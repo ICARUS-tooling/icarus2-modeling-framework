@@ -26,8 +26,8 @@
 package de.ims.icarus2.model.api.driver.mapping;
 
 import de.ims.icarus2.model.api.driver.Driver;
-import de.ims.icarus2.model.api.manifest.ItemLayerManifest;
-import de.ims.icarus2.model.api.manifest.MappingManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.MappingManifest;
 
 /**
  * @author Markus Gärtner

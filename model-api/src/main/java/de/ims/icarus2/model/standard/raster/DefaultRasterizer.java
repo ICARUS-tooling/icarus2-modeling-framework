@@ -25,11 +25,11 @@
  */
 package de.ims.icarus2.model.standard.raster;
 
-import de.ims.icarus2.model.api.Messages;
 import de.ims.icarus2.model.api.raster.Metric;
 import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.api.raster.RasterAxis;
 import de.ims.icarus2.model.api.raster.Rasterizer;
+import de.ims.icarus2.model.manifest.util.Messages;
 
 /**
  * @author Markus Gärtner

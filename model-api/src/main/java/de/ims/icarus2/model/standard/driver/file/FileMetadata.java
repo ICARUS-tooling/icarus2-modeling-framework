@@ -33,16 +33,17 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.api.manifest.ContainerManifest;
-import de.ims.icarus2.model.api.manifest.ContainerType;
-import de.ims.icarus2.model.api.manifest.ItemLayerManifest;
-import de.ims.icarus2.model.api.manifest.StructureLayerManifest;
-import de.ims.icarus2.model.api.manifest.StructureManifest;
-import de.ims.icarus2.model.api.manifest.StructureType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
+import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.ContainerType;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
+import de.ims.icarus2.model.manifest.api.StructureManifest;
+import de.ims.icarus2.model.manifest.api.StructureType;
+import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.registry.MetadataRegistry;
 import de.ims.icarus2.model.registry.SubRegistry;
 import de.ims.icarus2.model.standard.driver.AbstractDriver;
@@ -50,7 +51,6 @@ import de.ims.icarus2.model.standard.driver.io.BufferedIOResource.BlockCache;
 import de.ims.icarus2.model.standard.driver.io.RUBlockCache;
 import de.ims.icarus2.model.standard.driver.io.UnlimitedBlockCache;
 import de.ims.icarus2.model.standard.driver.mapping.chunks.ChunkIndex;
-import de.ims.icarus2.model.types.ValueType;
 
 /**
  * Defines keys and key generation functions for the storage of file metadata.

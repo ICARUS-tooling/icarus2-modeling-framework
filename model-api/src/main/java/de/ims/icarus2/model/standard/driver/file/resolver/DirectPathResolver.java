@@ -44,13 +44,13 @@ import java.util.regex.Pattern;
 
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.manifest.LocationManifest;
-import de.ims.icarus2.model.api.manifest.LocationType;
-import de.ims.icarus2.model.api.manifest.LocationManifest.PathEntry;
-import de.ims.icarus2.model.api.manifest.LocationManifest.PathType;
-import de.ims.icarus2.model.api.manifest.PathResolverManifest;
 import de.ims.icarus2.model.io.PathResolver;
 import de.ims.icarus2.model.io.ResourcePath;
+import de.ims.icarus2.model.manifest.api.LocationManifest;
+import de.ims.icarus2.model.manifest.api.LocationType;
+import de.ims.icarus2.model.manifest.api.PathResolverManifest;
+import de.ims.icarus2.model.manifest.api.LocationManifest.PathEntry;
+import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
 
 /**
  * Implements a simple path resolver that is directly linked to a fixed set

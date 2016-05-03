@@ -40,13 +40,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import de.ims.icarus2.model.api.manifest.ContainerType;
-import de.ims.icarus2.model.api.manifest.StructureManifest;
-import de.ims.icarus2.model.api.manifest.StructureType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
+import de.ims.icarus2.model.manifest.api.ContainerType;
+import de.ims.icarus2.model.manifest.api.StructureManifest;
+import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.standard.members.container.ItemStorage;
 import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.model.standard.members.structure.DefaultEdge;

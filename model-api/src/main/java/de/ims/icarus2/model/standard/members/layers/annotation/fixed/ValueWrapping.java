@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
-import de.ims.icarus2.model.types.ValueType;
+import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.util.MutablePrimitives;
 import de.ims.icarus2.util.MutablePrimitives.MutablePrimitive;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;

@@ -29,13 +29,13 @@ import static de.ims.icarus2.model.util.Conditions.checkNotNull;
 
 import java.util.Arrays;
 
-import de.ims.icarus2.model.api.Messages;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.CorpusView.PageControl;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
+import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.driver.indices.IndexBuffer;
 
 /**

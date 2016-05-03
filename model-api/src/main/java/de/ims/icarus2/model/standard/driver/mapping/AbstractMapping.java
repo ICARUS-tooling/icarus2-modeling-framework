@@ -30,8 +30,8 @@ import static de.ims.icarus2.model.util.Conditions.checkState;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
-import de.ims.icarus2.model.api.manifest.ItemLayerManifest;
-import de.ims.icarus2.model.api.manifest.MappingManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.util.AbstractBuilder;
 
 /**

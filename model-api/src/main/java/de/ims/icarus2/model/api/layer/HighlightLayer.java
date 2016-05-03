@@ -26,9 +26,9 @@
 package de.ims.icarus2.model.api.layer;
 
 import de.ims.icarus2.model.api.highlight.HighlightCursor;
-import de.ims.icarus2.model.api.manifest.HighlightLayerManifest;
-import de.ims.icarus2.model.api.manifest.ManifestOwner;
 import de.ims.icarus2.model.api.members.container.Container;
+import de.ims.icarus2.model.manifest.api.HighlightLayerManifest;
+import de.ims.icarus2.model.manifest.api.ManifestOwner;
 
 /**
  * @author Markus Gärtner

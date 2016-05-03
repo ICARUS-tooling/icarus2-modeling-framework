@@ -32,9 +32,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
-import de.ims.icarus2.model.api.manifest.AnnotationLayerManifest;
-import de.ims.icarus2.model.api.manifest.AnnotationManifest;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
+import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.standard.util.CorpusUtils;
 
 /**

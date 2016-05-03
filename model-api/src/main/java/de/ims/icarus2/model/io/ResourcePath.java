@@ -28,7 +28,7 @@ package de.ims.icarus2.model.io;
 import java.net.URL;
 import java.nio.file.Path;
 
-import de.ims.icarus2.model.api.manifest.LocationType;
+import de.ims.icarus2.model.manifest.api.LocationType;
 import de.ims.icarus2.util.Options;
 
 /**

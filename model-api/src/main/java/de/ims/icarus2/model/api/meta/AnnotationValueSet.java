@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.api.meta;
 
-import de.ims.icarus2.model.types.ValueType;
+import de.ims.icarus2.model.manifest.types.ValueType;
 
 /**
  * @author Markus Gärtner

@@ -41,13 +41,13 @@ import java.util.function.Consumer;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.DependencyType;
-import de.ims.icarus2.model.api.manifest.ContextManifest;
-import de.ims.icarus2.model.api.manifest.CorpusManifest;
-import de.ims.icarus2.model.api.manifest.FragmentLayerManifest;
-import de.ims.icarus2.model.api.manifest.ItemLayerManifest;
-import de.ims.icarus2.model.api.manifest.LayerManifest;
-import de.ims.icarus2.model.api.manifest.LayerManifest.TargetLayerManifest;
-import de.ims.icarus2.model.api.manifest.Manifest;
+import de.ims.icarus2.model.manifest.api.ContextManifest;
+import de.ims.icarus2.model.manifest.api.CorpusManifest;
+import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.LayerManifest;
+import de.ims.icarus2.model.manifest.api.Manifest;
+import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.standard.util.CorpusUtils;
 
 /**

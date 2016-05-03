@@ -26,7 +26,7 @@
 package de.ims.icarus2.model.api.events;
 
 import de.ims.icarus2.model.api.corpus.Corpus;
-import de.ims.icarus2.model.api.manifest.CorpusManifest;
+import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.registry.CorpusManager;
 
 /**

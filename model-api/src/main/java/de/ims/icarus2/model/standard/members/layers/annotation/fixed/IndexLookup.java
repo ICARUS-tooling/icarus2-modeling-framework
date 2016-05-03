@@ -29,7 +29,7 @@ import java.util.Arrays;
 import java.util.Set;
 
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
-import de.ims.icarus2.model.api.manifest.AnnotationLayerManifest;
+import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 
 /**
  * Implements the actual key storage and provides a sorted view

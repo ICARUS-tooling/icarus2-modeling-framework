@@ -46,7 +46,7 @@ import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
 import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
-import de.ims.icarus2.model.api.manifest.MappingManifest.Coverage;
+import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
 
 /**
  * Mapping implementation that relies on another reverse mapping to map contents of spans to

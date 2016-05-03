@@ -37,9 +37,9 @@ import de.ims.icarus2.model.api.corpus.CorpusModel;
 import de.ims.icarus2.model.api.corpus.CorpusView;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.events.CorpusLifecycleListener;
-import de.ims.icarus2.model.api.manifest.CorpusManifest;
-import de.ims.icarus2.model.api.manifest.ManifestRegistry;
 import de.ims.icarus2.model.api.members.CorpusMember;
+import de.ims.icarus2.model.manifest.api.CorpusManifest;
+import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.util.id.Identity;
 
 /**

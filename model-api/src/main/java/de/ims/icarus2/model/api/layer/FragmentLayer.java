@@ -26,11 +26,11 @@
 package de.ims.icarus2.model.api.layer;
 
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.manifest.FragmentLayerManifest;
 import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.raster.RasterAxis;
 import de.ims.icarus2.model.api.raster.Rasterizer;
+import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 
 /**
  * Models a layer that holds fragments of another layer's items. Fragmentation is possible

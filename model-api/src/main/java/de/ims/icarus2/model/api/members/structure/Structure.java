@@ -30,11 +30,11 @@ import java.util.function.Consumer;
 import de.ims.icarus2.annotations.OptionalMethod;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.api.manifest.StructureManifest;
-import de.ims.icarus2.model.api.manifest.StructureType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.manifest.api.StructureManifest;
+import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.util.DataSequence;
 
 /**

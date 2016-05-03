@@ -34,9 +34,9 @@ import java.nio.file.Paths;
 
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.manifest.LocationType;
 import de.ims.icarus2.model.io.PathResolver;
 import de.ims.icarus2.model.io.ResourcePath;
+import de.ims.icarus2.model.manifest.api.LocationType;
 
 /**
  * Implements a {@link FileSet} that is linked to a central storage file and

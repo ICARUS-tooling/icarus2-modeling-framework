@@ -31,7 +31,7 @@ import java.util.function.BiConsumer;
 
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.HighlightLayer;
-import de.ims.icarus2.model.api.manifest.AnnotationManifest;
+import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.util.DataSet;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.collections.LazyMap;

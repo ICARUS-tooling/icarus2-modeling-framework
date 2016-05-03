@@ -28,10 +28,10 @@ package de.ims.icarus2.model.standard.members.structure.builder;
 import static de.ims.icarus2.model.standard.util.CorpusUtils.ensureIntegerValueRange;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.manifest.StructureType;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
+import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.standard.members.structure.RootItem;
 import de.ims.icarus2.util.collections.LookupList;
 

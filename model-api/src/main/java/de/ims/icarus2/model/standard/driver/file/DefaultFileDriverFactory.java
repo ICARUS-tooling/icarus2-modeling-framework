@@ -28,10 +28,10 @@ package de.ims.icarus2.model.standard.driver.file;
 import static de.ims.icarus2.model.util.Conditions.checkNotNull;
 import static de.ims.icarus2.model.util.Conditions.checkState;
 import de.ims.icarus2.model.api.corpus.Corpus;
-import de.ims.icarus2.model.api.manifest.DriverManifest;
-import de.ims.icarus2.model.api.manifest.ImplementationLoader;
-import de.ims.icarus2.model.api.manifest.ImplementationManifest;
-import de.ims.icarus2.model.api.manifest.ImplementationManifest.Factory;
+import de.ims.icarus2.model.manifest.api.DriverManifest;
+import de.ims.icarus2.model.manifest.api.ImplementationLoader;
+import de.ims.icarus2.model.manifest.api.ImplementationManifest;
+import de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory;
 import de.ims.icarus2.model.registry.MetadataRegistry;
 import de.ims.icarus2.model.registry.SubRegistry;
 import de.ims.icarus2.model.standard.driver.file.FileDriver.FileDriverBuilder;
@@ -65,7 +65,7 @@ public class DefaultFileDriverFactory implements Factory {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.manifest.ImplementationManifest.Factory#create(java.lang.Class, de.ims.icarus2.model.api.manifest.ImplementationManifest, de.ims.icarus2.model.api.manifest.ImplementationLoader)
+	 * @see de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory#create(java.lang.Class, de.ims.icarus2.model.manifest.api.ImplementationManifest, de.ims.icarus2.model.manifest.api.ImplementationLoader)
 	 */
 	@Override
 	public <T> T create(Class<T> resultClass, ImplementationManifest manifest,

@@ -30,9 +30,9 @@ import static de.ims.icarus2.model.standard.util.CorpusUtils.ensureIntegerValueR
 import java.util.Collection;
 
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.manifest.ContainerType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.standard.members.container.AbstractImmutableItemStorage;
 import de.ims.icarus2.util.collections.LookupList;
 

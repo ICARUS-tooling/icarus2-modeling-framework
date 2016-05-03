@@ -28,7 +28,7 @@ package de.ims.icarus2.model.api.layer;
 import java.util.Set;
 
 import de.ims.icarus2.model.api.corpus.Context;
-import de.ims.icarus2.model.api.manifest.LayerGroupManifest;
+import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.util.Part;
 
 /**

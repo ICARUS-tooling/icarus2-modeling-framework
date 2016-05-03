@@ -32,8 +32,8 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import de.ims.icarus2.model.api.ModelConstants;
-import de.ims.icarus2.model.api.manifest.ContextManifest;
-import de.ims.icarus2.model.api.manifest.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ContextManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.registry.MetadataRegistry;
 import de.ims.icarus2.model.standard.driver.file.FileDriver.PreparationStep;
 import de.ims.icarus2.model.standard.driver.file.FileDriverStates.FileInfo;

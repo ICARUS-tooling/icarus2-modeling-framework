@@ -30,8 +30,8 @@ import javax.swing.Icon;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.ims.icarus2.model.api.manifest.LayerManifest;
-import de.ims.icarus2.model.api.manifest.LayerType;
+import de.ims.icarus2.model.manifest.api.LayerManifest;
+import de.ims.icarus2.model.manifest.api.LayerType;
 import de.ims.icarus2.util.classes.ClassProxy;
 import de.ims.icarus2.util.classes.ClassUtils;
 
@@ -129,7 +129,7 @@ public class LayerTypeWrapper implements LayerType {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.manifest.LayerType#getSharedManifest()
+	 * @see de.ims.icarus2.model.manifest.api.LayerType#getSharedManifest()
 	 */
 	@Override
 	public LayerManifest getSharedManifest() {

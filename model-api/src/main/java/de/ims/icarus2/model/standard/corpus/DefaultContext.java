@@ -48,8 +48,8 @@ import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
-import de.ims.icarus2.model.api.manifest.ContextManifest;
-import de.ims.icarus2.model.api.manifest.ContextManifest.PrerequisiteManifest;
+import de.ims.icarus2.model.manifest.api.ContextManifest;
+import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.standard.util.CorpusUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
 

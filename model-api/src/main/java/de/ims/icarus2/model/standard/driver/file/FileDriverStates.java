@@ -36,10 +36,10 @@ import java.util.function.ObjIntConsumer;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.manifest.ContainerType;
-import de.ims.icarus2.model.api.manifest.ItemLayerManifest;
-import de.ims.icarus2.model.api.manifest.LayerManifest;
-import de.ims.icarus2.model.api.manifest.StructureType;
+import de.ims.icarus2.model.manifest.api.ContainerType;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.LayerManifest;
+import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.standard.driver.io.sets.FileSet;
 import de.ims.icarus2.util.Counter;
 

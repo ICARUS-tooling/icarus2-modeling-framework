@@ -28,9 +28,9 @@ package de.ims.icarus2.model.standard.members.layers.item;
 import static de.ims.icarus2.model.util.Conditions.checkNotSet;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.FragmentLayer;
-import de.ims.icarus2.model.api.manifest.FragmentLayerManifest;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.raster.Rasterizer;
+import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 
 /**
  * @author Markus Gärtner

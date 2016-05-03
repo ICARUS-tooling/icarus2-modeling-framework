@@ -27,12 +27,12 @@ package de.ims.icarus2.model.standard.members.structure;
 
 import de.ims.icarus2.annotations.OptionalMethod;
 import de.ims.icarus2.model.api.ModelConstants;
-import de.ims.icarus2.model.api.manifest.StructureType;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureEditVerifier;
+import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.util.DataSequence;
 import de.ims.icarus2.model.util.Recyclable;
 

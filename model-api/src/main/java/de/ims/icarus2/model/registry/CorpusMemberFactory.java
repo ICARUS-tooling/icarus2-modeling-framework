@@ -33,14 +33,14 @@ import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
 import de.ims.icarus2.model.api.layer.StructureLayer;
-import de.ims.icarus2.model.api.manifest.AnnotationLayerManifest;
-import de.ims.icarus2.model.api.manifest.ContextManifest;
-import de.ims.icarus2.model.api.manifest.FragmentLayerManifest;
-import de.ims.icarus2.model.api.manifest.ImplementationLoader;
-import de.ims.icarus2.model.api.manifest.ImplementationManifest;
-import de.ims.icarus2.model.api.manifest.ItemLayerManifest;
-import de.ims.icarus2.model.api.manifest.LayerGroupManifest;
-import de.ims.icarus2.model.api.manifest.StructureLayerManifest;
+import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
+import de.ims.icarus2.model.manifest.api.ContextManifest;
+import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
+import de.ims.icarus2.model.manifest.api.ImplementationLoader;
+import de.ims.icarus2.model.manifest.api.ImplementationManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
+import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.util.Options;
 
 /**

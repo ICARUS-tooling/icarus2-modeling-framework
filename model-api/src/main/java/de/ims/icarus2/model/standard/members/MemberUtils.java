@@ -26,17 +26,17 @@
 package de.ims.icarus2.model.standard.members;
 
 import static de.ims.icarus2.model.standard.util.CorpusUtils.getName;
-import de.ims.icarus2.model.api.Messages;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.manifest.ContainerFlag;
-import de.ims.icarus2.model.api.manifest.ContainerManifest;
-import de.ims.icarus2.model.api.manifest.StructureFlag;
-import de.ims.icarus2.model.api.manifest.StructureManifest;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
+import de.ims.icarus2.model.manifest.api.ContainerFlag;
+import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.StructureFlag;
+import de.ims.icarus2.model.manifest.api.StructureManifest;
+import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.util.DataSet;
 import de.ims.icarus2.util.collections.LazyCollection;
 

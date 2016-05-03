@@ -25,12 +25,12 @@
  */
 package de.ims.icarus2.model.api.members.container;
 
-import de.ims.icarus2.model.api.manifest.ContainerManifest;
-import de.ims.icarus2.model.api.manifest.ContainerType;
-import de.ims.icarus2.model.api.manifest.ManifestOwner;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.ItemList;
 import de.ims.icarus2.model.api.members.structure.Structure;
+import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.ContainerType;
+import de.ims.icarus2.model.manifest.api.ManifestOwner;
 import de.ims.icarus2.model.util.DataSet;
 
 

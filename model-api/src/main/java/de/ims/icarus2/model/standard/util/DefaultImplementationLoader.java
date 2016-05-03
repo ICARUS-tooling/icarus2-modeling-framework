@@ -33,13 +33,13 @@ import static de.ims.icarus2.model.util.Conditions.checkState;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-import de.ims.icarus2.model.api.Messages;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
-import de.ims.icarus2.model.api.manifest.ImplementationLoader;
-import de.ims.icarus2.model.api.manifest.ImplementationManifest;
-import de.ims.icarus2.model.api.manifest.ImplementationManifest.SourceType;
-import de.ims.icarus2.model.api.manifest.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.api.ImplementationLoader;
+import de.ims.icarus2.model.manifest.api.ImplementationManifest;
+import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.api.ImplementationManifest.SourceType;
+import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.registry.CorpusManager;
 
 /**

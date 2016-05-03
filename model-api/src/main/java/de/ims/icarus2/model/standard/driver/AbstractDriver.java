@@ -54,18 +54,18 @@ import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
-import de.ims.icarus2.model.api.manifest.AnnotationLayerManifest;
-import de.ims.icarus2.model.api.manifest.ContextManifest;
-import de.ims.icarus2.model.api.manifest.DriverManifest;
-import de.ims.icarus2.model.api.manifest.ImplementationLoader;
-import de.ims.icarus2.model.api.manifest.DriverManifest.ModuleManifest;
-import de.ims.icarus2.model.api.manifest.ItemLayerManifest;
-import de.ims.icarus2.model.api.manifest.MappingManifest;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.meta.AnnotationValueDistribution;
 import de.ims.icarus2.model.api.meta.AnnotationValueSet;
 import de.ims.icarus2.model.io.resources.FileResource;
 import de.ims.icarus2.model.io.resources.IOResource;
+import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
+import de.ims.icarus2.model.manifest.api.ContextManifest;
+import de.ims.icarus2.model.manifest.api.DriverManifest;
+import de.ims.icarus2.model.manifest.api.ImplementationLoader;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.MappingManifest;
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
 import de.ims.icarus2.model.registry.CorpusMemberFactory;
 import de.ims.icarus2.model.standard.driver.io.BufferedIOResource.BlockCache;
 import de.ims.icarus2.model.standard.driver.io.RUBlockCache;
@@ -218,7 +218,7 @@ public abstract class AbstractDriver implements Driver {
 	 * The default implementation does not provide custom layer implementations and therefore
 	 * always returns {@code null}.
 	 *
-	 * @see de.ims.icarus2.model.api.driver.Driver#createCustomLayers(de.ims.icarus2.model.api.manifest.ContextManifest)
+	 * @see de.ims.icarus2.model.api.driver.Driver#createCustomLayers(de.ims.icarus2.model.manifest.api.ContextManifest)
 	 */
 	protected Options createCustomLayers(ContextManifest manifest) {
 		return null;

@@ -34,13 +34,13 @@ import java.util.function.IntConsumer;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongConsumer;
 
-import de.ims.icarus2.model.api.Messages;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.func.IndexIterativeIntersection;
 import de.ims.icarus2.model.api.driver.indices.func.IndexSetMerger;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.driver.indices.IndexBuffer;
 import de.ims.icarus2.model.standard.driver.indices.SingletonIndexSet;
 import de.ims.icarus2.model.standard.driver.indices.SpanIndexSet;

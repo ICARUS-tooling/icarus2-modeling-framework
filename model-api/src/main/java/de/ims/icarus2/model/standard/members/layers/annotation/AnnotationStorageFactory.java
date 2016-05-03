@@ -32,9 +32,10 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
-import de.ims.icarus2.model.api.manifest.AnnotationFlag;
-import de.ims.icarus2.model.api.manifest.AnnotationLayerManifest;
-import de.ims.icarus2.model.api.manifest.AnnotationManifest;
+import de.ims.icarus2.model.manifest.api.AnnotationFlag;
+import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
+import de.ims.icarus2.model.manifest.api.AnnotationManifest;
+import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysBoolean15BitStorage;
 import de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysBoolean31BitStorage;
 import de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysBoolean7BitStorage;
@@ -52,7 +53,6 @@ import de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyL
 import de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyObjectStorage;
 import de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationStorage;
 import de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationStorage.AnnotationBundle;
-import de.ims.icarus2.model.types.ValueType;
 import de.ims.icarus2.util.Options;
 
 /**

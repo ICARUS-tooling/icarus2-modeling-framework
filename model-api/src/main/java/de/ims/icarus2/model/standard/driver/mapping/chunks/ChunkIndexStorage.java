@@ -38,7 +38,7 @@ import java.util.Set;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.api.manifest.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**

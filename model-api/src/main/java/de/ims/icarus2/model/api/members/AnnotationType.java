@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.api.members;
 
-import de.ims.icarus2.model.api.manifest.AnnotationManifest;
+import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.util.id.Identity;
 
 /**

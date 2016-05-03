@@ -37,10 +37,10 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.function.Consumer;
 
-import de.ims.icarus2.model.api.manifest.StructureType;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
+import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.util.collections.ArrayUtils;
 
 /**

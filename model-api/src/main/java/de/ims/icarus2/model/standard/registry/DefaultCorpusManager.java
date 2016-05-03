@@ -48,8 +48,8 @@ import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.events.CorpusLifecycleListener;
-import de.ims.icarus2.model.api.manifest.CorpusManifest;
-import de.ims.icarus2.model.api.manifest.Manifest;
+import de.ims.icarus2.model.manifest.api.CorpusManifest;
+import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.registry.CorpusManager;
 import de.ims.icarus2.model.registry.CorpusMemberFactory;
 import de.ims.icarus2.model.registry.CorpusRegistry;
@@ -249,7 +249,7 @@ public class DefaultCorpusManager implements CorpusManager {
 //	}
 
 	/**
-	 * @see de.ims.icarus2.model.registry.CorpusManager#connect(de.ims.icarus2.model.api.manifest.CorpusManifest)
+	 * @see de.ims.icarus2.model.registry.CorpusManager#connect(de.ims.icarus2.model.manifest.api.CorpusManifest)
 	 */
 	@Override
 	public Corpus connect(CorpusManifest manifest) throws InterruptedException {
@@ -357,7 +357,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.registry.CorpusManager#disconnect(de.ims.icarus2.model.api.manifest.CorpusManifest)
+	 * @see de.ims.icarus2.model.registry.CorpusManager#disconnect(de.ims.icarus2.model.manifest.api.CorpusManifest)
 	 */
 	@Override
 	public void disconnect(CorpusManifest manifest) throws InterruptedException {
@@ -416,7 +416,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.registry.CorpusManager#getLiveCorpus(de.ims.icarus2.model.api.manifest.CorpusManifest)
+	 * @see de.ims.icarus2.model.registry.CorpusManager#getLiveCorpus(de.ims.icarus2.model.manifest.api.CorpusManifest)
 	 */
 	@Override
 	public Corpus getLiveCorpus(CorpusManifest manifest) {
@@ -456,7 +456,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.registry.CorpusManager#isCorpusConnected(de.ims.icarus2.model.api.manifest.CorpusManifest)
+	 * @see de.ims.icarus2.model.registry.CorpusManager#isCorpusConnected(de.ims.icarus2.model.manifest.api.CorpusManifest)
 	 */
 	@Override
 	public boolean isCorpusConnected(CorpusManifest corpus) {
@@ -464,7 +464,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.registry.CorpusManager#isCorpusConnecting(de.ims.icarus2.model.api.manifest.CorpusManifest)
+	 * @see de.ims.icarus2.model.registry.CorpusManager#isCorpusConnecting(de.ims.icarus2.model.manifest.api.CorpusManifest)
 	 */
 	@Override
 	public boolean isCorpusConnecting(CorpusManifest corpus) {
@@ -472,7 +472,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.registry.CorpusManager#isCorpusDisconnecting(de.ims.icarus2.model.api.manifest.CorpusManifest)
+	 * @see de.ims.icarus2.model.registry.CorpusManager#isCorpusDisconnecting(de.ims.icarus2.model.manifest.api.CorpusManifest)
 	 */
 	@Override
 	public boolean isCorpusDisconnecting(CorpusManifest corpus) {
@@ -480,7 +480,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.registry.CorpusManager#isCorpusEnabled(de.ims.icarus2.model.api.manifest.CorpusManifest)
+	 * @see de.ims.icarus2.model.registry.CorpusManager#isCorpusEnabled(de.ims.icarus2.model.manifest.api.CorpusManifest)
 	 */
 	@Override
 	public boolean isCorpusEnabled(CorpusManifest corpus) {
@@ -488,7 +488,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.registry.CorpusManager#isBadCorpus(de.ims.icarus2.model.api.manifest.CorpusManifest)
+	 * @see de.ims.icarus2.model.registry.CorpusManager#isBadCorpus(de.ims.icarus2.model.manifest.api.CorpusManifest)
 	 */
 	@Override
 	public boolean isBadCorpus(CorpusManifest corpus) {
@@ -496,7 +496,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.registry.CorpusManager#enableCorpus(de.ims.icarus2.model.api.manifest.CorpusManifest)
+	 * @see de.ims.icarus2.model.registry.CorpusManager#enableCorpus(de.ims.icarus2.model.manifest.api.CorpusManifest)
 	 */
 	@Override
 	public boolean enableCorpus(CorpusManifest corpus) {
@@ -522,7 +522,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.registry.CorpusManager#disableCorpus(de.ims.icarus2.model.api.manifest.CorpusManifest)
+	 * @see de.ims.icarus2.model.registry.CorpusManager#disableCorpus(de.ims.icarus2.model.manifest.api.CorpusManifest)
 	 */
 	@Override
 	public boolean disableCorpus(CorpusManifest corpus) {
@@ -548,7 +548,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.registry.CorpusManager#resetBadCorpus(de.ims.icarus2.model.api.manifest.CorpusManifest)
+	 * @see de.ims.icarus2.model.registry.CorpusManager#resetBadCorpus(de.ims.icarus2.model.manifest.api.CorpusManifest)
 	 */
 	@Override
 	public boolean resetBadCorpus(CorpusManifest corpus) {

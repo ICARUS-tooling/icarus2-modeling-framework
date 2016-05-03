@@ -27,10 +27,10 @@ package de.ims.icarus2.model.standard.members.container;
 
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.manifest.ContainerType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.util.DataSequence;
 import de.ims.icarus2.model.util.Recyclable;
 

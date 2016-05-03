@@ -27,7 +27,7 @@ package de.ims.icarus2.model.standard.members.layers.item;
 
 import static de.ims.icarus2.model.util.Conditions.checkNotSet;
 import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.api.manifest.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.standard.members.layers.AbstractLayer;
 
 /**

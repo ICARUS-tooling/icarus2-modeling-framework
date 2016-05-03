@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.api.layer;
 
-import de.ims.icarus2.model.api.manifest.StructureLayerManifest;
+import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 
 /**
  * @author Markus Gärtner

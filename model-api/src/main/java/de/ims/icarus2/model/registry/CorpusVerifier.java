@@ -31,21 +31,21 @@ import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 
-import de.ims.icarus2.model.api.manifest.AnnotationLayerManifest;
-import de.ims.icarus2.model.api.manifest.AnnotationManifest;
-import de.ims.icarus2.model.api.manifest.ContainerManifest;
-import de.ims.icarus2.model.api.manifest.ContextManifest;
-import de.ims.icarus2.model.api.manifest.CorpusManifest;
-import de.ims.icarus2.model.api.manifest.ItemLayerManifest;
-import de.ims.icarus2.model.api.manifest.LayerManifest;
-import de.ims.icarus2.model.api.manifest.LocationManifest;
-import de.ims.icarus2.model.api.manifest.ManifestType;
-import de.ims.icarus2.model.api.manifest.MemberManifest;
-import de.ims.icarus2.model.api.manifest.OptionsManifest;
-import de.ims.icarus2.model.api.manifest.OptionsManifest.Option;
-import de.ims.icarus2.model.api.manifest.PathResolverManifest;
-import de.ims.icarus2.model.api.manifest.StructureLayerManifest;
-import de.ims.icarus2.model.types.ValueType;
+import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
+import de.ims.icarus2.model.manifest.api.AnnotationManifest;
+import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.ContextManifest;
+import de.ims.icarus2.model.manifest.api.CorpusManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.LayerManifest;
+import de.ims.icarus2.model.manifest.api.LocationManifest;
+import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.model.manifest.api.MemberManifest;
+import de.ims.icarus2.model.manifest.api.OptionsManifest;
+import de.ims.icarus2.model.manifest.api.PathResolverManifest;
+import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
+import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
+import de.ims.icarus2.model.manifest.types.ValueType;
 
 /**
  * @author Markus Gärtner

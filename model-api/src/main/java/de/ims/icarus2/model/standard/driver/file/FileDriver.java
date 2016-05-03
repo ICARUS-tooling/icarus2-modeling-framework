@@ -35,7 +35,6 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.ims.icarus2.model.api.Messages;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
@@ -45,14 +44,16 @@ import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.api.manifest.ContextManifest;
-import de.ims.icarus2.model.api.manifest.DriverManifest.ModuleManifest;
-import de.ims.icarus2.model.api.manifest.ItemLayerManifest;
-import de.ims.icarus2.model.api.manifest.LayerManifest;
-import de.ims.icarus2.model.api.manifest.MappingManifest;
-import de.ims.icarus2.model.api.manifest.MemberManifest;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.ItemLayerManager;
+import de.ims.icarus2.model.manifest.api.ContextManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.LayerManifest;
+import de.ims.icarus2.model.manifest.api.MappingManifest;
+import de.ims.icarus2.model.manifest.api.MemberManifest;
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
+import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.registry.MetadataRegistry;
 import de.ims.icarus2.model.standard.driver.AbstractDriver;
 import de.ims.icarus2.model.standard.driver.file.FileDriverStates.FileInfo;
@@ -65,7 +66,6 @@ import de.ims.icarus2.model.standard.driver.mapping.MappingFactory;
 import de.ims.icarus2.model.standard.driver.mapping.MappingFactory.Property;
 import de.ims.icarus2.model.standard.driver.mapping.chunks.ChunkIndexStorage;
 import de.ims.icarus2.model.standard.util.CorpusUtils;
-import de.ims.icarus2.model.types.ValueType;
 import de.ims.icarus2.util.Options;
 
 
@@ -121,7 +121,7 @@ public abstract class FileDriver extends AbstractDriver {
 	/**
 	 *
 	 *
-	 * @see de.ims.icarus2.model.standard.driver.AbstractDriver#createCustomLayers(de.ims.icarus2.model.api.manifest.ContextManifest)
+	 * @see de.ims.icarus2.model.standard.driver.AbstractDriver#createCustomLayers(de.ims.icarus2.model.manifest.api.ContextManifest)
 	 */
 	@Override
 	protected Options createCustomLayers(ContextManifest manifest) {
@@ -252,7 +252,7 @@ public abstract class FileDriver extends AbstractDriver {
 	 *
 	 * TODO refresh description
 	 *
-	 * @see de.ims.icarus2.model.api.driver.Driver#getItemCount(de.ims.icarus2.model.api.manifest.ItemLayerManifest)
+	 * @see de.ims.icarus2.model.api.driver.Driver#getItemCount(de.ims.icarus2.model.manifest.api.ItemLayerManifest)
 	 * @see ItemLayerKey#ITEMS
 	 */
 	@Override
