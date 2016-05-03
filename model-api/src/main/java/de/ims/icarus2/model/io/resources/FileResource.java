@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.io.resources;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.io.IOException;
 import java.nio.channels.SeekableByteChannel;

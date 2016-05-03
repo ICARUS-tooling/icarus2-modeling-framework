@@ -35,9 +35,39 @@ import de.ims.icarus2.model.manifest.api.LayerManifest;
  */
 public class Messages {
 
+	/**
+	 * Internal helper class to access call stack information in a cheaper way than
+	 * via {@link Thread#getStackTrace()}.
+	 *
+	 * @author Markus Gärtner
+	 * @version $Id$
+	 *
+	 */
+	private static final class CallingClass extends SecurityManager {
+	    public static final CallingClass INSTANCE = new CallingClass();
+
+	    /**
+	     * @see SecurityManager#getClassContext()
+	     */
+	    @SuppressWarnings("rawtypes")
+		public Class[] getCallingClasses() {
+	        return getClassContext();
+	    }
+	}
+
 	private static String ensureMsg(String msg) {
 		if(msg==null) {
-			//FIXME Access stack trace and construct "Class.method(signature)" message
+			@SuppressWarnings("rawtypes")
+			Class[] trace = CallingClass.INSTANCE.getCallingClasses();
+
+			for(int i=1; i<trace.length; i++) {
+				@SuppressWarnings("rawtypes")
+				Class clazz = trace[i];
+
+				if(clazz!=CallingClass.class && clazz!=Messages.class) {
+					return clazz.getName();
+				}
+			}
 		}
 
 		return msg;

@@ -26,7 +26,7 @@
 package de.ims.icarus2.model.standard.registry;
 
 import static de.ims.icarus2.model.standard.util.CorpusUtils.getName;
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -36,10 +36,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import de.ims.icarus2.events.EventListener;
-import de.ims.icarus2.events.EventObject;
-import de.ims.icarus2.events.EventSource;
-import de.ims.icarus2.events.WeakEventSource;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.events.CorpusEvents;
@@ -53,6 +49,10 @@ import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.registry.CorpusRegistry;
 import de.ims.icarus2.model.standard.util.CorpusUtils;
 import de.ims.icarus2.util.Counter;
+import de.ims.icarus2.util.events.EventListener;
+import de.ims.icarus2.util.events.EventObject;
+import de.ims.icarus2.util.events.EventSource;
+import de.ims.icarus2.util.events.WeakEventSource;
 
 /**
  * @author Markus Gärtner
@@ -565,7 +565,7 @@ public final class DefaultCorpusRegistry implements CorpusRegistry {
 	/**
 	 * @param eventName
 	 * @param listener
-	 * @see de.ims.icarus2.events.EventSource#addListener(java.lang.String, de.ims.icarus2.events.EventListener)
+	 * @see de.ims.icarus2.util.events.EventSource#addListener(java.lang.String, de.ims.icarus2.util.events.EventListener)
 	 */
 	@Override
 	public void addListener(String eventName, EventListener listener) {
@@ -574,7 +574,7 @@ public final class DefaultCorpusRegistry implements CorpusRegistry {
 
 	/**
 	 * @param listener
-	 * @see de.ims.icarus2.events.EventSource#removeListener(de.ims.icarus2.events.EventListener)
+	 * @see de.ims.icarus2.util.events.EventSource#removeListener(de.ims.icarus2.util.events.EventListener)
 	 */
 	@Override
 	public void removeListener(EventListener listener) {
@@ -584,7 +584,7 @@ public final class DefaultCorpusRegistry implements CorpusRegistry {
 	/**
 	 * @param listener
 	 * @param eventName
-	 * @see de.ims.icarus2.events.EventSource#removeListener(de.ims.icarus2.events.EventListener, java.lang.String)
+	 * @see de.ims.icarus2.util.events.EventSource#removeListener(de.ims.icarus2.util.events.EventListener, java.lang.String)
 	 */
 	@Override
 	public void removeListener(EventListener listener, String eventName) {

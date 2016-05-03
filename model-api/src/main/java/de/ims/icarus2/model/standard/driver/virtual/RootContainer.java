@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.driver.virtual;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.function.Supplier;
 
@@ -40,8 +40,8 @@ import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.standard.members.container.AbstractImmutableContainer;
-import de.ims.icarus2.model.util.DataSequence;
-import de.ims.icarus2.model.util.DataSet;
+import de.ims.icarus2.util.collections.DataSequence;
+import de.ims.icarus2.util.collections.DataSet;
 
 /**
  * Implements a container suitable for being a layer's root container.

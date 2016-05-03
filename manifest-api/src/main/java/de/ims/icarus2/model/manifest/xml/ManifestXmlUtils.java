@@ -31,19 +31,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 
-import de.ims.icarus2.eval.Expression;
-import de.ims.icarus2.eval.Variable;
 import de.ims.icarus2.model.manifest.api.ModifiableIdentity;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest.Note;
 import de.ims.icarus2.model.manifest.api.Documentation.Resource;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.util.IconWrapper;
-import de.ims.icarus2.model.util.StringResource;
-import de.ims.icarus2.model.xml.XmlSerializer;
+import de.ims.icarus2.util.IconWrapper;
 import de.ims.icarus2.util.date.DateUtils;
+import de.ims.icarus2.util.eval.Expression;
+import de.ims.icarus2.util.eval.Variable;
 import de.ims.icarus2.util.id.Identity;
+import de.ims.icarus2.util.strings.StringResource;
+import de.ims.icarus2.util.xml.XmlSerializer;
 
 /**
  * @author Markus Gärtner

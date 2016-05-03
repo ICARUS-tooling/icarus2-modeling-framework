@@ -29,7 +29,7 @@ import static de.ims.icarus2.model.standard.util.CorpusUtils.getName;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
-import de.ims.icarus2.model.util.DataSequence;
+import de.ims.icarus2.util.collections.DataSequence;
 
 /**
  * Extends the {@link ItemLookup} interface with matching

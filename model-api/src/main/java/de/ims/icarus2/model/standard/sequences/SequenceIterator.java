@@ -28,7 +28,7 @@ package de.ims.icarus2.model.standard.sequences;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import de.ims.icarus2.model.util.DataSequence;
+import de.ims.icarus2.util.collections.DataSequence;
 
 /**
  * @author Markus Gärtner

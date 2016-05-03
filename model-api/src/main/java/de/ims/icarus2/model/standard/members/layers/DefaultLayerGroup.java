@@ -39,7 +39,7 @@ import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.standard.util.CorpusUtils;
-import de.ims.icarus2.model.util.AbstractPart;
+import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**

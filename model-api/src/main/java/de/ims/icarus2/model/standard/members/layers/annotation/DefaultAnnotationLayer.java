@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.standard.members.layers.AbstractLayer;

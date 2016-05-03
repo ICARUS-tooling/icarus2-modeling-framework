@@ -30,13 +30,8 @@ import java.util.function.Consumer;
 import javax.swing.event.ChangeListener;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.annotations.OptionalMethod;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.access.AccessControl;
-import de.ims.icarus2.model.api.access.AccessMode;
-import de.ims.icarus2.model.api.access.AccessPolicy;
-import de.ims.icarus2.model.api.access.AccessRestriction;
 import de.ims.icarus2.model.api.corpus.CorpusView.PageControl;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
@@ -54,10 +49,15 @@ import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.api.ValueSet;
-import de.ims.icarus2.model.util.DataSequence;
-import de.ims.icarus2.model.util.DataSet;
 import de.ims.icarus2.util.Changeable;
 import de.ims.icarus2.util.Part;
+import de.ims.icarus2.util.access.AccessControl;
+import de.ims.icarus2.util.access.AccessMode;
+import de.ims.icarus2.util.access.AccessPolicy;
+import de.ims.icarus2.util.access.AccessRestriction;
+import de.ims.icarus2.util.annotations.OptionalMethod;
+import de.ims.icarus2.util.collections.DataSequence;
+import de.ims.icarus2.util.collections.DataSet;
 
 /**
  * @author Markus Gärtner

@@ -25,8 +25,8 @@
  */
 package de.ims.icarus2.model.standard.sets;
 
-import de.ims.icarus2.model.util.DataSet;
-import de.ims.icarus2.model.util.Recyclable;
+import de.ims.icarus2.util.Recyclable;
+import de.ims.icarus2.util.collections.DataSet;
 import de.ims.icarus2.util.mem.HeapMember;
 
 @HeapMember

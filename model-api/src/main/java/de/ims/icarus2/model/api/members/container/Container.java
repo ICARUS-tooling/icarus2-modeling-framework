@@ -31,7 +31,7 @@ import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
-import de.ims.icarus2.model.util.DataSet;
+import de.ims.icarus2.util.collections.DataSet;
 
 
 /**

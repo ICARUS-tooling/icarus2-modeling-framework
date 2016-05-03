@@ -25,9 +25,9 @@
  */
 package de.ims.icarus2.model.standard.driver.io;
 
-import static de.ims.icarus2.model.util.Conditions.checkArgument;
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
-import static de.ims.icarus2.model.util.Conditions.checkState;
+import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkState;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;

@@ -31,7 +31,7 @@ import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.util.DataSequence;
+import de.ims.icarus2.util.collections.DataSequence;
 
 /**
  *
@@ -54,7 +54,7 @@ public class SpanSequence implements DataSequence<Item> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.DataSequence#entryCount()
+	 * @see de.ims.icarus2.util.collections.DataSequence#entryCount()
 	 */
 	@Override
 	public long entryCount() {
@@ -62,7 +62,7 @@ public class SpanSequence implements DataSequence<Item> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.DataSequence#elementAt(int)
+	 * @see de.ims.icarus2.util.collections.DataSequence#elementAt(int)
 	 */
 	@Override
 	public Item elementAt(long index) throws ConcurrentModificationException {

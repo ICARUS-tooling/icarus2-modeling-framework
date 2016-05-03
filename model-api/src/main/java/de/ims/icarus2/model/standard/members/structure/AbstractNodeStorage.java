@@ -43,7 +43,7 @@ import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureEditVerifier;
 import de.ims.icarus2.model.manifest.api.StructureFlag;
 import de.ims.icarus2.model.standard.sequences.ListSequence;
-import de.ims.icarus2.model.util.DataSequence;
+import de.ims.icarus2.util.collections.DataSequence;
 import de.ims.icarus2.util.collections.LookupList;
 
 /**

@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.driver.jdbc.indices;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

@@ -30,9 +30,9 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import de.ims.icarus2.events.EventManager;
-import de.ims.icarus2.events.Events;
 import de.ims.icarus2.util.collections.LazyCollection;
+import de.ims.icarus2.util.events.EventManager;
+import de.ims.icarus2.util.events.Events;
 
 /**
  * Models the central <i>storage</i> space for all kinds of manifests.
@@ -48,7 +48,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  * registry or until {@link #resetUIDs() reset} manually.
  * <p>
  * Clients that wish to be notified about changes to the registry can subscribe by
- * {@link #addListener(String, de.ims.icarus2.events.EventListener) adding a listener}.
+ * {@link #addListener(String, de.ims.icarus2.util.events.EventListener) adding a listener}.
  * The registry will fire {@link Events#ADD add}, {@link Events#REMOVE remove} and {@link Events#CHANGE change} events
  * <b>before</b> the respective changes are made, giving subscribed listeners the chance to interrupt illegal changes
  * (typically a {@link CorpusManager manager} responsible for a registry will subscribe and intercept changes so that

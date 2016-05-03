@@ -25,11 +25,11 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import de.ims.icarus2.model.api.access.AccessControl;
-import de.ims.icarus2.model.api.access.AccessMode;
-import de.ims.icarus2.model.api.access.AccessPolicy;
-import de.ims.icarus2.model.api.access.AccessRestriction;
-import de.ims.icarus2.model.util.StringResource;
+import de.ims.icarus2.util.access.AccessControl;
+import de.ims.icarus2.util.access.AccessMode;
+import de.ims.icarus2.util.access.AccessPolicy;
+import de.ims.icarus2.util.access.AccessRestriction;
+import de.ims.icarus2.util.strings.StringResource;
 
 
 
@@ -170,7 +170,7 @@ public interface ImplementationManifest extends MemberManifest {
 		DEFAULT;
 
 		/**
-		 * @see de.ims.icarus2.model.util.StringResource#getStringValue()
+		 * @see de.ims.icarus2.util.strings.StringResource#getStringValue()
 		 */
 		@Override
 		public String getStringValue() {

@@ -46,7 +46,7 @@ public class SingletonSet<E extends Object> extends AbstractDataSet<E> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.DataSet#entryCount()
+	 * @see de.ims.icarus2.util.collections.DataSet#entryCount()
 	 */
 	@Override
 	public int entryCount() {
@@ -57,7 +57,7 @@ public class SingletonSet<E extends Object> extends AbstractDataSet<E> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.DataSet#containerAt(int)
+	 * @see de.ims.icarus2.util.collections.DataSet#containerAt(int)
 	 */
 	@Override
 	public E entryAt(int index) {
@@ -70,7 +70,7 @@ public class SingletonSet<E extends Object> extends AbstractDataSet<E> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.Recyclable#recycle()
+	 * @see de.ims.icarus2.util.Recyclable#recycle()
 	 */
 	@Override
 	public void recycle() {
@@ -78,7 +78,7 @@ public class SingletonSet<E extends Object> extends AbstractDataSet<E> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.Recyclable#revive()
+	 * @see de.ims.icarus2.util.Recyclable#revive()
 	 */
 	@Override
 	public boolean revive() {
@@ -87,7 +87,7 @@ public class SingletonSet<E extends Object> extends AbstractDataSet<E> {
 
 	/**
 	 *
-	 * @see de.ims.icarus2.model.util.DataSet#contains(java.lang.Object)
+	 * @see de.ims.icarus2.util.collections.DataSet#contains(java.lang.Object)
 	 */
 	@Override
 	public boolean contains(E member) {

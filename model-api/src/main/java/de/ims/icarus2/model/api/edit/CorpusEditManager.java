@@ -29,10 +29,10 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Lock;
 
-import de.ims.icarus2.events.EventObject;
-import de.ims.icarus2.events.WeakEventSource;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange;
+import de.ims.icarus2.util.events.EventObject;
+import de.ims.icarus2.util.events.WeakEventSource;
 
 /**
  *

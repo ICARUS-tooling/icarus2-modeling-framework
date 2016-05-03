@@ -27,7 +27,7 @@ package de.ims.icarus2.model.standard.sequences;
 
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.util.DataSequence;
+import de.ims.icarus2.util.collections.DataSequence;
 
 /**
  * @author Markus Gärtner
@@ -37,7 +37,7 @@ import de.ims.icarus2.model.util.DataSequence;
 public class EmptySequence<E extends Object> implements DataSequence<E> {
 
 	/**
-	 * @see de.ims.icarus2.model.util.DataSequence#entryCount()
+	 * @see de.ims.icarus2.util.collections.DataSequence#entryCount()
 	 */
 	@Override
 	public long entryCount() {
@@ -45,7 +45,7 @@ public class EmptySequence<E extends Object> implements DataSequence<E> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.DataSequence#elementAt(long)
+	 * @see de.ims.icarus2.util.collections.DataSequence#elementAt(long)
 	 */
 	@Override
 	public E elementAt(long index) {

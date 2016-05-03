@@ -25,17 +25,17 @@
  */
 package de.ims.icarus2.model.standard.driver.cache;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 import gnu.trove.map.TLongObjectMap;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.procedure.TObjectProcedure;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.access.AccessControl;
-import de.ims.icarus2.model.api.access.AccessMode;
-import de.ims.icarus2.model.api.access.AccessPolicy;
-import de.ims.icarus2.model.api.access.AccessRestriction;
 import de.ims.icarus2.model.standard.driver.cache.CachedMember.CachedItem;
+import de.ims.icarus2.util.access.AccessControl;
+import de.ims.icarus2.util.access.AccessMode;
+import de.ims.icarus2.util.access.AccessPolicy;
+import de.ims.icarus2.util.access.AccessRestriction;
 import de.ims.icarus2.util.mem.HeapMember;
 import de.ims.icarus2.util.mem.Primitive;
 import de.ims.icarus2.util.mem.Reference;

@@ -30,8 +30,8 @@ import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.members.NamedCorpusMember;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
-import de.ims.icarus2.model.util.DataSet;
 import de.ims.icarus2.util.Part;
+import de.ims.icarus2.util.collections.DataSet;
 
 /**
  *

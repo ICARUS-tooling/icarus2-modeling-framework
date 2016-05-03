@@ -40,7 +40,7 @@ import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.standard.sequences.DataSequenceCollectionWrapper;
 import de.ims.icarus2.model.standard.sequences.ListSequence;
-import de.ims.icarus2.model.util.DataSequence;
+import de.ims.icarus2.util.collections.DataSequence;
 import de.ims.icarus2.util.collections.LookupList;
 
 /**
@@ -227,7 +227,7 @@ public class ListItemStorageInt implements ItemStorage {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addItems(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.model.util.DataSequence)
+	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addItems(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.util.collections.DataSequence)
 	 */
 	@Override
 	public void addItems(Container context, long index,
@@ -316,7 +316,7 @@ public class ListItemStorageInt implements ItemStorage {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.Recyclable#recycle()
+	 * @see de.ims.icarus2.util.Recyclable#recycle()
 	 */
 	@Override
 	public void recycle() {
@@ -326,7 +326,7 @@ public class ListItemStorageInt implements ItemStorage {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.Recyclable#revive()
+	 * @see de.ims.icarus2.util.Recyclable#revive()
 	 */
 	@Override
 	public boolean revive() {

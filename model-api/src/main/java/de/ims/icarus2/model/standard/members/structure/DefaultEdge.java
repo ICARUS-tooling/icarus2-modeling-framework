@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.util.mem.HeapMember;
@@ -100,7 +100,7 @@ public class DefaultEdge extends AbstractEdge {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.Recyclable#recycle()
+	 * @see de.ims.icarus2.util.Recyclable#recycle()
 	 */
 	@Override
 	public void recycle() {
@@ -109,7 +109,7 @@ public class DefaultEdge extends AbstractEdge {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.Recyclable#revive()
+	 * @see de.ims.icarus2.util.Recyclable#revive()
 	 */
 	@Override
 	public boolean revive() {

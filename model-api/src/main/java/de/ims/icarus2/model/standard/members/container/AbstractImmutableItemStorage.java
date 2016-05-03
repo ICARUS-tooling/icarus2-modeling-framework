@@ -30,7 +30,7 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.util.DataSequence;
+import de.ims.icarus2.util.collections.DataSequence;
 
 /**
  * @author Markus Gärtner
@@ -53,7 +53,7 @@ public abstract class AbstractImmutableItemStorage implements ItemStorage {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addItems(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.model.util.DataSequence)
+	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addItems(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.util.collections.DataSequence)
 	 */
 	@Override
 	public void addItems(Container context, long index,

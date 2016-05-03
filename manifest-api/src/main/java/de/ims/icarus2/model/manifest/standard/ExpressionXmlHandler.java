@@ -28,15 +28,15 @@ package de.ims.icarus2.model.manifest.standard;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
-import de.ims.icarus2.eval.Expression;
-import de.ims.icarus2.eval.ExpressionFactory;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
-import de.ims.icarus2.model.xml.UnexpectedTagException;
-import de.ims.icarus2.model.xml.UnsupportedNestingException;
+import de.ims.icarus2.util.eval.Expression;
+import de.ims.icarus2.util.eval.ExpressionFactory;
+import de.ims.icarus2.util.xml.UnexpectedTagException;
+import de.ims.icarus2.util.xml.UnsupportedNestingException;
 
 /**
  * @author Markus Gärtner

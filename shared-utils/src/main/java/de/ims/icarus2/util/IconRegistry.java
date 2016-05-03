@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.util;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.io.ObjectStreamException;
 import java.net.URL;

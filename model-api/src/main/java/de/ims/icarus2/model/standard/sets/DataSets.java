@@ -27,7 +27,7 @@ package de.ims.icarus2.model.standard.sets;
 
 import java.util.List;
 
-import de.ims.icarus2.model.util.DataSet;
+import de.ims.icarus2.util.collections.DataSet;
 
 /**
  * @author Markus Gärtner

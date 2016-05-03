@@ -27,7 +27,7 @@ package de.ims.icarus2.model.api.highlight;
 
 import de.ims.icarus2.model.api.layer.HighlightLayer;
 import de.ims.icarus2.model.api.members.container.Container;
-import de.ims.icarus2.model.util.DataSequence;
+import de.ims.icarus2.util.collections.DataSequence;
 
 /**
  *

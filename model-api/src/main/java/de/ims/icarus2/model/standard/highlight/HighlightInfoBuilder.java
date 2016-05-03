@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.highlight;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 import gnu.trove.map.hash.THashMap;
 
 import java.util.ArrayList;
@@ -41,8 +41,8 @@ import de.ims.icarus2.model.api.highlight.HighlightInfo.AnnotationLink;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.HighlightLayer;
 import de.ims.icarus2.model.standard.sets.DataSets;
-import de.ims.icarus2.model.util.DataSet;
 import de.ims.icarus2.util.CompactProperties;
+import de.ims.icarus2.util.collections.DataSet;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.id.StaticIdentity;
 

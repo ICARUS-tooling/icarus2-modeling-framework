@@ -35,7 +35,6 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import de.ims.icarus2.events.EventListener;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context.VirtualContext;
@@ -60,6 +59,7 @@ import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.data.ContentType;
+import de.ims.icarus2.util.events.EventListener;
 import de.ims.icarus2.util.id.DuplicateIdentifierException;
 import de.ims.icarus2.util.id.UnknownIdentifierException;
 

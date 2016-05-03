@@ -33,7 +33,7 @@ import org.xml.sax.Attributes;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest.SourceType;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
-import de.ims.icarus2.model.xml.XmlSerializer;
+import de.ims.icarus2.util.xml.XmlSerializer;
 
 /**
  * @author Markus Gärtner
@@ -44,7 +44,7 @@ public class ImplementationManifestXmlDelegate extends AbstractMemberManifestXml
 
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.standard.AbstractManifest#writeAttributes(de.ims.icarus2.model.xml.XmlSerializer)
+	 * @see de.ims.icarus2.model.manifest.standard.AbstractManifest#writeAttributes(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
 	protected void writeAttributes(XmlSerializer serializer) throws Exception {

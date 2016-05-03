@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.api.path;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 import de.ims.icarus2.model.api.corpus.CorpusView;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Edge;

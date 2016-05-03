@@ -25,11 +25,11 @@
  */
 package de.ims.icarus2.model.standard.highlight;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 import de.ims.icarus2.model.api.highlight.Highlight;
 import de.ims.icarus2.model.api.highlight.HighlightInfo;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.util.DataSet;
+import de.ims.icarus2.util.collections.DataSet;
 
 /**
  * @author Markus Gärtner

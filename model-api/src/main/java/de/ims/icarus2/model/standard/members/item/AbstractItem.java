@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.item;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -34,7 +34,7 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.standard.MemberFlags;
 import de.ims.icarus2.model.standard.util.CorpusUtils;
-import de.ims.icarus2.model.util.Recyclable;
+import de.ims.icarus2.util.Recyclable;
 import de.ims.icarus2.util.mem.HeapMember;
 import de.ims.icarus2.util.mem.Primitive;
 import de.ims.icarus2.util.mem.Reference;
@@ -65,7 +65,7 @@ public abstract class AbstractItem implements Item, Recyclable {
 	protected int flags = MemberFlags.EMPTY_FLAGS;
 
 	/**
-	 * @see de.ims.icarus2.model.util.Recyclable#recycle()
+	 * @see de.ims.icarus2.util.Recyclable#recycle()
 	 */
 	@Override
 	public void recycle() {
@@ -75,7 +75,7 @@ public abstract class AbstractItem implements Item, Recyclable {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.Recyclable#revive()
+	 * @see de.ims.icarus2.util.Recyclable#revive()
 	 */
 	@Override
 	public boolean revive() {

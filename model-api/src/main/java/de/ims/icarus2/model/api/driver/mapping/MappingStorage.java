@@ -25,8 +25,8 @@
  */
 package de.ims.icarus2.model.api.driver.mapping;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
-import static de.ims.icarus2.model.util.Conditions.checkState;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkState;
 import gnu.trove.map.TLongObjectMap;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.set.hash.TCustomHashSet;

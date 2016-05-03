@@ -25,9 +25,9 @@
  */
 package de.ims.icarus2.model.standard.view;
 
-import static de.ims.icarus2.model.util.Conditions.checkArgument;
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
-import static de.ims.icarus2.model.util.Conditions.checkState;
+import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkState;
 import gnu.trove.set.hash.TCustomHashSet;
 import gnu.trove.strategy.IdentityHashingStrategy;
 
@@ -38,7 +38,6 @@ import java.util.Set;
 
 import javax.swing.event.ChangeListener;
 
-import de.ims.icarus2.events.ChangeSource;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -50,9 +49,10 @@ import de.ims.icarus2.model.api.corpus.Scope;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.members.item.ItemLayerManager;
-import de.ims.icarus2.model.util.AbstractPart;
 import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.classes.Lazy;
+import de.ims.icarus2.util.events.ChangeSource;
 
 /**
  * @author Markus Gärtner

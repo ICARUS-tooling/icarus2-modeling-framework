@@ -25,10 +25,10 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation;
 
-import de.ims.icarus2.annotations.OptionalMethod;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.util.annotations.OptionalMethod;
 
 /**
  * Extends the basic {@code AnnotationStorage} by means of managing the

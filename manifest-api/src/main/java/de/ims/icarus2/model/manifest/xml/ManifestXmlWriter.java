@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.manifest.xml;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.io.Writer;
 import java.util.ArrayList;
@@ -37,8 +37,8 @@ import javax.xml.stream.XMLOutputFactory;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.xml.delegates.DefaultManifestXmlDelegateFactory;
-import de.ims.icarus2.model.xml.XmlSerializer;
-import de.ims.icarus2.model.xml.stream.XmlStreamSerializer;
+import de.ims.icarus2.util.xml.XmlSerializer;
+import de.ims.icarus2.util.xml.stream.XmlStreamSerializer;
 
 /**
  * Implements an xml writing facility for {@link Manifest} objects.

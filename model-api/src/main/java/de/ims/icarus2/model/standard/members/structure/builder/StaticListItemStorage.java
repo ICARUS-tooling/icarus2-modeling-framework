@@ -117,7 +117,7 @@ public class StaticListItemStorage extends AbstractImmutableItemStorage {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.Recyclable#recycle()
+	 * @see de.ims.icarus2.util.Recyclable#recycle()
 	 */
 	@Override
 	public void recycle() {
@@ -125,7 +125,7 @@ public class StaticListItemStorage extends AbstractImmutableItemStorage {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.Recyclable#revive()
+	 * @see de.ims.icarus2.util.Recyclable#revive()
 	 */
 	@Override
 	public boolean revive() {

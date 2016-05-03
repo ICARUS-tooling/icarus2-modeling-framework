@@ -28,7 +28,7 @@ package de.ims.icarus2.model.manifest.api;
 import java.net.URL;
 
 import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec;
-import de.ims.icarus2.model.util.StringResource;
+import de.ims.icarus2.util.strings.StringResource;
 
 /**
  * @author Markus Gärtner

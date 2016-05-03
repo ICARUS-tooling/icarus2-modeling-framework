@@ -37,9 +37,9 @@ import de.ims.icarus2.model.manifest.standard.ValueManifestImpl;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
-import de.ims.icarus2.model.xml.UnexpectedTagException;
-import de.ims.icarus2.model.xml.UnsupportedNestingException;
-import de.ims.icarus2.model.xml.XmlSerializer;
+import de.ims.icarus2.util.xml.UnexpectedTagException;
+import de.ims.icarus2.util.xml.UnsupportedNestingException;
+import de.ims.icarus2.util.xml.XmlSerializer;
 
 /**
  * @author Markus Gärtner
@@ -61,7 +61,7 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlElement#writeXml(de.ims.icarus2.model.xml.XmlSerializer)
+	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlElement#writeXml(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
 	public void writeXml(XmlSerializer serializer) throws Exception {

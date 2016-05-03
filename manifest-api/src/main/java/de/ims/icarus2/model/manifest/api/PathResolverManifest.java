@@ -25,8 +25,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import de.ims.icarus2.model.api.access.AccessControl;
-import de.ims.icarus2.model.api.access.AccessPolicy;
+import de.ims.icarus2.util.access.AccessControl;
+import de.ims.icarus2.util.access.AccessPolicy;
 
 /**
  * @author Markus Gärtner

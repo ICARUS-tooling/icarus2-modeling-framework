@@ -38,7 +38,7 @@ import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.standard.StructureManifestImpl;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
-import de.ims.icarus2.model.xml.XmlSerializer;
+import de.ims.icarus2.util.xml.XmlSerializer;
 
 /**
  * @author Markus Gärtner

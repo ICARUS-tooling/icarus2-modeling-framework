@@ -25,11 +25,11 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.util.DataSequence;
+import de.ims.icarus2.util.collections.DataSequence;
 
 /**
  * @author Markus Gärtner
@@ -79,7 +79,7 @@ public class DefaultContainerEditVerifier implements ContainerEditVerifier {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.container.ContainerEditVerifier#canAddItems(long, de.ims.icarus2.model.util.DataSequence)
+	 * @see de.ims.icarus2.model.api.members.container.ContainerEditVerifier#canAddItems(long, de.ims.icarus2.util.collections.DataSequence)
 	 */
 	@Override
 	public boolean canAddItems(long index, DataSequence<? extends Item> items) {

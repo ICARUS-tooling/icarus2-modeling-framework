@@ -27,9 +27,9 @@ package de.ims.icarus2.model.standard.view;
 
 import static de.ims.icarus2.model.standard.util.CorpusUtils.ensureIntegerValueRange;
 import static de.ims.icarus2.model.standard.util.CorpusUtils.getName;
-import static de.ims.icarus2.model.util.Conditions.checkArgument;
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
-import static de.ims.icarus2.model.util.Conditions.checkState;
+import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkState;
 
 import java.util.function.Consumer;
 import java.util.function.ObjLongConsumer;
@@ -39,7 +39,6 @@ import javax.swing.event.ChangeListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.ims.icarus2.events.ChangeSource;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -73,13 +72,14 @@ import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.container.AbstractImmutableContainer;
 import de.ims.icarus2.model.standard.util.CorpusUtils;
-import de.ims.icarus2.model.util.AbstractPart;
-import de.ims.icarus2.model.util.DataSequence;
-import de.ims.icarus2.model.util.DataSet;
 import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.classes.ClassUtils;
 import de.ims.icarus2.util.classes.Lazy;
+import de.ims.icarus2.util.collections.DataSequence;
+import de.ims.icarus2.util.collections.DataSet;
 import de.ims.icarus2.util.collections.LookupList;
+import de.ims.icarus2.util.events.ChangeSource;
 
 /**
  *

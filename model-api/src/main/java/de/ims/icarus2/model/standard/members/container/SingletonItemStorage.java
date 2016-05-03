@@ -32,7 +32,7 @@ import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.standard.sequences.SingletonSequence;
-import de.ims.icarus2.model.util.DataSequence;
+import de.ims.icarus2.util.collections.DataSequence;
 
 /**
  * @author Markus Gärtner
@@ -44,7 +44,7 @@ public class SingletonItemStorage implements ItemStorage {
 	protected Item singleton;
 
 	/**
-	 * @see de.ims.icarus2.model.util.Recyclable#recycle()
+	 * @see de.ims.icarus2.util.Recyclable#recycle()
 	 */
 	@Override
 	public void recycle() {
@@ -52,7 +52,7 @@ public class SingletonItemStorage implements ItemStorage {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.Recyclable#revive()
+	 * @see de.ims.icarus2.util.Recyclable#revive()
 	 */
 	@Override
 	public boolean revive() {
@@ -144,7 +144,7 @@ public class SingletonItemStorage implements ItemStorage {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addItems(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.model.util.DataSequence)
+	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addItems(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.util.collections.DataSequence)
 	 */
 	@Override
 	public void addItems(Container context, long index,

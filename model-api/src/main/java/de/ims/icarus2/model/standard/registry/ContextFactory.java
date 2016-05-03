@@ -26,8 +26,8 @@
 package de.ims.icarus2.model.standard.registry;
 
 import static de.ims.icarus2.model.standard.util.CorpusUtils.getName;
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
-import static de.ims.icarus2.model.util.Conditions.checkState;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkState;
 
 import java.util.ArrayList;
 import java.util.List;

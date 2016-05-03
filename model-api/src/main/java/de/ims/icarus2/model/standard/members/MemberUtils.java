@@ -37,7 +37,7 @@ import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.StructureFlag;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.util.Messages;
-import de.ims.icarus2.model.util.DataSet;
+import de.ims.icarus2.util.collections.DataSet;
 import de.ims.icarus2.util.collections.LazyCollection;
 
 /**

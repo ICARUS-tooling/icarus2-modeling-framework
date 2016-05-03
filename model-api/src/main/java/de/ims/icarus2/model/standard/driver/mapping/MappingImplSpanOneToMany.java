@@ -32,8 +32,8 @@ import static de.ims.icarus2.model.api.driver.indices.IndexUtils.forEachSpan;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.isContinuous;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.lastIndex;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
-import static de.ims.icarus2.model.util.Conditions.checkArgument;
-import static de.ims.icarus2.model.util.Conditions.checkState;
+import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.Conditions.checkState;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.driver.mapping;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;

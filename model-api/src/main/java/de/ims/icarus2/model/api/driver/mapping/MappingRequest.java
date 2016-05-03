@@ -25,8 +25,8 @@
  */
 package de.ims.icarus2.model.api.driver.mapping;
 
-import static de.ims.icarus2.model.util.Conditions.checkArgument;
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;

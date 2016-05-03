@@ -38,7 +38,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.standard.sequences.DataSequenceCollectionWrapper;
 import de.ims.icarus2.model.standard.sequences.ListSequence;
-import de.ims.icarus2.model.util.DataSequence;
+import de.ims.icarus2.util.collections.DataSequence;
 import de.ims.icarus2.util.collections.LookupList;
 
 /**

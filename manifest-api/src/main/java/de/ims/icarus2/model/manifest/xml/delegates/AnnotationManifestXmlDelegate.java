@@ -35,8 +35,8 @@ import de.ims.icarus2.model.manifest.standard.AnnotationManifestImpl;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
-import de.ims.icarus2.model.xml.XmlSerializer;
 import de.ims.icarus2.util.data.ContentTypeRegistry;
+import de.ims.icarus2.util.xml.XmlSerializer;
 
 /**
  * @author Markus Gärtner
@@ -101,7 +101,7 @@ public class AnnotationManifestXmlDelegate extends AbstractMemberManifestXmlDele
 
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.standard.AbstractMemberManifest#writeAttributes(de.ims.icarus2.model.xml.XmlSerializer)
+	 * @see de.ims.icarus2.model.manifest.standard.AbstractMemberManifest#writeAttributes(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
 	protected void writeAttributes(XmlSerializer serializer) throws Exception {
@@ -151,7 +151,7 @@ public class AnnotationManifestXmlDelegate extends AbstractMemberManifestXmlDele
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.standard.AbstractModifiableManifest#writeElements(de.ims.icarus2.model.xml.XmlSerializer)
+	 * @see de.ims.icarus2.model.manifest.standard.AbstractModifiableManifest#writeElements(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
 	protected void writeElements(XmlSerializer serializer) throws Exception {

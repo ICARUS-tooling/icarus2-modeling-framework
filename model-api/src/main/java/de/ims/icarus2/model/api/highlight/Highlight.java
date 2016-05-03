@@ -26,7 +26,7 @@
 package de.ims.icarus2.model.api.highlight;
 
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.util.DataSet;
+import de.ims.icarus2.util.collections.DataSet;
 
 /**
  * Lightweight meta annotation used for highlighting a (potentially empty)

@@ -26,7 +26,7 @@
 package de.ims.icarus2.model.standard.driver.cache;
 
 import static de.ims.icarus2.model.standard.util.CorpusUtils.limitToIntegerValueRange;
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,7 +34,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.util.DataSequence;
+import de.ims.icarus2.util.collections.DataSequence;
 import de.ims.icarus2.util.mem.HeapMember;
 import de.ims.icarus2.util.mem.Primitive;
 import de.ims.icarus2.util.mem.Reference;

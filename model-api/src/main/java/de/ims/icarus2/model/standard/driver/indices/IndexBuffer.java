@@ -26,7 +26,7 @@
 package de.ims.icarus2.model.standard.driver.indices;
 
 import static de.ims.icarus2.model.standard.util.CorpusUtils.ensureIntegerValueRange;
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.lang.reflect.Array;
 import java.util.List;

@@ -26,7 +26,7 @@
 package de.ims.icarus2.model.api.driver.mapping;
 
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
-import de.ims.icarus2.model.util.Flag;
+import de.ims.icarus2.util.Flag;
 
 /**
  * @author Markus Gärtner

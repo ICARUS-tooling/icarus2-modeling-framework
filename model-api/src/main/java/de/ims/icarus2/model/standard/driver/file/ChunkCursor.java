@@ -25,8 +25,8 @@
  */
 package de.ims.icarus2.model.standard.driver.file;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
-import static de.ims.icarus2.model.util.Conditions.checkState;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkState;
 
 import java.io.Closeable;
 import java.io.IOException;

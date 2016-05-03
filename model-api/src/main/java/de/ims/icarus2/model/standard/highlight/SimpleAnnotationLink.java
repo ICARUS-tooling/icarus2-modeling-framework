@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.highlight;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 import de.ims.icarus2.model.api.highlight.HighlightInfo.AnnotationLink;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 

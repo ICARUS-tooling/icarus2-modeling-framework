@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.api.members;
 
-import de.ims.icarus2.model.util.StringResource;
+import de.ims.icarus2.util.strings.StringResource;
 
 /**
  * Defines the possibles types a {@link CorpusMember} can declare to represent by

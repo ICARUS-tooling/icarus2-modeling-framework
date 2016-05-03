@@ -26,8 +26,8 @@
 package de.ims.icarus2.model.standard.registry;
 
 import static de.ims.icarus2.model.standard.util.CorpusUtils.getName;
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
-import static de.ims.icarus2.model.util.Conditions.checkState;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkState;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,7 +43,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import de.ims.icarus2.events.EventObject;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -56,6 +55,7 @@ import de.ims.icarus2.model.registry.CorpusRegistry;
 import de.ims.icarus2.model.registry.MetadataRegistry;
 import de.ims.icarus2.model.registry.SubRegistry;
 import de.ims.icarus2.model.standard.corpus.DefaultCorpus;
+import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.id.Identity;
 
 /**

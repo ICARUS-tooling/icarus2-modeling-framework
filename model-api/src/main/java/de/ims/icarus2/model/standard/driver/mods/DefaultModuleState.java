@@ -25,8 +25,8 @@
  */
 package de.ims.icarus2.model.standard.driver.mods;
 
-import static de.ims.icarus2.model.util.Conditions.checkArgument;
-import static de.ims.icarus2.model.util.Conditions.checkState;
+import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.Conditions.checkState;
 import de.ims.icarus2.model.api.driver.mods.ModuleState;
 import de.ims.icarus2.util.id.StaticIdentity;
 

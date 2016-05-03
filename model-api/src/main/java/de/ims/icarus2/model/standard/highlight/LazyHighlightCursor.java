@@ -26,8 +26,8 @@
 package de.ims.icarus2.model.standard.highlight;
 
 import static de.ims.icarus2.model.standard.util.CorpusUtils.getName;
-import static de.ims.icarus2.model.util.Conditions.checkArgument;
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.function.IntFunction;
 
@@ -36,7 +36,7 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.highlight.Highlight;
 import de.ims.icarus2.model.api.layer.HighlightLayer;
 import de.ims.icarus2.model.api.members.container.Container;
-import de.ims.icarus2.model.util.DataSequence;
+import de.ims.icarus2.util.collections.DataSequence;
 
 /**
  * @author Markus Gärtner

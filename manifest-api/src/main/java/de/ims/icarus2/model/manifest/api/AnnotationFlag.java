@@ -29,8 +29,8 @@ import java.awt.Container;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.ims.icarus2.model.util.Flag;
-import de.ims.icarus2.model.util.StringResource;
+import de.ims.icarus2.util.Flag;
+import de.ims.icarus2.util.strings.StringResource;
 
 /**
  * @author Markus Gärtner

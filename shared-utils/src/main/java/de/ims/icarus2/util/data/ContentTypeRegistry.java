@@ -37,11 +37,11 @@ import java.util.Map;
 
 import javax.swing.Icon;
 
-import de.ims.icarus2.events.EventListener;
-import de.ims.icarus2.events.EventObject;
-import de.ims.icarus2.events.Events;
-import de.ims.icarus2.events.WeakEventSource;
 import de.ims.icarus2.util.collections.CollectionUtils;
+import de.ims.icarus2.util.events.EventListener;
+import de.ims.icarus2.util.events.EventObject;
+import de.ims.icarus2.util.events.Events;
+import de.ims.icarus2.util.events.WeakEventSource;
 import de.ims.icarus2.util.id.DuplicateIdentifierException;
 import de.ims.icarus2.util.id.UnknownIdentifierException;
 

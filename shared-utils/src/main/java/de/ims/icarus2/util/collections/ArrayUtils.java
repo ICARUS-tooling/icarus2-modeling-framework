@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.util.collections;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;

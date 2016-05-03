@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.util.strings;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.awt.Component;
 import java.awt.Font;

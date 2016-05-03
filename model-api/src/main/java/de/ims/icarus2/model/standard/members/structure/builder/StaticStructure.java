@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.structure.builder;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.MemberType;
@@ -44,8 +44,8 @@ import de.ims.icarus2.model.standard.members.item.AbstractItem;
 import de.ims.icarus2.model.standard.members.structure.EdgeStorage;
 import de.ims.icarus2.model.standard.members.structure.ImmutableStructureEditVerifier;
 import de.ims.icarus2.model.standard.util.CorpusUtils;
-import de.ims.icarus2.model.util.DataSequence;
-import de.ims.icarus2.model.util.DataSet;
+import de.ims.icarus2.util.collections.DataSequence;
+import de.ims.icarus2.util.collections.DataSet;
 
 /**
  * @author Markus Gärtner
@@ -174,7 +174,7 @@ public class StaticStructure extends AbstractItem implements Structure {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.container.Container#addItems(long, de.ims.icarus2.model.util.DataSequence)
+	 * @see de.ims.icarus2.model.api.members.container.Container#addItems(long, de.ims.icarus2.util.collections.DataSequence)
 	 */
 	@Override
 	public void addItems(long index, DataSequence<? extends Item> items) {
@@ -382,7 +382,7 @@ public class StaticStructure extends AbstractItem implements Structure {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.structure.Structure#addEdges(long, de.ims.icarus2.model.util.DataSequence)
+	 * @see de.ims.icarus2.model.api.members.structure.Structure#addEdges(long, de.ims.icarus2.util.collections.DataSequence)
 	 */
 	@Override
 	public void addEdges(long index, DataSequence<? extends Edge> edges) {

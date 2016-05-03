@@ -31,7 +31,7 @@ import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.standard.util.CorpusUtils;
-import de.ims.icarus2.model.util.Recyclable;
+import de.ims.icarus2.util.Recyclable;
 import de.ims.icarus2.util.mem.HeapMember;
 import de.ims.icarus2.util.mem.Reference;
 
@@ -174,7 +174,7 @@ public abstract class AbstractEdge implements Edge, Recyclable {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.Recyclable#recycle()
+	 * @see de.ims.icarus2.util.Recyclable#recycle()
 	 */
 	@Override
 	public void recycle() {
@@ -182,7 +182,7 @@ public abstract class AbstractEdge implements Edge, Recyclable {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.Recyclable#revive()
+	 * @see de.ims.icarus2.util.Recyclable#revive()
 	 */
 	@Override
 	public boolean revive() {

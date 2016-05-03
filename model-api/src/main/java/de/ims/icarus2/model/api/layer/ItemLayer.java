@@ -26,13 +26,13 @@
 package de.ims.icarus2.model.api.layer;
 
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.access.AccessControl;
-import de.ims.icarus2.model.api.access.AccessMode;
-import de.ims.icarus2.model.api.access.AccessPolicy;
-import de.ims.icarus2.model.api.access.AccessRestriction;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
+import de.ims.icarus2.util.access.AccessControl;
+import de.ims.icarus2.util.access.AccessMode;
+import de.ims.icarus2.util.access.AccessPolicy;
+import de.ims.icarus2.util.access.AccessRestriction;
 
 /**
  * A {@code ItemLayer} defines a collection of items with a well defined

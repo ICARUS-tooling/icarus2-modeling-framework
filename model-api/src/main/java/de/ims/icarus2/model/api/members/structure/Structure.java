@@ -27,7 +27,6 @@ package de.ims.icarus2.model.api.members.structure;
 
 import java.util.function.Consumer;
 
-import de.ims.icarus2.annotations.OptionalMethod;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -35,7 +34,8 @@ import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
-import de.ims.icarus2.model.util.DataSequence;
+import de.ims.icarus2.util.annotations.OptionalMethod;
+import de.ims.icarus2.util.collections.DataSequence;
 
 /**
  * Provides a structural view on an {@link ItemLayer} by specifying a

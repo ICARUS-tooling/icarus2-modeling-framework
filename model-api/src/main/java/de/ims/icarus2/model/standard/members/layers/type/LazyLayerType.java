@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.layers.type;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import javax.swing.Icon;
 

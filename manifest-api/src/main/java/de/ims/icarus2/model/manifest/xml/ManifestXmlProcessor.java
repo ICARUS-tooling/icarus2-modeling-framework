@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.manifest.xml;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 import gnu.trove.map.hash.THashMap;
 
 import java.util.Map;

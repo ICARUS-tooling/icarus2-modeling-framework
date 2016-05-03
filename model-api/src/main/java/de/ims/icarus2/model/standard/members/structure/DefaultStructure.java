@@ -39,7 +39,7 @@ import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.MemberFlags;
 import de.ims.icarus2.model.standard.members.container.DefaultContainer;
-import de.ims.icarus2.model.util.DataSequence;
+import de.ims.icarus2.util.collections.DataSequence;
 
 /**
  * @author Markus Gärtner
@@ -264,7 +264,7 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.structure.Structure#addEdges(long, de.ims.icarus2.model.util.DataSequence)
+	 * @see de.ims.icarus2.model.api.members.structure.Structure#addEdges(long, de.ims.icarus2.util.collections.DataSequence)
 	 */
 	@Override
 	public void addEdges(long index, DataSequence<? extends Edge> edges) {

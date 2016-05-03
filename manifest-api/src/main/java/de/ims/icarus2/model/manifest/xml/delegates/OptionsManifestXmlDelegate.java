@@ -44,9 +44,9 @@ import de.ims.icarus2.model.manifest.standard.OptionsManifestImpl.OptionImpl;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
-import de.ims.icarus2.model.xml.XmlSerializer;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.id.Identity;
+import de.ims.icarus2.util.xml.XmlSerializer;
 
 /**
  * @author Markus Gärtner
@@ -108,7 +108,7 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.standard.AbstractManifest#writeElements(de.ims.icarus2.model.xml.XmlSerializer)
+	 * @see de.ims.icarus2.model.manifest.standard.AbstractManifest#writeElements(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
 	protected void writeElements(XmlSerializer serializer) throws Exception {

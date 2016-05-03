@@ -30,8 +30,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import de.ims.icarus2.model.util.EditOperation;
-import de.ims.icarus2.model.util.StringResource;
+import de.ims.icarus2.util.EditOperation;
+import de.ims.icarus2.util.strings.StringResource;
 
 /**
  * @author Markus Gärtner

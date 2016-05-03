@@ -38,9 +38,9 @@ import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.MemberFlags;
 import de.ims.icarus2.model.standard.members.item.AbstractItem;
 import de.ims.icarus2.model.standard.util.CorpusUtils;
-import de.ims.icarus2.model.util.DataSequence;
-import de.ims.icarus2.model.util.DataSet;
-import de.ims.icarus2.model.util.Recyclable;
+import de.ims.icarus2.util.Recyclable;
+import de.ims.icarus2.util.collections.DataSequence;
+import de.ims.icarus2.util.collections.DataSet;
 import de.ims.icarus2.util.mem.Link;
 import de.ims.icarus2.util.mem.Reference;
 
@@ -209,7 +209,7 @@ public class DefaultContainer extends AbstractItem implements Container, Recycla
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.container.Container#addItems(long, de.ims.icarus2.model.util.DataSequence)
+	 * @see de.ims.icarus2.model.api.members.container.Container#addItems(long, de.ims.icarus2.util.collections.DataSequence)
 	 */
 	@Override
 	public void addItems(long index, DataSequence<? extends Item> items) {
@@ -284,7 +284,7 @@ public class DefaultContainer extends AbstractItem implements Container, Recycla
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.Recyclable#recycle()
+	 * @see de.ims.icarus2.util.Recyclable#recycle()
 	 */
 	@Override
 	public void recycle() {
@@ -296,7 +296,7 @@ public class DefaultContainer extends AbstractItem implements Container, Recycla
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.Recyclable#revive()
+	 * @see de.ims.icarus2.util.Recyclable#revive()
 	 */
 	@Override
 	public boolean revive() {

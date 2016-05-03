@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.manifest.xml;
 
-import de.ims.icarus2.model.xml.XmlSerializer;
+import de.ims.icarus2.util.xml.XmlSerializer;
 
 
 /**

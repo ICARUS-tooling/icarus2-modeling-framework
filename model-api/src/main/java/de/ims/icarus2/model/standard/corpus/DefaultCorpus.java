@@ -28,9 +28,9 @@ package de.ims.icarus2.model.standard.corpus;
 import static de.ims.icarus2.model.standard.util.CorpusUtils.ensureIntegerValueRange;
 import static de.ims.icarus2.model.standard.util.CorpusUtils.getName;
 import static de.ims.icarus2.model.standard.util.CorpusUtils.getUniqueId;
-import static de.ims.icarus2.model.util.Conditions.checkArgument;
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
-import static de.ims.icarus2.model.util.Conditions.checkState;
+import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkState;
 import gnu.trove.map.hash.THashMap;
 import gnu.trove.set.hash.TCustomHashSet;
 import gnu.trove.set.hash.THashSet;
@@ -51,9 +51,6 @@ import java.util.function.Consumer;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import de.ims.icarus2.events.EventListener;
-import de.ims.icarus2.events.EventObject;
-import de.ims.icarus2.events.Events;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
@@ -93,12 +90,15 @@ import de.ims.icarus2.model.standard.members.container.AbstractImmutableContaine
 import de.ims.icarus2.model.standard.registry.ContextFactory;
 import de.ims.icarus2.model.standard.view.DefaultCorpusView;
 import de.ims.icarus2.model.standard.view.DefaultCorpusView.CorpusViewBuilder;
-import de.ims.icarus2.model.util.DataSet;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.Options;
+import de.ims.icarus2.util.collections.DataSet;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.data.ContentType;
+import de.ims.icarus2.util.events.EventListener;
+import de.ims.icarus2.util.events.EventObject;
+import de.ims.icarus2.util.events.Events;
 
 /**
  * Implements a corpus that manages its contents in a lazy way. {@link Context} instances
@@ -644,7 +644,7 @@ public class DefaultCorpus implements Corpus {
 	private final class ManifestTracker implements EventListener {
 
 		/**
-		 * @see de.ims.icarus2.events.EventListener#invoke(java.lang.Object, de.ims.icarus2.events.EventObject)
+		 * @see de.ims.icarus2.util.events.EventListener#invoke(java.lang.Object, de.ims.icarus2.util.events.EventObject)
 		 */
 		@Override
 		public void invoke(Object sender, EventObject event) {

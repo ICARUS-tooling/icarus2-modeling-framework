@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.sets;
 
-import static de.ims.icarus2.model.util.Conditions.checkState;
+import static de.ims.icarus2.util.Conditions.checkState;
 
 import java.util.Arrays;
 import java.util.List;
@@ -61,7 +61,7 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.DataSet#entryCount()
+	 * @see de.ims.icarus2.util.collections.DataSet#entryCount()
 	 */
 	@Override
 	public int entryCount() {
@@ -70,7 +70,7 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.DataSet#entryAt(int)
+	 * @see de.ims.icarus2.util.collections.DataSet#entryAt(int)
 	 */
 	@Override
 	public E entryAt(int index) {
@@ -82,7 +82,7 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.Recyclable#recycle()
+	 * @see de.ims.icarus2.util.Recyclable#recycle()
 	 */
 	@Override
 	public void recycle() {
@@ -92,7 +92,7 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.Recyclable#revive()
+	 * @see de.ims.icarus2.util.Recyclable#revive()
 	 */
 	@Override
 	public boolean revive() {
@@ -134,7 +134,7 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 
 	/**
 	 *
-	 * @see de.ims.icarus2.model.util.DataSet#contains(java.lang.Object)
+	 * @see de.ims.icarus2.util.collections.DataSet#contains(java.lang.Object)
 	 */
 	@Override
 	public boolean contains(E member) {

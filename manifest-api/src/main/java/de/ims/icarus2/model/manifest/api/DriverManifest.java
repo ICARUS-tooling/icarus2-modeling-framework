@@ -32,12 +32,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import de.ims.icarus2.model.api.access.AccessControl;
-import de.ims.icarus2.model.api.access.AccessMode;
-import de.ims.icarus2.model.api.access.AccessPolicy;
-import de.ims.icarus2.model.api.access.AccessRestriction;
-import de.ims.icarus2.model.util.StringResource;
+import de.ims.icarus2.util.access.AccessControl;
+import de.ims.icarus2.util.access.AccessMode;
+import de.ims.icarus2.util.access.AccessPolicy;
+import de.ims.icarus2.util.access.AccessRestriction;
 import de.ims.icarus2.util.collections.LazyCollection;
+import de.ims.icarus2.util.strings.StringResource;
 
 /**
  * @author Markus Gärtner
@@ -348,7 +348,7 @@ public interface DriverManifest extends ForeignImplementationManifest {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.util.StringResource#getStringValue()
+		 * @see de.ims.icarus2.util.strings.StringResource#getStringValue()
 		 */
 		@Override
 		public String getStringValue() {

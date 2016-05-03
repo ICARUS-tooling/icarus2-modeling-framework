@@ -26,10 +26,6 @@
 package de.ims.icarus2.model.api.members.item;
 
 import de.ims.icarus2.model.api.ModelConstants;
-import de.ims.icarus2.model.api.access.AccessControl;
-import de.ims.icarus2.model.api.access.AccessMode;
-import de.ims.icarus2.model.api.access.AccessPolicy;
-import de.ims.icarus2.model.api.access.AccessRestriction;
 import de.ims.icarus2.model.api.corpus.CorpusModel;
 import de.ims.icarus2.model.api.corpus.CorpusView;
 import de.ims.icarus2.model.api.driver.Driver;
@@ -38,6 +34,10 @@ import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.CorpusMember;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.structure.Structure;
+import de.ims.icarus2.util.access.AccessControl;
+import de.ims.icarus2.util.access.AccessMode;
+import de.ims.icarus2.util.access.AccessPolicy;
+import de.ims.icarus2.util.access.AccessRestriction;
 
 /**
  * The {@code Item} interface describes the basic building blocks of all corpora.

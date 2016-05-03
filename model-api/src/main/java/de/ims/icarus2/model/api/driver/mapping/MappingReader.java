@@ -25,7 +25,6 @@
  */
 package de.ims.icarus2.model.api.driver.mapping;
 
-import de.ims.icarus2.annotations.OptionalMethod;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
@@ -35,6 +34,7 @@ import de.ims.icarus2.model.io.SynchronizedAccessor;
 import de.ims.icarus2.model.standard.driver.indices.IndexCollectorFactory;
 import de.ims.icarus2.model.standard.driver.indices.IndexCollectorFactory.IndexSetBuilder;
 import de.ims.icarus2.model.standard.driver.mapping.MappingImplSpanOneToMany;
+import de.ims.icarus2.util.annotations.OptionalMethod;
 
 /**
  * Models the read access to an {@link Mapping} implementation. Note that all

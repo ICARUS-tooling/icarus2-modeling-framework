@@ -25,8 +25,8 @@
  */
 package de.ims.icarus2.model.standard.highlight;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
-import static de.ims.icarus2.model.util.Conditions.checkState;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkState;
 
 import java.lang.ref.WeakReference;
 

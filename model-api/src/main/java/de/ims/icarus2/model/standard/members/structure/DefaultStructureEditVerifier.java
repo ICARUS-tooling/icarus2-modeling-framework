@@ -30,7 +30,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureEditVerifier;
 import de.ims.icarus2.model.standard.members.container.DefaultContainerEditVerifier;
-import de.ims.icarus2.model.util.DataSequence;
+import de.ims.icarus2.util.collections.DataSequence;
 
 /**
  * @author Markus Gärtner
@@ -68,7 +68,7 @@ public class DefaultStructureEditVerifier extends DefaultContainerEditVerifier i
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdges(long, de.ims.icarus2.model.util.DataSequence)
+	 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdges(long, de.ims.icarus2.util.collections.DataSequence)
 	 */
 	@Override
 	public boolean canAddEdges(long index, DataSequence<? extends Edge> edges) {

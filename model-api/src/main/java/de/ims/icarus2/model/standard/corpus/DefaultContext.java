@@ -26,7 +26,7 @@
 package de.ims.icarus2.model.standard.corpus;
 
 import static de.ims.icarus2.model.standard.util.CorpusUtils.getName;
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;

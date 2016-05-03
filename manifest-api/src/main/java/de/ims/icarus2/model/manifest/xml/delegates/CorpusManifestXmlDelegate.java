@@ -39,8 +39,8 @@ import de.ims.icarus2.model.manifest.api.CorpusManifest.Note;
 import de.ims.icarus2.model.manifest.standard.CorpusManifestImpl.NoteImpl;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
-import de.ims.icarus2.model.xml.XmlSerializer;
 import de.ims.icarus2.util.date.DateUtils;
+import de.ims.icarus2.util.xml.XmlSerializer;
 
 /**
  * @author Markus Gärtner
@@ -74,7 +74,7 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.standard.AbstractMemberManifest#writeAttributes(de.ims.icarus2.model.xml.XmlSerializer)
+	 * @see de.ims.icarus2.model.manifest.standard.AbstractMemberManifest#writeAttributes(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
 	protected void writeAttributes(XmlSerializer serializer) throws Exception {
@@ -92,7 +92,7 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.standard.AbstractModifiableManifest#writeElements(de.ims.icarus2.model.xml.XmlSerializer)
+	 * @see de.ims.icarus2.model.manifest.standard.AbstractModifiableManifest#writeElements(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
 	protected void writeElements(XmlSerializer serializer) throws Exception {

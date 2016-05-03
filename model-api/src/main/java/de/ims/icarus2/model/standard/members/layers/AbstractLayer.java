@@ -35,8 +35,8 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.Manifest;
-import de.ims.icarus2.model.util.AbstractPart;
-import de.ims.icarus2.model.util.DataSet;
+import de.ims.icarus2.util.AbstractPart;
+import de.ims.icarus2.util.collections.DataSet;
 
 /**
  * @author Markus Gärtner

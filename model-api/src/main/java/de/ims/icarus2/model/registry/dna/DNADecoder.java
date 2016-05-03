@@ -26,7 +26,7 @@
 package de.ims.icarus2.model.registry.dna;
 
 import static de.ims.icarus2.model.standard.util.CorpusUtils.ensureIntegerValueRange;
-import static de.ims.icarus2.model.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.Conditions.checkArgument;
 
 import java.io.IOException;
 import java.io.Reader;

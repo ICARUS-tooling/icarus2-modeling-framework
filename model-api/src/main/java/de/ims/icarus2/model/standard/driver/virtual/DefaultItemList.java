@@ -35,7 +35,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.ItemList;
 import de.ims.icarus2.model.standard.sequences.DataSequenceCollectionWrapper;
 import de.ims.icarus2.model.standard.sequences.ListSequence;
-import de.ims.icarus2.model.util.DataSequence;
+import de.ims.icarus2.util.collections.DataSequence;
 import de.ims.icarus2.util.collections.LookupList;
 
 /**
@@ -106,7 +106,7 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemList#addItems(long, de.ims.icarus2.model.util.DataSequence)
+	 * @see de.ims.icarus2.model.api.members.item.ItemList#addItems(long, de.ims.icarus2.util.collections.DataSequence)
 	 */
 	@Override
 	public void addItems(long index, DataSequence<? extends Item> items) {

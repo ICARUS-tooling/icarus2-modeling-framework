@@ -42,16 +42,16 @@ import java.util.function.Predicate;
 import javax.swing.Icon;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.eval.Expression;
 import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestException;
-import de.ims.icarus2.model.nio.ArrayByteStream;
-import de.ims.icarus2.model.nio.ByteChannelCharacterSequence;
-import de.ims.icarus2.model.util.IconWrapper;
-import de.ims.icarus2.model.util.StringResource;
+import de.ims.icarus2.util.IconWrapper;
 import de.ims.icarus2.util.classes.ClassUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
+import de.ims.icarus2.util.eval.Expression;
+import de.ims.icarus2.util.nio.ArrayByteStream;
+import de.ims.icarus2.util.nio.ByteChannelCharacterSequence;
+import de.ims.icarus2.util.strings.StringResource;
 
 /**
  * @author Markus Gärtner

@@ -25,9 +25,9 @@
  */
 package de.ims.icarus2.model.standard.view;
 
-import static de.ims.icarus2.model.util.Conditions.checkArgument;
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
-import static de.ims.icarus2.model.util.Conditions.checkState;
+import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkState;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
@@ -51,8 +51,8 @@ import de.ims.icarus2.model.api.events.PageListener;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.item.ItemLayerManager;
 import de.ims.icarus2.model.manifest.util.Messages;
-import de.ims.icarus2.model.util.AbstractPart;
 import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.AbstractPart;
 
 /**
  * @author Markus Gärtner

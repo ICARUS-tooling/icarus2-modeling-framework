@@ -25,8 +25,8 @@
  */
 package de.ims.icarus2.model.standard.driver.mods;
 
-import static de.ims.icarus2.model.util.Conditions.checkNotNull;
-import static de.ims.icarus2.model.util.Conditions.checkState;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkState;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -36,8 +36,8 @@ import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.model.api.driver.mods.ModuleMonitor;
 import de.ims.icarus2.model.api.driver.mods.ModuleState;
-import de.ims.icarus2.model.util.AbstractPart;
 import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.id.StaticIdentity;
 

@@ -28,11 +28,11 @@ package de.ims.icarus2.model.manifest.api;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.ims.icarus2.model.api.access.AccessControl;
-import de.ims.icarus2.model.api.access.AccessMode;
-import de.ims.icarus2.model.api.access.AccessPolicy;
-import de.ims.icarus2.model.api.access.AccessRestriction;
-import de.ims.icarus2.model.util.StringResource;
+import de.ims.icarus2.util.access.AccessControl;
+import de.ims.icarus2.util.access.AccessMode;
+import de.ims.icarus2.util.access.AccessPolicy;
+import de.ims.icarus2.util.access.AccessRestriction;
+import de.ims.icarus2.util.strings.StringResource;
 
 /**
  * Models the description of an indexable mapping in the form of either a
