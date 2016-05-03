@@ -36,11 +36,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
-import de.ims.icarus2.io.ByteChannelBlockStream;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.standard.driver.io.sets.FileSet;
 import de.ims.icarus2.model.standard.driver.mapping.chunks.ChunkIndex;
 import de.ims.icarus2.model.standard.driver.mapping.chunks.ChunkIndexReader;
+import de.ims.icarus2.util.nio.ByteChannelBlockStream;
 
 /**
  *

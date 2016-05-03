@@ -42,7 +42,7 @@ import java.nio.file.StandardOpenOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.ims.icarus2.io.IOUtil;
+import de.ims.icarus2.util.io.IOUtil;
 
 /**
  * Models information about the physical location of a manifest resource

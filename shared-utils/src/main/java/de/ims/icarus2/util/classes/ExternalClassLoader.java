@@ -42,7 +42,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import de.ims.icarus2.io.IOUtil;
+import de.ims.icarus2.util.io.IOUtil;
 
 /**
  * @author Markus Gärtner

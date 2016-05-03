@@ -29,10 +29,10 @@ import java.io.IOException;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 
-import de.ims.icarus2.io.MemoryByteStorage;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.util.io.MemoryByteStorage;
 
 /**
  * Implements a {@link IOResource} based on an internal {@link MemoryByteStorage}.

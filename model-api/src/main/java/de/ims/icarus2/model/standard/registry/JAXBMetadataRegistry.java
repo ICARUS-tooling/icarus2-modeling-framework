@@ -43,10 +43,10 @@ import javax.xml.bind.annotation.XmlRootElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.ims.icarus2.jaxb.JAXBGate;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.registry.MetadataRegistry;
+import de.ims.icarus2.util.xml.jaxb.JAXBGate;
 
 /**
  * @author Markus Gärtner
@@ -102,7 +102,7 @@ public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageB
 	}
 
 	/**
-	 * @see de.ims.icarus2.jaxb.JAXBGate#readBuffer(java.lang.Object)
+	 * @see de.ims.icarus2.util.xml.jaxb.JAXBGate#readBuffer(java.lang.Object)
 	 */
 	@Override
 	protected synchronized void readBuffer(StorageBuffer buffer)
@@ -118,7 +118,7 @@ public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageB
 	}
 
 	/**
-	 * @see de.ims.icarus2.jaxb.JAXBGate#createBuffer()
+	 * @see de.ims.icarus2.util.xml.jaxb.JAXBGate#createBuffer()
 	 */
 	@Override
 	protected synchronized StorageBuffer createBuffer()

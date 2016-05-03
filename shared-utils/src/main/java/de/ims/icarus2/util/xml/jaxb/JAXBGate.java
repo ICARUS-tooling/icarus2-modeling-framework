@@ -23,7 +23,7 @@
  * $LastChangedRevision: 402 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.jaxb;
+package de.ims.icarus2.util.xml.jaxb;
 
 import java.io.IOException;
 import java.nio.file.Files;

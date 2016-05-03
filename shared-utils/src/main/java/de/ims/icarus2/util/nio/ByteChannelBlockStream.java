@@ -23,7 +23,7 @@
  * $LastChangedRevision: 412 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.io;
+package de.ims.icarus2.util.nio;
 
 import java.io.IOException;
 import java.io.InputStream;

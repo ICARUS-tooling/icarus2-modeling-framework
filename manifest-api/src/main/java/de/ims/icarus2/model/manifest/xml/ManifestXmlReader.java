@@ -65,6 +65,7 @@ import de.ims.icarus2.model.manifest.standard.ContainerManifestImpl;
 import de.ims.icarus2.model.manifest.standard.ContextManifestImpl;
 import de.ims.icarus2.model.manifest.standard.CorpusManifestImpl;
 import de.ims.icarus2.model.manifest.standard.DriverManifestImpl;
+import de.ims.icarus2.model.manifest.standard.DriverManifestImpl.ModuleManifestImpl;
 import de.ims.icarus2.model.manifest.standard.FragmentLayerManifestImpl;
 import de.ims.icarus2.model.manifest.standard.HighlightLayerManifestImpl;
 import de.ims.icarus2.model.manifest.standard.ItemLayerManifestImpl;
@@ -73,7 +74,6 @@ import de.ims.icarus2.model.manifest.standard.PathResolverManifestImpl;
 import de.ims.icarus2.model.manifest.standard.RasterizerManifestImpl;
 import de.ims.icarus2.model.manifest.standard.StructureLayerManifestImpl;
 import de.ims.icarus2.model.manifest.standard.StructureManifestImpl;
-import de.ims.icarus2.model.manifest.standard.DriverManifestImpl.ModuleManifestImpl;
 import de.ims.icarus2.model.manifest.xml.delegates.DefaultManifestXmlDelegateFactory;
 import de.ims.icarus2.util.id.Identity;
 
@@ -434,10 +434,10 @@ public class ManifestXmlReader extends ManifestXmlProcessor implements ManifestX
 			}
 		}
 
-		private String logMsg(SAXParseException ex) {
+		protected String toLogMsg(SAXParseException ex) {
 			StringBuilder sb = new StringBuilder();
 			sb.append(ex.getMessage()).append(":\n"); //$NON-NLS-1$
-			sb.append("Message: ").append(ex.getMessage()).append('\n'); //$NON-NLS-1$
+//			sb.append("Message: ").append(ex.getMessage()).append('\n'); //$NON-NLS-1$
 			sb.append("Public ID: ").append(String.valueOf(ex.getPublicId())).append('\n'); //$NON-NLS-1$
 			sb.append("System ID: ").append(String.valueOf(ex.getSystemId())).append('\n'); //$NON-NLS-1$
 			sb.append("Line: ").append(ex.getLineNumber()).append('\n'); //$NON-NLS-1$
