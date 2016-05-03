@@ -1,0 +1,730 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	targetNamespace="http://www.ikarus-systems.net/icarus/xml/manifest"
+	xmlns:imf="http://www.ikarus-systems.net/icarus/xml/manifest"
+	elementFormDefault="qualified">
+	
+	<xs:element name="corpora" type="imf:corporaType" />
+	
+	<xs:element name="templates" type="imf:templatesType" />
+	
+	<xs:complexType name="templatesType">
+		<xs:sequence>
+			<xs:choice minOccurs="0" maxOccurs="unbounded">
+				<xs:group ref="imf:layerGroup" />
+				<xs:element name="context" type="imf:contextManifestType" />
+				<xs:element name="driver" type="imf:driverManifestType" />
+				<xs:element name="annotation" type="imf:annotationManifestType" />
+				<xs:element name="container" type="imf:containerManifestType" />
+				<xs:element name="structure" type="imf:structureManifestType" />
+				<xs:element name="rasterizer" type="imf:rasterizerManifestType" />
+				<xs:element name="path-resolver" type="imf:pathResolverManifestType" />
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:complexType name="corporaType">
+		<xs:sequence>
+			<xs:element name="corpus" type="imf:corpusManifestType" minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:complexType name="corpusManifestType">
+		<xs:annotation>
+			<xs:documentation></xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="imf:basicMemberManifestType">
+				<xs:sequence>
+					<xs:element name="note" type="imf:moduleSpecType" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="context" type="imf:contextManifestType" maxOccurs="unbounded" />
+				</xs:sequence>
+				<xs:attribute name="root-context" type="imf:identifierAttr" />
+				<xs:attribute name="editable" type="xs:boolean" default="false" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="noteType">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="name" type="xs:string" />
+				<xs:attribute name="date" type="xs:string" />				
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	
+	<xs:complexType name="contextManifestType">
+		<xs:annotation>
+			<xs:documentation></xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="imf:basicMemberManifestType">
+				<xs:sequence>
+					<xs:element name="location" type="imf:locationManifestType" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="prerequisites" minOccurs="0">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element name="prerequisite" type="imf:prerequisiteType" maxOccurs="unbounded" />
+							</xs:sequence>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="layer-group" type="imf:layerGroupManifestType" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="driver" type="imf:driverManifestType" minOccurs="0" />
+				</xs:sequence>
+				<xs:attribute name="primary-layer" type="imf:identifierAttr" />
+				<xs:attribute name="foundation-layer" type="imf:identifierAttr" />
+				<xs:attribute name="independent" type="xs:boolean" default="false" />
+				<xs:attribute name="editable" type="xs:boolean" default="false" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="prerequisiteType">
+		<xs:attribute name="context-id" type="imf:identifierAttr" />
+		<xs:attribute name="layer-id" type="imf:identifierAttr" />
+		<xs:attribute name="layer-type" type="imf:identifierAttr" />
+		<xs:attribute name="alias" type="imf:identifierAttr" />
+	</xs:complexType>
+	
+	<xs:complexType name="driverManifestType">
+		<xs:annotation>
+			<xs:documentation></xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="imf:foreignImplementationManifestType">
+				<xs:sequence>
+					<xs:element name="module-spec" type="imf:moduleSpecType" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="module" type="imf:moduleManifestType" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="mapping" type="imf:mappingManifestType" minOccurs="0" maxOccurs="unbounded" />
+				</xs:sequence>
+				<xs:attribute name="location-type" type="imf:locationTypeAttr" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="moduleManifestType">
+		<xs:annotation>
+			<xs:documentation></xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="imf:foreignImplementationManifestType">
+				<xs:attribute name="module-spec-id" type="imf:identifierAttr" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="moduleSpecType">
+		<xs:annotation>
+			<xs:documentation></xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="imf:identityType">
+				<xs:sequence>
+					<xs:element name="extension-point" type="imf:identifierType" />
+				</xs:sequence>
+				<xs:attribute name="customizable" type="xs:boolean" />
+				<xs:attribute name="multiplicity" type="imf:multiplicityAttr" default="one" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="layerGroupManifestType">
+		<xs:complexContent>
+			<xs:extension base="imf:identityType">
+				<xs:sequence>
+					<xs:group ref="imf:layerGroup" />
+				</xs:sequence>
+				<xs:attribute name="independent" type="xs:boolean" default="false" />
+				<xs:attribute name="primary-layer" type="imf:identifierAttr" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="highlightLayerManifestType">
+		<xs:annotation>
+			<xs:documentation></xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="imf:layerManifestType">
+				<xs:sequence>
+					<xs:element name="highlight-flag" type="imf:highlightFlagType" minOccurs="0" maxOccurs="unbounded" />
+				</xs:sequence>
+				<xs:attribute name="primary-layer" type="imf:identifierAttr" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="annotationLayerManifestType">
+		<xs:annotation>
+			<xs:documentation></xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="imf:layerManifestType">
+				<xs:sequence>
+					<xs:element name="annotation-flag" type="imf:annotationFlagType" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="annotation" type="imf:annotationManifestType" minOccurs="0" maxOccurs="unbounded" />
+				</xs:sequence>
+				<xs:attribute name="key" type="imf:identifierAttr" use="required" />
+				<xs:attribute name="content-type" type="imf:identifierAttr" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="annotationManifestType">
+		<xs:annotation>
+			<xs:documentation></xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="imf:basicMemberManifestType">
+				<xs:sequence>
+					<xs:element name="alias" minOccurs="0" maxOccurs="unbounded">
+						<xs:complexType>
+							<xs:attribute name="name" type="imf:identifierAttr" />
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="value-set" type="imf:valueSetType" minOccurs="0" />
+					<xs:element name="value-range" type="imf:valueRangeType" minOccurs="0" />
+				</xs:sequence>
+				<xs:attribute name="default-key" type="imf:identifierAttr" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="fragmentLayerManifestType">
+		<xs:annotation>
+			<xs:documentation></xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="imf:itemLayerManifestType">
+				<xs:sequence>
+					<xs:element name="value-layer" type="imf:targetLayerType" />
+					<xs:element name="rasterizer" type="imf:rasterizerManifestType" />
+				</xs:sequence>
+				<xs:attribute name="annotation-key" type="imf:identifierAttr" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="rasterizerManifestType">
+		<xs:complexContent>
+			<xs:extension base="imf:foreignImplementationManifestType" />
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="structureLayerManifestType">
+		<xs:annotation>
+			<xs:documentation>Structure layer contains the mandatory container definition from 'Item Layer' and at least 1 structure declaration, after which an arbitrary number of containers and structures may follow</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="imf:itemLayerManifestType">
+				<xs:sequence>
+					<xs:element name="structure" type="imf:structureManifestType" />
+					<xs:choice minOccurs="0" maxOccurs="unbounded">
+						<xs:element name="structure" type="imf:structureManifestType" />
+						<xs:element name="container" type="imf:containerManifestType" />
+					</xs:choice>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="itemLayerManifestType">
+		<xs:annotation>
+			<xs:documentation>Item layer contains at least 1 container definition</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="imf:layerManifestType">
+				<xs:sequence>
+					<xs:element name="boundary-layer" type="imf:targetLayerType" minOccurs="0" />
+					<xs:element name="foundation-layer" type="imf:targetLayerType" minOccurs="0" />
+					<xs:element name="container" type="imf:containerManifestType" maxOccurs="unbounded" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="structureManifestType">
+		<xs:complexContent>
+			<xs:extension base="imf:containerManifestType">
+				<xs:sequence>
+					<xs:element name="structure-flag" type="imf:structureFlagType" minOccurs="0" maxOccurs="unbounded" />
+				</xs:sequence>
+				<xs:attribute name="structure-type" type="imf:structureTypeAttr"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="containerManifestType">
+		<xs:complexContent>
+			<xs:extension base="imf:basicMemberManifestType">
+				<xs:sequence>
+					<xs:element name="container-flag" type="imf:containerFlagType" minOccurs="0" maxOccurs="unbounded" />
+				</xs:sequence>
+				<xs:attribute name="container-type" type="imf:containerTypeAttr"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="layerManifestType">
+		<xs:complexContent>
+			<xs:extension base="imf:basicMemberManifestType">
+				<xs:sequence>
+					<xs:element name="base-layer" type="imf:targetLayerType" minOccurs="0" maxOccurs="unbounded" />
+				</xs:sequence>
+				<xs:attribute name="layer-type" type="imf:identifierAttr"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="targetLayerType">
+		<xs:attribute name="layer-id" type="imf:identifierAttr" use="required" />
+	</xs:complexType>
+	
+	<xs:complexType name="locationManifestType">
+		<xs:complexContent>
+			<xs:extension base="imf:basicManifestType">
+				<xs:sequence>
+					<xs:element name="path" type="imf:pathEntryType" minOccurs="0"/>
+					<xs:element name="path-entry" type="imf:pathEntryType" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="path-resolver" type="imf:pathResolverManifestType" minOccurs="0" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="pathResolverManifestType">
+		<xs:complexContent>
+			<xs:extension base="imf:foreignImplementationManifestType" />
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="foreignImplementationManifestType">
+		<xs:complexContent>
+			<xs:extension base="imf:basicMemberManifestType">
+				<xs:sequence>
+					<xs:element name="implementation" type="imf:implementationManifestType" minOccurs="0" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="implementationManifestType">
+		<xs:complexContent>
+			<xs:extension base="imf:basicMemberManifestType">
+				<xs:attribute name="source" type="xs:string" />
+				<xs:attribute name="classname" type="imf:qualifiedClassNameAttr" use="required" />
+				<xs:attribute name="source-type" type="xs:string" default="default" />
+				<xs:attribute name="factory" type="xs:boolean" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="basicMemberManifestType">
+		<xs:complexContent>
+			<xs:extension base="imf:basicManifestType">
+				<xs:sequence>
+					<xs:group ref="imf:documentationGroup" />
+					<xs:element name="options" type="imf:optionsManifestType" minOccurs="0" />
+					<xs:element name="properties" minOccurs="0">
+						<xs:complexType mixed="true">
+							<xs:sequence>
+								<xs:element name="property" type="imf:propertyType" maxOccurs="unbounded"/>
+							</xs:sequence>
+						</xs:complexType>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="optionsManifestType">
+		<xs:complexContent>
+			<xs:extension base="imf:basicManifestType">
+				<xs:sequence>
+					<xs:element name="option" type="imf:optionType" maxOccurs="unbounded" />
+					<xs:element name="group" type="imf:optionalIdentityType" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="optionType" mixed="true">
+		<xs:all>
+			<xs:element name="extension-point" type="imf:identifierType" />
+			<xs:element name="default-value" type="imf:textType" />
+			<xs:element name="value-set" type="imf:valueSetType" />
+			<xs:element name="value-range" type="imf:valueRangeType" />
+		</xs:all>
+		<xs:attributeGroup ref="imf:identity" />
+		<xs:attribute name="value-type" type="imf:valueTypeAttr" use="required" />
+		<xs:attribute name="published" type="xs:boolean" use="optional" default="true" />
+		<xs:attribute name="multi-value" type="xs:boolean" use="optional" default="false" />
+		<xs:attribute name="group" type="imf:identifierAttr" use="optional" />
+	</xs:complexType>
+	
+	<xs:complexType name="propertyType" mixed="true">
+		<xs:sequence>
+			<xs:element name="value" type="xs:string" />
+		</xs:sequence>
+		<xs:attribute name="name" type="imf:identifierAttr" />
+		<xs:attribute name="value-type" type="imf:valueTypeAttr" />
+	</xs:complexType>
+	
+	<xs:complexType name="basicManifestType">
+		<xs:sequence>
+			<xs:element name="version" type="imf:versionManifestType" minOccurs="0" />
+		</xs:sequence>
+		<xs:attribute name="id" type="imf:identifierAttr" use="optional" />
+		<xs:attribute name="template-id" type="imf:identifierAttr" use="optional" />
+	</xs:complexType>
+	
+	<xs:complexType name="pathEntryType">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="type" type="imf:pathTypeAttr" use="required" />
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	
+	<xs:complexType name="mappingManifestType">
+		<xs:attribute name="id" type="imf:identifierAttr" use="required" />
+		<xs:attribute name="source-layer" type="imf:identifierAttr" use="required" />
+		<xs:attribute name="target-layer" type="imf:identifierAttr" use="required" />
+		<xs:attribute name="relation" type="imf:relationAttr" use="required" />
+		<xs:attribute name="coverage" type="imf:coverageAttr" use="required" />
+		<xs:attribute name="inverse-mapping" type="imf:identifierAttr" use="required" />
+	</xs:complexType>
+	
+	<xs:complexType name="valueSetType">
+		<xs:sequence>
+			<xs:element name="value" type="imf:genericValueType" maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:complexType name="valueRangeType">
+		<xs:sequence>
+			<xs:element name="min" type="imf:expressionValueType" />
+			<xs:element name="max" type="imf:expressionValueType" />
+		</xs:sequence>
+		<xs:attribute name="include-min" type="xs:boolean" default="true" use="optional" />
+		<xs:attribute name="include-max" type="xs:boolean" default="true" use="optional" />
+	</xs:complexType>
+	
+	<xs:complexType name="expressionValueType" mixed="true">
+		<xs:sequence>
+			<xs:element name="eval" type="imf:evalType" minOccurs="0" />
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:complexType name="genericValueType" mixed="true">
+		<xs:annotation>
+			<xs:documentation>Either contains the textual representation of a single value or wraps it and adds identity attributes and optional documentation</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:group ref="imf:documentationGroup" />
+			<xs:element name="content" type="imf:textType" minOccurs="0" maxOccurs="1" />
+		</xs:sequence>
+		<xs:attributeGroup ref="imf:optionalIdentity" />
+	</xs:complexType>
+
+	<xs:complexType name="documentationManifestType">
+		<xs:annotation>
+			<xs:documentation>Documentation of another element by means of a content text which might contain embedded markups and a collection of external resource references.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="content" type="xs:string" minOccurs="0" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>Textual content of the documentation. May contain any form of text including escaped html or other formattings. </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="resource" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Link to an external resource via URI.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:simpleContent>
+						<xs:extension base="xs:anyURI">
+							<xs:attributeGroup ref="imf:identity" />
+						</xs:extension>
+					</xs:simpleContent>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attributeGroup ref="imf:optionalIdentity" />
+	</xs:complexType>
+	
+	<xs:complexType name="valueManifestType">
+		<xs:annotation>
+			<xs:documentation>Wraps a single value and adds identity attributes and optional documentation</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:group ref="imf:documentationGroup" />
+			<xs:element name="content" type="imf:textType" minOccurs="0" maxOccurs="1" />
+		</xs:sequence>
+		<xs:attributeGroup ref="imf:identity" />
+	</xs:complexType>
+	
+	<xs:complexType name="evalType">
+		<xs:sequence>
+			<xs:element name="variable" minOccurs="1" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Variable declared for late runtime binding. The type of the variable is defined by the 'namespace' attribute</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:simpleContent>
+						<xs:extension base="xs:string">
+							<xs:attribute name="name" type="imf:simpleNameAttr" />
+							<xs:attribute name="namespace" type="imf:qualifiedClassNameAttr" />
+						</xs:extension>
+					</xs:simpleContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="code" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Code content of an expression to be executed</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:complexType name="versionManifestType">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="version-format" type="imf:identifierAttr"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	
+	<xs:complexType name="textType">
+		<xs:simpleContent>
+			<xs:extension base="xs:string" />
+		</xs:simpleContent>
+	</xs:complexType>
+	
+	<xs:complexType name="identifierType">
+		<xs:simpleContent>
+	        <xs:restriction base="imf:textType">
+	    		<xs:pattern value="[A-Za-z][:_\-\w]+\w"></xs:pattern>
+	    	</xs:restriction>
+		</xs:simpleContent>
+	</xs:complexType>
+	
+	<xs:complexType name="identityType">
+		<xs:attributeGroup ref="imf:identity" />
+	</xs:complexType>
+	
+	<xs:complexType name="optionalIdentityType">
+		<xs:attributeGroup ref="imf:optionalIdentity" />
+	</xs:complexType>
+	
+	
+	<xs:simpleType name="valueTypeAttr">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="unknown" />
+			<xs:enumeration value="custom" />
+			<xs:enumeration value="extension" />
+			<xs:enumeration value="enum" />
+			<xs:enumeration value="string" />
+			<xs:enumeration value="boolean" />
+			<xs:enumeration value="integer" />
+			<xs:enumeration value="long" />
+			<xs:enumeration value="double" />
+			<xs:enumeration value="float" />
+			<xs:enumeration value="uri" />
+			<xs:enumeration value="url" />
+			<xs:enumeration value="file" />
+			<xs:enumeration value="url-resource" />
+			<xs:enumeration value="link" />
+			<xs:enumeration value="image" />
+			<xs:enumeration value="image-resource" />
+			<xs:enumeration value="binary" />
+			<xs:pattern value="[a-z][a-z\-]*[a-z]\[x|[1-9][0-9]*\]" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="coverageAttr">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="total" />
+			<xs:enumeration value="partial" />
+			<xs:enumeration value="monotonic" />
+			<xs:enumeration value="total-monotonic" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="relationAttr">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="one-to-one" />
+			<xs:enumeration value="one-to-many" />
+			<xs:enumeration value="many-to-one" />
+			<xs:enumeration value="many-to-many" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="pathTypeAttr">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="file" />
+			<xs:enumeration value="folder" />
+			<xs:enumeration value="identifier" />
+			<xs:enumeration value="custom" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="locationTypeAttr">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="local" />
+			<xs:enumeration value="remote" />
+			<xs:enumeration value="service" />
+			<xs:enumeration value="database" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="multiplicityAttr">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="none" />
+			<xs:enumeration value="none-or-one" />
+			<xs:enumeration value="one" />
+			<xs:enumeration value="one-or-more" />
+			<xs:enumeration value="any" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="sourceTypeAttr">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="extension" />
+			<xs:enumeration value="plugin" />
+			<xs:enumeration value="extern" />
+			<xs:enumeration value="default" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="containerTypeAttr">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="singleton" />
+			<xs:enumeration value="span" />
+			<xs:enumeration value="set" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="structureTypeAttr">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="set" />
+			<xs:enumeration value="chain" />
+			<xs:enumeration value="tree" />
+			<xs:enumeration value="directed-graph" />
+			<xs:enumeration value="graph" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="containerFlagType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="virtual" />
+			<xs:enumeration value="empty" />
+			<xs:enumeration value="non-static" />
+			<xs:enumeration value="duplicates" />
+			<xs:enumeration value="ordered" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="structureFlagType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="virtual" />
+			<xs:enumeration value="empty" />
+			<xs:enumeration value="non-static" />
+			<xs:enumeration value="loops" />
+			<xs:enumeration value="ordered" />
+			<xs:enumeration value="partial" />
+			<xs:enumeration value="multi-root" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="annotationFlagType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="searchable" />
+			<xs:enumeration value="indexable" />
+			<xs:enumeration value="deep-annotation" />
+			<xs:enumeration value="element-annotation" />
+			<xs:enumeration value="node-annotation" />
+			<xs:enumeration value="edge-annotation" />
+			<xs:enumeration value="unknown-keys" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="highlightFlagType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="deep-highlighting" />
+			<xs:enumeration value="editable" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="complexNameAttr">
+		<xs:annotation>
+			<xs:documentation>A more complex identifier that allows some special characters and whitespaces</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[A-Za-z][\w \-_]*" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="simpleNameAttr">
+		<xs:annotation>
+			<xs:documentation>A compact identifier starting with a upper- or lowercase letter and otherwise only containing alphanumeric characters without any whitespaces</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[A-Za-z]\w*" />
+		</xs:restriction>
+	</xs:simpleType>
+
+    <xs:simpleType name="identifierAttr">
+        <xs:annotation>
+        	<xs:documentation>General format of identifiers, minimum length of 3 characters, starting with a letter character, followed by any positive number of any one of alphanumeric, colon, underscore or hyphen and ended by an alphanumeric character</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+    		<xs:pattern value="[A-Za-z][:_\-\w]+\w" />
+    	</xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="qualifiedClassNameAttr">
+        <xs:annotation>
+        	<xs:documentation>Fully qualified class name of a java class. Note that the pattern used expresses a less strict version of the java identifier format by allowing lower case letters to be used in the beginning of the final class name!</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+    		<xs:pattern value="([a-z][a-z_0-9]*\.)*[A-Z_]($[A-Za-z_]|[\w_])*" />
+    	</xs:restriction>
+    </xs:simpleType>
+    
+    
+	
+	<xs:attributeGroup name="identity">
+		<xs:attribute name="id" type="imf:identifierAttr" use="required"/>
+		<xs:attribute name="name" type="imf:complexNameAttr" use="required"/>
+		<xs:attribute name="description" type="xs:string" use="optional"/>
+		<xs:attribute name="icon" type="xs:string" use="optional"/>
+	</xs:attributeGroup>
+	
+	<xs:attributeGroup name="optionalIdentity">
+		<xs:attribute name="id" type="imf:identifierAttr" use="optional"/>
+		<xs:attribute name="name" type="imf:complexNameAttr" use="optional"/>
+		<xs:attribute name="description" type="xs:string" use="optional"/>
+		<xs:attribute name="icon" type="xs:string" use="optional"/>
+	</xs:attributeGroup>
+	
+	<xs:group name="layerGroup">
+		<xs:sequence>
+			<xs:choice maxOccurs="unbounded">
+				<xs:element name="item-layer" type="imf:itemLayerManifestType" />
+				<xs:element name="structure-layer" type="imf:structureLayerManifestType" />
+				<xs:element name="fragment-layer" type="imf:fragmentLayerManifestType" />
+				<xs:element name="annotation-layer" type="imf:annotationLayerManifestType" />
+				<xs:element name="highlight-layer" type="imf:highlightLayerManifestType" />
+			</xs:choice>
+		</xs:sequence>
+	</xs:group>
+	
+	<xs:group name="documentationGroup">
+		<xs:sequence>
+			<xs:element name="documentation" type="imf:documentationManifestType" minOccurs="0" maxOccurs="1" />
+		</xs:sequence>
+	</xs:group>
+
+</xs:schema>

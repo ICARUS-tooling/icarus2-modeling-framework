@@ -1,0 +1,78 @@
+/*
+ *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
+ *  Copyright (C) 2015 Markus Gärtner
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see http://www.gnu.org/licenses.
+
+ * $Revision: 396 $
+ * $Date: 2015-05-20 11:11:11 +0200 (Mi, 20 Mai 2015) $
+ * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/registry/CorpusMemberFactory.java $
+ *
+ * $LastChangedDate: 2015-05-20 11:11:11 +0200 (Mi, 20 Mai 2015) $
+ * $LastChangedRevision: 396 $
+ * $LastChangedBy: mcgaerty $
+ */
+package de.ims.icarus2.model.registry;
+
+import de.ims.icarus2.model.api.corpus.Context;
+import de.ims.icarus2.model.api.corpus.Corpus;
+import de.ims.icarus2.model.api.layer.AnnotationLayer;
+import de.ims.icarus2.model.api.layer.FragmentLayer;
+import de.ims.icarus2.model.api.layer.ItemLayer;
+import de.ims.icarus2.model.api.layer.Layer;
+import de.ims.icarus2.model.api.layer.LayerGroup;
+import de.ims.icarus2.model.api.layer.StructureLayer;
+import de.ims.icarus2.model.api.manifest.AnnotationLayerManifest;
+import de.ims.icarus2.model.api.manifest.ContextManifest;
+import de.ims.icarus2.model.api.manifest.FragmentLayerManifest;
+import de.ims.icarus2.model.api.manifest.ImplementationLoader;
+import de.ims.icarus2.model.api.manifest.ImplementationManifest;
+import de.ims.icarus2.model.api.manifest.ItemLayerManifest;
+import de.ims.icarus2.model.api.manifest.LayerGroupManifest;
+import de.ims.icarus2.model.api.manifest.StructureLayerManifest;
+import de.ims.icarus2.util.Options;
+
+/**
+ * A factory to create various high level members of a corpus.
+ * This includes all kinds of {@link Layer layers}, {@link LayerGroup layer groups} and the top
+ * level type {@link Context}.
+ * <p>
+ * In addition this factor is meant to provide {@link ImplementationLoader} instances to load
+ * custom or foreign implementations of things like drivers.
+ * <p>
+ * Unless otherwise noted, all {@link Options options} parameters in the factory methods of this
+ * class are allowed to be {@code null}.
+ *
+ * @author Markus Gärtner
+ * @version $Id: CorpusMemberFactory.java 396 2015-05-20 09:11:11Z mcgaerty $
+ *
+ */
+public interface CorpusMemberFactory {
+
+	Context createContext(Corpus corpus, ContextManifest manifest, Options options);
+	LayerGroup createLayerGroup(LayerGroupManifest groupManifest, Options options);
+	AnnotationLayer createAnnotationLayer(Corpus corpus, AnnotationLayerManifest manifest, Options options);
+	ItemLayer createItemLayer(Corpus corpus, ItemLayerManifest manifest, Options options);
+	StructureLayer createStructureLayer(Corpus corpus, StructureLayerManifest manifest, Options options);
+	FragmentLayer createFragmentLayer(Corpus corpus, FragmentLayerManifest manifest, Options options);
+
+
+	/**
+	 * Creates a loader suitable for loading and instantiating classes defined
+	 * via {@link ImplementationManifest manifests}.
+	 *
+	 * @return
+	 */
+	ImplementationLoader<?> newImplementationLoader();
+}

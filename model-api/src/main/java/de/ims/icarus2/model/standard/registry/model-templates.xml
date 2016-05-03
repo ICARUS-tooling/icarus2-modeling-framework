@@ -1,0 +1,23 @@
+<?xml version="1.0"  encoding="UTF-8"?>
+
+<templates xmlns:imf="http://www.ikarus-systems.net/icarus/xml/manifest/">
+		
+	<!-- A default driver for file based corpora -->
+	<driver id="fileDriver" name="Basic File Driver">
+		<implementation classname="de.ims.icarus2.model.standard.driver.file.DefaultFileDriverFactory" factory="true" />
+		
+		<options>
+			<option id="content.encoding" name="Content Encoding" description="Defines the encoding to be used when reading the corpus files" type="string">
+				<default-value>UTF-8</default-value>
+			</option>
+		</options>
+		
+		<!-- Expects a matching module manifest in the live version of the driver -->
+		<module-spec id="fileConnector" multiplicity="one" customizable="false">
+			<documentation>
+				
+			</documentation>
+			<extension-point>de.ims.icarus2.model.fileConnector</extension-point>
+		</module-spec>
+	</driver>
+</templates>

@@ -1,0 +1,768 @@
+/*
+ *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
+ *  Copyright (C) 2015 Markus Gärtner
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see http://www.gnu.org/licenses.
+
+ * $Revision: 457 $
+ * $Date: 2016-04-20 15:08:11 +0200 (Mi, 20 Apr 2016) $
+ * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/manifest/ContextManifestImpl.java $
+ *
+ * $LastChangedDate: 2016-04-20 15:08:11 +0200 (Mi, 20 Apr 2016) $
+ * $LastChangedRevision: 457 $
+ * $LastChangedBy: mcgaerty $
+ */
+package de.ims.icarus2.model.standard.manifest;
+
+import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.manifest.ContextManifest;
+import de.ims.icarus2.model.api.manifest.CorpusManifest;
+import de.ims.icarus2.model.api.manifest.DriverManifest;
+import de.ims.icarus2.model.api.manifest.ItemLayerManifest;
+import de.ims.icarus2.model.api.manifest.LayerGroupManifest;
+import de.ims.icarus2.model.api.manifest.LayerManifest;
+import de.ims.icarus2.model.api.manifest.LocationManifest;
+import de.ims.icarus2.model.api.manifest.ManifestErrorCode;
+import de.ims.icarus2.model.api.manifest.ManifestException;
+import de.ims.icarus2.model.api.manifest.ManifestLocation;
+import de.ims.icarus2.model.api.manifest.ManifestRegistry;
+import de.ims.icarus2.model.api.manifest.ManifestType;
+import de.ims.icarus2.model.standard.manifest.Links.Link;
+import de.ims.icarus2.model.standard.manifest.Links.MemoryLink;
+import de.ims.icarus2.model.standard.manifest.util.ManifestUtils;
+import de.ims.icarus2.util.collections.CollectionUtils;
+
+/**
+ * @author Markus Gärtner
+ * @version $Id: ContextManifestImpl.java 457 2016-04-20 13:08:11Z mcgaerty $
+ *
+ */
+public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest> implements ContextManifest {
+
+	// Lookup structures
+//	private final List<LayerManifest> layerManifests = new ArrayList<>();
+//	private final Map<String, LayerManifest> layerManifestLookup = new HashMap<>();
+
+	// Main storage
+	private final List<PrerequisiteManifest> prerequisiteManifests = new ArrayList<>();
+	private final List<LayerGroupManifest> groupManifests = new ArrayList<>();
+	private final List<LocationManifest> locationManifests = new ArrayList<>();
+
+	private LayerLink primaryLayer;
+	private LayerLink foundationLayer;
+
+	private Boolean independent;
+	private Boolean editable;
+
+	private final CorpusManifest corpusManifest;
+	private DriverManifest driverManifest;
+
+	/**
+	 * @param manifestLocation
+	 * @param registry
+	 */
+	public ContextManifestImpl(ManifestLocation manifestLocation,
+			ManifestRegistry registry) {
+		super(manifestLocation, registry);
+
+		corpusManifest = null;
+	}
+
+	public ContextManifestImpl(ManifestLocation manifestLocation,
+			ManifestRegistry registry, CorpusManifest corpusManifest) {
+		super(manifestLocation, registry);
+
+		verifyEnvironment(manifestLocation, corpusManifest, CorpusManifest.class);
+
+		this.corpusManifest = corpusManifest;
+	}
+
+	public ContextManifestImpl(CorpusManifest corpusManifest) {
+		this(corpusManifest.getManifestLocation(), corpusManifest.getRegistry(), corpusManifest);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.standard.manifest.AbstractManifest#isEmpty()
+	 */
+	@Override
+	public boolean isEmpty() {
+		return super.isEmpty() && prerequisiteManifests.isEmpty()
+				&& groupManifests.isEmpty() && driverManifest==null && locationManifests.isEmpty();
+	}
+
+	@Override
+	public void forEachLayerManifest(Consumer<? super LayerManifest> action) {
+		forEachGroupManifest(g -> g.forEachLayerManifest(action));
+	}
+
+	private LayerManifest lookupLayerManifest(String id) {
+
+		LayerManifest result = null;
+
+		List<LayerGroupManifest> groupManifests = getGroupManifests();
+
+		for(int i=0; i<groupManifests.size(); i++) {
+			result = groupManifests.get(i).getLayerManifest(id);
+			if(result!=null) {
+				break;
+			}
+		}
+
+		/// TODO maybe throw exception when no corpus manifest is set here?
+		if(result==null && corpusManifest!=null) {
+			List<PrerequisiteManifest> prerequisiteManifests = getPrerequisites();
+
+			for(int i=0; i<prerequisiteManifests.size(); i++) {
+				PrerequisiteManifest prerequisiteManifest = prerequisiteManifests.get(i);
+				if(id.equals(prerequisiteManifest.getAlias())) {
+					CorpusManifest corpusManifest = getCorpusManifest();
+					ContextManifest targetContext = corpusManifest.getContextManifest(prerequisiteManifest.getContextId());
+					result = targetContext.getLayerManifest(prerequisiteManifest.getLayerId());
+					break;
+				}
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.manifest.ContextManifest#getLayerManifest(java.lang.String)
+	 */
+	@Override
+	public LayerManifest getLayerManifest(String id) {
+		checkNotNull(id);
+
+//		ensureLookup();
+
+//		LayerManifest result = layerManifestLookup.get(id);
+
+		LayerManifest result = lookupLayerManifest(id);
+
+		if(result==null)
+			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
+					"No layer available for id "+id+" in context "+getId()); //$NON-NLS-1$ //$NON-NLS-2$
+
+		return result;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.manifest.ContextManifest#getPrerequisite(java.lang.String)
+	 */
+	@Override
+	public PrerequisiteManifest getPrerequisite(String alias) {
+		checkNotNull(alias);
+
+		PrerequisiteManifest result = null;
+
+		for(PrerequisiteManifest prerequisiteManifest : prerequisiteManifests) {
+			if(alias.equals(prerequisiteManifest.getAlias())) {
+				result = prerequisiteManifest;
+				break;
+			}
+		}
+
+		if(result==null && hasTemplate()) {
+			result = getTemplate().getPrerequisite(alias);
+		}
+
+		return result;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.manifest.ContextManifest#getCorpusManifest()
+	 */
+	@Override
+	public CorpusManifest getCorpusManifest() {
+		return corpusManifest;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.manifest.ContextManifest#getLocationManifest()
+	 */
+	@Override
+	public List<LocationManifest> getLocationManifests() {
+		return CollectionUtils.getListProxy(locationManifests);
+	}
+
+	@Override
+	public void addLocationManifest(LocationManifest manifest) {
+		checkNotLocked();
+
+		addLocationManifest0(manifest);
+	}
+
+	protected void addLocationManifest0(LocationManifest manifest) {
+		checkNotNull(manifest);
+		checkNotTemplate();
+
+		if(locationManifests.contains(manifest))
+			throw new IllegalArgumentException("Location already present: "+manifest); //$NON-NLS-1$
+
+		locationManifests.add(manifest);
+	}
+
+	@Override
+	public void removeLocationManifest(LocationManifest manifest) {
+		checkNotLocked();
+
+		removeLocationManifest0(manifest);
+	}
+
+	protected void removeLocationManifest0(LocationManifest manifest) {
+		checkNotNull(manifest);
+		checkNotTemplate();
+
+		if(!locationManifests.remove(manifest))
+			throw new IllegalArgumentException("Location unknown: "+manifest); //$NON-NLS-1$
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.manifest.ContextManifest#isIndependentContext()
+	 */
+	@Override
+	public boolean isIndependentContext() {
+		if(independent==null) {
+			return hasTemplate() ? getTemplate().isIndependentContext() : DEFAULT_INDEPENDENT_VALUE;
+		} else {
+			return independent.booleanValue();
+		}
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.manifest.ContextManifest#isLocalIndependentContext()
+	 */
+	@Override
+	public boolean isLocalIndependentContext() {
+		return independent!=null;
+	}
+
+	/**
+	 * @param independent the independent to set
+	 */
+	@Override
+	public void setIndependentContext(Boolean independent) {
+		checkNotLocked();
+
+		setIndependentContext0(independent);
+	}
+
+	protected void setIndependentContext0(Boolean independent) {
+		checkNotLive();
+
+		this.independent = independent;
+	}
+
+	@Override
+	public boolean isEditable() {
+		if(editable==null) {
+			return hasTemplate() ? getTemplate().isEditable() : DEFAULT_EDITABLE_VALUE;
+		} else {
+			return editable.booleanValue();
+		}
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.manifest.ContextManifest#isLocalEditable()
+	 */
+	@Override
+	public boolean isLocalEditable() {
+		return editable!=null;
+	}
+
+	/**
+	 * @param independent the independent to set
+	 */
+	@Override
+	public void setEditable(Boolean editable) {
+		checkNotLocked();
+
+		setEditable0(editable);
+	}
+
+	protected void setEditable0(Boolean editable) {
+		checkNotLive();
+
+		this.editable = editable;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.manifest.ContextManifest#isRootContext()
+	 */
+	@Override
+	public boolean isRootContext() {
+		return corpusManifest!=null && corpusManifest.getRootContextManifest()==this;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.manifest.MemberManifest#getManifestType()
+	 */
+	@Override
+	public ManifestType getManifestType() {
+		return ManifestType.CONTEXT_MANIFEST;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.manifest.ContextManifest#getDriverManifest()
+	 */
+	@Override
+	public DriverManifest getDriverManifest() {
+		DriverManifest result = driverManifest;
+		if(result==null && hasTemplate()) {
+			result = getTemplate().getDriverManifest();
+		}
+		return result;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.manifest.ContextManifest#isLocalDriverManifest()
+	 */
+	@Override
+	public boolean isLocalDriverManifest() {
+		return driverManifest!=null;
+	}
+
+	@Override
+	public void forEachPrerequisite(Consumer<? super PrerequisiteManifest> action) {
+		if(hasTemplate()) {
+			getTemplate().forEachPrerequisite(action);
+		}
+		prerequisiteManifests.forEach(action);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.manifest.ContextManifest#forEachLocalPrerequisite(java.util.function.Consumer)
+	 */
+	@Override
+	public void forEachLocalPrerequisite(
+			Consumer<? super PrerequisiteManifest> action) {
+		prerequisiteManifests.forEach(action);
+	}
+
+	@Override
+	public void forEachGroupManifest(Consumer<? super LayerGroupManifest> action) {
+		if(hasTemplate()) {
+			getTemplate().forEachGroupManifest(action);
+		}
+		groupManifests.forEach(action);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.manifest.ContextManifest#forEachLocalGroupManifest(java.util.function.Consumer)
+	 */
+	@Override
+	public void forEachLocalGroupManifest(
+			Consumer<? super LayerGroupManifest> action) {
+		groupManifests.forEach(action);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.manifest.ContextManifest#getPrimaryLayerManifest()
+	 */
+	@Override
+	public ItemLayerManifest getPrimaryLayerManifest() {
+		if(primaryLayer!=null) {
+			return primaryLayer.get();
+		}
+
+		if(hasTemplate()) {
+			return getTemplate().getPrimaryLayerManifest();
+		}
+
+		throw new IllegalStateException("No primary layer defined for context: "+this); //$NON-NLS-1$
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.manifest.ContextManifest#isLocalPrimaryLayerManifest()
+	 */
+	@Override
+	public boolean isLocalPrimaryLayerManifest() {
+		return primaryLayer!=null;
+	}
+
+	/**
+	 * @param primaryLayerManifest the primaryLayerManifest to set
+	 */
+	@Override
+	public void setPrimaryLayerId(String primaryLayerId) {
+		checkNotLocked();
+
+		setPrimaryLayerId0(primaryLayerId);
+	}
+
+	protected void setPrimaryLayerId0(String primaryLayerId) {
+		checkNotNull(primaryLayerId);
+		checkNotLive();
+
+		primaryLayer = new LayerLink(primaryLayerId);
+	}
+
+	/**
+	 * @return the foundationLayerManifest
+	 */
+	@Override
+	public ItemLayerManifest getFoundationLayerManifest() {
+		if(foundationLayer!=null) {
+			return foundationLayer.get();
+		}
+
+		if(hasTemplate()) {
+			return getTemplate().getFoundationLayerManifest();
+		}
+
+		return null;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.manifest.ContextManifest#isLocalFoundationLayerManifest()
+	 */
+	@Override
+	public boolean isLocalFoundationLayerManifest() {
+		return foundationLayer!=null;
+	}
+
+	/**
+	 * @param foundationLayerId the foundationLayerId to set
+	 */
+	@Override
+	public void setFoundationLayerId(String foundationLayerId) {
+		checkNotLocked();
+
+		setFoundationLayerId0(foundationLayerId);
+	}
+
+	protected void setFoundationLayerId0(String foundationLayerId) {
+		checkNotNull(foundationLayerId);
+		checkNotLive();
+
+		foundationLayer = new LayerLink(foundationLayerId);
+	}
+
+	/**
+	 * @param driverManifest the driverManifest to set
+	 */
+	@Override
+	public void setDriverManifest(DriverManifest driverManifest) {
+		checkNotLocked();
+
+		setDriverManifest0(driverManifest);
+	}
+
+	protected void setDriverManifest0(DriverManifest driverManifest) {
+		checkNotNull(driverManifest);
+		checkNotLive();
+
+		this.driverManifest = driverManifest;
+	}
+
+	@Override
+	public PrerequisiteManifest addPrerequisite(String alias) {
+		checkNotLocked();
+
+		return addPrerequisite0(alias);
+	}
+
+	protected PrerequisiteManifest addPrerequisite0(String alias) {
+		checkNotNull(alias);
+		checkNotLive();
+
+		for(int i=0; i<prerequisiteManifests.size(); i++) {
+			if(alias.equals(prerequisiteManifests.get(i).getAlias()))
+				throw new IllegalArgumentException("Duplicate prerequisite alias: "+alias); //$NON-NLS-1$
+		}
+
+		PrerequisiteManifestImpl result = new PrerequisiteManifestImpl(alias);
+		prerequisiteManifests.add(result);
+
+		return result;
+	}
+
+	@Override
+	public void removePrerequisite(PrerequisiteManifest prerequisiteManifest) {
+		checkNotLocked();
+
+		removePrerequisite0(prerequisiteManifest);
+	}
+
+	protected void removePrerequisite0(PrerequisiteManifest prerequisiteManifest) {
+		checkNotNull(prerequisiteManifest);
+		checkNotLive();
+
+		if(!prerequisiteManifests.remove(prerequisiteManifest))
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
+					"Unknown prerequisite manifest: "+prerequisiteManifest.getAlias());
+	}
+
+	@Override
+	public void addLayerGroup(LayerGroupManifest groupManifest) {
+		checkNotLocked();
+
+		addLayerGroup0(groupManifest);
+	}
+
+	protected void addLayerGroup0(LayerGroupManifest groupManifest) {
+		checkNotNull(groupManifest);
+		checkNotLive();
+
+		if(groupManifest.getContextManifest()!=this)
+			throw new IllegalArgumentException("Layer group already hosted in foreign context: "+groupManifest); //$NON-NLS-1$
+
+		if(groupManifests.contains(groupManifest))
+			throw new IllegalArgumentException("Layer group already present: "+groupManifest); //$NON-NLS-1$
+
+		groupManifests.add(groupManifest);
+
+//		resetLookup();
+	}
+
+	@Override
+	public void removeLayerGroup(LayerGroupManifest groupManifest) {
+		checkNotLocked();
+
+		removeLayerGroup0(groupManifest);
+	}
+
+	protected void removeLayerGroup0(LayerGroupManifest groupManifest) {
+		checkNotNull(groupManifest);
+		checkNotLive();
+
+		if(!groupManifests.remove(groupManifest))
+			throw new IllegalArgumentException("Layer group not present: "+groupManifest); //$NON-NLS-1$
+
+//		resetLookup();
+	}
+
+	@Override
+	public void lock() {
+		super.lock();
+
+		for(PrerequisiteManifest prerequisiteManifest : prerequisiteManifests) {
+			prerequisiteManifest.lock();
+		}
+
+		for(LayerGroupManifest layerGroupManifest : groupManifests) {
+			layerGroupManifest.lock();
+		}
+	}
+
+	protected class LayerLink extends Link<ItemLayerManifest> {
+
+		/**
+		 * @param id
+		 */
+		public LayerLink(String id) {
+			super(id);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.manifest.Links.Link#resolve()
+		 */
+		@Override
+		protected ItemLayerManifest resolve() {
+			return (ItemLayerManifest) getLayerManifest(getId());
+		}
+
+	}
+
+	/**
+	 * Link to a previously defined {@link PrerequisiteManifest} in a
+	 * context template manifest.
+	 *
+	 * @author Markus Gärtner
+	 * @version $Id: ContextManifestImpl.java 457 2016-04-20 13:08:11Z mcgaerty $
+	 *
+	 */
+	protected class PrerequisiteLink extends MemoryLink<PrerequisiteManifest> {
+
+		/**
+		 * @param id
+		 */
+		public PrerequisiteLink(String id) {
+			super(id);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.manifest.Links.Link#resolve()
+		 */
+		@Override
+		protected PrerequisiteManifest resolve() {
+			ContextManifest contextManifest = ContextManifestImpl.this.getTemplate();
+			return contextManifest==null ? null : contextManifest.getPrerequisite(getId());
+		}
+
+	}
+
+	/**
+	 *
+	 * @author Markus Gärtner
+	 * @version $Id: ContextManifestImpl.java 457 2016-04-20 13:08:11Z mcgaerty $
+	 *
+	 */
+	public class PrerequisiteManifestImpl extends AbstractLockable implements PrerequisiteManifest {
+
+		private final String alias;
+		private final PrerequisiteLink unresolvedForm;
+
+		private String layerId;
+		private String typeId;
+		private String contextId;
+		private String description;
+
+		PrerequisiteManifestImpl(String alias) {
+			checkNotNull(alias);
+
+			if(!ManifestUtils.isValidId(alias))
+				throw new IllegalArgumentException("Alias format not supported: "+alias); //$NON-NLS-1$
+
+			this.alias = alias;
+			this.unresolvedForm = new PrerequisiteLink(alias);
+		}
+
+		/**
+		 * @return the description
+		 */
+		@Override
+		public String getDescription() {
+			return description;
+		}
+
+		/**
+		 * @param description the description to set
+		 */
+		@Override
+		public void setDescription(String description) {
+			checkNotLocked();
+			getContextManifest().checkNotLive();
+
+			this.description = description;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.api.manifest.ContextManifest.PrerequisiteManifest#getContextManifest()
+		 */
+		@Override
+		public ContextManifest getContextManifest() {
+			return ContextManifestImpl.this;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.api.manifest.ContextManifest.PrerequisiteManifest#getLayerId()
+		 */
+		@Override
+		public String getLayerId() {
+			return layerId;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.api.manifest.ContextManifest.PrerequisiteManifest#getContextId()
+		 */
+		@Override
+		public String getContextId() {
+			return contextId;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.api.manifest.ContextManifest.PrerequisiteManifest#getTypeId()
+		 */
+		@Override
+		public String getTypeId() {
+			return typeId;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.api.manifest.ContextManifest.PrerequisiteManifest#getAlias()
+		 */
+		@Override
+		public String getAlias() {
+			return alias;
+		}
+
+		/**
+		 * @return the unresolvedForm
+		 */
+		@Override
+		public PrerequisiteManifest getUnresolvedForm() {
+			return unresolvedForm.get();
+		}
+
+		/**
+		 * @param layerId the layerId to set
+		 */
+		@Override
+		public void setLayerId(String layerId) {
+			checkNotLocked();
+			getContextManifest().checkNotLive();
+
+			this.layerId = layerId;
+		}
+
+		/**
+		 * @param typeId the typeId to set
+		 */
+		@Override
+		public void setTypeId(String typeId) {
+			checkNotLocked();
+			getContextManifest().checkNotLive();
+
+			this.typeId = typeId;
+		}
+
+		/**
+		 * @param contextId the contextId to set
+		 */
+		@Override
+		public void setContextId(String contextId) {
+			checkNotLocked();
+			getContextManifest().checkNotLive();
+
+			this.contextId = contextId;
+		}
+
+		/**
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return alias.hashCode();
+		}
+
+		/**
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+			if(this==obj) {
+				return true;
+			} if(obj instanceof PrerequisiteManifest) {
+				return alias.equals(((PrerequisiteManifest)obj).getAlias());
+			}
+			return false;
+		}
+
+		/**
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return "Prerequisite:"+alias; //$NON-NLS-1$
+		}
+
+	}
+}

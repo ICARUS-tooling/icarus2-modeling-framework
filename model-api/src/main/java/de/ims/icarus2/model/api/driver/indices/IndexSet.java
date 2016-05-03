@@ -1,0 +1,510 @@
+/*
+ *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
+ *  Copyright (C) 2015 Markus Gärtner
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see http://www.gnu.org/licenses.
+
+ * $Revision: 457 $
+ * $Date: 2016-04-20 15:08:11 +0200 (Mi, 20 Apr 2016) $
+ * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/api/driver/indices/IndexSet.java $
+ *
+ * $LastChangedDate: 2016-04-20 15:08:11 +0200 (Mi, 20 Apr 2016) $
+ * $LastChangedRevision: 457 $
+ * $LastChangedBy: mcgaerty $
+ */
+package de.ims.icarus2.model.api.driver.indices;
+
+import static de.ims.icarus2.model.util.Conditions.checkArgument;
+import static de.ims.icarus2.model.util.Conditions.checkNotNull;
+
+import java.sql.ResultSet;
+import java.util.Comparator;
+import java.util.NoSuchElementException;
+import java.util.PrimitiveIterator;
+import java.util.PrimitiveIterator.OfLong;
+import java.util.function.IntBinaryOperator;
+import java.util.function.IntConsumer;
+import java.util.function.LongBinaryOperator;
+import java.util.function.LongConsumer;
+
+import de.ims.icarus2.model.api.ModelConstants;
+import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.model.api.ModelException;
+
+
+/**
+ * Models an arbitrary collection of {@code long} index values. Values in the collection
+ * can either appear in random order or be sorted!
+ * The latter situation can be exploited to do easy checks for continuous collections
+ * of indices:<br>
+ * <i>Let i_0 be the first index in the set and i_n the last, with the set holding
+ * n+1 indices, then the collection of indices is continuous, if and only if the
+ * difference i_n-i_0 is exactly n</i>
+ * <p>
+ * Note that often consuming code requires an {@link IndexSet} instance to be sorted
+ * in order to guarantee certain computational qualities. In that case the respective
+ * method should document that requirement and ensure to check the index set (array)
+ * arguments, throwing {@link ModelErrorCode#MODEL_UNSORTED_INDEX_SET} when being presented
+ * with unsorted indices.
+ *
+ *
+ * When {@code IndexSet} instances occur in an array and the method they are being
+ * used for refers to this specification, they have to be sorted according to
+ * {@link #INDEX_SET_SORTER}.
+ *
+ * @author Markus Gärtner
+ * @version $Id: IndexSet.java 457 2016-04-20 13:08:11Z mcgaerty $
+ *
+ */
+public interface IndexSet {
+
+	//FIXME add a final UUID field that captures information about the source state (like generation id etc) so that client code can verify if a given index set is referencing outdated elements
+	//FIXME maybe add mechanics to allow one-time forward-only implementations
+
+	/**
+	 * Assumes that {@link IndexSet} instances passed to the {@link Comparator#compare(Object, Object) compare}
+	 * method are {@link IndexSet#isSorted() sorted}!
+	 */
+	public static final Comparator<IndexSet> INDEX_SET_SORTER = new Comparator<IndexSet>() {
+
+		@Override
+		public int compare(IndexSet o1, IndexSet o2) {
+			long result = o1.firstIndex()-o2.firstIndex();
+			if(result==0L) {
+				result = o1.lastIndex()-o2.lastIndex();
+			}
+			// Prevent integer overflow
+			if(result>Integer.MAX_VALUE || result<=Integer.MIN_VALUE) {
+				result >>= 32;
+			}
+			return (int) result;
+		}
+	};
+
+	public static final Comparator<IndexSet> INDEX_SET_SIZE_SORTER = new Comparator<IndexSet>() {
+
+		@Override
+		public int compare(IndexSet o1, IndexSet o2) {
+			return o1.size()-o2.size();
+		}
+	};
+
+	/**
+	 * Special return value for the {@link #size()} method indicating that
+	 * the implementation does not know about the total number of entries.
+	 */
+	public static final int UNKNOWN_SIZE = -1;
+
+	/**
+	 * Returns the number of index values in this set.
+	 * <p>
+	 * If the implementation does not know about the number of entries
+	 * then it is allowed to return {@link #UNKNOWN_SIZE}. Note however,
+	 * that this greatly devalues the robustness of certain optimization
+	 * facilities! Providing an index set of unknown size should only be
+	 * done when it is planned to only access the entries in a stream
+	 * like fashion.
+	 */
+	int size();
+
+	long indexAt(int index);
+
+	default long firstIndex() {
+		return indexAt(0);
+	}
+
+	default long lastIndex() {
+		return indexAt(size()-1);
+	}
+
+	IndexValueType getIndexValueType();
+
+	// SORTING
+
+	/**
+	 * Returns {@code true} in case this index set is already sorted.
+	 *
+	 * @return
+	 */
+	boolean isSorted();
+
+	/**
+	 * Sorts the content of this index set and returns {@code true} if successful.
+	 *
+	 * @return
+	 */
+	boolean sort();
+
+	// EXPORT
+
+	/**
+	 * Copies data from this {@code IndexSet} into a target {@code buffer} array.
+	 *
+	 * @see #export(int, int, byte[], int)
+	 */
+	default void export(byte[] buffer, int offset) {
+		export(0, size(), buffer, offset);
+	}
+
+	/**
+	 * Copies data from this {@code IndexSet} into a target {@code buffer} array.
+	 * @param beginIndex position of first index to be copied, inclusive
+	 * @param endIndex position of last index to be copied, exclusive
+	 * @param buffer target array to copy indices into
+	 * @param offset position of first insert into target buffer
+	 */
+	default void export(int beginIndex, int endIndex, byte[] buffer, int offset) {
+		for(int i=beginIndex; i<endIndex; i++) {
+			buffer[offset++] = (byte) indexAt(i);
+		}
+	}
+
+	/**
+	 * Copies data from this {@code IndexSet} into a target {@code buffer} array.
+	 *
+	 * @see #export(int, int, short[], int)
+	 */
+	default void export(short[] buffer, int offset) {
+		export(0, size(), buffer, offset);
+	}
+
+	/**
+	 * Copies data from this {@code IndexSet} into a target {@code buffer} array.
+	 * @param beginIndex position of first index to be copied, inclusive
+	 * @param endIndex position of last index to be copied, exclusive
+	 * @param buffer target array to copy indices into
+	 * @param offset position of first insert into target buffer
+	 */
+	default void export(int beginIndex, int endIndex, short[] buffer, int offset) {
+		for(int i=beginIndex; i<endIndex; i++) {
+			buffer[offset++] = (short) indexAt(i);
+		}
+	}
+
+	/**
+	 * Copies data from this {@code IndexSet} into a target {@code buffer} array.
+	 *
+	 * @see #export(int, int, int[], int)
+	 */
+	default void export(int[] buffer, int offset) {
+		export(0, size(), buffer, offset);
+	}
+
+	/**
+	 * Copies data from this {@code IndexSet} into a target {@code buffer} array.
+	 * @param beginIndex position of first index to be copied, inclusive
+	 * @param endIndex position of last index to be copied, exclusive
+	 * @param buffer target array to copy indices into
+	 * @param offset position of first insert into target buffer
+	 */
+	default void export(int beginIndex, int endIndex, int[] buffer, int offset) {
+		for(int i=beginIndex; i<endIndex; i++) {
+			buffer[offset++] = (int) indexAt(i);
+		}
+	}
+
+	/**
+	 * Copies data from this {@code IndexSet} into a target {@code buffer} array.
+	 *
+	 * @see #export(int, int, long[], int)
+	 */
+	default void export(long[] buffer, int offset) {
+		export(0, size(), buffer, offset);
+	}
+
+	/**
+	 * Copies data from this {@code IndexSet} into a target {@code buffer} array.
+	 * @param beginIndex position of first index to be copied, inclusive
+	 * @param endIndex position of last index to be copied, exclusive
+	 * @param buffer target array to copy indices into
+	 * @param offset position of first insert into target buffer
+	 */
+	default void export(int beginIndex, int endIndex, long[] buffer, int offset) {
+		for(int i=beginIndex; i<endIndex; i++) {
+			buffer[offset++] = indexAt(i);
+		}
+	}
+
+	// TRANSVERSAL
+
+	default void forEachIndex(LongConsumer action) {
+		forEachIndex(action, 0, size());
+	}
+
+	/**
+	 *
+	 * @param action
+	 * @param beginIndex position of first index to apply the given action to, inclusive
+	 * @param endIndex position of last index to apply the given action to, exclusive
+	 */
+	default void forEachIndex(LongConsumer action, int beginIndex, int endIndex) {
+		for(int i=beginIndex; i<endIndex; i++) {
+			action.accept(indexAt(i));
+		}
+	}
+
+	default void forEachIndex(IntConsumer action) {
+		forEachIndex(action, 0, size());
+	}
+
+	/**
+	 *
+	 * @param action
+	 * @param beginIndex position of first index to apply the given action to, inclusive
+	 * @param endIndex position of last index to apply the given action to, exclusive
+	 *
+	 * @throws ModelException in case this set contains values that exceed integer space
+	 */
+	default void forEachIndex(IntConsumer action, int beginIndex, int endIndex) {
+		if(!IndexValueType.INTEGER.isValidSubstitute(getIndexValueType()))
+			throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+					"Cannot serve IntConsumer - index set contains values beyond integer space");
+
+		for(int i=beginIndex; i<endIndex; i++) {
+			action.accept((int) indexAt(i));
+		}
+	}
+
+	default void forEachEntry(LongBinaryOperator action) {
+		forEachEntry(action, 0, size());
+	}
+
+	default void forEachEntry(LongBinaryOperator action, int beginIndex, int endIndex) {
+
+		for(int i=beginIndex; i<endIndex; i++) {
+			action.applyAsLong(i, indexAt(i));
+		}
+	}
+
+	default void forEachEntry(IntBinaryOperator action) {
+		forEachEntry(action, 0, size());
+	}
+
+	default void forEachEntry(IntBinaryOperator action, int beginIndex, int endIndex) {
+		if(!IndexValueType.INTEGER.isValidSubstitute(getIndexValueType()))
+			throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+					"Cannot serve IntConsumer - index set contains values beyond integer space");
+
+		for(int i=beginIndex; i<endIndex; i++) {
+			action.applyAsInt(i, (int)indexAt(i));
+		}
+	}
+
+	// TRANSFORMATION
+
+	/**
+	 * Splits the current set of indices so that each new subset contains at most
+	 * the given number of indices.
+	 *
+	 * @param chunkSize
+	 * @return
+	 *
+	 * @see #subSet(int, int)
+	 */
+	default IndexSet[] split(int chunkSize) {
+		checkArgument("Chunk size must be positive", chunkSize>0);
+
+		int size = size();
+
+		if(chunkSize>=size) {
+			return IndexUtils.wrap(this);
+		}
+
+		long chunks = (long)Math.ceil((double)size/chunkSize);
+
+		if(chunks>ModelConstants.MAX_INTEGER_INDEX)
+			throw new ModelException(ModelErrorCode.INDEX_OVERFLOW, "Cannot create array of size: "+chunks); //$NON-NLS-1$
+
+		IndexSet[] result = new IndexSet[(int) chunks];
+
+		int fromIndex = 0;
+		int toIndex;
+		for(int i=0; i<chunks; i++) {
+			toIndex = Math.min(fromIndex+chunkSize, size-1);
+			result[i] = subSet(fromIndex, toIndex);
+			fromIndex = toIndex+1;
+		}
+
+		return result;
+	}
+
+	/**
+	 *
+	 * @param fromIndex first index within this index set the new one is meant to contain (inclusive)
+	 * @param toIndex last index within this index set the new one is meant to contain (inclusive)
+	 * @return
+	 */
+	IndexSet subSet(int fromIndex, int toIndex);
+
+	/**
+	 * Return an {@code IndexSet} object that describes the exact same set of index values
+	 * as this one, but is disconnected from any implementation specific shared storage.
+	 * If an implementation is not relying on shared storage or cannot be disconnected from it,
+	 * this method should just return the current {@code IndexSet} itself.
+	 */
+	IndexSet externalize();
+
+	// FEATURE FLAGS
+
+	/**
+	 * General hint that the implementation is able to sort its content.
+	 * Note that this information is kind of redundant since the {@link #sort()} method
+	 * already expresses this information, but more in a pos-condition kind of way.
+	 */
+	public static final int FEATURE_CAN_SORT = (1 << 0);
+
+	/**
+	 * Indicates whether or not the implementation supports exporting parts of it via any
+	 * of the following method:
+	 * <ul>
+	 * <li>{@link #split(int)}</li>
+	 * <li>{@link #subSet(int, int)}</li>
+	 * </ul>
+	 * Implementations are free to
+	 */
+	public static final int FEATURE_CAN_EXPORT = (1 << 1);
+
+	/**
+	 * Signals that this implementation is not able to provide information about the number
+	 * of entries it holds. This can be the case when the index set is a wrapper around some
+	 * foreign storage like the {@link ResultSet result} of a SQL query.
+	 */
+	public static final int FEATURE_INDETERMINATE_SIZE = (1 << 2);
+
+	/**
+	 * Signals that client code cannot address entries in this set in a <i>random-access</i> pattern.
+	 * The exact semantics of <i>forward-only</i> are implementation specific, but the general contract
+	 * is that for any 2 consecutive calls to {@link #indexAt(int)} the {@code index} parameter passed
+	 * to the second call must be greater than the one passed to the first call.
+	 * Some implementations might require it to be exactly the next greater integer value, but that is
+	 * generally not required and implementations should implement an internal "skip" mechanism that
+	 * scrolls forward to the desired position, discarding any entries on the way.
+	 * <p>
+	 * Note that by declaring this feature active an implementation becomes effectively one-time usable only.
+	 */
+	public static final int FEATURE_CURSOR_FORWARD_ONLY = (1 << 3);
+
+	/**
+	 * Signals that the implementation is thread-safe and it can be shared across multiple threads.
+	 * Per default implementations are <b>not</> required to implement synchronization measures to
+	 * improve performance.
+	 */
+	public static final int FEATURE_THREAD_SAFE = (1 << 4);
+
+	public static final int DEFAULT_FEATURES =
+			FEATURE_CAN_SORT
+			| FEATURE_CAN_EXPORT;
+
+	default int getFeatures() {
+		return DEFAULT_FEATURES;
+	}
+
+	default boolean hasFeatures(int features) {
+		return (getFeatures() & features) == features;
+	}
+
+	default void checkHasFeatures(int features) {
+		if(!hasFeatures(features)) {
+			StringBuilder sb = new StringBuilder("Required features not available: ");
+
+			int pos = 0;
+			//TODO aggregate textual info of the missing features and use as error message!
+
+			throw new ModelException(ModelErrorCode.NOT_IMPLEMENTED, sb.toString());
+		}
+	}
+
+	// ITERATOR SUPPORT
+
+	/**
+	 * Creates and returns a {@link PrimitiveIterator.OfLong} iterator that traverses the
+	 * entire number of index values within this {@code IndexSet}.
+	 *
+	 * @return
+	 */
+	default OfLong iterator() {
+		return new OfLongImpl(this);
+	}
+
+	default OfLong iterator(int start) {
+		return new OfLongImpl(this, start);
+	}
+
+	default OfLong iterator(int start, int end) {
+		return new OfLongImpl(this, start, end);
+	}
+
+	/**
+	 * Iterator implementation for traversal of a {@code IndexSet} or a specified
+	 * subsection of it.
+	 *
+	 * @author Markus Gärtner
+	 * @version $Id: IndexSet.java 457 2016-04-20 13:08:11Z mcgaerty $
+	 *
+	 */
+	public static class OfLongImpl implements OfLong {
+
+		private final IndexSet source;
+		private int pointer;
+		private final int limit;
+
+		public OfLongImpl(IndexSet source) {
+			this(source, 0, -1);
+		}
+
+		public OfLongImpl(IndexSet source, int start) {
+			this(source, start, -1);
+		}
+
+		/**
+		 *
+		 * @param source data to traverse
+		 * @param start begin of region to be iterated over, inclusive
+		 * @param end end of region to be iterated over, exclusive
+		 */
+		public OfLongImpl(IndexSet source, int start, int end) {
+			checkNotNull(source);
+			checkArgument(start>=0);
+
+			this.source = source;
+			pointer = start;
+
+			if(end<0) {
+				end = source.size();
+			}
+
+			limit = end;
+		}
+
+		/**
+		 * @see java.util.Iterator#hasNext()
+		 */
+		@Override
+		public boolean hasNext() {
+			return pointer<limit;
+		}
+
+		/**
+		 * @see java.util.PrimitiveIterator.OfLong#nextLong()
+		 */
+		@Override
+		public long nextLong() {
+			if(pointer>=limit)
+				throw new NoSuchElementException();
+
+			return source.indexAt(pointer++);
+		}
+
+	}
+}
