@@ -56,7 +56,6 @@ public class Expression {
 
 	//FIXME specify exception type
 	void compile() throws Exception {
-
 	}
 
 	public List<Variable> getVariables() {

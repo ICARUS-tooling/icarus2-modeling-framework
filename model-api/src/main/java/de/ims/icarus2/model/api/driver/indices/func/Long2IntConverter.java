@@ -25,7 +25,6 @@
  */
 package de.ims.icarus2.model.api.driver.indices.func;
 
-import static de.ims.icarus2.model.standard.util.CorpusUtils.ensureIntegerValueRange;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.function.IntConsumer;

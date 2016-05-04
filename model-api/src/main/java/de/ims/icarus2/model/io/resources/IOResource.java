@@ -30,8 +30,6 @@ import java.net.URL;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 
-import de.ims.icarus2.model.standard.driver.io.BufferedIOResource;
-import de.ims.icarus2.model.standard.driver.mapping.AbstractStoredMapping;
 import de.ims.icarus2.util.annotations.OptionalMethod;
 
 /**

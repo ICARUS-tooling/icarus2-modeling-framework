@@ -1,0 +1,211 @@
+/*
+ *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
+ *  Copyright (C) 2015 Markus Gärtner
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see http://www.gnu.org/licenses.
+
+ * $Revision: 457 $
+ * $Date: 2016-04-20 15:08:11 +0200 (Mi, 20 Apr 2016) $
+ * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/view/PageIndexBuffer.java $
+ *
+ * $LastChangedDate: 2016-04-20 15:08:11 +0200 (Mi, 20 Apr 2016) $
+ * $LastChangedRevision: 457 $
+ * $LastChangedBy: mcgaerty $
+ */
+package de.ims.icarus2.model.standard.view;
+
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+
+import java.util.Arrays;
+
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.model.api.corpus.CorpusView.PageControl;
+import de.ims.icarus2.model.api.driver.indices.IndexSet;
+import de.ims.icarus2.model.api.driver.indices.IndexUtils;
+import de.ims.icarus2.model.api.driver.indices.IndexValueType;
+import de.ims.icarus2.model.manifest.util.Messages;
+import de.ims.icarus2.model.standard.driver.indices.IndexBuffer;
+
+/**
+ * Implements a buffer that holds a collection of raw {@link IndexSet} instances and
+ * transforms them into new sets based on a fixed paging policy. Creation of those
+ * {@code pages} is done on demand and the buffer itself does not cache them, nor store any
+ * reference to them. So if client code such as a {@link PageControl} implementation wishes
+ * caching to be employed then it will have to do it itself.
+ *
+ * @author Markus Gärtner
+ * @version $Id: PageIndexBuffer.java 457 2016-04-20 13:08:11Z mcgaerty $
+ *
+ */
+public class PageIndexBuffer {
+
+	/**
+	 * Max size of a single returned {@link IndexSet}
+	 */
+	private final int pageSize;
+
+	/**
+	 * Number of pages the input indices can be split into.
+	 * Calculated at construction time
+	 */
+	private final int pageCount;
+
+	/**
+	 * Total number of index values available
+	 */
+	private final long size;
+
+	/**
+	 * Source collection of {@link IndexSet} instances
+	 */
+	private final IndexSet[] indices;
+
+	/**
+	 * Accumulated size informations for all the given index sets
+	 */
+	private final long[] offsets;
+
+	public PageIndexBuffer(IndexSet[] indices, int pageSize) {
+		checkNotNull(indices);
+
+		if(indices.length==0)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Indices array is empty");
+		if(pageSize<=0)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Page size must not be zero or negative: "+pageSize);
+
+		this.indices = indices;
+		this.pageSize = pageSize;
+
+		offsets = new long[indices.length];
+
+		long size = 0L;
+
+		for(int i=0; i<indices.length; i++) {
+			offsets[i] = size;
+			size += indices[i].size();
+		}
+
+		this.size = size;
+
+		// Calculate page count without floating point conversion
+		long pageCount = size/pageSize;
+		if(pageCount*pageSize<size) {
+			pageCount++;
+		}
+
+		this.pageCount = (int)pageCount;
+	}
+
+	public int getPageSize() {
+		return pageSize;
+	}
+
+	public int getPageCount() {
+		return pageCount;
+	}
+
+	/**
+	 * Returns the total number of index values available in this buffer
+	 * @return
+	 */
+	public long getSize() {
+		return size;
+	}
+
+	/**
+	 * Collects all index values for the page at {@code pageIndex} and wraps them
+	 * into a freshly created {@link IndexSet};
+	 *
+	 * @param pageIndex
+	 * @return
+	 */
+	public IndexSet createPage(int pageIndex) {
+		if(pageIndex<0 || pageIndex>=pageCount)
+			throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
+					Messages.outOfBoundsMessage(null, pageIndex, 0, pageCount-1));
+
+		// If it's only a single output page just aggregate all the source indices
+		if(pageCount==1) {
+			return IndexUtils.combine(indices);
+		}
+
+		int bufferSize = 0;
+
+		if(pageIndex==pageCount-1) {
+			bufferSize = (int) (size % pageSize);
+		}
+		if(bufferSize==0) {
+			bufferSize = pageSize;
+		}
+
+		long firstOffset = pageIndex*(long)pageSize;
+		long lastOffset = firstOffset+bufferSize;
+
+		// Search for the first raw IndexSet to use
+		int firstSetIndex = Arrays.binarySearch(offsets, firstOffset);
+		if(firstSetIndex<0) {
+			/*
+			 * (-(insertion_point) - 1) is returned. Insertion_point is the
+			 * first index holding an offset greater than 'firstOffset', so we
+			 * need the previous index.
+			 */
+			firstSetIndex = -(firstSetIndex+1) - 1;
+		}
+
+		/*
+		 * Search for the last raw IndexSet to use.
+		 * Make use of the fact that we already searched for the first index
+		 */
+		int lastSetIndex = Arrays.binarySearch(offsets, firstSetIndex, offsets.length, lastOffset);
+		if(lastSetIndex<0) {
+			lastSetIndex = -(lastSetIndex+1) - 1;
+		}
+		if(lastSetIndex==indices.length) {
+			lastSetIndex = indices.length-1;
+		}
+
+		IndexValueType valueType = IndexUtils.getDominantType(indices, firstSetIndex, lastSetIndex+1);
+
+		IndexBuffer buffer = new IndexBuffer(valueType, bufferSize);
+
+		if(firstSetIndex==lastSetIndex) {
+			IndexSet set = indices[firstSetIndex];
+			buffer.add(set,
+					(int)(firstOffset-offsets[firstSetIndex]),
+					(int)(lastOffset-offsets[firstSetIndex]+1));
+
+		} else {
+
+			// Add part of first set
+			IndexSet firstSet = indices[firstSetIndex];
+			buffer.add(firstSet, (int)(firstOffset-offsets[firstSetIndex]));
+
+			// Add intermediate sets
+
+			for(int i=firstSetIndex+1; i<lastSetIndex; i++) {
+				buffer.add(indices[i]);
+			}
+
+			// Add part of last set
+			IndexSet lastSet = indices[lastSetIndex];
+			buffer.add(lastSet, 0, (int)(lastOffset-offsets[lastSetIndex]+1));
+		}
+
+		//TODO maybe add sanity check comparing buffer's size with calculated size of the requested page?
+
+		return buffer;
+	}
+}

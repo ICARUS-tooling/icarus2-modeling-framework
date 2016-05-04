@@ -27,7 +27,6 @@ package de.ims.icarus2.model.api.driver.mapping;
 
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.io.SynchronizedAccessor;
-import de.ims.icarus2.model.standard.driver.mapping.AbstractStoredMapping;
 
 /**
  * Provides the standard interface for writing to a {@link AbstractStoredMapping} implementation.

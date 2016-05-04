@@ -1,0 +1,392 @@
+/*
+ *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
+ *  Copyright (C) 2015 Markus Gärtner
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see http://www.gnu.org/licenses.
+
+ * $Revision: 457 $
+ * $Date: 2016-04-20 15:08:11 +0200 (Mi, 20 Apr 2016) $
+ * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/driver/indices/IndexBuffer.java $
+ *
+ * $LastChangedDate: 2016-04-20 15:08:11 +0200 (Mi, 20 Apr 2016) $
+ * $LastChangedRevision: 457 $
+ * $LastChangedBy: mcgaerty $
+ */
+package de.ims.icarus2.model.standard.driver.indices;
+
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+
+import java.lang.reflect.Array;
+import java.util.List;
+import java.util.PrimitiveIterator.OfInt;
+import java.util.PrimitiveIterator.OfLong;
+import java.util.function.IntConsumer;
+import java.util.function.IntSupplier;
+import java.util.function.LongConsumer;
+import java.util.function.LongSupplier;
+import java.util.function.Supplier;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+
+import de.ims.icarus2.model.api.ModelConstants;
+import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.model.api.driver.indices.IndexSet;
+import de.ims.icarus2.model.api.driver.indices.IndexValueType;
+import de.ims.icarus2.model.api.members.item.Item;
+
+/**
+ * Implements a modifiable {@link IndexSet} with a fixed size buffer that can
+ * be filled using various version of the {@link #add(long) add} method. Additionally
+ * it implements the specialized {@link LongConsumer} and {@link IntConsumer} interfaces
+ * so that it can be filled via a stream or similar data source.
+ * <p>
+ * Not thread safe!
+ *
+ * @author Markus Gärtner
+ * @version $Id: IndexBuffer.java 457 2016-04-20 13:08:11Z mcgaerty $
+ *
+ */
+public class IndexBuffer implements IndexSet, ModelConstants, LongConsumer, IntConsumer {
+
+	private final Object buffer;
+	private final IndexValueType valueType;
+	private int size;
+
+	private boolean sorted = false;
+
+	public IndexBuffer(int bufferSize) {
+		this(IndexValueType.LONG, bufferSize);
+	}
+
+	public IndexBuffer(IndexValueType valueType, int bufferSize) {
+		checkNotNull(valueType);
+
+		if(bufferSize<1)
+			throw new ModelException(ModelErrorCode.INVALID_INPUT, "Buffer size must not be less than 1: "+bufferSize);
+		if(bufferSize>MAX_INTEGER_INDEX)
+			throw new ModelException(ModelErrorCode.INDEX_OVERFLOW, "Buffer size exceeds allowed limit for integer index values: "+bufferSize);
+
+		this.valueType = valueType;
+		buffer = valueType.newArray(bufferSize);
+		size = 0;
+	}
+
+	@Override
+	public IndexValueType getIndexValueType() {
+		return valueType;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.driver.indices.IndexSet#size()
+	 */
+	@Override
+	public int size() {
+		return size;
+	}
+
+	public boolean isEmpty() {
+		return size==0;
+	}
+
+	public void clear() {
+		size = 0;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.driver.indices.IndexSet#externalize()
+	 */
+	@Override
+	public IndexSet externalize() {
+		return this;
+	}
+
+	public IndexSet snapshot() {
+
+		return isEmpty() ? null : subSet(0, size-1);
+	}
+
+	public int remaining() {
+		return Array.getLength(buffer)-size;
+	}
+
+	protected void checkCapacity(int requiredSlots) {
+		int capacity = Array.getLength(buffer);
+		if(capacity-size < requiredSlots)
+			throw new ModelException(ModelErrorCode.INDEX_OVERFLOW,
+					"Unable to fit in "+requiredSlots+" more slots - max size: "+capacity);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.driver.indices.IndexSet#indexAt(int)
+	 */
+	@Override
+	public long indexAt(int index) {
+		return valueType.get(buffer, index);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.driver.indices.IndexSet#firstIndex()
+	 */
+	@Override
+	public long firstIndex() {
+		return size>=0 ? valueType.get(buffer, 0) : NO_INDEX;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.driver.indices.IndexSet#lastIndex()
+	 */
+	@Override
+	public long lastIndex() {
+		return size>=0 ? valueType.get(buffer, size-1) : NO_INDEX;
+	}
+
+	@Override
+	public void export(int beginIndex, int endIndex, byte[] buffer, int offset) {
+		valueType.copyTo(this.buffer, beginIndex, buffer, offset, endIndex-beginIndex);
+	}
+
+	@Override
+	public void export(int beginIndex, int endIndex, short[] buffer, int offset) {
+		valueType.copyTo(this.buffer, beginIndex, buffer, offset, endIndex-beginIndex);
+	}
+
+	@Override
+	public void export(int beginIndex, int endIndex, int[] buffer, int offset) {
+		valueType.copyTo(this.buffer, beginIndex, buffer, offset, endIndex-beginIndex);
+	}
+
+	@Override
+	public void export(int beginIndex, int endIndex, long[] buffer, int offset) {
+		valueType.copyTo(this.buffer, beginIndex, buffer, offset, endIndex-beginIndex);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.driver.indices.IndexSet#subSet(int, int)
+	 */
+	@Override
+	public IndexSet subSet(int fromIndex, int toIndex) {
+		if(fromIndex>=size || toIndex>=size)
+			throw new IndexOutOfBoundsException();
+
+		return new ArrayIndexSet(getIndexValueType(), buffer, fromIndex, toIndex, isSorted());
+	}
+
+	@Override
+	public boolean sort() {
+		if(!sorted) {
+			valueType.sort(buffer, 0, size);
+			sorted = true;
+		}
+		return true;
+	}
+
+	@Override
+	public boolean isSorted() {
+		return sorted;
+	}
+
+	public void add(long index) {
+		checkCapacity(1);
+		valueType.set(buffer, size, index);
+
+		sorted = false;
+		size++;
+	}
+
+	public void add(long from, long to) {
+		int length = ensureIntegerValueRange(to-from+1);
+		checkCapacity(length);
+		valueType.copyFrom(i -> from+i, 0, buffer, size, length);
+
+		sorted = false;
+		size += length;
+	}
+
+	public void add(IntSupplier supplier) {
+		add(supplier.getAsInt());
+	}
+
+	public void add(LongSupplier supplier) {
+		add(supplier.getAsLong());
+	}
+
+	public void add(byte[] indices) {
+		add(indices, 0, indices.length);
+	}
+
+	public void add(byte[] indices, int offset, int length) {
+		checkCapacity(length);
+		valueType.copyFrom(indices, offset, buffer, size, length);
+
+		sorted = false;
+		size += length;
+	}
+
+	public void add(short[] indices) {
+		add(indices, 0, indices.length);
+	}
+
+	public void add(short[] indices, int offset, int length) {
+		checkCapacity(length);
+		valueType.copyFrom(indices, offset, buffer, size, length);
+
+		sorted = false;
+		size += length;
+	}
+
+	public void add(int[] indices) {
+		add(indices, 0, indices.length);
+	}
+
+	public void add(int[] indices, int offset, int length) {
+		checkCapacity(length);
+		valueType.copyFrom(indices, offset, buffer, size, length);
+
+		sorted = false;
+		size += length;
+	}
+
+	public void add(long[] indices) {
+		add(indices, 0, indices.length);
+	}
+
+	public void add(long[] indices, int offset, int length) {
+		checkCapacity(length);
+		valueType.copyFrom(indices, offset, buffer, size, length);
+
+		sorted = false;
+		size += length;
+	}
+
+	public void add(IndexSet indices) {
+		add(indices, 0, indices.size());
+	}
+
+	public void add(IndexSet indices, int beginIndex) {
+		add(indices, beginIndex, indices.size());
+	}
+
+	/**
+     * Adds index values from the specified {@code IndexSet}. The
+     * interval begins at the specified {@code beginIndex} and
+     * extends to the value at index {@code endIndex - 1}.
+     * Thus the length of the added interval is {@code endIndex-beginIndex}.
+	 *
+	 * @param indices the {@link IndexSet} that acts as source of new index values
+	 * @param beginIndex position of the first index value to copy from the source {@code indices} (inclusive)
+	 * @param endIndex position of the last index value to copy from the source {@code indices} (exclusive)
+	 */
+	public void add(IndexSet indices, int beginIndex, int endIndex) {
+		int addCount = endIndex-beginIndex;
+		checkCapacity(addCount);
+
+		switch (valueType) {
+		case BYTE:
+			indices.export(beginIndex, endIndex, (byte[])buffer, size);
+			break;
+		case SHORT:
+			indices.export(beginIndex, endIndex, (short[])buffer, size);
+			break;
+		case INTEGER:
+			indices.export(beginIndex, endIndex, (int[])buffer, size);
+			break;
+		case LONG:
+			indices.export(beginIndex, endIndex, (long[])buffer, size);
+			break;
+
+		default:
+			throw new IllegalStateException();
+		}
+
+		sorted = false;
+		size += addCount;
+	}
+
+	public void add(IndexSet[] indices) {
+		for(IndexSet set : indices) {
+			add(set);
+		}
+	}
+
+	public void add(Item item) {
+		add(item.getIndex());
+	}
+
+	public void add(Supplier<? extends Item> supplier) {
+		add(supplier.get());
+	}
+
+	public void add(Item[] items) {
+		add(items, 0, items.length);
+	}
+
+	public void add(Item[] items, int offset, int length) {
+		checkCapacity(length);
+		valueType.copyFrom(i -> items[i].getIndex(), offset, buffer, size, length);
+
+		sorted = false;
+		size += length;
+	}
+
+	public void add(List<? extends Item> items) {
+		add(items, 0, items.size());
+	}
+
+	public void add(List<? extends Item> items, int beginIndex) {
+		add(items, beginIndex, items.size());
+	}
+
+	public void add(List<? extends Item> items, int beginIndex, int endIndex) {
+		int addCount = endIndex-beginIndex;
+		checkCapacity(addCount);
+
+		valueType.copyFrom(i -> items.get(i).getIndex(), beginIndex, buffer, size, addCount);
+
+		sorted = false;
+		size += addCount;
+	}
+
+	public void add(OfLong source) {
+		source.forEachRemaining(this);
+	}
+
+	public void add(OfInt source) {
+		source.forEachRemaining(this);
+	}
+
+	public void add(LongStream stream) {
+		stream.forEachOrdered(this);
+	}
+
+	public void add(IntStream stream) {
+		stream.forEachOrdered(this);
+	}
+
+	/**
+	 * @see java.util.function.IntConsumer#accept(int)
+	 */
+	@Override
+	public void accept(int value) {
+		add(value);
+	}
+
+	/**
+	 * @see java.util.function.LongConsumer#accept(long)
+	 */
+	@Override
+	public void accept(long value) {
+		add(value);
+	}
+}

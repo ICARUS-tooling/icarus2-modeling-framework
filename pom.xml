@@ -71,5 +71,6 @@
     <module>utils</module>
     <module>shared-utils</module>
     <module>model-api</module>
+    <module>model-defaults</module>
   </modules>
 </project>

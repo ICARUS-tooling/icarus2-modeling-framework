@@ -25,7 +25,6 @@
  */
 package de.ims.icarus2.model.api.path;
 
-import static de.ims.icarus2.model.standard.util.CorpusUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import gnu.trove.map.hash.THashMap;
@@ -46,9 +45,8 @@ import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
-import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
-import de.ims.icarus2.model.standard.util.CorpusUtils;
+import de.ims.icarus2.model.manifest.api.Manifest;
 
 /**
  *

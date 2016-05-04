@@ -31,9 +31,6 @@ import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.io.SynchronizedAccessor;
-import de.ims.icarus2.model.standard.driver.indices.IndexCollectorFactory;
-import de.ims.icarus2.model.standard.driver.indices.IndexCollectorFactory.IndexSetBuilder;
-import de.ims.icarus2.model.standard.driver.mapping.MappingImplSpanOneToMany;
 import de.ims.icarus2.util.annotations.OptionalMethod;
 
 /**
