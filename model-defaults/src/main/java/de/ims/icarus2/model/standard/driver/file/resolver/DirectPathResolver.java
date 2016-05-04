@@ -44,8 +44,8 @@ import java.util.regex.Pattern;
 
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.io.PathResolver;
-import de.ims.icarus2.model.io.ResourcePath;
+import de.ims.icarus2.model.api.io.PathResolver;
+import de.ims.icarus2.model.api.io.ResourcePath;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathEntry;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
@@ -211,7 +211,7 @@ public class DirectPathResolver implements PathResolver {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.io.PathResolver#getPath(int)
+	 * @see de.ims.icarus2.model.api.io.PathResolver#getPath(int)
 	 */
 	@Override
 	public ResourcePath getPath(int chunkIndex) {
@@ -219,7 +219,7 @@ public class DirectPathResolver implements PathResolver {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.io.PathResolver#getPathCount()
+	 * @see de.ims.icarus2.model.api.io.PathResolver#getPathCount()
 	 */
 	@Override
 	public int getPathCount() {
@@ -227,7 +227,7 @@ public class DirectPathResolver implements PathResolver {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.io.PathResolver#close()
+	 * @see de.ims.icarus2.model.api.io.PathResolver#close()
 	 */
 	@Override
 	public void close() {

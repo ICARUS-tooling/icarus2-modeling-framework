@@ -23,7 +23,7 @@
  * $LastChangedRevision: 380 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.io;
+package de.ims.icarus2.model.api.io;
 
 
 /**

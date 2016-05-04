@@ -23,7 +23,7 @@
  * $LastChangedRevision: 402 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.io;
+package de.ims.icarus2.model.api.io;
 
 import de.ims.icarus2.model.api.ModelException;
 

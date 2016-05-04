@@ -23,7 +23,7 @@
  * $LastChangedRevision$
  * $LastChangedBy$
  */
-package de.ims.icarus2.model.registry.dna;
+package de.ims.icarus2.model.api.registry.dna;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 
@@ -41,8 +41,8 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.path.CorpusPath;
 import de.ims.icarus2.model.api.path.CorpusPath.PathElementType;
 import de.ims.icarus2.model.api.path.CorpusPathBuilder;
-import de.ims.icarus2.model.registry.CorpusMemberDecoder;
-import de.ims.icarus2.model.registry.LayerLookup;
+import de.ims.icarus2.model.api.registry.CorpusMemberDecoder;
+import de.ims.icarus2.model.api.registry.LayerLookup;
 import de.ims.icarus2.util.strings.CharSequenceReader;
 import de.ims.icarus2.util.strings.StringUtil;
 

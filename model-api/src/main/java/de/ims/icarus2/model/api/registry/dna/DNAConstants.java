@@ -23,50 +23,19 @@
  * $LastChangedRevision$
  * $LastChangedBy$
  */
-package de.ims.icarus2.model.registry;
-
-import static de.ims.icarus2.util.Conditions.checkNotNull;
-
-import java.io.IOException;
-import java.io.Reader;
-import java.util.function.IntSupplier;
-
-import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.path.CorpusPath;
+package de.ims.icarus2.model.api.registry.dna;
 
 /**
  * @author Markus Gärtner
  * @version $Id$
  *
  */
-public abstract class CorpusMemberDecoder {
+public interface DNAConstants {
 
-	protected final LayerLookup config;
+	public static final char _SEP_MID_ = ':';
+	public static final char _SEP_END_ = ';';
 
-	protected CorpusMemberDecoder(LayerLookup config) {
-		checkNotNull(config);
+	public static final char _PATH_BEGIN_ = '{';
+	public static final char _PATH_END_ = '}';
 
-		this.config = config;
-	}
-
-	public final LayerLookup config() {
-		return config;
-	}
-
-	public abstract CorpusPath readPath(CharSequence s);
-
-
-	public abstract CorpusPath readPath(Reader in) throws IOException;
-
-
-	public abstract CorpusPath readPath(IntSupplier in);
-
-
-	public abstract Item readItem(CharSequence s);
-
-
-	public abstract Item readItem(Reader in) throws IOException;
-
-
-	public abstract Item readItem(IntSupplier in);
 }

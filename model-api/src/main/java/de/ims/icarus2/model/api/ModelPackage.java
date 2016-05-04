@@ -23,19 +23,21 @@
  * $LastChangedRevision$
  * $LastChangedBy$
  */
-package de.ims.icarus2.model.registry.dna;
+package de.ims.icarus2.model.api;
 
 /**
  * @author Markus Gärtner
  * @version $Id$
  *
  */
-public interface DNAConstants {
+public class ModelPackage {
 
-	public static final char _SEP_MID_ = ':';
-	public static final char _SEP_END_ = ';';
+	private ModelPackage() {
+		// can't construct
+	}
 
-	public static final char _PATH_BEGIN_ = '{';
-	public static final char _PATH_END_ = '}';
-
+	/** Return ICARUS's model package, including version information. */
+	public static Package get() {
+		return ModelPackage.class.getPackage();
+	}
 }

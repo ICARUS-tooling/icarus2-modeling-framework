@@ -71,7 +71,7 @@ public class MappingImplFunction extends AbstractMapping {
 		private final Coverage coverage = getManifest().getCoverage();
 
 		/**
-		 * @see de.ims.icarus2.model.io.SynchronizedAccessor#getSource()
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#getSource()
 		 */
 		@Override
 		public Mapping getSource() {
@@ -79,7 +79,7 @@ public class MappingImplFunction extends AbstractMapping {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.io.SynchronizedAccessor#begin()
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#begin()
 		 */
 		@Override
 		public void begin() {
@@ -87,7 +87,7 @@ public class MappingImplFunction extends AbstractMapping {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.io.SynchronizedAccessor#end()
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#end()
 		 */
 		@Override
 		public void end() {
@@ -95,7 +95,7 @@ public class MappingImplFunction extends AbstractMapping {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.io.SynchronizedAccessor#close()
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#close()
 		 */
 		@Override
 		public void close() throws ModelException {

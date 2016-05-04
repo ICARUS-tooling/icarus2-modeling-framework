@@ -23,7 +23,7 @@
  * $LastChangedRevision$
  * $LastChangedBy$
  */
-package de.ims.icarus2.model.registry;
+package de.ims.icarus2.model.api.registry;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import gnu.trove.map.TIntObjectMap;

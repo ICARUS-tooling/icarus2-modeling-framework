@@ -26,8 +26,8 @@
 package de.ims.icarus2.model.api.events;
 
 import de.ims.icarus2.model.api.corpus.Corpus;
+import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
-import de.ims.icarus2.model.registry.CorpusManager;
 
 /**
  * @author Markus Gärtner

@@ -23,7 +23,7 @@
  * $LastChangedRevision: 445 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.registry;
+package de.ims.icarus2.model.api.registry;
 
 import java.util.List;
 import java.util.Set;

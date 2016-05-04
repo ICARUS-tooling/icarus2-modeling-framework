@@ -23,7 +23,7 @@
  * $LastChangedRevision$
  * $LastChangedBy$
  */
-package de.ims.icarus2.model.registry;
+package de.ims.icarus2.model.api.registry;
 
 import java.util.function.BiConsumer;
 

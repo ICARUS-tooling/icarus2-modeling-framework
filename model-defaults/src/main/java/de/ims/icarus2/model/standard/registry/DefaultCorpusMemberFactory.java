@@ -33,6 +33,8 @@ import de.ims.icarus2.model.api.layer.FragmentLayer;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
 import de.ims.icarus2.model.api.layer.StructureLayer;
+import de.ims.icarus2.model.api.registry.CorpusManager;
+import de.ims.icarus2.model.api.registry.CorpusMemberFactory;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
@@ -41,8 +43,6 @@ import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
-import de.ims.icarus2.model.registry.CorpusManager;
-import de.ims.icarus2.model.registry.CorpusMemberFactory;
 import de.ims.icarus2.model.standard.corpus.DefaultContext;
 import de.ims.icarus2.model.standard.members.layers.DefaultLayerGroup;
 import de.ims.icarus2.model.standard.members.layers.annotation.AnnotationStorageFactory;
@@ -73,7 +73,7 @@ public class DefaultCorpusMemberFactory implements CorpusMemberFactory {
 	/**
 	 * Creates a new instance of {@link DefaultContext}.
 	 *
-	 * @see de.ims.icarus2.model.registry.CorpusMemberFactory#createContext(de.ims.icarus2.model.api.corpus.Corpus, de.ims.icarus2.model.manifest.api.ContextManifest, de.ims.icarus2.util.Options)
+	 * @see de.ims.icarus2.model.api.registry.CorpusMemberFactory#createContext(de.ims.icarus2.model.api.corpus.Corpus, de.ims.icarus2.model.manifest.api.ContextManifest, de.ims.icarus2.util.Options)
 	 */
 	@Override
 	public Context createContext(Corpus corpus, ContextManifest manifest,
@@ -85,7 +85,7 @@ public class DefaultCorpusMemberFactory implements CorpusMemberFactory {
 	/**
 	 * Creates a new instance of {@link DefaultLayerGroup}.
 	 *
-	 * @see de.ims.icarus2.model.registry.CorpusMemberFactory#createLayerGroup(de.ims.icarus2.model.manifest.api.LayerGroupManifest, de.ims.icarus2.util.Options)
+	 * @see de.ims.icarus2.model.api.registry.CorpusMemberFactory#createLayerGroup(de.ims.icarus2.model.manifest.api.LayerGroupManifest, de.ims.icarus2.util.Options)
 	 */
 	@Override
 	public LayerGroup createLayerGroup(LayerGroupManifest groupManifest,
@@ -101,7 +101,7 @@ public class DefaultCorpusMemberFactory implements CorpusMemberFactory {
 	 * used as storage for the new layer. Otherwise creation of the storage will be forwarded
 	 * to a new {@link AnnotationStorageFactory storage factory} instance.
 	 *
-	 * @see de.ims.icarus2.model.registry.CorpusMemberFactory#createAnnotationLayer(de.ims.icarus2.model.api.corpus.Corpus, de.ims.icarus2.model.manifest.api.AnnotationLayerManifest, de.ims.icarus2.util.Options)
+	 * @see de.ims.icarus2.model.api.registry.CorpusMemberFactory#createAnnotationLayer(de.ims.icarus2.model.api.corpus.Corpus, de.ims.icarus2.model.manifest.api.AnnotationLayerManifest, de.ims.icarus2.util.Options)
 	 */
 	@Override
 	public AnnotationLayer createAnnotationLayer(Corpus corpus,
@@ -124,7 +124,7 @@ public class DefaultCorpusMemberFactory implements CorpusMemberFactory {
 	/**
 	 * Creates a new instance of {@link DefaultItemLayer}.
 	 *
-	 * @see de.ims.icarus2.model.registry.CorpusMemberFactory#createItemLayer(de.ims.icarus2.model.api.corpus.Corpus, de.ims.icarus2.model.manifest.api.ItemLayerManifest, de.ims.icarus2.util.Options)
+	 * @see de.ims.icarus2.model.api.registry.CorpusMemberFactory#createItemLayer(de.ims.icarus2.model.api.corpus.Corpus, de.ims.icarus2.model.manifest.api.ItemLayerManifest, de.ims.icarus2.util.Options)
 	 */
 	@Override
 	public ItemLayer createItemLayer(Corpus corpus, ItemLayerManifest manifest,
@@ -135,7 +135,7 @@ public class DefaultCorpusMemberFactory implements CorpusMemberFactory {
 	/**
 	 * Creates a new instance of {@link DefaultStructureLayer}.
 	 *
-	 * @see de.ims.icarus2.model.registry.CorpusMemberFactory#createStructureLayer(de.ims.icarus2.model.api.corpus.Corpus, de.ims.icarus2.model.manifest.api.StructureLayerManifest, de.ims.icarus2.util.Options)
+	 * @see de.ims.icarus2.model.api.registry.CorpusMemberFactory#createStructureLayer(de.ims.icarus2.model.api.corpus.Corpus, de.ims.icarus2.model.manifest.api.StructureLayerManifest, de.ims.icarus2.util.Options)
 	 */
 	@Override
 	public StructureLayer createStructureLayer(Corpus corpus,
@@ -146,7 +146,7 @@ public class DefaultCorpusMemberFactory implements CorpusMemberFactory {
 	/**
 	 * Creates a new instance of {@link DefaultFragmentLayer}.
 	 *
-	 * @see de.ims.icarus2.model.registry.CorpusMemberFactory#createFragmentLayer(de.ims.icarus2.model.api.corpus.Corpus, de.ims.icarus2.model.manifest.api.FragmentLayerManifest, de.ims.icarus2.util.Options)
+	 * @see de.ims.icarus2.model.api.registry.CorpusMemberFactory#createFragmentLayer(de.ims.icarus2.model.api.corpus.Corpus, de.ims.icarus2.model.manifest.api.FragmentLayerManifest, de.ims.icarus2.util.Options)
 	 */
 	@Override
 	public FragmentLayer createFragmentLayer(Corpus corpus,
@@ -158,7 +158,7 @@ public class DefaultCorpusMemberFactory implements CorpusMemberFactory {
 	 * Creates a new instance of {@link DefaultImplementationLoader}, using the
 	 * {@link PluginRegistry} and {@link PluginManager} supplied at creation time.
 	 *
-	 * @see de.ims.icarus2.model.registry.CorpusMemberFactory#newImplementationLoader()
+	 * @see de.ims.icarus2.model.api.registry.CorpusMemberFactory#newImplementationLoader()
 	 */
 	@Override
 	public ImplementationLoader<?> newImplementationLoader() {

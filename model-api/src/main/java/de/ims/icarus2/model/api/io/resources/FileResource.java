@@ -23,7 +23,7 @@
  * $LastChangedRevision: 439 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.io.resources;
+package de.ims.icarus2.model.api.io.resources;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 
@@ -58,7 +58,7 @@ public final class FileResource implements IOResource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.io.resources.IOResource#getWriteChannel()
+	 * @see de.ims.icarus2.model.api.io.resources.IOResource#getWriteChannel()
 	 */
 	@Override
 	public SeekableByteChannel getWriteChannel() throws IOException {
@@ -66,7 +66,7 @@ public final class FileResource implements IOResource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.io.resources.IOResource#getReadChannel()
+	 * @see de.ims.icarus2.model.api.io.resources.IOResource#getReadChannel()
 	 */
 	@Override
 	public SeekableByteChannel getReadChannel() throws IOException {
@@ -74,7 +74,7 @@ public final class FileResource implements IOResource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.io.resources.IOResource#delete()
+	 * @see de.ims.icarus2.model.api.io.resources.IOResource#delete()
 	 */
 	@Override
 	public void delete() throws IOException {
@@ -82,7 +82,7 @@ public final class FileResource implements IOResource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.io.resources.IOResource#prepare()
+	 * @see de.ims.icarus2.model.api.io.resources.IOResource#prepare()
 	 */
 	@Override
 	public void prepare() throws IOException {
@@ -102,7 +102,7 @@ public final class FileResource implements IOResource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.io.resources.IOResource#size()
+	 * @see de.ims.icarus2.model.api.io.resources.IOResource#size()
 	 */
 	@Override
 	public long size() throws IOException {
@@ -110,7 +110,7 @@ public final class FileResource implements IOResource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.io.resources.IOResource#getLocalPath()
+	 * @see de.ims.icarus2.model.api.io.resources.IOResource#getLocalPath()
 	 */
 	@Override
 	public final Path getLocalPath() {

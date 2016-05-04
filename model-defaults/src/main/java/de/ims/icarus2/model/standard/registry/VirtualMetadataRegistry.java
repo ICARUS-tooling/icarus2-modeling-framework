@@ -28,7 +28,7 @@ package de.ims.icarus2.model.standard.registry;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
 
-import de.ims.icarus2.model.registry.MetadataRegistry;
+import de.ims.icarus2.model.api.registry.MetadataRegistry;
 
 /**
  * @author Markus Gärtner
@@ -41,7 +41,7 @@ public class VirtualMetadataRegistry implements MetadataRegistry {
 
 
 	/**
-	 * @see de.ims.icarus2.model.registry.MetadataRegistry#getValue(java.lang.String)
+	 * @see de.ims.icarus2.model.api.registry.MetadataRegistry#getValue(java.lang.String)
 	 */
 	@Override
 	public synchronized String getValue(String key) {
@@ -49,7 +49,7 @@ public class VirtualMetadataRegistry implements MetadataRegistry {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.registry.MetadataRegistry#setValue(java.lang.String, java.lang.String)
+	 * @see de.ims.icarus2.model.api.registry.MetadataRegistry#setValue(java.lang.String, java.lang.String)
 	 */
 	@Override
 	public synchronized void setValue(String key, String value) {
@@ -61,7 +61,7 @@ public class VirtualMetadataRegistry implements MetadataRegistry {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.registry.MetadataRegistry#beginUpdate()
+	 * @see de.ims.icarus2.model.api.registry.MetadataRegistry#beginUpdate()
 	 */
 	@Override
 	public void beginUpdate() {
@@ -69,7 +69,7 @@ public class VirtualMetadataRegistry implements MetadataRegistry {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.registry.MetadataRegistry#endUpdate()
+	 * @see de.ims.icarus2.model.api.registry.MetadataRegistry#endUpdate()
 	 */
 	@Override
 	public void endUpdate() {
@@ -77,7 +77,7 @@ public class VirtualMetadataRegistry implements MetadataRegistry {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.registry.MetadataRegistry#delete()
+	 * @see de.ims.icarus2.model.api.registry.MetadataRegistry#delete()
 	 */
 	@Override
 	public synchronized void delete() {
@@ -92,7 +92,7 @@ public class VirtualMetadataRegistry implements MetadataRegistry {
 	/**
 	 *
 	 *
-	 * @see de.ims.icarus2.model.registry.MetadataRegistry#forEachEntry(java.lang.String, java.util.function.BiConsumer)
+	 * @see de.ims.icarus2.model.api.registry.MetadataRegistry#forEachEntry(java.lang.String, java.util.function.BiConsumer)
 	 */
 	@Override
 	public synchronized void forEachEntry(String prefix,
@@ -105,7 +105,7 @@ public class VirtualMetadataRegistry implements MetadataRegistry {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.registry.MetadataRegistry#close()
+	 * @see de.ims.icarus2.model.api.registry.MetadataRegistry#close()
 	 */
 	@Override
 	public void close() {

@@ -43,8 +43,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.io.SynchronizedAccessor;
-import de.ims.icarus2.model.io.resources.IOResource;
+import de.ims.icarus2.model.api.io.SynchronizedAccessor;
+import de.ims.icarus2.model.api.io.resources.IOResource;
 
 /**
  * Models an I/O resource that reads from a single source and provides synchronized
@@ -497,7 +497,7 @@ public abstract class BufferedIOResource {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.io.SynchronizedAccessor#getSource()
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#getSource()
 		 */
 		@SuppressWarnings("unchecked")
 		@Override
@@ -506,7 +506,7 @@ public abstract class BufferedIOResource {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.io.SynchronizedAccessor#begin()
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#begin()
 		 */
 		@Override
 		public void begin() {
@@ -514,7 +514,7 @@ public abstract class BufferedIOResource {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.io.SynchronizedAccessor#end()
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#end()
 		 */
 		@Override
 		public void end() {
@@ -522,7 +522,7 @@ public abstract class BufferedIOResource {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.io.SynchronizedAccessor#close()
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#close()
 		 */
 		@Override
 		public void close() {
@@ -550,7 +550,7 @@ public abstract class BufferedIOResource {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.io.SynchronizedAccessor#getSource()
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#getSource()
 		 */
 		@SuppressWarnings("unchecked")
 		@Override
@@ -559,7 +559,7 @@ public abstract class BufferedIOResource {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.io.SynchronizedAccessor#begin()
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#begin()
 		 */
 		@Override
 		public void begin() {
@@ -567,7 +567,7 @@ public abstract class BufferedIOResource {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.io.SynchronizedAccessor#end()
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#end()
 		 */
 		@Override
 		public void end() {
@@ -575,7 +575,7 @@ public abstract class BufferedIOResource {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.io.SynchronizedAccessor#close()
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#close()
 		 */
 		@Override
 		public void close() {

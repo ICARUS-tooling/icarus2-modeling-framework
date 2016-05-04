@@ -23,7 +23,7 @@
  * $LastChangedRevision$
  * $LastChangedBy$
  */
-package de.ims.icarus2.model.registry.dna;
+package de.ims.icarus2.model.api.registry.dna;
 
 import java.io.IOException;
 import java.util.function.IntConsumer;
@@ -34,8 +34,8 @@ import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.path.CorpusPath;
 import de.ims.icarus2.model.api.path.CorpusPath.PathElementType;
-import de.ims.icarus2.model.registry.CorpusMemberEncoder;
-import de.ims.icarus2.model.registry.LayerLookup;
+import de.ims.icarus2.model.api.registry.CorpusMemberEncoder;
+import de.ims.icarus2.model.api.registry.LayerLookup;
 import de.ims.icarus2.util.strings.StringUtil;
 
 /**

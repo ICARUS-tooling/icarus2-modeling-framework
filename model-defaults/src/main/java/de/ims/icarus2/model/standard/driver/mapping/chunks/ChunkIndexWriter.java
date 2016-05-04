@@ -27,7 +27,7 @@ package de.ims.icarus2.model.standard.driver.mapping.chunks;
 
 import java.io.Flushable;
 
-import de.ims.icarus2.model.io.SynchronizedAccessor;
+import de.ims.icarus2.model.api.io.SynchronizedAccessor;
 
 /**
  * Defines the writer interface to get data into a {@link ChunkIndex}.

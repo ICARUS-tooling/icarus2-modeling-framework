@@ -23,7 +23,7 @@
  * $LastChangedRevision: 442 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.io.resources;
+package de.ims.icarus2.model.api.io.resources;
 
 import java.io.IOException;
 import java.net.URL;

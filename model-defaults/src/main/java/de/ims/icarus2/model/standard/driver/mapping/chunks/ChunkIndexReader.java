@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.driver.mapping.chunks;
 
-import de.ims.icarus2.model.io.SynchronizedAccessor;
+import de.ims.icarus2.model.api.io.SynchronizedAccessor;
 
 /**
  * Specifies a reader for {@code ChunkIndex} data.

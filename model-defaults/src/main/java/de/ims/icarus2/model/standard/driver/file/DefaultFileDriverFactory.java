@@ -28,12 +28,12 @@ package de.ims.icarus2.model.standard.driver.file;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
 import de.ims.icarus2.model.api.corpus.Corpus;
+import de.ims.icarus2.model.api.registry.MetadataRegistry;
+import de.ims.icarus2.model.api.registry.SubRegistry;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory;
-import de.ims.icarus2.model.registry.MetadataRegistry;
-import de.ims.icarus2.model.registry.SubRegistry;
 import de.ims.icarus2.model.standard.driver.file.FileDriver.FileDriverBuilder;
 
 /**

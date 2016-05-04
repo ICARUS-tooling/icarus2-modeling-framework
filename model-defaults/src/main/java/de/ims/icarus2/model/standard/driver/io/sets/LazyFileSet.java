@@ -34,8 +34,8 @@ import java.nio.file.Paths;
 
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.io.PathResolver;
-import de.ims.icarus2.model.io.ResourcePath;
+import de.ims.icarus2.model.api.io.PathResolver;
+import de.ims.icarus2.model.api.io.ResourcePath;
 import de.ims.icarus2.model.manifest.api.LocationType;
 
 /**

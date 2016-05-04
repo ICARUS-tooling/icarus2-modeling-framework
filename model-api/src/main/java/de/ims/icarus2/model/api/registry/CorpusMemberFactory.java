@@ -23,7 +23,7 @@
  * $LastChangedRevision: 396 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.registry;
+package de.ims.icarus2.model.api.registry;
 
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;

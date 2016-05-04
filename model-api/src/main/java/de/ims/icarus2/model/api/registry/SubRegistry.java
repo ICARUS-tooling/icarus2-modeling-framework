@@ -23,7 +23,7 @@
  * $LastChangedRevision$
  * $LastChangedBy$
  */
-package de.ims.icarus2.model.registry;
+package de.ims.icarus2.model.api.registry;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
@@ -71,7 +71,7 @@ public class SubRegistry implements MetadataRegistry {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.registry.MetadataRegistry#getValue(java.lang.String)
+	 * @see de.ims.icarus2.model.api.registry.MetadataRegistry#getValue(java.lang.String)
 	 */
 	@Override
 	public String getValue(String key) {
@@ -81,7 +81,7 @@ public class SubRegistry implements MetadataRegistry {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.registry.MetadataRegistry#setValue(java.lang.String, java.lang.String)
+	 * @see de.ims.icarus2.model.api.registry.MetadataRegistry#setValue(java.lang.String, java.lang.String)
 	 */
 	@Override
 	public void setValue(String key, String value) {
@@ -91,7 +91,7 @@ public class SubRegistry implements MetadataRegistry {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.registry.MetadataRegistry#beginUpdate()
+	 * @see de.ims.icarus2.model.api.registry.MetadataRegistry#beginUpdate()
 	 */
 	@Override
 	public void beginUpdate() {
@@ -99,7 +99,7 @@ public class SubRegistry implements MetadataRegistry {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.registry.MetadataRegistry#endUpdate()
+	 * @see de.ims.icarus2.model.api.registry.MetadataRegistry#endUpdate()
 	 */
 	@Override
 	public void endUpdate() {
@@ -113,7 +113,7 @@ public class SubRegistry implements MetadataRegistry {
 	 * collecting those with the matching prefix. Afterwards all those collected
 	 * keys are used to sequentially erase entries from the backing registry.
 	 *
-	 * @see de.ims.icarus2.model.registry.MetadataRegistry#delete()
+	 * @see de.ims.icarus2.model.api.registry.MetadataRegistry#delete()
 	 */
 	@Override
 	public void delete() {
@@ -141,7 +141,7 @@ public class SubRegistry implements MetadataRegistry {
 	 * Since this implementation doesn't store data by itself, this method
 	 * does nothing.
 	 *
-	 * @see de.ims.icarus2.model.registry.MetadataRegistry#close()
+	 * @see de.ims.icarus2.model.api.registry.MetadataRegistry#close()
 	 */
 	@Override
 	public void close() {
@@ -165,7 +165,7 @@ public class SubRegistry implements MetadataRegistry {
 	 * Note that the keys forwarded to the given {@code action} will have their prefix
 	 * matching this registry's prefix removed.
 	 *
-	 * @see de.ims.icarus2.model.registry.MetadataRegistry#forEachEntry(java.lang.String, java.util.function.BiConsumer)
+	 * @see de.ims.icarus2.model.api.registry.MetadataRegistry#forEachEntry(java.lang.String, java.util.function.BiConsumer)
 	 */
 	@Override
 	public void forEachEntry(String prefix,

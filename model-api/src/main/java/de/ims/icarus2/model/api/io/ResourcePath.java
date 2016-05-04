@@ -23,7 +23,7 @@
  * $LastChangedRevision: 419 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.io;
+package de.ims.icarus2.model.api.io;
 
 import java.net.URL;
 import java.nio.file.Path;

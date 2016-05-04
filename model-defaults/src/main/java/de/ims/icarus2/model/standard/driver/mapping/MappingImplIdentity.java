@@ -58,7 +58,7 @@ public class MappingImplIdentity extends AbstractMapping {
 	public class Reader implements MappingReader {
 
 		/**
-		 * @see de.ims.icarus2.model.io.SynchronizedAccessor#getSource()
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#getSource()
 		 */
 		@Override
 		public Mapping getSource() {
@@ -66,7 +66,7 @@ public class MappingImplIdentity extends AbstractMapping {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.io.SynchronizedAccessor#begin()
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#begin()
 		 */
 		@Override
 		public void begin() {
@@ -74,7 +74,7 @@ public class MappingImplIdentity extends AbstractMapping {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.io.SynchronizedAccessor#end()
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#end()
 		 */
 		@Override
 		public void end() {
@@ -82,7 +82,7 @@ public class MappingImplIdentity extends AbstractMapping {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.io.SynchronizedAccessor#close()
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#close()
 		 */
 		@Override
 		public void close() throws ModelException {
