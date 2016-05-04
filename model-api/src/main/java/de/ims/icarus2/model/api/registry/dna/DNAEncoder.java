@@ -34,8 +34,8 @@ import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.path.CorpusPath;
 import de.ims.icarus2.model.api.path.CorpusPath.PathElementType;
-import de.ims.icarus2.model.api.registry.CorpusMemberEncoder;
 import de.ims.icarus2.model.api.registry.LayerLookup;
+import de.ims.icarus2.model.api.transfer.CorpusMemberEncoder;
 import de.ims.icarus2.util.strings.StringUtil;
 
 /**
@@ -102,7 +102,10 @@ public class DNAEncoder extends CorpusMemberEncoder implements DNAConstants {
 		for(int i=0; i<length; i++) {
 			out.accept(buffer[i]);
 		}
-		out.accept(delimiter);
+		//TODO check necessity of null character check
+		if(delimiter!='\0') {
+			out.accept(delimiter);
+		}
 	}
 
 	private void flush(Appendable out, char delimiter) throws IOException {

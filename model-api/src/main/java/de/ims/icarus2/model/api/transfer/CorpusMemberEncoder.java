@@ -23,7 +23,7 @@
  * $LastChangedRevision$
  * $LastChangedBy$
  */
-package de.ims.icarus2.model.api.registry;
+package de.ims.icarus2.model.api.transfer;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 
@@ -32,6 +32,7 @@ import java.util.function.IntConsumer;
 
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.path.CorpusPath;
+import de.ims.icarus2.model.api.registry.LayerLookup;
 
 /**
  * @author Markus Gärtner

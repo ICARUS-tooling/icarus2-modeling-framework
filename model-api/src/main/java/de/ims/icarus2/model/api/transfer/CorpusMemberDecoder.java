@@ -23,18 +23,51 @@
  * $LastChangedRevision$
  * $LastChangedBy$
  */
-package de.ims.icarus2.model.api.registry;
+package de.ims.icarus2.model.api.transfer;
+
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.util.function.IntSupplier;
+
+import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.path.CorpusPath;
+import de.ims.icarus2.model.api.registry.LayerLookup;
 
 /**
  * @author Markus Gärtner
  * @version $Id$
  *
  */
-public interface CorpusMemberEncoding {
+public abstract class CorpusMemberDecoder {
 
-	String getName();
+	protected final LayerLookup config;
 
-	CorpusMemberEncoder newEncoder(LayerLookup lookup);
+	protected CorpusMemberDecoder(LayerLookup config) {
+		checkNotNull(config);
 
-	CorpusMemberDecoder newDecoder(LayerLookup lookup);
+		this.config = config;
+	}
+
+	public final LayerLookup config() {
+		return config;
+	}
+
+	public abstract CorpusPath readPath(CharSequence s);
+
+
+	public abstract CorpusPath readPath(Reader in) throws IOException;
+
+
+	public abstract CorpusPath readPath(IntSupplier in);
+
+
+	public abstract Item readItem(CharSequence s);
+
+
+	public abstract Item readItem(Reader in) throws IOException;
+
+
+	public abstract Item readItem(IntSupplier in);
 }
