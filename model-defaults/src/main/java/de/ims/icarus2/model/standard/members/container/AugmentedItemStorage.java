@@ -34,6 +34,7 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerType;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.seq.DataSequenceCollectionWrapper;
@@ -132,7 +133,7 @@ public class AugmentedItemStorage extends WrappingItemStorage {
 		if(index<wrappedCount) {
 			return super.getItemAt(context, index);
 		} else {
-			return augmentation.get(ensureIntegerValueRange(index-wrappedCount));
+			return augmentation.get(IcarusUtils.ensureIntegerValueRange(index-wrappedCount));
 		}
 	}
 
@@ -153,7 +154,7 @@ public class AugmentedItemStorage extends WrappingItemStorage {
 			throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
 					"Augmented container storage cannot modify underlying container - unable to perform edit at index: "+index);
 
-		return ensureIntegerValueRange(index-wrappedCount);
+		return IcarusUtils.ensureIntegerValueRange(index-wrappedCount);
 	}
 
 	protected boolean isWrappedIndex(Container context, long index) {
@@ -169,7 +170,7 @@ public class AugmentedItemStorage extends WrappingItemStorage {
 	@Override
 	public void addItems(Container context, long index,
 			DataSequence<? extends Item> items) {
-		augmentation.addAll(ensureIntegerValueRange(index),
+		augmentation.addAll(IcarusUtils.ensureIntegerValueRange(index),
 				new DataSequenceCollectionWrapper<>(items));
 	}
 

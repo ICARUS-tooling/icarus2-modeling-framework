@@ -36,6 +36,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.seq.DataSequenceCollectionWrapper;
@@ -145,7 +146,7 @@ public class ListItemStorageInt implements ItemStorage {
 	 */
 	@Override
 	public Item getItemAt(Container context, long index) {
-		return items.get(ensureIntegerValueRange(index));
+		return items.get(IcarusUtils.ensureIntegerValueRange(index));
 	}
 
 	/**
@@ -221,7 +222,7 @@ public class ListItemStorageInt implements ItemStorage {
 	 */
 	@Override
 	public void addItem(Container context, long index, Item item) {
-		items.add(ensureIntegerValueRange(index), item);
+		items.add(IcarusUtils.ensureIntegerValueRange(index), item);
 	}
 
 	/**
@@ -231,7 +232,7 @@ public class ListItemStorageInt implements ItemStorage {
 	public void addItems(Container context, long index,
 			DataSequence<? extends Item> items) {
 
-		this.items.addAll(ensureIntegerValueRange(index),
+		this.items.addAll(IcarusUtils.ensureIntegerValueRange(index),
 				new DataSequenceCollectionWrapper<>(items));
 
 		//TODO maybe try to refresh during each loop cycle instead?
@@ -243,7 +244,7 @@ public class ListItemStorageInt implements ItemStorage {
 	 */
 	@Override
 	public Item removeItem(Container context, long index) {
-		Item item = items.remove(ensureIntegerValueRange(index));
+		Item item = items.remove(IcarusUtils.ensureIntegerValueRange(index));
 
 		maybeClearOffsetItems(item);
 
@@ -256,8 +257,8 @@ public class ListItemStorageInt implements ItemStorage {
 	@Override
 	public DataSequence<? extends Item> removeItems(Container context,
 			long index0, long index1) {
-		int idx0 = ensureIntegerValueRange(index0);
-		int idx1 = ensureIntegerValueRange(index1);
+		int idx0 = IcarusUtils.ensureIntegerValueRange(index0);
+		int idx1 = IcarusUtils.ensureIntegerValueRange(index1);
 
 		final List<Item> buffer = new ArrayList<>(Math.max(10, idx1-idx0+1));
 
@@ -273,8 +274,8 @@ public class ListItemStorageInt implements ItemStorage {
 	 */
 	@Override
 	public void moveItem(Container context, long index0, long index1) {
-		int idx0 = ensureIntegerValueRange(index0);
-		int idx1 = ensureIntegerValueRange(index1);
+		int idx0 = IcarusUtils.ensureIntegerValueRange(index0);
+		int idx1 = IcarusUtils.ensureIntegerValueRange(index1);
 
 		items.move(idx0, idx1);
 	}

@@ -42,6 +42,7 @@ import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.StructureFlag;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.mem.HeapMember;
 import de.ims.icarus2.util.mem.Reference;
 import de.ims.icarus2.util.mem.ReferenceType;
@@ -125,7 +126,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 	public Edge edgeAt(long index, boolean incoming) {
 		checkNotIncoming(incoming);
 
-		return getEdgeAt(ensureIntegerValueRange(index));
+		return getEdgeAt(IcarusUtils.ensureIntegerValueRange(index));
 	}
 
 	@SuppressWarnings("unchecked")

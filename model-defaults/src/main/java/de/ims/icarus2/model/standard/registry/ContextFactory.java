@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -56,6 +55,7 @@ import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
+import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.RasterizerManifest;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.standard.corpus.DefaultContext;
@@ -509,10 +509,10 @@ public class ContextFactory {
 
 			// No default implementation available, therefore notify with exception
 			if(rasterizerManifest==null)
-				throw new ModelException(layer.getCorpus(), ModelErrorCode.IMPLEMENTATION_MISSING,
+				throw new ModelException(layer.getCorpus(), ManifestErrorCode.IMPLEMENTATION_MISSING,
 						"Missing rasterizer manifest for fragment layer: "+getName(layer)); //$NON-NLS-1$
 			if(rasterizerManifest.getImplementationManifest()==null)
-				throw new ModelException(layer.getCorpus(), ModelErrorCode.IMPLEMENTATION_MISSING,
+				throw new ModelException(layer.getCorpus(), ManifestErrorCode.IMPLEMENTATION_MISSING,
 						"Missing rasterizer implementation manifest for fragment layer: "+getName(layer)); //$NON-NLS-1$
 
 			// Instantiate rasterizer and assign to layer
@@ -526,7 +526,6 @@ public class ContextFactory {
 
 			Rasterizer rasterizer = loader
 					.manifest(rasterizerManifest.getImplementationManifest())
-					.corpus(getCorpus())
 					.environment(layer)
 					.message("Rasterizer for layer '"+getName(layer)+"'")
 					.instantiate(Rasterizer.class);

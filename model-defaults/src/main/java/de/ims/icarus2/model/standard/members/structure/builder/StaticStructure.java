@@ -26,7 +26,7 @@
 package de.ims.icarus2.model.standard.members.structure.builder;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -94,7 +94,7 @@ public class StaticStructure extends AbstractItem implements Structure {
 	}
 
 	private <T extends Object> T signalUnsupportedOperation() {
-		throw new ModelException(getCorpus(), ModelErrorCode.UNSUPPORTED_OPERATION,
+		throw new ModelException(getCorpus(), GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Structure is immutable");
 	}
 

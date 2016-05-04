@@ -53,6 +53,7 @@ import de.ims.icarus2.model.standard.members.structure.DefaultStructure;
 import de.ims.icarus2.model.standard.members.structure.EdgeStorage;
 import de.ims.icarus2.model.standard.members.structure.EmptyEdgeStorage;
 import de.ims.icarus2.model.standard.members.structure.RootItem;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.set.DataSet;
 
@@ -366,7 +367,7 @@ public class StructureBuilder {
 		checkState(itemStorage == null);
 		checkNotNull(container);
 
-		int size = ensureIntegerValueRange(container.getItemCount());
+		int size = IcarusUtils.ensureIntegerValueRange(container.getItemCount());
 		List<Item> nodes = nodes();
 
 		for(int i=0; i<size; i++) {
@@ -402,7 +403,7 @@ public class StructureBuilder {
 		checkState(itemStorage == null);
 		checkNotNull(structure);
 
-		int size = ensureIntegerValueRange(structure.getEdgeCount());
+		int size = IcarusUtils.ensureIntegerValueRange(structure.getEdgeCount());
 		List<Edge> nodes = edges();
 
 		for(int i=0; i<size; i++) {
@@ -484,7 +485,7 @@ public class StructureBuilder {
 	//**********************************
 
 	public int getEdgeCount() {
-		return edgeStorage==null ? edges().size() : ensureIntegerValueRange(edgeStorage.getEdgeCount(proxyStructure()));
+		return edgeStorage==null ? edges().size() : IcarusUtils.ensureIntegerValueRange(edgeStorage.getEdgeCount(proxyStructure()));
 	}
 
 	public Edge getEdgeAt(int index) {
@@ -492,7 +493,7 @@ public class StructureBuilder {
 	}
 
 	public int getNodeCount() {
-		return itemStorage==null ? nodes().size() : ensureIntegerValueRange(itemStorage.getItemCount(proxyStructure()));
+		return itemStorage==null ? nodes().size() : IcarusUtils.ensureIntegerValueRange(itemStorage.getItemCount(proxyStructure()));
 	}
 
 	public Item getNodeAt(int index) {

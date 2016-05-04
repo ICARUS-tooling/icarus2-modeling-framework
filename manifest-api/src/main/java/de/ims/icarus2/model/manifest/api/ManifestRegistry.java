@@ -264,7 +264,7 @@ public interface ManifestRegistry extends EventManager {
 	/**
 	 * Adds a single template manifest to this registry and updates internal reference links
 	 * that are used for determining {@link #isLocked(Manifest) locks}.
-	 * Fires {@link CorpusEvents#ADD_TEMPLATE} and {@link CorpusEvents#ADDED_TEMPLATE}.
+	 * Fires {@link ManifestEvents#ADD_TEMPLATE} and {@link ManifestEvents#ADDED_TEMPLATE}.
 	 *
 	 * @param template
 	 */
@@ -273,7 +273,7 @@ public interface ManifestRegistry extends EventManager {
 	/**
 	 * Batch version of {@link #addTemplate(Manifest)} that ensures that all the internal
 	 * steps are performed for the entire batch of template manifests at once.
-	 * Fires the batch events {@link CorpusEvents#ADD_TEMPLATES} and {@link CorpusEvents#ADDED_TEMPLATES}.
+	 * Fires the batch events {@link ManifestEvents#ADD_TEMPLATES} and {@link ManifestEvents#ADDED_TEMPLATES}.
 	 * @param templates
 	 */
 	void addTemplates(Collection<? extends Manifest> templates);

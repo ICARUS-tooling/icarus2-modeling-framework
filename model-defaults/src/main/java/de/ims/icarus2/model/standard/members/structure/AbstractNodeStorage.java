@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
@@ -41,6 +42,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureEditVerifier;
 import de.ims.icarus2.model.manifest.api.StructureFlag;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.seq.ListSequence;
@@ -130,7 +132,7 @@ public abstract class AbstractNodeStorage<N extends NodeInfo, E extends Edge> im
 
 	@Override
 	public Edge getEdgeAt(Structure context, long index) {
-		return edges.get(ensureIntegerValueRange(index));
+		return edges.get(IcarusUtils.ensureIntegerValueRange(index));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -213,7 +215,7 @@ public abstract class AbstractNodeStorage<N extends NodeInfo, E extends Edge> im
 			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
 					"Edge already present: "+getName(edge));
 
-		edges.add(ensureIntegerValueRange(index), e);
+		edges.add(IcarusUtils.ensureIntegerValueRange(index), e);
 
 		// Map source node
 		NodeInfo sourceInfo = ensureNodeInfo(edge.getSource());
@@ -232,7 +234,7 @@ public abstract class AbstractNodeStorage<N extends NodeInfo, E extends Edge> im
 	public void addEdges(Structure context, long index,
 			DataSequence<? extends Edge> edges) {
 
-		int size = ensureIntegerValueRange(edges.entryCount());
+		int size = IcarusUtils.ensureIntegerValueRange(edges.entryCount());
 
 		for(int i=0; i<size; i++) {
 			addEdge(context, index+i, edges.elementAt(i));
@@ -242,7 +244,7 @@ public abstract class AbstractNodeStorage<N extends NodeInfo, E extends Edge> im
 	@Override
 	public Edge removeEdge(Structure context, long index) {
 
-		E edge = edges.remove(ensureIntegerValueRange(index));
+		E edge = edges.remove(IcarusUtils.ensureIntegerValueRange(index));
 
 		// Unmap source
 		NodeInfo sourceInfo = getNodeInfo(edge.getSource());
@@ -279,8 +281,8 @@ public abstract class AbstractNodeStorage<N extends NodeInfo, E extends Edge> im
 	public DataSequence<? extends Edge> removeEdges(Structure context,
 			long index0, long index1) {
 
-		int idx0 = ensureIntegerValueRange(index0);
-		int idx1 = ensureIntegerValueRange(index1);
+		int idx0 = IcarusUtils.ensureIntegerValueRange(index0);
+		int idx1 = IcarusUtils.ensureIntegerValueRange(index1);
 
 		List<Edge> buffer = new ArrayList<>(Math.max(1, idx1-idx0+1));
 
@@ -293,8 +295,8 @@ public abstract class AbstractNodeStorage<N extends NodeInfo, E extends Edge> im
 
 	@Override
 	public void moveEdge(Structure context, long index0, long index1) {
-		int idx0 = ensureIntegerValueRange(index0);
-		int idx1 = ensureIntegerValueRange(index1);
+		int idx0 = IcarusUtils.ensureIntegerValueRange(index0);
+		int idx1 = IcarusUtils.ensureIntegerValueRange(index1);
 
 		E edge0 = edges.get(idx0);
 		E edge1 = edges.get(idx1);
@@ -320,7 +322,7 @@ public abstract class AbstractNodeStorage<N extends NodeInfo, E extends Edge> im
 	}
 
 	private <T extends Object> T signalUnsupportedOperation(Structure context) {
-		throw new ModelException(context.getCorpus(), ModelErrorCode.UNSUPPORTED_OPERATION,
+		throw new ModelException(context.getCorpus(), GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Specialized tree operations not supported");
 	}
 

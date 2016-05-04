@@ -39,6 +39,7 @@ import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.structure.RootItem;
 import de.ims.icarus2.model.standard.members.structure.builder.StaticNodes.Node;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.LookupList;
 
 /**
@@ -273,7 +274,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		}
 
 		private int localIndex(Structure context, Item node) {
-			return ensureIntegerValueRange(context.indexOfItem(node))+1;
+			return IcarusUtils.ensureIntegerValueRange(context.indexOfItem(node))+1;
 		}
 
 		private int outgoing(int data, int index) {
@@ -323,7 +324,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			} else {
 				int data = treeData[localIndex(context, node)];
 				if(isSource) {
-					return getEdgeAt(outgoing(data, ensureIntegerValueRange(index)));
+					return getEdgeAt(outgoing(data, IcarusUtils.ensureIntegerValueRange(index)));
 				} else {
 					return getEdgeAt(incoming(data));
 				}
@@ -429,7 +430,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public Item getSiblingAt(Structure context, Item child, long offset) {
-			int delta = ensureIntegerValueRange(offset);
+			int delta = IcarusUtils.ensureIntegerValueRange(offset);
 
 			Edge incomingEdge = incomingEdge(context, child);
 			if(incomingEdge==null) {
@@ -646,7 +647,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		}
 
 		private int localIndex(Structure context, Item node) {
-			return ensureIntegerValueRange(context.indexOfItem(node))+1;
+			return IcarusUtils.ensureIntegerValueRange(context.indexOfItem(node))+1;
 		}
 
 		private int outgoing(long data, int index) {
@@ -696,7 +697,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			} else {
 				long data = treeData[localIndex(context, node)];
 				if(isSource) {
-					return getEdgeAt(outgoing(data, ensureIntegerValueRange(index)));
+					return getEdgeAt(outgoing(data, IcarusUtils.ensureIntegerValueRange(index)));
 				} else {
 					return getEdgeAt(incoming(data));
 				}
@@ -802,7 +803,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public Item getSiblingAt(Structure context, Item child, long offset) {
-			int delta = ensureIntegerValueRange(offset);
+			int delta = IcarusUtils.ensureIntegerValueRange(offset);
 
 			Edge incomingEdge = incomingEdge(context, child);
 			if(incomingEdge==null) {
@@ -866,7 +867,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			if(index==NO_INDEX)
 				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Given node is not a member of this tree: "+getName(node));
 
-			return ensureIntegerValueRange(index)+1;
+			return IcarusUtils.ensureIntegerValueRange(index)+1;
 		}
 
 		private Node getData(Structure context, Item node) {
@@ -899,7 +900,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			if(node==root) {
 				return root.edgeAt(index, !isSource);
 			} else {
-				int idx = ensureIntegerValueRange(index);
+				int idx = IcarusUtils.ensureIntegerValueRange(index);
 				Node data = getData(context, node);
 				if(data==null)
 					throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS, "No edge for index: "+idx);
@@ -996,7 +997,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public Item getSiblingAt(Structure context, Item child, long offset) {
-			int delta = ensureIntegerValueRange(offset);
+			int delta = IcarusUtils.ensureIntegerValueRange(offset);
 			int edgeIndex = incomingEdge(context, child);
 
 			if(edgeIndex==NO_INDEX) {

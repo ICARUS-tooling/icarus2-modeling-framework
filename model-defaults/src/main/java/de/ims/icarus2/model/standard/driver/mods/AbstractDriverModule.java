@@ -30,7 +30,7 @@ import static de.ims.icarus2.util.Conditions.checkState;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.mods.DriverModule;
@@ -109,9 +109,9 @@ public abstract class AbstractDriverModule extends AbstractPart<Driver> implemen
 	@Override
 	public void prepare(ModuleMonitor monitor) throws InterruptedException {
 		if(isReady())
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE, "Module is already prepared");
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Module is already prepared");
 		if(!busy.compareAndSet(false, true))
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE, "Module is already busy");
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Module is already busy");
 
 		try {
 			cancelled = false;
@@ -148,7 +148,7 @@ public abstract class AbstractDriverModule extends AbstractPart<Driver> implemen
 //		if(!isReady())
 //			throw new ModelException(ModelError.ILLEGAL_STATE, "Module is not ready - cannot reset");
 		if(!busy.compareAndSet(false, true))
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE, "Module is already busy");
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Module is already busy");
 
 		try {
 			cancelled = false;
@@ -179,7 +179,7 @@ public abstract class AbstractDriverModule extends AbstractPart<Driver> implemen
 	@Override
 	public void cancel() {
 		if(!busy.get())
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE, "Module is not busy - cannot cancel");
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Module is not busy - cannot cancel");
 
 		cancelled = true;
 	}

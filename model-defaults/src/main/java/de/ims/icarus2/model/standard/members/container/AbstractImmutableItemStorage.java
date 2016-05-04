@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
@@ -40,7 +40,7 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
 public abstract class AbstractImmutableItemStorage implements ItemStorage {
 
 	private <T extends Object> T signalUnsupportedOperation(Container context) {
-		throw new ModelException(context.getCorpus(), ModelErrorCode.UNSUPPORTED_OPERATION,
+		throw new ModelException(context.getCorpus(), GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Item storage is immutable");
 	}
 

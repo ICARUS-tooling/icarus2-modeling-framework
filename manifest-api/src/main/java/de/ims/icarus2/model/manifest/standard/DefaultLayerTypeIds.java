@@ -23,7 +23,7 @@
  * $LastChangedRevision: 397 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.standard.registry;
+package de.ims.icarus2.model.manifest.standard;
 
 /**
  * @author Markus Gärtner

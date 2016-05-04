@@ -27,8 +27,8 @@ package de.ims.icarus2.model.standard.driver.file;
 
 import java.nio.file.Path;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelConstants;
-import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
@@ -374,14 +374,14 @@ public class FileMetadata implements ModelConstants {
 
 		public String getKey(int fileIndex) {
 			if(isLayerSubKey)
-				throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION,
+				throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 						"Key requires layer context: "+suffix);
 			return getFileKey(fileIndex, suffix);
 		}
 
 		public String getKey(int fileIndex, ItemLayerManifest layer) {
 			if(!isLayerSubKey)
-				throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION,
+				throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 						"Key does not allow layer context: "+suffix);
 			return getFileKey(fileIndex, layer, suffix);
 		}
@@ -608,14 +608,14 @@ public class FileMetadata implements ModelConstants {
 
 		public String getKey(ItemLayerManifest layer, int level) {
 			if(isTypeSubKey)
-				throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION,
+				throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 						"Key requires type context: "+suffix);
 			return getContainerKey(layer, level, suffix);
 		}
 
 		public String getKey(ItemLayerManifest layer, int level, ContainerType type) {
 			if(!isTypeSubKey)
-				throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION,
+				throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 						"Key does not allow type context: "+suffix);
 			return getContainerTypeKey(layer, level, type, suffix);
 		}

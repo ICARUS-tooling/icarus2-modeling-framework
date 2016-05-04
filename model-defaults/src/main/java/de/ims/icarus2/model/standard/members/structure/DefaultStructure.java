@@ -25,6 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
@@ -60,7 +61,7 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 	 */
 	protected EdgeStorage edgeStorage() {
 		if(edgeStorage==null)
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE, "No edge storage set");
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "No edge storage set");
 		return edgeStorage;
 	}
 

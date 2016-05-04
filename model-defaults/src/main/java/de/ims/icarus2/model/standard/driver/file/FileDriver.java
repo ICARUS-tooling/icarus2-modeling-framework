@@ -35,6 +35,7 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
@@ -567,7 +568,7 @@ public abstract class FileDriver extends AbstractDriver {
 		 */
 		@Override
 		protected FileDriver create() {
-			throw new ModelException(ModelErrorCode.NOT_IMPLEMENTED,
+			throw new ModelException(GlobalErrorCode.NOT_IMPLEMENTED,
 					"Cannot create abstract file driver - must override method in subclass or specify driver constructor!");
 		}
 	}

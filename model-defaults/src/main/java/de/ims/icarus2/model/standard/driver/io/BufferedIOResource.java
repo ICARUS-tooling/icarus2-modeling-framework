@@ -40,11 +40,12 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import de.ims.icarus2.model.api.ModelConstants;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.io.SynchronizedAccessor;
 import de.ims.icarus2.model.api.io.resources.IOResource;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * Models an I/O resource that reads from a single source and provides synchronized
@@ -95,7 +96,7 @@ public abstract class BufferedIOResource {
 	 * so that a channel within the size limitations of {@link #MAX_CHANNEL_SIZE} can still
 	 * be addressed on the block level by means of integer values.
 	 */
-	public static final long MIN_BLOCK_SIZE = MAX_CHANNEL_SIZE/ModelConstants.MAX_INTEGER_INDEX;
+	public static final long MIN_BLOCK_SIZE = MAX_CHANNEL_SIZE/IcarusUtils.MAX_INTEGER_INDEX;
 
 	private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -305,7 +306,7 @@ public abstract class BufferedIOResource {
 
 			Block block = cache.getBlock(id);
 			if(block==null)
-				throw new ModelException(ModelErrorCode.ILLEGAL_STATE, "Missing block marked as locked: "+id); //$NON-NLS-1$
+				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Missing block marked as locked: "+id); //$NON-NLS-1$
 
 			long offset = id*(long)bytesPerBlock;
 
@@ -361,7 +362,7 @@ public abstract class BufferedIOResource {
 	protected void close() throws IOException {
 
 		if(useCount.get()>0)
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Cannot close resource while there are still accessors using it");
 
 		try {

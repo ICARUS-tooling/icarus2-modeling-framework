@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.item.Edge;
@@ -43,7 +43,7 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
 public abstract class AbstractImmutableStructure extends AbstractImmutableContainer implements Structure {
 
 	private <T extends Object> T signalUnsupportedOperation() {
-		throw new ModelException(getCorpus(), ModelErrorCode.UNSUPPORTED_OPERATION,
+		throw new ModelException(getCorpus(), GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Structure is immutable");
 	}
 

@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -125,7 +125,7 @@ public class EdgeProxyStorage implements ItemStorage {
 	 * structure all modifying methods are bound to fail.
 	 */
 	private <T extends Object> T signalUnsupportedOperation(Container context) {
-		throw new ModelException(context.getCorpus(), ModelErrorCode.UNSUPPORTED_OPERATION,
+		throw new ModelException(context.getCorpus(), GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Edge proxy storage cannot modify underlying structure");
 	}
 

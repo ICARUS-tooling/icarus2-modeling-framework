@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -41,7 +41,7 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
 public abstract class AbstractImmutableContainer implements Container {
 
 	private <T extends Object> T signalUnsupportedOperation() {
-		throw new ModelException(getCorpus(), ModelErrorCode.UNSUPPORTED_OPERATION,
+		throw new ModelException(getCorpus(), GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Container is immutable");
 	}
 

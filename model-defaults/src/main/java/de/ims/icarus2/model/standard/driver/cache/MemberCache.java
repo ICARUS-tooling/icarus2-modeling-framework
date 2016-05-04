@@ -29,7 +29,7 @@ import static de.ims.icarus2.util.Conditions.checkNotNull;
 import gnu.trove.map.TLongObjectMap;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.procedure.TObjectProcedure;
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.standard.driver.cache.CachedMember.CachedItem;
 import de.ims.icarus2.util.access.AccessControl;
@@ -148,7 +148,7 @@ public class MemberCache<M extends CachedItem> {
 		}
 
 		if(cache.putIfAbsent(key, member)!=null)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT, "Key already used for mapping: "+key);
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Key already used for mapping: "+key);
 
 		return true;
 	}

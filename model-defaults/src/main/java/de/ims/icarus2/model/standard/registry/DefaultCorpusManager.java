@@ -43,7 +43,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.events.CorpusLifecycleListener;
@@ -53,6 +53,8 @@ import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.api.registry.SubRegistry;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.Manifest;
+import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.standard.corpus.DefaultCorpus;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.id.Identity;
@@ -64,7 +66,7 @@ import de.ims.icarus2.util.id.Identity;
  */
 public class DefaultCorpusManager implements CorpusManager {
 
-	private final CorpusRegistry corpusRegistry;
+	private final ManifestRegistry ManifestRegistry;
 	private final MetadataRegistry metadataRegistry;
 
 	private volatile Function<CorpusManifest, Corpus> corpusProducer;
@@ -84,11 +86,11 @@ public class DefaultCorpusManager implements CorpusManager {
 
 	private final List<CorpusLifecycleListener> lifecycleListeners = new CopyOnWriteArrayList<>();
 
-	public DefaultCorpusManager(CorpusRegistry registry, MetadataRegistry metadataRegistry) {
+	public DefaultCorpusManager(ManifestRegistry registry, MetadataRegistry metadataRegistry) {
 		checkNotNull(registry);
 		checkNotNull(metadataRegistry);
 
-		this.corpusRegistry = registry;
+		this.ManifestRegistry = registry;
 		this.metadataRegistry = metadataRegistry;
 	}
 
@@ -104,13 +106,13 @@ public class DefaultCorpusManager implements CorpusManager {
 
 	@Override
 	public ClassLoader getPluginClassLoader(String pluginUid) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION,
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Implementation does not support class loader lookup for plugin: "+pluginUid);
 	}
 
 	@Override
 	public Identity getExtensionIdentity(String extensionuid) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION,
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Implementation does not support identity lookup for extension: "+extensionuid);
 	}
 
@@ -120,7 +122,7 @@ public class DefaultCorpusManager implements CorpusManager {
 
 	protected final void tryStartWrite() {
 		if(isCurrentThreadWriting())
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Thread is not allowed to perform nested write actions");
 	}
 
@@ -150,7 +152,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	}
 
 	/**
-	 * Checks that the given {@code manifest} is managed by the {@link CorpusRegistry corpusRegistry}
+	 * Checks that the given {@code manifest} is managed by the {@link ManifestRegistry ManifestRegistry}
 	 * this manager is linked to and then looks up the current state of it, assigning
 	 * {@link CorpusState#ENABLED enabled} in case there is no other state stored for it.
 	 * <p>
@@ -161,14 +163,14 @@ public class DefaultCorpusManager implements CorpusManager {
 	 */
 	protected final CorpusManager.CorpusState getStateUnsafe(CorpusManifest manifest, boolean allowBadState) {
 		checkNotNull(manifest);
-		if(manifest.getRegistry()!=corpusRegistry)
-			throw new ModelException(ModelErrorCode.MANIFEST_ERROR,
+		if(manifest.getRegistry()!=ManifestRegistry)
+			throw new ModelException(ManifestErrorCode.MANIFEST_ERROR,
 					"Foreign manifest: "+getName(manifest));
 
 		CorpusManager.CorpusState state = states.get(manifest);
 
 		if(state==CorpusManager.CorpusState.BAD && !allowBadState)
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Bad corpus: "+getName(manifest));
 
 		if(state==null) {
@@ -197,7 +199,7 @@ public class DefaultCorpusManager implements CorpusManager {
 		}
 
 		if(!state.isValidPrecondition(oldState))
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					String.format("Corpus %s cannot be set to state %s while currently being %s",
 							getName(manifest), state, oldState));
 
@@ -214,38 +216,9 @@ public class DefaultCorpusManager implements CorpusManager {
 	 * @see de.ims.icarus2.model.api.registry.CorpusManager#getManifestRegistry()
 	 */
 	@Override
-	public CorpusRegistry getManifestRegistry() {
-		return corpusRegistry;
+	public ManifestRegistry getManifestRegistry() {
+		return ManifestRegistry;
 	}
-
-//	protected final CorpusState setCorpusToState(CorpusManifest corpus, CorpusState newState,
-//			boolean allowBadState , BiConsumer<CorpusState, CorpusState> c) {
-//
-//		writeLock().lock();
-//		try {
-//			// Read state, automatically applying sanity checks
-//			final CorpusState oldState = getStateUnsafe(corpus, allowBadState);
-//
-//			if(oldState==CorpusState.BAD)
-//				throw new ModelException(ModelError.ILLEGAL_STATE,
-//						"Bad corpus: "+getName(corpus));
-//
-//			if(!newState.isValidPrecondition(oldState))
-//				throw new ModelException(ModelError.ILLEGAL_STATE,
-//						String.format("Corpus %s cannot be set to state %s while currently being %s",
-//								getName(corpus), newState, oldState));
-//
-//			setStateUnsafe(corpus, newState);
-//
-//			if(c!=null) {
-//				c.accept(oldState, newState);
-//			}
-//
-//			return oldState;
-//		} finally {
-//			writeLock().unlock();
-//		}
-//	}
 
 	/**
 	 * @see de.ims.icarus2.model.api.registry.CorpusManager#connect(de.ims.icarus2.model.manifest.api.CorpusManifest)
@@ -326,7 +299,7 @@ public class DefaultCorpusManager implements CorpusManager {
 		}
 
 		if(corpus==null)
-			throw new ModelException(ModelErrorCode.DELEGATION_FAILED,
+			throw new ModelException(GlobalErrorCode.DELEGATION_FAILED,
 					"Corpus generation yielded null result");
 
 		return corpus;
@@ -563,7 +536,7 @@ public class DefaultCorpusManager implements CorpusManager {
 			}
 
 			if(currentState!=CorpusManager.CorpusState.BAD)
-				throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 						"Cannot reset corpus if not marked as 'bad': "+getName(corpus));
 
 			setStateUnsafe(corpus, CorpusManager.CorpusState.ENABLED);

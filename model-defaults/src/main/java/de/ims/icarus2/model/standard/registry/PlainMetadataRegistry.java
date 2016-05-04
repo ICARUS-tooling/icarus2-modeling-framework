@@ -42,7 +42,7 @@ import java.util.function.BiConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 
@@ -52,7 +52,7 @@ import de.ims.icarus2.model.api.registry.MetadataRegistry;
  *
  */
 public class PlainMetadataRegistry implements MetadataRegistry {
-	
+
 	private static final Logger log = LoggerFactory
 			.getLogger(PlainMetadataRegistry.class);
 
@@ -216,7 +216,7 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 		try {
 			Files.delete(file);
 		} catch (IOException e) {
-			throw new ModelException(ModelErrorCode.IO_ERROR, "Failed to delete registry file");
+			throw new ModelException(GlobalErrorCode.IO_ERROR, "Failed to delete registry file");
 		}
 	}
 

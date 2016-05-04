@@ -35,7 +35,7 @@ import gnu.trove.strategy.IdentityHashingStrategy;
 
 import java.util.Set;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
@@ -80,7 +80,7 @@ public class ChunkIndexStorage {
 		int id = layer.getUID();
 		ChunkIndex chunkIndex = chunkIndexMap.get(id);
 		if(chunkIndex==null)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"No chunk index available for layer: "+getName(layer));
 
 		return chunkIndex;
@@ -103,7 +103,7 @@ public class ChunkIndexStorage {
 			int id = layer.getUID();
 
 			if(chunkIndexMap.containsKey(id))
-				throw new ModelException(ModelErrorCode.INVALID_INPUT,
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 						"UID for layer is already mapped: "+getName(layer));
 
 			chunkIndexMap.put(id, chunkIndex);

@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.function.LongBinaryOperator;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
@@ -435,10 +435,10 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 		@Override
 		public void map(long sourceFrom, long sourceTo, long targetFrom, long targetTo) {
 			if(sourceFrom!=sourceTo)
-				throw new ModelException(ModelErrorCode.INVALID_INPUT,
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 						"Can only map from single index values");
 			if(targetFrom!=targetTo)
-				throw new ModelException(ModelErrorCode.INVALID_INPUT,
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 						"Can only map to single index values");
 
 			map(sourceFrom, targetFrom);

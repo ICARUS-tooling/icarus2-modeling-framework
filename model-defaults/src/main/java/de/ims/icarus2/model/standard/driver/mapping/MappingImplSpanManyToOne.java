@@ -38,7 +38,7 @@ import static de.ims.icarus2.util.Conditions.checkState;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
@@ -424,7 +424,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 		@Override
 		public long find(long fromSource, long toSource, long targetIndex, RequestSettings settings)
 				throws InterruptedException {
-			throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION,
+			throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 					"FIND operation not supported since inverse reader is used");
 
 //			long spanBegin = inverseReader.getBeginIndex(targetIndex);
@@ -447,7 +447,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 		public boolean find(long fromSource, long toSource,
 				IndexSet[] targetIndices, IndexCollector collector, RequestSettings settings)
 				throws InterruptedException {
-			throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION,
+			throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 					"FIND operation not supported since inverse reader is used");
 
 //			boolean result = false;
@@ -520,7 +520,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 		@Override
 		public void map(long sourceFrom, long sourceTo, long targetFrom, long targetTo) {
 			if(targetFrom!=targetTo)
-				throw new ModelException(ModelErrorCode.INVALID_INPUT,
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 						"Can only map to single index values");
 
 			long targetIndex = targetFrom;
@@ -561,9 +561,9 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 		@Override
 		public void map(IndexSet sourceIndices, IndexSet targetIndices) {
 			if(targetIndices.size()>1)
-				throw new ModelException(ModelErrorCode.INVALID_INPUT, "Can only map to single index values");
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map to single index values");
 			if(!isContinuous(sourceIndices))
-				throw new ModelException(ModelErrorCode.INVALID_INPUT, "Can only map from spans"); //$NON-NLS-1$
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map from spans"); //$NON-NLS-1$
 
 			map(sourceIndices.firstIndex(), sourceIndices.firstIndex(),
 					targetIndices.firstIndex(), targetIndices.lastIndex());
@@ -572,9 +572,9 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 		@Override
 		public void map(IndexSet[] sourceIndices, IndexSet[] targetIndices) {
 			if(targetIndices.length>1 || targetIndices[0].size()>1)
-				throw new ModelException(ModelErrorCode.INVALID_INPUT, "Can only map to single index values");
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map to single index values");
 			if(!isContinuous(sourceIndices))
-				throw new ModelException(ModelErrorCode.INVALID_INPUT, "Can only map from spans"); //$NON-NLS-1$
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map from spans"); //$NON-NLS-1$
 
 			long targetIndex = firstIndex(targetIndices);
 			map(firstIndex(sourceIndices), lastIndex(sourceIndices), targetIndex, targetIndex);

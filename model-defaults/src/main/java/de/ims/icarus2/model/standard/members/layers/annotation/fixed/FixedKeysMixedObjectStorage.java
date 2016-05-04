@@ -27,6 +27,7 @@ package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
 import java.util.function.Consumer;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
@@ -313,7 +314,7 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 			try {
 				value = clazz.newInstance();
 			} catch (InstantiationException | IllegalAccessException e) {
-				throw new ModelException(ModelErrorCode.ILLEGAL_STATE, "Unable to instantiate primitive buffer object");
+				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Unable to instantiate primitive buffer object");
 			}
 
 			buffer[index] = value;

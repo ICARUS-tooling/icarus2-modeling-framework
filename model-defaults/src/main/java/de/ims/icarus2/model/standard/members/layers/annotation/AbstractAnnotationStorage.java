@@ -27,7 +27,7 @@ package de.ims.icarus2.model.standard.members.layers.annotation;
 
 import java.util.function.Consumer;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -82,27 +82,27 @@ public abstract class AbstractAnnotationStorage implements ManagedAnnotationStor
 
 	@Override
 	public int getIntegerValue(Item item, String key) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION, "Annotation value is not an integer for key: "+key);
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Annotation value is not an integer for key: "+key);
 	}
 
 	@Override
 	public float getFloatValue(Item item, String key) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION, "Annotation value is not a float for key: "+key);
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Annotation value is not a float for key: "+key);
 	}
 
 	@Override
 	public double getDoubleValue(Item item, String key) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION, "Annotation value is not a double for key: "+key);
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Annotation value is not a double for key: "+key);
 	}
 
 	@Override
 	public long getLongValue(Item item, String key) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION, "Annotation value is not a long for key: "+key);
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Annotation value is not a long for key: "+key);
 	}
 
 	@Override
 	public boolean getBooleanValue(Item item, String key) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION, "Annotation value is not a boolean for key: "+key);
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Annotation value is not a boolean for key: "+key);
 	}
 
 	@Override
@@ -117,27 +117,27 @@ public abstract class AbstractAnnotationStorage implements ManagedAnnotationStor
 
 	@Override
 	public void setIntegerValue(Item item, String key, int value) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION, "Cannot set integer value for key: "+key);
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot set integer value for key: "+key);
 	}
 
 	@Override
 	public void setLongValue(Item item, String key, long value) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION, "Cannot set long value for key: "+key);
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot set long value for key: "+key);
 	}
 
 	@Override
 	public void setFloatValue(Item item, String key, float value) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION, "Cannot set float value for key: "+key);
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot set float value for key: "+key);
 	}
 
 	@Override
 	public void setDoubleValue(Item item, String key, double value) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION, "Cannot set double value for key: "+key);
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot set double value for key: "+key);
 	}
 
 	@Override
 	public void setBooleanValue(Item item, String key, boolean value) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION, "Cannot set boolean value for key: "+key);
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot set boolean value for key: "+key);
 	}
 
 	@Override

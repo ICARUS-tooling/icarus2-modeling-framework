@@ -31,7 +31,7 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
-import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
@@ -150,7 +150,7 @@ public class FixedKeysIntStorage extends AbstractFixedKeysStorage<int[]> {
 
 	@Override
 	public void setLongValue(Item item, String key, long value) {
-		setIntegerValue(item, key, ModelUtils.ensureIntegerValueRange(value));
+		setIntegerValue(item, key, IcarusUtils.ensureIntegerValueRange(value));
 	}
 
 	/**

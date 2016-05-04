@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
@@ -45,6 +46,7 @@ import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureEditVerifier;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.standard.members.container.ImmutableContainerEditVerifier;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.seq.ListSequence;
 
@@ -106,7 +108,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		checkNonPartialStructure(context);
 		checkNoLoopsStructure(context);
 
-		int itemCount = ensureIntegerValueRange(context.getItemCount());
+		int itemCount = IcarusUtils.ensureIntegerValueRange(context.getItemCount());
 		int capacity = itemCount*2;
 
 		if(edges==null || edges.length<capacity) {
@@ -170,7 +172,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 	public Edge getEdgeAt(Structure context, long index) {
 //		checkChainConsistency();
 
-		return edges[ensureIntegerValueRange(index)<<1];
+		return edges[IcarusUtils.ensureIntegerValueRange(index)<<1];
 	}
 
 	protected void invalidateHeightAndDepth() {
@@ -198,7 +200,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
 					"Supplied item is not a legal node in the structure of this storage: "+getName(node));
 
-		return ensureIntegerValueRange(nodeIndex)<<1;
+		return IcarusUtils.ensureIntegerValueRange(nodeIndex)<<1;
 	}
 
 	protected void refreshHeights(Structure context) {
@@ -244,7 +246,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 //		checkChainConsistency();
 		checkHostStructure(edge, context);
 
-		return ensureIntegerValueRange(context.indexOfItem(edge.getTarget()));
+		return IcarusUtils.ensureIntegerValueRange(context.indexOfItem(edge.getTarget()));
 	}
 
 	/**
@@ -305,7 +307,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 //		checkChainConsistency();
 
 		if(node==root)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Virtual root node cannot have a parent");
 
 		return getAsTarget(context, node);
@@ -327,7 +329,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 			if(isSource) {
 				return root.getEdgeCount();
 			} else
-				throw new ModelException(ModelErrorCode.INVALID_INPUT,
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 						"Virtual root node cannot have incoming edges");
 		} else {
 			int index = localIndexForNode(context, node);
@@ -347,13 +349,13 @@ public class FixedSizeChainStorage implements EdgeStorage {
 	public Edge getEdgeAt(Structure context, Item node, long index, boolean isSource) {
 //		checkChainConsistency();
 
-		int idx = ensureIntegerValueRange(index);
+		int idx = IcarusUtils.ensureIntegerValueRange(index);
 
 		if(node==root) {
 			if(isSource) {
 				return root.getEdgeAt(idx);
 			} else
-				throw new ModelException(ModelErrorCode.INVALID_INPUT,
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 						"Virtual root node cannot have incoming edges");
 		} else {
 			int localIndex = localIndexForNode(context, node);
@@ -372,7 +374,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 	}
 
 	public boolean hasEdgeAt(Structure context, long index) {
-		int localIndex = ensureIntegerValueRange(index)<<1;
+		int localIndex = IcarusUtils.ensureIntegerValueRange(index)<<1;
 		return edges[localIndex] != null;
 	}
 
@@ -425,7 +427,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 	 */
 	@Override
 	public Item getSiblingAt(Structure context, Item child, long offset) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION,
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Nodes in a chain cannot have siblings");
 	}
 
@@ -521,7 +523,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 	public void addEdges(Structure context, long index,
 			DataSequence<? extends Edge> edges) {
 
-		int size = ensureIntegerValueRange(edges.entryCount());
+		int size = IcarusUtils.ensureIntegerValueRange(edges.entryCount());
 		for(int i = 0; i<size; i++) {
 			addEdge(context, edges.elementAt(i));
 		}
@@ -533,7 +535,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 	@Override
 	public Edge removeEdge(Structure context, long index) {
 
-		int localIndex = ensureIntegerValueRange(index)<<1;
+		int localIndex = IcarusUtils.ensureIntegerValueRange(index)<<1;
 
 		Edge edge = edges[localIndex];
 
@@ -569,8 +571,8 @@ public class FixedSizeChainStorage implements EdgeStorage {
 			return DataSequence.emptySequence();
 		}
 
-		int idx0 = ensureIntegerValueRange(index0);
-		int idx1 = ensureIntegerValueRange(index1);
+		int idx0 = IcarusUtils.ensureIntegerValueRange(index0);
+		int idx1 = IcarusUtils.ensureIntegerValueRange(index1);
 
 		int bufferSize = Math.min(edgeCount, idx1-idx0+1);
 
@@ -613,7 +615,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 	 */
 	@Override
 	public void moveEdge(Structure context, long index0, long index1) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION, "Order of edges is fixed in this implementation");
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Order of edges is fixed in this implementation");
 	}
 
 	/**
@@ -646,7 +648,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 			}
 		} else {
 			if(terminal==root) {
-				throw new ModelException(ModelErrorCode.INVALID_INPUT,
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 						"Virtual root node cannot have incoming edges");
 			} else {
 				Edge existing = getAsTarget(context, terminal);
@@ -771,7 +773,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 				return false;
 			}
 
-			int size = ensureIntegerValueRange(edges.entryCount());
+			int size = IcarusUtils.ensureIntegerValueRange(edges.entryCount());
 
 			for(int i=0; i<size; i++) {
 				if(!canAddEdge(i, edges.elementAt(i))) {

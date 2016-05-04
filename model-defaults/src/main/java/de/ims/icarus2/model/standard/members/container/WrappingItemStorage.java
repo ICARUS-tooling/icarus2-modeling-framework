@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
@@ -133,7 +133,7 @@ public class WrappingItemStorage implements ItemStorage {
 	 */
 	@Override
 	public void addItem(Container context, long index, Item item) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION, "Cannot add item to static source container");
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot add item to static source container");
 	}
 
 	/**
@@ -142,7 +142,7 @@ public class WrappingItemStorage implements ItemStorage {
 	@Override
 	public void addItems(Container context, long index,
 			DataSequence<? extends Item> items) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION, "Cannot add items to static source container");
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot add items to static source container");
 	}
 
 	/**
@@ -150,7 +150,7 @@ public class WrappingItemStorage implements ItemStorage {
 	 */
 	@Override
 	public Item removeItem(Container context, long index) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION, "Cannot remove item from static source container");
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot remove item from static source container");
 	}
 
 	/**
@@ -159,7 +159,7 @@ public class WrappingItemStorage implements ItemStorage {
 	@Override
 	public DataSequence<? extends Item> removeItems(Container context,
 			long index0, long index1) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION, "Cannot remove items from static source container");
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot remove items from static source container");
 	}
 
 	/**
@@ -167,7 +167,7 @@ public class WrappingItemStorage implements ItemStorage {
 	 */
 	@Override
 	public void moveItem(Container context, long index0, long index1) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION, "Cannot move items in static source container");
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot move items in static source container");
 	}
 
 	/**

@@ -38,7 +38,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.ChunkInfo;
 import de.ims.icarus2.model.api.driver.Driver;
@@ -119,7 +119,7 @@ public class VirtualDriver extends AbstractDriver {
 			try {
 				return managerClass.newInstance();
 			} catch (InstantiationException | IllegalAccessException e) {
-				throw new ModelException(ModelErrorCode.DELEGATION_FAILED,
+				throw new ModelException(GlobalErrorCode.DELEGATION_FAILED,
 						"Failed to instantiate item layer manager from class", e);
 			}
 		}
@@ -186,7 +186,7 @@ public class VirtualDriver extends AbstractDriver {
 	protected final void registerLayer(ItemLayer layer) {
 		int id = layer.getManifest().getUID();
 		if(idMap.containsKey(id))
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE, "Layer already registered: "+getName(layer));
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Layer already registered: "+getName(layer));
 		idMap.put(id, layer);
 	}
 

@@ -33,6 +33,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.mem.HeapMember;
 import de.ims.icarus2.util.mem.Primitive;
@@ -132,7 +133,7 @@ public class MemberPool<M extends Item> implements Consumer<M>, Supplier<M> {
 			pool = new ArrayList<>(poolSize);
 		}
 
-		for(int i = limitToIntegerValueRange(members.entryCount()); i>=0; i--) {
+		for(int i = IcarusUtils.limitToIntegerValueRange(members.entryCount()); i>=0; i--) {
 			if(pool.size()>=poolSize) {
 				break;
 			}

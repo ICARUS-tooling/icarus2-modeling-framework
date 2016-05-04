@@ -25,6 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
@@ -51,7 +52,7 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
 public abstract class AbstractImmutableEdgeStorage implements EdgeStorage {
 
 	protected <T extends Object> T signalUnsupportedOperation(Structure context) {
-		throw new ModelException(context.getCorpus(), ModelErrorCode.UNSUPPORTED_OPERATION,
+		throw new ModelException(context.getCorpus(), GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Edge storage is immutable");
 	}
 

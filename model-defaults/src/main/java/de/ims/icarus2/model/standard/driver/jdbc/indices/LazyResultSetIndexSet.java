@@ -33,7 +33,7 @@ import java.sql.Statement;
 import java.util.function.Supplier;
 import java.util.function.ToLongFunction;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
@@ -101,13 +101,13 @@ public class LazyResultSetIndexSet implements IndexSet {
 			rs.next();
 			return rs.getInt(1);
 		} catch(SQLException e) {
-			throw new ModelException(ModelErrorCode.DELEGATION_FAILED, "Failed to fetch required size of result set: "+query, e);
+			throw new ModelException(GlobalErrorCode.DELEGATION_FAILED, "Failed to fetch required size of result set: "+query, e);
 		} finally {
 			if(rs!=null) {
 				try {
 					rs.close();
 				} catch (SQLException e) {
-					throw new ModelException(ModelErrorCode.DELEGATION_FAILED, "Unable to close result set", e);
+					throw new ModelException(GlobalErrorCode.DELEGATION_FAILED, "Unable to close result set", e);
 				}
 			}
 		}
@@ -176,11 +176,11 @@ public class LazyResultSetIndexSet implements IndexSet {
 					try {
 						resultSet = resultSetSupplier.get();
 					} catch (SQLException e) {
-						throw new ModelException(ModelErrorCode.DELEGATION_FAILED, "Error while acquiring result set", e);
+						throw new ModelException(GlobalErrorCode.DELEGATION_FAILED, "Error while acquiring result set", e);
 					}
 
 					if(resultSet==null)
-						throw new ModelException(ModelErrorCode.DELEGATION_FAILED, "Returned result set is null");
+						throw new ModelException(GlobalErrorCode.DELEGATION_FAILED, "Returned result set is null");
 
 					int size = estimatedSize;
 					if(size==-1) {
@@ -191,7 +191,7 @@ public class LazyResultSetIndexSet implements IndexSet {
 					try {
 						readResultSet(resultSet, buffer);
 					} catch (SQLException e) {
-						throw new ModelException(ModelErrorCode.INTERNAL_ERROR, "Error while reading indices from result set", e);
+						throw new ModelException(GlobalErrorCode.INTERNAL_ERROR, "Error while reading indices from result set", e);
 					}
 				}
 			}

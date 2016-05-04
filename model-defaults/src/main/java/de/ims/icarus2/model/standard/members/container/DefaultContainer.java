@@ -25,6 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.MemberType;
@@ -75,7 +76,7 @@ public class DefaultContainer extends AbstractItem implements Container, Recycla
 	 */
 	protected ItemStorage itemStorage() {
 		if(itemStorage==null)
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE, "No item storage set");
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "No item storage set");
 		return itemStorage;
 	}
 

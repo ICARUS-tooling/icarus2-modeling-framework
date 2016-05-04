@@ -38,7 +38,7 @@ import static de.ims.icarus2.util.Conditions.checkState;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
@@ -616,7 +616,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 		@Override
 		public void map(long sourceFrom, long sourceTo, long targetFrom, long targetTo) {
 			if(sourceFrom!=sourceTo)
-				throw new ModelException(ModelErrorCode.INVALID_INPUT,
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 						"Can only map from single index values");
 
 			int id = id(sourceFrom);
@@ -641,9 +641,9 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 		@Override
 		public void map(IndexSet sourceIndices, IndexSet targetIndices) {
 			if(sourceIndices.size()>1)
-				throw new ModelException(ModelErrorCode.INVALID_INPUT, "Can only map from single index values");
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map from single index values");
 			if(!isContinuous(targetIndices))
-				throw new ModelException(ModelErrorCode.INVALID_INPUT, "Can only map to spans"); //$NON-NLS-1$
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map to spans"); //$NON-NLS-1$
 
 			map(sourceIndices.firstIndex(), sourceIndices.firstIndex(),
 					targetIndices.firstIndex(), targetIndices.lastIndex());
@@ -652,9 +652,9 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 		@Override
 		public void map(IndexSet[] sourceIndices, IndexSet[] targetIndices) {
 			if(sourceIndices.length>1 || sourceIndices[0].size()>1)
-				throw new ModelException(ModelErrorCode.INVALID_INPUT, "Can only map from single index values");
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map from single index values");
 			if(!isContinuous(targetIndices))
-				throw new ModelException(ModelErrorCode.INVALID_INPUT, "Can only map to spans"); //$NON-NLS-1$
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map to spans"); //$NON-NLS-1$
 
 			long sourceIndex = firstIndex(sourceIndices);
 			map(sourceIndex, sourceIndex, firstIndex(targetIndices), lastIndex(targetIndices));

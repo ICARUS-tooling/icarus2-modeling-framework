@@ -17,20 +17,20 @@
 
  * $Revision: 429 $
  * $Date: 2015-10-07 17:08:17 +0200 (Mi, 07 Okt 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/api/events/CorpusEvents.java $
+ * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/api/events/ManifestEvents.java $
  *
  * $LastChangedDate: 2015-10-07 17:08:17 +0200 (Mi, 07 Okt 2015) $
  * $LastChangedRevision: 429 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.api.events;
+package de.ims.icarus2.model.manifest.api.events;
 
 /**
  * @author Markus Gärtner
- * @version $Id: CorpusEvents.java 429 2015-10-07 15:08:17Z mcgaerty $
+ * @version $Id: ManifestEvents.java 429 2015-10-07 15:08:17Z mcgaerty $
  *
  */
-public interface CorpusEvents {
+public interface ManifestEvents {
 
 	public static final String ADD_CORPUS = "add_corpus";
 	public static final String ADDED_CORPUS = "added_corpus";

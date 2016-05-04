@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.manifest.util.Messages;
@@ -79,7 +79,7 @@ public abstract class AbstractFixedKeysStorage<B extends Object> extends Abstrac
 		int index = indexLookup.indexOf(key);
 
 		if(index==-1)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					Messages.mismatchMessage("Unknown key", indexLookup.getAvailableKeysString(), key));
 
 		return index;

@@ -38,6 +38,7 @@ import javax.swing.event.ChangeListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -73,6 +74,7 @@ import de.ims.icarus2.model.standard.members.container.AbstractImmutableContaine
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AbstractPart;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.classes.ClassUtils;
 import de.ims.icarus2.util.classes.Lazy;
 import de.ims.icarus2.util.collections.LookupList;
@@ -987,7 +989,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 
 		protected final void checkNotLocked() {
 			if(dataLocked)
-				throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 						"Cannot access data as it is locked due to being either reloaded or cleared");
 		}
 
@@ -1052,7 +1054,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		public Item getItemAt(long index) {
 			checkNotLocked();
 
-			return items.get(ensureIntegerValueRange(index));
+			return items.get(IcarusUtils.ensureIntegerValueRange(index));
 		}
 
 		/**
@@ -1798,7 +1800,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 
 			if(!ClassUtils.equals(oldValue, expectedValue))
 				throw new ModelException(layer.getCorpus(), ModelErrorCode.MODEL_CORRUPTED_EDIT,
-						"Expected value '"+ModelUtils.toLoggableString(expectedValue)+"' - got '"+ModelUtils.toLoggableString(oldValue)+"'");
+						"Expected value '"+IcarusUtils.toLoggableString(expectedValue)+"' - got '"+IcarusUtils.toLoggableString(oldValue)+"'");
 
 			layer.getAnnotationStorage().setValue(item, key, value);
 

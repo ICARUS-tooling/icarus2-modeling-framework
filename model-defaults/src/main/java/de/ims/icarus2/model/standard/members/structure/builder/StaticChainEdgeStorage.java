@@ -25,13 +25,14 @@
  */
 package de.ims.icarus2.model.standard.members.structure.builder;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.standard.members.structure.RootItem;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.LookupList;
 
 /**
@@ -114,7 +115,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 	 */
 	@Override
 	public Item getSiblingAt(Structure context, Item child, long offset) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION, "Nodes in CHAIN structure can't have siblings");
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Nodes in CHAIN structure can't have siblings");
 	}
 
 	/**
@@ -251,7 +252,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		}
 
 		private int localIndex(Structure context, Item node) {
-			return ensureIntegerValueRange(context.indexOfItem(node))+1;
+			return IcarusUtils.ensureIntegerValueRange(context.indexOfItem(node))+1;
 		}
 
 		/**
@@ -443,7 +444,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		}
 
 		private int localIndex(Structure context, Item node) {
-			return ensureIntegerValueRange(context.indexOfItem(node))+1;
+			return IcarusUtils.ensureIntegerValueRange(context.indexOfItem(node))+1;
 		}
 
 		/**
@@ -629,7 +630,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		}
 
 		private int localIndex(Structure context, Item node) {
-			return ensureIntegerValueRange(context.indexOfItem(node))+1;
+			return IcarusUtils.ensureIntegerValueRange(context.indexOfItem(node))+1;
 		}
 
 		/**
@@ -785,7 +786,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		}
 
 		private int localIndex(Structure context, Item node) {
-			return ensureIntegerValueRange(context.indexOfItem(node))+1;
+			return IcarusUtils.ensureIntegerValueRange(context.indexOfItem(node))+1;
 		}
 
 		/**

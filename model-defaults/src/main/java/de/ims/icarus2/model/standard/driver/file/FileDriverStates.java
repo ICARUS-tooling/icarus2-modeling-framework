@@ -33,8 +33,8 @@ import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.function.ObjIntConsumer;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelConstants;
-import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
@@ -103,7 +103,7 @@ public class FileDriverStates {
 	public FileInfo getFileInfo(int fileIndex) {
 		FileInfo info = fileInfos.get(fileIndex);
 		if(info==null)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"No info available for index: "+fileIndex);
 
 		return info;
@@ -112,7 +112,7 @@ public class FileDriverStates {
 	public LayerInfo getLayerInfo(LayerManifest layer) {
 		LayerInfo info = layerInfos.get(layer.getUID());
 		if(info==null)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"No info available for layer: "+layer.getId());
 
 		return info;

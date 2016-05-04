@@ -43,7 +43,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.util.xml.jaxb.JAXBGate;
@@ -54,7 +54,7 @@ import de.ims.icarus2.util.xml.jaxb.JAXBGate;
  *
  */
 public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageBuffer> implements MetadataRegistry {
-	
+
 	private static final Logger log = LoggerFactory
 			.getLogger(JAXBMetadataRegistry.class);
 
@@ -223,7 +223,7 @@ public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageB
 		try {
 			super.delete();
 		} catch (IOException e) {
-			throw new ModelException(ModelErrorCode.IO_ERROR, "Failed to delete registry file");
+			throw new ModelException(GlobalErrorCode.IO_ERROR, "Failed to delete registry file");
 		}
 	}
 

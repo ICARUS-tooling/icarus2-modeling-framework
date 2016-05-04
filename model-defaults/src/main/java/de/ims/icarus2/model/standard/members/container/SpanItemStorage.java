@@ -25,6 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -95,14 +96,14 @@ public class SpanItemStorage implements ItemStorage {
 
 	protected long beginIndex() {
 		if(beginIndex==NO_INDEX)
-			throw new ModelException(ModelErrorCode.MISSING_DATA, "Begin index not set");
+			throw new ModelException(GlobalErrorCode.MISSING_DATA, "Begin index not set");
 
 		return beginIndex;
 	}
 
 	protected long endIndex() {
 		if(endIndex==NO_INDEX)
-			throw new ModelException(ModelErrorCode.MISSING_DATA, "End index not set");
+			throw new ModelException(GlobalErrorCode.MISSING_DATA, "End index not set");
 
 		return endIndex;
 	}
@@ -171,7 +172,7 @@ public class SpanItemStorage implements ItemStorage {
 		Item targetItem = target.getItemAt(targetIndex);
 
 		if(targetItem!=item)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Given item "+item+" is not located at correct target location "+targetIndex);
 	}
 
@@ -193,7 +194,7 @@ public class SpanItemStorage implements ItemStorage {
 
 			if(index==0L) {
 				if(beginIndex==0L)
-					throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+					throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 							"Begin index in target container is already 0 - cannot decrement it further");
 
 				checkTargetItem(target, beginIndex-1, item);
@@ -201,14 +202,14 @@ public class SpanItemStorage implements ItemStorage {
 				beginIndex--;
 			} else if(index==size) {
 				if(target.getItemCount()<=endIndex+1)
-					throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+					throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 							"End index in target contianer is already at maximum size - cannot increment it further: "+endIndex);
 
 				checkTargetItem(target, endIndex+1, item);
 
 				endIndex++;
 			} else
-				throw new ModelException(ModelErrorCode.INVALID_INPUT,
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 						"Can only append to beginning or end of span - index out of range: "+index);
 		}
 	}
@@ -224,7 +225,7 @@ public class SpanItemStorage implements ItemStorage {
 		long index0 = NO_INDEX, index1 = NO_INDEX;
 
 		if(index!=0L && index!=size)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Can only append to beginning or end of span - index out of range: "+index);
 
 		if(items instanceof SpanSequence) {
@@ -236,7 +237,7 @@ public class SpanItemStorage implements ItemStorage {
 
 			// Ensure the span sequence operates on the same target container
 			if(sequenceTarget!=target)
-				throw new ModelException(ModelErrorCode.INVALID_INPUT, Messages.foreignContainerMessage(
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, Messages.foreignContainerMessage(
 						null, target, sequenceTarget));
 
 			// Fetch interval bounds in target container's space
@@ -266,7 +267,7 @@ public class SpanItemStorage implements ItemStorage {
 
 			//FIXME check if this is a real constraint of the SPAN type contract !!!
 			if((maxIndex-minIndex+1) != items.entryCount())
-				throw new ModelException(ModelErrorCode.INVALID_INPUT,
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 						"Provided item sequenc does not represent a span - cannot append random collections of items");
 
 			// Neither min nor max index can be -1
@@ -276,7 +277,7 @@ public class SpanItemStorage implements ItemStorage {
 
 
 		if(index1<beginIndex-1 || index0>endIndex+1)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT, Messages.nonOverlappingIntervalsMessage(
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, Messages.nonOverlappingIntervalsMessage(
 					null, beginIndex, endIndex, index0, index1));
 
 		beginIndex = Math.min(index0, beginIndex);
@@ -289,7 +290,7 @@ public class SpanItemStorage implements ItemStorage {
 	@Override
 	public Item removeItem(Container context, long index) {
 		if(isEmpty())
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Span is empty - cannot remove item at index: "+index);
 
 		// Ensures a legal index value
@@ -301,7 +302,7 @@ public class SpanItemStorage implements ItemStorage {
 		} else if(index==size-1) {
 			endIndex--;
 		} else
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Can only remove from beginning or end of span: "+index);
 
 		// Mark empty if required
@@ -318,7 +319,7 @@ public class SpanItemStorage implements ItemStorage {
 	@Override
 	public DataSequence<? extends Item> removeItems(Container context, long index0, long index1) {
 		if(isEmpty())
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Span is empty - cannot remove items");
 
 		long size = getItemCount(context);
@@ -335,7 +336,7 @@ public class SpanItemStorage implements ItemStorage {
 			sequence = new SpanSequence(target, index0, index1-index0+1);
 			endIndex = beginIndex+index0-1;
 		} else
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Supplied index range must denote either the beginning or end of this span: "+index0+" to "+index1);
 
 		// Mark empty if required
@@ -351,7 +352,7 @@ public class SpanItemStorage implements ItemStorage {
 	 */
 	@Override
 	public void moveItem(Container context, long index0, long index1) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION,
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Cannot move items within a span");
 	}
 

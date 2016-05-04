@@ -28,6 +28,7 @@ package de.ims.icarus2.model.standard.driver.file;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
 import de.ims.icarus2.model.api.corpus.Corpus;
+import de.ims.icarus2.model.api.members.CorpusMember;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.api.registry.SubRegistry;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
@@ -69,11 +70,11 @@ public class DefaultFileDriverFactory implements Factory {
 	 */
 	@Override
 	public <T> T create(Class<T> resultClass, ImplementationManifest manifest,
-			ImplementationLoader<?> environment) throws ClassNotFoundException,
+			ImplementationLoader<?> loader) throws ClassNotFoundException,
 			IllegalAccessException, InstantiationException, ClassCastException {
 
 		final DriverManifest driverManifest = (DriverManifest) manifest.getHostManifest();
-		final Corpus corpus = environment.getCorpus();
+		final Corpus corpus = ((CorpusMember)loader.getEnvironment()).getCorpus();
 
 		// Early sanity checks
 		checkNotNull("No corpus defined", corpus!=null);

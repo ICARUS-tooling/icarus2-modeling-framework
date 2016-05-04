@@ -42,7 +42,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.io.PathResolver;
 import de.ims.icarus2.model.api.io.ResourcePath;
@@ -50,6 +50,7 @@ import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathEntry;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
 import de.ims.icarus2.model.manifest.api.LocationType;
+import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.PathResolverManifest;
 
 /**
@@ -117,7 +118,7 @@ public class DirectPathResolver implements PathResolver {
 						files.add(path.toString());
 					}
 				} catch (IOException e) {
-					throw new ModelException(ModelErrorCode.IO_ERROR,
+					throw new ModelException(GlobalErrorCode.IO_ERROR,
 							"Failed to scan root folder for regular files: "+root, e);
 				}
 			} else {
@@ -130,7 +131,7 @@ public class DirectPathResolver implements PathResolver {
 					if(entry.getType()==PathType.FILE) {
 						String value = entry.getValue();
 						if(value==null || value.isEmpty())
-							throw new ModelException(ModelErrorCode.MANIFEST_CORRUPTED_STATE,
+							throw new ModelException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
 									"Empty path");
 
 						directFiles.add(value);
@@ -138,7 +139,7 @@ public class DirectPathResolver implements PathResolver {
 					} else if(entry.getType()==PathType.PATTERN) {
 						patterns.add(entry.getValue());
 					} else
-						throw new ModelException(ModelErrorCode.MANIFEST_ERROR,
+						throw new ModelException(ManifestErrorCode.MANIFEST_ERROR,
 								"Can only handle FILE or PATTERN path types inside FOLDER: got "+entry.getType());
 				}
 
@@ -180,14 +181,14 @@ public class DirectPathResolver implements PathResolver {
 							files.add(path.toString());
 						}
 					} catch (IOException e) {
-						throw new ModelException(ModelErrorCode.IO_ERROR,
+						throw new ModelException(GlobalErrorCode.IO_ERROR,
 								"Failed to scan root folder for files based on patterns: "+root, e);
 					}
 				}
 			}
 
 			if(files.isEmpty())
-				throw new ModelException(ModelErrorCode.MANIFEST_CORRUPTED_STATE,
+				throw new ModelException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
 						"No valid entries found for file resolver");
 
 			return new DirectPathResolver(files);

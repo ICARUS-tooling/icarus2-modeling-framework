@@ -32,7 +32,7 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.io.PathResolver;
 import de.ims.icarus2.model.api.io.ResourcePath;
@@ -89,10 +89,10 @@ public class LazyFileSet implements FileSet {
 		if(path==null) {
 			ResourcePath resourcePath = pathResolver.getPath(fileIndex);
 			if(resourcePath==null)
-				throw new ModelException(ModelErrorCode.INVALID_INPUT,
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 						"No file available for index: "+fileIndex); //$NON-NLS-1$
 			if(resourcePath.getType()!=LocationType.LOCAL)
-				throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 						"Resolver returned unsupported path type: "+resourcePath);//TODO more info in exception //$NON-NLS-1$
 
 			path = Paths.get(resourcePath.getPath());

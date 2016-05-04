@@ -29,12 +29,12 @@ import gnu.trove.set.hash.THashSet;
 
 import java.util.Set;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
+import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.util.collections.WeakHashSet;
 
 /**
@@ -84,7 +84,7 @@ public class SingleKeyBooleanStorage extends AbstractSingleKeyStorage {
 		noEntryValue = declaredNoEntryValue==null ? DEFAULT_NO_ENTRY_VALUE : (boolean) declaredNoEntryValue;
 
 		if(noEntryValueSet && noEntryValue)
-			throw new ModelException(ModelErrorCode.IMPLEMENTATION_ERROR,
+			throw new ModelException(ManifestErrorCode.IMPLEMENTATION_ERROR,
 					"Implementation does not support 'true' as 'neEntryValue'");
 
 		annotations = buildBuffer(layer);

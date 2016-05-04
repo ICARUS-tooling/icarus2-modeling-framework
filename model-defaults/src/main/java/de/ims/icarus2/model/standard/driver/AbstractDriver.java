@@ -39,6 +39,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
@@ -66,6 +67,7 @@ import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.standard.driver.io.BufferedIOResource.BlockCache;
 import de.ims.icarus2.model.standard.driver.io.RUBlockCache;
@@ -284,7 +286,7 @@ public abstract class AbstractDriver implements Driver {
 				return (BlockCache) Class.forName(s).newInstance();
 			} catch (InstantiationException | IllegalAccessException
 					| ClassNotFoundException e) {
-				throw new ModelException(ModelErrorCode.IMPLEMENTATION_ERROR,
+				throw new ModelException(ManifestErrorCode.IMPLEMENTATION_ERROR,
 						"Unable to instantiate block cache: "+s);
 			}
 		}
@@ -338,7 +340,7 @@ public abstract class AbstractDriver implements Driver {
 			if(isDead())
 				throw new ModelException(ModelErrorCode.DRIVER_CONNECTION, "Driver previously disconencted - considered dead: "+manifest.getId());
 			if(this.corpus!=target)
-				throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 						"Driver not connected to given context: "+manifest.getId());
 
 			allowUncheckedAccess = true;
@@ -387,7 +389,7 @@ public abstract class AbstractDriver implements Driver {
 	}
 
 	/**
-	 * Throws {@link ModelException} with code {@link ModelErrorCode#DRIVER_CONNECTION} in case
+	 * Throws {@link ModelException} with code {@link GlobalErrorCode#DRIVER_CONNECTION} in case
 	 * the driver is not currently connected. Does nothing if the driver is in the process
 	 * of connecting and was marked to allow unchecked access to connection critical code.
 	 */
@@ -397,7 +399,7 @@ public abstract class AbstractDriver implements Driver {
 	}
 
 	/**
-	 * Throws {@link ModelException} with code {@link ModelErrorCode#DRIVER_READY} in case
+	 * Throws {@link ModelException} with code {@link GlobalErrorCode#DRIVER_READY} in case
 	 * the driver is not currently ready.
 	 */
 	protected void checkReady() {
@@ -566,43 +568,42 @@ public abstract class AbstractDriver implements Driver {
 
 		return factory.newImplementationLoader()
 				.manifest(manifest.getImplementationManifest())
-				.corpus(corpus)
 				.environment(this)
 				.message("Module manifest "+getName(manifest))
 				.instantiate(resultClass);
 	}
 
 	/**
-	 * Default implementation throws {@link ModelErrorCode#UNSUPPORTED_OPERATION ModelException}.
+	 * Default implementation throws {@link GlobalErrorCode#UNSUPPORTED_OPERATION ModelException}.
 	 *
 	 * @see de.ims.icarus2.model.api.driver.Driver#addItem(de.ims.icarus2.model.api.layer.ItemLayer, de.ims.icarus2.model.api.members.item.Item, long)
 	 */
 	@Override
 	public void addItem(ItemLayer layer, Item item, long index) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION,
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Driver implementation does not support addition of items");
 	}
 
 	/**
-	 * Default implementation throws {@link ModelErrorCode#UNSUPPORTED_OPERATION ModelException}.
+	 * Default implementation throws {@link GlobalErrorCode#UNSUPPORTED_OPERATION ModelException}.
 	 *
 	 * @see de.ims.icarus2.model.api.driver.Driver#removeItem(de.ims.icarus2.model.api.layer.ItemLayer, de.ims.icarus2.model.api.members.item.Item, long)
 	 */
 	@Override
 	public void removeItem(ItemLayer layer, Item item, long index) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION,
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Driver implementation does not support removal of items");
 	}
 
 	/**
-	 * Default implementation throws {@link ModelErrorCode#UNSUPPORTED_OPERATION ModelException}.
+	 * Default implementation throws {@link GlobalErrorCode#UNSUPPORTED_OPERATION ModelException}.
 	 *
 	 * @see de.ims.icarus2.model.api.driver.Driver#moveItem(de.ims.icarus2.model.api.layer.ItemLayer, de.ims.icarus2.model.api.members.item.Item, long, long)
 	 */
 	@Override
 	public void moveItem(ItemLayer layer, Item item, long fromIndex,
 			long toIndex) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION,
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Driver implementation does not support moving of items");
 	}
 

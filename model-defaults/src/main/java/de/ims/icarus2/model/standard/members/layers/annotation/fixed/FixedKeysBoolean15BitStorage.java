@@ -34,7 +34,7 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -48,7 +48,7 @@ import de.ims.icarus2.model.util.ModelUtils;
  *
  */
 public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorage {
-	
+
 	private static final Logger log = LoggerFactory
 			.getLogger(FixedKeysBoolean15BitStorage.class);
 
@@ -85,7 +85,7 @@ public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorag
 
 		IndexLookup indexLookup = getIndexLookup();
 		if(indexLookup.keyCount()>MAX_KEY_COUNT)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Short integer buffer only holds 15 value bits - cannot represent annotations for layer: "+ModelUtils.getName(layer));
 
 		AnnotationLayerManifest manifest = layer.getManifest();

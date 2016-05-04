@@ -26,6 +26,7 @@
 package de.ims.icarus2.model.standard.members;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -51,7 +52,7 @@ public class MemberUtils {
 		DataSet<Container> baseContainers = container.getBaseContainers();
 
 		if(baseContainers.entryCount()>1)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Container must not have more than one base container: "+getName(container));
 	}
 

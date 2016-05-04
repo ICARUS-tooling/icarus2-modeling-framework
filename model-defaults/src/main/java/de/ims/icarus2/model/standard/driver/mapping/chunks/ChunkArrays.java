@@ -30,7 +30,7 @@ import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.nio.ByteBuffer;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 
@@ -185,7 +185,7 @@ public class ChunkArrays {
 		 */
 		@Override
 		public int setFileId(Object buffer, int index, int fileId) {
-			throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION,
+			throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 					"Adapter implementation does not support mapping to multiple files");
 		}
 

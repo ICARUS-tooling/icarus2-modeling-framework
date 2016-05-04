@@ -25,6 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -99,13 +100,13 @@ public class SingletonItemStorage implements ItemStorage {
 
 	protected final void checkNonEmpty() {
 		if(isEmpty())
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Singletong container storage is empty");
 	}
 
 	protected final void checkEmpty() {
 		if(!isEmpty())
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Singletong container storage is not empty");
 	}
 
@@ -151,7 +152,7 @@ public class SingletonItemStorage implements ItemStorage {
 			DataSequence<? extends Item> items) {
 		checkEmpty();
 		if(items.entryCount()>1)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Cannot add mroe than 1 element - attempted to add "+items.entryCount());
 		checkIndex(index);
 
@@ -179,7 +180,7 @@ public class SingletonItemStorage implements ItemStorage {
 	public DataSequence<? extends Item> removeItems(Container context,
 			long index0, long index1) {
 		if(index1-index0>0)
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Cannot remove more than 1 element from singletong container storage");
 
 		return new SingletonSequence<>(removeItem(context, 0L));
@@ -190,7 +191,7 @@ public class SingletonItemStorage implements ItemStorage {
 	 */
 	@Override
 	public void moveItem(Container context, long index0, long index1) {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION,
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Cannot move items in singletong container storage");
 	}
 

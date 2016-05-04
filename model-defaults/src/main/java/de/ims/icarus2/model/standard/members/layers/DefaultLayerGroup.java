@@ -30,7 +30,6 @@ import gnu.trove.strategy.IdentityHashingStrategy;
 
 import java.util.Set;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.layer.Dependency;
@@ -38,6 +37,7 @@ import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
+import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.collections.CollectionUtils;
@@ -112,7 +112,7 @@ public class DefaultLayerGroup extends AbstractPart<Context> implements LayerGro
 		if (primaryLayer == null)
 			throw new NullPointerException("Invalid primaryLayer"); //$NON-NLS-1$
 		if(!layers.contains(primaryLayer))
-			throw new ModelException(ModelErrorCode.MANIFEST_UNKNOWN_ID, "Layer is unknown to this group: "+ModelUtils.getName(primaryLayer)); //$NON-NLS-1$
+			throw new ModelException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "Layer is unknown to this group: "+ModelUtils.getName(primaryLayer)); //$NON-NLS-1$
 
 		this.primaryLayer = primaryLayer;
 	}

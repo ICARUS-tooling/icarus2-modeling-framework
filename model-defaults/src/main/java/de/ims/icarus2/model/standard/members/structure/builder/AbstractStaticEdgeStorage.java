@@ -25,12 +25,13 @@
  */
 package de.ims.icarus2.model.standard.members.structure.builder;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.standard.members.structure.AbstractImmutableEdgeStorage;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.LookupList;
 
 /**
@@ -56,12 +57,12 @@ public abstract class AbstractStaticEdgeStorage<R extends Item> extends Abstract
 
 	@Override
 	public void recycle() {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION, "Cannot recycle static edge storage");
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot recycle static edge storage");
 	}
 
 	@Override
 	public boolean revive() {
-		throw new ModelException(ModelErrorCode.UNSUPPORTED_OPERATION, "Cannot revive static edge storage");
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot revive static edge storage");
 	}
 
 	@Override
@@ -101,7 +102,7 @@ public abstract class AbstractStaticEdgeStorage<R extends Item> extends Abstract
 	 */
 	@Override
 	public Edge getEdgeAt(Structure context, long index) {
-		return getEdgeAt(ensureIntegerValueRange(index));
+		return getEdgeAt(IcarusUtils.ensureIntegerValueRange(index));
 	}
 
 	protected int indexOfEdge(Edge edge) {

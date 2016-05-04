@@ -44,6 +44,7 @@ public enum MemberType implements StringResource {
 	CONTAINER,
 	STRUCTURE,
 	LAYER, // No distinction between different layer types. they are defined by the manifest type
+	CONTEXT,
 	;
 
 	/**

@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.function.LongUnaryOperator;
 import java.util.function.UnaryOperator;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
@@ -44,6 +44,7 @@ import de.ims.icarus2.model.api.io.resources.IOResource;
 import de.ims.icarus2.model.api.io.resources.InMemoryResource;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
@@ -164,7 +165,7 @@ public class MappingFactory {
 		}
 
 		if(mapping==null)
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Could not create mapping: "+getName(manifest));
 
 		instanceLookup.put(manifest, mapping);
@@ -175,56 +176,16 @@ public class MappingFactory {
 	protected Mapping lookupInverse(MappingManifest manifest) {
 		MappingManifest inverseManifest = manifest.getInverse();
 		if(inverseManifest==null)
-			throw new ModelException(ModelErrorCode.MANIFEST_CORRUPTED_STATE,
+			throw new ModelException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
 					"Provided manifest does not declare an inverse mapping: "+getName(manifest));
 
 		Mapping mapping = instanceLookup.get(inverseManifest);
 		if(mapping==null)
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"No mapping instance created by this factory for given manifest: "+getName(inverseManifest));
 
 		return mapping;
 	}
-
-//	public Mapping createInverseMapping(MappingManifest manifest, Options options) {
-//		checkNotNull(manifest);
-//		checkArgument("Manifest must declare 'includeReverse' flag", manifest.isIncludeReverse());
-//
-//		if(options==null) {
-//			options = Options.emptyOptions;
-//		}
-//
-//		Mapping mapping = null;
-//
-//		Relation relation = manifest.getRelation().invert();
-//
-//		switch (relation) {
-//		case ONE_TO_ONE:
-//			mapping = createOneToOneMapping(manifest, options);
-//			break;
-//
-//		case ONE_TO_MANY:
-//			mapping = createOneToManyMapping(manifest, options);
-//			break;
-//
-//		case MANY_TO_ONE:
-//			mapping = createManyToOneMapping(manifest, options);
-//			break;
-//
-//		case MANY_TO_MANY:
-//			mapping = createManyToManyMapping(manifest, options);
-//			break;
-//
-//		default:
-//			throw new IllegalStateException("Invalid mapping relation: "+relation);
-//		}
-//
-//		if(mapping==null)
-//			throw new ModelException(ModelError.ILLEGAL_STATE,
-//					"Could not create mapping: "+getName(manifest));
-//
-//		return mapping;
-//	}
 
 	protected Mapping createFunctionMapping(MappingManifest manifest, Options options) {
 		Object unaryFunc = Property.UNARY_FUNCTION.getValue(options);
@@ -365,7 +326,7 @@ public class MappingFactory {
 
 		Relation inverseRelation = inverseMapping.getManifest().getRelation();
 		if(inverseRelation!=Relation.ONE_TO_MANY)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					Messages.mismatchMessage("Invalid relation type for inverse mapping", Relation.ONE_TO_MANY, inverseRelation));
 
 		MappingImplSpanManyToOne.Builder builder = new MappingImplSpanManyToOne.Builder();
@@ -388,10 +349,10 @@ public class MappingFactory {
 	}
 
 	protected Mapping createManyToManyMapping(MappingManifest manifest, Options options) {
-		throw new ModelException(ModelErrorCode.NOT_IMPLEMENTED, "Not yet implemented");
+		throw new ModelException(GlobalErrorCode.NOT_IMPLEMENTED, "Not yet implemented");
 	}
 
 	public Mapping createCompoundMapping(ItemLayerManifest sourceLayer, ItemLayerManifest targetLayer) {
-		throw new ModelException(ModelErrorCode.NOT_IMPLEMENTED, "Not yet implemented");
+		throw new ModelException(GlobalErrorCode.NOT_IMPLEMENTED, "Not yet implemented");
 	}
 }

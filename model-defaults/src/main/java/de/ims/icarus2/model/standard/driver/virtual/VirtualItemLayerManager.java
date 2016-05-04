@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.driver.ChunkInfo;
@@ -83,7 +83,7 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 		RootContainer container = rootContainers.get(uid);
 
 		if(container!=null)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Layer already contained in manager: "+getName(layer));
 
 		container = new RootContainer(layer, supplier);
@@ -106,7 +106,7 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 
 	public void removeLayer(ItemLayer layer) {
 		if(rootContainers.remove(layer.getManifest().getUID()) == null)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Layer not contained in manager: "+getName(layer));
 	}
 
@@ -116,7 +116,7 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 		RootContainer result = rootContainers.get(layer.getManifest().getUID());
 
 		if(result==null)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Unknown layer: "+getName(layer));
 
 		return result;

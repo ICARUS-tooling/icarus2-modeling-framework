@@ -34,6 +34,7 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.standard.members.container.AbstractImmutableItemStorage;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * Array based storage for small containers using binary search for the
@@ -112,7 +113,7 @@ public class StaticArrayItemStorage extends AbstractImmutableItemStorage {
 	 */
 	@Override
 	public Item getItemAt(Container context, long index) {
-		return items[ensureIntegerValueRange(index)];
+		return items[IcarusUtils.ensureIntegerValueRange(index)];
 	}
 
 	/**

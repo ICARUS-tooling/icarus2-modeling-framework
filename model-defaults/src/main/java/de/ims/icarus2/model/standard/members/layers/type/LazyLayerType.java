@@ -31,6 +31,7 @@ import javax.swing.Icon;
 
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerType;
+import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.util.id.Identity;
 
 /**
@@ -48,7 +49,7 @@ public class LazyLayerType implements LayerType {
 	private String layerId;
 	private LayerManifest sharedManifest;
 
-	private final CorpusRegistry registry;
+	private final ManifestRegistry registry;
 
 	public LazyLayerType(String id) {
 		checkNotNull(id);
@@ -57,7 +58,7 @@ public class LazyLayerType implements LayerType {
 		this.id = id;
 	}
 
-	public LazyLayerType(CorpusRegistry registry, Identity identity, String layerId) {
+	public LazyLayerType(ManifestRegistry registry, Identity identity, String layerId) {
 		checkNotNull(registry);
 		checkNotNull(identity);
 		checkNotNull(layerId);

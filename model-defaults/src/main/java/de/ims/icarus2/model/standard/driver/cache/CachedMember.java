@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.driver.cache;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.FragmentLayer;
 import de.ims.icarus2.model.api.layer.ItemLayer;
@@ -120,7 +120,7 @@ public interface CachedMember<L extends ItemLayer> {
 		@Override
 		public int decrementUseCounter() {
 			if(useCounter==0)
-				throw new ModelException(ModelErrorCode.ILLEGAL_STATE, "Use counter already 0");
+				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Use counter already 0");
 			return --useCounter;
 		}
 
@@ -164,7 +164,7 @@ public interface CachedMember<L extends ItemLayer> {
 		@Override
 		public int decrementUseCounter() {
 			if(useCounter==0)
-				throw new ModelException(ModelErrorCode.ILLEGAL_STATE, "Use counter already 0");
+				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Use counter already 0");
 			return --useCounter;
 		}
 
@@ -208,7 +208,7 @@ public interface CachedMember<L extends ItemLayer> {
 		@Override
 		public int decrementUseCounter() {
 			if(useCounter==0)
-				throw new ModelException(ModelErrorCode.ILLEGAL_STATE, "Use counter already 0");
+				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Use counter already 0");
 			return --useCounter;
 		}
 
@@ -252,7 +252,7 @@ public interface CachedMember<L extends ItemLayer> {
 		@Override
 		public int decrementUseCounter() {
 			if(useCounter==0)
-				throw new ModelException(ModelErrorCode.ILLEGAL_STATE, "Use counter already 0");
+				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Use counter already 0");
 			return --useCounter;
 		}
 

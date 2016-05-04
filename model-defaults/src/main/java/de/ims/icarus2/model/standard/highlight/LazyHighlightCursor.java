@@ -31,7 +31,7 @@ import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.function.IntFunction;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.highlight.Highlight;
 import de.ims.icarus2.model.api.layer.HighlightLayer;
@@ -76,7 +76,7 @@ public class LazyHighlightCursor extends AbstractHighlightCursor {
 		DataSequence<Highlight> sequence = highlightGenerator.apply(index);
 
 		if(sequence==null)
-			throw new ModelException(ModelErrorCode.DELEGATION_FAILED,
+			throw new ModelException(GlobalErrorCode.DELEGATION_FAILED,
 					String.format("Failed to generate highlight sequence for index %d on container %s in layer %s",
 							index, getName(getTarget()), getName(getHighlightLayer())));
 

@@ -34,6 +34,7 @@ import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
+import de.ims.icarus2.model.api.members.NamedCorpusMember;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.LayerType;
@@ -48,9 +49,7 @@ import de.ims.icarus2.util.id.UnknownIdentifierException;
  * @version $Id: Context.java 407 2015-06-24 00:12:18Z mcgaerty $
  *
  */
-public interface Context extends ManifestOwner<ContextManifest>, Connectible<Driver>, Part<Corpus> {
-
-	Corpus getCorpus();
+public interface Context extends ManifestOwner<ContextManifest>, Connectible<Driver>, Part<Corpus>, NamedCorpusMember {
 
 	/**
 	 * If this context contains one or more markable layers it has to define

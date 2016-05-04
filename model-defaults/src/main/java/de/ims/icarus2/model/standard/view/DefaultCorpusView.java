@@ -38,6 +38,7 @@ import java.util.Set;
 
 import javax.swing.event.ChangeListener;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -300,7 +301,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 			checkOpen();
 
 			if(!owners.remove(owner))
-				throw new ModelException(getCorpus(), ModelErrorCode.INVALID_INPUT,
+				throw new ModelException(getCorpus(), GlobalErrorCode.INVALID_INPUT,
 						"Owner does not hold ownership of this view: "+owner.getName()); //$NON-NLS-1$
 
 			//TODO do additional processing or automatic closing?

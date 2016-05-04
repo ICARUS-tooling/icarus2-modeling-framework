@@ -25,7 +25,6 @@
  */
 package de.ims.icarus2.model.standard.corpus;
 
-import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.ArrayList;
@@ -40,7 +39,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -48,8 +47,10 @@ import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
+import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
+import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
 
@@ -103,14 +104,14 @@ public class DefaultContext implements Context {
 		PrerequisiteManifest prerequisiteManifest = contextManifest.getPrerequisite(id);
 
 		if(prerequisiteManifest==null)
-			throw new ModelException(ModelErrorCode.MANIFEST_UNKNOWN_ID,
+			throw new ModelException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
 					"No prerequisite manifest for id: "+id);
 
 		String contextId = prerequisiteManifest.getContextId();
 		String layerId = prerequisiteManifest.getLayerId();
 
 		if(contextManifest.getId().equals(contextId))
-			throw new ModelException(ModelErrorCode.MANIFEST_ERROR,
+			throw new ModelException(ManifestErrorCode.MANIFEST_ERROR,
 					"Foreign layer id points to this context: "+contextId);
 
 		Context foreignContext = getCorpus().getContext(contextId);
@@ -137,10 +138,10 @@ public class DefaultContext implements Context {
 
 		if(primaryLayer!=null) {
 			if(!layers.contains(primaryLayer))
-				throw new ModelException(ModelErrorCode.MANIFEST_UNKNOWN_ID,
+				throw new ModelException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
 						"Primary layer is unknown to this context: "+primaryLayer); //$NON-NLS-1$
 			if(primaryLayer.getLayerGroup().getPrimaryLayer()!=primaryLayer)
-				throw new ModelException(ModelErrorCode.MANIFEST_INVALID_ENVIRONMENT,
+				throw new ModelException(ManifestErrorCode.MANIFEST_INVALID_ENVIRONMENT,
 						"Context's primary layer must be the primary layer of the hosting group: "+primaryLayer); //$NON-NLS-1$
 		}
 
@@ -165,7 +166,7 @@ public class DefaultContext implements Context {
 
 		if(foundationLayer!=null) {
 			if(!layers.contains(foundationLayer))
-				throw new ModelException(ModelErrorCode.MANIFEST_UNKNOWN_ID,
+				throw new ModelException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
 						"Foundation layer is unknown to this context: "+foundationLayer); //$NON-NLS-1$
 		}
 
@@ -198,8 +199,8 @@ public class DefaultContext implements Context {
 	public Driver getDriver() {
 		Driver driver = this.driver;
 		if(driver==null)
-			throw new ModelException(getCorpus(), ModelErrorCode.ILLEGAL_STATE,
-					"Not yet connected to any driver: "+getName(this));
+			throw new ModelException(getCorpus(), GlobalErrorCode.ILLEGAL_STATE,
+					"Not yet connected to any driver: "+ModelUtils.getName(this));
 
 		return driver;
 	}
@@ -210,6 +211,24 @@ public class DefaultContext implements Context {
 	@Override
 	public Corpus getCorpus() {
 		return corpus;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.NamedCorpusMember#getName()
+	 */
+	@Override
+	public String getName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.CorpusMember#getMemberType()
+	 */
+	@Override
+	public MemberType getMemberType() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	/**
@@ -226,8 +245,8 @@ public class DefaultContext implements Context {
 	@Override
 	public void addNotify(Corpus corpus) {
 		if(corpus!=this.corpus)
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
-					"Cannot add context to foreign corpus: "+getName(corpus));
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+					"Cannot add context to foreign corpus: "+ModelUtils.getName(corpus));
 
 		added = true;
 	}
@@ -241,8 +260,8 @@ public class DefaultContext implements Context {
 	@Override
 	public void removeNotify(Corpus corpus) {
 		if(corpus!=this.corpus)
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
-					"Cannot remove context from foreign corpus: "+getName(corpus));
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+					"Cannot remove context from foreign corpus: "+ModelUtils.getName(corpus));
 
 		added = false;
 	}
@@ -257,8 +276,8 @@ public class DefaultContext implements Context {
 		checkNotNull(driver);
 
 		if(this.driver!=null)
-			throw new ModelException(getCorpus(), ModelErrorCode.ILLEGAL_STATE,
-					"Already connected to a driver: "+getName(this.driver));
+			throw new ModelException(getCorpus(), GlobalErrorCode.ILLEGAL_STATE,
+					"Already connected to a driver: "+ModelUtils.getName(this.driver));
 
 		this.driver = driver;
 	}
@@ -268,8 +287,8 @@ public class DefaultContext implements Context {
 		checkNotNull(driver);
 
 		if(this.driver!=driver)
-			throw new ModelException(getCorpus(), ModelErrorCode.ILLEGAL_STATE,
-					"Cannot disconnect from unknown driver: "+getName(driver));
+			throw new ModelException(getCorpus(), GlobalErrorCode.ILLEGAL_STATE,
+					"Cannot disconnect from unknown driver: "+ModelUtils.getName(driver));
 
 		this.driver = null;
 	}
@@ -284,7 +303,7 @@ public class DefaultContext implements Context {
 		Layer layer = layerLookup.get(id);
 
 		if(layer==null)
-			throw new ModelException(ModelErrorCode.MANIFEST_UNKNOWN_ID, "No such native layer: "+id);
+			throw new ModelException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "No such native layer: "+id);
 
 		return layer;
 	}
@@ -307,7 +326,7 @@ public class DefaultContext implements Context {
 		}
 
 		if(layer==null)
-			throw new ModelException(ModelErrorCode.MANIFEST_UNKNOWN_ID, "No such layer: "+id);
+			throw new ModelException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "No such layer: "+id);
 
 		return (L) layer;
 	}
@@ -320,13 +339,13 @@ public class DefaultContext implements Context {
 	public void addLayer(Layer layer) {
 		checkNotNull(layer);
 		if(layer.getContext()!=this)
-			throw new ModelException(ModelErrorCode.MANIFEST_INVALID_ENVIRONMENT,
+			throw new ModelException(ManifestErrorCode.MANIFEST_INVALID_ENVIRONMENT,
 					"Foreign layer: "+ModelUtils.getName(layer)); //$NON-NLS-1$
 
 		String id = layer.getManifest().getId();
 
 		if(layerLookup.containsKey(id))
-			throw new ModelException(ModelErrorCode.MANIFEST_DUPLICATE_ID,
+			throw new ModelException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
 					"Layer id already mapped to different layer: "+id); //$NON-NLS-1$
 
 		layers.add(layer);
@@ -339,13 +358,13 @@ public class DefaultContext implements Context {
 	public void removeLayer(Layer layer) {
 		checkNotNull(layer);
 		if(layer.getContext()!=this)
-			throw new ModelException(ModelErrorCode.MANIFEST_INVALID_ENVIRONMENT,
+			throw new ModelException(ManifestErrorCode.MANIFEST_INVALID_ENVIRONMENT,
 					"Foreign layer: "+ModelUtils.getName(layer)); //$NON-NLS-1$
 
 		String id = layer.getManifest().getId();
 
 		if(!layers.remove(layer))
-			throw new ModelException(ModelErrorCode.MANIFEST_UNKNOWN_ID,
+			throw new ModelException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
 					"Unknown layer: "+ModelUtils.getName(layer)); //$NON-NLS-1$
 		layerLookup.remove(id);
 

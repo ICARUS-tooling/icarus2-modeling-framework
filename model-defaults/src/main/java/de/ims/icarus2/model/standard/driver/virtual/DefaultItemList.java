@@ -31,6 +31,7 @@ import java.util.List;
 
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.ItemList;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.seq.DataSequenceCollectionWrapper;
@@ -68,7 +69,7 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	 */
 	@Override
 	public Item getItemAt(long index) {
-		return get(ensureIntegerValueRange(index));
+		return get(IcarusUtils.ensureIntegerValueRange(index));
 	}
 
 	/**
@@ -84,7 +85,7 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	 */
 	@Override
 	public Item removeItem(long index) {
-		return remove(ensureIntegerValueRange(index));
+		return remove(IcarusUtils.ensureIntegerValueRange(index));
 	}
 
 	/**
@@ -92,7 +93,7 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	 */
 	@Override
 	public void addItem(long index, Item item) {
-		add(ensureIntegerValueRange(index), item);
+		add(IcarusUtils.ensureIntegerValueRange(index), item);
 	}
 
 	/**
@@ -100,7 +101,7 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	 */
 	@Override
 	public void moveItem(long index0, long index1) {
-		move(ensureIntegerValueRange(index0), ensureIntegerValueRange(index1));
+		move(IcarusUtils.ensureIntegerValueRange(index0), IcarusUtils.ensureIntegerValueRange(index1));
 	}
 
 	/**
@@ -108,7 +109,7 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	 */
 	@Override
 	public void addItems(long index, DataSequence<? extends Item> items) {
-		addAll(ensureIntegerValueRange(index),
+		addAll(IcarusUtils.ensureIntegerValueRange(index),
 				new DataSequenceCollectionWrapper<>(items));
 	}
 
@@ -117,8 +118,8 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	 */
 	@Override
 	public DataSequence<? extends Item> removeItems(long index0, long index1) {
-		int idx0 = ensureIntegerValueRange(index0);
-		int idx1 = ensureIntegerValueRange(index1);
+		int idx0 = IcarusUtils.ensureIntegerValueRange(index0);
+		int idx1 = IcarusUtils.ensureIntegerValueRange(index1);
 
 		final List<Item> buffer = new ArrayList<>(Math.max(10, idx1-idx0+1));
 
