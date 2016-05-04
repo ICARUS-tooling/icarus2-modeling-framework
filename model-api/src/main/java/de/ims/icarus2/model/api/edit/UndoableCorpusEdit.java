@@ -42,6 +42,7 @@ import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.CorpusMember;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.util.CorpusUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
 
 /**

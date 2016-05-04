@@ -43,6 +43,7 @@ import de.ims.icarus2.model.api.path.CorpusPath.PathElementType;
 import de.ims.icarus2.model.api.path.CorpusPathBuilder;
 import de.ims.icarus2.model.api.registry.CorpusMemberDecoder;
 import de.ims.icarus2.model.api.registry.LayerLookup;
+import de.ims.icarus2.model.util.CorpusUtils;
 import de.ims.icarus2.util.strings.CharSequenceReader;
 import de.ims.icarus2.util.strings.StringUtil;
 

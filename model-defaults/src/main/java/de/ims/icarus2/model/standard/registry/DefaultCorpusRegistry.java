@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.registry;
 
-import static de.ims.icarus2.model.standard.util.CorpusUtils.getName;
+import static de.ims.icarus2.model.util.CorpusUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.Collection;
@@ -46,7 +46,7 @@ import de.ims.icarus2.model.manifest.api.LayerType;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
-import de.ims.icarus2.model.standard.util.CorpusUtils;
+import de.ims.icarus2.model.util.CorpusUtils;
 import de.ims.icarus2.util.Counter;
 import de.ims.icarus2.util.events.EventListener;
 import de.ims.icarus2.util.events.EventObject;

@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
-import static de.ims.icarus2.model.standard.util.CorpusUtils.getName;
+import static de.ims.icarus2.model.util.CorpusUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.ArrayList;
@@ -41,7 +41,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.StructureFlag;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
-import de.ims.icarus2.model.standard.util.CorpusUtils;
+import de.ims.icarus2.model.util.CorpusUtils;
 import de.ims.icarus2.util.mem.HeapMember;
 import de.ims.icarus2.util.mem.Reference;
 import de.ims.icarus2.util.mem.ReferenceType;

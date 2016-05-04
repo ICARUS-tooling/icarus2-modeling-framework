@@ -30,7 +30,7 @@ import static de.ims.icarus2.model.standard.members.MemberUtils.checkNoLoopsStru
 import static de.ims.icarus2.model.standard.members.MemberUtils.checkNonEmptyContainer;
 import static de.ims.icarus2.model.standard.members.MemberUtils.checkNonPartialStructure;
 import static de.ims.icarus2.model.standard.members.MemberUtils.checkStaticContainer;
-import static de.ims.icarus2.model.standard.util.CorpusUtils.getName;
+import static de.ims.icarus2.model.util.CorpusUtils.getName;
 
 import java.util.ArrayList;
 import java.util.Arrays;

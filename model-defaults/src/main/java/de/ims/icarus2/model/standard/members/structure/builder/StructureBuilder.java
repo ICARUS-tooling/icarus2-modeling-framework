@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.structure.builder;
 
-import static de.ims.icarus2.model.standard.util.CorpusUtils.isVirtual;
+import static de.ims.icarus2.model.util.CorpusUtils.isVirtual;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;

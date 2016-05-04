@@ -23,7 +23,7 @@
  * $LastChangedRevision: 448 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.standard.util;
+package de.ims.icarus2.model.util;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 

@@ -43,7 +43,7 @@ import de.ims.icarus2.model.standard.members.container.ItemStorage;
 import de.ims.icarus2.model.standard.members.item.AbstractItem;
 import de.ims.icarus2.model.standard.members.structure.EdgeStorage;
 import de.ims.icarus2.model.standard.members.structure.ImmutableStructureEditVerifier;
-import de.ims.icarus2.model.standard.util.CorpusUtils;
+import de.ims.icarus2.model.util.CorpusUtils;
 import de.ims.icarus2.util.collections.DataSequence;
 import de.ims.icarus2.util.collections.DataSet;
 

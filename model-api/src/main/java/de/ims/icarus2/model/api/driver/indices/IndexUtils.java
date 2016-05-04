@@ -39,6 +39,9 @@ import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.func.IndexIterativeIntersection;
 import de.ims.icarus2.model.api.driver.indices.func.IndexSetMerger;
+import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
+import de.ims.icarus2.model.api.driver.indices.standard.SingletonIndexSet;
+import de.ims.icarus2.model.api.driver.indices.standard.SpanIndexSet;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.util.Messages;
 

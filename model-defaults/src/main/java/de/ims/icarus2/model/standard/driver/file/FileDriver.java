@@ -65,7 +65,7 @@ import de.ims.icarus2.model.standard.driver.mapping.AbstractStoredMapping;
 import de.ims.icarus2.model.standard.driver.mapping.MappingFactory;
 import de.ims.icarus2.model.standard.driver.mapping.MappingFactory.Property;
 import de.ims.icarus2.model.standard.driver.mapping.chunks.ChunkIndexStorage;
-import de.ims.icarus2.model.standard.util.CorpusUtils;
+import de.ims.icarus2.model.util.CorpusUtils;
 import de.ims.icarus2.util.Options;
 
 

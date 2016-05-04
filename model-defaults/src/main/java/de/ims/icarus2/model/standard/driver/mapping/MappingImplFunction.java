@@ -32,11 +32,11 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
+import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
-import de.ims.icarus2.model.standard.driver.indices.IndexBuffer;
 
 /**
  * Implements a 1-to-1 mapping that is based

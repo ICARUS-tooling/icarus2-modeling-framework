@@ -28,7 +28,7 @@ package de.ims.icarus2.model.standard.sequences;
 import java.util.AbstractCollection;
 import java.util.Iterator;
 
-import de.ims.icarus2.model.standard.util.CorpusUtils;
+import de.ims.icarus2.model.util.CorpusUtils;
 import de.ims.icarus2.util.collections.DataSequence;
 
 /**

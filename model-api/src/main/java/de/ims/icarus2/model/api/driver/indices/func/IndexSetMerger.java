@@ -35,6 +35,9 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
+import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
+import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory;
+import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.IndexSetBuilder;
 
 /**
  * This class is not thread-safe!

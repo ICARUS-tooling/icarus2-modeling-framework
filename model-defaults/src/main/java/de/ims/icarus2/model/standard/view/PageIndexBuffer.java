@@ -36,8 +36,8 @@ import de.ims.icarus2.model.api.corpus.CorpusView.PageControl;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
+import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
 import de.ims.icarus2.model.manifest.util.Messages;
-import de.ims.icarus2.model.standard.driver.indices.IndexBuffer;
 
 /**
  * Implements a buffer that holds a collection of raw {@link IndexSet} instances and

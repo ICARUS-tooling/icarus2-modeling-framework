@@ -23,7 +23,7 @@
  * $LastChangedRevision$
  * $LastChangedBy$
  */
-package de.ims.icarus2.model.standard.driver.indices;
+package de.ims.icarus2.model.api.driver.indices.standard;
 
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkSorted;
 import static de.ims.icarus2.util.Conditions.checkArgument;
@@ -345,7 +345,7 @@ public class IndexCollectorFactory implements ModelConstants {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.indices.IndexCollectorFactory.IndexSetBuilder#build()
+		 * @see de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.IndexSetBuilder#build()
 		 */
 		@Override
 		public IndexSet[] build() {
@@ -393,7 +393,7 @@ public class IndexCollectorFactory implements ModelConstants {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.indices.IndexCollectorFactory.IndexSetBuilder#build()
+		 * @see de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.IndexSetBuilder#build()
 		 */
 		@Override
 		public IndexSet[] build() {
@@ -408,7 +408,7 @@ public class IndexCollectorFactory implements ModelConstants {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.indices.IndexCollectorFactory.IndexStorage#forEach(java.util.function.LongConsumer)
+		 * @see de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.IndexStorage#forEach(java.util.function.LongConsumer)
 		 */
 		@Override
 		public void forEach(LongConsumer action) {
@@ -470,7 +470,7 @@ public class IndexCollectorFactory implements ModelConstants {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.indices.IndexCollectorFactory.IndexSetBuilder#build()
+		 * @see de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.IndexSetBuilder#build()
 		 */
 		@Override
 		public IndexSet[] build() {
@@ -485,7 +485,7 @@ public class IndexCollectorFactory implements ModelConstants {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.indices.IndexCollectorFactory.IndexStorage#forEach(java.util.function.LongConsumer)
+		 * @see de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.IndexStorage#forEach(java.util.function.LongConsumer)
 		 */
 		@Override
 		public void forEach(LongConsumer action) {
@@ -547,7 +547,7 @@ public class IndexCollectorFactory implements ModelConstants {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.indices.IndexCollectorFactory.IndexSetBuilder#build()
+		 * @see de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.IndexSetBuilder#build()
 		 */
 		@Override
 		public IndexSet[] build() {
@@ -562,7 +562,7 @@ public class IndexCollectorFactory implements ModelConstants {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.indices.IndexCollectorFactory.IndexStorage#forEach(java.util.function.LongConsumer)
+		 * @see de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.IndexStorage#forEach(java.util.function.LongConsumer)
 		 */
 		@Override
 		public void forEach(LongConsumer action) {
@@ -624,7 +624,7 @@ public class IndexCollectorFactory implements ModelConstants {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.indices.IndexCollectorFactory.IndexSetBuilder#build()
+		 * @see de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.IndexSetBuilder#build()
 		 */
 		@Override
 		public IndexSet[] build() {
@@ -639,7 +639,7 @@ public class IndexCollectorFactory implements ModelConstants {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.indices.IndexCollectorFactory.IndexStorage#forEach(java.util.function.LongConsumer)
+		 * @see de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.IndexStorage#forEach(java.util.function.LongConsumer)
 		 */
 		@Override
 		public void forEach(LongConsumer action) {
@@ -850,7 +850,7 @@ public class IndexCollectorFactory implements ModelConstants {
 		 * No guarantees are made regarding sorting of index values within
 		 * individual sets!
 		 *
-		 * @see de.ims.icarus2.model.standard.driver.indices.IndexCollectorFactory.IndexSetBuilder#build()
+		 * @see de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.IndexSetBuilder#build()
 		 */
 		@Override
 		public IndexSet[] build() {

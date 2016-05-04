@@ -34,6 +34,7 @@ import java.util.function.Consumer;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
+import de.ims.icarus2.model.util.CorpusUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**

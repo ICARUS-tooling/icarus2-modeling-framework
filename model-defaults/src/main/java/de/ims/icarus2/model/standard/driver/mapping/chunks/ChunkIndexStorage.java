@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.driver.mapping.chunks;
 
-import static de.ims.icarus2.model.standard.util.CorpusUtils.getName;
+import static de.ims.icarus2.model.util.CorpusUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
 import gnu.trove.map.TIntObjectMap;

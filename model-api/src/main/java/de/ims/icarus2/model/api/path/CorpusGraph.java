@@ -47,6 +47,7 @@ import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.api.Manifest;
+import de.ims.icarus2.model.util.CorpusUtils;
 
 /**
  *

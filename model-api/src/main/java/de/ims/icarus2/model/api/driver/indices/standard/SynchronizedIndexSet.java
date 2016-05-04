@@ -23,7 +23,7 @@
  * $LastChangedRevision$
  * $LastChangedBy$
  */
-package de.ims.icarus2.model.standard.driver.indices;
+package de.ims.icarus2.model.api.driver.indices.standard;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 

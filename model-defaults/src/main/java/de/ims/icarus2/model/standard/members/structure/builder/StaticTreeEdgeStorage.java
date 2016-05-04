@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.structure.builder;
 
-import static de.ims.icarus2.model.standard.util.CorpusUtils.getName;
+import static de.ims.icarus2.model.util.CorpusUtils.getName;
 
 import java.util.Arrays;
 

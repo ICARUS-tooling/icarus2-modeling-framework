@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.corpus;
 
-import static de.ims.icarus2.model.standard.util.CorpusUtils.getName;
+import static de.ims.icarus2.model.util.CorpusUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.ArrayList;
@@ -50,7 +50,7 @@ import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
-import de.ims.icarus2.model.standard.util.CorpusUtils;
+import de.ims.icarus2.model.util.CorpusUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**

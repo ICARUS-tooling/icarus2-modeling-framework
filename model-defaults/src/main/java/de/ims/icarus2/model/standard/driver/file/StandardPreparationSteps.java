@@ -42,7 +42,7 @@ import de.ims.icarus2.model.standard.driver.file.FileMetadata.ChunkIndexKey;
 import de.ims.icarus2.model.standard.driver.file.FileMetadata.FileKey;
 import de.ims.icarus2.model.standard.driver.file.FileMetadata.ItemLayerKey;
 import de.ims.icarus2.model.standard.driver.io.sets.FileSet;
-import de.ims.icarus2.model.standard.util.CorpusUtils;
+import de.ims.icarus2.model.util.CorpusUtils;
 import de.ims.icarus2.util.Options;
 
 /**

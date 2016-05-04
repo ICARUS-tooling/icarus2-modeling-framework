@@ -30,7 +30,7 @@ import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.standard.util.CorpusUtils;
+import de.ims.icarus2.model.util.CorpusUtils;
 import de.ims.icarus2.util.Recyclable;
 import de.ims.icarus2.util.mem.HeapMember;
 import de.ims.icarus2.util.mem.Reference;

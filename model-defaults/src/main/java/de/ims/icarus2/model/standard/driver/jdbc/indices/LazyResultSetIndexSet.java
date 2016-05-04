@@ -37,7 +37,7 @@ import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
-import de.ims.icarus2.model.standard.driver.indices.IndexBuffer;
+import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
 
 /**
  * Implements an {@code IndexSet} that is backed by a {@link ResultSet}.

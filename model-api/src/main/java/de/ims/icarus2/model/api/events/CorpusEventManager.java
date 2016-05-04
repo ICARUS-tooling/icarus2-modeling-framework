@@ -33,6 +33,7 @@ import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.corpus.CorpusView;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.meta.MetaData;
+import de.ims.icarus2.model.util.CorpusUtils;
 
 /**
  * @author Markus Gärtner

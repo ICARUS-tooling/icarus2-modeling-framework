@@ -23,7 +23,7 @@
  * $LastChangedRevision: 442 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.standard.driver.indices;
+package de.ims.icarus2.model.api.driver.indices.standard;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;

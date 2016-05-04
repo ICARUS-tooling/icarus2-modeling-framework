@@ -17,40 +17,48 @@
 
  * $Revision: 419 $
  * $Date: 2015-07-23 22:36:36 +0200 (Do, 23 Jul 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/driver/indices/SingletonIndexSet.java $
+ * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/driver/indices/SpanIndexSet.java $
  *
  * $LastChangedDate: 2015-07-23 22:36:36 +0200 (Do, 23 Jul 2015) $
  * $LastChangedRevision: 419 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.standard.driver.indices;
+package de.ims.icarus2.model.api.driver.indices.standard;
 
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
-import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
+import de.ims.icarus2.util.classes.ClassUtils;
 
 /**
  * @author Markus Gärtner
- * @version $Id: SingletonIndexSet.java 419 2015-07-23 20:36:36Z mcgaerty $
+ * @version $Id: SpanIndexSet.java 419 2015-07-23 20:36:36Z mcgaerty $
  *
  */
-public class SingletonIndexSet implements IndexSet {
+public class SpanIndexSet implements IndexSet {
 
-	private final long index;
+	private final long minValue, maxValue;
+	private final IndexValueType valueType;
 
-	public SingletonIndexSet(long index) {
-		if(index<0)
-			throw new IllegalArgumentException("Index is negative: "+index); //$NON-NLS-1$
+	public SpanIndexSet(long minValue, long maxValue) {
+		if(minValue<0)
+			throw new IllegalArgumentException("Min value is negative: "+minValue); //$NON-NLS-1$
+		if(maxValue<0)
+			throw new IllegalArgumentException("Max value is negative: "+maxValue); //$NON-NLS-1$
+		if(minValue>maxValue)
+			throw new IllegalArgumentException("Min value exceeds max value: "+maxValue); //$NON-NLS-1$
 
-		this.index = index;
+		this.minValue = minValue;
+		this.maxValue = maxValue;
+
+		valueType = ClassUtils.max(IndexValueType.forValue(minValue), IndexValueType.forValue(maxValue));
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.driver.indices.IndexSet#size()
+	 * @see de.ims.icarus2.model.api.driver.indices.IndexSet#getSize()
 	 */
 	@Override
 	public int size() {
-		return 1;
+		return (int) (maxValue-minValue+1);
 	}
 
 	/**
@@ -58,21 +66,7 @@ public class SingletonIndexSet implements IndexSet {
 	 */
 	@Override
 	public long indexAt(int index) {
-		if(index!=0)
-			throw new IndexOutOfBoundsException();
-
-		return this.index;
-	}
-
-	/**
-	 * This implementation wraps itself into a new array of size {@code 1} and returns
-	 * that array.
-	 *
-	 * @see de.ims.icarus2.model.api.driver.indices.IndexSet#split(int)
-	 */
-	@Override
-	public IndexSet[] split(int chunkSize) {
-		return IndexUtils.wrap(this);
+		return minValue+index;
 	}
 
 	/**
@@ -80,7 +74,7 @@ public class SingletonIndexSet implements IndexSet {
 	 */
 	@Override
 	public long firstIndex() {
-		return index;
+		return minValue;
 	}
 
 	/**
@@ -88,7 +82,7 @@ public class SingletonIndexSet implements IndexSet {
 	 */
 	@Override
 	public long lastIndex() {
-		return index;
+		return maxValue;
 	}
 
 	/**
@@ -104,10 +98,13 @@ public class SingletonIndexSet implements IndexSet {
 	 */
 	@Override
 	public IndexSet subSet(int fromIndex, int toIndex) {
-		if(fromIndex!=0 || toIndex!=0)
-			throw new IllegalArgumentException();
+		//TODO sanity check for boundary violations
 
-		return this;
+		if(fromIndex==0 && toIndex==size()-1) {
+			return this;
+		} else {
+			return new SpanIndexSet(minValue+fromIndex, minValue+toIndex);
+		}
 	}
 
 	/**
@@ -115,7 +112,7 @@ public class SingletonIndexSet implements IndexSet {
 	 */
 	@Override
 	public IndexValueType getIndexValueType() {
-		return IndexValueType.forValue(index);
+		return valueType;
 	}
 
 	/**
@@ -133,5 +130,4 @@ public class SingletonIndexSet implements IndexSet {
 	public boolean sort() {
 		return true;
 	}
-
 }

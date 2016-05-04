@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.view;
 
-import static de.ims.icarus2.model.standard.util.CorpusUtils.getName;
+import static de.ims.icarus2.model.util.CorpusUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
@@ -70,7 +70,7 @@ import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.container.AbstractImmutableContainer;
-import de.ims.icarus2.model.standard.util.CorpusUtils;
+import de.ims.icarus2.model.util.CorpusUtils;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.classes.ClassUtils;
