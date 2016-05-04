@@ -29,7 +29,7 @@ import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.concurrent.Callable;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
@@ -72,7 +72,7 @@ public class MappingRequestFactory {
 
 	private void checkReaderSet() {
 		if(reader==null)
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE, "No reader set");
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "No reader set");
 	}
 
 	public MappingRequest forIndex(long index) {

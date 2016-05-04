@@ -33,7 +33,7 @@ import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.corpus.CorpusView;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.meta.MetaData;
-import de.ims.icarus2.model.util.CorpusUtils;
+import de.ims.icarus2.model.util.ModelUtils;
 
 /**
  * @author Markus Gärtner
@@ -73,7 +73,7 @@ public class CorpusEventManager {
 
 	private void checkProvidedCorpus(Corpus target) {
 		if(target!=corpus)
-			throw new IllegalArgumentException("Cannot fire events for foreign corpus "+CorpusUtils.getName(corpus));
+			throw new IllegalArgumentException("Cannot fire events for foreign corpus "+ModelUtils.getName(corpus));
 	}
 
 	public void fireCorpusChanged() {

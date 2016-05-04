@@ -23,15 +23,14 @@
  * $LastChangedRevision: 457 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.standard.sequences;
+package de.ims.icarus2.util.collections.seq;
 
 import java.util.Iterator;
 import java.util.List;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
-import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.util.CorpusUtils;
-import de.ims.icarus2.util.collections.DataSequence;
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  *
@@ -47,13 +46,13 @@ public class ListSequence<E extends Object> implements DataSequence<E>, Iterable
 		if (list == null)
 			throw new NullPointerException("Invalid list");
 		if (list.isEmpty())
-			throw new ModelException(ModelErrorCode.INVALID_INPUT, "List of elements must not be empty");
+			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "List of elements must not be empty");
 
 		this.list = list;
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.collections.DataSequence#entryCount()
+	 * @see de.ims.icarus2.util.collections.seq.DataSequence#entryCount()
 	 */
 	@Override
 	public long entryCount() {
@@ -61,11 +60,11 @@ public class ListSequence<E extends Object> implements DataSequence<E>, Iterable
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.collections.DataSequence#elementAt(long)
+	 * @see de.ims.icarus2.util.collections.seq.DataSequence#elementAt(long)
 	 */
 	@Override
-	public E elementAt(long index) throws ModelException {
-		return list.get(CorpusUtils.ensureIntegerValueRange(index));
+	public E elementAt(long index) {
+		return list.get(IcarusUtils.ensureIntegerValueRange(index));
 	}
 
 	/**

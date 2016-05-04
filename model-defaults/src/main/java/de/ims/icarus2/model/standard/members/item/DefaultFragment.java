@@ -31,7 +31,7 @@ import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.raster.Position;
-import de.ims.icarus2.model.util.CorpusUtils;
+import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.mem.HeapMember;
 import de.ims.icarus2.util.mem.Reference;
 import de.ims.icarus2.util.mem.ReferenceType;
@@ -173,7 +173,7 @@ public class DefaultFragment extends AbstractItem implements Fragment {
 		if (begin == null)
 			throw new NullPointerException("Invalid begin");  //$NON-NLS-1$
 
-		CorpusUtils.checkFragmentPositions(this, begin, null);
+		ModelUtils.checkFragmentPositions(this, begin, null);
 
 		fragmentBegin = begin;
 	}
@@ -195,7 +195,7 @@ public class DefaultFragment extends AbstractItem implements Fragment {
 		if (end == null)
 			throw new NullPointerException("Invalid end");  //$NON-NLS-1$
 
-		CorpusUtils.checkFragmentPositions(this, begin, end);
+		ModelUtils.checkFragmentPositions(this, begin, end);
 
 		fragmentBegin = begin;
 		fragmentEnd = end;

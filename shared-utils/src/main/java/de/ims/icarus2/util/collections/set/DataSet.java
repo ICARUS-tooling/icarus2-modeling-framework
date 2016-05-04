@@ -23,7 +23,7 @@
  * $LastChangedRevision: 457 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.util.collections;
+package de.ims.icarus2.util.collections.set;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 
@@ -31,6 +31,9 @@ import java.lang.reflect.Array;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
+
+import de.ims.icarus2.util.collections.LazyCollection;
+import de.ims.icarus2.util.collections.seq.DataSequence;
 
 
 /**

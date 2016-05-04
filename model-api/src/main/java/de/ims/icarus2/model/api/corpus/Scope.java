@@ -34,7 +34,7 @@ import java.util.function.Consumer;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
-import de.ims.icarus2.model.util.CorpusUtils;
+import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**
@@ -79,16 +79,16 @@ public class Scope {
 			throw new IllegalArgumentException("List of layers is empty"); //$NON-NLS-1$
 
 		if(primaryLayer.getCorpus()!=corpus)
-			throw new IllegalArgumentException("Primary layer is not party of specified corpus: "+CorpusUtils.getName(primaryLayer)); //$NON-NLS-1$
+			throw new IllegalArgumentException("Primary layer is not party of specified corpus: "+ModelUtils.getName(primaryLayer)); //$NON-NLS-1$
 
 		for(Context context : contexts) {
 			if(context.getCorpus()!=corpus)
-				throw new IllegalArgumentException("Context is not party of specified corpus: "+CorpusUtils.getName(context)); //$NON-NLS-1$
+				throw new IllegalArgumentException("Context is not party of specified corpus: "+ModelUtils.getName(context)); //$NON-NLS-1$
 		}
 
 		for(Layer layer : layers) {
 			if(layer.getCorpus()!=corpus)
-				throw new IllegalArgumentException("Layer is not party of specified corpus: "+CorpusUtils.getName(layer)); //$NON-NLS-1$
+				throw new IllegalArgumentException("Layer is not party of specified corpus: "+ModelUtils.getName(layer)); //$NON-NLS-1$
 		}
 
 		this.corpus = corpus;

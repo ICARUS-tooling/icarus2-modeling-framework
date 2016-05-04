@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.structure.builder;
 
-import static de.ims.icarus2.model.util.CorpusUtils.isVirtual;
+import static de.ims.icarus2.model.util.ModelUtils.isVirtual;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
@@ -54,7 +54,7 @@ import de.ims.icarus2.model.standard.members.structure.EdgeStorage;
 import de.ims.icarus2.model.standard.members.structure.EmptyEdgeStorage;
 import de.ims.icarus2.model.standard.members.structure.RootItem;
 import de.ims.icarus2.util.collections.CollectionUtils;
-import de.ims.icarus2.util.collections.DataSet;
+import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
  * @author Markus Gärtner

@@ -34,8 +34,8 @@ import java.util.List;
 import de.ims.icarus2.model.api.highlight.Highlight;
 import de.ims.icarus2.model.api.highlight.HighlightInfo;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.standard.sets.DataSets;
-import de.ims.icarus2.util.collections.DataSet;
+import de.ims.icarus2.util.collections.set.DataSet;
+import de.ims.icarus2.util.collections.set.DataSets;
 
 /**
  * @author Markus Gärtner

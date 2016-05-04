@@ -56,8 +56,8 @@ import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
 import de.ims.icarus2.util.access.AccessRestriction;
 import de.ims.icarus2.util.annotations.OptionalMethod;
-import de.ims.icarus2.util.collections.DataSequence;
-import de.ims.icarus2.util.collections.DataSet;
+import de.ims.icarus2.util.collections.seq.DataSequence;
+import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
  * @author Markus Gärtner

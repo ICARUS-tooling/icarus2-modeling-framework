@@ -30,8 +30,8 @@ import java.util.Arrays;
 import java.util.function.IntToLongFunction;
 import java.util.function.LongBinaryOperator;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelConstants;
-import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.util.collections.ArrayUtils;
 
@@ -562,7 +562,7 @@ public enum IndexValueType {
 
 	public long checkValue(long value) {
 		if(value>=maxValue())
-			throw new ModelException(ModelErrorCode.INVALID_INPUT, name()+" - Value exceeds max value: "+value);
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, name()+" - Value exceeds max value: "+value);
 		return value;
 	}
 

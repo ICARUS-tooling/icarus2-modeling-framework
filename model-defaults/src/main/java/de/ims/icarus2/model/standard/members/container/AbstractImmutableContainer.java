@@ -31,7 +31,7 @@ import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.util.collections.DataSequence;
+import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
  * @author Markus Gärtner
@@ -78,7 +78,7 @@ public abstract class AbstractImmutableContainer implements Container {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.container.Container#addItems(long, de.ims.icarus2.util.collections.DataSequence)
+	 * @see de.ims.icarus2.model.api.members.container.Container#addItems(long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
 	public void addItems(long index, DataSequence<? extends Item> items) {

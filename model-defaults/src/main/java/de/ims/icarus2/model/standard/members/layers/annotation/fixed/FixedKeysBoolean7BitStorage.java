@@ -40,7 +40,7 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
-import de.ims.icarus2.model.util.CorpusUtils;
+import de.ims.icarus2.model.util.ModelUtils;
 
 /**
  * @author Markus Gärtner
@@ -86,7 +86,7 @@ public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage
 		IndexLookup indexLookup = getIndexLookup();
 		if(indexLookup.keyCount()>MAX_KEY_COUNT)
 			throw new ModelException(ModelErrorCode.INVALID_INPUT,
-					"Byte buffer only holds 7 value bits - cannot represent annotations for layer: "+CorpusUtils.getName(layer));
+					"Byte buffer only holds 7 value bits - cannot represent annotations for layer: "+ModelUtils.getName(layer));
 
 		AnnotationLayerManifest manifest = layer.getManifest();
 

@@ -23,10 +23,9 @@
  * $LastChangedRevision: 457 $ 
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.standard.sets;
+package de.ims.icarus2.util.collections.set;
 
 import de.ims.icarus2.util.Recyclable;
-import de.ims.icarus2.util.collections.DataSet;
 import de.ims.icarus2.util.mem.HeapMember;
 
 @HeapMember

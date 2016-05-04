@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.function.IntSupplier;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.layer.ItemLayer;
@@ -43,7 +43,8 @@ import de.ims.icarus2.model.api.path.CorpusPath.PathElementType;
 import de.ims.icarus2.model.api.path.CorpusPathBuilder;
 import de.ims.icarus2.model.api.registry.CorpusMemberDecoder;
 import de.ims.icarus2.model.api.registry.LayerLookup;
-import de.ims.icarus2.model.util.CorpusUtils;
+import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.strings.CharSequenceReader;
 import de.ims.icarus2.util.strings.StringUtil;
 
@@ -87,7 +88,7 @@ public class DNADecoder extends CorpusMemberDecoder implements DNAConstants {
 	private Layer readLayer0() {
 		long uid = readLong0();
 
-		return config.getLayer(ensureIntegerValueRange(uid));
+		return config.getLayer(IcarusUtils.ensureIntegerValueRange(uid));
 	}
 
 	private Item readItem0(ItemLayer layer) {
@@ -124,7 +125,7 @@ public class DNADecoder extends CorpusMemberDecoder implements DNAConstants {
 		fill(in, _SEP_MID_);
 		Layer layer = readLayer0();
 
-		checkArgument("Not an ItemLayer", CorpusUtils.isItemLayer(layer));
+		checkArgument("Not an ItemLayer", ModelUtils.isItemLayer(layer));
 
 		fill(in, _SEP_END_);
 
@@ -136,7 +137,7 @@ public class DNADecoder extends CorpusMemberDecoder implements DNAConstants {
 		fill(in, _SEP_MID_);
 		Layer layer = readLayer0();
 
-		checkArgument("Not an ItemLayer", CorpusUtils.isItemLayer(layer));
+		checkArgument("Not an ItemLayer", ModelUtils.isItemLayer(layer));
 
 		fill(in, _SEP_END_);
 
@@ -151,7 +152,7 @@ public class DNADecoder extends CorpusMemberDecoder implements DNAConstants {
 		try {
 			return readItem(reader);
 		} catch (IOException e) {
-			throw new ModelException(ModelErrorCode.INTERNAL_ERROR,
+			throw new ModelException(GlobalErrorCode.INTERNAL_ERROR,
 					"Unexpected IOException in non-IO context", e);
 		} finally {
 			reader.clear();
@@ -194,7 +195,7 @@ public class DNADecoder extends CorpusMemberDecoder implements DNAConstants {
 				break;
 
 			default:
-				throw new ModelException(ModelErrorCode.INTERNAL_ERROR, "Unknown path element type: "+type);
+				throw new ModelException(GlobalErrorCode.INTERNAL_ERROR, "Unknown path element type: "+type);
 			}
 		}
 
@@ -237,7 +238,7 @@ public class DNADecoder extends CorpusMemberDecoder implements DNAConstants {
 				break;
 
 			default:
-				throw new ModelException(ModelErrorCode.INTERNAL_ERROR, "Unknown path element type: "+type);
+				throw new ModelException(GlobalErrorCode.INTERNAL_ERROR, "Unknown path element type: "+type);
 			}
 		}
 
@@ -252,7 +253,7 @@ public class DNADecoder extends CorpusMemberDecoder implements DNAConstants {
 		try {
 			return readPath(reader);
 		} catch (IOException e) {
-			throw new ModelException(ModelErrorCode.INTERNAL_ERROR,
+			throw new ModelException(GlobalErrorCode.INTERNAL_ERROR,
 					"Unexpected IOException in non-IO context", e);
 		} finally {
 			reader.clear();

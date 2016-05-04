@@ -23,11 +23,9 @@
  * $LastChangedRevision: 457 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.standard.sets;
+package de.ims.icarus2.util.collections.set;
 
 import java.util.List;
-
-import de.ims.icarus2.util.collections.DataSet;
 
 /**
  * @author Markus Gärtner

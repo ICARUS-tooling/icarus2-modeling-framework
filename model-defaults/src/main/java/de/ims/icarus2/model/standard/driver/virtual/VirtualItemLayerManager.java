@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.driver.virtual;
 
-import static de.ims.icarus2.model.util.CorpusUtils.getName;
+import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -48,9 +48,9 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.ItemLayerManager;
 import de.ims.icarus2.model.api.members.item.ItemList;
 import de.ims.icarus2.model.standard.driver.ChunkInfoBuilder;
-import de.ims.icarus2.model.util.CorpusUtils;
+import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
-import de.ims.icarus2.util.collections.DataSequence;
+import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
  * @author Markus Gärtner
@@ -98,7 +98,7 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 		checkNotNull(context);
 
 		context.forEachLayer(layer -> {
-			if(CorpusUtils.isItemLayer(layer)) {
+			if(ModelUtils.isItemLayer(layer)) {
 				addLayer((ItemLayer) layer);
 			}
 		});

@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.corpus;
 
-import static de.ims.icarus2.model.util.CorpusUtils.getName;
+import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.ArrayList;
@@ -50,7 +50,7 @@ import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
-import de.ims.icarus2.model.util.CorpusUtils;
+import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**
@@ -184,7 +184,7 @@ public class DefaultContext implements Context {
 		checkNotNull(group);
 
 		if(layerGroups.contains(group))
-			throw new IllegalArgumentException("Layer group already added: "+CorpusUtils.getName(group)); //$NON-NLS-1$
+			throw new IllegalArgumentException("Layer group already added: "+ModelUtils.getName(group)); //$NON-NLS-1$
 
 		group.addNotify(this);
 
@@ -321,7 +321,7 @@ public class DefaultContext implements Context {
 		checkNotNull(layer);
 		if(layer.getContext()!=this)
 			throw new ModelException(ModelErrorCode.MANIFEST_INVALID_ENVIRONMENT,
-					"Foreign layer: "+CorpusUtils.getName(layer)); //$NON-NLS-1$
+					"Foreign layer: "+ModelUtils.getName(layer)); //$NON-NLS-1$
 
 		String id = layer.getManifest().getId();
 
@@ -340,13 +340,13 @@ public class DefaultContext implements Context {
 		checkNotNull(layer);
 		if(layer.getContext()!=this)
 			throw new ModelException(ModelErrorCode.MANIFEST_INVALID_ENVIRONMENT,
-					"Foreign layer: "+CorpusUtils.getName(layer)); //$NON-NLS-1$
+					"Foreign layer: "+ModelUtils.getName(layer)); //$NON-NLS-1$
 
 		String id = layer.getManifest().getId();
 
 		if(!layers.remove(layer))
 			throw new ModelException(ModelErrorCode.MANIFEST_UNKNOWN_ID,
-					"Unknown layer: "+CorpusUtils.getName(layer)); //$NON-NLS-1$
+					"Unknown layer: "+ModelUtils.getName(layer)); //$NON-NLS-1$
 		layerLookup.remove(id);
 
 		getCorpus().removeLayer(layer);

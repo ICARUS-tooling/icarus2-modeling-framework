@@ -38,7 +38,7 @@ import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
-import de.ims.icarus2.model.util.CorpusUtils;
+import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.collections.CollectionUtils;
 
@@ -112,7 +112,7 @@ public class DefaultLayerGroup extends AbstractPart<Context> implements LayerGro
 		if (primaryLayer == null)
 			throw new NullPointerException("Invalid primaryLayer"); //$NON-NLS-1$
 		if(!layers.contains(primaryLayer))
-			throw new ModelException(ModelErrorCode.MANIFEST_UNKNOWN_ID, "Layer is unknown to this group: "+CorpusUtils.getName(primaryLayer)); //$NON-NLS-1$
+			throw new ModelException(ModelErrorCode.MANIFEST_UNKNOWN_ID, "Layer is unknown to this group: "+ModelUtils.getName(primaryLayer)); //$NON-NLS-1$
 
 		this.primaryLayer = primaryLayer;
 	}
@@ -125,7 +125,7 @@ public class DefaultLayerGroup extends AbstractPart<Context> implements LayerGro
 		if (layer == null)
 			throw new NullPointerException("Invalid layer"); //$NON-NLS-1$
 //		if(layers.contains(layer))
-//			throw new IllegalArgumentException("Layer already added: "+CorpusUtils.getName(layer)); //$NON-NLS-1$
+//			throw new IllegalArgumentException("Layer already added: "+ModelUtils.getName(layer)); //$NON-NLS-1$
 
 		layer.addNotify(this);
 

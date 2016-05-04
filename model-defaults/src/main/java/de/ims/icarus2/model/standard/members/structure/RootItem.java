@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
-import static de.ims.icarus2.model.util.CorpusUtils.getName;
+import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.ArrayList;
@@ -41,7 +41,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.StructureFlag;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
-import de.ims.icarus2.model.util.CorpusUtils;
+import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.mem.HeapMember;
 import de.ims.icarus2.util.mem.Reference;
 import de.ims.icarus2.util.mem.ReferenceType;
@@ -335,7 +335,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		@Override
 		public void addEdge(E edge) {
 			if(this.edge!=null)
-				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Singleton edge already set - cannot add "+CorpusUtils.getName(edge));
+				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Singleton edge already set - cannot add "+ModelUtils.getName(edge));
 
 			this.edge = edge;
 		}
@@ -346,7 +346,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		@Override
 		public void removeEdge(E edge) {
 			if(edge!=this.edge)
-				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Unknown edge - cannot remove "+CorpusUtils.getName(edge));
+				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Unknown edge - cannot remove "+ModelUtils.getName(edge));
 
 			this.edge = null;
 		}
@@ -423,7 +423,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		@Override
 		public void addEdge(E edge) {
 			if(edges.contains(edge))
-				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Edge already present: "+CorpusUtils.getName(edge));
+				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Edge already present: "+ModelUtils.getName(edge));
 
 			edges.add(edge);
 		}
@@ -434,7 +434,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		@Override
 		public void removeEdge(E edge) {
 			if(!edges.remove(edge))
-				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Cannot remove unknown edge: "+CorpusUtils.getName(edge));
+				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Cannot remove unknown edge: "+ModelUtils.getName(edge));
 		}
 
 		/**

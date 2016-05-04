@@ -23,7 +23,7 @@
  * $LastChangedRevision: 457 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.standard.sets;
+package de.ims.icarus2.util.collections.set;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 
@@ -51,7 +51,7 @@ public class CachedSet<E extends Object> extends AbstractDataSet<E> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.collections.DataSet#entryCount()
+	 * @see de.ims.icarus2.util.collections.set.DataSet#entryCount()
 	 */
 	@Override
 	public int entryCount() {
@@ -59,7 +59,7 @@ public class CachedSet<E extends Object> extends AbstractDataSet<E> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.collections.DataSet#entryAt(int)
+	 * @see de.ims.icarus2.util.collections.set.DataSet#entryAt(int)
 	 */
 	@Override
 	public E entryAt(int index) {
@@ -100,7 +100,7 @@ public class CachedSet<E extends Object> extends AbstractDataSet<E> {
 
 	/**
 	 *
-	 * @see de.ims.icarus2.util.collections.DataSet#contains(java.lang.Object)
+	 * @see de.ims.icarus2.util.collections.set.DataSet#contains(java.lang.Object)
 	 */
 	@Override
 	public boolean contains(E element) {
@@ -110,7 +110,7 @@ public class CachedSet<E extends Object> extends AbstractDataSet<E> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.sets.AbstractDataSet#add(java.lang.Object)
+	 * @see de.ims.icarus2.util.collections.set.AbstractDataSet#add(java.lang.Object)
 	 */
 	@Override
 	public void add(E element) {

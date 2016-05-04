@@ -31,10 +31,10 @@ import java.util.List;
 
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.ItemList;
-import de.ims.icarus2.model.standard.sequences.DataSequenceCollectionWrapper;
-import de.ims.icarus2.model.standard.sequences.ListSequence;
-import de.ims.icarus2.util.collections.DataSequence;
 import de.ims.icarus2.util.collections.LookupList;
+import de.ims.icarus2.util.collections.seq.DataSequence;
+import de.ims.icarus2.util.collections.seq.DataSequenceCollectionWrapper;
+import de.ims.icarus2.util.collections.seq.ListSequence;
 
 /**
  * @author Markus Gärtner
@@ -104,7 +104,7 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemList#addItems(long, de.ims.icarus2.util.collections.DataSequence)
+	 * @see de.ims.icarus2.model.api.members.item.ItemList#addItems(long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
 	public void addItems(long index, DataSequence<? extends Item> items) {

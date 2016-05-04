@@ -31,7 +31,7 @@ import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureEditVerifier;
-import de.ims.icarus2.util.collections.DataSequence;
+import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
  * @author Markus Gärtner
@@ -71,7 +71,7 @@ public class CompoundStructureEditVerifier implements StructureEditVerifier {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.container.ContainerEditVerifier#canAddItems(long, de.ims.icarus2.util.collections.DataSequence)
+	 * @see de.ims.icarus2.model.api.members.container.ContainerEditVerifier#canAddItems(long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
 	public boolean canAddItems(long index, DataSequence<? extends Item> items) {
@@ -127,7 +127,7 @@ public class CompoundStructureEditVerifier implements StructureEditVerifier {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdges(long, de.ims.icarus2.util.collections.DataSequence)
+	 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdges(long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
 	public boolean canAddEdges(long index, DataSequence<? extends Edge> edges) {

@@ -23,15 +23,15 @@
  * $LastChangedRevision: 457 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.standard.sequences;
+package de.ims.icarus2.model.util;
 
 import java.util.ConcurrentModificationException;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
-import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusException;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.util.collections.DataSequence;
+import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
  *
@@ -46,7 +46,7 @@ public class SpanSequence implements DataSequence<Item> {
 
 	public SpanSequence(Container target, long beginIndex, long size) {
 		if(size<=0L)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT, "Size must not be greater than 0: "+size);
+			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Size must not be greater than 0: "+size);
 
 		this.target = target;
 		this.beginIndex = beginIndex;
@@ -54,7 +54,7 @@ public class SpanSequence implements DataSequence<Item> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.collections.DataSequence#entryCount()
+	 * @see de.ims.icarus2.util.collections.seq.DataSequence#entryCount()
 	 */
 	@Override
 	public long entryCount() {
@@ -62,7 +62,7 @@ public class SpanSequence implements DataSequence<Item> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.collections.DataSequence#elementAt(int)
+	 * @see de.ims.icarus2.util.collections.seq.DataSequence#elementAt(int)
 	 */
 	@Override
 	public Item elementAt(long index) throws ConcurrentModificationException {

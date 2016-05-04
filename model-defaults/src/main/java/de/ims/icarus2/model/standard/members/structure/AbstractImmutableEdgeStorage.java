@@ -32,7 +32,7 @@ import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureEditVerifier;
-import de.ims.icarus2.util.collections.DataSequence;
+import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
  * Implements an {@link EdgeStorage} that cannot modified by the user.
@@ -64,7 +64,7 @@ public abstract class AbstractImmutableEdgeStorage implements EdgeStorage {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#addEdges(de.ims.icarus2.model.api.members.structure.Structure, long, de.ims.icarus2.util.collections.DataSequence)
+	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#addEdges(de.ims.icarus2.model.api.members.structure.Structure, long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
 	public void addEdges(Structure context, long index,

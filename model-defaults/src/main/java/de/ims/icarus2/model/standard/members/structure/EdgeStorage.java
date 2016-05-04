@@ -34,7 +34,7 @@ import de.ims.icarus2.model.api.members.structure.StructureEditVerifier;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.util.Recyclable;
 import de.ims.icarus2.util.annotations.OptionalMethod;
-import de.ims.icarus2.util.collections.DataSequence;
+import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
  * @author Markus Gärtner

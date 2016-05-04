@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.registry;
 
-import static de.ims.icarus2.model.util.CorpusUtils.getName;
+import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
 
@@ -60,8 +60,8 @@ import de.ims.icarus2.model.manifest.api.RasterizerManifest;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.standard.corpus.DefaultContext;
 import de.ims.icarus2.model.standard.members.layers.DefaultLayerGroup;
-import de.ims.icarus2.model.standard.sets.DataSets;
 import de.ims.icarus2.util.Options;
+import de.ims.icarus2.util.collections.set.DataSets;
 
 /**
  * @author Markus Gärtner

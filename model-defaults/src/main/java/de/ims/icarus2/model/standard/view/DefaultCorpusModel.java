@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.view;
 
-import static de.ims.icarus2.model.util.CorpusUtils.getName;
+import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
@@ -70,14 +70,14 @@ import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.container.AbstractImmutableContainer;
-import de.ims.icarus2.model.util.CorpusUtils;
+import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.classes.ClassUtils;
 import de.ims.icarus2.util.classes.Lazy;
-import de.ims.icarus2.util.collections.DataSequence;
-import de.ims.icarus2.util.collections.DataSet;
 import de.ims.icarus2.util.collections.LookupList;
+import de.ims.icarus2.util.collections.seq.DataSequence;
+import de.ims.icarus2.util.collections.set.DataSet;
 import de.ims.icarus2.util.events.ChangeSource;
 
 /**
@@ -381,7 +381,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 	public boolean isVirtual(Item item) {
 		checkReadAccess();
 
-		return CorpusUtils.isVirtual(item);
+		return ModelUtils.isVirtual(item);
 	}
 
 
@@ -1750,11 +1750,11 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 			Position currentPosition = isBegin ? fragment.getFragmentBegin() : fragment.getFragmentEnd();
 
 			if(isBegin) {
-				CorpusUtils.checkFragmentPositions(fragment, position, null);
+				ModelUtils.checkFragmentPositions(fragment, position, null);
 
 				fragment.setFragmentBegin(position);
 			} else {
-				CorpusUtils.checkFragmentPositions(fragment, null, position);
+				ModelUtils.checkFragmentPositions(fragment, null, position);
 
 				fragment.setFragmentEnd(position);
 			}
@@ -1798,7 +1798,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 
 			if(!ClassUtils.equals(oldValue, expectedValue))
 				throw new ModelException(layer.getCorpus(), ModelErrorCode.MODEL_CORRUPTED_EDIT,
-						"Expected value '"+CorpusUtils.toLoggableString(expectedValue)+"' - got '"+CorpusUtils.toLoggableString(oldValue)+"'");
+						"Expected value '"+ModelUtils.toLoggableString(expectedValue)+"' - got '"+ModelUtils.toLoggableString(oldValue)+"'");
 
 			layer.getAnnotationStorage().setValue(item, key, value);
 

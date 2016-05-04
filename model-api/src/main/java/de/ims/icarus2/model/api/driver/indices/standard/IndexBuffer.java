@@ -39,12 +39,13 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelConstants;
-import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * Implements a modifiable {@link IndexSet} with a fixed size buffer that can
@@ -74,9 +75,9 @@ public class IndexBuffer implements IndexSet, ModelConstants, LongConsumer, IntC
 		checkNotNull(valueType);
 
 		if(bufferSize<1)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT, "Buffer size must not be less than 1: "+bufferSize);
-		if(bufferSize>MAX_INTEGER_INDEX)
-			throw new ModelException(ModelErrorCode.INDEX_OVERFLOW, "Buffer size exceeds allowed limit for integer index values: "+bufferSize);
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Buffer size must not be less than 1: "+bufferSize);
+		if(bufferSize>IcarusUtils.MAX_INTEGER_INDEX)
+			throw new ModelException(GlobalErrorCode.INDEX_OVERFLOW, "Buffer size exceeds allowed limit for integer index values: "+bufferSize);
 
 		this.valueType = valueType;
 		buffer = valueType.newArray(bufferSize);
@@ -124,7 +125,7 @@ public class IndexBuffer implements IndexSet, ModelConstants, LongConsumer, IntC
 	protected void checkCapacity(int requiredSlots) {
 		int capacity = Array.getLength(buffer);
 		if(capacity-size < requiredSlots)
-			throw new ModelException(ModelErrorCode.INDEX_OVERFLOW,
+			throw new ModelException(GlobalErrorCode.INDEX_OVERFLOW,
 					"Unable to fit in "+requiredSlots+" more slots - max size: "+capacity);
 	}
 
@@ -206,7 +207,7 @@ public class IndexBuffer implements IndexSet, ModelConstants, LongConsumer, IntC
 	}
 
 	public void add(long from, long to) {
-		int length = ensureIntegerValueRange(to-from+1);
+		int length = IcarusUtils.ensureIntegerValueRange(to-from+1);
 		checkCapacity(length);
 		valueType.copyFrom(i -> from+i, 0, buffer, size, length);
 

@@ -38,9 +38,10 @@ import java.util.function.IntConsumer;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongConsumer;
 
-import de.ims.icarus2.model.api.ModelConstants;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.util.IcarusUtils;
 
 
 /**
@@ -268,7 +269,7 @@ public interface IndexSet {
 	 */
 	default void forEachIndex(IntConsumer action, int beginIndex, int endIndex) {
 		if(!IndexValueType.INTEGER.isValidSubstitute(getIndexValueType()))
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Cannot serve IntConsumer - index set contains values beyond integer space");
 
 		for(int i=beginIndex; i<endIndex; i++) {
@@ -293,7 +294,7 @@ public interface IndexSet {
 
 	default void forEachEntry(IntBinaryOperator action, int beginIndex, int endIndex) {
 		if(!IndexValueType.INTEGER.isValidSubstitute(getIndexValueType()))
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Cannot serve IntConsumer - index set contains values beyond integer space");
 
 		for(int i=beginIndex; i<endIndex; i++) {
@@ -323,8 +324,8 @@ public interface IndexSet {
 
 		long chunks = (long)Math.ceil((double)size/chunkSize);
 
-		if(chunks>ModelConstants.MAX_INTEGER_INDEX)
-			throw new ModelException(ModelErrorCode.INDEX_OVERFLOW, "Cannot create array of size: "+chunks); //$NON-NLS-1$
+		if(chunks>IcarusUtils.MAX_INTEGER_INDEX)
+			throw new ModelException(GlobalErrorCode.INDEX_OVERFLOW, "Cannot create array of size: "+chunks); //$NON-NLS-1$
 
 		IndexSet[] result = new IndexSet[(int) chunks];
 
@@ -421,7 +422,7 @@ public interface IndexSet {
 			int pos = 0;
 			//TODO aggregate textual info of the missing features and use as error message!
 
-			throw new ModelException(ModelErrorCode.NOT_IMPLEMENTED, sb.toString());
+			throw new ModelException(GlobalErrorCode.NOT_IMPLEMENTED, sb.toString());
 		}
 	}
 

@@ -29,6 +29,8 @@ import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.PrimitiveIterator.OfInt;
 
+import de.ims.icarus2.util.IcarusUtils;
+
 /**
  * @author Markus Gärtner
  * @version $Id: LongToIntIterator.java 396 2015-05-20 09:11:11Z mcgaerty $
@@ -57,6 +59,6 @@ public class LongToIntIterator implements OfInt {
 	 */
 	@Override
 	public int nextInt() {
-		return ensureIntegerValueRange(source.nextLong());
+		return IcarusUtils.ensureIntegerValueRange(source.nextLong());
 	}
 }

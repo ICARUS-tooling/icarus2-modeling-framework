@@ -34,6 +34,7 @@ import java.util.function.IntConsumer;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongConsumer;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
@@ -44,6 +45,7 @@ import de.ims.icarus2.model.api.driver.indices.standard.SingletonIndexSet;
 import de.ims.icarus2.model.api.driver.indices.standard.SpanIndexSet;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.util.Messages;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
@@ -104,9 +106,9 @@ public class IndexUtils implements ModelConstants {
 	public static void checkNonEmpty(IndexSet[] indices) {
 		checkNotNull(indices);
 		if(indices.length==0)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT, "Empty indices array"); //$NON-NLS-1$
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Empty indices array"); //$NON-NLS-1$
 		if(count(indices)==0)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT, "Index array contains no actual index values"); //$NON-NLS-1$
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Index array contains no actual index values"); //$NON-NLS-1$
 	}
 
 	public static void checkSorted(IndexSet indices) {
@@ -289,16 +291,16 @@ public class IndexUtils implements ModelConstants {
 		long previousMax = NO_INDEX;
 		for(IndexSet set : indices) {
 			if(set.firstIndex()<=previousMax)
-				throw new ModelException(ModelErrorCode.INVALID_INPUT,
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 						"Provided index sets are not disjoint");
 
 			size+=set.size();
 			previousMax = set.lastIndex();
 		}
 
-		if(size>MAX_INTEGER_INDEX)
-			throw new ModelException(ModelErrorCode.INDEX_OVERFLOW,
-					Messages.outOfBoundsMessage(null, size, 0, MAX_INTEGER_INDEX));
+		if(size>IcarusUtils.MAX_INTEGER_INDEX)
+			throw new ModelException(GlobalErrorCode.INDEX_OVERFLOW,
+					Messages.outOfBoundsMessage(null, size, 0, IcarusUtils.MAX_INTEGER_INDEX));
 
 		IndexValueType valueType = getDominantType(indices);
 
@@ -357,13 +359,13 @@ public class IndexUtils implements ModelConstants {
 
 		long count = to-from+1;
 		//FIXME allow for a flexible definition of the upper bound for chunk size
-		int chunks = (int) Math.ceil(count/(double)MAX_INTEGER_INDEX);
+		int chunks = (int) Math.ceil(count/(double)IcarusUtils.MAX_INTEGER_INDEX);
 
 		IndexSet[] result = new IndexSet[chunks];
 
 		for(int i=0; i<chunks; i++) {
 			long begin = from;
-			long end = Math.min(begin+MAX_INTEGER_INDEX, to);
+			long end = Math.min(begin+IcarusUtils.MAX_INTEGER_INDEX, to);
 
 			result[i] = new SpanIndexSet(begin, end);
 
@@ -433,7 +435,7 @@ public class IndexUtils implements ModelConstants {
 		int sizeA = setA.size();
 		int sizeB = setB.size();
 		if(sizeA!=sizeB)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					Messages.mismatchMessage("Mismatching index set sizes", sizeA, sizeB));
 
 		long result = 0L;
@@ -453,7 +455,7 @@ public class IndexUtils implements ModelConstants {
 		long indicesACount = count(indicesA);
 		long indicesBCount = count(indicesB);
 		if(indicesACount!=indicesBCount)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					Messages.mismatchMessage("Mismatching index value counts", indicesACount, indicesBCount));
 
 		long result = 0L;

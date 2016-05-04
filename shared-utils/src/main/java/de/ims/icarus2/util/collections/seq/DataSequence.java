@@ -23,12 +23,14 @@
  * $LastChangedRevision: 457 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.util.collections;
+package de.ims.icarus2.util.collections.seq;
 
 import java.util.List;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.collections.LazyCollection;
+import de.ims.icarus2.util.collections.set.DataSet;
 
 
 /**

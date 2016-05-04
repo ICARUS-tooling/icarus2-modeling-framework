@@ -27,7 +27,7 @@ package de.ims.icarus2.model.api.members.container;
 
 import de.ims.icarus2.model.api.members.EditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.util.collections.DataSequence;
+import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
  * Verification mechanism to check preconditions for certain actions

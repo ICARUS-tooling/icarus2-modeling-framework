@@ -35,7 +35,7 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
-import de.ims.icarus2.model.util.CorpusUtils;
+import de.ims.icarus2.model.util.ModelUtils;
 
 /**
  * @author Markus Gärtner
@@ -65,7 +65,7 @@ public class SingleKeyFloatStorage extends AbstractSingleKeyStorage {
 
 	protected TObjectFloatMap<Item> buildBuffer(AnnotationLayer layer) {
 		if(isWeakKeys()) {
-			log.warn("Storage implementation does not support weak key references to stored items in layer {}", CorpusUtils.getUniqueId(layer));
+			log.warn("Storage implementation does not support weak key references to stored items in layer {}", ModelUtils.getUniqueId(layer));
 		}
 
 		return new TObjectFloatHashMap<>(getInitialCapacity(layer), 0.75F, getNoEntryValue());

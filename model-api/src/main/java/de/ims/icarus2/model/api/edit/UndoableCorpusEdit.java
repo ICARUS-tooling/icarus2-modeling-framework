@@ -42,7 +42,7 @@ import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.CorpusMember;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.util.CorpusUtils;
+import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
 
 /**
@@ -331,9 +331,9 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	 */
 	public static Context getContextForChange(AtomicChange change){
 		CorpusMember member = change.getAffectedMember();
-		if(CorpusUtils.isNonLayer(member)) {
+		if(ModelUtils.isNonLayer(member)) {
 			return ((Item)member).getLayer().getContext();
-		} else if(CorpusUtils.isLayer(member)) {
+		} else if(ModelUtils.isLayer(member)) {
 			return ((Layer)member).getContext();
 		} else {
 			return null;
@@ -353,9 +353,9 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	 */
 	public static Layer getLayerForChange(AtomicChange change){
 		CorpusMember member = change.getAffectedMember();
-		if(CorpusUtils.isNonLayer(member)) {
+		if(ModelUtils.isNonLayer(member)) {
 			return ((Item)member).getLayer();
-		} else if(CorpusUtils.isLayer(member)) {
+		} else if(ModelUtils.isLayer(member)) {
 			return (Layer)member;
 		} else {
 			return null;

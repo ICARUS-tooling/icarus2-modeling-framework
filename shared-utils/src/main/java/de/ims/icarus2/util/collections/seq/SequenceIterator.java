@@ -17,50 +17,61 @@
 
  * $Revision: 457 $
  * $Date: 2016-04-20 15:08:11 +0200 (Mi, 20 Apr 2016) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/sequences/DataSequenceCollectionWrapper.java $
+ * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/sequences/SequenceIterator.java $
  *
  * $LastChangedDate: 2016-04-20 15:08:11 +0200 (Mi, 20 Apr 2016) $
  * $LastChangedRevision: 457 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.standard.sequences;
+package de.ims.icarus2.util.collections.seq;
 
-import java.util.AbstractCollection;
 import java.util.Iterator;
-
-import de.ims.icarus2.model.util.CorpusUtils;
-import de.ims.icarus2.util.collections.DataSequence;
+import java.util.NoSuchElementException;
 
 /**
  * @author Markus Gärtner
- * @version $Id: DataSequenceCollectionWrapper.java 457 2016-04-20 13:08:11Z mcgaerty $
+ * @version $Id: SequenceIterator.java 457 2016-04-20 13:08:11Z mcgaerty $
  *
  */
-public class DataSequenceCollectionWrapper<E extends Object> extends AbstractCollection<E> {
+public class SequenceIterator<E extends Object> implements Iterator<E> {
 
-	private final DataSequence<E> sequence;
+	@SuppressWarnings("rawtypes")
+	private final DataSequence sequence;
+	private long index;
 
-	public DataSequenceCollectionWrapper(DataSequence<E> sequence) {
+	public SequenceIterator(DataSequence<? extends E> sequence, long index) {
 		if (sequence == null)
 			throw new NullPointerException("Invalid sequence");
 
 		this.sequence = sequence;
+		this.index = index;
+	}
+
+	public SequenceIterator(DataSequence<? extends E> sequence) {
+		this(sequence, 0L);
 	}
 
 	/**
-	 * @see java.util.AbstractCollection#iterator()
+	 * @see java.util.Iterator#hasNext()
 	 */
 	@Override
-	public Iterator<E> iterator() {
-		return new SequenceIterator<>(sequence);
+	public boolean hasNext() {
+		return index<sequence.entryCount();
 	}
 
 	/**
-	 * @see java.util.AbstractCollection#size()
+	 * @see java.util.Iterator#next()
 	 */
 	@Override
-	public int size() {
-		return CorpusUtils.ensureIntegerValueRange(sequence.entryCount());
-	}
+	public E next() {
+		if(index>=sequence.entryCount())
+			throw new NoSuchElementException();
 
+		@SuppressWarnings("unchecked")
+		E element = (E) sequence.elementAt(index);
+
+		index++;
+
+		return element;
+	}
 }

@@ -30,6 +30,8 @@ import static de.ims.icarus2.util.Conditions.checkNotNull;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 
+import de.ims.icarus2.util.IcarusUtils;
+
 /**
  * @author Markus Gärtner
  * @version $Id: Long2IntConverter.java 396 2015-05-20 09:11:11Z mcgaerty $
@@ -50,6 +52,6 @@ public class Long2IntConverter implements LongConsumer {
 	 */
 	@Override
 	public void accept(long value) {
-		target.accept(ensureIntegerValueRange(value));
+		target.accept(IcarusUtils.ensureIntegerValueRange(value));
 	}
 }

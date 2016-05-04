@@ -29,7 +29,6 @@ import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -51,6 +50,8 @@ import de.ims.icarus2.model.api.meta.AnnotationValueSet;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.collections.LazyCollection;
@@ -189,7 +190,7 @@ public interface Driver extends ItemLayerManager {
 		Mapping mapping = getMapping(sourceLayer, targetLayer);
 
 		if(mapping==null)
-			throw new ModelException(ModelErrorCode.MANIFEST_MISSING_MAPPING,
+			throw new ManifestException(ManifestErrorCode.MANIFEST_MISSING_MAPPING,
 					Messages.missingMappingMessage(null, sourceLayer, targetLayer));
 
 		MappingReader reader = mapping.newReader();
@@ -214,7 +215,7 @@ public interface Driver extends ItemLayerManager {
 		Mapping mapping = getMapping(sourceLayer, targetLayer);
 
 		if(mapping==null)
-			throw new ModelException(ModelErrorCode.MANIFEST_MISSING_MAPPING,
+			throw new ManifestException(ManifestErrorCode.MANIFEST_MISSING_MAPPING,
 					Messages.missingMappingMessage(null, sourceLayer, targetLayer));
 
 		MappingReader reader = mapping.newReader();

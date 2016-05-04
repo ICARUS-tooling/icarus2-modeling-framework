@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.model.standard.registry;
 
-import static de.ims.icarus2.model.util.CorpusUtils.getName;
+import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.Collection;
@@ -46,7 +46,7 @@ import de.ims.icarus2.model.manifest.api.LayerType;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
-import de.ims.icarus2.model.util.CorpusUtils;
+import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.Counter;
 import de.ims.icarus2.util.events.EventListener;
 import de.ims.icarus2.util.events.EventObject;
@@ -231,7 +231,7 @@ public final class DefaultCorpusRegistry implements CorpusRegistry {
 		if(id==null)
 			throw new ModelException(ModelErrorCode.MANIFEST_INVALID_ID,
 					"Missing id on layer type"); //$NON-NLS-1$
-		if(!CorpusUtils.isValidId(id))
+		if(!ModelUtils.isValidId(id))
 			throw new ModelException(ModelErrorCode.MANIFEST_INVALID_ID,
 					"Invaid layer id: "+id); //$NON-NLS-1$
 
@@ -257,7 +257,7 @@ public final class DefaultCorpusRegistry implements CorpusRegistry {
 		if(id==null)
 			throw new ModelException(ModelErrorCode.MANIFEST_INVALID_ID,
 					"Missing id on layer type"); //$NON-NLS-1$
-		if(!CorpusUtils.isValidId(id))
+		if(!ModelUtils.isValidId(id))
 			throw new ModelException(ModelErrorCode.MANIFEST_INVALID_ID,
 					"Invaid layer id: "+id); //$NON-NLS-1$
 
@@ -296,7 +296,7 @@ public final class DefaultCorpusRegistry implements CorpusRegistry {
 		if(id==null)
 			throw new ModelException(ModelErrorCode.MANIFEST_INVALID_ID,
 					"Missing corpus id"); //$NON-NLS-1$
-		if(!CorpusUtils.isValidId(id))
+		if(!ModelUtils.isValidId(id))
 			throw new ModelException(ModelErrorCode.MANIFEST_INVALID_ID,
 					"Invaid corpus id: "+id); //$NON-NLS-1$
 
@@ -467,7 +467,7 @@ public final class DefaultCorpusRegistry implements CorpusRegistry {
 		if(id==null)
 			throw new ModelException(ModelErrorCode.MANIFEST_INVALID_ID,
 					"Template does not declare valid identifier"); //$NON-NLS-1$
-		if(!CorpusUtils.isValidId(id))
+		if(!ModelUtils.isValidId(id))
 			throw new ModelException(ModelErrorCode.MANIFEST_INVALID_ID,
 					"Invalid template id: "+id); //$NON-NLS-1$
 		Manifest current = templates.get(id);
@@ -536,7 +536,7 @@ public final class DefaultCorpusRegistry implements CorpusRegistry {
 		if(id==null)
 			throw new ModelException(ModelErrorCode.MANIFEST_INVALID_ID,
 					"Template does not declare valid identifier"); //$NON-NLS-1$
-		if(!CorpusUtils.isValidId(id))
+		if(!ModelUtils.isValidId(id))
 			throw new ModelException(ModelErrorCode.MANIFEST_INVALID_ID,
 					"Invalid template id: "+id); //$NON-NLS-1$
 

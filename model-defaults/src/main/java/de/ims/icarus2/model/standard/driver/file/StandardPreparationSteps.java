@@ -42,7 +42,7 @@ import de.ims.icarus2.model.standard.driver.file.FileMetadata.ChunkIndexKey;
 import de.ims.icarus2.model.standard.driver.file.FileMetadata.FileKey;
 import de.ims.icarus2.model.standard.driver.file.FileMetadata.ItemLayerKey;
 import de.ims.icarus2.model.standard.driver.io.sets.FileSet;
-import de.ims.icarus2.model.util.CorpusUtils;
+import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.Options;
 
 /**
@@ -205,7 +205,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			FileSet dataFiles = driver.getDataFiles();
 			ContextManifest manifest = driver.getManifest().getContextManifest();
-			List<ItemLayerManifest> layers = manifest.getLayerManifests(CorpusUtils::isItemLayer);
+			List<ItemLayerManifest> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
 
 			int fileCount = dataFiles.getFileCount();
 
@@ -253,7 +253,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			ContextManifest manifest = driver.getManifest().getContextManifest();
-			List<ItemLayerManifest> layers = manifest.getLayerManifests(CorpusUtils::isItemLayer);
+			List<ItemLayerManifest> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
 
 			int invalidLayers = 0;
 
@@ -365,7 +365,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 			ContextManifest manifest = driver.getManifest().getContextManifest();
 			FileSet dataFiles = driver.getDataFiles();
-			List<ItemLayerManifest> layers = manifest.getLayerManifests(CorpusUtils::isItemLayer);
+			List<ItemLayerManifest> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
 
 			int fileCount = dataFiles.getFileCount();
 			int invalidLayers = 0;
@@ -434,7 +434,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			}
 
 			// Update layer info and metadata
-			List<ItemLayerManifest> layers = manifest.getLayerManifests(CorpusUtils::isItemLayer);
+			List<ItemLayerManifest> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
 			ElementFlag flag = invalidFiles==0 ? ElementFlag.SCANNED : ElementFlag.PARTIALLY_SCANNED;
 			if(invalidFiles==fileCount) {
 				flag = ElementFlag.CORRUPTED;

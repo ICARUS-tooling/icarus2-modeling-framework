@@ -37,7 +37,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.DependencyType;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
@@ -47,7 +47,7 @@ import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.api.Manifest;
-import de.ims.icarus2.model.util.CorpusUtils;
+import de.ims.icarus2.model.util.ModelUtils;
 
 /**
  *
@@ -78,8 +78,8 @@ public class CorpusGraph {
 
 	private static void checkNotTemplate(Manifest manifest) {
 		if(manifest.isTemplate())
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
-					"Manifest must not be a template: "+getName(manifest));
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					"Manifest must not be a template: "+ModelUtils.getName(manifest));
 	}
 
 	public void addContext(ContextManifest context) {
@@ -171,12 +171,12 @@ public class CorpusGraph {
 						tryCreateEdge(baseLayer, DependencyType.STRONG);
 					}
 
-					if(CorpusUtils.isItemLayer(layer)) {
+					if(ModelUtils.isItemLayer(layer)) {
 						ItemLayerManifest itemLayer = (ItemLayerManifest) layer;
 						tryCreateEdge(itemLayer.getBoundaryLayerManifest(), DependencyType.BOUNDARY);
 						tryCreateEdge(itemLayer.getFoundationLayerManifest(), DependencyType.FOUNDATION);
 
-						if(CorpusUtils.isFragmentLayer(itemLayer)) {
+						if(ModelUtils.isFragmentLayer(itemLayer)) {
 							FragmentLayerManifest fragmentLayer = (FragmentLayerManifest)itemLayer;
 							tryCreateEdge(fragmentLayer.getValueLayerManifest(), DependencyType.VALUE);
 						}

@@ -25,10 +25,11 @@
  */
 package de.ims.icarus2.model.api.members.item;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
-import de.ims.icarus2.util.collections.DataSequence;
+import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
  * Extends the {@link ItemLookup} interface with matching
@@ -58,8 +59,8 @@ public interface ItemList extends ItemLookup {
 		long index = indexOfItem(item);
 
 		if(index==NO_INDEX)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
-					"Unknown item: "+getName(item));
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					"Unknown item: "+ModelUtils.getName(item));
 
 		removeItem(index);
 	}

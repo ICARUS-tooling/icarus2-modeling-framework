@@ -23,15 +23,15 @@
  * $LastChangedRevision: 457 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.standard.sets;
+package de.ims.icarus2.util.collections.set;
 
 import static de.ims.icarus2.util.Conditions.checkState;
 
 import java.util.Arrays;
 import java.util.List;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
-import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusException;
 import de.ims.icarus2.util.collections.ArrayUtils;
 import de.ims.icarus2.util.mem.HeapMember;
 import de.ims.icarus2.util.mem.Reference;
@@ -61,7 +61,7 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.collections.DataSet#entryCount()
+	 * @see de.ims.icarus2.util.collections.set.DataSet#entryCount()
 	 */
 	@Override
 	public int entryCount() {
@@ -70,12 +70,12 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.collections.DataSet#entryAt(int)
+	 * @see de.ims.icarus2.util.collections.set.DataSet#entryAt(int)
 	 */
 	@Override
 	public E entryAt(int index) {
 		if(items==null)
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE, "Missing items");
+			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Missing items");
 		@SuppressWarnings("unchecked")
 		E item = (E) items[index];
 		return item;
@@ -112,7 +112,7 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 
 	public void set(int index, E member) {
 		if(items==null)
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE, "Missing items");
+			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Missing items");
 
 		items[index] = member;
 	}
@@ -134,12 +134,12 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 
 	/**
 	 *
-	 * @see de.ims.icarus2.util.collections.DataSet#contains(java.lang.Object)
+	 * @see de.ims.icarus2.util.collections.set.DataSet#contains(java.lang.Object)
 	 */
 	@Override
 	public boolean contains(E member) {
 		if(items==null)
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE, "Missing items");
+			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Missing items");
 		if (member == null)
 			throw new NullPointerException("Invalid member"); //$NON-NLS-1$
 
@@ -147,12 +147,12 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.sets.AbstractDataSet#add(java.lang.Object)
+	 * @see de.ims.icarus2.util.collections.set.AbstractDataSet#add(java.lang.Object)
 	 */
 	@Override
 	public void add(E element) {
 		if(items==null)
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE, "Missing items");
+			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Missing items");
 		if (element == null)
 			throw new NullPointerException("Invalid element"); //$NON-NLS-1$
 
@@ -163,6 +163,6 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 			}
 		}
 
-		throw new ModelException(ModelErrorCode.ILLEGAL_STATE, "Set already full"); //$NON-NLS-1$
+		throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Set already full"); //$NON-NLS-1$
 	}
 }

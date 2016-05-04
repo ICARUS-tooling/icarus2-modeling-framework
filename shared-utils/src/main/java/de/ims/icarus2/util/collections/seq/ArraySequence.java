@@ -17,52 +17,46 @@
 
  * $Revision: 457 $
  * $Date: 2016-04-20 15:08:11 +0200 (Mi, 20 Apr 2016) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/sequences/SingletonSequence.java $
+ * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/sequences/ArraySequence.java $
  *
  * $LastChangedDate: 2016-04-20 15:08:11 +0200 (Mi, 20 Apr 2016) $
  * $LastChangedRevision: 457 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.standard.sequences;
+package de.ims.icarus2.util.collections.seq;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
-import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.util.collections.DataSequence;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
- * @version $Id: SingletonSequence.java 457 2016-04-20 13:08:11Z mcgaerty $
+ * @version $Id: ArraySequence.java 457 2016-04-20 13:08:11Z mcgaerty $
  *
  */
-public class SingletonSequence<E extends Object> implements DataSequence<E> {
+public class ArraySequence<E extends Object> implements DataSequence<E> {
 
-	private final E element;
+	private final E[] elements;
 
-	public SingletonSequence(E element) {
-		if (element == null)
-			throw new NullPointerException("Invalid element");
+	public ArraySequence(E[] elements) {
+		if (elements == null)
+			throw new NullPointerException("Invalid elements");
 
-		this.element = element;
+		this.elements = elements;
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.collections.DataSequence#entryCount()
+	 * @see de.ims.icarus2.util.collections.seq.DataSequence#entryCount()
 	 */
 	@Override
 	public long entryCount() {
-		return 1;
+		return elements.length;
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.collections.DataSequence#elementAt(long)
+	 * @see de.ims.icarus2.util.collections.seq.DataSequence#elementAt(long)
 	 */
 	@Override
-	public E elementAt(long index) throws ModelException {
-		if(index!=0L)
-			throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
-					"Invalid index for singleton sequence (only 0 allowed): "+index);
-
-		return element;
+	public E elementAt(long index) {
+		return elements[IcarusUtils.ensureIntegerValueRange(index)];
 	}
 
 }

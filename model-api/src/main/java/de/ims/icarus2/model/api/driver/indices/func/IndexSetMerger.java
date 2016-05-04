@@ -29,8 +29,8 @@ import java.util.Collection;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.function.LongConsumer;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelConstants;
-import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
@@ -38,6 +38,7 @@ import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.IndexSetBuilder;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * This class is not thread-safe!
@@ -74,8 +75,8 @@ public class IndexSetMerger extends AbstractIndexSetProcessor implements ModelCo
 			return buffer.get(0);
 		}
 
-		if(estimatedResultSize>MAX_INTEGER_INDEX)
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+		if(estimatedResultSize>IcarusUtils.MAX_INTEGER_INDEX)
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Estimated size of merged indices exceeds array limit: "+estimatedResultSize);
 
 		// Create merged stream of all the sources
@@ -102,7 +103,7 @@ public class IndexSetMerger extends AbstractIndexSetProcessor implements ModelCo
 			return IndexUtils.wrap(buffer.get(0));
 		}
 
-		if(estimatedResultSize<=MAX_INTEGER_INDEX) {
+		if(estimatedResultSize<=IcarusUtils.MAX_INTEGER_INDEX) {
 			return IndexUtils.wrap(mergeAllToSingle());
 		}
 

@@ -29,9 +29,10 @@ import java.io.IOException;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelConstants;
-import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.io.MemoryByteStorage;
 
 /**
@@ -50,11 +51,13 @@ import de.ims.icarus2.util.io.MemoryByteStorage;
 public class InMemoryResource implements IOResource, ModelConstants {
 
 	private MemoryByteStorage buffer;
+
+	// Initial capacity for buffer creation
 	private final int capacity;
 
 	public InMemoryResource(int capacity) {
-		if(capacity<0 || capacity>MAX_INTEGER_INDEX)
-			throw new ModelException(ModelErrorCode.INVALID_INPUT,
+		if(capacity<0 || capacity>IcarusUtils.MAX_INTEGER_INDEX)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Capacity must be 0<=capacity<=MAX_INDEX: "+capacity);
 
 		this.capacity = capacity;
@@ -67,7 +70,7 @@ public class InMemoryResource implements IOResource, ModelConstants {
 
 	private void checkOpen() {
 		if(buffer==null)
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Buffer not prepared");
 	}
 

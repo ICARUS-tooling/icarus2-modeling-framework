@@ -28,7 +28,7 @@ package de.ims.icarus2.model.api.registry.dna;
 import java.io.IOException;
 import java.util.function.IntConsumer;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -134,7 +134,7 @@ public class DNAEncoder extends CorpusMemberEncoder implements DNAConstants {
 		try {
 			writeItem(item, sb);
 		} catch (IOException e) {
-			throw new ModelException(ModelErrorCode.INTERNAL_ERROR,
+			throw new ModelException(GlobalErrorCode.INTERNAL_ERROR,
 					"Unexpected IOException in non-IO context", e);
 		}
 		return sb.toString();
@@ -168,7 +168,7 @@ public class DNAEncoder extends CorpusMemberEncoder implements DNAConstants {
 				break;
 
 			default:
-				throw new ModelException(ModelErrorCode.INVALID_INPUT, "Unknown path element type: "+type);
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Unknown path element type: "+type);
 			}
 		}
 
@@ -203,7 +203,7 @@ public class DNAEncoder extends CorpusMemberEncoder implements DNAConstants {
 				break;
 
 			default:
-				throw new ModelException(ModelErrorCode.INVALID_INPUT, "Unknown path element type: "+type);
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Unknown path element type: "+type);
 			}
 		}
 
@@ -216,7 +216,7 @@ public class DNAEncoder extends CorpusMemberEncoder implements DNAConstants {
 		try {
 			writePath(path, sb);
 		} catch (IOException e) {
-			throw new ModelException(ModelErrorCode.INTERNAL_ERROR,
+			throw new ModelException(GlobalErrorCode.INTERNAL_ERROR,
 					"Unexpected IOException in non-IO context", e);
 		}
 		return sb.toString();

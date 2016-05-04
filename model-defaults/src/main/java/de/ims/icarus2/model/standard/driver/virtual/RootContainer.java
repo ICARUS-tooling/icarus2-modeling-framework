@@ -40,8 +40,8 @@ import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.standard.members.container.AbstractImmutableContainer;
-import de.ims.icarus2.util.collections.DataSequence;
-import de.ims.icarus2.util.collections.DataSet;
+import de.ims.icarus2.util.collections.seq.DataSequence;
+import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
  * Implements a container suitable for being a layer's root container.

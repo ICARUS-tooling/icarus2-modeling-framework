@@ -17,7 +17,7 @@
 
  * $Revision: 448 $
  * $Date: 2016-01-19 17:30:06 +0100 (Di, 19 Jan 2016) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/util/CorpusUtils.java $
+ * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/util/ModelUtils.java $
  *
  * $LastChangedDate: 2016-01-19 17:30:06 +0100 (Di, 19 Jan 2016) $
  * $LastChangedRevision: 448 $
@@ -86,12 +86,12 @@ import de.ims.icarus2.model.manifest.util.Messages;
 
 /**
  * @author Markus Gärtner
- * @version $Id: CorpusUtils.java 448 2016-01-19 16:30:06Z mcgaerty $
+ * @version $Id: ModelUtils.java 448 2016-01-19 16:30:06Z mcgaerty $
  *
  */
-public final class CorpusUtils implements ModelConstants {
+public final class ModelUtils implements ModelConstants {
 
-	private CorpusUtils() {
+	private ModelUtils() {
 		throw new AssertionError();
 	}
 
@@ -436,9 +436,11 @@ public final class CorpusUtils implements ModelConstants {
 	}
 
 	public static int compare(Item m1, Item m2) {
-		if(m1.getLayer().getFoundationLayer()!=m2.getLayer().getFoundationLayer())
+		ItemLayer fLayer1 = m1.getLayer().getFoundationLayer();
+		ItemLayer fLayer2 = m2.getLayer().getFoundationLayer();
+		if(fLayer1!=fLayer2)
 			throw new ModelException(ModelErrorCode.MODEL_INCOMPATIBLE_FOUNDATIONS,
-					Messages.incompatibleFoundationLayersMessage(null, m1, m1));
+					Messages.incompatibleFoundationLayersMessage(null, m1, m1, fLayer1, fLayer2));
 
 		long result = m1.getBeginOffset()-m2.getBeginOffset();
 
@@ -475,9 +477,11 @@ public final class CorpusUtils implements ModelConstants {
 	 * defined by {@code m1}.
 	 */
 	public static boolean contains(Item m1, Item m2) {
-		if(m1.getLayer().getFoundationLayer()!=m2.getLayer().getFoundationLayer())
+		ItemLayer fLayer1 = m1.getLayer().getFoundationLayer();
+		ItemLayer fLayer2 = m2.getLayer().getFoundationLayer();
+		if(fLayer1!=fLayer2)
 			throw new ModelException(ModelErrorCode.MODEL_INCOMPATIBLE_FOUNDATIONS,
-					Messages.incompatibleFoundationLayersMessage(null, m1, m1));
+					Messages.incompatibleFoundationLayersMessage(null, m1, m1, fLayer1, fLayer2));
 
 		return m2.getBeginOffset()>=m1.getBeginOffset()
 				&& m2.getEndOffset()<=m1.getEndOffset();

@@ -33,9 +33,9 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.MemberUtils;
-import de.ims.icarus2.model.standard.sequences.SpanSequence;
-import de.ims.icarus2.util.collections.DataSequence;
-import de.ims.icarus2.util.collections.DataSet;
+import de.ims.icarus2.model.util.SpanSequence;
+import de.ims.icarus2.util.collections.seq.DataSequence;
+import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
  * A storage implementation for {@value ContainerType#SPAN} containers that assumes the underlying
@@ -214,7 +214,7 @@ public class SpanItemStorage implements ItemStorage {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addItems(long, de.ims.icarus2.util.collections.DataSequence)
+	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addItems(long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
 	public void addItems(Container context, long index, DataSequence<? extends Item> items) {

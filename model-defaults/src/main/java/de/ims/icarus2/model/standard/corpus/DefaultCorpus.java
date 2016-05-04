@@ -25,8 +25,8 @@
  */
 package de.ims.icarus2.model.standard.corpus;
 
-import static de.ims.icarus2.model.util.CorpusUtils.getName;
-import static de.ims.icarus2.model.util.CorpusUtils.getUniqueId;
+import static de.ims.icarus2.model.util.ModelUtils.getName;
+import static de.ims.icarus2.model.util.ModelUtils.getUniqueId;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
@@ -95,8 +95,8 @@ import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Options;
-import de.ims.icarus2.util.collections.DataSet;
 import de.ims.icarus2.util.collections.LazyCollection;
+import de.ims.icarus2.util.collections.set.DataSet;
 import de.ims.icarus2.util.data.ContentType;
 import de.ims.icarus2.util.events.EventListener;
 import de.ims.icarus2.util.events.EventObject;

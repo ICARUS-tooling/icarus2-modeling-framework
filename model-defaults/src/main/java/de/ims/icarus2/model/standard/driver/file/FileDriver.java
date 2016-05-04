@@ -65,7 +65,7 @@ import de.ims.icarus2.model.standard.driver.mapping.AbstractStoredMapping;
 import de.ims.icarus2.model.standard.driver.mapping.MappingFactory;
 import de.ims.icarus2.model.standard.driver.mapping.MappingFactory.Property;
 import de.ims.icarus2.model.standard.driver.mapping.chunks.ChunkIndexStorage;
-import de.ims.icarus2.model.util.CorpusUtils;
+import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.Options;
 
 
@@ -128,7 +128,7 @@ public abstract class FileDriver extends AbstractDriver {
 
 		Options options = new Options();
 
-		for(LayerManifest layer : manifest.getLayerManifests(CorpusUtils::isItemLayer)) {
+		for(LayerManifest layer : manifest.getLayerManifests(ModelUtils::isItemLayer)) {
 			//TODO access states and create optimized layers?
 		}
 
@@ -394,7 +394,7 @@ public abstract class FileDriver extends AbstractDriver {
 				return loadChunks(layer, indices, action);
 			} catch (IOException e) {
 				throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-						"Failed to delegate loading of data chunks in layer "+CorpusUtils.getUniqueId(layer)+" to connector", e);
+						"Failed to delegate loading of data chunks in layer "+ModelUtils.getUniqueId(layer)+" to connector", e);
 			}
 		} else {
 			// No chunk index available, proceed with loading the respective file
@@ -408,11 +408,11 @@ public abstract class FileDriver extends AbstractDriver {
 			int firstFile = findFile(minIndex, layer.getManifest(), 0, fileCount);
 			if(firstFile<0)
 				throw new ModelException(ModelErrorCode.DRIVER_METADATA,
-						"Could not find file index for item index "+minIndex+" in layer "+CorpusUtils.getUniqueId(layer));
+						"Could not find file index for item index "+minIndex+" in layer "+ModelUtils.getUniqueId(layer));
 			int lastFile = findFile(maxIndex, layer.getManifest(), firstFile, fileCount);
 			if(lastFile<0)
 				throw new ModelException(ModelErrorCode.DRIVER_METADATA,
-						"Could not find file index for item index "+maxIndex+" in layer "+CorpusUtils.getUniqueId(layer));
+						"Could not find file index for item index "+maxIndex+" in layer "+ModelUtils.getUniqueId(layer));
 
 			long loadedItems = 0L;
 

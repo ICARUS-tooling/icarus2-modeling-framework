@@ -17,48 +17,38 @@
 
  * $Revision: 457 $
  * $Date: 2016-04-20 15:08:11 +0200 (Mi, 20 Apr 2016) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/sequences/ArraySequence.java $
+ * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/sequences/EmptySequence.java $
  *
  * $LastChangedDate: 2016-04-20 15:08:11 +0200 (Mi, 20 Apr 2016) $
  * $LastChangedRevision: 457 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.standard.sequences;
+package de.ims.icarus2.util.collections.seq;
 
-import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.util.CorpusUtils;
-import de.ims.icarus2.util.collections.DataSequence;
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusException;
 
 /**
  * @author Markus Gärtner
- * @version $Id: ArraySequence.java 457 2016-04-20 13:08:11Z mcgaerty $
+ * @version $Id: EmptySequence.java 457 2016-04-20 13:08:11Z mcgaerty $
  *
  */
-public class ArraySequence<E extends Object> implements DataSequence<E> {
-
-	private final E[] elements;
-
-	public ArraySequence(E[] elements) {
-		if (elements == null)
-			throw new NullPointerException("Invalid elements");
-
-		this.elements = elements;
-	}
+public class EmptySequence<E extends Object> implements DataSequence<E> {
 
 	/**
-	 * @see de.ims.icarus2.util.collections.DataSequence#entryCount()
+	 * @see de.ims.icarus2.util.collections.seq.DataSequence#entryCount()
 	 */
 	@Override
 	public long entryCount() {
-		return elements.length;
+		return 0L;
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.collections.DataSequence#elementAt(long)
+	 * @see de.ims.icarus2.util.collections.seq.DataSequence#elementAt(long)
 	 */
 	@Override
-	public E elementAt(long index) throws ModelException {
-		return elements[CorpusUtils.ensureIntegerValueRange(index)];
+	public E elementAt(long index) {
+		throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Member sequence is empty!");
 	}
 
 }

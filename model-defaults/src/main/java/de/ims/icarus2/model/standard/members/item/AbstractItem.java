@@ -33,7 +33,7 @@ import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.standard.MemberFlags;
-import de.ims.icarus2.model.util.CorpusUtils;
+import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.Recyclable;
 import de.ims.icarus2.util.mem.HeapMember;
 import de.ims.icarus2.util.mem.Primitive;
@@ -119,7 +119,7 @@ public abstract class AbstractItem implements Item, Recyclable {
 	 */
 	@Override
 	public String toString() {
-		return CorpusUtils.toString(this);
+		return ModelUtils.toString(this);
 	}
 
 	/**

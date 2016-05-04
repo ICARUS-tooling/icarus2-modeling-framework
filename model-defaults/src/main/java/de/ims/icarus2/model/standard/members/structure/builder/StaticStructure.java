@@ -43,9 +43,9 @@ import de.ims.icarus2.model.standard.members.container.ItemStorage;
 import de.ims.icarus2.model.standard.members.item.AbstractItem;
 import de.ims.icarus2.model.standard.members.structure.EdgeStorage;
 import de.ims.icarus2.model.standard.members.structure.ImmutableStructureEditVerifier;
-import de.ims.icarus2.model.util.CorpusUtils;
-import de.ims.icarus2.util.collections.DataSequence;
-import de.ims.icarus2.util.collections.DataSet;
+import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.collections.seq.DataSequence;
+import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
  * @author Markus Gärtner
@@ -174,7 +174,7 @@ public class StaticStructure extends AbstractItem implements Structure {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.container.Container#addItems(long, de.ims.icarus2.util.collections.DataSequence)
+	 * @see de.ims.icarus2.model.api.members.container.Container#addItems(long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
 	public void addItems(long index, DataSequence<? extends Item> items) {
@@ -234,7 +234,7 @@ public class StaticStructure extends AbstractItem implements Structure {
 	 */
 	@Override
 	public StructureManifest getManifest() {
-		return (StructureManifest) CorpusUtils.getContainerManifest(this);
+		return (StructureManifest) ModelUtils.getContainerManifest(this);
 	}
 
 	/**
@@ -382,7 +382,7 @@ public class StaticStructure extends AbstractItem implements Structure {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.structure.Structure#addEdges(long, de.ims.icarus2.util.collections.DataSequence)
+	 * @see de.ims.icarus2.model.api.members.structure.Structure#addEdges(long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
 	public void addEdges(long index, DataSequence<? extends Edge> edges) {

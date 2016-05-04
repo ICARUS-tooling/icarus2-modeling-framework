@@ -31,6 +31,7 @@ import static de.ims.icarus2.util.Conditions.checkNotNull;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
@@ -77,7 +78,7 @@ public abstract class MappingRequest implements Callable<IndexSet[]>, ModelConst
 	@Override
 	public IndexSet[] call() throws Exception {
 		if(!lookupStarted.compareAndSet(false, true))
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE, "Lookup operation already initiated");
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Lookup operation already initiated");
 
 		IndexSet[] result = null;
 
@@ -89,7 +90,7 @@ public abstract class MappingRequest implements Callable<IndexSet[]>, ModelConst
 		}
 
 		if(result==null)
-			throw new ModelException(ModelErrorCode.INTERNAL_ERROR, "Result index set is null");
+			throw new ModelException(GlobalErrorCode.INTERNAL_ERROR, "Result index set is null");
 
 		return result;
 	}

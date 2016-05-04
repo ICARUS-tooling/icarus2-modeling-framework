@@ -37,10 +37,10 @@ import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.MemberFlags;
 import de.ims.icarus2.model.standard.members.item.AbstractItem;
-import de.ims.icarus2.model.util.CorpusUtils;
+import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.Recyclable;
-import de.ims.icarus2.util.collections.DataSequence;
-import de.ims.icarus2.util.collections.DataSet;
+import de.ims.icarus2.util.collections.seq.DataSequence;
+import de.ims.icarus2.util.collections.set.DataSet;
 import de.ims.icarus2.util.mem.Link;
 import de.ims.icarus2.util.mem.Reference;
 
@@ -141,7 +141,7 @@ public class DefaultContainer extends AbstractItem implements Container, Recycla
 	 */
 	@Override
 	public ContainerManifest getManifest() {
-		return CorpusUtils.getContainerManifest(this);
+		return ModelUtils.getContainerManifest(this);
 	}
 
 	/**
@@ -209,7 +209,7 @@ public class DefaultContainer extends AbstractItem implements Container, Recycla
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.container.Container#addItems(long, de.ims.icarus2.util.collections.DataSequence)
+	 * @see de.ims.icarus2.model.api.members.container.Container#addItems(long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
 	public void addItems(long index, DataSequence<? extends Item> items) {

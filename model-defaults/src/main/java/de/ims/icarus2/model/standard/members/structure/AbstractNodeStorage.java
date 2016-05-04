@@ -26,7 +26,7 @@
 package de.ims.icarus2.model.standard.members.structure;
 
 import static de.ims.icarus2.model.standard.members.MemberUtils.checkHostStructure;
-import static de.ims.icarus2.model.util.CorpusUtils.getName;
+import static de.ims.icarus2.model.util.ModelUtils.getName;
 import gnu.trove.map.hash.THashMap;
 
 import java.util.ArrayList;
@@ -41,9 +41,9 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureEditVerifier;
 import de.ims.icarus2.model.manifest.api.StructureFlag;
-import de.ims.icarus2.model.standard.sequences.ListSequence;
-import de.ims.icarus2.util.collections.DataSequence;
 import de.ims.icarus2.util.collections.LookupList;
+import de.ims.icarus2.util.collections.seq.DataSequence;
+import de.ims.icarus2.util.collections.seq.ListSequence;
 
 /**
  * Implements a an {@link EdgeStorage} that stores all the actual structural information

@@ -30,7 +30,7 @@ import static de.ims.icarus2.model.standard.members.MemberUtils.checkNoLoopsStru
 import static de.ims.icarus2.model.standard.members.MemberUtils.checkNonEmptyContainer;
 import static de.ims.icarus2.model.standard.members.MemberUtils.checkNonPartialStructure;
 import static de.ims.icarus2.model.standard.members.MemberUtils.checkStaticContainer;
-import static de.ims.icarus2.model.util.CorpusUtils.getName;
+import static de.ims.icarus2.model.util.ModelUtils.getName;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,8 +45,8 @@ import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureEditVerifier;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.standard.members.container.ImmutableContainerEditVerifier;
-import de.ims.icarus2.model.standard.sequences.ListSequence;
-import de.ims.icarus2.util.collections.DataSequence;
+import de.ims.icarus2.util.collections.seq.DataSequence;
+import de.ims.icarus2.util.collections.seq.ListSequence;
 
 /**
  * A specialized chain storage that links a fixed collection of items
@@ -515,7 +515,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#addEdges(de.ims.icarus2.model.api.members.structure.Structure, long, de.ims.icarus2.util.collections.DataSequence)
+	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#addEdges(de.ims.icarus2.model.api.members.structure.Structure, long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
 	public void addEdges(Structure context, long index,
@@ -761,7 +761,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdges(long, de.ims.icarus2.util.collections.DataSequence)
+		 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdges(long, de.ims.icarus2.util.collections.seq.DataSequence)
 		 */
 		@Override
 		public boolean canAddEdges(long index,

@@ -34,6 +34,7 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 
@@ -97,7 +98,7 @@ public final class FileResource implements IOResource {
 		}
 
 		if(!Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS))
-			throw new ModelException(ModelErrorCode.ILLEGAL_STATE,
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Supplied file is not regular file: "+file); //$NON-NLS-1$
 	}
 

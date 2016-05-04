@@ -47,13 +47,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.LongConsumer;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelConstants;
-import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.strings.StringUtil;
 
 /**
@@ -136,7 +137,7 @@ public class IndexCollectorFactory implements ModelConstants {
 		final int chunkLimit = getChunkSizeLimit();
 
 		final boolean isLimited = totalLimit != UNDEFINED_TOTAL_SIZE
-				&& totalLimit <= MAX_INTEGER_INDEX;
+				&& totalLimit <= IcarusUtils.MAX_INTEGER_INDEX;
 		final int capacity = (int) (isLimited ? Math.min(DEFAULT_CAPACITY,
 				totalLimit) : -1);
 
@@ -174,7 +175,7 @@ public class IndexCollectorFactory implements ModelConstants {
 		}
 
 		 if(builder==null)
-			 throw new ModelException(ModelErrorCode.NOT_IMPLEMENTED,
+			 throw new ModelException(GlobalErrorCode.NOT_IMPLEMENTED,
 					 "Could not create IndexSetBuilder for factory configuration: "+toString());
 
 //		if (builder == null) {

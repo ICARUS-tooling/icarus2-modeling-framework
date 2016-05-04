@@ -36,10 +36,10 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
-import de.ims.icarus2.model.standard.sequences.DataSequenceCollectionWrapper;
-import de.ims.icarus2.model.standard.sequences.ListSequence;
-import de.ims.icarus2.util.collections.DataSequence;
 import de.ims.icarus2.util.collections.LookupList;
+import de.ims.icarus2.util.collections.seq.DataSequence;
+import de.ims.icarus2.util.collections.seq.DataSequenceCollectionWrapper;
+import de.ims.icarus2.util.collections.seq.ListSequence;
 
 /**
  * Implements a {@link ItemStorage} that is backed by a {@link LookupList}.
@@ -225,7 +225,7 @@ public class ListItemStorageInt implements ItemStorage {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addItems(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.util.collections.DataSequence)
+	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addItems(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
 	public void addItems(Container context, long index,

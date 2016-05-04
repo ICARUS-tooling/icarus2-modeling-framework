@@ -17,39 +17,51 @@
 
  * $Revision: 457 $
  * $Date: 2016-04-20 15:08:11 +0200 (Mi, 20 Apr 2016) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/sequences/EmptySequence.java $
+ * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/sequences/SingletonSequence.java $
  *
  * $LastChangedDate: 2016-04-20 15:08:11 +0200 (Mi, 20 Apr 2016) $
  * $LastChangedRevision: 457 $
  * $LastChangedBy: mcgaerty $
  */
-package de.ims.icarus2.model.standard.sequences;
+package de.ims.icarus2.util.collections.seq;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
-import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.util.collections.DataSequence;
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusException;
 
 /**
  * @author Markus Gärtner
- * @version $Id: EmptySequence.java 457 2016-04-20 13:08:11Z mcgaerty $
+ * @version $Id: SingletonSequence.java 457 2016-04-20 13:08:11Z mcgaerty $
  *
  */
-public class EmptySequence<E extends Object> implements DataSequence<E> {
+public class SingletonSequence<E extends Object> implements DataSequence<E> {
 
-	/**
-	 * @see de.ims.icarus2.util.collections.DataSequence#entryCount()
-	 */
-	@Override
-	public long entryCount() {
-		return 0L;
+	private final E element;
+
+	public SingletonSequence(E element) {
+		if (element == null)
+			throw new NullPointerException("Invalid element");
+
+		this.element = element;
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.collections.DataSequence#elementAt(long)
+	 * @see de.ims.icarus2.util.collections.seq.DataSequence#entryCount()
+	 */
+	@Override
+	public long entryCount() {
+		return 1;
+	}
+
+	/**
+	 * @see de.ims.icarus2.util.collections.seq.DataSequence#elementAt(long)
 	 */
 	@Override
 	public E elementAt(long index) {
-		throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS, "Member sequence is empty!");
+		if(index!=0L)
+			throw new IcarusException(GlobalErrorCode.INVALID_INPUT,
+					"Invalid index for singleton sequence (only 0 allowed): "+index);
+
+		return element;
 	}
 
 }
