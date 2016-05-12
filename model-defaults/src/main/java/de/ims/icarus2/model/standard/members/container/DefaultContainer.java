@@ -36,7 +36,7 @@ import de.ims.icarus2.model.manifest.api.ContainerFlag;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.util.Messages;
-import de.ims.icarus2.model.standard.MemberFlags;
+import de.ims.icarus2.model.standard.members.MemberFlags;
 import de.ims.icarus2.model.standard.members.item.AbstractItem;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.Recyclable;

@@ -38,7 +38,7 @@ import de.ims.icarus2.model.api.members.structure.StructureInfo;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
-import de.ims.icarus2.model.standard.MemberFlags;
+import de.ims.icarus2.model.standard.members.MemberFlags;
 import de.ims.icarus2.model.standard.members.container.ItemStorage;
 import de.ims.icarus2.model.standard.members.item.AbstractItem;
 import de.ims.icarus2.model.standard.members.structure.EdgeStorage;

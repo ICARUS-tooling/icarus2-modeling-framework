@@ -29,7 +29,6 @@ import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
 
-import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -48,12 +47,9 @@ import de.ims.icarus2.model.api.driver.ChunkInfo;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.DriverListener;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
-import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingStorage;
 import de.ims.icarus2.model.api.driver.mods.DriverModule;
-import de.ims.icarus2.model.api.io.resources.FileResource;
-import de.ims.icarus2.model.api.io.resources.IOResource;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
@@ -67,12 +63,6 @@ import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
-import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
-import de.ims.icarus2.model.manifest.api.MappingManifest;
-import de.ims.icarus2.model.standard.driver.io.BufferedIOResource.BlockCache;
-import de.ims.icarus2.model.standard.driver.io.RUBlockCache;
-import de.ims.icarus2.model.standard.driver.io.UnlimitedBlockCache;
-import de.ims.icarus2.model.standard.driver.mapping.MappingFactory;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.Options;
 
@@ -155,14 +145,14 @@ public abstract class AbstractDriver implements Driver {
 		}
 	}
 
-	protected final void setMappings(MappingStorage mappings) {
+	private void setMappings(MappingStorage mappings) {
 		checkNotNull(mappings);
 		checkState(this.mappings==null);
 
 		this.mappings = mappings;
 	}
 
-	protected final void setContext(Context context) {
+	private void setContext(Context context) {
 		checkNotNull(context);
 		checkState(this.context==null);
 
@@ -176,15 +166,14 @@ public abstract class AbstractDriver implements Driver {
 	}
 
 	/**
-	 * Performs maintenance work during the connection process after the basic internal
-	 * modules like mappings and the respective context have been initialized. For virtual
-	 * drivers for example, this is the place to create their content. Other implementations
-	 * might use this opportunity to prepare {@link DriverModule modules} or do sanity checks
-	 * on external resources.
+	 * Performs maintenance work during the connection process.
+	 * For virtual drivers for example, this is the place to create their content.
+	 * Other implementations might use this opportunity to prepare {@link DriverModule modules}
+	 * or do sanity checks on external resources.
 	 * <p>
 	 * Note that this method will be called <b>first</b> from {@link #connect(Corpus)}.
 	 * <p>
-	 * The default implementation creates the context
+	 * The default implementation creates the context and mapping storage to be used later.
 	 *
 	 * @throws InterruptedException
 	 */
@@ -229,23 +218,12 @@ public abstract class AbstractDriver implements Driver {
 	/**
 	 * Creates the basic mappings for this driver implementation.
 	 * <p>
-	 * The default implementation just traverses all mapping manifests declared for this driver
-	 * and delegates to the internal {@link #defaultCreateMapping(MappingFactory, MappingManifest, Options, boolean)}
-	 * with an {@link Options} instance that contains the original mapping in case a reverse mapping
-	 * is to be created and which is otherwise empty. If subclasses wish to customize the generation
-	 * process they should either override the above mentioned default method to
-	 * <p>
-	 * If a subclass wants to more closely control the creation of mappings, it should override
-	 * this method and create every mapping instance either by using a {@code MappingFactory} object
-	 * and customize the generation by supplying appropriate {@code options} or by manually
-	 * instantiating the mappings.
+	 * This method is called exactly once by this driver implementation during the connection phase.
 	 *
 	 * @param manifest
 	 * @return
 	 */
 	protected MappingStorage createMappings() {
-
-		DriverManifest manifest = getManifest();
 		MappingStorage.Builder builder = new MappingStorage.Builder();
 
 		// Allow for subclasses to provide a fallback function
@@ -254,76 +232,7 @@ public abstract class AbstractDriver implements Driver {
 			builder.fallback(fallback);
 		}
 
-		MappingFactory mappingFactory = new MappingFactory(this);
-
-		manifest.forEachMappingManifest(m -> {
-			Options options = new Options();
-
-			Mapping mapping = defaultCreateMapping(mappingFactory, m, options);
-			builder.addMapping(mapping);
-		});
-
 		return builder.build();
-	}
-
-	public static final String HINT_LRU_CACHE = "LRU";
-	public static final String HINT_MRU_CACHE = "MRU";
-	public static final String HINT_UNLIMITED_CACHE = "UNLIMITED";
-
-	protected static BlockCache toBlockCache(String s) {
-		if(s==null) {
-			return null;
-		}
-
-		if(HINT_LRU_CACHE.equals(s)) {
-			return RUBlockCache.newLeastRecentlyUsedCache();
-		} else if(HINT_MRU_CACHE.equals(s)) {
-			return RUBlockCache.newMostRecentlyUsedCache();
-		} else if(HINT_UNLIMITED_CACHE.equals(s)) {
-			return new UnlimitedBlockCache();
-		} else {
-			try {
-				return (BlockCache) Class.forName(s).newInstance();
-			} catch (InstantiationException | IllegalAccessException
-					| ClassNotFoundException e) {
-				throw new ModelException(ManifestErrorCode.IMPLEMENTATION_ERROR,
-						"Unable to instantiate block cache: "+s);
-			}
-		}
-	}
-
-	protected static Integer toInteger(int value) {
-		return value==-1 ? null : Integer.valueOf(value);
-	}
-
-	protected static Long toLong(long value) {
-		return value==NO_INDEX ? null : Long.valueOf(value);
-	}
-
-	protected static IndexValueType toValueType(String s) {
-		if(s==null) {
-			return null;
-		}
-
-		return IndexValueType.valueOf(s);
-	}
-
-	protected static IOResource toResource(String s) {
-		if(s==null) {
-			return null;
-		}
-
-		return new FileResource(Paths.get(s));
-	}
-
-	protected Mapping defaultCreateMapping(MappingFactory mappingFactory, MappingManifest mappingManifest, Options options) {
-		// Populate options
-
-		Mapping mapping = mappingFactory.createMapping(mappingManifest, options);
-
-		//TODO do verification?
-
-		return mapping;
 	}
 
 	protected BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> createMappingFallback() {
@@ -341,7 +250,7 @@ public abstract class AbstractDriver implements Driver {
 				throw new ModelException(ModelErrorCode.DRIVER_CONNECTION, "Driver previously disconencted - considered dead: "+manifest.getId());
 			if(this.corpus!=target)
 				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
-						"Driver not connected to given context: "+manifest.getId());
+						"Driver not connected to given corpus: "+manifest.getId());
 
 			allowUncheckedAccess = true;
 
@@ -426,7 +335,7 @@ public abstract class AbstractDriver implements Driver {
 	 *
 	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#getLayers()
 	 *
-	 * @throws ModelException in case the driver is currently not connected to any live context
+	 * @throws ModelException in case the driver is currently not connected to any live corpus
 	 */
 	@Override
 	public Collection<Layer> getLayers() {
@@ -548,7 +457,6 @@ public abstract class AbstractDriver implements Driver {
 	 * via the {@link Corpus} it is connected with and then set it up with additional
 	 * information:
 	 * <br>
-	 * The {@link ImplementationLoader#corpus(Corpus) corpus} will be set to the above mentioned one.
 	 * The {@link ImplementationLoader#environment(Object) environment} will be set to this driver instance.
 	 * <br>
 	 * When calling the {@link ImplementationLoader#instantiate(Class) instantiation} method, the

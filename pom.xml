@@ -72,5 +72,6 @@
     <module>shared-utils</module>
     <module>model-api</module>
     <module>model-defaults</module>
+    <module>file-driver-utils</module>
   </modules>
 </project>

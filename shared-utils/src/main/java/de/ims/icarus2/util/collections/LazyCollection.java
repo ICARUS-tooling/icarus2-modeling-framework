@@ -153,12 +153,16 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 	public <T extends Object> T[] getAsArray(T[] array) {
 		Collection<E> c = buffer;
 
-		return (c==null || c.isEmpty()) ? (T[]) new Object[0] : c.toArray(array);
+		return (c==null) ? (T[]) new Object[0] : c.toArray(array);
 	}
 
 	public boolean isEmpty() {
 		Collection<E> c = buffer;
 		return c==null || c.isEmpty();
+	}
+
+	public int size() {
+		return buffer.size();
 	}
 
 	/**

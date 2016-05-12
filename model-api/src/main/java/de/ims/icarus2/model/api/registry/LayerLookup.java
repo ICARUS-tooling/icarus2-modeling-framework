@@ -71,4 +71,13 @@ public class LayerLookup {
 	public int getUID(Layer layer) {
 		return layerIds.get(layer);
 	}
+
+	/**
+	 * Returns an array containing all the layers currently available in this lookup.
+	 * @return
+	 */
+	public Layer[] getLayers() {
+		Layer[] a = new Layer[layerIds.size()];
+		return layerIds.keys(a);
+	}
 }

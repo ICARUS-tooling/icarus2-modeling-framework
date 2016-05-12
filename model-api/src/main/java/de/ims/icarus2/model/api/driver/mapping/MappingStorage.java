@@ -138,11 +138,11 @@ public class MappingStorage {
 		mappingSet.forEach(action);
 	}
 
-	private static long getKey(Mapping mapping) {
+	protected static long getKey(Mapping mapping) {
 		return getKey(mapping.getSourceLayer(), mapping.getTargetLayer());
 	}
 
-	private static long getKey(LayerManifest source, LayerManifest target) {
+	protected static long getKey(LayerManifest source, LayerManifest target) {
 		return (long)source.getUID() | ((long)target.getUID()<<32);
 	}
 
@@ -184,6 +184,11 @@ public class MappingStorage {
 			return this;
 		}
 
+		/**
+		 * Verifies that all required fields have been set for a successful build operation.
+		 * <p>
+		 * The default implementation does nothing.
+		 */
 		protected void validate() {
 			// Verification opportunity for subclasses
 		}
