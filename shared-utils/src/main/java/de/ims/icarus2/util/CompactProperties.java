@@ -16,12 +16,7 @@
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  *
  * $Revision: 229 $
- * $Date: 2014-02-20 15:53:33 +0100 (Do, 20 Feb 2014) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus/core/de.ims.icarus/source/de/ims/icarus/util/CompactProperties.java $
  *
- * $LastChangedDate: 2014-02-20 15:53:33 +0100 (Do, 20 Feb 2014) $
- * $LastChangedRevision: 229 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.util;
 
@@ -42,7 +37,6 @@ import java.util.function.Consumer;
  * map, depending on the number of entries.
  *
  * @author Markus Gärtner
- * @version $Id: CompactProperties.java 229 2014-02-20 14:53:33Z mcgaerty $
  *
  */
 public class CompactProperties implements Cloneable, Serializable {

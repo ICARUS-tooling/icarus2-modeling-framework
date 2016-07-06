@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015 Markus Gärtner
+ *  Copyright (C) 2015-2016 Markus Gärtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,14 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 457 $
- * $Date: 2016-04-20 15:08:11 +0200 (Mi, 20 Apr 2016) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/api/driver/indices/IndexValueType.java $
  *
- * $LastChangedDate: 2016-04-20 15:08:11 +0200 (Mi, 20 Apr 2016) $
- * $LastChangedRevision: 457 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.model.api.driver.indices;
 
@@ -38,7 +31,6 @@ import de.ims.icarus2.util.collections.ArrayUtils;
 /**
  *
  * @author Markus Gärtner
- * @version $Id: IndexValueType.java 457 2016-04-20 13:08:11Z mcgaerty $
  *
  */
 public enum IndexValueType {

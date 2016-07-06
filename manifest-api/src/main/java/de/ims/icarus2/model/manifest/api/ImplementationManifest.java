@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015 Markus Gärtner
+ *  Copyright (C) 2015-2016 Markus Gärtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,14 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 445 $
- * $Date: 2016-01-11 17:33:05 +0100 (Mo, 11 Jan 2016) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/api/manifest/ImplementationManifest.java $
  *
- * $LastChangedDate: 2016-01-11 17:33:05 +0100 (Mo, 11 Jan 2016) $
- * $LastChangedRevision: 445 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.model.manifest.api;
 
@@ -46,7 +39,6 @@ import de.ims.icarus2.util.strings.StringResource;
  * to his needs and the amount of modifiable properties.
  *
  * @author Markus Gärtner
- * @version $Id: ImplementationManifest.java 445 2016-01-11 16:33:05Z mcgaerty $
  *
  */
 @AccessControl(AccessPolicy.DENY)
@@ -188,7 +180,6 @@ public interface ImplementationManifest extends MemberManifest {
 	 * {@link ImplementationManifest manifest} and the active {@link ImplementationLoader loader}.
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id: ImplementationManifest.java 445 2016-01-11 16:33:05Z mcgaerty $
 	 *
 	 */
 	public interface Factory {

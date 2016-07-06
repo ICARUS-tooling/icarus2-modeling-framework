@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015 Markus Gärtner
+ *  Copyright (C) 2015-2016 Markus Gärtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,14 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 448 $
- * $Date: 2016-01-19 17:30:06 +0100 (Di, 19 Jan 2016) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/members/structure/RootItem.java $
  *
- * $LastChangedDate: 2016-01-19 17:30:06 +0100 (Di, 19 Jan 2016) $
- * $LastChangedRevision: 448 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.model.standard.members.structure;
 
@@ -56,7 +49,6 @@ import de.ims.icarus2.util.mem.ReferenceType;
  * TODO rell about the 2 specialized subclasses
  *
  * @author Markus Gärtner
- * @version $Id: RootItem.java 448 2016-01-19 16:30:06Z mcgaerty $
  *
  */
 @HeapMember
@@ -295,7 +287,6 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 	/**
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id: RootItem.java 448 2016-01-19 16:30:06Z mcgaerty $
 	 *
 	 */
 	public static class SingleEdgeRootItem<E extends Edge> extends RootItem<E> {
@@ -365,7 +356,6 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 	/**
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id: RootItem.java 448 2016-01-19 16:30:06Z mcgaerty $
 	 *
 	 */
 	public static class MultiEdgeRootItem<E extends Edge> extends RootItem<E> {

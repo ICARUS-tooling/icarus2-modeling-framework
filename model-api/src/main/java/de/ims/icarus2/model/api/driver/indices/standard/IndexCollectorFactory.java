@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015 Markus Gärtner
+ *  Copyright (C) 2015-2016 Markus Gärtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,14 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision$
- * $Date$
- * $URL$
  *
- * $LastChangedDate$
- * $LastChangedRevision$
- * $LastChangedBy$
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
@@ -63,7 +56,6 @@ import de.ims.icarus2.util.strings.StringUtil;
  * aggregation of large numbers of index values.
  *
  * @author Markus Gärtner
- * @version $Id$
  *
  */
 public class IndexCollectorFactory implements ModelConstants {
@@ -203,7 +195,6 @@ public class IndexCollectorFactory implements ModelConstants {
 	/**
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id$
 	 *
 	 */
 	public interface IndexSetBuilder extends IndexCollector {
@@ -250,7 +241,6 @@ public class IndexCollectorFactory implements ModelConstants {
 	 * implementations is limited and defined at construction time.
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id$
 	 *
 	 */
 	public static class LimitedSortedSetBuilder extends IndexBuffer implements IndexSetBuilder {
@@ -369,7 +359,6 @@ public class IndexCollectorFactory implements ModelConstants {
 	 * instances is {@link IndexValueType#LONG}.
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id$
 	 *
 	 */
 	public static class LimitedUnsortedSetBuilderLong implements
@@ -446,7 +435,6 @@ public class IndexCollectorFactory implements ModelConstants {
 	 * instances is {@link IndexValueType#INTEGER}.
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id$
 	 *
 	 */
 	public static class LimitedUnsortedSetBuilderInt implements
@@ -523,7 +511,6 @@ public class IndexCollectorFactory implements ModelConstants {
 	 * instances is {@link IndexValueType#SHORT}.
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id$
 	 *
 	 */
 	public static class LimitedUnsortedSetBuilderShort implements
@@ -600,7 +587,6 @@ public class IndexCollectorFactory implements ModelConstants {
 	 * instances is {@link IndexValueType#BYTE}.
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id$
 	 *
 	 */
 	public static class LimitedUnsortedSetBuilderByte implements
@@ -682,7 +668,6 @@ public class IndexCollectorFactory implements ModelConstants {
 	 * currently contained in the bucket.
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id$
 	 *
 	 */
 	public static class BucketSetBuilder implements IndexSetBuilder {
@@ -1086,7 +1071,6 @@ public class IndexCollectorFactory implements ModelConstants {
 	 *
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id$
 	 *
 	 */
 	private static class Bucket implements Comparable<Bucket> {

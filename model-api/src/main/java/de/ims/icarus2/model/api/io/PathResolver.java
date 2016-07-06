@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015 Markus Gärtner
+ *  Copyright (C) 2015-2016 Markus Gärtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,14 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 402 $
- * $Date: 2015-06-08 17:06:51 +0200 (Mo, 08 Jun 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/io/PathResolver.java $
  *
- * $LastChangedDate: 2015-06-08 17:06:51 +0200 (Mo, 08 Jun 2015) $
- * $LastChangedRevision: 402 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.model.api.io;
 
@@ -32,7 +25,6 @@ import de.ims.icarus2.model.api.ModelException;
  * little chunks from a very big database.
  *
  * @author Markus Gärtner
- * @version $Id: PathResolver.java 402 2015-06-08 15:06:51Z mcgaerty $
  * @see ResourcePath
  *
  */

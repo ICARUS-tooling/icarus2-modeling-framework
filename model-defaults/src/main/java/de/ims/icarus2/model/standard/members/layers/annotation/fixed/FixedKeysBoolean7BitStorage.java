@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015 Markus Gärtner
+ *  Copyright (C) 2015-2016 Markus Gärtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,14 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 382 $
- * $Date: 2015-04-09 16:23:50 +0200 (Do, 09 Apr 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/members/layers/annotation/fixed/FixedKeysBoolean7BitStorage.java $
  *
- * $LastChangedDate: 2015-04-09 16:23:50 +0200 (Do, 09 Apr 2015) $
- * $LastChangedRevision: 382 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
@@ -44,7 +37,6 @@ import de.ims.icarus2.model.util.ModelUtils;
 
 /**
  * @author Markus Gärtner
- * @version $Id: FixedKeysBoolean7BitStorage.java 382 2015-04-09 14:23:50Z mcgaerty $
  *
  */
 public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage {

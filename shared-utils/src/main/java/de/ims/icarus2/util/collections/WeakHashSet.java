@@ -1,11 +1,6 @@
 /*
  * $Revision: 380 $
- * $Date: 2015-04-02 03:28:48 +0200 (Do, 02 Apr 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.core/source/de/ims/icarus2/util/collections/WeakHashSet.java $
  *
- * $LastChangedDate: 2015-04-02 03:28:48 +0200 (Do, 02 Apr 2015) $
- * $LastChangedRevision: 380 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.util.collections;
 
@@ -16,7 +11,6 @@ import java.util.WeakHashMap;
 
 /**
  * @author Markus Gärtner
- * @version $Id: WeakHashSet.java 380 2015-04-02 01:28:48Z mcgaerty $
  *
  */
 public class WeakHashSet<E extends Object> extends AbstractSet<E> {

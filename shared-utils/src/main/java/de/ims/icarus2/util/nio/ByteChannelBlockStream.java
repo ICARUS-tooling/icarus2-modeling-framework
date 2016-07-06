@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015 Markus Gärtner
+ *  Copyright (C) 2015-2016 Markus Gärtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,14 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 412 $
- * $Date: 2015-06-30 16:15:08 +0200 (Di, 30 Jun 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.core/source/de/ims/icarus2/io/ByteChannelBlockStream.java $
  *
- * $LastChangedDate: 2015-06-30 16:15:08 +0200 (Di, 30 Jun 2015) $
- * $LastChangedRevision: 412 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.util.nio;
 
@@ -32,7 +25,6 @@ import java.nio.channels.SeekableByteChannel;
 
 /**
  * @author Markus Gärtner
- * @version $Id: ByteChannelBlockStream.java 412 2015-06-30 14:15:08Z mcgaerty $
  *
  */
 public class ByteChannelBlockStream extends InputStream {

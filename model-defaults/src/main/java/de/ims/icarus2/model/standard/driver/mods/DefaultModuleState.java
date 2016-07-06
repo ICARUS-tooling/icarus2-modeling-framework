@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015 Markus Gärtner
+ *  Copyright (C) 2015-2016 Markus Gärtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,14 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision$
- * $Date$
- * $URL$
  *
- * $LastChangedDate$
- * $LastChangedRevision$
- * $LastChangedBy$
  */
 package de.ims.icarus2.model.standard.driver.mods;
 
@@ -32,7 +25,6 @@ import de.ims.icarus2.util.id.StaticIdentity;
 
 /**
  * @author Markus Gärtner
- * @version $Id$
  *
  */
 public class DefaultModuleState extends StaticIdentity implements ModuleState {

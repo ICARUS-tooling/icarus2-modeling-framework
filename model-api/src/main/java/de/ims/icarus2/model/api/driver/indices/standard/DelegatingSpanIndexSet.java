@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015 Markus Gärtner
+ *  Copyright (C) 2015-2016 Markus Gärtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,14 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 442 $
- * $Date: 2016-01-07 10:59:40 +0100 (Do, 07 Jan 2016) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/driver/indices/DelegatingSpanIndexSet.java $
  *
- * $LastChangedDate: 2016-01-07 10:59:40 +0100 (Do, 07 Jan 2016) $
- * $LastChangedRevision: 442 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
@@ -37,7 +30,6 @@ import de.ims.icarus2.model.api.driver.indices.IndexValueType;
  * making this a very flexible way of looking at sub-sections of another index set.
  *
  * @author Markus Gärtner
- * @version $Id: DelegatingSpanIndexSet.java 442 2016-01-07 09:59:40Z mcgaerty $
  *
  */
 public class DelegatingSpanIndexSet implements IndexSet {

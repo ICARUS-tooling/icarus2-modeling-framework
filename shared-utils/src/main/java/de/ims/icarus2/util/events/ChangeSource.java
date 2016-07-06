@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015 Markus Gärtner
+ *  Copyright (C) 2015-2016 Markus Gärtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,14 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 407 $
- * $Date: 2015-06-24 02:12:18 +0200 (Mi, 24 Jun 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.core/source/de/ims/icarus2/events/ChangeSource.java $
  *
- * $LastChangedDate: 2015-06-24 02:12:18 +0200 (Mi, 24 Jun 2015) $
- * $LastChangedRevision: 407 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.util.events;
 
@@ -33,7 +26,6 @@ import de.ims.icarus2.util.Changeable;
 
 /**
  * @author Markus Gärtner
- * @version $Id: ChangeSource.java 407 2015-06-24 00:12:18Z mcgaerty $
  *
  */
 public class ChangeSource implements Changeable {

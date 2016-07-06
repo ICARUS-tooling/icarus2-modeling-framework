@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015 Markus Gärtner
+ *  Copyright (C) 2015-2016 Markus Gärtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,14 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 402 $
- * $Date: 2015-06-08 17:06:51 +0200 (Mo, 08 Jun 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.core/source/de/ims/icarus2/jaxb/JAXBGate.java $
  *
- * $LastChangedDate: 2015-06-08 17:06:51 +0200 (Mo, 08 Jun 2015) $
- * $LastChangedRevision: 402 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.util.xml.jaxb;
 
@@ -42,7 +35,6 @@ import de.ims.icarus2.util.concurrent.ExecutionUtil;
 
 /**
  * @author Markus Gärtner
- * @version $Id: JAXBGate.java 402 2015-06-08 15:06:51Z mcgaerty $
  *
  */
 public abstract class JAXBGate<B extends Object> {

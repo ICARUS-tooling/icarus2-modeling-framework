@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015 Markus Gärtner
+ *  Copyright (C) 2015-2016 Markus Gärtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -309,7 +309,6 @@ public class FileMetadata implements ModelConstants {
 	 * associated with a {@link ItemLayerManifest layer}.
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id$
 	 *
 	 */
 	public static enum FileKey implements MetadataKey {

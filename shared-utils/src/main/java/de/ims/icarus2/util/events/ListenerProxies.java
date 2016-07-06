@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015 Markus Gärtner
+ *  Copyright (C) 2015-2016 Markus Gärtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,14 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 404 $
- * $Date: 2015-06-15 12:01:03 +0200 (Mo, 15 Jun 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.core/source/de/ims/icarus2/events/ListenerProxies.java $
  *
- * $LastChangedDate: 2015-06-15 12:01:03 +0200 (Mo, 15 Jun 2015) $
- * $LastChangedRevision: 404 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.util.events;
 
@@ -48,7 +41,6 @@ import de.ims.icarus2.util.collections.BiDiMap;
 
 /**
  * @author Markus Gärtner
- * @version $Id: ListenerProxies.java 404 2015-06-15 10:01:03Z mcgaerty $
  *
  */
 public final class ListenerProxies {
@@ -192,7 +184,6 @@ public final class ListenerProxies {
 	/**
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id: ListenerProxies.java 404 2015-06-15 10:01:03Z mcgaerty $
 	 */
 	static class ListenerProxy extends WeakReference<Object> implements InvocationHandler {
 

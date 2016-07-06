@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015 Markus Gärtner
+ *  Copyright (C) 2015-2016 Markus Gärtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,14 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 451 $
- * $Date: 2016-02-03 12:33:06 +0100 (Mi, 03 Feb 2016) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/corpus/DefaultContext.java $
  *
- * $LastChangedDate: 2016-02-03 12:33:06 +0100 (Mi, 03 Feb 2016) $
- * $LastChangedRevision: 451 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.model.standard.corpus;
 
@@ -56,7 +49,6 @@ import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**
  * @author Markus Gärtner
- * @version $Id: DefaultContext.java 451 2016-02-03 11:33:06Z mcgaerty $
  *
  */
 public class DefaultContext implements Context {

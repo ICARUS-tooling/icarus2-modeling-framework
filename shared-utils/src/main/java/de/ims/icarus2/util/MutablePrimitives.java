@@ -48,7 +48,6 @@ public class MutablePrimitives {
 	/**
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id: MutablePrimitives.java 443 2016-01-11 11:31:11Z mcgaerty $
 	 *
 	 */
 	public static final class MutableBoolean implements MutablePrimitive {
@@ -224,7 +223,6 @@ public class MutablePrimitives {
 	/**
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id: MutablePrimitives.java 443 2016-01-11 11:31:11Z mcgaerty $
 	 *
 	 */
 	public static final class MutableInteger implements MutablePrimitive {
@@ -409,7 +407,6 @@ public class MutablePrimitives {
 	/**
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id: MutablePrimitives.java 443 2016-01-11 11:31:11Z mcgaerty $
 	 *
 	 */
 	public static final class MutableFloat implements MutablePrimitive {
@@ -574,7 +571,6 @@ public class MutablePrimitives {
 	/**
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id: MutablePrimitives.java 443 2016-01-11 11:31:11Z mcgaerty $
 	 *
 	 */
 	public static final class MutableDouble implements MutablePrimitive {
@@ -740,7 +736,6 @@ public class MutablePrimitives {
 	/**
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id: MutablePrimitives.java 443 2016-01-11 11:31:11Z mcgaerty $
 	 *
 	 */
 	public static final class MutableLong implements MutablePrimitive {
@@ -925,7 +920,6 @@ public class MutablePrimitives {
 	/**
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id: MutablePrimitives.java 443 2016-01-11 11:31:11Z mcgaerty $
 	 *
 	 */
 	public static final class MutableShort implements MutablePrimitive {
@@ -1110,7 +1104,6 @@ public class MutablePrimitives {
 	/**
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id: MutablePrimitives.java 443 2016-01-11 11:31:11Z mcgaerty $
 	 *
 	 */
 	public static final class MutableChar implements MutablePrimitive {
@@ -1295,7 +1288,6 @@ public class MutablePrimitives {
 	/**
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id: MutablePrimitives.java 443 2016-01-11 11:31:11Z mcgaerty $
 	 *
 	 */
 	public static final class MutableByte implements MutablePrimitive {

@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015 Markus Gärtner
+ *  Copyright (C) 2015-2016 Markus Gärtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,14 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 435 $
- * $Date: 2015-10-21 18:01:32 +0200 (Mi, 21 Okt 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/members/layers/type/LazyLayerType.java $
  *
- * $LastChangedDate: 2015-10-21 18:01:32 +0200 (Mi, 21 Okt 2015) $
- * $LastChangedRevision: 435 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.model.standard.members.layers.type;
 
@@ -36,7 +29,6 @@ import de.ims.icarus2.util.id.Identity;
 
 /**
  * @author Markus Gärtner
- * @version $Id: LazyLayerType.java 435 2015-10-21 16:01:32Z mcgaerty $
  *
  */
 public class LazyLayerType implements LayerType {

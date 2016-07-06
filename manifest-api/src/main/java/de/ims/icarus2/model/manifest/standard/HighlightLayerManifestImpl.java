@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015 Markus Gärtner
+ *  Copyright (C) 2015-2016 Markus Gärtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,14 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 447 $
- * $Date: 2016-01-14 11:34:47 +0100 (Do, 14 Jan 2016) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/manifest/HighlightLayerManifestImpl.java $
  *
- * $LastChangedDate: 2016-01-14 11:34:47 +0100 (Do, 14 Jan 2016) $
- * $LastChangedRevision: 447 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.model.manifest.standard;
 
@@ -41,7 +34,6 @@ import de.ims.icarus2.model.manifest.api.ManifestType;
 
 /**
  * @author Markus Gärtner
- * @version $Id: HighlightLayerManifestImpl.java 447 2016-01-14 10:34:47Z mcgaerty $
  *
  */
 public class HighlightLayerManifestImpl extends AbstractLayerManifest<HighlightLayerManifest> implements HighlightLayerManifest {

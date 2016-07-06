@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015 Markus Gärtner
+ *  Copyright (C) 2015-2016 Markus Gärtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,14 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 421 $
- * $Date: 2015-08-06 11:54:09 +0200 (Do, 06 Aug 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/members/structure/builder/StaticChainEdgeStorage.java $
  *
- * $LastChangedDate: 2015-08-06 11:54:09 +0200 (Do, 06 Aug 2015) $
- * $LastChangedRevision: 421 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.model.standard.members.structure.builder;
 
@@ -37,7 +30,6 @@ import de.ims.icarus2.util.collections.LookupList;
 
 /**
  * @author Markus Gärtner
- * @version $Id: StaticChainEdgeStorage.java 421 2015-08-06 09:54:09Z mcgaerty $
  *
  */
 public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<RootItem<?>> {
@@ -147,7 +139,6 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 	 * address a maximum of {@value #MAX_NODE_COUNT} items/edges.
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id: StaticChainEdgeStorage.java 421 2015-08-06 09:54:09Z mcgaerty $
 	 *
 	 */
 	public static class CompactChainEdgeStorageInt extends StaticChainEdgeStorage {
@@ -339,7 +330,6 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 	 * address a maximum of {@value #MAX_NODE_COUNT} items/edges.
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id: StaticChainEdgeStorage.java 421 2015-08-06 09:54:09Z mcgaerty $
 	 *
 	 */
 	public static class CompactChainEdgeStorageLong extends StaticChainEdgeStorage {

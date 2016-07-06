@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015 Markus Gärtner
+ *  Copyright (C) 2015-2016 Markus Gärtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,14 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 443 $
- * $Date: 2016-01-11 12:31:11 +0100 (Mo, 11 Jan 2016) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/manifest/AnnotationManifestImpl.java $
  *
- * $LastChangedDate: 2016-01-11 12:31:11 +0100 (Mo, 11 Jan 2016) $
- * $LastChangedRevision: 443 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.model.manifest.standard;
 
@@ -46,7 +39,6 @@ import de.ims.icarus2.util.data.ContentType;
  * FIXME missing value type when parsing might break the implementation (maybe use lazy value parsing?)
  *
  * @author Markus Gärtner
- * @version $Id: AnnotationManifestImpl.java 443 2016-01-11 11:31:11Z mcgaerty $
  *
  */
 public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationManifest> implements AnnotationManifest {

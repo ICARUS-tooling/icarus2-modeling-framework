@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015 Markus Gärtner
+ *  Copyright (C) 2015-2016 Markus Gärtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,12 +16,7 @@
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  *
  * $Revision: 399 $
- * $Date: 2015-05-29 12:53:50 +0200 (Fr, 29 Mai 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.core/source/de/ims/icarus2/io/IOUtil.java $
  *
- * $LastChangedDate: 2015-05-29 12:53:50 +0200 (Fr, 29 Mai 2015) $
- * $LastChangedRevision: 399 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.util.io;
 
@@ -61,7 +56,6 @@ import de.ims.icarus2.util.strings.StringUtil;
 
 /**
  * @author Markus Gärtner
- * @version $Id: IOUtil.java 399 2015-05-29 10:53:50Z mcgaerty $
  *
  */
 public final class IOUtil {

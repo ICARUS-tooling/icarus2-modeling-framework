@@ -1,11 +1,6 @@
 /*
  * $Revision: 434 $
- * $Date: 2015-10-20 15:12:43 +0200 (Di, 20 Okt 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.core/source/de/ims/icarus2/util/classes/ClassUtils.java $
  *
- * $LastChangedDate: 2015-10-20 15:12:43 +0200 (Di, 20 Okt 2015) $
- * $LastChangedRevision: 434 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.util.classes;
 
@@ -47,7 +42,6 @@ import de.ims.icarus2.util.collections.IdentityHashSet;
 
 /**
  * @author Markus Gärtner
- * @version $Id: ClassUtils.java 434 2015-10-20 13:12:43Z mcgaerty $
  *
  */
 public final class ClassUtils {
