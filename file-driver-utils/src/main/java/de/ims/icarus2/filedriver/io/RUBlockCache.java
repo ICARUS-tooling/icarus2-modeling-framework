@@ -14,14 +14,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 442 $
- * $Date: 2016-01-07 10:59:40 +0100 (Do, 07 Jan 2016) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/driver/io/RUBlockCache.java $
- *
- * $LastChangedDate: 2016-01-07 10:59:40 +0100 (Do, 07 Jan 2016) $
- * $LastChangedRevision: 442 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.filedriver.io;
 
@@ -39,7 +31,6 @@ import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
  * which point removal of previously used entries will begin).
  *
  * @author Markus Gärtner
- * @version $Id: RUBlockCache.java 442 2016-01-07 09:59:40Z mcgaerty $
  *
  */
 public class RUBlockCache implements BlockCache {

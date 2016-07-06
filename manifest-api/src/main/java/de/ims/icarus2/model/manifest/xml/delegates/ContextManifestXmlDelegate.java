@@ -35,11 +35,11 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import de.ims.icarus2.model.manifest.api.ContextManifest;
+import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
-import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.standard.ContextManifestImpl;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
@@ -55,6 +55,8 @@ public class ContextManifestXmlDelegate extends AbstractMemberManifestXmlDelegat
 	private LayerGroupManifestXmlHandler layerGroupManifestXmlHandler;
 	private DriverManifestXmlDelegate driverManifestXmlDelegate;
 	private LocationManifestXmlDelegate locationManifestXmlDelegate;
+
+	private boolean root;
 
 	public ContextManifestXmlDelegate() {
 		// no-op
@@ -107,11 +109,19 @@ public class ContextManifestXmlDelegate extends AbstractMemberManifestXmlDelegat
 		if(locationManifestXmlDelegate!=null) {
 			locationManifestXmlDelegate.reset();
 		}
+
+		root = false;
 	}
 
 	public ContextManifestXmlDelegate reset(CorpusManifest corpusManifest) {
 		reset();
 		setInstance(new ContextManifestImpl(corpusManifest));
+
+		return this;
+	}
+
+	public ContextManifestXmlDelegate root(boolean root) {
+		this.root = root;
 
 		return this;
 	}
@@ -353,6 +363,6 @@ public class ContextManifestXmlDelegate extends AbstractMemberManifestXmlDelegat
 	 */
 	@Override
 	protected String xmlTag() {
-		return TAG_CONTEXT;
+		return root ? TAG_ROOT_CONTEXT : TAG_CONTEXT;
 	}
 }

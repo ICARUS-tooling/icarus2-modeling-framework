@@ -37,10 +37,11 @@
 			<xs:extension base="imf:basicMemberManifestType">
 				<xs:sequence>
 					<xs:element name="note" type="imf:moduleSpecType" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="root-context" type="imf:contextManifestType" minOccurs="1" maxOccurs="unbounded" />
 					<xs:element name="context" type="imf:contextManifestType" maxOccurs="unbounded" />
 				</xs:sequence>
-				<xs:attribute name="root-context" type="imf:identifierAttr" />
 				<xs:attribute name="editable" type="xs:boolean" default="false" />
+				<xs:attribute name="parallel" type="xs:boolean" default="false" />
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>

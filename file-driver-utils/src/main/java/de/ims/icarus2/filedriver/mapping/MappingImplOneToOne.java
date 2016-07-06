@@ -14,14 +14,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 429 $
- * $Date: 2015-10-07 17:08:17 +0200 (Mi, 07 Okt 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/driver/mapping/MappingImplOneToOne.java $
- *
- * $LastChangedDate: 2015-10-07 17:08:17 +0200 (Mi, 07 Okt 2015) $
- * $LastChangedRevision: 429 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.filedriver.mapping;
 
@@ -49,7 +41,6 @@ import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
  * Implements a one-to-one mapping
  *
  * @author Markus Gärtner
- * @version $Id: MappingImplOneToOne.java 429 2015-10-07 15:08:17Z mcgaerty $
  *
  */
 public class MappingImplOneToOne extends AbstractStoredMapping {
@@ -150,6 +141,11 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 		return this.new Writer();
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public class Reader extends ReadAccessor<Mapping> implements MappingReader {
 
 		private final Coverage coverage = getManifest().getCoverage();
@@ -424,6 +420,11 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public class Writer extends WriteAccessor<Mapping> implements MappingWriter {
 
 		/**
@@ -486,6 +487,11 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public static class Builder extends StoredMappingBuilder<Builder, MappingImplOneToOne> {
 
 		private Integer blockPower;

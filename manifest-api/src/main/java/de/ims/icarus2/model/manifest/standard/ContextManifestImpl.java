@@ -308,7 +308,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	 */
 	@Override
 	public boolean isRootContext() {
-		return corpusManifest!=null && corpusManifest.getRootContextManifest()==this;
+		return corpusManifest!=null && corpusManifest.isRootContext(this);
 	}
 
 	/**

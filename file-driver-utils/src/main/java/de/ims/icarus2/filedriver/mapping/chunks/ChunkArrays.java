@@ -14,14 +14,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 398 $
- * $Date: 2015-05-29 11:29:49 +0200 (Fr, 29 Mai 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/driver/mapping/chunks/ChunkArrays.java $
- *
- * $LastChangedDate: 2015-05-29 11:29:49 +0200 (Fr, 29 Mai 2015) $
- * $LastChangedRevision: 398 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.filedriver.mapping.chunks;
 
@@ -36,7 +28,6 @@ import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 
 /**
  * @author Markus Gärtner
- * @version $Id: ChunkArrays.java 398 2015-05-29 09:29:49Z mcgaerty $
  *
  */
 public class ChunkArrays {
@@ -45,6 +36,11 @@ public class ChunkArrays {
 //	private static final int INT_BYTES = 4;
 //	private static final int LONG_BYTES = 8;
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public interface ArrayAdapter {
 
 		Object createBuffer(int byteCount);
@@ -100,6 +96,11 @@ public class ChunkArrays {
 //		return new LongFileAdapter();
 //	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public static class DefaultAdapter implements ArrayAdapter {
 		private final IndexValueType valueType;
 
@@ -216,6 +217,11 @@ public class ChunkArrays {
 		}
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public static class DefaultFileAdapter implements ArrayAdapter {
 		// Specifies representation of buffer array in memory
 		private final IndexValueType valueType;

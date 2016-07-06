@@ -73,5 +73,6 @@
     <module>model-api</module>
     <module>model-defaults</module>
     <module>file-driver-utils</module>
+    <module>model-compression</module>
   </modules>
 </project>

@@ -29,6 +29,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -46,27 +47,92 @@ import de.ims.icarus2.util.collections.LazyCollection;
 public interface CorpusManifest extends MemberManifest {
 
 	public static final boolean DEFAULT_EDITABLE_VALUE = false;
+	public static final boolean DEFAULT_PARALLEL_VALUE = false;
 
 	@AccessRestriction(AccessMode.READ)
-	ContextManifest getRootContextManifest();
+	void forEachRootContextManifest(Consumer<? super ContextManifest> action);
+
+	@AccessRestriction(AccessMode.READ)
+	default List<ContextManifest> getRootContextManifests() {
+		LazyCollection<ContextManifest> result = LazyCollection.lazyList();
+
+		forEachRootContextManifest(result);
+
+		return result.getAsList();
+	}
+
+	/**
+	 * Checks whether the given context is declared as a root context in this corpus.
+	 * <p>
+	 * The default implementation uses {@link #forEachRootContextManifest(Consumer)} to
+	 * iterate over all root contexts in this corpus and therefore is not very efficient.
+	 * Actual implementations of this interface are encouraged to implement a better solution.
+	 *
+	 * @param manifest
+	 * @return
+	 */
+	default boolean isRootContext(ContextManifest manifest) {
+		MutableBoolean result = new MutableBoolean(false);
+
+		forEachRootContextManifest(m -> {
+			if(m==manifest) {
+				result.setBoolean(true);
+			}
+		});
+
+		return result.booleanValue();
+	}
 
 	@AccessRestriction(AccessMode.READ)
 	void forEachCustomContextManifest(Consumer<? super ContextManifest> action);
 
 	/**
 	 * Returns all the {@link ContextManifest context manifests} hosted in this corpus
-	 * including the one for the {@link #getRootContextManifest() root context}.
+	 * besides the {@link #getRootContextManifests() root contexts}.
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
 	default List<ContextManifest> getCustomContextManifests() {
 		LazyCollection<ContextManifest> result = LazyCollection.lazyList();
 
-		result.add(getRootContextManifest());
-
 		forEachCustomContextManifest(result);
 
 		return result.getAsList();
+	}
+
+	/**
+	 * Convenience method that executes the given {@code action} for both
+	 * {@link #forEachRootContextManifest(Consumer) root} and
+	 * {@link #forEachCustomContextManifest(Consumer) custom} contexts, in
+	 * that order.
+	 * @param action
+	 */
+	@AccessRestriction(AccessMode.READ)
+	default void forEachContextManifest(Consumer<? super ContextManifest> action) {
+		forEachRootContextManifest(action);
+		forEachCustomContextManifest(action);
+	}
+
+	/**
+	 * Checks whether the given context is declared as a custom context in this corpus.
+	 * <p>
+	 * The default implementation uses {@link #forEachCustomContextManifest(Consumer)} to
+	 * iterate over all custom contexts in this corpus and therefore is not very efficient.
+	 * Actual implementations of this interface are encouraged to implement a better solution.
+	 *
+	 * @param manifest
+	 * @return
+	 */
+	default boolean isCustomContext(ContextManifest manifest) {
+		MutableBoolean result = new MutableBoolean(false);
+
+		forEachCustomContextManifest(m -> {
+			if(m==manifest) {
+				result.setBoolean(true);
+			}
+		});
+
+		return result.booleanValue();
 	}
 
 	@Override
@@ -74,6 +140,12 @@ public interface CorpusManifest extends MemberManifest {
 		return null;
 	};
 
+	/**
+	 * Performs a lookup and returns the context that matches the given unique id.
+	 *
+	 * @param id
+	 * @return
+	 */
 	@AccessRestriction(AccessMode.READ)
 	ContextManifest getContextManifest(String id);
 
@@ -84,6 +156,14 @@ public interface CorpusManifest extends MemberManifest {
 	 * @return
 	 */
 	boolean isEditable();
+
+	/**
+	 * Returns whether or not this corpus describes a parallel data set,
+	 * in which case it is allowed to have multiple {@link #getRootContextManifests() root contexts}.
+	 *
+	 * @return
+	 */
+	boolean isParallel();
 
 	@AccessRestriction(AccessMode.READ)
 	void forEachNote(Consumer<? super Note> action);
@@ -107,7 +187,9 @@ public interface CorpusManifest extends MemberManifest {
 
 	// Modification methods
 
-	void setRootContextId(String rootContextId);
+	void addRootContextManifest(ContextManifest manifest);
+
+	void removeRootContextManifest(ContextManifest manifest);
 
 	void addCustomContextManifest(ContextManifest manifest);
 
@@ -125,10 +207,29 @@ public interface CorpusManifest extends MemberManifest {
 	void removeNote(Note note);
 
 	/**
+	 * Changes whether or not the user is allowed to make modifications to the content
+	 * in this corpus. Note that this does not restrict the ability to attach
+	 * {@link #addCustomContextManifest(ContextManifest) additional contexts}!
+	 * The user only will be prevented from e.g. changing annotation values, adding
+	 * or removing items from layers and from performing other <i>content</i> related operations.
+	 * <p>
+	 * Note that it is up to the actual implementation to decide whether or not changing
+	 * changeability of a corpus after it already contains live contexts. The default
+	 * behavior should be to not allow this property to be changed after at least one live
+	 * context is attached.
 	 *
 	 * @param value
+	 * @see #DEFAULT_EDITABLE_VALUE
 	 */
 	void setEditable(boolean value);
+
+	/**
+	 * Changes whether or not this corpus is allowed to host multiple
+	 *
+	 * @param value
+	 * @see #DEFAULT_PARALLEL_VALUE
+	 */
+	void setParallel(boolean value);
 
 	/**
 	 * Notes are user made textual additions that are saved together with the corpus manifest.

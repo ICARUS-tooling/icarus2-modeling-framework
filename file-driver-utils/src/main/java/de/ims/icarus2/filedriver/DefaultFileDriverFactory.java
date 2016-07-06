@@ -14,14 +14,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision$
- * $Date$
- * $URL$
- *
- * $LastChangedDate$
- * $LastChangedRevision$
- * $LastChangedBy$
  */
 package de.ims.icarus2.filedriver;
 
@@ -42,7 +34,6 @@ import de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory;
  * {@link FileDriver} instance.
  *
  * @author Markus Gärtner
- * @version $Id$
  *
  */
 public class DefaultFileDriverFactory implements Factory {

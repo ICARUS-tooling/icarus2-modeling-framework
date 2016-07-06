@@ -14,14 +14,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 457 $
- * $Date: 2016-04-20 15:08:11 +0200 (Mi, 20 Apr 2016) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/driver/mapping/SpanArrays.java $
- *
- * $LastChangedDate: 2016-04-20 15:08:11 +0200 (Mi, 20 Apr 2016) $
- * $LastChangedRevision: 457 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.filedriver.mapping;
 
@@ -34,7 +26,6 @@ import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 
 /**
  * @author Markus Gärtner
- * @version $Id: SpanArrays.java 457 2016-04-20 13:08:11Z mcgaerty $
  *
  */
 @Deprecated
@@ -48,6 +39,11 @@ public class SpanArrays {
 
 //	private static final UnsignedNumbers NUMS = UnsignedNumbers.withOffset(-1);
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public interface SpanAdapter {
 
 		IndexValueType getValueType();
@@ -115,6 +111,11 @@ public class SpanArrays {
 		}
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 * @deprecated
+	 */
 	private static class ShortSpanAdapter implements SpanAdapter {
 
 		// from | to
@@ -273,6 +274,11 @@ public class SpanArrays {
 
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 * @deprecated
+	 */
 	private static class IntSpanAdapter implements SpanAdapter {
 
 		// from | to
@@ -431,6 +437,11 @@ public class SpanArrays {
 
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 * @deprecated
+	 */
 	private static class LongSpanAdapter implements SpanAdapter {
 
 		// from | to

@@ -197,7 +197,7 @@ public class Options extends HashMap<String, Object> implements Cloneable {
 
 	@Override
 	public Options clone() {
-		return (Options) super.clone();
+		return new Options(this);
 	}
 
 	// Collection of commonly used option keys

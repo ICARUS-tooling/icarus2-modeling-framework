@@ -14,14 +14,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 440 $
- * $Date: 2015-12-18 14:36:38 +0100 (Fr, 18 Dez 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/driver/io/sets/SingletonFileSet.java $
- *
- * $LastChangedDate: 2015-12-18 14:36:38 +0100 (Fr, 18 Dez 2015) $
- * $LastChangedRevision: 440 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.filedriver.io.sets;
 
@@ -31,7 +23,6 @@ import java.nio.file.Path;
 
 /**
  * @author Markus Gärtner
- * @version $Id: SingletonFileSet.java 440 2015-12-18 13:36:38Z mcgaerty $
  *
  */
 public final class SingletonFileSet implements FileSet {

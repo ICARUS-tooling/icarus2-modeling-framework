@@ -14,32 +14,29 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
+
+ * $Revision$
+ * $Date$
+ * $URL$
+ *
+ * $LastChangedDate$
+ * $LastChangedRevision$
+ * $LastChangedBy$
  */
-package de.ims.icarus2.filedriver.mapping.chunks;
+package de.ims.icarus2.model.api.registry;
 
-import java.io.Flushable;
-
-import de.ims.icarus2.model.api.io.SynchronizedAccessor;
+import de.ims.icarus2.model.api.members.container.Container;
+import de.ims.icarus2.model.api.members.item.Edge;
+import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.members.structure.Structure;
 
 /**
- * Defines the writer interface to get data into a {@link ChunkIndex}.
- *
  * @author Markus Gärtner
+ * @version $Id$
  *
  */
-public interface ChunkIndexWriter extends SynchronizedAccessor<ChunkIndex>, Flushable {
+public interface LayerMemberFactory {
 
-	/**
-	 * Changes the file id for the given {@code index} to the new value
-	 * and returns the old value if one was set.
-	 *
-	 * @param index
-	 * @param fileId
-	 * @return the value previously stored as file id for the given {@code index}
-	 */
-	int setFileId(long index, int fileId);
-
-	long setBeginOffset(long index, long offset);
-
-	long setEndOffset(long index, long offset);
+	Item newItem(Container host);
+	Edge newEdge(Structure host, Item source, Item target);
 }

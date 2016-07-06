@@ -43,10 +43,12 @@ import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.model.api.driver.mods.ModuleMonitor;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.ItemLayer;
+import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.ItemLayerManager;
 import de.ims.icarus2.model.api.meta.AnnotationValueDistribution;
 import de.ims.icarus2.model.api.meta.AnnotationValueSet;
+import de.ims.icarus2.model.api.registry.LayerMemberFactory;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
@@ -124,7 +126,7 @@ public interface Driver extends ItemLayerManager {
 	long getItemCount(ItemLayerManifest layer);
 
 	/**
-	 * Returns all the indices available for the context this driver manages.
+	 * Returns all the mappings available for the context this driver manages.
 	 * <p>
 	 * Note that the returned {@code MappingStorage} is only required to contain
 	 * mappings that have been defined explicitly in the manifest of this driver!
@@ -158,10 +160,10 @@ public interface Driver extends ItemLayerManager {
 	}
 
 	default IndexValueType getValueTypeForLayer(ItemLayerManifest manifest) {
-		long size = getItemCount(manifest);
 
 		IndexValueType valueType = IndexValueType.LONG;
 
+		long size = getItemCount(manifest);
 		if(size!=NO_INDEX) {
 			valueType = IndexValueType.forValue(size);
 		}
@@ -281,7 +283,7 @@ public interface Driver extends ItemLayerManager {
 		LazyCollection<DriverModule> result = LazyCollection.lazyList();
 
 		forEachModule(m -> {
-			if(p.test(m))result.add(m);
+			if(p.test(m)) result.add(m);
 		});
 
 		return result.getAsList();
@@ -309,6 +311,18 @@ public interface Driver extends ItemLayerManager {
 	}
 
 	// Connected (live) phase
+
+	/**
+	 * Returns a {@link LayerMemberFactory} implementation that creates {@link Item} and {@link Edge}
+	 * objects suitable for this driver. If the driver does not impose any implementation dependent
+	 * restrictions on the member objects it manages, than this method should return {@code null}.
+	 * <p>
+	 * Note that although the name suggests otherwise it is <b>not</b> mandatory that the driver
+	 * instantiate and return a completely new factory instance.
+	 *
+	 * @return
+	 */
+	LayerMemberFactory newFactory();
 
 	/**
 	 * Inserts a new {@code item} into the specified layer.

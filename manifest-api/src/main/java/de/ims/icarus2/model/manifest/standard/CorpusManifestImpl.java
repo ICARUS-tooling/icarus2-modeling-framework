@@ -28,12 +28,14 @@ package de.ims.icarus2.model.manifest.standard;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
@@ -41,7 +43,7 @@ import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
-import de.ims.icarus2.model.manifest.standard.Links.Link;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 
 /**
  * @author Markus Gärtner
@@ -50,10 +52,11 @@ import de.ims.icarus2.model.manifest.standard.Links.Link;
  */
 public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> implements CorpusManifest {
 
-	private ContextLink rootContext;
-	private final List<ContextManifest> contextManifests = new ArrayList<>(3);
+	private final List<ContextManifest> rootContextManifests = new ArrayList<>(3);
+	private final List<ContextManifest> customContextManifests = new ArrayList<>(5);
 	private final Map<String, ContextManifest> contextManifestLookup = new HashMap<>();
-	private boolean editable;
+	private Boolean editable;
+	private Boolean parallel;
 	private final List<Note> notes = new ArrayList<>();
 
 	/**
@@ -70,7 +73,7 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	 */
 	@Override
 	public boolean isEmpty() {
-		return super.isEmpty() && contextManifests.isEmpty() && notes.isEmpty();
+		return super.isEmpty() && rootContextManifests.isEmpty() && customContextManifests.isEmpty() && notes.isEmpty();
 	}
 
 	/**
@@ -94,29 +97,74 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.CorpusManifest#getRootContextManifest()
+	 * @see de.ims.icarus2.model.manifest.api.CorpusManifest#forEachRootContextManifest(java.util.function.Consumer)
 	 */
 	@Override
-	public ContextManifest getRootContextManifest() {
-		return rootContext.get();
-	}
-
-	/**
-	 * Defines the {@code id} of the context that should be used as root context.
-	 * Note that the context itself has to be added separately.
-	 *
-	 * @param rootContextManifest the rootContextManifest to set
-	 */
-	@Override
-	public void setRootContextId(String rootContextId) {
-		checkNotNull(rootContextId);
-
-		rootContext = new ContextLink(rootContextId);
+	public void forEachRootContextManifest(Consumer<? super ContextManifest> action) {
+		rootContextManifests.forEach(action);
 	}
 
 	@Override
 	public void forEachCustomContextManifest( Consumer<? super ContextManifest> action) {
-		contextManifests.forEach(action);
+		customContextManifests.forEach(action);
+	}
+
+	protected void addContextManifest0(ContextManifest manifest, boolean isRoot) {
+		checkNotNull(manifest);
+		manifest.checkNotTemplate();
+
+		if(contextManifestLookup.containsKey(manifest.getId()))
+			throw new IllegalArgumentException("Duplicate context manifest: "+manifest); //$NON-NLS-1$
+
+		Collection<ContextManifest> storage = isRoot ? rootContextManifests : customContextManifests;
+
+		/*
+		 * If the given manifest should be added as root context we need to check whether this
+		 * corpus is declared to be parallel. If it is not parallel the maximum number of root
+		 * contexts is 1 and any attempt to add more will be met with an exception.
+		 */
+		if(isRoot && !isParallel() && !storage.isEmpty())
+			throw new ManifestException(GlobalErrorCode.ILLEGAL_STATE,
+					"Cannot add more than one context as root to non-parallel corpus: "+ManifestUtils.getName(manifest));
+
+		contextManifestLookup.put(manifest.getId(), manifest);
+		storage.add(manifest);
+	}
+
+	protected void removeContextManifest0(ContextManifest manifest, boolean isRoot) {
+		checkNotNull(manifest);
+
+		if(!customContextManifests.remove(manifest))
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Unknown context manifest: "+manifest); //$NON-NLS-1$
+
+
+		Collection<ContextManifest> storage = isRoot ? rootContextManifests : customContextManifests;
+
+		storage.remove(manifest.getId());
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.CorpusManifest#addRootContextManifest(de.ims.icarus2.model.manifest.api.ContextManifest)
+	 */
+	@Override
+	public void addRootContextManifest(ContextManifest manifest) {
+		addContextManifest0(manifest, true);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.CorpusManifest#removeRootContextManifest(de.ims.icarus2.model.manifest.api.ContextManifest)
+	 */
+	@Override
+	public void removeRootContextManifest(ContextManifest manifest) {
+		removeContextManifest0(manifest, true);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.CorpusManifest#isRootContext(de.ims.icarus2.model.manifest.api.ContextManifest)
+	 */
+	@Override
+	public boolean isRootContext(ContextManifest manifest) {
+		return rootContextManifests.contains(manifest);
 	}
 
 	/**
@@ -125,14 +173,7 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	 */
 	@Override
 	public void addCustomContextManifest(ContextManifest manifest) {
-		checkNotNull(manifest);
-		manifest.checkNotTemplate();
-
-		if(contextManifestLookup.containsKey(manifest.getId()))
-			throw new IllegalArgumentException("Duplicate context manifest: "+manifest); //$NON-NLS-1$
-
-		contextManifestLookup.put(manifest.getId(), manifest);
-		contextManifests.add(manifest);
+		addContextManifest0(manifest, false);
 	}
 
 	/**
@@ -140,20 +181,15 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	 */
 	@Override
 	public void removeCustomContextManifest(ContextManifest manifest) {
-		checkNotNull(manifest);
+		removeContextManifest0(manifest, false);
+	}
 
-		boolean isRootContext = manifest==getRootContextManifest();
-
-		if(isRootContext && contextManifests.size()>1)
-			throw new IllegalArgumentException("Cannot remove root context with more than 1 context in corpus!"); //$NON-NLS-1$
-
-		if(!contextManifests.remove(manifest))
-			throw new IllegalArgumentException("Unknown context manifest: "+manifest); //$NON-NLS-1$
-		contextManifestLookup.remove(manifest.getId());
-
-		if(isRootContext) {
-			rootContext = null;
-		}
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.CorpusManifest#isCustomContext(de.ims.icarus2.model.manifest.api.ContextManifest)
+	 */
+	@Override
+	public boolean isCustomContext(ContextManifest manifest) {
+		return customContextManifests.contains(manifest);
 	}
 
 	/**
@@ -164,11 +200,8 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 		checkNotNull(id);
 
 		ContextManifest contextManifest = contextManifestLookup.get(id);
-		if(contextManifest==null && rootContext.get().getId().equals(id)) {
-			contextManifest = rootContext.get();
-		}
 		if(contextManifest==null)
-			throw new IllegalArgumentException("No such context: "+id); //$NON-NLS-1$
+			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "No such context: "+id); //$NON-NLS-1$
 
 		return contextManifest;
 	}
@@ -178,7 +211,7 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	 */
 	@Override
 	public boolean isEditable() {
-		return editable;
+		return editable==null ? DEFAULT_EDITABLE_VALUE : editable.booleanValue();
 	}
 
 	/**
@@ -186,12 +219,36 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	 */
 	@Override
 	public void setEditable(boolean value) {
-		this.editable = value;
+
+		this.editable = (value==DEFAULT_EDITABLE_VALUE) ? null : Boolean.valueOf(value);
 	}
 
 	@Override
 	public void forEachNote(Consumer<? super Note> action) {
 		notes.forEach(action);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.CorpusManifest#isParallel()
+	 */
+	@Override
+	public boolean isParallel() {
+		return parallel==null ? DEFAULT_PARALLEL_VALUE : parallel.booleanValue();
+	}
+
+	/**
+	 *
+	 * @throws ManifestException if there is more than 1 root context already defined for this corpus
+	 *
+	 * @see de.ims.icarus2.model.manifest.api.CorpusManifest#setParallel(boolean)
+	 */
+	@Override
+	public void setParallel(boolean value) {
+		if(rootContextManifests.size()>1)
+			throw new ManifestException(GlobalErrorCode.ILLEGAL_STATE,
+					"Cannot change 'parallel' property of corpus once more than one root context is present");
+
+		this.parallel = (value==DEFAULT_PARALLEL_VALUE) ? null : Boolean.valueOf(value);
 	}
 
 	/**
@@ -212,25 +269,6 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 		notes.remove(note);
 	}
 
-	protected class ContextLink extends Link<ContextManifest> {
-
-		/**
-		 * @param id
-		 */
-		public ContextLink(String id) {
-			super(id);
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#resolve()
-		 */
-		@Override
-		protected ContextManifest resolve() {
-			return getContextManifest(getId());
-		}
-
-	}
-
 	/**
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractMemberManifest#lock()
 	 */
@@ -238,10 +276,30 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	public void lock() {
 		super.lock();
 
-		for(ContextManifest contextManifest : contextManifests) {
+		for(ContextManifest contextManifest : customContextManifests) {
 			contextManifest.lock();
 		}
 	}
+
+	//FIXME removed due to explicit storage of added contexts instead of links
+//	protected class ContextLink extends Link<ContextManifest> {
+//
+//		/**
+//		 * @param id
+//		 */
+//		public ContextLink(String id) {
+//			super(id);
+//		}
+//
+//		/**
+//		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#resolve()
+//		 */
+//		@Override
+//		protected ContextManifest resolve() {
+//			return getContextManifest(getId());
+//		}
+//
+//	}
 
 	public static class NoteImpl implements Note {
 

@@ -48,7 +48,7 @@ import de.ims.icarus2.util.Options;
  * This includes all kinds of {@link Layer layers}, {@link LayerGroup layer groups} and the top
  * level type {@link Context}.
  * <p>
- * In addition this factor is meant to provide {@link ImplementationLoader} instances to load
+ * In addition this factory is meant to provide {@link ImplementationLoader} instances to load
  * custom or foreign implementations of things like drivers.
  * <p>
  * Unless otherwise noted, all {@link Options options} parameters in the factory methods of this

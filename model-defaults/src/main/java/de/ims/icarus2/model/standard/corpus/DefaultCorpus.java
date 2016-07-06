@@ -191,7 +191,7 @@ public class DefaultCorpus implements Corpus {
 			ContextProxy proxy = new ContextProxy(context);
 			contexts.put(context.getId(), proxy);
 
-			if(context== manifest.getRootContextManifest()) {
+			if(manifest.isRootContext(context)) {
 				rootContext = proxy;
 			}
 		}

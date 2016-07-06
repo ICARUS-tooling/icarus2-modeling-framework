@@ -34,8 +34,8 @@ import org.xml.sax.SAXException;
 
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
-import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.CorpusManifest.Note;
+import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.standard.CorpusManifestImpl.NoteImpl;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
@@ -87,8 +87,10 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 			serializer.writeAttribute(ATTR_EDITABLE, manifest.isEditable());
 		}
 
-		// Write root context id
-		serializer.writeAttribute(ATTR_ROOT_CONTEXT, manifest.getRootContextManifest().getId());
+		// Write parallel flag
+		if(manifest.isParallel()!=CorpusManifest.DEFAULT_PARALLEL_VALUE) {
+			serializer.writeAttribute(ATTR_EDITABLE, manifest.isParallel());
+		}
 	}
 
 	/**
@@ -113,7 +115,17 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 			serializer.endElement(TAG_NOTES);
 		}
 
-		// Write contained context manifests
+		// Write contained root context manifests
+		for(Iterator<ContextManifest> it = manifest.getRootContextManifests().iterator(); it.hasNext();) {
+			ContextManifest contextManifest = it.next();
+			getContextManifestXmlDelegate().reset(contextManifest).writeXml(serializer);
+
+			if(it.hasNext()) {
+				serializer.writeLineBreak();
+			}
+		}
+
+		// Write contained custom context manifests
 		for(Iterator<ContextManifest> it = manifest.getCustomContextManifests().iterator(); it.hasNext();) {
 			ContextManifest contextManifest = it.next();
 			getContextManifestXmlDelegate().reset(contextManifest).writeXml(serializer);
@@ -140,8 +152,12 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 			manifest.setEditable(CorpusManifest.DEFAULT_EDITABLE_VALUE);
 		}
 
-		String rootContextId = ManifestXmlUtils.normalize(attributes, ATTR_ROOT_CONTEXT);
-		manifest.setRootContextId(rootContextId);
+		String parallel = ManifestXmlUtils.normalize(attributes, ATTR_PARALLEL);
+		if(parallel!=null) {
+			manifest.setParallel(Boolean.parseBoolean(parallel));
+		} else {
+			manifest.setParallel(CorpusManifest.DEFAULT_PARALLEL_VALUE);
+		}
 	}
 
 	@Override
@@ -153,8 +169,12 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 			readAttributes(attributes);
 		} break;
 
+		case TAG_ROOT_CONTEXT: {
+			return getContextManifestXmlDelegate().reset(getInstance()).root(true);
+		}
+
 		case TAG_CONTEXT: {
-			return getContextManifestXmlDelegate().reset(getInstance());
+			return getContextManifestXmlDelegate().reset(getInstance()).root(false);
 		}
 
 		case TAG_NOTES: {
@@ -210,6 +230,10 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
 		switch (qName) {
+
+		case TAG_ROOT_CONTEXT: {
+			getInstance().addRootContextManifest(((ContextManifestXmlDelegate) handler).getInstance());
+		} break;
 
 		case TAG_CONTEXT: {
 			getInstance().addCustomContextManifest(((ContextManifestXmlDelegate) handler).getInstance());

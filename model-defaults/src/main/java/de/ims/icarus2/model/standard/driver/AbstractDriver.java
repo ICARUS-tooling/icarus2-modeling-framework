@@ -57,12 +57,16 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.meta.AnnotationValueDistribution;
 import de.ims.icarus2.model.api.meta.AnnotationValueSet;
 import de.ims.icarus2.model.api.registry.CorpusMemberFactory;
+import de.ims.icarus2.model.api.registry.LayerMemberFactory;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.standard.members.DefaultLayerMemberFactory;
+import de.ims.icarus2.model.standard.members.item.DefaultItem;
+import de.ims.icarus2.model.standard.members.structure.DefaultEdge;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.Options;
 
@@ -100,6 +104,21 @@ public abstract class AbstractDriver implements Driver {
 		checkNotNull(manifest);
 
 		this.manifest = manifest;
+	}
+
+	/**
+	 * Returns a fresh instance of {@link DefaultLayerMemberFactory} which
+	 * in turn returns implementations for all layer members based on the
+	 * {@code de.ims.icarus2.standard.members} package and its subpackages.
+	 *
+	 * @see de.ims.icarus2.model.api.driver.Driver#newFactory()
+	 * @see DefaultLayerMemberFactory
+	 * @see DefaultItem
+	 * @see DefaultEdge
+	 */
+	@Override
+	public LayerMemberFactory newFactory() {
+		return new DefaultLayerMemberFactory();
 	}
 
 	@Override
@@ -174,6 +193,9 @@ public abstract class AbstractDriver implements Driver {
 	 * Note that this method will be called <b>first</b> from {@link #connect(Corpus)}.
 	 * <p>
 	 * The default implementation creates the context and mapping storage to be used later.
+	 * <p>
+	 * For proper nesting of method calls a subclass should make sure to call {@code super.doConnect()}
+	 * before any setup work.
 	 *
 	 * @throws InterruptedException
 	 */
@@ -283,6 +305,9 @@ public abstract class AbstractDriver implements Driver {
 	 * <p>
 	 * The default implementation just {@link #closeMappings() shuts down} all the mappings for
 	 * this driver.
+	 * <p>
+	 * For proper nesting of method calls a subclass should make sure to call {@code super.doConnect()}
+	 * after any cleanup work.
 	 *
 	 * @throws InterruptedException
 	 */
@@ -292,6 +317,8 @@ public abstract class AbstractDriver implements Driver {
 
 	/**
 	 * Iterates over all mappings this driver manages and calls {@link Mapping#close()} on them.
+	 * <p>
+	 * If a subclass wishes to perform individual cleanup jobs for mappings, it should override this method.
 	 */
 	protected void closeMappings() {
 		mappings.forEachMapping(Mapping::close);

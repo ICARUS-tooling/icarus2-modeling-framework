@@ -14,14 +14,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 429 $
- * $Date: 2015-10-07 17:08:17 +0200 (Mi, 07 Okt 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/driver/mapping/MappingImplSpanOneToMany.java $
- *
- * $LastChangedDate: 2015-10-07 17:08:17 +0200 (Mi, 07 Okt 2015) $
- * $LastChangedRevision: 429 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.filedriver.mapping;
 
@@ -71,7 +63,6 @@ import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
  * entries each.
  *
  * @author Markus Gärtner
- * @version $Id: MappingImplSpanOneToMany.java 429 2015-10-07 15:08:17Z mcgaerty $
  *
  */
 public class MappingImplSpanOneToMany extends AbstractStoredMapping {
@@ -176,6 +167,11 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 		return this.new Writer();
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public class Reader extends ReadAccessor<Mapping> implements MappingReader {
 
 		private final Coverage coverage = getManifest().getCoverage();
@@ -608,6 +604,11 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public class Writer extends WriteAccessor<Mapping> implements MappingWriter {
 
 		/**
@@ -662,6 +663,11 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public static class Builder extends StoredMappingBuilder<Builder, MappingImplSpanOneToMany> {
 
 		private Integer blockPower;

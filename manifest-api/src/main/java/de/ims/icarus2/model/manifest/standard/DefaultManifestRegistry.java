@@ -562,8 +562,7 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 
 			case CORPUS_MANIFEST: {
 				CorpusManifest corpusManifest = (CorpusManifest) manifest;
-				walkTemplate(corpusManifest.getRootContextManifest(), true, delta);
-				corpusManifest.forEachCustomContextManifest(c -> walkTemplate(c, true, delta));
+				corpusManifest.forEachContextManifest(c -> walkTemplate(c, true, delta));
 			} break;
 
 			case CONTEXT_MANIFEST: {

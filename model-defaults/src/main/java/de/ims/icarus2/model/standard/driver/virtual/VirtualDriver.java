@@ -50,6 +50,7 @@ import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.ItemLayerManager;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.standard.driver.AbstractDriver;
 
 /**
@@ -172,25 +173,31 @@ public class VirtualDriver extends AbstractDriver {
 	public ItemLayer getLayerForManifest(ItemLayerManifest manifest) {
 		ensureLayerMap();
 
-		return idMap.get(manifest.getUID());
+		return idMap.get(keyForManifest(manifest));
+	}
+
+	protected int keyForManifest(LayerManifest manifest) {
+		return manifest.getUID();
 	}
 
 	protected final void ensureLayerMap() {
 		if(idMap.isEmpty()) {
 			for(Layer layer : getItemLayerManager().getLayers()) {
-				idMap.put(layer.getManifest().getUID(), (ItemLayer)layer);
+				idMap.put(keyForManifest(layer.getManifest()), (ItemLayer)layer);
 			}
 		}
 	}
 
 	protected final void registerLayer(ItemLayer layer) {
-		int id = layer.getManifest().getUID();
+		int id = keyForManifest(layer.getManifest());
 		if(idMap.containsKey(id))
 			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Layer already registered: "+getName(layer));
 		idMap.put(id, layer);
 	}
 
 	protected final ItemLayer getLayerForId(int id) {
+		ensureLayerMap();
+
 		return idMap.get(id);
 	}
 
@@ -232,9 +239,7 @@ public class VirtualDriver extends AbstractDriver {
 
 		setItemLayerManager(createItemLayerManager());
 
-		for(DriverModule module : modules) {
-			module.addNotify(this);
-		}
+		forEachModule(m -> m.addNotify(this));
 	}
 
 	protected final void setItemLayerManager(ItemLayerManager itemLayerManager) {
@@ -268,6 +273,8 @@ public class VirtualDriver extends AbstractDriver {
 		}
 
 		itemLayerManager = null;
+
+		super.doDisconnect();
 	}
 
 	@Override

@@ -14,14 +14,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 429 $
- * $Date: 2015-10-07 17:08:17 +0200 (Mi, 07 Okt 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/driver/mapping/MappingImplIdentity.java $
- *
- * $LastChangedDate: 2015-10-07 17:08:17 +0200 (Mi, 07 Okt 2015) $
- * $LastChangedRevision: 429 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.filedriver.mapping;
 
@@ -42,7 +34,6 @@ import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
  * close methods on its reader instances have no effect!
  *
  * @author Markus Gärtner
- * @version $Id: MappingImplIdentity.java 429 2015-10-07 15:08:17Z mcgaerty $
  *
  */
 public class MappingImplIdentity extends AbstractMapping {
@@ -55,6 +46,11 @@ public class MappingImplIdentity extends AbstractMapping {
 		return this.new Reader();
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public class Reader implements MappingReader {
 
 		/**

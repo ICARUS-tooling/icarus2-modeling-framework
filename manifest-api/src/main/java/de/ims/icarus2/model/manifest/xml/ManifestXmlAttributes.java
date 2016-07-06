@@ -52,8 +52,8 @@ public interface ManifestXmlAttributes {
 	public static final String ATTR_MULTIPLICITY = "multiplicity"; //$NON-NLS-1$
 	public static final String ATTR_MODULE_SPEC_ID = "module-spec-id"; //$NON-NLS-1$
 
-	public static final String ATTR_ROOT_CONTEXT = "root-context"; //$NON-NLS-1$
 	public static final String ATTR_EDITABLE = "editable"; //$NON-NLS-1$
+	public static final String ATTR_PARALLEL = "parallel"; //$NON-NLS-1$
 
 	public static final String ATTR_NAMESPACE = "namespace"; //$NON-NLS-1$
 	public static final String ATTR_CLASS = "class"; //$NON-NLS-1$

@@ -14,14 +14,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision$
- * $Date$
- * $URL$
- *
- * $LastChangedDate$
- * $LastChangedRevision$
- * $LastChangedBy$
  */
 package de.ims.icarus2.filedriver;
 
@@ -30,6 +22,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.filedriver.FileDriver.PreparationStep;
 import de.ims.icarus2.filedriver.FileDriverStates.FileInfo;
@@ -47,7 +42,6 @@ import de.ims.icarus2.util.Options;
 
 /**
  * @author Markus Gärtner
- * @version $Id$
  *
  */
 public enum StandardPreparationSteps implements PreparationStep, ModelConstants {
@@ -66,7 +60,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			String fileCountKey = FileMetadata.DriverKey.FILE_COUNT.getKey();
 			int storedFileCount = metadataRegistry.getIntValue(fileCountKey, -1);
 			if(storedFileCount!=-1 && storedFileCount!=fileCount) {
-				driver.getLogger().error("Corrupted file count in metadata: expected {} - got {} as stored value", fileCount, storedFileCount);
+				log.error("Corrupted file count in metadata: expected {} - got {} as stored value", fileCount, storedFileCount);
 				return false;
 			} else {
 				metadataRegistry.setIntValue(fileCountKey, fileCount);
@@ -80,7 +74,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 				FileInfo fileInfo = driver.getFileDriverStates().getFileInfo(fileIndex);
 
 				if(path.getNameCount()==0) {
-					driver.getLogger().error("Invalid path with 0 name elements for file index {}", fileIndex);
+					log.error("Invalid path with 0 name elements for file index {}", fileIndex);
 					invalidFiles++;
 					continue;
 				}
@@ -94,7 +88,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 				if(savedPath==null) {
 					metadataRegistry.setValue(pathKey, pathString);
 				} else if(!pathString.equals(savedPath)) {
-					driver.getLogger().error("Corrupted metadata for file index {}: expected '{}' - got '{}'",
+					log.error("Corrupted metadata for file index {}: expected '{}' - got '{}'",
 							fileIndex, savedPath, pathString);
 					fileInfo.setFlag(ElementFlag.CORRUPTED);
 					invalidFiles++;
@@ -134,7 +128,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 					} else {
 						fileInfo.setFlag(ElementFlag.MISSING);
 						// Signal error, since non-editable data MUST be present
-						driver.getLogger().error("Missing file for index {}: {}", fileIndex, path);
+						log.error("Missing file for index {}: {}", fileIndex, path);
 						invalidFiles++;
 					}
 				}
@@ -168,7 +162,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 				try {
 					checksum = FileChecksum.compute(path);
 				} catch (IOException e) {
-					driver.getLogger().error("Failed to compute checksum for file at index {} : {}", fileIndex, path, e);
+					log.error("Failed to compute checksum for file at index {} : {}", fileIndex, path, e);
 					invalidFiles++;
 					continue;
 				}
@@ -181,7 +175,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 				if(savedChecksum==null) {
 					metadataRegistry.setValue(checksumKey, checksumString);
 				} else if(!checksumString.equals(savedChecksum)) {
-					driver.getLogger().error("Invalid checksum stored for file index {}: expected '{}' - got '{}'",
+					log.error("Invalid checksum stored for file index {}: expected '{}' - got '{}'",
 							fileIndex, savedChecksum, checksumString);
 					fileInfo.setFlag(ElementFlag.CORRUPTED);
 					invalidFiles++;
@@ -279,7 +273,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 					layerInfo.setFlag(ElementFlag.MISSING);
 					// Signal error, since non-editable data MUST be present
-					driver.getLogger().error("Missing file for chunk index  of layer {}: {}", layer.getId(), savedPath);
+					log.error("Missing file for chunk index  of layer {}: {}", layer.getId(), savedPath);
 					invalidLayers++;
 				}
 			}
@@ -322,7 +316,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			}
 
 			if(itemCount==NO_INDEX || beginIndex==NO_INDEX || endIndex==NO_INDEX) {
-				driver.getLogger().error("Indicies partly missing in metadata for layer {} in file {}", layer.getId(), fileIndex);
+				log.error("Indicies partly missing in metadata for layer {} in file {}", layer.getId(), fileIndex);
 				return false;
 			}
 
@@ -330,21 +324,21 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 			// Verify correct span definition and total number of items
 			if(itemCount!=(endIndex-beginIndex+1)) {
-				driver.getLogger().error("Total number of items declared for layer {} in file {}  does not match defined span {} to {}",
+				log.error("Total number of items declared for layer {} in file {}  does not match defined span {} to {}",
 						layer.getId(), fileIndex, beginIndex, endIndex);
 				isValid = false;
 			}
 
 			// Make sure the index values form a continuous span over all files
 			if(lastEndIndex!=NO_INDEX && beginIndex!=(lastEndIndex+1)) {
-				driver.getLogger().error("Non-continuous item indices for layer {} in file {}: expected {} as ebgin index, but got {}",
+				log.error("Non-continuous item indices for layer {} in file {}: expected {} as begin index, but got {}",
 						layer.getId(), fileIndex, lastEndIndex+1, beginIndex);
 				isValid = false;
 			}
 
 			// First file must always start at item index 0!!!
 			if(lastEndIndex==NO_INDEX && fileIndex==0 && beginIndex!=0L) {
-				driver.getLogger().error("First file for layer {} in set must start at item index 0 - got start value {}",
+				log.error("First file for layer {} in set must start at item index 0 - got start value {}",
 						layer.getId(), beginIndex);
 				isValid = false;
 			}
@@ -417,7 +411,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 					try {
 						driver.scanFile(fileIndex);
 					} catch(IOException e) {
-						driver.getLogger().error("Failed to scan file {} at index {}", fileInfo.getPath(), fileIndex, e);
+						log.error("Failed to scan file {} at index {}", fileInfo.getPath(), fileIndex, e);
 						fileValid = false;
 					}
 
@@ -454,4 +448,6 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 	},
 
 	;
+
+	private static Logger log = LoggerFactory.getLogger(StandardPreparationSteps.class);
 }

@@ -14,14 +14,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 440 $
- * $Date: 2015-12-18 14:36:38 +0100 (Fr, 18 Dez 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/driver/mapping/chunks/DefaultChunkIndex.java $
- *
- * $LastChangedDate: 2015-12-18 14:36:38 +0100 (Fr, 18 Dez 2015) $
- * $LastChangedRevision: 440 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.filedriver.mapping.chunks;
 
@@ -44,11 +36,10 @@ import de.ims.icarus2.model.api.driver.indices.IndexValueType;
  *
  *
  * @author Markus Gärtner
- * @version $Id: DefaultChunkIndex.java 440 2015-12-18 13:36:38Z mcgaerty $
  *
  */
 public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex {
-	
+
 	private static final Logger log = LoggerFactory
 			.getLogger(DefaultChunkIndex.class);
 
@@ -226,6 +217,11 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 		return result;
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	private class Reader extends ReadAccessor<ChunkIndex> implements ChunkIndexReader {
 
 		private Reader() {
@@ -266,6 +262,11 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	private class Writer extends WriteAccessor<ChunkIndex> implements ChunkIndexWriter {
 
 		private Writer() {
@@ -306,6 +307,11 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public static class Builder extends BufferedIOResourceBuilder<Builder> {
 		private FileSet fileSet;
 		private IndexValueType indexValueType;

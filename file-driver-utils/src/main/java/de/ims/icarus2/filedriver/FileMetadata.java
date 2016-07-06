@@ -14,23 +14,15 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision$
- * $Date$
- * $URL$
- *
- * $LastChangedDate$
- * $LastChangedRevision$
- * $LastChangedBy$
  */
 package de.ims.icarus2.filedriver;
 
 import java.nio.file.Path;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
 import de.ims.icarus2.filedriver.io.RUBlockCache;
 import de.ims.icarus2.filedriver.io.UnlimitedBlockCache;
-import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndex;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
@@ -273,7 +265,6 @@ import de.ims.icarus2.model.standard.driver.AbstractDriver;
  * </table>
  *
  * @author Markus Gärtner
- * @version $Id$
  *
  */
 public class FileMetadata implements ModelConstants {
@@ -399,7 +390,6 @@ public class FileMetadata implements ModelConstants {
 	 * Metadata keys for {@link ItemLayerManifest layers}.
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id$
 	 *
 	 */
 	public static enum ItemLayerKey implements MetadataKey {
@@ -452,7 +442,6 @@ public class FileMetadata implements ModelConstants {
 	 * Metadata keys for {@link ChunkIndex} instances.
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id$
 	 *
 	 */
 	public static enum ChunkIndexKey implements MetadataKey {
@@ -528,7 +517,6 @@ public class FileMetadata implements ModelConstants {
 	 * associated with a {@link ContainerType type} information.
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id$
 	 *
 	 */
 	public static enum ContainerKey implements MetadataKey {
@@ -636,7 +624,6 @@ public class FileMetadata implements ModelConstants {
 	 * associated with a {@link StructureType type} information.
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id$
 	 *
 	 */
 	public static enum StructureKey implements MetadataKey {
@@ -698,7 +685,6 @@ public class FileMetadata implements ModelConstants {
 	 * Metadata keys for {@link Mapping mappings}.
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id$
 	 *
 	 */
 	public static enum MappingKey implements MetadataKey {

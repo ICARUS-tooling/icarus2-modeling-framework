@@ -43,12 +43,12 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
+import de.ims.icarus2.model.api.registry.LayerMemberFactory;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
+import de.ims.icarus2.model.standard.members.DefaultLayerMemberFactory;
 import de.ims.icarus2.model.standard.members.container.ItemStorage;
-import de.ims.icarus2.model.standard.members.item.DefaultItem;
-import de.ims.icarus2.model.standard.members.structure.DefaultEdge;
 import de.ims.icarus2.model.standard.members.structure.DefaultStructure;
 import de.ims.icarus2.model.standard.members.structure.EdgeStorage;
 import de.ims.icarus2.model.standard.members.structure.EmptyEdgeStorage;
@@ -102,6 +102,10 @@ public class StructureBuilder {
 
 	private Comparator<? super Item> nodeSorter = null;
 	private Comparator<? super Edge> edgeSorter = null;
+
+	private LayerMemberFactory memberFactory;
+
+	private static final LayerMemberFactory DEFAULT_LAYER_MEMBER_FACTORY = new DefaultLayerMemberFactory();
 
 	// Buffer
 
@@ -310,6 +314,23 @@ public class StructureBuilder {
 		return edgeSorter;
 	}
 
+	public StructureBuilder memberFactory(LayerMemberFactory factory) {
+		checkState(memberFactory==null);
+		checkNotNull(factory);
+
+		memberFactory = factory;
+
+		return this;
+	}
+
+	LayerMemberFactory getMemberFactory() {
+		LayerMemberFactory factory = memberFactory;
+		if(factory==null) {
+			factory = DEFAULT_LAYER_MEMBER_FACTORY;
+		}
+		return factory;
+	}
+
 	public StructureBuilder augmented(boolean augmented) {
 		this.augmented = augmented;
 
@@ -472,12 +493,12 @@ public class StructureBuilder {
 	//    CREATION METHODS
 	//**********************************
 
-	public DefaultItem newNode() {
-		return new DefaultItem();
+	public Item newNode() {
+		return getMemberFactory().newItem(currentStructure());
 	}
 
-	public DefaultEdge newEdge(Item source, Item target) {
-		return new DefaultEdge(currentStructure(), source, target);
+	public Edge newEdge(Item source, Item target) {
+		return getMemberFactory().newEdge(currentStructure(), source, target);
 	}
 
 	//**********************************

@@ -14,14 +14,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 439 $
- * $Date: 2015-12-18 14:25:15 +0100 (Fr, 18 Dez 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/driver/io/BufferedIOResource.java $
- *
- * $LastChangedDate: 2015-12-18 14:25:15 +0100 (Fr, 18 Dez 2015) $
- * $LastChangedRevision: 439 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.filedriver.io;
 
@@ -68,6 +60,7 @@ import de.ims.icarus2.util.IcarusUtils;
  *     reader.begin();
  *     try {
  *         // do something with reader
+ *         ...
  *     } finally {
  *         reader.end();
  *     }
@@ -81,7 +74,6 @@ import de.ims.icarus2.util.IcarusUtils;
  * read or write operations) will then reopen those caches and buffers.
  *
  * @author Markus Gärtner
- * @version $Id: BufferedIOResource.java 439 2015-12-18 13:25:15Z mcgaerty $
  *
  */
 public abstract class BufferedIOResource {
@@ -361,6 +353,7 @@ public abstract class BufferedIOResource {
 
 	protected void close() throws IOException {
 
+		//TODO having a corrupted accessor prevent resource from closing might pose problems?
 		if(useCount.get()>0)
 			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Cannot close resource while there are still accessors using it");
@@ -378,7 +371,6 @@ public abstract class BufferedIOResource {
 	 * A lockable chunk of raw data with a variable size.
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id: BufferedIOResource.java 439 2015-12-18 13:25:15Z mcgaerty $
 	 *
 	 */
 	public static final class Block {
@@ -439,7 +431,6 @@ public abstract class BufferedIOResource {
 	 * Caching strategy and storage for holding loaded {@link Block blocks} in memory.
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id: BufferedIOResource.java 439 2015-12-18 13:25:15Z mcgaerty $
 	 *
 	 */
 	public interface BlockCache {
@@ -487,7 +478,6 @@ public abstract class BufferedIOResource {
 	 * then again decrement the counter.
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id: BufferedIOResource.java 439 2015-12-18 13:25:15Z mcgaerty $
 	 *
 	 * @param <T> The source type of the accessor
 	 */
@@ -540,7 +530,6 @@ public abstract class BufferedIOResource {
 	 * then again decrement the counter.
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id: BufferedIOResource.java 439 2015-12-18 13:25:15Z mcgaerty $
 	 *
 	 * @param <T> The source type of the accessor
 	 */
@@ -584,6 +573,12 @@ public abstract class BufferedIOResource {
 		}
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @param <B>
+	 */
 	public static abstract class BufferedIOResourceBuilder<B extends BufferedIOResourceBuilder<B>> {
 		private int cacheSize;
 		private IOResource resource;

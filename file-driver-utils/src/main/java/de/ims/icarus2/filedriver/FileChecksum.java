@@ -14,14 +14,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 402 $
- * $Date: 2015-06-08 17:06:51 +0200 (Mo, 08 Jun 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/driver/file/FileChecksum.java $
- *
- * $LastChangedDate: 2015-06-08 17:06:51 +0200 (Mo, 08 Jun 2015) $
- * $LastChangedRevision: 402 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.filedriver;
 
@@ -42,7 +34,6 @@ import java.util.UUID;
  * The checksum internally uses an {@link UUID} object to simplify storage and serialization.
  *
  * @author Markus Gärtner
- * @version $Id: FileChecksum.java 402 2015-06-08 15:06:51Z mcgaerty $
  *
  */
 public class FileChecksum implements Serializable {

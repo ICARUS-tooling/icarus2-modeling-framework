@@ -14,20 +14,11 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision$
- * $Date$
- * $URL$
- *
- * $LastChangedDate$
- * $LastChangedRevision$
- * $LastChangedBy$
  */
 package de.ims.icarus2.filedriver;
 
 /**
  * @author Markus Gärtner
- * @version $Id$
  *
  */
 public enum ElementFlag {

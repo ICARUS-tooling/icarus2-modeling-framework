@@ -14,14 +14,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 411 $
- * $Date: 2015-06-26 17:07:19 +0200 (Fr, 26 Jun 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/driver/mapping/chunks/ChunkIndexStorage.java $
- *
- * $LastChangedDate: 2015-06-26 17:07:19 +0200 (Fr, 26 Jun 2015) $
- * $LastChangedRevision: 411 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.filedriver.mapping.chunks;
 
@@ -43,7 +35,6 @@ import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**
  * @author Markus Gärtner
- * @version $Id: ChunkIndexStorage.java 411 2015-06-26 15:07:19Z mcgaerty $
  *
  */
 public class ChunkIndexStorage {
@@ -89,7 +80,6 @@ public class ChunkIndexStorage {
 	/**
 	 *
 	 * @author Markus Gärtner
-	 * @version $Id: ChunkIndexStorage.java 411 2015-06-26 15:07:19Z mcgaerty $
 	 *
 	 */
 	public static class Builder {

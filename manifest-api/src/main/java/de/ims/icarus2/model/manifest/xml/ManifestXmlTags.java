@@ -37,6 +37,7 @@ public interface ManifestXmlTags {
 
 	public static final String TAG_CORPUS = "corpus"; //$NON-NLS-1$
 	public static final String TAG_CONTEXT = "context"; //$NON-NLS-1$
+	public static final String TAG_ROOT_CONTEXT = "root-context"; //$NON-NLS-1$
 	public static final String TAG_LAYER_GROUP = "layer-group"; //$NON-NLS-1$
 	public static final String TAG_ITEM_LAYER = "item-layer"; //$NON-NLS-1$
 	public static final String TAG_STRUCTURE_LAYER = "structure-layer"; //$NON-NLS-1$

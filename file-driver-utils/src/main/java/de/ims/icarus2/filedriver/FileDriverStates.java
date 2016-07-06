@@ -14,14 +14,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision$
- * $Date$
- * $URL$
- *
- * $LastChangedDate$
- * $LastChangedRevision$
- * $LastChangedBy$
  */
 package de.ims.icarus2.filedriver;
 
@@ -45,7 +37,6 @@ import de.ims.icarus2.util.Counter;
 
 /**
  * @author Markus Gärtner
- * @version $Id$
  *
  */
 public class FileDriverStates {
@@ -118,6 +109,11 @@ public class FileDriverStates {
 		return info;
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public static class ElementInfo implements ModelConstants {
 		private EnumSet<ElementFlag> state = EnumSet.noneOf(ElementFlag.class);
 
@@ -150,7 +146,6 @@ public class FileDriverStates {
 
 	/**
 	 * @author Markus Gärtner
-	 * @version $Id$
 	 *
 	 */
 	public static class FileInfo extends ElementInfo {

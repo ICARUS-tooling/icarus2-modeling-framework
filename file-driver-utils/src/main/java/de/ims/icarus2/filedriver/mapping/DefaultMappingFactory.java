@@ -14,14 +14,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 439 $
- * $Date: 2015-12-18 14:25:15 +0100 (Fr, 18 Dez 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/driver/mapping/DefaultMappingFactory.java $
- *
- * $LastChangedDate: 2015-12-18 14:25:15 +0100 (Fr, 18 Dez 2015) $
- * $LastChangedRevision: 439 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.filedriver.mapping;
 
@@ -71,7 +63,6 @@ import de.ims.icarus2.util.classes.ClassUtils;
  * </table>
  *
  * @author Markus Gärtner
- * @version $Id: DefaultMappingFactory.java 439 2015-12-18 13:25:15Z mcgaerty $
  *
  */
 public class DefaultMappingFactory implements MappingFactory {

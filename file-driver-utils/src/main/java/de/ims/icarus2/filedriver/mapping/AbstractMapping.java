@@ -14,14 +14,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 412 $
- * $Date: 2015-06-30 16:15:08 +0200 (Di, 30 Jun 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/driver/mapping/AbstractMapping.java $
- *
- * $LastChangedDate: 2015-06-30 16:15:08 +0200 (Di, 30 Jun 2015) $
- * $LastChangedRevision: 412 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.filedriver.mapping;
 
@@ -36,7 +28,6 @@ import de.ims.icarus2.util.AbstractBuilder;
 
 /**
  * @author Markus Gärtner
- * @version $Id: AbstractMapping.java 412 2015-06-30 14:15:08Z mcgaerty $
  *
  */
 public abstract class AbstractMapping implements Mapping {
@@ -136,6 +127,13 @@ public abstract class AbstractMapping implements Mapping {
 		// no-op
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @param <B>
+	 * @param <M>
+	 */
 	public static abstract class MappingBuilder<B extends MappingBuilder<B, M>, M extends Mapping> extends AbstractBuilder<B, M> {
 		private Driver driver;
 		private MappingManifest manifest;

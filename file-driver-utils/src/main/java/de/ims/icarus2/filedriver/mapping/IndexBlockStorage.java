@@ -14,14 +14,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 400 $
- * $Date: 2015-05-29 15:06:46 +0200 (Fr, 29 Mai 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/driver/mapping/IndexBlockStorage.java $
- *
- * $LastChangedDate: 2015-05-29 15:06:46 +0200 (Fr, 29 Mai 2015) $
- * $LastChangedRevision: 400 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.filedriver.mapping;
 
@@ -31,7 +23,6 @@ import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 
 /**
  * @author Markus Gärtner
- * @version $Id: IndexBlockStorage.java 400 2015-05-29 13:06:46Z mcgaerty $
  *
  */
 public enum IndexBlockStorage {

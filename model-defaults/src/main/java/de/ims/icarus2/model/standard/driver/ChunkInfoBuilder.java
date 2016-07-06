@@ -14,14 +14,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
-
- * $Revision: 396 $
- * $Date: 2015-05-20 11:11:11 +0200 (Mi, 20 Mai 2015) $
- * $URL: https://subversion.assembla.com/svn/icarusplatform/trunk/Icarus2Core/core/de.ims.icarus2.model/source/de/ims/icarus2/model/standard/driver/ChunkInfoBuilder.java $
- *
- * $LastChangedDate: 2015-05-20 11:11:11 +0200 (Mi, 20 Mai 2015) $
- * $LastChangedRevision: 396 $
- * $LastChangedBy: mcgaerty $
  */
 package de.ims.icarus2.model.standard.driver;
 
@@ -35,7 +27,6 @@ import de.ims.icarus2.model.api.members.item.Item;
 
 /**
  * @author Markus Gärtner
- * @version $Id: ChunkInfoBuilder.java 396 2015-05-20 09:11:11Z mcgaerty $
  *
  */
 public class ChunkInfoBuilder implements ModelConstants {
@@ -104,6 +95,13 @@ public class ChunkInfoBuilder implements ModelConstants {
 		return storage.addChunk(index, null, ChunkState.MODIFIED);
 	}
 
+	/**
+	 * Returns the current state of the internal {@link ChunkInfo}.
+	 * Note that this method does <b>not</b> reset this builder and
+	 * therefore can be used multiple times with the same result.
+	 *
+	 * @return
+	 */
 	public ChunkInfo build() {
 		return storage;
 	}
@@ -120,6 +118,12 @@ public class ChunkInfoBuilder implements ModelConstants {
 		return storage.chunkCount();
 	}
 
+	/**
+	 * Helper interface for
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public interface ChunkStorage extends ChunkInfo {
 		boolean addChunk(long index, Item item, ChunkState state);
 
