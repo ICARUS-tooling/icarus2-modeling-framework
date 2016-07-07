@@ -24,18 +24,20 @@ import de.ims.icarus2.util.version.Version;
 import de.ims.icarus2.util.version.VersionFormat;
 
 /**
+ *
+ *
  * @author Markus Gärtner
  *
  */
-public class MajorMinorBuildVersionFormat implements VersionFormat {
+public class MajorMinorReleaseVersionFormat implements VersionFormat {
 
 	/**
 	 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
 	 */
 	@Override
 	public int compare(Version o1, Version o2) {
-		MajorMinorBuildVersion v1 = (MajorMinorBuildVersion)o1;
-		MajorMinorBuildVersion v2 = (MajorMinorBuildVersion)o2;
+		MajorMinorReleaseVersion v1 = (MajorMinorReleaseVersion)o1;
+		MajorMinorReleaseVersion v2 = (MajorMinorReleaseVersion)o2;
 		return v1.compareTo(v2);
 	}
 
@@ -47,7 +49,7 @@ public class MajorMinorBuildVersionFormat implements VersionFormat {
     private static enum Field {
     	MAJOR,
     	MINOR,
-    	BUILD,
+    	RELEASE,
     	INFO,
     	;
 
@@ -66,7 +68,7 @@ public class MajorMinorBuildVersionFormat implements VersionFormat {
 	public Version parseVersion(String versionString) {
         int major = 0;
         int minor = 0;
-        int build = 0;
+        int release = 0;
         String info = "";
 
         StringTokenizer st = new StringTokenizer(versionString, String.valueOf(SEPARATOR), false);
@@ -86,7 +88,7 @@ public class MajorMinorBuildVersionFormat implements VersionFormat {
         			switch (field) {
 					case MAJOR: major = numericValue; break;
 					case MINOR: minor = numericValue; break;
-					case BUILD: build = numericValue; break;
+					case RELEASE: release = numericValue; break;
 
 					default:
 						break;
@@ -102,17 +104,21 @@ public class MajorMinorBuildVersionFormat implements VersionFormat {
         	}
         }
 
-        return new MajorMinorBuildVersion(versionString, this, major, minor, build, info);
+        if(info!=null) {
+        	info = info.trim();
+        }
+
+        return new MajorMinorReleaseVersion(versionString, this, major, minor, release, info);
 	}
 
 
-	public static final class MajorMinorBuildVersion extends Version implements Comparable<MajorMinorBuildVersion> {
+	public static final class MajorMinorReleaseVersion extends Version implements Comparable<MajorMinorReleaseVersion> {
 
-		private final int major, minir, build;
+		private final int major, minor, release;
 		private final String info;
 
-		public MajorMinorBuildVersion(String versionString,
-				VersionFormat versionFormat, int major, int minor, int build, String info) {
+		public MajorMinorReleaseVersion(String versionString,
+				VersionFormat versionFormat, int major, int minor, int release, String info) {
 			super(versionString, versionFormat);
 
 			if(info==null) {
@@ -120,8 +126,8 @@ public class MajorMinorBuildVersionFormat implements VersionFormat {
 			}
 
 			this.major = major;
-			this.minir = minor;
-			this.build = build;
+			this.minor = minor;
+			this.release = release;
 			this.info = info;
 		}
 
@@ -129,12 +135,12 @@ public class MajorMinorBuildVersionFormat implements VersionFormat {
 			return major;
 		}
 
-		public int getMinir() {
-			return minir;
+		public int getMinor() {
+			return minor;
 		}
 
-		public int getBuild() {
-			return build;
+		public int getRelease() {
+			return release;
 		}
 
 		public String getInfo() {
@@ -145,18 +151,18 @@ public class MajorMinorBuildVersionFormat implements VersionFormat {
 		 * @see java.lang.Comparable#compareTo(java.lang.Object)
 		 */
 		@Override
-		public int compareTo(MajorMinorBuildVersion o) {
+		public int compareTo(MajorMinorReleaseVersion o) {
 			int result = major-o.major;
 			if(result!=0) {
 				return result;
 			}
 
-			result = minir-o.minir;
+			result = minor-o.minor;
 			if(result!=0) {
 				return result;
 			}
 
-			result = build-o.build;
+			result = release-o.release;
 			if(result!=0) {
 				return result;
 			}
