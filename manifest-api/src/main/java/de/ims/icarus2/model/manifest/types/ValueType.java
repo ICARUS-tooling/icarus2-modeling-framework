@@ -37,6 +37,7 @@ import javax.swing.Icon;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.IconWrapper;
 import de.ims.icarus2.util.classes.ClassUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
@@ -44,13 +45,14 @@ import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.eval.Expression;
 import de.ims.icarus2.util.nio.ArrayByteStream;
 import de.ims.icarus2.util.nio.ByteChannelCharacterSequence;
+import de.ims.icarus2.util.strings.StringPrimitives;
 import de.ims.icarus2.util.strings.StringResource;
 
 /**
  * @author Markus Gärtner
  *
  */
-public abstract class ValueType implements StringResource {
+public class ValueType implements StringResource {
 
 	private final Class<?> baseClass;
 	private final String xmlForm;
@@ -64,7 +66,7 @@ public abstract class ValueType implements StringResource {
 		ValueType result = xmlLookup.get(s);
 
 		if(result==null) {
-			int sepIdx = s.indexOf(VectorType.SIZE_SEPARATOR);
+			int sepIdx = s.indexOf(VectorType.SIZE_OPEN);
 			if(sepIdx!=-1) {
 				String typeName = s.substring(0, sepIdx);
 
@@ -104,7 +106,9 @@ public abstract class ValueType implements StringResource {
 		return String.valueOf(value);
 	}
 
-	public abstract Object parse(String s, ClassLoader classLoader);
+	public Object parse(CharSequence s, ClassLoader classLoader) {
+		throw new IllegalStateException("Cannot parse data of type '"+getStringValue()+"'"); //$NON-NLS-1$
+	}
 
 	/**
 	 * Returns whether or not the type has a simple form that makes it
@@ -132,27 +136,17 @@ public abstract class ValueType implements StringResource {
 		return baseClass;
 	}
 
-	public static final ValueType UNKNOWN = new ValueType("unknown", Object.class, false, true) { //$NON-NLS-1$
-		@Override
-		public Object parse(String s, ClassLoader classLoader) {
-			throw new IllegalStateException("Cannot parse data of type '"+getStringValue()+"'"); //$NON-NLS-1$
-		}
-	};
+	public static final ValueType UNKNOWN = new ValueType("unknown", Object.class, false, true);
 
 	// External
-	public static final ValueType CUSTOM = new ValueType("custom", Object.class, false, true) { //$NON-NLS-1$
-		@Override
-		public Object parse(String s, ClassLoader classLoader) {
-			throw new IllegalStateException("Cannot parse data of type '"+getStringValue()+"'"); //$NON-NLS-1$
-		}
-	};
+	public static final ValueType CUSTOM = new ValueType("custom", Object.class, false, true);
 
 	/**
 	 * To reduce dependency we only store the extension's unique id, not the extension itself!
 	 */
 	public static final ValueType EXTENSION = new ValueType("extension", String.class, false, true) { //$NON-NLS-1$
 		@Override
-		public Object parse(String s, ClassLoader classLoader) {
+		public Object parse(CharSequence s, ClassLoader classLoader) {
 			return s;
 		}
 
@@ -171,8 +165,8 @@ public abstract class ValueType implements StringResource {
 	public static final ValueType ENUM = new ValueType("enum", Enum.class, false, true) { //$NON-NLS-1$
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		@Override
-		public Object parse(String s, ClassLoader classLoader) {
-			String[] parts = s.split("@"); //$NON-NLS-1$
+		public Object parse(CharSequence s, ClassLoader classLoader) {
+			String[] parts = s.toString().split("@"); //$NON-NLS-1$
 			try {
 				Class<?> clazz = classLoader.loadClass(parts[0]);
 
@@ -198,52 +192,52 @@ public abstract class ValueType implements StringResource {
 	// "Primitive"
 	public static final ValueType STRING = new ValueType("string", CharSequence.class, false, true) { //$NON-NLS-1$
 		@Override
-		public Object parse(String s, ClassLoader classLoader) {
+		public Object parse(CharSequence s, ClassLoader classLoader) {
 			return s;
 		}
 	};
 
 	public static final ValueType BOOLEAN = new ValueType("boolean", Boolean.class, true, true) { //$NON-NLS-1$
 		@Override
-		public Object parse(String s, ClassLoader classLoader) {
-			return Boolean.parseBoolean(s);
+		public Object parse(CharSequence s, ClassLoader classLoader) {
+			return StringPrimitives.parseBoolean(s);
 		}
 	};
 
 	public static final ValueType INTEGER = new ValueType("integer", Integer.class, true, true) { //$NON-NLS-1$
 		@Override
-		public Object parse(String s, ClassLoader classLoader) {
-			return Integer.parseInt(s);
+		public Object parse(CharSequence s, ClassLoader classLoader) {
+			return StringPrimitives.parseInt(s);
 		}
 	};
 
 	public static final ValueType LONG = new ValueType("long", Long.class, true, true) { //$NON-NLS-1$
 		@Override
-		public Object parse(String s, ClassLoader classLoader) {
-			return Long.parseLong(s);
+		public Object parse(CharSequence s, ClassLoader classLoader) {
+			return StringPrimitives.parseLong(s);
 		}
 	};
 
 	public static final ValueType DOUBLE = new ValueType("double", Double.class, true, true) { //$NON-NLS-1$
 		@Override
-		public Object parse(String s, ClassLoader classLoader) {
-			return Double.parseDouble(s);
+		public Object parse(CharSequence s, ClassLoader classLoader) {
+			return StringPrimitives.parseDouble(s);
 		}
 	};
 
 	public static final ValueType FLOAT = new ValueType("float", Float.class, true, true) { //$NON-NLS-1$
 		@Override
-		public Object parse(String s, ClassLoader classLoader) {
-			return Float.parseFloat(s);
+		public Object parse(CharSequence s, ClassLoader classLoader) {
+			return StringPrimitives.parseFloat(s);
 		}
 	};
 
 	// Resource identifiers
 	public static final ValueType URI = new ValueType("uri", URI.class, false, true) { //$NON-NLS-1$
 		@Override
-		public Object parse(String s, ClassLoader classLoader) {
+		public Object parse(CharSequence s, ClassLoader classLoader) {
 			try {
-				return new URI(s);
+				return new URI(s.toString());
 			} catch (URISyntaxException e) {
 				throw new ManifestException(GlobalErrorCode.ILLEGAL_STATE,
 						"Serialized form of uri is invalid: "+s, e); //$NON-NLS-1$
@@ -264,9 +258,9 @@ public abstract class ValueType implements StringResource {
 	// Resource links
 	public static final ValueType URL = new ValueType("url", Url.class, false, true) { //$NON-NLS-1$
 		@Override
-		public Object parse(String s, ClassLoader classLoader) {
+		public Object parse(CharSequence s, ClassLoader classLoader) {
 			try {
-				return new Url(s);
+				return new Url(s.toString());
 			} catch (MalformedURLException e) {
 				throw new ManifestException(GlobalErrorCode.ILLEGAL_STATE,
 						"Serialized form of url is invalid: "+s, e); //$NON-NLS-1$
@@ -287,8 +281,8 @@ public abstract class ValueType implements StringResource {
 	// Resource links
 	public static final ValueType FILE = new ValueType("file", Path.class, false, true) { //$NON-NLS-1$
 		@Override
-		public Object parse(String s, ClassLoader classLoader) {
-			return Paths.get(s);
+		public Object parse(CharSequence s, ClassLoader classLoader) {
+			return Paths.get(s.toString());
 		}
 
 		/**
@@ -303,11 +297,6 @@ public abstract class ValueType implements StringResource {
 	};
 
 	public static final ValueType URL_RESOURCE = new ValueType("url-resource", UrlResource.class, false, true) { //$NON-NLS-1$
-		@Override
-		public Object parse(String s, ClassLoader classLoader) {
-			throw new UnsupportedOperationException("Cannot parse data of type '"+getStringValue()+"'"); //$NON-NLS-1$
-		}
-
 		/**
 		 *
 		 * @see de.ims.icarus2.model.manifest.types.ValueType#toChars(java.lang.Object)
@@ -319,10 +308,6 @@ public abstract class ValueType implements StringResource {
 	};
 
 	public static final ValueType LINK = new ValueType("link", Link.class, false, true) { //$NON-NLS-1$
-		@Override
-		public Object parse(String s, ClassLoader classLoader) {
-			throw new UnsupportedOperationException("Cannot parse data of type '"+getStringValue()+"'"); //$NON-NLS-1$
-		}
 
 		/**
 		 *
@@ -337,8 +322,8 @@ public abstract class ValueType implements StringResource {
 	// Predefined images
 	public static final ValueType IMAGE = new ValueType("image", Icon.class, false, true) { //$NON-NLS-1$
 		@Override
-		public Object parse(String s, ClassLoader classLoader) {
-			return new IconWrapper(s);
+		public Object parse(CharSequence s, ClassLoader classLoader) {
+			return new IconWrapper(s.toString());
 		}
 
 		/**
@@ -355,11 +340,6 @@ public abstract class ValueType implements StringResource {
 	};
 
 	public static final ValueType IMAGE_RESOURCE = new ValueType("image-resource", IconLink.class, false, true) { //$NON-NLS-1$
-		@Override
-		public Object parse(String s, ClassLoader classLoader) {
-			throw new UnsupportedOperationException("Cannot parse data of type '"+getStringValue()+"'"); //$NON-NLS-1$
-		}
-
 		/**
 		 *
 		 * @see de.ims.icarus2.model.manifest.types.ValueType#toChars(java.lang.Object)
@@ -373,7 +353,7 @@ public abstract class ValueType implements StringResource {
 	public static final ValueType BINARY_STREAM = new ValueType("binary", SeekableByteChannel.class, false, true) {
 
 		@Override
-		public Object parse(String s, ClassLoader classLoader) {
+		public Object parse(CharSequence s, ClassLoader classLoader) {
 			return ArrayByteStream.fromChars(s);
 		}
 
@@ -507,7 +487,8 @@ public abstract class ValueType implements StringResource {
 
 	public static final class VectorType extends ValueType {
 
-		public static final char SIZE_SEPARATOR = '[';
+		public static final char SIZE_OPEN = '[';
+		public static final char SIZE_CLOSE = ']';
 		public static final char ELEMENT_SEPARATOR = '|';
 		public static final char ESCAPE_CHARACTER = '\\';
 		public static final char WILDCARD_SIZE_CHARACTER = 'x';
@@ -521,10 +502,10 @@ public abstract class ValueType implements StringResource {
 		private final transient Object emptyArray;
 
 		public VectorType(ValueType componentType, int size) {
-			super(componentType.getStringValue()+SIZE_SEPARATOR+size+SIZE_SEPARATOR, Object.class, false, true);
+			super(componentType.getStringValue()+SIZE_OPEN+size+SIZE_CLOSE, Object.class, false, true);
 
 			if(size<1)
-				throw new IllegalArgumentException("Size has to be greater than 0: "+size); //$NON-NLS-1$
+				throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Size has to be greater than 0: "+size); //$NON-NLS-1$
 
 			this.size = size;
 			this.componentType = componentType;
@@ -533,7 +514,7 @@ public abstract class ValueType implements StringResource {
 		}
 
 		public VectorType(ValueType componentType) {
-			super(componentType.getStringValue()+SIZE_SEPARATOR+WILDCARD_SIZE_CHARACTER+SIZE_SEPARATOR, Object.class, false, true);
+			super(componentType.getStringValue()+SIZE_OPEN+WILDCARD_SIZE_CHARACTER+SIZE_CLOSE, Object.class, false, true);
 
 			this.size = UNDEFINED_SIZE;
 			this.componentType = componentType;
@@ -574,8 +555,8 @@ public abstract class ValueType implements StringResource {
 			return sb.toString();
 		}
 
-		private static int countElements(String s) {
-			if(s.isEmpty()) {
+		private static int countElements(CharSequence s) {
+			if(s.length()==0) {
 				return 0;
 			}
 
@@ -610,7 +591,7 @@ public abstract class ValueType implements StringResource {
 			return Array.newInstance(ClassUtils.unwrap(componentType.getBaseClass()), size);
 		}
 
-		private static Object parseStaticSized(String s, ClassLoader classLoader, ValueType componentType, int size) {
+		private static Object parseStaticSized(CharSequence s, ClassLoader classLoader, ValueType componentType, int size) {
 
 			// Create array with unwrapped types
 			Object array = createArray(componentType, size);
@@ -632,7 +613,7 @@ public abstract class ValueType implements StringResource {
 						break;
 
 					case ELEMENT_SEPARATOR:
-						Object element = componentType.parse(buffer.toString(), classLoader);
+						Object element = componentType.parse(buffer, classLoader);
 						buffer.setLength(0);
 						Array.set(array, elementIndex, element);
 						elementIndex++;
@@ -648,7 +629,7 @@ public abstract class ValueType implements StringResource {
 
 			// Handle last element
 			if(buffer.length()>0) {
-				Object element = componentType.parse(buffer.toString(), classLoader);
+				Object element = componentType.parse(buffer, classLoader);
 				Array.set(array, elementIndex, element);
 				elementIndex++;
 			}
@@ -665,7 +646,7 @@ public abstract class ValueType implements StringResource {
 		 * @see de.ims.icarus2.model.manifest.types.ValueType#parse(java.lang.String, java.lang.ClassLoader)
 		 */
 		@Override
-		public Object parse(String s, ClassLoader classLoader) {
+		public Object parse(CharSequence s, ClassLoader classLoader) {
 
 			int size = this.size;
 
@@ -715,6 +696,218 @@ public abstract class ValueType implements StringResource {
 						"Incompatible value type "+type.getName()+" for value-type "+getStringValue()+" - expected an array type"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
 			if(!isUndefinedSize() && Array.getLength(value)!=size)
+				throw new ManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
+						"Mismatching component count "+Array.getLength(value)+" for value-type "+getStringValue()+" - expected "+size); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
+			Class<?> componentClass = type.getComponentType();
+
+			// Again we need wrapping of primitive types
+			componentClass = ClassUtils.wrap(componentClass);
+
+			if(!componentType.isValidType(componentClass))
+				throw new ManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
+						"Incompatible array component type "+componentClass.getName()+" for vector-type "+getStringValue()+" - expected "+componentType.getBaseClass().getName()); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
+			return type;
+		}
+	}
+
+	/**
+	 * Implements a matrix storage for arbitrary component types that uses an array to actually store the
+	 * matrix data in.
+	 * <p>
+	 * Rows of the matrix will be concatenated into the buffer array.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	public static final class MatrixType extends ValueType {
+
+		public static final char ROW_SEPARATOR = ';';
+
+		private final int rows, columns;
+		private final ValueType componentType;
+
+		private final transient Object emptyArray;
+
+		private static String toXmlForm(ValueType componentType, int rows, int columns) {
+			return (componentType==null ? "" : componentType.getStringValue())
+					+VectorType.SIZE_OPEN+rows+VectorType.SIZE_CLOSE
+					+VectorType.SIZE_OPEN+columns+VectorType.SIZE_CLOSE;
+		}
+
+		public MatrixType(ValueType componentType, int rows, int columns) {
+			super(toXmlForm(componentType, rows, columns), Object.class, false, true);
+
+			if(rows<0)
+				throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Row count must not be negative: "+rows); //$NON-NLS-1$
+
+			if(columns<0)
+				throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Column count must not be negative: "+columns); //$NON-NLS-1$
+
+			this.rows = rows;
+			this.columns = columns;
+			this.componentType = componentType;
+
+			emptyArray = createArray(componentType, 0);
+		}
+
+		public int getRows() {
+			return rows;
+		}
+
+		public int getColumns() {
+			return columns;
+		}
+
+		private int toIndex(int row, int col) {
+			return row*columns + col;
+		}
+
+		public Object getCell(Object matrix, int row, int col) {
+			return Array.get(matrix, toIndex(row, col));
+		}
+
+		public void setCell(Object matrix, Object value, int row, int col) {
+			Array.set(matrix, toIndex(row, col), value);
+		}
+
+		@Override
+		public CharSequence toChars(Object value) {
+			StringBuilder sb = new StringBuilder();
+
+			int size = rows*columns;
+
+			if(size!=Array.getLength(value))
+				throw new ManifestException(GlobalErrorCode.DATA_ARRAY_SIZE,
+						Messages.sizeMismatchMessage("Invalid size of matrix buffer array", size, Array.getLength(value)));
+
+			for(int row=0; row<rows; row++) {
+				for(int col=0; col<columns; col++) {
+
+					Object element = getCell(value, row, col);
+					CharSequence s = componentType.toChars(element);
+
+					for(int idx=0; idx <s.length(); idx++) {
+						char c = s.charAt(idx);
+						if(c==VectorType.ELEMENT_SEPARATOR
+								|| c==VectorType.ESCAPE_CHARACTER
+								|| c==ROW_SEPARATOR) {
+							sb.append(VectorType.ESCAPE_CHARACTER);
+						}
+						sb.append(VectorType.ELEMENT_SEPARATOR);
+					}
+				}
+
+				sb.append(ROW_SEPARATOR);
+			}
+
+			return sb.toString();
+		}
+
+		private static Object createArray(ValueType componentType, int size) {
+			return Array.newInstance(ClassUtils.unwrap(componentType.getBaseClass()), size);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.manifest.types.ValueType#parse(java.lang.String, java.lang.ClassLoader)
+		 */
+		@Override
+		public Object parse(CharSequence s, ClassLoader classLoader) {
+
+			int size = rows*columns;
+
+			if(size==0) {
+				return emptyArray;
+			}
+
+
+			// Create array with unwrapped types
+			Object array = createArray(componentType, size);
+
+			// Traverse input string and load elements
+			boolean escaped = false;
+			StringBuilder buffer = new StringBuilder();
+			int row = 0;
+			int col = 0;
+			boolean rowBreak = false;
+			for(int i=0; i<s.length(); i++) {
+				char c = s.charAt(i);
+
+				if(escaped) {
+					escaped = false;
+					buffer.append(c);
+				} else {
+					switch (c) {
+					case VectorType.ESCAPE_CHARACTER:
+						escaped = true;
+						break;
+
+					case ROW_SEPARATOR:
+						rowBreak = true;
+
+					case VectorType.ELEMENT_SEPARATOR:
+						Object element = componentType.parse(buffer, classLoader);
+						buffer.setLength(0);
+						setCell(array, element, row, col);
+						col++;
+						if(rowBreak) {
+							//FIXME do some sanity check here regarding number of elements in row?
+							row++;
+							col = 0;
+							rowBreak = false;
+						}
+						break;
+
+					default:
+						buffer.append(c);
+						break;
+					}
+				}
+
+			}
+
+			// No need to handle last element, since ROW_SEPARATOR will appear as sentinel character there
+
+			return array;
+		}
+
+		/**
+		 * Returns {@code true} iff the given {@code value} is an array with the correct
+		 * length and a compatible component type.
+		 *
+		 * @see de.ims.icarus2.model.manifest.types.ValueType#isValidValue(java.lang.Object)
+		 * @see #isValidType(Class)
+		 */
+		@Override
+		public boolean isValidValue(Object value) {
+			return super.isValidValue(value) && Array.getLength(value)==rows*columns;
+		}
+
+		/**
+		 * Returns {@code true} iff the given {@code type} is an array type
+		 * and its component type is compatible with this vector's declared component
+		 * type.
+		 * <p>
+		 * Note that primitive arrays will get their component type wrapped accordingly!
+		 *
+		 * @see de.ims.icarus2.model.manifest.types.ValueType#isValidType(java.lang.Class)
+		 */
+		@Override
+		public boolean isValidType(Class<?> type) {
+			return type.isArray() && componentType.isValidType(ClassUtils.wrap(type.getComponentType()));
+		}
+
+		@Override
+		public Class<?> checkValue(Object value) {
+			Class<?> type = extractClass(value);
+
+			if(!type.isArray())
+				throw new ManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
+						"Incompatible value type "+type.getName()+" for value-type "+getStringValue()+" - expected an array type"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
+			int size = rows*columns;
+			if(Array.getLength(value)!=size)
 				throw new ManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
 						"Mismatching component count "+Array.getLength(value)+" for value-type "+getStringValue()+" - expected "+size); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
