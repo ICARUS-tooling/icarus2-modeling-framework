@@ -94,6 +94,14 @@ public interface AnnotationManifest extends MemberManifest {
 		return result.getAsList();
 	}
 
+	/**
+	 * Returns a list only containing the aliases for this annotation which
+	 * have been declared within this very manifest.
+	 * If there are no local aliases defined for this manifest the method
+	 * should return an empty list.
+	 *
+	 * @return
+	 */
 	@AccessRestriction(AccessMode.READ)
 	default List<String> getLocalAliases() {
 		LazyCollection<String> result = LazyCollection.lazyList();

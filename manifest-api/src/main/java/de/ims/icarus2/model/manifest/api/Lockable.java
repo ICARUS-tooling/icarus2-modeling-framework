@@ -20,6 +20,10 @@ package de.ims.icarus2.model.manifest.api;
 
 
 /**
+ * A one-way lock mechanism.
+ * Objects implementing this interface can be locked or be locked from the point of their
+ * creation, but can never be unlocked after they have been locked.
+ *
  * @author Markus Gärtner
  *
  */
@@ -28,7 +32,7 @@ public interface Lockable {
 	/**
 	 * Irreversibly locks this object. This includes all directly hosted sub-parts
 	 * that are also lockable. So if for example a {@link ContextManifest} gets locked
-	 * it must also lock all {@link LayerGroupManifest group manifest} that are hosted
+	 * it must also lock all {@link LayerGroupManifest group manifests} that are hosted
 	 * directly, i.e. those not derived via templates.
 	 * <p>
 	 * This method does nothing if the object has already been locked.
@@ -42,7 +46,8 @@ public interface Lockable {
 	boolean isLocked();
 
 	/**
-	 * If this object is {@link #lock() locked} throws a {@link ModelException}
+	 * If this object is {@link #lock() locked} throws a {@link ManifestException}
+	 * with {@link ManifestErrorCode#MANIFEST_LOCKED}.
 	 */
 	default void checkNotLocked() {
 		if(isLocked())

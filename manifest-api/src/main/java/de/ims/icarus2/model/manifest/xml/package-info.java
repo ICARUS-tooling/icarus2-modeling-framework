@@ -20,7 +20,7 @@
  * Contains the classes responsible for (de)serialization of all the
  * manifest framework members.
  *
- * @author Markus G�rtner
+ * @author Markus Gärtner
  *
  */
 package de.ims.icarus2.model.manifest.xml;

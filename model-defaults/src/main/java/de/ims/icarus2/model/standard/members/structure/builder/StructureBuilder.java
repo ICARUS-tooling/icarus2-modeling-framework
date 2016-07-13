@@ -51,6 +51,17 @@ import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
+ * <p>
+ * Note that this class partly works around one of the more basic principles of the
+ * {@link Structure} interface contract. That is, it does not use the dedicated
+ * method for creating {@link Structure#newEdge(Item, Item) new edges} declared in
+ * that interface. The reason for this is that the default implementation used as
+ * return value of the {@link #build()} method models a static structure object
+ * and therefore does not support aforementioned method. To still allow for some
+ * customization regarding implementations of edge objects this builder lets
+ * client code provide a {@link LayerMemberFactory} that will be used to create
+ * new nodes and edges if requested.
+ *
  * @author Markus Gärtner
  *
  */

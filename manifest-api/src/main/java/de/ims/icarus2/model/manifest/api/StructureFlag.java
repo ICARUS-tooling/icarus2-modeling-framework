@@ -47,6 +47,12 @@ public enum StructureFlag implements StringResource, Flag {
 
 	/**
 	 * Arrangement of edges in a structure can be altered by the user.
+	 * <p>
+	 * Note that the default assumption is that edges are immutable, to
+	 * avoid verbose declaration of this flag (since in most cases it
+	 * is indeed safe to assume immutable data, which prevents driver
+	 * implementations from having to deal with complexity of mutable
+	 * corpus data)
 	 */
 	NON_STATIC("non-static"),
 
@@ -55,6 +61,12 @@ public enum StructureFlag implements StringResource, Flag {
 	 * item assigned as source and target terminal.
 	 */
 	LOOPS("loops"),
+
+	/**
+	 * Signals that for a given pair of terminals there may exist more than
+	 * one edge between them with the same direction.
+	 */
+	PARALLEL("parallel"),
 
 	/**
 	 * Specifies whether or not a structure requires its edges to be arranged according

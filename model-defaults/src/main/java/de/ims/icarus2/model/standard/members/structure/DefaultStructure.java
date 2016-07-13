@@ -45,7 +45,7 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 
 	/**
 	 * Checks whether a valid edge storage is set and returns it.
-	 * Throw an esception otherwise.
+	 * Throw an exception otherwise.
 	 *
 	 * @return
 	 *

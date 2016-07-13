@@ -22,6 +22,13 @@ import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessRestriction;
 
 /**
+ * As the most simple variation of a manifest, a {@code ManifestFragment} only
+ * has to declare a namespace wide unique {@link #getId() id}, a valid {@link #getManifestType() type}
+ * and provide an implementation of the locking mechanism defined in {@link Lockable}.
+ * <p>
+ * Note that "namespace" usually refers to the entity a manifest is hosted in. This can either be
+ * another manifest or the entirety of a {@link ManifestRegistry registry}.
+ *
  * @author Markus Gärtner
  *
  */
@@ -33,11 +40,4 @@ public interface ManifestFragment extends Lockable, TypedManifest {
 	 */
 	@AccessRestriction(AccessMode.READ)
 	String getId();
-
-	@Override
-	default void checkNotLocked() {
-		if(isLocked())
-			throw new ManifestException(ManifestErrorCode.MANIFEST_LOCKED,
-					"Manifest is locked: "+getId());
-	}
 }

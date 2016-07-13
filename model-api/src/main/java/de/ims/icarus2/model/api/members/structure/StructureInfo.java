@@ -18,11 +18,55 @@
  */
 package de.ims.icarus2.model.api.members.structure;
 
+import java.io.Serializable;
+
+import de.ims.icarus2.model.api.meta.MetaData;
+
 /**
+ * Models a collection of structure related metadata.
+ * To minimize the number of required methods to provide access to all
+ * kinds of metadata field this interface only defines generic methods
+ * that take a {@link StructureInfoField} object as hint.
+ * A total of three such methods exists to fetch the minimum, maximum
+ * and average value for a given field.
+ * <p>
+ * Note that no direct link to the original {@code Structure} object
+ * is required, therefore client code can freely store this metadata
+ * without having to worries.
+ * <p>
+ * As a matter of consistency all three methods, when provided with
+ * the same {@link StructureInfoField field} argument, should either
+ * all return their respective <i>no-entry</i> sentinel value
+ * ({@link #NO_ENTRY_LONG} or {@link #NO_ENTRY_DOUBLE}) or all provide
+ * a valid meaningful result.
+ * This way it is sufficient for the default implementation of
+ * {@link #isUndefined(StructureInfoField)} to only use one {@code long}
+ * based method for quick verification.
+ *
  * @author Markus Gärtner
  *
  */
-public interface StructureInfo {
+public interface StructureInfo extends MetaData, Serializable {
+
+	public static final double NO_ENTRY_DOUBLE = -1D;
+	public static final long NO_ENTRY_LONG = -1L;
 
 	//TODO add info getter methods for stuff like min/max branching etc
+
+	long getMin(StructureInfoField field);
+	double getAvg(StructureInfoField field);
+	long getMax(StructureInfoField field);
+
+	/**
+	 * Returns {@code true} iff this metadata set does not contain valid
+	 * data for the given {@code field}. The default implementation uses
+	 * the return value of {@link #getMin(StructureInfoField)} with the
+	 * supplied {@code field} and checks its equality to {@link #NO_ENTRY_LONG}.
+	 *
+	 * @param field
+	 * @return
+	 */
+	default boolean isUndefined(StructureInfoField field) {
+		return getMin(field)==NO_ENTRY_LONG;
+	}
 }

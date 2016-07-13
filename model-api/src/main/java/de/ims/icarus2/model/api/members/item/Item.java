@@ -158,6 +158,11 @@ public interface Item extends CorpusMember, ModelConstants {
 	 * The result of the {@code #getIndex()} method on the other hand is constant,
 	 * no matter where the item in question is stored. The only way to modify
 	 * a item's index is to remove or insert other items into the underlying data.
+	 * <p>
+	 * All <i>real</i> items are required to return a non-negative index value unless they
+	 * are marked as {@link #isDirty() dirty} by their managing driver. The only items allowed
+	 * to constantly return {@link ModelConstants#NO_INDEX -1} as index are the {@link Layer#getItemProxy() proxy} items
+	 * assigned to every {@link Layer} and virtual {@link Structure#getVirtualRoot() root} nodes in {@link Structure structures}.
 	 *
 	 * @return
 	 */

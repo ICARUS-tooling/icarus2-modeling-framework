@@ -28,9 +28,9 @@ import org.xml.sax.SAXException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.OptionsManifest;
+import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
 import de.ims.icarus2.model.manifest.api.ValueRange;
 import de.ims.icarus2.model.manifest.api.ValueSet;
-import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
 import de.ims.icarus2.model.manifest.standard.DefaultModifiableIdentity;
 import de.ims.icarus2.model.manifest.standard.OptionsManifestImpl;
 import de.ims.icarus2.model.manifest.standard.OptionsManifestImpl.OptionImpl;
@@ -258,7 +258,6 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 		return this;
 	}
 
-	@SuppressWarnings("unchecked")
 	protected void addDefaultValue(Object value) {
 		Object defaultValue = option.getDefaultValue();
 		if(defaultValue instanceof Collection) {

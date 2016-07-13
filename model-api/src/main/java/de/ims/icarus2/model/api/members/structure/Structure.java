@@ -59,6 +59,17 @@ public interface Structure extends Container {
 	StructureType getStructureType();
 
 	/**
+	 * Returns {@code true} in case the structure contains all the edges it
+	 * is supposed to contain. For extremely large containers or containers that
+	 * only serve a secondary role in the task at hand (like boundary containers)
+	 * it is possible that a driver decides to omit certain elements which would
+	 * either be unaccessible or which are simply not needed.
+	 * <p>
+	 * Note that in case this method returns {@code true}, its sibling method
+	 * {@link #isItemsComplete()} is bound to also return {@code true}.
+	 * However, the reverse implication doesn't hold: It is perfectly legal for a
+	 * structure to be able to provide all the nodes but not having loaded all the
+	 * edges yes!
 	 *
 	 * @return
 	 *
@@ -67,11 +78,24 @@ public interface Structure extends Container {
 	boolean isEdgesComplete();
 
 	/**
+	 * Returns {@code true} if this structure contains items not hosted in any of its
+	 * base containers.
 	 *
 	 * @return
 	 */
 	boolean isAugmented();
 
+	/**
+	 * Returns a set of metadata providing additional information baout this structure.
+	 * <p>
+	 * Note that there is no defined caching policy imposed on the structure implementation,
+	 * meaning that it is perfectly legal to compute a new {@code StructureInfo} object each
+	 * time this method is called.
+	 * If client code wishes to use a given {@code StructureInfo} instance multiple times it
+	 * should employ its own caching mechanism.
+	 *
+	 * @return
+	 */
 	@OptionalMethod
 	StructureInfo getInfo();
 
@@ -131,6 +155,14 @@ public interface Structure extends Container {
 	 * of this structure's node-container
 	 */
 	long getEdgeCount(Item node, boolean isSource);
+
+	default long getOutgoingEdgeCount(Item node) {
+		return getEdgeCount(node, true);
+	}
+
+	default long getIncomingEdgeCount(Item node) {
+		return getEdgeCount(node, false);
+	}
 
 	/**
 	 * Return the either outgoing or incoming edge at position {@code index}
@@ -240,6 +272,8 @@ public interface Structure extends Container {
 	/**
 	 * Returns the length of the longest path to a leaf node in the tree whose root the given
 	 * item is. If the given {@code node} is a leaf itself the method returns {@code 0}.
+	 * <p>
+	 * This is an optional method. If a structure does not support this kind of information it should simply return {@code -1};
 	 *
 	 * @param node
 	 * @return
@@ -247,6 +281,14 @@ public interface Structure extends Container {
 	@OptionalMethod
 	long getHeight(Item node);
 
+	/**
+	 * Returns the length of the longest path from the {@link #getVirtualRoot() root node} to
+	 * any of the reachable leafs in the structure.
+	 * <p>
+	 * This is an optional method. If a structure does not support this kind of information it should simply return {@code -1};
+	 *
+	 * @return
+	 */
 	@OptionalMethod
 	default long getHeight() {
 		return getHeight(getVirtualRoot());
@@ -257,6 +299,8 @@ public interface Structure extends Container {
 	 * If the given {@code node} is the virtual root itself the method returns {@code 0}. Note
 	 * that a return value of {@code -1} signals that the specified node has no valid 'parent'
 	 * path to the virtual root and the actual depth could not be calculated.
+	 * <p>
+	 * This is an optional method. If a structure does not support this kind of information it should simply return {@code -1};
 	 *
 	 * @param node
 	 * @return
@@ -268,6 +312,8 @@ public interface Structure extends Container {
 	 * Returns the total size of the tree whose root the given item is (minus the node itself).
 	 * This includes children of the given node and all successive grand children. If called
 	 * for a leaf node this method returns {@code 0}.
+	 * <p>
+	 * This is an optional method. If a structure does not support this kind of information it should simply return {@code -1};
 	 *
 	 * @param parent
 	 * @return
@@ -366,6 +412,12 @@ public interface Structure extends Container {
 	 */
 	Edge newEdge(Item source, Item target);
 
+	/**
+	 * Applies the given {@code action} to all edges in the order in which they are returned when
+	 * iterating via {@link #getEdgeAt(long)} with increasing index values.
+	 *
+	 * @param action
+	 */
 	default void forEachEdge(Consumer<? super Edge> action) {
 		long edgeCount = getEdgeCount();
 		for(long i = 0L; i<edgeCount; i++) {
