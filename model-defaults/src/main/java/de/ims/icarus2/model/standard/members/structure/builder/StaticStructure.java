@@ -36,6 +36,7 @@ import de.ims.icarus2.model.standard.members.container.ItemStorage;
 import de.ims.icarus2.model.standard.members.item.AbstractItem;
 import de.ims.icarus2.model.standard.members.structure.EdgeStorage;
 import de.ims.icarus2.model.standard.members.structure.ImmutableStructureEditVerifier;
+import de.ims.icarus2.model.standard.members.structure.info.StructureInfoBuilder;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
@@ -97,8 +98,7 @@ public class StaticStructure extends AbstractItem implements Structure {
 
 	@Override
 	public StructureInfo getInfo() {
-		//TODO
-		return null;
+		return StructureInfoBuilder.createInfo(this);
 	}
 
 	/**

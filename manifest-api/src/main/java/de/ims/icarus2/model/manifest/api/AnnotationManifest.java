@@ -54,6 +54,12 @@ public interface AnnotationManifest extends MemberManifest {
 	@AccessRestriction(AccessMode.READ)
 	String getKey();
 
+	/**
+	 * Returns {@code true} iff the orimary key used for this annotation has
+	 * been declared locally.
+	 *
+	 * @return
+	 */
 	boolean isLocalKey();
 
 	/**
@@ -64,12 +70,31 @@ public interface AnnotationManifest extends MemberManifest {
 		return getLayerManifest();
 	}
 
+	/**
+	 * Applies the given {@code action} to all aliases in this manifest,
+	 * including both locally defined and inherited ones.
+	 * <p>
+	 * This method should first apply the action to inherited aliases
+	 * before traversing local ones.
+	 *
+	 * @param action
+	 */
 	@AccessRestriction(AccessMode.READ)
 	void forEachAlias(Consumer<? super String> action);
 
+	/**
+	 * Returns {@code true} if the given {@code alias} has been declared locally.
+	 *
+	 * @param alias
+	 * @return
+	 */
 	boolean isLocalAlias(String alias);
 
-
+	/**
+	 *  Applies the given {@code action} only to locally defined aliases.
+	 *
+	 * @param action
+	 */
 	@AccessRestriction(AccessMode.READ)
 	default void forEachLocalAlias(Consumer<? super String> action) {
 		forEachAlias(a -> {

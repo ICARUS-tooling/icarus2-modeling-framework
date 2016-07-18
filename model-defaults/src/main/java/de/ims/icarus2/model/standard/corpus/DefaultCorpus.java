@@ -53,6 +53,7 @@ import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.corpus.CorpusAccessMode;
 import de.ims.icarus2.model.api.corpus.CorpusOption;
 import de.ims.icarus2.model.api.corpus.CorpusView;
+import de.ims.icarus2.model.api.corpus.GenerationControl;
 import de.ims.icarus2.model.api.corpus.Scope;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
@@ -99,17 +100,17 @@ import de.ims.icarus2.util.events.Events;
  * Implements a corpus that manages its contents in a lazy way. {@link Context} instances
  * and their {@link Driver drivers} will be created and linked when they are first being used.
  * <p>
- * When a corpus consists of multiple contexts and there exist dependencies between several
- * contexts, then creation and initialization of context instances will be performed in such a
- * way, that a context gets fully initialized only <b>after</b> all the other contexts it is
+ * When a corpus consists of multiple customContexts and there exist dependencies between several
+ * customContexts, then creation and initialization of context instances will be performed in such a
+ * way, that a context gets fully initialized only <b>after</b> all the other customContexts it is
  * depending on are created and connected with their respective drivers.
- * Note that the actual instantiation and linking of contexts, {@link LayerGroup groups} and
+ * Note that the actual instantiation and linking of customContexts, {@link LayerGroup groups} and
  * {@link Layer layers} is delegated to a new {@link ContextFactory} object for each context.
  * This factory implementation honors the ability of drivers to provide custom implementations
  * of groups or layers (or {@link AnnotationStorage annotation storages}) if they do wish so.
  * <p>
- * Due to the lazy creation of both contexts and drivers it is perfectly legal to encounter a
- * driver whose context has not yet been created. Instantiation of contexts and their drivers
+ * Due to the lazy creation of both customContexts and drivers it is perfectly legal to encounter a
+ * driver whose context has not yet been created. Instantiation of customContexts and their drivers
  * is done as follows:
  * <p>
  * {@code Context} instances are created by delegating to a {@link CorpusMemberFactory} obtained
@@ -136,6 +137,7 @@ public class DefaultCorpus implements Corpus {
 	private final CorpusEventManager corpusEventManager = new CorpusEventManager(this);
 	private final CorpusEditManager editModel = new CorpusEditManager(this);
 	private final CorpusUndoManager undoManager = new CorpusUndoManager(this);
+	private final GenerationControl generationControl;
 
 
 	private final Lock lock = new ReentrantLock();
@@ -149,16 +151,19 @@ public class DefaultCorpus implements Corpus {
 
 	private final ManifestTracker manifestTracker;
 
-	private final ContextProxy rootContext;
 	/**
-	 *  Proxies for all custom contexts, preserves insertion order.
+	 * Proxies for all root contexts in insertion order.
+	 */
+	private final Map<String, ContextProxy> rootContexts = new LinkedHashMap<>();
+	/**
+	 *  Proxies for all custom customContexts, preserves insertion order.
 	 *
 	 *  NOTE:
 	 *  The content of this map is effectively static, since it will be
 	 *  created and populated at construction time of this corpus. Therefore
 	 *  no synchronization is required when accessing it!
 	 */
-	private final Map<String, ContextProxy> contexts = new LinkedHashMap<>();
+	private final Map<String, ContextProxy> customContexts = new LinkedHashMap<>();
 	private final Map<Layer, MetaDataStorage> metaDataStorages = new THashMap<>();
 	private final Map<String, VirtualContext> virtualContexts = new LinkedHashMap<>();
 
@@ -169,33 +174,39 @@ public class DefaultCorpus implements Corpus {
 	protected DefaultCorpus(CorpusBuilder builder) {
 		checkNotNull(builder);
 
-		this.manager = builder.getManager();
-		this.manifest = builder.getManifest();
-		this.metadataRegistry = builder.getMetadataRegistry();
+		manager = builder.getManager();
+		manifest = builder.getManifest();
+
+		metadataRegistry = builder.getMetadataRegistry();
+		metadataRegistry.open();
 
 		overlayLayer = new OverlayLayer();
 		overlayContainer = new OverlayContainer();
 
-		ContextProxy rootContext = null;
-
 		for(ContextManifest context : manifest.getCustomContextManifests()) {
 
 			ContextProxy proxy = new ContextProxy(context);
-			contexts.put(context.getId(), proxy);
-
-			if(manifest.isRootContext(context)) {
-				rootContext = proxy;
-			}
+			customContexts.put(context.getId(), proxy);
 		}
 
-		if(rootContext==null)
+		for(ContextManifest context : manifest.getRootContextManifests()) {
+
+			ContextProxy proxy = new ContextProxy(context);
+			rootContexts.put(context.getId(), proxy);
+		}
+
+		if(rootContexts.isEmpty())
 			throw new ModelException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
 					"No root context declared for corpus: "+getName(manifest));
 
-		this.rootContext = rootContext;
-
 		manifestTracker = new ManifestTracker();
 		manifest.getRegistry().addListener(Events.ADDED, manifestTracker);
+
+		if(manifest.isEditable()) {
+			generationControl = new DefaultGeneration(this);
+		} else {
+			generationControl = new ImmutableGeneration(this);
+		}
 	}
 
 	@Override
@@ -264,12 +275,10 @@ public class DefaultCorpus implements Corpus {
 	private ContextProxy getContextProxy(String id) {
 		checkNotNull(id);
 
-		ContextProxy proxy = null;
+		ContextProxy proxy = rootContexts.get(id);
 
-		if(rootContext.getId().equals(id)) {
-			proxy = rootContext;
-		} else {
-			proxy = contexts.get(id);
+		if(proxy==null) {
+			proxy = customContexts.get(id);
 		}
 
 		if(proxy==null)
@@ -286,13 +295,13 @@ public class DefaultCorpus implements Corpus {
 
 		lock.lock();
 		try {
-			synchronized (contexts) {
+			synchronized (customContexts) {
 				String id = context.getId();
-				if(contexts.containsKey(id))
+				if(customContexts.containsKey(id))
 					throw new ModelException(this, ManifestErrorCode.MANIFEST_DUPLICATE_ID,
 							"Duplicate context: "+id);
 
-				contexts.put(id, new ContextProxy(context));
+				customContexts.put(id, new ContextProxy(context));
 			}
 		} finally {
 			lock.unlock();
@@ -320,6 +329,10 @@ public class DefaultCorpus implements Corpus {
 				throw new ModelException(this, GlobalErrorCode.ILLEGAL_STATE,
 						"Corpus already closing: "+getName(this));
 
+			// Ensure we wrap the entire corpus shutdown into a single metadata registry transaction
+			MetadataRegistry registry = getMetadataRegistry();
+			registry.beginUpdate();
+
 			AccumulatingException.Buffer buffer = new AccumulatingException.Buffer();
 
 			// Close views first
@@ -334,8 +347,8 @@ public class DefaultCorpus implements Corpus {
 				buffer.addExceptionsFrom(e);
 			}
 
-			// Close contexts and their drivers now
-			for(ContextProxy proxy : contexts.values()) {
+			// Close custom contexts and their drivers now
+			for(ContextProxy proxy : customContexts.values()) {
 				try {
 					proxy.close();
 				} catch (InterruptedException e) {
@@ -345,11 +358,22 @@ public class DefaultCorpus implements Corpus {
 				}
 			}
 
+			// Close root contexts and their drivers now
+			for(ContextProxy proxy : rootContexts.values()) {
+				try {
+					proxy.close();
+				} catch (InterruptedException e) {
+					throw e;
+				} catch (Exception e) {
+					buffer.addException(e);
+				}
+			}
+
+			// Now end the metadata transaction and ensure it gets saved
 			try {
-				rootContext.close();
-			} catch (InterruptedException e) {
-				throw e;
-			} catch (Exception e) {
+				registry.endUpdate();
+				registry.close();
+			} catch(Exception e) {
 				buffer.addException(e);
 			}
 
@@ -381,19 +405,19 @@ public class DefaultCorpus implements Corpus {
 	}
 
 	/**
+	 * @see de.ims.icarus2.model.api.corpus.Corpus#getGenerationControl()
+	 */
+	@Override
+	public GenerationControl getGenerationControl() {
+		return generationControl;
+	}
+
+	/**
 	 * @see de.ims.icarus2.model.api.corpus.Corpus#getUndoManager()
 	 */
 	@Override
 	public CorpusUndoManager getUndoManager() {
 		return undoManager;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.corpus.Corpus#getRootContext()
-	 */
-	@Override
-	public Context getRootContext() {
-		return rootContext.getContext();
 	}
 
 	/**
@@ -420,11 +444,22 @@ public class DefaultCorpus implements Corpus {
 		return manifest;
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.api.corpus.Corpus#forEachRootContext(java.util.function.Consumer)
+	 */
 	@Override
-	public void forEachContext(Consumer<? super Context> action) {
+	public void forEachRootContext(Consumer<? super Context> action) {
 		checkNotNull(action);
-		synchronized (contexts) {
-			contexts.values().forEach(c -> action.accept(c.getContext()));
+		synchronized (rootContexts) {
+			rootContexts.values().forEach(c -> action.accept(c.getContext()));
+		}
+	}
+
+	@Override
+	public void forEachCustomContext(Consumer<? super Context> action) {
+		checkNotNull(action);
+		synchronized (customContexts) {
+			customContexts.values().forEach(c -> action.accept(c.getContext()));
 		}
 	}
 
@@ -505,12 +540,14 @@ public class DefaultCorpus implements Corpus {
 	private boolean isKnownContext(Context context) {
 		String id = context.getManifest().getId();
 
-		if(id.equals(rootContext.getId())) {
-			return true;
+		synchronized (rootContexts) {
+			if(rootContexts.containsKey(id)) {
+				return true;
+			}
 		}
 
-		synchronized (contexts) {
-			if(contexts.containsKey(id)) {
+		synchronized (customContexts) {
+			if(customContexts.containsKey(id)) {
 				return true;
 			}
 		}

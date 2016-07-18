@@ -112,11 +112,7 @@ public class SubRegistry implements MetadataRegistry {
 		final List<String> keys = new ArrayList<>();
 
 		// Collect keys
-		source.forEachEntry((key, value) -> {
-			if(key.startsWith(prefix)) {
-				keys.add(key);
-			}
-		});
+		source.forEachEntry(prefix, (key, value) -> keys.add(key));
 
 		// Now delete entries
 		source.beginUpdate();
@@ -137,6 +133,17 @@ public class SubRegistry implements MetadataRegistry {
 	 */
 	@Override
 	public void close() {
+		// no-op
+	}
+
+	/**
+	 * Since this implementation doesn't store data by itself, this method
+	 * does nothing.
+	 *
+	 * @see de.ims.icarus2.model.api.registry.MetadataRegistry#open()
+	 */
+	@Override
+	public void open() {
 		// no-op
 	}
 

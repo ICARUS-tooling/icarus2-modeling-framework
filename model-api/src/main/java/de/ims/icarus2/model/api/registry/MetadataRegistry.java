@@ -26,6 +26,8 @@ import java.util.function.BiConsumer;
  */
 public interface MetadataRegistry {
 
+	void open();
+
 	String getValue(String key);
 
 	default byte getByteValue(String key, byte noEntryValue) {
@@ -108,7 +110,7 @@ public interface MetadataRegistry {
 		setValue(key, String.valueOf(value));
 	}
 
-	default void updateByteValue(String key, byte value, byte noEntryValue) {
+	default void changeByteValue(String key, byte value, byte noEntryValue) {
 		if(value==noEntryValue) {
 			setValue(key, null);
 		} else {
@@ -116,7 +118,7 @@ public interface MetadataRegistry {
 		}
 	}
 
-	default void updateShortValue(String key, short value, byte noEntryValue) {
+	default void changeShortValue(String key, short value, byte noEntryValue) {
 		if(value==noEntryValue) {
 			setValue(key, null);
 		} else {
@@ -124,7 +126,7 @@ public interface MetadataRegistry {
 		}
 	}
 
-	default void updateIntValue(String key, int value, int noEntryValue) {
+	default void changeIntValue(String key, int value, int noEntryValue) {
 		if(value==noEntryValue) {
 			setValue(key, null);
 		} else {
@@ -132,7 +134,7 @@ public interface MetadataRegistry {
 		}
 	}
 
-	default void updateLongValue(String key, long value, long noEntryValue) {
+	default void changeLongValue(String key, long value, long noEntryValue) {
 		if(value==noEntryValue) {
 			setValue(key, null);
 		} else {
@@ -140,7 +142,7 @@ public interface MetadataRegistry {
 		}
 	}
 
-	default void updateFloatValue(String key, float value, float noEntryValue) {
+	default void changeFloatValue(String key, float value, float noEntryValue) {
 		if(Float.compare(value, noEntryValue)==0) {
 			setValue(key, null);
 		} else {
@@ -148,7 +150,7 @@ public interface MetadataRegistry {
 		}
 	}
 
-	default void updateDoubleValue(String key, double value, double noEntryValue) {
+	default void changeDoubleValue(String key, double value, double noEntryValue) {
 		if(Double.compare(value, noEntryValue)==0) {
 			setValue(key, null);
 		} else {
@@ -156,7 +158,7 @@ public interface MetadataRegistry {
 		}
 	}
 
-	default void updateBooleanValue(String key, boolean value, boolean noEntryValue) {
+	default void changeBooleanValue(String key, boolean value, boolean noEntryValue) {
 		if(value==noEntryValue) {
 			setValue(key, null);
 		} else {

@@ -18,13 +18,19 @@
  */
 package de.ims.icarus2.model.api.edit;
 
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 
 import de.ims.icarus2.model.api.corpus.Corpus;
+import de.ims.icarus2.model.api.corpus.GenerationControl;
 import de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange;
 import de.ims.icarus2.util.events.EventObject;
+import de.ims.icarus2.util.events.EventSource;
 import de.ims.icarus2.util.events.WeakEventSource;
 
 /**
@@ -37,8 +43,8 @@ public class CorpusEditManager extends WeakEventSource {
 
 	private static final long serialVersionUID = -8320136116919999917L;
 
-	private int updateLevel = 0;
-	private boolean endingUpdate = false;
+	private AtomicInteger updateLevel = new AtomicInteger(0);
+	private AtomicBoolean endingUpdate = new AtomicBoolean(false);
 	private UndoableCorpusEdit currentEdit;
 
 	private final Corpus corpus;
@@ -55,17 +61,16 @@ public class CorpusEditManager extends WeakEventSource {
 	}
 
 	public void beginUpdate() {
-		updateLevel++;
+		updateLevel.incrementAndGet();
 		fireEvent(new EventObject(CorpusEditEvents.BEGIN_UPDATE));
 	}
 
 	public boolean hasActiveUpdate() {
-		return updateLevel>0;
+		return updateLevel.get()>0;
 	}
 
 	public void beginUpdate(String nameKey) {
-		if(nameKey==null)
-			throw new NullPointerException("Invalid edit name"); //$NON-NLS-1$
+		checkNotNull(nameKey);
 		if(hasActiveUpdate())
 			throw new IllegalStateException("Cannot start named edit '"+nameKey+"' while another edit is already in progress."); //$NON-NLS-1$ //$NON-NLS-2$
 
@@ -76,18 +81,16 @@ public class CorpusEditManager extends WeakEventSource {
 	}
 
 	public void endUpdate() {
-		updateLevel--;
+		int level = updateLevel.decrementAndGet();
 
-		if (!endingUpdate) {
-			endingUpdate = updateLevel == 0;
-			fireEvent(new EventObject(CorpusEditEvents.END_UPDATE,
-					"edit", currentEdit)); //$NON-NLS-1$
+		if (!endingUpdate.get()) {
+			boolean end = endingUpdate.compareAndSet(false, level==0);
+			fireEvent(new EventObject(CorpusEditEvents.END_UPDATE, "edit", currentEdit));
 
 			try {
-				if (endingUpdate && !currentEdit.isEmpty()) {
+				if (end && !currentEdit.isEmpty()) {
 					// Notify listeners about imminent undoable edit
-					fireEvent(new EventObject(CorpusEditEvents.BEFORE_UNDO, "edit", //$NON-NLS-1$
-							currentEdit));
+					fireEvent(new EventObject(CorpusEditEvents.BEFORE_UNDO, "edit", currentEdit));
 
 					// Copy and then reset current edit
 					UndoableCorpusEdit publishedEdit = currentEdit;
@@ -97,33 +100,68 @@ public class CorpusEditManager extends WeakEventSource {
 					publishedEdit.dispatch();
 
 					// Notify listeners about executed undoable edit
-					fireEvent(new EventObject(CorpusEditEvents.UNDO, "edit", publishedEdit)); //$NON-NLS-1$
+					fireEvent(new EventObject(CorpusEditEvents.UNDO, "edit", publishedEdit));
 
 					// Finally dispatch the edit so undo managers and other specialized
 					// listeners can handle or accumulate it
 					fireUndoableCorpusEdit(publishedEdit);
 				}
 			} finally {
-				endingUpdate = false;
+				endingUpdate.set(false);
 			}
 		}
+	}
+
+	protected void dispatchEdit(UndoableCorpusEdit edit) {
+		GenerationControl generationControl = getCorpus().getGenerationControl();
+		Lock lock = getCorpus().getLock();
+
+		lock.lock();
+		try {
+			long oldStage = edit.getOldGenerationStage();
+			long newStage;
+
+			// If it's the first time the given edit gets dispatched, only advance the generation stage and save it
+			if(oldStage==-1L) {
+				oldStage = generationControl.getStage();
+				newStage = generationControl.advance();
+			} else {
+				/* We're "reverting" from the post state of the given edit to its pre state,
+				 * therefore the stages get switched.
+				 *
+				 */
+				oldStage = edit.getNewGenerationStage();
+				newStage = edit.getOldGenerationStage();
+
+				// Expected "old" stage is the new stage after the edit has originally been performed
+				generationControl.step(oldStage, newStage);
+			}
+
+			edit.setOldGenerationStage(oldStage);
+			edit.setNewGenerationStage(newStage);
+		} finally {
+			lock.unlock();
+		}
+
+		fireEvent(new EventObject(CorpusEditEvents.CHANGE, "edit", this)); //$NON-NLS-1$
 	}
 
 	/**
 	 * @return
 	 */
 	protected UndoableCorpusEdit createUndoableEdit(final String nameKey) {
-		return new UndoableCorpusEdit(getCorpus(), nameKey)
-		{
+		return new UndoableCorpusEdit(getCorpus(), nameKey) {
 
 			private static final long serialVersionUID = -471363052764925086L;
 
 			/**
+			 * Use the surrounding {@link EventSource} to publish the CHANGE event.
+			 *
 			 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit#dispatch()
 			 */
 			@Override
 			public void dispatch() {
-				fireEvent(new EventObject(CorpusEditEvents.CHANGE, "edit", this)); //$NON-NLS-1$
+				dispatchEdit(this);
 			}
 
 		};

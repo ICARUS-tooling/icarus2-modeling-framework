@@ -52,13 +52,14 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 
 	private int useCount = 0;
 
+	private int changedEntryCount = 0;
+
 	private final Path file;
 
 	private static final Map<Path, PlainMetadataRegistry> instances = new WeakHashMap<>();
 
 	public static PlainMetadataRegistry getSharedRegistry(Path file) {
-		if (file == null)
-			throw new NullPointerException("Invalid file"); //$NON-NLS-1$
+		checkNotNull(file);
 
 		synchronized (instances) {
 			PlainMetadataRegistry registry = instances.get(file);
@@ -99,6 +100,19 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 		destroy(this);
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.api.registry.MetadataRegistry#open()
+	 */
+	@Override
+	public synchronized void open() {
+		try {
+			load();
+		} catch (IOException e) {
+			log.error("Failed to load value storage from file", e); //$NON-NLS-1$
+			//FIXME propagate error?
+		}
+	}
+
 	public synchronized void synchronize() {
 		// Only save to disc when actual new entries exist
 		if(!checkStorage()) {
@@ -118,7 +132,11 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 		tmp.putAll(entries);
 
 		Writer writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8);
-		tmp.store(writer, null);
+		try {
+			tmp.store(writer, null);
+		} finally {
+			changedEntryCount = 0;
+		}
 	}
 
 	/**
@@ -136,7 +154,7 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 			return !entries.isEmpty();
 		}
 
-		return false;
+		return changedEntryCount>0;
 	}
 
 	/**
@@ -173,6 +191,8 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 		} else {
 			entries.put(key, value);
 		}
+
+		changedEntryCount++;
 	}
 
 	/**

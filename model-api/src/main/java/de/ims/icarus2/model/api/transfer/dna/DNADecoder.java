@@ -176,7 +176,7 @@ public class DNADecoder extends CorpusMemberDecoder implements DNAConstants {
 				builder.appendEdge((Edge)readItem(in));
 				break;
 
-			case INDEX:
+			case ITEM_INDEX:
 				fill(in, _SEP_END_);
 				builder.appendItemIndex(readLong0());
 				break;
@@ -219,7 +219,7 @@ public class DNADecoder extends CorpusMemberDecoder implements DNAConstants {
 				builder.appendEdge((Edge)readItem(in));
 				break;
 
-			case INDEX:
+			case ITEM_INDEX:
 				fill(in, _SEP_END_);
 				builder.appendItemIndex(readLong0());
 				break;

@@ -103,4 +103,12 @@ public class VirtualMetadataRegistry implements MetadataRegistry {
 	public void close() {
 		// no-op
 	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.registry.MetadataRegistry#open()
+	 */
+	@Override
+	public void open() {
+		// no-op
+	}
 }

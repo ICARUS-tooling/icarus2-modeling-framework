@@ -52,6 +52,8 @@ public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageB
 
 	private final TreeMap<String, String> entries = new TreeMap<>();
 
+	private int changedEntryCount = 0;
+
 	private int useCount = 0;
 
 	private static final Map<Path, JAXBMetadataRegistry> instances = new WeakHashMap<>();
@@ -91,6 +93,19 @@ public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageB
 	@Override
 	public synchronized void close() {
 		destroy(this);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.registry.MetadataRegistry#open()
+	 */
+	@Override
+	public void open() {
+		try {
+			loadBuffer();
+		} catch (Exception e) {
+			log.error("Failed to load value storage from file", e); //$NON-NLS-1$
+			//FIXME propagate error?
+		}
 	}
 
 	/**
@@ -143,6 +158,18 @@ public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageB
 	}
 
 	/**
+	 * @see de.ims.icarus2.util.xml.jaxb.JAXBGate#save(java.nio.file.Path, boolean)
+	 */
+	@Override
+	public void save(Path file, boolean saveNow) throws Exception {
+		try {
+			super.save(file, saveNow);
+		} finally {
+			changedEntryCount = 0;
+		}
+	}
+
+	/**
 	 * Loads the value storage if necessary and returns {@code true} if at least one
 	 * mapping was loaded.
 	 */
@@ -157,7 +184,7 @@ public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageB
 			return !entries.isEmpty();
 		}
 
-		return false;
+		return changedEntryCount>0;
 	}
 
 	/**
@@ -178,6 +205,8 @@ public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageB
 		} else {
 			entries.put(key, value);
 		}
+
+		changedEntryCount++;
 	}
 
 	/**

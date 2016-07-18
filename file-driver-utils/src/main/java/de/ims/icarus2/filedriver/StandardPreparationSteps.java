@@ -416,7 +416,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 					}
 
 					// Update metadata entry
-					metadataRegistry.updateBooleanValue(FileKey.SCANNED.getKey(fileIndex), fileValid, false);
+					metadataRegistry.changeBooleanValue(FileKey.SCANNED.getKey(fileIndex), fileValid, false);
 
 					// Update info
 					fileInfo.updateFlag(ElementFlag.SCANNED, fileValid);
@@ -440,7 +440,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 				layerInfo.setFlag(flag);
 
 				String scannedKey = ItemLayerKey.SCANNED.getKey(layer);
-				metadataRegistry.updateBooleanValue(scannedKey, layerInfo.isValid(), false);
+				metadataRegistry.changeBooleanValue(scannedKey, layerInfo.isValid(), false);
 			}
 
 			return invalidFiles==0;

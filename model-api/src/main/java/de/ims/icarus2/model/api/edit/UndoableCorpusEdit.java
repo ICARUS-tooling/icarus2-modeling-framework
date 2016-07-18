@@ -107,6 +107,9 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 
 	private final String name;
 
+	private long oldGenerationStage = -1L;
+	private long newGenerationStage = -1L;
+
 	/**
 	 * Constructs a new undoable edit for the given corpus.
 	 */
@@ -202,6 +205,8 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 			for (; index >= 0; index--) {
 				changes.get(index).execute();
 			}
+
+			dispatch();
 		} catch(Exception e) {
 			// If rollback fails we'll shadow the original exception with an InternalError
 			rollbackUndo(index);
@@ -209,8 +214,6 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 		} finally {
 			lock.unlock();
 		}
-
-		dispatch();
 	}
 
 	/**
@@ -247,6 +250,8 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 			for (; index < count; index++) {
 				changes.get(index).execute();
 			}
+
+			dispatch();
 		} catch(Exception e) {
 			// If rollback fails we'll shadow the original exception with an InternalError
 			rollbackRedo(index);
@@ -254,8 +259,6 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 		} finally {
 			lock.unlock();
 		}
-
-		dispatch();
 	}
 
 	/**
@@ -420,5 +423,33 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 		}
 
 		return result.getAsSet();
+	}
+
+	/**
+	 * @return the oldGenerationStage
+	 */
+	public long getOldGenerationStage() {
+		return oldGenerationStage;
+	}
+
+	/**
+	 * @param oldGenerationStage the oldGenerationStage to set
+	 */
+	void setOldGenerationStage(long oldGenerationStage) {
+		this.oldGenerationStage = oldGenerationStage;
+	}
+
+	/**
+	 * @return the newGenerationStage
+	 */
+	public long getNewGenerationStage() {
+		return newGenerationStage;
+	}
+
+	/**
+	 * @param newGenerationStage the newGenerationStage to set
+	 */
+	void setNewGenerationStage(long newGenerationStage) {
+		this.newGenerationStage = newGenerationStage;
 	}
 }

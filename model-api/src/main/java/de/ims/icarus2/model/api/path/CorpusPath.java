@@ -24,12 +24,14 @@ import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 
 /**
+ *
+ *
  * @author Markus Gärtner
  *
  */
 public interface CorpusPath {
 
-	CorpusView getCorpus();
+	CorpusView getSource();
 
 	int getElementCount();
 
@@ -43,6 +45,12 @@ public interface CorpusPath {
 
 	long getIndex(int index);
 
+	/**
+	 * Models the different kinds of elements that can occur in a {@link CorpusPath}.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public enum PathElementType {
 
 		/**
@@ -57,10 +65,10 @@ public interface CorpusPath {
 		 * settings, we don't point to the elements in a path, but rather list the index
 		 * in the container or structure!
 		 */
-		INDEX,
+		ITEM_INDEX,
 
 		/**
-		 * Edge hosted within previous path element, which had to be a structure
+		 * Edge hosted within previous path element, which had to be a structure.
 		 */
 		EDGE_INDEX,
 
@@ -115,7 +123,7 @@ public interface CorpusPath {
 		}
 
 		@Override
-		public CorpusView getCorpus() {
+		public CorpusView getSource() {
 			return null;
 		}
 	};

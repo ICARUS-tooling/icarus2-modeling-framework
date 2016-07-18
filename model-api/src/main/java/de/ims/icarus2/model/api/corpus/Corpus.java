@@ -38,6 +38,7 @@ import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.edit.CorpusEditManager;
 import de.ims.icarus2.model.api.edit.CorpusUndoListener;
 import de.ims.icarus2.model.api.edit.CorpusUndoManager;
+import de.ims.icarus2.model.api.edit.UndoableCorpusEdit;
 import de.ims.icarus2.model.api.events.CorpusAdapter;
 import de.ims.icarus2.model.api.events.CorpusEventManager;
 import de.ims.icarus2.model.api.events.CorpusListener;
@@ -139,6 +140,16 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	CorpusUndoManager getUndoManager();
 
 	/**
+	 * Returns the control end-point for interaction with the <i>generation</i> of a corpus,
+	 * that is, a kind of version tracker linked to the {@link #getEditManager() edit manager}.
+	 * Whenever the content of a corpus experiences a modification in the form of a
+	 * {@link UndoableCorpusEdit} the generation id (or "age") of the corpus will be modified.
+	 *
+	 * @return
+	 */
+	GenerationControl getGenerationControl();
+
+	/**
 	 * Creates a new {@link Scope} that contains all the layers of this corpus and
 	 * uses the {@link Context#getPrimaryLayer() primary layer} of the
 	 * {@link #getRootContext() root context} as {@code primary layer}.
@@ -148,7 +159,7 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	default Scope createCompleteScope() {
 		ScopeBuilder builder = new ScopeBuilder(this);
 
-		forEachContext(c -> builder.addContext(c));
+		forEachCustomContext(c -> builder.addContext(c));
 		forEachLayer(l -> builder.addLayer(l));
 
 		builder.setPrimaryLayer(getPrimaryLayer());
@@ -204,7 +215,9 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	 *
 	 * @return The {@code Context} hosting all the default members of the corpus
 	 */
-	Context getRootContext();
+	default Context getRootContext() {
+		return getRootContexts().get(0);
+	}
 
 	/**
 	 * Looks up the context mapped to the given id.
@@ -257,11 +270,27 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 		return getRootContext().getPrimaryLayer();
 	}
 
+	default List<ItemLayer> getPrimaryLayers() {
+		LazyCollection<ItemLayer> result = LazyCollection.lazyList();
+
+		forEachRootContext(c -> result.add(c.getPrimaryLayer()));
+
+		return result.getAsList();
+	}
+
 	/**
 	 * @see Context#getFoundationLayer()
 	 */
 	default ItemLayer getFoundationLayer() {
 		return getRootContext().getFoundationLayer();
+	}
+
+	default List<ItemLayer> getFoundationLayers() {
+		LazyCollection<ItemLayer> result = LazyCollection.lazyList();
+
+		forEachRootContext(c -> result.add(c.getFoundationLayer()));
+
+		return result.getAsList();
 	}
 
 	/**
@@ -279,7 +308,7 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 
 		Consumer<Context> action = c -> result.add(c);
 
-		forEachContext(action);
+		forEachCustomContext(action);
 		forEachVirtualContext(action);
 
 		return result;
@@ -295,11 +324,15 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	ItemLayer getOverlayLayer();
 
 	Container getOverlayContainer();
-	void forEachContext(Consumer<? super Context> action);
+	void forEachCustomContext(Consumer<? super Context> action);
+	void forEachRootContext(Consumer<? super Context> action);
 	void forEachVirtualContext(Consumer<? super VirtualContext> action);
 
 	default void forEachLayer(Consumer<? super Layer> action) {
-		forEachContext(c -> c.forEachLayer(action));
+		Consumer<Context> action2 = c -> c.forEachLayer(action);
+		forEachRootContext(action2);
+		forEachCustomContext(action2);
+		forEachVirtualContext(action2);
 	}
 
 	default Collection<Layer> getLayers(Predicate<? super Layer> p) {
@@ -312,10 +345,26 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 		return buffer.getAsList();
 	}
 
+	default List<Context> getRootContexts() {
+		LazyCollection<Context> buffer = LazyCollection.lazyList();
+
+		forEachRootContext(c -> buffer.add(c));
+
+		return buffer.getAsList();
+	}
+
+	default Collection<Context> getRootContexts(Predicate<? super Context> p) {
+		LazyCollection<Context> buffer = LazyCollection.lazyList();
+
+		forEachRootContext(c -> {if(p.test(c))buffer.add(c);});
+
+		return buffer.getAsList();
+	}
+
 	default List<Context> getCustomContexts() {
 		LazyCollection<Context> buffer = LazyCollection.lazyList();
 
-		forEachContext(c -> buffer.add(c));
+		forEachCustomContext(c -> buffer.add(c));
 
 		return buffer.getAsList();
 	}
@@ -323,7 +372,7 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	default Collection<Context> getCustomContexts(Predicate<? super Context> p) {
 		LazyCollection<Context> buffer = LazyCollection.lazyList();
 
-		forEachContext(c -> {if(p.test(c))buffer.add(c);});
+		forEachCustomContext(c -> {if(p.test(c))buffer.add(c);});
 
 		return buffer.getAsList();
 	}
@@ -352,9 +401,8 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 				buffer.add(c);
 		};
 
-		action.accept(getRootContext());
-
-		forEachContext(action);
+		forEachRootContext(action);
+		forEachCustomContext(action);
 		forEachVirtualContext(action);
 
 		return buffer.getAsList();

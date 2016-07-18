@@ -20,7 +20,11 @@ package de.ims.icarus2.model.api;
 
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
+
+import java.util.concurrent.locks.Lock;
+
 import de.ims.icarus2.ErrorCode;
+import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.corpus.CorpusModel;
 import de.ims.icarus2.model.api.corpus.CorpusView.PageControl;
 import de.ims.icarus2.model.api.driver.Driver;
@@ -36,6 +40,25 @@ import de.ims.icarus2.util.id.DuplicateIdentifierException;
  *
  */
 public enum ModelErrorCode implements ErrorCode {
+
+	//**************************************************
+	//       3xx  EDIT ERRORS
+	//**************************************************
+
+	/**
+	 * A general edit related error.
+	 */
+	EDIT_ERROR(300),
+
+	/**
+	 * Client code attempted to access a method that relies on synchronization via
+	 * the global {@link Corpus#getLock() lock} of a corpus.
+	 * <p>
+	 * Such methods usually make use of the {@link Lock#tryLock()} method to check
+	 * if the lock is already held by another thread.
+	 */
+	EDIT_UNSYNCHRONIZED_ACCESS(301),
+
 
 	//**************************************************
 	//       4xx  DRIVER ERRORS

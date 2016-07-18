@@ -33,6 +33,7 @@ import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.MemberFlags;
 import de.ims.icarus2.model.standard.members.container.DefaultContainer;
+import de.ims.icarus2.model.standard.members.structure.info.StructureInfoBuilder;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
@@ -136,7 +137,7 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 
 	@Override
 	public StructureInfo getInfo() {
-		return null;
+		return StructureInfoBuilder.createInfo(this);
 	}
 
 	/**

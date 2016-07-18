@@ -157,7 +157,7 @@ public class DNAEncoder extends CorpusMemberEncoder implements DNAConstants {
 				break;
 
 			case EDGE_INDEX:
-			case INDEX:
+			case ITEM_INDEX:
 				writeLong(path.getIndex(i));
 				flush(out, _SEP_END_);
 				break;
@@ -192,7 +192,7 @@ public class DNAEncoder extends CorpusMemberEncoder implements DNAConstants {
 				break;
 
 			case EDGE_INDEX:
-			case INDEX:
+			case ITEM_INDEX:
 				writeLong(path.getIndex(i));
 				flush(out, _SEP_END_);
 				break;
