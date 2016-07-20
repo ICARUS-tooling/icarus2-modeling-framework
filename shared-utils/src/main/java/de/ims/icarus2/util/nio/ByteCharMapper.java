@@ -30,7 +30,6 @@ import java.nio.charset.CoderResult;
 import java.util.Arrays;
 
 import de.ims.icarus2.util.io.IOUtil;
-import de.ims.icarus2.util.io.MemoryByteStorage;
 
 /**
  * Utility class for reading byte data from a {@link ReadableByteChannel channel} and converting

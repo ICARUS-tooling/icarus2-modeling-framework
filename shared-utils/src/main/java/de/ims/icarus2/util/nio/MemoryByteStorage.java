@@ -16,7 +16,7 @@
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  *
  */
-package de.ims.icarus2.util.io;
+package de.ims.icarus2.util.nio;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 
