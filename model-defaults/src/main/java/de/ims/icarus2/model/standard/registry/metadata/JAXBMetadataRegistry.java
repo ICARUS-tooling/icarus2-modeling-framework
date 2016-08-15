@@ -16,21 +16,22 @@
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  *
  */
-package de.ims.icarus2.model.standard.registry;
-
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+package de.ims.icarus2.model.standard.registry.metadata;
 
 import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.Properties;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.function.BiConsumer;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,42 +39,48 @@ import org.slf4j.LoggerFactory;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
+import de.ims.icarus2.util.xml.jaxb.JAXBGate;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class PlainMetadataRegistry implements MetadataRegistry {
+public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageBuffer> implements MetadataRegistry {
+
+	/**
+	 * The default file suffix used by the modeling framework for metadata registry storage
+	 * in xml-files.
+	 */
+	public static final String DEFAULT_FILE_ENDING = ".mdxml";
 
 	private static final Logger log = LoggerFactory
-			.getLogger(PlainMetadataRegistry.class);
+			.getLogger(JAXBMetadataRegistry.class);
 
 	private final TreeMap<String, String> entries = new TreeMap<>();
 
-	private int useCount = 0;
-
 	private int changedEntryCount = 0;
 
-	private final Path file;
+	private int useCount = 0;
 
-	private static final Map<Path, PlainMetadataRegistry> instances = new WeakHashMap<>();
+	private static final Map<Path, JAXBMetadataRegistry> instances = new WeakHashMap<>();
 
-	public static PlainMetadataRegistry getSharedRegistry(Path file) {
-		checkNotNull(file);
+	public static JAXBMetadataRegistry getSharedRegistry(Path file) {
+		if (file == null)
+			throw new NullPointerException("Invalid file"); //$NON-NLS-1$
 
 		synchronized (instances) {
-			PlainMetadataRegistry registry = instances.get(file);
+			JAXBMetadataRegistry storage = instances.get(file);
 
-			if(registry==null) {
-				registry = new PlainMetadataRegistry(file);
-				instances.put(file, registry);
+			if(storage==null) {
+				storage = new JAXBMetadataRegistry(file);
+				instances.put(file, storage);
 			}
 
-			return registry;
+			return storage;
 		}
 	}
 
-	private static void destroy(PlainMetadataRegistry storage) {
+	private static void destroy(JAXBMetadataRegistry storage) {
 		synchronized (instances) {
 			try {
 				// Ensure the data gets saved properly
@@ -85,14 +92,8 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 		}
 	}
 
-	private PlainMetadataRegistry(Path file) {
-		checkNotNull(file);
-
-		this.file = file;
-	}
-
-	public Path getFile() {
-		return file;
+	private JAXBMetadataRegistry(Path file) {
+		super(file, StorageBuffer.class);
 	}
 
 	@Override
@@ -104,36 +105,71 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 	 * @see de.ims.icarus2.model.api.registry.MetadataRegistry#open()
 	 */
 	@Override
-	public synchronized void open() {
+	public void open() {
 		try {
-			load();
-		} catch (IOException e) {
+			loadBuffer();
+		} catch (Exception e) {
 			log.error("Failed to load value storage from file", e); //$NON-NLS-1$
 			//FIXME propagate error?
 		}
+	}
+
+	/**
+	 * @see de.ims.icarus2.util.xml.jaxb.JAXBGate#readBuffer(java.lang.Object)
+	 */
+	@Override
+	protected synchronized void readBuffer(StorageBuffer buffer)
+			throws Exception {
+		entries.clear();
+
+		for(StorageEntry entry : buffer.items) {
+			String key = entry.getKey();
+			String value = entry.getValue();
+
+			entries.put(key, value);
+		}
+	}
+
+	/**
+	 * @see de.ims.icarus2.util.xml.jaxb.JAXBGate#createBuffer()
+	 */
+	@Override
+	protected synchronized StorageBuffer createBuffer()
+			throws Exception {
+		if(entries.isEmpty()) {
+			return null;
+		}
+
+		List<StorageEntry> entryList = new ArrayList<>();
+
+		for(Entry<String, String> entry : entries.entrySet()) {
+			if(entry.getValue()==null) {
+				continue;
+			}
+			entryList.add(new StorageEntry(entry.getKey(), entry.getValue()));
+		}
+
+		return new StorageBuffer(entryList);
 	}
 
 	public synchronized void synchronize() {
 		// Only save to disc when actual new entries exist
 		if(!checkStorage()) {
 			try {
-				saveNow();
-			} catch (IOException e) {
+				saveBufferNow();
+			} catch (Exception e) {
 				log.error("Failed to synchronize value storage to file", e); //$NON-NLS-1$
 			}
 		}
 	}
 
 	/**
-	 *
+	 * @see de.ims.icarus2.util.xml.jaxb.JAXBGate#save(java.nio.file.Path, boolean)
 	 */
-	public void saveNow() throws IOException {
-		Properties tmp = new Properties();
-		tmp.putAll(entries);
-
-		Writer writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8);
+	@Override
+	public void save(Path file, boolean saveNow) throws Exception {
 		try {
-			tmp.store(writer, null);
+			super.save(file, saveNow);
 		} finally {
 			changedEntryCount = 0;
 		}
@@ -146,31 +182,15 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 	private synchronized boolean checkStorage() {
 		if(entries.isEmpty()) {
 			try {
-				load();
-			} catch (IOException e) {
-				log.error("Failed to load value storage: {}", getFile(), e); //$NON-NLS-1$
+				loadBuffer();
+			} catch (Exception e) {
+				log.error("Failed to load value storage: "+getFile(), e); //$NON-NLS-1$
 			}
 
 			return !entries.isEmpty();
 		}
 
 		return changedEntryCount>0;
-	}
-
-	/**
-	 *
-	 */
-	@SuppressWarnings("unchecked")
-	public void load() throws IOException {
-		Properties prop = new Properties();
-
-		Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8);
-		prop.load(reader);
-
-		@SuppressWarnings("rawtypes")
-		Map tmp = prop;
-		entries.clear();
-		entries.putAll(tmp);
 	}
 
 	/**
@@ -218,6 +238,8 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 	}
 
 	/**
+	 * This implementation clears all entries and then attempts to delete the backing physical file.
+	 *
 	 * @see de.ims.icarus2.model.api.registry.MetadataRegistry#delete()
 	 */
 	@Override
@@ -226,7 +248,7 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 		entries.clear();
 
 		try {
-			Files.delete(file);
+			super.delete();
 		} catch (IOException e) {
 			throw new ModelException(GlobalErrorCode.IO_ERROR, "Failed to delete registry file");
 		}
@@ -252,5 +274,56 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 		String upperBound = prefix+Character.MAX_VALUE;
 
 		entries.subMap(lowerBound, true, upperBound, true).forEach(action);
+	}
+
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	@XmlRootElement(name="entries")
+	@XmlAccessorType(XmlAccessType.FIELD)
+	public static class StorageBuffer {
+		@XmlElement(name="entry")
+		private List<StorageEntry> items;
+
+		private StorageBuffer() {
+			// no-op
+		}
+
+		private StorageBuffer(List<StorageEntry> items) {
+			this.items = items;
+		}
+	}
+
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	@XmlRootElement(name="entry")
+	@XmlAccessorType(XmlAccessType.FIELD)
+	public static class StorageEntry {
+		@XmlElement(name="key", required=true)
+		private String key;
+		@XmlElement(name="value", required=true)
+		private String value;
+
+		private StorageEntry() {
+			// no-op
+		}
+
+		private StorageEntry(String key, String value) {
+			this.key = key;
+			this.value = value;
+		}
+
+		public String getKey() {
+			return key;
+		}
+
+		public String getValue() {
+			return value;
+		}
 	}
 }

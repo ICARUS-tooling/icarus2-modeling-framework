@@ -127,13 +127,16 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 
 	/**
 	 * Returns the {@code CorpusEditManager} that is used to model changes the user
-	 * made to this corpus.
+	 * made to this corpus or {@code null} if no edit model is implemented.
+	 *
 	 * @return
 	 */
 	CorpusEditManager getEditManager();
 
 	/**
-	 * Returns the shared undo-manager that keeps track of changes of this corpus.
+	 * Returns the shared undo-manager that keeps track of changes of this corpus
+	 * or {@code null} if no edit model is implemented by the corpus and therefore no
+	 * undo-manager is present.
 	 *
 	 * @return
 	 */

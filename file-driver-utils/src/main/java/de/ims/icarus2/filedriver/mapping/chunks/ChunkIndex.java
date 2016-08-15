@@ -21,7 +21,7 @@ import de.ims.icarus2.filedriver.io.sets.FileSet;
 import de.ims.icarus2.model.api.ModelConstants;
 
 /**
- * A simple lookup structure to map from chunk index values to actual
+ * A simple lookup structure to map from item index values to actual
  * physical file locations and byte offsets within those files. To
  * actually access the data within an index or in order to modify it,
  * one has to use appropriate implementations of the {@link ChunkIndexReader}

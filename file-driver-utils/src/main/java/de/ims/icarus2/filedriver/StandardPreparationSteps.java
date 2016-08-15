@@ -27,8 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.filedriver.FileDriver.PreparationStep;
-import de.ims.icarus2.filedriver.FileDriverStates.FileInfo;
-import de.ims.icarus2.filedriver.FileDriverStates.LayerInfo;
+import de.ims.icarus2.filedriver.FileDataStates.FileInfo;
+import de.ims.icarus2.filedriver.FileDataStates.LayerInfo;
 import de.ims.icarus2.filedriver.FileMetadata.ChunkIndexKey;
 import de.ims.icarus2.filedriver.FileMetadata.FileKey;
 import de.ims.icarus2.filedriver.FileMetadata.ItemLayerKey;
@@ -298,7 +298,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 //			driver.getModuleState().setFormatted("fileConnector.checkLayerContinuity", layer.getId(), fileIndex);
 
 			final MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
-			final FileDriverStates states = driver.getFileDriverStates();
+			final FileDataStates states = driver.getFileDriverStates();
 
 			long lastEndIndex = env.getLong(LAST_END_INDEX_KEY, NO_INDEX);
 

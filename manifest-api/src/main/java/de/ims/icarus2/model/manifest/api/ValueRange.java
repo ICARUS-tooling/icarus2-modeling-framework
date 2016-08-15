@@ -19,9 +19,15 @@
 package de.ims.icarus2.model.manifest.api;
 
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.util.eval.Expression;
 
 
 /**
+ * Implements a bounded range with an lower and upper bound,
+ * both of which can be defined as inclusive or exclusive.
+ * <p>
+ *
+ *
  * @author Markus Gärtner
  *
  */
@@ -30,10 +36,29 @@ public interface ValueRange extends Lockable, TypedManifest {
 	public static final boolean DEFAULT_LOWER_INCLUSIVE_VALUE = true;
 	public static final boolean DEFAULT_UPPER_INCLUSIVE_VALUE = true;
 
+	/**
+	 * Returns the lower bound of this range. The returned value must either
+	 * be an object matching the {@link #getValueType() value-type} specified for
+	 * this range or an {@link Expression} that returns a compatible value.
+	 *
+	 * @return
+	 */
 	Object getLowerBound();
 
+	/**
+	 * Returns the upper bound of this range. The returned value must either
+	 * be an object matching the {@link #getValueType() value-type} specified for
+	 * this range or an {@link Expression} that returns a compatible value.
+	 *
+	 * @return
+	 */
 	Object getUpperBound();
 
+	/**
+	 * Returns the interval size used when stepping through this range.
+	 *
+	 * @return
+	 */
 	Object getStepSize();
 
 	boolean isLowerBoundInclusive();

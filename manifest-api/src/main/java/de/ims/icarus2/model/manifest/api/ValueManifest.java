@@ -19,6 +19,7 @@
 package de.ims.icarus2.model.manifest.api;
 
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.util.strings.Describable;
 
 
 /**
@@ -30,7 +31,7 @@ import de.ims.icarus2.model.manifest.types.ValueType;
  * @author Markus Gärtner
  *
  */
-public interface ValueManifest extends Documentable, TypedManifest {
+public interface ValueManifest extends Documentable, Describable, TypedManifest {
 
 	/**
 	 * Returns the value this manifest wraps and describes.
@@ -47,6 +48,7 @@ public interface ValueManifest extends Documentable, TypedManifest {
 	 *
 	 * @return The name of this value or {@code null} if the value is unnamed
 	 */
+	@Override
 	String getName();
 
 	/**
@@ -54,6 +56,7 @@ public interface ValueManifest extends Documentable, TypedManifest {
 	 *
 	 * @return A textual description of this value
 	 */
+	@Override
 	String getDescription();
 
 	ValueType getValueType();
@@ -69,7 +72,5 @@ public interface ValueManifest extends Documentable, TypedManifest {
 	// Modification methods
 
 	void setValue(Object value);
-	void setName(String name);
-	void setDescription(String description);
 
 }

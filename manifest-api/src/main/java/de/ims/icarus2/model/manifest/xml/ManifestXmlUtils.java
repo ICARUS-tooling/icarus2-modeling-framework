@@ -24,16 +24,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 
-import de.ims.icarus2.model.manifest.api.ModifiableIdentity;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest.Note;
 import de.ims.icarus2.model.manifest.api.Documentation.Resource;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
+import de.ims.icarus2.model.manifest.api.ModifiableIdentity;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.util.IconWrapper;
 import de.ims.icarus2.util.date.DateUtils;
 import de.ims.icarus2.util.eval.Expression;
-import de.ims.icarus2.util.eval.Variable;
+import de.ims.icarus2.util.eval.var.VariableDescriptor;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.strings.StringResource;
 import de.ims.icarus2.util.xml.XmlSerializer;
@@ -43,7 +43,7 @@ import de.ims.icarus2.util.xml.XmlSerializer;
  *
  */
 public final class ManifestXmlUtils implements ManifestXmlAttributes, ManifestXmlTags {
-	
+
 	private static final Logger log = LoggerFactory
 			.getLogger(ManifestXmlUtils.class);
 
@@ -164,19 +164,22 @@ public final class ManifestXmlUtils implements ManifestXmlAttributes, ManifestXm
 	public static void writeEvalElement(XmlSerializer serializer, Expression expression) throws Exception {
 		serializer.startElement(TAG_EVAL);
 
-		for(Variable variable : expression.getVariables()) {
-			serializer.startEmptyElement(TAG_VARIABLE);
-			serializer.writeAttribute(ATTR_NAME, variable.getName());
-			serializer.writeAttribute(ATTR_CLASS, variable.getNamespaceClass().getName());
+		if(expression.hasVariables()) {
+			for(VariableDescriptor variableDescriptor : expression.getVariables().getVariables()) {
+				serializer.startEmptyElement(TAG_VARIABLE);
+				serializer.writeAttribute(ATTR_NAME, variableDescriptor.getName());
+				serializer.writeAttribute(ATTR_CLASS, variableDescriptor.getNamespaceClass().getName());
 
-			//FIXME introduce a workaround to carry on plugin information on the variable level
-//			ClassLoader loader = variable.getNamespaceClass().getClassLoader();
-//			if(PluginUtil.isPluginClassLoader(loader)) {
-//				PluginDescriptor descriptor = PluginUtil.getDescriptor(loader);
-//				serializer.writeAttribute(ATTR_PLUGIN_ID, descriptor.getId());
-//			}
+				//FIXME introduce a workaround to carry on plugin information on the variable level
+//				ClassLoader loader = variable.getNamespaceClass().getClassLoader();
+//				if(PluginUtil.isPluginClassLoader(loader)) {
+//					PluginDescriptor descriptor = PluginUtil.getDescriptor(loader);
+//					serializer.writeAttribute(ATTR_PLUGIN_ID, descriptor.getId());
+//				}
 
-			serializer.endElement(TAG_VARIABLE);
+				serializer.endElement(TAG_VARIABLE);
+			}
+
 		}
 
 		serializer.startElement(TAG_CODE);

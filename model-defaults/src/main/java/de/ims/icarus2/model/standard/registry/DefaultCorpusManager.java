@@ -42,8 +42,10 @@ import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.events.CorpusLifecycleListener;
 import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.api.registry.CorpusMemberFactory;
+import de.ims.icarus2.model.api.registry.MetadataStoragePolicy;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.api.registry.SubRegistry;
+import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
@@ -58,7 +60,7 @@ import de.ims.icarus2.util.id.Identity;
  */
 public class DefaultCorpusManager implements CorpusManager {
 
-	private final ManifestRegistry ManifestRegistry;
+	private final ManifestRegistry manifestRegistry;
 	private final MetadataRegistry metadataRegistry;
 
 	private volatile Function<CorpusManifest, Corpus> corpusProducer;
@@ -75,6 +77,8 @@ public class DefaultCorpusManager implements CorpusManager {
 
 	private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
+	private MetadataStoragePolicy<CorpusManifest> corpusMetadataPolicy;
+	private MetadataStoragePolicy<ContextManifest> contextMetadataPolicy;
 
 	private final List<CorpusLifecycleListener> lifecycleListeners = new CopyOnWriteArrayList<>();
 
@@ -82,7 +86,7 @@ public class DefaultCorpusManager implements CorpusManager {
 		checkNotNull(registry);
 		checkNotNull(metadataRegistry);
 
-		this.ManifestRegistry = registry;
+		this.manifestRegistry = registry;
 		this.metadataRegistry = metadataRegistry;
 	}
 
@@ -144,7 +148,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	}
 
 	/**
-	 * Checks that the given {@code manifest} is managed by the {@link ManifestRegistry ManifestRegistry}
+	 * Checks that the given {@code manifest} is managed by the {@link manifestRegistry manifestRegistry}
 	 * this manager is linked to and then looks up the current state of it, assigning
 	 * {@link CorpusState#ENABLED enabled} in case there is no other state stored for it.
 	 * <p>
@@ -155,7 +159,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	 */
 	protected final CorpusManager.CorpusState getStateUnsafe(CorpusManifest manifest, boolean allowBadState) {
 		checkNotNull(manifest);
-		if(manifest.getRegistry()!=ManifestRegistry)
+		if(manifest.getRegistry()!=manifestRegistry)
 			throw new ModelException(ManifestErrorCode.MANIFEST_ERROR,
 					"Foreign manifest: "+getName(manifest));
 
@@ -209,7 +213,43 @@ public class DefaultCorpusManager implements CorpusManager {
 	 */
 	@Override
 	public ManifestRegistry getManifestRegistry() {
-		return ManifestRegistry;
+		return manifestRegistry;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.registry.CorpusManager#getMetadataRegistry()
+	 */
+	@Override
+	public MetadataRegistry getMetadataRegistry() {
+		return metadataRegistry;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.registry.CorpusManager#getCorpusMetadataPolicy()
+	 */
+	@Override
+	public MetadataStoragePolicy<CorpusManifest> getCorpusMetadataPolicy() {
+		MetadataStoragePolicy<CorpusManifest> result = corpusMetadataPolicy;
+
+		if(result==null) {
+			result = CorpusManager.super.getCorpusMetadataPolicy();
+		}
+
+		return result;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.registry.CorpusManager#getContextMetadataPolicy()
+	 */
+	@Override
+	public MetadataStoragePolicy<ContextManifest> getContextMetadataPolicy() {
+		MetadataStoragePolicy<ContextManifest> result = contextMetadataPolicy;
+
+		if(result==null) {
+			result = CorpusManager.super.getContextMetadataPolicy();
+		}
+
+		return result;
 	}
 
 	/**

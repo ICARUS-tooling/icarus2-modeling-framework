@@ -22,6 +22,7 @@ import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -40,7 +41,29 @@ public interface HighlightLayerManifest extends LayerManifest {
 
 	boolean isLocalPrimaryLayerManifest();
 
-	boolean isHighlightFlagSet(HighlightFlag flag);
+	default boolean isHighlightFlagSet(HighlightFlag flag) {
+		MutableBoolean result = new MutableBoolean(false);
+
+		forEachActiveHighlightFlag(f -> {
+			if(f==flag) {
+				result.setBoolean(true);
+			}
+		});
+
+		return result.booleanValue();
+	}
+
+	default boolean isLocalHighlightFlagSet(HighlightFlag flag) {
+		MutableBoolean result = new MutableBoolean(false);
+
+		forEachActiveLocalHighlightFlag(f -> {
+			if(f==flag) {
+				result.setBoolean(true);
+			}
+		});
+
+		return result.booleanValue();
+	}
 
 	@AccessRestriction(AccessMode.READ)
 	void forEachActiveHighlightFlag(Consumer<? super HighlightFlag> action);

@@ -69,6 +69,11 @@ public class HighlightLayerManifestImpl extends AbstractLayerManifest<HighlightL
 	}
 
 	@Override
+	public boolean isLocalHighlightFlagSet(HighlightFlag flag) {
+		return highlightFlags.contains(flag);
+	}
+
+	@Override
 	public void setHighlightFlag(HighlightFlag flag, boolean active) {
 		checkNotLocked();
 
@@ -91,7 +96,7 @@ public class HighlightLayerManifestImpl extends AbstractLayerManifest<HighlightL
 			getTemplate().forEachActiveHighlightFlag(action);
 		}
 
-		highlightFlags.forEach(action);
+		forEachActiveLocalHighlightFlag(action);
 	}
 
 	@Override

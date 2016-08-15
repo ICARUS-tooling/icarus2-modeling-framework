@@ -18,9 +18,13 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
+import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
@@ -40,19 +44,9 @@ public class ExpressionXmlHandler implements ManifestXmlHandler, ManifestXmlAttr
 	private final ExpressionFactory factory;
 
 	public ExpressionXmlHandler(ExpressionFactory factory) {
-		if (factory == null)
-			throw new NullPointerException("Invalid factory"); //$NON-NLS-1$
+		checkNotNull(factory);
 
 		this.factory = factory;
-	}
-
-	/**
-	 * Default constructor. Uses the basic {@link ExpressionFactory} implementation
-	 * as factory to build the expression object.
-	 */
-	public ExpressionXmlHandler() {
-
-		this.factory = new ExpressionFactory();
 	}
 
 	/**
@@ -139,6 +133,16 @@ public class ExpressionXmlHandler implements ManifestXmlHandler, ManifestXmlAttr
 	}
 
 	public Expression createExpression() {
-		return factory.build();
+		try {
+			/*
+			 *  Fail fast policy:
+			 *
+			 *  We directly let the factory compile an expression instead of
+			 *  doing it lazily and risking delayed problems.
+			 */
+			return factory.compile();
+		} catch (Exception e) {
+			throw new ManifestException(ManifestErrorCode.IMPLEMENTATION_ERROR, "Failed to compile custom expression", e);
+		}
 	}
 }

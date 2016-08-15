@@ -28,6 +28,8 @@ import de.ims.icarus2.model.manifest.standard.ValueRangeImpl;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
+import de.ims.icarus2.util.eval.ExpressionFactory;
+import de.ims.icarus2.util.eval.spi.ExpressionFactoryProvider;
 import de.ims.icarus2.util.xml.UnexpectedTagException;
 import de.ims.icarus2.util.xml.UnsupportedNestingException;
 import de.ims.icarus2.util.xml.XmlSerializer;
@@ -127,7 +129,19 @@ public class ValueRangeXmlDelegate extends AbstractXmlDelegate<ValueRange> {
 		} break;
 
 		case TAG_EVAL : {
-			return new ExpressionXmlHandler();
+			String type = ManifestXmlUtils.normalize(attributes, ATTR_TYPE);
+			if(type==null) {
+				type = ExpressionFactoryProvider.GENERIC_JAVA_TYPE;
+			}
+
+			// Instantiate fresh factory, this might throw an unchecked exception
+			ExpressionFactory factory = ExpressionFactoryProvider.newFactory(type);
+
+			// Assign correct return type based on the outer value type
+			ValueRange range = getInstance();
+			factory.setReturnType(range.getValueType().getBaseClass());
+
+			return new ExpressionXmlHandler(factory);
 		}
 
 		default:

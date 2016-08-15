@@ -75,7 +75,9 @@ public abstract class AbstractDriver implements Driver {
 
 	private volatile boolean dead = false;
 
-	// Helper flag to disable connection based errors during the connect() method
+	/**
+	 *  Helper flag to disable connection based errors during the connect() method
+	 */
 	private volatile boolean allowUncheckedAccess = false;
 	private final AtomicBoolean connected = new AtomicBoolean(false);
 	private Corpus corpus;
@@ -576,6 +578,13 @@ public abstract class AbstractDriver implements Driver {
 		return null;
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @param <B>
+	 * @param <D>
+	 */
 	public static abstract class DriverBuilder<B extends DriverBuilder<B, D>, D extends Driver> extends AbstractBuilder<B, D> {
 
 		private DriverManifest manifest;

@@ -24,7 +24,7 @@ import java.util.function.BiConsumer;
  * @author Markus Gärtner
  *
  */
-public interface MetadataRegistry {
+public interface MetadataRegistry extends AutoCloseable {
 
 	void open();
 
@@ -172,6 +172,8 @@ public interface MetadataRegistry {
 
 	void delete();
 
+	//FIXME check if we should expand the method signature to throw a general Exception
+	@Override
 	void close();
 
 	void forEachEntry(BiConsumer<? super String, ? super String> action);

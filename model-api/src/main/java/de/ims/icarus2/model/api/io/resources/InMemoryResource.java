@@ -26,7 +26,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.util.IcarusUtils;
-import de.ims.icarus2.util.io.MemoryByteStorage;
+import de.ims.icarus2.util.nio.MemoryByteStorage;
 
 /**
  * Implements a {@link IOResource} based on an internal {@link MemoryByteStorage}.

@@ -30,6 +30,7 @@ import de.ims.icarus2.model.api.corpus.CorpusView;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.events.CorpusLifecycleListener;
 import de.ims.icarus2.model.api.members.CorpusMember;
+import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.util.annotations.OptionalMethod;
@@ -112,6 +113,21 @@ public interface CorpusManager {
 	 * @return the registry that hosts legal manifests for this manager
 	 */
 	ManifestRegistry getManifestRegistry();
+
+	/**
+	 * Returns the global client wide registry for storing of metadata information.
+	 *
+	 * @return
+	 */
+	MetadataRegistry getMetadataRegistry();
+
+	default MetadataStoragePolicy<CorpusManifest> getCorpusMetadataPolicy() {
+		return MetadataStoragePolicy.emptyCorpusMetadataStoragePolicy;
+	}
+
+	default MetadataStoragePolicy<ContextManifest> getContextMetadataPolicy() {
+		return MetadataStoragePolicy.emptyContextMetadataStoragePolicy;
+	}
 
 	/**
 	 * Creates a factory that can be used to instantiate a variety of corpus members

@@ -39,7 +39,7 @@ import de.ims.icarus2.util.Counter;
  * @author Markus Gärtner
  *
  */
-public class FileDriverStates {
+public class FileDataStates {
 
 	private final ElementInfo globalInfo = new ElementInfo();
 
@@ -49,7 +49,7 @@ public class FileDriverStates {
 	// Layer states and meta info
 	private final TIntObjectMap<LayerInfo> layerInfos = new TIntObjectHashMap<>();
 
-	public FileDriverStates(FileDriver driver) {
+	public FileDataStates(FileDriver driver) {
 
 		// Collect data files
 		FileSet dataFiles = driver.getDataFiles();

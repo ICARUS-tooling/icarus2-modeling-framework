@@ -59,6 +59,11 @@ import de.ims.icarus2.model.standard.driver.AbstractDriver;
  * <td>number of files expected by the driver</td>
  * </tr>
  * <tr>
+ * <td>metadata-folder</td>
+ * <td>string</td>
+ * <td>full or relative {@link Path#toString() path} pointing to the root folder used for metadata storage. This information can be used to pick locations for chunk and content indexes.</td>
+ * </tr>
+ * <tr>
  * <td></td>
  * <td></td>
  * <td></td>
@@ -71,7 +76,7 @@ import de.ims.icarus2.model.standard.driver.AbstractDriver;
  * <tr>
  * <td>path</td>
  * <td>string</td>
- * <td>full {@link Path#toString() string} path of the {@link Path file} object, used to check whether a file still points to the same location (note that it is up to the client to decide whether or not to use relative or absolute pathes!)</td>
+ * <td>full {@link Path#toString() string} path of the {@link Path file} object, used to check whether a file still points to the same location (note that it is up to the client to decide whether or not to use relative or absolute paths!)</td>
  * </tr>
  * <tr>
  * <td>checksum</td>
@@ -288,8 +293,16 @@ public class FileMetadata implements ModelConstants {
 
 	public static enum DriverKey implements MetadataKey {
 
+		/**
+		 * Number of content files for the corpus expected by the driver
+		 */
 		FILE_COUNT("file-count"),
 
+		/**
+		 * Root folder for storage of metadata. This information is used for decisions regarding
+		 * physical location of chunk and content indexes.
+		 */
+		METADATA_FOLDER("metadata-folder"),
 		;
 
 		private final String key;

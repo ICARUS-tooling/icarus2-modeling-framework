@@ -16,7 +16,7 @@
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  *
  */
-package de.ims.icarus2.model.standard.registry;
+package de.ims.icarus2.model.standard.registry.metadata;
 
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
@@ -24,6 +24,9 @@ import java.util.function.BiConsumer;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 
 /**
+ * Implements a virtual in-memory metadata registry whose content does not get synchronized to a
+ * persistent storage and therefore will be lost once the registry is closed.
+ *
  * @author Markus Gärtner
  *
  */
@@ -101,7 +104,7 @@ public class VirtualMetadataRegistry implements MetadataRegistry {
 	 */
 	@Override
 	public void close() {
-		// no-op
+		delete();
 	}
 
 	/**

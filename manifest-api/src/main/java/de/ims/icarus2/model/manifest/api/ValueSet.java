@@ -21,11 +21,19 @@ package de.ims.icarus2.model.manifest.api;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.util.eval.Expression;
 
 /**
  * A discrete collection of values.
  * Note that this interface does not differentiate between primitive and
  * value types and complex objects.
+ * <p>
+ * Values in this collection can have any of the following types:
+ * <ul>
+ * <li>{@link Expression} relying on the environment the set is used in to generate the final values</li>
+ * <li>A wrapper object around a primitive value</li>
+ * <li>The value as an object</li>
+ * </ul>
  *
  * @author Markus Gärtner
  *
@@ -50,13 +58,16 @@ public interface ValueSet extends Lockable, TypedManifest {
 	ValueType getValueType();
 
 	/**
-	 * Adds the given {@code value} to the end of this set
+	 * Returns the {@code index} for the given {@code value} (i.e. the {@code index}
+	 * that when used for {@link #getValueAt(int)} will yield the {@link Object#equals(Object) same}
+	 * {@code value}), or {@code -1} if the {@code value} is not present in this set.
 	 *
 	 * @param value
+	 * @return
 	 */
-	default void addValue(Object value) {
-		addValue(value, -1);
-	}
+	int indexOfValue(Object value);
+
+	// Modification methods
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.TypedManifest#getManifestType()
@@ -64,6 +75,15 @@ public interface ValueSet extends Lockable, TypedManifest {
 	@Override
 	default public ManifestType getManifestType() {
 		return ManifestType.VALUE_SET;
+	}
+
+	/**
+	 * Adds the given {@code value} to the end of this set
+	 *
+	 * @param value
+	 */
+	default void addValue(Object value) {
+		addValue(value, -1);
 	}
 
 	/**
@@ -77,14 +97,4 @@ public interface ValueSet extends Lockable, TypedManifest {
 	void addValue(Object value, int index);
 
 	void removeValue(int index);
-
-	/**
-	 * Returns the {@code index} for the given {@code value} (i.e. the {@code index}
-	 * that when used for {@link #getValueAt(int)} will yield the {@link Object#equals(Object) same}
-	 * {@code value}), or {@code -1} if the {@code value} is not present in this set.
-	 *
-	 * @param value
-	 * @return
-	 */
-	int indexOfValue(Object value);
 }

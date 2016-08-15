@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.filedriver.FileDriverStates.FileInfo;
+import de.ims.icarus2.filedriver.FileDataStates.FileInfo;
 import de.ims.icarus2.filedriver.FileMetadata.FileKey;
 import de.ims.icarus2.filedriver.FileMetadata.ItemLayerKey;
 import de.ims.icarus2.filedriver.FileMetadata.MappingKey;
@@ -88,7 +88,7 @@ public abstract class FileDriver extends AbstractDriver {
 
 	private ItemLayerManager itemManager;
 
-	private FileDriverStates states;
+	private FileDataStates states;
 
 	/**
 	 * Chunk indices for the primary layers in each layer group of the host driver.
@@ -143,7 +143,7 @@ public abstract class FileDriver extends AbstractDriver {
 		return dataFiles;
 	}
 
-	public FileDriverStates getStates() {
+	public FileDataStates getStates() {
 		checkConnected();
 		return states;
 	}
@@ -158,7 +158,7 @@ public abstract class FileDriver extends AbstractDriver {
 	 *
 	 * @return
 	 */
-	public FileDriverStates getFileDriverStates() {
+	public FileDataStates getFileDriverStates() {
 		return states;
 	}
 
@@ -399,7 +399,7 @@ public abstract class FileDriver extends AbstractDriver {
 	}
 
 	/**
-	 * This implementation initializes the internal {@link FileDriverStates} storage
+	 * This implementation initializes the internal {@link FileDataStates} storage
 	 * before calling the super method.
 	 * After that, a customizable series of {@link PreparationStep preparation steps} is performed
 	 * to allow for a more flexible initialization.
@@ -410,7 +410,7 @@ public abstract class FileDriver extends AbstractDriver {
 	@Override
 	protected void doConnect() throws InterruptedException {
 
-		states = new FileDriverStates(this);
+		states = new FileDataStates(this);
 
 		// Creates context and mappings
 		super.doConnect();
@@ -457,7 +457,7 @@ public abstract class FileDriver extends AbstractDriver {
 
 	/**
 	 * Calls the super method and then closes the internal {@link MetadataRegistry}
-	 * and discards the current set of {@link FileDriverStates states}.
+	 * and discards the current set of {@link FileDataStates states}.
 	 *
 	 * @see de.ims.icarus2.model.standard.driver.AbstractDriver#doDisconnect()
 	 */
