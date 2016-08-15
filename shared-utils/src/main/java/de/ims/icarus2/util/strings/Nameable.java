@@ -15,34 +15,14 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package de.ims.icarus2.util.eval;
-
-import de.ims.icarus2.util.eval.var.VariableSet;
+package de.ims.icarus2.util.strings;
 
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface Expression {
+public interface Nameable extends NamedObject {
 
-	Class<?> getReturnType();
-
-	String getCode();
-
-	Environment getEnvironment();
-
-	VariableSet getVariables();
-
-	default boolean hasVariables() {
-		return getVariables()!=null;
-	}
-
-	/**
-	 * Executes the code stored in this expression and returns the result.
-	 *
-	 * @return
-	 */
-	//TODO determine a sensible exception type
-	public Object evaulate();
+	void setName(String name);
 }

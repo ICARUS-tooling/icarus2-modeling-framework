@@ -18,46 +18,74 @@
  */
 package de.ims.icarus2.util.eval;
 
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Map.Entry;
+
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.util.collections.CollectionUtils;
+import de.ims.icarus2.util.eval.var.VariableDescriptor;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class ExpressionFactory {
+public abstract class ExpressionFactory {
 
-	private Map<String, Class<?>> variables = new LinkedHashMap<>();
+	private Map<String, VariableDescriptor> variables = new LinkedHashMap<>();
 
 	private String code;
 	private Environment environment;
+	private Class<?> returnType;
 
-	private Expression expression;
+	private final String name;
 
-	public void addVariable(String id, Class<?> namespace) {
-		if (id == null)
-			throw new NullPointerException("Invalid id");
-		if (namespace == null)
-			throw new NullPointerException("Invalid namespace");
+	/**
+	 * @param name The unique name used for this type of factory
+	 */
+	protected ExpressionFactory(String name) {
+		checkNotNull(name);
+
+		this.name = name;
+	}
+
+	public final String getName() {
+		return name;
+	}
+
+	public VariableDescriptor addVariable(String id, boolean nullable, Class<?> namespace) {
+		checkNotNull(id);
+		checkNotNull(namespace);
 
 		if(variables.containsKey(id))
-			throw new IllegalArgumentException("Duplicate variable id: "+id);
+			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Duplicate variable id: "+id);
 
-		variables.put(id, namespace);
+		VariableDescriptor variable = new VariableDescriptor(id, namespace, nullable);
+
+		variables.put(id, variable);
+
+		return variable;
 	}
 
-	public Expression build() {
-		if(expression==null) {
-			expression = new Expression(code, 0);
-
-			for(Entry<String, Class<?>> entry : variables.entrySet()) {
-				expression.addVariable(entry.getKey(), entry.getValue());
-			}
-		}
-
-		return expression;
+	public VariableDescriptor addVariable(String id, Class<?> namespace) {
+		return addVariable(id, false, namespace);
 	}
+
+	public Collection<VariableDescriptor> getVariables() {
+		return CollectionUtils.getCollectionProxy(variables.values());
+	}
+
+	/**
+	 * Compiles the {@link #getCode() code} currently stored in this factory
+	 * into an executable {@link Expression expression}.
+	 *
+	 * @return
+	 * @throws Exception
+	 */
+	public abstract Expression compile() throws Exception;
 
 	/**
 	 * @return the code
@@ -77,8 +105,7 @@ public class ExpressionFactory {
 	 * @param code the code to set
 	 */
 	public void setCode(String code) {
-		if (code == null)
-			throw new NullPointerException("Invalid code");
+		checkNotNull(code);
 
 		this.code = code;
 	}
@@ -87,9 +114,24 @@ public class ExpressionFactory {
 	 * @param environment the environment to set
 	 */
 	public void setEnvironment(Environment environment) {
-		if (environment == null)
-			throw new NullPointerException("Invalid environment");
+		checkNotNull(environment);
 
 		this.environment = environment;
+	}
+
+	/**
+	 * @return the returnType
+	 */
+	public Class<?> getReturnType() {
+		return returnType;
+	}
+
+	/**
+	 * @param returnType the returnType to set
+	 */
+	public void setReturnType(Class<?> returnType) {
+		checkNotNull(returnType);
+
+		this.returnType = returnType;
 	}
 }

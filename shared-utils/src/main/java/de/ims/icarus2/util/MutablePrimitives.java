@@ -10,7 +10,7 @@ package de.ims.icarus2.util;
  */
 public class MutablePrimitives {
 
-	public interface Primitive extends Wrapper<Object>, Cloneable {
+	public interface Primitive<O extends Object> extends Wrapper<O>, Cloneable {
 		int intValue();
 		long longValue();
 		float floatValue();
@@ -19,10 +19,14 @@ public class MutablePrimitives {
 		byte byteValue();
 		boolean booleanValue();
 
-		Primitive clone();
+		default char charValue() {
+			return (char) shortValue();
+		}
+
+		Primitive<O> clone();
 	}
 
-	public interface MutablePrimitive extends Primitive {
+	public interface MutablePrimitive<O extends Object> extends Primitive<O>, Mutable<O> {
 		void setInt(int value);
 		void setLong(long value);
 		void setFloat(float value);
@@ -30,6 +34,10 @@ public class MutablePrimitives {
 		void setShort(short value);
 		void setByte(byte value);
 		void setBoolean(boolean value);
+
+		default void setChar(char value) {
+			setShort((short)value);
+		}
 
 		/**
 		 * Assumes {@code wrapper} to be one of the default wrapper
@@ -42,7 +50,23 @@ public class MutablePrimitives {
 		void fromWrapper(Object wrapper);
 
 		@Override
-		MutablePrimitive clone();
+		MutablePrimitive<O> clone();
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#set(java.lang.Object)
+		 */
+		@Override
+		default public void set(Object value) {
+			fromWrapper(value);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#isPrimitive()
+		 */
+		@Override
+		default public boolean isPrimitive() {
+			return true;
+		}
 	}
 
 	/**
@@ -50,7 +74,10 @@ public class MutablePrimitives {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static final class MutableBoolean implements MutablePrimitive {
+	public static final class MutableBoolean implements MutablePrimitive<Boolean> {
+
+		public static final boolean DEFAULT_EMPTY_VALUE = false;
+
 		private boolean value;
 
 		public MutableBoolean(boolean value) {
@@ -59,6 +86,21 @@ public class MutablePrimitives {
 
 		public MutableBoolean() {
 			this(false);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#set(java.lang.Object)
+		 */
+		public void set(Boolean value) {
+			this.value = value.booleanValue();
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#clear()
+		 */
+		@Override
+		public void clear() {
+			value = DEFAULT_EMPTY_VALUE;
 		}
 
 		@Override
@@ -207,8 +249,8 @@ public class MutablePrimitives {
 		 * @see de.ims.icarus2.util.Wrapper#get()
 		 */
 		@Override
-		public Object get() {
-			return value;
+		public Boolean get() {
+			return Boolean.valueOf(value);
 		}
 
 		/**
@@ -218,6 +260,14 @@ public class MutablePrimitives {
 		public void fromWrapper(Object wrapper) {
 			value = ((Boolean)wrapper).booleanValue();
 		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#isEmpty()
+		 */
+		@Override
+		public boolean isEmpty() {
+			return value==DEFAULT_EMPTY_VALUE;
+		}
 	}
 
 	/**
@@ -225,7 +275,10 @@ public class MutablePrimitives {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static final class MutableInteger implements MutablePrimitive {
+	public static final class MutableInteger implements MutablePrimitive<Integer> {
+
+		public static final int DEFAULT_EMPTY_VALUE = 0;
+
 		private int value;
 
 		public MutableInteger(int value) {
@@ -234,6 +287,21 @@ public class MutablePrimitives {
 
 		public MutableInteger() {
 			this(0);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#set(java.lang.Object)
+		 */
+		public void set(Integer value) {
+			this.value = value.intValue();
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#clear()
+		 */
+		@Override
+		public void clear() {
+			value = DEFAULT_EMPTY_VALUE;
 		}
 
 		@Override
@@ -391,8 +459,8 @@ public class MutablePrimitives {
 		 * @see de.ims.icarus2.util.Wrapper#get()
 		 */
 		@Override
-		public Object get() {
-			return value;
+		public Integer get() {
+			return Integer.valueOf(value);
 		}
 
 		/**
@@ -402,6 +470,14 @@ public class MutablePrimitives {
 		public void fromWrapper(Object wrapper) {
 			value = ((Number)wrapper).intValue();
 		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#isEmpty()
+		 */
+		@Override
+		public boolean isEmpty() {
+			return value==DEFAULT_EMPTY_VALUE;
+		}
 	}
 
 	/**
@@ -409,7 +485,10 @@ public class MutablePrimitives {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static final class MutableFloat implements MutablePrimitive {
+	public static final class MutableFloat implements MutablePrimitive<Float> {
+
+		public static final float DEFAULT_EMPTY_VALUE = 0F;
+
 		private float value;
 
 		public MutableFloat(float value) {
@@ -418,6 +497,21 @@ public class MutablePrimitives {
 
 		public MutableFloat() {
 			this(0F);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#set(java.lang.Object)
+		 */
+		public void set(Float value) {
+			this.value = value.floatValue();
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#clear()
+		 */
+		@Override
+		public void clear() {
+			value = DEFAULT_EMPTY_VALUE;
 		}
 
 		@Override
@@ -555,8 +649,8 @@ public class MutablePrimitives {
 		 * @see de.ims.icarus2.util.Wrapper#get()
 		 */
 		@Override
-		public Object get() {
-			return value;
+		public Float get() {
+			return Float.valueOf(value);
 		}
 
 		/**
@@ -566,6 +660,14 @@ public class MutablePrimitives {
 		public void fromWrapper(Object wrapper) {
 			value = ((Number)wrapper).floatValue();
 		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#isEmpty()
+		 */
+		@Override
+		public boolean isEmpty() {
+			return value==DEFAULT_EMPTY_VALUE;
+		}
 	}
 
 	/**
@@ -573,7 +675,10 @@ public class MutablePrimitives {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static final class MutableDouble implements MutablePrimitive {
+	public static final class MutableDouble implements MutablePrimitive<Double> {
+
+		public static final double DEFAULT_EMPTY_VALUE = 0D;
+
 		private double value;
 
 		public MutableDouble(double value) {
@@ -582,6 +687,21 @@ public class MutablePrimitives {
 
 		public MutableDouble() {
 			this(0D);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#set(java.lang.Object)
+		 */
+		public void set(Double value) {
+			this.value = value.doubleValue();
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#clear()
+		 */
+		@Override
+		public void clear() {
+			value = DEFAULT_EMPTY_VALUE;
 		}
 
 		@Override
@@ -720,8 +840,8 @@ public class MutablePrimitives {
 		 * @see de.ims.icarus2.util.Wrapper#get()
 		 */
 		@Override
-		public Object get() {
-			return value;
+		public Double get() {
+			return Double.valueOf(value);
 		}
 
 		/**
@@ -731,6 +851,14 @@ public class MutablePrimitives {
 		public void fromWrapper(Object wrapper) {
 			value = ((Number)wrapper).doubleValue();
 		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#isEmpty()
+		 */
+		@Override
+		public boolean isEmpty() {
+			return value==DEFAULT_EMPTY_VALUE;
+		}
 	}
 
 	/**
@@ -738,7 +866,10 @@ public class MutablePrimitives {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static final class MutableLong implements MutablePrimitive {
+	public static final class MutableLong implements MutablePrimitive<Long> {
+
+		public static final long DEFAULT_EMPTY_VALUE = 0;
+
 		private long value;
 
 		public MutableLong(long value) {
@@ -747,6 +878,21 @@ public class MutablePrimitives {
 
 		public MutableLong() {
 			this(0L);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#set(java.lang.Object)
+		 */
+		public void set(Long value) {
+			this.value = value.longValue();
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#clear()
+		 */
+		@Override
+		public void clear() {
+			value = DEFAULT_EMPTY_VALUE;
 		}
 
 		@Override
@@ -904,8 +1050,8 @@ public class MutablePrimitives {
 		 * @see de.ims.icarus2.util.Wrapper#get()
 		 */
 		@Override
-		public Object get() {
-			return value;
+		public Long get() {
+			return Long.valueOf(value);
 		}
 
 		/**
@@ -915,6 +1061,14 @@ public class MutablePrimitives {
 		public void fromWrapper(Object wrapper) {
 			value = ((Number)wrapper).longValue();
 		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#isEmpty()
+		 */
+		@Override
+		public boolean isEmpty() {
+			return value==DEFAULT_EMPTY_VALUE;
+		}
 	}
 
 	/**
@@ -922,7 +1076,11 @@ public class MutablePrimitives {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static final class MutableShort implements MutablePrimitive {
+	public static final class MutableShort implements MutablePrimitive<Short> {
+
+
+		public static final short DEFAULT_EMPTY_VALUE = 0;
+
 		private short value;
 
 		public MutableShort(short value) {
@@ -931,6 +1089,18 @@ public class MutablePrimitives {
 
 		public MutableShort() {
 			this((short) 0);
+		}
+
+		public void set(Short value) {
+			this.value = value.shortValue();
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#clear()
+		 */
+		@Override
+		public void clear() {
+			value = DEFAULT_EMPTY_VALUE;
 		}
 
 		@Override
@@ -1088,8 +1258,8 @@ public class MutablePrimitives {
 		 * @see de.ims.icarus2.util.Wrapper#get()
 		 */
 		@Override
-		public Object get() {
-			return value;
+		public Short get() {
+			return Short.valueOf(value);
 		}
 
 		/**
@@ -1099,6 +1269,14 @@ public class MutablePrimitives {
 		public void fromWrapper(Object wrapper) {
 			value = ((Number)wrapper).shortValue();
 		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#isEmpty()
+		 */
+		@Override
+		public boolean isEmpty() {
+			return value==DEFAULT_EMPTY_VALUE;
+		}
 	}
 
 	/**
@@ -1106,7 +1284,10 @@ public class MutablePrimitives {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static final class MutableChar implements MutablePrimitive {
+	public static final class MutableChar implements MutablePrimitive<Character> {
+
+		public static final char DEFAULT_EMPTY_VALUE = 0;
+
 		private char value;
 
 		public MutableChar(char value) {
@@ -1115,6 +1296,18 @@ public class MutablePrimitives {
 
 		public MutableChar() {
 			this((char) 0);
+		}
+
+		public void set(Character value) {
+			this.value = value.charValue();
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#clear()
+		 */
+		@Override
+		public void clear() {
+			value = DEFAULT_EMPTY_VALUE;
 		}
 
 		@Override
@@ -1272,8 +1465,8 @@ public class MutablePrimitives {
 		 * @see de.ims.icarus2.util.Wrapper#get()
 		 */
 		@Override
-		public Object get() {
-			return value;
+		public Character get() {
+			return Character.valueOf(value);
 		}
 
 		/**
@@ -1283,6 +1476,14 @@ public class MutablePrimitives {
 		public void fromWrapper(Object wrapper) {
 			value = (char) ((Number)wrapper).longValue();
 		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#isEmpty()
+		 */
+		@Override
+		public boolean isEmpty() {
+			return value==DEFAULT_EMPTY_VALUE;
+		}
 	}
 
 	/**
@@ -1290,7 +1491,10 @@ public class MutablePrimitives {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static final class MutableByte implements MutablePrimitive {
+	public static final class MutableByte implements MutablePrimitive<Byte> {
+
+		public static final byte DEFAULT_EMPTY_VALUE = 0;
+
 		private byte value;
 
 		public MutableByte(byte value) {
@@ -1299,6 +1503,18 @@ public class MutablePrimitives {
 
 		public MutableByte() {
 			this((byte) 0);
+		}
+
+		public void set(Byte value) {
+			this.value = value.byteValue();
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#clear()
+		 */
+		@Override
+		public void clear() {
+			value = DEFAULT_EMPTY_VALUE;
 		}
 
 		@Override
@@ -1486,8 +1702,8 @@ public class MutablePrimitives {
 		 * @see de.ims.icarus2.util.Wrapper#get()
 		 */
 		@Override
-		public Object get() {
-			return value;
+		public Byte get() {
+			return Byte.valueOf(value);
 		}
 
 		/**
@@ -1497,9 +1713,19 @@ public class MutablePrimitives {
 		public void fromWrapper(Object wrapper) {
 			value = ((Number)wrapper).byteValue();
 		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#isEmpty()
+		 */
+		@Override
+		public boolean isEmpty() {
+			return value==DEFAULT_EMPTY_VALUE;
+		}
 	}
 
-	public static class GenericMutablePrimitive implements MutablePrimitive {
+	public static class GenericMutablePrimitive implements MutablePrimitive<Object> {
+
+		public static final double DEFAULT_EMPTY_VALUE = 0D;
 
 		private double storage = 0D;
 
@@ -1533,6 +1759,14 @@ public class MutablePrimitives {
 
 		public GenericMutablePrimitive(boolean value) {
 			setBoolean(value);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#clear()
+		 */
+		@Override
+		public void clear() {
+			storage = DEFAULT_EMPTY_VALUE;
 		}
 
 		/**
@@ -1671,7 +1905,7 @@ public class MutablePrimitives {
 		 * @see de.ims.icarus2.util.MutablePrimitives.MutablePrimitive#clone()
 		 */
 		@Override
-		public MutablePrimitive clone() {
+		public MutablePrimitive<Object> clone() {
 			return new GenericMutablePrimitive(storage);
 		}
 
@@ -1695,9 +1929,26 @@ public class MutablePrimitives {
 			return String.valueOf(intValue());
 		}
 
+		/**
+		 * @see de.ims.icarus2.util.Mutable#set(java.lang.Object)
+		 */
+		@Override
+		public void set(Object value) {
+			fromWrapper(value);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#isEmpty()
+		 */
+		@Override
+		public boolean isEmpty() {
+			return storage==DEFAULT_EMPTY_VALUE;
+		}
 	}
 
 	public static class GenericTypeAwareMutablePrimitive implements MutablePrimitive {
+
+		public static final long DEFAULT_EMPTY_VALUE = 0L;
 
 		private long storage = 0L;
 		private byte type = NULL;
@@ -1757,6 +2008,19 @@ public class MutablePrimitives {
 		}
 
 		/**
+		 * @see de.ims.icarus2.util.Mutable#clear()
+		 */
+		@Override
+		public void clear() {
+			setNull();
+		}
+
+		protected void checkNotNull() {
+			if(type==NULL)
+				throw new NullPointerException();
+		}
+
+		/**
 		 * @see de.ims.icarus2.util.MutablePrimitives.Primitive#intValue()
 		 */
 		@Override
@@ -1769,6 +2033,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public long longValue() {
+			checkNotNull();
 			return storage;
 		}
 
@@ -1785,6 +2050,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public double doubleValue() {
+			checkNotNull();
 			return Double.longBitsToDouble(storage);
 		}
 
@@ -1809,7 +2075,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public boolean booleanValue() {
-			return longValue()!=0L;
+			return longValue()!=DEFAULT_EMPTY_VALUE;
 		}
 
 		/**
@@ -1817,6 +2083,8 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public Object get() {
+			checkNotNull();
+
 			switch (type) {
 			case BOOLEAN: return booleanValue();
 			case BYTE: return byteValue();
@@ -1832,7 +2100,7 @@ public class MutablePrimitives {
 		}
 
 		public void setNull() {
-			storage = 0L;
+			storage = DEFAULT_EMPTY_VALUE;
 			setType(NULL);
 		}
 
@@ -1908,16 +2176,26 @@ public class MutablePrimitives {
 		}
 
 		/**
+		 * @see de.ims.icarus2.util.Mutable#set(java.lang.Object)
+		 */
+		@Override
+		public void set(Object value) {
+			fromWrapper(value);
+		}
+
+		/**
 		 * @see de.ims.icarus2.util.MutablePrimitives.MutablePrimitive#fromWrapper(java.lang.Object)
 		 */
 		@Override
 		public void fromWrapper(Object wrapper) {
 			if(wrapper==null) {
 				setNull();
-			} else if(wrapper instanceof Boolean) {
-				setBoolean(((Boolean)wrapper).booleanValue());
 			} else {
 				switch (wrapper.getClass().getSimpleName()) {
+				case "Boolean":
+					setBoolean(((Boolean)wrapper).booleanValue());
+					break;
+
 				case "Byte":
 					setByte(((Byte)wrapper).byteValue());
 					break;
@@ -1979,6 +2257,14 @@ public class MutablePrimitives {
 		@Override
 		public String toString() {
 			return String.valueOf(storage);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.Mutable#isEmpty()
+		 */
+		@Override
+		public boolean isEmpty() {
+			return type==NULL || storage==DEFAULT_EMPTY_VALUE;
 		}
 
 	}

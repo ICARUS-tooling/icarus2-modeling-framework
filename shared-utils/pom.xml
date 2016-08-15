@@ -38,5 +38,9 @@
 			<groupId>net.sf.trove4j</groupId>
 			<artifactId>trove4j</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.squareup</groupId>
+			<artifactId>javapoet</artifactId>
+		</dependency>
 	</dependencies>
 </project>

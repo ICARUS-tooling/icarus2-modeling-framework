@@ -15,34 +15,27 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package de.ims.icarus2.util.eval;
+package de.ims.icarus2.util.compiler;
 
-import de.ims.icarus2.util.eval.var.VariableSet;
+import java.net.URI;
 
+import javax.tools.SimpleJavaFileObject;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface Expression {
+public class CharSequenceJavaFileObject extends SimpleJavaFileObject {
 
-	Class<?> getReturnType();
+	protected final CharSequence  content;
 
-	String getCode();
-
-	Environment getEnvironment();
-
-	VariableSet getVariables();
-
-	default boolean hasVariables() {
-		return getVariables()!=null;
+	public CharSequenceJavaFileObject(String className, CharSequence  content) {
+		super(URI.create("string:///" + className.replace('.', '/')	+ Kind.SOURCE.extension), Kind.SOURCE);
+		this.content = content;
 	}
 
-	/**
-	 * Executes the code stored in this expression and returns the result.
-	 *
-	 * @return
-	 */
-	//TODO determine a sensible exception type
-	public Object evaulate();
+	@Override
+	public CharSequence getCharContent(boolean ignoreEncodingErrors) {
+		return content;
+	}
 }
