@@ -28,7 +28,7 @@ import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec;
-import de.ims.icarus2.model.manifest.api.DriverManifest.Multiplicity;
+import de.ims.icarus2.model.manifest.api.Multiplicity;
 import de.ims.icarus2.model.manifest.standard.DocumentationImpl;
 import de.ims.icarus2.model.manifest.standard.DriverManifestImpl;
 import de.ims.icarus2.model.manifest.standard.DriverManifestImpl.ModuleManifestImpl;

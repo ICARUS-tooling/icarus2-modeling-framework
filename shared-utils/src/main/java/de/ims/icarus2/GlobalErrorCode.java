@@ -25,9 +25,16 @@ package de.ims.icarus2;
 public enum GlobalErrorCode implements ErrorCode {
 
 	/**
+	 * Not strictly speaking an actual error code, but used to signal that
+	 * some exception or other means of notification was meant purely for
+	 * informative purposes.
+	 */
+	INFO(1),
+
+	/**
 	 * Hint that a certain implementation is missing mandatory functionality.
 	 */
-	NOT_IMPLEMENTED(1),
+	NOT_IMPLEMENTED(3),
 
 	//**************************************************
 	//       1xx  GENERAL ERRORS

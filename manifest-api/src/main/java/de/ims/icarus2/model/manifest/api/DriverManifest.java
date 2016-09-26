@@ -19,9 +19,7 @@
 package de.ims.icarus2.model.manifest.api;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -30,7 +28,6 @@ import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
 import de.ims.icarus2.util.access.AccessRestriction;
 import de.ims.icarus2.util.collections.LazyCollection;
-import de.ims.icarus2.util.strings.StringResource;
 
 /**
  * @author Markus Gärtner
@@ -304,58 +301,5 @@ public interface DriverManifest extends ForeignImplementationManifest {
 		ModuleSpec getModuleSpec();
 
 		void setModuleSpecId(String moduleSpecId);
-	}
-
-	/**
-	 * Defines the multiplicity of allowed module manifests that are linked to a single module spec
-	 * within a driver manifest.
-	 *
-	 * @author Markus Gärtner
-	 *
-	 */
-	public static enum Multiplicity implements StringResource {
-
-		NONE("none"),
-		NONE_OR_ONE("none-or-one"),
-		ONE("one"),
-		ONE_OR_MORE("one-or-more"),
-		ANY("any"),
-		;
-
-		private final String xmlForm;
-
-		private Multiplicity(String xmlForm) {
-			this.xmlForm = xmlForm;
-		}
-
-		/**
-		 * @see java.lang.Enum#toString()
-		 */
-		@Override
-		public String toString() {
-			return name().toLowerCase();
-		}
-
-		/**
-		 * @see de.ims.icarus2.util.strings.StringResource#getStringValue()
-		 */
-		@Override
-		public String getStringValue() {
-			return xmlForm;
-		}
-
-		private static Map<String, Multiplicity> xmlLookup;
-
-		public static Multiplicity parseMultiplicity(String s) {
-			if(xmlLookup==null) {
-				Map<String, Multiplicity> map = new HashMap<>();
-				for(Multiplicity type : values()) {
-					map.put(type.xmlForm, type);
-				}
-				xmlLookup = map;
-			}
-
-			return xmlLookup.get(s);
-		}
 	}
 }

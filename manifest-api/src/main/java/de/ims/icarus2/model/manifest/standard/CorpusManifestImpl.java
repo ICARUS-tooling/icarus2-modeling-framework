@@ -192,8 +192,9 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 		checkNotNull(id);
 
 		ContextManifest contextManifest = contextManifestLookup.get(id);
-		if(contextManifest==null)
-			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "No such context: "+id); //$NON-NLS-1$
+		//FIXME reevaluate decision to remove exception in case of unknown id to stay consistent with layer group and context level lookups
+//		if(contextManifest==null)
+//			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "No such context: "+id); //$NON-NLS-1$
 
 		return contextManifest;
 	}
