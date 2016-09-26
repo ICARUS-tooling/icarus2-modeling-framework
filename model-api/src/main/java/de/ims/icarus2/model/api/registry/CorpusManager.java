@@ -121,10 +121,24 @@ public interface CorpusManager {
 	 */
 	MetadataRegistry getMetadataRegistry();
 
+	/**
+	 * Returns the {@link MetadataStoragePolicy policy} to be sued for creating metadata
+	 * registries for corpora. The default implementation simply returns an
+	 * {@link MetadataStoragePolicy#emptyCorpusMetadataStoragePolicy empty} implementation.
+	 *
+	 * @return
+	 */
 	default MetadataStoragePolicy<CorpusManifest> getCorpusMetadataPolicy() {
 		return MetadataStoragePolicy.emptyCorpusMetadataStoragePolicy;
 	}
 
+	/**
+	 * Returns the {@link MetadataStoragePolicy policy} to be sued for creating metadata
+	 * registries for contexts. The default implementation simply returns an
+	 * {@link MetadataStoragePolicy#emptyContextMetadataStoragePolicy empty} implementation.
+	 *
+	 * @return
+	 */
 	default MetadataStoragePolicy<ContextManifest> getContextMetadataPolicy() {
 		return MetadataStoragePolicy.emptyContextMetadataStoragePolicy;
 	}

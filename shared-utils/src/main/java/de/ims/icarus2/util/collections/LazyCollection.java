@@ -19,11 +19,11 @@
 package de.ims.icarus2.util.collections;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
+import gnu.trove.set.hash.THashSet;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -52,7 +52,7 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 	}
 
 	public static <E extends Object> LazyCollection<E> lazySet() {
-		return new LazyCollection<>(() -> new HashSet<>());
+		return new LazyCollection<>(() -> new THashSet<>());
 	}
 
 	public static <E extends Object> LazyCollection<E> lazyLinkedSet() {
@@ -60,7 +60,7 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 	}
 
 	public static <E extends Object> LazyCollection<E> lazySet(final int capacity) {
-		return new LazyCollection<>(() -> new HashSet<>(capacity));
+		return new LazyCollection<>(() -> new THashSet<>(capacity));
 	}
 
 	public static <E extends Object> LazyCollection<E> lazyLinkedSet(final int capacity) {

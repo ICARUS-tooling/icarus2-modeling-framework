@@ -18,6 +18,8 @@
  */
 package de.ims.icarus2.model.api.io;
 
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+
 import java.net.URL;
 import java.nio.file.Path;
 
@@ -50,11 +52,14 @@ public class ResourcePath extends Options {
 	private final String path;
 	private final LocationType type;
 
+	/**
+	 * Creates a new {@code ResourcePath} using the given (relative or abstract) path and {@code LocationType}.
+	 * @param path
+	 * @param type
+	 */
 	public ResourcePath(String path, LocationType type) {
-		if (path == null)
-			throw new NullPointerException("Invalid path"); //$NON-NLS-1$
-		if (type == null)
-			throw new NullPointerException("Invalid type");  //$NON-NLS-1$
+		checkNotNull(path);
+		checkNotNull(type);
 
 		this.path = path;
 		this.type = type;

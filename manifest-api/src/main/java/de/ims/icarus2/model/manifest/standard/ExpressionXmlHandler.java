@@ -85,7 +85,7 @@ public class ExpressionXmlHandler implements ManifestXmlHandler, ManifestXmlAttr
 			}
 
 
-			factory.addVariable(name, namespace);
+			factory.addInputVariable(name, namespace);
 		} break;
 
 		default:

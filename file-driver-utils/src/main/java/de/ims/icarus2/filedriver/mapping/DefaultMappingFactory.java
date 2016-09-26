@@ -18,7 +18,6 @@
 package de.ims.icarus2.filedriver.mapping;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
-import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.IdentityHashMap;
@@ -27,6 +26,7 @@ import java.util.function.LongUnaryOperator;
 import java.util.function.UnaryOperator;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.filedriver.FileDriverUtils;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
 import de.ims.icarus2.filedriver.io.RUBlockCache;
 import de.ims.icarus2.model.api.ModelException;
@@ -66,47 +66,6 @@ import de.ims.icarus2.util.classes.ClassUtils;
  *
  */
 public class DefaultMappingFactory implements MappingFactory {
-
-	/**
-	 * Defines legal property keys used by {@link DefaultMappingFactory} instances when
-	 * creating mapping objects.
-	 *
-	 * @author Markus Gärtner
-	 *
-	 */
-	public static enum Property {
-
-		UNARY_FUNCTION("unaryFunction", "function", "unary"),
-		BATCH_FUNCTION("unaryFunction", "batch"),
-		RESOURCE("resource", "storage"),
-		CAPACITY("capacity"),
-		VALUE_TYPE("valueType", "indexValueType"),
-		CACHE_SIZE("cacheSize"),
-		BLOCK_CACHE("blockCache", "cache"),
-		BLOCK_POWER("blockPower"),
-		GROUP_POWER("groupPower"),
-		;
-
-		private final String[] keys;
-
-		private Property(String...keys) {
-			checkArgument(keys.length>0);
-
-			this.keys = keys;
-		}
-
-		public String key() {
-			return keys[0];
-		}
-
-		public String[] getKeys() {
-			return keys.clone();
-		}
-
-		public Object getValue(Options options) {
-			return options.firstSet(keys);
-		}
-	}
 
 	private final Driver driver;
 
@@ -179,13 +138,13 @@ public class DefaultMappingFactory implements MappingFactory {
 	}
 
 	protected Mapping createFunctionMapping(MappingManifest manifest, Options options) {
-		Object unaryFunc = Property.UNARY_FUNCTION.getValue(options);
+		Object unaryFunc = FileDriverUtils.MappingProperty.UNARY_FUNCTION.getValue(options);
 
 		if(!LongUnaryOperator.class.isInstance(unaryFunc)) {
 			return null;
 		}
 
-		Object batchFunc = Property.BATCH_FUNCTION.getValue(options);
+		Object batchFunc = FileDriverUtils.MappingProperty.BATCH_FUNCTION.getValue(options);
 
 		if(!UnaryOperator.class.isInstance(batchFunc)) { //TODO maybe use type argument check to make sure the operator can handle IndexSet instances
 
@@ -201,10 +160,10 @@ public class DefaultMappingFactory implements MappingFactory {
 	}
 
 	protected IOResource getResource(Options options) {
-		Object resource = Property.RESOURCE.getValue(options);
+		Object resource = FileDriverUtils.MappingProperty.RESOURCE.getValue(options);
 
 		if(!IOResource.class.isInstance(resource)) {
-			int capacity = options.getInteger(Property.CAPACITY.key(), 1024*1024);
+			int capacity = options.getInteger(FileDriverUtils.MappingProperty.CAPACITY.key(), 1024*1024);
 
 			resource = new InMemoryResource(capacity);
 		}
@@ -221,7 +180,7 @@ public class DefaultMappingFactory implements MappingFactory {
 
 			initStoredMappingBuilder(builder, manifest, options);
 
-			int blockPower = options.getInteger(Property.BLOCK_POWER.key(), -1);
+			int blockPower = options.getInteger(FileDriverUtils.MappingProperty.BLOCK_POWER.key(), -1);
 			if(blockPower!=-1) {
 				builder.blockPower(blockPower);
 			}
@@ -250,7 +209,7 @@ public class DefaultMappingFactory implements MappingFactory {
 	protected IndexValueType getValueType(ItemLayerManifest source, ItemLayerManifest target, Options options) {
 
 		// Try direct type declared in options
-		Object declaredValueType = Property.VALUE_TYPE.getValue(options);
+		Object declaredValueType = FileDriverUtils.MappingProperty.VALUE_TYPE.getValue(options);
 		if(IndexValueType.class.isInstance(declaredValueType)) {
 			return (IndexValueType) declaredValueType;
 		}
@@ -281,7 +240,7 @@ public class DefaultMappingFactory implements MappingFactory {
 		builder.resource(getResource(options));
 		builder.blockCache(getBlockCache(options));
 
-		int cacheSize = options.getInteger(Property.CACHE_SIZE.key(), -1);
+		int cacheSize = options.getInteger(FileDriverUtils.MappingProperty.CACHE_SIZE.key(), -1);
 		if(cacheSize!=-1) {
 			builder.cacheSize(cacheSize);
 		}
@@ -290,7 +249,7 @@ public class DefaultMappingFactory implements MappingFactory {
 	}
 
 	protected BlockCache getBlockCache(Options options) {
-		Object declaredBlockCache = Property.BLOCK_CACHE.getValue(options);
+		Object declaredBlockCache = FileDriverUtils.MappingProperty.BLOCK_CACHE.getValue(options);
 		if(BlockCache.class.isInstance(declaredBlockCache)) {
 			return (BlockCache) declaredBlockCache;
 		}
@@ -303,7 +262,7 @@ public class DefaultMappingFactory implements MappingFactory {
 
 		initStoredMappingBuilder(builder, manifest, options);
 
-		int blockPower = options.getInteger(Property.BLOCK_POWER.key(), -1);
+		int blockPower = options.getInteger(FileDriverUtils.MappingProperty.BLOCK_POWER.key(), -1);
 		if(blockPower!=-1) {
 			builder.blockPower(blockPower);
 		}
@@ -324,12 +283,12 @@ public class DefaultMappingFactory implements MappingFactory {
 
 		initStoredMappingBuilder(builder, manifest, options);
 
-		int blockPower = options.getInteger(Property.BLOCK_POWER.key(), -1);
+		int blockPower = options.getInteger(FileDriverUtils.MappingProperty.BLOCK_POWER.key(), -1);
 		if(blockPower!=-1) {
 			builder.blockPower(blockPower);
 		}
 
-		int groupPower = options.getInteger(Property.GROUP_POWER.key(), -1);
+		int groupPower = options.getInteger(FileDriverUtils.MappingProperty.GROUP_POWER.key(), -1);
 		if(groupPower!=-1) {
 			builder.groupPower(groupPower);
 		}

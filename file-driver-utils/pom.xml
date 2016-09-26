@@ -8,7 +8,6 @@
 		<artifactId>core-tools</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
-	<groupId>icarus2-tooling</groupId>
 	<artifactId>file-driver-utils</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>file-driver-utils</name>
@@ -42,6 +41,10 @@
 			<groupId>icarus2-tooling</groupId>
 			<artifactId>model-defaults</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.lucene</groupId>
+		    <artifactId>lucene-core</artifactId>
 		</dependency>
 	</dependencies>
 </project>

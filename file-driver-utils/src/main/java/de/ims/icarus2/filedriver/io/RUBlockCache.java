@@ -25,7 +25,7 @@ import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
  * Each time a block is added or requested it gets pushed to the head of the internal
  * linked list of entries. When the cache is full and needs to make space for new entries
  * it will remove either the least or most recently used entry, depending on the chosen
- * strategy. The entry storage is built as a hash table, making all cache operations
+ * strategy. The entry storage is built as an open hash table, making all cache operations
  * perform in constant time (with the exception of occasional rehashing when the current
  * buffer storage needs to be expanded until the specified cache capacity is reached, at
  * which point removal of previously used entries will begin).
@@ -55,7 +55,7 @@ public class RUBlockCache implements BlockCache {
 		// Link to the next entry in the hash table
 		Entry next;
 
-		// Links for the linked list
+		// Links for the usage list
 		Entry _next, _previous;
 
 		Entry(int key, Block block, Entry next) {

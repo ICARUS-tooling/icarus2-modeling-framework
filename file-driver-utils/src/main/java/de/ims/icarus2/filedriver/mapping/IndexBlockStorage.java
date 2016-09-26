@@ -22,6 +22,8 @@ import java.nio.ByteBuffer;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 
 /**
+ * Implements storage solutions and protocols for array based storage of index value pairs.
+ *
  * @author Markus Gärtner
  *
  */
@@ -125,18 +127,52 @@ public enum IndexBlockStorage {
 
 	public abstract void write(Object source, ByteBuffer buffer, int offset, int length);
 
+	/**
+	 * @return the valueType
+	 */
+	public IndexValueType getValueType() {
+		return valueType;
+	}
+
+	/**
+	 * Returns byte size of a single value entry
+	 *
+	 * @return
+	 */
 	public int entrySize() {
 		return valueType.bytesPerValue();
 	}
 
+	/**
+	 * Returns byte size of a single span entry,
+	 * which is double the size of a single value entry.
+	 *
+	 * @return
+	 */
 	public int spanSize() {
 		return valueType.bytesPerValue()<<1;
 	}
 
+	/**
+	 * Returns number of value entries stored in the given {@code buffer},
+	 * which is an array of appropriate component type for this storage's
+	 * {@link #getValueType() value type}.
+	 *
+	 * @param buffer
+	 * @return
+	 */
 	public int entryCount(Object buffer) {
 		return valueType.length(buffer);
 	}
 
+	/**
+	 * Returns number of span entries stored in the given {@code buffer},
+	 * which is an array of appropriate component type for this storage's
+	 * {@link #getValueType() value type}.
+	 *
+	 * @param buffer
+	 * @return
+	 */
 	public int spanCount(Object buffer) {
 		return valueType.length(buffer)>>1;
 	}
@@ -156,7 +192,8 @@ public enum IndexBlockStorage {
 	 * Searches the given storage data for a specified {@code value}, delegating
 	 * to the underlying {@link IndexValueType value type's}
 	 * {@link IndexValueType#binarySearch(Object, long, int, int) search} method.
-	 *
+	 * <p>
+	 * If the given {@code value} is not found this method will return {@code -1}
 	 *
 	 * @param source
 	 * @param from first index to search (inclusive)
@@ -169,7 +206,8 @@ public enum IndexBlockStorage {
 	}
 
 	/**
-	 * Searches the given storage data for a specified {@code value}
+	 * Searches the given storage data for a specified {@code value} and returns
+	 * the index location or {@code -1} if the {@code value} couldn't be found.
 	 *
 	 * @param source
 	 * @param from first index to search (inclusive)

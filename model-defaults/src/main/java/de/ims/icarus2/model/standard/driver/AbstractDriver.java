@@ -71,6 +71,7 @@ import de.ims.icarus2.util.Options;
  *
  */
 public abstract class AbstractDriver implements Driver {
+
 	private final DriverManifest manifest;
 
 	private volatile boolean dead = false;
@@ -243,7 +244,7 @@ public abstract class AbstractDriver implements Driver {
 		MappingStorage.Builder builder = new MappingStorage.Builder();
 
 		// Allow for subclasses to provide a fallback function
-		BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> fallback = createMappingFallback();
+		BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> fallback = getMappingFallback();
 		if(fallback!=null) {
 			builder.fallback(fallback);
 		}
@@ -251,7 +252,7 @@ public abstract class AbstractDriver implements Driver {
 		return builder.build();
 	}
 
-	protected BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> createMappingFallback() {
+	protected BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> getMappingFallback() {
 		return null;
 	}
 

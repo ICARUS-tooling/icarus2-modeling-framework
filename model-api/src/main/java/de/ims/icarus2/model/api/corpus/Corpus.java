@@ -42,6 +42,7 @@ import de.ims.icarus2.model.api.edit.UndoableCorpusEdit;
 import de.ims.icarus2.model.api.events.CorpusAdapter;
 import de.ims.icarus2.model.api.events.CorpusEventManager;
 import de.ims.icarus2.model.api.events.CorpusListener;
+import de.ims.icarus2.model.api.layer.HighlightLayer;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -105,10 +106,27 @@ import de.ims.icarus2.util.id.UnknownIdentifierException;
  * interface with empty methods so that a new listener implementation only needs to define the methods
  * it actually requires).
  *
+ * A corpus can contain 3 types of {@link Context contexts} (root, custom and virtual):
+ *
+ * A <b>root</b> context is an independent context that can serve as foundation for other contexts.
+ * Usually a corpus only has 1 root context, unless it is a conventional parallel corpus or features contexts
+ * representing data from multiple modalities that are modeled in a parallel way. The number and nature of all
+ * root contexts is described in the corpus' {@link #getManifest() manifest} and cannot be changed while the
+ * corpus is active.
+ *
+ * <b>Custom</b> contexts are all contexts that build on top of one or more root contexts and/or other custom contexts.
+ * They also originate from physical data in the form of files, databases, etc...
+ * Similar to root contexts each custom context has a manifest equivalent and while a corpus is active no
+ * custom contexts can be added or removed.
+ *
+ * To support purely programmatically created contexts, a <b>virtual</b> contexts behaves much like a custom
+ * context but does not have to be linked to some physical data. Virtual contexts are also the only contexts that
+ * can be added or removed while a corpus is active. They are intended to host mainly {@link HighlightLayer}s or
+ * annotation layers that create their content dynamically.
+ *
  * @author Markus Gärtner
  *
  */
-//FIXME change the "root context" mechanisms so that we can model parallel primary data within a single corpus
 public interface Corpus extends ManifestOwner<CorpusManifest> {
 
 	CorpusManager getManager();
@@ -196,6 +214,19 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	 */
 	CorpusView createView(Scope scope, IndexSet[] indices, CorpusAccessMode mode, Options options) throws InterruptedException;
 
+	/**
+	 * Creates a new corpus view object that gives access to the entire corpus.
+	 * <p>
+	 * This is done by first creating a {@link #createCompleteScope() full scope} and then forwarding to the
+	 * more general {@link #createView(Scope, IndexSet[], CorpusAccessMode, Options)} method.
+	 * The scope will contain all the layers and contexts in this corpus and will be assigned as primary layer the
+	 * primary layer of the first root context (as returned by {@link #getRootContext()} unless changed by a subclass).
+	 *
+	 * @param mode
+	 * @param options
+	 * @return
+	 * @throws InterruptedException
+	 */
 	default CorpusView createFullView(CorpusAccessMode mode, Options options) throws InterruptedException {
 		Scope scope = createCompleteScope();
 		return createView(scope, null, mode, options);

@@ -40,8 +40,6 @@ public class FileChecksum implements Serializable {
 
 	private static final long serialVersionUID = -2035971325487167347L;
 
-	private final UUID uuid;
-
 	public static FileChecksum compute(Path file) throws IOException {
 		if (file == null)
 			throw new NullPointerException("Invalid file"); //$NON-NLS-1$
@@ -69,6 +67,8 @@ public class FileChecksum implements Serializable {
 
 		return new FileChecksum(uuid);
 	}
+
+	private final UUID uuid;
 
 	private FileChecksum(UUID uuid) {
 		this.uuid = uuid;

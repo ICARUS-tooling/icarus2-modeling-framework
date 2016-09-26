@@ -26,9 +26,9 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.ims.icarus2.filedriver.FileDriver.PreparationStep;
 import de.ims.icarus2.filedriver.FileDataStates.FileInfo;
 import de.ims.icarus2.filedriver.FileDataStates.LayerInfo;
+import de.ims.icarus2.filedriver.FileDriver.PreparationStep;
 import de.ims.icarus2.filedriver.FileMetadata.ChunkIndexKey;
 import de.ims.icarus2.filedriver.FileMetadata.FileKey;
 import de.ims.icarus2.filedriver.FileMetadata.ItemLayerKey;
@@ -46,6 +46,10 @@ import de.ims.icarus2.util.Options;
  */
 public enum StandardPreparationSteps implements PreparationStep, ModelConstants {
 
+	/**
+	 * Verify that metadata holds the correct number of entries for physical files
+	 * and that the actual pathes match.
+	 */
 	CHECK_FILE_METADATA {
 
 		@Override
@@ -102,6 +106,11 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 	},
 
+	/**
+	 * Verify that the physical corpus files exist.
+	 * <p>
+	 * If context is editable missing files will be created as empty ones.
+	 */
 	CHECK_FILE_EXISTENCE {
 
 		@Override
@@ -139,6 +148,13 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 	},
 
+	/**
+	 * Verify file integrity via {@link FileChecksum checksums}.
+	 * <p>
+	 * Since using "real" checksums that analyze the entire byte content
+	 * of a file we rather use a simplistic minimal checksum comprised of
+	 * size of the file and date of last change.
+	 */
 	CHECK_FILE_CHECKSUM {
 
 		@Override
@@ -190,6 +206,9 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 	},
 
+	/**
+	 * Verify that the 'scanned' properties for individual files and the layers
+	 */
 	CHECK_LAYER_METADATA {
 
 		@Override
@@ -203,25 +222,25 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 			int fileCount = dataFiles.getFileCount();
 
+			int scannedFileCount = 0;
+
+			for(int fileIndex = 0; fileIndex < fileCount; fileIndex++) {
+				FileInfo fileInfo = driver.getFileDriverStates().getFileInfo(fileIndex);
+
+				String scannedKey = FileKey.SCANNED.getKey(fileIndex);
+				boolean savedScanned = metadataRegistry.getBooleanValue(scannedKey, false);
+
+				if(savedScanned) {
+					fileInfo.setFlag(ElementFlag.SCANNED);
+					scannedFileCount++;
+				}
+			}
+
 			for(ItemLayerManifest layer : layers) {
 
 //				state.setFormatted("fileConnector.checkLayerMetadata", layer.getId());
 
 				LayerInfo layerInfo = driver.getFileDriverStates().getLayerInfo(layer);
-
-				int scannedFileCount = 0;
-
-				for(int fileIndex = 0; fileIndex < fileCount; fileIndex++) {
-					FileInfo fileInfo = driver.getFileDriverStates().getFileInfo(fileIndex);
-
-					String scannedKey = FileKey.SCANNED.getKey(fileIndex);
-					boolean savedScanned = metadataRegistry.getBooleanValue(scannedKey, false);
-
-					if(savedScanned) {
-						fileInfo.setFlag(ElementFlag.SCANNED);
-						scannedFileCount++;
-					}
-				}
 
 				String scannedKey = ItemLayerKey.SCANNED.getKey(layer);
 				boolean savedScanned = metadataRegistry.getBooleanValue(scannedKey, false);
@@ -230,7 +249,8 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 					layerInfo.setFlag(ElementFlag.SCANNED);
 				}
 
-				if(scannedFileCount>0) {
+				// Reset to 'partially scanned' if there are files not marked as being scanned
+				if(scannedFileCount>0 && scannedFileCount<fileCount) {
 					layerInfo.setFlag(ElementFlag.PARTIALLY_SCANNED);
 				}
 			}
@@ -283,6 +303,9 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 	},
 
+	/**
+	 *
+	 */
 	CHECK_LAYER_CONTINUITY {
 
 		private static final String LAST_END_INDEX_KEY = "lastEndIndex";
@@ -388,6 +411,15 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 	},
 
+	/**
+	 * Delegate to the driver's {@link FileDriver#scanFile(int)} method for every file
+	 * that hasn't been scanned before.
+	 * This is done in increasing order of the respective {@code file index} to ensure that
+	 * for every file all the metadata of previous files is already available.
+	 * <p>
+	 * If an error occures during scanning the associated metadata will mark the layers in
+	 * question {@link ElementFlag#UNUSABLE unusable}.
+	 */
 	SCAN_FILES {
 
 		@Override
@@ -410,7 +442,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 					try {
 						driver.scanFile(fileIndex);
-					} catch(IOException e) {
+					} catch(Exception e) { //FIXME determine exactly which exception type we should use here, base was IOException
 						log.error("Failed to scan file {} at index {}", fileInfo.getPath(), fileIndex, e);
 						fileValid = false;
 					}
@@ -431,7 +463,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			List<ItemLayerManifest> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
 			ElementFlag flag = invalidFiles==0 ? ElementFlag.SCANNED : ElementFlag.PARTIALLY_SCANNED;
 			if(invalidFiles==fileCount) {
-				flag = ElementFlag.CORRUPTED;
+				flag = ElementFlag.UNUSABLE;
 			}
 
 			for(ItemLayerManifest layer : layers) {

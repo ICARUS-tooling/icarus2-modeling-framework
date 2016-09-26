@@ -18,8 +18,8 @@
 package de.ims.icarus2.model.standard.registry.metadata.policy;
 
 import de.ims.icarus2.model.api.registry.CorpusManager;
-import de.ims.icarus2.model.api.registry.MetadataStoragePolicy;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
+import de.ims.icarus2.model.api.registry.MetadataStoragePolicy;
 import de.ims.icarus2.model.api.registry.SubRegistry;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
@@ -45,6 +45,15 @@ public class PrefixMetadataPolicy<M extends ManifestFragment> implements Metadat
 		return new SubRegistry(hostRegistry, getRegistryPrefix(target));
 	}
 
+	/**
+	 * Returns the prefix used to instantiate a new {@link SubRegistry}.
+	 * This method is only called from within {@link #registryFor(CorpusManager, MetadataRegistry, ManifestFragment)}
+	 * and the default implementation simply returns the {@link ManifestFragment#getId() id}
+	 * of the supplied {@link ManifestFragment}.
+	 *
+	 * @param target
+	 * @return
+	 */
 	protected String getRegistryPrefix(M target) {
 		return target.getId();
 	}
@@ -56,8 +65,8 @@ public class PrefixMetadataPolicy<M extends ManifestFragment> implements Metadat
 	public static final MetadataStoragePolicy<CorpusManifest> sharedCorpusMetadataPolicy = new PrefixMetadataPolicy<>();
 
 	/**
-	 * Global sharable metadata policy for {@link ContextManifest drivers} that uses the context|s id
+	 * Global sharable metadata policy for {@link ContextManifest drivers} that uses the context's id
 	 * as prefix to create a new {@link SubRegistry} of the provided host registry.
 	 */
-	public static final MetadataStoragePolicy<ContextManifest> sharedContextMetadataPolicy = new PrefixMetadataPolicy<ContextManifest>();
+	public static final MetadataStoragePolicy<ContextManifest> sharedContextMetadataPolicy = new PrefixMetadataPolicy<>();
 }

@@ -41,6 +41,19 @@ public class InMemoryJavaFileManager extends ForwardingJavaFileManager {
 	 */
 	private final Map<String, ByteArrayJavaFileObject> classBytesLookup = new THashMap<>();
 
+	private final ClassLoader sharedClassLoader = new SecureClassLoader() {
+		@Override
+		protected Class<?> findClass(String name) throws ClassNotFoundException {
+			ByteArrayJavaFileObject fileObject = getJavaFileObject(name, false, true);
+			if(fileObject==null)
+				throw new ClassNotFoundException("No compiled class saved in this manager for name: "+name);
+
+			byte[] b = fileObject.getBytes();
+
+			return super.defineClass(name, b, 0, b.length);
+		}
+	};
+
 	/**
 	 * Will initialize the manager with the specified standard java file manager
 	 *
@@ -59,12 +72,16 @@ public class InMemoryJavaFileManager extends ForwardingJavaFileManager {
 	 * @param createIfMissing
 	 * @return
 	 */
-	protected ByteArrayJavaFileObject getJavaFileObject(String className, boolean createIfMissing) {
+	protected ByteArrayJavaFileObject getJavaFileObject(String className, boolean createIfMissing, boolean removeFromCache) {
 		ByteArrayJavaFileObject fileObject = classBytesLookup.get(className);
 
 		if(fileObject==null && createIfMissing) {
 			fileObject = new ByteArrayJavaFileObject(className);
 			classBytesLookup.put(className, fileObject);
+		}
+
+		if(fileObject!=null && removeFromCache) {
+			classBytesLookup.remove(className);
 		}
 
 		return fileObject;
@@ -78,18 +95,7 @@ public class InMemoryJavaFileManager extends ForwardingJavaFileManager {
 	 */
 	@Override
 	public ClassLoader getClassLoader(Location location) {
-		return new SecureClassLoader() {
-			@Override
-			protected Class<?> findClass(String name) throws ClassNotFoundException {
-				ByteArrayJavaFileObject fileObject = getJavaFileObject(name, false);
-				if(fileObject==null)
-					throw new ClassNotFoundException("No compiled class saved in this manager for name: "+name);
-
-				byte[] b = fileObject.getBytes();
-
-				return super.defineClass(name, b, 0, b.length);
-			}
-		};
+		return sharedClassLoader;
 	}
 
 	/**
@@ -99,6 +105,6 @@ public class InMemoryJavaFileManager extends ForwardingJavaFileManager {
 	@Override
 	public JavaFileObject getJavaFileForOutput(Location location,
 			String className, Kind kind, FileObject sibling) throws IOException {
-		return getJavaFileObject(className, true);
+		return getJavaFileObject(className, true, false);
 	}
 }

@@ -46,11 +46,11 @@ public interface VariableSet {
 
 	Object getValue(String name);
 
-	default int getInt(VariableDescriptor variableDescriptor) {
-		return getInt(variableDescriptor.getName());
+	default int getInteger(VariableDescriptor variableDescriptor) {
+		return getInteger(variableDescriptor.getName());
 	}
 
-	default int getInt(String name) {
+	default int getInteger(String name) {
 		return ((Number) getValue(name)).intValue();
 	}
 
@@ -135,67 +135,67 @@ public interface VariableSet {
 		setValue(variableDescriptor.getName(), value);
 	}
 
-	default void setValue(String variableName, byte value) {
+	default void setByte(String variableName, byte value) {
 		setValue(variableName, Byte.valueOf(value));
 	}
 
-	default void setValue(VariableDescriptor variableDescriptor, byte value) {
-		setValue(variableDescriptor.getName(), value);
+	default void setByte(VariableDescriptor variableDescriptor, byte value) {
+		setByte(variableDescriptor.getName(), value);
 	}
 
-	default void setValue(String variableName, short value) {
+	default void setShort(String variableName, short value) {
 		setValue(variableName, Short.valueOf(value));
 	}
 
-	default void setValue(VariableDescriptor variableDescriptor, short value) {
-		setValue(variableDescriptor.getName(), value);
+	default void setShort(VariableDescriptor variableDescriptor, short value) {
+		setShort(variableDescriptor.getName(), value);
 	}
 
-	default void setValue(String variableName, int value) {
+	default void setInteger(String variableName, int value) {
 		setValue(variableName, Integer.valueOf(value));
 	}
 
-	default void setValue(VariableDescriptor variableDescriptor, int value) {
-		setValue(variableDescriptor.getName(), value);
+	default void setInteger(VariableDescriptor variableDescriptor, int value) {
+		setInteger(variableDescriptor.getName(), value);
 	}
 
-	default void setValue(String variableName, long value) {
+	default void setLong(String variableName, long value) {
 		setValue(variableName, Long.valueOf(value));
 	}
 
-	default void setValue(VariableDescriptor variableDescriptor, long value) {
-		setValue(variableDescriptor.getName(), value);
+	default void setLong(VariableDescriptor variableDescriptor, long value) {
+		setLong(variableDescriptor.getName(), value);
 	}
 
-	default void setValue(String variableName, boolean value) {
+	default void setBoolean(String variableName, boolean value) {
 		setValue(variableName, Boolean.valueOf(value));
 	}
 
-	default void setValue(VariableDescriptor variableDescriptor, boolean value) {
-		setValue(variableDescriptor.getName(), value);
+	default void setBoolean(VariableDescriptor variableDescriptor, boolean value) {
+		setBoolean(variableDescriptor.getName(), value);
 	}
 
-	default void setValue(String variableName, char value) {
+	default void setChar(String variableName, char value) {
 		setValue(variableName, Character.valueOf(value));
 	}
 
-	default void setValue(VariableDescriptor variableDescriptor, char value) {
-		setValue(variableDescriptor.getName(), value);
+	default void setChar(VariableDescriptor variableDescriptor, char value) {
+		setChar(variableDescriptor.getName(), value);
 	}
 
-	default void setValue(String variableName, float value) {
+	default void setFloat(String variableName, float value) {
 		setValue(variableName, Float.valueOf(value));
 	}
 
-	default void setValue(VariableDescriptor variableDescriptor, float value) {
-		setValue(variableDescriptor.getName(), value);
+	default void setFloat(VariableDescriptor variableDescriptor, float value) {
+		setFloat(variableDescriptor.getName(), value);
 	}
 
-	default void setValue(String variableName, double value) {
+	default void setDouble(String variableName, double value) {
 		setValue(variableName, Double.valueOf(value));
 	}
 
-	default void setValue(VariableDescriptor variableDescriptor, double value) {
-		setValue(variableDescriptor.getName(), value);
+	default void setDouble(VariableDescriptor variableDescriptor, double value) {
+		setDouble(variableDescriptor.getName(), value);
 	}
 }

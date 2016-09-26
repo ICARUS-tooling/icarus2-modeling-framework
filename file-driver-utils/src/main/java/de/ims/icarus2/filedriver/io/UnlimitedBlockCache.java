@@ -23,6 +23,14 @@ import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
 
 /**
+ * Implements {@link BlockCache} without configurable restrictions regarding capacity.
+ * The implementation uses a {@link TIntObjectMap} as internal storage and will never
+ * purge entries. It will fail to add new entries once the map runs out of natural space
+ * which is determined by the maximum size of an array and the load factor of the map
+ * implementation.
+ * <p>
+ * Upon closing the entire map is deleted and gc'd.
+ *
  * @author Markus Gärtner
  *
  */
@@ -41,7 +49,7 @@ public class UnlimitedBlockCache implements BlockCache {
 	public String toString() {
 		return new StringBuilder()
 		.append(getClass().getName())
-		.append("[size=").append(blocks==null ? -1 : blocks.size())
+		.append("[size=").append(blocks==null ? "<unopened>" : blocks.size())
 		.append(']')
 		.toString();
 	}

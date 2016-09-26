@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 
 import com.google.common.base.Predicate;
 
+import de.ims.icarus2.model.manifest.api.binding.LayerPrerequisite;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -309,7 +310,7 @@ public interface ContextManifest extends MemberManifest {
 	 *
 	 */
 	@AccessControl(AccessPolicy.DENY)
-	public interface PrerequisiteManifest extends Lockable {
+	public interface PrerequisiteManifest extends Lockable, LayerPrerequisite {
 
 		/**
 		 * Returns the {@code ContextManifest} this prerequisite was declared in.
@@ -324,46 +325,6 @@ public interface ContextManifest extends MemberManifest {
 		ContextManifest getContextManifest();
 
 		/**
-		 * Returns the id of the target layer or {@code null} if an exact id match
-		 * is not required or the prerequisite has not yet been fully resolved.
-		 *
-		 * @return
-		 */
-		@AccessRestriction(AccessMode.READ)
-		String getLayerId();
-
-		/**
-		 * Returns the id of the context which should be used to resolve the required
-		 * layer (specified by the {@link #getLayerId() method}) or {@code null} if no
-		 * exact match is required or the prerequisite has not yet been fully resolved.
-		 * @return
-		 */
-		@AccessRestriction(AccessMode.READ)
-		String getContextId();
-
-		/**
-		 * If this layer only requires <i>some</i> layer of a certain type to be present
-		 * this method provides the mechanics to tell this. When the returned value is
-		 * {@code non-null} it is considered to be the exact name of a previously
-		 * defined layer type.
-		 *
-		 * @return
-		 */
-		@AccessRestriction(AccessMode.READ)
-		String getTypeId();
-
-		/**
-		 * Returns the id the required layer should be assigned once resolved. This links
-		 * the result of an abstract prerequisite declaration to a boundary or base definition
-		 * in a template. In addition a prerequisite's alias serves as its identifier. Therefore
-		 * an alias must be unique within the same context!
-		 *
-		 * @return
-		 */
-		@AccessRestriction(AccessMode.READ)
-		String getAlias();
-
-		/**
 		 * If this prerequisite is in resolved state, it was created based on some unresolved
 		 * prerequisite in a context template. In that case this method returns the original
 		 * prerequisite manifest in unresolved form, or {@code null} otherwise.
@@ -375,17 +336,6 @@ public interface ContextManifest extends MemberManifest {
 		 */
 		@AccessRestriction(AccessMode.READ)
 		PrerequisiteManifest getUnresolvedForm();
-
-		/**
-		 * Returns a brief description of this prerequisite, usable as a hint for user interfaces
-		 * when asking the user to resolve ambiguous references.
-		 * <p>
-		 * This is an optional method.
-		 *
-		 * @return
-		 */
-		@AccessRestriction(AccessMode.READ)
-		String getDescription();
 
 		// Modification methods
 

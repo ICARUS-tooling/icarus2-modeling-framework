@@ -67,11 +67,16 @@ import de.ims.icarus2.util.IcarusUtils;
  * </pre>
  *
  * <p>
- * Note that there is no dedicated method for shutting down the resource. When the <i>use count</i>
+ * Note that there is no dedicated method for shutting down the resource. When the <i>use count</i> of
  * a managed resource reaches {@code 0} after {@link #decrementUseCount() decrementing it} the
  * resource will automatically flush pending changes and close caches and buffers.
  * {@link #incrementUseCount() Incrementing} the counter again (e.g. by requesting an accessor for
  * read or write operations) will then reopen those caches and buffers.
+ * <p>
+ * It is important to keep in mind that this implementation is <b>not</b> suited for arbitrary data,
+ * but only for resources which follow a frame format with fixed frame size. Any change in the placement of
+ * individual data frames in the physical resource would invalidate the entire access mechanism implemented
+ * in this class!
  *
  * @author Markus Gärtner
  *

@@ -26,4 +26,6 @@ package de.ims.icarus2.model.api;
 public interface ModelConstants {
 
 	public static final long NO_INDEX = -1L;
+
+	public static final int NO_INDEX_INT = -1;
 }

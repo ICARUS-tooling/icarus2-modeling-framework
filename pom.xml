@@ -19,6 +19,7 @@
 		<trove.version>3.0.3</trove.version>
 		<maven-compiler-plugin.version>3.0</maven-compiler-plugin.version>
 		<javapoet.version>1.7.0</javapoet.version>
+		<lucene.version>6.2.0</lucene.version>
 	</properties>
 
 	<dependencyManagement>
@@ -52,6 +53,11 @@
  				<groupId>com.squareup</groupId>
  				<artifactId>javapoet</artifactId>
  				<version>${javapoet.version}</version>
+			</dependency>
+			<dependency>
+			    <groupId>org.apache.lucene</groupId>
+			    <artifactId>lucene-core</artifactId>
+			    <version>${lucene.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

@@ -82,13 +82,14 @@ public class DirectPathResolver implements PathResolver {
 	 */
 	public static DirectPathResolver forManifest(LocationManifest manifest) {
 		checkNotNull(manifest);
-		checkArgument("Can only handle file or folder locations",
-				manifest.getRootPathType()==PathType.FILE
-				|| manifest.getRootPathType()==PathType.FOLDER);
-		checkArgument("Manifest must define a root path", manifest.getRootPath()!=null);
 
 		String rootPath = manifest.getRootPath();
 		PathType rootPathType = manifest.getRootPathType();
+
+		checkArgument("Can only handle file or folder locations",
+				rootPathType==PathType.FILE || rootPathType==PathType.FOLDER);
+		checkArgument("Manifest must define a root path", rootPath!=null);
+
 
 		if(rootPathType==PathType.FILE) {
 			return new DirectPathResolver(rootPath);
@@ -101,7 +102,7 @@ public class DirectPathResolver implements PathResolver {
 
 			Path root = Paths.get(rootPath);
 
-			// No path entries mean that we should add all regular files in the folder
+			// No path entries means that we should add all regular files in the folder
 			if(pathEntries.isEmpty()) {
 				try (DirectoryStream<Path> stream = Files.newDirectoryStream(root, Files::isRegularFile)) {
 
@@ -119,6 +120,7 @@ public class DirectPathResolver implements PathResolver {
 				Set<String> directFiles = new THashSet<>();
 
 				for(PathEntry entry : pathEntries) {
+					// Explicit file entries get resolved directly
 					if(entry.getType()==PathType.FILE) {
 						String value = entry.getValue();
 						if(value==null || value.isEmpty())
@@ -128,6 +130,7 @@ public class DirectPathResolver implements PathResolver {
 						directFiles.add(value);
 						files.add(root.resolve(value).toString());
 					} else if(entry.getType()==PathType.PATTERN) {
+						// For pattern entries we collect them and wait for a second pass
 						patterns.add(entry.getValue());
 					} else
 						throw new ModelException(ManifestErrorCode.MANIFEST_ERROR,
@@ -143,6 +146,7 @@ public class DirectPathResolver implements PathResolver {
 					}
 
 					Filter<Path> filter = p -> {
+						// Ignore links (or any non-regular file) for pattern matching
 						if(!Files.isRegularFile(p, LinkOption.NOFOLLOW_LINKS)) {
 							return false;
 						}
@@ -158,6 +162,7 @@ public class DirectPathResolver implements PathResolver {
 							matcher.reset(path);
 
 							if(matcher.find()) {
+								//FIXME need to evaluate if we should introduce some sort of exclusion flag for entries/pattern
 								return true;
 							}
 						}

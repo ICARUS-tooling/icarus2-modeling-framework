@@ -26,18 +26,43 @@ import static de.ims.icarus2.util.Conditions.checkNotNull;
  */
 public class VariableDescriptor {
 
+	public static enum Mode {
+		IN(true, false),
+		OUT(false, true),
+		IN_OUT(true, true),
+		;
+
+		private final boolean in, out;
+
+		private Mode(boolean in, boolean out) {
+			this.in = in;
+			this.out = out;
+		}
+
+		public boolean isIn() {
+			return in;
+		}
+
+		public boolean isOut() {
+			return out;
+		}
+	}
+
 	private final String name;
 	private final boolean nullable;
+	private final Mode mode;
 
 	private final Class<?> namespaceClass;
 
 
-	public VariableDescriptor(String name, Class<?> namespaceClass, boolean nullable) {
+	public VariableDescriptor(String name, Class<?> namespaceClass, Mode mode, boolean nullable) {
 		checkNotNull(name);
 		checkNotNull(namespaceClass);
+		checkNotNull(mode);
 
 		this.name = name;
 		this.namespaceClass = namespaceClass;
+		this.mode = mode;
 		this.nullable = nullable;
 	}
 
@@ -53,6 +78,13 @@ public class VariableDescriptor {
 	 */
 	public Class<?> getNamespaceClass() {
 		return namespaceClass;
+	}
+
+	/**
+	 * @return the mode
+	 */
+	public Mode getMode() {
+		return mode;
 	}
 
 	/**

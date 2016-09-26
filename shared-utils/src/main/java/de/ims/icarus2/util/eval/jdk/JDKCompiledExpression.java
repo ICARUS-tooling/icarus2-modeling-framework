@@ -17,7 +17,6 @@
  */
 package de.ims.icarus2.util.eval.jdk;
 
-import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
 
@@ -35,30 +34,20 @@ import de.ims.icarus2.util.eval.var.VariableSet;
  */
 public abstract class JDKCompiledExpression extends AbstractExpression {
 
-	protected VariableSet variables;
-	protected Mutable<?> result;
+	protected VariableSet __variables__;
+	protected Object __result__;
 
 
 	public void setVariables(Collection<? extends VariableDescriptor> variableDescriptors) {
 		checkNotNull(variableDescriptors);
-		checkArgument(!variableDescriptors.isEmpty());
-		checkState("Variables already defined", this.variables==null);
+//		checkArgument(!variableDescriptors.isEmpty());
+		checkState("Variables already defined", this.__variables__==null);
 
-		this.variables = createVariableSet(variableDescriptors);
+		this.__variables__ = createVariableSet(variableDescriptors);
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.eval.AbstractExpression#setReturnType(java.lang.Class)
-	 */
-	@Override
-	public void setReturnType(Class<?> returnType) {
-		super.setReturnType(returnType);
-
-		result = createResultStorage(returnType);
-	}
-
-	/**
-	 * Creates the internal storage used for variables.
+	 * Creates the internal storage used for __variables__.
 	 * <p>
 	 * The default implementation returns a new instance of {@link SimpleVariableSet}.
 	 *
@@ -84,7 +73,7 @@ public abstract class JDKCompiledExpression extends AbstractExpression {
 	 */
 	@Override
 	public VariableSet getVariables() {
-		return variables;
+		return __variables__;
 	}
 
 	/**
@@ -92,7 +81,7 @@ public abstract class JDKCompiledExpression extends AbstractExpression {
 	 */
 	@Override
 	public boolean hasVariables() {
-		return variables!=null;
+		return __variables__!=null;
 	}
 
 	protected abstract void executeCode();
@@ -107,6 +96,6 @@ public abstract class JDKCompiledExpression extends AbstractExpression {
 
 		executeCode();
 
-		return result.get();
+		return __result__;
 	}
 }

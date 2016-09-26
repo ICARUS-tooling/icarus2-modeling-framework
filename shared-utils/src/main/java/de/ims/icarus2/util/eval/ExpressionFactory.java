@@ -28,12 +28,13 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusException;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.eval.var.VariableDescriptor;
+import de.ims.icarus2.util.eval.var.VariableDescriptor.Mode;
 
 /**
  * @author Markus Gärtner
  *
  */
-public abstract class ExpressionFactory {
+public abstract class ExpressionFactory extends Environment {
 
 	private Map<String, VariableDescriptor> variables = new LinkedHashMap<>();
 
@@ -56,26 +57,43 @@ public abstract class ExpressionFactory {
 		return name;
 	}
 
-	public VariableDescriptor addVariable(String id, boolean nullable, Class<?> namespace) {
+	public VariableDescriptor addVariable(String id, Class<?> namespace, Mode mode, boolean nullable) {
 		checkNotNull(id);
 		checkNotNull(namespace);
+		checkNotNull(mode);
 
 		if(variables.containsKey(id))
 			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Duplicate variable id: "+id);
 
-		VariableDescriptor variable = new VariableDescriptor(id, namespace, nullable);
+		VariableDescriptor variable = new VariableDescriptor(id, namespace, mode, nullable);
 
 		variables.put(id, variable);
 
 		return variable;
 	}
 
-	public VariableDescriptor addVariable(String id, Class<?> namespace) {
-		return addVariable(id, false, namespace);
+	public VariableDescriptor addVariable(String id, Class<?> namespace, Mode mode) {
+		return addVariable(id, namespace, mode, false);
+	}
+
+	public VariableDescriptor addInputVariable(String id, Class<?> namespace) {
+		return addVariable(id, namespace, Mode.IN, false);
+	}
+
+	public VariableDescriptor addOutputVariable(String id, Class<?> namespace) {
+		return addVariable(id, namespace, Mode.OUT, false);
+	}
+
+	public VariableDescriptor addInOutVariable(String id, Class<?> namespace) {
+		return addVariable(id, namespace, Mode.IN_OUT, false);
 	}
 
 	public Collection<VariableDescriptor> getVariables() {
 		return CollectionUtils.getCollectionProxy(variables.values());
+	}
+
+	public VariableDescriptor getVariable(String name) {
+		return variables.get(name);
 	}
 
 	/**
@@ -98,7 +116,7 @@ public abstract class ExpressionFactory {
 	 * @return the environment
 	 */
 	public Environment getEnvironment() {
-		return environment;
+		return environment==null ? this : environment;
 	}
 
 	/**

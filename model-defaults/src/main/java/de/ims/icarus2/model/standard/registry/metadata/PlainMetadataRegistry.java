@@ -131,9 +131,14 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 	}
 
 	/**
-	 *
+	 * Writes the content of this registry to the file specified
+	 * in the constructor using UTF-8 character encoding.
 	 */
 	public void saveNow() throws IOException {
+		/*
+		 * Kinda expensive strategy, since we duplicate
+		 * the entire registry content
+		 */
 		Properties tmp = new Properties();
 		tmp.putAll(entries);
 
@@ -141,7 +146,7 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 		try {
 			tmp.store(writer, null);
 		} finally {
-			changedEntryCount = 0;
+			changedEntryCount -= tmp.size();
 		}
 	}
 

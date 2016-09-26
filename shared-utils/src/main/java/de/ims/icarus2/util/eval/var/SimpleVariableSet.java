@@ -129,10 +129,10 @@ public class SimpleVariableSet implements VariableSet {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.eval.var.VariableSet#setValue(java.lang.String, byte)
+	 * @see de.ims.icarus2.util.eval.var.VariableSet#setByte(java.lang.String, byte)
 	 */
 	@Override
-	public void setValue(String variableName, byte value) {
+	public void setByte(String variableName, byte value) {
 		Mutable<?> storage = getStorage(variableName);
 		if(storage.isPrimitive()) {
 			((MutablePrimitive<?>)storage).setByte(value);
@@ -142,10 +142,10 @@ public class SimpleVariableSet implements VariableSet {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.eval.var.VariableSet#setValue(java.lang.String, short)
+	 * @see de.ims.icarus2.util.eval.var.VariableSet#setShort(java.lang.String, short)
 	 */
 	@Override
-	public void setValue(String variableName, short value) {
+	public void setShort(String variableName, short value) {
 		Mutable<?> storage = getStorage(variableName);
 		if(storage.isPrimitive()) {
 			((MutablePrimitive<?>)storage).setShort(value);
@@ -155,10 +155,10 @@ public class SimpleVariableSet implements VariableSet {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.eval.var.VariableSet#setValue(java.lang.String, int)
+	 * @see de.ims.icarus2.util.eval.var.VariableSet#setInteger(java.lang.String, int)
 	 */
 	@Override
-	public void setValue(String variableName, int value) {
+	public void setInteger(String variableName, int value) {
 		Mutable<?> storage = getStorage(variableName);
 		if(storage.isPrimitive()) {
 			((MutablePrimitive<?>)storage).setInt(value);
@@ -168,10 +168,10 @@ public class SimpleVariableSet implements VariableSet {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.eval.var.VariableSet#setValue(java.lang.String, long)
+	 * @see de.ims.icarus2.util.eval.var.VariableSet#setLong(java.lang.String, long)
 	 */
 	@Override
-	public void setValue(String variableName, long value) {
+	public void setLong(String variableName, long value) {
 		Mutable<?> storage = getStorage(variableName);
 		if(storage.isPrimitive()) {
 			((MutablePrimitive<?>)storage).setLong(value);
@@ -181,10 +181,10 @@ public class SimpleVariableSet implements VariableSet {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.eval.var.VariableSet#setValue(java.lang.String, boolean)
+	 * @see de.ims.icarus2.util.eval.var.VariableSet#setBoolean(java.lang.String, boolean)
 	 */
 	@Override
-	public void setValue(String variableName, boolean value) {
+	public void setBoolean(String variableName, boolean value) {
 		Mutable<?> storage = getStorage(variableName);
 		if(storage.isPrimitive()) {
 			((MutablePrimitive<?>)storage).setBoolean(value);
@@ -194,10 +194,10 @@ public class SimpleVariableSet implements VariableSet {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.eval.var.VariableSet#setValue(java.lang.String, char)
+	 * @see de.ims.icarus2.util.eval.var.VariableSet#setChar(java.lang.String, char)
 	 */
 	@Override
-	public void setValue(String variableName, char value) {
+	public void setChar(String variableName, char value) {
 		Mutable<?> storage = getStorage(variableName);
 		if(storage.isPrimitive()) {
 			((MutablePrimitive<?>)storage).setChar(value);
@@ -207,10 +207,10 @@ public class SimpleVariableSet implements VariableSet {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.eval.var.VariableSet#setValue(java.lang.String, float)
+	 * @see de.ims.icarus2.util.eval.var.VariableSet#setFloat(java.lang.String, float)
 	 */
 	@Override
-	public void setValue(String variableName, float value) {
+	public void setFloat(String variableName, float value) {
 		Mutable<?> storage = getStorage(variableName);
 		if(storage.isPrimitive()) {
 			((MutablePrimitive<?>)storage).setFloat(value);
@@ -220,10 +220,10 @@ public class SimpleVariableSet implements VariableSet {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.eval.var.VariableSet#setValue(java.lang.String, double)
+	 * @see de.ims.icarus2.util.eval.var.VariableSet#setDouble(java.lang.String, double)
 	 */
 	@Override
-	public void setValue(String variableName, double value) {
+	public void setDouble(String variableName, double value) {
 		Mutable<?> storage = getStorage(variableName);
 		if(storage.isPrimitive()) {
 			((MutablePrimitive<?>)storage).setDouble(value);
@@ -241,10 +241,10 @@ public class SimpleVariableSet implements VariableSet {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.eval.var.VariableSet#getInt(java.lang.String)
+	 * @see de.ims.icarus2.util.eval.var.VariableSet#getInteger(java.lang.String)
 	 */
 	@Override
-	public int getInt(String name) {
+	public int getInteger(String name) {
 		Mutable<?> storage = getStorage(name);
 		if(storage.isPrimitive()) {
 			return ((MutablePrimitive<?>)storage).intValue();

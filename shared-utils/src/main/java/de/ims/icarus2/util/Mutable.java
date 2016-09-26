@@ -57,7 +57,7 @@ public interface Mutable<O extends Object> extends Wrapper<O>, Cloneable {
 			case "double": result = new MutablePrimitives.MutableDouble(); break;
 			case "char": result = new MutablePrimitives.MutableChar(); break;
 			case "boolean": result = new MutablePrimitives.MutableBoolean(); break;
-			case "void": result = new MutablePrimitives.GenericMutablePrimitive(); break;
+			case "void": result = NULL; break;
 
 			default:
 				break;

@@ -21,7 +21,6 @@ import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
 
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -33,14 +32,9 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.FileDataStates.FileInfo;
 import de.ims.icarus2.filedriver.FileMetadata.FileKey;
 import de.ims.icarus2.filedriver.FileMetadata.ItemLayerKey;
-import de.ims.icarus2.filedriver.FileMetadata.MappingKey;
-import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
-import de.ims.icarus2.filedriver.io.RUBlockCache;
-import de.ims.icarus2.filedriver.io.UnlimitedBlockCache;
 import de.ims.icarus2.filedriver.io.sets.FileSet;
 import de.ims.icarus2.filedriver.mapping.AbstractStoredMapping;
 import de.ims.icarus2.filedriver.mapping.DefaultMappingFactory;
-import de.ims.icarus2.filedriver.mapping.DefaultMappingFactory.Property;
 import de.ims.icarus2.filedriver.mapping.MappingFactory;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexStorage;
 import de.ims.icarus2.model.api.ModelConstants;
@@ -49,12 +43,9 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.ChunkInfo;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
-import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingStorage;
 import de.ims.icarus2.model.api.driver.mods.DriverModule;
-import de.ims.icarus2.model.api.io.resources.FileResource;
-import de.ims.icarus2.model.api.io.resources.IOResource;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.ItemLayerManager;
@@ -64,7 +55,6 @@ import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
-import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
@@ -186,7 +176,7 @@ public abstract class FileDriver extends AbstractDriver {
 		MappingStorage.Builder builder = new MappingStorage.Builder();
 
 		// Allow for subclasses to provide a fallback function
-		BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> fallback = createMappingFallback();
+		BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> fallback = getMappingFallback();
 		if(fallback!=null) {
 			builder.fallback(fallback);
 		}
@@ -203,104 +193,12 @@ public abstract class FileDriver extends AbstractDriver {
 		return builder.build();
 	}
 
-	public static final String HINT_LRU_CACHE = "LRU";
-	public static final String HINT_MRU_CACHE = "MRU";
-	public static final String HINT_UNLIMITED_CACHE = "UNLIMITED";
-
-	protected static BlockCache toBlockCache(String s) {
-		if(s==null) {
-			return null;
-		}
-
-		if(HINT_LRU_CACHE.equals(s)) {
-			return RUBlockCache.newLeastRecentlyUsedCache();
-		} else if(HINT_MRU_CACHE.equals(s)) {
-			return RUBlockCache.newMostRecentlyUsedCache();
-		} else if(HINT_UNLIMITED_CACHE.equals(s)) {
-			return new UnlimitedBlockCache();
-		} else {
-			try {
-				return (BlockCache) Class.forName(s).newInstance();
-			} catch (InstantiationException | IllegalAccessException
-					| ClassNotFoundException e) {
-				throw new ModelException(ManifestErrorCode.IMPLEMENTATION_ERROR,
-						"Unable to instantiate block cache: "+s, e);
-			}
-		}
-	}
-
-	protected static Integer toInteger(int value) {
-		return value==-1 ? null : Integer.valueOf(value);
-	}
-
-	protected static Long toLong(long value) {
-		return value==NO_INDEX ? null : Long.valueOf(value);
-	}
-
-	protected static IndexValueType toValueType(String s) {
-		if(s==null) {
-			return null;
-		}
-
-		return IndexValueType.valueOf(s);
-	}
-
-	protected static IOResource toResource(String s) {
-		if(s==null) {
-			return null;
-		}
-
-		return new FileResource(Paths.get(s));
-	}
-
 	/**
-	 * Enhanced version of the super method. This implementation augments the given {@link Options options} with values for the
-	 * following properties:
-	 * <ul>
-	 * <li>{@link Property#BLOCK_CACHE}</li>
-	 * <li>{@link Property#CACHE_SIZE}</li>
-	 * <li>{@link Property#BLOCK_POWER}</li>
-	 * <li>{@link Property#GROUP_POWER}</li>
-	 * <li>{@link Property#VALUE_TYPE}</li>
-	 * <li>{@link Property#RESOURCE}</li>
-	 * </ul>
+	 * Default implementation delegates directly to {@link FileDriverUtils#createMapping(MappingFactory, MappingManifest, MetadataRegistry, Options)}.
 	 *
-	 * The values are created by querying the {@link MetadataRegistry} of this driver for a set of {@link MappingKey mapping-keys}
-	 * and processing those stored values. The augmented options are then passed to the super method to do the actual instantiation
-	 * and verification work.
-	 *
-	 * @param mappingFactory
-	 * @param mappingManifest
-	 * @param options
-	 * @return
-	 *
-	 * @see #toBlockCache(String)
-	 * @see #toInteger(int)
-	 * @see #toResource(String)
-	 * @see #toValueType(String)
 	 */
 	protected Mapping defaultCreateMapping(MappingFactory mappingFactory, MappingManifest mappingManifest, Options options) {
-		// Populate options
-
-		ContextManifest contextManifest = getManifest().getContextManifest();
-
-		ItemLayerManifest source = (ItemLayerManifest) contextManifest.getLayerManifest(mappingManifest.getSourceLayerId());
-		ItemLayerManifest target = (ItemLayerManifest) contextManifest.getLayerManifest(mappingManifest.getTargetLayerId());
-
-		options.put(Property.BLOCK_CACHE.key(), toBlockCache(metadataRegistry.getValue(MappingKey.BLOCK_CACHE.getKey(source, target))));
-		options.put(Property.CACHE_SIZE.key(), toInteger(metadataRegistry.getIntValue(MappingKey.CACHE_SIZE.getKey(source, target), -1)));
-		options.put(Property.BLOCK_POWER.key(), toInteger(metadataRegistry.getIntValue(MappingKey.BLOCK_POWER.getKey(source, target), -1)));
-		options.put(Property.GROUP_POWER.key(), toInteger(metadataRegistry.getIntValue(MappingKey.GROUP_POWER.getKey(source, target), -1)));
-		options.put(Property.VALUE_TYPE.key(), toValueType(metadataRegistry.getValue(MappingKey.VALUE_TYPE.getKey(source, target))));
-		options.put(Property.RESOURCE.key(), toResource(metadataRegistry.getValue(MappingKey.PATH.getKey(source, target))));
-
-		// Populate options further
-
-		Mapping mapping = mappingFactory.createMapping(mappingManifest, options);
-
-		//TODO do verification?
-
-		return mapping;
+		return FileDriverUtils.createMapping(mappingFactory, mappingManifest, metadataRegistry, options);
 	}
 
 	public void resetMappings() {
@@ -370,6 +268,7 @@ public abstract class FileDriver extends AbstractDriver {
 	public void removeItem(ItemLayer layer, Item item, long index) {
 		checkConnected();
 
+		// TODO Auto-generated method stub
 		super.removeItem(layer, item, index);
 	}
 
