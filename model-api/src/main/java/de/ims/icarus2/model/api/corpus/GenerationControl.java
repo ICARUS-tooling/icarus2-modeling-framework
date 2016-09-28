@@ -19,7 +19,9 @@
 package de.ims.icarus2.model.api.corpus;
 
 /**
- *
+ * A simple "versioning" scheme for corpus objects.
+ * It assumes that modifications transit the corpus from one generation stage into another,
+ * either forward or backwards.
  *
  * @author Markus Gärtner
  *
@@ -59,12 +61,13 @@ public interface GenerationControl {
 	 * @param newId
 	 * @return
 	 */
+	//FIXME not the most reliable strategy, since we can end up with the same "situation" stored in a previous edit after redoing and advancing
 	boolean step(long expectedId, long newId);
 
 	/**
 	 * Maintenance method called when a corpus shuts down.
-	 * Intended persist the current generation stage by whatever method the implemention
-	 * uses for storage.
+	 * Intended to persist the current generation stage by whatever method the
+	 * implementation uses for storage.
 	 */
 	void close();
 }

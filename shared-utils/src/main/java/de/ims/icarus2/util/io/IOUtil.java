@@ -36,6 +36,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.FileVisitResult;
@@ -59,15 +60,13 @@ import de.ims.icarus2.util.strings.StringUtil;
  *
  */
 public final class IOUtil {
-	
-	
+
+
 	private static final Logger log = LoggerFactory.getLogger(IOUtil.class);
 
 	private IOUtil() {
 		// no-op
 	}
-
-	public static final String UTF8_ENCODING = "UTF-8"; //$NON-NLS-1$
 
 	public static final Filter<Path> fileFilter = new Filter<Path>() {
 
@@ -183,10 +182,10 @@ public final class IOUtil {
 	}
 
 	public static String readStream(InputStream input) throws IOException {
-		return readStream(input, UTF8_ENCODING);
+		return readStream(input, StandardCharsets.UTF_8);
 	}
 
-	public static String readStream(InputStream input, String encoding) throws IOException {
+	public static String readStream(InputStream input, Charset encoding) throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		byte[] buffer = new byte[1024];
 		int len = 0;
@@ -198,10 +197,10 @@ public final class IOUtil {
 	}
 
 	public static String readStreamUnchecked(InputStream input) {
-		return readStreamUnchecked(input, UTF8_ENCODING);
+		return readStreamUnchecked(input, StandardCharsets.UTF_8);
 	}
 
-	public static String readStreamUnchecked(InputStream input, String encoding) {
+	public static String readStreamUnchecked(InputStream input, Charset encoding) {
 		try {
 			return readStream(input, encoding);
 		} catch (IOException e) {
@@ -383,11 +382,8 @@ public final class IOUtil {
      */
     public static boolean isUrlResourceExists(final URL url) {
         try {
-            InputStream is = url.openStream();
-            try {
-                is.close();
-            } catch (IOException ioe) {
-                // ignore
+            try(InputStream is = url.openStream()) {
+            	is.available();
             }
             return true;
         } catch (IOException ioe) {
@@ -417,11 +413,8 @@ public final class IOUtil {
             if (p == urlStr.length() - 2) {// URL points to the root entry of JAR file
                 return true;
             }
-            JarFile jarFile = new JarFile(path.toFile());
-            try {
+            try(JarFile jarFile = new JarFile(path.toFile())) {
                 return jarFile.getEntry(urlStr.substring(p + 2)) != null;
-            } finally {
-                jarFile.close();
             }
         } catch (IOException | URISyntaxException ioe) {
             return false;

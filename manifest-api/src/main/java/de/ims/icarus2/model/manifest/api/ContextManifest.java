@@ -19,10 +19,12 @@
 package de.ims.icarus2.model.manifest.api;
 
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import com.google.common.base.Predicate;
 
+import de.ims.icarus2.model.manifest.api.binding.Bindable;
 import de.ims.icarus2.model.manifest.api.binding.LayerPrerequisite;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
@@ -35,7 +37,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface ContextManifest extends MemberManifest {
+public interface ContextManifest extends MemberManifest, Bindable {
 
 	public static final boolean DEFAULT_INDEPENDENT_VALUE = false;
 	public static final boolean DEFAULT_EDITABLE_VALUE = false;
@@ -99,6 +101,21 @@ public interface ContextManifest extends MemberManifest {
 	 */
 	@AccessRestriction(AccessMode.READ)
 	PrerequisiteManifest getPrerequisite(String alias);
+
+	/**
+	 * Default implementation just collects all {@link PrerequisiteManifest} in this
+	 * context into a {@code Set}.
+	 *
+	 * @see de.ims.icarus2.model.manifest.api.binding.Bindable#getBindingEndpoints()
+	 */
+	@Override
+	default Set<LayerPrerequisite> getBindingEndpoints() {
+		LazyCollection<LayerPrerequisite> result = LazyCollection.lazySet();
+
+		forEachPrerequisite(result);
+
+		return result.getAsSet();
+	}
 
 	@AccessRestriction(AccessMode.READ)
 	void forEachLayerManifest(Consumer<? super LayerManifest> action);
@@ -311,6 +328,22 @@ public interface ContextManifest extends MemberManifest {
 	 */
 	@AccessControl(AccessPolicy.DENY)
 	public interface PrerequisiteManifest extends Lockable, LayerPrerequisite {
+
+		/**
+		 * Per default a {@link PrerequisiteManifest} is meant to provide a docking point
+		 * for exactly {@code one} other {@link LayerManifest} and therefore the returned
+		 * {@link Multiplicity} is {@link Multiplicity#ONE ONE}.
+		 * If implementations want to deviate from this behavior they are allowed to
+		 * return other values but should clearly document so.
+		 * <p>
+		 * As for
+		 *
+		 * @see de.ims.icarus2.model.manifest.api.binding.LayerPrerequisite#getMultiplicity()
+		 */
+		@Override
+		default Multiplicity getMultiplicity() {
+			return Multiplicity.ONE;
+		}
 
 		/**
 		 * Returns the {@code ContextManifest} this prerequisite was declared in.

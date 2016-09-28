@@ -36,10 +36,13 @@ import de.ims.icarus2.model.api.registry.MetadataRegistry;
 public class DefaultGeneration implements GenerationControl {
 
 	public static final String KEY_STAGE = "generation.stage";
+	public static final String KEY_MAX_STAGE = "generation.maxStage";
 
 	private final Corpus corpus;
 
 	private final AtomicLong stage = new AtomicLong(INITIAL_STAGE);
+
+	private long maxStage = INITIAL_STAGE;
 
 	/**
 	 * @param corpus
@@ -50,22 +53,45 @@ public class DefaultGeneration implements GenerationControl {
 
 		this.corpus = corpus;
 
-		stage.set(loadStage());
+		loadStage();
 	}
 
-	protected long loadStage() {
+	protected void loadStage() {
 		MetadataRegistry registry = getCorpus().getMetadataRegistry();
-		return registry.getLongValue(KEY_STAGE, INITIAL_STAGE);
+
+		stage.set(registry.getLongValue(KEY_STAGE, INITIAL_STAGE));
+		maxStage = registry.getLongValue(KEY_MAX_STAGE, INITIAL_STAGE);
 	}
 
+	/**
+	 * Persists the current stage in the corpus' {@link MetadataRegistry}.
+	 * <p>
+	 * Note that this method tries to acquire the global lock for the corpus
+	 * to ensure consistency of the two saved values.
+	 *
+	 * @throws ModelException in case the corpus lock is held by a foreign thread
+	 */
 	protected void storeStage() {
-		MetadataRegistry registry = getCorpus().getMetadataRegistry();
-		registry.beginUpdate();
-		try {
-			registry.setLongValue(KEY_STAGE, getStage());
-		} finally {
-			registry.endUpdate();
-		}
+
+		Lock lock = getCorpus().getLock();
+
+		// Check for lock free or held by current thread
+		if(lock.tryLock()) {
+			try {
+				MetadataRegistry registry = getCorpus().getMetadataRegistry();
+				registry.beginUpdate();
+				try {
+					registry.setLongValue(KEY_STAGE, getStage());
+					registry.setLongValue(KEY_MAX_STAGE, maxStage);
+				} finally {
+					registry.endUpdate();
+				}
+			} finally {
+				lock.unlock();
+			}
+		} else
+			throw new ModelException(ModelErrorCode.EDIT_UNSYNCHRONIZED_ACCESS,
+				"Unable to persist generation stage - corpus lock held by foreign thread");
 	}
 
 	/**
@@ -94,7 +120,11 @@ public class DefaultGeneration implements GenerationControl {
 		// Check for lock free or held by current thread
 		if(lock.tryLock()) {
 			try {
-				return stage.incrementAndGet();
+				long newStage = ++maxStage;
+
+				stage.set(newStage);
+
+				return newStage;
 			} finally {
 				lock.unlock();
 			}
@@ -113,7 +143,15 @@ public class DefaultGeneration implements GenerationControl {
 		// Check for lock free or held by current thread
 		if(lock.tryLock()) {
 			try {
-				return stage.compareAndSet(expectedId, newId);
+				if(stage.compareAndSet(expectedId, newId)) {
+					if(newId>maxStage) {
+						maxStage = newId;
+					}
+
+					return true;
+				} else {
+					return false;
+				}
 			} finally {
 				lock.unlock();
 			}

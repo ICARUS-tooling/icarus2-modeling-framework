@@ -64,9 +64,10 @@ public interface LayerManifest extends MemberManifest {
 	}
 
 	/**
-	 * Returns the optional layer type that acts as another abstraction layer
+	 * Returns the optional layer type that acts as another abstraction mechanism
 	 * to unify layers that share a common content structure. Note that all
-	 * layer type instances are globally unique and are shared between all the
+	 * layer type instances are globally unique within the scope of a single
+	 * {@link ManifestRegistry registry} and are shared between all the
 	 * layers of that type.
 	 *
 	 * @return

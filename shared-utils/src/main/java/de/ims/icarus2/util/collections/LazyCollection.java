@@ -154,7 +154,8 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 	}
 
 	public int size() {
-		return buffer.size();
+		Collection<E> c = buffer;
+		return c==null ? 0 : c.size();
 	}
 
 	/**
