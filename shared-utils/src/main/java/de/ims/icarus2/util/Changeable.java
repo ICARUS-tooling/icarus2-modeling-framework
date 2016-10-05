@@ -22,11 +22,11 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 /**
- * <i>Publisher</i counter-part of the {@link ChangeListener} interface.
+ * <i>Publisher</i> counter-part of the {@link ChangeListener} interface.
  * A class implementing {@code Changeable} models an entity with at least one
  * aspect that has observable state changes.
  * <p>
- * Note that the <i>subscriber<i> part of the contract does not specify any
+ * Note that the <i>subscriber</i> part of the contract does not specify any
  * way to communicate the content or nature of the change that occurred but only
  * signals the event of the change itself.
  *

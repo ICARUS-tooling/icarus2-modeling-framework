@@ -128,6 +128,6 @@ public class CorpusUndoManager extends UndoManager implements CorpusUndoListener
 	@Override
 	public void undoableEditHappened(UndoableEditEvent e) {
 		throw new UnsupportedOperationException(
-				"Use method in de.ims.icarus2.model.api.edit.CorpusUndoListener interface"); //$NON-NLS-1$
+				"Use method in "+CorpusUndoListener.class.getSimpleName()+" interface"); //$NON-NLS-1$
 	}
 }

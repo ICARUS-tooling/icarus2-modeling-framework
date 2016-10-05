@@ -17,6 +17,7 @@
  */
 package de.ims.icarus2.model.standard.corpus;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
 
@@ -27,13 +28,16 @@ import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.corpus.GenerationControl;
+import de.ims.icarus2.model.api.edit.CorpusEditEvents;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
+import de.ims.icarus2.util.events.EventListener;
+import de.ims.icarus2.util.events.EventObject;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class DefaultGeneration implements GenerationControl {
+public class DefaultGeneration implements GenerationControl, EventListener {
 
 	public static final String KEY_STAGE = "generation.stage";
 	public static final String KEY_MAX_STAGE = "generation.maxStage";
@@ -138,6 +142,9 @@ public class DefaultGeneration implements GenerationControl {
 	 */
 	@Override
 	public boolean step(long expectedId, long newId) {
+		checkArgument(expectedId>=INITIAL_STAGE);
+		checkArgument(newId>=INITIAL_STAGE);
+
 		Lock lock = getCorpus().getLock();
 
 		// Check for lock free or held by current thread
@@ -168,4 +175,20 @@ public class DefaultGeneration implements GenerationControl {
 		storeStage();
 	}
 
+	/**
+	 * @see de.ims.icarus2.util.events.EventListener#invoke(java.lang.Object, de.ims.icarus2.util.events.EventObject)
+	 */
+	@Override
+	public void invoke(Object sender, EventObject event) {
+		switch (event.getName()) {
+
+		// If an atomic change occurs for the first time we simple do a generation step forward
+		case CorpusEditEvents.EXECUTE:
+			advance();
+			break;
+
+		default:
+			break;
+		}
+	}
 }

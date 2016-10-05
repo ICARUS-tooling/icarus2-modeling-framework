@@ -87,10 +87,10 @@ public abstract class JDKCompiledExpression extends AbstractExpression {
 	protected abstract void executeCode();
 
 	/**
-	 * @see de.ims.icarus2.util.eval.Expression#evaulate()
+	 * @see de.ims.icarus2.util.eval.Expression#evaluate()
 	 */
 	@Override
-	public Object evaulate() {
+	public Object evaluate() {
 
 		//TODO init variables for inner execution
 

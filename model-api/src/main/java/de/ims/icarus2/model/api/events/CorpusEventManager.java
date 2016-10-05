@@ -23,9 +23,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
-import de.ims.icarus2.model.api.corpus.CorpusView;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.meta.MetaData;
+import de.ims.icarus2.model.api.view.CorpusView;
 import de.ims.icarus2.model.util.ModelUtils;
 
 /**

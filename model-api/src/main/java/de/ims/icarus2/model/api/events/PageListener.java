@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.api.events;
 
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.corpus.CorpusView.PageControl;
+import de.ims.icarus2.model.api.view.CorpusView.PageControl;
 
 /**
  *

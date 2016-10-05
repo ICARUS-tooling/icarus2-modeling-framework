@@ -30,11 +30,15 @@ import javax.swing.undo.AbstractUndoableEdit;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 
+import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
+import de.ims.icarus2.model.api.corpus.GenerationControl;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.CorpusMember;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
 
@@ -138,12 +142,14 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	}
 
 	/**
-	 * Notifies listeners of the execution of this edit
+	 * Empty method that allows subclasses to customize the actual dispatch
+	 * behavior.
+	 * <p>
+	 * This includes passing the undoable edit to listeners and/or doing
+	 * preparation work before actually dispatching it.
 	 */
 	public void dispatch() {
-//		getCorpus().getEditModel().fireEvent(
-//				new EventObject(CorpusEditEvents.CHANGE, "edit", this)); //$NON-NLS-1$
-		// for subclasses
+		// no-op
 	}
 
 	/**
@@ -183,7 +189,92 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	 * Adds the specified change to this edit.
 	 */
 	public void add(AtomicChange change) {
+
+		/*
+		 *  If this edit has been empty of actual atomic changes until now
+		 *  use the chance to initialize it with the current generation stage
+		 *  of the the linked corpus.
+		 *  Note that changes are added AFTER they have been successfully
+		 *  executed but BEFORE they get dispatched to event listeners!
+		 */
+		if(changes.isEmpty()) {
+			oldGenerationStage = getCorpus().getGenerationControl().getStage();
+		}
+
 		changes.add(change);
+	}
+
+	/**
+	 * Mark the current generation stage of the linked corpus as the
+	 * {@link #getNewGenerationStage() new stage} of this edit.
+	 */
+	void beforeFirstDispatch() {
+		newGenerationStage = getCorpus().getGenerationControl().getStage();
+	}
+
+	private boolean isGenerationInSync() {
+		return newGenerationStage!=0L // ensures that the edit is complete
+				&& newGenerationStage==getCorpus().getGenerationControl().getStage(); // ensures that this is the most up2date edit
+	}
+
+	/**
+	 * Verifies that this edit is the most up-to-date edit of the
+	 * associated corpus by checking the generation stage and
+	 * delegates to the super method.
+	 *
+	 * @see javax.swing.undo.AbstractUndoableEdit#canUndo()
+	 */
+	@Override
+	public boolean canUndo() {
+		return super.canUndo() && isGenerationInSync();
+	}
+
+	/**
+	 * Verifies that this edit is the most up-to-date edit of the
+	 * associated corpus by checking the generation stage and
+	 * delegates to the super method.
+	 *
+	 * @see javax.swing.undo.AbstractUndoableEdit#canRedo()
+	 */
+	@Override
+	public boolean canRedo() {
+		return super.canRedo() && isGenerationInSync();
+	}
+
+	/**
+	 * This method only verifies that the current generation stage matches the expected
+	 * {@link #getNewGenerationStage() value} stored.
+	 */
+	private void checkGenerationPreChange() {
+		GenerationControl generationControl = getCorpus().getGenerationControl();
+		long currentStage = generationControl.getStage();
+		long expectedStage = getNewGenerationStage();
+
+		if(currentStage!=newGenerationStage)
+			throw new ModelException(getCorpus(), ModelErrorCode.EDIT_GENERATION_OUT_OF_SYNC,
+					Messages.mismatchMessage("Cannot execute operation, corpus generation stage out of sync", expectedStage, currentStage));
+	}
+
+	/**
+	 * This method attempts to {@link GenerationControl#step(long, long) update} the
+	 * generation counter with the values stored as {@link #getOldGenerationStage() begin}
+	 * and {@link #getNewGenerationStage() end} for this edit and throws an exception in
+	 * case this fails.
+	 */
+	private void checkAndRefreshGenerationPostChange() {
+		GenerationControl generationControl = getCorpus().getGenerationControl();
+		long oldStage = getOldGenerationStage();
+		long newStage = getNewGenerationStage();
+
+		// Final consistency check. If this succeeds we're golden
+		if(!generationControl.step(newStage, oldStage))
+			throw new ModelException(getCorpus(), ModelErrorCode.EDIT_GENERATION_OUT_OF_SYNC,
+					"Corrupted edit, generation stage deviates from expected value");
+
+		// If everything went fine swap our saved stages
+		//TODO maybe move this mechanic into one 2-arg method depending on where else it's being used
+		setNewGenerationStage(oldStage);
+		setOldGenerationStage(newStage);
 	}
 
 	/**
@@ -202,9 +293,15 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 		lock.lock();
 		int index = count-1;
 		try {
+			// fail-fast in case of inconsistencies
+			checkGenerationPreChange();
+
 			for (; index >= 0; index--) {
 				changes.get(index).execute();
 			}
+
+			// Verify again before dispatching and then commit the stage change -> rollback if that fails
+			checkAndRefreshGenerationPostChange();
 
 			dispatch();
 		} catch(Exception e) {
@@ -245,11 +342,19 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 		Lock lock = getCorpus().getLock();
 
 		lock.lock();
+
+		// Index up to which changes have been attempted to execute
 		int index = 0;
 		try {
+			// fail-fast in case of inconsistencies
+			checkGenerationPreChange();
+
 			for (; index < count; index++) {
 				changes.get(index).execute();
 			}
+
+			// Verify again before dispatching and then commit the stage change -> rollback if that fails
+			checkAndRefreshGenerationPostChange();
 
 			dispatch();
 		} catch(Exception e) {

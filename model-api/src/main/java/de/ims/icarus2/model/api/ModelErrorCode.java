@@ -25,14 +25,16 @@ import java.util.concurrent.locks.Lock;
 
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.model.api.corpus.Corpus;
-import de.ims.icarus2.model.api.corpus.CorpusModel;
-import de.ims.icarus2.model.api.corpus.CorpusView.PageControl;
+import de.ims.icarus2.model.api.corpus.GenerationControl;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
+import de.ims.icarus2.model.api.edit.UndoableCorpusEdit;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.raster.Position;
+import de.ims.icarus2.model.api.view.CorpusModel;
+import de.ims.icarus2.model.api.view.CorpusView.PageControl;
 import de.ims.icarus2.util.id.DuplicateIdentifierException;
 
 /**
@@ -58,6 +60,19 @@ public enum ModelErrorCode implements ErrorCode {
 	 * if the lock is already held by another thread.
 	 */
 	EDIT_UNSYNCHRONIZED_ACCESS(301),
+
+	/**
+	 * Client code attempted to perform an edit operation (like an undo or redo)
+	 * that relies on synchronization with the {@link GenerationControl generation}
+	 * of a corpus.
+	 * Usually an edit has a well defined {@link UndoableCorpusEdit#getOldGenerationStage() begin}
+	 * and {@link UndoableCorpusEdit#getNewGenerationStage() end} stage that determines
+	 * exactly when it is valid to execute this {@link UndoableCorpusEdit edit}.
+	 * If at the beginning or during execution of an {@link UndoableCorpusEdit#undo()} or
+	 * {@link UndoableCorpusEdit#redo()} operation the current {@link GenerationControl#getStage() stage}
+	 * does not match the edit's expectation, then it will throw this kind of error code.
+	 */
+	EDIT_GENERATION_OUT_OF_SYNC(302),
 
 
 	//**************************************************

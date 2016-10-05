@@ -16,11 +16,13 @@
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  *
  */
-package de.ims.icarus2.model.api.corpus;
+package de.ims.icarus2.model.api.view;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import de.ims.icarus2.model.api.corpus.Context;
+import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.util.collections.CollectionUtils;

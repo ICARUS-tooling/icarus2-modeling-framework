@@ -39,7 +39,7 @@ public class LazyMap<K extends Object, V extends Object> implements BiConsumer<K
 	}
 
 	public static <K extends Object, V extends Object> LazyMap<K, V> lazyHashMap() {
-		return new LazyMap<>(()-> new HashMap<>());
+		return new LazyMap<>(HashMap::new);
 	}
 
 	public static <K extends Object, V extends Object> LazyMap<K, V> lazyTHashMap(final int capacity) {
@@ -47,11 +47,11 @@ public class LazyMap<K extends Object, V extends Object> implements BiConsumer<K
 	}
 
 	public static <K extends Object, V extends Object> LazyMap<K, V> lazyTHashMap() {
-		return new LazyMap<>(()-> new THashMap<>());
+		return new LazyMap<>(THashMap::new);
 	}
 
 	public static <K extends Object, V extends Object> LazyMap<K, V> lazyNavigableMap() {
-		return new LazyMap<>(()-> new TreeMap<>());
+		return new LazyMap<>(TreeMap::new);
 	}
 
 

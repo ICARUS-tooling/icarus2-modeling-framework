@@ -43,6 +43,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 
 	public static final Supplier<AnnotationBundle> LARGE_BUNDLE_FACTORY = LargeAnnotationBundle::new;
 	public static final Supplier<AnnotationBundle> COMPACT_BUNDLE_FACTORY = CompactAnnotationBundle::new;
+	public static final Supplier<AnnotationBundle> GROWING_BUNDLE_FACTORY = GrowingAnnotationBundle::new;
 
 
 	public ComplexAnnotationStorage(Supplier<AnnotationBundle> bundleFactory) {
@@ -89,7 +90,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		return value;
 	}
 
-	private static final Supplier<MutablePrimitive> DEFAULT_STORAGE_FACTORY = GenericTypeAwareMutablePrimitive::new;
+	private static final Supplier<MutablePrimitive<?>> DEFAULT_STORAGE_FACTORY = GenericTypeAwareMutablePrimitive::new;
 
 	/**
 	 * Assigns {@code value} as the mapping for {@code key} on the given {@code item}.
@@ -121,7 +122,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 
 			if(ClassUtils.isPrimitiveWrapperClass(value.getClass())) {
 				// Will fail with ClassCastException in case previous mappings didn't use primitives!
-				MutablePrimitive current = bundle.getValue(key, DEFAULT_STORAGE_FACTORY);
+				MutablePrimitive<?> current = bundle.getValue(key, DEFAULT_STORAGE_FACTORY);
 				// Let storage implementation handle primitive conversion
 				current.fromWrapper(value);
 			} else {
@@ -135,46 +136,46 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 	 * Fetch current value for given item and key and cast to
 	 * {@link MutablePrimitive} if present.
 	 */
-	private MutablePrimitive getPrimitive(Item item, String key) {
+	private MutablePrimitive<?> getPrimitive(Item item, String key) {
 		AnnotationBundle bundle = getBuffer(item);
-		return bundle==null ? null : (MutablePrimitive)bundle.getValue(key);
+		return bundle==null ? null : (MutablePrimitive<?>)bundle.getValue(key);
 	}
 
 	/**
 	 * Fetch current value for given item and key and cast to
 	 * {@link MutablePrimitive} if present.
 	 */
-	private MutablePrimitive ensurePrimitive(Item item, String key) {
+	private MutablePrimitive<?> ensurePrimitive(Item item, String key) {
 		return getBuffer(item, true).getValue(key, DEFAULT_STORAGE_FACTORY);
 	}
 
 	@Override
 	public int getIntegerValue(Item item, String key) {
-		MutablePrimitive primitive = getPrimitive(item, key);
+		MutablePrimitive<?> primitive = getPrimitive(item, key);
 		return primitive==null ? 0 : primitive.intValue();
 	}
 
 	@Override
 	public float getFloatValue(Item item, String key) {
-		MutablePrimitive primitive = getPrimitive(item, key);
+		MutablePrimitive<?> primitive = getPrimitive(item, key);
 		return primitive==null ? 0F : primitive.floatValue();
 	}
 
 	@Override
 	public double getDoubleValue(Item item, String key) {
-		MutablePrimitive primitive = getPrimitive(item, key);
+		MutablePrimitive<?> primitive = getPrimitive(item, key);
 		return primitive==null ? 0D : primitive.doubleValue();
 	}
 
 	@Override
 	public long getLongValue(Item item, String key) {
-		MutablePrimitive primitive = getPrimitive(item, key);
+		MutablePrimitive<?> primitive = getPrimitive(item, key);
 		return primitive==null ? 0L : primitive.longValue();
 	}
 
 	@Override
 	public boolean getBooleanValue(Item item, String key) {
-		MutablePrimitive primitive = getPrimitive(item, key);
+		MutablePrimitive<?> primitive = getPrimitive(item, key);
 		return primitive==null ? false : primitive.booleanValue();
 	}
 
@@ -403,7 +404,8 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 				if(value==null) {
 					map.remove(key);
 				} else {
-
+					//TODO this assignment was missing. need to check if simply throwing the mapping into the map is ok
+					map.put(key, value);
 				}
 			}
 

@@ -40,7 +40,7 @@ public class JDKExpressionFactoryTest {
 
 		Expression expression = factory.compile();
 
-		expression.evaulate();
+		expression.evaluate();
 	}
 
 	@Test
@@ -54,7 +54,7 @@ public class JDKExpressionFactoryTest {
 		Expression expression = factory.compile();
 
 		expression.getVariables().setValue("input", "this is a test");
-		expression.evaulate();
+		expression.evaluate();
 	}
 
 	@Test
@@ -67,7 +67,7 @@ public class JDKExpressionFactoryTest {
 		factory.setReturnType(String.class);
 
 		Expression expression = factory.compile();
-		Object result = expression.evaulate();
+		Object result = expression.evaluate();
 
 		assertEquals(test, result);
 	}
@@ -84,7 +84,7 @@ public class JDKExpressionFactoryTest {
 		Expression expression = factory.compile();
 		expression.getVariables().setInteger("a", 2);
 		expression.getVariables().setInteger("b", 10);
-		Object result = expression.evaulate();
+		Object result = expression.evaluate();
 
 		assertEquals(12, result);
 	}
@@ -99,7 +99,7 @@ public class JDKExpressionFactoryTest {
 
 		Expression expression = factory.compile();
 		expression.getVariables().setValue("input", "abcxcba");
-		Object result = expression.evaulate();
+		Object result = expression.evaluate();
 
 		assertEquals("cba", result);
 	}
@@ -145,6 +145,9 @@ public class JDKExpressionFactoryTest {
 
 		int runs = 10_000_000;
 
+		//for default testing use smaller value
+		runs = 100_000;
+
 		long runtime_raw = 0L;
 		long runtime_exp = 0L;
 
@@ -167,7 +170,7 @@ public class JDKExpressionFactoryTest {
 			expression.getVariables().setValue("a", a);
 			expression.getVariables().setValue("b", b);
 			expression.getVariables().setValue("iterations", iterations);
-			double result_exp = (double) expression.evaulate();
+			double result_exp = (double) expression.evaluate();
 			l2 = System.nanoTime();
 
 			runtime_exp += Math.abs(l2-l1);

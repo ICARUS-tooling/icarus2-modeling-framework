@@ -19,10 +19,10 @@
 package de.ims.icarus2.model.api.path;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
-import de.ims.icarus2.model.api.corpus.CorpusView;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.view.CorpusView;
 
 /**
  * @author Markus Gärtner
@@ -67,6 +67,7 @@ public class CorpusPathBuilder {
 
 
 	public CorpusPath createPath() {
-		//TODO
+		//TODO implement actual builder logic!
+		return null;
 	}
 }

@@ -22,6 +22,9 @@ package de.ims.icarus2.model.api.corpus;
  * A simple "versioning" scheme for corpus objects.
  * It assumes that modifications transit the corpus from one generation stage into another,
  * either forward or backwards.
+ * <p>
+ * To ensure consistency over multiple subsequent undo-operations and intermediate
+ * {@link #advance() forward steps}
  *
  * @author Markus Gärtner
  *
@@ -33,7 +36,7 @@ public interface GenerationControl {
 	Corpus getCorpus();
 
 	/**
-	 * Returns the current generation id.
+	 * Returns the id of the current generation stage.
 	 * <p>
 	 * This id is initially {@code 1} and will be incremented whenever a new
 	 * modification is performed on the corpus.
@@ -43,7 +46,7 @@ public interface GenerationControl {
 	long getStage();
 
 	/**
-	 * Advances into the next generation and returns the new id.
+	 * Advances into the next generation stage and returns the new id.
 	 *
 	 * @return
 	 */

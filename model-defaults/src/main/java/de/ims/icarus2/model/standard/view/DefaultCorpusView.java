@@ -35,14 +35,14 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
-import de.ims.icarus2.model.api.corpus.CorpusAccessMode;
-import de.ims.icarus2.model.api.corpus.CorpusModel;
-import de.ims.icarus2.model.api.corpus.CorpusOwner;
-import de.ims.icarus2.model.api.corpus.CorpusView;
-import de.ims.icarus2.model.api.corpus.Scope;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.members.item.ItemLayerManager;
+import de.ims.icarus2.model.api.view.CorpusAccessMode;
+import de.ims.icarus2.model.api.view.CorpusModel;
+import de.ims.icarus2.model.api.view.CorpusOwner;
+import de.ims.icarus2.model.api.view.CorpusView;
+import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.classes.Lazy;
@@ -135,7 +135,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.corpus.CorpusView#getCorpus()
+	 * @see de.ims.icarus2.model.api.view.CorpusView#getCorpus()
 	 */
 	@Override
 	public Corpus getCorpus() {
@@ -143,7 +143,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.corpus.CorpusView#getScope()
+	 * @see de.ims.icarus2.model.api.view.CorpusView#getScope()
 	 */
 	@Override
 	public Scope getScope() {
@@ -161,7 +161,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.corpus.CorpusView#closable()
+	 * @see de.ims.icarus2.model.api.view.CorpusView#closable()
 	 */
 	@Override
 	public boolean closable() {
@@ -174,7 +174,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 
 	/**
 	 * @throws InterruptedException
-	 * @see de.ims.icarus2.model.api.corpus.CorpusView#close()
+	 * @see de.ims.icarus2.model.api.view.CorpusView#close()
 	 */
 	@Override
 	public void close() throws InterruptedException {
@@ -253,7 +253,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 	 * Creates a fresh unmodifiable copy of the current collection of
 	 * owners that hold partial ownership of this view.
 	 *
-	 * @see de.ims.icarus2.model.api.corpus.CorpusView#getOwners()
+	 * @see de.ims.icarus2.model.api.view.CorpusView#getOwners()
 	 */
 	@Override
 	public Set<CorpusOwner> getOwners() {
@@ -263,7 +263,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.corpus.CorpusView#acquire(de.ims.icarus2.model.api.corpus.CorpusOwner)
+	 * @see de.ims.icarus2.model.api.view.CorpusView#acquire(de.ims.icarus2.model.api.view.CorpusOwner)
 	 */
 	@Override
 	public void acquire(CorpusOwner owner) throws ModelException {
@@ -282,7 +282,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.corpus.CorpusView#release(de.ims.icarus2.model.api.corpus.CorpusOwner)
+	 * @see de.ims.icarus2.model.api.view.CorpusView#release(de.ims.icarus2.model.api.view.CorpusOwner)
 	 */
 	@Override
 	public void release(CorpusOwner owner) throws ModelException {

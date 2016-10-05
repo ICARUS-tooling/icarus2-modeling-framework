@@ -16,11 +16,12 @@
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  *
  */
-package de.ims.icarus2.model.api.corpus;
+package de.ims.icarus2.model.api.view;
 
 import java.util.Set;
 
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.events.CorpusListener;
 import de.ims.icarus2.model.api.events.PageListener;

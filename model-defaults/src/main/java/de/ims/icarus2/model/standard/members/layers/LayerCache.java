@@ -25,9 +25,9 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.util.Collection;
 
-import de.ims.icarus2.model.api.corpus.Scope;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
+import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**

@@ -92,6 +92,10 @@ public final class LayerBinding implements Bindable, Serializable {
 		return new Builder();
 	}
 
+	public static Builder newBuilder(String corpusId) {
+		return new Builder().corpusId(corpusId);
+	}
+
 	/**
 	 * Creates a new {@link Builder} that will contain all the {@link LayerPrerequisite}s
 	 * from the given {@link Bindable}.

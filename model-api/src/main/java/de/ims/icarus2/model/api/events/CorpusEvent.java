@@ -25,12 +25,12 @@ import java.util.Map;
 
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
-import de.ims.icarus2.model.api.corpus.CorpusView;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.CorpusMember;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.meta.MetaData;
+import de.ims.icarus2.model.api.view.CorpusView;
 import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**

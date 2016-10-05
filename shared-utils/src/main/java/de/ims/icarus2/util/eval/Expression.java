@@ -44,5 +44,5 @@ public interface Expression {
 	 * @return
 	 */
 	//TODO determine a sensible exception type
-	public Object evaulate();
+	public Object evaluate();
 }

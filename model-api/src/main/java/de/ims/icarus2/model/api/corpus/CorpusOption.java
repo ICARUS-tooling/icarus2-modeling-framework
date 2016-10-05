@@ -18,6 +18,8 @@
  */
 package de.ims.icarus2.model.api.corpus;
 
+import de.ims.icarus2.model.api.view.CorpusView;
+
 /**
  *
  * @author Markus Gärtner

@@ -27,7 +27,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 
 import de.ims.icarus2.model.api.corpus.Corpus;
-import de.ims.icarus2.model.api.corpus.GenerationControl;
 import de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.events.EventSource;
@@ -96,6 +95,9 @@ public class CorpusEditManager extends WeakEventSource {
 					UndoableCorpusEdit publishedEdit = currentEdit;
 					currentEdit = createUndoableEdit(null);
 
+					// Notify edit itself that it is about to be published
+					publishedEdit.beforeFirstDispatch();
+
 					// Allow edit to manage notification (per default this will fire a "change" event)
 					publishedEdit.dispatch();
 
@@ -113,40 +115,51 @@ public class CorpusEditManager extends WeakEventSource {
 	}
 
 	protected void dispatchEdit(UndoableCorpusEdit edit) {
-		GenerationControl generationControl = getCorpus().getGenerationControl();
-		Lock lock = getCorpus().getLock();
 
-		lock.lock();
-		try {
-			long oldStage = edit.getOldGenerationStage();
-			long newStage;
+		//TODO the following commented out part should be removed?
 
-			// If it's the first time the given edit gets dispatched, only advance the generation stage and save it
-			if(oldStage==-1L) {
-				oldStage = generationControl.getStage();
-				newStage = generationControl.advance();
-			} else {
-				/* We're "reverting" from the post state of the given edit to its pre state,
-				 * therefore the stages get switched.
-				 *
-				 */
-				oldStage = edit.getNewGenerationStage();
-				newStage = edit.getOldGenerationStage();
+//		GenerationControl generationControl = getCorpus().getGenerationControl();
+//		Lock lock = getCorpus().getLock();
+//
+//		lock.lock();
+//		try {
+//			long oldStage = edit.getOldGenerationStage();
+//			long newStage;
+//
+//			// If it's the first time the given edit gets dispatched, only advance the generation stage and save it
+//			if(oldStage==-1L) {
+//				oldStage = generationControl.getStage();
+//				newStage = generationControl.advance();
+//			} else {
+//				/* We're "reverting" from the post state of the given edit to its pre state,
+//				 * therefore the stages get switched.
+//				 *
+//				 */
+//				oldStage = edit.getNewGenerationStage();
+//				newStage = edit.getOldGenerationStage();
+//
+//				// Expected "old" stage is the new stage after the edit has originally been performed
+//				generationControl.step(oldStage, newStage);
+//			}
+//
+//			edit.setOldGenerationStage(oldStage);
+//			edit.setNewGenerationStage(newStage);
+//		} finally {
+//			lock.unlock();
+//		}
 
-				// Expected "old" stage is the new stage after the edit has originally been performed
-				generationControl.step(oldStage, newStage);
-			}
-
-			edit.setOldGenerationStage(oldStage);
-			edit.setNewGenerationStage(newStage);
-		} finally {
-			lock.unlock();
-		}
+		// END-TODO
 
 		fireEvent(new EventObject(CorpusEditEvents.CHANGE, "edit", this)); //$NON-NLS-1$
 	}
 
 	/**
+	 * Allows subclasses to customize what implementation to use.
+	 * <p>
+	 * The default behavior is to create a new {@link UndoableCorpusEdit}
+	 * with its {@link UndoableCorpusEdit#dispatch()} method overridden so
+	 * that it forwards to an internal dispatcher method of this manager.
+	 *
 	 * @return
 	 */
 	protected UndoableCorpusEdit createUndoableEdit(final String nameKey) {

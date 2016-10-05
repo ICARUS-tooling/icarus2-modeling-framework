@@ -41,6 +41,13 @@
 			<groupId>icarus2-tooling</groupId>
 			<artifactId>shared-utils</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
+		</dependency>    
+		<dependency>
+			<groupId>icarus2-tooling</groupId>
+			<artifactId>shared-utils</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+			<type>test-jar</type>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 </project>

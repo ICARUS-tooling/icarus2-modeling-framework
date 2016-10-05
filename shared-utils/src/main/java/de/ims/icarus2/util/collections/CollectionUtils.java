@@ -45,7 +45,8 @@ import java.util.NoSuchElementException;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.WeakHashMap;
+
+import com.google.common.collect.MapMaker;
 
 import de.ims.icarus2.util.Filter;
 
@@ -59,12 +60,16 @@ public final class CollectionUtils {
 	public static final float DEFAULT_LOAD_FACTOR = 0.75f;
 	public static final float DEFAULT_MIN_LOAD = 0.25f;
 
+	public static <K extends Object, V extends Object> Map<K, V> createWeakIdentityHashMap() {
+		return new MapMaker().weakKeys().makeMap();
+	}
+
 	private static final Map<Class<?>, Map<Object, Object>> proxyMaps = new HashMap<>();
 	static {
-		proxyMaps.put(Set.class, new WeakHashMap<>());
-		proxyMaps.put(Collection.class, new WeakHashMap<>());
-		proxyMaps.put(List.class, new WeakHashMap<>());
-		proxyMaps.put(Map.class, new WeakHashMap<>());
+		proxyMaps.put(Set.class, createWeakIdentityHashMap());
+		proxyMaps.put(Collection.class, createWeakIdentityHashMap());
+		proxyMaps.put(List.class, createWeakIdentityHashMap());
+		proxyMaps.put(Map.class, createWeakIdentityHashMap());
 	}
 	private static final Object proxyLock = new Object();
 
@@ -364,7 +369,7 @@ public final class CollectionUtils {
 		return sb.toString();
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings("rawtypes")
 	public static String toString(Map map) {
 		StringBuilder sb = new StringBuilder();
 
