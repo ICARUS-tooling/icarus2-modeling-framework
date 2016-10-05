@@ -310,7 +310,8 @@ public interface Driver extends ItemLayerManager {
 	 * restrictions on the member objects it manages, than this method should return {@code null}.
 	 * <p>
 	 * Note that although the name suggests otherwise it is <b>not</b> mandatory that the driver
-	 * instantiate and return a completely new factory instance.
+	 * instantiate and return a completely new factory instance. It's perfectly legal to return
+	 * a shared instance every time this method is called.
 	 *
 	 * @return
 	 */
@@ -336,6 +337,8 @@ public interface Driver extends ItemLayerManager {
 	boolean hasPendingChanges();
 
 	void flush();
+
+	// Notification stuff
 
 	void addDriverListener(DriverListener listener);
 

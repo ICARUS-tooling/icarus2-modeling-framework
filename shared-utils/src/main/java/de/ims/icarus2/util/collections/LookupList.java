@@ -101,7 +101,7 @@ public class LookupList<E extends Object> implements Iterable<E> {
 	}
 
 	protected void rangeCheck(int index) {
-        if (index >= size)
+        if (index >= size || index < 0)
             throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
     }
 
@@ -400,7 +400,7 @@ public class LookupList<E extends Object> implements Iterable<E> {
         items[--size] = null; // clear to let GC do its work
         unmap(item);
 
-        addDirtyRegion(index+1);
+        addDirtyRegion(index);
     }
 
     private void fastRemove(int index0, int index1, Consumer<? super E> c) {

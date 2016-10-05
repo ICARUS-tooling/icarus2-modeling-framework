@@ -86,6 +86,13 @@ public interface ItemLayerManifest extends LayerManifest {
 		return result.getAsList();
 	}
 
+	/**
+	 * Looks up the level at which the given {@link ContainerManifest} is placed within
+	 * this layer.
+	 *
+	 * @param containerManifest
+	 * @return
+	 */
 	@AccessRestriction(AccessMode.READ)
 	int indexOfContainerManifest(ContainerManifest containerManifest);
 

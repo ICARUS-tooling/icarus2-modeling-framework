@@ -44,7 +44,7 @@ import de.ims.icarus2.util.Options;
  * In addition this factory is meant to provide {@link ImplementationLoader} instances to load
  * custom or foreign implementations of things like drivers.
  * <p>
- * Unless otherwise noted, all {@link Options options} parameters in the factory methods of this
+ * Unless otherwise noted, all {@link Options} parameters in the factory methods of this
  * class are allowed to be {@code null}.
  *
  * @author Markus Gärtner

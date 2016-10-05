@@ -21,7 +21,7 @@ package de.ims.icarus2.model.api.raster;
 
 /**
  * Defines a transformation facility that defines a vector space and allows for the
- * transformation
+ * transformation of a set of raster values into a "vector" {@link Position}.
  *
  * @author Markus Gärtner
  *
@@ -36,7 +36,7 @@ public interface Rasterizer {
 	int getAxisCount();
 
 	/**
-	 * Fetches the specified axis of the udnerlying vector space model.
+	 * Fetches the specified axis of the underlying vector space model.
 	 *
 	 * @param index
 	 * @return

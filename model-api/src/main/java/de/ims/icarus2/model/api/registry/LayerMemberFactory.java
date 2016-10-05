@@ -20,15 +20,36 @@ package de.ims.icarus2.model.api.registry;
 
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
+import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
+import de.ims.icarus2.model.api.raster.Position;
+import de.ims.icarus2.model.api.raster.Rasterizer;
+import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.StructureManifest;
 
 /**
+ * A factory for creating {@link Item items}, {@link Edge edges} and
+ * various {@link Container containers} to host those elements.
+ * <p>
+ * Note that the creation of {@link Position} instances to address
+ * boundaries of {@link Fragment fragments} is <b>not</i> part of this
+ * factory since they are covered by the appropriate {@link Rasterizer}.
+ *
  * @author Markus Gärtner
  *
  */
 public interface LayerMemberFactory {
 
+	Container newContainer(Container host, ContainerManifest manifest);
+
+	Structure newStructure(Container host, StructureManifest manifest);
+
 	Item newItem(Container host);
+
+	default Item newNode(Structure host) {
+		return newItem(host);
+	}
+
 	Edge newEdge(Structure host, Item source, Item target);
 }

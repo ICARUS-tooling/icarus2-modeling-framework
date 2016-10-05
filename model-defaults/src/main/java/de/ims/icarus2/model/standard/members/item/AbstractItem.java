@@ -56,6 +56,14 @@ public abstract class AbstractItem implements Item, Recyclable {
 	@Primitive
 	protected int flags = MemberFlags.EMPTY_FLAGS;
 
+	protected AbstractItem() {
+		// no-op
+	}
+
+	protected AbstractItem(Container host) {
+		setContainer(host);
+	}
+
 	/**
 	 * @see de.ims.icarus2.util.Recyclable#recycle()
 	 */

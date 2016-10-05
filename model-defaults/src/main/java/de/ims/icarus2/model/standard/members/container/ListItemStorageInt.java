@@ -72,11 +72,12 @@ public class ListItemStorageInt implements ItemStorage {
 	 * smaller than the specified {@code capacity} argument. If the
 	 * {@code capacity} parameter is negative, the method is to choose
 	 * an implementation specific value for it.
+	 * <p>
+	 * The default implementation will use {@value #DEFAULT_CAPACITY} as
+	 * fallback in this case.
 	 *
 	 * @param capacity
 	 * @return
-	 *
-	 * @throws
 	 */
 	protected LookupList<Item> createItemsBuffer(int capacity) {
 		if(capacity<0) {

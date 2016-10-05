@@ -18,13 +18,21 @@
  */
 package de.ims.icarus2.model.standard.members;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.registry.LayerMemberFactory;
+import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.StructureManifest;
+import de.ims.icarus2.model.standard.members.container.DefaultContainer;
+import de.ims.icarus2.model.standard.members.container.ItemStorage;
 import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.model.standard.members.structure.DefaultEdge;
+import de.ims.icarus2.model.standard.members.structure.DefaultStructure;
+import de.ims.icarus2.model.standard.members.structure.EdgeStorage;
 
 /**
  * @author Markus Gärtner
@@ -48,4 +56,32 @@ public class DefaultLayerMemberFactory implements LayerMemberFactory {
 		return new DefaultEdge(host, source, target);
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.api.registry.LayerMemberFactory#newContainer(de.ims.icarus2.model.api.members.container.Container, de.ims.icarus2.model.manifest.api.ContainerManifest)
+	 */
+	@Override
+	public Container newContainer(Container host, ContainerManifest manifest) {
+		ItemStorage itemStorage = createItemStorage(manifest);
+
+		return new DefaultContainer(host, itemStorage);
+	}
+
+	protected ItemStorage createItemStorage(ContainerManifest manifest) {
+		throw new ModelException(GlobalErrorCode.NOT_IMPLEMENTED, "TODO");
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.registry.LayerMemberFactory#newStructure(de.ims.icarus2.model.api.members.container.Container, de.ims.icarus2.model.manifest.api.StructureManifest)
+	 */
+	@Override
+	public Structure newStructure(Container host, StructureManifest manifest) {
+		ItemStorage itemStorage = createItemStorage(manifest);
+		EdgeStorage edgeStorage = createEdgeStorage(manifest);
+
+		return new DefaultStructure(host, itemStorage, edgeStorage);
+	}
+
+	protected EdgeStorage createEdgeStorage(StructureManifest manifest) {
+		throw new ModelException(GlobalErrorCode.NOT_IMPLEMENTED, "TODO");
+	}
 }

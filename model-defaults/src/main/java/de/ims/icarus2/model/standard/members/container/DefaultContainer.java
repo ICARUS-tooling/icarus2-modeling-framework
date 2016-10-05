@@ -57,6 +57,16 @@ public class DefaultContainer extends AbstractItem implements Container, Recycla
 		// no-op
 	}
 
+	public DefaultContainer(Container host) {
+		super(host);
+	}
+
+	public DefaultContainer(Container host, ItemStorage itemStorage) {
+		super(host);
+
+		setItemStorage(itemStorage);
+	}
+
 	/**
 	 * Method for accessing the internal item storage in a situation where it
 	 * is expected to not be {@code null}.
