@@ -1,0 +1,6 @@
+
+	-	Semantic Search interface/implementation to use information from DS to have "semantic cluster" or "semantic closeness" constraints as a form of fuzzy search
+	-	Serialization for corpus edits to automatically keep track of changes on a rather high level compared to tracking physical changes via git or other systems
+		-	what level of integration? view/driver/etc ?
+		-	what form? xml, json, sql?
+		-	one-way serialization or ability of recreating edit/change object instances from serialized form? <- tricky!

@@ -26,8 +26,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
-import de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.events.EventSource;
 import de.ims.icarus2.util.events.WeakEventSource;
@@ -51,8 +52,7 @@ public class CorpusEditManager extends WeakEventSource {
 	private final List<CorpusUndoListener> undoListeners = new CopyOnWriteArrayList<>();
 
 	public CorpusEditManager(Corpus corpus) {
-		if (corpus == null)
-			throw new NullPointerException("Invalid corpus"); //$NON-NLS-1$
+		checkNotNull(corpus);
 
 		this.corpus = corpus;
 
@@ -60,8 +60,7 @@ public class CorpusEditManager extends WeakEventSource {
 	}
 
 	public void beginUpdate() {
-		updateLevel.incrementAndGet();
-		fireEvent(new EventObject(CorpusEditEvents.BEGIN_UPDATE));
+		fireEvent(new EventObject(CorpusEditEvents.BEGIN_UPDATE, "edit", currentEdit));
 	}
 
 	public boolean hasActiveUpdate() {
@@ -150,7 +149,7 @@ public class CorpusEditManager extends WeakEventSource {
 
 		// END-TODO
 
-		fireEvent(new EventObject(CorpusEditEvents.CHANGE, "edit", this)); //$NON-NLS-1$
+		fireEvent(new EventObject(CorpusEditEvents.CHANGE, "edit", edit)); //$NON-NLS-1$
 	}
 
 	/**
@@ -159,10 +158,14 @@ public class CorpusEditManager extends WeakEventSource {
 	 * The default behavior is to create a new {@link UndoableCorpusEdit}
 	 * with its {@link UndoableCorpusEdit#dispatch()} method overridden so
 	 * that it forwards to an internal dispatcher method of this manager.
+	 * <p>
+	 * Note that this method is made public instead of protected so that
+	 * serialization frameworks can exploit it for obtaining "correct" instances
+	 * to use together with the active edit manager implementation.
 	 *
 	 * @return
 	 */
-	protected UndoableCorpusEdit createUndoableEdit(final String nameKey) {
+	public UndoableCorpusEdit createUndoableEdit(final String nameKey) {
 		return new UndoableCorpusEdit(getCorpus(), nameKey) {
 
 			private static final long serialVersionUID = -471363052764925086L;
@@ -216,31 +219,39 @@ public class CorpusEditManager extends WeakEventSource {
 	 * a full cycle of update level related methods is called. Note that if
 	 * the change fails in its {@link AtomicChange#execute()} method by
 	 * throwing an exception, the update level will remain unaffected and no
-	 * listener notification will be performed.
+	 * update related listener notification will be performed.
 	 * <p>
 	 * Note that a change will only trigger a {@value CorpusEditEvents#EXECUTE}
 	 * event the first time it is executed by the model. Subsequent executions
 	 * (when undoing or redoing a change) will {@code not} result in events being
 	 * fired for every atomic change, only for top level changes as a whole!
+	 * Note further that each incoming change is <b>always</b> broadcasted via
+	 * above mentioned event type in raw form, i.e. <b>before</b> any attempt of
+	 * actually executing it will be made. This is so that consumers of atomic
+	 * changes such as serialization frameworks have access to the raw representation
+	 * and can obtain the metadata required for proper serialization from the
+	 * unchanged pre-change state of the corpus resource.
 	 *
 	 * @param change
-	 * @throws UnsupportedOperationException if the corpus is not editable
+	 * @throws ModelException if the corpus is not editable
 	 */
-	public void execute(UndoableCorpusEdit.AtomicChange change) {
+	public void execute(AtomicChange change) {
 
 		if(!getCorpus().getManifest().isEditable())
-			throw new UnsupportedOperationException("Corpus does not support modifications"); //$NON-NLS-1$
+			throw new ModelException(getCorpus(), GlobalErrorCode.UNSUPPORTED_OPERATION, "Corpus does not support modifications"); //$NON-NLS-1$
 
 		Lock lock = getCorpus().getLock();
 
 		lock.lock();
 		try {
+			// Fire the "raw" change before executing it
+			fireEvent(new EventObject(CorpusEditEvents.EXECUTE, "change", change)); //$NON-NLS-1$
+
 			// Execute change before update level is modified
 			change.execute();
 
 			beginUpdate();
 			currentEdit.add(change);
-			fireEvent(new EventObject(CorpusEditEvents.EXECUTE, "change", change)); //$NON-NLS-1$
 			endUpdate();
 		} finally {
 			lock.unlock();

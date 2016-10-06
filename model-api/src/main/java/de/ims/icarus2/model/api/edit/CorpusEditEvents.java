@@ -28,6 +28,8 @@ public interface CorpusEditEvents {
 
 	/**
 	 * Fired when the update level is increased
+	 * <p>
+	 * The "edit" property contains the edit in progress.
 	 */
 	public static final String BEGIN_UPDATE = "beginUpdate"; //$NON-NLS-1$
 

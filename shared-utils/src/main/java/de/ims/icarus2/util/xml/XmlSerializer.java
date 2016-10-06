@@ -61,6 +61,13 @@ public interface XmlSerializer {
 	void writeAttribute(String name, double value) throws Exception;
 	void writeAttribute(String name, boolean value) throws Exception;
 
+	default void writeAttribute(String name, byte value) throws Exception {
+		writeAttribute(name, (int)value);
+	}
+	default void writeAttribute(String name, short value) throws Exception {
+		writeAttribute(name, (int)value);
+	}
+
 	/**
 	 * Closes the element with the given {@code name}. Note that the
 	 * behavior of this method depends on whether or not the element

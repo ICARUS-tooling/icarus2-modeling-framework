@@ -18,6 +18,8 @@
  */
 package de.ims.icarus2.model.api.edit;
 
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.undo.UndoManager;
 import javax.swing.undo.UndoableEdit;
@@ -39,8 +41,7 @@ public class CorpusUndoManager extends UndoManager implements CorpusUndoListener
 	private long savedGeneration = 0L;
 
 	public CorpusUndoManager(Corpus corpus) {
-		if (corpus == null)
-			throw new NullPointerException("Invalid corpus");  //$NON-NLS-1$
+		checkNotNull(corpus);
 
 		this.corpus = corpus;
 

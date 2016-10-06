@@ -160,6 +160,14 @@ public abstract class AbstractItem implements Item, Recyclable {
 		return MemberFlags.isItemDirty(flags);
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.api.members.item.Item#isUsable()
+	 */
+	@Override
+	public boolean isUsable() {
+		return MemberFlags.isItemUsable(flags);
+	}
+
 	public void setAlive(boolean alive) {
 		flags = MemberFlags.setItemAlive(flags, alive);
 	}

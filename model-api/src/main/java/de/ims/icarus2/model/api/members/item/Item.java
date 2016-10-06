@@ -230,4 +230,23 @@ public interface Item extends CorpusMember, ModelConstants {
 	boolean isAlive();
 	boolean isLocked();
 	boolean isDirty();
+
+	/**
+	 * Method combining all internal flags into one check.
+	 * An item is considered usable if all 3 of the following conditions hold true:
+	 * <ul>
+	 * <li>It is {@link #isAlive() alive}</li>
+	 * <li>It is <b>not</b> {@link #isLocked() locked}</li>
+	 * <li>It is <b>not</b> {@link #isDirty() dirty}</li>
+	 * </ul>
+	 *
+	 * The default implementation just calls the corresponding methods in succession.
+	 * Subclasses might want to replace that behavior with one more suited to how
+	 * they represent flag states.
+	 *
+	 * @return
+	 */
+	default boolean isUsable() {
+		return isAlive() && !isLocked() && !isDirty();
+	}
 }

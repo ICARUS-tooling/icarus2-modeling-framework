@@ -40,6 +40,7 @@ import de.ims.icarus2.model.api.members.CorpusMember;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
 
 /**
@@ -53,43 +54,8 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	private static final AtomicLong idGenerator = new AtomicLong();
 
 	/**
-	 * Describes an atomic change to the content of a corpus. As a general
-	 * rule a change should check its preconditions and fail without any
-	 * modifications when they are not entirely met.
-	 *
-	 * @author Markus Gärtner
-	 *
+	 * Unique identifier for edits that are created in the same session under the same VM.
 	 */
-	public interface AtomicChange {
-
-		/**
-		 * Executes the change and modifies it internal information
-		 * so that the next call to this method reverts the result.
-		 * If a change requires a specific set of preconditions to be
-		 * carried out, it should check them first or at least try to
-		 * fail before making any permanent changes to the model, should
-		 * any of those conditions be unfulfilled.
-		 *
-		 * @throws CorruptedStateException if the preconditions of this
-		 * change are not met
-		 */
-		void execute();
-
-		/**
-		 * Returns the {@code CorpusMember} that this change affected.
-		 * This is used to decide whether or not changes or entire edits
-		 * should be purged from the undo history in the event of higher order
-		 * changes like the removal of an entire context.
-		 * @return
-		 */
-		CorpusMember getAffectedMember();
-
-		//TODO why keep this method? (currently unused anyway)
-		default boolean canReverse() {
-			return true;
-		}
-	}
-
 	private final long id;
 
 	/**
@@ -109,10 +75,24 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 
 	private boolean reversible = true;
 
+	/**
+	 * Optional human readable textual representation of the edit oepration.
+	 */
 	private final String name;
 
-	private long oldGenerationStage = -1L;
-	private long newGenerationStage = -1L;
+	// Consistency check fields
+
+	private static final long UNSET_GENERATION_STAGE = -1L;
+
+	/**
+	 * Generation stage of the associated corpus <b>before</b> the edit took place.
+	 */
+	private long oldGenerationStage = UNSET_GENERATION_STAGE;
+
+	/**
+	 * Generation stage of the associated corpus <b>after</b> the edit took place.
+	 */
+	private long newGenerationStage = UNSET_GENERATION_STAGE;
 
 	/**
 	 * Constructs a new undoable edit for the given corpus.
@@ -122,7 +102,18 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	}
 
 	/**
-	 * Constructs a new undoable edit for the given corpus.
+	 * Constructs a new undoable edit for the given corpus and sets its generation stage fields.
+	 * This constructor is mainly intended for use with edit serialization frameworks.
+	 */
+	public UndoableCorpusEdit(Corpus corpus, long oldGenerationStage, long newGenerationStage) {
+		this(corpus, true, null);
+
+		setOldGenerationStage(oldGenerationStage);
+		setNewGenerationStage(newGenerationStage);
+	}
+
+	/**
+	 * Constructs a new named undoable edit for the given corpus.
 	 */
 	public UndoableCorpusEdit(Corpus corpus, String name) {
 		this(corpus, true, name);
@@ -163,7 +154,7 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	 * @return the changes
 	 */
 	public List<AtomicChange> getChanges() {
-		return changes;
+		return CollectionUtils.getListProxy(changes);
 	}
 
 	/**
@@ -197,7 +188,7 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 		 *  Note that changes are added AFTER they have been successfully
 		 *  executed but BEFORE they get dispatched to event listeners!
 		 */
-		if(changes.isEmpty()) {
+		if(changes.isEmpty() && oldGenerationStage==UNSET_GENERATION_STAGE) {
 			oldGenerationStage = getCorpus().getGenerationControl().getStage();
 		}
 
@@ -209,11 +200,13 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	 * {@link #getNewGenerationStage() new stage} of this edit.
 	 */
 	void beforeFirstDispatch() {
-		newGenerationStage = getCorpus().getGenerationControl().getStage();
+		if(newGenerationStage==UNSET_GENERATION_STAGE) {
+			newGenerationStage = getCorpus().getGenerationControl().getStage();
+		}
 	}
 
 	private boolean isGenerationInSync() {
-		return newGenerationStage!=0L // ensures that the edit is complete
+		return newGenerationStage!=UNSET_GENERATION_STAGE // ensures that the edit is complete
 				&& newGenerationStage==getCorpus().getGenerationControl().getStage(); // ensures that this is the most up2date edit
 	}
 
@@ -429,6 +422,8 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	 * @return
 	 */
 	public static Context getContextForChange(AtomicChange change){
+		checkNotNull(change);
+
 		CorpusMember member = change.getAffectedMember();
 		if(ModelUtils.isNonLayer(member)) {
 			return ((Item)member).getLayer().getContext();
@@ -451,6 +446,8 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	 * @return
 	 */
 	public static Layer getLayerForChange(AtomicChange change){
+		checkNotNull(change);
+
 		CorpusMember member = change.getAffectedMember();
 		if(ModelUtils.isNonLayer(member)) {
 			return ((Item)member).getLayer();
@@ -469,8 +466,7 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	 * member's context) to the given one.
 	 */
 	public boolean isAffected(Context context) {
-		if (context == null)
-			throw new NullPointerException("Invalid context"); //$NON-NLS-1$
+		checkNotNull(context);
 
 		for(AtomicChange change : changes) {
 			Context affected = getContextForChange(change);

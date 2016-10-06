@@ -79,6 +79,10 @@ public class MemberFlags {
 		return (b & ITEM_DIRTY) == ITEM_DIRTY;
 	}
 
+	public static boolean isItemUsable(int b) {
+		return (b & ITEM_DEFAULT_FLAGS) == ITEM_DEFAULT_FLAGS;
+	}
+
 	public static boolean isItemsComplete(int b) {
 		return (b & ITEMS_COMPLETE) == ITEMS_COMPLETE;
 	}

@@ -37,8 +37,9 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
+import de.ims.icarus2.model.api.edit.AtomicChange;
 import de.ims.icarus2.model.api.edit.CorpusEditManager;
-import de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange;
+import de.ims.icarus2.model.api.edit.SerializableAtomicChanges;
 import de.ims.icarus2.model.api.events.CorpusAdapter;
 import de.ims.icarus2.model.api.events.CorpusEvent;
 import de.ims.icarus2.model.api.events.PageListener;
@@ -68,7 +69,6 @@ import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.IcarusUtils;
-import de.ims.icarus2.util.classes.ClassUtils;
 import de.ims.icarus2.util.classes.Lazy;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.collections.seq.DataSequence;
@@ -443,7 +443,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		checkWriteAccess();
 		checkIndexForAdd(index, container.getItemCount());
 
-		executeChange(new ItemChange(container, item, index, true));
+		executeChange(new SerializableAtomicChanges.ItemChange(container, item, container.getItemCount(), index, true));
 	}
 
 	@Override
@@ -452,7 +452,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		checkWriteAccess();
 		checkIndexForAdd(index, container.getItemCount());
 
-		executeChange(new ItemSequenceChange(container, index, items));
+		executeChange(new SerializableAtomicChanges.ItemSequenceChange(container, container.getItemCount(), index, items));
 	}
 
 	@Override
@@ -462,7 +462,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 
 		Item item = container.getItemAt(index);
 
-		executeChange(new ItemChange(container, item, index, false));
+		executeChange(new SerializableAtomicChanges.ItemChange(container, item, container.getItemCount(), index, false));
 
 		return item;
 	}
@@ -487,7 +487,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		checkIndexForRemove(index1, container.getItemCount());
 		checkArgument(index0<=index1);
 
-		executeChange(new ItemSequenceChange(container, index0, index1));
+		executeChange(new SerializableAtomicChanges.ItemSequenceChange(container, container.getItemCount(), index0, index1));
 	}
 
 	@Override
@@ -499,7 +499,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		Item item0 = container.getItemAt(index0);
 		Item item1 = container.getItemAt(index1);
 
-		executeChange(new ItemMoveChange(container, index0, index1, item0, item1));
+		executeChange(new SerializableAtomicChanges.ItemMoveChange(container, container.getItemCount(), index0, index1, item0, item1));
 	}
 
 
@@ -633,7 +633,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		checkWriteAccess();
 		checkIndexForAdd(index, structure.getEdgeCount());
 
-		executeChange(new EdgeChange(structure, edge, index, true));
+		executeChange(new SerializableAtomicChanges.EdgeChange(structure, edge, structure.getEdgeCount(), index, true));
 	}
 
 	@Override
@@ -642,7 +642,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		checkWriteAccess();
 		checkIndexForAdd(index, structure.getEdgeCount());
 
-		executeChange(new EdgeSequenceChange(structure, index, edges));
+		executeChange(new SerializableAtomicChanges.EdgeSequenceChange(structure, structure.getEdgeCount(), index, edges));
 	}
 
 	@Override
@@ -652,7 +652,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 
 		Edge edge = structure.getEdgeAt(index);
 
-		executeChange(new EdgeChange(structure, edge, index, false));
+		executeChange(new SerializableAtomicChanges.EdgeChange(structure, edge, structure.getEdgeCount(), index, false));
 
 		return edge;
 	}
@@ -665,7 +665,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 			return false;
 		}
 
-		removeEdge(structure, edge);
+		removeEdge(structure, index);
 
 		return true;
 	}
@@ -677,7 +677,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		checkIndexForRemove(index1, structure.getEdgeCount());
 		checkArgument(index0<=index1);
 
-		executeChange(new EdgeSequenceChange(structure, index0, index1));
+		executeChange(new SerializableAtomicChanges.EdgeSequenceChange(structure, structure.getEdgeCount(), index0, index1));
 	}
 
 	@Override
@@ -689,15 +689,15 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		Edge edge0 = structure.getEdgeAt(index0);
 		Edge edge1 = structure.getEdgeAt(index1);
 
-		executeChange(new EdgeMoveChange(structure, index0, index1, edge0, edge1));
+		executeChange(new SerializableAtomicChanges.EdgeMoveChange(structure, structure.getEdgeCount(), index0, index1, edge0, edge1));
 	}
 
 	@Override
 	public Item setTerminal(Structure structure, Edge edge, Item item,
 			boolean isSource) {
-		Item oldTerminal = isSource ? edge.getSource() : edge.getTarget();
+		Item oldTerminal = edge.getTerminal(isSource);
 
-		executeChange(new TerminalChange(structure, edge, isSource, item));
+		executeChange(new SerializableAtomicChanges.TerminalChange(structure, edge, isSource, item, oldTerminal));
 
 		return oldTerminal;
 	}
@@ -768,7 +768,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 	public Position setFragmentBegin(Fragment fragment, Position position) {
 		Position oldPosition = ensureNotNull(fragment.getFragmentBegin());
 
-		executeChange(new PositionChange(fragment, true, position));
+		executeChange(new SerializableAtomicChanges.PositionChange(fragment, true, position));
 
 		return oldPosition;
 	}
@@ -777,7 +777,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 	public Position setFragmentEnd(Fragment fragment, Position position) {
 		Position oldPosition = ensureNotNull(fragment.getFragmentEnd());
 
-		executeChange(new PositionChange(fragment, false, position));
+		executeChange(new SerializableAtomicChanges.PositionChange(fragment, false, position));
 
 		return oldPosition;
 	}
@@ -854,7 +854,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 			Object value) {
 		Object oldValue = layer.getAnnotationStorage().getValue(item, key);
 
-		executeChange(new ValueChange(layer, item, key, value));
+		executeChange(new SerializableAtomicChanges.ValueChange(layer, item, key, value, oldValue));
 
 		return oldValue;
 	}
@@ -864,7 +864,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 			int value) {
 		int oldValue = layer.getAnnotationStorage().getIntegerValue(item, key);
 
-		executeChange(new IntegerValueChange(layer, item, key, value));
+		executeChange(new SerializableAtomicChanges.IntegerValueChange(layer, item, key, value, oldValue));
 
 		return oldValue;
 	}
@@ -874,7 +874,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 			long value) {
 		long oldValue = layer.getAnnotationStorage().getLongValue(item, key);
 
-		executeChange(new LongValueChange(layer, item, key, value));
+		executeChange(new SerializableAtomicChanges.LongValueChange(layer, item, key, value, oldValue));
 
 		return oldValue;
 	}
@@ -884,7 +884,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 			float value) {
 		float oldValue = layer.getAnnotationStorage().getFloatValue(item, key);
 
-		executeChange(new FloatValueChange(layer, item, key, value));
+		executeChange(new SerializableAtomicChanges.FloatValueChange(layer, item, key, value, oldValue));
 
 		return oldValue;
 	}
@@ -894,7 +894,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 			double value) {
 		double oldValue = layer.getAnnotationStorage().getDoubleValue(item, key);
 
-		executeChange(new DoubleValueChange(layer, item, key, value));
+		executeChange(new SerializableAtomicChanges.DoubleValueChange(layer, item, key, value, oldValue));
 
 		return oldValue;
 	}
@@ -904,7 +904,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 			String key, boolean value) {
 		boolean oldValue = layer.getAnnotationStorage().getBooleanValue(item, key);
 
-		executeChange(new BooleanValueChange(layer, item, key, value));
+		executeChange(new SerializableAtomicChanges.BooleanValueChange(layer, item, key, value, oldValue));
 
 		return oldValue;
 	}
@@ -1272,749 +1272,8 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 
 		if(editModel==null) {
 			change.execute();
-			return;
-		}
-
-		editModel.execute(change);
-	}
-
-	protected static void checkExpectedSize(String msg, long size, long expected) {
-		if(size!=expected)
-			throw new ModelException(ModelErrorCode.MODEL_CORRUPTED_EDIT,
-					Messages.sizeMismatchMessage(msg, expected, size));
-	}
-
-	protected static <E extends Item> void checkExpectedMember(String msg, E item, E expected) {
-		if(item!=expected)
-			throw new ModelException(ModelErrorCode.MODEL_CORRUPTED_EDIT,
-					Messages.mismatchMessage(msg, getName(expected), getName(item)));
-	}
-
-	/**
-	 *
-	 * @author Markus Gärtner
-	 *
-	 * @deprecated maintaining the index value of an item is left to the driver implementation that manages it
-	 */
-	protected static class IndexChange implements AtomicChange {
-		protected final Item item;
-		protected long expectedIndex;
-		protected long newIndex;
-
-		public IndexChange(Item item, long newIndex) {
-			this.item = item;
-			this.expectedIndex = item.getIndex();
-			this.newIndex = newIndex;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#execute()
-		 */
-		@Override
-		public void execute() {
-			long index = item.getIndex();
-			if(index!=expectedIndex)
-				throw new ModelException(item.getCorpus(), ModelErrorCode.MODEL_CORRUPTED_EDIT, "Expected index "+expectedIndex+" - got "+item); //$NON-NLS-1$ //$NON-NLS-2$
-
-			// Fail-fast for invalid index values
-			item.setIndex(newIndex);
-
-			long tmp = expectedIndex;
-			expectedIndex = newIndex;
-			newIndex = tmp;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#getAffectedMember()
-		 */
-		@Override
-		public CorpusMember getAffectedMember() {
-			return item;
-		}
-	}
-
-	protected static class ItemChange implements AtomicChange {
-
-		protected final Container container;
-		protected final Item item;
-		protected final long index;
-
-		protected boolean add;
-		protected long expectedSize;
-
-		public ItemChange(Container container, Item item, long index, boolean add) {
-			this.container = container;
-			this.item = item;
-			this.index = index;
-			this.add = add;
-
-			expectedSize = container.getItemCount();
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#execute()
-		 */
-		@Override
-		public void execute() {
-			checkExpectedSize("Remove/Add failed", container.getItemCount(), expectedSize);
-
-			if(add) {
-				container.addItem(index, item);
-				expectedSize++;
-			} else {
-				checkExpectedMember("Remove failed", container.getItemAt(index), item);
-
-				container.removeItem(index);
-
-				expectedSize--;
-			}
-
-			add = !add;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#getAffectedMember()
-		 */
-		@Override
-		public CorpusMember getAffectedMember() {
-			return container;
-		}
-
-	}
-
-	protected static class ItemMoveChange implements AtomicChange {
-
-		protected final Container container;
-
-		protected long index0, index1;
-		protected Item item0, item1;
-		protected long expectedSize;
-
-		public ItemMoveChange(Container container, long index0, long index1, Item item0, Item item1) {
-			this.container = container;
-
-			this.index0 = index0;
-			this.index1 = index1;
-			this.item0 = item0;
-			this.item1 = item1;
-
-			expectedSize = container.getItemCount();
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#execute()
-		 */
-		@Override
-		public void execute() {
-			checkExpectedSize("Move failed", container.getItemCount(), expectedSize);
-
-			Item currentItem0 = container.getItemAt(index0);
-			Item currentItem1 = container.getItemAt(index1);
-
-			checkExpectedMember("Move failed - item0", currentItem0, item0);
-			checkExpectedMember("Move failed - item1", currentItem1, item1);
-
-			container.moveItem(index0, index1);
-
-			// Swap indices and expected items
-
-			item0 = currentItem1;
-			item1 = currentItem0;
-
-			long tmp = index0;
-			index0 = index1;
-			index1 = tmp;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#getAffectedMember()
-		 */
-		@Override
-		public CorpusMember getAffectedMember() {
-			return container;
-		}
-
-	}
-
-	protected static class ItemSequenceChange implements AtomicChange {
-
-		protected final Container container;
-		protected final long index0, index1;
-
-		protected DataSequence<? extends Item> items;
-		protected boolean add;
-		protected long expectedSize;
-
-		/**
-		 * Create a new change that models adding a sequence of items to a container
-		 *
-		 * @param container
-		 * @param index
-		 * @param items
-		 */
-		public ItemSequenceChange(Container container, long index, DataSequence<? extends Item> items) {
-			this.container = container;
-			this.index0 = index;
-			this.index1 = index + items.entryCount();
-
-			this.items = items;
-			this.add = true;
-
-			expectedSize = container.getItemCount();
-		}
-
-		/**
-		 * Create a new change that models the removal of a sequence of items from a container.
-		 *
-		 * @param container
-		 * @param index0
-		 * @param index1
-		 */
-		public ItemSequenceChange(Container container, long index0, long index1) {
-			this.container = container;
-			this.index0 = index0;
-			this.index1 = index1;
-
-			this.items = null;
-			this.add = false;
-
-			expectedSize = container.getItemCount();
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#execute()
-		 */
-		@Override
-		public void execute() {
-			checkExpectedSize("Batch Remove/Add failed", container.getItemCount(), expectedSize);
-
-			if(add) {
-				container.addItems(index0, items);
-				expectedSize += items.entryCount();
-
-				items = null;
-			} else {
-				items = container.removeItems(index0, index1);
-
-				expectedSize -= items.entryCount();
-			}
-
-			add = !add;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#getAffectedMember()
-		 */
-		@Override
-		public CorpusMember getAffectedMember() {
-			return container;
-		}
-
-	}
-
-	protected static class EdgeChange implements AtomicChange {
-
-		protected final Structure structure;
-		protected final Edge edge;
-		protected final long index;
-
-		protected boolean add;
-		protected long expectedSize;
-
-		public EdgeChange(Structure structure, Edge edge, long index, boolean add) {
-			this.structure = structure;
-			this.edge = edge;
-			this.index = index;
-			this.add = add;
-
-			expectedSize = structure.getEdgeCount();
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#execute()
-		 */
-		@Override
-		public void execute() {
-			checkExpectedSize("Remove/Add failed", structure.getEdgeCount(), expectedSize);
-
-			if(add) {
-				structure.addEdge(index, edge);
-				expectedSize++;
-			} else {
-				checkExpectedMember("Removing failed", structure.getEdgeAt(index), edge);
-
-				structure.removeEdge(index);
-
-				expectedSize--;
-			}
-
-			add = !add;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#getAffectedMember()
-		 */
-		@Override
-		public CorpusMember getAffectedMember() {
-			return structure;
-		}
-
-	}
-
-	protected static class EdgeMoveChange implements AtomicChange {
-
-		protected final Structure structure;
-
-		protected long index0, index1;
-		protected Edge edge0, edge1;
-		protected long expectedSize;
-
-		public EdgeMoveChange(Structure structure, long index0, long index1, Edge edge0, Edge edge1) {
-			this.structure = structure;
-
-			this.index0 = index0;
-			this.index1 = index1;
-			this.edge0 = edge0;
-			this.edge1 = edge1;
-
-			expectedSize = structure.getEdgeCount();
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#execute()
-		 */
-		@Override
-		public void execute() {
-			checkExpectedSize("Move failed", structure.getEdgeCount(), expectedSize);
-
-			Edge currentEdge0 = structure.getEdgeAt(index0);
-			Edge currentEdge1 = structure.getEdgeAt(index1);
-
-			checkExpectedMember("Move failed - edge0", currentEdge0, edge0);
-			checkExpectedMember("Move failed - edge1", currentEdge1, edge1);
-
-			structure.moveEdge(index0, index1);
-
-			// Swap indices and expected edges
-
-			edge0 = currentEdge1;
-			edge1 = currentEdge0;
-
-			long tmp = index0;
-			index0 = index1;
-			index1 = tmp;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#getAffectedMember()
-		 */
-		@Override
-		public CorpusMember getAffectedMember() {
-			return structure;
-		}
-
-	}
-
-	protected static class EdgeSequenceChange implements AtomicChange {
-
-		protected final Structure structure;
-		protected final long index0, index1;
-
-		protected DataSequence<? extends Edge> edges;
-		protected boolean add;
-		protected long expectedSize;
-
-		public EdgeSequenceChange(Structure structure, long index, DataSequence<? extends Edge> edges) {
-			this.structure = structure;
-			this.index0 = index;
-			this.index1 = index + edges.entryCount();
-
-			this.edges = edges;
-			this.add = true;
-
-			expectedSize = structure.getEdgeCount();
-		}
-
-		public EdgeSequenceChange(Structure structure, long index0, long index1) {
-			this.structure = structure;
-			this.index0 = index0;
-			this.index1 = index1;
-
-			this.edges = null;
-			this.add = false;
-
-			expectedSize = structure.getEdgeCount();
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#execute()
-		 */
-		@Override
-		public void execute() {
-			checkExpectedSize("Batch Remove/Add failed", structure.getEdgeCount(), expectedSize);
-
-			if(add) {
-				structure.addEdges(index0, edges);
-				expectedSize += edges.entryCount();
-
-				edges = null;
-			} else {
-				edges = structure.removeEdges(index0, index1);
-
-				expectedSize -= edges.entryCount();
-			}
-
-			add = !add;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#getAffectedMember()
-		 */
-		@Override
-		public CorpusMember getAffectedMember() {
-			return structure;
-		}
-
-	}
-
-	protected static class TerminalChange implements AtomicChange {
-
-		protected final Structure structure;
-		protected final Edge edge;
-		protected final boolean isSource;
-
-		protected Item terminal;
-		protected Item expected;
-
-		public TerminalChange(Structure structure, Edge edge, boolean isSource, Item terminal) {
-			this.structure = structure;
-			this.edge = edge;
-			this.isSource = isSource;
-
-			this.terminal = terminal;
-			expected = edge.getTerminal(isSource);
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#execute()
-		 */
-		@Override
-		public void execute() {
-			checkExpectedMember("Wrong host structure", edge.getStructure(), structure);
-
-			Item oldTerminal = isSource ? edge.getSource() : edge.getTarget();
-			checkExpectedMember("Terminal change failed", oldTerminal, expected);
-
-			structure.setTerminal(edge, terminal, isSource);
-
-			terminal = oldTerminal;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#getAffectedMember()
-		 */
-		@Override
-		public CorpusMember getAffectedMember() {
-			return edge;
-		}
-
-	}
-
-	protected static class PositionChange implements AtomicChange {
-
-		protected final Fragment fragment;
-		protected final boolean isBegin;
-
-		protected Position position;
-
-		// We do not store expected position, since its implementation details are undefined
-
-		public PositionChange(Fragment fragment, boolean isBegin, Position position) {
-			this.fragment = fragment;
-			this.isBegin = isBegin;
-			this.position = position;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#execute()
-		 */
-		@Override
-		public void execute() {
-			Position currentPosition = isBegin ? fragment.getFragmentBegin() : fragment.getFragmentEnd();
-
-			if(isBegin) {
-				ModelUtils.checkFragmentPositions(fragment, position, null);
-
-				fragment.setFragmentBegin(position);
-			} else {
-				ModelUtils.checkFragmentPositions(fragment, null, position);
-
-				fragment.setFragmentEnd(position);
-			}
-
-			position = currentPosition;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#getAffectedMember()
-		 */
-		@Override
-		public CorpusMember getAffectedMember() {
-			return fragment;
-		}
-
-	}
-
-	protected static class ValueChange implements AtomicChange {
-		protected final AnnotationLayer layer;
-		protected final Item item;
-		protected final String key;
-
-		protected Object value, expectedValue;
-
-		public ValueChange(AnnotationLayer layer, Item item, String key, Object value) {
-			this.layer = layer;
-			this.item = item;
-			this.key = key;
-
-			this.value = value;
-
-			expectedValue = layer.getAnnotationStorage().getValue(item, key);
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#execute()
-		 */
-		@Override
-		public void execute() {
-			Object oldValue = layer.getAnnotationStorage().getValue(item, key);
-
-			if(!ClassUtils.equals(oldValue, expectedValue))
-				throw new ModelException(layer.getCorpus(), ModelErrorCode.MODEL_CORRUPTED_EDIT,
-						"Expected value '"+IcarusUtils.toLoggableString(expectedValue)+"' - got '"+IcarusUtils.toLoggableString(oldValue)+"'");
-
-			layer.getAnnotationStorage().setValue(item, key, value);
-
-			expectedValue = value;
-			value = oldValue;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#getAffectedMember()
-		 */
-		@Override
-		public CorpusMember getAffectedMember() {
-			return item;
-		}
-	}
-
-	protected static class IntegerValueChange implements AtomicChange {
-		protected final AnnotationLayer layer;
-		protected final Item item;
-		protected final String key;
-
-		protected int value, expectedValue;
-
-		public IntegerValueChange(AnnotationLayer layer, Item item, String key, int value) {
-			this.layer = layer;
-			this.item = item;
-			this.key = key;
-
-			this.value = value;
-			expectedValue = layer.getAnnotationStorage().getIntegerValue(item, key);
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#execute()
-		 */
-		@Override
-		public void execute() {
-			int oldValue = layer.getAnnotationStorage().getIntegerValue(item, key);
-
-			if(oldValue!=expectedValue)
-				throw new ModelException(layer.getCorpus(), ModelErrorCode.MODEL_CORRUPTED_EDIT,
-						"Expected value "+expectedValue+" - got "+oldValue);
-
-			layer.getAnnotationStorage().setIntegerValue(item, key, value);
-
-			expectedValue = value;
-			value = oldValue;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#getAffectedMember()
-		 */
-		@Override
-		public CorpusMember getAffectedMember() {
-			return item;
-		}
-	}
-
-	protected static class LongValueChange implements AtomicChange {
-		protected final AnnotationLayer layer;
-		protected final Item item;
-		protected final String key;
-
-		protected long value, expectedValue;
-
-		public LongValueChange(AnnotationLayer layer, Item item, String key, long value) {
-			this.layer = layer;
-			this.item = item;
-			this.key = key;
-
-			this.value = value;
-			expectedValue = layer.getAnnotationStorage().getLongValue(item, key);
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#execute()
-		 */
-		@Override
-		public void execute() {
-			long oldValue = layer.getAnnotationStorage().getLongValue(item, key);
-
-			if(oldValue!=expectedValue)
-				throw new ModelException(layer.getCorpus(), ModelErrorCode.MODEL_CORRUPTED_EDIT,
-						"Expected value "+expectedValue+" - got "+oldValue);
-
-			layer.getAnnotationStorage().setLongValue(item, key, value);
-
-			expectedValue = value;
-			value = oldValue;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#getAffectedMember()
-		 */
-		@Override
-		public CorpusMember getAffectedMember() {
-			return item;
-		}
-	}
-
-	protected static class FloatValueChange implements AtomicChange {
-		protected final AnnotationLayer layer;
-		protected final Item item;
-		protected final String key;
-
-		protected float value, expectedValue;
-
-		public FloatValueChange(AnnotationLayer layer, Item item, String key, float value) {
-			this.layer = layer;
-			this.item = item;
-			this.key = key;
-
-			this.value = value;
-			expectedValue = layer.getAnnotationStorage().getFloatValue(item, key);
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#execute()
-		 */
-		@Override
-		public void execute() {
-			float oldValue = layer.getAnnotationStorage().getFloatValue(item, key);
-
-			if(Float.compare(oldValue, expectedValue)!=0)
-				throw new ModelException(layer.getCorpus(), ModelErrorCode.MODEL_CORRUPTED_EDIT,
-						"Expected value "+expectedValue+" - got "+oldValue);
-
-			layer.getAnnotationStorage().setFloatValue(item, key, value);
-
-			expectedValue = value;
-			value = oldValue;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#getAffectedMember()
-		 */
-		@Override
-		public CorpusMember getAffectedMember() {
-			return item;
-		}
-	}
-
-	protected static class DoubleValueChange implements AtomicChange {
-		protected final AnnotationLayer layer;
-		protected final Item item;
-		protected final String key;
-
-		protected double value, expectedValue;
-
-		public DoubleValueChange(AnnotationLayer layer, Item item, String key, double value) {
-			this.layer = layer;
-			this.item = item;
-			this.key = key;
-
-			this.value = value;
-			expectedValue = layer.getAnnotationStorage().getDoubleValue(item, key);
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#execute()
-		 */
-		@Override
-		public void execute() {
-			double oldValue = layer.getAnnotationStorage().getDoubleValue(item, key);
-
-			if(Double.compare(oldValue, expectedValue)!=0)
-				throw new ModelException(layer.getCorpus(), ModelErrorCode.MODEL_CORRUPTED_EDIT,
-						"Expected value "+expectedValue+" - got "+oldValue);
-
-			layer.getAnnotationStorage().setDoubleValue(item, key, value);
-
-			expectedValue = value;
-			value = oldValue;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#getAffectedMember()
-		 */
-		@Override
-		public CorpusMember getAffectedMember() {
-			return item;
-		}
-	}
-
-	protected static class BooleanValueChange implements AtomicChange {
-		protected final AnnotationLayer layer;
-		protected final Item item;
-		protected final String key;
-
-		protected boolean value, expectedValue;
-
-		public BooleanValueChange(AnnotationLayer layer, Item item, String key, boolean value) {
-			this.layer = layer;
-			this.item = item;
-			this.key = key;
-
-			this.value = value;
-			expectedValue = layer.getAnnotationStorage().getBooleanValue(item, key);
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#execute()
-		 */
-		@Override
-		public void execute() {
-			boolean oldValue = layer.getAnnotationStorage().getBooleanValue(item, key);
-
-			if(oldValue!=expectedValue)
-				throw new ModelException(layer.getCorpus(), ModelErrorCode.MODEL_CORRUPTED_EDIT,
-						"Expected value "+expectedValue+" - got "+oldValue);
-
-			layer.getAnnotationStorage().setBooleanValue(item, key, value);
-
-			expectedValue = value;
-			value = oldValue;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.UndoableCorpusEdit.AtomicChange#getAffectedMember()
-		 */
-		@Override
-		public CorpusMember getAffectedMember() {
-			return item;
+		} else {
+			editModel.execute(change);
 		}
 	}
 }
