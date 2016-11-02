@@ -22,6 +22,7 @@ import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -87,7 +88,10 @@ public abstract class AbstractDriver implements Driver {
 
 	private Context context;
 
-	protected final Lock lock = new ReentrantLock();
+	/**
+	 * Driver global lock to synchronize critical operations like {@link #connect(Corpus)}
+	 */
+	private final Lock lock = new ReentrantLock();
 
 	private MappingStorage mappings;
 
@@ -101,18 +105,22 @@ public abstract class AbstractDriver implements Driver {
 		this.manifest = manifest;
 	}
 
+	protected Lock getGlobalLock() {
+		return lock;
+	}
+
 	/**
 	 * Returns a fresh instance of {@link DefaultLayerMemberFactory} which
 	 * in turn returns implementations for all layer members based on the
 	 * {@code de.ims.icarus2.standard.members} package and its subpackages.
 	 *
-	 * @see de.ims.icarus2.model.api.driver.Driver#newFactory()
+	 * @see de.ims.icarus2.model.api.driver.Driver#newMemberFactory()
 	 * @see DefaultLayerMemberFactory
 	 * @see DefaultItem
 	 * @see DefaultEdge
 	 */
 	@Override
-	public LayerMemberFactory newFactory() {
+	public LayerMemberFactory newMemberFactory() {
 		return new DefaultLayerMemberFactory();
 	}
 
@@ -132,8 +140,10 @@ public abstract class AbstractDriver implements Driver {
 
 	@Override
 	public void connect(Corpus target) throws InterruptedException {
-		lock.lock();
 
+		Lock lock = getGlobalLock();
+
+		lock.lock();
 		try {
 			if(isDead())
 				throw new ModelException(ModelErrorCode.DRIVER_CONNECTION, "Driver previously disconencted - considered dead: "+manifest.getId());
@@ -142,6 +152,7 @@ public abstract class AbstractDriver implements Driver {
 
 			this.corpus = target;
 
+			// From here on subclasses should be able to access critical components without problems
 			allowUncheckedAccess = true;
 
 			// Delegate initialization work
@@ -190,7 +201,7 @@ public abstract class AbstractDriver implements Driver {
 	 * The default implementation creates the context and mapping storage to be used later.
 	 * <p>
 	 * For proper nesting of method calls a subclass should make sure to call {@code super.doConnect()}
-	 * before any setup work.
+	 * <b>before</b> any setup work.
 	 *
 	 * @throws InterruptedException
 	 */
@@ -252,6 +263,11 @@ public abstract class AbstractDriver implements Driver {
 		return builder.build();
 	}
 
+	/**
+	 * Hook for subclasses to modify default behavior when creating the mapping storage.
+	 *
+	 * @return
+	 */
 	protected BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> getMappingFallback() {
 		return null;
 	}
@@ -259,6 +275,8 @@ public abstract class AbstractDriver implements Driver {
 	@Override
 	public void disconnect(Corpus target) throws InterruptedException {
 		checkNotNull(target);
+
+		Lock lock = getGlobalLock();
 
 		lock.lock();
 		try {
@@ -302,7 +320,7 @@ public abstract class AbstractDriver implements Driver {
 	 * this driver.
 	 * <p>
 	 * For proper nesting of method calls a subclass should make sure to call {@code super.doConnect()}
-	 * after any cleanup work.
+	 * <b>after</b> any cleanup work.
 	 *
 	 * @throws InterruptedException
 	 */
@@ -435,13 +453,15 @@ public abstract class AbstractDriver implements Driver {
 			primaryIndices = mapIndices(layer.getManifest(), primaryLayer.getManifest(), indices);
 		}
 
+		//TODO alternative way would be to implement this as a kind of stream to better utilize CPU and I/O in parallel
+
 		// Delegate to wrapped ItemLayerManager for actual loading
 		return loadPrimaryLayer(primaryIndices, primaryLayer, action);
 	}
 
 	/**
 	 * Loads data chunks for the specified primary layer. This method is not publicly exposed
-	 * and only used be the general {@link #load(IndexSet[], ItemLayer, Consumer) load} method
+	 * and only used by the general {@link #load(IndexSet[], ItemLayer, Consumer) load} method
 	 * after indices have been translated properly to the respective primary layer.
 	 *
 	 * @param indices
@@ -539,6 +559,10 @@ public abstract class AbstractDriver implements Driver {
 
 	/**
 	 * Default implementation always returns {@code false}.
+	 * <p>
+	 * Subclasses that implement a synchronous link to their backend storage
+	 * should use this method to signal client code about unfinished maintenance
+	 * work.
 	 *
 	 * @see de.ims.icarus2.model.api.driver.Driver#hasPendingChanges()
 	 */
@@ -549,11 +573,14 @@ public abstract class AbstractDriver implements Driver {
 
 	/**
 	 * Default implementation does nothing.
+	 * <p>
+	 * Subclasses that implement a synchronous link to their backend storage
+	 * should use this method to finish maintenance work.
 	 *
 	 * @see de.ims.icarus2.model.api.driver.Driver#flush()
 	 */
 	@Override
-	public void flush() {
+	public void flush() throws IOException {
 		// no-op
 	}
 

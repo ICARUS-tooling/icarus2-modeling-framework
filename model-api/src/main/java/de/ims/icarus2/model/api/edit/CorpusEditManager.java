@@ -60,7 +60,7 @@ public class CorpusEditManager extends WeakEventSource {
 	}
 
 	public void beginUpdate() {
-		fireEvent(new EventObject(CorpusEditEvents.BEGIN_UPDATE, "edit", currentEdit));
+		fireEvent(new EventObject(CorpusEditEvents.BEGIN_UPDATE, "edit", currentEdit, "level", updateLevel.incrementAndGet()));
 	}
 
 	public boolean hasActiveUpdate() {
@@ -79,11 +79,11 @@ public class CorpusEditManager extends WeakEventSource {
 	}
 
 	public void endUpdate() {
-		int level = updateLevel.decrementAndGet();
+		int level = updateLevel.getAndDecrement();
 
 		if (!endingUpdate.get()) {
-			boolean end = endingUpdate.compareAndSet(false, level==0);
-			fireEvent(new EventObject(CorpusEditEvents.END_UPDATE, "edit", currentEdit));
+			boolean end = endingUpdate.compareAndSet(false, level==1);
+			fireEvent(new EventObject(CorpusEditEvents.END_UPDATE, "edit", currentEdit, "level", level));
 
 			try {
 				if (end && !currentEdit.isEmpty()) {
@@ -94,8 +94,11 @@ public class CorpusEditManager extends WeakEventSource {
 					UndoableCorpusEdit publishedEdit = currentEdit;
 					currentEdit = createUndoableEdit(null);
 
-					// Notify edit itself that it is about to be published
-					publishedEdit.beforeFirstDispatch();
+					// Finalize generation information of edit
+					//FIXME should we ensure some proper synchronization on the generation control here?
+					if(publishedEdit.getNewGenerationStage()==UndoableCorpusEdit.UNSET_GENERATION_STAGE) {
+						publishedEdit.setNewGenerationStage(getCorpus().getGenerationControl().getStage());
+					}
 
 					// Allow edit to manage notification (per default this will fire a "change" event)
 					publishedEdit.dispatch();
@@ -244,14 +247,27 @@ public class CorpusEditManager extends WeakEventSource {
 
 		lock.lock();
 		try {
+			UndoableCorpusEdit edit = currentEdit;
+			long stage = getCorpus().getGenerationControl().getStage();
+
 			// Fire the "raw" change before executing it
 			fireEvent(new EventObject(CorpusEditEvents.EXECUTE, "change", change)); //$NON-NLS-1$
 
 			// Execute change before update level is modified
 			change.execute();
 
+			/*
+			 * If this is the first occasion we executed a change with a fresh new edit object
+			 * it's time to initialize the 'oldGenerationStage' field.
+			 * Note that we need that extra check since the setter methods for stages in the edit
+			 * class only ever allow a single invocation each!
+			 */
+			if(edit.isEmpty() && edit.getOldGenerationStage()==UndoableCorpusEdit.UNSET_GENERATION_STAGE) {
+				edit.setOldGenerationStage(stage);
+			}
+
 			beginUpdate();
-			currentEdit.add(change);
+			edit.add(change);
 			endUpdate();
 		} finally {
 			lock.unlock();

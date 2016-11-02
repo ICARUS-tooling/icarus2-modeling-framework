@@ -51,6 +51,10 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 
 	private static final int DEFAULT_BLOCK_POWER = 12;
 
+	public static Builder builder() {
+		return new Builder();
+	}
+
 	protected DefaultChunkIndex(Builder builder) {
 		super(builder);
 

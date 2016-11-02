@@ -23,8 +23,8 @@ import static de.ims.icarus2.util.Conditions.checkNotNull;
 import java.util.List;
 
 import de.ims.icarus2.model.api.registry.CorpusManager;
-import de.ims.icarus2.model.api.registry.MetadataStoragePolicy;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
+import de.ims.icarus2.model.api.registry.MetadataStoragePolicy;
 
 /**
  * Implements a delegating metadata policy that takes a priority list of actual policies
@@ -43,19 +43,17 @@ public class PriorityListMetadataPolicy<O extends Object> implements MetadataSto
 	@SuppressWarnings("rawtypes")
 	private final MetadataStoragePolicy[] policies;
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public PriorityListMetadataPolicy(MetadataStoragePolicy[] policies) {
+	public PriorityListMetadataPolicy(MetadataStoragePolicy<? extends O>[] policies) {
 		checkNotNull(policies);
 		checkArgument(policies.length>0);
 
 		this.policies = new MetadataStoragePolicy[policies.length];
 
 		for(int i=0; i<policies.length; i++) {
-			this.policies[i] = (MetadataStoragePolicy<O>) policies[i];
+			this.policies[i] = (MetadataStoragePolicy<? extends O>) policies[i];
 		}
 	}
 
-	@SuppressWarnings({ "unchecked" })
 	public PriorityListMetadataPolicy(List<MetadataStoragePolicy<? extends O>> policies) {
 		checkNotNull(policies);
 		checkArgument(!policies.isEmpty());
@@ -63,7 +61,7 @@ public class PriorityListMetadataPolicy<O extends Object> implements MetadataSto
 		this.policies = new MetadataStoragePolicy[policies.size()];
 
 		for(int i=0; i<policies.size(); i++) {
-			this.policies[i] = (MetadataStoragePolicy<O>) policies.get(i);
+			this.policies[i] = (MetadataStoragePolicy<? extends O>) policies.get(i);
 		}
 	}
 

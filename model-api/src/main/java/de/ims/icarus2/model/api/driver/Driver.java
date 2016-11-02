@@ -18,6 +18,7 @@
  */
 package de.ims.icarus2.model.api.driver;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -191,8 +192,9 @@ public interface Driver extends ItemLayerManager {
 
 		IndexSet[] result;
 
-		reader.begin();
 		try {
+			reader.begin();
+
 			result = reader.lookup(sourceIndices, null);
 		} finally {
 			reader.end();
@@ -216,8 +218,9 @@ public interface Driver extends ItemLayerManager {
 
 		boolean result;
 
-		reader.begin();
 		try {
+			reader.begin();
+
 			result = reader.lookup(indices, collector, null);
 		} finally {
 			reader.end();
@@ -315,7 +318,9 @@ public interface Driver extends ItemLayerManager {
 	 *
 	 * @return
 	 */
-	LayerMemberFactory newFactory();
+	LayerMemberFactory newMemberFactory();
+
+	// Modification methods
 
 	/**
 	 * Inserts a new {@code item} into the specified layer.
@@ -336,7 +341,7 @@ public interface Driver extends ItemLayerManager {
 
 	boolean hasPendingChanges();
 
-	void flush();
+	void flush() throws IOException;
 
 	// Notification stuff
 

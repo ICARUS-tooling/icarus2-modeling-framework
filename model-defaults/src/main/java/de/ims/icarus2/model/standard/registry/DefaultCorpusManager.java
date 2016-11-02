@@ -21,7 +21,9 @@ package de.ims.icarus2.model.standard.registry;
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import gnu.trove.map.hash.THashMap;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Lock;
@@ -40,10 +43,11 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.events.CorpusLifecycleListener;
+import de.ims.icarus2.model.api.io.FileManager;
 import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.api.registry.CorpusMemberFactory;
-import de.ims.icarus2.model.api.registry.MetadataStoragePolicy;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
+import de.ims.icarus2.model.api.registry.MetadataStoragePolicy;
 import de.ims.icarus2.model.api.registry.SubRegistry;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
@@ -62,6 +66,7 @@ public class DefaultCorpusManager implements CorpusManager {
 
 	private final ManifestRegistry manifestRegistry;
 	private final MetadataRegistry metadataRegistry;
+	private final FileManager fileManager;
 
 	private volatile Function<CorpusManifest, Corpus> corpusProducer;
 
@@ -82,12 +87,48 @@ public class DefaultCorpusManager implements CorpusManager {
 
 	private final List<CorpusLifecycleListener> lifecycleListeners = new CopyOnWriteArrayList<>();
 
-	public DefaultCorpusManager(ManifestRegistry registry, MetadataRegistry metadataRegistry) {
+	private final Map<String, String> properties = new THashMap<>();
+
+	//TODO add config parameter that allows passing of stuff like path to a new properties file, or a default fallback set of properties, etc...
+	public DefaultCorpusManager(ManifestRegistry registry, MetadataRegistry metadataRegistry, FileManager fileManager) {
 		checkNotNull(registry);
 		checkNotNull(metadataRegistry);
 
 		this.manifestRegistry = registry;
 		this.metadataRegistry = metadataRegistry;
+		this.fileManager = fileManager;
+
+		// Read in default properties
+		Properties defaultProperties = new Properties();
+		try {
+			defaultProperties.load(DefaultCorpusManager.class.getResourceAsStream("default-properties.ini"));
+		} catch (IOException e) {
+			throw new ModelException(GlobalErrorCode.INTERNAL_ERROR, "Failed to load default properties", e);
+		}
+
+		// Copy over default properties
+		for(String key : properties.keySet()) {
+			properties.put(key, defaultProperties.getProperty(key));
+		}
+	}
+
+	/**
+	 * This implementation first tries to fetch the {@link System#getProperty(String) system property} for the given
+	 * {@code key} and if no such property has been defined accesses the internal default properties.
+	 *
+	 * @see de.ims.icarus2.model.api.registry.CorpusManager#getProperty(java.lang.String)
+	 */
+	@Override
+	public String getProperty(String key) {
+		checkNotNull(key);
+
+		String value = System.getProperty(key);
+
+		if(value==null) {
+			value = properties.get(key);
+		}
+
+		return value;
 	}
 
 	@Override
@@ -222,6 +263,11 @@ public class DefaultCorpusManager implements CorpusManager {
 	@Override
 	public MetadataRegistry getMetadataRegistry() {
 		return metadataRegistry;
+	}
+
+	@Override
+	public FileManager getFileManager() {
+		return fileManager;
 	}
 
 	/**

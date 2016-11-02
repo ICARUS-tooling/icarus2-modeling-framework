@@ -31,7 +31,7 @@ public class CharacterAxis implements RasterAxis {
 	 */
 	@Override
 	public String getId() {
-		return "CharacterAxis"; //$NON-NLS-1$
+		return "characterAxis"; //$NON-NLS-1$
 	}
 
 	/**

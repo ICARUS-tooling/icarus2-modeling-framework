@@ -132,7 +132,7 @@ public class ContextFactory {
 		return this;
 	}
 
-	protected synchronized Producers getProducers() {
+	protected synchronized Producers cloneAndGetProducers() {
 		return producers.clone();
 	}
 
@@ -157,7 +157,7 @@ public class ContextFactory {
 		}
 
 		// Fetch snapshot of producers and make sure we can create every possible member!
-		Producers producers = getProducers();
+		Producers producers = cloneAndGetProducers();
 		producers.ensureFactories(corpus);
 
 		DefaultContext context = (DefaultContext) newContext(corpus, manifest, producers, options);

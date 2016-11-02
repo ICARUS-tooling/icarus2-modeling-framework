@@ -861,9 +861,13 @@ public interface CorpusModel extends Part<CorpusView>, ModelConstants, Changeabl
 
 	Item getTarget(Edge edge);
 
-	Item setSource(Edge edge, Item item);
+	default Item setSource(Edge edge, Item item) {
+		return setTerminal(edge.getStructure(), edge, item, true);
+	}
 
-	Item setTarget(Edge edge, Item item);
+	default Item setTarget(Edge edge, Item item) {
+		return setTerminal(edge.getStructure(), edge, item, false);
+	}
 
 	//---------------------------------------------
 	//			FRAGMENT METHODS

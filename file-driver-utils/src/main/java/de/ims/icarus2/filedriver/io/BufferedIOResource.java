@@ -124,7 +124,7 @@ public abstract class BufferedIOResource {
 	}
 
 	protected BufferedIOResource(BufferedIOResourceBuilder<?> builder) {
-		// TODO maybe redundant call or should leave for safety?
+		// TODO maybe redundant call or should leave it here for safety?
 		builder.validate();
 
 		this.resource = builder.getResource();
@@ -157,7 +157,7 @@ public abstract class BufferedIOResource {
 		// Ensure we never have to worry about block id values
 		// exceeding Integer.MAX_VALUE
 		if(bytesPerBlock<MIN_BLOCK_SIZE)
-			throw new IllegalArgumentException("Invalid block size: "+bytesPerBlock+" - minimum size is "+MIN_BLOCK_SIZE); //$NON-NLS-1$ //$NON-NLS-2$
+			throw new IllegalArgumentException("Invalid block size: "+bytesPerBlock+" - minimum size is "+MIN_BLOCK_SIZE);
 
 		this.bytesPerBlock = bytesPerBlock;
 	}

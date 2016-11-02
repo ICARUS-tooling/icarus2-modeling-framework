@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.standard.members.item;
 
 import gnu.trove.map.hash.TCustomHashMap;
-import gnu.trove.strategy.HashingStrategy;
+import gnu.trove.strategy.IdentityHashingStrategy;
 
 import java.util.Collection;
 import java.util.function.Consumer;
@@ -38,25 +38,12 @@ import de.ims.icarus2.util.collections.LazyCollection;
  */
 public class CompoundItemLayerManager implements ItemLayerManager {
 
+	//FIXME
+
 	private final TCustomHashMap<ItemLayer, ItemLayerManager> managerLookup;
 
-	private static final HashingStrategy<ItemLayer> HASHING_STRATEGY = new HashingStrategy<ItemLayer>() {
-
-		private static final long serialVersionUID = -7197936330884264266L;
-
-		@Override
-		public boolean equals(ItemLayer o1, ItemLayer o2) {
-			return o1==o2;
-		}
-
-		@Override
-		public int computeHashCode(ItemLayer object) {
-			return object.hashCode();
-		}
-	};
-
 	public CompoundItemLayerManager() {
-		managerLookup = new TCustomHashMap<>(HASHING_STRATEGY);
+		managerLookup = new TCustomHashMap<>(IdentityHashingStrategy.INSTANCE);
 	}
 
 	protected ItemLayerManager getManager(ItemLayer layer) {

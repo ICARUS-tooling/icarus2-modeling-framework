@@ -18,7 +18,9 @@
  */
 package de.ims.icarus2.model.api.edit;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkState;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -82,7 +84,7 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 
 	// Consistency check fields
 
-	private static final long UNSET_GENERATION_STAGE = -1L;
+	static final long UNSET_GENERATION_STAGE = -1L;
 
 	/**
 	 * Generation stage of the associated corpus <b>before</b> the edit took place.
@@ -178,31 +180,15 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 
 	/**
 	 * Adds the specified change to this edit.
+	 * <p>
+	 * This will also set the internal value returned by {@link #getOldGenerationStage()}
+	 * in the case it hasn't already been set and there haven't been any atomic changes
+	 * added to this edit so far. So if an edit gets constructed from serialized data
+	 * the generation stage fields should be set before adding any changes.
 	 */
 	public void add(AtomicChange change) {
 
-		/*
-		 *  If this edit has been empty of actual atomic changes until now
-		 *  use the chance to initialize it with the current generation stage
-		 *  of the the linked corpus.
-		 *  Note that changes are added AFTER they have been successfully
-		 *  executed but BEFORE they get dispatched to event listeners!
-		 */
-		if(changes.isEmpty() && oldGenerationStage==UNSET_GENERATION_STAGE) {
-			oldGenerationStage = getCorpus().getGenerationControl().getStage();
-		}
-
 		changes.add(change);
-	}
-
-	/**
-	 * Mark the current generation stage of the linked corpus as the
-	 * {@link #getNewGenerationStage() new stage} of this edit.
-	 */
-	void beforeFirstDispatch() {
-		if(newGenerationStage==UNSET_GENERATION_STAGE) {
-			newGenerationStage = getCorpus().getGenerationControl().getStage();
-		}
 	}
 
 	private boolean isGenerationInSync() {
@@ -266,8 +252,8 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 
 		// If everything went fine swap our saved stages
 		//TODO maybe move this mechanic into one 2-arg method depending on where else it's being used
-		setNewGenerationStage(oldStage);
-		setOldGenerationStage(newStage);
+		this.newGenerationStage = oldStage;
+		this.oldGenerationStage = newStage;
 	}
 
 	/**
@@ -537,6 +523,9 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	 * @param oldGenerationStage the oldGenerationStage to set
 	 */
 	void setOldGenerationStage(long oldGenerationStage) {
+		checkArgument(oldGenerationStage!=UNSET_GENERATION_STAGE);
+		checkState(this.oldGenerationStage==UNSET_GENERATION_STAGE);
+
 		this.oldGenerationStage = oldGenerationStage;
 	}
 
@@ -551,6 +540,9 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	 * @param newGenerationStage the newGenerationStage to set
 	 */
 	void setNewGenerationStage(long newGenerationStage) {
+		checkArgument(newGenerationStage!=UNSET_GENERATION_STAGE);
+		checkState(this.newGenerationStage==UNSET_GENERATION_STAGE);
+
 		this.newGenerationStage = newGenerationStage;
 	}
 }

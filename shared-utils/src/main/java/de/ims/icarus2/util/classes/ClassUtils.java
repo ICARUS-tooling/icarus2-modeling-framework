@@ -177,6 +177,12 @@ public final class ClassUtils {
 		primitiveWrapperLookup.put(Void.class, void.class);
 	}
 
+	/**
+	 * Unwraps wrapper types to their primitive type definition.
+	 *
+	 * @param clazz
+	 * @return
+	 */
 	public static Class<?> unwrap(Class<?> clazz) {
 		Class<?> primitiveClass = primitiveWrapperLookup.get(clazz);
 		return primitiveClass==null ? clazz : primitiveClass;
@@ -195,6 +201,12 @@ public final class ClassUtils {
 		primitiveWrappers.put(void.class, Void.class);
 	}
 
+	/**
+	 * Returns the wrapper type for a given class if it is a primitive type.
+	 *
+	 * @param clazz
+	 * @return
+	 */
 	public static Class<?> wrap(Class<?> clazz) {
 		return clazz.isPrimitive() ? primitiveWrappers.get(clazz) : clazz;
 	}

@@ -44,6 +44,18 @@ public interface FileSet {
 	 */
 	Path getFileAt(int fileIndex);
 
+	default int indexOfFile(Path file) {
+		int fileCount = getFileCount();
+
+		for(int i=0; i<fileCount; i++) {
+			if(getFileAt(i).equals(file)) {
+				return i;
+			}
+		}
+
+		return -1;
+	}
+
 	default void forEachFile(IntConsumer action) {
 		int fileCount = getFileCount();
 

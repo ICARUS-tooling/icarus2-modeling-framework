@@ -197,6 +197,7 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 			}
 		}
 
+		// Flush final content of builder
 		if(action!=null && !infoBuilder.isEmpty()) {
 			action.accept(infoBuilder.build());
 		}

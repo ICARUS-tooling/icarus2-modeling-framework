@@ -27,6 +27,7 @@ import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.events.CorpusLifecycleListener;
+import de.ims.icarus2.model.api.io.FileManager;
 import de.ims.icarus2.model.api.members.CorpusMember;
 import de.ims.icarus2.model.api.view.CorpusModel;
 import de.ims.icarus2.model.api.view.CorpusView;
@@ -106,6 +107,16 @@ import de.ims.icarus2.util.id.Identity;
  */
 public interface CorpusManager {
 
+	/**
+	 * Obtains the global setting denoted by the {@code key} parameter.
+	 *
+	 * @param key
+	 * @return
+	 */
+	String getProperty(String key);
+
+	//TODO keep the properties interface read-only or allow some way of programmatically setting new values?
+
 	//TODO create some interface to gather statistics and situational snapshots of a corpus' state (lifetime, views created, etc...)
 
 	/**
@@ -122,7 +133,15 @@ public interface CorpusManager {
 	MetadataRegistry getMetadataRegistry();
 
 	/**
-	 * Returns the {@link MetadataStoragePolicy policy} to be sued for creating metadata
+	 * Returns the optional file manager that can be used to provide a unified
+	 * access to shared file resources.
+	 *
+	 * @return
+	 */
+	FileManager getFileManager();
+
+	/**
+	 * Returns the {@link MetadataStoragePolicy policy} to be used for creating metadata
 	 * registries for corpora. The default implementation simply returns an
 	 * {@link MetadataStoragePolicy#emptyCorpusMetadataStoragePolicy empty} implementation.
 	 *
@@ -133,7 +152,7 @@ public interface CorpusManager {
 	}
 
 	/**
-	 * Returns the {@link MetadataStoragePolicy policy} to be sued for creating metadata
+	 * Returns the {@link MetadataStoragePolicy policy} to be used for creating metadata
 	 * registries for contexts. The default implementation simply returns an
 	 * {@link MetadataStoragePolicy#emptyContextMetadataStoragePolicy empty} implementation.
 	 *
@@ -168,7 +187,7 @@ public interface CorpusManager {
 	 * @return
 	 * @throws InterruptedException
 	 * @throws ModelException in case the given {@code corpus} has been {@link #disableCorpus(CorpusManifest) disabled}
-	 * or is marked as {@link #isBadCorpus(CorpusManifest) bad}
+	 * or is marked as {@link #isBadCorpus(CorpusManifest) bad} or for any internal error encountered during execution.
 	 */
 	Corpus connect(CorpusManifest corpus) throws InterruptedException;
 

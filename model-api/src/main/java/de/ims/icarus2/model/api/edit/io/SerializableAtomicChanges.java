@@ -15,10 +15,14 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package de.ims.icarus2.model.api.edit;
+package de.ims.icarus2.model.api.edit.io;
 
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.model.api.edit.AtomicChange;
+import de.ims.icarus2.model.api.edit.AtomicChangeType;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.CorpusMember;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -27,6 +31,8 @@ import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.raster.Position;
+import de.ims.icarus2.model.api.view.CorpusModel;
+import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.IcarusUtils;
@@ -34,6 +40,11 @@ import de.ims.icarus2.util.classes.ClassUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
+ * Provides a collection of ready-to-use implementations of {@link SerializableAtomicChange} functionality
+ * that covers all the modifications possible on a corpus through the {@link CorpusModel}
+ * interface.
+ * <p>
+ *
  * @author Markus Gärtner
  *
  */
@@ -58,7 +69,7 @@ public class SerializableAtomicChanges {
 	 *
 	 * @deprecated maintaining the index value of an item is left to the driver implementation that manages it
 	 */
-	public static class IndexChange implements AtomicChange {
+	public static class IndexChange implements SerializableAtomicChange {
 		protected final Item item;
 		protected long expectedIndex;
 		protected long newIndex;
@@ -67,6 +78,10 @@ public class SerializableAtomicChanges {
 			this.item = item;
 			this.expectedIndex = expectedIndex;
 			this.newIndex = newIndex;
+		}
+
+		protected IndexChange(AtomicChangeProxy proxy) {
+			this(proxy.getItem1(), proxy.getIndex1(), proxy.getIndex2());
 		}
 
 		/**
@@ -93,9 +108,30 @@ public class SerializableAtomicChanges {
 		public CorpusMember getAffectedMember() {
 			return item;
 		}
+
+		/**
+		 * @see de.ims.icarus2.model.api.edit.io.SerializableAtomicChange#toProxy()
+		 */
+		@Override
+		public AtomicChangeProxy toProxy() {
+			return new AtomicChangeProxy(AtomicChangeType.INDEX_CHANGE)
+				.setItem1(item)
+				.setIndex1(expectedIndex)
+				.setIndex2(newIndex);
+		}
 	}
 
-	public static class ItemChange implements AtomicChange {
+	/**
+	 * Models the {@link CorpusModel#addItem(Container, long, Item)}
+	 * and {@link CorpusModel#removeItem(Container, long)} changes.
+	 *
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @see CorpusModel#addItem(Container, long, Item)
+	 * @see CorpusModel#removeItem(Container, long)
+	 */
+	public static class ItemChange implements SerializableAtomicChange {
 
 		protected final Container container;
 		protected final Item item;
@@ -110,6 +146,30 @@ public class SerializableAtomicChanges {
 			this.index = index;
 			this.add = add;
 			this.expectedSize = expectedSize;
+		}
+
+		protected ItemChange(AtomicChangeProxy proxy) {
+			container = proxy.getContainer();
+			index = proxy.getIndex1();
+			expectedSize = proxy.getExpectedSize();
+			add = proxy.getIsAdd();
+
+			item = add ? proxy.getItem1() : null;
+		}
+
+		@Override
+		public AtomicChangeProxy toProxy() {
+			AtomicChangeProxy proxy = new AtomicChangeProxy(AtomicChangeType.ITEM_CHANGE)
+				.setContainer(container)
+				.setIndex1(index)
+				.setExpectedSize(expectedSize)
+				.setIsAdd(add);
+
+			if(add) {
+				proxy.setItem1(item);
+			}
+
+			return proxy;
 		}
 
 		/**
@@ -143,7 +203,14 @@ public class SerializableAtomicChanges {
 
 	}
 
-	public static class ItemMoveChange implements AtomicChange {
+	/**
+	 * Models the {@link CorpusModel#moveItem(Container, long, long)} change.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @see CorpusModel#moveItem(Container, long, long)
+	 */
+	public static class ItemMoveChange implements SerializableAtomicChange {
 
 		protected final Container container;
 
@@ -158,6 +225,21 @@ public class SerializableAtomicChanges {
 			this.item0 = item0;
 			this.item1 = item1;
 			this.expectedSize = expectedSize;
+		}
+
+		protected ItemMoveChange(AtomicChangeProxy proxy) {
+			this(proxy.getContainer(), proxy.getExpectedSize(), proxy.getIndex1(), proxy.getIndex2(), proxy.getItem1(), proxy.getItem2());
+		}
+
+		@Override
+		public AtomicChangeProxy toProxy() {
+			return new AtomicChangeProxy(AtomicChangeType.ITEM_MOVE_CHANGE)
+				.setContainer(container)
+				.setExpectedSize(expectedSize)
+				.setIndex1(index0)
+				.setIndex2(index1)
+				.setItem1(item0)
+				.setItem2(item1);
 		}
 
 		/**
@@ -195,7 +277,16 @@ public class SerializableAtomicChanges {
 
 	}
 
-	public static class ItemSequenceChange implements AtomicChange {
+	/**
+	 * Models the {@link CorpusModel#addItems(Container, long, DataSequence)}
+	 * and {@link CorpusModel#removeItems(Container, long, long)} changes,
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @see CorpusModel#addItems(Container, long, DataSequence)
+	 * @see CorpusModel#removeItems(Container, long, long)
+	 */
+	public static class ItemSequenceChange implements SerializableAtomicChange {
 
 		protected final Container container;
 		protected final long index0, index1;
@@ -236,6 +327,34 @@ public class SerializableAtomicChanges {
 			this.expectedSize = expectedSize;
 		}
 
+		protected ItemSequenceChange(AtomicChangeProxy proxy) {
+			container = proxy.getContainer();
+			index0 = proxy.getIndex1();
+			index1 = proxy.getIndex2();
+			expectedSize = proxy.getExpectedSize();
+
+			add = proxy.getIsAdd();
+			if(add) {
+				items = proxy.getItems();
+			}
+		}
+
+		@Override
+		public AtomicChangeProxy toProxy() {
+			AtomicChangeProxy proxy = new AtomicChangeProxy(AtomicChangeType.ITEMS_CHANGE)
+				.setContainer(container)
+				.setIndex1(index0)
+				.setIndex2(index1)
+				.setIsAdd(add)
+				.setExpectedSize(expectedSize);
+
+			if(add) {
+				proxy.setItems(items);
+			}
+
+			return proxy;
+		}
+
 		/**
 		 * @see de.ims.icarus2.model.api.edit.AtomicChange#execute()
 		 */
@@ -267,7 +386,16 @@ public class SerializableAtomicChanges {
 
 	}
 
-	public static class EdgeChange implements AtomicChange {
+	/**
+	 * Models the {@link CorpusModel#addEdge(Structure, long, Edge)} and
+	 * {@link CorpusModel#removeEdge(Structure, long)} changes.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @see CorpusModel#addEdge(Structure, long, Edge)
+	 * @see CorpusModel#removeEdge(Structure, long)
+	 */
+	public static class EdgeChange implements SerializableAtomicChange {
 
 		protected final Structure structure;
 		protected final Edge edge;
@@ -282,6 +410,30 @@ public class SerializableAtomicChanges {
 			this.index = index;
 			this.add = add;
 			this.expectedSize = expectedSize;
+		}
+
+		protected EdgeChange(AtomicChangeProxy proxy) {
+			structure = proxy.getStructure();
+			index = proxy.getIndex1();
+			expectedSize = proxy.getExpectedSize();
+			add = proxy.getIsAdd();
+
+			edge = add ? proxy.getEdge1() : null;
+		}
+
+		@Override
+		public AtomicChangeProxy toProxy() {
+			AtomicChangeProxy proxy = new AtomicChangeProxy(AtomicChangeType.ITEM_CHANGE)
+				.setStructure(structure)
+				.setIndex1(index)
+				.setExpectedSize(expectedSize)
+				.setIsAdd(add);
+
+			if(add) {
+				proxy.setEdge1(edge);
+			}
+
+			return proxy;
 		}
 
 		/**
@@ -315,7 +467,14 @@ public class SerializableAtomicChanges {
 
 	}
 
-	public static class EdgeMoveChange implements AtomicChange {
+	/**
+	 * Models the {@link CorpusModel#moveEdge(Structure, long, long)} change.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @see CorpusModel#moveEdge(Structure, long, long)
+	 */
+	public static class EdgeMoveChange implements SerializableAtomicChange {
 
 		protected final Structure structure;
 
@@ -330,6 +489,21 @@ public class SerializableAtomicChanges {
 			this.edge0 = edge0;
 			this.edge1 = edge1;
 			this.expectedSize = expectedSize;
+		}
+
+		protected EdgeMoveChange(AtomicChangeProxy proxy) {
+			this(proxy.getStructure(), proxy.getExpectedSize(), proxy.getIndex1(), proxy.getIndex2(), proxy.getEdge1(), proxy.getEdge2());
+		}
+
+		@Override
+		public AtomicChangeProxy toProxy() {
+			return new AtomicChangeProxy(AtomicChangeType.EDGE_MOVE_CHANGE)
+				.setStructure(structure)
+				.setExpectedSize(expectedSize)
+				.setIndex1(index0)
+				.setIndex2(index1)
+				.setEdge1(edge0)
+				.setEdge2(edge1);
 		}
 
 		/**
@@ -367,7 +541,16 @@ public class SerializableAtomicChanges {
 
 	}
 
-	public static class EdgeSequenceChange implements AtomicChange {
+	/**
+	 * Models the {@link CorpusModel#addEdges(Structure, long, DataSequence)} and
+	 * {@link CorpusModel#removeEdges(Structure, long, long)} changes.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @see CorpusModel#addEdges(Structure, long, DataSequence)
+	 * @see CorpusModel#removeEdges(Structure, long, long)
+	 */
+	public static class EdgeSequenceChange implements SerializableAtomicChange {
 
 		protected final Structure structure;
 		protected final long index0, index1;
@@ -392,6 +575,34 @@ public class SerializableAtomicChanges {
 			this.edges = null;
 			this.add = false;
 			this.expectedSize = expectedSize;
+		}
+
+		protected EdgeSequenceChange(AtomicChangeProxy proxy) {
+			structure = proxy.getStructure();
+			index0 = proxy.getIndex1();
+			index1 = proxy.getIndex2();
+			expectedSize = proxy.getExpectedSize();
+
+			add = proxy.getIsAdd();
+			if(add) {
+				edges = proxy.getEdges();
+			}
+		}
+
+		@Override
+		public AtomicChangeProxy toProxy() {
+			AtomicChangeProxy proxy = new AtomicChangeProxy(AtomicChangeType.EDGES_CHANGE)
+				.setStructure(structure)
+				.setIndex1(index0)
+				.setIndex2(index1)
+				.setIsAdd(add)
+				.setExpectedSize(expectedSize);
+
+			if(add) {
+				proxy.setEdges(edges);
+			}
+
+			return proxy;
 		}
 
 		/**
@@ -425,7 +636,17 @@ public class SerializableAtomicChanges {
 
 	}
 
-	public static class TerminalChange implements AtomicChange {
+	/**
+	 * Models the {@link CorpusModel#setTerminal(Structure, Edge, Item, boolean)},
+	 * {@link CorpusModel#setSource(Edge, Item)} and {@link CorpusModel#setTarget(Edge, Item)} changes.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @see CorpusModel#setTerminal(Structure, Edge, Item, boolean)
+	 * @see CorpusModel#setSource(Edge, Item)
+	 * @see CorpusModel#setTarget(Edge, Item)
+	 */
+	public static class TerminalChange implements SerializableAtomicChange {
 
 		protected final Structure structure;
 		protected final Edge edge;
@@ -441,6 +662,20 @@ public class SerializableAtomicChanges {
 
 			this.terminal = terminal;
 			this.expected = expected;
+		}
+
+		protected TerminalChange(AtomicChangeProxy proxy) {
+			this(proxy.getStructure(), proxy.getEdge1(), proxy.getIsSource(), proxy.getItem1(), proxy.getItem2());
+		}
+
+		@Override
+		public AtomicChangeProxy toProxy() {
+			return new AtomicChangeProxy(AtomicChangeType.TERMINAL_CHANGE)
+				.setStructure(structure)
+				.setEdge1(edge)
+				.setIsSource(isSource)
+				.setItem1(terminal)
+				.setItem2(expected);
 		}
 
 		/**
@@ -468,7 +703,17 @@ public class SerializableAtomicChanges {
 
 	}
 
-	public static class PositionChange implements AtomicChange {
+	/**
+	 * Models the {@link CorpusModel#setFragmentBegin(Fragment, Position)} and
+	 * {@link CorpusModel#setFragmentEnd(Fragment, Position)} changes.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @see CorpusModel#setFragmentBegin(Fragment, Position)
+	 * @see CorpusModel#setFragmentEnd(Fragment, Position)
+	 *
+	 */
+	public static class PositionChange implements SerializableAtomicChange {
 
 		protected final Fragment fragment;
 		protected final boolean isBegin;
@@ -481,6 +726,18 @@ public class SerializableAtomicChanges {
 			this.fragment = fragment;
 			this.isBegin = isBegin;
 			this.position = position;
+		}
+
+		protected PositionChange(AtomicChangeProxy proxy) {
+			this(proxy.getFragment(), proxy.getIsBegin(), proxy.getPosition());
+		}
+
+		@Override
+		public AtomicChangeProxy toProxy() {
+			return new AtomicChangeProxy(AtomicChangeType.POSITION_CHANGE)
+				.setFragment(fragment)
+				.setIsBegin(isBegin)
+				.setPosition(position);
 		}
 
 		/**
@@ -514,12 +771,12 @@ public class SerializableAtomicChanges {
 	}
 
 	/**
-	 *
+	 * Provides a common base class for all kinds of value changes.
 	 *
 	 * @author Markus Gärtner
 	 *
 	 */
-	public abstract static class AbstractValueChange implements AtomicChange {
+	public abstract static class AbstractValueChange implements SerializableAtomicChange {
 		protected final AnnotationLayer layer;
 		protected final Item item;
 		protected final String key;
@@ -530,17 +787,54 @@ public class SerializableAtomicChanges {
 			this.key = key;
 		}
 
+		protected AbstractValueChange(AtomicChangeProxy proxy) {
+			this(proxy.getAnnotationLayer(), proxy.getItem1(), proxy.getKey());
+		}
+
+		protected AtomicChangeProxy toProxy0(ValueType valueType, Object value1, Object value2) {
+			return new AtomicChangeProxy(AtomicChangeType.VALUE_CHANGE)
+			.setAnnotationLayer(layer)
+			.setItem1(item)
+			.setKey(key)
+			.setValueType(valueType)
+			.setValue1(value1)
+			.setValue2(value2);
+		}
 	}
 
+	/**
+	 * Implements a generic {@code object-level} value change.
+	 * This covers a wide range of possible {@link ValueType value types}, essentially
+	 * all but the specialized types for primitive values.
+	 * <p>
+	 * This models the {@link CorpusModel#setValue(AnnotationLayer, Item, String, Object)}
+	 * change.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @see CorpusModel#setValue(AnnotationLayer, Item, String, Object)
+	 */
 	public static class ValueChange extends AbstractValueChange {
 
 		protected Object value, expectedValue;
+		protected final ValueType valueType;
 
-		public ValueChange(AnnotationLayer layer, Item item, String key, Object value, Object expectedValue) {
+		public ValueChange(AnnotationLayer layer, ValueType valueType, Item item, String key, Object value, Object expectedValue) {
 			super(layer, item, key);
 
 			this.value = value;
 			this.expectedValue = expectedValue;
+			this.valueType = valueType;
+		}
+
+		protected ValueChange(AtomicChangeProxy proxy) {
+			this(proxy.getAnnotationLayer(), proxy.getValueType(), proxy.getItem1(),
+					proxy.getKey(), proxy.getValue1(), proxy.getValue2());
+		}
+
+		@Override
+		public AtomicChangeProxy toProxy() {
+			return toProxy0(valueType, value, expectedValue);
 		}
 
 		/**
@@ -569,6 +863,13 @@ public class SerializableAtomicChanges {
 		}
 	}
 
+	/**
+	 * Models the {@link CorpusModel#setIntegerValue(AnnotationLayer, Item, String, int)} change.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @see CorpusModel#setIntegerValue(AnnotationLayer, Item, String, int)
+	 */
 	public static class IntegerValueChange extends AbstractValueChange {
 
 		protected int value, expectedValue;
@@ -577,6 +878,23 @@ public class SerializableAtomicChanges {
 			super(layer, item, key);
 			this.value = value;
 			this.expectedValue = expectedValue;
+		}
+
+		protected IntegerValueChange(AtomicChangeProxy proxy) {
+			super(proxy.getAnnotationLayer(), proxy.getItem1(), proxy.getKey());
+
+			if(proxy.value1!=null) {
+				value = ((Integer)proxy.value1).intValue();
+			}
+
+			if(proxy.value2!=null) {
+				expectedValue = ((Integer)proxy.value2).intValue();
+			}
+		}
+
+		@Override
+		public AtomicChangeProxy toProxy() {
+			return toProxy0(ValueType.INTEGER, Integer.valueOf(value), Integer.valueOf(expectedValue));
 		}
 
 		/**
@@ -605,6 +923,13 @@ public class SerializableAtomicChanges {
 		}
 	}
 
+	/**
+	 * Models the {@link CorpusModel#setLongValue(AnnotationLayer, Item, String, long)} change.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @see CorpusModel#setLongValue(AnnotationLayer, Item, String, long)
+	 */
 	public static class LongValueChange extends AbstractValueChange {
 
 		protected long value, expectedValue;
@@ -614,6 +939,23 @@ public class SerializableAtomicChanges {
 
 			this.value = value;
 			this.expectedValue = expectedValue;
+		}
+
+		protected LongValueChange(AtomicChangeProxy proxy) {
+			super(proxy.getAnnotationLayer(), proxy.getItem1(), proxy.getKey());
+
+			if(proxy.value1!=null) {
+				value = ((Long)proxy.value1).longValue();
+			}
+
+			if(proxy.value2!=null) {
+				expectedValue = ((Long)proxy.value2).longValue();
+			}
+		}
+
+		@Override
+		public AtomicChangeProxy toProxy() {
+			return toProxy0(ValueType.LONG, Long.valueOf(value), Long.valueOf(expectedValue));
 		}
 
 		/**
@@ -642,6 +984,13 @@ public class SerializableAtomicChanges {
 		}
 	}
 
+	/**
+	 * Models the {@link CorpusModel#setFloatValue(AnnotationLayer, Item, String, float)} change.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @see CorpusModel#setFloatValue(AnnotationLayer, Item, String, float)
+	 */
 	public static class FloatValueChange extends AbstractValueChange {
 
 		protected float value, expectedValue;
@@ -651,6 +1000,23 @@ public class SerializableAtomicChanges {
 
 			this.value = value;
 			this.expectedValue = expectedValue;
+		}
+
+		protected FloatValueChange(AtomicChangeProxy proxy) {
+			super(proxy.getAnnotationLayer(), proxy.getItem1(), proxy.getKey());
+
+			if(proxy.value1!=null) {
+				value = ((Float)proxy.value1).floatValue();
+			}
+
+			if(proxy.value2!=null) {
+				expectedValue = ((Float)proxy.value2).floatValue();
+			}
+		}
+
+		@Override
+		public AtomicChangeProxy toProxy() {
+			return toProxy0(ValueType.FLOAT, Float.valueOf(value), Float.valueOf(expectedValue));
 		}
 
 		/**
@@ -679,6 +1045,13 @@ public class SerializableAtomicChanges {
 		}
 	}
 
+	/**
+	 * Models the {@link CorpusModel#setDoubleValue(AnnotationLayer, Item, String, double)} change.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @see CorpusModel#setDoubleValue(AnnotationLayer, Item, String, double)
+	 */
 	public static class DoubleValueChange extends AbstractValueChange {
 
 		protected double value, expectedValue;
@@ -688,6 +1061,23 @@ public class SerializableAtomicChanges {
 
 			this.value = value;
 			this.expectedValue = expectedValue;
+		}
+
+		protected DoubleValueChange(AtomicChangeProxy proxy) {
+			super(proxy.getAnnotationLayer(), proxy.getItem1(), proxy.getKey());
+
+			if(proxy.value1!=null) {
+				value = ((Double)proxy.value1).doubleValue();
+			}
+
+			if(proxy.value2!=null) {
+				expectedValue = ((Double)proxy.value2).doubleValue();
+			}
+		}
+
+		@Override
+		public AtomicChangeProxy toProxy() {
+			return toProxy0(ValueType.DOUBLE, Double.valueOf(value), Double.valueOf(expectedValue));
 		}
 
 		/**
@@ -716,6 +1106,13 @@ public class SerializableAtomicChanges {
 		}
 	}
 
+	/**
+	 * Models the {@link CorpusModel#setBooleanValue(AnnotationLayer, Item, String, boolean)} change.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @see CorpusModel#setBooleanValue(AnnotationLayer, Item, String, boolean)
+	 */
 	public static class BooleanValueChange extends AbstractValueChange {
 
 		protected boolean value, expectedValue;
@@ -725,6 +1122,23 @@ public class SerializableAtomicChanges {
 
 			this.value = value;
 			this.expectedValue = expectedValue;
+		}
+
+		protected BooleanValueChange(AtomicChangeProxy proxy) {
+			super(proxy.getAnnotationLayer(), proxy.getItem1(), proxy.getKey());
+
+			if(proxy.value1!=null) {
+				value = ((Boolean)proxy.value1).booleanValue();
+			}
+
+			if(proxy.value2!=null) {
+				expectedValue = ((Boolean)proxy.value2).booleanValue();
+			}
+		}
+
+		@Override
+		public AtomicChangeProxy toProxy() {
+			return toProxy0(ValueType.BOOLEAN, Boolean.valueOf(value), Boolean.valueOf(expectedValue));
 		}
 
 		/**
@@ -753,23 +1167,36 @@ public class SerializableAtomicChanges {
 		}
 	}
 
-	public interface AtomicChangeWriter {
+	public static AtomicChange fromProxy(AtomicChangeProxy proxy) {
+		checkNotNull(proxy);
 
-	}
+		switch (proxy.getType()) {
 
-	public static final class ChangeProxy {
-		public AtomicChangeType type;
-		public AnnotationLayer annotationLayer;
-		public String key;
-		public Container container;
-		public Structure structure;
-		public Item item1, item2, expectedItem;
-		public Edge edge1, edge2;
-		public Fragment fragment;
-		public Position position;
-		public long index1, index2, expectedSize, expectedIndex;
-		public boolean add, isSource, isBegin; //TODO unify to 1 boolean field!!!
-		public DataSequence<? extends Item> items;
-		public DataSequence<? extends Edge> edges;
+		case INDEX_CHANGE: return new IndexChange(proxy);
+		case ITEM_CHANGE: return new ItemChange(proxy);
+		case ITEM_MOVE_CHANGE: return new ItemMoveChange(proxy);
+		case ITEMS_CHANGE: return new ItemSequenceChange(proxy);
+		case EDGE_CHANGE: return new EdgeChange(proxy);
+		case EDGE_MOVE_CHANGE: return new EdgeMoveChange(proxy);
+		case EDGES_CHANGE: return new EdgeSequenceChange(proxy);
+		case POSITION_CHANGE: return new PositionChange(proxy);
+		case TERMINAL_CHANGE: return new TerminalChange(proxy);
+		case VALUE_CHANGE: {
+			ValueType valueType = proxy.getValueType();
+			switch (valueType.getStringValue()) {
+			case ValueType.INTEGER_TYPE_LABEL: return new IntegerValueChange(proxy);
+			case ValueType.LONG_TYPE_LABEL: return new LongValueChange(proxy);
+			case ValueType.Float_TYPE_LABEL: return new FloatValueChange(proxy);
+			case ValueType.DOUBLE_TYPE_LABEL: return new DoubleValueChange(proxy);
+			case ValueType.BOOLEAN_TYPE_LABEL: return new BooleanValueChange(proxy);
+
+			default:
+				return new ValueChange(proxy);
+			}
+		}
+
+		default:
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Unrecognized change type: "+proxy.type);
+		}
 	}
 }

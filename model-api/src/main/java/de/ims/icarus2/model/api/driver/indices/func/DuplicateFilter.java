@@ -24,6 +24,11 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 
 /**
+ * Implements a stream consumer that filters out duplicates.
+ * The input stream is required to provide {@code long} values
+ * in ascending order! Violation of this contract will result in
+ * a {@link ModelException} being thrown in the {@link #accept(long)}
+ * method.
  *
  * @author Markus Gärtner
  *

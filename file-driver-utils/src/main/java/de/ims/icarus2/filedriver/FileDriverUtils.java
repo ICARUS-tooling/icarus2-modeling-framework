@@ -36,8 +36,10 @@ import de.ims.icarus2.model.api.io.resources.IOResource;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
+import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.Options;
 
 /**
@@ -46,9 +48,26 @@ import de.ims.icarus2.util.Options;
  */
 public class FileDriverUtils {
 
+	static final String SHARED_PROPERTY_PREFIX = ModelUtils.SHARED_PROPERTY_PREFIX+".fileDriver";
+
+	public static final String FILE_SIZE_THRESHOLD_FOR_CHUNKING_PROPERTY = SHARED_PROPERTY_PREFIX+".fileSizeThresholdForChunking";
+
+	public static final String CACHE_SIZE_FOR_CHUNKING_PROPERTY = SHARED_PROPERTY_PREFIX+".cacheSizeForChunking";
+
+	public static final String BLOCK_POWER_FOR_CHUNKING_PROPERTY = SHARED_PROPERTY_PREFIX+".blockPowerForChunking";
 
 	/**
-	 * Defines legal property keys used by method in this utility class and the
+	 * Suffix to be appended to a {@link LayerGroupManifest}'s {@link LayerGroupManifest#getId() id}
+	 * in order to access saved estimates about that groups individual chunks (i.e. elements of the
+	 * group's {@link LayerGroupManifest#getPrimaryLayerManifest() primary layer}).
+	 */
+	public static final String ESTIMATED_CHUNK_SIZE_SUFFIX = ".chunkSize";
+
+	public static final String CHUNK_INDEX_FILE_ENDING = ".chk";
+
+
+	/**
+	 * Defines legal property keys used by methods in this utility class and the
 	 * {@link DefaultMappingFactory} implementation when creating mapping objects.
 	 *
 	 * @author Markus Gärtner
@@ -160,7 +179,7 @@ public class FileDriverUtils {
 			return null;
 		}
 
-		return IndexValueType.valueOf(s);
+		return IndexValueType.parseIndexValueType(s);
 	}
 
 	/**
@@ -212,12 +231,12 @@ public class FileDriverUtils {
 		ItemLayerManifest source = (ItemLayerManifest) contextManifest.getLayerManifest(mappingManifest.getSourceLayerId());
 		ItemLayerManifest target = (ItemLayerManifest) contextManifest.getLayerManifest(mappingManifest.getTargetLayerId());
 
-		options.put(FileDriverUtils.MappingProperty.BLOCK_CACHE.key(), toBlockCache(metadataRegistry.getValue(MappingKey.BLOCK_CACHE.getKey(source, target))));
-		options.put(FileDriverUtils.MappingProperty.CACHE_SIZE.key(), toInteger(metadataRegistry.getIntValue(MappingKey.CACHE_SIZE.getKey(source, target), -1)));
-		options.put(FileDriverUtils.MappingProperty.BLOCK_POWER.key(), toInteger(metadataRegistry.getIntValue(MappingKey.BLOCK_POWER.getKey(source, target), -1)));
-		options.put(FileDriverUtils.MappingProperty.GROUP_POWER.key(), toInteger(metadataRegistry.getIntValue(MappingKey.GROUP_POWER.getKey(source, target), -1)));
-		options.put(FileDriverUtils.MappingProperty.VALUE_TYPE.key(), toValueType(metadataRegistry.getValue(MappingKey.VALUE_TYPE.getKey(source, target))));
-		options.put(FileDriverUtils.MappingProperty.RESOURCE.key(), toResource(metadataRegistry.getValue(MappingKey.PATH.getKey(source, target))));
+		options.put(MappingProperty.BLOCK_CACHE.key(), toBlockCache(metadataRegistry.getValue(MappingKey.BLOCK_CACHE.getKey(source, target))));
+		options.put(MappingProperty.CACHE_SIZE.key(), toInteger(metadataRegistry.getIntValue(MappingKey.CACHE_SIZE.getKey(source, target), -1)));
+		options.put(MappingProperty.BLOCK_POWER.key(), toInteger(metadataRegistry.getIntValue(MappingKey.BLOCK_POWER.getKey(source, target), -1)));
+		options.put(MappingProperty.GROUP_POWER.key(), toInteger(metadataRegistry.getIntValue(MappingKey.GROUP_POWER.getKey(source, target), -1)));
+		options.put(MappingProperty.VALUE_TYPE.key(), toValueType(metadataRegistry.getValue(MappingKey.VALUE_TYPE.getKey(source, target))));
+		options.put(MappingProperty.RESOURCE.key(), toResource(metadataRegistry.getValue(MappingKey.PATH.getKey(source, target))));
 
 		// Populate options further
 

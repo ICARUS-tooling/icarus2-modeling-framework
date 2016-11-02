@@ -26,10 +26,12 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.ims.icarus2.filedriver.FileDataStates.ElementInfo;
 import de.ims.icarus2.filedriver.FileDataStates.FileInfo;
 import de.ims.icarus2.filedriver.FileDataStates.LayerInfo;
 import de.ims.icarus2.filedriver.FileDriver.PreparationStep;
 import de.ims.icarus2.filedriver.FileMetadata.ChunkIndexKey;
+import de.ims.icarus2.filedriver.FileMetadata.DriverKey;
 import de.ims.icarus2.filedriver.FileMetadata.FileKey;
 import de.ims.icarus2.filedriver.FileMetadata.ItemLayerKey;
 import de.ims.icarus2.filedriver.io.sets.FileSet;
@@ -187,12 +189,12 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 				String checksumString = checksum.toString();
 				String savedChecksum = metadataRegistry.getValue(checksumKey);
 
-				// Signal corrupted 'checksum' metadata
+				// Signal corrupted 'checksum' metadata in case the existing value is different from freshly computed one
 				if(savedChecksum==null) {
 					metadataRegistry.setValue(checksumKey, checksumString);
 				} else if(!checksumString.equals(savedChecksum)) {
 					log.error("Invalid checksum stored for file index {}: expected '{}' - got '{}'",
-							fileIndex, savedChecksum, checksumString);
+							fileIndex, checksumString, savedChecksum);
 					fileInfo.setFlag(ElementFlag.CORRUPTED);
 					invalidFiles++;
 				}
@@ -202,6 +204,81 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			}
 
 			return invalidFiles==0;
+		}
+
+	},
+
+	/**
+	 * Verify total and individual byte size of all files that are managed by the driver.
+	 */
+	CHECK_TOTAL_SIZE {
+
+		@Override
+		public boolean apply(FileDriver driver, Options env) throws Exception {
+
+			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
+			FileSet dataFiles = driver.getDataFiles();
+
+			int fileCount = dataFiles.getFileCount();
+			int invalidFiles = 0;
+
+			long totalBytes = 0L;
+
+			for(int fileIndex = 0; fileIndex < fileCount; fileIndex++) {
+
+				FileInfo fileInfo = driver.getFileDriverStates().getFileInfo(fileIndex);
+				Path path = fileInfo.getPath();
+
+				long fileBytes = 0L;
+
+				try {
+					fileBytes = Files.size(path);
+				} catch (IOException e) {
+					log.error("Failed to fetch size for file at index {} : {}", fileIndex, path, e);
+					invalidFiles++;
+					continue;
+				}
+
+				String sizeKey = FileKey.SIZE.getKey(fileIndex);
+				String sizeString = String.valueOf(fileBytes);
+				String savedSize = metadataRegistry.getValue(sizeKey);
+
+				// Signal corrupted 'checksum' metadata in case the saved value is different from current size
+				if(savedSize==null) {
+					metadataRegistry.setValue(sizeKey, sizeString);
+				} else if(!sizeString.equals(savedSize)) {
+					log.error("Invalid size stored for file index {}: expected '{}' - got '{}'",
+							fileIndex, sizeString, savedSize);
+					fileInfo.setFlag(ElementFlag.CORRUPTED);
+					invalidFiles++;
+				}
+
+				// Refresh 'size' metadata
+				fileInfo.setSize(fileBytes);
+
+				totalBytes += fileBytes;
+			}
+
+			String totalSizeKey = DriverKey.SIZE.getKey();
+			String totalSizeString = String.valueOf(totalBytes);
+			String savedTotalSize = metadataRegistry.getValue(totalSizeKey);
+
+			ElementInfo globalInfo = driver.getFileDriverStates().getGlobalInfo();
+			globalInfo.setProperty(totalSizeKey, totalSizeString);
+
+			boolean totalBytesValid = true;
+
+			// Signal corrupted global metadata in case the saved value is different from current size
+			if(savedTotalSize==null) {
+				metadataRegistry.setValue(totalSizeKey, totalSizeString);
+			} else if(!totalSizeString.equals(savedTotalSize)) {
+				log.error("Invalid total size stored for driver: expected '{}' - got '{}'",
+						totalSizeString, savedTotalSize);
+				globalInfo.setFlag(ElementFlag.CORRUPTED);
+				totalBytesValid = false;
+			}
+
+			return invalidFiles==0 && totalBytesValid;
 		}
 
 	},
@@ -258,6 +335,74 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			return true;
 		}
 
+	},
+
+	/**
+	 * Delegate to the driver's {@link FileDriver#scanFile(int)} method for every file
+	 * that hasn't been scanned before.
+	 * This is done in increasing order of the respective {@code file index} to ensure that
+	 * for every file all the metadata of previous files is already available.
+	 * <p>
+	 * If an error occurs during scanning the associated metadata will mark the layers in
+	 * question {@link ElementFlag#UNUSABLE unusable}.
+	 */
+	SCAN_FILES {
+
+		@Override
+		public boolean apply(FileDriver driver, Options env) throws Exception {
+
+			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
+			ContextManifest manifest = driver.getManifest().getContextManifest();
+			FileSet dataFiles = driver.getDataFiles();
+
+			int fileCount = dataFiles.getFileCount();
+			int invalidFiles = 0;
+
+			for(int fileIndex = 0; fileIndex < fileCount; fileIndex++) {
+
+				FileInfo fileInfo = driver.getFileDriverStates().getFileInfo(fileIndex);
+
+				if(!fileInfo.isFlagSet(ElementFlag.SCANNED)) {
+
+					boolean fileValid = true;
+
+					try {
+						driver.scanFile(fileIndex);
+					} catch(IOException | InterruptedException e) { //TODO maybe change back to catch general Exception
+						log.error("Failed to scan file {} at index {}", fileInfo.getPath(), fileIndex, e);
+						fileValid = false;
+					}
+
+					// Update metadata entry
+					metadataRegistry.changeBooleanValue(FileKey.SCANNED.getKey(fileIndex), fileValid, false);
+
+					// Update info
+					fileInfo.updateFlag(ElementFlag.SCANNED, fileValid);
+					if(!fileValid) {
+						invalidFiles++;
+						break;
+					}
+				}
+			}
+
+			// Update layer info and metadata
+			List<ItemLayerManifest> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
+			ElementFlag flag = invalidFiles==0 ? ElementFlag.SCANNED : ElementFlag.PARTIALLY_SCANNED;
+			if(invalidFiles==fileCount) {
+				flag = ElementFlag.UNUSABLE;
+			}
+
+			for(ItemLayerManifest layer : layers) {
+
+				LayerInfo layerInfo = driver.getFileDriverStates().getLayerInfo(layer);
+				layerInfo.setFlag(flag);
+
+				String scannedKey = ItemLayerKey.SCANNED.getKey(layer);
+				metadataRegistry.changeBooleanValue(scannedKey, layerInfo.isValid(), false);
+			}
+
+			return invalidFiles==0;
+		}
 	},
 
 	CHECK_LAYER_CHUNK_INDEX {
@@ -409,74 +554,6 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			return invalidLayers==0;
 		}
 
-	},
-
-	/**
-	 * Delegate to the driver's {@link FileDriver#scanFile(int)} method for every file
-	 * that hasn't been scanned before.
-	 * This is done in increasing order of the respective {@code file index} to ensure that
-	 * for every file all the metadata of previous files is already available.
-	 * <p>
-	 * If an error occures during scanning the associated metadata will mark the layers in
-	 * question {@link ElementFlag#UNUSABLE unusable}.
-	 */
-	SCAN_FILES {
-
-		@Override
-		public boolean apply(FileDriver driver, Options env) throws Exception {
-
-			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
-			ContextManifest manifest = driver.getManifest().getContextManifest();
-			FileSet dataFiles = driver.getDataFiles();
-
-			int fileCount = dataFiles.getFileCount();
-			int invalidFiles = 0;
-
-			for(int fileIndex = 0; fileIndex < fileCount; fileIndex++) {
-
-				FileInfo fileInfo = driver.getFileDriverStates().getFileInfo(fileIndex);
-
-				if(!fileInfo.isFlagSet(ElementFlag.SCANNED)) {
-
-					boolean fileValid = true;
-
-					try {
-						driver.scanFile(fileIndex);
-					} catch(Exception e) { //FIXME determine exactly which exception type we should use here, base was IOException
-						log.error("Failed to scan file {} at index {}", fileInfo.getPath(), fileIndex, e);
-						fileValid = false;
-					}
-
-					// Update metadata entry
-					metadataRegistry.changeBooleanValue(FileKey.SCANNED.getKey(fileIndex), fileValid, false);
-
-					// Update info
-					fileInfo.updateFlag(ElementFlag.SCANNED, fileValid);
-					if(!fileValid) {
-						invalidFiles++;
-						break;
-					}
-				}
-			}
-
-			// Update layer info and metadata
-			List<ItemLayerManifest> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
-			ElementFlag flag = invalidFiles==0 ? ElementFlag.SCANNED : ElementFlag.PARTIALLY_SCANNED;
-			if(invalidFiles==fileCount) {
-				flag = ElementFlag.UNUSABLE;
-			}
-
-			for(ItemLayerManifest layer : layers) {
-
-				LayerInfo layerInfo = driver.getFileDriverStates().getLayerInfo(layer);
-				layerInfo.setFlag(flag);
-
-				String scannedKey = ItemLayerKey.SCANNED.getKey(layer);
-				metadataRegistry.changeBooleanValue(scannedKey, layerInfo.isValid(), false);
-			}
-
-			return invalidFiles==0;
-		}
 	},
 
 	;

@@ -28,6 +28,21 @@ import de.ims.icarus2.util.strings.StringResource;
  *
  */
 public enum AtomicChangeType implements StringResource {
+
+	INDEX_CHANGE("index"),
+
+	ITEM_CHANGE("item"),
+	ITEM_MOVE_CHANGE("item-move"),
+	ITEMS_CHANGE("items"),
+
+	EDGE_CHANGE("edge"),
+	EDGE_MOVE_CHANGE("edge-move"),
+	EDGES_CHANGE("edges"),
+
+	TERMINAL_CHANGE("terminal"),
+	POSITION_CHANGE("position"),
+
+	VALUE_CHANGE("value"),
 	;
 
 	private final String key;

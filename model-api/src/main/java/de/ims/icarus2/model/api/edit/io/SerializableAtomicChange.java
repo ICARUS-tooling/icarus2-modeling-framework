@@ -14,24 +14,26 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
- *
  */
-package de.ims.icarus2.model.api.driver;
+package de.ims.icarus2.model.api.edit.io;
 
-import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.edit.AtomicChange;
 
 /**
- *
  * @author Markus Gärtner
  *
  */
-public interface ChunkInfo {
+public interface SerializableAtomicChange extends AtomicChange {
 
-	int chunkCount();
 
-	long getIndex(int index);
-
-	Item getItem(int index);
-
-	ChunkState getState(int index);
+	/**
+	 * Optional method for creating a unified serializable representation of this
+	 * change. The change implementation is to create a blank new proxy and fill its
+	 * fields with the appropriate contextual information for the type of change it
+	 * models.
+	 *
+	 * @return a filled out {@link AtomicChangeProxy} instance containing all the information
+	 * required to reproduce this change or {@code null} if creating such a proxy is not supported.
+	 */
+	AtomicChangeProxy toProxy();
 }

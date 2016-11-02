@@ -83,12 +83,14 @@ import de.ims.icarus2.model.manifest.util.Messages;
  */
 public final class ModelUtils implements ModelConstants {
 
+	public static final String SHARED_PROPERTY_PREFIX = "de.ims.icarus2.model";
+
 	private ModelUtils() {
 		throw new AssertionError();
 	}
 
 	public static String getUniqueId(Layer layer) {
-		return getUniqueId(layer, '@');
+		return getUniqueId(layer, '.');
 	}
 
 	public static String getUniqueId(Layer layer, char separator) {
@@ -102,7 +104,7 @@ public final class ModelUtils implements ModelConstants {
 		if(manifest==null) {
 			Corpus corpus = layer.getCorpus();
 
-			id = corpus.getManifest().getId()+"@layer-overlay";
+			id = corpus.getManifest().getId()+".layer-overlay";
 		} else {
 
 			LayerGroup layerGroup = layer.getLayerGroup();
@@ -136,7 +138,7 @@ public final class ModelUtils implements ModelConstants {
 	}
 
 	public static String getUniqueId(LayerManifest manifest) {
-		return getUniqueId(manifest, '@');
+		return getUniqueId(manifest, '.');
 	}
 
 	public static String getUniqueId(LayerManifest manifest, char separator) {

@@ -18,6 +18,8 @@
  */
 package de.ims.icarus2.model.standard.raster;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 import de.ims.icarus2.model.api.raster.Metric;
 import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.api.raster.RasterAxis;
@@ -34,12 +36,9 @@ public class DefaultRasterizer implements Rasterizer {
 	private final Metric<Position> metric;
 
 	public DefaultRasterizer(RasterAxis[] axes, Metric<Position> metric) {
-		if (axes == null)
-			throw new NullPointerException("Invalid axes");
-		if (metric == null)
-			throw new NullPointerException("Invalid metric");
-		if (axes.length == 0)
-			throw new IllegalArgumentException("Empty axes array");
+		checkNotNull(axes);
+		checkArgument("Axes array must not be empty", axes.length>0);
+		checkNotNull(metric);
 
 		this.axes = axes;
 		this.metric = metric;
@@ -71,19 +70,7 @@ public class DefaultRasterizer implements Rasterizer {
 					"Provided number of vector elements does not equal axes count",
 					axes.length, values.length));
 
-		switch (values.length) {
-		case 0:
-			throw new IllegalArgumentException("Empty values array - cannot create position");
-		case 1:
-			return new Positions.Position1D(values[0]);
-		case 2:
-			return new Positions.Position2D(values[0], values[1]);
-		case 3:
-			return new Positions.Position3D(values[0], values[1], values[2]);
-
-		default:
-			return new Positions.PositionND(values);
-		}
+		return Positions.createPosition(values);
 	}
 
 	/**

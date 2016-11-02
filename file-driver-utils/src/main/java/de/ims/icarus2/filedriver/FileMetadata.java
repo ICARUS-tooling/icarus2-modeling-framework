@@ -54,12 +54,12 @@ import de.ims.icarus2.model.standard.driver.AbstractDriver;
  * <table border="1">
  * <tr><th>Key</th><th>Type</th><th>Description</th></tr>
  * <tr>
- * <td>file-count</td>
+ * <td>fileCount</td>
  * <td>int</td>
  * <td>number of files expected by the driver</td>
  * </tr>
  * <tr>
- * <td>metadata-folder</td>
+ * <td>metadataFolder</td>
  * <td>string</td>
  * <td>full or relative {@link Path#toString() path} pointing to the root folder used for metadata storage. This information can be used to pick locations for chunk and content indexes.</td>
  * </tr>
@@ -84,17 +84,17 @@ import de.ims.icarus2.model.standard.driver.AbstractDriver;
  * <td>serialized {@link FileChecksum}, used to track external changes to the file</td>
  * </tr>
  * <tr>
- * <td>[layer-id].items</td>
+ * <td>[layerId].items</td>
  * <td>long</td>
  * <td>number of {@link Item items} in a {@link ItemLayer layer's} top level container in the file</td>
  * </tr>
  * <tr>
- * <td>[layer-id].begin</td>
+ * <td>[layerId].begin</td>
  * <td>long</td>
  * <td>id of the first {@link Item item} in a {@link ItemLayer layer's} top level container in the file</td>
  * </tr>
  * <tr>
- * <td>[layer-id].end</td>
+ * <td>[layerId].end</td>
  * <td>long</td>
  * <td>id of the last {@link Item item} in a {@link ItemLayer layer's} top level container in the file</td>
  * </tr>
@@ -146,12 +146,12 @@ import de.ims.icarus2.model.standard.driver.AbstractDriver;
  * <table border="1">
  * <tr><th>Key</th><th>Type</th><th>Description</th></tr>
  * <tr>
- * <td>[container-type].count</td>
+ * <td>[containerType].count</td>
  * <td>long</td>
  * <td>number of times the specified {@link ContainerType} was encountered for containers of this level</td>
  * </tr>
  * <tr>
- * <td>[structure-type].count</td>
+ * <td>[structureType].count</td>
  * <td>long</td>
  * <td>number of times the specified {@link StructureType} was encountered for structures of this level</td>
  * </tr>
@@ -289,6 +289,8 @@ public class FileMetadata implements ModelConstants {
 
 	public static interface MetadataKey {
 		String name();
+
+		ValueType getType();
 	}
 
 	public static enum DriverKey implements MetadataKey {
@@ -296,23 +298,40 @@ public class FileMetadata implements ModelConstants {
 		/**
 		 * Number of content files for the corpus expected by the driver
 		 */
-		FILE_COUNT("file-count"),
+		FILE_COUNT("fileCount", ValueType.INTEGER),
 
 		/**
 		 * Root folder for storage of metadata. This information is used for decisions regarding
-		 * physical location of chunk and content indexes.
+		 * physical location of chunk and content indices.
 		 */
-		METADATA_FOLDER("metadata-folder"),
+		METADATA_FOLDER("metadataFolder", ValueType.STRING),
+
+		/**
+		 * Size of all the data files in bytes.
+		 * <p>
+		 * Used by driver implementations to determine necessity of certain optional
+		 * modules like {@link ChunkIndex} instances which might only be feasible for
+		 * rather large sets of data.
+		 */
+		SIZE("size", ValueType.LONG),
+
 		;
 
 		private final String key;
+		private final ValueType type;
 
-		private DriverKey(String key) {
+		private DriverKey(String key, ValueType type) {
 			this.key = key;
+			this.type = type;
 		}
 
 		public String getKey() {
 			return key;
+		}
+
+		@Override
+		public ValueType getType() {
+			return type;
 		}
 	}
 
@@ -335,6 +354,11 @@ public class FileMetadata implements ModelConstants {
 		 * Path to the physical file as specified by client code (may be absolute or relative)
 		 */
 		PATH("path", ValueType.STRING, false),
+
+		/**
+		 * Size of the data file in bytes.
+		 */
+		SIZE("size", ValueType.LONG, false),
 
 		/**
 		 * FLag indicating whether the file has been scanned completely
@@ -389,12 +413,16 @@ public class FileMetadata implements ModelConstants {
 			return getFileKey(fileIndex, layer, suffix);
 		}
 
+		@Override
 		public ValueType getType() {
 			return type;
 		}
 
 		public void deleteFileData(MetadataRegistry metadataRegistry, int fileIndex) {
-			new SubRegistry(metadataRegistry, getFileKey(fileIndex, "")).delete();
+			// Use the SubRegistry mechanics to erase part of the given metadata registry
+			try(SubRegistry sub = new SubRegistry(metadataRegistry, getFileKey(fileIndex, ""))){
+				sub.delete();
+			}
 		}
 	}
 
@@ -441,12 +469,13 @@ public class FileMetadata implements ModelConstants {
 			return getLayerKey(layer, suffix);
 		}
 
+		@Override
 		public ValueType getType() {
 			return type;
 		}
 
 		public void deleteLayerData(MetadataRegistry metadataRegistry, ItemLayerManifest layer) {
-			new SubRegistry(metadataRegistry, getLayerKey(layer, "")).delete();
+			delete(metadataRegistry, getLayerKey(layer, ""));
 		}
 	}
 
@@ -492,7 +521,7 @@ public class FileMetadata implements ModelConstants {
 		/**
 		 * Size of the internal {@link BlockCache} of a chunk index. This value together
 		 * with the {@link #VALUE_TYPE value type} and {@link #BLOCK_POWER block power}
-		 * defines the memory maximum consumption of the chunk index.
+		 * defines the maximum memory consumption of the chunk index.
 		 */
 		CACHE_SIZE("cacheSize", ValueType.INTEGER),
 		;
@@ -513,12 +542,13 @@ public class FileMetadata implements ModelConstants {
 			return getChunkIndexKey(layer, suffix);
 		}
 
+		@Override
 		public ValueType getType() {
 			return type;
 		}
 
 		public void deleteChunkIndexData(MetadataRegistry metadataRegistry, ItemLayerManifest layer) {
-			new SubRegistry(metadataRegistry, getChunkIndexKey(layer, "")).delete();
+			delete(metadataRegistry, getChunkIndexKey(layer, ""));
 		}
 	}
 
@@ -620,12 +650,13 @@ public class FileMetadata implements ModelConstants {
 			return getContainerTypeKey(layer, level, type, suffix);
 		}
 
+		@Override
 		public ValueType getType() {
 			return type;
 		}
 
 		public void deleteContainerData(MetadataRegistry metadataRegistry, ItemLayerManifest layer, int level) {
-			new SubRegistry(metadataRegistry, getContainerKey(layer, level, "")).delete();
+			delete(metadataRegistry, getContainerKey(layer, level, ""));
 		}
 	}
 
@@ -684,12 +715,13 @@ public class FileMetadata implements ModelConstants {
 			return getStructureTypeKey(layer, level, type, suffix);
 		}
 
+		@Override
 		public ValueType getType() {
 			return type;
 		}
 
 		public void deleteStructureData(MetadataRegistry metadataRegistry, StructureLayerManifest layer, int level) {
-			new SubRegistry(metadataRegistry, getStructureKey(layer, level, "")).delete();
+			delete(metadataRegistry, getStructureKey(layer, level, ""));
 		}
 	}
 
@@ -724,12 +756,21 @@ public class FileMetadata implements ModelConstants {
 			return getMappingKey(source, target, suffix);
 		}
 
+		@Override
 		public ValueType getType() {
 			return type;
 		}
 
 		public void deleteMappingData(MetadataRegistry metadataRegistry, ItemLayerManifest source, ItemLayerManifest target) {
-			new SubRegistry(metadataRegistry, getMappingKey(source, target, "")).delete();
+			delete(metadataRegistry, getMappingKey(source, target, ""));
+		}
+	}
+
+	private static void delete(MetadataRegistry metadataRegistry, String prefix) {
+
+		// Use the SubRegistry mechanics to erase part of the given metadata registry
+		try(SubRegistry sub = new SubRegistry(metadataRegistry, prefix)){
+			sub.delete();
 		}
 	}
 

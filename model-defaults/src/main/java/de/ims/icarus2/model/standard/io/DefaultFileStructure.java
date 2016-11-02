@@ -14,24 +14,19 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
- *
  */
-package de.ims.icarus2.model.api.driver;
+package de.ims.icarus2.model.standard.io;
 
-import de.ims.icarus2.model.api.members.item.Item;
 
 /**
- *
  * @author Markus Gärtner
  *
  */
-public interface ChunkInfo {
+public class DefaultFileStructure {
 
-	int chunkCount();
+	public static final String CORPUS_PREFIX = "corpus_";
+	public static final String CONTEXT_PREFIX = "context_";
 
-	long getIndex(int index);
-
-	Item getItem(int index);
-
-	ChunkState getState(int index);
+	public static final String METADATA_FOLDER = "metadata";
+	public static final String TEMP_FOLDER = "temp";
 }

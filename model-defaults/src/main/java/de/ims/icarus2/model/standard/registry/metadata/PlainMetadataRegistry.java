@@ -197,13 +197,18 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 	 */
 	@Override
 	public synchronized void setValue(String key, String value) {
-		if(value==null) {
-			entries.remove(key);
-		} else {
-			entries.put(key, value);
-		}
+		beginUpdate();
+		try {
+			if(value==null) {
+				entries.remove(key);
+			} else {
+				entries.put(key, value);
+			}
 
-		changedEntryCount++;
+			changedEntryCount++;
+		} finally {
+			endUpdate();
+		}
 	}
 
 	/**

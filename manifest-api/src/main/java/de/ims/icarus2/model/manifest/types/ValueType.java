@@ -43,7 +43,7 @@ import de.ims.icarus2.util.classes.ClassUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.eval.Expression;
-import de.ims.icarus2.util.nio.ArrayByteStream;
+import de.ims.icarus2.util.nio.ByteArrayChannel;
 import de.ims.icarus2.util.nio.ByteChannelCharacterSequence;
 import de.ims.icarus2.util.strings.StringPrimitives;
 import de.ims.icarus2.util.strings.StringResource;
@@ -136,14 +136,22 @@ public class ValueType implements StringResource {
 		return baseClass;
 	}
 
-	public static final ValueType UNKNOWN = new ValueType("unknown", Object.class, false, true);
+	public static final String UNKNOWN_TYPE_LABEL = "unknwon";
+	public static final ValueType UNKNOWN = new ValueType(UNKNOWN_TYPE_LABEL, Object.class, false, true);
 
 	// External
-	public static final ValueType CUSTOM = new ValueType("custom", Object.class, false, true);
+	public static final String CUSTOM_TYPE_LABEL = "custom";
+	public static final ValueType CUSTOM = new ValueType(CUSTOM_TYPE_LABEL, Object.class, false, true);
+
+	public static final String EXTENSION_TYPE_LABEL = "extension";
 
 	/**
 	 * To reduce dependency we only store the extension's unique id, not the extension itself!
+	 *
+	 * @deprecated due to decoupling extension or plugin capabilities from the core modules, this is
+	 * no longer supported on this level.
 	 */
+	@Deprecated
 	public static final ValueType EXTENSION = new ValueType("extension", String.class, false, true) { //$NON-NLS-1$
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
@@ -162,7 +170,8 @@ public class ValueType implements StringResource {
 //		}
 	};
 
-	public static final ValueType ENUM = new ValueType("enum", Enum.class, false, true) { //$NON-NLS-1$
+	public static final String ENUM_TYPE_LABEL = "enum";
+	public static final ValueType ENUM = new ValueType(ENUM_TYPE_LABEL, Enum.class, false, true) {
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
@@ -190,42 +199,48 @@ public class ValueType implements StringResource {
 	};
 
 	// "Primitive"
-	public static final ValueType STRING = new ValueType("string", CharSequence.class, false, true) { //$NON-NLS-1$
+	public static final String STRING_TYPE_LABEL = "string";
+	public static final ValueType STRING = new ValueType(STRING_TYPE_LABEL, CharSequence.class, false, true) {
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
 			return s;
 		}
 	};
 
-	public static final ValueType BOOLEAN = new ValueType("boolean", Boolean.class, true, true) { //$NON-NLS-1$
+	public static final String BOOLEAN_TYPE_LABEL = "boolean";
+	public static final ValueType BOOLEAN = new ValueType(BOOLEAN_TYPE_LABEL, Boolean.class, true, true) {
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
 			return StringPrimitives.parseBoolean(s);
 		}
 	};
 
-	public static final ValueType INTEGER = new ValueType("integer", Integer.class, true, true) { //$NON-NLS-1$
+	public static final String INTEGER_TYPE_LABEL = "integer";
+	public static final ValueType INTEGER = new ValueType(INTEGER_TYPE_LABEL, Integer.class, true, true) {
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
 			return StringPrimitives.parseInt(s);
 		}
 	};
 
-	public static final ValueType LONG = new ValueType("long", Long.class, true, true) { //$NON-NLS-1$
+	public static final String LONG_TYPE_LABEL = "long";
+	public static final ValueType LONG = new ValueType(LONG_TYPE_LABEL, Long.class, true, true) {
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
 			return StringPrimitives.parseLong(s);
 		}
 	};
 
-	public static final ValueType DOUBLE = new ValueType("double", Double.class, true, true) { //$NON-NLS-1$
+	public static final String DOUBLE_TYPE_LABEL = "double";
+	public static final ValueType DOUBLE = new ValueType(DOUBLE_TYPE_LABEL, Double.class, true, true) {
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
 			return StringPrimitives.parseDouble(s);
 		}
 	};
 
-	public static final ValueType FLOAT = new ValueType("float", Float.class, true, true) { //$NON-NLS-1$
+	public static final String Float_TYPE_LABEL = "float";
+	public static final ValueType FLOAT = new ValueType(Float_TYPE_LABEL, Float.class, true, true) {
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
 			return StringPrimitives.parseFloat(s);
@@ -233,7 +248,8 @@ public class ValueType implements StringResource {
 	};
 
 	// Resource identifiers
-	public static final ValueType URI = new ValueType("uri", URI.class, false, true) { //$NON-NLS-1$
+	public static final String URI_TYPE_LABEL = "uri";
+	public static final ValueType URI = new ValueType(URI_TYPE_LABEL, URI.class, false, true) {
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
 			try {
@@ -256,7 +272,8 @@ public class ValueType implements StringResource {
 	};
 
 	// Resource links
-	public static final ValueType URL = new ValueType("url", Url.class, false, true) { //$NON-NLS-1$
+	public static final String URL_TYPE_LABEL = "url";
+	public static final ValueType URL = new ValueType(URL_TYPE_LABEL, Url.class, false, true) {
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
 			try {
@@ -279,7 +296,8 @@ public class ValueType implements StringResource {
 	};
 
 	// Resource links
-	public static final ValueType FILE = new ValueType("file", Path.class, false, true) { //$NON-NLS-1$
+	public static final String FILE_TYPE_LABEL = "file";
+	public static final ValueType FILE = new ValueType(FILE_TYPE_LABEL, Path.class, false, true) {
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
 			return Paths.get(s.toString());
@@ -296,7 +314,8 @@ public class ValueType implements StringResource {
 		}
 	};
 
-	public static final ValueType URL_RESOURCE = new ValueType("url-resource", UrlResource.class, false, true) { //$NON-NLS-1$
+	public static final String URL_RESOURCE_TYPE_LABEL = "url-resource";
+	public static final ValueType URL_RESOURCE = new ValueType(URL_RESOURCE_TYPE_LABEL, UrlResource.class, false, true) {
 		/**
 		 *
 		 * @see de.ims.icarus2.model.manifest.types.ValueType#toChars(java.lang.Object)
@@ -307,7 +326,8 @@ public class ValueType implements StringResource {
 		}
 	};
 
-	public static final ValueType LINK = new ValueType("link", Link.class, false, true) { //$NON-NLS-1$
+	public static final String LINK_TYPE_LABEL = "link";
+	public static final ValueType LINK = new ValueType(LINK_TYPE_LABEL, Link.class, false, true) {
 
 		/**
 		 *
@@ -320,7 +340,8 @@ public class ValueType implements StringResource {
 	};
 
 	// Predefined images
-	public static final ValueType IMAGE = new ValueType("image", Icon.class, false, true) { //$NON-NLS-1$
+	public static final String IMAGE_TYPE_LABEL = "image";
+	public static final ValueType IMAGE = new ValueType(IMAGE_TYPE_LABEL, Icon.class, false, true) {
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
 			return new IconWrapper(s.toString());
@@ -339,7 +360,8 @@ public class ValueType implements StringResource {
 		}
 	};
 
-	public static final ValueType IMAGE_RESOURCE = new ValueType("image-resource", IconLink.class, false, true) { //$NON-NLS-1$
+	public static final String IMAGE_RESOURCE_TYPE_LABEL = "image-resourc";
+	public static final ValueType IMAGE_RESOURCE = new ValueType(IMAGE_RESOURCE_TYPE_LABEL, IconLink.class, false, true) {
 		/**
 		 *
 		 * @see de.ims.icarus2.model.manifest.types.ValueType#toChars(java.lang.Object)
@@ -350,11 +372,12 @@ public class ValueType implements StringResource {
 		}
 	};
 
-	public static final ValueType BINARY_STREAM = new ValueType("binary", SeekableByteChannel.class, false, true) {
+	public static final String BINARY_TYPE_LABEL = "binary";
+	public static final ValueType BINARY_STREAM = new ValueType(BINARY_TYPE_LABEL, SeekableByteChannel.class, false, true) {
 
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
-			return ArrayByteStream.fromChars(s);
+			return ByteArrayChannel.fromChars(s);
 		}
 
 		@Override
@@ -613,6 +636,8 @@ public class ValueType implements StringResource {
 						break;
 
 					case ELEMENT_SEPARATOR:
+						// Not the fastest way to implement it, but should be sufficient
+
 						Object element = componentType.parse(buffer, classLoader);
 						buffer.setLength(0);
 						Array.set(array, elementIndex, element);
@@ -636,8 +661,7 @@ public class ValueType implements StringResource {
 
 			if(elementIndex!=size)
 				throw new ManifestException(GlobalErrorCode.DATA_ARRAY_SIZE,
-						//TODO switch to Messages utility class for creating the error message!!!
-						"Insufficient elements declared in input string: "+elementIndex+" - expected "+size); //$NON-NLS-1$ //$NON-NLS-2$
+						Messages.mismatchMessage("Insufficient elements declared in input string", size, elementIndex));
 
 			return array;
 		}
@@ -650,6 +674,7 @@ public class ValueType implements StringResource {
 
 			int size = this.size;
 
+			// 2-path strategy for unknown size: count elements first so we can use a single parsing method
 			if(size==UNDEFINED_SIZE) {
 				size = countElements(s);
 			}

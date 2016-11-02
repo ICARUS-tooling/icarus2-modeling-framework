@@ -29,14 +29,20 @@ public interface CorpusEditEvents {
 	/**
 	 * Fired when the update level is increased
 	 * <p>
-	 * The "edit" property contains the edit in progress.
+	 * The "edit" property contains the edit in progress.<br>
+	 * The "level" property contains the current update level
+	 * which will be {@code 1} for the first update event being
+	 * fired for an edit.
 	 */
 	public static final String BEGIN_UPDATE = "beginUpdate"; //$NON-NLS-1$
 
 	/**
 	 * Fired when the update level is decreased.
 	 * <p>
-	 * The "edit" property contains the edit in progress.
+	 * The "edit" property contains the edit in progress.<br>
+	 * The "level" property contains the current update level
+	 * which will be {@code 1} for the last update event being
+	 * fired for an edit.
 	 */
 	public static final String END_UPDATE = "endUpdate"; //$NON-NLS-1$
 

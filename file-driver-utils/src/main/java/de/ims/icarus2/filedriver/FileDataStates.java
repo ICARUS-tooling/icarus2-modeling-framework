@@ -18,11 +18,13 @@
 package de.ims.icarus2.filedriver;
 
 import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.THashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.procedure.TIntObjectProcedure;
 
 import java.nio.file.Path;
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.function.ObjIntConsumer;
 
 import de.ims.icarus2.GlobalErrorCode;
@@ -49,6 +51,12 @@ public class FileDataStates {
 	// Layer states and meta info
 	private final TIntObjectMap<LayerInfo> layerInfos = new TIntObjectHashMap<>();
 
+	/**
+	 * Initializes all {@link ElementInfo elements} based on data from the
+	 * given {@code driver}.
+	 *
+	 * @param driver
+	 */
 	public FileDataStates(FileDriver driver) {
 
 		// Collect data files
@@ -110,12 +118,31 @@ public class FileDataStates {
 	}
 
 	/**
+	 * Basic info type that only provides a set of {@link ElementFlag flags}
+	 * and simple properties for the associated resource.
 	 *
 	 * @author Markus Gärtner
 	 *
 	 */
 	public static class ElementInfo implements ModelConstants {
 		private EnumSet<ElementFlag> state = EnumSet.noneOf(ElementFlag.class);
+		private Map<String, String> properties;
+
+		public String getProperty(String key) {
+			return properties==null ? null : properties.get(key);
+		}
+
+		public void setProperty(String key, String value) {
+			if(value==null) {
+				return;
+			}
+
+			if(properties==null) {
+				properties = new THashMap<>();
+			}
+
+			properties.put(key, value);
+		}
 
 		public void updateFlag(ElementFlag flag, boolean active) {
 			if(active) {
@@ -137,6 +164,26 @@ public class FileDataStates {
 			return state.contains(flag);
 		}
 
+		public boolean isAnyFlagSet(ElementFlag...flags) {
+			for(ElementFlag flag : flags) {
+				if(isFlagSet(flag)) {
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		public boolean isNoFlagSet(ElementFlag...flags) {
+			for(ElementFlag flag : flags) {
+				if(isFlagSet(flag)) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
 		public boolean isValid() {
 			return !state.contains(ElementFlag.CORRUPTED)
 					&& !state.contains(ElementFlag.MISSING)
@@ -154,6 +201,7 @@ public class FileDataStates {
 		private Path path;
 
 		private FileChecksum checksum;
+		private long size;
 
 		private TIntObjectMap<LayerCoverage> stats = new TIntObjectHashMap<>();
 
@@ -171,6 +219,14 @@ public class FileDataStates {
 
 		public FileChecksum getChecksum() {
 			return checksum;
+		}
+
+		public long getSize() {
+			return size;
+		}
+
+		public void setSize(long size) {
+			this.size = size;
 		}
 
 		public void setPath(Path file) {
@@ -195,7 +251,7 @@ public class FileDataStates {
 
 		public long getItemCount(ItemLayerManifest layer) {
 			LayerCoverage cov = getCoverage(layer, false);
-			return cov==null ? 0L : cov.count;
+			return cov==null ? NO_INDEX : cov.count;
 		}
 
 		public long getBeginIndex(ItemLayerManifest layer) {

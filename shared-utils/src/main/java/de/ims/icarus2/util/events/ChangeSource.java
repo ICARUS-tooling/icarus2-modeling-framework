@@ -18,6 +18,8 @@
  */
 package de.ims.icarus2.util.events;
 
+import java.util.Arrays;
+
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
@@ -28,7 +30,7 @@ import de.ims.icarus2.util.Changeable;
  * @author Markus Gärtner
  *
  */
-public class ChangeSource implements Changeable {
+public class ChangeSource implements Changeable, AutoCloseable {
 
 	protected final Object source;
 
@@ -73,5 +75,14 @@ public class ChangeSource implements Changeable {
 				((ChangeListener) pairs[i + 1]).stateChanged(event);
 			}
 		}
+	}
+
+	/**
+	 * @see java.lang.AutoCloseable#close()
+	 */
+	@Override
+	public void close() throws Exception {
+		// Violation of the original method contract, since we modify internal data from the listener list!
+		Arrays.fill(listenerList.getListenerList(), null);
 	}
 }

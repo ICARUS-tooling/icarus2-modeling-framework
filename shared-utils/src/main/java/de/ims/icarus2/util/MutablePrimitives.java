@@ -3,6 +3,9 @@
  */
 package de.ims.icarus2.util;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusException;
+
 
 /**
  * @author Markus Gärtner
@@ -1946,7 +1949,7 @@ public class MutablePrimitives {
 		}
 	}
 
-	public static class GenericTypeAwareMutablePrimitive implements MutablePrimitive {
+	public static class GenericTypeAwareMutablePrimitive implements MutablePrimitive<Object> {
 
 		public static final long DEFAULT_EMPTY_VALUE = 0L;
 
@@ -1961,6 +1964,23 @@ public class MutablePrimitives {
 		public static final byte LONG = 0x5;
 		public static final byte FLOAT = 0x6;
 		public static final byte DOUBLE = 0x7;
+
+		private static String type2Label(byte type) {
+			switch (type) {
+			case NULL: return "NULL";
+			case BOOLEAN: return "BOOLEAN";
+			case BYTE: return "BYTE";
+			case SHORT: return "SHORT";
+			case INTEGER: return "INTEGER";
+			case LONG: return "LONG";
+			case FLOAT: return "FLOAT";
+			case DOUBLE: return "DOUBLE";
+
+			default:
+				throw new IcarusException(GlobalErrorCode.INVALID_INPUT,
+						"Not a valid type: "+String.valueOf(type));
+			}
+		}
 
 		public GenericTypeAwareMutablePrimitive() {
 			// no-op
@@ -2184,6 +2204,13 @@ public class MutablePrimitives {
 		}
 
 		/**
+		 * Tries to determine the wrapper class of the given object and then unwraps the stored
+		 * value to the internal storage and adjusts the type flag accordingly.
+		 * <p>
+		 * Note that besides the basic {@link Number numerical} wrappers and {@link Boolean} this
+		 * method also supports the {@link Character} wrapper class and will unwrap it to a
+		 * {@code long} value.
+		 *
 		 * @see de.ims.icarus2.util.MutablePrimitives.MutablePrimitive#fromWrapper(java.lang.Object)
 		 */
 		@Override
@@ -2191,6 +2218,8 @@ public class MutablePrimitives {
 			if(wrapper==null) {
 				setNull();
 			} else {
+				//TODO maybe check for "Mutable" type?
+
 				switch (wrapper.getClass().getSimpleName()) {
 				case "Boolean":
 					setBoolean(((Boolean)wrapper).booleanValue());
@@ -2235,13 +2264,13 @@ public class MutablePrimitives {
 		 * @see de.ims.icarus2.util.MutablePrimitives.MutablePrimitive#clone()
 		 */
 		@Override
-		public MutablePrimitive clone() {
-			return new GenericTypeAwareMutablePrimitive(storage);
+		public MutablePrimitive<Object> clone() {
+			return new GenericTypeAwareMutablePrimitive(storage, type);
 		}
 
 		@Override
 		public int hashCode() {
-			return intValue();
+			return (int)(storage * type + 1);
 		}
 
 		@Override
@@ -2249,14 +2278,15 @@ public class MutablePrimitives {
 			if(this==obj) {
 				return true;
 			} if(obj instanceof GenericTypeAwareMutablePrimitive) {
-				return storage==((GenericTypeAwareMutablePrimitive)obj).storage;
+				GenericTypeAwareMutablePrimitive other = (GenericTypeAwareMutablePrimitive) obj;
+				return storage==other.storage && type==other.type;
 			}
 			return false;
 		}
 
 		@Override
 		public String toString() {
-			return String.valueOf(storage);
+			return type2Label(type)+"@"+String.valueOf(storage);
 		}
 
 		/**

@@ -119,6 +119,16 @@ public class IndexSetMerger extends AbstractIndexSetProcessor implements ModelCo
 		return builder.build();
 	}
 
+	/**
+	 * Creates an iterator that traverses the merged output in
+	 * sorted order.
+	 * <p>
+	 * In case we only need to merge 2 input streams the simple
+	 * {@link DualMergeOfLong} is used, otherwise this implementation
+	 * delegates to {@link HeapMergeOfLong}.
+	 *
+	 * @return
+	 */
 	private OfLong mergedIterator() {
 		// Buffer size guaranteed to be 2 or more
 		if(buffer.size()==2) {

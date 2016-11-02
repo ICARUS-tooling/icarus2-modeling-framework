@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 
@@ -35,11 +37,40 @@ public abstract class AbstractIndexSetProcessor {
 
 	protected long estimatedResultSize;
 
+	/**
+	 * Called whenever a new {@link IndexSet} is added to this processor so that
+	 * subclasses can adjust the prediction about required buffer sizes for output
+	 * data.
+	 *
+	 * @param indexSet
+	 */
 	protected abstract void refreshEstimatedResultSize(IndexSet indexSet);
+
+	/**
+	 * Signals whether or not the input for this processor has to be sorted.
+	 * Used in all the {@code add} methods to determine if a check is
+	 * required.
+	 * <p>
+	 * The default implementation returns {@code true}
+	 *
+	 * @return
+	 */
+	protected boolean isRequiresSortedInput() {
+		return true;
+	}
+
+	protected void checkNewIndexSet(IndexSet set) {
+		if(set.size()==IndexSet.UNKNOWN_SIZE)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Unable to process index set of unknown size");
+
+		if(isRequiresSortedInput()) {
+			IndexUtils.checkSorted(set);
+		}
+	}
 
 	public void add(IndexSet...indices) {
 		for(IndexSet set : indices) {
-			IndexUtils.checkSorted(set);
+			checkNewIndexSet(set);
 			buffer.add(set);
 			refreshEstimatedResultSize(set);
 		}
@@ -47,7 +78,7 @@ public abstract class AbstractIndexSetProcessor {
 
 	public void add(Collection<? extends IndexSet> indices) {
 		for(IndexSet set : indices) {
-			IndexUtils.checkSorted(set);
+			checkNewIndexSet(set);
 			buffer.add(set);
 			refreshEstimatedResultSize(set);
 		}

@@ -20,6 +20,8 @@ package de.ims.icarus2.model.standard.raster;
 
 import java.util.Arrays;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.raster.Position;
 
 /**
@@ -27,6 +29,22 @@ import de.ims.icarus2.model.api.raster.Position;
  *
  */
 public class Positions {
+
+	public static Position createPosition(long... values) {
+		switch (values.length) {
+		case 0:
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Empty values array - cannot create position");
+		case 1:
+			return new Position1D(values[0]);
+		case 2:
+			return new Position2D(values[0], values[1]);
+		case 3:
+			return new Position3D(values[0], values[1], values[2]);
+
+		default:
+			return new PositionND(values);
+		}
+	}
 
 	public static class Position1D implements Position, Comparable<Position1D> {
 

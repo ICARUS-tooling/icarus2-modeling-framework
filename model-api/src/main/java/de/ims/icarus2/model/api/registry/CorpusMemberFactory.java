@@ -62,7 +62,7 @@ public interface CorpusMemberFactory {
 
 	/**
 	 * Creates a loader suitable for loading and instantiating classes defined
-	 * via {@link ImplementationManifest manifests}.
+	 * via {@link ImplementationManifest implementation manifests}.
 	 *
 	 * @return
 	 */

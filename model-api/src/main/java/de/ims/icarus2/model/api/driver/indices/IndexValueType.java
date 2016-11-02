@@ -27,15 +27,16 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.util.collections.ArrayUtils;
+import de.ims.icarus2.util.strings.StringResource;
 
 /**
  *
  * @author Markus Gärtner
  *
  */
-public enum IndexValueType {
+public enum IndexValueType implements StringResource {
 
-	BYTE(Byte.TYPE, byte[].class) {
+	BYTE("byte", Byte.TYPE, byte[].class) {
 		@Override
 		public Object newArray(int bufferSize) {
 			return new byte[bufferSize];
@@ -157,7 +158,7 @@ public enum IndexValueType {
 			return Byte.MAX_VALUE;
 		}
 	},
-	SHORT(Short.TYPE, short[].class) {
+	SHORT("short", Short.TYPE, short[].class) {
 		@Override
 		public Object newArray(int bufferSize) {
 			return new short[bufferSize];
@@ -279,7 +280,7 @@ public enum IndexValueType {
 			return Short.MAX_VALUE;
 		}
 	},
-	INTEGER(Integer.TYPE, int[].class) {
+	INTEGER("integer", Integer.TYPE, int[].class) {
 
 		@Override
 		public Object newArray(int bufferSize) {
@@ -402,7 +403,7 @@ public enum IndexValueType {
 			return Integer.MAX_VALUE;
 		}
 	},
-	LONG(Long.TYPE, long[].class) {
+	LONG("long", Long.TYPE, long[].class) {
 		@Override
 		public Object newArray(int bufferSize) {
 			return new long[bufferSize];
@@ -527,10 +528,32 @@ public enum IndexValueType {
 	;
 
 	private final Class<?> valueClass, arrayClass;
+	private final String label;
 
-	private IndexValueType(Class<?> valueClass, Class<?> arrayClass) {
+	private IndexValueType(String label, Class<?> valueClass, Class<?> arrayClass) {
+		this.label = label;
 		this.valueClass = valueClass;
 		this.arrayClass = arrayClass;
+	}
+
+	public static IndexValueType parseIndexValueType(String s) {
+		switch (s.toLowerCase()) {
+		case "byte": return BYTE;
+		case "short": return SHORT;
+		case "integer": return INTEGER;
+		case "long": return LONG;
+
+		default:
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Unknown index value type label: "+s);
+		}
+	}
+
+	/**
+	 * @see de.ims.icarus2.util.strings.StringResource#getStringValue()
+	 */
+	@Override
+	public String getStringValue() {
+		return label;
 	}
 
 	public Class<?> getValueClass() {
@@ -736,11 +759,11 @@ public enum IndexValueType {
 			return null;
 		}
 
-		if(value<=Byte.MAX_VALUE) {
+		if(value<=BYTE.maxValue()) {
 			return BYTE;
-		} else if(value<=Short.MAX_VALUE) {
+		} else if(value<=SHORT.maxValue()) {
 			return SHORT;
-		} else if(value<=Integer.MAX_VALUE) {
+		} else if(value<=INTEGER.maxValue()) {
 			return INTEGER;
 		} else {
 			return LONG;

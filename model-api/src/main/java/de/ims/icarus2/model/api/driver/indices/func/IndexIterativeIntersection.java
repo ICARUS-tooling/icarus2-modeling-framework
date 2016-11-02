@@ -102,20 +102,20 @@ public class IndexIterativeIntersection extends AbstractIndexSetProcessor {
 	}
 
 	/**
-	 * Creates the intersection of two {link IndexSet} instances and saves the result in
-	 * the specified {@link IndexBuffer}. Returns {@code true} only if there exists a
-	 * valid intersection of {@code set1} and {@code set2} (i.e. the {@code buffer} will
-	 * hold at least one index value  common to both input sets).
+	 * Creates the intersection of two {@link IndexSet} instances and saves the result in
+	 * the specified {@link LongConsumer consumer}. Returns {@code true} only if there exists a
+	 * valid intersection of {@code set1} and {@code set2} (i.e. the {@code consumer} will
+	 * hold at least one index value common to both input sets).
 	 *
 	 * @param set1
 	 * @param set2
 	 * @param buffer
 	 * @return
 	 */
-	public static boolean intersect(IndexSet set1, IndexSet set2, LongConsumer action) {
+	public static boolean intersect(IndexSet set1, IndexSet set2, LongConsumer consumer) {
 		checkNotNull(set1);
 		checkNotNull(set2);
-		checkNotNull(action);
+		checkNotNull(consumer);
 
 		long max1 = set1.lastIndex();
 		long max2 = set2.lastIndex();
@@ -146,7 +146,7 @@ public class IndexIterativeIntersection extends AbstractIndexSetProcessor {
 			} else if(v2 > v1) {
 				j++;
 			} else {
-				action.accept(v1);
+				consumer.accept(v1);
 				count++;
 
 				i++;

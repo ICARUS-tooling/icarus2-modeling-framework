@@ -18,6 +18,11 @@
  */
 package de.ims.icarus2.util;
 
+import java.io.Closeable;
+import java.io.IOException;
+
+import org.slf4j.Logger;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusException;
 
@@ -48,4 +53,35 @@ public class IcarusUtils {
 		return (int) Math.min(MAX_INTEGER_INDEX, value);
 	}
 
+	public static void close(Object obj) throws Exception {
+		if(obj instanceof Closeable) {
+			((Closeable)obj).close();
+		} else if(obj instanceof AutoCloseable) {
+			((AutoCloseable)obj).close();
+		}
+	}
+
+	public static void closeSilently(Object obj) {
+		if(obj instanceof Closeable) {
+			try {
+				((Closeable)obj).close();
+			} catch (IOException e) {
+				// ignore
+			}
+		} else if(obj instanceof AutoCloseable) {
+			try {
+				((AutoCloseable)obj).close();
+			} catch (Exception e) {
+				//ignore
+			}
+		}
+	}
+
+	public static void close(Object obj, Logger log, String label) {
+		try {
+			close(obj);
+		} catch(Exception e) {
+			log.error("Failed to close {1}", label, e);
+		}
+	}
 }

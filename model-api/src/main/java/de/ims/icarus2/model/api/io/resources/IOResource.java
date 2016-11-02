@@ -67,7 +67,7 @@ public interface IOResource {
 
 	/**
 	 * Initializes the resource so that subsequent calls to fetch {@link #getReadChannel() read}
-	 * and {@link #getWriteChannel() write} data will not require expensive preparation time.
+	 * and {@link #getWriteChannel() write} access to data will not require expensive preparation time.
 	 *
 	 * @throws IOException
 	 */
@@ -83,11 +83,15 @@ public interface IOResource {
 
 	/**
 	 * Returns the path on the local file system this resource is pointing at.
-	 * A return value of {@code null} indicates the resource not referring to local data
+	 * A return value of {@code null} indicates the resource is not referring to local data
 	 * (i.e. it's either based on remote {@link URL} data or just exists virtually in
 	 * memory).
+	 * <p>
+	 * The default implementation returns {@code null}.
 	 *
 	 * @return
 	 */
-	Path getLocalPath();
+	default Path getLocalPath() {
+		return null;
+	}
 }

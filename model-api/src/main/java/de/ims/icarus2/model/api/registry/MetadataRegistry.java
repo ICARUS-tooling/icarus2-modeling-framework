@@ -76,6 +76,11 @@ public interface MetadataRegistry extends AutoCloseable {
 	 * Changes the entry for the given {@code key} so that it maps to the
 	 * specified {@code value}. Providing a value of {@code null} indicates that
 	 * the mapping for {@code key} should be erased from the registry.
+	 * <p>
+	 * Note that implementations should make sure that a lone call to this or
+	 * any of the more specialized {@code setXXX(String,xxx)} methods triggers
+	 * a full transaction cycle via the {@link #beginUpdate()} and {@link #endUpdate()}
+	 * methods!
 	 *
 	 * @param key
 	 * @param value

@@ -20,7 +20,6 @@ package de.ims.icarus2.model.api.io.resources;
 
 import java.io.IOException;
 import java.nio.channels.SeekableByteChannel;
-import java.nio.file.Path;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelConstants;
@@ -109,13 +108,4 @@ public class InMemoryResource implements IOResource, ModelConstants {
 	public long size() throws IOException {
 		return buffer.size();
 	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.io.resources.IOResource#getLocalPath()
-	 */
-	@Override
-	public Path getLocalPath() {
-		return null;
-	}
-
 }

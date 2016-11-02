@@ -34,10 +34,7 @@ import de.ims.icarus2.util.id.UnknownIdentifierException;
 
 /**
  * Helper manifest (not describing a corpus member/entity of its own)
- * to specify possible properties the user can set on another manifest.
- * <p>
- * Note that option manifests do not have upwards links to their surrounding
- * manifests and therefore can be shared across many hosts.
+ * to specify possible properties the user can set for another manifest.
  *
  * @author Markus Gärtner
  *

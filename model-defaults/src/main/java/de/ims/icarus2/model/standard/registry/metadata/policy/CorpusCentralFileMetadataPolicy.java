@@ -24,16 +24,17 @@ import java.nio.file.Path;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.registry.CorpusManager;
-import de.ims.icarus2.model.api.registry.MetadataStoragePolicy;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
+import de.ims.icarus2.model.api.registry.MetadataStoragePolicy;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
+import de.ims.icarus2.model.standard.io.DefaultFileStructure;
 import de.ims.icarus2.model.standard.registry.metadata.JAXBMetadataRegistry;
 import de.ims.icarus2.model.standard.registry.metadata.PlainMetadataRegistry;
 
 /**
- * Implements a set of metadata policies that use a new file-bases metadata registry for every target object.
+ * Implements a set of metadata policies that use a new file-based metadata registry for every target object.
  * <p>
  * The strategy is to create one folder below the root folder for every corpus. This folder will use the
  * {@link #CORPUS_PREFIX} and the corpus' {@link CorpusManifest#getId()} as name.
@@ -64,9 +65,6 @@ import de.ims.icarus2.model.standard.registry.metadata.PlainMetadataRegistry;
  *
  */
 public abstract class CorpusCentralFileMetadataPolicy<O extends Object> implements MetadataStoragePolicy<O> {
-
-	public static final String CORPUS_PREFIX = "corpus_";
-	public static final String CONTEXT_PREFIX = "context_";
 
 	public static final String CORPUS_FILENAME = "corpus";
 
@@ -99,7 +97,7 @@ public abstract class CorpusCentralFileMetadataPolicy<O extends Object> implemen
 	}
 
 	protected Path getCorpusFolder(CorpusManifest manifest) {
-		return rootFolder.resolve(CORPUS_PREFIX+manifest.getId());
+		return rootFolder.resolve(DefaultFileStructure.CORPUS_PREFIX+manifest.getId());
 	}
 
 	protected String getMetadataFileName(CorpusManifest manifest) {
@@ -107,7 +105,7 @@ public abstract class CorpusCentralFileMetadataPolicy<O extends Object> implemen
 	}
 
 	protected String getMetadataFileName(ContextManifest manifest) {
-		return CONTEXT_PREFIX+manifest.getId()+format.getFileSuffix();
+		return DefaultFileStructure.CONTEXT_PREFIX+manifest.getId()+format.getFileSuffix();
 	}
 
 	protected MetadataRegistry createRegistry(Path file) {
@@ -125,7 +123,7 @@ public abstract class CorpusCentralFileMetadataPolicy<O extends Object> implemen
 		 * @param rootFolder
 		 * @param format
 		 */
-		public CorpusPolicy(Path rootFolder,Format format) {
+		public CorpusPolicy(Path rootFolder, Format format) {
 			super(rootFolder, format);
 		}
 
@@ -150,7 +148,7 @@ public abstract class CorpusCentralFileMetadataPolicy<O extends Object> implemen
 		 * @param rootFolder
 		 * @param format
 		 */
-		public ContextPolicy(Path rootFolder,Format format) {
+		public ContextPolicy(Path rootFolder, Format format) {
 			super(rootFolder, format);
 		}
 

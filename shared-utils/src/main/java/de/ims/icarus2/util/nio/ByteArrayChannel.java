@@ -30,7 +30,7 @@ import de.ims.icarus2.util.IcarusUtils;
  * @author Markus Gärtner
  *
  */
-public class ArrayByteStream implements SeekableByteChannel {
+public class ByteArrayChannel implements SeekableByteChannel {
 
 	private static final int MASK = 0xff;
 
@@ -43,7 +43,7 @@ public class ArrayByteStream implements SeekableByteChannel {
 	 * @param s
 	 * @return
 	 */
-	public static ArrayByteStream fromChars(CharSequence s) {
+	public static ByteArrayChannel fromChars(CharSequence s) {
 		checkNotNull(s);
 
 		int length = s.length();
@@ -57,7 +57,7 @@ public class ArrayByteStream implements SeekableByteChannel {
 			data[idx+1] = (byte) (c & MASK);
 		}
 
-		return new ArrayByteStream(data);
+		return new ByteArrayChannel(data);
 	}
 
 	private final byte[] data;
@@ -65,11 +65,11 @@ public class ArrayByteStream implements SeekableByteChannel {
 
 	private int position;
 
-	public ArrayByteStream(byte[] data) {
+	public ByteArrayChannel(byte[] data) {
 		this(data, true);
 	}
 
-	public ArrayByteStream(byte[] data, boolean readOnly) {
+	public ByteArrayChannel(byte[] data, boolean readOnly) {
 		checkNotNull(data);
 
 		this.data = data;

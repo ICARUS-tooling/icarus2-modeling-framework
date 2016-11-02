@@ -16,11 +16,9 @@
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  *
  */
-package de.ims.icarus2.util;
+package de.ims.icarus2.util.id;
 
 import javax.swing.Icon;
-
-import de.ims.icarus2.util.id.Identity;
 
 /**
  * @author Markus Gärtner

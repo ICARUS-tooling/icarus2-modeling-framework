@@ -38,7 +38,7 @@ public class SpanSequence implements DataSequence<Item> {
 
 	public SpanSequence(Container target, long beginIndex, long size) {
 		if(size<=0L)
-			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Size must not be greater than 0: "+size);
+			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Size must be greater than 0: "+size);
 
 		this.target = target;
 		this.beginIndex = beginIndex;

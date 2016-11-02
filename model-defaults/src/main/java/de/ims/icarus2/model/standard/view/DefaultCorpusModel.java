@@ -39,9 +39,10 @@ import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.edit.AtomicChange;
 import de.ims.icarus2.model.api.edit.CorpusEditManager;
-import de.ims.icarus2.model.api.edit.SerializableAtomicChanges;
+import de.ims.icarus2.model.api.edit.io.SerializableAtomicChanges;
 import de.ims.icarus2.model.api.events.CorpusAdapter;
 import de.ims.icarus2.model.api.events.CorpusEvent;
+import de.ims.icarus2.model.api.events.CorpusListener;
 import de.ims.icarus2.model.api.events.PageListener;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.ItemLayer;
@@ -63,6 +64,7 @@ import de.ims.icarus2.model.api.view.CorpusView.PageControl;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.StructureType;
+import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.container.AbstractImmutableContainer;
 import de.ims.icarus2.model.util.ModelUtils;
@@ -91,11 +93,11 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 	 * Listener added to the host corpus responsible for cleaning
 	 * up the model once the surrounding view gets closed
 	 */
-	protected final ViewObserver viewObserver;
+	protected final CorpusListener viewObserver;
 
 	/**
 	 * Proxy container that represents the horizontal filtering performed
-	 * by the surrounding view.
+	 * by the surrounding view. Created lazily when actually needed.
 	 */
 	protected final Lazy<RootContainer> rootContainer;
 
@@ -106,7 +108,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 
 	/**
 	 * Proxy for storing the filtered items in an efficient lookup structure.
-	 * Created at initialization time with a default implementation based on
+	 * Created lazily with a default implementation based on
 	 * {@link LookupList}.
 	 *
 	 * @see BufferedItemLookup
@@ -123,8 +125,8 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		readable = builder.getAccessMode().isRead();
 
 		viewObserver = createViewObserver();
-		itemLookup = Lazy.create(this::createItemLookup, false);
-		rootContainer = Lazy.create(this::createRootContainer, false);
+		itemLookup = Lazy.create(this::createItemLookup, true);
+		rootContainer = Lazy.create(this::createRootContainer, true);
 
 		changeSource = new ChangeSource(this);
 	}
@@ -140,11 +142,23 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		owner.getCorpus().addCorpusListener(viewObserver);
 	}
 
+	/**
+	 * Besides delegating to the matching super function this implementation
+	 * removes listeners registered with other corpus resources and then tries
+	 * to close down internal modules.
+	 *
+	 * @param owner
+	 */
 	@Override
 	public void removeNotify(CorpusView owner) {
 		super.removeNotify(owner);
 
 		owner.getCorpus().removeCorpusListener(viewObserver);
+
+		IcarusUtils.close(viewObserver, log, "view observer");
+		IcarusUtils.close(rootContainer, log, "root container");
+		IcarusUtils.close(itemLookup, log, "item lookup");
+		IcarusUtils.close(changeSource, log, "change source");
 	}
 
 	@Override
@@ -157,7 +171,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		changeSource.removeChangeListener(listener);
 	}
 
-	protected ViewObserver createViewObserver() {
+	protected CorpusListener createViewObserver() {
 		return new ViewObserver();
 	}
 
@@ -171,19 +185,16 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		CorpusView view = getView();
 		PageControl pageControl = view.getPageControl();
 
-		int pageSize = pageControl.getPageSize();
-		ItemLayer layer = view.getScope().getPrimaryLayer();
-
-		BufferedItemLookup itemLookup = new BufferedItemLookup(itemLayerManager, layer, pageSize);
-
-		pageControl.addPageListener(itemLookup);
+		BufferedItemLookup itemLookup = new BufferedItemLookup(itemLayerManager, pageControl);
 
 		// Make sure that the new item lookup is up2date wrt the current page state!
 		if(pageControl.isPageLoaded()) {
 			try {
-				itemLookup.reload(pageControl);
+				itemLookup.reload();
 			} catch (InterruptedException e) {
 				log.error("Loading of page was interrupted", e);
+				throw new ModelException(getCorpus(), GlobalErrorCode.INTERRUPTED,
+						"Could not finish creation of item lookup - loading of page was interrupted", e);
 			}
 		}
 
@@ -728,16 +739,6 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		return ensureNotNull(edge.getTarget());
 	}
 
-	@Override
-	public Item setSource(Edge edge, Item item) {
-		return setTerminal(edge.getStructure(), edge, item, true);
-	}
-
-	@Override
-	public Item setTarget(Edge edge, Item item) {
-		return setTerminal(edge.getStructure(), edge, item, false);
-	}
-
 
 	//---------------------------------------------
 	//			FRAGMENT METHODS
@@ -853,8 +854,9 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 	public Object setValue(AnnotationLayer layer, Item item, String key,
 			Object value) {
 		Object oldValue = layer.getAnnotationStorage().getValue(item, key);
+		ValueType valueType = layer.getManifest().getAnnotationManifest(key).getValueType();
 
-		executeChange(new SerializableAtomicChanges.ValueChange(layer, item, key, value, oldValue));
+		executeChange(new SerializableAtomicChanges.ValueChange(layer, valueType, item, key, value, oldValue));
 
 		return oldValue;
 	}
@@ -935,22 +937,25 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 
 	}
 
-	protected static class BufferedItemLookup implements ItemLookup, PageListener, ObjLongConsumer<Item> {
+	protected static class BufferedItemLookup implements ItemLookup, PageListener, ObjLongConsumer<Item>, AutoCloseable {
 
 		private boolean dataLocked = false;
 
+		private final PageControl pageControl;
 		private final LookupList<Item> items;
-		private final ItemLayer layer;
 		private final ItemLayerManager itemLayerManager;
 
-		public BufferedItemLookup(ItemLayerManager itemLayerManager, ItemLayer layer, int capacity) {
+		public BufferedItemLookup(ItemLayerManager itemLayerManager, PageControl pageControl) {
 			checkNotNull(itemLayerManager);
-			checkNotNull(layer);
-			checkArgument("Capacity must be positive", capacity>0);
+			checkNotNull(pageControl);
+
+			this.pageControl = pageControl;
+			int capacity = pageControl.getPageSize();
 
 			this.itemLayerManager = itemLayerManager;
-			this.layer = layer;
 			items = new LookupList<>(capacity);
+
+			pageControl.addPageListener(this);
 		}
 
 		protected synchronized void lock() {
@@ -962,9 +967,10 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 			dataLocked = false;
 		}
 
-		protected synchronized void reload(PageControl pageControl) throws InterruptedException {
+		protected synchronized void reload() throws InterruptedException {
 			try {
 				IndexSet indices = pageControl.getIndices();
+				ItemLayer layer = pageControl.getView().getScope().getPrimaryLayer();
 				itemLayerManager.forItems(layer, IndexUtils.wrap(indices), this);
 			} catch (ModelException e) {
 				items.clear();
@@ -985,11 +991,19 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 						"Cannot access data as it is locked due to being either reloaded or cleared");
 		}
 
+		protected final void checkPageControl(PageControl pageControl) {
+			if(this.pageControl!=pageControl)
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+						"Notification chain corrupted - provided page control does not match the one saved for this model");
+		}
+
 		/**
 		 * @see de.ims.icarus2.model.api.events.PageListener#pageClosing(de.ims.icarus2.model.api.view.CorpusView.PageControl, int)
 		 */
 		@Override
 		public void pageClosing(PageControl source, int page) {
+			checkPageControl(source);
+
 			lock();
 		}
 
@@ -998,6 +1012,8 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		 */
 		@Override
 		public void pageClosed(PageControl source, int page) {
+			checkPageControl(source);
+
 			clear();
 		}
 
@@ -1006,6 +1022,8 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		 */
 		@Override
 		public void pageLoading(PageControl source, int page, int size) {
+			checkPageControl(source);
+
 			lock();
 		}
 
@@ -1014,8 +1032,10 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		 */
 		@Override
 		public void pageLoaded(PageControl source, int page, int size) {
+			checkPageControl(source);
+
 			try {
-				reload(source);
+				reload();
 			} catch (InterruptedException e) {
 				log.error("Loading of page was interrupted", e);
 			}
@@ -1026,6 +1046,8 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		 */
 		@Override
 		public void pageFailed(PageControl source, int page, ModelException ex) {
+			checkPageControl(source);
+
 			clear();
 		}
 
@@ -1057,6 +1079,14 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 			checkNotLocked();
 
 			return items.indexOf(item);
+		}
+
+		/**
+		 * @see java.lang.AutoCloseable#close()
+		 */
+		@Override
+		public void close() throws Exception {
+			pageControl.removePageListener(this);
 		}
 
 	}
@@ -1260,9 +1290,9 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 	 * <p>
 	 * If there is no {@link Corpus#getEditManager() edit model} present on the
 	 * {@link CorpusModel#getCorpus() corpus} then the {@code change} will be
-	 * executed directly.
+	 * {@link AtomicChange#execute() executed} directly.
 	 *
-	 * @param change
+	 * @param change the atomic change to be executed
 	 * @throws UnsupportedOperationException if the corpus is not editable
 	 */
 	protected void executeChange(AtomicChange change) {

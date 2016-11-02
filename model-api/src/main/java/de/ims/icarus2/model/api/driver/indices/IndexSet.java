@@ -438,6 +438,16 @@ public interface IndexSet {
 		return new OfLongImpl(this, start, end);
 	}
 
+	public static OfLong asIterator(IndexSet[] indices) {
+		checkNotNull(indices);
+
+		if(indices.length==1) {
+			return new OfLongImpl(indices[0]);
+		} else {
+			return new CompositeOfLongImpl(indices);
+		}
+	}
+
 	/**
 	 * Iterator implementation for traversal of a {@code IndexSet} or a specified
 	 * subsection of it.
@@ -496,6 +506,73 @@ public interface IndexSet {
 				throw new NoSuchElementException();
 
 			return source.indexAt(pointer++);
+		}
+
+	}
+
+	/**
+	 * Iterator implementation for a set of {@link IndexSet} instances in
+	 * succession.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	public static class CompositeOfLongImpl implements OfLong {
+
+		private final IndexSet[] indices;
+		private final int limit;
+
+		private int index;
+		private OfLong iterator;
+
+		public CompositeOfLongImpl(IndexSet[] indices) {
+			checkNotNull(indices);
+			checkArgument(indices.length>0);
+
+			this.indices = indices;
+			limit = indices.length-1;
+
+			index = -1;
+		}
+
+		public CompositeOfLongImpl(IndexSet[] indices, int fromIndex, int toIndex) {
+			checkNotNull(indices);
+			checkArgument(indices.length>0);
+
+			this.indices = indices;
+			limit = toIndex;
+
+			index = fromIndex-1;
+		}
+
+		/**
+		 * @see java.util.Iterator#hasNext()
+		 */
+		@Override
+		public boolean hasNext() {
+
+			if(iterator==null || !iterator.hasNext()) {
+				if(index>=limit) {
+					iterator = null;
+					return false;
+				}
+
+				index++;
+				iterator = indices[index].iterator();
+			}
+
+			return iterator.hasNext();
+		}
+
+		/**
+		 * @see java.util.PrimitiveIterator.OfLong#nextLong()
+		 */
+		@Override
+		public long nextLong() {
+			if(iterator==null)
+				throw new NoSuchElementException();
+
+			return iterator.nextLong();
 		}
 
 	}
