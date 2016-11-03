@@ -18,8 +18,7 @@
  */
 package de.ims.icarus2.model.standard.members.layers;
 
-import gnu.trove.set.hash.TCustomHashSet;
-import gnu.trove.strategy.IdentityHashingStrategy;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 import java.util.Set;
 
@@ -41,8 +40,8 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  */
 public class DefaultLayerGroup extends AbstractPart<Context> implements LayerGroup {
 
-	private final Set<Layer> layers = new TCustomHashSet<>(IdentityHashingStrategy.INSTANCE);
-	private final Set<Dependency<LayerGroup>> dependencies = new TCustomHashSet<>(IdentityHashingStrategy.INSTANCE);
+	private final Set<Layer> layers = new ReferenceOpenHashSet<>();
+	private final Set<Dependency<LayerGroup>> dependencies = new ReferenceOpenHashSet<>();
 	private final LayerGroupManifest manifest;
 	private ItemLayer primaryLayer;
 

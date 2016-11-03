@@ -85,23 +85,21 @@ public class LazyResultSetIndexSet implements IndexSet {
 	protected static int getRequiredSize(Statement stmt, String sql) {
 		String query = "SELECT count(*) FROM ("+sql+")";
 
-		ResultSet rs = null;
-		try {
-			rs = stmt.executeQuery(query);
-
+		try (ResultSet rs = stmt.executeQuery(query)) {
 			// Result has to be a 1x1 table
 			rs.next();
 			return rs.getInt(1);
 		} catch(SQLException e) {
 			throw new ModelException(GlobalErrorCode.DELEGATION_FAILED, "Failed to fetch required size of result set: "+query, e);
 		} finally {
-			if(rs!=null) {
-				try {
-					rs.close();
-				} catch (SQLException e) {
-					throw new ModelException(GlobalErrorCode.DELEGATION_FAILED, "Unable to close result set", e);
-				}
-			}
+			//TODO not sure if we should revert to former version of manual closing to prevent the SQLException from leaking
+//			if(rs!=null) {
+//				try {
+//					rs.close();
+//				} catch (SQLException e) {
+//					throw new ModelException(GlobalErrorCode.DELEGATION_FAILED, "Unable to close result set", e);
+//				}
+//			}
 		}
 	}
 

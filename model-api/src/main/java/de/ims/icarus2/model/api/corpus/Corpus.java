@@ -20,7 +20,7 @@
  */
 package de.ims.icarus2.model.api.corpus;
 
-import gnu.trove.set.hash.THashSet;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 import java.util.Collection;
 import java.util.List;
@@ -340,7 +340,7 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	 * @return All the contexts available for this corpus.
 	 */
 	default Set<Context> getContexts() {
-		Set<Context> result = new THashSet<>();
+		Set<Context> result = new ObjectOpenHashSet<>();
 
 		result.add(getRootContext());
 

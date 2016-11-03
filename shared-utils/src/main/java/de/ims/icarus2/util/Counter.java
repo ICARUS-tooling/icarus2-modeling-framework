@@ -18,8 +18,7 @@
  */
 package de.ims.icarus2.util;
 
-import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.hash.TObjectIntHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 import java.util.Set;
 
@@ -31,29 +30,19 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  */
 public class Counter<T extends Object> {
 
-	private final TObjectIntMap<T> counts = new TObjectIntHashMap<>();
+	private final Object2IntOpenHashMap<T> counts = new Object2IntOpenHashMap<>();
 
 	public Counter() {
 		// no-op
 	}
 
 	public int increment(T data) {
-		int c = counts.get(data);
-		if(c==counts.getNoEntryValue()) {
-			c = 0;
-		}
-
-		c++;
-		counts.put(data, c);
-
-//		System.out.printf("%s: %d size=%d\n",data,c,counts.size());
-
-		return c;
+		return counts.addTo(data, 1) + 1;
 	}
 
 	public int add(T data, int delta) {
-		int c = counts.get(data);
-		if(c==counts.getNoEntryValue()) {
+		int c = counts.getInt(data);
+		if(c==counts.defaultReturnValue()) {
 			c = 0;
 		}
 
@@ -73,13 +62,13 @@ public class Counter<T extends Object> {
 	}
 
 	public int decrement(T data) {
-		int c = counts.get(data);
+		int c = counts.getInt(data);
 		if(c<1)
 			throw new IllegalStateException("Cannot decrement count for data: "+data); //$NON-NLS-1$
 
 		c--;
 		if(c==0) {
-			counts.remove(data);
+			counts.removeInt(data);
 		} else {
 			counts.put(data, c);
 		}
@@ -92,8 +81,8 @@ public class Counter<T extends Object> {
 	}
 
 	public int getCount(Object data) {
-		int c = counts.get(data);
-		return c==counts.getNoEntryValue() ? 0 : c;
+		int c = counts.getInt(data);
+		return c==counts.defaultReturnValue() ? 0 : c;
 	}
 
 	/**
@@ -104,7 +93,7 @@ public class Counter<T extends Object> {
 	 * @return
 	 */
 	public boolean hasCount(Object data) {
-		int c = counts.get(data);
+		int c = counts.getInt(data);
 		return c>0;
 	}
 

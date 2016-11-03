@@ -17,10 +17,9 @@
  */
 package de.ims.icarus2.filedriver;
 
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.THashMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
-import gnu.trove.procedure.TIntObjectProcedure;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.nio.file.Path;
 import java.util.EnumSet;
@@ -46,10 +45,10 @@ public class FileDataStates {
 	private final ElementInfo globalInfo = new ElementInfo();
 
 	// File states and meta info
-	private final TIntObjectMap<FileInfo> fileInfos = new TIntObjectHashMap<>();
+	private final Int2ObjectMap<FileInfo> fileInfos = new Int2ObjectOpenHashMap<>();
 
 	// Layer states and meta info
-	private final TIntObjectMap<LayerInfo> layerInfos = new TIntObjectHashMap<>();
+	private final Int2ObjectMap<LayerInfo> layerInfos = new Int2ObjectOpenHashMap<>();
 
 	/**
 	 * Initializes all {@link ElementInfo elements} based on data from the
@@ -76,25 +75,15 @@ public class FileDataStates {
 	}
 
 	public void forEachFile(ObjIntConsumer<FileInfo> action) {
-		fileInfos.forEachEntry(new TIntObjectProcedure<FileInfo>() {
-
-			@Override
-			public boolean execute(int fileIndex, FileInfo info) {
-				action.accept(info, fileIndex);
-				return true;
-			}
+		fileInfos.int2ObjectEntrySet().forEach(entry -> {
+			action.accept(entry.getValue(), entry.getIntKey());
 		});
 	}
 
 	public void forEachValidFile(ObjIntConsumer<FileInfo> action) {
-		fileInfos.forEachEntry(new TIntObjectProcedure<FileInfo>() {
-
-			@Override
-			public boolean execute(int fileIndex, FileInfo info) {
-				if(info.isValid()) {
-					action.accept(info, fileIndex);
-				}
-				return true;
+		fileInfos.int2ObjectEntrySet().forEach(entry -> {
+			if(entry.getValue().isValid()) {
+				action.accept(entry.getValue(), entry.getIntKey());
 			}
 		});
 	}
@@ -138,7 +127,7 @@ public class FileDataStates {
 			}
 
 			if(properties==null) {
-				properties = new THashMap<>();
+				properties = new Object2ObjectOpenHashMap<>();
 			}
 
 			properties.put(key, value);
@@ -203,7 +192,7 @@ public class FileDataStates {
 		private FileChecksum checksum;
 		private long size;
 
-		private TIntObjectMap<LayerCoverage> stats = new TIntObjectHashMap<>();
+		private Int2ObjectMap<LayerCoverage> stats = new Int2ObjectOpenHashMap<>();
 
 		private FileInfo(int index) {
 			this.index = index;

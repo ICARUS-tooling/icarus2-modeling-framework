@@ -18,8 +18,8 @@
  */
 package de.ims.icarus2;
 
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import de.ims.icarus2.util.id.DuplicateIdentifierException;
 
 /**
@@ -32,7 +32,7 @@ public interface ErrorCode {
 
 	String name();
 
-	static final TIntObjectMap<ErrorCode> _lookup = new TIntObjectHashMap<>();
+	static final Int2ObjectMap<ErrorCode> _lookup = new Int2ObjectOpenHashMap<>();
 
 	@SafeVarargs
 	public static <E extends ErrorCode> void register(E... codes) {

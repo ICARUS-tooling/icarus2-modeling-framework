@@ -19,9 +19,8 @@
 package de.ims.icarus2.model.standard.driver.cache;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
-import gnu.trove.map.TLongObjectMap;
-import gnu.trove.map.hash.TLongObjectHashMap;
-import gnu.trove.procedure.TObjectProcedure;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.standard.driver.cache.CachedMember.CachedItem;
@@ -42,7 +41,7 @@ import de.ims.icarus2.util.mem.Reference;
 public class MemberCache<M extends CachedItem> {
 
 	@Reference
-	private TLongObjectMap<M> cache;
+	private Long2ObjectMap<M> cache;
 
 	@Primitive
 	private final int limit;
@@ -56,13 +55,13 @@ public class MemberCache<M extends CachedItem> {
 
 	/**
 	 * Constructs a new, empty hash-table with the specified initial capacity and
-	 * default load factor, which is <code>0.75</code>.
+	 * default load factor, which is <code>0.5</code>.
 	 *
 	 * @param initialCapacity the initial capacity of the hash-table.
 	 * @throws IllegalArgumentException if the initial capacity is less than zero.
 	 */
 	public MemberCache(int initialCapacity) {
-		this(initialCapacity, -1, 0.85f);
+		this(initialCapacity, -1, 0.5F);
 	}
 
 	public MemberCache(int initialCapacity, int limit, float loadFactor) {
@@ -83,9 +82,9 @@ public class MemberCache<M extends CachedItem> {
 			return;
 		}
 
-		TLongObjectMap<M> oldCache = cache;
+		Long2ObjectMap<M> oldCache = cache;
 
-		cache = new TLongObjectHashMap<>(cacheSize, loadFactor);
+		cache = new Long2ObjectOpenHashMap<>(cacheSize, loadFactor);
 
 		if(oldCache!=null && !oldCache.isEmpty()) {
 			cache.putAll(oldCache);
@@ -139,7 +138,7 @@ public class MemberCache<M extends CachedItem> {
 			return false;
 		}
 
-		if(cache.putIfAbsent(key, member)!=null)
+		if(cache.put(key, member)!=null)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Key already used for mapping: "+key);
 
 		return true;
@@ -178,13 +177,7 @@ public class MemberCache<M extends CachedItem> {
 			return;
 		}
 
-		//FIXME does not remove recycled members from cache!
-		cache.forEachValue(new TObjectProcedure<M>() {
-
-			@Override
-			public boolean execute(M object) {
-				return pool.recycle(object);
-			}
-		});
+		cache.values().forEach(pool::recycle);
+		cache.clear();
 	}
 }

@@ -18,8 +18,8 @@
 package de.ims.icarus2.filedriver.io.sets;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,7 +42,7 @@ import de.ims.icarus2.model.manifest.api.LocationType;
  */
 public class LazyFileSet implements FileSet {
 
-	private final TIntObjectMap<Path> paths = new TIntObjectHashMap<>();
+	private final Int2ObjectMap<Path> paths = new Int2ObjectOpenHashMap<>();
 	private final PathResolver pathResolver;
 
 	/**

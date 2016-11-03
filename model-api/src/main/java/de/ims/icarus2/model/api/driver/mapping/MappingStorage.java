@@ -20,10 +20,9 @@ package de.ims.icarus2.model.api.driver.mapping;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
-import gnu.trove.map.TLongObjectMap;
-import gnu.trove.map.hash.TLongObjectHashMap;
-import gnu.trove.set.hash.TCustomHashSet;
-import gnu.trove.strategy.IdentityHashingStrategy;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 import java.util.List;
 import java.util.Set;
@@ -47,8 +46,8 @@ public class MappingStorage {
 		return mapping.getSourceLayer().getName()+"->"+mapping.getTargetLayer().getName(); //$NON-NLS-1$
 	}
 
-	private final TLongObjectMap<Mapping> mappingMap;
-	private final Set<Mapping> mappingSet = new TCustomHashSet<>(IdentityHashingStrategy.INSTANCE);
+	private final Long2ObjectMap<Mapping> mappingMap;
+	private final Set<Mapping> mappingSet = new ReferenceOpenHashSet<>();
 
 	private final BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> fallback;
 
@@ -60,7 +59,7 @@ public class MappingStorage {
 		builder.reset();
 
 		// Post processing of builder data
-		mappingSet.addAll(mappingMap.valueCollection());
+		mappingSet.addAll(mappingMap.values());
 	}
 
 	public Set<Mapping> getMappings() {
@@ -139,8 +138,12 @@ public class MappingStorage {
 	}
 
 	public static class Builder {
-		private TLongObjectMap<Mapping> mappingMap = new TLongObjectHashMap<>();
+		private Long2ObjectMap<Mapping> mappingMap;
 		private BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> fallback;
+
+		public Builder() {
+			reset();
+		}
 
 		public Builder addMapping(Mapping mapping) {
 			checkNotNull(mapping);
@@ -172,7 +175,7 @@ public class MappingStorage {
 		}
 
 		public Builder reset() {
-			mappingMap = new TLongObjectHashMap<>();
+			mappingMap = new Long2ObjectOpenHashMap<>();
 			return this;
 		}
 

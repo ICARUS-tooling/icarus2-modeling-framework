@@ -19,7 +19,7 @@
 package de.ims.icarus2.util.collections;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
-import gnu.trove.map.hash.THashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,11 +43,11 @@ public class LazyMap<K extends Object, V extends Object> implements BiConsumer<K
 	}
 
 	public static <K extends Object, V extends Object> LazyMap<K, V> lazyTHashMap(final int capacity) {
-		return new LazyMap<>(()-> new THashMap<>(capacity));
+		return new LazyMap<>(()-> new Object2ObjectOpenHashMap<>(capacity));
 	}
 
 	public static <K extends Object, V extends Object> LazyMap<K, V> lazyTHashMap() {
-		return new LazyMap<>(THashMap::new);
+		return new LazyMap<>(Object2ObjectOpenHashMap::new);
 	}
 
 	public static <K extends Object, V extends Object> LazyMap<K, V> lazyNavigableMap() {

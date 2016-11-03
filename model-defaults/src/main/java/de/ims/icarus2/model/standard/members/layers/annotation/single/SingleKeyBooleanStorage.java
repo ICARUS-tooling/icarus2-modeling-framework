@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.single;
 
-import gnu.trove.set.hash.THashSet;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 import java.util.Set;
 
@@ -59,7 +59,7 @@ public class SingleKeyBooleanStorage extends AbstractSingleKeyStorage {
 			//TODO expensive implementation, really use this one?
 			return new WeakHashSet<>(getInitialCapacity(layer));
 		} else {
-			return new THashSet<>(getInitialCapacity(layer));
+			return new ObjectOpenHashSet<>(getInitialCapacity(layer));
 		}
 	}
 

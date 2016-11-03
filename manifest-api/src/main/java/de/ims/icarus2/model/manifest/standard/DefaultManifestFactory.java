@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.manifest.standard;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
-import gnu.trove.map.hash.THashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -79,7 +79,7 @@ public class DefaultManifestFactory implements ManifestFactory {
 		}
 	}
 
-	private static final Map<ManifestType, ManifestFragmentInfo> _info = new THashMap<>();
+	private static final Map<ManifestType, ManifestFragmentInfo> _info = new Object2ObjectOpenHashMap<>();
 
 	protected static void registerInfo(ManifestType manifestType, Class<?> implementingClass,
 			Class<?> hostClass) {

@@ -18,8 +18,8 @@
 package de.ims.icarus2.util.eval.var;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
-import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.hash.TObjectIntHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 import java.util.Collection;
 import java.util.function.Consumer;
@@ -49,7 +49,7 @@ public class SimpleVariableSet implements VariableSet {
 	/**
 	 * Maps descriptor names to index values for above arrays
 	 */
-	private final TObjectIntMap<String> variablesLookup;
+	private final Object2IntMap<String> variablesLookup;
 
 	public SimpleVariableSet(Collection<? extends VariableDescriptor> variableDescriptors) {
 		checkNotNull(variableDescriptors);
@@ -59,7 +59,8 @@ public class SimpleVariableSet implements VariableSet {
 		descriptors = new VariableDescriptor[size];
 		variables = new Mutable[size];
 
-		variablesLookup = new TObjectIntHashMap<String>(size, 0.75f, -1);
+		variablesLookup = new Object2IntOpenHashMap<String>(size);
+		variablesLookup.defaultReturnValue(-1);
 
 		int index = 0;
 		for(VariableDescriptor descriptor : variableDescriptors) {
@@ -99,7 +100,7 @@ public class SimpleVariableSet implements VariableSet {
 	}
 
 	protected int getIndexFor(String variableName) {
-		int index = variablesLookup.get(variableName);
+		int index = variablesLookup.getInt(variableName);
 		if(index==-1)
 			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Unknown variable name: "+variableName);
 		return index;

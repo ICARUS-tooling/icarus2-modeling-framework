@@ -19,7 +19,7 @@ package de.ims.icarus2.filedriver.resolver;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
-import gnu.trove.set.hash.THashSet;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -117,7 +117,7 @@ public class DirectPathResolver implements PathResolver {
 				// If we have path entries, they represent explicit files or patterns in the host folder
 
 				List<String> patterns = new ArrayList<>();
-				Set<String> directFiles = new THashSet<>();
+				Set<String> directFiles = new ObjectOpenHashSet<>();
 
 				for(PathEntry entry : pathEntries) {
 					// Explicit file entries get resolved directly

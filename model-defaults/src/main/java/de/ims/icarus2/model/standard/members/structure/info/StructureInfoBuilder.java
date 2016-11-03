@@ -21,7 +21,7 @@ import static de.ims.icarus2.model.standard.members.structure.info.DefaultStruct
 import static de.ims.icarus2.model.standard.members.structure.info.DefaultStructureInfo.maxIndex;
 import static de.ims.icarus2.model.standard.members.structure.info.DefaultStructureInfo.minIndex;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
-import gnu.trove.set.hash.THashSet;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 import java.util.Set;
 
@@ -91,7 +91,7 @@ public class StructureInfoBuilder implements ModelConstants {
 	 */
 	private final long[] counts = new long[_fields.length];
 
-	private final Set<Item> visitedNodes = new THashSet<>(200);
+	private final Set<Item> visitedNodes = new ObjectOpenHashSet<>(200);
 
 	public StructureInfoBuilder() {
 		// no-op

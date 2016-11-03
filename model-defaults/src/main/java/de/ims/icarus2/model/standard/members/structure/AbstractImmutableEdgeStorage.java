@@ -51,6 +51,7 @@ public abstract class AbstractImmutableEdgeStorage implements EdgeStorage {
 	/**
 	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#addEdge(de.ims.icarus2.model.api.members.structure.Structure, long, de.ims.icarus2.model.api.members.item.Edge)
 	 */
+	@SuppressWarnings("boxing")
 	@Override
 	public long addEdge(Structure context, long index, Edge edge) {
 		return signalUnsupportedOperation(context);

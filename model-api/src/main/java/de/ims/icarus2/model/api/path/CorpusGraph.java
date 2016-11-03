@@ -20,7 +20,7 @@ package de.ims.icarus2.model.api.path;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
-import gnu.trove.map.hash.THashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +53,7 @@ public class CorpusGraph {
 
 	private final List<ContextManifest> contexts = new ArrayList<>();
 
-	private final Map<LayerManifest, Node> nodeMap = new THashMap<>();
+	private final Map<LayerManifest, Node> nodeMap = new Object2ObjectOpenHashMap<>();
 
 	final Lock lock = new ReentrantLock();
 
@@ -115,7 +115,7 @@ public class CorpusGraph {
 
 		public Object putClientProperty(Object key, Object value) {
 			if(properties==null) {
-				properties = new THashMap<>();
+				properties = new Object2ObjectOpenHashMap<>();
 			}
 
 			return value==null ? properties.remove(key) : properties.put(key, value);

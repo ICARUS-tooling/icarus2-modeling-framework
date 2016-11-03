@@ -20,7 +20,7 @@ package de.ims.icarus2.model.manifest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
-import gnu.trove.map.hash.THashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -47,7 +47,7 @@ import de.ims.icarus2.util.id.Identity;
  */
 public class ManifestTestUtils {
 
-	private static final Map<ValueType, Object[]> testValues = new THashMap<>();
+	private static final Map<ValueType, Object[]> testValues = new Object2ObjectOpenHashMap<>();
 
 	public enum TestEnum {
 		TEST1,

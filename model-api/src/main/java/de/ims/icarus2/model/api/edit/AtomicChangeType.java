@@ -17,7 +17,7 @@
  */
 package de.ims.icarus2.model.api.edit;
 
-import gnu.trove.map.hash.THashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.Map;
 
@@ -66,7 +66,7 @@ public enum AtomicChangeType implements StringResource {
 		Map<String, AtomicChangeType> types = xmlLookup;
 
 		if(types==null) {
-			types = new THashMap<>();
+			types = new Object2ObjectOpenHashMap<>();
 
 			for(AtomicChangeType type : values()) {
 				types.put(type.getStringValue(), type);

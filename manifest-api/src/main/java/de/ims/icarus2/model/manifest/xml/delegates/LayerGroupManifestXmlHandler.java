@@ -20,7 +20,7 @@ package de.ims.icarus2.model.manifest.xml.delegates;
 
 import static de.ims.icarus2.model.manifest.xml.ManifestXmlUtils.readFlag;
 import static de.ims.icarus2.model.manifest.xml.ManifestXmlUtils.writeFlag;
-import gnu.trove.map.hash.THashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -49,7 +49,7 @@ public class LayerGroupManifestXmlHandler extends AbstractXmlDelegate<LayerGroup
 
 	@SuppressWarnings("rawtypes")
 	private static final Map<ManifestType, Supplier<? extends AbstractLayerManifestXmlDelegate>>
-			layerDelegateSuppliers = new THashMap<>();
+			layerDelegateSuppliers = new Object2ObjectOpenHashMap<>();
 	static {
 		layerDelegateSuppliers.put(ManifestType.ITEM_LAYER_MANIFEST, ItemLayerManifestXmlDelegate::new);
 		layerDelegateSuppliers.put(ManifestType.STRUCTURE_LAYER_MANIFEST, StructureLayerManifestXmlDelegate::new);
@@ -58,7 +58,7 @@ public class LayerGroupManifestXmlHandler extends AbstractXmlDelegate<LayerGroup
 		layerDelegateSuppliers.put(ManifestType.HIGHLIGHT_LAYER_MANIFEST, HighlightLayerManifestXmlDelegate::new);
 	}
 
-	private Map<ManifestType, AbstractLayerManifestXmlDelegate<?>> layerDelegates = new THashMap<>();
+	private Map<ManifestType, AbstractLayerManifestXmlDelegate<?>> layerDelegates = new Object2ObjectOpenHashMap<>();
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private <D extends AbstractLayerManifestXmlDelegate> D getLayerDelegate(ManifestType type) {

@@ -18,8 +18,8 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
-import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.hash.TObjectIntHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
  *
@@ -30,7 +30,7 @@ public class MappedLookup extends IndexLookup {
 
 	public static final int NO_KEY_VALUE = -1;
 
-	protected TObjectIntMap<String> map;
+	protected final Object2IntMap<String> map;
 
 	/**
 	 * @param keys
@@ -38,7 +38,8 @@ public class MappedLookup extends IndexLookup {
 	public MappedLookup(String[] keys) {
 		super(keys);
 
-		map = new TObjectIntHashMap<>(keys.length<<1, 0.5F, NO_KEY_VALUE);
+		map = new Object2IntOpenHashMap<>(keys.length<<1);
+		map.defaultReturnValue(NO_KEY_VALUE);
 
 		for(int i=0; i<keyCount(); i++) {
 			map.put(keyAt(i), i);
@@ -50,7 +51,7 @@ public class MappedLookup extends IndexLookup {
 	 */
 	@Override
 	public int indexOf(String key) {
-		return map.get(key);
+		return map.getInt(key);
 	}
 
 }

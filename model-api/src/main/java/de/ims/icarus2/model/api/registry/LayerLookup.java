@@ -19,11 +19,10 @@
 package de.ims.icarus2.model.api.registry;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.custom_hash.TObjectIntCustomHashMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
-import gnu.trove.strategy.IdentityHashingStrategy;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Reference2IntMap;
+import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.view.CorpusView;
 
@@ -33,8 +32,8 @@ import de.ims.icarus2.model.api.view.CorpusView;
  */
 public class LayerLookup {
 
-	private final TObjectIntMap<Layer> layerIds = new TObjectIntCustomHashMap<>(IdentityHashingStrategy.INSTANCE);
-	private final TIntObjectMap<Layer> layerLookup = new TIntObjectHashMap<>();
+	private final Reference2IntMap<Layer> layerIds = new Reference2IntOpenHashMap<>();
+	private final Int2ObjectMap<Layer> layerLookup = new Int2ObjectOpenHashMap<>();
 
 	private final CorpusView view;
 
@@ -61,7 +60,7 @@ public class LayerLookup {
 	}
 
 	public int getUID(Layer layer) {
-		return layerIds.get(layer);
+		return layerIds.getInt(layer);
 	}
 
 	/**
@@ -70,6 +69,6 @@ public class LayerLookup {
 	 */
 	public Layer[] getLayers() {
 		Layer[] a = new Layer[layerIds.size()];
-		return layerIds.keys(a);
+		return layerIds.keySet().toArray(a);
 	}
 }

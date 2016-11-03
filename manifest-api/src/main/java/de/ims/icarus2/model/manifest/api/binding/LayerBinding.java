@@ -20,8 +20,9 @@ package de.ims.icarus2.model.manifest.api.binding;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
-import gnu.trove.map.hash.THashMap;
-import gnu.trove.set.hash.THashSet;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -125,7 +126,7 @@ public final class LayerBinding implements Bindable, Serializable {
 
 	// Object fields
 
-	private final transient Map<String, Entry> mappings = new THashMap<>();
+	private final transient Map<String, Entry> mappings = new Object2ObjectOpenHashMap<>();
 	private final transient Identity source;
 	private final String corpusId;
 
@@ -191,7 +192,7 @@ public final class LayerBinding implements Bindable, Serializable {
 	private void resolveEntry(String alias, Entry entry, CorpusManifest corpusManifest, ManifestRegistry registry, ReportBuilder<ReportItem> reportBuilder) {
 		// Resolve layer manifests if required
 		if(entry.layers==null && entry.targets!=null) {
-			Set<LayerManifest> layers = new THashSet<>();
+			Set<LayerManifest> layers = new ReferenceOpenHashSet<>();
 			int failedPointers = 0;
 			for(LayerPointer layerPointer : entry.targets) {
 
@@ -260,7 +261,7 @@ public final class LayerBinding implements Bindable, Serializable {
 	}
 
 	public Set<String> getAliases() {
-		return new THashSet<>(mappings.keySet());
+		return new ObjectOpenHashSet<>(mappings.keySet());
 	}
 
 	protected Entry getBinding(String alias) {
@@ -598,7 +599,7 @@ public final class LayerBinding implements Bindable, Serializable {
 		/**
 		 * Maps aliases to Binding objects
 		 */
-		private final transient Map<String, Entry> mappings = new THashMap<>();
+		private final transient Map<String, Entry> mappings = new Object2ObjectOpenHashMap<>();
 
 		private String corpusId;
 
@@ -681,7 +682,7 @@ public final class LayerBinding implements Bindable, Serializable {
 			Entry entry = getEntry(alias, true);
 
 			if(entry.targets==null) {
-				entry.targets = new THashSet<>();
+				entry.targets = new ObjectOpenHashSet<>();
 			}
 
 			entry.targets.add(pointer);
@@ -698,7 +699,7 @@ public final class LayerBinding implements Bindable, Serializable {
 			Entry entry = getEntry(alias, true);
 
 			if(entry.targets==null) {
-				entry.targets = new THashSet<>();
+				entry.targets = new ObjectOpenHashSet<>();
 			}
 
 			entry.targets.addAll(pointers);
@@ -826,7 +827,7 @@ public final class LayerBinding implements Bindable, Serializable {
 
 				int expectedTargets = in.readInt();
 				if(expectedTargets>0) {
-					Set<LayerPointer> targets = new THashSet<>();
+					Set<LayerPointer> targets = new ObjectOpenHashSet<>();
 					while(expectedTargets-->0) {
 						String contextId = (String)in.readObject();
 						String layerId = (String)in.readObject();

@@ -20,8 +20,8 @@ package de.ims.icarus2.model.standard.members.layers;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 import java.util.Collection;
 
@@ -36,9 +36,9 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  */
 public class LayerCache {
 
-	private static TIntObjectMap<Layer> _map(Layer[] layers) {
+	private static Int2ObjectMap<Layer> _map(Layer[] layers) {
 
-		TIntObjectMap<Layer> map = new TIntObjectHashMap<>();
+		Int2ObjectMap<Layer> map = new Int2ObjectOpenHashMap<>();
 
 		for(Layer layer : layers) {
 			map.put(layer.getManifest().getUID(), layer);
@@ -47,9 +47,9 @@ public class LayerCache {
 		return map;
 	}
 
-	private static <L extends Layer> TIntObjectMap<Layer> _map(Iterable<L> layers) {
+	private static <L extends Layer> Int2ObjectMap<Layer> _map(Iterable<L> layers) {
 
-		TIntObjectMap<Layer> map = new TIntObjectHashMap<>();
+		Int2ObjectMap<Layer> map = new Int2ObjectOpenHashMap<>();
 
 		for(Layer layer : layers) {
 			map.put(layer.getManifest().getUID(), layer);
@@ -75,7 +75,7 @@ public class LayerCache {
 	public static <L extends Layer> LayerCache fromScope(Scope scope) {
 		checkNotNull(scope);
 
-		TIntObjectMap<Layer> map = _map(scope.getLayers());
+		Int2ObjectMap<Layer> map = _map(scope.getLayers());
 
 		ItemLayer primaryLayer = scope.getPrimaryLayer();
 		map.put(primaryLayer.getManifest().getUID(), primaryLayer);
@@ -83,9 +83,9 @@ public class LayerCache {
 		return new LayerCache(map);
 	}
 
-	private final TIntObjectMap<Layer> layers;
+	private final Int2ObjectMap<Layer> layers;
 
-	private LayerCache(TIntObjectMap<Layer> layers) {
+	private LayerCache(Int2ObjectMap<Layer> layers) {
 		checkNotNull(layers);
 		this.layers = layers;
 	}
@@ -100,12 +100,12 @@ public class LayerCache {
 	}
 
 	public Collection<Layer> layerCollection() {
-		return CollectionUtils.getCollectionProxy(layers.valueCollection());
+		return CollectionUtils.getCollectionProxy(layers.values());
 	}
 
 	public Layer[] layers() {
 		Layer[] result = new Layer[layers.size()];
-		layers.values(result);
+		layers.values().toArray(result);
 		return result;
 	}
 }

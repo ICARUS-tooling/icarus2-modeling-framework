@@ -23,10 +23,9 @@ import static de.ims.icarus2.model.util.ModelUtils.getUniqueId;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
-import gnu.trove.map.hash.THashMap;
-import gnu.trove.set.hash.TCustomHashSet;
-import gnu.trove.set.hash.THashSet;
-import gnu.trove.strategy.IdentityHashingStrategy;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -144,7 +143,7 @@ public class DefaultCorpus implements Corpus {
 
 	// All contained layers, not including the overlay layer!
 	private final List<Layer> layers = new ArrayList<>();
-	private final Map<String, Layer> layerLookup = new THashMap<>();
+	private final Map<String, Layer> layerLookup = new Object2ObjectOpenHashMap<>();
 
 	private final OverlayLayer overlayLayer;
 	private final OverlayContainer overlayContainer;
@@ -164,7 +163,7 @@ public class DefaultCorpus implements Corpus {
 	 *  no synchronization is required when accessing it!
 	 */
 	private final Map<String, ContextProxy> customContexts = new LinkedHashMap<>();
-	private final Map<Layer, MetaDataStorage> metaDataStorages = new THashMap<>();
+	private final Map<Layer, MetaDataStorage> metaDataStorages = new Object2ObjectOpenHashMap<>();
 	private final Map<String, VirtualContext> virtualContexts = new LinkedHashMap<>();
 
 	private final ViewStorage viewStorage = new ViewStorage();
@@ -705,7 +704,7 @@ public class DefaultCorpus implements Corpus {
 	 */
 	private final class ViewStorage implements ChangeListener {
 		private CorpusView currentWriteView;
-		private final Set<CorpusView> readViews = new TCustomHashSet<>(IdentityHashingStrategy.INSTANCE);
+		private final Set<CorpusView> readViews = new ReferenceOpenHashSet<>();
 
 		public boolean canOpen(CorpusAccessMode accessMode) {
 			return !accessMode.isWrite() || currentWriteView==null;
@@ -884,7 +883,7 @@ public class DefaultCorpus implements Corpus {
 			Set<MetaData> result = content.get(type);
 
 			if(result==null && createIfMissing) {
-				result = new THashSet<>();
+				result = new ObjectOpenHashSet<>();
 				content.put(type, result);
 			}
 

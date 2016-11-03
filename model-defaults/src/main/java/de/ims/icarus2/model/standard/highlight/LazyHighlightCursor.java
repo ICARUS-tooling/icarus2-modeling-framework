@@ -70,7 +70,7 @@ public class LazyHighlightCursor extends AbstractHighlightCursor {
 		if(sequence==null)
 			throw new ModelException(GlobalErrorCode.DELEGATION_FAILED,
 					String.format("Failed to generate highlight sequence for index %d on container %s in layer %s",
-							index, getName(getTarget()), getName(getHighlightLayer())));
+							Integer.valueOf(index), getName(getTarget()), getName(getHighlightLayer())));
 
 		return sequence;
 	}

@@ -18,8 +18,8 @@
  */
 package de.ims.icarus2.util.mem;
 
-import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.hash.TObjectIntHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 import java.lang.reflect.Array;
 import java.util.LinkedHashMap;
@@ -45,7 +45,7 @@ public class FootprintBuffer implements MemoryFootprint {
 	private static final int FLOAT = 6;
 	private static final int DOUBLE = 7;
 
-	private static final TObjectIntMap<Class<?>> typeLookup = new TObjectIntHashMap<>();
+	private static final Object2IntMap<Class<?>> typeLookup = new Object2IntOpenHashMap<>();
 	static {
 		typeLookup.put(int.class, INTEGER);
 		typeLookup.put(short.class, SHORT);
@@ -220,7 +220,7 @@ public class FootprintBuffer implements MemoryFootprint {
 
 		int size = Array.getLength(array);
 		long fieldsize = refsize;
-		int type = typeLookup.get(array.getClass().getComponentType());
+		int type = typeLookup.getInt(array.getClass().getComponentType());
 		if(type!=-1) {
 			// For primitive array directly calculate memory for fields
 			fieldsize = primitiveFootprints[type];
@@ -254,7 +254,7 @@ public class FootprintBuffer implements MemoryFootprint {
 	}
 
 	public long addPrimitive(Class<?> clazz) {
-		int type = typeLookup.get(clazz);
+		int type = typeLookup.getInt(clazz);
 		if(type==-1)
 			throw new IllegalArgumentException("Not a primitive class: "+clazz); //$NON-NLS-1$
 

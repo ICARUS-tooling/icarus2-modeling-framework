@@ -18,7 +18,7 @@
 package de.ims.icarus2.model.standard.io;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
-import gnu.trove.map.hash.THashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.nio.file.Path;
 import java.util.Collections;
@@ -35,7 +35,7 @@ public class DefaultFileManager implements FileManager {
 
 	private final static Map<String, String> sharedFolderLookup;
 	static {
-		Map<String, String> map = new THashMap<>();
+		Map<String, String> map = new Object2ObjectOpenHashMap<>();
 
 		map.put(CommonFolders.METADATA.getId(), DefaultFileStructure.METADATA_FOLDER);
 

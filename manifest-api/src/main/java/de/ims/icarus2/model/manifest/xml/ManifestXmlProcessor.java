@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.manifest.xml;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
-import gnu.trove.map.hash.THashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.Map;
 
@@ -35,7 +35,7 @@ import de.ims.icarus2.model.manifest.api.ManifestType;
  */
 public abstract class ManifestXmlProcessor {
 
-	private final Map<ManifestType, ManifestXmlDelegate<?>> topLevelDelegates = new THashMap<>();
+	private final Map<ManifestType, ManifestXmlDelegate<?>> topLevelDelegates = new Object2ObjectOpenHashMap<>();
 
 	private final ManifestXmlDelegateFactory delegateFactory;
 

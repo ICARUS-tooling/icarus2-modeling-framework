@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.single;
 
-import gnu.trove.map.hash.THashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -55,7 +55,7 @@ public class SingleKeyObjectStorage extends AbstractSingleKeyStorage {
 			return new WeakHashMap<>(getInitialCapacity(layer));
 		} else {
 			//TODO evaluate which map implementation to use!!!
-			return new THashMap<>(getInitialCapacity(layer));
+			return new Object2ObjectOpenHashMap<>(getInitialCapacity(layer));
 		}
 	}
 

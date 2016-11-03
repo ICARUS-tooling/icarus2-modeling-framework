@@ -19,12 +19,12 @@
 package de.ims.icarus2.util.collections;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
-import gnu.trove.set.hash.THashSet;
+import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -52,19 +52,19 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 	}
 
 	public static <E extends Object> LazyCollection<E> lazySet() {
-		return new LazyCollection<>(() -> new THashSet<>());
+		return new LazyCollection<>(() -> new ObjectOpenHashSet<>());
 	}
 
 	public static <E extends Object> LazyCollection<E> lazyLinkedSet() {
-		return new LazyCollection<>(() -> new LinkedHashSet<>());
+		return new LazyCollection<>(() -> new ObjectLinkedOpenHashSet<>());
 	}
 
 	public static <E extends Object> LazyCollection<E> lazySet(final int capacity) {
-		return new LazyCollection<>(() -> new THashSet<>(capacity));
+		return new LazyCollection<>(() -> new ObjectOpenHashSet<>(capacity));
 	}
 
 	public static <E extends Object> LazyCollection<E> lazyLinkedSet(final int capacity) {
-		return new LazyCollection<>(() -> new LinkedHashSet<>(capacity));
+		return new LazyCollection<>(() -> new ObjectLinkedOpenHashSet<>(capacity));
 	}
 
 	private final Supplier<Collection<E>> supplier;

@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.standard.highlight;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
-import gnu.trove.map.hash.THashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -61,7 +61,7 @@ public class HighlightInfoBuilder {
 	private DataSet<AnnotationLink> annotations;
 
 	// Properties builder part
-	private final Map<String, Object> propertyMap = new THashMap<>();
+	private final Map<String, Object> propertyMap = new Object2ObjectOpenHashMap<>();
 
 	// Fixed properties
 	private CompactProperties properties;

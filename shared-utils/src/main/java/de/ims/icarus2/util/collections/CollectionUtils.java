@@ -20,7 +20,7 @@
  */
 package de.ims.icarus2.util.collections;
 
-import gnu.trove.TLongCollection;
+import it.unimi.dsi.fastutil.longs.LongCollection;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -172,7 +172,7 @@ public final class CollectionUtils {
 
 		Object value = map.get(key);
 		if(value instanceof Boolean) {
-			return (boolean)value;
+			return ((Boolean)value).booleanValue();
 		} else if(value instanceof String) {
 			return Boolean.parseBoolean((String)value);
 		}
@@ -246,7 +246,7 @@ public final class CollectionUtils {
 		}
 	}
 
-    public static void feedItems(TLongCollection collection, long...items) {
+    public static void feedItems(LongCollection collection, long...items) {
     	for(long item : items) {
     		collection.add(item);
     	}

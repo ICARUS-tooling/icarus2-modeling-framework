@@ -59,7 +59,7 @@ public class FixedKeysLongStorage extends AbstractFixedKeysStorage<long[]> {
 				continue;
 			}
 
-			noEntryValues[i] = (long) noEntryValue;
+			noEntryValues[i] = ((Number) noEntryValue).longValue();
 		}
 
 		return noEntryValues;
@@ -93,7 +93,7 @@ public class FixedKeysLongStorage extends AbstractFixedKeysStorage<long[]> {
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
-		return getIntegerValue(item, key);
+		return Long.valueOf(getLongValue(item, key));
 	}
 
 	/**
@@ -101,7 +101,7 @@ public class FixedKeysLongStorage extends AbstractFixedKeysStorage<long[]> {
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		setLongValue(item, key, (long) value);
+		setLongValue(item, key, ((Number) value).longValue());
 	}
 
 	@Override

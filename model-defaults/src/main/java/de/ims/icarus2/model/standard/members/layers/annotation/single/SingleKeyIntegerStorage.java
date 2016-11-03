@@ -18,8 +18,8 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.single;
 
-import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.hash.TObjectIntHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +39,7 @@ public class SingleKeyIntegerStorage extends AbstractSingleKeyStorage {
 
 	private final static Logger log = LoggerFactory.getLogger(SingleKeyIntegerStorage.class);
 
-	private TObjectIntMap<Item> annotations;
+	private Object2IntMap<Item> annotations;
 	private int noEntryValue = DEFAULT_NO_ENTRY_VALUE;
 
 	public static final int DEFAULT_NO_ENTRY_VALUE = -1;
@@ -56,12 +56,15 @@ public class SingleKeyIntegerStorage extends AbstractSingleKeyStorage {
 		super(weakKeys, initialCapacity);
 	}
 
-	protected TObjectIntMap<Item> buildBuffer(AnnotationLayer layer) {
+	protected Object2IntMap<Item> buildBuffer(AnnotationLayer layer) {
 		if(isWeakKeys()) {
 			log.warn("Storage implementation does not support weak key references to stored items in layer {}", ModelUtils.getUniqueId(layer));
 		}
 
-		return new TObjectIntHashMap<>(getInitialCapacity(layer), 0.75F, getNoEntryValue());
+		Object2IntMap<Item> result = new Object2IntOpenHashMap<>(getInitialCapacity(layer));
+		result.defaultReturnValue(getNoEntryValue());
+
+		return result;
 	}
 
 	@Override
@@ -73,7 +76,7 @@ public class SingleKeyIntegerStorage extends AbstractSingleKeyStorage {
 
 		Object declaredNoEntryValue = annotationManifest.getNoEntryValue();
 
-		noEntryValue = declaredNoEntryValue==null ? DEFAULT_NO_ENTRY_VALUE : (int) declaredNoEntryValue;
+		noEntryValue = declaredNoEntryValue==null ? DEFAULT_NO_ENTRY_VALUE : ((Integer) declaredNoEntryValue).intValue();
 		annotations = buildBuffer(layer);
 	}
 
@@ -90,7 +93,7 @@ public class SingleKeyIntegerStorage extends AbstractSingleKeyStorage {
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
-		return getIntegerValue(item, key);
+		return Integer.valueOf(getIntegerValue(item, key));
 	}
 
 	/**
@@ -98,14 +101,14 @@ public class SingleKeyIntegerStorage extends AbstractSingleKeyStorage {
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		setIntegerValue(item, key, (int) value);
+		setIntegerValue(item, key, ((Number) value).intValue());
 	}
 
 	@Override
 	public int getIntegerValue(Item item, String key) {
 		checkKey(key);
 
-		return annotations.get(item);
+		return annotations.getInt(item);
 	}
 
 	@Override
@@ -156,7 +159,7 @@ public class SingleKeyIntegerStorage extends AbstractSingleKeyStorage {
 
 	@Override
 	public boolean removeItem(Item item) {
-		return annotations.remove(item)!=noEntryValue;
+		return annotations.removeInt(item)!=noEntryValue;
 	}
 
 	public int getNoEntryValue() {

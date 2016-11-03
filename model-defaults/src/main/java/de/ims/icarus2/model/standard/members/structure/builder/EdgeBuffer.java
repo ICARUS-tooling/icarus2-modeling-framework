@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.standard.members.structure.builder;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
-import gnu.trove.map.hash.THashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,7 +48,7 @@ public class EdgeBuffer {
 	private static final int UNSET_INT = -1;
 	private static final int VISITED_INT = -2;
 
-	private final Map<Item, NodeInfo> data = new THashMap<>(200);
+	private final Map<Item, NodeInfo> data = new Object2ObjectOpenHashMap<>(200);
 
 	private int maxHeight = UNSET_INT;
 	private int maxDepth = UNSET_INT;

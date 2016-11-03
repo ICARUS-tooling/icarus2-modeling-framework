@@ -18,10 +18,10 @@
  */
 package de.ims.icarus2.model.standard.members.item;
 
-import gnu.trove.map.hash.TCustomHashMap;
-import gnu.trove.strategy.IdentityHashingStrategy;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.model.api.driver.ChunkInfo;
@@ -40,10 +40,10 @@ public class CompoundItemLayerManager implements ItemLayerManager {
 
 	//FIXME
 
-	private final TCustomHashMap<ItemLayer, ItemLayerManager> managerLookup;
+	private final Map<ItemLayer, ItemLayerManager> managerLookup;
 
 	public CompoundItemLayerManager() {
-		managerLookup = new TCustomHashMap<>(IdentityHashingStrategy.INSTANCE);
+		managerLookup = new Reference2ObjectOpenHashMap<>();
 	}
 
 	protected ItemLayerManager getManager(ItemLayer layer) {

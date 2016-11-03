@@ -17,7 +17,7 @@
  */
 package de.ims.icarus2.util.compiler;
 
-import gnu.trove.map.hash.THashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.io.IOException;
 import java.security.SecureClassLoader;
@@ -39,7 +39,7 @@ public class InMemoryJavaFileManager extends ForwardingJavaFileManager {
 	/**
 	 * Maps class names to their respective "output files"
 	 */
-	private final Map<String, ByteArrayJavaFileObject> classBytesLookup = new THashMap<>();
+	private final Map<String, ByteArrayJavaFileObject> classBytesLookup = new Object2ObjectOpenHashMap<>();
 
 	private final ClassLoader sharedClassLoader = new SecureClassLoader() {
 		@Override

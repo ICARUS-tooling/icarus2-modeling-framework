@@ -119,43 +119,43 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 
 	protected Object wrapMutable(Object value, ValueType valueType) {
 		if(valueType==ValueType.INTEGER) {
-			value = new MutablePrimitives.MutableInteger((int) value);
+			value = new MutablePrimitives.MutableInteger(((Number) value).intValue());
 		} else if(valueType==ValueType.LONG) {
-			value = new MutablePrimitives.MutableLong((long) value);
+			value = new MutablePrimitives.MutableLong(((Number) value).longValue());
 		} else if(valueType==ValueType.FLOAT) {
-			value = new MutablePrimitives.MutableFloat((float) value);
+			value = new MutablePrimitives.MutableFloat(((Number) value).floatValue());
 		} else if(valueType==ValueType.DOUBLE) {
-			value = new MutablePrimitives.MutableDouble((double) value);
+			value = new MutablePrimitives.MutableDouble(((Number) value).doubleValue());
 		} else if(valueType==ValueType.BOOLEAN) {
-			value = new MutablePrimitives.MutableBoolean((boolean) value);
+			value = new MutablePrimitives.MutableBoolean(((Boolean) value).booleanValue());
 		}
 
 		return value;
 	}
 
-	protected MutablePrimitive wrapMutable(Object value) {
+	protected MutablePrimitive<?> wrapMutable(Object value) {
 		Class<?> clazz = value.getClass();
 
 		if(clazz==Integer.class || clazz==Short.class || clazz==Byte.class) {
-			value = new MutablePrimitives.MutableInteger((int) value);
+			value = new MutablePrimitives.MutableInteger(((Number) value).intValue());
 		} else if(clazz==Long.class) {
-			value = new MutablePrimitives.MutableLong((long) value);
+			value = new MutablePrimitives.MutableLong(((Number) value).longValue());
 		} else if(clazz==Float.class) {
-			value = new MutablePrimitives.MutableFloat((float) value);
+			value = new MutablePrimitives.MutableFloat(((Number) value).floatValue());
 		} else if(clazz==Double.class) {
-			value = new MutablePrimitives.MutableDouble((double) value);
+			value = new MutablePrimitives.MutableDouble(((Number) value).doubleValue());
 		} else if(clazz==Boolean.class) {
-			value = new MutablePrimitives.MutableBoolean((boolean) value);
+			value = new MutablePrimitives.MutableBoolean(((Boolean) value).booleanValue());
 		} else if(clazz==Void.class) {
 			value = null;
 		}
 
-		return (MutablePrimitive) value;
+		return (MutablePrimitive<?>) value;
 	}
 
 	protected Object unwrapMutable(Object value) {
 		if(value instanceof Primitive) {
-			value = ((Primitive)value).get();
+			value = ((Primitive<?>)value).get();
 		}
 
 		return value;
@@ -222,7 +222,7 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 		 */
 		if(value!=null && isPrimitive(index) && !isPrimitiveWrapper(value)) {
 			if(ClassUtils.isPrimitiveWrapperClass(value.getClass())) {
-				MutablePrimitive wrapper = (MutablePrimitive) buffer[index];
+				MutablePrimitive<?> wrapper = (MutablePrimitive<?>) buffer[index];
 
 				if(wrapper==null) {
 					wrapper = wrapMutable(value);
@@ -275,7 +275,7 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 		getAnnotations().forEach((item, buffer) -> buffer[index] = null);
 	}
 
-	protected MutablePrimitive getPrimitive(Item item, String key) {
+	protected MutablePrimitive<?> getPrimitive(Item item, String key) {
 
 		Object value = getValue(item, key);
 
@@ -283,7 +283,7 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 			throw new ModelException(ModelErrorCode.MODEL_INVALID_REQUEST,
 					"Given key is not declared to map to primitive values or a 'noEntryValue' declraration is missing from the manifest: "+key);
 
-		return (MutablePrimitive) value;
+		return (MutablePrimitive<?>) value;
 	}
 
 	/**
@@ -296,7 +296,8 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 	 * @param clazz
 	 * @return
 	 */
-	protected <T extends MutablePrimitive> MutablePrimitive ensureAndGetPrimitive(Item item, String key, Class<T> clazz) {
+	@SuppressWarnings("unchecked")
+	protected <T extends MutablePrimitive<?>> T ensureAndGetPrimitive(Item item, String key, Class<T> clazz) {
 		int index = checkKeyAndGetIndex(key);
 		Object[] buffer = getBuffer(item);
 
@@ -312,7 +313,7 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 			buffer[index] = value;
 		}
 
-		return (MutablePrimitive)value;
+		return (T)value;
 	}
 
 	@Override

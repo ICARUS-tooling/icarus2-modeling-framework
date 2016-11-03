@@ -18,9 +18,8 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
-import gnu.trove.function.TShortFunction;
-import gnu.trove.map.TObjectShortMap;
-import gnu.trove.map.hash.TObjectShortHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ShortMap;
+import it.unimi.dsi.fastutil.objects.Object2ShortOpenHashMap;
 
 import java.util.function.Consumer;
 
@@ -46,7 +45,7 @@ public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorag
 
 	public static final int MAX_KEY_COUNT = 15;
 
-	private TObjectShortMap<Item> annotations;
+	private Object2ShortMap<Item> annotations;
 	private short noEntryValues;
 
 	private static final short EMPTY_BUFFER = (short) (0x1<<15);
@@ -63,12 +62,15 @@ public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorag
 		super(weakKeys, initialCapacity);
 	}
 
-	protected TObjectShortMap<Item> createMap(AnnotationLayer layer) {
+	protected Object2ShortMap<Item> createMap(AnnotationLayer layer) {
 		if(isWeakKeys()) {
 			log.warn("Storage implementation does not support weak key references to stored items.");
 		}
 
-		return new TObjectShortHashMap<>(getInitialCapacity(layer), 0.75F, EMPTY_BUFFER);
+		Object2ShortMap<Item> result = new Object2ShortOpenHashMap<>(getInitialCapacity(layer));
+		result.defaultReturnValue(EMPTY_BUFFER);
+
+		return result;
 	}
 
 	@Override
@@ -89,7 +91,7 @@ public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorag
 
 			Object declaredNoEntryValue = annotationManifest.getNoEntryValue();
 
-			if(declaredNoEntryValue==null || !(boolean)declaredNoEntryValue) {
+			if(declaredNoEntryValue==null || !((Boolean)declaredNoEntryValue).booleanValue()) {
 				continue;
 			}
 
@@ -111,7 +113,7 @@ public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorag
 
 	@Override
 	public boolean collectKeys(Item item, Consumer<String> action) {
-		short data = annotations.get(item);
+		short data = annotations.getShort(item);
 
 		if(data==EMPTY_BUFFER || data==noEntryValues) {
 			return false;
@@ -132,7 +134,7 @@ public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorag
 	@Override
 	public boolean getBooleanValue(Item item, String key) {
 		int index = checkKeyAndGetIndex(key);
-		short b = annotations.get(item);
+		short b = annotations.getShort(item);
 
 		if(b==EMPTY_BUFFER) {
 			b = noEntryValues;
@@ -144,7 +146,7 @@ public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorag
 	@Override
 	public void setBooleanValue(Item item, String key, boolean value) {
 		int index = checkKeyAndGetIndex(key);
-		short b = annotations.get(item);
+		short b = annotations.getShort(item);
 
 		if(value) {
 			b |= (1<<index);
@@ -166,12 +168,10 @@ public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorag
 
 		final short mask = (short) (EMPTY_BUFFER | ~(1<<index));
 
-		annotations.transformValues(new TShortFunction() {
-
-			@Override
-			public short execute(short value) {
-				return (short) (mask & value);
-			}
+		annotations.object2ShortEntrySet().forEach(entry -> {
+			short value = entry.getShortValue();
+			value = (short) (mask & value);
+			entry.setValue(value);
 		});
 	}
 
@@ -182,7 +182,7 @@ public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorag
 
 	@Override
 	public boolean hasAnnotations(Item item) {
-		return annotations.get(item)!=EMPTY_BUFFER;
+		return annotations.getShort(item)!=EMPTY_BUFFER;
 	}
 
 	@Override
@@ -192,7 +192,7 @@ public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorag
 
 	@Override
 	public boolean addItem(Item item) {
-		short b = annotations.get(item);
+		short b = annotations.getShort(item);
 
 		if(b!=EMPTY_BUFFER) {
 			annotations.put(item, EMPTY_BUFFER);
@@ -204,7 +204,7 @@ public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorag
 
 	@Override
 	public boolean removeItem(Item item) {
-		return annotations.remove(item)!=EMPTY_BUFFER;
+		return annotations.removeShort(item)!=EMPTY_BUFFER;
 	}
 
 }

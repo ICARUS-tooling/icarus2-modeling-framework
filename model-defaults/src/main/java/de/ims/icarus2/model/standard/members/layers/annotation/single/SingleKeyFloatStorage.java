@@ -18,8 +18,8 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.single;
 
-import gnu.trove.map.TObjectFloatMap;
-import gnu.trove.map.hash.TObjectFloatHashMap;
+import it.unimi.dsi.fastutil.objects.Object2FloatMap;
+import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +38,7 @@ public class SingleKeyFloatStorage extends AbstractSingleKeyStorage {
 
 	private final static Logger log = LoggerFactory.getLogger(SingleKeyFloatStorage.class);
 
-	private TObjectFloatMap<Item> annotations;
+	private Object2FloatMap<Item> annotations;
 	private float noEntryValue = DEFAULT_NO_ENTRY_VALUE;
 
 	public static final float DEFAULT_NO_ENTRY_VALUE = -1F;
@@ -55,12 +55,15 @@ public class SingleKeyFloatStorage extends AbstractSingleKeyStorage {
 		super(weakKeys, initialCapacity);
 	}
 
-	protected TObjectFloatMap<Item> buildBuffer(AnnotationLayer layer) {
+	protected Object2FloatMap<Item> buildBuffer(AnnotationLayer layer) {
 		if(isWeakKeys()) {
 			log.warn("Storage implementation does not support weak key references to stored items in layer {}", ModelUtils.getUniqueId(layer));
 		}
 
-		return new TObjectFloatHashMap<>(getInitialCapacity(layer), 0.75F, getNoEntryValue());
+		Object2FloatMap<Item> result =  new Object2FloatOpenHashMap<>(getInitialCapacity(layer));
+		result.defaultReturnValue(getNoEntryValue());
+
+		return result;
 	}
 
 	@Override
@@ -72,7 +75,7 @@ public class SingleKeyFloatStorage extends AbstractSingleKeyStorage {
 
 		Object declaredNoEntryValue = annotationManifest.getNoEntryValue();
 
-		noEntryValue = declaredNoEntryValue==null ? DEFAULT_NO_ENTRY_VALUE : (float) declaredNoEntryValue;
+		noEntryValue = declaredNoEntryValue==null ? DEFAULT_NO_ENTRY_VALUE : ((Float) declaredNoEntryValue).floatValue();
 		annotations = buildBuffer(layer);
 	}
 
@@ -89,7 +92,7 @@ public class SingleKeyFloatStorage extends AbstractSingleKeyStorage {
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
-		return getFloatValue(item, key);
+		return Float.valueOf(getFloatValue(item, key));
 	}
 
 	/**
@@ -97,14 +100,14 @@ public class SingleKeyFloatStorage extends AbstractSingleKeyStorage {
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		setFloatValue(item, key, (float) value);
+		setFloatValue(item, key, ((Number) value).floatValue());
 	}
 
 	@Override
 	public float getFloatValue(Item item, String key) {
 		checkKey(key);
 
-		return annotations.get(item);
+		return annotations.getFloat(item);
 	}
 
 	@Override
@@ -140,7 +143,7 @@ public class SingleKeyFloatStorage extends AbstractSingleKeyStorage {
 
 	@Override
 	public boolean removeItem(Item item) {
-		return Float.compare(annotations.remove(item), noEntryValue)!=0;
+		return Float.compare(annotations.removeFloat(item), noEntryValue)!=0;
 	}
 
 	public float getNoEntryValue() {

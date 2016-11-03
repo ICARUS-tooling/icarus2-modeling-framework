@@ -19,8 +19,8 @@ package de.ims.icarus2.filedriver;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -129,7 +129,7 @@ public class FileDriver extends AbstractDriver {
 	 * <p>
 	 * Will be populated lazily when actually needed.
 	 */
-	private final TIntObjectMap<ReadWriteLock> fileLocks;
+	private final Int2ObjectMap<ReadWriteLock> fileLocks;
 
 	private static Logger log = LoggerFactory.getLogger(FileDriver.class);
 
@@ -144,8 +144,7 @@ public class FileDriver extends AbstractDriver {
 		metadataRegistry = builder.getMetadataRegistry();
 		dataFiles = builder.getDataFiles();
 
-		int capacity = Math.max(10, (int)(0.25 * dataFiles.getFileCount()/0.75) + 1);
-		fileLocks = new TIntObjectHashMap<>(capacity);
+		fileLocks = new Int2ObjectOpenHashMap<>(dataFiles.getFileCount());
 
 		converter = Lazy.create(this::createConverter, true);
 	}

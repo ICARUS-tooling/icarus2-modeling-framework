@@ -32,60 +32,60 @@ public class ValueWrapping {
 	// Getters
 
 	public static int getInteger(Object value) {
-		return ((Primitive)value).intValue();
+		return ((Primitive<?>)value).intValue();
 	}
 
 	public static long getLong(Object value) {
-		return ((Primitive)value).longValue();
+		return ((Primitive<?>)value).longValue();
 	}
 
 	public static float getFloat(Object value) {
-		return ((Primitive)value).floatValue();
+		return ((Primitive<?>)value).floatValue();
 	}
 
 	public static double getDouble(Object value) {
-		return ((Primitive)value).doubleValue();
+		return ((Primitive<?>)value).doubleValue();
 	}
 
 	public static boolean getBoolean(Object value) {
-		return ((Primitive)value).booleanValue();
+		return ((Primitive<?>)value).booleanValue();
 	}
 
 	// Setters
 
 	public static void setInteger(Object target, int value) {
-		((MutablePrimitive)target).setInt(value);
+		((MutablePrimitive<?>)target).setInt(value);
 	}
 
 	public static void setLong(Object target, long value) {
-		((MutablePrimitive)target).setLong(value);
+		((MutablePrimitive<?>)target).setLong(value);
 	}
 
 	public static void setFloat(Object target, float value) {
-		((MutablePrimitive)target).setFloat(value);
+		((MutablePrimitive<?>)target).setFloat(value);
 	}
 
 	public static void setDouble(Object target, double value) {
-		((MutablePrimitive)target).setDouble(value);
+		((MutablePrimitive<?>)target).setDouble(value);
 	}
 
 	public static void setBoolean(Object target, boolean value) {
-		((MutablePrimitive)target).setBoolean(value);
+		((MutablePrimitive<?>)target).setBoolean(value);
 	}
 
 	// Wrappers
 
 	public static Object wrapMutable(Object value, ValueType valueType) {
 		if(valueType==ValueType.INTEGER) {
-			value = new MutablePrimitives.MutableInteger((int) value);
+			value = new MutablePrimitives.MutableInteger(((Number) value).intValue());
 		} else if(valueType==ValueType.LONG) {
-			value = new MutablePrimitives.MutableLong((long) value);
+			value = new MutablePrimitives.MutableLong(((Number) value).longValue());
 		} else if(valueType==ValueType.FLOAT) {
-			value = new MutablePrimitives.MutableFloat((float) value);
+			value = new MutablePrimitives.MutableFloat(((Number) value).floatValue());
 		} else if(valueType==ValueType.DOUBLE) {
-			value = new MutablePrimitives.MutableDouble((double) value);
+			value = new MutablePrimitives.MutableDouble(((Number) value).doubleValue());
 		} else if(valueType==ValueType.BOOLEAN) {
-			value = new MutablePrimitives.MutableBoolean((boolean) value);
+			value = new MutablePrimitives.MutableBoolean(((Boolean) value).booleanValue());
 		}
 
 		return value;

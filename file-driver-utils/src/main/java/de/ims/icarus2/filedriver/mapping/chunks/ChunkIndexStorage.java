@@ -20,10 +20,9 @@ package de.ims.icarus2.filedriver.mapping.chunks;
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
-import gnu.trove.set.hash.TCustomHashSet;
-import gnu.trove.strategy.IdentityHashingStrategy;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 import java.util.Set;
 
@@ -39,14 +38,14 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  */
 public class ChunkIndexStorage {
 
-	private final TIntObjectMap<ChunkIndex> chunkIndexMap = new TIntObjectHashMap<>();
-	private final Set<ChunkIndex> chunkIndices = new TCustomHashSet<>(IdentityHashingStrategy.INSTANCE);
+	private final Int2ObjectMap<ChunkIndex> chunkIndexMap = new Int2ObjectOpenHashMap<>();
+	private final Set<ChunkIndex> chunkIndices = new ReferenceOpenHashSet<>();
 
 	protected ChunkIndexStorage(Builder builder) {
 		checkNotNull(builder);
 
 		chunkIndexMap.putAll(builder.chunkIndexMap);
-		chunkIndices.addAll(chunkIndexMap.valueCollection());
+		chunkIndices.addAll(chunkIndexMap.values());
 	}
 
 	public Set<ChunkIndex> getChunkIndices() {
@@ -84,7 +83,7 @@ public class ChunkIndexStorage {
 	 */
 	public static class Builder {
 
-		private final TIntObjectMap<ChunkIndex> chunkIndexMap = new TIntObjectHashMap<>();
+		private final Int2ObjectMap<ChunkIndex> chunkIndexMap = new Int2ObjectOpenHashMap<>();
 
 		public Builder add(ItemLayerManifest layer, ChunkIndex chunkIndex) {
 			checkNotNull(layer);

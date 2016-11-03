@@ -18,7 +18,9 @@
  */
 package de.ims.icarus2.util.mem;
 
-import de.ims.icarus2.util.collections.IdentityHashSet;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
+
+import java.util.Set;
 
 /**
  * @author Markus Gärtner
@@ -26,7 +28,7 @@ import de.ims.icarus2.util.collections.IdentityHashSet;
  */
 public class ObjectCache {
 
-	private final IdentityHashSet<Object> cache = new IdentityHashSet<>();
+	private final Set<Object> cache = new ReferenceOpenHashSet<>();
 
 	public synchronized boolean contains(Object object) {
 		if (object == null)
@@ -35,18 +37,7 @@ public class ObjectCache {
 		return cache.contains(object);
 	}
 
-	public synchronized boolean containsEquals(Object object) {
-		if (object == null)
-			throw new NullPointerException("Invalid object"); //$NON-NLS-1$
-
-		return cache.containsEquals(object);
-	}
-
 	public synchronized boolean addIfAbsent(Object object) {
 		return cache.add(object);
-	}
-
-	public synchronized boolean addIfAbsentEquals(Object object) {
-		return cache.addEquals(object);
 	}
 }

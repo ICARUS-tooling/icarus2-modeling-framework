@@ -49,6 +49,7 @@ public abstract class AbstractImmutableStructure extends AbstractImmutableContai
 		return new ImmutableStructureEditVerifier(this);
 	}
 
+	@SuppressWarnings("boxing")
 	@Override
 	public long addEdge(long index, Edge edge) {
 		return signalUnsupportedOperation();

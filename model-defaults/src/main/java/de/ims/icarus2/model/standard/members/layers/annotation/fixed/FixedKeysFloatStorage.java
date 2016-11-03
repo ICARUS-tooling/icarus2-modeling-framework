@@ -59,7 +59,7 @@ public class FixedKeysFloatStorage extends AbstractFixedKeysStorage<float[]> {
 				continue;
 			}
 
-			noEntryValues[i] = (float) noEntryValue;
+			noEntryValues[i] = ((Number) noEntryValue).floatValue();
 		}
 
 		return noEntryValues;
@@ -93,7 +93,7 @@ public class FixedKeysFloatStorage extends AbstractFixedKeysStorage<float[]> {
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
-		return getFloatValue(item, key);
+		return Float.valueOf(getFloatValue(item, key));
 	}
 
 	/**
@@ -101,7 +101,7 @@ public class FixedKeysFloatStorage extends AbstractFixedKeysStorage<float[]> {
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		setFloatValue(item, key, (float) value);
+		setFloatValue(item, key, ((Number) value).floatValue());
 	}
 
 	@Override

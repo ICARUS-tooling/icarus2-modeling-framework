@@ -18,9 +18,8 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
-import gnu.trove.function.TIntFunction;
-import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.hash.TObjectIntHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 import java.util.function.Consumer;
 
@@ -46,7 +45,7 @@ public class FixedKeysBoolean31BitStorage extends AbstractFixedKeysBooleanStorag
 
 	public static final int MAX_KEY_COUNT = 31;
 
-	private TObjectIntMap<Item> annotations;
+	private Object2IntMap<Item> annotations;
 	private int noEntryValues;
 
 	private static final int EMPTY_BUFFER = (0x1<<15);
@@ -63,12 +62,15 @@ public class FixedKeysBoolean31BitStorage extends AbstractFixedKeysBooleanStorag
 		super(weakKeys, initialCapacity);
 	}
 
-	protected TObjectIntMap<Item> createMap(AnnotationLayer layer) {
+	protected Object2IntMap<Item> createMap(AnnotationLayer layer) {
 		if(isWeakKeys()) {
 			log.warn("Storage implementation does not support weak key references to stored items.");
 		}
 
-		return new TObjectIntHashMap<>(getInitialCapacity(layer), 0.75F, EMPTY_BUFFER);
+		Object2IntMap<Item> result = new Object2IntOpenHashMap<>(getInitialCapacity(layer));
+		result.defaultReturnValue(EMPTY_BUFFER);
+
+		return result;
 	}
 
 	@Override
@@ -89,7 +91,7 @@ public class FixedKeysBoolean31BitStorage extends AbstractFixedKeysBooleanStorag
 
 			Object declaredNoEntryValue = annotationManifest.getNoEntryValue();
 
-			if(declaredNoEntryValue==null || !(boolean)declaredNoEntryValue) {
+			if(declaredNoEntryValue==null || !((Boolean)declaredNoEntryValue).booleanValue()) {
 				continue;
 			}
 
@@ -111,7 +113,7 @@ public class FixedKeysBoolean31BitStorage extends AbstractFixedKeysBooleanStorag
 
 	@Override
 	public boolean collectKeys(Item item, Consumer<String> action) {
-		int data = annotations.get(item);
+		int data = annotations.getInt(item);
 
 		if(data==EMPTY_BUFFER || data==noEntryValues) {
 			return false;
@@ -134,7 +136,7 @@ public class FixedKeysBoolean31BitStorage extends AbstractFixedKeysBooleanStorag
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
-		return getBooleanValue(item, key);
+		return Boolean.valueOf(getBooleanValue(item, key));
 	}
 
 	/**
@@ -142,13 +144,13 @@ public class FixedKeysBoolean31BitStorage extends AbstractFixedKeysBooleanStorag
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		setBooleanValue(item, key, (boolean) value);
+		setBooleanValue(item, key, ((Boolean) value).booleanValue());
 	}
 
 	@Override
 	public boolean getBooleanValue(Item item, String key) {
 		int index = checkKeyAndGetIndex(key);
-		int b = annotations.get(item);
+		int b = annotations.getInt(item);
 
 		if(b==EMPTY_BUFFER) {
 			b = noEntryValues;
@@ -160,7 +162,7 @@ public class FixedKeysBoolean31BitStorage extends AbstractFixedKeysBooleanStorag
 	@Override
 	public void setBooleanValue(Item item, String key, boolean value) {
 		int index = checkKeyAndGetIndex(key);
-		int b = annotations.get(item);
+		int b = annotations.getInt(item);
 
 		if(value) {
 			b |= (1<<index);
@@ -182,12 +184,10 @@ public class FixedKeysBoolean31BitStorage extends AbstractFixedKeysBooleanStorag
 
 		final int mask = (EMPTY_BUFFER | ~(1<<index));
 
-		annotations.transformValues(new TIntFunction() {
-
-			@Override
-			public int execute(int value) {
-				return (int) (mask & value);
-			}
+		annotations.object2IntEntrySet().forEach(entry -> {
+			int value = entry.getIntValue();
+			value = (int) (mask & value);
+			entry.setValue(value);
 		});
 	}
 
@@ -198,7 +198,7 @@ public class FixedKeysBoolean31BitStorage extends AbstractFixedKeysBooleanStorag
 
 	@Override
 	public boolean hasAnnotations(Item item) {
-		return annotations.get(item)!=EMPTY_BUFFER;
+		return annotations.getInt(item)!=EMPTY_BUFFER;
 	}
 
 	@Override
@@ -208,7 +208,7 @@ public class FixedKeysBoolean31BitStorage extends AbstractFixedKeysBooleanStorag
 
 	@Override
 	public boolean addItem(Item item) {
-		int b = annotations.get(item);
+		int b = annotations.getInt(item);
 
 		if(b!=EMPTY_BUFFER) {
 			annotations.put(item, EMPTY_BUFFER);
@@ -220,7 +220,7 @@ public class FixedKeysBoolean31BitStorage extends AbstractFixedKeysBooleanStorag
 
 	@Override
 	public boolean removeItem(Item item) {
-		return annotations.remove(item)!=EMPTY_BUFFER;
+		return annotations.removeInt(item)!=EMPTY_BUFFER;
 	}
 
 }

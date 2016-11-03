@@ -18,8 +18,8 @@
  */
 package de.ims.icarus2.util.collections;
 
-import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.hash.TObjectIntHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -57,7 +57,7 @@ public class LookupList<E extends Object> implements Iterable<E> {
      * Lookup table to map from items to their respective index in the list
      */
     @Link
-	private TObjectIntMap<Object> lookup;
+	private Object2IntMap<Object> lookup;
     /**
      * Modification counter for detection of concurrent modifications during iterator traversal
      */
@@ -314,7 +314,7 @@ public class LookupList<E extends Object> implements Iterable<E> {
 	public int indexOf(E item) {
 		// If lookup table is active make sure it's up2date and then use it
 		if(checkRequiresLookup()) {
-			return lookup.get(item);
+			return lookup.getInt(item);
 		}
 
 		// For small list sizes just traverse the items
@@ -462,7 +462,7 @@ public class LookupList<E extends Object> implements Iterable<E> {
 
     		if(lookup==null) {
 	    		// Create and fill lookup
-	    		lookup = new TObjectIntHashMap<>((int)(size/0.75f));
+	    		lookup = new Object2IntOpenHashMap<>(size);
     		}
 
             if(dirtyIndex!=-1 && dirtyIndex<size) {

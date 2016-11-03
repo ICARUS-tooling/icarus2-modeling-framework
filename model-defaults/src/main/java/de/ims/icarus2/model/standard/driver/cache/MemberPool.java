@@ -61,6 +61,18 @@ public class MemberPool<M extends Item> implements Consumer<M>, Supplier<M> {
 		pool = null;
 	}
 
+	private ArrayList<M> ensurePool() {
+		if(pool==null) {
+			synchronized (this) {
+				if(pool==null) {
+					pool = new ArrayList<>(poolSize);
+				}
+			}
+		}
+
+		return pool;
+	}
+
 
 	/**
 	 * Adds the given member to the internal object pool.
@@ -72,21 +84,20 @@ public class MemberPool<M extends Item> implements Consumer<M>, Supplier<M> {
 	 */
 	public boolean recycle(M member) {
 		checkNotNull(member);
+		ArrayList<M> pool = ensurePool();
 
-		if(pool==null) {
-			synchronized (this) {
-				if(pool==null) {
-					pool = new ArrayList<>(poolSize);
-				}
-			}
-		}
+		boolean canAdd = pool.size()<poolSize;
 
-		if(pool.size()<poolSize) {
+		if(canAdd) {
 			pool.add(member);
-			return true;
 		}
 
-		return false;
+		return canAdd;
+	}
+
+	public boolean isEmpty() {
+		ArrayList<M> pool = this.pool;
+		return pool==null || pool.isEmpty();
 	}
 
 	/**
@@ -95,19 +106,18 @@ public class MemberPool<M extends Item> implements Consumer<M>, Supplier<M> {
 	 * @return
 	 */
 	public M revive() {
-		if(pool==null || pool.isEmpty()) {
+		if(isEmpty()) {
 			return null;
 		}
+
+		ArrayList<M> pool = ensurePool();
 
 		return pool.remove(pool.size()-1);
 	}
 
 	public void recycleAll(Collection<? extends M> members) {
 		checkNotNull(members);
-
-		if(pool==null) {
-			pool = new ArrayList<>(poolSize);
-		}
+		ArrayList<M> pool = ensurePool();
 
 		for(M member : members) {
 			if(pool.size()>=poolSize) {
@@ -120,10 +130,7 @@ public class MemberPool<M extends Item> implements Consumer<M>, Supplier<M> {
 
 	public void recycleAll(DataSequence<? extends M> members) {
 		checkNotNull(members);
-
-		if(pool==null) {
-			pool = new ArrayList<>(poolSize);
-		}
+		ArrayList<M> pool = ensurePool();
 
 		for(int i = IcarusUtils.limitToIntegerValueRange(members.entryCount()); i>=0; i--) {
 			if(pool.size()>=poolSize) {

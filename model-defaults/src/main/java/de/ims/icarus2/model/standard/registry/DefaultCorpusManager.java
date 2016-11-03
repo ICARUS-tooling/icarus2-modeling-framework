@@ -21,7 +21,7 @@ package de.ims.icarus2.model.standard.registry;
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
-import gnu.trove.map.hash.THashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -87,7 +87,7 @@ public class DefaultCorpusManager implements CorpusManager {
 
 	private final List<CorpusLifecycleListener> lifecycleListeners = new CopyOnWriteArrayList<>();
 
-	private final Map<String, String> properties = new THashMap<>();
+	private final Map<String, String> properties = new Object2ObjectOpenHashMap<>();
 
 	//TODO add config parameter that allows passing of stuff like path to a new properties file, or a default fallback set of properties, etc...
 	public DefaultCorpusManager(ManifestRegistry registry, MetadataRegistry metadataRegistry, FileManager fileManager) {

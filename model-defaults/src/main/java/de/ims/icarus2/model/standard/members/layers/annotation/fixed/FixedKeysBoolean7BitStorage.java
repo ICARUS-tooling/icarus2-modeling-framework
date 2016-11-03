@@ -18,9 +18,8 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
-import gnu.trove.function.TByteFunction;
-import gnu.trove.map.TObjectByteMap;
-import gnu.trove.map.hash.TObjectByteHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ByteMap;
+import it.unimi.dsi.fastutil.objects.Object2ByteOpenHashMap;
 
 import java.util.function.Consumer;
 
@@ -46,7 +45,7 @@ public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage
 
 	public static final int MAX_KEY_COUNT = 7;
 
-	private TObjectByteMap<Item> annotations;
+	private Object2ByteMap<Item> annotations;
 	private byte noEntryValues;
 
 	private static final byte EMPTY_BUFFER = (byte) (0x1<<7);
@@ -63,12 +62,15 @@ public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage
 		super(weakKeys, initialCapacity);
 	}
 
-	protected TObjectByteMap<Item> createMap(AnnotationLayer layer) {
+	protected Object2ByteMap<Item> createMap(AnnotationLayer layer) {
 		if(isWeakKeys()) {
 			log.warn("Storage implementation does not support weak key references to stored items.");
 		}
 
-		return new TObjectByteHashMap<>(getInitialCapacity(layer), 0.75F, EMPTY_BUFFER);
+		Object2ByteMap<Item> result = new Object2ByteOpenHashMap<>(getInitialCapacity(layer));
+		result.defaultReturnValue(EMPTY_BUFFER);
+
+		return result;
 	}
 
 	@Override
@@ -89,7 +91,7 @@ public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage
 
 			Object declaredNoEntryValue = annotationManifest.getNoEntryValue();
 
-			if(declaredNoEntryValue==null || !(boolean)declaredNoEntryValue) {
+			if(declaredNoEntryValue==null || !((Boolean)declaredNoEntryValue).booleanValue()) {
 				continue;
 			}
 
@@ -111,7 +113,7 @@ public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage
 
 	@Override
 	public boolean collectKeys(Item item, Consumer<String> action) {
-		byte data = annotations.get(item);
+		byte data = annotations.getByte(item);
 
 		if(data==EMPTY_BUFFER || data==noEntryValues) {
 			return false;
@@ -134,7 +136,7 @@ public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
-		return getBooleanValue(item, key);
+		return Boolean.valueOf(getBooleanValue(item, key));
 	}
 
 	/**
@@ -142,13 +144,13 @@ public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		setBooleanValue(item, key, (boolean) value);
+		setBooleanValue(item, key, ((Boolean)value).booleanValue());
 	}
 
 	@Override
 	public boolean getBooleanValue(Item item, String key) {
 		int index = checkKeyAndGetIndex(key);
-		byte b = annotations.get(item);
+		byte b = annotations.getByte(item);
 
 		if(b==EMPTY_BUFFER) {
 			b = noEntryValues;
@@ -160,7 +162,7 @@ public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage
 	@Override
 	public void setBooleanValue(Item item, String key, boolean value) {
 		int index = checkKeyAndGetIndex(key);
-		byte b = annotations.get(item);
+		byte b = annotations.getByte(item);
 
 		if(value) {
 			b |= (1<<index);
@@ -182,12 +184,10 @@ public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage
 
 		final byte mask = (byte) (EMPTY_BUFFER | ~(1<<index));
 
-		annotations.transformValues(new TByteFunction() {
-
-			@Override
-			public byte execute(byte value) {
-				return (byte) (mask & value);
-			}
+		annotations.object2ByteEntrySet().forEach(entry -> {
+			byte value = entry.getByteValue();
+			value = (byte) (mask & value);
+			entry.setValue(value);
 		});
 	}
 
@@ -198,7 +198,7 @@ public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage
 
 	@Override
 	public boolean hasAnnotations(Item item) {
-		return annotations.get(item)!=EMPTY_BUFFER;
+		return annotations.getByte(item)!=EMPTY_BUFFER;
 	}
 
 	@Override
@@ -208,7 +208,7 @@ public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage
 
 	@Override
 	public boolean addItem(Item item) {
-		byte b = annotations.get(item);
+		byte b = annotations.getByte(item);
 
 		if(b!=EMPTY_BUFFER) {
 			annotations.put(item, EMPTY_BUFFER);
@@ -220,7 +220,7 @@ public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage
 
 	@Override
 	public boolean removeItem(Item item) {
-		return annotations.remove(item)!=EMPTY_BUFFER;
+		return annotations.removeByte(item)!=EMPTY_BUFFER;
 	}
 
 }

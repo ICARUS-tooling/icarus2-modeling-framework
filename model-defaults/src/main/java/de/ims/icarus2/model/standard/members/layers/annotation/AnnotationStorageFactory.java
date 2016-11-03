@@ -18,8 +18,7 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation;
 
-import gnu.trove.set.hash.TCustomHashSet;
-import gnu.trove.strategy.IdentityHashingStrategy;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 import java.util.Set;
 import java.util.function.Supplier;
@@ -109,7 +108,7 @@ public class AnnotationStorageFactory {
 	}
 
 	protected AnnotationStorage buildFixedKeyStorage(Set<String> keySet, AnnotationLayerManifest layerManifest) {
-		Set<ValueType> valueTypes = new TCustomHashSet<>(IdentityHashingStrategy.INSTANCE);
+		Set<ValueType> valueTypes = new ReferenceOpenHashSet<>();
 
 		// Collect value types to see if we can optimize storage
 		for(String key : keySet) {

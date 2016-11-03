@@ -5,6 +5,7 @@
 package de.ims.icarus2.util.classes;
 
 import static java.util.Objects.requireNonNull;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -38,7 +39,6 @@ import java.util.Stack;
 import java.util.WeakHashMap;
 
 import de.ims.icarus2.util.collections.CollectionUtils;
-import de.ims.icarus2.util.collections.IdentityHashSet;
 
 /**
  * @author Markus Gärtner
@@ -332,6 +332,7 @@ public final class ClassUtils {
 		throw new CloneNotSupportedException("Cannot clone object: "+source);
 	}
 
+	@SuppressWarnings("boxing")
 	public static boolean deepEquals(final Object obj1, final Object obj2) throws IllegalArgumentException, IllegalAccessException {
 		if (obj1 == null)
 			throw new NullPointerException("Invalid obj1"); //$NON-NLS-1$
@@ -372,6 +373,7 @@ public final class ClassUtils {
 		try {
 			AccessController.doPrivileged(new PrivilegedExceptionAction<Boolean>() {
 
+				@SuppressWarnings("boxing")
 				@Override
 				public Boolean run() throws Exception {
 					return getChecker(clazz).equals(trace, obj1, obj2);
@@ -397,7 +399,7 @@ public final class ClassUtils {
 		private final Class<?> rootClass;
 		private final Stack<Field> fields = new Stack<>();
 		private final List<String> messages = new ArrayList<>();
-		private final Set<Object> visited = new IdentityHashSet<>();
+		private final Set<Object> visited = new ReferenceOpenHashSet<>();
 		private final boolean doDiff;
 
 		Trace(Class<?> rootClass, boolean doDiff) {

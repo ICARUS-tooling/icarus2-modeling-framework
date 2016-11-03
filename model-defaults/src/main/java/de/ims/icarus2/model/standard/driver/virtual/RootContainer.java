@@ -160,13 +160,14 @@ public class RootContainer extends AbstractImmutableContainer {
 	}
 
 	/**
-	 * Returns {@link ContainerType#LIST}.
+	 * Returns the {@code ContainerType} declared in the manifest returned
+	 * by {@link #getManifest()} (usually this will be  {@link ContainerType#LIST}).
 	 *
 	 * @see de.ims.icarus2.model.api.members.container.Container#getContainerType()
 	 */
 	@Override
 	public ContainerType getContainerType() {
-		return ContainerType.LIST;
+		return getManifest().getContainerType();
 	}
 
 	/**

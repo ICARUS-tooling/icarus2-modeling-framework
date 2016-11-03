@@ -20,8 +20,8 @@ package de.ims.icarus2.model.standard.driver.virtual;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,7 +52,7 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
 public class VirtualItemLayerManager implements ItemLayerManager {
 
 	private final List<Layer> layers = new ArrayList<>();
-	private final TIntObjectMap<RootContainer> rootContainers = new TIntObjectHashMap<>();
+	private final Int2ObjectMap<RootContainer> rootContainers = new Int2ObjectOpenHashMap<>();
 
 
 	@Override
@@ -163,7 +163,7 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 	}
 
 	public void clear() {
-		for(RootContainer rootContainer : rootContainers.valueCollection()) {
+		for(RootContainer rootContainer : rootContainers.values()) {
 			rootContainer.clear();
 		}
 	}

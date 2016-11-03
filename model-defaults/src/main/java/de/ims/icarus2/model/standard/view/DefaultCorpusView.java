@@ -21,8 +21,7 @@ package de.ims.icarus2.model.standard.view;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
-import gnu.trove.set.hash.TCustomHashSet;
-import gnu.trove.strategy.IdentityHashingStrategy;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -89,7 +88,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 
 		size = IndexUtils.count(indices);
 
-		owners = new TCustomHashSet<>(IdentityHashingStrategy.INSTANCE);
+		owners = new ReferenceOpenHashSet<>();
 		changeSource = new ChangeSource(this);
 
 		pageControl = Lazy.create(this::createPageControl);

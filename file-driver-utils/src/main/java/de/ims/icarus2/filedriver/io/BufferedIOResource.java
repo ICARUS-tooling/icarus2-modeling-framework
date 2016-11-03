@@ -20,9 +20,9 @@ package de.ims.icarus2.filedriver.io;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
-import gnu.trove.iterator.TIntIterator;
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
+import it.unimi.dsi.fastutil.ints.IntIterator;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -103,7 +103,7 @@ public abstract class BufferedIOResource {
 
 	private final BlockCache cache;
 
-	private final TIntSet changedBlocks = new TIntHashSet();
+	private final IntSet changedBlocks = new IntOpenHashSet();
 
 	private int bytesPerBlock = -1;
 
@@ -298,8 +298,9 @@ public abstract class BufferedIOResource {
 	protected abstract int read(Object target, ByteBuffer buffer) throws IOException;
 
 	public void flush() throws IOException {
-		for(TIntIterator it = changedBlocks.iterator(); it.hasNext(); ) {
-			int id = it.next();
+
+		for(IntIterator it = changedBlocks.iterator(); it.hasNext(); ) {
+			int id = it.nextInt();
 
 			Block block = cache.getBlock(id);
 			if(block==null)

@@ -21,7 +21,7 @@
 package de.ims.icarus2.util;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
-import gnu.trove.map.hash.THashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -64,7 +64,7 @@ public class CompactProperties implements Cloneable, Serializable {
 
 				this.table = table;
 			} else {
-				this.table = new THashMap<>(map);
+				this.table = new Object2ObjectOpenHashMap<>(map);
 			}
 		}
 	}
@@ -99,7 +99,7 @@ public class CompactProperties implements Cloneable, Serializable {
 	}
 
 	protected void grow() {
-		Map<String, Object> map = new THashMap<>();
+		Map<String, Object> map = new Object2ObjectOpenHashMap<>();
 		Object[] table = (Object[]) this.table;
 
 		for(int i=1; i<table.length; i+=2)
@@ -203,7 +203,7 @@ public class CompactProperties implements Cloneable, Serializable {
 		if(table==null) {
 			map = null;
 		} else if(table instanceof Object[]) {
-			map = new THashMap<>((int)(ARRAY_SIZE_LIMIT/0.75F));
+			map = new Object2ObjectOpenHashMap<>(ARRAY_SIZE_LIMIT);
 			Object[] table = (Object[]) this.table;
 			for(int i=1; i<table.length; i+=2) {
 				if(table[i-1]!=null && table[i]!=null) {
@@ -211,7 +211,7 @@ public class CompactProperties implements Cloneable, Serializable {
 				}
 			}
 		} else {
-			map = new THashMap<>((Map<String, Object>)this.table);
+			map = new Object2ObjectOpenHashMap<>((Map<String, Object>)this.table);
 		}
 
 		return map;
@@ -284,7 +284,7 @@ public class CompactProperties implements Cloneable, Serializable {
 		} else if(other.table instanceof Object[]) {
 			table = ((Object[])other.table).clone();
 		} else {
-			table = new THashMap<>((Map<String, Object>) other.table);
+			table = new Object2ObjectOpenHashMap<>((Map<String, Object>) other.table);
 		}
 	}
 }

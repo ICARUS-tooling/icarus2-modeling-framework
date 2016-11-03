@@ -18,8 +18,8 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.single;
 
-import gnu.trove.map.TObjectLongMap;
-import gnu.trove.map.hash.TObjectLongHashMap;
+import it.unimi.dsi.fastutil.objects.Object2LongMap;
+import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +38,7 @@ public class SingleKeyLongStorage extends AbstractSingleKeyStorage {
 
 	private final static Logger log = LoggerFactory.getLogger(SingleKeyLongStorage.class);
 
-	private TObjectLongMap<Item> annotations;
+	private Object2LongMap<Item> annotations;
 	private long noEntryValue = DEFAULT_NO_ENTRY_VALUE;
 
 	public static final long DEFAULT_NO_ENTRY_VALUE = -1L;
@@ -55,12 +55,15 @@ public class SingleKeyLongStorage extends AbstractSingleKeyStorage {
 		super(weakKeys, initialCapacity);
 	}
 
-	protected TObjectLongMap<Item> buildBuffer(AnnotationLayer layer) {
+	protected Object2LongMap<Item> buildBuffer(AnnotationLayer layer) {
 		if(isWeakKeys()) {
 			log.warn("Storage implementation does not support weak key references to stored items in layer {}", ModelUtils.getUniqueId(layer));
 		}
 
-		return new TObjectLongHashMap<>(getInitialCapacity(layer), 0.75F, getNoEntryValue());
+		Object2LongMap<Item> result = new Object2LongOpenHashMap<>(getInitialCapacity(layer));
+		result.defaultReturnValue(getNoEntryValue());
+
+		return result;
 	}
 
 	@Override
@@ -72,7 +75,7 @@ public class SingleKeyLongStorage extends AbstractSingleKeyStorage {
 
 		Object declaredNoEntryValue = annotationManifest.getNoEntryValue();
 
-		noEntryValue = declaredNoEntryValue==null ? DEFAULT_NO_ENTRY_VALUE : (long) declaredNoEntryValue;
+		noEntryValue = declaredNoEntryValue==null ? DEFAULT_NO_ENTRY_VALUE : ((Long) declaredNoEntryValue).longValue();
 		annotations = buildBuffer(layer);
 	}
 
@@ -89,7 +92,7 @@ public class SingleKeyLongStorage extends AbstractSingleKeyStorage {
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
-		return getIntegerValue(item, key);
+		return Long.valueOf(getLongValue(item, key));
 	}
 
 	/**
@@ -97,7 +100,7 @@ public class SingleKeyLongStorage extends AbstractSingleKeyStorage {
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		setLongValue(item, key, (long) value);
+		setLongValue(item, key, ((Number) value).longValue());
 	}
 
 	@Override
@@ -119,7 +122,7 @@ public class SingleKeyLongStorage extends AbstractSingleKeyStorage {
 	public long getLongValue(Item item, String key) {
 		checkKey(key);
 
-		return annotations.get(item);
+		return annotations.getLong(item);
 	}
 
 	@Override
@@ -155,7 +158,7 @@ public class SingleKeyLongStorage extends AbstractSingleKeyStorage {
 
 	@Override
 	public boolean removeItem(Item item) {
-		return annotations.remove(item)!=noEntryValue;
+		return annotations.removeLong(item)!=noEntryValue;
 	}
 
 	public long getNoEntryValue() {

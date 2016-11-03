@@ -17,8 +17,8 @@
  */
 package de.ims.icarus2.filedriver.io;
 
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
 
@@ -36,7 +36,7 @@ import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
  */
 public class UnlimitedBlockCache implements BlockCache {
 
-	private TIntObjectMap<Block> blocks;
+	private Int2ObjectMap<Block> blocks;
 
 	public UnlimitedBlockCache() {
 		// no-op
@@ -76,7 +76,7 @@ public class UnlimitedBlockCache implements BlockCache {
 	 */
 	@Override
 	public void open(int capacity) {
-		blocks = new TIntObjectHashMap<>((int)(capacity/0.75));
+		blocks = new Int2ObjectOpenHashMap<>(capacity);
 	}
 
 	/**

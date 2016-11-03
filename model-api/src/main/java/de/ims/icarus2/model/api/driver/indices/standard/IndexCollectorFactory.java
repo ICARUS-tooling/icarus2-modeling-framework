@@ -22,18 +22,18 @@ import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkSorted;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
-import gnu.trove.procedure.TByteProcedure;
-import gnu.trove.procedure.TIntProcedure;
-import gnu.trove.procedure.TLongProcedure;
-import gnu.trove.procedure.TShortProcedure;
-import gnu.trove.set.TByteSet;
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.TLongSet;
-import gnu.trove.set.TShortSet;
-import gnu.trove.set.hash.TByteHashSet;
-import gnu.trove.set.hash.TIntHashSet;
-import gnu.trove.set.hash.TLongHashSet;
-import gnu.trove.set.hash.TShortHashSet;
+import it.unimi.dsi.fastutil.bytes.ByteIterator;
+import it.unimi.dsi.fastutil.bytes.ByteOpenHashSet;
+import it.unimi.dsi.fastutil.bytes.ByteSet;
+import it.unimi.dsi.fastutil.ints.IntIterator;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.longs.LongIterator;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
+import it.unimi.dsi.fastutil.shorts.ShortIterator;
+import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
+import it.unimi.dsi.fastutil.shorts.ShortSet;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -363,13 +363,13 @@ public class IndexCollectorFactory implements ModelConstants {
 	 */
 	public static class LimitedUnsortedSetBuilderLong implements
 			IndexSetBuilder, IndexStorage {
-		private final TLongSet buffer;
+		private final LongSet buffer;
 		private final int chunkSize;
 
 		private static final IndexValueType TYPE = IndexValueType.LONG;
 
 		public LimitedUnsortedSetBuilderLong(int capacity, int chunkSize) {
-			buffer = new TLongHashSet(capacity);
+			buffer = new LongOpenHashSet(capacity);
 
 			this.chunkSize = chunkSize;
 		}
@@ -402,14 +402,9 @@ public class IndexCollectorFactory implements ModelConstants {
 		 */
 		@Override
 		public void forEach(LongConsumer action) {
-			buffer.forEach(new TLongProcedure() {
-
-				@Override
-				public boolean execute(long value) {
-					action.accept(value);
-					return true;
-				}
-			});
+			for(LongIterator it = buffer.iterator(); it.hasNext();) {
+				action.accept(it.nextLong());
+			}
 		}
 
 		@Override
@@ -439,13 +434,13 @@ public class IndexCollectorFactory implements ModelConstants {
 	 */
 	public static class LimitedUnsortedSetBuilderInt implements
 			IndexSetBuilder, IndexStorage {
-		private final TIntSet buffer;
+		private final IntSet buffer;
 		private final int chunkSize;
 
 		private static final IndexValueType TYPE = IndexValueType.INTEGER;
 
 		public LimitedUnsortedSetBuilderInt(int capacity, int chunkSize) {
-			buffer = new TIntHashSet(capacity);
+			buffer = new IntOpenHashSet(capacity);
 
 			this.chunkSize = chunkSize;
 		}
@@ -478,14 +473,9 @@ public class IndexCollectorFactory implements ModelConstants {
 		 */
 		@Override
 		public void forEach(LongConsumer action) {
-			buffer.forEach(new TIntProcedure() {
-
-				@Override
-				public boolean execute(int value) {
-					action.accept(value);
-					return true;
-				}
-			});
+			for(IntIterator it = buffer.iterator(); it.hasNext();) {
+				action.accept(it.nextInt());
+			}
 		}
 
 		@Override
@@ -515,13 +505,13 @@ public class IndexCollectorFactory implements ModelConstants {
 	 */
 	public static class LimitedUnsortedSetBuilderShort implements
 			IndexSetBuilder, IndexStorage {
-		private final TShortSet buffer;
+		private final ShortSet buffer;
 		private final int chunkSize;
 
 		private static final IndexValueType TYPE = IndexValueType.SHORT;
 
 		public LimitedUnsortedSetBuilderShort(int capacity, int chunkSize) {
-			buffer = new TShortHashSet(capacity);
+			buffer = new ShortOpenHashSet(capacity);
 
 			this.chunkSize = chunkSize;
 		}
@@ -554,14 +544,9 @@ public class IndexCollectorFactory implements ModelConstants {
 		 */
 		@Override
 		public void forEach(LongConsumer action) {
-			buffer.forEach(new TShortProcedure() {
-
-				@Override
-				public boolean execute(short value) {
-					action.accept(value);
-					return true;
-				}
-			});
+			for(ShortIterator it = buffer.iterator(); it.hasNext();) {
+				action.accept(it.nextShort());
+			}
 		}
 
 		@Override
@@ -591,13 +576,13 @@ public class IndexCollectorFactory implements ModelConstants {
 	 */
 	public static class LimitedUnsortedSetBuilderByte implements
 			IndexSetBuilder, IndexStorage {
-		private final TByteSet buffer;
+		private final ByteSet buffer;
 		private final int chunkSize;
 
 		private static final IndexValueType TYPE = IndexValueType.BYTE;
 
 		public LimitedUnsortedSetBuilderByte(int capacity, int chunkSize) {
-			buffer = new TByteHashSet(capacity);
+			buffer = new ByteOpenHashSet(capacity);
 
 			this.chunkSize = chunkSize;
 		}
@@ -630,14 +615,9 @@ public class IndexCollectorFactory implements ModelConstants {
 		 */
 		@Override
 		public void forEach(LongConsumer action) {
-			buffer.forEach(new TByteProcedure() {
-
-				@Override
-				public boolean execute(byte value) {
-					action.accept(value);
-					return true;
-				}
-			});
+			for(ByteIterator it = buffer.iterator(); it.hasNext();) {
+				action.accept(it.nextByte());
+			}
 		}
 
 		@Override
@@ -703,6 +683,12 @@ public class IndexCollectorFactory implements ModelConstants {
 		 */
 		private Bucket lastInsertionCache;
 
+		/**
+		 * Flag that tells us whether or not we should make use of the
+		 * 'lastInsertionCache' hint to potentially speed up insertion time.
+		 */
+		private final boolean useLastHitCache;
+
 		// RUNTIME STATS
 		private long insertions = 0L;
 		private long cacheMisses = 0L;
@@ -711,8 +697,6 @@ public class IndexCollectorFactory implements ModelConstants {
 		private double averageSplitRatio = 0D;
 		private double minSplitRatio = 1D;
 		private double maxSplitRation = 0D;
-
-		private final boolean useLastHitCache;
 
 		public BucketSetBuilder(IndexValueType valueType, int chunkSize) {
 			this(valueType, chunkSize, false);

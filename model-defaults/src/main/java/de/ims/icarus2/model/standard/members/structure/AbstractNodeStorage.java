@@ -20,7 +20,7 @@ package de.ims.icarus2.model.standard.members.structure;
 
 import static de.ims.icarus2.model.standard.members.MemberUtils.checkHostStructure;
 import static de.ims.icarus2.model.util.ModelUtils.getName;
-import gnu.trove.map.hash.THashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,7 +79,7 @@ public abstract class AbstractNodeStorage<N extends NodeInfo, E extends Edge> im
 			capacity = DEFAULT_CAPACITY;
 		}
 
-		return new THashMap<>(capacity);
+		return new Object2ObjectOpenHashMap<>(capacity);
 	}
 
 	/**

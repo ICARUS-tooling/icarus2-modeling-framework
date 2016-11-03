@@ -22,8 +22,8 @@ import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,7 +57,7 @@ public class VirtualDriver extends AbstractDriver {
 
 	private ItemLayerManager itemLayerManager;
 
-	private final TIntObjectMap<ItemLayer> idMap = new TIntObjectHashMap<>();
+	private final Int2ObjectMap<ItemLayer> idMap = new Int2ObjectOpenHashMap<>();
 
 	private final Collection<DriverModule> modules = new ArrayList<>();
 

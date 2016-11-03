@@ -20,12 +20,12 @@ package de.ims.icarus2.model.api.driver.indices.standard;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
-import gnu.trove.list.TByteList;
-import gnu.trove.list.TIntList;
-import gnu.trove.list.TLongList;
-import gnu.trove.list.TShortList;
-import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.list.array.TLongArrayList;
+import it.unimi.dsi.fastutil.bytes.ByteList;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongList;
+import it.unimi.dsi.fastutil.shorts.ShortList;
 
 import java.lang.reflect.Array;
 import java.util.PrimitiveIterator.OfInt;
@@ -219,7 +219,7 @@ public class ArrayIndexSet implements IndexSet {
 		return new ArrayIndexSet(valueType, buffer, set.isSorted());
 	}
 
-	public static ArrayIndexSet copyOf(TByteList source) {
+	public static ArrayIndexSet copyOf(ByteList source) {
 		checkNotNull(source);
 
 		IndexValueType valueType = IndexValueType.BYTE;
@@ -228,7 +228,7 @@ public class ArrayIndexSet implements IndexSet {
 		return new ArrayIndexSet(valueType, indices, false);
 	}
 
-	public static ArrayIndexSet copyOf(TShortList source) {
+	public static ArrayIndexSet copyOf(ShortList source) {
 		checkNotNull(source);
 
 		IndexValueType valueType = IndexValueType.SHORT;
@@ -237,7 +237,7 @@ public class ArrayIndexSet implements IndexSet {
 		return new ArrayIndexSet(valueType, indices, false);
 	}
 
-	public static ArrayIndexSet copyOf(TIntList source) {
+	public static ArrayIndexSet copyOf(IntList source) {
 		checkNotNull(source);
 
 		IndexValueType valueType = IndexValueType.INTEGER;
@@ -246,7 +246,7 @@ public class ArrayIndexSet implements IndexSet {
 		return new ArrayIndexSet(valueType, indices, false);
 	}
 
-	public static ArrayIndexSet copyOf(TLongList source) {
+	public static ArrayIndexSet copyOf(LongList source) {
 		checkNotNull(source);
 
 		IndexValueType valueType = IndexValueType.LONG;
@@ -258,7 +258,7 @@ public class ArrayIndexSet implements IndexSet {
 	public static ArrayIndexSet fromIterator(OfInt source) {
 		checkNotNull(source);
 
-		TIntList indices = new TIntArrayList(1000); //TODO flexible buffer size!!!
+		IntList indices = new IntArrayList(1000); //TODO flexible buffer size!!!
 		boolean sorted = true;
 		int previousValue = -1;
 		while(source.hasNext()) {
@@ -278,7 +278,7 @@ public class ArrayIndexSet implements IndexSet {
 	public static ArrayIndexSet fromIterator(OfLong source) {
 		checkNotNull(source);
 
-		TLongList indices = new TLongArrayList(1000); //TODO flexible buffer size!!!
+		LongList indices = new LongArrayList(1000); //TODO flexible buffer size!!!
 		boolean sorted = true;
 		long previousValue = -1L;
 		while(source.hasNext()) {

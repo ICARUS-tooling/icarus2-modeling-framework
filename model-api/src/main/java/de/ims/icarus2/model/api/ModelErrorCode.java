@@ -18,8 +18,8 @@
  */
 package de.ims.icarus2.model.api;
 
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 import java.util.concurrent.locks.Lock;
 
@@ -285,7 +285,7 @@ public enum ModelErrorCode implements ErrorCode {
 		return code;
 	}
 
-	private static final TIntObjectMap<ModelErrorCode> codeLookup = new TIntObjectHashMap<>();
+	private static final Int2ObjectMap<ModelErrorCode> codeLookup = new Int2ObjectOpenHashMap<>();
 
 	public static ModelErrorCode forCode(int code) {
 		if(codeLookup.isEmpty()) {

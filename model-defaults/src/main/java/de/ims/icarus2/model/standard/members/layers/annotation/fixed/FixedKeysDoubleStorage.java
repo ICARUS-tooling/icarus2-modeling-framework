@@ -59,7 +59,7 @@ public class FixedKeysDoubleStorage extends AbstractFixedKeysStorage<double[]> {
 				continue;
 			}
 
-			noEntryValues[i] = (double) noEntryValue;
+			noEntryValues[i] = ((Number) noEntryValue).doubleValue();
 		}
 
 		return noEntryValues;
@@ -93,7 +93,7 @@ public class FixedKeysDoubleStorage extends AbstractFixedKeysStorage<double[]> {
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
-		return getFloatValue(item, key);
+		return Double.valueOf(getDoubleValue(item, key));
 	}
 
 	/**
@@ -101,7 +101,7 @@ public class FixedKeysDoubleStorage extends AbstractFixedKeysStorage<double[]> {
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		setFloatValue(item, key, (float) value);
+		setDoubleValue(item, key, ((Number) value).doubleValue());
 	}
 
 	@Override

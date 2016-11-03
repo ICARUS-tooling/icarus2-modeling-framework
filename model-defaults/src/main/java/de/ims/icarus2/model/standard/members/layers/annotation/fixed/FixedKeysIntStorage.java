@@ -60,7 +60,7 @@ public class FixedKeysIntStorage extends AbstractFixedKeysStorage<int[]> {
 				continue;
 			}
 
-			noEntryValues[i] = (int) noEntryValue;
+			noEntryValues[i] = ((Number) noEntryValue).intValue();
 		}
 
 		return noEntryValues;
@@ -94,7 +94,7 @@ public class FixedKeysIntStorage extends AbstractFixedKeysStorage<int[]> {
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
-		return getIntegerValue(item, key);
+		return Integer.valueOf(getIntegerValue(item, key));
 	}
 
 	/**
@@ -102,7 +102,7 @@ public class FixedKeysIntStorage extends AbstractFixedKeysStorage<int[]> {
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		setIntegerValue(item, key, (int) value);
+		setIntegerValue(item, key, ((Number) value).intValue());
 	}
 
 	@Override
