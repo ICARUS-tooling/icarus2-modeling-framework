@@ -18,6 +18,8 @@
  */
 package de.ims.icarus2.model.api.driver;
 
+import de.ims.icarus2.model.api.members.item.Item;
+
 /**
  * @author Markus Gärtner
  *
@@ -42,5 +44,9 @@ public enum ChunkState {
 	@Override
 	public String toString() {
 		return name()+" ("+statusCode+")"; //$NON-NLS-1$ //$NON-NLS-2$
+	}
+
+	public static ChunkState forItem(Item item) {
+		return item.isUsable() ? VALID : CORRUPTED;
 	}
 }

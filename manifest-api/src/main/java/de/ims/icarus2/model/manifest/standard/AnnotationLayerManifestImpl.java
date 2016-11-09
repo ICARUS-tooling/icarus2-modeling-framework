@@ -20,8 +20,11 @@ package de.ims.icarus2.model.manifest.standard;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -29,6 +32,8 @@ import de.ims.icarus2.model.manifest.api.AnnotationFlag;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
+import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
@@ -43,6 +48,8 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	private String defaultKey;
 
 	private EnumSet<de.ims.icarus2.model.manifest.api.AnnotationFlag> annotationFlags;
+
+	private final List<TargetLayerManifest> referenceLayerManifests = new ArrayList<>(3);
 
 	/**
 	 * @param manifestLocation
@@ -80,6 +87,19 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	@Override
 	public ManifestType getManifestType() {
 		return ManifestType.ANNOTATION_LAYER_MANIFEST;
+	}
+
+	@Override
+	public void forEachReferenceLayerManifest(Consumer<? super TargetLayerManifest> action) {
+		if(hasTemplate()) {
+			getTemplate().forEachReferenceLayerManifest(action);
+		}
+		referenceLayerManifests.forEach(action);
+	}
+
+	@Override
+	public void forEachLocalReferenceLayerManifest(Consumer<? super TargetLayerManifest> action) {
+		referenceLayerManifests.forEach(action);
 	}
 
 	@Override
@@ -186,6 +206,44 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 		checkNotNull(defaultKey);
 
 		this.defaultKey = defaultKey;
+	}
+
+	@Override
+	public TargetLayerManifest addReferenceLayerId(String referenceLayerId) {
+		checkNotLocked();
+
+		return addReferenceLayerId0(referenceLayerId);
+	}
+
+	protected TargetLayerManifest addReferenceLayerId0(String referenceLayerId) {
+		checkNotNull(referenceLayerId);
+
+		checkAllowsTargetLayer();
+		TargetLayerManifest targetLayerManifest = new TargetLayerManifestImpl(referenceLayerId);
+		referenceLayerManifests.add(targetLayerManifest);
+		return targetLayerManifest;
+	}
+
+	@Override
+	public void removeReferenceLayerId(String referenceLayerId) {
+		checkNotLocked();
+
+		removeReferenceLayerId0(referenceLayerId);
+	}
+
+	protected void removeReferenceLayerId0(String referenceLayerId) {
+		checkNotNull(referenceLayerId);
+
+		checkAllowsTargetLayer();
+
+		for(Iterator<TargetLayerManifest> it = referenceLayerManifests.iterator(); it.hasNext();) {
+			if(referenceLayerId.equals(it.next().getLayerId())) {
+				it.remove();
+				return;
+			}
+		}
+
+		throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "No reference layer manifest defined for id: "+referenceLayerId);
 	}
 
 	@Override

@@ -103,6 +103,24 @@ public class IndexUtils implements ModelConstants {
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Index array contains no actual index values"); //$NON-NLS-1$
 	}
 
+	public static boolean isSorted(IndexSet[] indices) {
+
+		long previousMax = NO_INDEX;
+
+		for(int i=0; i<indices.length; i++) {
+			IndexSet indexSet = indices[i];
+			if(!indexSet.isSorted()) {
+				return false;
+			}
+
+			if(previousMax!=NO_INDEX && indexSet.firstIndex()<previousMax) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	public static void checkSorted(IndexSet indices) {
 		if(!indices.isSorted())
 			throw new ModelException(ModelErrorCode.MODEL_UNSORTED_INDEX_SET, "Index set is unsorted");

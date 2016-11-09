@@ -171,18 +171,42 @@ public interface MetadataRegistry extends AutoCloseable {
 		}
 	}
 
+	/**
+	 * Starts a transaction.
+	 * <p>
+	 * The actual transaction semantics are implementation specific.
+	 */
 	void beginUpdate();
 
+	/**
+	 * Ends a transaction and potentially persists the changes into whatever backing storage is used.
+	 */
 	void endUpdate();
 
+	/**
+	 * Erases the current content of this registry permanently.
+	 */
 	void delete();
 
 	//FIXME check if we should expand the method signature to throw a general Exception
 	@Override
 	void close();
 
+	/**
+	 * Executes the given {@code action} for all entries in this registry in unspecified order.
+	 * @param action
+	 */
 	void forEachEntry(BiConsumer<? super String, ? super String> action);
 
+	/**
+	 * Executes the given {@code action} for all entries in this registry whose {@code keys} start
+	 * with the specified {@code prefix}. The default implementation delegates to {@link #forEachEntry(BiConsumer)}
+	 * using a specialized {@link BiConsumer} and checking for each raw entry if its key is a valid candidate.
+	 * Subclasses are encouraged to provide a more efficient solution!
+	 *
+	 * @param prefix
+	 * @param action
+	 */
 	default void forEachEntry(String prefix, BiConsumer<? super String, ? super String> action) {
 		forEachEntry((key, value) -> {
 			if(key.startsWith(prefix)) {

@@ -21,21 +21,25 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.Report.ReportItem;
+import de.ims.icarus2.ReportBuilder;
 import de.ims.icarus2.filedriver.FileDataStates.ElementInfo;
 import de.ims.icarus2.filedriver.FileDataStates.FileInfo;
 import de.ims.icarus2.filedriver.FileDataStates.LayerInfo;
 import de.ims.icarus2.filedriver.FileDriver.PreparationStep;
-import de.ims.icarus2.filedriver.FileMetadata.ChunkIndexKey;
-import de.ims.icarus2.filedriver.FileMetadata.DriverKey;
-import de.ims.icarus2.filedriver.FileMetadata.FileKey;
-import de.ims.icarus2.filedriver.FileMetadata.ItemLayerKey;
+import de.ims.icarus2.filedriver.FileDriverMetadata.ChunkIndexKey;
+import de.ims.icarus2.filedriver.FileDriverMetadata.DriverKey;
+import de.ims.icarus2.filedriver.FileDriverMetadata.FileKey;
+import de.ims.icarus2.filedriver.FileDriverMetadata.ItemLayerKey;
 import de.ims.icarus2.filedriver.io.sets.FileSet;
 import de.ims.icarus2.model.api.ModelConstants;
+import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
@@ -50,12 +54,12 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 	/**
 	 * Verify that metadata holds the correct number of entries for physical files
-	 * and that the actual pathes match.
+	 * and that the actual paths match.
 	 */
 	CHECK_FILE_METADATA {
 
 		@Override
-		public boolean apply(FileDriver driver, Options env) throws Exception {
+		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
 
 			FileSet dataFiles = driver.getDataFiles();
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
@@ -63,10 +67,12 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			int fileCount = dataFiles.getFileCount();
 
 			// Verify that our metadata holds the correct file count
-			String fileCountKey = FileMetadata.DriverKey.FILE_COUNT.getKey();
+			String fileCountKey = FileDriverMetadata.DriverKey.FILE_COUNT.getKey();
 			int storedFileCount = metadataRegistry.getIntValue(fileCountKey, -1);
 			if(storedFileCount!=-1 && storedFileCount!=fileCount) {
-				log.error("Corrupted file count in metadata: expected {} - got {} as stored value", fileCount, storedFileCount);
+				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+						"Corrupted file count in metadata: expected {} - got {} as stored value",
+						Integer.valueOf(fileCount), Integer.valueOf(storedFileCount));
 				return false;
 			} else {
 				metadataRegistry.setIntValue(fileCountKey, fileCount);
@@ -77,10 +83,11 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			for(int fileIndex = 0; fileIndex < fileCount; fileIndex++) {
 
 				Path path = dataFiles.getFileAt(fileIndex);
-				FileInfo fileInfo = driver.getFileDriverStates().getFileInfo(fileIndex);
+				FileInfo fileInfo = driver.getFileStates().getFileInfo(fileIndex);
 
 				if(path.getNameCount()==0) {
-					log.error("Invalid path with 0 name elements for file index {}", fileIndex);
+					reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+							"Invalid path with 0 name elements for file index {}", Integer.valueOf(fileIndex));
 					invalidFiles++;
 					continue;
 				}
@@ -94,8 +101,9 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 				if(savedPath==null) {
 					metadataRegistry.setValue(pathKey, pathString);
 				} else if(!pathString.equals(savedPath)) {
-					log.error("Corrupted metadata for file index {}: expected '{}' - got '{}'",
-							fileIndex, savedPath, pathString);
+					reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+							"Corrupted metadata for file index {}: expected '{}' - got '{}'",
+							Integer.valueOf(fileIndex), savedPath, pathString);
 					fileInfo.setFlag(ElementFlag.CORRUPTED);
 					invalidFiles++;
 				}
@@ -104,6 +112,11 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			}
 
 			return invalidFiles==0;
+		}
+
+		@Override
+		public Collection<? extends PreparationStep> getPreconditions() {
+			return Collections.emptyList();
 		}
 
 	},
@@ -116,7 +129,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 	CHECK_FILE_EXISTENCE {
 
 		@Override
-		public boolean apply(FileDriver driver, Options env) throws Exception {
+		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
 
 			FileSet dataFiles = driver.getDataFiles();
 			ContextManifest manifest = driver.getManifest().getContextManifest();
@@ -126,7 +139,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 			for(int fileIndex = 0; fileIndex < fileCount; fileIndex++) {
 
-				FileInfo fileInfo = driver.getFileDriverStates().getFileInfo(fileIndex);
+				FileInfo fileInfo = driver.getFileStates().getFileInfo(fileIndex);
 				Path path = fileInfo.getPath();
 
 //				state.setFormatted("fileConnector.checkFileExistence", fileIndex, fileCount, path.getFileName().toString());
@@ -139,13 +152,19 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 					} else {
 						fileInfo.setFlag(ElementFlag.MISSING);
 						// Signal error, since non-editable data MUST be present
-						log.error("Missing file for index {}: {}", fileIndex, path);
+						reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+								"Missing file for index {}: {}", Integer.valueOf(fileIndex), path);
 						invalidFiles++;
 					}
 				}
 			}
 
 			return invalidFiles==0;
+		}
+
+		@Override
+		public Collection<? extends PreparationStep> getPreconditions() {
+			return Arrays.asList(CHECK_FILE_METADATA);
 		}
 
 	},
@@ -160,7 +179,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 	CHECK_FILE_CHECKSUM {
 
 		@Override
-		public boolean apply(FileDriver driver, Options env) throws Exception {
+		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			FileSet dataFiles = driver.getDataFiles();
@@ -170,7 +189,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 			for(int fileIndex = 0; fileIndex < fileCount; fileIndex++) {
 
-				FileInfo fileInfo = driver.getFileDriverStates().getFileInfo(fileIndex);
+				FileInfo fileInfo = driver.getFileStates().getFileInfo(fileIndex);
 				Path path = fileInfo.getPath();
 
 //				state.setFormatted("fileConnector.checkFileChecksum", fileIndex, fileCount, path.getFileName().toString());
@@ -180,7 +199,8 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 				try {
 					checksum = FileChecksum.compute(path);
 				} catch (IOException e) {
-					log.error("Failed to compute checksum for file at index {} : {}", fileIndex, path, e);
+					reportBuilder.addError(GlobalErrorCode.IO_ERROR,
+							"Failed to compute checksum for file at index {} : {}", Integer.valueOf(fileIndex), path, e);
 					invalidFiles++;
 					continue;
 				}
@@ -193,8 +213,9 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 				if(savedChecksum==null) {
 					metadataRegistry.setValue(checksumKey, checksumString);
 				} else if(!checksumString.equals(savedChecksum)) {
-					log.error("Invalid checksum stored for file index {}: expected '{}' - got '{}'",
-							fileIndex, checksumString, savedChecksum);
+					reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+							"Invalid checksum stored for file index {}: expected '{}' - got '{}'",
+							Integer.valueOf(fileIndex), checksumString, savedChecksum);
 					fileInfo.setFlag(ElementFlag.CORRUPTED);
 					invalidFiles++;
 				}
@@ -206,6 +227,11 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			return invalidFiles==0;
 		}
 
+		@Override
+		public Collection<? extends PreparationStep> getPreconditions() {
+			return Arrays.asList(CHECK_FILE_EXISTENCE);
+		}
+
 	},
 
 	/**
@@ -214,7 +240,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 	CHECK_TOTAL_SIZE {
 
 		@Override
-		public boolean apply(FileDriver driver, Options env) throws Exception {
+		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			FileSet dataFiles = driver.getDataFiles();
@@ -226,7 +252,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 			for(int fileIndex = 0; fileIndex < fileCount; fileIndex++) {
 
-				FileInfo fileInfo = driver.getFileDriverStates().getFileInfo(fileIndex);
+				FileInfo fileInfo = driver.getFileStates().getFileInfo(fileIndex);
 				Path path = fileInfo.getPath();
 
 				long fileBytes = 0L;
@@ -234,7 +260,8 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 				try {
 					fileBytes = Files.size(path);
 				} catch (IOException e) {
-					log.error("Failed to fetch size for file at index {} : {}", fileIndex, path, e);
+					reportBuilder.addError(GlobalErrorCode.IO_ERROR,
+							"Failed to fetch size for file at index {} : {}", Integer.valueOf(fileIndex), path, e);
 					invalidFiles++;
 					continue;
 				}
@@ -247,8 +274,9 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 				if(savedSize==null) {
 					metadataRegistry.setValue(sizeKey, sizeString);
 				} else if(!sizeString.equals(savedSize)) {
-					log.error("Invalid size stored for file index {}: expected '{}' - got '{}'",
-							fileIndex, sizeString, savedSize);
+					reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+							"Invalid size stored for file index {}: expected '{}' - got '{}'",
+							Integer.valueOf(fileIndex), sizeString, savedSize);
 					fileInfo.setFlag(ElementFlag.CORRUPTED);
 					invalidFiles++;
 				}
@@ -263,7 +291,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			String totalSizeString = String.valueOf(totalBytes);
 			String savedTotalSize = metadataRegistry.getValue(totalSizeKey);
 
-			ElementInfo globalInfo = driver.getFileDriverStates().getGlobalInfo();
+			ElementInfo globalInfo = driver.getFileStates().getGlobalInfo();
 			globalInfo.setProperty(totalSizeKey, totalSizeString);
 
 			boolean totalBytesValid = true;
@@ -272,13 +300,19 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			if(savedTotalSize==null) {
 				metadataRegistry.setValue(totalSizeKey, totalSizeString);
 			} else if(!totalSizeString.equals(savedTotalSize)) {
-				log.error("Invalid total size stored for driver: expected '{}' - got '{}'",
+				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+						"Invalid total size stored for driver: expected '{}' - got '{}'",
 						totalSizeString, savedTotalSize);
 				globalInfo.setFlag(ElementFlag.CORRUPTED);
 				totalBytesValid = false;
 			}
 
 			return invalidFiles==0 && totalBytesValid;
+		}
+
+		@Override
+		public Collection<? extends PreparationStep> getPreconditions() {
+			return Arrays.asList(CHECK_FILE_CHECKSUM);
 		}
 
 	},
@@ -289,7 +323,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 	CHECK_LAYER_METADATA {
 
 		@Override
-		public boolean apply(FileDriver driver, Options env)
+		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env)
 				throws Exception {
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
@@ -302,7 +336,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			int scannedFileCount = 0;
 
 			for(int fileIndex = 0; fileIndex < fileCount; fileIndex++) {
-				FileInfo fileInfo = driver.getFileDriverStates().getFileInfo(fileIndex);
+				FileInfo fileInfo = driver.getFileStates().getFileInfo(fileIndex);
 
 				String scannedKey = FileKey.SCANNED.getKey(fileIndex);
 				boolean savedScanned = metadataRegistry.getBooleanValue(scannedKey, false);
@@ -317,7 +351,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 //				state.setFormatted("fileConnector.checkLayerMetadata", layer.getId());
 
-				LayerInfo layerInfo = driver.getFileDriverStates().getLayerInfo(layer);
+				LayerInfo layerInfo = driver.getFileStates().getLayerInfo(layer);
 
 				String scannedKey = ItemLayerKey.SCANNED.getKey(layer);
 				boolean savedScanned = metadataRegistry.getBooleanValue(scannedKey, false);
@@ -335,6 +369,11 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			return true;
 		}
 
+		@Override
+		public Collection<? extends PreparationStep> getPreconditions() {
+			return Arrays.asList(CHECK_TOTAL_SIZE);
+		}
+
 	},
 
 	/**
@@ -349,7 +388,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 	SCAN_FILES {
 
 		@Override
-		public boolean apply(FileDriver driver, Options env) throws Exception {
+		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			ContextManifest manifest = driver.getManifest().getContextManifest();
@@ -360,7 +399,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 			for(int fileIndex = 0; fileIndex < fileCount; fileIndex++) {
 
-				FileInfo fileInfo = driver.getFileDriverStates().getFileInfo(fileIndex);
+				FileInfo fileInfo = driver.getFileStates().getFileInfo(fileIndex);
 
 				if(!fileInfo.isFlagSet(ElementFlag.SCANNED)) {
 
@@ -369,7 +408,8 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 					try {
 						driver.scanFile(fileIndex);
 					} catch(IOException | InterruptedException e) { //TODO maybe change back to catch general Exception
-						log.error("Failed to scan file {} at index {}", fileInfo.getPath(), fileIndex, e);
+						reportBuilder.addError(GlobalErrorCode.IO_ERROR,
+								"Failed to scan file {} at index {}", fileInfo.getPath(), Integer.valueOf(fileIndex), e);
 						fileValid = false;
 					}
 
@@ -394,7 +434,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 			for(ItemLayerManifest layer : layers) {
 
-				LayerInfo layerInfo = driver.getFileDriverStates().getLayerInfo(layer);
+				LayerInfo layerInfo = driver.getFileStates().getLayerInfo(layer);
 				layerInfo.setFlag(flag);
 
 				String scannedKey = ItemLayerKey.SCANNED.getKey(layer);
@@ -403,12 +443,17 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 			return invalidFiles==0;
 		}
+
+		@Override
+		public Collection<? extends PreparationStep> getPreconditions() {
+			return Arrays.asList(CHECK_LAYER_METADATA);
+		}
 	},
 
 	CHECK_LAYER_CHUNK_INDEX {
 
 		@Override
-		public boolean apply(FileDriver driver, Options env) throws Exception {
+		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			ContextManifest manifest = driver.getManifest().getContextManifest();
@@ -420,7 +465,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 //				state.setFormatted("fileConnector.checkLayerChunkIndex", layer.getId());
 
-				LayerInfo layerInfo = driver.getFileDriverStates().getLayerInfo(layer);
+				LayerInfo layerInfo = driver.getFileStates().getLayerInfo(layer);
 
 				String useChunkIndexKey = ItemLayerKey.USE_CHUNK_INDEX.getKey(layer);
 				boolean savedUseChunkIndex = metadataRegistry.getBooleanValue(useChunkIndexKey, false);
@@ -438,12 +483,18 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 					layerInfo.setFlag(ElementFlag.MISSING);
 					// Signal error, since non-editable data MUST be present
-					log.error("Missing file for chunk index  of layer {}: {}", layer.getId(), savedPath);
+					reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+							"Missing file for chunk index  of layer {}: {}", layer.getId(), savedPath);
 					invalidLayers++;
 				}
 			}
 
 			return invalidLayers==0;
+		}
+
+		@Override
+		public Collection<? extends PreparationStep> getPreconditions() {
+			return Arrays.asList(SCAN_FILES);
 		}
 
 	},
@@ -461,12 +512,12 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 		 * stored in the metadata.
 		 */
 		private boolean verifyFileMetadataForLayer(ItemLayerManifest layer, int fileIndex,
-				FileDriver driver, Options env) {
+				FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) {
 
 //			driver.getModuleState().setFormatted("fileConnector.checkLayerContinuity", layer.getId(), fileIndex);
 
 			final MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
-			final FileDataStates states = driver.getFileDriverStates();
+			final FileDataStates states = driver.getFileStates();
 
 			long lastEndIndex = env.getLong(LAST_END_INDEX_KEY, NO_INDEX);
 
@@ -484,7 +535,8 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			}
 
 			if(itemCount==NO_INDEX || beginIndex==NO_INDEX || endIndex==NO_INDEX) {
-				log.error("Indicies partly missing in metadata for layer {} in file {}", layer.getId(), fileIndex);
+				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+						"Indicies partly missing in metadata for layer {} in file {}", layer.getId(), Integer.valueOf(fileIndex));
 				return false;
 			}
 
@@ -492,22 +544,25 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 			// Verify correct span definition and total number of items
 			if(itemCount!=(endIndex-beginIndex+1)) {
-				log.error("Total number of items declared for layer {} in file {}  does not match defined span {} to {}",
-						layer.getId(), fileIndex, beginIndex, endIndex);
+				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+						"Total number of items declared for layer {} in file {}  does not match defined span {} to {}",
+						layer.getId(), Integer.valueOf(fileIndex), Long.valueOf(beginIndex), Long.valueOf(endIndex));
 				isValid = false;
 			}
 
 			// Make sure the index values form a continuous span over all files
 			if(lastEndIndex!=NO_INDEX && beginIndex!=(lastEndIndex+1)) {
-				log.error("Non-continuous item indices for layer {} in file {}: expected {} as begin index, but got {}",
-						layer.getId(), fileIndex, lastEndIndex+1, beginIndex);
+				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+						"Non-continuous item indices for layer {} in file {}: expected {} as begin index, but got {}",
+						layer.getId(), Integer.valueOf(fileIndex), Long.valueOf(lastEndIndex+1), Long.valueOf(beginIndex));
 				isValid = false;
 			}
 
 			// First file must always start at item index 0!!!
 			if(lastEndIndex==NO_INDEX && fileIndex==0 && beginIndex!=0L) {
-				log.error("First file for layer {} in set must start at item index 0 - got start value {}",
-						layer.getId(), beginIndex);
+				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+						"First file for layer {} in set must start at item index 0 - got start value {}",
+						layer.getId(), Long.valueOf(beginIndex));
 				isValid = false;
 			}
 
@@ -517,13 +572,13 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			fileInfo.setEndIndex(layer, endIndex);
 			fileInfo.setItemCount(layer, itemCount);
 
-			env.put(LAST_END_INDEX_KEY, endIndex);
+			env.put(LAST_END_INDEX_KEY, Long.valueOf(endIndex));
 
 			return isValid;
 		}
 
 		@Override
-		public boolean apply(FileDriver driver, Options env) throws Exception {
+		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
 
 			ContextManifest manifest = driver.getManifest().getContextManifest();
 			FileSet dataFiles = driver.getDataFiles();
@@ -532,16 +587,16 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			int fileCount = dataFiles.getFileCount();
 			int invalidLayers = 0;
 
-			env.put(LAST_END_INDEX_KEY, NO_INDEX);
+			env.put(LAST_END_INDEX_KEY, Long.valueOf(NO_INDEX));
 
 			for(ItemLayerManifest layer : layers) {
 
-				LayerInfo layerInfo = driver.getFileDriverStates().getLayerInfo(layer);
+				LayerInfo layerInfo = driver.getFileStates().getLayerInfo(layer);
 
 				for(int fileIndex = 0; fileIndex < fileCount; fileIndex++) {
-					FileInfo fileInfo = driver.getFileDriverStates().getFileInfo(fileIndex);
+					FileInfo fileInfo = driver.getFileStates().getFileInfo(fileIndex);
 
-					if(!verifyFileMetadataForLayer(layer, fileIndex, driver, env)) {
+					if(!verifyFileMetadataForLayer(layer, fileIndex, driver, reportBuilder, env)) {
 						fileInfo.setFlag(ElementFlag.CORRUPTED);
 						layerInfo.setFlag(ElementFlag.CORRUPTED);
 						invalidLayers++;
@@ -554,9 +609,12 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			return invalidLayers==0;
 		}
 
+		@Override
+		public Collection<? extends PreparationStep> getPreconditions() {
+			return Arrays.asList(CHECK_LAYER_CHUNK_INDEX);
+		}
+
 	},
 
 	;
-
-	private static Logger log = LoggerFactory.getLogger(StandardPreparationSteps.class);
 }

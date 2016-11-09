@@ -4,3 +4,8 @@
 		-	what level of integration? view/driver/etc ?
 		-	what form? xml, json, sql?
 		-	one-way serialization or ability of recreating edit/change object instances from serialized form? <- tricky!
+		
+	-	Implement "shared" annotation layers that use a common mapping from Items to a binary payload.
+		-	Have individual annotation types maintain a Pointer+Offset into the binary payload and (de)construct values when reading/writing
+		-	For values of variable binary length use a dictionary or compression lookup to map them into a discrete numerical space
+		-	Especially useful for "static" formats, e.g. CoNLL etc...

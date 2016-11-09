@@ -312,7 +312,7 @@ public final class ModelUtils implements ModelConstants {
 			container = parent;
 		}
 
-		ItemLayerManifest manifest = container.getLayer().getManifest();
+		ItemLayerManifest manifest = container.getManifest().getLayerManifest(); // was container.getLayer().getManifest()
 
 		return manifest.getContainerManifest(level);
 	}

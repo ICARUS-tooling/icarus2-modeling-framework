@@ -28,6 +28,7 @@ import de.ims.icarus2.model.manifest.api.AnnotationFlag;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
+import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.standard.AnnotationLayerManifestImpl;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
@@ -121,6 +122,11 @@ public class AnnotationLayerManifestXmlDelegate extends AbstractLayerManifestXml
 
 		AnnotationLayerManifest manifest = getInstance();
 
+		// Write reference layers
+		for(TargetLayerManifest layerManifest : getInstance().getLocalReferenceLayerManifests()) {
+			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, TAG_REFERENCE_LAYER, layerManifest);
+		}
+
 		// Write annotation manifests
 		List<AnnotationManifest> sortedAnnotationManifests = new ArrayList<>(manifest.getLocalAnnotationManifests());
 		sortedAnnotationManifests.sort((a1, a2) -> a1.getId().compareTo(a2.getId()));
@@ -148,6 +154,11 @@ public class AnnotationLayerManifestXmlDelegate extends AbstractLayerManifestXml
 			readAttributes(attributes);
 		} break;
 
+		case TAG_REFERENCE_LAYER: {
+			String referenceLayerId = ManifestXmlUtils.normalize(attributes, ATTR_LAYER_ID);
+			getInstance().addReferenceLayerId(referenceLayerId);
+		} break;
+
 		case TAG_ANNOTATION: {
 			return getAnnotationManifestXmlDelegate().reset(getInstance());
 		}
@@ -173,6 +184,10 @@ public class AnnotationLayerManifestXmlDelegate extends AbstractLayerManifestXml
 		switch (qName) {
 		case TAG_ANNOTATION_LAYER: {
 			return null;
+		}
+
+		case TAG_REFERENCE_LAYER: {
+			return this;
 		}
 
 		case TAG_ANNOTATION_FLAG: {

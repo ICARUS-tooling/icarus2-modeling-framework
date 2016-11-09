@@ -30,7 +30,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
@@ -40,13 +39,11 @@ import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.ChunkInfo;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.DriverListener;
-import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingStorage;
 import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
-import de.ims.icarus2.model.api.layer.LayerGroup;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.meta.AnnotationValueDistribution;
 import de.ims.icarus2.model.api.meta.AnnotationValueSet;
@@ -423,55 +420,6 @@ public abstract class AbstractDriver implements Driver {
 
 		driverListeners.remove(listener);
 	}
-
-	/**
-	 * Translates the indices to indices in the surrounding layer group in case the specified
-	 * layer is not the respective primary layer and then delegates to an internal
-	 * {@link #loadPrimaryLayer(IndexSet[], ItemLayer, Consumer) load} method.
-	 *
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#load(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer, java.util.function.Consumer)
-	 */
-	@Override
-	public long load(IndexSet[] indices, ItemLayer layer,
-			Consumer<ChunkInfo> action) throws InterruptedException {
-		checkNotNull(indices);
-		checkNotNull(layer);
-
-		checkConnected();
-		checkReady();
-
-		final LayerGroup group = layer.getLayerGroup();
-
-		ItemLayer primaryLayer = layer;
-		IndexSet[] primaryIndices = indices;
-
-		// Translate indices to primary layer of enclosing group if the given layer is not primary
-		if(group.getPrimaryLayer()!=layer) {
-			primaryLayer = group.getPrimaryLayer();
-
-			// Delegate to default lookup
-			primaryIndices = mapIndices(layer.getManifest(), primaryLayer.getManifest(), indices);
-		}
-
-		//TODO alternative way would be to implement this as a kind of stream to better utilize CPU and I/O in parallel
-
-		// Delegate to wrapped ItemLayerManager for actual loading
-		return loadPrimaryLayer(primaryIndices, primaryLayer, action);
-	}
-
-	/**
-	 * Loads data chunks for the specified primary layer. This method is not publicly exposed
-	 * and only used by the general {@link #load(IndexSet[], ItemLayer, Consumer) load} method
-	 * after indices have been translated properly to the respective primary layer.
-	 *
-	 * @param indices
-	 * @param layer
-	 * @param action
-	 * @return
-	 * @throws InterruptedException
-	 */
-	protected abstract long loadPrimaryLayer(IndexSet[] indices, ItemLayer layer,
-			Consumer<ChunkInfo> action) throws InterruptedException;
 
 	protected void fireChunksLoaded(ItemLayer layer, ChunkInfo info) {
 		if(driverListeners.isEmpty() || info==null || info.chunkCount()==0) {

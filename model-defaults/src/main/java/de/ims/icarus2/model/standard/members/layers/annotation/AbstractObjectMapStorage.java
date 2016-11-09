@@ -18,7 +18,8 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation;
 
-import java.util.HashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -45,7 +46,7 @@ public abstract class AbstractObjectMapStorage<B extends Object> extends Abstrac
 		if(isWeakKeys()) {
 			return new WeakHashMap<>(getInitialCapacity(layer));
 		} else {
-			return new HashMap<>(getInitialCapacity(layer));
+			return new Object2ObjectOpenHashMap<>(getInitialCapacity(layer));
 		}
 	}
 

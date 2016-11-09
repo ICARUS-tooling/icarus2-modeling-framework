@@ -289,8 +289,10 @@ public class VirtualDriver extends AbstractDriver {
 	 * @see ItemLayerManager#load(IndexSet[], ItemLayer, Consumer)
 	 */
 	@Override
-	protected long loadPrimaryLayer(IndexSet[] indices, ItemLayer layer,
+	public long load(IndexSet[] indices, ItemLayer layer,
 			Consumer<ChunkInfo> action) throws InterruptedException {
+		checkNotNull(indices);
+		checkNotNull(layer);
 
 		// Unlike the ItemLayerManager a driver also has independent listeners to satisfy
 		Consumer<ChunkInfo> compoundAction = c -> {

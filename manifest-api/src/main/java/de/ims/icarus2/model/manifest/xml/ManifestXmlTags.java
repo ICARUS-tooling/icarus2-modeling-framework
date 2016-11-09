@@ -46,6 +46,7 @@ public interface ManifestXmlTags {
 	public static final String TAG_BOUNDARY_LAYER = "boundary-layer"; //$NON-NLS-1$
 	public static final String TAG_FOUNDATION_LAYER = "foundation-layer"; //$NON-NLS-1$
 	public static final String TAG_VALUE_LAYER = "value-layer"; //$NON-NLS-1$
+	public static final String TAG_REFERENCE_LAYER = "reference-layer"; //$NON-NLS-1$
 
 	public static final String TAG_CONTAINER = "container"; //$NON-NLS-1$
 	public static final String TAG_STRUCTURE = "structure"; //$NON-NLS-1$

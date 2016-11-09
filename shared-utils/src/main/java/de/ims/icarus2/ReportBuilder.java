@@ -31,6 +31,7 @@ import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.Report.Severity;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.id.Identity;
+import de.ims.icarus2.util.strings.StringUtil;
 
 /**
  * @author Markus Gärtner
@@ -218,6 +219,15 @@ public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportB
 			return items;
 		}
 
+		/**
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			appendTo(sb);
+			return sb.toString();
+		}
 	}
 
 	public static class ReportItemImpl implements ReportItem {
@@ -227,6 +237,8 @@ public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportB
 		private final ErrorCode code;
 		private final String message;
 		private final Object[] data;
+
+		private final long timestamp = System.currentTimeMillis();
 
 		public ReportItemImpl(Severity severity, Identity source,
 				ErrorCode code, String message, Object...data) {
@@ -271,7 +283,7 @@ public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportB
 		 */
 		@Override
 		public String getMessage() {
-			return String.format(message, data);
+			return StringUtil.format(message, data);
 		}
 
 		/**
@@ -279,8 +291,17 @@ public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportB
 		 */
 		@Override
 		public String getMessage(Locale locale) {
-			return String.format(locale, message, data);
+			return StringUtil.format(locale, message, data);
 		}
 
+		/**
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			appendTo(sb);
+			return sb.toString();
+		}
 	}
 }

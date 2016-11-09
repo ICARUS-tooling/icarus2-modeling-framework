@@ -28,9 +28,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.StampedLock;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
@@ -95,22 +94,55 @@ public abstract class BufferedIOResource {
 	 */
 	public static final long MIN_BLOCK_SIZE = MAX_CHANNEL_SIZE/IcarusUtils.MAX_INTEGER_INDEX;
 
-	private final ReadWriteLock lock = new ReentrantReadWriteLock();
+	/**
+	 * Originally was {@link ReentrantReadWriteLock} but the stamped locking version should
+	 * provide better throughput and we also don't really need the reentrant capability.
+	 */
+	private final StampedLock lock = new StampedLock();
 
+	/**
+	 * Number of concurrently active accessors
+	 */
 	private final AtomicInteger useCount = new AtomicInteger();
 
+	/**
+	 * Actual resource to fetch physical data from
+	 */
 	private final IOResource resource;
 
+	/**
+	 * Intermediate buffer of blocks of physical data in respective internal representation
+	 */
 	private final BlockCache cache;
 
-	private final IntSet changedBlocks = new IntOpenHashSet();
+	/**
+	 * Lookup for ids of blocks that have been modified.
+	 */
+	private final IntSet changedBlocks = new IntOpenHashSet(100);
 
+	/**
+	 * Physical size of a block to be read into cache
+	 */
 	private int bytesPerBlock = -1;
 
-	// Size of cache upon which stale entries can be removed
+	/**
+	 *  Size of cache upon which stale entries can be removed
+	 */
 	private final int cacheSize;
 
+	/**
+	 * Buffer for I/O operations on open channels from the underlying {@link IOResource}
+	 */
 	private ByteBuffer buffer;
+
+	/**
+	 * Buffered instance to prevent unnecessary creation of new blocks.
+	 * <p>
+	 * When cache grows full or stale and old entries need to be purged, this field stores
+	 * the result of a call to {@link BlockCache#addBlock(Block, int)}. When a cache miss
+	 * occurs and a new block needs to be read from the underlying {@link IOResource} this
+	 * buffered block will be used before falling back to creating a fresh new block object.
+	 */
 	private Block tmpBlock;
 
 	protected BufferedIOResource(IOResource resource, BlockCache cache, int cacheSize) {
@@ -130,6 +162,10 @@ public abstract class BufferedIOResource {
 		this.resource = builder.getResource();
 		this.cache = builder.getBlockCache();
 		this.cacheSize = builder.getCacheSize();
+	}
+
+	protected StampedLock getLock() {
+		return lock;
 	}
 
 	@Override
@@ -166,13 +202,13 @@ public abstract class BufferedIOResource {
 		return resource;
 	}
 
-	public final Lock getReadLock() {
-		return lock.readLock();
-	}
+//	public final Lock getReadLock() {
+//		return lock.readLock();
+//	}
 
-	public final Lock getWriteLock() {
-		return lock.writeLock();
-	}
+//	public final Lock getWriteLock() {
+//		return lock.writeLock();
+//	}
 
 	/**
 	 * @return the bytesPerBlock
@@ -304,7 +340,7 @@ public abstract class BufferedIOResource {
 
 			Block block = cache.getBlock(id);
 			if(block==null)
-				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Missing block marked as locked: "+id); //$NON-NLS-1$
+				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Missing block previously marked as locked: "+id); //$NON-NLS-1$
 
 			long offset = id*(long)bytesPerBlock;
 
@@ -315,6 +351,10 @@ public abstract class BufferedIOResource {
 		}
 	}
 
+	/**
+	 * Creates a new payload object to be used inside a {@link Block}
+	 * @return
+	 */
 	protected abstract Object newBlockData();
 
 	public final void incrementUseCount() {
@@ -487,7 +527,9 @@ public abstract class BufferedIOResource {
 	 *
 	 * @param <T> The source type of the accessor
 	 */
-	protected class ReadAccessor<T extends Object> implements SynchronizedAccessor<T> {
+	public class ReadAccessor<T extends Object> implements SynchronizedAccessor<T> {
+
+		private long stamp;
 
 		protected ReadAccessor() {
 			incrementUseCount();
@@ -507,7 +549,7 @@ public abstract class BufferedIOResource {
 		 */
 		@Override
 		public void begin() {
-			getReadLock().lock();
+			stamp = getLock().readLock();
 		}
 
 		/**
@@ -515,7 +557,10 @@ public abstract class BufferedIOResource {
 		 */
 		@Override
 		public void end() {
-			getReadLock().unlock();
+			long stamp = this.stamp;
+			this.stamp = 0L;
+
+			getLock().unlockRead(stamp);
 		}
 
 		/**
@@ -539,7 +584,9 @@ public abstract class BufferedIOResource {
 	 *
 	 * @param <T> The source type of the accessor
 	 */
-	protected class WriteAccessor<T extends Object> implements SynchronizedAccessor<T> {
+	public class WriteAccessor<T extends Object> implements SynchronizedAccessor<T> {
+
+		private long stamp;
 
 		protected WriteAccessor() {
 			incrementUseCount();
@@ -559,7 +606,7 @@ public abstract class BufferedIOResource {
 		 */
 		@Override
 		public void begin() {
-			getWriteLock().lock();
+			stamp = getLock().writeLock();
 		}
 
 		/**
@@ -567,7 +614,10 @@ public abstract class BufferedIOResource {
 		 */
 		@Override
 		public void end() {
-			getWriteLock().unlock();
+			long stamp = this.stamp;
+			this.stamp = 0L;
+
+			getLock().unlockWrite(stamp);
 		}
 
 		/**

@@ -161,11 +161,7 @@ public class ListItemStorageInt implements ItemStorage {
 			return;
 		}
 
-		for(int i=0; i<items.size(); i++) {
-			Item item = items.get(i);
-
-			tryRefrechOffsetItems(item);
-		}
+		items.forEach(this::tryRefrechOffsetItems);
 	}
 
 	/**
@@ -255,7 +251,7 @@ public class ListItemStorageInt implements ItemStorage {
 
 		final List<Item> buffer = new ArrayList<>(Math.max(10, idx1-idx0+1));
 
-		items.removeAll(idx0, idx1, e -> buffer.add(e));
+		items.removeAll(idx0, idx1, buffer::add);
 
 		clearOffsetItems();
 

@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>icarus2-tooling</groupId>
+	<groupId>icarus2</groupId>
 	<artifactId>core-tools</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
@@ -21,6 +21,7 @@
 		<javapoet.version>1.7.0</javapoet.version>
 		<lucene.version>6.2.0</lucene.version>
 		<fastutil.version>7.0.13</fastutil.version>
+		<reflections.version>0.9.9-RC1</reflections.version>
 	</properties>
 
 	<dependencyManagement>
@@ -65,6 +66,11 @@
 				<artifactId>fastutil</artifactId>
 				<version>${fastutil.version}</version>
 			</dependency>
+		 	<dependency> 
+		 		<groupId>org.reflections</groupId> 
+		 		<artifactId>reflections</artifactId> 
+		 		<version>${reflections.version}</version> 
+		 	</dependency>
 		</dependencies>
 	</dependencyManagement>
 

@@ -19,6 +19,7 @@
 package de.ims.icarus2.model.manifest.api;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -154,6 +155,34 @@ public interface AnnotationLayerManifest extends LayerManifest {
 		return result;
 	}
 
+	@AccessRestriction(AccessMode.READ)
+	void forEachReferenceLayerManifest(Consumer<? super TargetLayerManifest> action);
+
+	@AccessRestriction(AccessMode.READ)
+	void forEachLocalReferenceLayerManifest(Consumer<? super TargetLayerManifest> action);
+
+	/**
+	 * Returns the list of (resolved) reference layers for this annotation layer manifest.
+	 * @return
+	 */
+	@AccessRestriction(AccessMode.READ)
+	default List<TargetLayerManifest> getReferenceLayerManifests() {
+		LazyCollection<TargetLayerManifest> result = LazyCollection.lazyList();
+
+		forEachReferenceLayerManifest(result);
+
+		return result.getAsList();
+	}
+
+	@AccessRestriction(AccessMode.READ)
+	default List<TargetLayerManifest> getLocalReferenceLayerManifests() {
+		LazyCollection<TargetLayerManifest> result = LazyCollection.lazyList();
+
+		forEachLocalReferenceLayerManifest(result);
+
+		return result.getAsList();
+	}
+
 	// Modification methods
 
 	void setDefaultKey(String key);
@@ -163,4 +192,8 @@ public interface AnnotationLayerManifest extends LayerManifest {
 	void removeAnnotationManifest(AnnotationManifest annotationManifest);
 
 	void setAnnotationFlag(AnnotationFlag flag, boolean active);
+
+	TargetLayerManifest addReferenceLayerId(String referenceLayerId);
+
+	void removeReferenceLayerId(String referenceLayerId);
 }

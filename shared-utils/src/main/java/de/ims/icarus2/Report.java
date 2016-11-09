@@ -92,6 +92,17 @@ public interface Report<R extends ReportItem> {
          * @return message, associated with this report item for given locale
          */
         String getMessage(Locale locale);
+
+        default void appendTo(StringBuilder sb) {
+        	sb.append('[').append(getSeverity()).append('-').append(getCode()).append(']');
+
+        	Identity identity = getSource();
+        	if(identity!=null) {
+        		sb.append(' ').append(identity.getName());
+        	}
+
+        	sb.append(' ').append(getMessage());
+        }
     }
 
 	/**
@@ -103,19 +114,31 @@ public interface Report<R extends ReportItem> {
 	 */
     public enum Severity {
         /**
-         * Report item severity constant.
+         * Report item severity constant for severe failure events.
          */
         ERROR,
 
         /**
-         * Report item severity constant.
+         * Report item severity constant for warning events.
          */
         WARNING,
 
         /**
-         * Report item severity constant.
+         * Report item severity constant for informative or debugging events.
          */
         INFO
+    }
+
+    default void appendTo(StringBuilder sb) {
+    	sb.append("======[errors: ").append(countErrors())
+    	.append(" - warnings: ").append(countWarnings()).append("]======").append('\n');
+
+    	for(R item : getItems()) {
+    		item.appendTo(sb);
+    		sb.append('\n');
+    	}
+
+    	sb.append("==========================================");
     }
 
 	public static final Report<ReportItem> EMPTY_REPORT = new EmptyReport<>();

@@ -4,7 +4,7 @@
 	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-		<groupId>icarus2-tooling</groupId>
+		<groupId>icarus2</groupId>
 		<artifactId>core-tools</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
@@ -38,13 +38,9 @@
 			<artifactId>fastutil</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>icarus2-tooling</groupId>
+			<groupId>icarus2</groupId>
 			<artifactId>model-defaults</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-		    <groupId>org.apache.lucene</groupId>
-		    <artifactId>lucene-core</artifactId>
 		</dependency>
 	</dependencies>
 </project>

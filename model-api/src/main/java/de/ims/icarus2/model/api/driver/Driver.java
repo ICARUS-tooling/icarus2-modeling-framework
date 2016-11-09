@@ -32,6 +32,7 @@ import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.MappingStorage;
+import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
 import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.model.api.driver.mods.ModuleMonitor;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
@@ -195,7 +196,7 @@ public interface Driver extends ItemLayerManager {
 		try {
 			reader.begin();
 
-			result = reader.lookup(sourceIndices, null);
+			result = reader.lookup(sourceIndices, RequestSettings.emptySettings);
 		} finally {
 			reader.end();
 			reader.close();

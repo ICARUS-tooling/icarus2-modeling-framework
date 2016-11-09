@@ -26,10 +26,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
+import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.StampedLock;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
@@ -39,13 +40,15 @@ import org.slf4j.LoggerFactory;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.Report;
 import de.ims.icarus2.Report.ReportItem;
+import de.ims.icarus2.ReportBuilder;
 import de.ims.icarus2.filedriver.Converter.ConverterProperty;
 import de.ims.icarus2.filedriver.FileDataStates.ElementInfo;
 import de.ims.icarus2.filedriver.FileDataStates.FileInfo;
-import de.ims.icarus2.filedriver.FileMetadata.ChunkIndexKey;
-import de.ims.icarus2.filedriver.FileMetadata.DriverKey;
-import de.ims.icarus2.filedriver.FileMetadata.FileKey;
-import de.ims.icarus2.filedriver.FileMetadata.ItemLayerKey;
+import de.ims.icarus2.filedriver.FileDataStates.LayerInfo;
+import de.ims.icarus2.filedriver.FileDriverMetadata.ChunkIndexKey;
+import de.ims.icarus2.filedriver.FileDriverMetadata.DriverKey;
+import de.ims.icarus2.filedriver.FileDriverMetadata.FileKey;
+import de.ims.icarus2.filedriver.FileDriverMetadata.ItemLayerKey;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
 import de.ims.icarus2.filedriver.io.sets.FileSet;
 import de.ims.icarus2.filedriver.mapping.AbstractStoredMapping;
@@ -62,14 +65,16 @@ import de.ims.icarus2.model.api.driver.ChunkState;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
+import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory;
+import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.IndexSetBuilder;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingStorage;
 import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.model.api.io.FileManager;
 import de.ims.icarus2.model.api.io.resources.FileResource;
 import de.ims.icarus2.model.api.layer.ItemLayer;
+import de.ims.icarus2.model.api.layer.LayerGroup;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.members.item.ItemLayerManager;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
@@ -82,6 +87,7 @@ import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.driver.AbstractDriver;
+import de.ims.icarus2.model.standard.driver.BufferedItemManager;
 import de.ims.icarus2.model.standard.driver.ChunkConsumer;
 import de.ims.icarus2.model.standard.driver.ChunkInfoBuilder;
 import de.ims.icarus2.model.util.ModelUtils;
@@ -95,19 +101,27 @@ import de.ims.icarus2.util.classes.Lazy;
  */
 public class FileDriver extends AbstractDriver {
 
+	private static final int DEFAULT_CHUNK_INFO_SIZE = 200;
+
 	/**
 	 * Registry for storing metadata info like number of items in each layer,
 	 * availability of chunk indices for certain files, etc...
 	 */
 	private final MetadataRegistry metadataRegistry;
 
-	protected ItemLayerManager itemManager;
+	/**
+	 * Storage for our model instances
+	 */
+	protected BufferedItemManager content; //FIXME needs initialization in one of the connection substeps
 
 	/**
 	 * Runtime states for files and associated resources.
 	 */
 	private FileDataStates states;
 
+	/**
+	 * Our bridge between physical format and the model instances we manage
+	 */
 	protected final Lazy<Converter> converter;
 
 	/**
@@ -117,6 +131,13 @@ public class FileDriver extends AbstractDriver {
 	 * or just do a "read all" operation when asked to load items from it.
 	 */
 	private volatile ChunkIndexStorage chunkIndexStorage;
+
+	/**
+	 * Switch to indicate once we made our first attempt at creating chunk indices
+	 * after it has been deemed necessary to actually use them. This prevents
+	 * repeated attempts and allows treating a missing {@link ChunkIndexStorage}
+	 * as actual error.
+	 */
 	private volatile boolean chunkIndexCreationAttempted = false;
 
 	/**
@@ -125,11 +146,11 @@ public class FileDriver extends AbstractDriver {
 	protected final FileSet dataFiles;
 
 	/**
-	 * Locks for individual files. We use a map here since
+	 * Locks for individual files.
 	 * <p>
 	 * Will be populated lazily when actually needed.
 	 */
-	private final Int2ObjectMap<ReadWriteLock> fileLocks;
+	private final Int2ObjectMap<StampedLock> fileLocks;
 
 	private static Logger log = LoggerFactory.getLogger(FileDriver.class);
 
@@ -161,32 +182,24 @@ public class FileDriver extends AbstractDriver {
 		return converter.value();
 	}
 
-	private ReadWriteLock getLock(int fileIndex) {
+	protected final StampedLock getLockForFile(int fileIndex) {
 		Path file = dataFiles.getFileAt(fileIndex);
 		if(file==null)
 			throw new ModelException(ModelErrorCode.DRIVER_ERROR,
 					"Could not find a valid file to fetch lock for at index "+fileIndex);
 
-		ReadWriteLock lock = fileLocks.get(fileIndex);
+		StampedLock lock = fileLocks.get(fileIndex);
 		if(lock==null) {
 			synchronized (fileLocks) {
 				lock = fileLocks.get(fileIndex);
 				if(lock==null) {
-					lock = new ReentrantReadWriteLock(); //no fair lock policy
+					lock = new StampedLock();
 					fileLocks.put(fileIndex, lock);
 				}
 			}
 		}
 
 		return lock;
-	}
-
-	protected final Lock getReadLockForFile(int fileIndex) {
-		return getLock(fileIndex).readLock();
-	}
-
-	protected final Lock getWriteLockForFile(int fileIndex) {
-		return getLock(fileIndex).writeLock();
 	}
 
 	@Override
@@ -215,11 +228,6 @@ public class FileDriver extends AbstractDriver {
 		return dataFiles;
 	}
 
-	public FileDataStates getStates() {
-		checkConnected();
-		return states;
-	}
-
 	public MetadataRegistry getMetadataRegistry() {
 		return metadataRegistry;
 	}
@@ -230,7 +238,8 @@ public class FileDriver extends AbstractDriver {
 	 *
 	 * @return
 	 */
-	public FileDataStates getFileDriverStates() {
+	public FileDataStates getFileStates() {
+		checkConnected();
 		return states;
 	}
 
@@ -329,8 +338,8 @@ public class FileDriver extends AbstractDriver {
 	@Override
 	public long getItemCount(ItemLayer layer) {
 		checkConnected();
-		// TODO access local cache, if no data available there, delegate to the manifest based method
-		return 0;
+
+		return getItemCount(layer.getManifest());
 	}
 
 	/**
@@ -348,7 +357,15 @@ public class FileDriver extends AbstractDriver {
 	public long getItemCount(ItemLayerManifest layer) {
 		checkReady();
 
-		return states.getLayerInfo(layer).getSize();
+		LayerInfo info = getFileStates().getLayerInfo(layer);
+
+		return info==null ? NO_INDEX : info.getSize();
+	}
+
+	public BufferedItemManager.LayerBuffer getLayerBuffer(ItemLayer layer) {
+		checkConnected();
+
+		return content.getBuffer(layer);
 	}
 
 	@Override
@@ -380,16 +397,9 @@ public class FileDriver extends AbstractDriver {
 	 */
 	@Override
 	public Item getItem(ItemLayer layer, long index) {
-		return itemManager.getItem(layer, index);
-	}
+		checkConnected();
 
-	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#release(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer)
-	 */
-	@Override
-	public void release(IndexSet[] indices, ItemLayer layer)
-			throws InterruptedException {
-		itemManager.release(indices, layer);
+		return getLayerBuffer(layer).fetch(index);
 	}
 
 	/**
@@ -415,7 +425,10 @@ public class FileDriver extends AbstractDriver {
 			super.doConnect();
 
 			// Fetch customized steps to be performed next
+			//FIXME move this over to a DAG style execution order making sure of the getPreconditions() result of each step
 			final PreparationStep[] steps = getPreparationSteps();
+			ReportBuilder<ReportItem> reportBuilder = ReportBuilder.newBuilder(getManifest());
+			reportBuilder.addInfo("Connecting to corpus");
 
 			boolean driverIsValid = true;
 
@@ -432,9 +445,11 @@ public class FileDriver extends AbstractDriver {
 				boolean valid = true;
 
 				try {
-					valid = step.apply(this, env);
+					valid = step.apply(this, reportBuilder, env);
 				} catch(Exception e) {
-					log.error("Preparation step {} of {} failed: {}", i+1, steps.length, step.name(), e);
+					reportBuilder.addError(ModelErrorCode.DRIVER_ERROR,
+							"Preparation step {} of {} failed: {}", Integer.valueOf(i+1),
+							Integer.valueOf(steps.length), step.name(), e);
 					valid = false;
 				}
 
@@ -447,6 +462,10 @@ public class FileDriver extends AbstractDriver {
 			if(!driverIsValid) {
 				states.getGlobalInfo().setFlag(ElementFlag.UNUSABLE);
 			}
+
+
+			log.info(reportBuilder.build().toString());
+
 		} finally {
 			metadataRegistry.endUpdate();
 		}
@@ -479,6 +498,12 @@ public class FileDriver extends AbstractDriver {
 
 			//TODO shut down converter and persist current filestates in metadata registry
 
+			try {
+				content.close();
+			} catch(Exception e) {
+				log.error("Error during shutdown of layer buffer", e);
+			}
+
 			states = null;
 		} finally {
 			metadataRegistry.endUpdate();
@@ -489,72 +514,6 @@ public class FileDriver extends AbstractDriver {
 	public boolean hasChunkIndex() {
 		checkConnected();
 		return chunkIndexStorage!=null;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.standard.driver.AbstractDriver#loadPrimaryLayer(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer, java.util.function.Consumer)
-	 */
-	@Override
-	protected long loadPrimaryLayer(IndexSet[] indices, ItemLayer layer,
-			Consumer<ChunkInfo> action) throws InterruptedException {
-		checkConnected();
-		checkReady();
-
-		// If the driver supports chunking and has created a chunk index, then use the easy path
-		if(hasChunkIndex()) {
-			try {
-				return loadChunks(layer, indices, action);
-			} catch (IOException e) {
-				throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-						"Failed to delegate loading of data chunks in layer "+ModelUtils.getUniqueId(layer)+" to connector", e);
-			}
-		} else {
-			// No chunk index available, proceed with loading the respective files
-			int fileCount = dataFiles.getFileCount();
-
-			long minIndex = IndexUtils.firstIndex(indices);
-			long maxIndex = IndexUtils.lastIndex(indices);
-
-			// Find first and last file to contain the indices
-
-			int firstFile = findFile(minIndex, layer.getManifest(), 0, fileCount);
-			if(firstFile<0)
-				throw new ModelException(ModelErrorCode.DRIVER_METADATA,
-						"Could not find file index for item index "+minIndex+" in layer "+ModelUtils.getUniqueId(layer));
-			int lastFile = findFile(maxIndex, layer.getManifest(), firstFile, fileCount);
-			if(lastFile<0)
-				throw new ModelException(ModelErrorCode.DRIVER_METADATA,
-						"Could not find file index for item index "+maxIndex+" in layer "+ModelUtils.getUniqueId(layer));
-
-			long loadedItems = 0L;
-
-			for(int fileIndex = firstFile; fileIndex<=lastFile; fileIndex++) {
-
-				FileInfo fileInfo = states.getFileInfo(fileIndex);
-				if(!fileInfo.isValid())
-					throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-							"Cannot attempt to load from invalid file at index "+fileIndex);
-
-				if(fileInfo.isFlagSet(ElementFlag.PARTIALLY_LOADED))
-					throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-							"Cannot attempt to completely load already partially loaded file at index "+fileIndex);
-
-				if(fileInfo.isFlagSet(ElementFlag.LOADED)) {
-					//TODO do we need to supply the already loaded chunks from that file to the 'action' argument?
-					continue;
-				}
-
-				try {
-					loadedItems += loadFile(fileIndex, action);
-				} catch (IOException e) {
-					throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-							"Failed to delegate loading of data chunks in file at index "+fileIndex+" to connector", e);
-				}
-			}
-
-
-			return loadedItems;
-		}
 	}
 
 	/**
@@ -629,9 +588,7 @@ public class FileDriver extends AbstractDriver {
 			globalLock.unlock();
 		}
 
-
-		//TODO access metadata and check if we need chunking, then initialize chunk index and forward to doScan()
-		// afterwards process report
+		scanFileSynchronized(fileIndex);
 	}
 
 	/**
@@ -647,7 +604,7 @@ public class FileDriver extends AbstractDriver {
 
 		// Check first if converter even supports chunking
 		Converter converter = getConverter();
-		if(!(Boolean)converter.getPropertyValue(ConverterProperty.CHUNK_INDEX_SUPPORTED)) {
+		if(!((Boolean)converter.getPropertyValue(ConverterProperty.CHUNK_INDEX_SUPPORTED)).booleanValue()) {
 			return false;
 		}
 
@@ -656,7 +613,7 @@ public class FileDriver extends AbstractDriver {
 		if(fileSizeThreshold!=-1L) {
 			long totalSize = 0L;
 
-			ElementInfo globalInfo = getFileDriverStates().getGlobalInfo();
+			ElementInfo globalInfo = getFileStates().getGlobalInfo();
 			String savedTotalSize = globalInfo.getProperty(DriverKey.SIZE.getKey());
 			if(savedTotalSize!=null) { //TODO maybe if there's no value stored we should traverse file metadata to compute total size?
 				totalSize = Long.parseLong(savedTotalSize);
@@ -758,7 +715,7 @@ public class FileDriver extends AbstractDriver {
 
 		// Fetch combined size of all files
 		long totalFileSize = 0L;
-		ElementInfo globalInfo = getFileDriverStates().getGlobalInfo();
+		ElementInfo globalInfo = getFileStates().getGlobalInfo();
 		String savedTotalSize = globalInfo.getProperty(DriverKey.SIZE.getKey());
 		if(savedTotalSize!=null) {
 			totalFileSize = Long.parseLong(savedTotalSize);
@@ -948,19 +905,294 @@ public class FileDriver extends AbstractDriver {
 	 * Wraps the {@link Converter#scanFile(int, ChunkIndexStorage)} call into a
 	 * synchronized block based on the file's {@link #getReadLockForFile(int) read lock}.
 	 *
-	 * @see de.ims.icarus2.filedriver.FileDriver#doScan(int)
+	 * @see de.ims.icarus2.filedriver.FileDriver#scanFileSynchronized(int)
 	 */
-	protected Report<ReportItem> doScan(int fileIndex) throws IOException,
+	protected Report<ReportItem> scanFileSynchronized(int fileIndex) throws IOException,
 			InterruptedException {
 
-		Lock lock = getReadLockForFile(fileIndex);
+		StampedLock lock = getLockForFile(fileIndex);
 
-		lock.lock();
+		long stamp = lock.readLock();
 		try {
 			return getConverter().scanFile(fileIndex, chunkIndexStorage);
 		} finally {
-			lock.unlock();
+			lock.unlockRead(stamp);
 		}
+	}
+
+	/**
+	 * Translates the indices to indices in the surrounding layer group in case the specified
+	 * layer is not the respective primary layer and then delegates to an internal
+	 * {@link #loadPrimaryLayer(IndexSet[], ItemLayer, Consumer) load} method.
+	 *
+	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#load(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer, java.util.function.Consumer)
+	 */
+	@Override
+	public long load(IndexSet[] indices, ItemLayer layer,
+			Consumer<ChunkInfo> action) throws InterruptedException {
+		checkNotNull(indices);
+		checkNotNull(layer);
+
+		checkConnected();
+		checkReady();
+
+		Lock globalLock = getGlobalLock();
+		globalLock.lock();
+		try {
+
+			final LayerGroup group = layer.getLayerGroup();
+			final ItemLayer primaryLayer = group.getPrimaryLayer();
+			final boolean mappingRequired = layer!=primaryLayer;
+
+			if(mappingRequired) {
+				indices = mapIndices(layer.getManifest(), primaryLayer.getManifest(), indices);
+			}
+
+			/*
+			 *  Delegate loading.
+			 *  We do not forward the consumer action for publishing since that is only
+			 *  required when actually loading chunks from a backend storage!
+			 */
+			Loader loader = new Loader(indices, getLayerBuffer(primaryLayer), null);
+
+			// Potentially long running part
+			loader.execute();
+
+			// Only in case of missing items do we need to start mapping and/or accessing underlying resources
+			if(loader.getMissingIndicesCount()>0L) {
+				IndexSet[] missingIndices = loader.getMissingIndices();
+
+				// Delegate to chunk aware method to do the actual I/O stuff
+				return loadPrimaryLayer(missingIndices, primaryLayer, action);
+			} else {
+				// Nothing to be loaded
+				return 0L;
+			}
+		} finally {
+			globalLock.unlock();
+		}
+	}
+
+	/**
+	 * Not meant to be used by multiple threads!
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	protected class Loader {
+
+		private final IndexSet[] indices;
+
+		/**
+		 * Hint for lazy construction of buffers.
+		 * Meant to represent the total number of index values in the original request.
+		 */
+		private final long requestedItemCount;
+
+		private final boolean inputSorted;
+
+		/**
+		 * Callback for successfully loaded chunks.
+		 */
+		private final ChunkConsumer publisher;
+
+		/**
+		 * Actual storage to query
+		 */
+		private final BufferedItemManager.LayerBuffer buffer;
+
+		/**
+		 * Storage for index values of chunks that need to be loaded
+		 */
+		private IndexSetBuilder missingIndices;
+
+		private long missingIndicesCount = 0L;
+		private long availableIndicesCount = 0L;
+
+		public Loader(IndexSet[] indices, BufferedItemManager.LayerBuffer buffer, Consumer<ChunkInfo> action) {
+			this.indices = indices;
+			this.buffer = buffer;
+
+			requestedItemCount = IndexUtils.count(indices);
+			inputSorted = IndexUtils.isSorted(indices);
+
+			int recommendedBufferSize = (int) Math.min(DEFAULT_CHUNK_INFO_SIZE, requestedItemCount);
+			publisher = createPublisher(action, recommendedBufferSize);
+		}
+
+		public void execute() {
+			OfLong it = IndexSet.asIterator(indices);
+
+			buffer.load(it, this::onAvailableItem, this::onMissingItem);
+		}
+
+		/**
+		 * Called only for missing items by the {@link BufferedItemManager.LayerBuffer}
+		 */
+		public void onMissingItem(long index) {
+			missingIndicesCount++;
+
+			if(missingIndices==null) {
+				IndexCollectorFactory factory = new IndexCollectorFactory();
+				factory.totalSizeLimit(requestedItemCount);
+				factory.inputSorted(inputSorted);
+
+				missingIndices = factory.create();
+			}
+
+			missingIndices.add(index);
+		}
+
+		public void onAvailableItem(Item item, long index) {
+			ChunkState chunkState = ChunkState.CORRUPTED;
+			if(item.isUsable()) {
+				availableIndicesCount++;
+			}
+			publisher.accept(index, item, chunkState);
+		}
+
+		public IndexSet[] getMissingIndices() {
+			return missingIndices==null ? null : missingIndices.build();
+		}
+
+		public long getRequestedItemCount() {
+			return requestedItemCount;
+		}
+
+		public boolean isInputSorted() {
+			return inputSorted;
+		}
+
+		public long getMissingIndicesCount() {
+			return missingIndicesCount;
+		}
+
+		public long getAvailableIndicesCount() {
+			return availableIndicesCount;
+		}
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#release(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer)
+	 */
+	@Override
+	public void release(IndexSet[] indices, ItemLayer layer)
+			throws InterruptedException {
+		checkNotNull(indices);
+		checkNotNull(layer);
+
+		checkConnected();
+		checkReady();
+
+		Lock globalLock = getGlobalLock();
+		globalLock.lock();
+		try {
+
+			final LayerGroup group = layer.getLayerGroup();
+			final ItemLayer primaryLayer = group.getPrimaryLayer();
+			final boolean mappingRequired = layer!=primaryLayer;
+
+			if(mappingRequired) {
+				indices = mapIndices(layer.getManifest(), primaryLayer.getManifest(), indices);
+			}
+		} finally {
+			globalLock.unlock();
+		}
+	}
+
+	protected long loadPrimaryLayer(IndexSet[] indices, ItemLayer layer,
+			Consumer<ChunkInfo> action) throws InterruptedException {
+		checkConnected();
+		checkReady();
+
+		// If the driver supports chunking and has created a chunk index, then use the easy path
+		if(hasChunkIndex()) {
+			try {
+				return loadChunks(layer, indices, action);
+			} catch (IOException e) {
+				throw new ModelException(ModelErrorCode.DRIVER_ERROR,
+						"Failed to delegate loading of data chunks in layer "+ModelUtils.getUniqueId(layer)+" to connector", e);
+			}
+		} else {
+			// No chunk index available, proceed with loading the respective files
+			int fileCount = dataFiles.getFileCount();
+
+			long minIndex = IndexUtils.firstIndex(indices);
+			long maxIndex = IndexUtils.lastIndex(indices);
+
+			// Find first and last file to contain the indices
+
+			int firstFile = findFile(minIndex, layer.getManifest(), 0, fileCount);
+			if(firstFile<0)
+				throw new ModelException(ModelErrorCode.DRIVER_METADATA,
+						"Could not find file index for item index "+minIndex+" in layer "+ModelUtils.getUniqueId(layer));
+			int lastFile = findFile(maxIndex, layer.getManifest(), firstFile, fileCount);
+			if(lastFile<0)
+				throw new ModelException(ModelErrorCode.DRIVER_METADATA,
+						"Could not find file index for item index "+maxIndex+" in layer "+ModelUtils.getUniqueId(layer));
+
+			long loadedItems = 0L;
+
+			for(int fileIndex = firstFile; fileIndex<=lastFile; fileIndex++) {
+
+				FileInfo fileInfo = states.getFileInfo(fileIndex);
+				if(!fileInfo.isValid())
+					throw new ModelException(ModelErrorCode.DRIVER_ERROR,
+							"Cannot attempt to load from invalid file at index "+fileIndex);
+
+				if(fileInfo.isFlagSet(ElementFlag.PARTIALLY_LOADED))
+					throw new ModelException(ModelErrorCode.DRIVER_ERROR,
+							"Cannot attempt to completely load already partially loaded file at index "+fileIndex);
+
+				if(fileInfo.isFlagSet(ElementFlag.LOADED)) {
+					// Skip file entirely (no need to publish chunk info in this case either)
+					continue;
+				}
+
+				try {
+					loadedItems += loadFile(fileIndex, action);
+				} catch (IOException e) {
+					throw new ModelException(ModelErrorCode.DRIVER_ERROR,
+							"Failed to delegate loading of data chunks in file at index "+fileIndex+" to connector", e);
+				}
+			}
+
+
+			return loadedItems;
+		}
+	}
+
+	/**
+	 * Loads chunks of data from the underlying file(s). It is the method's responsibility to
+	 * query the chunk index and verify for each chunk of data that it is indeed required to be
+	 * loaded.
+	 *
+	 * @param layer
+	 * @param indices
+	 * @param action
+	 * @return
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+	protected long loadChunks(ItemLayer layer, IndexSet[] indices,
+			Consumer<ChunkInfo> action) throws IOException,
+			InterruptedException {
+
+
+		StampedLock lock = getLockForFile(fileIndex);
+		FileInfo fileInfo = getFileStates().getFileInfo(fileIndex);
+
+		long stamp = lock.readLock();
+		try {
+
+		} finally {
+			lock.unlockRead(stamp);
+		}
+
+		//TODO check whether we
+
+		// TODO Auto-generated method stub
+		return getConverter().loadChunks(layer, IndexSet.asIterator(indices), chunkIndexStorage, action);
 	}
 
 	/**
@@ -971,13 +1203,13 @@ public class FileDriver extends AbstractDriver {
 	 * @throws IOException
 	 * @throws ModelException in case the specified file has already been (partially) loaded
 	 */
-	protected long loadFile(int fileIndex, Consumer<ChunkInfo> action)
+	public long loadFile(int fileIndex, Consumer<ChunkInfo> action)
 			throws IOException, InterruptedException {
 
-		Lock lock = getReadLockForFile(fileIndex);
-		FileInfo fileInfo = getFileDriverStates().getFileInfo(fileIndex);
+		StampedLock lock = getLockForFile(fileIndex);
+		FileInfo fileInfo = getFileStates().getFileInfo(fileIndex);
 
-		lock.lock();
+		long stamp = lock.readLock();
 		try {
 
 			if(!fileInfo.isValid())
@@ -998,8 +1230,8 @@ public class FileDriver extends AbstractDriver {
 			 */
 			long expectedItemCount = fileInfo.getItemCount(getManifest().getContextManifest().getPrimaryLayerManifest());
 
-			// Now start actual loading
-			int recommendedBufferSize = Math.min(200, (int) expectedItemCount); //kinda arbitrary number as default batch size
+			// Now start actual loading process
+			int recommendedBufferSize = (int) Math.min(DEFAULT_CHUNK_INFO_SIZE, expectedItemCount);
 			ChunkConsumer consumer = createPublisher(action, recommendedBufferSize);
 
 			// Delegate to converter to do the I/O work
@@ -1025,8 +1257,35 @@ public class FileDriver extends AbstractDriver {
 			fileInfo.setFlag(ElementFlag.UNUSABLE);
 			throw e;
 		} finally {
-			lock.unlock();
+			lock.unlockRead(stamp);
 		}
+	}
+
+	/**
+	 * Attempts to load all files comprising the resources of this driver.
+	 *
+	 * @param action
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+	public void loadAllFiles(Consumer<ChunkInfo> action) throws IOException, InterruptedException {
+		FileSet dataFiles = getDataFiles();
+
+		int fileCount = dataFiles.getFileCount();
+
+		for(int fileIndex = 0; fileIndex < fileCount; fileIndex++) {
+
+			FileInfo fileInfo = getFileStates().getFileInfo(fileIndex);
+
+			if(!fileInfo.isFlagSet(ElementFlag.SCANNED))
+				throw new ModelException(ModelErrorCode.DRIVER_ERROR,
+						"Unscanned file at index "+fileIndex);
+
+			if(!fileInfo.isFlagSet(ElementFlag.LOADED)) {
+				loadFile(fileIndex, action);
+			}
+		}
+
 	}
 
 	/**
@@ -1050,48 +1309,14 @@ public class FileDriver extends AbstractDriver {
 		ChunkConsumer consumer = noOpChunkConsumer;
 
 		if(action!=null) {
-			// We picked 100 as fallback buffer size to keep potential overhead small
 			if(bufferSize<=0) {
-				bufferSize = 100;
+				bufferSize = DEFAULT_CHUNK_INFO_SIZE;
 			}
 			ChunkInfoBuilder buffer = ChunkInfoBuilder.newBuilder(100);
 			consumer = new BufferedChunkInfoPublisher(buffer, action);
 		}
 
 		return consumer;
-	}
-
-	/**
-	 * Loads chunks of data from the underlying file(s). It is the method's responsibility to
-	 * query the chunk index and verify for each chunk of data that it is indeed required to be
-	 * loaded.
-	 *
-	 * @param layer
-	 * @param indices
-	 * @param action
-	 * @return
-	 * @throws IOException
-	 * @throws InterruptedException
-	 */
-	public long loadChunks(ItemLayer layer, IndexSet[] indices,
-			Consumer<ChunkInfo> action) throws IOException,
-			InterruptedException {
-
-
-		Lock lock = getReadLockForFile(fileIndex);
-		FileInfo fileInfo = getFileDriverStates().getFileInfo(fileIndex);
-
-		lock.lock();
-		try {
-
-		} finally {
-			lock.unlock();
-		}
-
-		//TODO check whether we
-
-		// TODO Auto-generated method stub
-		return getConverter().loadChunks(layer, IndexSet.asIterator(indices), chunkIndexStorage, action);
 	}
 
 
@@ -1235,6 +1460,12 @@ public class FileDriver extends AbstractDriver {
 
 		//TODO
 		CHUNK_INDICES_FOLDER("chunkIndicesFolder", ValueType.FILE),
+
+		/**
+		 * User defined hint whether to immediately load the underlying resources
+		 * when the driver is connecting.
+		 */
+		LOAD_ON_CONNECT("loadOnConnect", ValueType.BOOLEAN),
 		;
 
 		private final String key;
@@ -1288,7 +1519,9 @@ public class FileDriver extends AbstractDriver {
 		 * @return
 		 * @throws Exception
 		 */
-		boolean apply(FileDriver driver, Options env) throws Exception;
+		boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception;
+
+		Collection<? extends PreparationStep> getPreconditions();
 
 
 		String name();

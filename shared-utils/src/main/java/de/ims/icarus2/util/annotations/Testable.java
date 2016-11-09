@@ -15,15 +15,26 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package de.ims.icarus2.util.strings;
+package de.ims.icarus2.util.annotations;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
+ * Marker interface that signals that a class is a testable implementation of
+ * the interface or abstract class specified as parameter.
+ *
  * @author Markus Gärtner
  *
  */
-public interface Describable extends Nameable {
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface Testable {
 
-	String getDescription();
-
-	void setDescription(String description);
+	@SuppressWarnings("rawtypes")
+	Class[] value();
 }

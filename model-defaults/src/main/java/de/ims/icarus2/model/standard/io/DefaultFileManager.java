@@ -17,9 +17,11 @@
  */
 package de.ims.icarus2.model.standard.io;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
@@ -37,7 +39,8 @@ public class DefaultFileManager implements FileManager {
 	static {
 		Map<String, String> map = new Object2ObjectOpenHashMap<>();
 
-		map.put(CommonFolders.METADATA.getId(), DefaultFileStructure.METADATA_FOLDER);
+		map.put(CommonFolders.METADATA.getId(), DefaultFileStructure.METADATA_FOLDER_NAME);
+		map.put(CommonFolders.TEMP.getId(), DefaultFileStructure.TEMP_FOLDER_NAME);
 
 		sharedFolderLookup = Collections.unmodifiableMap(map);
 	}
@@ -49,7 +52,8 @@ public class DefaultFileManager implements FileManager {
 	 */
 	public DefaultFileManager(Path rootFolder) {
 		checkNotNull(rootFolder);
-		//TODO maybe check if folder actually axists, is not a link, etc...
+		checkArgument("Root path must be a directory", Files.isDirectory(rootFolder));
+		//TODO maybe check if folder actually exists, is not a link, etc...
 
 		this.rootFolder = rootFolder;
 	}
@@ -62,7 +66,7 @@ public class DefaultFileManager implements FileManager {
 		return rootFolder;
 	}
 
-	private Path getPath(String folder) {
+	private Path getToplevelPath(String folder) {
 		return rootFolder.resolve(folder);
 	}
 
@@ -76,7 +80,7 @@ public class DefaultFileManager implements FileManager {
 			return null;
 		}
 
-		return getPath(storedName);
+		return getToplevelPath(storedName);
 	}
 
 	/**

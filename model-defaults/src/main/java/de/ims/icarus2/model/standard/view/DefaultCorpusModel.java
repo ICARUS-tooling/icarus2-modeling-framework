@@ -39,7 +39,7 @@ import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.edit.AtomicChange;
 import de.ims.icarus2.model.api.edit.CorpusEditManager;
-import de.ims.icarus2.model.api.edit.io.SerializableAtomicChanges;
+import de.ims.icarus2.model.api.edit.io.SerializableAtomicChangeImpl;
 import de.ims.icarus2.model.api.events.CorpusAdapter;
 import de.ims.icarus2.model.api.events.CorpusEvent;
 import de.ims.icarus2.model.api.events.CorpusListener;
@@ -454,7 +454,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		checkWriteAccess();
 		checkIndexForAdd(index, container.getItemCount());
 
-		executeChange(new SerializableAtomicChanges.ItemChange(container, item, container.getItemCount(), index, true));
+		executeChange(new SerializableAtomicChangeImpl.ItemChange(container, item, container.getItemCount(), index, true));
 	}
 
 	@Override
@@ -463,7 +463,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		checkWriteAccess();
 		checkIndexForAdd(index, container.getItemCount());
 
-		executeChange(new SerializableAtomicChanges.ItemSequenceChange(container, container.getItemCount(), index, items));
+		executeChange(new SerializableAtomicChangeImpl.ItemSequenceChange(container, container.getItemCount(), index, items));
 	}
 
 	@Override
@@ -473,7 +473,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 
 		Item item = container.getItemAt(index);
 
-		executeChange(new SerializableAtomicChanges.ItemChange(container, item, container.getItemCount(), index, false));
+		executeChange(new SerializableAtomicChangeImpl.ItemChange(container, item, container.getItemCount(), index, false));
 
 		return item;
 	}
@@ -498,7 +498,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		checkIndexForRemove(index1, container.getItemCount());
 		checkArgument(index0<=index1);
 
-		executeChange(new SerializableAtomicChanges.ItemSequenceChange(container, container.getItemCount(), index0, index1));
+		executeChange(new SerializableAtomicChangeImpl.ItemSequenceChange(container, container.getItemCount(), index0, index1));
 	}
 
 	@Override
@@ -510,7 +510,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		Item item0 = container.getItemAt(index0);
 		Item item1 = container.getItemAt(index1);
 
-		executeChange(new SerializableAtomicChanges.ItemMoveChange(container, container.getItemCount(), index0, index1, item0, item1));
+		executeChange(new SerializableAtomicChangeImpl.ItemMoveChange(container, container.getItemCount(), index0, index1, item0, item1));
 	}
 
 
@@ -644,7 +644,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		checkWriteAccess();
 		checkIndexForAdd(index, structure.getEdgeCount());
 
-		executeChange(new SerializableAtomicChanges.EdgeChange(structure, edge, structure.getEdgeCount(), index, true));
+		executeChange(new SerializableAtomicChangeImpl.EdgeChange(structure, edge, structure.getEdgeCount(), index, true));
 	}
 
 	@Override
@@ -653,7 +653,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		checkWriteAccess();
 		checkIndexForAdd(index, structure.getEdgeCount());
 
-		executeChange(new SerializableAtomicChanges.EdgeSequenceChange(structure, structure.getEdgeCount(), index, edges));
+		executeChange(new SerializableAtomicChangeImpl.EdgeSequenceChange(structure, structure.getEdgeCount(), index, edges));
 	}
 
 	@Override
@@ -663,7 +663,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 
 		Edge edge = structure.getEdgeAt(index);
 
-		executeChange(new SerializableAtomicChanges.EdgeChange(structure, edge, structure.getEdgeCount(), index, false));
+		executeChange(new SerializableAtomicChangeImpl.EdgeChange(structure, edge, structure.getEdgeCount(), index, false));
 
 		return edge;
 	}
@@ -688,7 +688,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		checkIndexForRemove(index1, structure.getEdgeCount());
 		checkArgument(index0<=index1);
 
-		executeChange(new SerializableAtomicChanges.EdgeSequenceChange(structure, structure.getEdgeCount(), index0, index1));
+		executeChange(new SerializableAtomicChangeImpl.EdgeSequenceChange(structure, structure.getEdgeCount(), index0, index1));
 	}
 
 	@Override
@@ -700,7 +700,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		Edge edge0 = structure.getEdgeAt(index0);
 		Edge edge1 = structure.getEdgeAt(index1);
 
-		executeChange(new SerializableAtomicChanges.EdgeMoveChange(structure, structure.getEdgeCount(), index0, index1, edge0, edge1));
+		executeChange(new SerializableAtomicChangeImpl.EdgeMoveChange(structure, structure.getEdgeCount(), index0, index1, edge0, edge1));
 	}
 
 	@Override
@@ -708,7 +708,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 			boolean isSource) {
 		Item oldTerminal = edge.getTerminal(isSource);
 
-		executeChange(new SerializableAtomicChanges.TerminalChange(structure, edge, isSource, item, oldTerminal));
+		executeChange(new SerializableAtomicChangeImpl.TerminalChange(structure, edge, isSource, item, oldTerminal));
 
 		return oldTerminal;
 	}
@@ -769,7 +769,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 	public Position setFragmentBegin(Fragment fragment, Position position) {
 		Position oldPosition = ensureNotNull(fragment.getFragmentBegin());
 
-		executeChange(new SerializableAtomicChanges.PositionChange(fragment, true, position));
+		executeChange(new SerializableAtomicChangeImpl.PositionChange(fragment, true, position));
 
 		return oldPosition;
 	}
@@ -778,7 +778,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 	public Position setFragmentEnd(Fragment fragment, Position position) {
 		Position oldPosition = ensureNotNull(fragment.getFragmentEnd());
 
-		executeChange(new SerializableAtomicChanges.PositionChange(fragment, false, position));
+		executeChange(new SerializableAtomicChangeImpl.PositionChange(fragment, false, position));
 
 		return oldPosition;
 	}
@@ -856,7 +856,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		Object oldValue = layer.getAnnotationStorage().getValue(item, key);
 		ValueType valueType = layer.getManifest().getAnnotationManifest(key).getValueType();
 
-		executeChange(new SerializableAtomicChanges.ValueChange(layer, valueType, item, key, value, oldValue));
+		executeChange(new SerializableAtomicChangeImpl.ValueChange(layer, valueType, item, key, value, oldValue));
 
 		return oldValue;
 	}
@@ -866,7 +866,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 			int value) {
 		int oldValue = layer.getAnnotationStorage().getIntegerValue(item, key);
 
-		executeChange(new SerializableAtomicChanges.IntegerValueChange(layer, item, key, value, oldValue));
+		executeChange(new SerializableAtomicChangeImpl.IntegerValueChange(layer, item, key, value, oldValue));
 
 		return oldValue;
 	}
@@ -876,7 +876,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 			long value) {
 		long oldValue = layer.getAnnotationStorage().getLongValue(item, key);
 
-		executeChange(new SerializableAtomicChanges.LongValueChange(layer, item, key, value, oldValue));
+		executeChange(new SerializableAtomicChangeImpl.LongValueChange(layer, item, key, value, oldValue));
 
 		return oldValue;
 	}
@@ -886,7 +886,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 			float value) {
 		float oldValue = layer.getAnnotationStorage().getFloatValue(item, key);
 
-		executeChange(new SerializableAtomicChanges.FloatValueChange(layer, item, key, value, oldValue));
+		executeChange(new SerializableAtomicChangeImpl.FloatValueChange(layer, item, key, value, oldValue));
 
 		return oldValue;
 	}
@@ -896,7 +896,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 			double value) {
 		double oldValue = layer.getAnnotationStorage().getDoubleValue(item, key);
 
-		executeChange(new SerializableAtomicChanges.DoubleValueChange(layer, item, key, value, oldValue));
+		executeChange(new SerializableAtomicChangeImpl.DoubleValueChange(layer, item, key, value, oldValue));
 
 		return oldValue;
 	}
@@ -906,7 +906,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 			String key, boolean value) {
 		boolean oldValue = layer.getAnnotationStorage().getBooleanValue(item, key);
 
-		executeChange(new SerializableAtomicChanges.BooleanValueChange(layer, item, key, value, oldValue));
+		executeChange(new SerializableAtomicChangeImpl.BooleanValueChange(layer, item, key, value, oldValue));
 
 		return oldValue;
 	}

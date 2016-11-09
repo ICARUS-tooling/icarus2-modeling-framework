@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.model.manifest.api.ContextManifest;
+import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerType;
@@ -33,7 +34,6 @@ import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.standard.Links.Link;
 import de.ims.icarus2.model.manifest.standard.Links.MemoryLink;
 
@@ -177,19 +177,6 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 		throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "No base layer manifest defined for id: "+baseLayerId);
 	}
 
-	protected TargetLayerManifest lookupLocalBaseLayer(String id) {
-		TargetLayerManifest result = null;
-
-		for(TargetLayerManifest targetLayerManifest : baseLayerManifests) {
-			if(id.equals(targetLayerManifest.getLayerId())) {
-				result = targetLayerManifest;
-				break;
-			}
-		}
-
-		return result;
-	}
-
 	protected class GlobalLayerLink extends Link<LayerManifest> {
 
 		/**
@@ -206,27 +193,6 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 		protected LayerManifest resolve() {
 			// This takes care of layer id resolution in terms of prerequisite aliases
 			return getContextManifest().getLayerManifest(getId());
-		}
-
-	}
-
-	protected class LocalLayerLink extends Link<LayerManifest> {
-
-		/**
-		 * @param lazyResolver
-		 * @param id
-		 */
-		public LocalLayerLink(String id) {
-			super(id);
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#resolve()
-		 */
-		@Override
-		protected LayerManifest resolve() {
-			TargetLayerManifest target = lookupLocalBaseLayer(getId());
-			return target==null ? null : target.getResolvedLayerManifest();
 		}
 
 	}

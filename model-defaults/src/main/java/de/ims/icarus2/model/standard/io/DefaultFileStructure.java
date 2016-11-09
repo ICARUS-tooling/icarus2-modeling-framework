@@ -27,6 +27,6 @@ public class DefaultFileStructure {
 	public static final String CORPUS_PREFIX = "corpus_";
 	public static final String CONTEXT_PREFIX = "context_";
 
-	public static final String METADATA_FOLDER = "metadata";
-	public static final String TEMP_FOLDER = "temp";
+	public static final String METADATA_FOLDER_NAME = "metadata";
+	public static final String TEMP_FOLDER_NAME = "temp";
 }

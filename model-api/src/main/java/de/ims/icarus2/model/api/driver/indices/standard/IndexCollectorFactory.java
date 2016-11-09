@@ -124,7 +124,7 @@ public class IndexCollectorFactory implements ModelConstants {
 	public IndexSetBuilder create() {
 
 		final IndexValueType valueType = getValueType();
-		final boolean sorted = isInputSorted();
+		final boolean inputSorted = isInputSorted();
 		final long totalLimit = getTotalSizeLimit();
 		final int chunkLimit = getChunkSizeLimit();
 
@@ -135,7 +135,7 @@ public class IndexCollectorFactory implements ModelConstants {
 
 		IndexSetBuilder builder = null;
 
-		if (sorted) {
+		if (inputSorted) {
 			if (isLimited) {
 				builder = new LimitedSortedSetBuilder(valueType, capacity, chunkLimit);
 			} else {

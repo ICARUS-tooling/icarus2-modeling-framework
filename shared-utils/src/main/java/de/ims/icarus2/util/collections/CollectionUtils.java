@@ -440,6 +440,18 @@ public final class CollectionUtils {
         return o1==null ? o2==null : o1.equals(o2);
     }
 
+    public static int countNonNull(Object...args) {
+    	int count = 0;
+
+    	for(Object obj : args) {
+    		if(obj!=null) {
+    			count++;
+    		}
+    	}
+
+    	return count;
+    }
+
     static class EmptyIterator<E extends Object> implements Iterator<E> {
 
 		/**

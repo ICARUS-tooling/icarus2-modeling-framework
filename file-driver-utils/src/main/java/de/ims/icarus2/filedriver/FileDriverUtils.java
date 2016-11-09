@@ -21,7 +21,7 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 
 import java.nio.file.Paths;
 
-import de.ims.icarus2.filedriver.FileMetadata.MappingKey;
+import de.ims.icarus2.filedriver.FileDriverMetadata.MappingKey;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
 import de.ims.icarus2.filedriver.io.RUBlockCache;
 import de.ims.icarus2.filedriver.io.UnlimitedBlockCache;

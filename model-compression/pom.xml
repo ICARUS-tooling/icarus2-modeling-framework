@@ -3,11 +3,10 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>icarus2-tooling</groupId>
+    <groupId>icarus2</groupId>
     <artifactId>core-tools</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
-  <groupId>icarus2-tooling</groupId>
   <artifactId>model-compression</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <name>model-compression</name>
@@ -21,7 +20,7 @@
   		<artifactId>junit</artifactId>
   	</dependency>
   	<dependency>
-  		<groupId>icarus2-tooling</groupId>
+  		<groupId>icarus2</groupId>
   		<artifactId>model-api</artifactId>
   		<version>0.0.1-SNAPSHOT</version>
   	</dependency>

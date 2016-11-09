@@ -48,7 +48,7 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
  * @author Markus Gärtner
  *
  */
-public class SerializableAtomicChanges {
+public class SerializableAtomicChangeImpl {
 
 	protected static void checkExpectedSize(String msg, long size, long expected) {
 		if(size!=expected)
@@ -1184,12 +1184,15 @@ public class SerializableAtomicChanges {
 		case VALUE_CHANGE: {
 			ValueType valueType = proxy.getValueType();
 			switch (valueType.getStringValue()) {
+
+			// For "primitive" annotations use the specialized change implementations
 			case ValueType.INTEGER_TYPE_LABEL: return new IntegerValueChange(proxy);
 			case ValueType.LONG_TYPE_LABEL: return new LongValueChange(proxy);
 			case ValueType.Float_TYPE_LABEL: return new FloatValueChange(proxy);
 			case ValueType.DOUBLE_TYPE_LABEL: return new DoubleValueChange(proxy);
 			case ValueType.BOOLEAN_TYPE_LABEL: return new BooleanValueChange(proxy);
 
+			// For anything else use the object based fallback
 			default:
 				return new ValueChange(proxy);
 			}

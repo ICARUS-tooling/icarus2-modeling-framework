@@ -82,6 +82,12 @@ public class DefaultContainer extends AbstractItem implements Container, Recycla
 		return itemStorage;
 	}
 
+	/**
+	 * Returns {@code true} if either the super method reports the {@link MemberFlags#isItemDirty(int) dirty flag}
+	 * to be set or if the underlying {@link #getItemStorage() item-storage} reports a dirty state.
+	 *
+	 * @see de.ims.icarus2.model.standard.members.item.AbstractItem#isDirty()
+	 */
 	@Override
 	public boolean isDirty() {
 		return super.isDirty() || itemStorage().isDirty(this);

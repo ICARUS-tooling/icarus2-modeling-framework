@@ -75,7 +75,7 @@ public interface Layer extends NamedCorpusMember, Part<LayerGroup> {
 	 * <p>
 	 * Note that some layers do not require a host context (e.g. the
 	 * virtual overlay layer each corpus provides in order to access
-	 * its layers as markables). Therefore this method is allowed to
+	 * its layers as items). Therefore this method is allowed to
 	 * return {@code null}. However, each layer that is hosted within
 	 * a context (i.e. is accessible through it) {@code must} return
 	 * that host context!

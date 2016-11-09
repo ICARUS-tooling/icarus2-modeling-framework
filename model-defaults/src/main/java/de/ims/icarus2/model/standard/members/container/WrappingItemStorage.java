@@ -18,6 +18,7 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -47,8 +48,7 @@ public class WrappingItemStorage implements ItemStorage {
 	}
 
 	public void setSourceContainer(Container sourceContainer) {
-		if (sourceContainer == null)
-			throw new NullPointerException("Invalid sourceContainer");
+		checkNotNull(sourceContainer);
 
 		// Implementation specific restriction: static target layer
 		MemberUtils.checkStaticContainer(sourceContainer);

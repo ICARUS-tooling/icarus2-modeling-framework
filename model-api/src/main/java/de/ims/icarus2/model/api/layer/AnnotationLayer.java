@@ -28,6 +28,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
 import de.ims.icarus2.model.manifest.api.ValueSet;
+import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
  *
@@ -44,6 +45,14 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 	 */
 	@Override
 	AnnotationLayerManifest getManifest();
+
+	/**
+	 * Returns the {@code AnnotationLayer}s that this layer
+	 * references in case it is stores meta-annotations on.
+	 *
+	 * @return
+	 */
+	DataSet<AnnotationLayer> getReferenceLayers();
 
 	/**
 	 * Returns the background storage that holds the actual annotation data in this
@@ -63,6 +72,15 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 	 */
 	//TODO check whether to throw exception when storage is already set or allow client code modifications?
 	void setAnnotationStorage(AnnotationStorage storage);
+
+	/**
+	 * Defines the set of reference layers to be used for this layer.
+	 * @param baseLayers
+	 *
+	 * @throws NullPointerException iff the {@code referenceLayers} argument is {@code null}
+	 * @throws ModelException in case the reference layers have already been set
+	 */
+	void setReferenceLayers(DataSet<AnnotationLayer> referenceLayers);
 
 	/**
 	 * @author Markus Gärtner

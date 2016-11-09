@@ -21,9 +21,13 @@ package de.ims.icarus2.model.standard.registry;
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -55,10 +59,16 @@ import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.standard.corpus.DefaultCorpus;
+import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.id.Identity;
 
 /**
+ * Default implementation of the central management component.
+ * <p>
+ * Since it provides quite a few opportunities for customization,
+ * construction is again realized via the builder pattern.
+ *
  * @author Markus Gärtner
  *
  */
@@ -68,7 +78,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	private final MetadataRegistry metadataRegistry;
 	private final FileManager fileManager;
 
-	private volatile Function<CorpusManifest, Corpus> corpusProducer;
+	private final Function<CorpusManifest, Corpus> corpusProducer;
 
 	/**
 	 * Current state of corpora. Must never contain corpora that are 'only' enabled!
@@ -80,35 +90,66 @@ public class DefaultCorpusManager implements CorpusManager {
 	 */
 	private final Map<CorpusManifest, Corpus> liveCorpora = new HashMap<>();
 
+	/**
+	 * Global lock to synchronize manipulation of corpora that are under control
+	 * of this manager. The lock implementation is chosen to support reentrant
+	 * locking although many methods in this class explicitly are designed to
+	 * NOT work with reentrant lock access. For those the {@link #tryNonReentrantWrite()}
+	 * method provides the required semantics to make sure no nested calls to those
+	 * critical code blocks is possible.
+	 */
 	private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-	private MetadataStoragePolicy<CorpusManifest> corpusMetadataPolicy;
-	private MetadataStoragePolicy<ContextManifest> contextMetadataPolicy;
+	private final MetadataStoragePolicy<CorpusManifest> corpusMetadataPolicy;
+	private final MetadataStoragePolicy<ContextManifest> contextMetadataPolicy;
 
 	private final List<CorpusLifecycleListener> lifecycleListeners = new CopyOnWriteArrayList<>();
 
-	private final Map<String, String> properties = new Object2ObjectOpenHashMap<>();
+	private final Properties properties;
 
-	//TODO add config parameter that allows passing of stuff like path to a new properties file, or a default fallback set of properties, etc...
-	public DefaultCorpusManager(ManifestRegistry registry, MetadataRegistry metadataRegistry, FileManager fileManager) {
-		checkNotNull(registry);
-		checkNotNull(metadataRegistry);
+	protected DefaultCorpusManager(Builder builder) {
+		checkNotNull(builder);
 
-		this.manifestRegistry = registry;
-		this.metadataRegistry = metadataRegistry;
-		this.fileManager = fileManager;
+		this.manifestRegistry = builder.getManifestRegistry();
+		this.metadataRegistry = builder.getMetadataRegistry();
+		this.fileManager = builder.getFileManager();
 
-		// Read in default properties
-		Properties defaultProperties = new Properties();
-		try {
-			defaultProperties.load(DefaultCorpusManager.class.getResourceAsStream("default-properties.ini"));
-		} catch (IOException e) {
-			throw new ModelException(GlobalErrorCode.INTERNAL_ERROR, "Failed to load default properties", e);
+		this.corpusMetadataPolicy = builder.getCorpusMetadataPolicy();
+		this.contextMetadataPolicy = builder.getContextMetadataPolicy();
+
+		this.corpusProducer = builder.getCorpusProducer();
+
+		Properties clientProperties = new Properties();
+
+		if(builder.getProperties()!=null) {
+			builder.getProperties().forEach(clientProperties::setProperty);
+		} else if(builder.getPropertiesFile()!=null) {
+			readProperties(clientProperties, builder.getPropertiesFile());
+		} else if(builder.getPropertiesUrl()!=null) {
+			readProperties(clientProperties, builder.getPropertiesUrl());
 		}
 
-		// Copy over default properties
-		for(String key : properties.keySet()) {
-			properties.put(key, defaultProperties.getProperty(key));
+		properties = new Properties();
+		readProperties(properties, DefaultCorpusManager.class.getResource("default-properties.ini"));
+
+		if(!clientProperties.isEmpty()) {
+			properties.putAll(clientProperties);
+		}
+	}
+
+	private void readProperties(Properties properties, URL url) {
+		try {
+			properties.load(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8));
+		} catch (IOException e) {
+			throw new ModelException(GlobalErrorCode.IO_ERROR, "Failed to load properties from URL: "+url, e);
+		}
+	}
+
+	private void readProperties(Properties properties, Path path) {
+		try {
+			properties.load(Files.newBufferedReader(path, StandardCharsets.UTF_8));
+		} catch (IOException e) {
+			throw new ModelException(GlobalErrorCode.IO_ERROR, "Failed to load properties from file: "+path, e);
 		}
 	}
 
@@ -125,7 +166,7 @@ public class DefaultCorpusManager implements CorpusManager {
 		String value = System.getProperty(key);
 
 		if(value==null) {
-			value = properties.get(key);
+			value = properties.getProperty(key);
 		}
 
 		return value;
@@ -153,14 +194,28 @@ public class DefaultCorpusManager implements CorpusManager {
 				"Implementation does not support identity lookup for extension: "+extensionuid);
 	}
 
-	public final boolean isCurrentThreadWriting() {
+	/**
+	 * Utility method to allow checking the global lock for being held
+	 * in write mode by the current {@link Thread}.
+	 *
+	 * @return
+	 */
+	protected final boolean isCurrentThreadWriting() {
 		return lock.isWriteLockedByCurrentThread();
 	}
 
-	protected final void tryStartWrite() {
+	protected final void tryNonReentrantWrite() {
 		if(isCurrentThreadWriting())
 			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Thread is not allowed to perform nested write actions");
+
+		writeLock().lock();
+
+		if(lock.getWriteHoldCount()>1) {
+			writeLock().unlock();
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+					"Thread is not allowed to perform nested write actions");
+		}
 	}
 
 	protected final Lock readLock() {
@@ -174,13 +229,6 @@ public class DefaultCorpusManager implements CorpusManager {
 	@Override
 	public CorpusMemberFactory newFactory() {
 		return new DefaultCorpusMemberFactory(this);
-	}
-
-	public void setCorpusProducer(Function<CorpusManifest, Corpus> corpusProducer) {
-		checkNotNull(corpusProducer);
-		checkState(this.corpusProducer==null);
-
-		this.corpusProducer = corpusProducer;
 	}
 
 	protected boolean isLegalChange(EventObject event) {
@@ -305,11 +353,9 @@ public class DefaultCorpusManager implements CorpusManager {
 	public Corpus connect(CorpusManifest manifest) throws InterruptedException {
 		checkNotNull(manifest);
 
-		tryStartWrite();
-
 		Corpus corpus = null;
 
-		writeLock().lock();
+		tryNonReentrantWrite();
 		try {
 			CorpusManager.CorpusState oldState = getStateUnsafe(manifest, false);
 
@@ -412,10 +458,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	@Override
 	public void disconnect(CorpusManifest manifest) throws InterruptedException {
 		checkNotNull(manifest);
-
-		tryStartWrite();
-
-		writeLock().lock();
+		tryNonReentrantWrite();
 		try {
 			// For internal sanity checks
 			getStateUnsafe(manifest, false);
@@ -550,9 +593,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	 */
 	@Override
 	public boolean enableCorpus(CorpusManifest corpus) {
-		tryStartWrite();
-
-		writeLock().lock();
+		tryNonReentrantWrite();
 		try {
 			// Read state, automatically applying sanity checks
 			final CorpusManager.CorpusState currentState = getStateUnsafe(corpus, false);
@@ -576,9 +617,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	 */
 	@Override
 	public boolean disableCorpus(CorpusManifest corpus) {
-		tryStartWrite();
-
-		writeLock().lock();
+		tryNonReentrantWrite();
 		try {
 			// Read state, automatically applying sanity checks
 			final CorpusManager.CorpusState currentState = getStateUnsafe(corpus, false);
@@ -602,9 +641,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	 */
 	@Override
 	public boolean resetBadCorpus(CorpusManifest corpus) {
-		tryStartWrite();
-
-		writeLock().lock();
+		tryNonReentrantWrite();
 		try {
 			// Read state, automatically applying sanity checks
 			final CorpusManager.CorpusState currentState = getStateUnsafe(corpus, true);
@@ -761,5 +798,160 @@ public class DefaultCorpusManager implements CorpusManager {
 		for (CorpusLifecycleListener listener : lifecycleListeners) {
 			listener.corpusDisconnected(this, manifest);
 		}
+	}
+
+	public static class Builder extends AbstractBuilder<Builder, DefaultCorpusManager> {
+
+		private MetadataStoragePolicy<CorpusManifest> corpusMetadataPolicy;
+		private MetadataStoragePolicy<ContextManifest> contextMetadataPolicy;
+
+		private ManifestRegistry manifestRegistry;
+		private MetadataRegistry metadataRegistry;
+		private FileManager fileManager;
+
+		private Function<CorpusManifest, Corpus> corpusProducer;
+
+		private Map<String, String> properties;
+
+		private URL propertiesUrl;
+		private Path propertiesFile;
+
+		public MetadataStoragePolicy<CorpusManifest> getCorpusMetadataPolicy() {
+			return corpusMetadataPolicy;
+		}
+
+		public MetadataStoragePolicy<ContextManifest> getContextMetadataPolicy() {
+			return contextMetadataPolicy;
+		}
+
+		public ManifestRegistry getManifestRegistry() {
+			return manifestRegistry;
+		}
+
+		public MetadataRegistry getMetadataRegistry() {
+			return metadataRegistry;
+		}
+
+		public FileManager getFileManager() {
+			return fileManager;
+		}
+
+		public Function<CorpusManifest, Corpus> getCorpusProducer() {
+			return corpusProducer;
+		}
+
+		public Map<String, String> getProperties() {
+			return properties;
+		}
+
+		public URL getPropertiesUrl() {
+			return propertiesUrl;
+		}
+
+		public Path getPropertiesFile() {
+			return propertiesFile;
+		}
+
+		public Builder corpusMetadataPolicy(
+				MetadataStoragePolicy<CorpusManifest> corpusMetadataPolicy) {
+			checkNotNull(corpusMetadataPolicy);
+			checkState("Corpus metadata policy already set", this.corpusMetadataPolicy==null);
+
+			this.corpusMetadataPolicy = corpusMetadataPolicy;
+
+			return thisAsCast();
+		}
+
+		public Builder contextMetadataPolicy(
+				MetadataStoragePolicy<ContextManifest> contextMetadataPolicy) {
+			checkNotNull(contextMetadataPolicy);
+			checkState("Context metadata policy already set", this.contextMetadataPolicy==null);
+
+			this.contextMetadataPolicy = contextMetadataPolicy;
+
+			return thisAsCast();
+		}
+
+		public Builder manifestRegistry(ManifestRegistry manifestRegistry) {
+			checkNotNull(manifestRegistry);
+			checkState("Manifest registry already set", this.manifestRegistry==null);
+
+			this.manifestRegistry = manifestRegistry;
+
+			return thisAsCast();
+		}
+
+		public Builder metadataRegistry(MetadataRegistry metadataRegistry) {
+			checkNotNull(metadataRegistry);
+			checkState("Metadata registry already set", this.metadataRegistry==null);
+
+			this.metadataRegistry = metadataRegistry;
+
+			return thisAsCast();
+		}
+
+		public Builder fileManager(FileManager fileManager) {
+			checkNotNull(fileManager);
+			checkState("File manager already set", this.fileManager==null);
+
+			this.fileManager = fileManager;
+
+			return thisAsCast();
+		}
+
+		public Builder corpusProducer(Function<CorpusManifest, Corpus> corpusProducer) {
+			checkNotNull(corpusProducer);
+			checkState("Corpus producer already set", this.corpusProducer==null);
+
+			this.corpusProducer = corpusProducer;
+
+			return thisAsCast();
+		}
+
+		public Builder properties(Map<String, String> properties) {
+			checkNotNull(properties);
+			checkState("Properties already set", this.properties==null);
+
+			this.properties = properties;
+
+			return thisAsCast();
+		}
+
+		public Builder propertiesUrl(URL propertiesUrl) {
+			checkNotNull(propertiesUrl);
+			checkState("Properties URL already set", this.propertiesUrl==null);
+
+			this.propertiesUrl = propertiesUrl;
+
+			return thisAsCast();
+		}
+
+		public Builder propertiesFile(Path propertiesFile) {
+			checkNotNull(propertiesFile);
+			checkState("Properties file already set", this.propertiesFile==null);
+
+			this.propertiesFile = propertiesFile;
+
+			return thisAsCast();
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.AbstractBuilder#validate()
+		 */
+		@Override
+		protected void validate() {
+			checkState("Manifest registry missing", manifestRegistry!=null);
+			checkState("Metadata registry missing", metadataRegistry!=null);
+			checkState("File manager missing", fileManager!=null);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.AbstractBuilder#create()
+		 */
+		@Override
+		protected DefaultCorpusManager create() {
+			return new DefaultCorpusManager(this);
+		}
+
 	}
 }

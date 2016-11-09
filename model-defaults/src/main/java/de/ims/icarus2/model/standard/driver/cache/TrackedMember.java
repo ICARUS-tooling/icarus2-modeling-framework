@@ -20,9 +20,6 @@ package de.ims.icarus2.model.standard.driver.cache;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.layer.FragmentLayer;
-import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.api.layer.StructureLayer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -45,7 +42,7 @@ import de.ims.icarus2.model.standard.members.structure.DefaultStructure;
  * @author Markus Gärtner
  *
  */
-public interface CachedMember<L extends ItemLayer> {
+public interface TrackedMember {
 
 	/**
 	 * Increments and returns the current use counter of the member
@@ -68,38 +65,12 @@ public interface CachedMember<L extends ItemLayer> {
 	 */
 	int getUseCounter();
 
-	/**
-	 * Changes the members's host layer to the given one
-	 * @param layer the new host layer or {@code null} (e.g. in case the member is being
-	 * prepared for recycling)
-	 */
-	void setLayer(L layer);
-
-	/**
-	 * Returns the members host layer
-	 *
-	 * @return
-	 */
-	L getLayer();
-
-	public static class CachedItem extends DefaultItem implements CachedMember<ItemLayer> {
+	public static class TrackedItem extends DefaultItem implements TrackedMember {
 
 		private int useCounter;
 
-		private ItemLayer layer;
-
-		@Override
-		public ItemLayer getLayer() {
-			return layer;
-		}
-
-		@Override
-		public void setLayer(ItemLayer layer) {
-			this.layer = layer;
-		}
-
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.cache.CachedMember#incrementUseCounter()
+		 * @see de.ims.icarus2.model.standard.driver.cache.TrackedMember#incrementUseCounter()
 		 */
 		@Override
 		public int incrementUseCounter() {
@@ -107,7 +78,7 @@ public interface CachedMember<L extends ItemLayer> {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.cache.CachedMember#decrementUseCounter()
+		 * @see de.ims.icarus2.model.standard.driver.cache.TrackedMember#decrementUseCounter()
 		 */
 		@Override
 		public int decrementUseCounter() {
@@ -117,7 +88,7 @@ public interface CachedMember<L extends ItemLayer> {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.cache.CachedMember#getUseCounter()
+		 * @see de.ims.icarus2.model.standard.driver.cache.TrackedMember#getUseCounter()
 		 */
 		@Override
 		public int getUseCounter() {
@@ -126,24 +97,12 @@ public interface CachedMember<L extends ItemLayer> {
 
 	}
 
-	public static class CachedFragment extends DefaultFragment implements CachedMember<FragmentLayer> {
+	public static class TrackedFragment extends DefaultFragment implements TrackedMember {
 
 		private int useCounter;
 
-		private FragmentLayer layer;
-
-		@Override
-		public FragmentLayer getLayer() {
-			return layer;
-		}
-
-		@Override
-		public void setLayer(FragmentLayer layer) {
-			this.layer = layer;
-		}
-
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.cache.CachedMember#incrementUseCounter()
+		 * @see de.ims.icarus2.model.standard.driver.cache.TrackedMember#incrementUseCounter()
 		 */
 		@Override
 		public int incrementUseCounter() {
@@ -151,7 +110,7 @@ public interface CachedMember<L extends ItemLayer> {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.cache.CachedMember#decrementUseCounter()
+		 * @see de.ims.icarus2.model.standard.driver.cache.TrackedMember#decrementUseCounter()
 		 */
 		@Override
 		public int decrementUseCounter() {
@@ -161,7 +120,7 @@ public interface CachedMember<L extends ItemLayer> {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.cache.CachedMember#getUseCounter()
+		 * @see de.ims.icarus2.model.standard.driver.cache.TrackedMember#getUseCounter()
 		 */
 		@Override
 		public int getUseCounter() {
@@ -170,24 +129,12 @@ public interface CachedMember<L extends ItemLayer> {
 
 	}
 
-	public static class CachedContainer extends DefaultContainer implements CachedMember<ItemLayer> {
+	public static class TrackedContainer extends DefaultContainer implements TrackedMember {
 
 		private int useCounter;
 
-		private ItemLayer layer;
-
-		@Override
-		public ItemLayer getLayer() {
-			return layer;
-		}
-
-		@Override
-		public void setLayer(ItemLayer layer) {
-			this.layer = layer;
-		}
-
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.cache.CachedMember#incrementUseCounter()
+		 * @see de.ims.icarus2.model.standard.driver.cache.TrackedMember#incrementUseCounter()
 		 */
 		@Override
 		public int incrementUseCounter() {
@@ -195,7 +142,7 @@ public interface CachedMember<L extends ItemLayer> {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.cache.CachedMember#decrementUseCounter()
+		 * @see de.ims.icarus2.model.standard.driver.cache.TrackedMember#decrementUseCounter()
 		 */
 		@Override
 		public int decrementUseCounter() {
@@ -205,7 +152,7 @@ public interface CachedMember<L extends ItemLayer> {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.cache.CachedMember#getUseCounter()
+		 * @see de.ims.icarus2.model.standard.driver.cache.TrackedMember#getUseCounter()
 		 */
 		@Override
 		public int getUseCounter() {
@@ -214,24 +161,12 @@ public interface CachedMember<L extends ItemLayer> {
 
 	}
 
-	public static class CachedStructure extends DefaultStructure implements CachedMember<StructureLayer> {
+	public static class TrackedStructure extends DefaultStructure implements TrackedMember {
 
 		private int useCounter;
 
-		private StructureLayer layer;
-
-		@Override
-		public StructureLayer getLayer() {
-			return layer;
-		}
-
-		@Override
-		public void setLayer(StructureLayer layer) {
-			this.layer = layer;
-		}
-
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.cache.CachedMember#incrementUseCounter()
+		 * @see de.ims.icarus2.model.standard.driver.cache.TrackedMember#incrementUseCounter()
 		 */
 		@Override
 		public int incrementUseCounter() {
@@ -239,7 +174,7 @@ public interface CachedMember<L extends ItemLayer> {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.cache.CachedMember#decrementUseCounter()
+		 * @see de.ims.icarus2.model.standard.driver.cache.TrackedMember#decrementUseCounter()
 		 */
 		@Override
 		public int decrementUseCounter() {
@@ -249,7 +184,7 @@ public interface CachedMember<L extends ItemLayer> {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.driver.cache.CachedMember#getUseCounter()
+		 * @see de.ims.icarus2.model.standard.driver.cache.TrackedMember#getUseCounter()
 		 */
 		@Override
 		public int getUseCounter() {

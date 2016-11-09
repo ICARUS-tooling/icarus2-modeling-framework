@@ -22,6 +22,7 @@ import static de.ims.icarus2.util.Conditions.checkNotNull;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.standard.members.layers.AbstractLayer;
+import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
  * @author Markus Gärtner
@@ -30,6 +31,7 @@ import de.ims.icarus2.model.standard.members.layers.AbstractLayer;
 public class DefaultAnnotationLayer extends AbstractLayer<AnnotationLayerManifest> implements AnnotationLayer {
 
 	private AnnotationStorage storage;
+	private DataSet<AnnotationLayer> referenceLayers = DataSet.emptySet();
 
 	/**
 	 * @param manifest
@@ -67,5 +69,23 @@ public class DefaultAnnotationLayer extends AbstractLayer<AnnotationLayerManifes
 		if(this.storage instanceof ManagedAnnotationStorage) {
 			((ManagedAnnotationStorage)this.storage).addNotify(this);
 		}
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer#getReferenceLayers()
+	 */
+	@Override
+	public DataSet<AnnotationLayer> getReferenceLayers() {
+		return referenceLayers;
+	}
+
+	/**
+	 * @param referenceLayers the referenceLayers to set
+	 */
+	@Override
+	public void setReferenceLayers(DataSet<AnnotationLayer> referenceLayers) {
+		checkNotNull(referenceLayers);
+
+		this.referenceLayers = referenceLayers;
 	}
 }

@@ -710,8 +710,13 @@ public class StructureBuilder {
 	static int compare0(Item m1, Item m2) {
 		long result = m1.getBeginOffset()-m2.getBeginOffset();
 
-		if(result==0) {
+		if(result==0L) {
 			result = m1.getEndOffset()-m2.getEndOffset();
+		}
+
+		// Scale down to int value space
+		if(result>Integer.MAX_VALUE) {
+			result -= Integer.MAX_VALUE;
 		}
 
 		return (int) result;

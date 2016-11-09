@@ -29,6 +29,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,7 +53,7 @@ import de.ims.icarus2.util.intern.WeakInterner;
  *
  */
 public final class StringUtil {
-	
+
 	private static final Logger log = LoggerFactory.getLogger(StringUtil.class);
 
 	public static final String TEXT_WILDCARD = "[...]"; //$NON-NLS-1$
@@ -65,6 +66,63 @@ public final class StringUtil {
 
 	private StringUtil() {
 		// no-op
+	}
+
+	public static String format(String text, Object...params) {
+		StringBuilder result = new StringBuilder();
+		String index = null;
+
+		for (int i = 0; i < text.length(); i++) {
+			char c = text.charAt(i);
+
+			if (c == '{') {
+				index = "";
+			} else if (index != null && c == '}') {
+
+				int tmp = Integer.parseInt(index) - 1;
+
+				if (tmp >= 0 && params!=null && tmp < params.length) {
+					result.append(params[tmp]);
+				}
+
+				index = null;
+			} else if (index != null) {
+				index += c;
+			} else {
+				result.append(c);
+			}
+		}
+
+		return result.toString();
+	}
+
+	//FIXME actually implement locale sensitive output!
+	public static String format(Locale locale, String text, Object...params) {
+		StringBuilder result = new StringBuilder();
+		String index = null;
+
+		for (int i = 0; i < text.length(); i++) {
+			char c = text.charAt(i);
+
+			if (c == '{') {
+				index = "";
+			} else if (index != null && c == '}') {
+
+				int tmp = Integer.parseInt(index) - 1;
+
+				if (tmp >= 0 && params!=null && tmp < params.length) {
+					result.append(params[tmp]);
+				}
+
+				index = null;
+			} else if (index != null) {
+				index += c;
+			} else {
+				result.append(c);
+			}
+		}
+
+		return result.toString();
 	}
 
 	public static final Comparator<CharSequence> CHAR_SEQUENCE_COMPARATOR = new Comparator<CharSequence>() {

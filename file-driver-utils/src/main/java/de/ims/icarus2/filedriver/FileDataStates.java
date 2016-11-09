@@ -284,6 +284,7 @@ public class FileDataStates {
 	public static class LayerInfo extends ElementInfo {
 		private final ItemLayerManifest layer;
 
+		// Total number of elements in top-level container
 		private long size = NO_INDEX;
 
 		private Counter<ContainerType> containerTypeCount;

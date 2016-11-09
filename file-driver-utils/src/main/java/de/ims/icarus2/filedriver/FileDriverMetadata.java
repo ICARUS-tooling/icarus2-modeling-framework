@@ -272,7 +272,7 @@ import de.ims.icarus2.model.standard.driver.AbstractDriver;
  * @author Markus Gärtner
  *
  */
-public class FileMetadata implements ModelConstants {
+public class FileDriverMetadata implements ModelConstants {
 
 	// PREFIXES
 

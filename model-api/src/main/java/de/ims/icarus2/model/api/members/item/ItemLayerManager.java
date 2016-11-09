@@ -65,7 +65,9 @@ public interface ItemLayerManager extends ModelConstants {
 	 * @return
 	 * @throws ModelException
 	 */
-	long getItemCount(ItemLayer layer);
+	default long getItemCount(ItemLayer layer) {
+		return NO_INDEX;
+	}
 
 	/**
 	 * Accesses the internal cache for the specified layer and attempts to lookup the
