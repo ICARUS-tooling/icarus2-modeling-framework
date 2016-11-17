@@ -17,10 +17,13 @@
  */
 package de.ims.icarus2.filedriver.schema;
 
+import de.ims.icarus2.util.id.Identity;
+
 /**
  * @author Markus Gärtner
  *
  */
-public interface CorpusFileSchema {
+public interface Schema extends Identity {
 
+	String getSchemaTypeName();
 }
