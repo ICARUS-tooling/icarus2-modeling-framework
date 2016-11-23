@@ -115,6 +115,10 @@ public class AnnotationManifestXmlDelegate extends AbstractMemberManifestXmlDele
 		if(manifest.isLocalContentType()) {
 			serializer.writeAttribute(ATTR_CONTENT_TYPE, manifest.getContentType().getId());
 		}
+
+		if(manifest.isAllowUnknownValues()!=AnnotationManifest.DEFAULT_ALLOW_UNKNOWN_VALUES) {
+			serializer.writeAttribute(ATTR_ALLOW_UNKNOWN_VALUES, manifest.isAllowUnknownValues());
+		}
 	}
 
 	/**
@@ -139,6 +143,11 @@ public class AnnotationManifestXmlDelegate extends AbstractMemberManifestXmlDele
 		String contentTypeId = ManifestXmlUtils.normalize(attributes, ATTR_CONTENT_TYPE);
 		if(contentTypeId!=null) {
 			manifest.setContentType(ContentTypeRegistry.getInstance().getType(contentTypeId));
+		}
+
+		String allowUnknownValues = ManifestXmlUtils.normalize(attributes, ATTR_ALLOW_UNKNOWN_VALUES);
+		if(allowUnknownValues!=null) {
+			manifest.setAllowUnknownValues(Boolean.parseBoolean(allowUnknownValues));
 		}
 	}
 

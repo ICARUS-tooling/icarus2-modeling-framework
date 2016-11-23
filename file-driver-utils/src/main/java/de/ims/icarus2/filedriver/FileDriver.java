@@ -17,12 +17,15 @@
  */
 package de.ims.icarus2.filedriver;
 
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkNonEmpty;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -55,6 +58,7 @@ import de.ims.icarus2.filedriver.mapping.AbstractStoredMapping;
 import de.ims.icarus2.filedriver.mapping.DefaultMappingFactory;
 import de.ims.icarus2.filedriver.mapping.MappingFactory;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndex;
+import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexCursor;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexStorage;
 import de.ims.icarus2.filedriver.mapping.chunks.DefaultChunkIndex;
 import de.ims.icarus2.model.api.ModelConstants;
@@ -88,6 +92,7 @@ import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.driver.AbstractDriver;
 import de.ims.icarus2.model.standard.driver.BufferedItemManager;
+import de.ims.icarus2.model.standard.driver.BufferedItemManager.LayerBuffer;
 import de.ims.icarus2.model.standard.driver.ChunkConsumer;
 import de.ims.icarus2.model.standard.driver.ChunkInfoBuilder;
 import de.ims.icarus2.model.util.ModelUtils;
@@ -368,6 +373,12 @@ public class FileDriver extends AbstractDriver {
 		return content.getBuffer(layer);
 	}
 
+	public ChunkIndex getChunkIndex(ItemLayer layer) {
+		checkConnected();
+
+		return chunkIndexStorage.getChunkIndex(layer);
+	}
+
 	@Override
 	public void addItem(ItemLayer layer, Item item, long index) {
 		checkConnected();
@@ -468,6 +479,25 @@ public class FileDriver extends AbstractDriver {
 
 		} finally {
 			metadataRegistry.endUpdate();
+		}
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.standard.driver.AbstractDriver#afterConnect()
+	 */
+	@Override
+	protected void afterConnect() {
+
+		// Check if we should directly load all the files
+
+		if(((Boolean)OptionKey.LOAD_ON_CONNECT.getValue(getManifest())).booleanValue()) {
+			try {
+				loadAllFiles(null);
+			} catch(IOException e) {
+				throw new ModelException(getCorpus(), GlobalErrorCode.IO_ERROR, "Failed to load complete file resources");
+			} catch (InterruptedException e) {
+				throw new ModelException(getCorpus(), GlobalErrorCode.INTERRUPTED, "Loading of complete file resources canceled");
+			}
 		}
 	}
 
@@ -781,6 +811,8 @@ public class FileDriver extends AbstractDriver {
 					}
 
 					/*
+					 *  For editable corpora only:
+					 *
 					 *  As a safety measure we assume that our guess only accounts for 25%
 					 *  of the potential total size the actual scanning method will encounter.
 					 *
@@ -788,7 +820,7 @@ public class FileDriver extends AbstractDriver {
 					 *  we will most likely shift into the next higher value space and potentially
 					 *  "waste" some space.
 					 */
-					if(estimatedChunkCount<Integer.MAX_VALUE) {
+					if(estimatedChunkCount<Integer.MAX_VALUE && getCorpus().getManifest().isEditable()) {
 						estimatedChunkCount <<= 2;
 					}
 
@@ -875,7 +907,7 @@ public class FileDriver extends AbstractDriver {
 		checkState("Failed to obtain block cache for chunk index: "+layerManifest, blockCache!=null);
 
 		// Finally throw all the settings into a builder and let it assemble the actual chunk index instance
-		return DefaultChunkIndex.builder()
+		return DefaultChunkIndex.newBuilder()
 				.fileSet(getDataFiles())
 				.indexValueType(valueType)
 				.resource(new FileResource(path))
@@ -914,7 +946,7 @@ public class FileDriver extends AbstractDriver {
 
 		long stamp = lock.readLock();
 		try {
-			return getConverter().scanFile(fileIndex, chunkIndexStorage);
+			return getConverter().scanFile(fileIndex);
 		} finally {
 			lock.unlockRead(stamp);
 		}
@@ -933,44 +965,54 @@ public class FileDriver extends AbstractDriver {
 		checkNotNull(indices);
 		checkNotNull(layer);
 
+		checkNonEmpty(indices);
+
 		checkConnected();
 		checkReady();
 
-		Lock globalLock = getGlobalLock();
-		globalLock.lock();
-		try {
+		/*
+		 * HOWTO:
+		 *
+		 * - Map indices to primary layer if required
+		 * - Delegate to SingleThreadedItemLoader which in turn delegates to LayerBuffer.load()
+		 * - Any existing chunks in the primary layer will directly be published to the action callback
+		 * - Indices not yet mapped to a live item then get sent to loadPrimaryLayer()
+		 */
 
-			final LayerGroup group = layer.getLayerGroup();
-			final ItemLayer primaryLayer = group.getPrimaryLayer();
-			final boolean mappingRequired = layer!=primaryLayer;
+		final LayerGroup group = layer.getLayerGroup();
+		final ItemLayer primaryLayer = group.getPrimaryLayer();
+		final boolean mappingRequired = layer!=primaryLayer;
 
-			if(mappingRequired) {
-				indices = mapIndices(layer.getManifest(), primaryLayer.getManifest(), indices);
-			}
-
-			/*
-			 *  Delegate loading.
-			 *  We do not forward the consumer action for publishing since that is only
-			 *  required when actually loading chunks from a backend storage!
-			 */
-			Loader loader = new Loader(indices, getLayerBuffer(primaryLayer), null);
-
-			// Potentially long running part
-			loader.execute();
-
-			// Only in case of missing items do we need to start mapping and/or accessing underlying resources
-			if(loader.getMissingIndicesCount()>0L) {
-				IndexSet[] missingIndices = loader.getMissingIndices();
-
-				// Delegate to chunk aware method to do the actual I/O stuff
-				return loadPrimaryLayer(missingIndices, primaryLayer, action);
-			} else {
-				// Nothing to be loaded
-				return 0L;
-			}
-		} finally {
-			globalLock.unlock();
+		if(mappingRequired) {
+			indices = mapIndices(layer.getManifest(), primaryLayer.getManifest(), indices);
 		}
+
+		/*
+		 *  Delegate loading.
+		 *  We do not forward the consumer action for publishing since that is only
+		 *  required when actually loading chunks from a backend storage!
+		 */
+		SingleThreadedItemLoader singleThreadedItemLoader = new SingleThreadedItemLoader(indices, getLayerBuffer(primaryLayer), null);
+
+		// Potentially long running part
+		singleThreadedItemLoader.execute();
+
+		long loadedItems = 0L;
+
+		// Only in case of missing items do we need to start mapping and/or accessing underlying resources
+		if(singleThreadedItemLoader.getMissingIndicesCount()>0L) {
+			IndexSet[] missingIndices = singleThreadedItemLoader.getMissingIndices();
+
+			// Delegate to chunk aware method to do the actual I/O stuff
+			try {
+				loadedItems = loadPrimaryLayer(missingIndices, primaryLayer, action);
+			} catch (IOException e) {
+				throw new ModelException(getCorpus(), GlobalErrorCode.IO_ERROR,
+						"Failed loading chunks for layer: "+ModelUtils.getUniqueId(primaryLayer));
+			}
+		}
+
+		return loadedItems;
 	}
 
 	/**
@@ -979,7 +1021,7 @@ public class FileDriver extends AbstractDriver {
 	 * @author Markus Gärtner
 	 *
 	 */
-	protected class Loader {
+	protected class SingleThreadedItemLoader {
 
 		private final IndexSet[] indices;
 
@@ -1004,12 +1046,14 @@ public class FileDriver extends AbstractDriver {
 		/**
 		 * Storage for index values of chunks that need to be loaded
 		 */
-		private IndexSetBuilder missingIndices;
+		private IndexSetBuilder missingIndicesBuffer;
+
+		private boolean allIndicesMissing = false;
 
 		private long missingIndicesCount = 0L;
 		private long availableIndicesCount = 0L;
 
-		public Loader(IndexSet[] indices, BufferedItemManager.LayerBuffer buffer, Consumer<ChunkInfo> action) {
+		public SingleThreadedItemLoader(IndexSet[] indices, BufferedItemManager.LayerBuffer buffer, Consumer<ChunkInfo> action) {
 			this.indices = indices;
 			this.buffer = buffer;
 
@@ -1021,9 +1065,18 @@ public class FileDriver extends AbstractDriver {
 		}
 
 		public void execute() {
-			OfLong it = IndexSet.asIterator(indices);
+			if(buffer.isEmpty()) {
+				allIndicesMissing = true;
+				missingIndicesCount = requestedItemCount;
+			} else {
 
-			buffer.load(it, this::onAvailableItem, this::onMissingItem);
+				OfLong it = IndexSet.asIterator(indices);
+
+				buffer.load(it, this::onAvailableItem, this::onMissingItem);
+
+				// Make sure to tell the publisher we're done, so it can wrap up pending chunk information
+				publisher.flush();
+			}
 		}
 
 		/**
@@ -1032,15 +1085,15 @@ public class FileDriver extends AbstractDriver {
 		public void onMissingItem(long index) {
 			missingIndicesCount++;
 
-			if(missingIndices==null) {
+			if(missingIndicesBuffer==null) {
 				IndexCollectorFactory factory = new IndexCollectorFactory();
 				factory.totalSizeLimit(requestedItemCount);
 				factory.inputSorted(inputSorted);
 
-				missingIndices = factory.create();
+				missingIndicesBuffer = factory.create();
 			}
 
-			missingIndices.add(index);
+			missingIndicesBuffer.add(index);
 		}
 
 		public void onAvailableItem(Item item, long index) {
@@ -1052,7 +1105,13 @@ public class FileDriver extends AbstractDriver {
 		}
 
 		public IndexSet[] getMissingIndices() {
-			return missingIndices==null ? null : missingIndices.build();
+
+			// Shortcut in case of empty buffer: just forward the raw input indices
+			if(allIndicesMissing) {
+				return indices;
+			}
+
+			return missingIndicesBuffer==null ? null : missingIndicesBuffer.build();
 		}
 
 		public long getRequestedItemCount() {
@@ -1081,38 +1140,37 @@ public class FileDriver extends AbstractDriver {
 		checkNotNull(indices);
 		checkNotNull(layer);
 
+		checkNonEmpty(indices);
+
 		checkConnected();
 		checkReady();
 
-		Lock globalLock = getGlobalLock();
-		globalLock.lock();
-		try {
+		/*
+		 * HOWTO:
+		 *
+		 * - Map indices to primary layer if required
+		 * - Provide indices to LayerBuffer.release() and let it take care of also releasing content
+		 */
 
-			final LayerGroup group = layer.getLayerGroup();
-			final ItemLayer primaryLayer = group.getPrimaryLayer();
-			final boolean mappingRequired = layer!=primaryLayer;
+		final LayerGroup group = layer.getLayerGroup();
+		final ItemLayer primaryLayer = group.getPrimaryLayer();
+		final boolean mappingRequired = layer!=primaryLayer;
 
-			if(mappingRequired) {
-				indices = mapIndices(layer.getManifest(), primaryLayer.getManifest(), indices);
-			}
-		} finally {
-			globalLock.unlock();
+		if(mappingRequired) {
+			indices = mapIndices(layer.getManifest(), primaryLayer.getManifest(), indices);
 		}
+
+		getLayerBuffer(primaryLayer).release(IndexSet.asIterator(indices));
 	}
 
 	protected long loadPrimaryLayer(IndexSet[] indices, ItemLayer layer,
-			Consumer<ChunkInfo> action) throws InterruptedException {
+			Consumer<ChunkInfo> action) throws IOException, InterruptedException {
 		checkConnected();
 		checkReady();
 
 		// If the driver supports chunking and has created a chunk index, then use the easy path
 		if(hasChunkIndex()) {
-			try {
-				return loadChunks(layer, indices, action);
-			} catch (IOException e) {
-				throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-						"Failed to delegate loading of data chunks in layer "+ModelUtils.getUniqueId(layer)+" to connector", e);
-			}
+			return loadChunks(layer, indices, action);
 		} else {
 			// No chunk index available, proceed with loading the respective files
 			int fileCount = dataFiles.getFileCount();
@@ -1149,12 +1207,7 @@ public class FileDriver extends AbstractDriver {
 					continue;
 				}
 
-				try {
-					loadedItems += loadFile(fileIndex, action);
-				} catch (IOException e) {
-					throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-							"Failed to delegate loading of data chunks in file at index "+fileIndex+" to connector", e);
-				}
+				loadedItems += loadFile(fileIndex, action);
 			}
 
 
@@ -1167,7 +1220,7 @@ public class FileDriver extends AbstractDriver {
 	 * query the chunk index and verify for each chunk of data that it is indeed required to be
 	 * loaded.
 	 *
-	 * @param layer
+	 * @param layer the primary layer to load chunks for
 	 * @param indices
 	 * @param action
 	 * @return
@@ -1177,7 +1230,31 @@ public class FileDriver extends AbstractDriver {
 	protected long loadChunks(ItemLayer layer, IndexSet[] indices,
 			Consumer<ChunkInfo> action) throws IOException,
 			InterruptedException {
+		checkNotNull(indices);
+		checkNotNull(layer);
 
+		checkConnected();
+		checkReady();
+
+		if(!hasChunkIndex())
+			throw new ModelException(getCorpus(), GlobalErrorCode.ILLEGAL_STATE,
+					"Cannot attempt to load chunks from files without a chunk index storage");
+
+		/*
+		 * HOWTO:
+		 *
+		 * - Ensure sorted order of indices
+		 * - Iterate indices and access chunk index
+		 */
+
+
+		// Now start actual loading process
+		ChunkIndex chunkIndex = getChunkIndex(layer);
+
+		int recommendedBufferSize = (int) Math.min(DEFAULT_CHUNK_INFO_SIZE, IndexUtils.count(indices));
+		ChunkConsumer consumer = createPublisher(action, recommendedBufferSize);
+
+		LayerBuffer layerBuffer = getLayerBuffer(layer);
 
 		StampedLock lock = getLockForFile(fileIndex);
 		FileInfo fileInfo = getFileStates().getFileInfo(fileIndex);
@@ -1193,6 +1270,80 @@ public class FileDriver extends AbstractDriver {
 
 		// TODO Auto-generated method stub
 		return getConverter().loadChunks(layer, IndexSet.asIterator(indices), chunkIndexStorage, action);
+	}
+
+	protected class ChunkLoader {
+		private final ItemLayer layer;
+		private final IndexSet[] indices;
+
+		private final ChunkIndex chunkIndex;
+
+		private Converter.Cursor cursor;
+
+		private int currentFileIndex = -1;
+		private StampedLock fileLock;
+		private long stamp;
+
+		public void execute() throws IOException {
+
+			IndexUtils.ensureSorted(indices);
+			OfLong it = IndexSet.asIterator(indices);
+			@SuppressWarnings("resource")
+			ChunkIndexCursor chunkIndexCursor = chunkIndex.newCursor(true);
+
+			chunkIndexCursor.begin();
+			try {
+
+				try {
+					while(it.hasNext()) {
+						long index = it.nextLong();
+						chunkIndexCursor.moveTo(index);
+
+						int fileIndex = chunkIndexCursor.getFileId();
+						if(fileIndex!=currentFileIndex) {
+							releaseFile();
+							useFile(fileIndex);
+						}
+
+
+					}
+				} finally {
+					releaseFile();
+				}
+
+			} finally {
+				chunkIndexCursor.end();
+				chunkIndexCursor.close();
+			}
+		}
+
+		/**
+		 * First tries to acquire a new Cursor and then locks the file
+		 */
+		private void useFile(int fileIndex) throws IOException {
+
+			cursor = getConverter().getCursor(fileIndex, layer);
+
+			fileLock = getLockForFile(fileIndex);
+			stamp = fileLock.readLock();
+			currentFileIndex = fileIndex;
+		}
+
+		/**
+		 * First unlocks the file and then closes the Cursor
+		 */
+		private void releaseFile() throws IOException {
+			if(fileLock!=null) {
+				fileLock.unlockRead(stamp);
+				stamp = 0;
+				fileLock = null;
+				currentFileIndex = -1;
+			}
+
+			if(cursor!=null) {
+				cursor.close();
+			}
+		}
 	}
 
 	/**
@@ -1286,6 +1437,25 @@ public class FileDriver extends AbstractDriver {
 			}
 		}
 
+	}
+
+	/**
+	 * Returns the {@link Charset} specified by the {@link OptionKey#ENCODING} option.
+	 * If no such option has been set in this driver's {@link #getManifest() manifest}
+	 * the default {@link StandardCharsets#UTF_8 UTF-8} charset will be returned.
+	 *
+	 * @return
+	 */
+	public Charset getEncoding() {
+
+		Charset charset = StandardCharsets.UTF_8;
+
+		String savedEncoding = (String) OptionKey.ENCODING.getValue(getManifest());
+		if(savedEncoding!=null) {
+			charset = Charset.forName(savedEncoding);
+		}
+
+		return charset;
 	}
 
 	/**
@@ -1460,6 +1630,12 @@ public class FileDriver extends AbstractDriver {
 
 		//TODO
 		CHUNK_INDICES_FOLDER("chunkIndicesFolder", ValueType.FILE),
+
+		/**
+		 * Name of a {@link Charset} specifying the character encoding of the files
+		 * containing the data for this driver.
+		 */
+		ENCODING("encoding", ValueType.STRING),
 
 		/**
 		 * User defined hint whether to immediately load the underlying resources

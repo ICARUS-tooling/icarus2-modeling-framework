@@ -52,8 +52,8 @@ public class DefaultLayerMemberFactory implements LayerMemberFactory {
 	 * @see de.ims.icarus2.model.api.registry.LayerMemberFactory#newEdge(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item, de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
-	public Edge newEdge(Structure host, Item source, Item target) {
-		return new DefaultEdge(host, source, target);
+	public Edge newEdge(Structure host) {
+		return new DefaultEdge(host);
 	}
 
 	/**

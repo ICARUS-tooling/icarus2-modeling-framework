@@ -140,15 +140,11 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 		String editable = ManifestXmlUtils.normalize(attributes, ATTR_EDITABLE);
 		if(editable!=null) {
 			manifest.setEditable(Boolean.parseBoolean(editable));
-		} else {
-			manifest.setEditable(CorpusManifest.DEFAULT_EDITABLE_VALUE);
 		}
 
 		String parallel = ManifestXmlUtils.normalize(attributes, ATTR_PARALLEL);
 		if(parallel!=null) {
 			manifest.setParallel(Boolean.parseBoolean(parallel));
-		} else {
-			manifest.setParallel(CorpusManifest.DEFAULT_PARALLEL_VALUE);
 		}
 	}
 

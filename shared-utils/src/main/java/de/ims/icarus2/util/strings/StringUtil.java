@@ -288,6 +288,22 @@ public final class StringUtil {
 		return new String(tmp);
 	}
 
+	public static String toString(CharSequence cs, int beginIndex, int endIndex) {
+		if(cs instanceof String) {
+			return ((String) cs).substring(beginIndex, endIndex);
+		}
+
+		int length = endIndex-beginIndex+1;
+
+		char[] tmp = new char[length];
+
+		while(--length>=0) {
+			tmp[length] = cs.charAt(beginIndex+length);
+		}
+
+		return new String(tmp);
+	}
+
 	/**
 	 * @see String#regionMatches(int, String, int, int)
 	 */

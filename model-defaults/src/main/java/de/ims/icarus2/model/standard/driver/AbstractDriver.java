@@ -167,6 +167,18 @@ public abstract class AbstractDriver implements Driver {
 		}
 	}
 
+	/**
+	 * Callback for subclasses to perform maintenance work or additional  initialization
+	 * after the main connection process has been finished. This is to allow subclasses
+	 * to inject custom initialization steps without overriding and compromising the
+	 * main connection routine.
+	 * <p>
+	 * This method will be called outside the global lock!
+	 */
+	protected void afterConnect() {
+		// no-op
+	}
+
 	private void setMappings(MappingStorage mappings) {
 		checkNotNull(mappings);
 		checkState(this.mappings==null);

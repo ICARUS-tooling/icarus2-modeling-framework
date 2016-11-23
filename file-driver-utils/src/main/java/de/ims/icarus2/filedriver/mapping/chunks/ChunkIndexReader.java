@@ -25,6 +25,7 @@ import de.ims.icarus2.model.api.io.SynchronizedAccessor;
  * @author Markus Gärtner
  *
  */
+@Deprecated
 public interface ChunkIndexReader extends SynchronizedAccessor<ChunkIndex> {
 
 	/**

@@ -368,6 +368,7 @@ public class StaticStructure extends AbstractItem implements Structure {
 	/**
 	 * @see de.ims.icarus2.model.api.members.structure.Structure#addEdge(long, de.ims.icarus2.model.api.members.item.Edge)
 	 */
+	@SuppressWarnings("boxing")
 	@Override
 	public long addEdge(long index, Edge edge) {
 		return signalUnsupportedOperation();

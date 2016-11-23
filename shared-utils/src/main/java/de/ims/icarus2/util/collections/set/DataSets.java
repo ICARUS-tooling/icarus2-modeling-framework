@@ -18,6 +18,8 @@
  */
 package de.ims.icarus2.util.collections.set;
 
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+
 import java.util.List;
 
 /**
@@ -29,8 +31,7 @@ public class DataSets {
 	public static final int ARRAY_SET_THRESHOLD = 7;
 
 	public static <E extends Object> DataSet<E> createDataSet(List<E> items) {
-		if (items == null)
-			throw new NullPointerException("Invalid items"); //$NON-NLS-1$
+		checkNotNull(items);
 
 		int size = items.size();
 
@@ -38,6 +39,22 @@ public class DataSets {
 			return DataSet.emptySet();
 		} else if(size==1) {
 			return new SingletonSet<>(items.get(0));
+		} else if(size<=ARRAY_SET_THRESHOLD) {
+			return new ArraySet<>(items);
+		} else {
+			return new CachedSet<>(items);
+		}
+	}
+
+	public static <E extends Object> DataSet<E> createDataSet(E[] items) {
+		checkNotNull(items);
+
+		int size = items.length;
+
+		if(size==0) {
+			return DataSet.emptySet();
+		} else if(size==1) {
+			return new SingletonSet<>(items[0]);
 		} else if(size<=ARRAY_SET_THRESHOLD) {
 			return new ArraySet<>(items);
 		} else {

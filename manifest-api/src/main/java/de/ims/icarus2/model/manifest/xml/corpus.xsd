@@ -18,7 +18,7 @@
 				<xs:element name="container" type="imf:containerManifestType" />
 				<xs:element name="structure" type="imf:structureManifestType" />
 				<xs:element name="rasterizer" type="imf:rasterizerManifestType" />
-				<xs:element name="path-resolver" type="imf:pathResolverManifestType" />
+				<xs:element name="pathResolver" type="imf:pathResolverManifestType" />
 			</xs:choice>
 		</xs:sequence>
 	</xs:complexType>
@@ -37,7 +37,7 @@
 			<xs:extension base="imf:basicMemberManifestType">
 				<xs:sequence>
 					<xs:element name="note" type="imf:moduleSpecType" minOccurs="0" maxOccurs="unbounded" />
-					<xs:element name="root-context" type="imf:contextManifestType" minOccurs="1" maxOccurs="unbounded" />
+					<xs:element name="rootContext" type="imf:contextManifestType" minOccurs="1" maxOccurs="unbounded" />
 					<xs:element name="context" type="imf:contextManifestType" maxOccurs="unbounded" />
 				</xs:sequence>
 				<xs:attribute name="editable" type="xs:boolean" default="false" />
@@ -70,11 +70,11 @@
 							</xs:sequence>
 						</xs:complexType>
 					</xs:element>
-					<xs:element name="layer-group" type="imf:layerGroupManifestType" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="layerGroup" type="imf:layerGroupManifestType" minOccurs="0" maxOccurs="unbounded" />
 					<xs:element name="driver" type="imf:driverManifestType" minOccurs="0" />
 				</xs:sequence>
-				<xs:attribute name="primary-layer" type="imf:identifierAttr" />
-				<xs:attribute name="foundation-layer" type="imf:identifierAttr" />
+				<xs:attribute name="primaryLayer" type="imf:identifierAttr" />
+				<xs:attribute name="foundationLayer" type="imf:identifierAttr" />
 				<xs:attribute name="independent" type="xs:boolean" default="false" />
 				<xs:attribute name="editable" type="xs:boolean" default="false" />
 			</xs:extension>
@@ -82,9 +82,9 @@
 	</xs:complexType>
 	
 	<xs:complexType name="prerequisiteType">
-		<xs:attribute name="context-id" type="imf:identifierAttr" />
-		<xs:attribute name="layer-id" type="imf:identifierAttr" />
-		<xs:attribute name="layer-type" type="imf:identifierAttr" />
+		<xs:attribute name="contextId" type="imf:identifierAttr" />
+		<xs:attribute name="layerId" type="imf:identifierAttr" />
+		<xs:attribute name="layerType" type="imf:identifierAttr" />
 		<xs:attribute name="alias" type="imf:identifierAttr" />
 	</xs:complexType>
 	
@@ -95,11 +95,11 @@
 		<xs:complexContent>
 			<xs:extension base="imf:foreignImplementationManifestType">
 				<xs:sequence>
-					<xs:element name="module-spec" type="imf:moduleSpecType" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="moduleSpec" type="imf:moduleSpecType" minOccurs="0" maxOccurs="unbounded" />
 					<xs:element name="module" type="imf:moduleManifestType" minOccurs="0" maxOccurs="unbounded" />
 					<xs:element name="mapping" type="imf:mappingManifestType" minOccurs="0" maxOccurs="unbounded" />
 				</xs:sequence>
-				<xs:attribute name="location-type" type="imf:locationTypeAttr" />
+				<xs:attribute name="locationType" type="imf:locationTypeAttr" />
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -110,7 +110,7 @@
 		</xs:annotation>
 		<xs:complexContent>
 			<xs:extension base="imf:foreignImplementationManifestType">
-				<xs:attribute name="module-spec-id" type="imf:identifierAttr" />
+				<xs:attribute name="moduleSpecId" type="imf:identifierAttr" />
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -122,7 +122,7 @@
 		<xs:complexContent>
 			<xs:extension base="imf:identityType">
 				<xs:sequence>
-					<xs:element name="extension-point" type="imf:identifierType" />
+					<xs:element name="extensionPoint" type="imf:identifierType" />
 				</xs:sequence>
 				<xs:attribute name="customizable" type="xs:boolean" />
 				<xs:attribute name="multiplicity" type="imf:multiplicityAttr" default="one" />
@@ -137,7 +137,7 @@
 					<xs:group ref="imf:layerGroup" />
 				</xs:sequence>
 				<xs:attribute name="independent" type="xs:boolean" default="false" />
-				<xs:attribute name="primary-layer" type="imf:identifierAttr" use="required"/>
+				<xs:attribute name="primaryLayer" type="imf:identifierAttr" use="required"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -149,9 +149,9 @@
 		<xs:complexContent>
 			<xs:extension base="imf:layerManifestType">
 				<xs:sequence>
-					<xs:element name="highlight-flag" type="imf:highlightFlagType" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="highlightFlag" type="imf:highlightFlagType" minOccurs="0" maxOccurs="unbounded" />
 				</xs:sequence>
-				<xs:attribute name="primary-layer" type="imf:identifierAttr" use="required"/>
+				<xs:attribute name="primaryLayer" type="imf:identifierAttr" use="required"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -163,11 +163,11 @@
 		<xs:complexContent>
 			<xs:extension base="imf:layerManifestType">
 				<xs:sequence>
-					<xs:element name="annotation-flag" type="imf:annotationFlagType" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="annotationFlag" type="imf:annotationFlagType" minOccurs="0" maxOccurs="unbounded" />
 					<xs:element name="annotation" type="imf:annotationManifestType" minOccurs="0" maxOccurs="unbounded" />
 				</xs:sequence>
 				<xs:attribute name="key" type="imf:identifierAttr" use="required" />
-				<xs:attribute name="content-type" type="imf:identifierAttr" />
+				<xs:attribute name="contentType" type="imf:identifierAttr" />
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -184,10 +184,10 @@
 							<xs:attribute name="name" type="imf:identifierAttr" />
 						</xs:complexType>
 					</xs:element>
-					<xs:element name="value-set" type="imf:valueSetType" minOccurs="0" />
-					<xs:element name="value-range" type="imf:valueRangeType" minOccurs="0" />
+					<xs:element name="valueSet" type="imf:valueSetType" minOccurs="0" />
+					<xs:element name="valueRange" type="imf:valueRangeType" minOccurs="0" />
 				</xs:sequence>
-				<xs:attribute name="default-key" type="imf:identifierAttr" />
+				<xs:attribute name="defaultKey" type="imf:identifierAttr" />
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -199,10 +199,10 @@
 		<xs:complexContent>
 			<xs:extension base="imf:itemLayerManifestType">
 				<xs:sequence>
-					<xs:element name="value-layer" type="imf:targetLayerType" />
+					<xs:element name="valueLayer" type="imf:targetLayerType" />
 					<xs:element name="rasterizer" type="imf:rasterizerManifestType" />
 				</xs:sequence>
-				<xs:attribute name="annotation-key" type="imf:identifierAttr" />
+				<xs:attribute name="annotationKey" type="imf:identifierAttr" />
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -237,8 +237,8 @@
 		<xs:complexContent>
 			<xs:extension base="imf:layerManifestType">
 				<xs:sequence>
-					<xs:element name="boundary-layer" type="imf:targetLayerType" minOccurs="0" />
-					<xs:element name="foundation-layer" type="imf:targetLayerType" minOccurs="0" />
+					<xs:element name="boundaryLayer" type="imf:targetLayerType" minOccurs="0" />
+					<xs:element name="foundationLayer" type="imf:targetLayerType" minOccurs="0" />
 					<xs:element name="container" type="imf:containerManifestType" maxOccurs="unbounded" />
 				</xs:sequence>
 			</xs:extension>
@@ -249,9 +249,9 @@
 		<xs:complexContent>
 			<xs:extension base="imf:containerManifestType">
 				<xs:sequence>
-					<xs:element name="structure-flag" type="imf:structureFlagType" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="structureFlag" type="imf:structureFlagType" minOccurs="0" maxOccurs="unbounded" />
 				</xs:sequence>
-				<xs:attribute name="structure-type" type="imf:structureTypeAttr"/>
+				<xs:attribute name="structureType" type="imf:structureTypeAttr"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -260,9 +260,9 @@
 		<xs:complexContent>
 			<xs:extension base="imf:basicMemberManifestType">
 				<xs:sequence>
-					<xs:element name="container-flag" type="imf:containerFlagType" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="containerFlag" type="imf:containerFlagType" minOccurs="0" maxOccurs="unbounded" />
 				</xs:sequence>
-				<xs:attribute name="container-type" type="imf:containerTypeAttr"/>
+				<xs:attribute name="containerType" type="imf:containerTypeAttr"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -271,15 +271,15 @@
 		<xs:complexContent>
 			<xs:extension base="imf:basicMemberManifestType">
 				<xs:sequence>
-					<xs:element name="base-layer" type="imf:targetLayerType" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="baseLayer" type="imf:targetLayerType" minOccurs="0" maxOccurs="unbounded" />
 				</xs:sequence>
-				<xs:attribute name="layer-type" type="imf:identifierAttr"/>
+				<xs:attribute name="layerType" type="imf:identifierAttr"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
 	
 	<xs:complexType name="targetLayerType">
-		<xs:attribute name="layer-id" type="imf:identifierAttr" use="required" />
+		<xs:attribute name="layerId" type="imf:identifierAttr" use="required" />
 	</xs:complexType>
 	
 	<xs:complexType name="locationManifestType">
@@ -287,8 +287,8 @@
 			<xs:extension base="imf:basicManifestType">
 				<xs:sequence>
 					<xs:element name="path" type="imf:pathEntryType" minOccurs="0"/>
-					<xs:element name="path-entry" type="imf:pathEntryType" minOccurs="0" maxOccurs="unbounded" />
-					<xs:element name="path-resolver" type="imf:pathResolverManifestType" minOccurs="0" />
+					<xs:element name="pathEntry" type="imf:pathEntryType" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="pathResolver" type="imf:pathResolverManifestType" minOccurs="0" />
 				</xs:sequence>
 			</xs:extension>
 		</xs:complexContent>
@@ -315,7 +315,7 @@
 			<xs:extension base="imf:basicMemberManifestType">
 				<xs:attribute name="source" type="xs:string" />
 				<xs:attribute name="classname" type="imf:qualifiedClassNameAttr" use="required" />
-				<xs:attribute name="source-type" type="xs:string" default="default" />
+				<xs:attribute name="sourceType" type="xs:string" default="default" />
 				<xs:attribute name="factory" type="xs:boolean" />
 			</xs:extension>
 		</xs:complexContent>
@@ -352,15 +352,15 @@
 	
 	<xs:complexType name="optionType" mixed="true">
 		<xs:all>
-			<xs:element name="extension-point" type="imf:identifierType" />
-			<xs:element name="default-value" type="imf:textType" />
-			<xs:element name="value-set" type="imf:valueSetType" />
-			<xs:element name="value-range" type="imf:valueRangeType" />
+			<xs:element name="extensionPoint" type="imf:identifierType" />
+			<xs:element name="defaultValue" type="imf:textType" />
+			<xs:element name="valueSet" type="imf:valueSetType" />
+			<xs:element name="valueRange" type="imf:valueRangeType" />
 		</xs:all>
 		<xs:attributeGroup ref="imf:identity" />
-		<xs:attribute name="value-type" type="imf:valueTypeAttr" use="required" />
+		<xs:attribute name="valueType" type="imf:valueTypeAttr" use="required" />
 		<xs:attribute name="published" type="xs:boolean" use="optional" default="true" />
-		<xs:attribute name="multi-value" type="xs:boolean" use="optional" default="false" />
+		<xs:attribute name="multiValue" type="xs:boolean" use="optional" default="false" />
 		<xs:attribute name="group" type="imf:identifierAttr" use="optional" />
 	</xs:complexType>
 	
@@ -369,7 +369,7 @@
 			<xs:element name="value" type="xs:string" />
 		</xs:sequence>
 		<xs:attribute name="name" type="imf:identifierAttr" />
-		<xs:attribute name="value-type" type="imf:valueTypeAttr" />
+		<xs:attribute name="valueType" type="imf:valueTypeAttr" />
 	</xs:complexType>
 	
 	<xs:complexType name="basicManifestType">
@@ -377,7 +377,7 @@
 			<xs:element name="version" type="imf:versionManifestType" minOccurs="0" />
 		</xs:sequence>
 		<xs:attribute name="id" type="imf:identifierAttr" use="optional" />
-		<xs:attribute name="template-id" type="imf:identifierAttr" use="optional" />
+		<xs:attribute name="templateId" type="imf:identifierAttr" use="optional" />
 	</xs:complexType>
 	
 	<xs:complexType name="pathEntryType">
@@ -390,11 +390,11 @@
 	
 	<xs:complexType name="mappingManifestType">
 		<xs:attribute name="id" type="imf:identifierAttr" use="required" />
-		<xs:attribute name="source-layer" type="imf:identifierAttr" use="required" />
-		<xs:attribute name="target-layer" type="imf:identifierAttr" use="required" />
+		<xs:attribute name="sourceLayer" type="imf:identifierAttr" use="required" />
+		<xs:attribute name="targetLayer" type="imf:identifierAttr" use="required" />
 		<xs:attribute name="relation" type="imf:relationAttr" use="required" />
 		<xs:attribute name="coverage" type="imf:coverageAttr" use="required" />
-		<xs:attribute name="inverse-mapping" type="imf:identifierAttr" use="required" />
+		<xs:attribute name="inverseMapping" type="imf:identifierAttr" use="required" />
 	</xs:complexType>
 	
 	<xs:complexType name="valueSetType">
@@ -408,8 +408,8 @@
 			<xs:element name="min" type="imf:expressionValueType" />
 			<xs:element name="max" type="imf:expressionValueType" />
 		</xs:sequence>
-		<xs:attribute name="include-min" type="xs:boolean" default="true" use="optional" />
-		<xs:attribute name="include-max" type="xs:boolean" default="true" use="optional" />
+		<xs:attribute name="includeMin" type="xs:boolean" default="true" use="optional" />
+		<xs:attribute name="includeMax" type="xs:boolean" default="true" use="optional" />
 	</xs:complexType>
 	
 	<xs:complexType name="expressionValueType" mixed="true">
@@ -492,7 +492,7 @@
 	<xs:complexType name="versionManifestType">
 		<xs:simpleContent>
 			<xs:extension base="xs:string">
-				<xs:attribute name="version-format" type="imf:identifierAttr"/>
+				<xs:attribute name="versionFormat" type="imf:identifierAttr"/>
 			</xs:extension>
 		</xs:simpleContent>
 	</xs:complexType>
@@ -713,11 +713,11 @@
 	<xs:group name="layerGroup">
 		<xs:sequence>
 			<xs:choice maxOccurs="unbounded">
-				<xs:element name="item-layer" type="imf:itemLayerManifestType" />
-				<xs:element name="structure-layer" type="imf:structureLayerManifestType" />
-				<xs:element name="fragment-layer" type="imf:fragmentLayerManifestType" />
-				<xs:element name="annotation-layer" type="imf:annotationLayerManifestType" />
-				<xs:element name="highlight-layer" type="imf:highlightLayerManifestType" />
+				<xs:element name="itemLayer" type="imf:itemLayerManifestType" />
+				<xs:element name="structureLayer" type="imf:structureLayerManifestType" />
+				<xs:element name="fragmentLayer" type="imf:fragmentLayerManifestType" />
+				<xs:element name="annotationLayer" type="imf:annotationLayerManifestType" />
+				<xs:element name="highlightLayer" type="imf:highlightLayerManifestType" />
 			</xs:choice>
 		</xs:sequence>
 	</xs:group>

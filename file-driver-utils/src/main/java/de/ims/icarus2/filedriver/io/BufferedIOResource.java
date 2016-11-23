@@ -145,6 +145,9 @@ public abstract class BufferedIOResource {
 	 */
 	private Block tmpBlock;
 
+	private Block lastReturnedBlock = null;
+	private int lastReturnedBlockId = -1;
+
 	protected BufferedIOResource(IOResource resource, BlockCache cache, int cacheSize) {
 		checkNotNull(resource);
 		checkNotNull(cache);
@@ -247,6 +250,10 @@ public abstract class BufferedIOResource {
 	}
 
 	protected final Block getBlock(int id, boolean writeAccess) {
+		if(id==lastReturnedBlockId && lastReturnedBlock!=null) {
+			return lastReturnedBlock;
+		}
+
 		Block block = cache.getBlock(id);
 
 		if(block==null) {
@@ -273,7 +280,7 @@ public abstract class BufferedIOResource {
 					return null;
 				}
 
-				if(tmpBlock==null) {
+				if(tmpBlock==null || tmpBlock.isLocked()) { // Technically it should never happen to have a block locked at this point
 					tmpBlock = new Block(newBlockData());
 				}
 
@@ -289,6 +296,9 @@ public abstract class BufferedIOResource {
 						"Failed to read block "+id+" in resource "+resource, e); //$NON-NLS-1$ //$NON-NLS-2$
 			}
 		}
+
+		lastReturnedBlock = block;
+		lastReturnedBlockId = id;
 
 		return block;
 	}
@@ -517,8 +527,9 @@ public abstract class BufferedIOResource {
 		void close();
 	}
 
+
 	/**
-	 * Provides a basic implementation for synchronized read access to the data in
+	 * Provides a basic implementation for synchronized read or write access to the data in
 	 * the hosting {@link BufferedIOResource}. Creating an instance of this accessor
 	 * will automatically increment the resource's use counter and closing it will
 	 * then again decrement the counter.
@@ -527,12 +538,19 @@ public abstract class BufferedIOResource {
 	 *
 	 * @param <T> The source type of the accessor
 	 */
-	public class ReadAccessor<T extends Object> implements SynchronizedAccessor<T> {
+	public class ReadWriteAccessor<T extends Object> implements SynchronizedAccessor<T> {
 
 		private long stamp;
+		private final boolean readOnly;
 
-		protected ReadAccessor() {
+		protected ReadWriteAccessor(boolean readOnly) {
+			this.readOnly = readOnly;
+
 			incrementUseCount();
+		}
+
+		public boolean isReadOnly() {
+			return readOnly;
 		}
 
 		/**
@@ -549,7 +567,11 @@ public abstract class BufferedIOResource {
 		 */
 		@Override
 		public void begin() {
-			stamp = getLock().readLock();
+			if(readOnly) {
+				stamp = getLock().readLock();
+			} else {
+				stamp = getLock().writeLock();
+			}
 		}
 
 		/**
@@ -560,64 +582,11 @@ public abstract class BufferedIOResource {
 			long stamp = this.stamp;
 			this.stamp = 0L;
 
-			getLock().unlockRead(stamp);
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#close()
-		 */
-		@Override
-		public void close() {
-			decrementUseCount();
-		}
-
-	}
-
-
-	/**
-	 * Provides a basic implementation for synchronized write access to the data in
-	 * the hosting {@link BufferedIOResource}. Creating an instance of this accessor
-	 * will automatically increment the resource's use counter and closing it will
-	 * then again decrement the counter.
-	 *
-	 * @author Markus Gärtner
-	 *
-	 * @param <T> The source type of the accessor
-	 */
-	public class WriteAccessor<T extends Object> implements SynchronizedAccessor<T> {
-
-		private long stamp;
-
-		protected WriteAccessor() {
-			incrementUseCount();
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#getSource()
-		 */
-		@SuppressWarnings("unchecked")
-		@Override
-		public T getSource() {
-			return (T) BufferedIOResource.this;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#begin()
-		 */
-		@Override
-		public void begin() {
-			stamp = getLock().writeLock();
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#end()
-		 */
-		@Override
-		public void end() {
-			long stamp = this.stamp;
-			this.stamp = 0L;
-
-			getLock().unlockWrite(stamp);
+			if(readOnly) {
+				getLock().unlockRead(stamp);
+			} else {
+				getLock().unlockWrite(stamp);
+			}
 		}
 
 		/**

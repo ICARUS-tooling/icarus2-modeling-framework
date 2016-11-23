@@ -182,9 +182,10 @@ public class ByteChannelBlockStream extends InputStream {
 	 * @see java.io.InputStream#close()
 	 */
 	@Override
-	public void close() throws IOException {
+	public void close() {
 		position = -1L;
 		remaining = -1L;
 		eos = true;
+		channel = null;
 	}
 }

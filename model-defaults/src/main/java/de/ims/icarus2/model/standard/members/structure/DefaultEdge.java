@@ -50,6 +50,10 @@ public class DefaultEdge extends AbstractEdge {
 		setTarget(target);
 	}
 
+	public DefaultEdge(Structure structure) {
+		setStructure(structure);
+	}
+
 	/**
 	 * @param structure the structure to set
 	 */

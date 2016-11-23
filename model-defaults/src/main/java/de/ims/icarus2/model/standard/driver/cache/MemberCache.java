@@ -23,7 +23,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.standard.driver.cache.TrackedMember.TrackedItem;
+import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -38,7 +38,7 @@ import de.ims.icarus2.util.mem.Reference;
  */
 @HeapMember
 @AccessControl(AccessPolicy.DENY)
-public class MemberCache<M extends TrackedItem> {
+public class MemberCache<M extends Item> {
 
 	@Reference
 	private Long2ObjectMap<M> cache;

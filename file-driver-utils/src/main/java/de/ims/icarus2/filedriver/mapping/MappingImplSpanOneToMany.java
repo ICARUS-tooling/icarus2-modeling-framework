@@ -172,7 +172,11 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class Reader extends ReadAccessor<Mapping> implements MappingReader {
+	public class Reader extends ReadWriteAccessor<Mapping> implements MappingReader {
+
+		protected Reader() {
+			super(true);
+		}
 
 		private final Coverage coverage = getManifest().getCoverage();
 
@@ -609,7 +613,11 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class Writer extends WriteAccessor<Mapping> implements MappingWriter {
+	public class Writer extends ReadWriteAccessor<Mapping> implements MappingWriter {
+
+		protected Writer() {
+			super(false);
+		}
 
 		/**
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingWriter#map(long, long, long)

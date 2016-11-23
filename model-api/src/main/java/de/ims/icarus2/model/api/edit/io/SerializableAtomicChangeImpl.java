@@ -1188,7 +1188,7 @@ public class SerializableAtomicChangeImpl {
 			// For "primitive" annotations use the specialized change implementations
 			case ValueType.INTEGER_TYPE_LABEL: return new IntegerValueChange(proxy);
 			case ValueType.LONG_TYPE_LABEL: return new LongValueChange(proxy);
-			case ValueType.Float_TYPE_LABEL: return new FloatValueChange(proxy);
+			case ValueType.FLOAT_TYPE_LABEL: return new FloatValueChange(proxy);
 			case ValueType.DOUBLE_TYPE_LABEL: return new DoubleValueChange(proxy);
 			case ValueType.BOOLEAN_TYPE_LABEL: return new BooleanValueChange(proxy);
 

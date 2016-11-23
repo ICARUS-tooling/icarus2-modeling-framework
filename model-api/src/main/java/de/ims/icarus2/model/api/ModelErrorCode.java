@@ -123,6 +123,11 @@ public enum ModelErrorCode implements ErrorCode {
 	 */
 	DRIVER_METADATA(406),
 
+	/**
+	 * The content of a corpus resource is invalid.
+	 */
+	DRIVER_INVALID_CONTENT(407),
+
 	//**************************************************
 	//       5xx  CORPUS VIEW ERRORS
 	//**************************************************

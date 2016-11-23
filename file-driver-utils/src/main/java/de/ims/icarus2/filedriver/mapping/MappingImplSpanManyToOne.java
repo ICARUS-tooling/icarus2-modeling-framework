@@ -194,7 +194,11 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class Reader extends ReadAccessor<Mapping> implements MappingReader {
+	public class Reader extends ReadWriteAccessor<Mapping> implements MappingReader {
+
+		protected Reader() {
+			super(true);
+		}
 
 		// Used for the final step in lookup resolution
 		// Represents one-to-many mapping (of spans)
@@ -488,7 +492,11 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class Writer extends WriteAccessor<Mapping> implements MappingWriter {
+	public class Writer extends ReadWriteAccessor<Mapping> implements MappingWriter {
+
+		protected Writer() {
+			super(false);
+		}
 
 		private void map0(long group, long targetIndex) {
 			// Block id for group

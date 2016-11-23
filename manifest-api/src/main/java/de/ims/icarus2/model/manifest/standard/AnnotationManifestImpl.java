@@ -52,6 +52,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	private ValueRange valueRange;
 	private ContentType contentType;
 	private Object noEntryValue = null;
+	private Boolean allowUnknownValues;
 
 	/**
 	 * @param manifestLocation
@@ -225,15 +226,17 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	}
 
 	/**
-	 * This implementation returns {@code true} when at least one of
-	 * {@link ValueRange} or {@link ValueSet} previously
-	 * assigned to this manifest is non-null.
 	 *
-	 * @see de.ims.icarus2.model.manifest.api.AnnotationManifest#isValuesLimited()
+	 * @see de.ims.icarus2.model.manifest.api.AnnotationManifest#isAllowUnknownValues()
 	 */
 	@Override
-	public boolean isValuesLimited() {
-		return valueRange!=null || values!=null || (hasTemplate() && getTemplate().isValuesLimited());
+	public boolean isAllowUnknownValues() {
+		return allowUnknownValues==null ? DEFAULT_ALLOW_UNKNOWN_VALUES : allowUnknownValues.booleanValue();
+	}
+
+	@Override
+	public void setAllowUnknownValues(boolean allowUnknownValues) {
+		this.allowUnknownValues = (allowUnknownValues == DEFAULT_ALLOW_UNKNOWN_VALUES) ? null : Boolean.valueOf(allowUnknownValues);
 	}
 
 	/**

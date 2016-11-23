@@ -216,7 +216,7 @@ public interface CorpusManifest extends MemberManifest {
 	void setEditable(boolean value);
 
 	/**
-	 * Changes whether or not this corpus is allowed to host multiple
+	 * Changes whether or not this corpus is allowed to host multiple concurrent root contexts.
 	 *
 	 * @param value
 	 * @see #DEFAULT_PARALLEL_VALUE

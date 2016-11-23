@@ -137,7 +137,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			if(edgeBuffer.getMaxDepth()>MAX_DEPTH)
 				throw new IllegalArgumentException("Tree exceeds maximum depth for this implementation: "+edgeBuffer.getMaxDepth());
 
-			final RootItem<Edge> root = builder.root();
+			final RootItem<Edge> root = builder.getRoot();
 
 			final LookupList<Edge> edges = new LookupList<>(builder.edges());
 
@@ -509,7 +509,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			if(edgeBuffer.getMaxDepth()>MAX_DEPTH)
 				throw new IllegalArgumentException("Tree exceeds maximum depth for this implementation: "+edgeBuffer.getMaxDepth());
 
-			final RootItem<Edge> root = builder.root();
+			final RootItem<Edge> root = builder.getRoot();
 
 			final LookupList<Edge> edges = new LookupList<>(builder.edges());
 
@@ -820,7 +820,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 
 		public static LargeTreeEdgeStorage fromBuilder(StructureBuilder builder) {
 			final EdgeBuffer edgeBuffer = builder.edgeBuffer();
-			final RootItem<Edge> root = builder.root();
+			final RootItem<Edge> root = builder.getRoot();
 			final LookupList<Edge> edges = new LookupList<>(builder.edges());
 			final int nodeCount = builder.getNodeCount();
 

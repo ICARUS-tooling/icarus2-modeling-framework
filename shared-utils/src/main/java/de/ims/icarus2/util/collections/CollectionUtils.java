@@ -246,6 +246,16 @@ public final class CollectionUtils {
 		}
 	}
 
+	public static <T extends Object> void feedItems(
+			Collection<T> collection, T[] items, int offset, int length) {
+		if(items==null || items.length==0) {
+			return;
+		}
+		for(int i=0; i<length; i++) {
+			collection.add((T)items[offset+i]);
+		}
+	}
+
     public static void feedItems(LongCollection collection, long...items) {
     	for(long item : items) {
     		collection.add(item);

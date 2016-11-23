@@ -19,6 +19,8 @@
 package de.ims.icarus2.model.manifest.standard;
 
 /**
+ * Defines constants to identify some common layer types.
+ *
  * @author Markus Gärtner
  *
  */
@@ -35,7 +37,7 @@ public interface DefaultLayerTypeIds {
 	public static final String ITEM_LAYER_OVERLAY = "item:layer-overlay"; //$NON-NLS-1$
 
 	public static final String STRUCT_DEPENDENCY = "struct:dependency"; //$NON-NLS-1$
-	public static final String STRUCT_PHRASE = "struct:phrase"; //$NON-NLS-1$
+	public static final String STRUCT_CONSTITUENT = "struct:constituent"; //$NON-NLS-1$
 	public static final String STRUCT_LFG = "struct:lfg"; //$NON-NLS-1$
 	public static final String STRUCT_COREFERENCE = "struct:coreference"; //$NON-NLS-1$
 	public static final String STRUCT_INFORMATION_STATUS = "struct:information-status"; //$NON-NLS-1$

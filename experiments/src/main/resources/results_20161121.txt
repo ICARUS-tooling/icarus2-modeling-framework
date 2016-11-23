@@ -1,0 +1,36 @@
+
+Running tests with file of size 50 MB - time for writing: 118
+[throughput=1122.0MB/s duration=517 bytesread=580MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=65536]
+[throughput=1073.0MB/s duration=557 bytesread=597MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=16384]
+[throughput=1052.0MB/s duration=565 bytesread=594MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=32768]
+[throughput=906.0MB/s duration=719 bytesread=651MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=33554432]
+[throughput=860.0MB/s duration=813 bytesread=699MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=1048576]
+[throughput=841.0MB/s duration=784 bytesread=659MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=8192]
+[throughput=826.0MB/s duration=797 bytesread=658MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=2097152]
+[throughput=623.0MB/s duration=926 bytesread=577MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=4096]
+[throughput=446.0MB/s duration=1349 bytesread=602MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=2048]
+[throughput=285.0MB/s duration=2216 bytesread=631MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=1024]
+
+Running tests with file of size 100 MB - time for writing: 218
+[throughput=1133.0MB/s duration=1209 bytesread=1370MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=65536]
+[throughput=1078.0MB/s duration=1073 bytesread=1156MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=32768]
+[throughput=1031.0MB/s duration=1252 bytesread=1291MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=16384]
+[throughput=919.0MB/s duration=1369 bytesread=1258MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=1048576]
+[throughput=864.0MB/s duration=1562 bytesread=1349MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=33554432]
+[throughput=859.0MB/s duration=1478 bytesread=1269MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=8192]
+[throughput=855.0MB/s duration=1360 bytesread=1163MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=2097152]
+[throughput=623.0MB/s duration=1864 bytesread=1161MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=4096]
+[throughput=445.0MB/s duration=2842 bytesread=1264MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=2048]
+[throughput=290.0MB/s duration=4405 bytesread=1277MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=1024]
+
+Running tests with file of size 500 MB - time for writing: 1075
+[throughput=1077.0MB/s duration=6206 bytesread=6684MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=65536]
+[throughput=1014.0MB/s duration=6449 bytesread=6544MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=32768]
+[throughput=965.0MB/s duration=5877 bytesread=5674MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=16384]
+[throughput=872.0MB/s duration=6678 bytesread=5824MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=1048576]
+[throughput=801.0MB/s duration=8381 bytesread=6719MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=8192]
+[throughput=757.0MB/s duration=7653 bytesread=5794MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=2097152]
+[throughput=691.0MB/s duration=8501 bytesread=5874MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=33554432]
+[throughput=624.0MB/s duration=11317 bytesread=7069MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=4096]
+[throughput=437.0MB/s duration=13917 bytesread=6089MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=2048]
+[throughput=296.0MB/s duration=22229 bytesread=6589MB CHANNEL_UNBUFFERED stack=SeekableByteChannel>>SubChannel>>ByteBuffer buffersize=1024]

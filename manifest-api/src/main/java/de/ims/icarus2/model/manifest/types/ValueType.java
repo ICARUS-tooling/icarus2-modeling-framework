@@ -45,6 +45,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.eval.Expression;
 import de.ims.icarus2.util.nio.ByteArrayChannel;
 import de.ims.icarus2.util.nio.ByteChannelCharacterSequence;
+import de.ims.icarus2.util.strings.NamedObject;
 import de.ims.icarus2.util.strings.StringPrimitives;
 import de.ims.icarus2.util.strings.StringResource;
 
@@ -52,7 +53,7 @@ import de.ims.icarus2.util.strings.StringResource;
  * @author Markus Gärtner
  *
  */
-public class ValueType implements StringResource {
+public class ValueType implements StringResource, NamedObject {
 
 	private final Class<?> baseClass;
 	private final String xmlForm;
@@ -132,6 +133,11 @@ public class ValueType implements StringResource {
 		return xmlForm;
 	}
 
+	@Override
+	public final String getName() {
+		return getStringValue();
+	}
+
 	public final Class<?> getBaseClass() {
 		return baseClass;
 	}
@@ -152,7 +158,7 @@ public class ValueType implements StringResource {
 	 * no longer supported on this level.
 	 */
 	@Deprecated
-	public static final ValueType EXTENSION = new ValueType("extension", String.class, false, true) { //$NON-NLS-1$
+	public static final ValueType EXTENSION = new ValueType(EXTENSION_TYPE_LABEL, String.class, false, true) {
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
 			return s;
@@ -239,8 +245,8 @@ public class ValueType implements StringResource {
 		}
 	};
 
-	public static final String Float_TYPE_LABEL = "float";
-	public static final ValueType FLOAT = new ValueType(Float_TYPE_LABEL, Float.class, true, true) {
+	public static final String FLOAT_TYPE_LABEL = "float";
+	public static final ValueType FLOAT = new ValueType(FLOAT_TYPE_LABEL, Float.class, true, true) {
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
 			return StringPrimitives.parseFloat(s);

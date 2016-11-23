@@ -27,9 +27,11 @@ import java.nio.ByteBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.io.BufferedIOResource;
 import de.ims.icarus2.filedriver.io.sets.FileSet;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkArrays.ArrayAdapter;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 
 /**
@@ -51,7 +53,7 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 
 	private static final int DEFAULT_BLOCK_POWER = 12;
 
-	public static Builder builder() {
+	public static Builder newBuilder() {
 		return new Builder();
 	}
 
@@ -113,6 +115,11 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 	@Override
 	public ChunkIndexWriter newWriter() {
 		return this.new Writer();
+	}
+
+	@Override
+	public ChunkIndexCursor newCursor(boolean readOnly) {
+		return this.new Cursor(readOnly);
 	}
 
 	public long getEntryCount() {
@@ -226,9 +233,10 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 	 * @author Markus Gärtner
 	 *
 	 */
-	private class Reader extends ReadAccessor<ChunkIndex> implements ChunkIndexReader {
+	private class Reader extends ReadWriteAccessor<ChunkIndex> implements ChunkIndexReader {
 
 		private Reader() {
+			super(true);
 			incrementUseCount();
 		}
 
@@ -271,9 +279,10 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 	 * @author Markus Gärtner
 	 *
 	 */
-	private class Writer extends WriteAccessor<ChunkIndex> implements ChunkIndexWriter {
+	private class Writer extends ReadWriteAccessor<ChunkIndex> implements ChunkIndexWriter {
 
 		private Writer() {
+			super(false);
 			incrementUseCount();
 		}
 
@@ -307,6 +316,127 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 		@Override
 		public long setEndOffset(long index, long offset) {
 			return DefaultChunkIndex.this.setEndOffset(index, offset);
+		}
+
+	}
+
+	private class Cursor extends ReadWriteAccessor<ChunkIndex> implements ChunkIndexCursor {
+
+		private int id = NO_INDEX_INT;
+		private int localIndex = NO_INDEX_INT;
+		private Block block = null;
+
+		private Cursor(boolean readOnly) {
+			super(readOnly);
+			incrementUseCount();
+		}
+
+		/**
+		 * @see java.io.Flushable#flush()
+		 */
+		@Override
+		public void flush() throws IOException {
+			DefaultChunkIndex.this.flush();
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexCursor#getEntryCount()
+		 */
+		@Override
+		public long getEntryCount() {
+			return DefaultChunkIndex.this.getEntryCount();
+		}
+
+		/**
+		 * Calculates and caches id of the required {@link BufferedIOResource.Block block}
+		 * and the offset for the frame within this block that's denoted by {@code index}.
+		 * Note that this method will only attempt to access the backing cache if the
+		 * required chunk data is stored outside the block referenced on the last call.
+		 *
+		 * @see de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexCursor#moveTo(long)
+		 */
+		@Override
+		public boolean moveTo(long index) {
+
+			localIndex = localIndex(index);
+
+			// Only delegate to cache lookup if we need a new block
+			int newId = id(index);
+			if(newId!=id) {
+				id = newId;
+				block = getBlock(id, !isReadOnly());
+			}
+
+			return block!=null;
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexCursor#getFileId()
+		 */
+		@Override
+		public int getFileId() {
+			return block==null ? -1 : arrayAdapter.getFileId(block.getData(), localIndex);
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexCursor#getBeginOffset()
+		 */
+		@Override
+		public long getBeginOffset() {
+			return block==null ? NO_INDEX : arrayAdapter.getBeginOffset(block.getData(), localIndex);
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexCursor#getEndOffset()
+		 */
+		@Override
+		public long getEndOffset() {
+			return block==null ? NO_INDEX : arrayAdapter.getEndOffset(block.getData(), localIndex);
+		}
+
+		private void checkWriteAccess() {
+			if(isReadOnly())
+				throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
+						"Write operations not supported on read-only cursor");
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexCursor#setFileId(long, int)
+		 */
+		@Override
+		public int setFileId(long index, int fileId) {
+			checkWriteAccess();
+
+			int result = arrayAdapter.setFileId(block.getData(), localIndex, fileId);
+			lockBlock(id, block);
+
+			return result;
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexCursor#setBeginOffset(long, long)
+		 */
+		@Override
+		public long setBeginOffset(long index, long offset) {
+			checkWriteAccess();
+
+			long result = arrayAdapter.setBeginOffset(block.getData(), localIndex, offset);
+			lockBlock(id, block);
+
+			return result;
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexCursor#setEndOffset(long, long)
+		 */
+		@Override
+		public long setEndOffset(long index, long offset) {
+			checkWriteAccess();
+
+			long result = arrayAdapter.setEndOffset(block.getData(), localIndex, offset);
+			lockBlock(id, block);
+
+			return result;
 		}
 
 	}

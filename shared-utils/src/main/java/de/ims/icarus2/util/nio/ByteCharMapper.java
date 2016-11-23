@@ -56,7 +56,7 @@ public class ByteCharMapper {
 		ByteCharMapper mapper = new ByteCharMapper(channel, IOUtil.UTF8_CHARSET.newDecoder(), 10);
 
 		int c;
-		while((c = mapper.next())!=-1) {
+		while((c = mapper.nextCharacter())!=-1) {
 			System.out.printf("char='%s' len=%d\n", (char)c, mapper.byteCount);
 			if(c=='l') {
 				c++;
@@ -88,7 +88,7 @@ public class ByteCharMapper {
 		bb.flip();
 	}
 
-	public int next() throws IOException {
+	public int nextCharacter() throws IOException {
 		if (eof || !hasMoreBytes()) {
 			return -1;
 		}
@@ -120,6 +120,12 @@ public class ByteCharMapper {
 				continue;
 			}
 			if (cr.isOverflow()) {
+				/*
+				 *  Theoretically should never happen since we only aim at
+				 *  decoding 1 character at a time.
+				 *
+				 *  TODO maybe skip this condition check altogether and let's throw the exception
+				 */
 				break;
 			}
 

@@ -140,6 +140,18 @@ import de.ims.icarus2.model.standard.driver.AbstractDriver;
  * (must be accessible via the classloader that loaded this storage instance) or one of the predefined constants
  * {LRU,MRU,UNLIMITED} which stand for either one of the two {@link RUBlockCache} variants or {@link UnlimitedBlockCache}</td>
  * </tr>
+ * <tr>
+ * <td>chunkIndex.minChunkSize</td>
+ * <td>int</td>
+ * <td>Length of the smallest chunk in the index, measured in bytes. A value of {@code -1} indicates either an
+ * empty chunk index or that the information about chunk length hasn't been recorded when the index was constructed.</td>
+ * </tr>
+ * <tr>
+ * <td>chunkIndex.maxChunkSize</td>
+ * <td>int</td>
+ * <td>Length of the largest chunk in the index, measured in bytes. A value of {@code -1} indicates either an
+ * empty chunk index or that the information about chunk length hasn't been recorded when the index was constructed.</td>
+ * </tr>
  * </table>
  * <p>
  * <b>Container/Structure metadata "[layer-id].[level].&lt;key&gt"</b>
@@ -524,6 +536,24 @@ public class FileDriverMetadata implements ModelConstants {
 		 * defines the maximum memory consumption of the chunk index.
 		 */
 		CACHE_SIZE("cacheSize", ValueType.INTEGER),
+
+		/**
+		 * Length of the smallest chunk in the index, measured in bytes.
+		 * <p>
+		 * A value of {@code -1} indicates either an empty chunk index or
+		 * that the information about chunk length hasn't been recorded when
+		 * the index was constructed.
+		 */
+		MIN_CHUNK_SIZE("minChunkSize", ValueType.INTEGER),
+
+		/**
+		 * Length of the largest chunk in the index, measured in bytes.
+		 * <p>
+		 * A value of {@code -1} indicates either an empty chunk index or
+		 * that the information about chunk length hasn't been recorded when
+		 * the index was constructed.
+		 */
+		MAX_CHUNK_SIZE("maxChunkSize", ValueType.INTEGER),
 		;
 
 		private final String suffix;

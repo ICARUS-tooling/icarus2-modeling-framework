@@ -49,6 +49,8 @@ import de.ims.icarus2.model.standard.members.structure.RootItem;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.set.DataSet;
+import de.ims.icarus2.util.collections.set.DataSets;
+import de.ims.icarus2.util.collections.set.SingletonSet;
 
 /**
  * <p>
@@ -171,7 +173,7 @@ public class StructureBuilder {
 	}
 
 	@SuppressWarnings("unchecked")
-	<R extends RootItem<?>> R root() {
+	public <R extends RootItem<?>> R getRoot() {
 		if(root==null) {
 			root = RootItem.forManifest(manifest);
 		}
@@ -416,6 +418,13 @@ public class StructureBuilder {
 		CollectionUtils.feedItems(edges(), edges);
 	}
 
+	public <E extends Edge> void addEdges(E[] edges, int offset, int length) {
+		checkState(edgeStorage == null);
+		checkNotNull(edges);
+
+		CollectionUtils.feedItems(edges(), edges, offset, length);
+	}
+
 	public <E extends Edge> void addEdges(Collection<E> edges) {
 		checkState(edgeStorage == null);
 		checkNotNull(edges);
@@ -440,6 +449,20 @@ public class StructureBuilder {
 		checkNotNull(baseContainers);
 
 		this.baseContainers = baseContainers;
+	}
+
+	public void setBaseContainers(Container[] baseContainers) {
+		checkState(this.baseContainers == null);
+		checkNotNull(baseContainers);
+
+		this.baseContainers = DataSets.createDataSet(baseContainers);
+	}
+
+	public void setBaseContainer(Container baseContainer) {
+		checkState(this.baseContainers == null);
+		checkNotNull(baseContainer);
+
+		this.baseContainers = new SingletonSet<>(baseContainer);
 	}
 
 	public void setBoundaryContainer(Container boundaryContainer) {
@@ -502,6 +525,10 @@ public class StructureBuilder {
 
 	public Edge newEdge(Item source, Item target) {
 		return getMemberFactory().newEdge(currentStructure(), source, target);
+	}
+
+	public Edge newEdge() {
+		return getMemberFactory().newEdge(currentStructure());
 	}
 
 	//**********************************
@@ -577,7 +604,7 @@ public class StructureBuilder {
 		structure.setEdges(edgeStorage);
 
 		// Final linking
-		RootItem<?> root = root();
+		RootItem<?> root = getRoot();
 
 		checkState(root==structure.getVirtualRoot());
 
@@ -637,7 +664,7 @@ public class StructureBuilder {
 
 	private void prepareEdgeBuffer() {
 
-		RootItem<?> root = root();
+		RootItem<?> root = getRoot();
 
 		edgeBuffer.setRoot(root);
 		edgeBuffer.add(edges);

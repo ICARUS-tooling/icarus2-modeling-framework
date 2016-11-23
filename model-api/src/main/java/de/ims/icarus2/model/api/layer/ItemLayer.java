@@ -55,8 +55,8 @@ public interface ItemLayer extends Layer, ManifestOwner<ItemLayerManifest> {
 	 * containers the elements in this layer correspond to. For
 	 * example if a structural layer represents syntax trees for
 	 * another layer that holds word tokens then this layer would
-	 * be referenced via {@link Layer#getBaseLayer()} and the
-	 * layer representing sentences would be accessed by
+	 * be referenced via {@link Layer#getBaseLayers() a base layer}
+	 * and the layer representing sentences would be accessed by
 	 * this method. Note that for containers that do not correspond
 	 * to the groups defined by other {@code ItemLayer}s this
 	 * method is allowed to return {@code null}. A {@code non-null}

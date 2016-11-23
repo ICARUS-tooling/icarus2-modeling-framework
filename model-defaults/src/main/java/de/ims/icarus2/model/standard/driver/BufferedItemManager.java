@@ -19,11 +19,9 @@ package de.ims.icarus2.model.standard.driver;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
-import java.util.Map;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.function.LongConsumer;
 import java.util.function.ObjLongConsumer;
@@ -34,7 +32,6 @@ import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.standard.driver.cache.TrackedMember;
 import de.ims.icarus2.model.util.ModelUtils;
-import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
@@ -66,65 +63,102 @@ public class BufferedItemManager {
 	}
 
 	/**
+	 * Helper class for use within methods that load/produce chunks and then add
+	 * them to a {@link LayerBuffer} instance.
+	 * <p>
+	 * Not thread-safe!
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	public static class InputCache {
+
+		private final int estimatedSize;
+
+		public InputCache(int estimatedSize) {
+			this.estimatedSize = estimatedSize;
+		}
+
+		private volatile Long2ObjectMap<Item> pendingEntries;
+
+		protected Long2ObjectMap<Item> pendingEntries() {
+			if(pendingEntries==null) {
+				int size = Math.min(estimatedSize, 100_000);
+				pendingEntries = new Long2ObjectOpenHashMap<>(size);
+			}
+
+			return pendingEntries;
+		}
+
+		public void offer(long index, Item item) {
+			pendingEntries().put(index, item);
+		}
+
+		public boolean hasPendingEntries() {
+			Long2ObjectMap<Item> pendingEntries = this.pendingEntries;
+			return pendingEntries!=null && !pendingEntries.isEmpty();
+		}
+
+		public void forEach(ObjLongConsumer<Item> action) {
+			Long2ObjectMap<Item> pendingEntries = this.pendingEntries;
+			if(pendingEntries!=null) {
+				pendingEntries.long2ObjectEntrySet().forEach(entry -> {
+					action.accept(entry.getValue(), entry.getLongKey());
+				});
+			}
+		}
+
+		public int discard() {
+			Long2ObjectMap<Item> pendingEntries = this.pendingEntries;
+			int result = 0;
+
+			if(pendingEntries!=null && !pendingEntries.isEmpty()) {
+				result = pendingEntries.size();
+				pendingEntries.clear();
+			}
+
+			return result;
+		}
+	}
+
+	/**
 	 *
 	 * @author Markus Gärtner
 	 *
 	 */
 	public static class LayerBuffer {
 		private final int estimatedSize;
-		private final boolean useSmallIndices;
-
 		private final boolean trackItemUse;
 
-		private volatile Object entries;
-		private volatile Object pendingEntries;
+		private volatile Long2ObjectMap<Item> entries;
+
+		private final ObjLongConsumer<Item> disposeItemAction;
 
 
-		protected LayerBuffer(int estimatedSize, boolean useSmallIndices, boolean trackItemUse) {
+		protected LayerBuffer(int estimatedSize, boolean trackItemUse, ObjLongConsumer<Item> disposeItemAction) {
 			this.estimatedSize = estimatedSize;
-			this.useSmallIndices = useSmallIndices;
 			this.trackItemUse = trackItemUse;
+			this.disposeItemAction = disposeItemAction;
 		}
 
 		public int getEstimatedSize() {
 			return estimatedSize;
 		}
 
-		public boolean isUseSmallIndices() {
-			return useSmallIndices;
-		}
-
 		public boolean isTrackItemUse() {
 			return trackItemUse;
 		}
 
-		@SuppressWarnings("rawtypes")
 		public boolean isEmpty() {
-			Object entries = this.entries;
-			return entries==null || ((Map)entries).isEmpty();
+			Long2ObjectMap<Item> entries = this.entries;
+			return entries==null || entries.isEmpty();
 		}
 
-		@SuppressWarnings("rawtypes")
-		public boolean hasPendingEntries() {
-			Object pendingEntries = this.pendingEntries;
-			return pendingEntries!=null && !((Map)pendingEntries).isEmpty();
-		}
-
-		protected Object createStorage(int size) {
-			if(size<=0) {
-				size = 100;
-			}
-
-			return useSmallIndices ?
-					new Int2ObjectOpenHashMap<Item>(size)
-					: new Long2ObjectOpenHashMap<Item>(size);
-		}
-
-		protected Object entries() {
+		protected Long2ObjectMap<Item> entries() {
 			if(entries==null) {
 				synchronized (this) {
 					if(entries==null) {
-						entries = createStorage(estimatedSize);
+						entries = new Long2ObjectOpenHashMap<>(estimatedSize);
 					}
 				}
 			}
@@ -132,23 +166,9 @@ public class BufferedItemManager {
 			return entries;
 		}
 
-		protected Object pendingEntries() {
-			if(pendingEntries==null) {
-				synchronized (this) {
-					if(pendingEntries==null) {
-						int size = Math.min(estimatedSize, 100_000);
-						pendingEntries = createStorage(size);
-					}
-				}
-			}
-
-			return pendingEntries;
-		}
-
 		public int remainingCapacity() {
-			Object entries = entries();
-			@SuppressWarnings("rawtypes")
-			int currentSize = ((Map)entries).size();
+			Long2ObjectMap<Item> entries = entries();
+			int currentSize = entries.size();
 
 			return Math.max(0, estimatedSize-currentSize);
 		}
@@ -162,14 +182,8 @@ public class BufferedItemManager {
 		 * @param index
 		 * @return
 		 */
-		@SuppressWarnings("unchecked")
 		public Item fetch(long index) {
-			Object entries = entries();
-			if(useSmallIndices) {
-				return ((Int2ObjectMap<Item>)entries).get(IcarusUtils.ensureIntegerValueRange(index));
-			} else {
-				return ((Long2ObjectMap<Item>)entries).get(index);
-			}
+			return entries().get(index);
 		}
 
 		/**
@@ -179,86 +193,40 @@ public class BufferedItemManager {
 		 *
 		 * @param index
 		 */
-		@SuppressWarnings("unchecked")
 		public Item remove(long index) {
-			Object entries = entries();
-			if(useSmallIndices) {
-				return ((Int2ObjectMap<Item>)entries).remove(IcarusUtils.ensureIntegerValueRange(index));
-			} else {
-				return ((Long2ObjectMap<Item>)entries).remove(index);
-			}
+			return entries().remove(index);
 		}
 
 		/**
 		 * Adds a new {@link Item} and maps it to the given {@code index}.
-		 *
-		 * @param index
 		 * @param item
+		 * @param index
 		 */
-		@SuppressWarnings("unchecked")
-		public void add(long index, Item item) {
-			Object entries = entries();
-			if(useSmallIndices) {
-				((Int2ObjectMap<Item>)entries).put(IcarusUtils.ensureIntegerValueRange(index), item);
-			} else {
-				((Long2ObjectMap<Item>)entries).put(index, item);
-			}
+		public void add(Item item, long index) {
+			entries().put(index, item);
 		}
 
 		/**
-		 * Adds the given mapping of {@link Item} and {@code index} to the
-		 * collection of pending items.
-		 *
-		 * @param index
+		 * Adds a new {@link Item} and maps it using its own {@link Item#getIndex() index}.
 		 * @param item
 		 */
-		@SuppressWarnings("unchecked")
-		public void offer(long index, Item item) {
-			Object pendingEntries = pendingEntries();
-			if(useSmallIndices) {
-				((Int2ObjectMap<Item>)pendingEntries).put(IcarusUtils.ensureIntegerValueRange(index), item);
-			} else {
-				((Long2ObjectMap<Item>)pendingEntries).put(index, item);
-			}
+		public void add(Item item) {
+			entries().put(item.getIndex(), item);
+		}
+
+		public InputCache newCache() {
+			return new InputCache(getEstimatedSize());
 		}
 
 		/**
-		 * Shifts all pending items into the actual storage.
+		 * Shifts all pending items from the given {@code cache} into the actual storage.
 		 */
-		@SuppressWarnings({ "rawtypes", "unchecked" })
-		public void commit() {
-			Object pendingEntries = this.pendingEntries;
-
-			if(pendingEntries==null || ((Map)pendingEntries).isEmpty()) {
+		public void commit(InputCache cache) {
+			if(!cache.hasPendingEntries()) {
 				return;
 			}
 
-			if(useSmallIndices) {
-				((Int2ObjectMap<Item>)pendingEntries).int2ObjectEntrySet().forEach(entry -> {
-					add(entry.getIntKey(), entry.getValue());
-				});
-			} else {
-				((Long2ObjectMap<Item>)pendingEntries).long2ObjectEntrySet().forEach(entry -> {
-					add(entry.getLongKey(), entry.getValue());
-				});
-			}
-		}
-
-		public int discardPending() {
-			Object pendingEntries = this.pendingEntries;
-
-			if(pendingEntries==null) {
-				return 0;
-			}
-
-			@SuppressWarnings("rawtypes")
-			Map map = (Map) pendingEntries;
-
-			int size = map.size();
-
-			map.clear();
-
-			return size;
+			cache.forEach(this::add);
 		}
 
 		/**
@@ -272,15 +240,17 @@ public class BufferedItemManager {
 		 * @param ids
 		 * @param action
 		 */
-		public void release(OfLong ids, ObjLongConsumer<Item> disposeItemAction) {
+		public void release(OfLong ids) {
 			while(ids.hasNext()) {
 				long index = ids.nextLong();
 				Item item = fetch(index);
 
-				if(((TrackedMember)item).decrementUseCounter()<=0) {
+				if(trackItemUse && ((TrackedMember)item).decrementUseCounter()<=0) {
 					remove(index);
 
-					disposeItemAction.accept(item, index);
+					if(disposeItemAction!=null) {
+						disposeItemAction.accept(item, index);
+					}
 				}
 			}
 		}
@@ -308,24 +278,19 @@ public class BufferedItemManager {
 				if(item==null) {
 					missingItemAction.accept(index);
 				} else {
-					((TrackedMember)item).incrementUseCounter();
+					if(trackItemUse) {
+						((TrackedMember)item).incrementUseCounter();
+					}
 					presentItemAction.accept(item, index);
 				}
 			}
 		}
 
-		@SuppressWarnings("rawtypes")
 		public void clear() {
-			Object entries = this.entries;
+			Long2ObjectMap<Item> entries = this.entries;
 			if(entries!=null) {
-				((Map)entries).clear();
+				entries.clear();
 				this.entries = null;
-			}
-
-			Object pendingEntries = this.pendingEntries;
-			if(pendingEntries!=null) {
-				((Map)pendingEntries).clear();
-				this.pendingEntries = null;
 			}
 		}
 	}

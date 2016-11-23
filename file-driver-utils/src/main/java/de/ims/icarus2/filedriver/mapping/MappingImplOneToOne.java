@@ -146,9 +146,13 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class Reader extends ReadAccessor<Mapping> implements MappingReader {
+	public class Reader extends ReadWriteAccessor<Mapping> implements MappingReader {
 
 		private final Coverage coverage = getManifest().getCoverage();
+
+		protected Reader() {
+			super(true);
+		}
 
 		private long lookup0(long sourceIndex) {
 			int id = id(sourceIndex);
@@ -425,7 +429,11 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class Writer extends WriteAccessor<Mapping> implements MappingWriter {
+	public class Writer extends ReadWriteAccessor<Mapping> implements MappingWriter {
+
+		protected Writer() {
+			super(false);
+		}
 
 		/**
 		 * Checks that both spans are of length {@code 1} and then delegates to

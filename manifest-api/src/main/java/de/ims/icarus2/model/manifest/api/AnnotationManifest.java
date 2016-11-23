@@ -44,6 +44,14 @@ import de.ims.icarus2.util.data.ContentType;
 @AccessControl(AccessPolicy.DENY)
 public interface AnnotationManifest extends MemberManifest {
 
+	public static final boolean DEFAULT_ALLOW_UNKNOWN_VALUES = false;
+
+	/**
+	 * Returns the hosting layer manifest or {@code null} if this manifest
+	 * is a template.
+	 *
+	 * @return
+	 */
 	AnnotationLayerManifest getLayerManifest();
 
 	/**
@@ -137,31 +145,26 @@ public interface AnnotationManifest extends MemberManifest {
 	}
 
 	/**
-	 * Tells whether or not this annotation has a predefined set of possible
-	 * values.
+	 * Tells whether or not this annotation accepts values outside the predefined
+	 * ones obtainable via the following methods:
 	 * <p>
-	 * This is an optional method that will be used by visualizations and other
-	 * user interfaces to improve usability by assisting the user. For example
-	 * a dialog allowing for search constraints to be defined could present the
-	 * user a drop-down menu containing all the possible values.
-	 * <p>
-	 * Note that in the case this method returns {@code true} <i>at least one</i>
-	 * of the following methods {@code must} return a valid object that describes
-	 * the bounds of supported values:
 	 * <ul>
 	 * <li>{@link #getValueRange()}</li>
 	 * <li>{@link #getValueSet()}</li>
 	 * </ul>
-	 * Not doing so violates the general manifest contract and renders helper
-	 * objects that wish to present the values to a user useless.
+	 * Note that in the case this method returns {@code false} <i>at least one</i>
+	 * of those methods {@code must} return a valid object that describes
+	 * the bounds of supported values.
+	 * <p>
+	 * This is <b>not</b> an inheritable property!
 	 *
-	 * @return {@code true} if and only if <b>at least</b> some the possible values
-	 * of this annotation are known.
+	 * @return {@code true} if and only if this annotation accepts values outside a
+	 * predefined and limited set or range.
 	 * @see #getValueRange()
 	 * @see #getValueSet()
 	 */
 	@AccessRestriction(AccessMode.READ)
-	boolean isValuesLimited();
+	boolean isAllowUnknownValues();
 
 	/**
 	 * Returns an object that describes the set of available values for this annotation
@@ -246,4 +249,6 @@ public interface AnnotationManifest extends MemberManifest {
 	void setContentType(ContentType contentType);
 
 	void setNoEntryValue(Object noEntryValue);
+
+	void setAllowUnknownValues(boolean allowUnknownValues);
 }

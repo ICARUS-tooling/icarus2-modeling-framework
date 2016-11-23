@@ -152,7 +152,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 
 			final EdgeBuffer edgeBuffer = builder.edgeBuffer();
 
-			final RootItem<Edge> root = builder.root();
+			final RootItem<Edge> root = builder.getRoot();
 
 			final LookupList<Edge> edges = new LookupList<>(builder.edges());
 
@@ -343,7 +343,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 
 			final EdgeBuffer edgeBuffer = builder.edgeBuffer();
 
-			final RootItem<Edge> root = builder.root();
+			final RootItem<Edge> root = builder.getRoot();
 
 			final LookupList<Edge> edges = new LookupList<>(builder.edges());
 
@@ -526,7 +526,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 
 			final EdgeBuffer edgeBuffer = builder.edgeBuffer();
 
-			final RootItem<Edge> root = builder.root();
+			final RootItem<Edge> root = builder.getRoot();
 
 			final LookupList<Edge> edges = new LookupList<>(builder.edges());
 
@@ -729,7 +729,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 
 			final EdgeBuffer edgeBuffer = builder.edgeBuffer();
 
-			final RootItem<Edge> root = builder.root();
+			final RootItem<Edge> root = builder.getRoot();
 
 			final LookupList<Edge> edges = new LookupList<>(builder.edges());
 
@@ -776,7 +776,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		}
 
 		private int localIndex(Structure context, Item node) {
-			return IcarusUtils.ensureIntegerValueRange(context.indexOfItem(node))+1;
+			return IcarusUtils.ensureIntegerValueRange(context.indexOfItem(node))+1; //TODO is blind increment rly ok? (might report -1)
 		}
 
 		/**

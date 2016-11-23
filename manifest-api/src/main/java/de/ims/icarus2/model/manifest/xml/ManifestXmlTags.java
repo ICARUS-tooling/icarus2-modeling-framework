@@ -24,77 +24,77 @@ package de.ims.icarus2.model.manifest.xml;
  */
 public interface ManifestXmlTags {
 
-	public static final String TAG_TEMPLATES = "templates"; //$NON-NLS-1$
-	public static final String TAG_CORPORA = "corpora"; //$NON-NLS-1$
+	public static final String TAG_TEMPLATES = "templates";
+	public static final String TAG_CORPORA = "corpora";
 
-	public static final String TAG_CORPUS = "corpus"; //$NON-NLS-1$
-	public static final String TAG_CONTEXT = "context"; //$NON-NLS-1$
-	public static final String TAG_ROOT_CONTEXT = "root-context"; //$NON-NLS-1$
-	public static final String TAG_LAYER_GROUP = "layer-group"; //$NON-NLS-1$
-	public static final String TAG_ITEM_LAYER = "item-layer"; //$NON-NLS-1$
-	public static final String TAG_STRUCTURE_LAYER = "structure-layer"; //$NON-NLS-1$
-	public static final String TAG_FRAGMENT_LAYER = "fragment-layer"; //$NON-NLS-1$
-	public static final String TAG_ANNOTATION_LAYER = "annotation-layer"; //$NON-NLS-1$
-	public static final String TAG_HIGHLIGHT_LAYER = "highlight-layer"; //$NON-NLS-1$
-	public static final String TAG_PREREQUISITES = "prerequisites"; //$NON-NLS-1$
-	public static final String TAG_PREREQUISITE = "prerequisite"; //$NON-NLS-1$
-	public static final String TAG_RASTERIZER = "rasterizer"; //$NON-NLS-1$
+	public static final String TAG_CORPUS = "corpus";
+	public static final String TAG_CONTEXT = "context";
+	public static final String TAG_ROOT_CONTEXT = "rootContext";
+	public static final String TAG_LAYER_GROUP = "layerGroup";
+	public static final String TAG_ITEM_LAYER = "itemLayer";
+	public static final String TAG_STRUCTURE_LAYER = "structureLayer";
+	public static final String TAG_FRAGMENT_LAYER = "fragmentLayer";
+	public static final String TAG_ANNOTATION_LAYER = "annotationLayer";
+	public static final String TAG_HIGHLIGHT_LAYER = "highlightLayer";
+	public static final String TAG_PREREQUISITES = "prerequisites";
+	public static final String TAG_PREREQUISITE = "prerequisite";
+	public static final String TAG_RASTERIZER = "rasterizer";
 
-	public static final String TAG_VERSION = "version"; //$NON-NLS-1$
+	public static final String TAG_VERSION = "version";
 
-	public static final String TAG_BASE_LAYER = "base-layer"; //$NON-NLS-1$
-	public static final String TAG_BOUNDARY_LAYER = "boundary-layer"; //$NON-NLS-1$
-	public static final String TAG_FOUNDATION_LAYER = "foundation-layer"; //$NON-NLS-1$
-	public static final String TAG_VALUE_LAYER = "value-layer"; //$NON-NLS-1$
-	public static final String TAG_REFERENCE_LAYER = "reference-layer"; //$NON-NLS-1$
+	public static final String TAG_BASE_LAYER = "baseLayer";
+	public static final String TAG_BOUNDARY_LAYER = "boundaryLayer";
+	public static final String TAG_FOUNDATION_LAYER = "foundationLayer";
+	public static final String TAG_VALUE_LAYER = "valueLayer";
+	public static final String TAG_REFERENCE_LAYER = "referenceLayer";
 
-	public static final String TAG_CONTAINER = "container"; //$NON-NLS-1$
-	public static final String TAG_STRUCTURE = "structure"; //$NON-NLS-1$
-	public static final String TAG_CONTAINER_FLAG = "container-flag"; //$NON-NLS-1$
-	public static final String TAG_STRUCTURE_FLAG = "structure-flag"; //$NON-NLS-1$
-	public static final String TAG_ANNOTATION = "annotation"; //$NON-NLS-1$
-	public static final String TAG_ANNOTATION_FLAG = "annotation-flag"; //$NON-NLS-1$
-	public static final String TAG_HIGHLIGHT_FLAG = "highlight-flag"; //$NON-NLS-1$
-	public static final String TAG_ALIAS = "alias"; //$NON-NLS-1$
+	public static final String TAG_CONTAINER = "container";
+	public static final String TAG_STRUCTURE = "structure";
+	public static final String TAG_CONTAINER_FLAG = "containerFlag";
+	public static final String TAG_STRUCTURE_FLAG = "structureFlag";
+	public static final String TAG_ANNOTATION = "annotation";
+	public static final String TAG_ANNOTATION_FLAG = "annotationFlag";
+	public static final String TAG_HIGHLIGHT_FLAG = "highlightFlag";
+	public static final String TAG_ALIAS = "alias";
 
-	public static final String TAG_NO_ENTRY_VALUE = "no-entry-value"; //$NON-NLS-1$
-	public static final String TAG_VALUE_SET = "value-set"; //$NON-NLS-1$
-	public static final String TAG_VALUE = "value"; //$NON-NLS-1$
-	public static final String TAG_OPTIONS = "options"; //$NON-NLS-1$
-	public static final String TAG_OPTION = "option"; //$NON-NLS-1$
-	public static final String TAG_EXTENSION_POINT = "extension-point"; //$NON-NLS-1$
-	public static final String TAG_DEFAULT_VALUE = "default-value"; //$NON-NLS-1$
-	public static final String TAG_IMPLEMENTATION = "implementation"; //$NON-NLS-1$
-	public static final String TAG_DOCUMENTATION = "documentation"; //$NON-NLS-1$
-	public static final String TAG_CONTENT = "content"; //$NON-NLS-1$
-	public static final String TAG_RESOURCE = "resource"; //$NON-NLS-1$
+	public static final String TAG_NO_ENTRY_VALUE = "noEntryValue";
+	public static final String TAG_VALUE_SET = "valueSet";
+	public static final String TAG_VALUE = "value";
+	public static final String TAG_OPTIONS = "options";
+	public static final String TAG_OPTION = "option";
+	public static final String TAG_EXTENSION_POINT = "extensionPoint";
+	public static final String TAG_DEFAULT_VALUE = "defaultValue";
+	public static final String TAG_IMPLEMENTATION = "implementation";
+	public static final String TAG_DOCUMENTATION = "documentation";
+	public static final String TAG_CONTENT = "content";
+	public static final String TAG_RESOURCE = "resource";
 
-	public static final String TAG_DRIVER = "driver"; //$NON-NLS-1$
-	public static final String TAG_MAPPING = "mapping"; //$NON-NLS-1$
-	public static final String TAG_MODULE = "module"; //$NON-NLS-1$
-	public static final String TAG_MODULE_SPEC = "module-spec"; //$NON-NLS-1$
+	public static final String TAG_DRIVER = "driver";
+	public static final String TAG_MAPPING = "mapping";
+	public static final String TAG_MODULE = "module";
+	public static final String TAG_MODULE_SPEC = "moduleSpec";
 
-	public static final String TAG_LOCATIONS = "locations"; //$NON-NLS-1$
-	public static final String TAG_LOCATION = "location"; //$NON-NLS-1$
-	public static final String TAG_PATH = "path"; //$NON-NLS-1$
-	public static final String TAG_PATH_ENTRY = "path-entry"; //$NON-NLS-1$
-	public static final String TAG_PATH_RESOLVER = "path-resolver"; //$NON-NLS-1$
+	public static final String TAG_LOCATIONS = "locations";
+	public static final String TAG_LOCATION = "location";
+	public static final String TAG_PATH = "path";
+	public static final String TAG_PATH_ENTRY = "pathEntry";
+	public static final String TAG_PATH_RESOLVER = "pathResolver";
 
-	public static final String TAG_VALUE_RANGE = "value-range"; //$NON-NLS-1$
-	public static final String TAG_MIN = "min"; //$NON-NLS-1$
-	public static final String TAG_MAX = "max"; //$NON-NLS-1$
-	public static final String TAG_STEP_SIZE = "step-size"; //$NON-NLS-1$
+	public static final String TAG_VALUE_RANGE = "valueRange";
+	public static final String TAG_MIN = "min";
+	public static final String TAG_MAX = "max";
+	public static final String TAG_STEP_SIZE = "stepSize";
 
-//	public static final String TAG_EMBEDDED = "embedded"; //$NON-NLS-1$
+//	public static final String TAG_EMBEDDED = "embedded";
 
-	public static final String TAG_EVAL = "eval"; //$NON-NLS-1$
-	public static final String TAG_CODE = "code"; //$NON-NLS-1$
-	public static final String TAG_VARIABLE = "variable"; //$NON-NLS-1$
+	public static final String TAG_EVAL = "eval";
+	public static final String TAG_CODE = "code";
+	public static final String TAG_VARIABLE = "variable";
 
-	public static final String TAG_PROPERTIES = "properties"; //$NON-NLS-1$
-	public static final String TAG_PROPERTY = "property"; //$NON-NLS-1$
-	public static final String TAG_GROUP = "group"; //$NON-NLS-1$
+	public static final String TAG_PROPERTIES = "properties";
+	public static final String TAG_PROPERTY = "property";
+	public static final String TAG_GROUP = "group";
 
-	public static final String TAG_NOTE = "note"; //$NON-NLS-1$
-	public static final String TAG_NOTES = "notes"; //$NON-NLS-1$
+	public static final String TAG_NOTE = "note";
+	public static final String TAG_NOTES = "notes";
 }

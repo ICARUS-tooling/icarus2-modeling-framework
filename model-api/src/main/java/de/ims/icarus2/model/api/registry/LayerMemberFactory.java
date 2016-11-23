@@ -51,5 +51,12 @@ public interface LayerMemberFactory {
 		return newItem(host);
 	}
 
-	Edge newEdge(Structure host, Item source, Item target);
+	default Edge newEdge(Structure host, Item source, Item target) {
+		Edge edge = newEdge(host);
+		edge.setSource(source);
+		edge.setTarget(target);
+		return edge;
+	}
+
+	Edge newEdge(Structure host);
 }

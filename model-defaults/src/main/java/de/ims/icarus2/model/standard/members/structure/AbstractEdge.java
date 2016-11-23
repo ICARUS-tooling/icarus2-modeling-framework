@@ -18,6 +18,7 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.MemberType;
@@ -46,8 +47,7 @@ public abstract class AbstractEdge implements Edge, Recyclable {
 	 */
 	@Override
 	public void setSource(Item source) {
-		if (source == null)
-			throw new NullPointerException("Invalid source"); //$NON-NLS-1$
+		checkNotNull(source);
 		this.source = source;
 	}
 
@@ -56,8 +56,7 @@ public abstract class AbstractEdge implements Edge, Recyclable {
 	 */
 	@Override
 	public void setTarget(Item target) {
-		if (target == null)
-			throw new NullPointerException("Invalid target"); //$NON-NLS-1$
+		checkNotNull(target);
 		this.target = target;
 	}
 

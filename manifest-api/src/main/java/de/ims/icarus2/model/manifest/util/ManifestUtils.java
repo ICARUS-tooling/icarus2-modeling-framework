@@ -21,8 +21,8 @@ package de.ims.icarus2.model.manifest.util;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import de.ims.icarus2.model.manifest.api.ManifestOwner;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
+import de.ims.icarus2.model.manifest.api.ManifestOwner;
 
 /**
  * @author Markus Gärtner
@@ -31,7 +31,7 @@ import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 public class ManifestUtils {
 
 	private static final Pattern idPattern = Pattern.compile(
-			"^\\p{Alpha}[:_\\-\\w]{2,}$"); //$NON-NLS-1$
+			"^\\p{Alpha}([:_\\-\\w]*[\\w])?$"); //$NON-NLS-1$
 
 	private static Matcher idMatcher;
 

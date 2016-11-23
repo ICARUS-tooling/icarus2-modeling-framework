@@ -25,8 +25,8 @@ import de.ims.icarus2.model.api.io.SynchronizedAccessor;
  * Defines the writer interface to get data into a {@link ChunkIndex}.
  *
  * @author Markus Gärtner
- *
  */
+@Deprecated
 public interface ChunkIndexWriter extends SynchronizedAccessor<ChunkIndex>, Flushable {
 
 	/**

@@ -25,6 +25,8 @@ import de.ims.icarus2.Report;
 import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndex;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexStorage;
+import de.ims.icarus2.model.api.driver.ChunkState;
+import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -57,9 +59,9 @@ public interface Converter extends AutoCloseable {
 		 * it's up to the converter that models those specific formats to
 		 * reject the usage of chunk indices.
 		 * <p>
-		 * This is a {@code boolean} property and its default value is {@code true}.
+		 * This is a {@code boolean} property and its default value is {@code false}.
 		 */
-		CHUNK_INDEX_SUPPORTED(Boolean.class, true),
+		CHUNK_INDEX_SUPPORTED(Boolean.class, false),
 
 		/**
 		 * Hints for the construction of {@link ChunkIndex} instances as to what
@@ -105,13 +107,15 @@ public interface Converter extends AutoCloseable {
 	 */
 	void init(FileDriver driver);
 
+	FileDriver getFileDriver();
+
 	/**
 	 * Preprocessing step that reads the specified corpus file and populates chunking and metadata.
 	 * <p>
 	 * In addition it should perform content verification and return a report containing information
 	 * about violations.
 	 */
-	Report<ReportItem> scanFile(int fileIndex, ChunkIndexStorage chunkIndexStorage) throws IOException, InterruptedException;
+	Report<ReportItem> scanFile(int fileIndex) throws IOException, InterruptedException;
 
 	/**
 	 * Loads the entire content of the specified file and converts its content into proper model
@@ -126,8 +130,7 @@ public interface Converter extends AutoCloseable {
 	long loadFile(int fileIndex, ChunkConsumer action) throws IOException, InterruptedException;
 
 	/**
-	 * Returns a cursor that allows {@code random-access} style reading of the specified file,
-	 * focusing on elements of the given {@code layer}.
+	 * Returns a cursor that allows {@code random-access} style reading of the specified layer.
 	 * <p>
 	 * This is an optional method and only required when the converter actually supports chunking and
 	 * the driver it is linked to has a {@code non-null} chunk index storage. In case any of those
@@ -135,11 +138,10 @@ public interface Converter extends AutoCloseable {
 	 *
 	 * @param fileIndex
 	 * @param layer
-	 * @param chunkIndexStorage
 	 * @return
 	 * @throws IOException
 	 */
-	Cursor getCursor(int fileIndex, ItemLayer layer, ChunkIndexStorage chunkIndexStorage) throws IOException;
+	Cursor getCursor(int fileIndex, ItemLayer layer) throws IOException;
 
 	/**
 	 * Releases any internal resources and most importantly disconnects from the
@@ -148,7 +150,7 @@ public interface Converter extends AutoCloseable {
 	 * @see java.lang.AutoCloseable#close()
 	 */
 	@Override
-	public void close() throws Exception;
+	public void close();
 
 	/**
 	 * Allows a converter implementation to decide upon what chunk indices to use.
@@ -173,5 +175,31 @@ public interface Converter extends AutoCloseable {
 		//TODO
 
 		Item load(long id) throws IOException, InterruptedException;
+
+		default long loadAll(IndexSet[] indices, ChunkConsumer consumer) throws IOException, InterruptedException {
+			long result = 0L;
+
+			for(IndexSet set : indices) {
+				for(int i=0; i<set.size(); i++) {
+					long index = set.indexAt(i);
+					Item item = load(index);
+					ChunkState state = ChunkState.forItem(item);
+
+					if(state==ChunkState.VALID) {
+						result++;
+					}
+
+					consumer.accept(index, item, state);
+				}
+			}
+
+			return result;
+		}
+
+		/**
+		 * @see java.lang.AutoCloseable#close()
+		 */
+		@Override
+		public void close() throws IOException;
 	}
 }
