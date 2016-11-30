@@ -36,9 +36,24 @@ public interface Mapping {
 	Driver getDriver();
 
 	/**
+	 * Returns {@code true} if this mapping is a root mapping, i.e.
+	 * it maps from the general integer space into the members of its
+	 * {@link #getTargetLayer() target layer}. This kind of mapping
+	 * exists to allow arbitrarily ordered elements in a layers'
+	 * root container, which can happen if a corpus resource is modified
+	 * over time by inserting new data.
+	 *
+	 * @return
+	 */
+	boolean isRootMapping();
+
+	/**
 	 * Returns the {@code source} layer for the mapping this mapping represents.
 	 * Note that the mapping must accept each element in this source layer as a
 	 * legal input to methods of its {@link MappingReader} instances!
+	 * <p>
+	 * If this mapping is a {@link #isRootMapping() root mapping} then this method returns
+	 * {@code null}.
 	 *
 	 * @return
 	 */
@@ -53,6 +68,8 @@ public interface Mapping {
 
 	/**
 	 * Returns the manifest this mapping is based upon.
+	 * Note that {@link #isRootMapping() root mappings} do not originate
+	 * from manifests!
 	 *
 	 * @return
 	 */

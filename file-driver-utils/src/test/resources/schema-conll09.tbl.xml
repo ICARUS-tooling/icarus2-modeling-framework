@@ -2,12 +2,12 @@
 
 <schema id="conll09.tbl" name="CoNLL-2009 ST Format" type="de.ims.icarus2.filedriver.schema.table">
 	<block layer-id="sentence">
-		<separator>TAB</separator>
+		<separator>WHITESPACES</separator>
 		
 		<container layerId="sentence" memberType="container" />
 		<component layerID="token" memberType="item" />
 		
-		<endDelimiter id="EMPTY_LINE" />
+		<endDelimiter>EMPTY_LINE</endDelimiter>
 			
 		<option name="trimWhitespaces" value="true" />
 		

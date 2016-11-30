@@ -36,6 +36,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -272,9 +273,14 @@ public class FileDriver extends AbstractDriver {
 		MappingStorage.Builder builder = new MappingStorage.Builder();
 
 		// Allow for subclasses to provide a fallback function
-		BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> fallback = getMappingFallback();
+		BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> fallback = getRegularMappingFallback();
 		if(fallback!=null) {
 			builder.fallback(fallback);
+		}
+
+		Function<ItemLayerManifest, Mapping> rootFallback = getRootMappingFallback();
+		if(rootFallback!=null) {
+			builder.rootMappingFallback(rootFallback);
 		}
 
 		MappingFactory mappingFactory = new DefaultMappingFactory(this);
@@ -295,6 +301,14 @@ public class FileDriver extends AbstractDriver {
 	 */
 	protected Mapping defaultCreateMapping(MappingFactory mappingFactory, MappingManifest mappingManifest, Options options) {
 		return FileDriverUtils.createMapping(mappingFactory, mappingManifest, metadataRegistry, options);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.standard.driver.AbstractDriver#getRootMappingFallback()
+	 */
+	@Override
+	protected Function<ItemLayerManifest, Mapping> getRootMappingFallback() {
+		return m -> {};
 	}
 
 	public void resetMappings() {

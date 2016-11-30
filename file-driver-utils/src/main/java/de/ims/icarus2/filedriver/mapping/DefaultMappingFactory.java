@@ -137,6 +137,7 @@ public class DefaultMappingFactory implements MappingFactory {
 		return mapping;
 	}
 
+	@SuppressWarnings("unchecked")
 	protected Mapping createFunctionMapping(MappingManifest manifest, Options options) {
 		Object unaryFunc = FileDriverUtils.MappingProperty.UNARY_FUNCTION.getValue(options);
 
@@ -152,11 +153,16 @@ public class DefaultMappingFactory implements MappingFactory {
 			batchFunc = null;
 		}
 
-		@SuppressWarnings("unchecked")
-		Mapping mapping = new MappingImplFunction((LongUnaryOperator)unaryFunc,
-				(UnaryOperator<IndexSet>)batchFunc);
+		MappingImplFunction.Builder builder = new MappingImplFunction.Builder();
 
-		return mapping;
+		initMappingBuilder(builder, manifest, options);
+
+		builder.unaryFunction((LongUnaryOperator) unaryFunc);
+		if(batchFunc!=null) {
+			builder.batchFunction((UnaryOperator<IndexSet>) batchFunc);
+		}
+
+		return builder.build();
 	}
 
 	protected IOResource getResource(Options options) {
@@ -174,7 +180,7 @@ public class DefaultMappingFactory implements MappingFactory {
 	protected Mapping createOneToOneMapping(MappingManifest manifest, Options options) {
 		Coverage coverage = manifest.getCoverage();
 		if(coverage.isTotal() && coverage.isMonotonic()) {
-			return new MappingImplIdentity();
+			return createIdentityMapping(manifest, options);
 		} else {
 			MappingImplOneToOne.Builder builder = new MappingImplOneToOne.Builder();
 
@@ -189,7 +195,14 @@ public class DefaultMappingFactory implements MappingFactory {
 		}
 	}
 
-	protected <B extends AbstractMapping.MappingBuilder<B, ?>> B initMappingBuilder(B builder, MappingManifest manifest, Options options) {
+	protected MappingImplIdentity createIdentityMapping(MappingManifest manifest, Options options) {
+		ContextManifest contextManifest = driver.getManifest().getContextManifest();
+
+		ItemLayerManifest targetLayer = (ItemLayerManifest) contextManifest.getLayerManifest(manifest.getTargetLayerId());
+		return new MappingImplIdentity(driver, targetLayer);
+	}
+
+	protected <B extends AbstractVirtualMapping.MappingBuilder<B, ?>> B initMappingBuilder(B builder, MappingManifest manifest, Options options) {
 		builder.driver(driver);
 		builder.manifest(manifest);
 

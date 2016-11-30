@@ -24,7 +24,7 @@ import static de.ims.icarus2.util.Conditions.checkState;
 import java.io.IOException;
 
 import de.ims.icarus2.filedriver.io.BufferedIOResource;
-import de.ims.icarus2.filedriver.mapping.AbstractMapping.MappingBuilder;
+import de.ims.icarus2.filedriver.mapping.AbstractVirtualMapping.MappingBuilder;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
@@ -44,57 +44,42 @@ public abstract class AbstractStoredMapping extends BufferedIOResource implement
 
 	public static final int DEFAULT_CACHE_SIZE = 100;
 
-	private Driver driver;
-	private MappingManifest manifest;
-	private ItemLayerManifest sourceLayer;
-	private ItemLayerManifest targetLayer;
-
-	protected AbstractStoredMapping(IOResource resource, BlockCache cache, int cacheSize) {
-		super(resource, cache, cacheSize);
-	}
+	private final Driver driver;
+	private final MappingManifest manifest;
+	private final ItemLayerManifest sourceLayer;
+	private final ItemLayerManifest targetLayer;
+	private final boolean rootMapping;
 
 	protected AbstractStoredMapping(StoredMappingBuilder<?,?> builder) {
 		super(builder.getResource(), builder.getBlockCache(), builder.getCacheSize());
+
+		driver = builder.getDriver();
+		manifest = builder.getManifest();
+		sourceLayer = builder.getSourceLayer();
+		targetLayer = builder.getTargetLayer();
+		rootMapping = builder.isRootMapping();
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.driver.mapping.Mapping#isRootMapping()
+	 */
+	@Override
+	public boolean isRootMapping() {
+		return rootMapping;
 	}
 
 	@Override
 	protected void toString(StringBuilder sb) {
-		sb.append(" id=").append(manifest.getId())
-		.append(" sourceLayer=").append(sourceLayer.getId())
-		.append(" targetLayer=").append(targetLayer.getId());
+		sb.append(" id=").append(manifest.getId());
+		if(!isRootMapping()) {
+			sb.append(" sourceLayer=").append(sourceLayer.getId());
+		}
+		sb.append(" targetLayer=").append(targetLayer.getId());
 	}
 
 	protected static void checkInterrupted() throws InterruptedException {
 		if(Thread.interrupted())
 			throw new InterruptedException();
-	}
-
-	/**
-	 * @param driver the driver to set
-	 */
-	void setDriver(Driver driver) {
-		this.driver = driver;
-	}
-
-	/**
-	 * @param manifest the manifest to set
-	 */
-	void setManifest(MappingManifest manifest) {
-		this.manifest = manifest;
-	}
-
-	/**
-	 * @param sourceLayer the sourceLayer to set
-	 */
-	void setSourceLayer(ItemLayerManifest sourceLayer) {
-		this.sourceLayer = sourceLayer;
-	}
-
-	/**
-	 * @param targetLayer the targetLayer to set
-	 */
-	void setTargetLayer(ItemLayerManifest targetLayer) {
-		this.targetLayer = targetLayer;
 	}
 
 	/**
@@ -213,13 +198,6 @@ public abstract class AbstractStoredMapping extends BufferedIOResource implement
 
 		public BlockCache getBlockCache() {
 			return blockCache;
-		}
-
-		protected void applyDefaults(AbstractStoredMapping mapping) {
-			mapping.setDriver(getDriver());
-			mapping.setManifest(getManifest());
-			mapping.setSourceLayer(getSourceLayer());
-			mapping.setTargetLayer(getTargetLayer());
 		}
 
 		@Override

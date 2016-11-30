@@ -20,12 +20,15 @@ package de.ims.icarus2.filedriver.mapping;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.firstIndex;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.lastIndex;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.standard.SingletonIndexSet;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.MappingManifest;
 
 /**
  * Implements a total index of type {@code one-to-one} which maps
@@ -36,7 +39,32 @@ import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
  * @author Markus Gärtner
  *
  */
-public class MappingImplIdentity extends AbstractMapping {
+public class MappingImplIdentity extends AbstractVirtualMapping {
+
+	/**
+	 * Creates a new {@code identity mapping} that functions as a
+	 * root mapping for the specified layer.
+	 *
+	 * @param driver
+	 * @param targetLayer
+	 */
+	public MappingImplIdentity(Driver driver, ItemLayerManifest targetLayer) {
+		super(driver, targetLayer);
+	}
+
+	/**
+	 * Creates a new {@code identity mapping} that maps between the two
+	 * specified layers.
+	 *
+	 * @param driver
+	 * @param manifest
+	 * @param sourceLayer
+	 * @param targetLayer
+	 */
+	public MappingImplIdentity(Driver driver, MappingManifest manifest,
+			ItemLayerManifest sourceLayer, ItemLayerManifest targetLayer) {
+		super(driver, manifest, sourceLayer, targetLayer);
+	}
 
 	/**
 	 * @see de.ims.icarus2.model.api.driver.mapping.Mapping#newReader()

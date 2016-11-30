@@ -49,13 +49,13 @@ public class MappingStorage {
 	private final Long2ObjectMap<Mapping> mappingMap;
 	private final Set<Mapping> mappingSet = new ReferenceOpenHashSet<>();
 
-	private final BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> fallback;
+	private final BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> regularMappingFallback;
 
 	protected MappingStorage(Builder builder) {
 
 		// Copy builder data and reset builder
 		mappingMap = builder.mappingMap;
-		fallback = builder.fallback;
+		regularMappingFallback = builder.fallback;
 		builder.reset();
 
 		// Post processing of builder data
@@ -70,8 +70,8 @@ public class MappingStorage {
 		long key = getKey(source, target);
 		Mapping mapping = mappingMap.get(key);
 
-		if(mapping==null && fallback!=null) {
-			mapping = fallback.apply(source, target);
+		if(mapping==null && regularMappingFallback!=null) {
+			mapping = regularMappingFallback.apply(source, target);
 			if(mapping!=null) {
 				mappingMap.put(key, mapping);
 				mappingSet.add(mapping);

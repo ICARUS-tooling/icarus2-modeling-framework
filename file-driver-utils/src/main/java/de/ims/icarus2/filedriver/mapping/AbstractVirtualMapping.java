@@ -30,12 +30,48 @@ import de.ims.icarus2.util.AbstractBuilder;
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractMapping implements Mapping {
+public abstract class AbstractVirtualMapping implements Mapping {
 
-	private Driver driver;
-	private MappingManifest manifest;
-	private ItemLayerManifest sourceLayer;
-	private ItemLayerManifest targetLayer;
+	private final Driver driver;
+	private final MappingManifest manifest;
+	private final ItemLayerManifest sourceLayer;
+	private final ItemLayerManifest targetLayer;
+	private final boolean rootMapping;
+
+	protected AbstractVirtualMapping(Driver driver, MappingManifest manifest,
+			ItemLayerManifest sourceLayer, ItemLayerManifest targetLayer) {
+		checkNotNull(driver);
+		checkNotNull(manifest);
+		checkNotNull(sourceLayer);
+		checkNotNull(targetLayer);
+
+		this.driver = driver;
+		this.manifest = manifest;
+		this.sourceLayer = sourceLayer;
+		this.targetLayer = targetLayer;
+		this.rootMapping = false;
+	}
+
+	protected AbstractVirtualMapping(Driver driver, ItemLayerManifest targetLayer) {
+		checkNotNull(driver);
+		checkNotNull(targetLayer);
+
+		this.driver = driver;
+		this.manifest = null;
+		this.sourceLayer = null;
+		this.targetLayer = targetLayer;
+		this.rootMapping = true;
+	}
+
+	protected AbstractVirtualMapping(MappingBuilder<?, ?> builder) {
+		checkNotNull(builder);
+
+		driver = builder.getDriver();
+		manifest = builder.getManifest();
+		sourceLayer = builder.getSourceLayer();
+		targetLayer = builder.getTargetLayer();
+		rootMapping = builder.isRootMapping();
+	}
 
 	/**
 	 * @see java.lang.Object#toString()
@@ -44,9 +80,11 @@ public abstract class AbstractMapping implements Mapping {
 	public String toString() {
 		StringBuilder sb = new StringBuilder()
 		.append(getClass().getName())
-		.append("[id=").append(manifest.getId())
-		.append(" sourceLayer=").append(sourceLayer.getId())
-		.append(" targetLayer=").append(targetLayer.getId());
+		.append("[id=").append(manifest.getId());
+		if(!isRootMapping()) {
+			sb.append(" sourceLayer=").append(sourceLayer.getId());
+		}
+		sb.append(" targetLayer=").append(targetLayer.getId());
 
 		toString(sb);
 
@@ -58,31 +96,11 @@ public abstract class AbstractMapping implements Mapping {
 	}
 
 	/**
-	 * @param driver the driver to set
+	 * @see de.ims.icarus2.model.api.driver.mapping.Mapping#isRootMapping()
 	 */
-	void setDriver(Driver driver) {
-		this.driver = driver;
-	}
-
-	/**
-	 * @param manifest the manifest to set
-	 */
-	void setManifest(MappingManifest manifest) {
-		this.manifest = manifest;
-	}
-
-	/**
-	 * @param sourceLayer the sourceLayer to set
-	 */
-	void setSourceLayer(ItemLayerManifest sourceLayer) {
-		this.sourceLayer = sourceLayer;
-	}
-
-	/**
-	 * @param targetLayer the targetLayer to set
-	 */
-	void setTargetLayer(ItemLayerManifest targetLayer) {
-		this.targetLayer = targetLayer;
+	@Override
+	public boolean isRootMapping() {
+		return rootMapping;
 	}
 
 	/**
@@ -140,6 +158,8 @@ public abstract class AbstractMapping implements Mapping {
 		private ItemLayerManifest sourceLayer, targetLayer;
 		private IndexValueType valueType;
 
+		private Boolean rootMapping;
+
 		public B driver(Driver driver) {
 			checkNotNull(driver);
 			checkState(this.driver==null);
@@ -185,6 +205,14 @@ public abstract class AbstractMapping implements Mapping {
 			return thisAsCast();
 		}
 
+		public B rootMapping(boolean rootMapping) {
+			checkState(this.rootMapping==null);
+
+			this.rootMapping = Boolean.valueOf(rootMapping);
+
+			return thisAsCast();
+		}
+
 		public Driver getDriver() {
 			return driver;
 		}
@@ -205,20 +233,18 @@ public abstract class AbstractMapping implements Mapping {
 			return valueType;
 		}
 
+		public boolean isRootMapping() {
+			return rootMapping==null ? false : rootMapping.booleanValue();
+		}
+
 		@Override
 		protected void validate() {
 			checkState("Missing driver", driver!=null);
 			checkState("Missing manifest", manifest!=null);
-			checkState("Missing source layer", sourceLayer!=null);
 			checkState("Missing target layer", targetLayer!=null);
 			checkState("Missing value type", valueType!=null);
-		}
-
-		protected void applyDefaults(AbstractMapping mapping) {
-			mapping.setDriver(driver);
-			mapping.setManifest(manifest);
-			mapping.setSourceLayer(sourceLayer);
-			mapping.setTargetLayer(targetLayer);
+			checkState("Mapping requires source layer if it's not declared as root mapping",
+					isRootMapping() || (sourceLayer!=null && manifest!=null));
 		}
 	}
 }

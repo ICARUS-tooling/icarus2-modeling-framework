@@ -647,16 +647,9 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 			checkState("Missing inverse mapping", inverseMapping!=null);
 		}
 
-		/**
-		 * @see de.ims.icarus2.filedriver.mapping.AbstractMapping.MappingBuilder#build()
-		 */
 		@Override
-		public MappingImplSpanManyToOne create() {
-			MappingImplSpanManyToOne mapping = new MappingImplSpanManyToOne(this);
-
-			applyDefaults(mapping);
-
-			return mapping;
+		protected MappingImplSpanManyToOne create() {
+			return new MappingImplSpanManyToOne(this);
 		}
 
 	}

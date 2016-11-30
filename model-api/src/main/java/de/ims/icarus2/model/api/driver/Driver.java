@@ -37,6 +37,7 @@ import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.model.api.driver.mods.ModuleMonitor;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.ItemLayer;
+import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.ItemLayerManager;
@@ -148,6 +149,17 @@ public interface Driver extends ItemLayerManager {
 	 * between the two
 	 */
 	Mapping getMapping(ItemLayerManifest sourceLayer, ItemLayerManifest targetLayer);
+
+	/**
+	 * Returns the mapping that defines the order of elements in the designated
+	 * {@link Layer laxer's} root container.
+	 *
+	 * @param layer
+	 * @return
+	 *
+	 * @throws NullPointerException iff the supplied {@code layer} argument is {@link null}
+	 */
+	Mapping getRootMapping(ItemLayerManifest layer);
 
 	default Mapping getMapping(ItemLayer sourceLayer, ItemLayer targetLayer) {
 		return getMapping(sourceLayer.getManifest(), targetLayer.getManifest());

@@ -20,6 +20,7 @@ package de.ims.icarus2.filedriver.schema.table;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 
 import de.ims.icarus2.model.api.members.MemberType;
@@ -74,11 +75,11 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 	private static AttributeSchema[] EMPTY_ATTRIBUTES = {};
 	private static BlockSchema[] EMPTY_BLOCKS = {};
 	private static ColumnSchema[] EMPTY_COLUMNS = {};
-	private static SubstituteSchema[] EMPTY_SUBSTITUTES = {};
 
 	public static class BlockSchemaImpl implements BlockSchema {
 
 		private String layerId;
+		private String separator;
 		private MemberSchema containerSchema, componentSchema;
 		private AttributeSchema beginDelimiter, endDelimiter;
 		private List<AttributeSchema> attributes;
@@ -86,7 +87,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		private ColumnSchema fallbackColumn;
 		private List<BlockSchema> nestedBlocks;
 		private String noEntryLabel;
-		private boolean columnOrderFixed;
+		private Boolean columnOrderFixed;
 		private Options options;
 
 		/**
@@ -192,11 +193,11 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 
 		@Override
 		public boolean isColumnOrderFixed() {
-			return columnOrderFixed;
+			return columnOrderFixed==null ? DEFAULT_COLUMN_ORDER_FIXED : columnOrderFixed.booleanValue();
 		}
 
 		public void setColumnOrderFixed(boolean columnOrderFixed) {
-			this.columnOrderFixed = columnOrderFixed;
+			this.columnOrderFixed = columnOrderFixed==DEFAULT_COLUMN_ORDER_FIXED ? null : Boolean.valueOf(columnOrderFixed);
 		}
 
 		public void setLayerId(String layerId) {
@@ -287,6 +288,20 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			options.put(key, value);
 		}
 
+		/**
+		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema#getSeparator()
+		 */
+		@Override
+		public String getSeparator() {
+			return separator;
+		}
+
+		public void setSeparator(String separator) {
+			checkNotNull(separator);
+
+			this.separator = separator;
+		}
+
 	}
 
 	public static class MemberSchemaImpl implements MemberSchema {
@@ -332,7 +347,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public void setIsReference(boolean isReference) {
-			this.isReference = Boolean.valueOf(isReference);
+			this.isReference = isReference==DEFAULT_IS_REFERENCE ? null : Boolean.valueOf(isReference);
 		}
 
 	}
@@ -341,6 +356,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 
 		private String pattern;
 		private ResolverSchema resolver;
+		private AttributeTarget target;
 
 		/**
 		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeSchema#getPattern()
@@ -370,6 +386,20 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			this.resolver = resolver;
 		}
 
+		/**
+		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeSchema#getTarget()
+		 */
+		@Override
+		public AttributeTarget getTarget() {
+			return target;
+		}
+
+		public void setTarget(AttributeTarget target) {
+			checkNotNull(target);
+
+			this.target = target;
+		}
+
 	}
 
 	public static class ColumnSchemaImpl implements ColumnSchema {
@@ -377,7 +407,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		private String name, layerId, annotationKey, noEntryLabel;
 		private Boolean isIgnoreColumn;
 		private ResolverSchema resolver;
-		private List<SubstituteSchema> substitutes;
+		private EnumMap<SubstituteType, SubstituteSchema> substitutes;
 
 		/**
 		 * @see de.ims.icarus2.util.strings.NamedObject#getName()
@@ -427,21 +457,6 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			return resolver;
 		}
 
-		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.ColumnSchema#getSubstitutes()
-		 */
-		@Override
-		public SubstituteSchema[] getSubstitutes() {
-
-			SubstituteSchema[] result = null;
-
-			if(substitutes!=null) {
-				result = substitutes.toArray(EMPTY_SUBSTITUTES);
-			}
-
-			return result;
-		}
-
 		public void setName(String name) {
 			checkNotNull(name);
 
@@ -466,10 +481,9 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			this.noEntryLabel = noEntryLabel;
 		}
 
-		public void setIsIgnoreColumn(Boolean isIgnoreColumn) {
-			checkNotNull(isIgnoreColumn);
+		public void setIsIgnoreColumn(boolean isIgnoreColumn) {
 
-			this.isIgnoreColumn = isIgnoreColumn;
+			this.isIgnoreColumn = isIgnoreColumn==DEFAULT_IGNORE_COLUMN ? null : Boolean.valueOf(isIgnoreColumn);
 		}
 
 		public void setResolver(ResolverSchema resolver) {
@@ -478,14 +492,23 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			this.resolver = resolver;
 		}
 
-		public void addSubstitute(SubstituteSchema substitute) {
+		public void addSubstitute(SubstituteType type, SubstituteSchema substitute) {
+			checkNotNull(type);
 			checkNotNull(substitute);
 
 			if(substitutes==null) {
-				substitutes = new ArrayList<>();
+				substitutes = new EnumMap<>(SubstituteType.class);
 			}
 
-			substitutes.add(substitute);
+			substitutes.put(type, substitute);
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.ColumnSchema#getSubstitute(de.ims.icarus2.filedriver.schema.table.TableSchema.SubstituteType)
+		 */
+		@Override
+		public SubstituteSchema getSubstitute(SubstituteType type) {
+			return substitutes==null ? null : substitutes.get(type);
 		}
 
 	}

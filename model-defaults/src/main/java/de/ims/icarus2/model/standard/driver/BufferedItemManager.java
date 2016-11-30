@@ -22,6 +22,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
+import java.lang.ref.WeakReference;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.function.LongConsumer;
 import java.util.function.ObjLongConsumer;
@@ -73,17 +74,24 @@ public class BufferedItemManager {
 	 */
 	public static class InputCache {
 
-		private final int estimatedSize;
-
-		public InputCache(int estimatedSize) {
-			this.estimatedSize = estimatedSize;
-		}
+		private final WeakReference<LayerBuffer> buffer;
 
 		private volatile Long2ObjectMap<Item> pendingEntries;
 
+		public InputCache(LayerBuffer buffer) {
+			this.buffer = new WeakReference<>(buffer);
+		}
+
+		public LayerBuffer getBuffer() {
+			LayerBuffer buffer = this.buffer.get();
+			if(buffer==null)
+				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Source buffer no longer available");
+			return buffer;
+		}
+
 		protected Long2ObjectMap<Item> pendingEntries() {
 			if(pendingEntries==null) {
-				int size = Math.min(estimatedSize, 100_000);
+				int size = Math.min(getBuffer().getEstimatedSize(), 100_000);
 				pendingEntries = new Long2ObjectOpenHashMap<>(size);
 			}
 
@@ -115,6 +123,18 @@ public class BufferedItemManager {
 			if(pendingEntries!=null && !pendingEntries.isEmpty()) {
 				result = pendingEntries.size();
 				pendingEntries.clear();
+			}
+
+			return result;
+		}
+
+		public int commit() {
+			Long2ObjectMap<Item> pendingEntries = this.pendingEntries;
+			int result = 0;
+
+			if(pendingEntries!=null && !pendingEntries.isEmpty()) {
+				result = pendingEntries.size();
+				getBuffer().commit(this);
 			}
 
 			return result;
@@ -215,18 +235,23 @@ public class BufferedItemManager {
 		}
 
 		public InputCache newCache() {
-			return new InputCache(getEstimatedSize());
+			return new InputCache(this);
 		}
 
 		/**
 		 * Shifts all pending items from the given {@code cache} into the actual storage.
+		 * <p>
+		 * Will only be called by package-private code, so we do not need to make additional
+		 * checks on the provided cache.
 		 */
-		public void commit(InputCache cache) {
-			if(!cache.hasPendingEntries()) {
-				return;
-			}
+		void commit(InputCache cache) {
 
-			cache.forEach(this::add);
+			/*
+			 *  Long2ObjectOpenHashMap internally checks if the source of a putAll() implements
+			 *  the Long2ObjectMap interface and uses faster non-boxing iterators to add all
+			 *  the new entries.
+			 */
+			entries.putAll(cache.pendingEntries);
 		}
 
 		/**

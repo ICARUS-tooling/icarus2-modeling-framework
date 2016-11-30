@@ -21,12 +21,17 @@ import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.FileDriverMetadata.ChunkIndexKey;
@@ -36,8 +41,10 @@ import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.registry.LayerMemberFactory;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.standard.driver.BufferedItemManager;
 import de.ims.icarus2.util.io.IOUtil;
 import de.ims.icarus2.util.nio.SubChannel;
 
@@ -47,9 +54,24 @@ import de.ims.icarus2.util.nio.SubChannel;
  */
 public abstract class AbstractConverter implements Converter {
 
-	protected FileDriver driver;
+	private FileDriver driver;
+
+	private LayerMemberFactory memberFactory;
 
 	private final Int2ObjectMap<Cursor> activeCursors = new Int2ObjectOpenHashMap<>();
+
+	private final Reference2ObjectMap<ItemLayer, BufferedItemManager.InputCache> caches = new Reference2ObjectOpenHashMap<>();
+
+	private static Logger log = LoggerFactory.getLogger(AbstractConverter.class);
+
+	protected BufferedItemManager.InputCache getCacheForLayer(ItemLayer layer) {
+		BufferedItemManager.InputCache cache = caches.get(layer);
+		if(cache==null) {
+			cache = getFileDriver().getLayerBuffer(layer).newCache();
+			caches.put(layer, cache);
+		}
+		return cache;
+	}
 
 	/**
 	 * If subclasses wish to override this method they should ensure to make
@@ -64,6 +86,7 @@ public abstract class AbstractConverter implements Converter {
 		checkState("Driver already set", this.driver==null);
 
 		this.driver = driver;
+		memberFactory = driver.newMemberFactory();
 	}
 
 	protected static void checkInterrupted() throws InterruptedException {
@@ -80,6 +103,10 @@ public abstract class AbstractConverter implements Converter {
 					"Converter not yet initialized or already closed again");
 
 		return driver;
+	}
+
+	protected LayerMemberFactory getMemberFactory() {
+		return memberFactory;
 	}
 
 	/**
@@ -239,6 +266,8 @@ public abstract class AbstractConverter implements Converter {
 				// Reposition our channel window
 				blockChannel.setOffsets(beginOffset, length);
 
+				//TODO adjust index streams
+
 				// Delegate reading to converter
 				result = readItemFromCursor(this);
 			}
@@ -253,6 +282,10 @@ public abstract class AbstractConverter implements Converter {
 		public void close() throws IOException {
 
 			try {
+				// No checked exception, so let's close this first
+				chunkIndexCursor.close();
+
+				// This might fail
 				fileChannel.close();
 
 				//TODO do other cleanup work

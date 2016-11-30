@@ -17,6 +17,9 @@
  */
 package de.ims.icarus2.filedriver.mapping;
 
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkState;
+
 import java.util.function.LongUnaryOperator;
 import java.util.function.UnaryOperator;
 
@@ -36,17 +39,16 @@ import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
  * @author Markus Gärtner
  *
  */
-public class MappingImplFunction extends AbstractMapping {
+public class MappingImplFunction extends AbstractVirtualMapping {
 
 	private final LongUnaryOperator unaryFunction;
 	private final UnaryOperator<IndexSet> batchFunction;
 
-	public MappingImplFunction(LongUnaryOperator unaryFunction, UnaryOperator<IndexSet> batchFunction) {
-		if (unaryFunction == null)
-			throw new NullPointerException("Invalid unaryFunction");  //$NON-NLS-1$
+	protected MappingImplFunction(Builder builder) {
+		super(builder);
 
-		this.unaryFunction = unaryFunction;
-		this.batchFunction = batchFunction;
+		unaryFunction = builder.getUnaryFunction();
+		batchFunction = builder.getBatchFunction();
 	}
 
 	/**
@@ -218,6 +220,59 @@ public class MappingImplFunction extends AbstractMapping {
 				IndexSet[] targetIndices, IndexCollector collector, RequestSettings settings)
 				throws InterruptedException {
 			return false;
+		}
+
+	}
+
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	public static class Builder extends MappingBuilder<Builder, MappingImplFunction> {
+
+		private LongUnaryOperator unaryFunction;
+		private UnaryOperator<IndexSet> batchFunction;
+
+		public LongUnaryOperator getUnaryFunction() {
+			return unaryFunction;
+		}
+
+		public Builder unaryFunction(LongUnaryOperator unaryFunction) {
+			checkNotNull(unaryFunction);
+			checkState(this.unaryFunction==null);
+
+			this.unaryFunction = unaryFunction;
+
+			return thisAsCast();
+		}
+
+		public UnaryOperator<IndexSet> getBatchFunction() {
+			return batchFunction;
+		}
+
+		public Builder batchFunction(UnaryOperator<IndexSet> batchFunction) {
+			checkNotNull(batchFunction);
+			checkState(this.batchFunction==null);
+
+			this.batchFunction = batchFunction;
+
+			return thisAsCast();
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.mapping.AbstractVirtualMapping.MappingBuilder#validate()
+		 */
+		@Override
+		protected void validate() {
+			super.validate();
+
+			checkState("Missing unary function", unaryFunction!=null);
+		}
+
+		@Override
+		protected MappingImplFunction create() {
+			return new MappingImplFunction(this);
 		}
 
 	}

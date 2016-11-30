@@ -517,16 +517,9 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 			return thisAsCast();
 		}
 
-		/**
-		 * @see de.ims.icarus2.filedriver.mapping.AbstractMapping.MappingBuilder#build()
-		 */
 		@Override
-		public MappingImplOneToOne create() {
-			MappingImplOneToOne mapping = new MappingImplOneToOne(this);
-
-			applyDefaults(mapping);
-
-			return mapping;
+		protected MappingImplOneToOne create() {
+			return new MappingImplOneToOne(this);
 		}
 
 	}

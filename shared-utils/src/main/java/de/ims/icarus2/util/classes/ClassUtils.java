@@ -254,6 +254,34 @@ public final class ClassUtils {
 		return value==null ? false : value.booleanValue();
 	}
 
+	public static Integer _int(int value) {
+		return Integer.valueOf(value);
+	}
+
+	public static Long _long(long value) {
+		return Long.valueOf(value);
+	}
+
+	public static Double _int(double value) {
+		return Double.valueOf(value);
+	}
+
+	public static Float _int(float value) {
+		return Float.valueOf(value);
+	}
+
+	public static Short _int(short value) {
+		return Short.valueOf(value);
+	}
+
+	public static Byte _int(byte value) {
+		return Byte.valueOf(value);
+	}
+
+	public static Boolean _int(boolean value) {
+		return Boolean.valueOf(value);
+	}
+
 	private static class SerializationBuffer extends ByteArrayInputStream {
 		final ByteArrayOutputStream out;
 		final ObjectOutputStream objOut;

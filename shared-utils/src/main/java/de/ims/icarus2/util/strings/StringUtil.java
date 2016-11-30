@@ -204,22 +204,24 @@ public final class StringUtil {
 
 	public static boolean equals(CharSequence cs, Object obj) {
 		if(obj instanceof CharSequence) {
-			CharSequence other = (CharSequence) obj;
-
-			if(cs.length()!=other.length()) {
-				return false;
-			}
-
-			for(int i=cs.length()-1; i>=0; i--) {
-				if(cs.charAt(i)!=other.charAt(i)) {
-					return false;
-				}
-			}
-
-			return true;
+			return equals(cs, (CharSequence)obj);
 		}
 
 		return false;
+	}
+
+	public static boolean equals(CharSequence cs, CharSequence other) {
+		if(cs.length()!=other.length()) {
+			return false;
+		}
+
+		for(int i=cs.length()-1; i>=0; i--) {
+			if(cs.charAt(i)!=other.charAt(i)) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**

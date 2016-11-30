@@ -102,7 +102,9 @@ public enum GlobalErrorCode implements ErrorCode {
 	CANCELLED(117),
 
 	/**
-	 * A given long index exceeds the {@value Integer#MAX_VALUE} limit.
+	 * A given long index exceeds the {@value Integer#MAX_VALUE} limit or
+	 * a buffer structure couldn't be enlarged due to the size overflowing
+	 * integer value space.
 	 */
 	INDEX_OVERFLOW(120),
 
@@ -122,12 +124,22 @@ public enum GlobalErrorCode implements ErrorCode {
 	 */
 	INTERNAL_ERROR(150),
 
+	/**
+	 * Trying to instantiate a member of a foreign class failed.
+	 * <p>
+	 * This error wraps {@link ClassNotFoundException}, {@link InstantiationException}
+	 * and {@link IllegalAccessException}.
+	 */
+	INSTANTIATION_ERROR(160),
+
 	//**************************************************
 	//       7xx  DATA ERRORS
 	//**************************************************
 
 	/**
 	 * Mismatch between expected size of an array object and its actual length.
+	 *
+	 * FIXME should be removed, only used for 2 error cases in ValueType
 	 */
 	DATA_ARRAY_SIZE(701),
 

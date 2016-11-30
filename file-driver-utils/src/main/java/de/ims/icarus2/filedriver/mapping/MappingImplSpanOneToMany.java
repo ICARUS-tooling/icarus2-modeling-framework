@@ -693,16 +693,9 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			return thisAsCast();
 		}
 
-		/**
-		 * @see de.ims.icarus2.filedriver.mapping.AbstractMapping.MappingBuilder#build()
-		 */
 		@Override
-		public MappingImplSpanOneToMany create() {
-			MappingImplSpanOneToMany mapping = new MappingImplSpanOneToMany(this);
-
-			applyDefaults(mapping);
-
-			return mapping;
+		protected MappingImplSpanOneToMany create() {
+			return new MappingImplSpanOneToMany(this);
 		}
 
 	}

@@ -53,6 +53,12 @@ public interface TableSchema extends Schema {
 	 */
 	public interface BlockSchema {
 
+		public static final String DELIMITER_TAB = "TAB";
+		public static final String DELIMITER_WHITESPACES = "WHITESPACES";
+		public static final String DELIMITER_SPACE = "SPACE";
+
+		public static final boolean DEFAULT_COLUMN_ORDER_FIXED = false;
+
 		Options getOptions();
 
 		/**
@@ -90,8 +96,9 @@ public interface TableSchema extends Schema {
 		 *
 		 * @return
 		 */
-
 		AttributeSchema getEndDelimiter();
+
+		String getSeparator();
 
 		/**
 		 * Free-form attributes like comments and the like
@@ -159,13 +166,28 @@ public interface TableSchema extends Schema {
 		boolean isReference();
 	}
 
+	public enum AttributeTarget {
+//		CURRENT_BLOCK,
+//		PARENT_BLOCK,
+//		ROOT_BLOCK,
+		NEXT_ITEM,
+		PREVIOUS_ITEM,
+		;
+	}
+
 	public interface AttributeSchema {
 
 		public static final String DELIMITER_EMPTY_LINE = "EMPTY_LINE";
 		public static final String DELIMITER_EMPTY_LINES = "EMPTY_LINES";
 
+		AttributeTarget getTarget();
+
 		/**
 		 * Pattern to be used for matching lines of text against this schema.
+		 * <p>
+		 * If the return value is any of the predefined {@code DELIMITER_} constants
+		 * available in this interface, than it should not be used directly as a
+		 * regular expression.
 		 *
 		 * @return
 		 */
@@ -210,7 +232,7 @@ public interface TableSchema extends Schema {
 		String getNoEntryLabel();
 
 		/**
-		 * Flag to signal that the column needs not to be processed
+		 * Flag to signal that the column should not be processed
 		 * @return
 		 */
 		boolean isIgnoreColumn();
@@ -225,11 +247,11 @@ public interface TableSchema extends Schema {
 		ResolverSchema getResolver();
 
 		/**
-		 * Returns the substitute declarations of this column (a total of 2 at most).
+		 * Returns the substitute declaration for the given type if present.
 		 *
 		 * @return
 		 */
-		SubstituteSchema[] getSubstitutes();
+		SubstituteSchema getSubstitute(SubstituteType type);
 	}
 
 	/**

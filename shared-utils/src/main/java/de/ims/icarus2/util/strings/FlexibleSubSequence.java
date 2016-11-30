@@ -22,7 +22,7 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
 
-public class FlexibleSubSequence extends AbstractString {
+public class FlexibleSubSequence extends AbstractString implements AutoCloseable {
 
 	private CharSequence source;
 	private int offset;
@@ -106,5 +106,24 @@ public class FlexibleSubSequence extends AbstractString {
 		checkState(source!=null);
 		checkArgument(length>=0);
 		this.length = length;
+	}
+
+	public void setRange(int begin, int end) {
+		checkState(source!=null);
+		checkArgument(begin>=0 && begin<source.length());
+		checkArgument(end>=begin && end<source.length());
+
+		offset = begin;
+		length = end-begin+1;
+	}
+
+	/**
+	 * @see java.lang.AutoCloseable#close()
+	 */
+	@Override
+	public void close() {
+		source = null;
+		offset = 0;
+		length = 0;
 	}
 }

@@ -44,7 +44,7 @@ import de.ims.icarus2.util.id.UnknownIdentifierException;
 public interface Context extends ManifestOwner<ContextManifest>, Connectible<Driver>, Part<Corpus>, NamedCorpusMember {
 
 	/**
-	 * If this context contains one or more markable layers it has to define
+	 * If this context contains one or more item layers it has to define
 	 * one primary layer among them.
 	 * @return
 	 */

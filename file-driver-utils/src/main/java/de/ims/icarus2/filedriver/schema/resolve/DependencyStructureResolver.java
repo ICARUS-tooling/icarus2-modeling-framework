@@ -114,7 +114,7 @@ public class DependencyStructureResolver implements BatchResolver, ResolverOptio
 		edges = new Edge[maxItemCount];
 		heads = new int[maxItemCount];
 
-		// Link with backend storage
+		// Link with back-end storage
 		LayerBuffer layerBuffer = driver.getLayerBuffer(dependencyLayer);
 		structureSaveAction = layerBuffer::add;
 
@@ -130,7 +130,10 @@ public class DependencyStructureResolver implements BatchResolver, ResolverOptio
 	 */
 	private void saveHeadInfo(int index, Edge edge, int head) {
 		if(dynamicBufferSize && index>=edges.length) {
-			int newSize = index<<1; //TODO needs defense against overflow
+			int newSize = index<<1;
+			if(newSize<0) {
+				newSize = (int) IcarusUtils.MAX_INTEGER_INDEX;
+			}
 
 			edges = Arrays.copyOf(edges, newSize);
 			heads = Arrays.copyOf(heads, newSize);
@@ -214,7 +217,7 @@ public class DependencyStructureResolver implements BatchResolver, ResolverOptio
 		Structure dependencyTree = structureBuilder.build();
 		dependencyTree.setIndex(sentence.getIndex());
 
-		// Push structure into backend storage
+		// Push structure into back-end storage
 		structureSaveAction.accept(dependencyTree);
 
 		// Reset buffers

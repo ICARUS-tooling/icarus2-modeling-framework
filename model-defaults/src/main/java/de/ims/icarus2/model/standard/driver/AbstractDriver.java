@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
@@ -264,7 +265,7 @@ public abstract class AbstractDriver implements Driver {
 		MappingStorage.Builder builder = new MappingStorage.Builder();
 
 		// Allow for subclasses to provide a fallback function
-		BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> fallback = getMappingFallback();
+		BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> fallback = getRegularMappingFallback();
 		if(fallback!=null) {
 			builder.fallback(fallback);
 		}
@@ -277,7 +278,16 @@ public abstract class AbstractDriver implements Driver {
 	 *
 	 * @return
 	 */
-	protected BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> getMappingFallback() {
+	protected BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> getRegularMappingFallback() {
+		return null;
+	}
+
+	/**
+	 * Hook for subclasses to modify default behavior when creating the mapping storage.
+	 *
+	 * @return
+	 */
+	protected Function<ItemLayerManifest, Mapping> getRootMappingFallback() {
 		return null;
 	}
 
