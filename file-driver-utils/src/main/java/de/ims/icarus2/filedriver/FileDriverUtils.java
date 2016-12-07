@@ -60,6 +60,8 @@ public class FileDriverUtils {
 	 * Suffix to be appended to a {@link LayerGroupManifest}'s {@link LayerGroupManifest#getId() id}
 	 * in order to access saved estimates about that groups individual chunks (i.e. elements of the
 	 * group's {@link LayerGroupManifest#getPrimaryLayerManifest() primary layer}).
+	 * <p>
+	 * The resulting {@code String} can be used to query
 	 */
 	public static final String ESTIMATED_CHUNK_SIZE_SUFFIX = ".chunkSize";
 

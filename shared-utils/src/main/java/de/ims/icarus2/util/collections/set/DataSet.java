@@ -18,10 +18,13 @@
  */
 package de.ims.icarus2.util.collections.set;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.lang.reflect.Array;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -41,7 +44,7 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
  *
  * @see DataSequence
  */
-public interface DataSet<E extends Object> {
+public interface DataSet<E extends Object> extends Iterable<E> {
 
 	int entryCount();
 
@@ -107,6 +110,15 @@ public interface DataSet<E extends Object> {
 		return array;
 	}
 
+	/**
+	 * @see java.lang.Iterable#iterator()
+	 */
+	@Override
+	default Iterator<E> iterator() {
+		return new DataSetIterator<>(this);
+	}
+
+
 	@SuppressWarnings("unchecked")
 	public static <E extends Object> DataSet<E> emptySet() {
 		return (DataSet<E>) EMPTY_SET;
@@ -129,4 +141,53 @@ public interface DataSet<E extends Object> {
 			return false;
 		}
 	};
+
+	public static class DataSetIterator<E extends Object> implements Iterator<E> {
+		private final DataSet<? extends E> source;
+		private int pos = 0;
+		private final int fence;
+
+		public DataSetIterator(DataSet<? extends E> source) {
+			this(source, 0, source.entryCount());
+		}
+
+		public DataSetIterator(DataSet<? extends E> source, int beginIndex) {
+			this(source, beginIndex, source.entryCount());
+		}
+
+		/**
+		 *
+		 * @param source
+		 * @param beginIndex first index position to be accessed by the iterator (inclusive)
+		 * @param endIndex last index position to be accessed by the iterator (exclusive)
+		 */
+		public DataSetIterator(DataSet<? extends E> source, int beginIndex, int endIndex) {
+			checkNotNull(source);
+			checkArgument(beginIndex>=0);
+			checkArgument(beginIndex<endIndex);
+			checkArgument(endIndex<=source.entryCount());
+
+			this.source = source;
+			pos = beginIndex;
+			fence = endIndex;
+		}
+
+		/**
+		 * @see java.util.Iterator#hasNext()
+		 */
+		@Override
+		public boolean hasNext() {
+			return pos<fence;
+		}
+
+		/**
+		 * @see java.util.Iterator#next()
+		 */
+		@Override
+		public E next() {
+			if(pos>=fence)
+				throw new NoSuchElementException();
+			return source.entryAt(pos++);
+		}
+	}
 }

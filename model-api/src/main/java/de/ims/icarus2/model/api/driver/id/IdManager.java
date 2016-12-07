@@ -14,22 +14,40 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
- *
  */
-package de.ims.icarus2.util.mem;
+package de.ims.icarus2.model.api.driver.id;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+
 
 /**
  * @author Markus Gärtner
  *
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface HeapMember {
+public interface IdManager extends AutoCloseable {
 
-	// marker annotation
+	/**
+	 * Returns the manifest describing the layer this manager stores ids for.
+	 *
+	 * @return
+	 */
+	public ItemLayerManifest getLayerManifest();
+
+	/**
+	 * Maps a given {@code index} to the {@link Item#getId() id} of the item at that position.
+	 *
+	 * @param index
+	 * @return
+	 */
+	long getIdAt(long index);
+
+	/**
+	 * Performs the inverse lookup operation of {@link #getIdAt(long)}, returning the position
+	 * in a layer where the item with a given {@code id} is located.
+	 *
+	 * @param id
+	 * @return
+	 */
+	long indexOfId(long id);
 }

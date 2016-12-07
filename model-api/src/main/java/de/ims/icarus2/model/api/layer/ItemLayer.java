@@ -21,6 +21,7 @@
 package de.ims.icarus2.model.api.layer;
 
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.model.api.driver.id.IdManager;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
@@ -49,6 +50,14 @@ public interface ItemLayer extends Layer, ManifestOwner<ItemLayerManifest> {
 	@AccessRestriction(AccessMode.ALL)
 	@Override
 	ItemLayerManifest getManifest();
+
+	/**
+	 * Short-hand method for fetching the {@link IdManager} that is used to map
+	 * between ids and index values for this layer.
+	 *
+	 * @return
+	 */
+	IdManager getIdManager();
 
 	/**
 	 * Returns the {@code ItemLayer} that holds the bounding
@@ -104,7 +113,7 @@ public interface ItemLayer extends Layer, ManifestOwner<ItemLayerManifest> {
 	 * @param layer
 	 *
 	 * @throws NullPointerException iff the {@code layer} argument is {@code null}
-	 * @throws ModelException in case the value layer has already been set
+	 * @throws ModelException in case the boundary layer has already been set
 	 */
 	void setBoundaryLayer(ItemLayer layer);
 
@@ -113,7 +122,11 @@ public interface ItemLayer extends Layer, ManifestOwner<ItemLayerManifest> {
 	 * @param layer
 	 *
 	 * @throws NullPointerException iff the {@code layer} argument is {@code null}
-	 * @throws ModelException in case the value layer has already been set
+	 * @throws ModelException in case the foundation layer has already been set
 	 */
 	void setFoundationLayer(ItemLayer layer);
+
+	default boolean isPrimaryLayer() {
+		return this==getLayerGroup().getPrimaryLayer();
+	}
 }

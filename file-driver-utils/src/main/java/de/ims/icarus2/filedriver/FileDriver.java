@@ -18,6 +18,7 @@
 package de.ims.icarus2.filedriver;
 
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkNonEmpty;
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -36,7 +37,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +58,7 @@ import de.ims.icarus2.filedriver.io.sets.FileSet;
 import de.ims.icarus2.filedriver.mapping.AbstractStoredMapping;
 import de.ims.icarus2.filedriver.mapping.DefaultMappingFactory;
 import de.ims.icarus2.filedriver.mapping.MappingFactory;
+import de.ims.icarus2.filedriver.mapping.MappingImplIdentity;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndex;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexCursor;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexStorage;
@@ -90,6 +91,7 @@ import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.driver.AbstractDriver;
 import de.ims.icarus2.model.standard.driver.BufferedItemManager;
@@ -156,7 +158,7 @@ public class FileDriver extends AbstractDriver {
 	 * <p>
 	 * Will be populated lazily when actually needed.
 	 */
-	private final Int2ObjectMap<StampedLock> fileLocks;
+	private final Int2ObjectMap<LockableFileObject> fileObjects;
 
 	private static Logger log = LoggerFactory.getLogger(FileDriver.class);
 
@@ -171,7 +173,7 @@ public class FileDriver extends AbstractDriver {
 		metadataRegistry = builder.getMetadataRegistry();
 		dataFiles = builder.getDataFiles();
 
-		fileLocks = new Int2ObjectOpenHashMap<>(dataFiles.getFileCount());
+		fileObjects = new Int2ObjectOpenHashMap<>(dataFiles.getFileCount());
 
 		converter = Lazy.create(this::createConverter, true);
 	}
@@ -188,24 +190,24 @@ public class FileDriver extends AbstractDriver {
 		return converter.value();
 	}
 
-	protected final StampedLock getLockForFile(int fileIndex) {
+	protected final LockableFileObject getFileObject(int fileIndex) {
 		Path file = dataFiles.getFileAt(fileIndex);
 		if(file==null)
 			throw new ModelException(ModelErrorCode.DRIVER_ERROR,
 					"Could not find a valid file to fetch lock for at index "+fileIndex);
 
-		StampedLock lock = fileLocks.get(fileIndex);
-		if(lock==null) {
-			synchronized (fileLocks) {
-				lock = fileLocks.get(fileIndex);
-				if(lock==null) {
-					lock = new StampedLock();
-					fileLocks.put(fileIndex, lock);
+		LockableFileObject fileObject = fileObjects.get(fileIndex);
+		if(fileObject==null) {
+			synchronized (fileObjects) {
+				fileObject = fileObjects.get(fileIndex);
+				if(fileObject==null) {
+					fileObject = new LockableFileObject(file, fileIndex, new StampedLock());
+					fileObjects.put(fileIndex, fileObject);
 				}
 			}
 		}
 
-		return lock;
+		return fileObject;
 	}
 
 	@Override
@@ -278,11 +280,6 @@ public class FileDriver extends AbstractDriver {
 			builder.fallback(fallback);
 		}
 
-		Function<ItemLayerManifest, Mapping> rootFallback = getRootMappingFallback();
-		if(rootFallback!=null) {
-			builder.rootMappingFallback(rootFallback);
-		}
-
 		MappingFactory mappingFactory = new DefaultMappingFactory(this);
 
 		manifest.forEachMappingManifest(m -> {
@@ -291,6 +288,11 @@ public class FileDriver extends AbstractDriver {
 			Mapping mapping = defaultCreateMapping(mappingFactory, m, options);
 			builder.addMapping(mapping);
 		});
+
+		for(LayerManifest layerManifest : manifest.getContextManifest().getLayerManifests(ManifestUtils::isItemLayerManifest)) {
+			Mapping mapping = defaultCreateRootMapping((ItemLayerManifest) layerManifest);
+			builder.addMapping(mapping);
+		}
 
 		return builder.build();
 	}
@@ -304,11 +306,16 @@ public class FileDriver extends AbstractDriver {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.driver.AbstractDriver#getRootMappingFallback()
+	 * Hook to customize creation of root mappings for {@link ItemLayerManifest item layers}.
+	 * The default implementation simply creates a new {@link MappingImplIdentity identity mapping}.
+	 *
+	 * @param layerManifest
+	 * @return
 	 */
-	@Override
-	protected Function<ItemLayerManifest, Mapping> getRootMappingFallback() {
-		return m -> {};
+	protected Mapping defaultCreateRootMapping(ItemLayerManifest layerManifest) {
+		//TODO check metadata and create specialized mapping if it's not basic dientity mapping!
+
+		return new MappingImplIdentity(this, layerManifest);
 	}
 
 	public void resetMappings() {
@@ -324,6 +331,7 @@ public class FileDriver extends AbstractDriver {
 				if(AbstractStoredMapping.class.isInstance(m)) {
 					AbstractStoredMapping mapping = (AbstractStoredMapping) m;
 					try {
+						//FIXME creates inconsistency on metadata level when physical resources of a mapping get deleted
 						mapping.delete();
 					} catch (Exception e) {
 						log.error("Failed to delete mapping storage", e);
@@ -632,7 +640,20 @@ public class FileDriver extends AbstractDriver {
 			globalLock.unlock();
 		}
 
-		scanFileSynchronized(fileIndex);
+
+		LockableFileObject fileObject = getFileObject(fileIndex);
+		StampedLock lock = fileObject.getLock();
+
+		Report<ReportItem> report = null;
+
+		long stamp = lock.readLock();
+		try {
+			report = getConverter().scanFile(fileIndex);
+		} finally {
+			lock.unlockRead(stamp);
+		}
+
+		//TODO process report
 	}
 
 	/**
@@ -937,33 +958,21 @@ public class FileDriver extends AbstractDriver {
 		Converter converter = getConverter();
 		@SuppressWarnings("rawtypes")
 		Map lookup = (Map) converter.getPropertyValue(ConverterProperty.EXTIMATED_CHUNK_SIZES);
-		String key = groupManifest.getId()+FileDriverUtils.ESTIMATED_CHUNK_SIZE_SUFFIX;
+		String key = groupManifest.getId();
 		Integer value = (Integer) lookup.get(key);
 		int converterEstimation = value!=null ? value.intValue() : -1;
+		if(converterEstimation!=-1) {
+			return converterEstimation;
+		}
 
 		// Check driver's settings next
+		//TODO
 
 
 		// Check metadata
-	}
+		//TODO
 
-	/**
-	 * Wraps the {@link Converter#scanFile(int, ChunkIndexStorage)} call into a
-	 * synchronized block based on the file's {@link #getReadLockForFile(int) read lock}.
-	 *
-	 * @see de.ims.icarus2.filedriver.FileDriver#scanFileSynchronized(int)
-	 */
-	protected Report<ReportItem> scanFileSynchronized(int fileIndex) throws IOException,
-			InterruptedException {
-
-		StampedLock lock = getLockForFile(fileIndex);
-
-		long stamp = lock.readLock();
-		try {
-			return getConverter().scanFile(fileIndex);
-		} finally {
-			lock.unlockRead(stamp);
-		}
+		return -1;
 	}
 
 	/**
@@ -1196,11 +1205,11 @@ public class FileDriver extends AbstractDriver {
 
 			int firstFile = findFile(minIndex, layer.getManifest(), 0, fileCount);
 			if(firstFile<0)
-				throw new ModelException(ModelErrorCode.DRIVER_METADATA,
+				throw new ModelException(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 						"Could not find file index for item index "+minIndex+" in layer "+ModelUtils.getUniqueId(layer));
 			int lastFile = findFile(maxIndex, layer.getManifest(), firstFile, fileCount);
 			if(lastFile<0)
-				throw new ModelException(ModelErrorCode.DRIVER_METADATA,
+				throw new ModelException(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 						"Could not find file index for item index "+maxIndex+" in layer "+ModelUtils.getUniqueId(layer));
 
 			long loadedItems = 0L;
@@ -1270,20 +1279,7 @@ public class FileDriver extends AbstractDriver {
 
 		LayerBuffer layerBuffer = getLayerBuffer(layer);
 
-		StampedLock lock = getLockForFile(fileIndex);
-		FileInfo fileInfo = getFileStates().getFileInfo(fileIndex);
 
-		long stamp = lock.readLock();
-		try {
-
-		} finally {
-			lock.unlockRead(stamp);
-		}
-
-		//TODO check whether we
-
-		// TODO Auto-generated method stub
-		return getConverter().loadChunks(layer, IndexSet.asIterator(indices), chunkIndexStorage, action);
 	}
 
 	protected class ChunkLoader {
@@ -1294,8 +1290,7 @@ public class FileDriver extends AbstractDriver {
 
 		private Converter.Cursor cursor;
 
-		private int currentFileIndex = -1;
-		private StampedLock fileLock;
+		private LockableFileObject fileObject;
 		private long stamp;
 
 		public void execute() throws IOException {
@@ -1314,7 +1309,7 @@ public class FileDriver extends AbstractDriver {
 						chunkIndexCursor.moveTo(index);
 
 						int fileIndex = chunkIndexCursor.getFileId();
-						if(fileIndex!=currentFileIndex) {
+						if(fileObject==null || fileIndex!=fileObject.getFileIndex()) {
 							releaseFile();
 							useFile(fileIndex);
 						}
@@ -1338,20 +1333,18 @@ public class FileDriver extends AbstractDriver {
 
 			cursor = getConverter().getCursor(fileIndex, layer);
 
-			fileLock = getLockForFile(fileIndex);
-			stamp = fileLock.readLock();
-			currentFileIndex = fileIndex;
+			fileObject = getFileObject(fileIndex);
+			stamp = fileObject.getLock().readLock();
 		}
 
 		/**
 		 * First unlocks the file and then closes the Cursor
 		 */
 		private void releaseFile() throws IOException {
-			if(fileLock!=null) {
-				fileLock.unlockRead(stamp);
+			if(fileObject!=null) {
+				fileObject.getLock().unlockRead(stamp);
 				stamp = 0;
-				fileLock = null;
-				currentFileIndex = -1;
+				fileObject = null;
 			}
 
 			if(cursor!=null) {
@@ -1371,7 +1364,7 @@ public class FileDriver extends AbstractDriver {
 	public long loadFile(int fileIndex, Consumer<ChunkInfo> action)
 			throws IOException, InterruptedException {
 
-		StampedLock lock = getLockForFile(fileIndex);
+		StampedLock lock = getFileObject(fileIndex);
 		FileInfo fileInfo = getFileStates().getFileInfo(fileIndex);
 
 		long stamp = lock.readLock();
@@ -1723,5 +1716,48 @@ public class FileDriver extends AbstractDriver {
 		default void cleanup() {
 			// no-op
 		}
+	}
+
+	public static class LockableFileObject {
+		private final Path path;
+		private final int fileIndex;
+		private final StampedLock lock;
+
+		/**
+		 * @param path
+		 * @param fileIndex
+		 * @param lock
+		 */
+		public LockableFileObject(Path path, int fileIndex, StampedLock lock) {
+			checkNotNull(path);
+			checkNotNull(lock);
+			checkArgument(fileIndex>=0);
+
+			this.path = path;
+			this.fileIndex = fileIndex;
+			this.lock = lock;
+		}
+
+		public Path getPath() {
+			return path;
+		}
+
+		public int getFileIndex() {
+			return fileIndex;
+		}
+
+		/**
+		 * Returns the raw lock used for this file resource.
+		 * We provide full access to the lock in order to allow subclasses the
+		 * decision to exploit all facets of the {@link StampedLock} implementation,
+		 * e.g. the option to use {@link StampedLock#tryOptimisticRead() optimistic reads}
+		 * to greatly reduce locking overhead.
+		 *
+		 * @return
+		 */
+		public StampedLock getLock() {
+			return lock;
+		}
+
 	}
 }

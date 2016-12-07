@@ -16,13 +16,20 @@
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  *
  */
-package de.ims.icarus2.util.collections.set;
+package de.ims.icarus2.util.mem;
 
-import de.ims.icarus2.util.Recyclable;
-import de.ims.icarus2.util.mem.Assessable;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@Assessable
-public abstract class AbstractDataSet<E extends Object> implements DataSet<E>, Recyclable {
+/**
+ * @author Markus Gärtner
+ *
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface Assessable {
 
-	public abstract void add(E element);
+	// marker annotation
 }

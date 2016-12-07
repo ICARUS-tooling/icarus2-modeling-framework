@@ -20,11 +20,11 @@ package de.ims.icarus2.util.collections.set;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusException;
-import de.ims.icarus2.util.mem.HeapMember;
+import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Reference;
 import de.ims.icarus2.util.mem.ReferenceType;
 
-@HeapMember
+@Assessable
 public class SingletonSet<E extends Object> extends AbstractDataSet<E> {
 
 	@Reference(ReferenceType.DOWNLINK)

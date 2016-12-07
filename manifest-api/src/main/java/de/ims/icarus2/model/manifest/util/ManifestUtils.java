@@ -22,7 +22,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
+import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
+import de.ims.icarus2.model.manifest.api.ManifestType;
 
 /**
  * @author Markus Gärtner
@@ -83,4 +85,9 @@ public class ManifestUtils {
 		}
 	}
 
+	public static boolean isItemLayerManifest(Manifest manifest) {
+		return manifest.getManifestType()==ManifestType.ITEM_LAYER_MANIFEST;
+	}
+
+	//TODO methods for checking other types so we can use them as method references in lambdas
 }

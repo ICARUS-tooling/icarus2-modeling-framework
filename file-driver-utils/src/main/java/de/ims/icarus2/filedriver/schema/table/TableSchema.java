@@ -19,9 +19,11 @@ package de.ims.icarus2.filedriver.schema.table;
 
 import de.ims.icarus2.filedriver.schema.Schema;
 import de.ims.icarus2.model.api.layer.ItemLayer;
+import de.ims.icarus2.model.api.layer.LayerGroup;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.util.Options;
@@ -35,9 +37,27 @@ public interface TableSchema extends Schema {
 
 	public static final String SCHEMA_ID = "de.ims.icarus2.filedriver.schema.table";
 
+	public static final String DELIMITER_TAB = "TAB";
+	public static final String DELIMITER_WHITESPACES = "WHITESPACES";
+	public static final String DELIMITER_SPACE = "SPACE";
+
 	BlockSchema getRootBlock();
 
+	/**
+	 * Returns the global column separator.
+	 * This can be overridden on the {@link BlockSchema block} level.
+	 *
+	 * @return
+	 */
 	String getSeparator();
+
+	/**
+	 * Returns the {@link LayerGroupManifest#getId() id} of the {@link LayerGroup} top
+	 * level members created via this schema should be placed in.
+	 *
+	 * @return
+	 */
+	String getGroupId();
 
 	/**
 	 * Defines a schema for one hierarchical level inside a tabular file format.
@@ -53,10 +73,6 @@ public interface TableSchema extends Schema {
 	 */
 	public interface BlockSchema {
 
-		public static final String DELIMITER_TAB = "TAB";
-		public static final String DELIMITER_WHITESPACES = "WHITESPACES";
-		public static final String DELIMITER_SPACE = "SPACE";
-
 		public static final boolean DEFAULT_COLUMN_ORDER_FIXED = false;
 
 		Options getOptions();
@@ -69,12 +85,8 @@ public interface TableSchema extends Schema {
 		 */
 		String getLayerId();
 
-		MemberSchema getContainerSchema();
-
 		/**
-		 * Specification of nested elements or {@code null}
-		 * if this container only hosts the output of
-		 * {@link #getNestedBlocks() nested blocks}.
+		 * Specification of nested elements.
 		 *
 		 * @return
 		 */
@@ -98,6 +110,13 @@ public interface TableSchema extends Schema {
 		 */
 		AttributeSchema getEndDelimiter();
 
+		/**
+		 * Returns the separator to be used for columns within this block.
+		 * This overrides the {@link TableSchema#getSeparator() global definition}
+		 * of the surrounding {@link TableSchema} if present.
+		 *
+		 * @return
+		 */
 		String getSeparator();
 
 		/**
@@ -143,13 +162,6 @@ public interface TableSchema extends Schema {
 	public interface MemberSchema {
 
 		public static final boolean DEFAULT_IS_REFERENCE = false;
-
-		/**
-		 * Layer to place newly created elements in.
-		 *
-		 * @return
-		 */
-		String getLayerId();
 
 		/**
 		 * Type of the member, if different from what is defined in the respective

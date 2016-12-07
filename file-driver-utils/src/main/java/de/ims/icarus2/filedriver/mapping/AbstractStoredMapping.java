@@ -22,13 +22,19 @@ import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import de.ims.icarus2.filedriver.io.BufferedIOResource;
+import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
+import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
+import de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter;
+import de.ims.icarus2.filedriver.io.BufferedIOResource.ReadWriteAccessor;
 import de.ims.icarus2.filedriver.mapping.AbstractVirtualMapping.MappingBuilder;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
 import de.ims.icarus2.model.api.driver.mapping.WritableMapping;
+import de.ims.icarus2.model.api.io.SynchronizedAccessor;
 import de.ims.icarus2.model.api.io.resources.IOResource;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
@@ -40,7 +46,7 @@ import de.ims.icarus2.model.manifest.api.MappingManifest;
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractStoredMapping extends BufferedIOResource implements WritableMapping {
+public abstract class AbstractStoredMapping implements WritableMapping {
 
 	public static final int DEFAULT_CACHE_SIZE = 100;
 
@@ -48,34 +54,42 @@ public abstract class AbstractStoredMapping extends BufferedIOResource implement
 	private final MappingManifest manifest;
 	private final ItemLayerManifest sourceLayer;
 	private final ItemLayerManifest targetLayer;
-	private final boolean rootMapping;
+	private final BufferedIOResource resource;
 
 	protected AbstractStoredMapping(StoredMappingBuilder<?,?> builder) {
-		super(builder.getResource(), builder.getBlockCache(), builder.getCacheSize());
 
 		driver = builder.getDriver();
 		manifest = builder.getManifest();
 		sourceLayer = builder.getSourceLayer();
 		targetLayer = builder.getTargetLayer();
-		rootMapping = builder.isRootMapping();
+
+		resource = builder.createBufferedIOResource();
+	}
+
+	public BufferedIOResource getResource() {
+		return resource;
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.driver.mapping.Mapping#isRootMapping()
+	 * @see java.lang.Object#toString()
 	 */
 	@Override
-	public boolean isRootMapping() {
-		return rootMapping;
+	public String toString() {
+		StringBuilder sb = new StringBuilder(100);
+
+		sb.append(getClass().getName()).append('@');
+		sb.append("[id=").append(manifest.getId());
+		sb.append(" sourceLayer=").append(sourceLayer.getId());
+		sb.append(" targetLayer=").append(targetLayer.getId());
+
+		toString(sb);
+
+		sb.append(']');
+
+		return sb.toString();
 	}
 
-	@Override
-	protected void toString(StringBuilder sb) {
-		sb.append(" id=").append(manifest.getId());
-		if(!isRootMapping()) {
-			sb.append(" sourceLayer=").append(sourceLayer.getId());
-		}
-		sb.append(" targetLayer=").append(targetLayer.getId());
-	}
+	protected abstract void toString(StringBuilder sb);
 
 	protected static void checkInterrupted() throws InterruptedException {
 		if(Thread.interrupted())
@@ -149,6 +163,106 @@ public abstract class AbstractStoredMapping extends BufferedIOResource implement
 		// for subclasses
 	}
 
+	protected class ResourceAccessor implements SynchronizedAccessor<Mapping> {
+
+		protected final ReadWriteAccessor delegateAccessor;
+
+		/**
+		 * Creates an accessor that wraps around the main resource as
+		 * returned by {@link AbstractStoredMapping#getResource()}
+		 *
+		 * @param readOnly
+		 */
+		protected ResourceAccessor(boolean readOnly) {
+			this(AbstractStoredMapping.this.getResource(), readOnly);
+		}
+
+		/**
+		 * Creates an accessor that wraps around the provided {@link BufferedIOResource resource}.
+		 * This constructor is useful if a mapping implementations needs to store data in different
+		 * resources.
+		 *
+		 * @param resource
+		 * @param readOnly
+		 */
+		protected ResourceAccessor(BufferedIOResource resource, boolean readOnly) {
+			delegateAccessor = resource.newAccessor(readOnly);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#getSource()
+		 */
+		@Override
+		public Mapping getSource() {
+			return AbstractStoredMapping.this;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#begin()
+		 */
+		@Override
+		public void begin() {
+			delegateAccessor.begin();
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#end()
+		 */
+		@Override
+		public void end() {
+			delegateAccessor.end();
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#close()
+		 */
+		@Override
+		public void close() {
+			delegateAccessor.close();
+		}
+
+		Block getBlock(int id, boolean writeAccess) {
+			return delegateAccessor.getSource().getBlock(id, writeAccess);
+		}
+	}
+
+	public static class PayloadConverterImpl implements PayloadConverter {
+
+		private final IndexBlockStorage blockStorage;
+
+		/**
+		 * @param blockStorage
+		 */
+		public PayloadConverterImpl(IndexBlockStorage blockStorage) {
+			checkNotNull(blockStorage);
+
+			this.blockStorage = blockStorage;
+		}
+
+		@Override
+		public void write(Object source, ByteBuffer buffer, int length)
+				throws IOException {
+			blockStorage.write(source, buffer, 0, length);
+		}
+
+		@Override
+		public int read(Object target, ByteBuffer buffer) throws IOException {
+			int length = buffer.remaining()/blockStorage.spanSize();
+			blockStorage.read(target, buffer, 0, length);
+			return length;
+		}
+
+		@Override
+		public Object newBlockData(int bytesPerBlock) {
+			return blockStorage.createBuffer(bytesPerBlock);
+		}
+
+		public IndexBlockStorage getBlockStorage() {
+			return blockStorage;
+		}
+
+	}
+
 	/**
 	 *
 	 * @author Markus Gärtner
@@ -199,6 +313,8 @@ public abstract class AbstractStoredMapping extends BufferedIOResource implement
 		public BlockCache getBlockCache() {
 			return blockCache;
 		}
+
+		public abstract BufferedIOResource createBufferedIOResource();
 
 		@Override
 		protected void validate() {

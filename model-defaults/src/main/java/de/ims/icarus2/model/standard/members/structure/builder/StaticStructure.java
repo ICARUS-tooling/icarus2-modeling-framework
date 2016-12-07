@@ -33,7 +33,7 @@ import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.standard.members.MemberFlags;
 import de.ims.icarus2.model.standard.members.container.ItemStorage;
-import de.ims.icarus2.model.standard.members.item.AbstractItem;
+import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.model.standard.members.structure.EdgeStorage;
 import de.ims.icarus2.model.standard.members.structure.ImmutableStructureEditVerifier;
 import de.ims.icarus2.model.standard.members.structure.info.StructureInfoBuilder;
@@ -45,7 +45,7 @@ import de.ims.icarus2.util.collections.set.DataSet;
  * @author Markus Gärtner
  *
  */
-public class StaticStructure extends AbstractItem implements Structure {
+public class StaticStructure extends DefaultItem implements Structure {
 
 	private ItemStorage nodes;
 	private EdgeStorage edges;
@@ -83,7 +83,7 @@ public class StaticStructure extends AbstractItem implements Structure {
 	}
 
 	void setAugmented(boolean augmented) {
-		flags = MemberFlags.setStructureAugmented(flags, augmented);
+		setFlag(MemberFlags.STRUCTURE_AUGMENTED, augmented);
 	}
 
 	private <T extends Object> T signalUnsupportedOperation() {
@@ -93,7 +93,7 @@ public class StaticStructure extends AbstractItem implements Structure {
 
 	@Override
 	public boolean isAugmented() {
-		return MemberFlags.isStructureAugmented(flags);
+		return isFlagSet(MemberFlags.STRUCTURE_AUGMENTED);
 	}
 
 	@Override

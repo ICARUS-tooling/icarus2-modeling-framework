@@ -28,7 +28,7 @@ import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
 import de.ims.icarus2.util.access.AccessRestriction;
-import de.ims.icarus2.util.mem.HeapMember;
+import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Primitive;
 import de.ims.icarus2.util.mem.Reference;
 
@@ -36,7 +36,7 @@ import de.ims.icarus2.util.mem.Reference;
  * @author Markus Gärtner
  *
  */
-@HeapMember
+@Assessable
 @AccessControl(AccessPolicy.DENY)
 public class MemberCache<M extends Item> {
 

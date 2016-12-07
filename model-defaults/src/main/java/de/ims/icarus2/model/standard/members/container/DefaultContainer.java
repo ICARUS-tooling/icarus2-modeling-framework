@@ -30,11 +30,12 @@ import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.MemberFlags;
-import de.ims.icarus2.model.standard.members.item.AbstractItem;
+import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.Recyclable;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
+import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Link;
 import de.ims.icarus2.util.mem.Reference;
 
@@ -42,7 +43,8 @@ import de.ims.icarus2.util.mem.Reference;
  * @author Markus Gärtner
  *
  */
-public class DefaultContainer extends AbstractItem implements Container, Recyclable {
+@Assessable
+public class DefaultContainer extends DefaultItem implements Container, Recyclable {
 
 	@Link
 	protected ItemStorage itemStorage;
@@ -55,16 +57,6 @@ public class DefaultContainer extends AbstractItem implements Container, Recycla
 
 	public DefaultContainer() {
 		// no-op
-	}
-
-	public DefaultContainer(Container host) {
-		super(host);
-	}
-
-	public DefaultContainer(Container host, ItemStorage itemStorage) {
-		super(host);
-
-		setItemStorage(itemStorage);
 	}
 
 	/**
@@ -86,7 +78,7 @@ public class DefaultContainer extends AbstractItem implements Container, Recycla
 	 * Returns {@code true} if either the super method reports the {@link MemberFlags#isItemDirty(int) dirty flag}
 	 * to be set or if the underlying {@link #getItemStorage() item-storage} reports a dirty state.
 	 *
-	 * @see de.ims.icarus2.model.standard.members.item.AbstractItem#isDirty()
+	 * @see de.ims.icarus2.model.standard.members.item.DefaultItem#isDirty()
 	 */
 	@Override
 	public boolean isDirty() {
@@ -235,11 +227,11 @@ public class DefaultContainer extends AbstractItem implements Container, Recycla
 
 	@Override
 	public boolean isItemsComplete() {
-		return MemberFlags.isItemsComplete(flags);
+		return isFlagSet(MemberFlags.ITEMS_COMPLETE);
 	}
 
 	public void setItemsComplete(boolean complete) {
-		flags = MemberFlags.setItemsComplete(flags, complete);
+		setFlag(MemberFlags.ITEMS_COMPLETE, complete);
 	}
 
 	public ItemStorage getItemStorage() {

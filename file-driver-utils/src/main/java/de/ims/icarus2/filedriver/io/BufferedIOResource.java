@@ -36,10 +36,11 @@ import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.io.SynchronizedAccessor;
 import de.ims.icarus2.model.api.io.resources.IOResource;
+import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.IcarusUtils;
 
 /**
- * Models an I/O resource that reads from a single source and provides synchronized
+ * Models an I/O resource that reads from a single physical source and provides synchronized
  * accessors for both read and write operations. Data is read in blocks of a fixed
  * size, the value of which is determined at construction time by the respective
  * subclass. Blocks are then cached in a cache implementation also provided at
@@ -55,14 +56,14 @@ import de.ims.icarus2.util.IcarusUtils;
  * {@link SynchronizedAccessor#end() end}.
  * <p>
  * <pre>
- *     Reader reader = ...	// obtain reader
- *     reader.begin();
- *     try {
- *         // do something with reader
- *         ...
- *     } finally {
- *         reader.end();
- *     }
+ * Reader reader = ...	// obtain reader
+ * reader.begin();
+ * try {
+ *     // do something with reader
+ *     ...
+ * } finally {
+ *     reader.end();
+ * }
  * </pre>
  *
  * <p>
@@ -80,7 +81,7 @@ import de.ims.icarus2.util.IcarusUtils;
  * @author Markus Gärtner
  *
  */
-public abstract class BufferedIOResource {
+public class BufferedIOResource {
 
 	/**
 	 * Maximum size of supported I/O objects, limited to 32 Gigabytes
@@ -123,7 +124,7 @@ public abstract class BufferedIOResource {
 	/**
 	 * Physical size of a block to be read into cache
 	 */
-	private int bytesPerBlock = -1;
+	private final int bytesPerBlock;
 
 	/**
 	 *  Size of cache upon which stale entries can be removed
@@ -134,6 +135,12 @@ public abstract class BufferedIOResource {
 	 * Buffer for I/O operations on open channels from the underlying {@link IOResource}
 	 */
 	private ByteBuffer buffer;
+
+	/**
+	 * External processor to convert back and forth between binary form ({@link ByteBuffer})
+	 * and the payload stored inside {@link Block} objects.
+	 */
+	private final PayloadConverter payloadConverter;
 
 	/**
 	 * Buffered instance to prevent unnecessary creation of new blocks.
@@ -148,23 +155,28 @@ public abstract class BufferedIOResource {
 	private Block lastReturnedBlock = null;
 	private int lastReturnedBlockId = -1;
 
-	protected BufferedIOResource(IOResource resource, BlockCache cache, int cacheSize) {
+	public BufferedIOResource(IOResource resource, PayloadConverter payloadConverter, BlockCache cache, int cacheSize, int bytesPerBlock) {
 		checkNotNull(resource);
+		checkNotNull(payloadConverter);
 		checkNotNull(cache);
 		checkArgument(cacheSize>=0);
 
 		this.resource = resource;
+		this.payloadConverter = payloadConverter;
 		this.cache = cache;
 		this.cacheSize = cacheSize;
+		this.bytesPerBlock = bytesPerBlock;
 	}
 
-	protected BufferedIOResource(BufferedIOResourceBuilder<?> builder) {
+	protected BufferedIOResource(BufferedIOResourceBuilder builder) {
 		// TODO maybe redundant call or should leave it here for safety?
 		builder.validate();
 
 		this.resource = builder.getResource();
+		this.payloadConverter = builder.getPayloadConverter();
 		this.cache = builder.getBlockCache();
 		this.cacheSize = builder.getCacheSize();
+		this.bytesPerBlock = builder.getBytesPerBlock();
 	}
 
 	protected StampedLock getLock() {
@@ -181,24 +193,10 @@ public abstract class BufferedIOResource {
 		.append(" bufferSize=").append(buffer==null ? -1 : buffer.capacity())
 		.append(" pendingBlockCount==").append(changedBlocks.size())
 		.append(" resource=").append(resource)
+		.append(" payloadConverter=").append(payloadConverter)
 		.append(" cache=").append(cache);
 
-		toString(sb);
-
 		return sb.append(']').toString();
-	}
-
-	protected void toString(StringBuilder sb) {
-		// for subclasses
-	}
-
-	protected void setBytesPerBlock(int bytesPerBlock) {
-		// Ensure we never have to worry about block id values
-		// exceeding Integer.MAX_VALUE
-		if(bytesPerBlock<MIN_BLOCK_SIZE)
-			throw new IllegalArgumentException("Invalid block size: "+bytesPerBlock+" - minimum size is "+MIN_BLOCK_SIZE);
-
-		this.bytesPerBlock = bytesPerBlock;
 	}
 
 	public IOResource getResource() {
@@ -237,19 +235,19 @@ public abstract class BufferedIOResource {
 		resource.delete();
 	}
 
-	protected final void lockBlock(int id, Block block) {
+	public final void lockBlock(int id, Block block) {
 		changedBlocks.add(id);
 		block.lock();
 	}
 
-	protected final void refreshBlockSize(Block block, int size) {
+	public final void refreshBlockSize(Block block, int size) {
 		if(size<0 || size>block.getSize()+1)
 			throw new ModelException(ModelErrorCode.DRIVER_INDEX_WRITE_VIOLATION,
 					"Entry index out of boundy for block: "+size+" - expected non negative value up to "+(block.getSize()+1)); //$NON-NLS-1$ //$NON-NLS-2$
 		block.setSize(size);
 	}
 
-	protected final Block getBlock(int id, boolean writeAccess) {
+	public final Block getBlock(int id, boolean writeAccess) {
 		if(id==lastReturnedBlockId && lastReturnedBlock!=null) {
 			return lastReturnedBlock;
 		}
@@ -281,7 +279,7 @@ public abstract class BufferedIOResource {
 				}
 
 				if(tmpBlock==null || tmpBlock.isLocked()) { // Technically it should never happen to have a block locked at this point
-					tmpBlock = new Block(newBlockData());
+					tmpBlock = new Block(payloadConverter.newBlockData(bytesPerBlock));
 				}
 
 				block = tmpBlock;
@@ -315,7 +313,7 @@ public abstract class BufferedIOResource {
 			}
 
 			// Read entries from buffer
-			int entriesRead = read(block.data, buffer);
+			int entriesRead = payloadConverter.read(block.data, buffer);
 
 			// Save number of entries read
 			//TODO evaluate if setting them even in case of empty block is desired
@@ -329,7 +327,7 @@ public abstract class BufferedIOResource {
 		try(SeekableByteChannel channel = resource.getWriteChannel()) {
 
 			// Write data to buffer
-			write(block.getData(), buffer, block.getSize());
+			payloadConverter.write(block.getData(), buffer, block.getSize());
 
 			// Copy buffer to channel
 			channel.position(offset);
@@ -338,10 +336,6 @@ public abstract class BufferedIOResource {
 			return true;
 		}
 	}
-
-	protected abstract void write(Object source, ByteBuffer buffer, int length) throws IOException;
-
-	protected abstract int read(Object target, ByteBuffer buffer) throws IOException;
 
 	public void flush() throws IOException {
 
@@ -360,12 +354,6 @@ public abstract class BufferedIOResource {
 			block.unlock();
 		}
 	}
-
-	/**
-	 * Creates a new payload object to be used inside a {@link Block}
-	 * @return
-	 */
-	protected abstract Object newBlockData();
 
 	public final void incrementUseCount() {
 		// Previous use count
@@ -421,6 +409,51 @@ public abstract class BufferedIOResource {
 			tmpBlock = null;
 			cache.close();
 		}
+	}
+
+	/**
+	 * Returns a new accessor for managing synchronization with this resource.
+	 * Depending on the {@code readOnly} parameter the returned accessor will
+	 * lock the resource either for writing or only read mode.
+	 *
+	 * @param readOnly
+	 * @return
+	 */
+	public ReadWriteAccessor newAccessor(boolean readOnly) {
+		return this.new ReadWriteAccessor(readOnly);
+	}
+
+	public interface PayloadConverter {
+
+		/**
+		 * Write content of payload {@code source} into given {@link ByteBuffer buffer}.
+		 * The method should write exactly {@code length} units from the payload object.
+		 *
+		 * @param source
+		 * @param buffer
+		 * @param length
+		 * @throws IOException
+		 */
+		void write(Object source, ByteBuffer buffer, int length) throws IOException;
+
+		/**
+		 * Read the content of the given {@link ByteBuffer buffer} into provided
+		 * payload {@code target} and return the number of units that got stored
+		 * in payload object as a result of this method call.
+		 *
+		 * @param target
+		 * @param buffer
+		 * @return
+		 * @throws IOException
+		 */
+		int read(Object target, ByteBuffer buffer) throws IOException;
+
+		/**
+		 * Creates a new payload object to be used inside a {@link Block}
+		 * @return
+		 */
+		Object newBlockData(int bytesPerBlock);
+
 	}
 
 	/**
@@ -538,12 +571,12 @@ public abstract class BufferedIOResource {
 	 *
 	 * @param <T> The source type of the accessor
 	 */
-	public class ReadWriteAccessor<T extends Object> implements SynchronizedAccessor<T> {
+	public class ReadWriteAccessor implements SynchronizedAccessor<BufferedIOResource> {
 
 		private long stamp;
 		private final boolean readOnly;
 
-		protected ReadWriteAccessor(boolean readOnly) {
+		public ReadWriteAccessor(boolean readOnly) {
 			this.readOnly = readOnly;
 
 			incrementUseCount();
@@ -556,10 +589,9 @@ public abstract class BufferedIOResource {
 		/**
 		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#getSource()
 		 */
-		@SuppressWarnings("unchecked")
 		@Override
-		public T getSource() {
-			return (T) BufferedIOResource.this;
+		public BufferedIOResource getSource() {
+			return BufferedIOResource.this;
 		}
 
 		/**
@@ -604,17 +636,14 @@ public abstract class BufferedIOResource {
 	 *
 	 * @param <B>
 	 */
-	public static abstract class BufferedIOResourceBuilder<B extends BufferedIOResourceBuilder<B>> {
+	public static class BufferedIOResourceBuilder extends AbstractBuilder<BufferedIOResourceBuilder, BufferedIOResource> {
 		private int cacheSize;
+		private int bytesPerBlock;
 		private IOResource resource;
 		private BlockCache blockCache;
+		private PayloadConverter payloadConverter;
 
-		@SuppressWarnings("unchecked")
-		protected B thisAsCast() {
-			return (B)this;
-		}
-
-		public B cacheSize(int cacheSize) {
+		public BufferedIOResourceBuilder cacheSize(int cacheSize) {
 			checkArgument(cacheSize>=0);
 			checkState(this.cacheSize==0);
 
@@ -623,7 +652,16 @@ public abstract class BufferedIOResource {
 			return thisAsCast();
 		}
 
-		public B resource(IOResource resource) {
+		public BufferedIOResourceBuilder bytesPerBlock(int bytesPerBlock) {
+			checkArgument(bytesPerBlock>=0);
+			checkState(this.bytesPerBlock==0);
+
+			this.bytesPerBlock = bytesPerBlock;
+
+			return thisAsCast();
+		}
+
+		public BufferedIOResourceBuilder resource(IOResource resource) {
 			checkNotNull(resource);
 			checkState(this.resource==null);
 
@@ -632,7 +670,7 @@ public abstract class BufferedIOResource {
 			return thisAsCast();
 		}
 
-		public B blockCache(BlockCache blockCache) {
+		public BufferedIOResourceBuilder blockCache(BlockCache blockCache) {
 			checkNotNull(blockCache);
 			checkState(this.blockCache==null);
 
@@ -641,8 +679,21 @@ public abstract class BufferedIOResource {
 			return thisAsCast();
 		}
 
+		public BufferedIOResourceBuilder payloadConverter(PayloadConverter payloadConverter) {
+			checkNotNull(payloadConverter);
+			checkState(this.payloadConverter==null);
+
+			this.payloadConverter = payloadConverter;
+
+			return thisAsCast();
+		}
+
 		public int getCacheSize() {
 			return cacheSize;
+		}
+
+		public int getBytesPerBlock() {
+			return bytesPerBlock;
 		}
 
 		public IOResource getResource() {
@@ -653,10 +704,25 @@ public abstract class BufferedIOResource {
 			return blockCache;
 		}
 
+		public PayloadConverter getPayloadConverter() {
+			return payloadConverter;
+		}
+
+		@Override
 		protected void validate() {
 			checkState("Missing resource", resource!=null);
 			checkState("Missing block cache", blockCache!=null);
+			checkState("Missing payload converter", payloadConverter!=null);
 			checkState("Negative cache size", cacheSize>=0);
+			checkState("Bytes per block too small: "+bytesPerBlock, bytesPerBlock>=MIN_BLOCK_SIZE);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.AbstractBuilder#create()
+		 */
+		@Override
+		protected BufferedIOResource create() {
+			return new BufferedIOResource(this);
 		}
 	}
 }

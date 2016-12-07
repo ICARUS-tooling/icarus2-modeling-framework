@@ -63,7 +63,7 @@ public interface MappingReader extends SynchronizedAccessor<Mapping>, ModelConst
 	/**
 	 * Looks up the mapping for the specified {@code sourceIndex} and sends the result to the
 	 * given {@code collector}. Returns {@code true} iff there was a valid mapping for the
-	 * {@code sourceIndex} and the {@code collector} was provided that value.
+	 * {@code sourceIndex} and the {@code collector} has been provided that value.
 	 *
 	 * @param sourceIndex
 	 * @param collector
@@ -73,6 +73,24 @@ public interface MappingReader extends SynchronizedAccessor<Mapping>, ModelConst
 	 * @throws InterruptedException
 	 */
 	boolean lookup(long sourceIndex, IndexCollector collector, RequestSettings settings) throws InterruptedException;
+
+	/**
+	 * Returns the number of indices that are mapped to the given {@code sourceIndex}.
+	 * This is equal to the {@link IndexSet#size() size} of an {@link IndexSet} that would
+	 * be returned for a call to {@link #lookup(long, RequestSettings)} when provided
+	 * with the same {@code sourceIndex} argument.
+	 * <p>
+	 * If the implementation is unable to efficiently determine to the number of mapped indices
+	 * without actually loading them it can return {@code -1} to signal an "unknown" size.
+	 *
+	 * @param sourceIndex
+	 * @param settings
+	 * @return the number of {@link #lookup(long, RequestSettings) target indices} mapped to the given {@code sourceIndex}
+	 * 		or {@code -1} if that number cannot be determined efficiently.
+	 * @throws InterruptedException
+	 */
+	@OptionalMethod
+	long getIndicesCount(long sourceIndex, RequestSettings settings) throws InterruptedException;
 
 	IndexSet[] lookup(long sourceIndex, RequestSettings settings) throws InterruptedException;
 

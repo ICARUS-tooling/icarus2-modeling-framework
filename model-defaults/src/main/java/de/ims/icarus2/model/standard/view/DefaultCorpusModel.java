@@ -925,6 +925,29 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		return layer.getAnnotationStorage().hasAnnotations(item);
 	}
 
+	/**
+	 * Helper method to check whether or not the enclosing corpus is editable
+	 * and to forward an atomic change to the edit model.
+	 * <p>
+	 * If there is no {@link Corpus#getEditManager() edit model} present on the
+	 * {@link CorpusModel#getCorpus() corpus} then the {@code change} will be
+	 * {@link AtomicChange#execute() executed} directly.
+	 *
+	 * @param change the atomic change to be executed
+	 * @throws UnsupportedOperationException if the corpus is not editable
+	 */
+	protected void executeChange(AtomicChange change) {
+		checkWriteAccess();
+
+		CorpusEditManager editModel = getCorpus().getEditManager();
+
+		if(editModel==null) {
+			change.execute();
+		} else {
+			editModel.execute(change);
+		}
+	}
+
 	//TODO forward destruction/reload of internal resources according to page changes
 	protected class ViewObserver extends CorpusAdapter {
 
@@ -1104,6 +1127,14 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		}
 
 		/**
+		 * @see de.ims.icarus2.model.api.members.item.Item#getId()
+		 */
+		@Override
+		public long getId() {
+			return NO_INDEX;
+		}
+
+		/**
 		 * @see de.ims.icarus2.model.api.members.item.Item#getContainer()
 		 */
 		@Override
@@ -1124,22 +1155,6 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		 */
 		@Override
 		public long getIndex() {
-			return NO_INDEX;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.members.item.Item#getBeginOffset()
-		 */
-		@Override
-		public long getBeginOffset() {
-			return NO_INDEX;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.members.item.Item#getEndOffset()
-		 */
-		@Override
-		public long getEndOffset() {
 			return NO_INDEX;
 		}
 
@@ -1281,29 +1296,6 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		@Override
 		public DefaultCorpusModel create() {
 			return new DefaultCorpusModel(this);
-		}
-	}
-
-	/**
-	 * Helper method to check whether or not the enclosing corpus is editable
-	 * and to forward an atomic change to the edit model.
-	 * <p>
-	 * If there is no {@link Corpus#getEditManager() edit model} present on the
-	 * {@link CorpusModel#getCorpus() corpus} then the {@code change} will be
-	 * {@link AtomicChange#execute() executed} directly.
-	 *
-	 * @param change the atomic change to be executed
-	 * @throws UnsupportedOperationException if the corpus is not editable
-	 */
-	protected void executeChange(AtomicChange change) {
-		checkWriteAccess();
-
-		CorpusEditManager editModel = getCorpus().getEditManager();
-
-		if(editModel==null) {
-			change.execute();
-		} else {
-			editModel.execute(change);
 		}
 	}
 }

@@ -18,14 +18,13 @@
  */
 package de.ims.icarus2.model.standard.members.item;
 
-import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.layer.FragmentLayer;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.util.ModelUtils;
-import de.ims.icarus2.util.mem.HeapMember;
+import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Reference;
 import de.ims.icarus2.util.mem.ReferenceType;
 
@@ -33,8 +32,8 @@ import de.ims.icarus2.util.mem.ReferenceType;
  * @author Markus Gärtner
  *
  */
-@HeapMember
-public class DefaultFragment extends AbstractItem implements Fragment {
+@Assessable
+public class DefaultFragment extends DefaultItem implements Fragment {
 
 	@Reference(ReferenceType.UPLINK)
 	private Item item;
@@ -103,14 +102,6 @@ public class DefaultFragment extends AbstractItem implements Fragment {
 	@Override
 	public Item getItem() {
 		return item;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.members.CorpusMember#getCorpus()
-	 */
-	@Override
-	public Corpus getCorpus() {
-		return getContainer().getCorpus();
 	}
 
 	/**

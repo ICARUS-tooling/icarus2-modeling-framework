@@ -97,31 +97,31 @@ public class MemberFlags {
 
 	// Write methods
 
-	private static int setFlag(int b, int flag, boolean active) {
-		return (int) (active ? (b|flag) : (b & ~flag));
-	}
-
-	public static int setItemAlive(int b, boolean alive) {
-		return setFlag(b, ITEM_ALIVE, alive);
-	}
-
-	public static int setItemLocked(int b, boolean locked) {
-		return setFlag(b, ITEM_LOCKED, locked);
-	}
-
-	public static int setItemDirty(int b, boolean dirty) {
-		return setFlag(b, ITEM_DIRTY, dirty);
-	}
-
-	public static int setItemsComplete(int b, boolean complete) {
-		return setFlag(b, ITEMS_COMPLETE, complete);
-	}
-
-	public static int setEdgesComplete(int b, boolean complete) {
-		return setFlag(b, EDGES_COMPLETE, complete);
-	}
-
-	public static int setStructureAugmented(int b, boolean complete) {
-		return setFlag(b, STRUCTURE_AUGMENTED, complete);
-	}
+//	private static int setFlag(int b, int flag, boolean active) {
+//		return (int) (active ? (b|flag) : (b & ~flag));
+//	}
+//
+//	public static int setItemAlive(int b, boolean alive) {
+//		return setFlag(b, ITEM_ALIVE, alive);
+//	}
+//
+//	public static int setItemLocked(int b, boolean locked) {
+//		return setFlag(b, ITEM_LOCKED, locked);
+//	}
+//
+//	public static int setItemDirty(int b, boolean dirty) {
+//		return setFlag(b, ITEM_DIRTY, dirty);
+//	}
+//
+//	public static int setItemsComplete(int b, boolean complete) {
+//		return setFlag(b, ITEMS_COMPLETE, complete);
+//	}
+//
+//	public static int setEdgesComplete(int b, boolean complete) {
+//		return setFlag(b, EDGES_COMPLETE, complete);
+//	}
+//
+//	public static int setStructureAugmented(int b, boolean complete) {
+//		return setFlag(b, STRUCTURE_AUGMENTED, complete);
+//	}
 }

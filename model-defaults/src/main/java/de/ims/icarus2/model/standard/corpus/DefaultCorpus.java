@@ -52,6 +52,7 @@ import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.corpus.CorpusOption;
 import de.ims.icarus2.model.api.corpus.GenerationControl;
 import de.ims.icarus2.model.api.driver.Driver;
+import de.ims.icarus2.model.api.driver.id.IdManager;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.edit.CorpusEditManager;
@@ -242,7 +243,7 @@ public class DefaultCorpus implements Corpus {
 			long itemCount = driver.getItemCount(primaryLayer);
 
 			if(itemCount==ModelConstants.NO_INDEX)
-				throw new ModelException(this, ModelErrorCode.DRIVER_METADATA,
+				throw new ModelException(this, ModelErrorCode.DRIVER_METADATA_MISSING,
 						"Cannot create default index set for entire primary layer, since driver has no metadata for its size");
 
 			indices = IndexUtils.wrap(0L, itemCount-1);
@@ -931,8 +932,13 @@ public class DefaultCorpus implements Corpus {
 
 	private class OverlayLayer implements ItemLayer {
 
-//		//TODO call uid creation at this point or do it lazily?
-//		private final int uid = getManifest().getRegistry().createUID();
+		/**
+		 * @see de.ims.icarus2.model.api.layer.ItemLayer#getIdManager()
+		 */
+		@Override
+		public IdManager getIdManager() {
+			return null;
+		}
 
 		/**
 		 * @see de.ims.icarus2.model.api.layer.Layer#getName()
@@ -1086,7 +1092,7 @@ public class DefaultCorpus implements Corpus {
 		 */
 		@Override
 		public long getBeginOffset() {
-			return -1;
+			return NO_INDEX;
 		}
 
 		/**
@@ -1094,7 +1100,7 @@ public class DefaultCorpus implements Corpus {
 		 */
 		@Override
 		public long getEndOffset() {
-			return -1;
+			return NO_INDEX;
 		}
 
 		/**
@@ -1146,7 +1152,15 @@ public class DefaultCorpus implements Corpus {
 		 */
 		@Override
 		public long getIndex() {
-			return -1;
+			return NO_INDEX;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.api.members.item.Item#getId()
+		 */
+		@Override
+		public long getId() {
+			return NO_INDEX;
 		}
 
 		/**

@@ -19,17 +19,17 @@
 package de.ims.icarus2.model.api.driver.indices;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.sql.ResultSet;
 import java.util.Comparator;
-import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.function.IntBinaryOperator;
 import java.util.function.IntConsumer;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongConsumer;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
@@ -69,29 +69,18 @@ public interface IndexSet {
 	 * Assumes that {@link IndexSet} instances passed to the {@link Comparator#compare(Object, Object) compare}
 	 * method are {@link IndexSet#isSorted() sorted}!
 	 */
-	public static final Comparator<IndexSet> INDEX_SET_SORTER = new Comparator<IndexSet>() {
+	public static final Comparator<IndexSet> INDEX_SET_SORTER =
+			(o1, o2) -> {
+				int result = Long.compare(o1.firstIndex(), o2.firstIndex());
+				if(result==0) {
+					result = Long.compare(o1.lastIndex(), o2.lastIndex());
+				}
+				return result;
+			};
 
-		@Override
-		public int compare(IndexSet o1, IndexSet o2) {
-			long result = o1.firstIndex()-o2.firstIndex();
-			if(result==0L) {
-				result = o1.lastIndex()-o2.lastIndex();
-			}
-			// Prevent integer overflow
-			if(result>Integer.MAX_VALUE || result<=Integer.MIN_VALUE) {
-				result >>= 32;
-			}
-			return (int) result;
-		}
-	};
 
-	public static final Comparator<IndexSet> INDEX_SET_SIZE_SORTER = new Comparator<IndexSet>() {
-
-		@Override
-		public int compare(IndexSet o1, IndexSet o2) {
-			return o1.size()-o2.size();
-		}
-	};
+	public static final Comparator<IndexSet> INDEX_SET_SIZE_SORTER =
+			(o1, o2) -> Integer.compare(o1.size(), o2.size());
 
 	/**
 	 * Special return value for the {@link #size()} method indicating that
@@ -353,7 +342,7 @@ public interface IndexSet {
 	/**
 	 * General hint that the implementation is able to sort its content.
 	 * Note that this information is kind of redundant since the {@link #sort()} method
-	 * already expresses this information, but more in a pos-condition kind of way.
+	 * already expresses this information, but more in a post-condition kind of way.
 	 */
 	public static final int FEATURE_CAN_SORT = (1 << 0);
 
@@ -427,153 +416,24 @@ public interface IndexSet {
 	 * @return
 	 */
 	default OfLong iterator() {
-		return new OfLongImpl(this);
+		return IndexUtils.asIterator(this);
 	}
 
 	default OfLong iterator(int start) {
-		return new OfLongImpl(this, start);
+		return IndexUtils.asIterator(this, start);
 	}
 
 	default OfLong iterator(int start, int end) {
-		return new OfLongImpl(this, start, end);
+		return IndexUtils.asIterator(this, start, end);
 	}
 
-	public static OfLong asIterator(IndexSet[] indices) {
-		checkNotNull(indices);
+	// STREAM SUPPORT
 
-		if(indices.length==1) {
-			return new OfLongImpl(indices[0]);
-		} else {
-			return new CompositeOfLongImpl(indices);
-		}
+	default IntStream intStream() {
+		return IndexUtils.asIntStream(this);
 	}
 
-	/**
-	 * Iterator implementation for traversal of a {@code IndexSet} or a specified
-	 * subsection of it.
-	 *
-	 * @author Markus Gärtner
-	 *
-	 */
-	public static class OfLongImpl implements OfLong {
-
-		private final IndexSet source;
-		private int pointer;
-		private final int limit;
-
-		public OfLongImpl(IndexSet source) {
-			this(source, 0, -1);
-		}
-
-		public OfLongImpl(IndexSet source, int start) {
-			this(source, start, -1);
-		}
-
-		/**
-		 *
-		 * @param source data to traverse
-		 * @param start begin of region to be iterated over, inclusive
-		 * @param end end of region to be iterated over, exclusive
-		 */
-		public OfLongImpl(IndexSet source, int start, int end) {
-			checkNotNull(source);
-			checkArgument(start>=0);
-
-			this.source = source;
-			pointer = start;
-
-			if(end<0) {
-				end = source.size();
-			}
-
-			limit = end;
-		}
-
-		/**
-		 * @see java.util.Iterator#hasNext()
-		 */
-		@Override
-		public boolean hasNext() {
-			return pointer<limit;
-		}
-
-		/**
-		 * @see java.util.PrimitiveIterator.OfLong#nextLong()
-		 */
-		@Override
-		public long nextLong() {
-			if(pointer>=limit)
-				throw new NoSuchElementException();
-
-			return source.indexAt(pointer++);
-		}
-
-	}
-
-	/**
-	 * Iterator implementation for a set of {@link IndexSet} instances in
-	 * succession.
-	 *
-	 * @author Markus Gärtner
-	 *
-	 */
-	public static class CompositeOfLongImpl implements OfLong {
-
-		private final IndexSet[] indices;
-		private final int limit;
-
-		private int index;
-		private OfLong iterator;
-
-		public CompositeOfLongImpl(IndexSet[] indices) {
-			checkNotNull(indices);
-			checkArgument(indices.length>0);
-
-			this.indices = indices;
-			limit = indices.length-1;
-
-			index = -1;
-		}
-
-		public CompositeOfLongImpl(IndexSet[] indices, int fromIndex, int toIndex) {
-			checkNotNull(indices);
-			checkArgument(indices.length>0);
-
-			this.indices = indices;
-			limit = toIndex;
-
-			index = fromIndex-1;
-		}
-
-		/**
-		 * @see java.util.Iterator#hasNext()
-		 */
-		@Override
-		public boolean hasNext() {
-
-			if(iterator==null || !iterator.hasNext()) {
-				if(index>=limit) {
-					iterator = null;
-					return false;
-				}
-
-				index++;
-				iterator = indices[index].iterator();
-			}
-
-			return iterator.hasNext();
-		}
-
-		/**
-		 * @see java.util.PrimitiveIterator.OfLong#nextLong()
-		 */
-		@Override
-		public long nextLong() {
-			if(iterator==null)
-				throw new NoSuchElementException();
-
-			return iterator.nextLong();
-		}
-
+	default LongStream longStream() {
+		return IndexUtils.asLongStream(this);
 	}
 }

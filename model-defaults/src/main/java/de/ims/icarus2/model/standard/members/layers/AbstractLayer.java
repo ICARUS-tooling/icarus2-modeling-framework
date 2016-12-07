@@ -213,11 +213,11 @@ public class AbstractLayer<M extends LayerManifest> extends AbstractPart<LayerGr
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.members.item.Item#setIndex(long)
+		 * @see de.ims.icarus2.model.api.members.item.Item#getId()
 		 */
 		@Override
-		public void setIndex(long newIndex) {
-			throw new UnsupportedOperationException("Proxy markables cannot have index values assigned"); //$NON-NLS-1$
+		public long getId() {
+			return NO_INDEX;
 		}
 
 		/**

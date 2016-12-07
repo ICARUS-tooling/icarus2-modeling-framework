@@ -39,12 +39,12 @@ import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
  * @author Markus Gärtner
  *
  */
-public class MappingImplFunction extends AbstractVirtualMapping {
+public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 
 	private final LongUnaryOperator unaryFunction;
 	private final UnaryOperator<IndexSet> batchFunction;
 
-	protected MappingImplFunction(Builder builder) {
+	protected MappingImplFunctionOneToOne(Builder builder) {
 		super(builder);
 
 		unaryFunction = builder.getUnaryFunction();
@@ -68,7 +68,7 @@ public class MappingImplFunction extends AbstractVirtualMapping {
 		 */
 		@Override
 		public Mapping getSource() {
-			return MappingImplFunction.this;
+			return MappingImplFunctionOneToOne.this;
 		}
 
 		/**
@@ -93,6 +93,15 @@ public class MappingImplFunction extends AbstractVirtualMapping {
 		@Override
 		public void close() throws ModelException {
 			// no-op
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getIndicesCount(long, de.ims.icarus2.model.api.driver.mapping.RequestSettings)
+		 */
+		@Override
+		public long getIndicesCount(long sourceIndex, RequestSettings settings)
+				throws InterruptedException {
+			return 1L;
 		}
 
 		private long lookup0(long sourceIndex) {
@@ -229,7 +238,7 @@ public class MappingImplFunction extends AbstractVirtualMapping {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static class Builder extends MappingBuilder<Builder, MappingImplFunction> {
+	public static class Builder extends MappingBuilder<Builder, MappingImplFunctionOneToOne> {
 
 		private LongUnaryOperator unaryFunction;
 		private UnaryOperator<IndexSet> batchFunction;
@@ -271,8 +280,8 @@ public class MappingImplFunction extends AbstractVirtualMapping {
 		}
 
 		@Override
-		protected MappingImplFunction create() {
-			return new MappingImplFunction(this);
+		protected MappingImplFunctionOneToOne create() {
+			return new MappingImplFunctionOneToOne(this);
 		}
 
 	}

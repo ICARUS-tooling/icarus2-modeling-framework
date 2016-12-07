@@ -65,6 +65,22 @@ public class ArrayUtils {
 		return -1;
 	}
 
+	public static int indexOf(long[] a, long v) {
+		for(int i=0; i<a.length; i++) {
+			if(a[i]==v)
+				return i;
+		}
+		return -1;
+	}
+
+	public static int indexOf(int[] a, int v) {
+		for(int i=0; i<a.length; i++) {
+			if(a[i]==v)
+				return i;
+		}
+		return -1;
+	}
+
 	public static int min(int...values) {
 		/*if(values.length<2)
 			throw new IllegalArgumentException();*/
@@ -98,7 +114,7 @@ public class ArrayUtils {
 
 	public static void fillAscending(Integer[] a) {
 		for(int i=0; i<a.length; i++)
-			a[i] = i;
+			a[i] = Integer.valueOf(i);
 	}
 
 	public static boolean isAscending(int[] a) {

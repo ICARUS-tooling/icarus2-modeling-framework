@@ -182,9 +182,9 @@ public class FootprintBuilder {
 		}
 
 
-		HeapMember heapMember = clazz.getAnnotation(HeapMember.class);
+		Assessable assessable = clazz.getAnnotation(Assessable.class);
 
-		if(heapMember!=null) {
+		if(assessable!=null) {
 			return new HeapMemberCalculator(clazz);
 		} else {
 			return new GeneralCalculator(clazz);
@@ -348,8 +348,8 @@ public class FootprintBuilder {
 		HeapMemberCalculator(Class<?> clazz) {
 			if (clazz == null)
 				throw new NullPointerException("Invalid clazz");  //$NON-NLS-1$
-			if(clazz.getAnnotation(HeapMember.class)==null)
-				throw new IllegalArgumentException("Missing @HeapMember annotation on type: "+clazz); //$NON-NLS-1$
+			if(clazz.getAnnotation(Assessable.class)==null)
+				throw new IllegalArgumentException("Missing @Assessable annotation on type: "+clazz); //$NON-NLS-1$
 
 			this.clazz = clazz;
 

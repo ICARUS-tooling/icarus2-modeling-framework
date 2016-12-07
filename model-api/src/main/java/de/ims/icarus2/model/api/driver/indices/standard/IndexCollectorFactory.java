@@ -496,7 +496,7 @@ public class IndexCollectorFactory implements ModelConstants {
 
 	/**
 	 * Implements a storage with limited but growing capacity. The total
-	 * capacity of the storage is limited to {@link Short#MAX_VALUE} and the
+	 * capacity of the storage is limited to {@link Integer#MAX_VALUE} and the
 	 * value type used when creating the resulting array of {@link IndexSet}
 	 * instances is {@link IndexValueType#SHORT}.
 	 *
@@ -567,7 +567,7 @@ public class IndexCollectorFactory implements ModelConstants {
 
 	/**
 	 * Implements a storage with limited but growing capacity. The total
-	 * capacity of the storage is limited to {@link Byte#MAX_VALUE} and the
+	 * capacity of the storage is limited to {@link Integer#MAX_VALUE} and the
 	 * value type used when creating the resulting array of {@link IndexSet}
 	 * instances is {@link IndexValueType#BYTE}.
 	 *

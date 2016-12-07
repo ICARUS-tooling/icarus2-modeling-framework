@@ -45,7 +45,11 @@ public class DefaultLayerMemberFactory implements LayerMemberFactory {
 	 */
 	@Override
 	public Item newItem(Container host) {
-		return new DefaultItem(host);
+		DefaultItem item = new DefaultItem();
+
+		item.setContainer(host);
+
+		return item;
 	}
 
 	/**
@@ -57,13 +61,17 @@ public class DefaultLayerMemberFactory implements LayerMemberFactory {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.registry.LayerMemberFactory#newContainer(de.ims.icarus2.model.api.members.container.Container, de.ims.icarus2.model.manifest.api.ContainerManifest)
+	 * @see de.ims.icarus2.model.api.registry.LayerMemberFactory#newContainer(de.ims.icarus2.model.manifest.api.ContainerManifest, de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public Container newContainer(Container host, ContainerManifest manifest) {
+	public Container newContainer(ContainerManifest manifest, Container host) {
 		ItemStorage itemStorage = createItemStorage(manifest);
 
-		return new DefaultContainer(host, itemStorage);
+		DefaultContainer container = new DefaultContainer();
+		container.setContainer(host);
+		container.setItemStorage(itemStorage);
+
+		return container;
 	}
 
 	protected ItemStorage createItemStorage(ContainerManifest manifest) {
@@ -71,14 +79,19 @@ public class DefaultLayerMemberFactory implements LayerMemberFactory {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.registry.LayerMemberFactory#newStructure(de.ims.icarus2.model.api.members.container.Container, de.ims.icarus2.model.manifest.api.StructureManifest)
+	 * @see de.ims.icarus2.model.api.registry.LayerMemberFactory#newStructure(de.ims.icarus2.model.manifest.api.StructureManifest, de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public Structure newStructure(Container host, StructureManifest manifest) {
+	public Structure newStructure(StructureManifest manifest, Container host) {
 		ItemStorage itemStorage = createItemStorage(manifest);
 		EdgeStorage edgeStorage = createEdgeStorage(manifest);
 
-		return new DefaultStructure(host, itemStorage, edgeStorage);
+		DefaultStructure structure = new DefaultStructure();
+		structure.setContainer(host);
+		structure.setItemStorage(itemStorage);
+		structure.setEdgeStorage(edgeStorage);
+
+		return structure;
 	}
 
 	protected EdgeStorage createEdgeStorage(StructureManifest manifest) {

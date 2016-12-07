@@ -21,7 +21,6 @@ package de.ims.icarus2.model.standard.members.structure;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -34,7 +33,6 @@ import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.MemberFlags;
 import de.ims.icarus2.model.standard.members.container.DefaultContainer;
-import de.ims.icarus2.model.standard.members.container.ItemStorage;
 import de.ims.icarus2.model.standard.members.structure.info.StructureInfoBuilder;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
@@ -48,16 +46,6 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 
 	public DefaultStructure() {
 		// no-op
-	}
-
-	public DefaultStructure(Container host) {
-		super(host);
-	}
-
-	public DefaultStructure(Container host, ItemStorage itemStorage, EdgeStorage edgeStorage) {
-		super(host, itemStorage);
-
-		setEdgeStorage(edgeStorage);
 	}
 
 	/**
@@ -135,20 +123,20 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 	 */
 	@Override
 	public boolean isEdgesComplete() {
-		return MemberFlags.isEdgesComplete(flags);
+		return isFlagSet(MemberFlags.EDGES_COMPLETE);
 	}
 
 	public void setEdgesComplete(boolean complete) {
-		flags = MemberFlags.setEdgesComplete(flags, complete);
+		setFlag(MemberFlags.EDGES_COMPLETE, complete);
 	}
 
 	@Override
 	public boolean isAugmented() {
-		return MemberFlags.isStructureAugmented(flags);
+		return isFlagSet(MemberFlags.STRUCTURE_AUGMENTED);
 	}
 
 	public void setAugmented(boolean augmented) {
-		flags = MemberFlags.setStructureAugmented(flags, augmented);
+		setFlag(MemberFlags.STRUCTURE_AUGMENTED, augmented);
 	}
 
 	@Override

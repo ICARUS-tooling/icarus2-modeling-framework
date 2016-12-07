@@ -18,7 +18,9 @@
  */
 package de.ims.icarus2.model.standard.members.layers.item;
 
+import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkNotSet;
+import de.ims.icarus2.model.api.driver.id.IdManager;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.standard.members.layers.AbstractLayer;
@@ -33,6 +35,11 @@ public class DefaultItemLayer extends AbstractLayer<ItemLayerManifest> implement
 	private ItemLayer foundationLayer;
 
 	/**
+	 * Lazily acquired manager to map between ids and index values for this layer
+	 */
+	private IdManager idManager;
+
+	/**
 	 * @param context
 	 * @param manifest
 	 */
@@ -41,12 +48,26 @@ public class DefaultItemLayer extends AbstractLayer<ItemLayerManifest> implement
 	}
 
 	/**
+	 * Lazily acquires the {@link IdManager} for this layer if needed and
+	 * then returns it.
+	 *
+	 * @see de.ims.icarus2.model.api.layer.ItemLayer#getIdManager()
+	 */
+	@Override
+	public IdManager getIdManager() {
+		if(idManager==null) {
+			idManager = getContext().getDriver().getIdManager(getManifest());
+		}
+
+		return idManager;
+	}
+
+	/**
 	 * @param boundaryLayer the boundaryLayer to set
 	 */
 	@Override
 	public void setBoundaryLayer(ItemLayer boundaryLayer) {
-		if (boundaryLayer == null)
-			throw new NullPointerException("Invalid boundaryLayer"); //$NON-NLS-1$
+		checkNotNull(boundaryLayer);
 
 		checkNotSet("Boundary layer", this.boundaryLayer, boundaryLayer);
 
@@ -66,8 +87,7 @@ public class DefaultItemLayer extends AbstractLayer<ItemLayerManifest> implement
 	 */
 	@Override
 	public void setFoundationLayer(ItemLayer foundationLayer) {
-		if (foundationLayer == null)
-			throw new NullPointerException("Invalid foundationLayer"); //$NON-NLS-1$
+		checkNotNull(foundationLayer);
 
 		checkNotSet("Foundation layer", this.foundationLayer, foundationLayer);
 

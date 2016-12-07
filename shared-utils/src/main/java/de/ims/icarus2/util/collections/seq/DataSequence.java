@@ -18,7 +18,12 @@
  */
 package de.ims.icarus2.util.collections.seq;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.util.IcarusUtils;
@@ -40,7 +45,7 @@ import de.ims.icarus2.util.collections.set.DataSet;
  *
  * @see DataSet
  */
-public interface DataSequence<E extends Object> {
+public interface DataSequence<E extends Object> extends Iterable<E> {
 
 	/**
 	 * Returns the total number of items in this sequence
@@ -78,6 +83,14 @@ public interface DataSequence<E extends Object> {
 		return result.getAsList();
 	}
 
+	/**
+	 * @see java.lang.Iterable#iterator()
+	 */
+	@Override
+	default Iterator<E> iterator() {
+		return new DataSequenceIterator<>(this);
+	}
+
 	@SuppressWarnings("unchecked")
 	public static <E extends Object> DataSequence<E> emptySequence() {
 		return (DataSequence<E>) EMPTY_SEQUENCE;
@@ -95,4 +108,53 @@ public interface DataSequence<E extends Object> {
 			throw new IndexOutOfBoundsException("Sequence is empty");
 		}
 	};
+
+	public static class DataSequenceIterator<E extends Object> implements Iterator<E> {
+		private final DataSequence<? extends E> source;
+		private long pos = 0;
+		private final long fence;
+
+		public DataSequenceIterator(DataSequence<? extends E> source) {
+			this(source, 0, source.entryCount());
+		}
+
+		public DataSequenceIterator(DataSequence<? extends E> source, long beginIndex) {
+			this(source, beginIndex, source.entryCount());
+		}
+
+		/**
+		 *
+		 * @param source
+		 * @param beginIndex first index position to be accessed by the iterator (inclusive)
+		 * @param endIndex last index position to be accessed by the iterator (exclusive)
+		 */
+		public DataSequenceIterator(DataSequence<? extends E> source, long beginIndex, long endIndex) {
+			checkNotNull(source);
+			checkArgument(beginIndex>=0);
+			checkArgument(beginIndex<endIndex);
+			checkArgument(endIndex<=source.entryCount());
+
+			this.source = source;
+			pos = beginIndex;
+			fence = endIndex;
+		}
+
+		/**
+		 * @see java.util.Iterator#hasNext()
+		 */
+		@Override
+		public boolean hasNext() {
+			return pos<fence;
+		}
+
+		/**
+		 * @see java.util.Iterator#next()
+		 */
+		@Override
+		public E next() {
+			if(pos>=fence)
+				throw new NoSuchElementException();
+			return source.elementAt(pos++);
+		}
+	}
 }

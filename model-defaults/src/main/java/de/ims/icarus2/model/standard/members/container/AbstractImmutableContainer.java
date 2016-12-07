@@ -38,14 +38,6 @@ public abstract class AbstractImmutableContainer implements Container {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.Item#setIndex(long)
-	 */
-	@Override
-	public void setIndex(long newIndex) {
-		signalUnsupportedOperation();
-	}
-
-	/**
 	 * @see de.ims.icarus2.model.api.members.CorpusMember#getMemberType()
 	 */
 	@Override

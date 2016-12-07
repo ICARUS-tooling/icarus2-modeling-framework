@@ -23,9 +23,15 @@ import static de.ims.icarus2.util.Conditions.checkNotNull;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.NoSuchElementException;
+import java.util.PrimitiveIterator.OfLong;
+import java.util.Spliterator;
 import java.util.function.IntConsumer;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongConsumer;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+import java.util.stream.StreamSupport;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelConstants;
@@ -39,6 +45,7 @@ import de.ims.icarus2.model.api.driver.indices.standard.SpanIndexSet;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.stream.AbstractFencedSpliterator;
 
 /**
  * @author Markus Gärtner
@@ -650,5 +657,273 @@ public class IndexUtils implements ModelConstants {
 			appendIndices(sb, set);
 		}
 		return sb.toString();
+	}
+
+	public static IntStream asIntStream(IndexSet set) {
+		return StreamSupport.intStream(new IndexSetIntSpliterator(set), false);
+	}
+
+	public static LongStream asLongStream(IndexSet set) {
+		return StreamSupport.longStream(new IndexSetLongSpliterator(set), false);
+	}
+
+	public static class IndexSetIntSpliterator extends AbstractFencedSpliterator.OfInt {
+
+		private final IndexSet source;
+
+		public IndexSetIntSpliterator(IndexSet source) {
+			this(source, 0, source.size());
+		}
+
+		/**
+		 * @param pos
+		 * @param fence
+		 */
+		public IndexSetIntSpliterator(IndexSet source, int pos, int fence) {
+			super(pos, fence);
+
+			checkNotNull(source);
+
+			this.source = source;
+		}
+
+		private IndexSetIntSpliterator(IndexSet source, long pos, long fence) {
+			this(source, IcarusUtils.ensureIntegerValueRange(pos), IcarusUtils.ensureIntegerValueRange(fence));
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.stream.AbstractFencedSpliterator.OfInt#currentInt()
+		 */
+		@Override
+		protected int currentInt() {
+			return IcarusUtils.ensureIntegerValueRange(source.indexAt((int) pos));
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.stream.AbstractFencedSpliterator#split(long, long)
+		 */
+		@Override
+		protected Spliterator<Integer> split(long pos, long fence) {
+			return new IndexSetIntSpliterator(source, pos, fence);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.stream.AbstractFencedSpliterator#characteristics()
+		 */
+		@Override
+		public int characteristics() {
+			int characteristics = super.characteristics();
+			if(source.isSorted()) {
+				characteristics |= SORTED;
+			}
+
+			return characteristics;
+		}
+	}
+
+	public static class IndexSetLongSpliterator extends AbstractFencedSpliterator.OfLong {
+
+		private final IndexSet source;
+
+		public IndexSetLongSpliterator(IndexSet source) {
+			this(source, 0, source.size());
+		}
+
+		/**
+		 * @param pos
+		 * @param fence
+		 */
+		public IndexSetLongSpliterator(IndexSet source, int pos, int fence) {
+			super(pos, fence);
+
+			checkNotNull(source);
+
+			this.source = source;
+		}
+
+		private IndexSetLongSpliterator(IndexSet source, long pos, long fence) {
+			this(source, IcarusUtils.ensureIntegerValueRange(pos), IcarusUtils.ensureIntegerValueRange(fence));
+		}
+
+		/**
+		 *
+		 * @see de.ims.icarus2.util.stream.AbstractFencedSpliterator.OfLong#currentLong()
+		 */
+		@Override
+		protected long currentLong() {
+			return source.indexAt((int) pos);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.stream.AbstractFencedSpliterator#split(long, long)
+		 */
+		@Override
+		protected Spliterator<Long> split(long pos, long fence) {
+			return new IndexSetLongSpliterator(source, pos, fence);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.stream.AbstractFencedSpliterator#characteristics()
+		 */
+		@Override
+		public int characteristics() {
+			int characteristics = super.characteristics();
+			if(source.isSorted()) {
+				characteristics |= SORTED;
+			}
+
+			return characteristics;
+		}
+	}
+
+	public static OfLong asIterator(IndexSet[] indices) {
+		checkNotNull(indices);
+
+		if(indices.length==1) {
+			return new OfLongImpl(indices[0]);
+		} else {
+			return new CompositeOfLongImpl(indices);
+		}
+	}
+
+	public static OfLong asIterator(IndexSet indices) {
+		return new OfLongImpl(indices);
+	}
+
+	public static OfLong asIterator(IndexSet indices, int start) {
+		return new OfLongImpl(indices, start);
+	}
+
+	public static OfLong asIterator(IndexSet indices, int start, int limit) {
+		return new OfLongImpl(indices, start, limit);
+	}
+
+	/**
+	 * Iterator implementation for traversal of a {@code IndexSet} or a specified
+	 * subsection of it.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	public static class OfLongImpl implements OfLong {
+
+		private final IndexSet source;
+		private int pointer;
+		private final int limit;
+
+		public OfLongImpl(IndexSet source) {
+			this(source, 0, -1);
+		}
+
+		public OfLongImpl(IndexSet source, int start) {
+			this(source, start, -1);
+		}
+
+		/**
+		 *
+		 * @param source data to traverse
+		 * @param start begin of region to be iterated over, inclusive
+		 * @param limit end of region to be iterated over, exclusive
+		 */
+		public OfLongImpl(IndexSet source, int start, int limit) {
+			checkNotNull(source);
+			checkArgument(start>=0);
+
+			this.source = source;
+			pointer = start;
+
+			if(limit<0) {
+				limit = source.size();
+			}
+
+			this.limit = limit;
+		}
+
+		/**
+		 * @see java.util.Iterator#hasNext()
+		 */
+		@Override
+		public boolean hasNext() {
+			return pointer<limit;
+		}
+
+		/**
+		 * @see java.util.PrimitiveIterator.OfLong#nextLong()
+		 */
+		@Override
+		public long nextLong() {
+			if(pointer>=limit)
+				throw new NoSuchElementException();
+
+			return source.indexAt(pointer++);
+		}
+
+	}
+
+	/**
+	 * Iterator implementation for a set of {@link IndexSet} instances in
+	 * succession.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	public static class CompositeOfLongImpl implements OfLong {
+
+		private final IndexSet[] indices;
+		private final int limit;
+
+		private int index;
+		private OfLong iterator;
+
+		public CompositeOfLongImpl(IndexSet[] indices) {
+			checkNotNull(indices);
+			checkArgument(indices.length>0);
+
+			this.indices = indices;
+			limit = indices.length-1;
+
+			index = -1;
+		}
+
+		public CompositeOfLongImpl(IndexSet[] indices, int fromIndex, int toIndex) {
+			checkNotNull(indices);
+			checkArgument(indices.length>0);
+
+			this.indices = indices;
+			limit = toIndex;
+
+			index = fromIndex-1;
+		}
+
+		/**
+		 * @see java.util.Iterator#hasNext()
+		 */
+		@Override
+		public boolean hasNext() {
+
+			if(iterator==null || !iterator.hasNext()) {
+				if(index>=limit) {
+					iterator = null;
+					return false;
+				}
+
+				index++;
+				iterator = indices[index].iterator();
+			}
+
+			return iterator.hasNext();
+		}
+
+		/**
+		 * @see java.util.PrimitiveIterator.OfLong#nextLong()
+		 */
+		@Override
+		public long nextLong() {
+			if(iterator==null)
+				throw new NoSuchElementException();
+
+			return iterator.nextLong();
+		}
+
 	}
 }

@@ -17,6 +17,7 @@
  */
 package de.ims.icarus2.filedriver.schema.table;
 
+import static org.mockito.Mockito.mock;
 import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.AttributeSchemaImpl;
 import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.BlockSchemaImpl;
 import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.ColumnSchemaImpl;
@@ -31,43 +32,19 @@ public class TableConverterTest {
 
 
 	private TableSchema createSimpleTableSchema() {
-		BlockSchemaImpl blockSchema = new BlockSchemaImpl();
-		blockSchema.setSeparator("SPACE");
 
-		AttributeSchemaImpl endDelimiter = new AttributeSchemaImpl();
-		endDelimiter.setPattern("EMPTY_LINE");
-		blockSchema.setEndDelimiter(endDelimiter);
-
-		MemberSchemaImpl containerSchema = new MemberSchemaImpl();
-		containerSchema.setLayerId("sentence");
-		blockSchema.setContainerSchema(containerSchema);
-
-		MemberSchemaImpl componentSchema = new MemberSchemaImpl();
-		componentSchema.setLayerId("token");
-		blockSchema.setComponentSchema(componentSchema);
-
-		// Column 0
-		ColumnSchemaImpl column0 = new ColumnSchemaImpl();
-		column0.setIsIgnoreColumn(true);
-		blockSchema.addColumn(column0);
-
-		//Column 1
-		ColumnSchemaImpl column1 = new ColumnSchemaImpl();
-		column1.setLayerId("annoLayer1");
-		blockSchema.addColumn(column1);
-
-		//Column 2
-		ColumnSchemaImpl column2 = new ColumnSchemaImpl();
-		column2.setLayerId("annoLayer2");
-		blockSchema.addColumn(column2);
-
-		TableSchemaImpl tableSchema = new TableSchemaImpl();
-		tableSchema.setRootBlock(blockSchema);
-
-		return tableSchema;
+		return new TableSchemaImpl()
+			.setRootBlock(new BlockSchemaImpl()
+				.setSeparator("SPACE")
+				.setEndDelimiter(new AttributeSchemaImpl().setPattern("EMPTY_LINE"))
+				.setContainerSchema(new MemberSchemaImpl().setLayerId("sentence"))
+				.setComponentSchema(new MemberSchemaImpl().setLayerId("token"))
+				.addColumn(new ColumnSchemaImpl().setIsIgnoreColumn(true))
+				.addColumn(new ColumnSchemaImpl().setLayerId("annoLayer1"))
+				.addColumn(new ColumnSchemaImpl().setLayerId("annoLayer2")));
 	}
 
 	private ContextManifest createSimpleContextManifest() {
-
+		ContextManifest contextManifest = mock(ContextManifest.class);
 	}
 }

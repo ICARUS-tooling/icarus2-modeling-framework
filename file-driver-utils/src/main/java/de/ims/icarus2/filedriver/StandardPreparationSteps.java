@@ -70,7 +70,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			String fileCountKey = FileDriverMetadata.DriverKey.FILE_COUNT.getKey();
 			int storedFileCount = metadataRegistry.getIntValue(fileCountKey, -1);
 			if(storedFileCount!=-1 && storedFileCount!=fileCount) {
-				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 						"Corrupted file count in metadata: expected {} - got {} as stored value",
 						Integer.valueOf(fileCount), Integer.valueOf(storedFileCount));
 				return false;
@@ -86,7 +86,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 				FileInfo fileInfo = driver.getFileStates().getFileInfo(fileIndex);
 
 				if(path.getNameCount()==0) {
-					reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+					reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 							"Invalid path with 0 name elements for file index {}", Integer.valueOf(fileIndex));
 					invalidFiles++;
 					continue;
@@ -101,7 +101,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 				if(savedPath==null) {
 					metadataRegistry.setValue(pathKey, pathString);
 				} else if(!pathString.equals(savedPath)) {
-					reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+					reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 							"Corrupted metadata for file index {}: expected '{}' - got '{}'",
 							Integer.valueOf(fileIndex), savedPath, pathString);
 					fileInfo.setFlag(ElementFlag.CORRUPTED);
@@ -152,7 +152,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 					} else {
 						fileInfo.setFlag(ElementFlag.MISSING);
 						// Signal error, since non-editable data MUST be present
-						reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+						reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 								"Missing file for index {}: {}", Integer.valueOf(fileIndex), path);
 						invalidFiles++;
 					}
@@ -213,7 +213,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 				if(savedChecksum==null) {
 					metadataRegistry.setValue(checksumKey, checksumString);
 				} else if(!checksumString.equals(savedChecksum)) {
-					reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+					reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 							"Invalid checksum stored for file index {}: expected '{}' - got '{}'",
 							Integer.valueOf(fileIndex), checksumString, savedChecksum);
 					fileInfo.setFlag(ElementFlag.CORRUPTED);
@@ -274,7 +274,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 				if(savedSize==null) {
 					metadataRegistry.setValue(sizeKey, sizeString);
 				} else if(!sizeString.equals(savedSize)) {
-					reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+					reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 							"Invalid size stored for file index {}: expected '{}' - got '{}'",
 							Integer.valueOf(fileIndex), sizeString, savedSize);
 					fileInfo.setFlag(ElementFlag.CORRUPTED);
@@ -300,7 +300,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			if(savedTotalSize==null) {
 				metadataRegistry.setValue(totalSizeKey, totalSizeString);
 			} else if(!totalSizeString.equals(savedTotalSize)) {
-				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 						"Invalid total size stored for driver: expected '{}' - got '{}'",
 						totalSizeString, savedTotalSize);
 				globalInfo.setFlag(ElementFlag.CORRUPTED);
@@ -483,7 +483,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 					layerInfo.setFlag(ElementFlag.MISSING);
 					// Signal error, since non-editable data MUST be present
-					reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+					reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 							"Missing file for chunk index  of layer {}: {}", layer.getId(), savedPath);
 					invalidLayers++;
 				}
@@ -535,7 +535,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			}
 
 			if(itemCount==NO_INDEX || beginIndex==NO_INDEX || endIndex==NO_INDEX) {
-				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 						"Indicies partly missing in metadata for layer {} in file {}", layer.getId(), Integer.valueOf(fileIndex));
 				return false;
 			}
@@ -544,7 +544,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 			// Verify correct span definition and total number of items
 			if(itemCount!=(endIndex-beginIndex+1)) {
-				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 						"Total number of items declared for layer {} in file {}  does not match defined span {} to {}",
 						layer.getId(), Integer.valueOf(fileIndex), Long.valueOf(beginIndex), Long.valueOf(endIndex));
 				isValid = false;
@@ -552,7 +552,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 			// Make sure the index values form a continuous span over all files
 			if(lastEndIndex!=NO_INDEX && beginIndex!=(lastEndIndex+1)) {
-				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 						"Non-continuous item indices for layer {} in file {}: expected {} as begin index, but got {}",
 						layer.getId(), Integer.valueOf(fileIndex), Long.valueOf(lastEndIndex+1), Long.valueOf(beginIndex));
 				isValid = false;
@@ -560,7 +560,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 			// First file must always start at item index 0!!!
 			if(lastEndIndex==NO_INDEX && fileIndex==0 && beginIndex!=0L) {
-				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA,
+				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 						"First file for layer {} in set must start at item index 0 - got start value {}",
 						layer.getId(), Long.valueOf(beginIndex));
 				isValid = false;

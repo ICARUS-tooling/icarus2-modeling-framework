@@ -167,6 +167,7 @@ public interface Converter extends AutoCloseable {
 	/**
 	 * Models a {@code random-access} read mechanism to load individual parts of a corpus resource.
 	 *
+	 *
 	 * @author Markus Gärtner
 	 *
 	 */

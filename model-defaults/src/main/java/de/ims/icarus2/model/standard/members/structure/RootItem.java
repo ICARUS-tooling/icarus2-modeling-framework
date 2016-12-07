@@ -26,8 +26,6 @@ import java.util.List;
 
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.corpus.Corpus;
-import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -36,7 +34,7 @@ import de.ims.icarus2.model.manifest.api.StructureFlag;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.IcarusUtils;
-import de.ims.icarus2.util.mem.HeapMember;
+import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Reference;
 import de.ims.icarus2.util.mem.ReferenceType;
 
@@ -51,7 +49,7 @@ import de.ims.icarus2.util.mem.ReferenceType;
  * @author Markus Gärtner
  *
  */
-@HeapMember
+@Assessable
 public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 
 	public static <E extends Edge> RootItem<E> forStructure(Structure structure) {
@@ -138,14 +136,6 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.CorpusMember#getCorpus()
-	 */
-	@Override
-	public Corpus getCorpus() {
-		return getContainer().getCorpus();
-	}
-
-	/**
 	 * @see de.ims.icarus2.model.api.members.CorpusMember#getMemberType()
 	 */
 	@Override
@@ -162,43 +152,19 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.Item#getLayer()
-	 */
-	@Override
-	public ItemLayer getLayer() {
-		return getContainer().getLayer();
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.members.item.Item#getBeginOffset()
-	 */
-	@Override
-	public long getBeginOffset() {
-		return -1;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.members.item.Item#getEndOffset()
-	 */
-	@Override
-	public long getEndOffset() {
-		return -1;
-	}
-
-	/**
 	 * @see de.ims.icarus2.model.api.members.item.Item#getIndex()
 	 */
 	@Override
 	public long getIndex() {
-		return -1;
+		return NO_INDEX;
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.Item#setIndex(long)
+	 * @see de.ims.icarus2.model.api.members.item.Item#getId()
 	 */
 	@Override
-	public void setIndex(long newIndex) {
-		throw new UnsupportedOperationException("ROOT nodes cannot have index values assigned"); //$NON-NLS-1$
+	public long getId() {
+		return NO_INDEX;
 	}
 
 	/**

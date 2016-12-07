@@ -18,6 +18,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.util.Conditions.checkNotNull;
+
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +33,14 @@ import de.ims.icarus2.util.strings.StringResource;
  *
  */
 public enum ContainerType implements StringResource {
+
+	/**
+	 * Special type of container that only exists as bridge between the top-level
+	 * members of a layer and the layer itself. Containers of this type will always
+	 * have a size of {@code 0} and will not support any {@link EditOperation} whatsoever.
+	 */
+	@Deprecated
+	PROXY("proxy", 0, 0),
 
 	/**
 	 * The container holds a single {@code Item}.
@@ -101,8 +111,7 @@ public enum ContainerType implements StringResource {
 	 * is {@code null}
 	 */
 	public boolean supportsOperation(EditOperation operation) {
-		if (operation == null)
-			throw new NullPointerException("Invalid operation");  //$NON-NLS-1$
+		checkNotNull(operation);
 
 		return operations.contains(operation);
 	}

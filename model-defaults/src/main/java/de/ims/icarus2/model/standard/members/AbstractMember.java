@@ -14,15 +14,52 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
- *
  */
-package de.ims.icarus2.util.collections.set;
+package de.ims.icarus2.model.standard.members;
 
 import de.ims.icarus2.util.Recyclable;
 import de.ims.icarus2.util.mem.Assessable;
+import de.ims.icarus2.util.mem.Primitive;
 
+/**
+ * @author Markus Gärtner
+ *
+ */
 @Assessable
-public abstract class AbstractDataSet<E extends Object> implements DataSet<E>, Recyclable {
+public class AbstractMember implements Recyclable {
 
-	public abstract void add(E element);
+	@Primitive
+	private int flags = MemberFlags.EMPTY_FLAGS;
+
+	protected int getFlags() {
+		return flags;
+	}
+
+	protected void setFlags(int flags) {
+		this.flags = flags;
+	}
+
+	protected boolean isFlagSet(int flag) {
+		return (flags & flag) == flag;
+	}
+
+	protected void setFlag(int flag, boolean active) {
+		flags = (active ? (flags|flag) : (flags & ~flag));
+	}
+
+	/**
+	 * @see de.ims.icarus2.util.Recyclable#recycle()
+	 */
+	@Override
+	public void recycle() {
+		flags = MemberFlags.EMPTY_FLAGS;
+	}
+
+	/**
+	 * @see de.ims.icarus2.util.Recyclable#revive()
+	 */
+	@Override
+	public boolean revive() {
+		return true;
+	}
 }

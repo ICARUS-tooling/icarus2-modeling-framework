@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.LongFunction;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -60,6 +61,7 @@ import de.ims.icarus2.filedriver.schema.table.TableSchema.SubstituteSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.SubstituteType;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.model.api.driver.id.IdManager;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
@@ -127,7 +129,7 @@ public class TableConverter extends SchemaBasedConverter {
 		 */
 		BlockSchema rootBlockSchema = rootBlockHandler.blockSchema;
 		ItemLayerManifest layerManifest = (ItemLayerManifest) contextManifest.getLayerManifest(rootBlockSchema.getLayerId());
-		int bufferSize = getRecommendedBufferSize(layerManifest);
+		int bufferSize = getRecommendedByteBufferSize(layerManifest);
 		characterBuffer = new StringBuilder(bufferSize);
 
 		Charset encoding = driver.getEncoding();
@@ -163,6 +165,7 @@ public class TableConverter extends SchemaBasedConverter {
 	protected Item readItemFromCursor(DelegatingCursor cursor)
 			throws IOException {
 
+		// Read entire channel and decode into characters
 		fillCharacterBuffer(cursor.getBlockChannel());
 
 		try(BlockLineIterator lines = new BlockLineIterator(characterBuffer, 0)) {
@@ -170,8 +173,11 @@ public class TableConverter extends SchemaBasedConverter {
 				throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT,
 						"Cannot create item from empty input");
 
+			// Clear state of context
 			inputContext.reset();
 
+			// For now we assume a flat block hierarchy (meaning one container block hosting items)
+			//TODO this should change in the future, allowing deeper nested blocks to be handled
 			return readFlatBlock(rootBlockHandler, lines, inputContext);
 		} finally {
 			rootBlockHandler.reset();
@@ -179,6 +185,7 @@ public class TableConverter extends SchemaBasedConverter {
 	}
 
 	protected Item readFlatBlock(BlockHandler blockHandler, LineIterator lines, InputResolverContext context) {
+		// Initialize with first raw line of content
 		context.setData(lines.getLine());
 
 		// Scan for beginning of block
@@ -203,6 +210,7 @@ public class TableConverter extends SchemaBasedConverter {
 		// Finalize block
 		blockHandler.endContent(context);
 
+		// Return the current top level container
 		return context.currentContainer();
 	}
 
@@ -485,38 +493,27 @@ public class TableConverter extends SchemaBasedConverter {
 		return result;
 	}
 
-	private class ItemSupplier implements Supplier<Item> {
+	private class ItemSupplier implements LongFunction<Item> {
 		private final ItemLayer layer;
+		private final IndexSource indexSource;
+		private final IdManager idManager;
+		private final BufferedItemManager.InputCache cache;
 
 		ItemSupplier(String layerId) {
 			layer = (ItemLayer) findLayer(layerId);
 		}
 
 		/**
-		 * Used to create index values for new items
-		 */
-		private LongSupplier idFactory;
-
-		/**
-		 * Lazily created cache
-		 */
-		private BufferedItemManager.InputCache cache;
-
-		/**
-		 * Active host container
-		 */
-		private Container host;
-
-		/**
-		 * @see java.util.function.Supplier#get()
+		 * @see java.util.function.LongFunction#apply(long)
 		 */
 		@Override
-		public Item get() {
+		public Item apply(long value) {
 			if(cache==null) {
 				cache = getCacheForLayer(layer);
 			}
 
-			long index = idFactory.getAsLong();
+			long index = indexSource.indexAt(value);
+			long id = idManager.getIdAt(index);
 			Item item = getMemberFactory().newItem(host);
 
 			item.setIndex(index);
@@ -524,10 +521,6 @@ public class TableConverter extends SchemaBasedConverter {
 			cache.offer(index, item);
 
 			return item;
-		}
-
-		public void setIdFactory(LongSupplier idFactory) {
-			this.idFactory = idFactory;
 		}
 	}
 
@@ -1083,8 +1076,7 @@ public class TableConverter extends SchemaBasedConverter {
 		 */
 		private final ColumnHandler[] batchHandlers;
 
-		private final Supplier<Container> containerFactory;
-		private final Supplier<Item> itemFactory;
+		private final Supplier<? extends Item> componentFactory;
 
 		/**
 		 * Any return value other than {@link ScanResult#FAILED} will
@@ -1153,15 +1145,15 @@ public class TableConverter extends SchemaBasedConverter {
 				separatorChar = separator.charAt(0);
 			} else {
 				switch (separator) {
-				case BlockSchema.DELIMITER_SPACE:
+				case TableSchema.DELIMITER_SPACE:
 					separatorChar = ' ';
 					break;
 
-				case BlockSchema.DELIMITER_TAB:
+				case TableSchema.DELIMITER_TAB:
 					separatorChar = '\t';
 					break;
 
-				case BlockSchema.DELIMITER_WHITESPACES:
+				case TableSchema.DELIMITER_WHITESPACES:
 					separator = "\\s+";
 
 					//$FALL-THROUGH$
@@ -1215,17 +1207,11 @@ public class TableConverter extends SchemaBasedConverter {
 				fallbackHandler = null;
 			}
 
-			MemberSchema containerSchema = blockSchema.getContainerSchema();
-			ContainerSupplier containerFactory = new ContainerSupplier(containerSchema.getLayerId());
-			MutableLong containerIndices = new MutableLong(-1L);
-			containerFactory.setIdFactory(containerIndices::increment); //FIXME needs proper linking to index mapping!
-			this.containerFactory = containerFactory;
-
 			MemberSchema componentSchema = blockSchema.getContainerSchema();
 			ItemSupplier itemFactory = new ItemSupplier(componentSchema.getLayerId());
 			MutableLong itemIndices = new MutableLong(-1L);
 			itemFactory.setIdFactory(itemIndices::increment); //FIXME needs proper linking to index mapping!
-			this.itemFactory = itemFactory;
+			this.componentFactory = itemFactory;
 
 			/*
 			 * IMPORTANT
@@ -1308,8 +1294,6 @@ public class TableConverter extends SchemaBasedConverter {
 		}
 
 		public void beginContent(InputResolverContext context) {
-			context.container = containerFactory.get();
-
 			if(batchHandlers!=null) {
 				for(int i=0; i<batchHandlers.length; i++) {
 					batchHandlers[i].startBatch(context);
@@ -1410,7 +1394,7 @@ public class TableConverter extends SchemaBasedConverter {
 							Messages.mismatchMessage("Insufficient columns", _int(requiredColumnCount), _int(columnCount)));
 
 				// New payload item for current line
-				context.item = itemFactory.get();
+				context.item = componentFactory.get();
 
 				// Re-link so the context uses our smaller cursor
 				characterCursor.setSource(rawContent);

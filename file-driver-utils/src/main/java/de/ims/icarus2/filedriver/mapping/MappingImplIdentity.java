@@ -42,17 +42,6 @@ import de.ims.icarus2.model.manifest.api.MappingManifest;
 public class MappingImplIdentity extends AbstractVirtualMapping {
 
 	/**
-	 * Creates a new {@code identity mapping} that functions as a
-	 * root mapping for the specified layer.
-	 *
-	 * @param driver
-	 * @param targetLayer
-	 */
-	public MappingImplIdentity(Driver driver, ItemLayerManifest targetLayer) {
-		super(driver, targetLayer);
-	}
-
-	/**
 	 * Creates a new {@code identity mapping} that maps between the two
 	 * specified layers.
 	 *
@@ -111,6 +100,15 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 		@Override
 		public void close() throws ModelException {
 			// no-op
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getIndicesCount(long, de.ims.icarus2.model.api.driver.mapping.RequestSettings)
+		 */
+		@Override
+		public long getIndicesCount(long sourceIndex, RequestSettings settings)
+				throws InterruptedException {
+			return 1L;
 		}
 
 		/**

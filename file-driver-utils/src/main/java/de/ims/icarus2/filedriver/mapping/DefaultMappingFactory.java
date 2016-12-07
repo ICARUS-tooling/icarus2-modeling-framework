@@ -153,7 +153,7 @@ public class DefaultMappingFactory implements MappingFactory {
 			batchFunc = null;
 		}
 
-		MappingImplFunction.Builder builder = new MappingImplFunction.Builder();
+		MappingImplFunctionOneToOne.Builder builder = new MappingImplFunctionOneToOne.Builder();
 
 		initMappingBuilder(builder, manifest, options);
 
@@ -198,8 +198,10 @@ public class DefaultMappingFactory implements MappingFactory {
 	protected MappingImplIdentity createIdentityMapping(MappingManifest manifest, Options options) {
 		ContextManifest contextManifest = driver.getManifest().getContextManifest();
 
+		ItemLayerManifest sourceLayer = (ItemLayerManifest) contextManifest.getLayerManifest(manifest.getSourceLayerId());
 		ItemLayerManifest targetLayer = (ItemLayerManifest) contextManifest.getLayerManifest(manifest.getTargetLayerId());
-		return new MappingImplIdentity(driver, targetLayer);
+
+		return new MappingImplIdentity(driver, manifest, sourceLayer, targetLayer);
 	}
 
 	protected <B extends AbstractVirtualMapping.MappingBuilder<B, ?>> B initMappingBuilder(B builder, MappingManifest manifest, Options options) {

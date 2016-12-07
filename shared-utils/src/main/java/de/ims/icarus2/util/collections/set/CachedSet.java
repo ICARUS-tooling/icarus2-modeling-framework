@@ -23,9 +23,9 @@ import static de.ims.icarus2.util.Conditions.checkNotNull;
 import java.util.List;
 
 import de.ims.icarus2.util.collections.LookupList;
-import de.ims.icarus2.util.mem.HeapMember;
+import de.ims.icarus2.util.mem.Assessable;
 
-@HeapMember
+@Assessable
 public class CachedSet<E extends Object> extends AbstractDataSet<E> {
 
 	private final LookupList<E> items = new LookupList<>();

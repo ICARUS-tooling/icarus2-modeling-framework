@@ -19,6 +19,7 @@
 package de.ims.icarus2.model.api.members.structure;
 
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.ItemLayer;
@@ -27,6 +28,7 @@ import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
+import de.ims.icarus2.model.util.stream.ModelStreams;
 import de.ims.icarus2.util.annotations.OptionalMethod;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
@@ -187,7 +189,7 @@ public interface Structure extends Container {
 	 * to collect them in a quick lookup manner.
 	 * <p>
 	 * What the actual root of a structure is meant to be depends on that
-	 * structure's {@code StructureType}:<br>
+	 * structure's {@code StructureType type}:<br>
 	 * For a {@value StructureType#CHAIN} this is the first item in the chain,
 	 * for a {@value StructureType#TREE} it is the one tree-root. In the case
 	 * of general {@value StructureType#GRAPH} structures it will be either a
@@ -443,5 +445,25 @@ public interface Structure extends Container {
 	default void forEachEdge(Item node, Consumer<? super Edge> action) {
 		forEachEdge(node, false, action);
 		forEachEdge(node, true, action);
+	}
+
+	/**
+	 * Returns a sequential {@link Stream} of the nodes in this container.
+	 * This includes all the items provided by the regular {@link #elements()}
+	 * stream plus the {@link #getVirtualRoot() virtual root node}.
+	 *
+	 * @return
+	 */
+	default Stream<Item> nodes() {
+		return ModelStreams.newNodeStream(this);
+	}
+
+	/**
+	 * Returns a sequential {@link Stream} of the edges in this container.
+	 *
+	 * @return
+	 */
+	default Stream<Edge> edges() {
+		return ModelStreams.newEdgeStream(this);
 	}
 }

@@ -49,13 +49,13 @@ public class MappingStorage {
 	private final Long2ObjectMap<Mapping> mappingMap;
 	private final Set<Mapping> mappingSet = new ReferenceOpenHashSet<>();
 
-	private final BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> regularMappingFallback;
+	private final BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> fallback;
 
 	protected MappingStorage(Builder builder) {
 
 		// Copy builder data and reset builder
 		mappingMap = builder.mappingMap;
-		regularMappingFallback = builder.fallback;
+		fallback = builder.fallback;
 		builder.reset();
 
 		// Post processing of builder data
@@ -70,8 +70,8 @@ public class MappingStorage {
 		long key = getKey(source, target);
 		Mapping mapping = mappingMap.get(key);
 
-		if(mapping==null && regularMappingFallback!=null) {
-			mapping = regularMappingFallback.apply(source, target);
+		if(mapping==null && fallback!=null) {
+			mapping = fallback.apply(source, target);
 			if(mapping!=null) {
 				mappingMap.put(key, mapping);
 				mappingSet.add(mapping);
@@ -129,11 +129,12 @@ public class MappingStorage {
 		mappingSet.forEach(action);
 	}
 
-	protected static long getKey(Mapping mapping) {
+	public static long getKey(Mapping mapping) {
 		return getKey(mapping.getSourceLayer(), mapping.getTargetLayer());
 	}
 
-	protected static long getKey(LayerManifest source, LayerManifest target) {
+
+	public static long getKey(LayerManifest source, LayerManifest target) {
 		return (long)source.getUID() | ((long)target.getUID()<<32);
 	}
 

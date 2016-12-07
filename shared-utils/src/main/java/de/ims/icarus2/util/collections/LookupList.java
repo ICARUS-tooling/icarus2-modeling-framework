@@ -29,7 +29,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
-import de.ims.icarus2.util.mem.HeapMember;
+import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Link;
 import de.ims.icarus2.util.mem.Primitive;
 
@@ -37,7 +37,7 @@ import de.ims.icarus2.util.mem.Primitive;
  * @author Markus Gärtner
  *
  */
-@HeapMember
+@Assessable
 public class LookupList<E extends Object> implements Iterable<E> {
 
 	/**

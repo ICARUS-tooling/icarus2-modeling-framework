@@ -21,6 +21,7 @@
 package de.ims.icarus2.model.api.members.item;
 
 import de.ims.icarus2.model.api.ModelConstants;
+import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
@@ -29,6 +30,7 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.view.CorpusModel;
 import de.ims.icarus2.model.api.view.CorpusView;
+import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -49,11 +51,16 @@ import de.ims.icarus2.util.access.AccessRestriction;
  * an arbitrary number of phrases or mentions). However, there is at most <b>one</b> container
  * that really owns an item!
  * <p>
- * Every item within a layer has a unique index defining the order of items in that layer.
- * This index is required to be equal to the position of the item in its layer. This means
- * that adding or removing items potentially changes a (potentially) huge number of item
- * indices. It is therefore advised not to use an item's internal index for hashing, since
- * it could compromise the storage when changes to a corpus occur.
+ * Every item within a layer has a unique constant id assigned to it either externally by the
+ * backend storage it originated from or by the model framework when the resource is accessed
+ * for the first time. This id is unique within the same layer and can be used for hashing or
+ * as key in a map. Note that for static resources, especially file resources, an item's id is
+ * typically equal to its position in the host layer.
+ * <p>
+ * Every item has a position with its host container or layer (in case the item is a top-level
+ * member of that layer) available via {@link #getIndex()}. This position can be subject to
+ * change over time depending on whether the corpus is {@link CorpusManifest#isEditable() editable}
+ * and new items get inserted between already existing ones.
  * <p>
  * An item can optionally provide information about its location in a corpus via the
  * {@link #getBeginOffset() beginOffset} and {@link #getEndOffset() endOffset} values.
@@ -127,10 +134,18 @@ public interface Item extends CorpusMember, ModelConstants {
 	 * fetched from when this method is called.
 	 *
 	 * @return The enclosing container of this item or {@code null} if this
-	 * item is not hosted within a container.
+	 * item is a top-level member and not hosted within a container.
 	 */
 	@AccessRestriction(AccessMode.ALL)
 	Container getContainer();
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.CorpusMember#getCorpus()
+	 */
+	@Override
+	default Corpus getCorpus() {
+		return getContainer().getCorpus();
+	}
 
 	/**
 	 * Returns the {@code ItemLayer} this item is hosted in. For nested
@@ -142,7 +157,9 @@ public interface Item extends CorpusMember, ModelConstants {
 	 * @return The enclosing {@code ItemLayer} that hosts this item object.
 	 */
 	@AccessRestriction(AccessMode.ALL)
-	ItemLayer getLayer();
+	default ItemLayer getLayer() {
+		return getContainer().getLayer();
+	}
 
 	/**
 	 * Returns the item's global position in the hosting container. For base items
@@ -170,14 +187,19 @@ public interface Item extends CorpusMember, ModelConstants {
 	long getIndex();
 
 	/**
-	 * Changes the index value associated with this item object to {@code newIndex}.
-	 * Note that inserting or removing items from containers or structures might result
-	 * in huge numbers of index changes!
+	 * Returns the id that uniquely identifies this item within the scope of the
+	 * host layer.
+	 * <p>
+	 * An item is required to return a valid non-negative value if it is declared
+	 * to be {@link #isUsable() usable}. Otherwise, for example during construction
+	 * time, a return value of {@link -1} is allowed.
+	 * <p>
+	 * Note that above contract only holds for top-level items in a layer. Nested
+	 * or {@link {@link #isVirtual() virtual} items
 	 *
-	 * @param newIndex
+	 * @return
 	 */
-	@AccessRestriction(AccessMode.WRITE)
-	void setIndex(long newIndex);
+	long getId();
 
 	/**
 	 * Returns the zero-based offset of this item's begin within the
@@ -197,7 +219,9 @@ public interface Item extends CorpusMember, ModelConstants {
 	 * or {@code -1} if the item is <i>virtual</i>
 	 */
 	@AccessRestriction(AccessMode.ALL)
-	long getBeginOffset();
+	default long getBeginOffset() {
+		return getIndex();
+	}
 
 	/**
 	 * Returns the zero-based offset of this item's end within the
@@ -217,7 +241,9 @@ public interface Item extends CorpusMember, ModelConstants {
 	 * or {@code -1} if the item is <i>virtual</i>
 	 */
 	@AccessRestriction(AccessMode.ALL)
-	long getEndOffset();
+	default long getEndOffset() {
+		return getIndex();
+	}
 
 	// Flags
 
@@ -248,5 +274,36 @@ public interface Item extends CorpusMember, ModelConstants {
 	 */
 	default boolean isUsable() {
 		return isAlive() && !isLocked() && !isDirty();
+	}
+
+	/**
+	 * Returns whether or not this item is considered <i>virtual</i>.
+	 * Virtual items have no corresponding "portion" in their potential
+	 * foundation layer. This is signaled by either of the two offset
+	 * related methods ({@link #getBeginOffset() or {@link #getEndOffset()}})
+	 * returning {@code -1}.
+	 *
+	 * @return
+	 */
+	default boolean isVirtual() {
+		return getBeginOffset()==NO_INDEX || getEndOffset()==NO_INDEX;
+	}
+
+	/**
+	 * Returns {@code true} if this item is <i>nested</i>, meaning it has a
+	 * valid host container and therefore is not considered a top-level member.
+	 *
+	 * @return
+	 */
+	default boolean isNested() {
+		return getContainer()!=null;
+	}
+
+	public interface ManagedItem {
+		void setId(long id);
+		void setContainer(Container container);
+		void setAlive(boolean alive);
+		void setDirty(boolean dirty);
+		void setLocked(boolean locked);
 	}
 }

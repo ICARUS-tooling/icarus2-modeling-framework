@@ -26,6 +26,7 @@ import java.util.function.Predicate;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
+import de.ims.icarus2.model.api.driver.id.IdManager;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
@@ -37,7 +38,6 @@ import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.model.api.driver.mods.ModuleMonitor;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.ItemLayerManager;
@@ -121,6 +121,14 @@ public interface Driver extends ItemLayerManager {
 	long getItemCount(ItemLayerManifest layer);
 
 	/**
+	 * Returns the {@link IdManager} for the specified {@code layer}.
+	 *
+	 * @param layer
+	 * @return
+	 */
+	IdManager getIdManager(ItemLayerManifest layer);
+
+	/**
 	 * Returns all the mappings available for the context this driver manages.
 	 * <p>
 	 * Note that the returned {@code MappingStorage} is only required to contain
@@ -149,17 +157,6 @@ public interface Driver extends ItemLayerManager {
 	 * between the two
 	 */
 	Mapping getMapping(ItemLayerManifest sourceLayer, ItemLayerManifest targetLayer);
-
-	/**
-	 * Returns the mapping that defines the order of elements in the designated
-	 * {@link Layer laxer's} root container.
-	 *
-	 * @param layer
-	 * @return
-	 *
-	 * @throws NullPointerException iff the supplied {@code layer} argument is {@link null}
-	 */
-	Mapping getRootMapping(ItemLayerManifest layer);
 
 	default Mapping getMapping(ItemLayer sourceLayer, ItemLayer targetLayer) {
 		return getMapping(sourceLayer.getManifest(), targetLayer.getManifest());
@@ -201,17 +198,17 @@ public interface Driver extends ItemLayerManager {
 			throw new ManifestException(ManifestErrorCode.MANIFEST_MISSING_MAPPING,
 					Messages.missingMappingMessage(null, sourceLayer, targetLayer));
 
-		MappingReader reader = mapping.newReader();
-
 		IndexSet[] result;
 
-		try {
-			reader.begin();
+		try(MappingReader reader = mapping.newReader()) {
 
-			result = reader.lookup(sourceIndices, RequestSettings.emptySettings);
-		} finally {
-			reader.end();
-			reader.close();
+			try {
+				reader.begin();
+
+				result = reader.lookup(sourceIndices, RequestSettings.emptySettings);
+			} finally {
+				reader.end();
+			}
 		}
 
 		return result;
@@ -227,17 +224,17 @@ public interface Driver extends ItemLayerManager {
 			throw new ManifestException(ManifestErrorCode.MANIFEST_MISSING_MAPPING,
 					Messages.missingMappingMessage(null, sourceLayer, targetLayer));
 
-		MappingReader reader = mapping.newReader();
-
 		boolean result;
 
-		try {
-			reader.begin();
+		try(MappingReader reader = mapping.newReader()) {
 
-			result = reader.lookup(indices, collector, null);
-		} finally {
-			reader.end();
-			reader.close();
+			try {
+				reader.begin();
+
+				result = reader.lookup(indices, collector, null);
+			} finally {
+				reader.end();
+			}
 		}
 
 		return result;

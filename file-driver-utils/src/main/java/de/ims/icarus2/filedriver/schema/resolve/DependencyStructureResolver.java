@@ -195,6 +195,7 @@ public class DependencyStructureResolver implements BatchResolver, ResolverOptio
 			case UNDEFINED_POINTER: break;
 			case ROOT_POINTER:
 				edges[i].setSource(root);
+				break;
 
 			default:
 				edges[i].setSource(sentence.getItemAt(head));

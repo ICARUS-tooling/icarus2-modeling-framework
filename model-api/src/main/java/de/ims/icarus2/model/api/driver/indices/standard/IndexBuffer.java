@@ -33,8 +33,8 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -51,7 +51,7 @@ import de.ims.icarus2.util.IcarusUtils;
  * @author Markus Gärtner
  *
  */
-public class IndexBuffer implements IndexSet, ModelConstants, LongConsumer, IntConsumer {
+public class IndexBuffer implements IndexSet, IndexCollector {
 
 	private final Object buffer;
 	private final IndexValueType valueType;
@@ -190,6 +190,7 @@ public class IndexBuffer implements IndexSet, ModelConstants, LongConsumer, IntC
 		return sorted;
 	}
 
+	@Override
 	public void add(long index) {
 		checkCapacity(1);
 		valueType.set(buffer, size, index);
@@ -198,6 +199,7 @@ public class IndexBuffer implements IndexSet, ModelConstants, LongConsumer, IntC
 		size++;
 	}
 
+	@Override
 	public void add(long from, long to) {
 		int length = IcarusUtils.ensureIntegerValueRange(to-from+1);
 		checkCapacity(length);
@@ -263,6 +265,7 @@ public class IndexBuffer implements IndexSet, ModelConstants, LongConsumer, IntC
 		size += length;
 	}
 
+	@Override
 	public void add(IndexSet indices) {
 		add(indices, 0, indices.size());
 	}
@@ -307,6 +310,7 @@ public class IndexBuffer implements IndexSet, ModelConstants, LongConsumer, IntC
 		size += addCount;
 	}
 
+	@Override
 	public void add(IndexSet[] indices) {
 		for(IndexSet set : indices) {
 			add(set);
@@ -351,10 +355,12 @@ public class IndexBuffer implements IndexSet, ModelConstants, LongConsumer, IntC
 		size += addCount;
 	}
 
+	@Override
 	public void add(OfLong source) {
 		source.forEachRemaining(this);
 	}
 
+	@Override
 	public void add(OfInt source) {
 		source.forEachRemaining(this);
 	}

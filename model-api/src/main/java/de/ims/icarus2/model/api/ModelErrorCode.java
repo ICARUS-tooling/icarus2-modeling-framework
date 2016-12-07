@@ -121,12 +121,17 @@ public enum ModelErrorCode implements ErrorCode {
 	/**
 	 * The metadata a driver stored for a resource got corrupted and is now displaying erroneous information.
 	 */
-	DRIVER_METADATA(406),
+	DRIVER_METADATA_CORRUPTED(406),
+
+	/**
+	 * The metadata a driver stored for a resource is missing required information.
+	 */
+	DRIVER_METADATA_MISSING(407),
 
 	/**
 	 * The content of a corpus resource is invalid.
 	 */
-	DRIVER_INVALID_CONTENT(407),
+	DRIVER_INVALID_CONTENT(410),
 
 	//**************************************************
 	//       5xx  CORPUS VIEW ERRORS
@@ -275,6 +280,12 @@ public enum ModelErrorCode implements ErrorCode {
 	 * This error applies to both individual index sets or arrays of such!
 	 */
 	MODEL_UNSORTED_INDEX_SET(814),
+
+	/**
+	 * An operation cannot be performed because the target {@link Item} has no
+	 * valid host container assigned to it.
+	 */
+	MODEL_HEADLESS(820),
 
 	//FIXME add errors for missing content etc...
 	;

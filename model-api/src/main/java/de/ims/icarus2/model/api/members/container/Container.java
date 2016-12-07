@@ -20,12 +20,15 @@
  */
 package de.ims.icarus2.model.api.members.container;
 
+import java.util.stream.Stream;
+
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.ItemList;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
+import de.ims.icarus2.model.util.stream.ModelStreams;
 import de.ims.icarus2.util.collections.set.DataSet;
 
 
@@ -47,6 +50,10 @@ public interface Container extends Item, ManifestOwner<ContainerManifest>, ItemL
 	 * @see ContainerType
 	 */
 	ContainerType getContainerType();
+
+	default boolean isProxy() {
+		return false;
+	}
 
 	/**
 	 * Returns the {@link ContainerManifest} object that holds additional
@@ -154,4 +161,22 @@ public interface Container extends Item, ManifestOwner<ContainerManifest>, ItemL
 	 */
 	@Override
 	long indexOfItem(Item item);
+
+	default boolean containsItem(Item item) {
+		return indexOfItem(item)>=0L;
+	}
+
+	/**
+	 * Returns a sequential {@link Stream} of the items in this container.
+	 * <p>
+	 * If this container is actually a {@link Structure} the returned stream will
+	 * <b>not</b> contain the {@link Structure#getVirtualRoot() virtual root node}.
+	 * If it is desired to also have this virtual node as part of the stream, the
+	 * structure-specific {@link Structure#nodes()} method should be used.
+	 *
+	 * @return
+	 */
+	default Stream<Item> elements() {
+		return ModelStreams.newElementStream(this);
+	}
 }

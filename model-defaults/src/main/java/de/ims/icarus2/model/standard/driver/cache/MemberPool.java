@@ -28,7 +28,7 @@ import java.util.function.Supplier;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
-import de.ims.icarus2.util.mem.HeapMember;
+import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Primitive;
 import de.ims.icarus2.util.mem.Reference;
 
@@ -36,7 +36,7 @@ import de.ims.icarus2.util.mem.Reference;
  * @author Markus Gärtner
  *
  */
-@HeapMember
+@Assessable
 public class MemberPool<M extends Item> implements Consumer<M>, Supplier<M> {
 
 	@Reference

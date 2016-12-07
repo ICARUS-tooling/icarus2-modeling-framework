@@ -26,11 +26,11 @@ import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
-
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.filedriver.io.BufferedIOResource;
+import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
+import de.ims.icarus2.filedriver.io.BufferedIOResource.BufferedIOResourceBuilder;
+import de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
@@ -76,18 +76,12 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 	protected MappingImplSpanManyToOne(Builder builder) {
 		super(builder);
 
-		int blockPower = builder.getBlockPower();
-
-		this.blockPower = blockPower;
-		blockMask = (1<<blockPower)-1;
-		entriesPerBlock = 1<<blockPower;
-
-		this.groupPower = builder.getGroupPower();
-
+		blockPower = builder.getBlockPower();
+		blockMask = builder.getBlockMask();
+		entriesPerBlock = builder.getEntriesPerBlock();
+		groupPower = builder.getGroupPower();
 		inverseMapping = builder.getInverseMapping();
-
-		blockStorage = IndexBlockStorage.forValueType(builder.getValueType());
-		setBytesPerBlock(entriesPerBlock * blockStorage.spanSize());
+		blockStorage = builder.getBlockStorage();
 	}
 
 	@Override
@@ -147,33 +141,6 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 	}
 
 	/**
-	 * @see de.ims.icarus2.filedriver.io.BufferedIOResource#write(java.lang.Object, java.nio.ByteBuffer, int)
-	 */
-	@Override
-	protected void write(Object source, ByteBuffer buffer, int length)
-			throws IOException {
-		blockStorage.write(source, buffer, 0, length);
-	}
-
-	/**
-	 * @see de.ims.icarus2.filedriver.io.BufferedIOResource#read(java.lang.Object, java.nio.ByteBuffer)
-	 */
-	@Override
-	protected int read(Object target, ByteBuffer buffer) throws IOException {
-		int length = buffer.remaining()/blockStorage.spanSize();
-		blockStorage.read(target, buffer, 0, length);
-		return length;
-	}
-
-	/**
-	 * @see de.ims.icarus2.filedriver.io.BufferedIOResource#newBlockData()
-	 */
-	@Override
-	protected Object newBlockData() {
-		return blockStorage.createBuffer(getBytesPerBlock());
-	}
-
-	/**
 	 * @see de.ims.icarus2.model.api.driver.mapping.Mapping#newReader()
 	 */
 	@Override
@@ -194,7 +161,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class Reader extends ReadWriteAccessor<Mapping> implements MappingReader {
+	public class Reader extends ResourceAccessor implements MappingReader {
 
 		protected Reader() {
 			super(true);
@@ -204,6 +171,15 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 		// Represents one-to-many mapping (of spans)
 		private final MappingReader inverseReader = inverseMapping.newReader();
 		private final Coverage inverseCoverage = inverseMapping.getManifest().getCoverage();
+
+		/**
+		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getIndicesCount(long, de.ims.icarus2.model.api.driver.mapping.RequestSettings)
+		 */
+		@Override
+		public long getIndicesCount(long sourceIndex, RequestSettings settings)
+				throws InterruptedException {
+			return 1L;
+		}
 
 		/**
 		 * Resolves the group a given source index belongs to and fetches the
@@ -492,7 +468,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class Writer extends ReadWriteAccessor<Mapping> implements MappingWriter {
+	public class Writer extends ResourceAccessor implements MappingWriter {
 
 		protected Writer() {
 			super(false);
@@ -639,6 +615,32 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 
 		public Mapping getInverseMapping() {
 			return inverseMapping;
+		}
+
+		public int getBlockMask() {
+			return (1<<getBlockPower())-1;
+		}
+
+		public int getEntriesPerBlock() {
+			return (1<<getBlockPower());
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.mapping.AbstractStoredMapping.StoredMappingBuilder#createBufferedIOResource()
+		 */
+		@Override
+		public BufferedIOResource createBufferedIOResource() {
+			IndexBlockStorage blockStorage = getBlockStorage();
+			int bytesPerBlock = getEntriesPerBlock()*blockStorage.spanSize();
+			PayloadConverter payloadConverter = new PayloadConverterImpl(blockStorage);
+
+			return new BufferedIOResourceBuilder()
+				.resource(getResource())
+				.blockCache(getBlockCache())
+				.cacheSize(getCacheSize())
+				.bytesPerBlock(bytesPerBlock)
+				.payloadConverter(payloadConverter)
+				.build();
 		}
 
 		@Override

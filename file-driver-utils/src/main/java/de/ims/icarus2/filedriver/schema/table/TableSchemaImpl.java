@@ -34,7 +34,16 @@ import de.ims.icarus2.util.Options;
 public class TableSchemaImpl extends DefaultModifiableIdentity implements TableSchema {
 
 	private String separator;
+	private String groupId;
 	private BlockSchema root;
+
+	/**
+	 * @see de.ims.icarus2.filedriver.schema.table.TableSchema#getGroupId()
+	 */
+	@Override
+	public String getGroupId() {
+		return groupId;
+	}
 
 	/**
 	 * @see de.ims.icarus2.filedriver.schema.Schema#getSchemaTypeName()
@@ -60,16 +69,26 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		return separator;
 	}
 
-	public void setRootBlock(BlockSchema root) {
+	public TableSchemaImpl setRootBlock(BlockSchema root) {
 		checkNotNull(root);
 
 		this.root = root;
+
+		return this;
 	}
 
-	public void setSeparator(String separator) {
+	public TableSchemaImpl setSeparator(String separator) {
 		checkNotNull(separator);
 
 		this.separator = separator;
+
+		return this;
+	}
+
+	public void setGroupId(String groupId) {
+		checkNotNull(groupId);
+
+		this.groupId = groupId;
 	}
 
 	private static AttributeSchema[] EMPTY_ATTRIBUTES = {};
@@ -80,7 +99,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 
 		private String layerId;
 		private String separator;
-		private MemberSchema containerSchema, componentSchema;
+		private MemberSchema componentSchema;
 		private AttributeSchema beginDelimiter, endDelimiter;
 		private List<AttributeSchema> attributes;
 		private List<ColumnSchema> columns;
@@ -96,14 +115,6 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		@Override
 		public String getLayerId() {
 			return layerId;
-		}
-
-		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema#getContainerSchema()
-		 */
-		@Override
-		public MemberSchema getContainerSchema() {
-			return containerSchema;
 		}
 
 		/**
@@ -196,53 +207,61 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			return columnOrderFixed==null ? DEFAULT_COLUMN_ORDER_FIXED : columnOrderFixed.booleanValue();
 		}
 
-		public void setColumnOrderFixed(boolean columnOrderFixed) {
+		public BlockSchemaImpl setColumnOrderFixed(boolean columnOrderFixed) {
 			this.columnOrderFixed = columnOrderFixed==DEFAULT_COLUMN_ORDER_FIXED ? null : Boolean.valueOf(columnOrderFixed);
+
+			return this;
 		}
 
-		public void setLayerId(String layerId) {
+		public BlockSchemaImpl setLayerId(String layerId) {
 			checkNotNull(layerId);
 
 			this.layerId = layerId;
+
+			return this;
 		}
 
-		public void setContainerSchema(MemberSchema containerSchema) {
-			checkNotNull(containerSchema);
-
-			this.containerSchema = containerSchema;
-		}
-
-		public void setComponentSchema(MemberSchema componentSchema) {
+		public BlockSchemaImpl setComponentSchema(MemberSchema componentSchema) {
 			checkNotNull(componentSchema);
 
 			this.componentSchema = componentSchema;
+
+			return this;
 		}
 
-		public void setBeginDelimiter(AttributeSchema beginDelimiter) {
+		public BlockSchemaImpl setBeginDelimiter(AttributeSchema beginDelimiter) {
 			checkNotNull(beginDelimiter);
 
 			this.beginDelimiter = beginDelimiter;
+
+			return this;
 		}
 
-		public void setEndDelimiter(AttributeSchema endDelimiter) {
+		public BlockSchemaImpl setEndDelimiter(AttributeSchema endDelimiter) {
 			checkNotNull(endDelimiter);
 
 			this.endDelimiter = endDelimiter;
+
+			return this;
 		}
 
-		public void setFallbackColumn(ColumnSchema fallbackColumn) {
+		public BlockSchemaImpl setFallbackColumn(ColumnSchema fallbackColumn) {
 			checkNotNull(fallbackColumn);
 
 			this.fallbackColumn = fallbackColumn;
+
+			return this;
 		}
 
-		public void setNoEntryLabel(String noEntryLabel) {
+		public BlockSchemaImpl setNoEntryLabel(String noEntryLabel) {
 			checkNotNull(noEntryLabel);
 
 			this.noEntryLabel = noEntryLabel;
+
+			return this;
 		}
 
-		public void addAttribute(AttributeSchema attribute) {
+		public BlockSchemaImpl addAttribute(AttributeSchema attribute) {
 			checkNotNull(attribute);
 
 			if(attributes==null) {
@@ -250,9 +269,11 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			}
 
 			attributes.add(attribute);
+
+			return this;
 		}
 
-		public void addColumn(ColumnSchema column) {
+		public BlockSchemaImpl addColumn(ColumnSchema column) {
 			checkNotNull(column);
 
 			if(columns==null) {
@@ -260,9 +281,11 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			}
 
 			columns.add(column);
+
+			return this;
 		}
 
-		public void addBlock(BlockSchema block) {
+		public BlockSchemaImpl addBlock(BlockSchema block) {
 			checkNotNull(block);
 
 			if(nestedBlocks==null) {
@@ -270,6 +293,8 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			}
 
 			nestedBlocks.add(block);
+
+			return this;
 		}
 
 		/**
@@ -280,12 +305,14 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			return options;
 		}
 
-		public void addOption(String key, String value) {
+		public BlockSchemaImpl addOption(String key, String value) {
 			if(options==null) {
 				options = new Options();
 			}
 
 			options.put(key, value);
+
+			return this;
 		}
 
 		/**
@@ -296,27 +323,20 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			return separator;
 		}
 
-		public void setSeparator(String separator) {
+		public BlockSchemaImpl setSeparator(String separator) {
 			checkNotNull(separator);
 
 			this.separator = separator;
+
+			return this;
 		}
 
 	}
 
 	public static class MemberSchemaImpl implements MemberSchema {
 
-		private String layerId;
 		private MemberType memberType;
 		private Boolean isReference;
-
-		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.MemberSchema#getLayerId()
-		 */
-		@Override
-		public String getLayerId() {
-			return layerId;
-		}
 
 		/**
 		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.MemberSchema#getMemberType()
@@ -334,20 +354,18 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			return isReference==null ? DEFAULT_IS_REFERENCE : isReference.booleanValue();
 		}
 
-		public void setLayerId(String layerId) {
-			checkNotNull(layerId);
-
-			this.layerId = layerId;
-		}
-
-		public void setMemberType(MemberType memberType) {
+		public MemberSchemaImpl setMemberType(MemberType memberType) {
 			checkNotNull(memberType);
 
 			this.memberType = memberType;
+
+			return this;
 		}
 
-		public void setIsReference(boolean isReference) {
+		public MemberSchemaImpl setIsReference(boolean isReference) {
 			this.isReference = isReference==DEFAULT_IS_REFERENCE ? null : Boolean.valueOf(isReference);
+
+			return this;
 		}
 
 	}
@@ -374,16 +392,20 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			return resolver;
 		}
 
-		public void setPattern(String pattern) {
+		public AttributeSchemaImpl setPattern(String pattern) {
 			checkNotNull(pattern);
 
 			this.pattern = pattern;
+
+			return this;
 		}
 
-		public void setResolver(ResolverSchema resolver) {
+		public AttributeSchemaImpl setResolver(ResolverSchema resolver) {
 			checkNotNull(resolver);
 
 			this.resolver = resolver;
+
+			return this;
 		}
 
 		/**
@@ -394,10 +416,12 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			return target;
 		}
 
-		public void setTarget(AttributeTarget target) {
+		public AttributeSchemaImpl setTarget(AttributeTarget target) {
 			checkNotNull(target);
 
 			this.target = target;
+
+			return this;
 		}
 
 	}
@@ -457,42 +481,54 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			return resolver;
 		}
 
-		public void setName(String name) {
+		public ColumnSchemaImpl setName(String name) {
 			checkNotNull(name);
 
 			this.name = name;
+
+			return this;
 		}
 
-		public void setLayerId(String layerId) {
+		public ColumnSchemaImpl setLayerId(String layerId) {
 			checkNotNull(layerId);
 
 			this.layerId = layerId;
+
+			return this;
 		}
 
-		public void setAnnotationKey(String annotationKey) {
+		public ColumnSchemaImpl setAnnotationKey(String annotationKey) {
 			checkNotNull(annotationKey);
 
 			this.annotationKey = annotationKey;
+
+			return this;
 		}
 
-		public void setNoEntryLabel(String noEntryLabel) {
+		public ColumnSchemaImpl setNoEntryLabel(String noEntryLabel) {
 			checkNotNull(noEntryLabel);
 
 			this.noEntryLabel = noEntryLabel;
+
+			return this;
 		}
 
-		public void setIsIgnoreColumn(boolean isIgnoreColumn) {
+		public ColumnSchemaImpl setIsIgnoreColumn(boolean isIgnoreColumn) {
 
 			this.isIgnoreColumn = isIgnoreColumn==DEFAULT_IGNORE_COLUMN ? null : Boolean.valueOf(isIgnoreColumn);
+
+			return this;
 		}
 
-		public void setResolver(ResolverSchema resolver) {
+		public ColumnSchemaImpl setResolver(ResolverSchema resolver) {
 			checkNotNull(resolver);
 
 			this.resolver = resolver;
+
+			return this;
 		}
 
-		public void addSubstitute(SubstituteType type, SubstituteSchema substitute) {
+		public ColumnSchemaImpl addSubstitute(SubstituteType type, SubstituteSchema substitute) {
 			checkNotNull(type);
 			checkNotNull(substitute);
 
@@ -501,6 +537,8 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			}
 
 			substitutes.put(type, substitute);
+
+			return this;
 		}
 
 		/**
@@ -543,22 +581,28 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			return memberType;
 		}
 
-		public void setType(SubstituteType type) {
+		public SubstituteSchemaImpl setType(SubstituteType type) {
 			checkNotNull(type);
 
 			this.type = type;
+
+			return this;
 		}
 
-		public void setMemberType(MemberType memberType) {
+		public SubstituteSchemaImpl setMemberType(MemberType memberType) {
 			checkNotNull(memberType);
 
 			this.memberType = memberType;
+
+			return this;
 		}
 
-		public void setName(String name) {
+		public SubstituteSchemaImpl setName(String name) {
 			checkNotNull(name);
 
 			this.name = name;
+
+			return this;
 		}
 
 	}
@@ -584,18 +628,22 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			return options;
 		}
 
-		public void setType(String type) {
+		public ResolverSchemaImpl setType(String type) {
 			checkNotNull(type);
 
 			this.type = type;
+
+			return this;
 		}
 
-		public void addOption(String key, String value) {
+		public ResolverSchemaImpl addOption(String key, String value) {
 			if(options==null) {
 				options = new Options();
 			}
 
 			options.put(key, value);
+
+			return this;
 		}
 	}
 }

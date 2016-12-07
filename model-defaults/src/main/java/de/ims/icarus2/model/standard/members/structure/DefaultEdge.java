@@ -19,56 +19,157 @@
 package de.ims.icarus2.model.standard.members.structure;
 
 import static de.ims.icarus2.util.Conditions.checkNotNull;
+import de.ims.icarus2.model.api.members.MemberType;
+import de.ims.icarus2.model.api.members.container.Container;
+import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
-import de.ims.icarus2.util.mem.HeapMember;
+import de.ims.icarus2.model.standard.members.item.DefaultItem;
+import de.ims.icarus2.util.Recyclable;
+import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Reference;
-import de.ims.icarus2.util.mem.ReferenceType;
 
 /**
- * Implements a simple edge. Note that this edge implementation requires
- * both terminals and a host strcture to be set at all times!
- *
  * @author Markus Gärtner
  *
  */
-@HeapMember
-public class DefaultEdge extends AbstractEdge {
+@Assessable
+public class DefaultEdge extends DefaultItem implements Edge, Recyclable {
 
-	@Reference(ReferenceType.UPLINK)
-	private Structure structure;
+	@Reference
+	private Item source;
+	@Reference
+	private Item target;
 
-	public DefaultEdge(Structure structure, Item source, Item target) {
-		// Rely on setStructure() doing the null check
-		setStructure(structure);
-		setSource(source);
-		setTarget(target);
-	}
-
-	public DefaultEdge(Item source, Item target) {
-		setSource(source);
-		setTarget(target);
+	public DefaultEdge() {
+		// no-op
 	}
 
 	public DefaultEdge(Structure structure) {
 		setStructure(structure);
 	}
 
-	/**
-	 * @param structure the structure to set
-	 */
-	public void setStructure(Structure structure) {
-		checkNotNull(structure);
+	public DefaultEdge(Structure structure, Item source, Item target) {
+		setStructure(structure);
+		setSource(source);
+		setTarget(target);
+	}
 
-		this.structure = structure;
+	@Override
+	public Structure getStructure() {
+		return getContainer();
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.Edge#getStructure()
+	 * @see de.ims.icarus2.model.standard.members.item.DefaultItem#getContainer()
 	 */
 	@Override
-	public Structure getStructure() {
-		return structure;
+	public Structure getContainer() {
+		return (Structure) super.getContainer();
+	}
+
+	@Override
+	public Item getTerminal(boolean isSource) {
+		return isSource ? source : target;
+	}
+
+	@Override
+	public boolean isLoop() {
+		return source!=null && source==target;
+	}
+
+	@Override
+	public void setTerminal(Item item, boolean isSource) {
+		if(isSource) {
+			source = item;
+		} else {
+			target = item;
+		}
+	}
+
+	@Override
+	public void setLocked(boolean locked) {
+		// no-op
+	}
+
+	@Override
+	public void setId(long id) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public void setContainer(Container container) {
+		super.setContainer((Structure)container);
+	}
+
+	public void setStructure(Structure structure) {
+		setContainer(structure);
+	}
+
+	/**
+	 * @param source the source to set
+	 */
+	@Override
+	public void setSource(Item source) {
+		checkNotNull(source);
+		this.source = source;
+	}
+
+	/**
+	 * @param target the target to set
+	 */
+	@Override
+	public void setTarget(Item target) {
+		checkNotNull(target);
+		this.target = target;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.item.Item#getBeginOffset()
+	 */
+	@Override
+	public long getBeginOffset() {
+		return (source==null || target==null) ? NO_INDEX : Math.min(source.getBeginOffset(), target.getBeginOffset());
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.item.Item#getEndOffset()
+	 */
+	@Override
+	public long getEndOffset() {
+		return (source==null || target==null) ? NO_INDEX : Math.min(source.getEndOffset(), target.getEndOffset());
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.CorpusMember#getMemberType()
+	 */
+	@Override
+	public MemberType getMemberType() {
+		return MemberType.EDGE;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.item.Edge#getSource()
+	 */
+	@Override
+	public Item getSource() {
+		return source;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.item.Edge#getTarget()
+	 */
+	@Override
+	public Item getTarget() {
+		return target;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.item.Item#getIndex()
+	 */
+	@Override
+	public long getIndex() {
+		return NO_INDEX;
 	}
 
 	/**
@@ -76,7 +177,7 @@ public class DefaultEdge extends AbstractEdge {
 	 */
 	@Override
 	public boolean isAlive() {
-		return super.isAlive() && structure!=null;
+		return super.isAlive() && source!=null && target!=null;
 	}
 
 	/**
@@ -92,7 +193,7 @@ public class DefaultEdge extends AbstractEdge {
 	 */
 	@Override
 	public boolean isDirty() {
-		return super.isDirty() || structure==null;
+		return super.isDirty() || source==null || target==null;
 	}
 
 	/**
@@ -101,7 +202,7 @@ public class DefaultEdge extends AbstractEdge {
 	@Override
 	public void recycle() {
 		super.recycle();
-		structure = null;
+		source = target = null;
 	}
 
 	/**
@@ -109,6 +210,6 @@ public class DefaultEdge extends AbstractEdge {
 	 */
 	@Override
 	public boolean revive() {
-		return super.revive() && structure!=null;
+		return super.revive() && source!=null && target!=null;
 	}
 }

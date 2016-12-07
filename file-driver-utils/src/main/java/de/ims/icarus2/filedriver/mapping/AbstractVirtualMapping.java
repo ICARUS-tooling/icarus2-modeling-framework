@@ -36,7 +36,6 @@ public abstract class AbstractVirtualMapping implements Mapping {
 	private final MappingManifest manifest;
 	private final ItemLayerManifest sourceLayer;
 	private final ItemLayerManifest targetLayer;
-	private final boolean rootMapping;
 
 	protected AbstractVirtualMapping(Driver driver, MappingManifest manifest,
 			ItemLayerManifest sourceLayer, ItemLayerManifest targetLayer) {
@@ -49,18 +48,6 @@ public abstract class AbstractVirtualMapping implements Mapping {
 		this.manifest = manifest;
 		this.sourceLayer = sourceLayer;
 		this.targetLayer = targetLayer;
-		this.rootMapping = false;
-	}
-
-	protected AbstractVirtualMapping(Driver driver, ItemLayerManifest targetLayer) {
-		checkNotNull(driver);
-		checkNotNull(targetLayer);
-
-		this.driver = driver;
-		this.manifest = null;
-		this.sourceLayer = null;
-		this.targetLayer = targetLayer;
-		this.rootMapping = true;
 	}
 
 	protected AbstractVirtualMapping(MappingBuilder<?, ?> builder) {
@@ -70,7 +57,6 @@ public abstract class AbstractVirtualMapping implements Mapping {
 		manifest = builder.getManifest();
 		sourceLayer = builder.getSourceLayer();
 		targetLayer = builder.getTargetLayer();
-		rootMapping = builder.isRootMapping();
 	}
 
 	/**
@@ -79,11 +65,9 @@ public abstract class AbstractVirtualMapping implements Mapping {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder()
-		.append(getClass().getName())
-		.append("[id=").append(manifest.getId());
-		if(!isRootMapping()) {
-			sb.append(" sourceLayer=").append(sourceLayer.getId());
-		}
+		.append(getClass().getName()).append('[');
+		sb.append("id=").append(manifest.getId());
+		sb.append(" sourceLayer=").append(sourceLayer.getId());
 		sb.append(" targetLayer=").append(targetLayer.getId());
 
 		toString(sb);
@@ -93,14 +77,6 @@ public abstract class AbstractVirtualMapping implements Mapping {
 
 	protected void toString(StringBuilder sb) {
 		// for subclasses
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.driver.mapping.Mapping#isRootMapping()
-	 */
-	@Override
-	public boolean isRootMapping() {
-		return rootMapping;
 	}
 
 	/**
@@ -158,8 +134,6 @@ public abstract class AbstractVirtualMapping implements Mapping {
 		private ItemLayerManifest sourceLayer, targetLayer;
 		private IndexValueType valueType;
 
-		private Boolean rootMapping;
-
 		public B driver(Driver driver) {
 			checkNotNull(driver);
 			checkState(this.driver==null);
@@ -205,14 +179,6 @@ public abstract class AbstractVirtualMapping implements Mapping {
 			return thisAsCast();
 		}
 
-		public B rootMapping(boolean rootMapping) {
-			checkState(this.rootMapping==null);
-
-			this.rootMapping = Boolean.valueOf(rootMapping);
-
-			return thisAsCast();
-		}
-
 		public Driver getDriver() {
 			return driver;
 		}
@@ -233,8 +199,8 @@ public abstract class AbstractVirtualMapping implements Mapping {
 			return valueType;
 		}
 
-		public boolean isRootMapping() {
-			return rootMapping==null ? false : rootMapping.booleanValue();
+		public IndexBlockStorage getBlockStorage() {
+			return IndexBlockStorage.forValueType(getValueType());
 		}
 
 		@Override
@@ -242,9 +208,8 @@ public abstract class AbstractVirtualMapping implements Mapping {
 			checkState("Missing driver", driver!=null);
 			checkState("Missing manifest", manifest!=null);
 			checkState("Missing target layer", targetLayer!=null);
+			checkState("Missing source layer", sourceLayer!=null);
 			checkState("Missing value type", valueType!=null);
-			checkState("Mapping requires source layer if it's not declared as root mapping",
-					isRootMapping() || (sourceLayer!=null && manifest!=null));
 		}
 	}
 }
