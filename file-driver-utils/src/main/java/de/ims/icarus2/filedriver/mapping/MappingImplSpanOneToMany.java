@@ -29,7 +29,6 @@ import static de.ims.icarus2.util.Conditions.checkState;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.io.BufferedIOResource;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
-import de.ims.icarus2.filedriver.io.BufferedIOResource.BufferedIOResourceBuilder;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
@@ -699,7 +698,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			int bytesPerBlock = getEntriesPerBlock()*blockStorage.spanSize();
 			PayloadConverter payloadConverter = new PayloadConverterImpl(blockStorage);
 
-			return new BufferedIOResourceBuilder()
+			return new BufferedIOResource.Builder()
 				.resource(getResource())
 				.blockCache(getBlockCache())
 				.cacheSize(getCacheSize())

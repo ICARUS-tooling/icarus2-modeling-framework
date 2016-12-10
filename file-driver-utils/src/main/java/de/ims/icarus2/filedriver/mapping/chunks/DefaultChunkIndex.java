@@ -29,10 +29,18 @@ import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.io.BufferedIOResource;
+import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
+import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
+import de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter;
+import de.ims.icarus2.filedriver.io.BufferedIOResource.ReadWriteAccessor;
 import de.ims.icarus2.filedriver.io.sets.FileSet;
+import de.ims.icarus2.filedriver.mapping.AbstractStoredMapping;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkArrays.ArrayAdapter;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
+import de.ims.icarus2.model.api.io.SynchronizedAccessor;
+import de.ims.icarus2.model.api.io.resources.IOResource;
+import de.ims.icarus2.util.AbstractBuilder;
 
 /**
  *
@@ -40,7 +48,11 @@ import de.ims.icarus2.model.api.driver.indices.IndexValueType;
  * @author Markus Gärtner
  *
  */
-public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex {
+public class DefaultChunkIndex implements ChunkIndex {
+
+	private static final int DEFAULT_BLOCK_POWER = 12;
+
+	public static final int DEFAULT_CACHE_SIZE = 100;
 
 	private static final Logger log = LoggerFactory
 			.getLogger(DefaultChunkIndex.class);
@@ -48,17 +60,14 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 	private final FileSet fileSet;
 	private final ChunkArrays.ArrayAdapter arrayAdapter;
 	private final int blockPower;
-	private final int entriesPerBlock;
 	private final int blockMask;
-
-	private static final int DEFAULT_BLOCK_POWER = 12;
+	private final BufferedIOResource resource;
 
 	public static Builder newBuilder() {
 		return new Builder();
 	}
 
 	protected DefaultChunkIndex(Builder builder) {
-		super(builder);
 
 		FileSet fileSet = builder.getFileSet();
 		this.fileSet = fileSet;
@@ -73,9 +82,16 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 		int blockPower = builder.getBlockPower();
 		this.blockPower = blockPower;
 		blockMask = (1<<blockPower)-1;
-		entriesPerBlock = 1<<blockPower;
 
-		setBytesPerBlock(entriesPerBlock * arrayAdapter.chunkSize());
+		int entriesPerBlock = 1<<blockPower;
+
+		resource = new BufferedIOResource.Builder()
+			.cacheSize(builder.getCacheSize())
+			.blockCache(builder.getBlockCache())
+			.resource(builder.getResource())
+			.bytesPerBlock(entriesPerBlock*arrayAdapter.chunkSize())
+			.payloadConverter(new PayloadConverterImpl())
+			.build();
 	}
 
 	protected ArrayAdapter createAdapter(IndexValueType valueType, FileSet fileSet) {
@@ -91,6 +107,10 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 		} else {
 			return ChunkArrays.createBasicAdapter(valueType);
 		}
+	}
+
+	public BufferedIOResource getBufferedResource() {
+		return resource;
 	}
 
 	/**
@@ -122,44 +142,12 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 		return this.new Cursor(readOnly);
 	}
 
-	public long getEntryCount() {
-		try {
-			return getResource().size()/arrayAdapter.chunkSize();
-		} catch (IOException e) {
-			log.error("Unable to read resource size: {}", getResource(), e); //$NON-NLS-1$
-
-			return 0;
-		}
+	protected Block getBlock(int id, boolean writeAccess) {
+		return resource.getBlock(id, writeAccess);
 	}
 
 	protected ArrayAdapter getAdapter() {
 		return arrayAdapter;
-	}
-
-	/**
-	 * @see de.ims.icarus2.filedriver.io.BufferedIOResource#read(java.lang.Object, java.nio.ByteBuffer)
-	 */
-	@Override
-	protected int read(Object target, ByteBuffer buffer) throws IOException {
-		int length = buffer.remaining()/arrayAdapter.chunkSize();
-		arrayAdapter.read(target, buffer, 0, length);
-		return length;
-	}
-
-	/**
-	 * @see de.ims.icarus2.filedriver.io.BufferedIOResource#write(java.lang.Object, java.nio.ByteBuffer, int)
-	 */
-	@Override
-	protected void write(Object source, ByteBuffer buffer, int size) throws IOException {
-		arrayAdapter.write(source, buffer, 0, size);
-	}
-
-	/**
-	 * @see de.ims.icarus2.filedriver.io.BufferedIOResource#newBlockData()
-	 */
-	@Override
-	protected Object newBlockData() {
-		return arrayAdapter.createBuffer(getBytesPerBlock());
 	}
 
 	private int id(long index) {
@@ -168,64 +156,112 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 
 	private int localIndex(long index) {
 		return (int)(index & blockMask);
-//		return (int)(index & (blockPower-1));
 	}
 
-	protected int getFileId(long index) {
-		int id = id(index);
-		int localIndex = localIndex(index);
+	private long getEntryCount() {
+		try {
+			IOResource resource = getBufferedResource().getResource();
+			return resource.size()/getAdapter().chunkSize();
+		} catch (IOException e) {
+			log.error("Unable to read resource size: {}", getBufferedResource(), e);
 
-		Block block = getBlock(id, false);
-		return block==null ? -1 : arrayAdapter.getFileId(block.getData(), localIndex);
+			return 0L;
+		}
 	}
 
-	protected long getBeginOffset(long index) {
-		int id = id(index);
-		int localIndex = localIndex(index);
+	/**
+	 * Direct bridge to the internal {@link ArrayAdapter} of the surrounding
+	 * {@link DefaultChunkIndex} instance.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	private class PayloadConverterImpl implements PayloadConverter {
 
-		Block block = getBlock(id, false);
-		return block==null ? NO_INDEX : arrayAdapter.getBeginOffset(block.getData(), localIndex);
+		@Override
+		public int read(Object target, ByteBuffer buffer) throws IOException {
+			int length = buffer.remaining()/getAdapter().chunkSize();
+			getAdapter().read(target, buffer, 0, length);
+			return length;
+		}
+
+		@Override
+		public void write(Object source, ByteBuffer buffer, int size) throws IOException {
+			getAdapter().write(source, buffer, 0, size);
+		}
+
+		@Override
+		public Object newBlockData(int bytesPerBlock) {
+			return getAdapter().createBuffer(bytesPerBlock);
+		}
+
 	}
 
-	protected long getEndOffset(long index) {
-		int id = id(index);
-		int localIndex = localIndex(index);
+	protected class ResourceAccessor implements SynchronizedAccessor<ChunkIndex> {
 
-		Block block = getBlock(id, false);
-		return block==null ? NO_INDEX : arrayAdapter.getEndOffset(block.getData(), localIndex);
-	}
+		protected final ReadWriteAccessor delegateAccessor;
 
-	protected int setFileId(long index, int fileId) {
-		int id = id(index);
-		int localIndex = localIndex(index);
+		/**
+		 * Creates an accessor that wraps around the main resource as
+		 * returned by {@link AbstractStoredMapping#getBufferedResource()}
+		 *
+		 * @param readOnly
+		 */
+		protected ResourceAccessor(boolean readOnly) {
+			this(DefaultChunkIndex.this.getBufferedResource(), readOnly);
+		}
 
-		Block block = getBlock(id, true);
-		int result = arrayAdapter.setFileId(block.getData(), localIndex, fileId);
-		lockBlock(id, block);
+		/**
+		 * Creates an accessor that wraps around the provided {@link BufferedIOResource resource}.
+		 * This constructor is useful if a mapping implementations needs to store data in different
+		 * resources.
+		 *
+		 * @param resource
+		 * @param readOnly
+		 */
+		protected ResourceAccessor(BufferedIOResource resource, boolean readOnly) {
+			delegateAccessor = resource.newAccessor(readOnly);
+		}
 
-		return result;
-	}
+		/**
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#getSource()
+		 */
+		@Override
+		public ChunkIndex getSource() {
+			return DefaultChunkIndex.this;
+		}
 
-	protected long setBeginOffset(long index, long offset) {
-		int id = id(index);
-		int localIndex = localIndex(index);
+		/**
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#begin()
+		 */
+		@Override
+		public void begin() {
+			delegateAccessor.begin();
+		}
 
-		Block block = getBlock(id, true);
-		long result = arrayAdapter.setBeginOffset(block.getData(), localIndex, offset);
-		lockBlock(id, block);
+		/**
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#end()
+		 */
+		@Override
+		public void end() {
+			delegateAccessor.end();
+		}
 
-		return result;
-	}
+		/**
+		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#close()
+		 */
+		@Override
+		public void close() {
+			delegateAccessor.close();
+		}
 
-	protected long setEndOffset(long index, long offset) {
-		int id = id(index);
-		int localIndex = localIndex(index);
+		protected Block getBlock(int id, boolean writeAccess) {
+			return delegateAccessor.getSource().getBlock(id, writeAccess);
+		}
 
-		Block block = getBlock(id, true);
-		long result = arrayAdapter.setEndOffset(block.getData(), localIndex, offset);
-		lockBlock(id, block);
-
-		return result;
+		protected void lockBlock(int id, Block block) {
+			delegateAccessor.getSource().lockBlock(id, block);
+		}
 	}
 
 	/**
@@ -233,11 +269,10 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 	 * @author Markus Gärtner
 	 *
 	 */
-	private class Reader extends ReadWriteAccessor<ChunkIndex> implements ChunkIndexReader {
+	private class Reader extends ResourceAccessor implements ChunkIndexReader {
 
 		private Reader() {
 			super(true);
-			incrementUseCount();
 		}
 
 		/**
@@ -253,7 +288,11 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 		 */
 		@Override
 		public int getFileId(long index) {
-			return DefaultChunkIndex.this.getFileId(index);
+			int id = id(index);
+			int localIndex = localIndex(index);
+
+			Block block = getBlock(id, false);
+			return block==null ? -1 : getAdapter().getFileId(block.getData(), localIndex);
 		}
 
 		/**
@@ -261,7 +300,11 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 		 */
 		@Override
 		public long getBeginOffset(long index) {
-			return DefaultChunkIndex.this.getBeginOffset(index);
+			int id = id(index);
+			int localIndex = localIndex(index);
+
+			Block block = getBlock(id, false);
+			return block==null ? NO_INDEX : getAdapter().getBeginOffset(block.getData(), localIndex);
 		}
 
 		/**
@@ -269,7 +312,11 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 		 */
 		@Override
 		public long getEndOffset(long index) {
-			return DefaultChunkIndex.this.getEndOffset(index);
+			int id = id(index);
+			int localIndex = localIndex(index);
+
+			Block block = getBlock(id, false);
+			return block==null ? NO_INDEX : arrayAdapter.getEndOffset(block.getData(), localIndex);
 		}
 
 	}
@@ -279,11 +326,10 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 	 * @author Markus Gärtner
 	 *
 	 */
-	private class Writer extends ReadWriteAccessor<ChunkIndex> implements ChunkIndexWriter {
+	private class Writer extends ResourceAccessor implements ChunkIndexWriter {
 
 		private Writer() {
 			super(false);
-			incrementUseCount();
 		}
 
 		/**
@@ -291,7 +337,7 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 		 */
 		@Override
 		public void flush() throws IOException {
-			DefaultChunkIndex.this.flush();
+			getBufferedResource().flush();
 		}
 
 		/**
@@ -299,7 +345,14 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 		 */
 		@Override
 		public int setFileId(long index, int fileId) {
-			return DefaultChunkIndex.this.setFileId(index, fileId);
+			int id = id(index);
+			int localIndex = localIndex(index);
+
+			Block block = getBlock(id, true);
+			int result = getAdapter().setFileId(block.getData(), localIndex, fileId);
+			lockBlock(id, block);
+
+			return result;
 		}
 
 		/**
@@ -307,7 +360,14 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 		 */
 		@Override
 		public long setBeginOffset(long index, long offset) {
-			return DefaultChunkIndex.this.setBeginOffset(index, offset);
+			int id = id(index);
+			int localIndex = localIndex(index);
+
+			Block block = getBlock(id, true);
+			long result = getAdapter().setBeginOffset(block.getData(), localIndex, offset);
+			lockBlock(id, block);
+
+			return result;
 		}
 
 		/**
@@ -315,12 +375,19 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 		 */
 		@Override
 		public long setEndOffset(long index, long offset) {
-			return DefaultChunkIndex.this.setEndOffset(index, offset);
+			int id = id(index);
+			int localIndex = localIndex(index);
+
+			Block block = getBlock(id, true);
+			long result = getAdapter().setEndOffset(block.getData(), localIndex, offset);
+			lockBlock(id, block);
+
+			return result;
 		}
 
 	}
 
-	private class Cursor extends ReadWriteAccessor<ChunkIndex> implements ChunkIndexCursor {
+	private class Cursor extends ResourceAccessor implements ChunkIndexCursor {
 
 		private int id = NO_INDEX_INT;
 		private int localIndex = NO_INDEX_INT;
@@ -328,7 +395,14 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 
 		private Cursor(boolean readOnly) {
 			super(readOnly);
-			incrementUseCount();
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexCursor#isReadOnly()
+		 */
+		@Override
+		public boolean isReadOnly() {
+			return delegateAccessor.isReadOnly();
 		}
 
 		/**
@@ -336,7 +410,7 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 		 */
 		@Override
 		public void flush() throws IOException {
-			DefaultChunkIndex.this.flush();
+			getBufferedResource().flush();
 		}
 
 		/**
@@ -446,11 +520,53 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static class Builder extends BufferedIOResourceBuilder<Builder> {
+	public static class Builder extends AbstractBuilder<Builder, DefaultChunkIndex> {
 		private FileSet fileSet;
 		private IndexValueType indexValueType;
 		private Integer blockPower;
 		private ChunkArrays.ArrayAdapter arrayAdapter;
+		private Integer cacheSize;
+		private IOResource resource;
+		private BlockCache blockCache;
+
+		public Builder cacheSize(int cacheSize) {
+			checkArgument(cacheSize>0);
+			checkState(this.cacheSize==null);
+
+			this.cacheSize = Integer.valueOf(cacheSize);
+
+			return thisAsCast();
+		}
+
+		public Builder resource(IOResource resource) {
+			checkNotNull(resource);
+			checkState(this.resource==null);
+
+			this.resource = resource;
+
+			return thisAsCast();
+		}
+
+		public Builder blockCache(BlockCache blockCache) {
+			checkNotNull(blockCache);
+			checkState(this.blockCache==null);
+
+			this.blockCache = blockCache;
+
+			return thisAsCast();
+		}
+
+		public int getCacheSize() {
+			return cacheSize==null ? DEFAULT_CACHE_SIZE : cacheSize.intValue();
+		}
+
+		public IOResource getResource() {
+			return resource;
+		}
+
+		public BlockCache getBlockCache() {
+			return blockCache;
+		}
 
 		public FileSet getFileSet() {
 			return fileSet;
@@ -508,13 +624,14 @@ public class DefaultChunkIndex extends BufferedIOResource implements ChunkIndex 
 			super.validate();
 
 			checkState("Missing file set", fileSet!=null);
+			checkState("Missing resource", resource!=null);
+			checkState("Missing block cache", blockCache!=null);
 
 			//TODO
 		}
 
-		public DefaultChunkIndex build() {
-			validate();
-
+		@Override
+		protected DefaultChunkIndex create() {
 			return new DefaultChunkIndex(this);
 		}
 	}

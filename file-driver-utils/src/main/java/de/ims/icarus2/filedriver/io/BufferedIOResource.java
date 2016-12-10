@@ -168,7 +168,7 @@ public class BufferedIOResource {
 		this.bytesPerBlock = bytesPerBlock;
 	}
 
-	protected BufferedIOResource(BufferedIOResourceBuilder builder) {
+	protected BufferedIOResource(Builder builder) {
 		// TODO maybe redundant call or should leave it here for safety?
 		builder.validate();
 
@@ -636,14 +636,14 @@ public class BufferedIOResource {
 	 *
 	 * @param <B>
 	 */
-	public static class BufferedIOResourceBuilder extends AbstractBuilder<BufferedIOResourceBuilder, BufferedIOResource> {
+	public static class Builder extends AbstractBuilder<Builder, BufferedIOResource> {
 		private int cacheSize;
 		private int bytesPerBlock;
 		private IOResource resource;
 		private BlockCache blockCache;
 		private PayloadConverter payloadConverter;
 
-		public BufferedIOResourceBuilder cacheSize(int cacheSize) {
+		public Builder cacheSize(int cacheSize) {
 			checkArgument(cacheSize>=0);
 			checkState(this.cacheSize==0);
 
@@ -652,7 +652,7 @@ public class BufferedIOResource {
 			return thisAsCast();
 		}
 
-		public BufferedIOResourceBuilder bytesPerBlock(int bytesPerBlock) {
+		public Builder bytesPerBlock(int bytesPerBlock) {
 			checkArgument(bytesPerBlock>=0);
 			checkState(this.bytesPerBlock==0);
 
@@ -661,7 +661,7 @@ public class BufferedIOResource {
 			return thisAsCast();
 		}
 
-		public BufferedIOResourceBuilder resource(IOResource resource) {
+		public Builder resource(IOResource resource) {
 			checkNotNull(resource);
 			checkState(this.resource==null);
 
@@ -670,7 +670,7 @@ public class BufferedIOResource {
 			return thisAsCast();
 		}
 
-		public BufferedIOResourceBuilder blockCache(BlockCache blockCache) {
+		public Builder blockCache(BlockCache blockCache) {
 			checkNotNull(blockCache);
 			checkState(this.blockCache==null);
 
@@ -679,7 +679,7 @@ public class BufferedIOResource {
 			return thisAsCast();
 		}
 
-		public BufferedIOResourceBuilder payloadConverter(PayloadConverter payloadConverter) {
+		public Builder payloadConverter(PayloadConverter payloadConverter) {
 			checkNotNull(payloadConverter);
 			checkState(this.payloadConverter==null);
 

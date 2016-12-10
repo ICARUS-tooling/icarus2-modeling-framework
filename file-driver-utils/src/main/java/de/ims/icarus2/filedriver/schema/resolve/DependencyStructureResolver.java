@@ -18,7 +18,7 @@
 package de.ims.icarus2.filedriver.schema.resolve;
 
 import java.util.Arrays;
-import java.util.function.Consumer;
+import java.util.function.ObjLongConsumer;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.Converter;
@@ -51,7 +51,7 @@ public class DependencyStructureResolver implements BatchResolver, ResolverOptio
 
 	private StructureLayer dependencyLayer;
 
-	private Consumer<Item> structureSaveAction;
+	private ObjLongConsumer<Item> structureSaveAction;
 
 	// Configuration
 
@@ -209,17 +209,16 @@ public class DependencyStructureResolver implements BatchResolver, ResolverOptio
 		structureBuilder.addEdges(edges, 0, context.currentIndex());
 		structureBuilder.setBoundaryContainer(sentence);
 		structureBuilder.setBaseContainer(sentence);
+		Structure dependencyTree = structureBuilder.build();
 
 		/*
-		 *  Mirror index value of sentence, since syntax structures
-		 *  are expected to  have a 1-to-1 mapping to their boundary
-		 *  sentences.
+		 * Push structure into back-end storage.
+		 *
+		 * Mirror index value of sentence, since syntax structures
+		 * are expected to  have a 1-to-1 mapping to their boundary
+		 * sentences.
 		 */
-		Structure dependencyTree = structureBuilder.build();
-		dependencyTree.setIndex(sentence.getIndex());
-
-		// Push structure into back-end storage
-		structureSaveAction.accept(dependencyTree);
+		structureSaveAction.accept(dependencyTree, sentence.getIndex());
 
 		// Reset buffers
 		Arrays.fill(heads, 0, length, UNDEFINED_POINTER);

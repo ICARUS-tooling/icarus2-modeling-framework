@@ -40,6 +40,7 @@ import de.ims.icarus2.model.util.ModelUtils;
  */
 public class BufferedItemManager {
 
+	//TODO create builder that allows driver to inject recycle actions through LayerBuffer constructors
 	private final Int2ObjectMap<LayerBuffer> layerBuffers;
 
 	public LayerBuffer getBuffer(ItemLayer layer) {
@@ -59,7 +60,7 @@ public class BufferedItemManager {
 	}
 
 	public void close() {
-		layerBuffers.forEach((key, buffer) -> {buffer.clear();});
+		layerBuffers.forEach((key, buffer) -> buffer.clear());
 		layerBuffers.clear();
 	}
 

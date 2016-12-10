@@ -53,4 +53,11 @@ public interface ResolverContext {
 	 * @return
 	 */
 	CharSequence rawData();
+
+	/**
+	 * Tells the context that the current raw input line should be treated as being consumed,
+	 * meaning that the code controlling the read operation must not pass it on to other
+	 * subsequent tasks.
+	 */
+	void consumeData();
 }

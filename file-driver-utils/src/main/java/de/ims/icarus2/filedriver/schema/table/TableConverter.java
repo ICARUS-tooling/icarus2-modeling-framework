@@ -200,7 +200,7 @@ public class TableConverter extends SchemaBasedConverter {
 
 		// Read in content lines until a stop line is detected or the iterator runs out of lines
 		while(!blockHandler.isEndLine(context)) {
-			blockHandler.processContentLine(context);
+			blockHandler.processColumns(context);
 			if(!lines.next()) {
 				break;
 			}
@@ -301,11 +301,14 @@ public class TableConverter extends SchemaBasedConverter {
 	 */
 	protected static class InputResolverContext implements ResolverContext {
 
+		private int containerIndex;
 		private Container container;
 		private int index;
 		private Item item;
 		private Item pendingItem;
 		private CharSequence data;
+
+		private boolean consumed;
 
 		private final Map<String, Item> namedSubstitues = new Object2ObjectOpenHashMap<>();
 
@@ -357,9 +360,18 @@ public class TableConverter extends SchemaBasedConverter {
 			return data;
 		}
 
+		/**
+		 * @see de.ims.icarus2.filedriver.schema.resolve.ResolverContext#consumeData()
+		 */
+		@Override
+		public void consumeData() {
+			consumed = true;
+		}
+
 		public void setData(CharSequence newData) {
 			checkNotNull(newData);
 			data = newData;
+			consumed = false;
 		}
 
 		public int getColumnIndex() {
@@ -427,6 +439,10 @@ public class TableConverter extends SchemaBasedConverter {
 			});
 
 			return result.getAsList();
+		}
+
+		public boolean isDataConsumed() {
+			return consumed;
 		}
 	}
 
@@ -916,6 +932,12 @@ public class TableConverter extends SchemaBasedConverter {
 		}
 	}
 
+	private static void advanceLine(LineIterator lines, InputResolverContext context) {
+		if(!lines.next())
+			throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT, "Unexpected end of input");
+		context.setData(lines.getLine());
+	}
+
 	/**
 	 *
 	 * @author Markus Gärtner
@@ -1054,6 +1076,8 @@ public class TableConverter extends SchemaBasedConverter {
 		private final BlockHandler parent;
 
 		private final BlockSchema blockSchema;
+
+		private final BlockHandler[] nestedBlockHandlers;
 
 		/**
 		 * All the column handlers in the order of their respective
@@ -1213,6 +1237,15 @@ public class TableConverter extends SchemaBasedConverter {
 			itemFactory.setIdFactory(itemIndices::increment); //FIXME needs proper linking to index mapping!
 			this.componentFactory = itemFactory;
 
+			BlockSchema[] nestedBlockSchemas = blockSchema.getNestedBlocks();
+			if(nestedBlockSchemas.length>0) {
+				nestedBlockHandlers = new BlockHandler[nestedBlockSchemas.length];
+				for(int i=0; i<nestedBlockHandlers.length; i++) {
+					nestedBlockHandlers[i] = new BlockHandler(nestedBlockSchemas[i], this);				}
+			} else {
+				nestedBlockHandlers = null;
+			}
+
 			/*
 			 * IMPORTANT
 			 *
@@ -1224,7 +1257,13 @@ public class TableConverter extends SchemaBasedConverter {
 			 * for the former there is no mapping available yet.
 			 */
 
-			//DEBUG
+			/*
+			 * DEBUG
+			 *
+			 * For now we do not support arbitrary attribute handler outside of
+			 * regular column content. Needs to be implemented on the next higher
+			 * level of input processing.
+			 */
 			attributeHandlers = null;
 		}
 
@@ -1383,7 +1422,104 @@ public class TableConverter extends SchemaBasedConverter {
 			characterCursor.setRange(columnOffsets[idx], columnOffsets[idx+1]);
 		}
 
-		public void processContentLine(InputResolverContext context) {
+		/**
+		 * {@link TableConverter#advanceLine(LineIterator, InputResolverContext) advances}
+		 * lines till a line indicating a valid {@link #isBeginLine(InputResolverContext) begin}
+		 * of content data is found.
+		 * <p>
+		 * If in the process the last processed line is consumed, this method will advance an
+		 * additional line.
+		 *
+		 * @param lines
+		 * @param context
+		 */
+		private void scanBegin(LineIterator lines, InputResolverContext context) {
+			while(!isBeginLine(context)) {
+				advanceLine(lines, context);
+			}
+
+			if(context.isDataConsumed()) {
+				advanceLine(lines, context);
+			}
+		}
+
+		/**
+		 * {@link TableConverter#advanceLine(LineIterator, InputResolverContext) advances}
+		 * lines till a line indicating a valid {@link #isEndLine(InputResolverContext) end}
+		 * of content data is found.
+		 * <p>
+		 * If in the process the last processed line is consumed, this method will try to advance an
+		 * additional line.
+		 *
+		 * @param lines
+		 * @param context
+		 */
+		private void scanEnd(LineIterator lines, InputResolverContext context) {
+			while(!isEndLine(context)) {
+				advanceLine(lines, context);
+			}
+
+			if(context.isDataConsumed() && lines.next()) {
+				context.setData(lines.getLine());
+			}
+		}
+
+		private boolean readNestedBlocks(LineIterator lines, InputResolverContext context) {
+			if(nestedBlockHandlers!=null) {
+
+				// Allow all nested block handlers to fully read their content
+				for(int i=0; i<nestedBlockHandlers.length; i++) {
+					//TODO evaluate if we should support "empty" blocks that do not need to match actual content
+					nestedBlockHandlers[i].readChunk(lines, context);
+				}
+
+				// Make sure we also scan till the end of our content
+				scanEnd(lines, context);
+
+				return true;
+			}
+
+			return false;
+		}
+
+		public void readChunk(LineIterator lines, InputResolverContext context) {
+
+			// Initialize with current raw line of content
+			context.setData(lines.getLine());
+
+			// Scan for beginning of content
+			scanBegin(lines, context);
+
+			// NOTE: we can either have column content OR nested blocks
+			if(!readNestedBlocks(lines, context)) {
+				readColumnLines(lines, context);
+			}
+		}
+
+		private void readColumnLines(LineIterator lines, InputResolverContext context) {
+
+			// Prepare for beginning of content (notify batch resolvers)
+			beginContent(context);
+
+			// Read in content lines until a stop line is detected or the iterator runs out of lines
+			while(!isEndLine(context)) {
+				processColumns(context);
+				if(!lines.next()) {
+					break;
+				}
+				context.setData(lines.getLine());
+			}
+
+			// Finalize content (notify batch resolvers)
+			endContent(context);
+
+			// Ensure that we advance in case the final line got consumed (this should usually hapen when reading a content line)
+			if(context.isDataConsumed() && lines.next()) {
+				context.setData(lines.getLine());
+			}
+		}
+
+		private void processColumns(InputResolverContext context) {
 			final CharSequence rawContent = context.rawData();
 
 			try {
@@ -1428,6 +1564,7 @@ public class TableConverter extends SchemaBasedConverter {
 
 			} finally {
 				context.setData(rawContent);
+				context.consumeData();
 			}
 		}
 

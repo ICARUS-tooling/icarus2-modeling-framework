@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -67,7 +68,7 @@ import de.ims.icarus2.util.collections.set.SingletonSet;
  * @author Markus Gärtner
  *
  */
-public class StructureBuilder {
+public class StructureBuilder implements ModelConstants {
 
 	public static StructureBuilder newBuilder(StructureManifest manifest) {
 		checkNotNull(manifest);
@@ -132,6 +133,8 @@ public class StructureBuilder {
 	private StaticStructure currentStructure;
 
 	private boolean augmented = false;
+
+	private long id;
 
 	@Override
 	public String toString() {
@@ -472,6 +475,13 @@ public class StructureBuilder {
 		this.boundaryContainer = boundaryContainer;
 	}
 
+	public void setId(long id) {
+		checkState(this.id==NO_INDEX);
+		checkArgument(id!=NO_INDEX);
+
+		this.id = id;
+	}
+
 	public void clearNodes() {
 		nodes().clear();
 	}
@@ -578,6 +588,8 @@ public class StructureBuilder {
 		root = null;
 
 		augmented = false;
+
+		id = NO_INDEX;
 	}
 
 	/**
@@ -613,6 +625,7 @@ public class StructureBuilder {
 
 		root.setStructure(structure);
 		structure.setAugmented(augmented);
+		structure.setId(id);
 
 		// Clear buffer for next building process
 		reset();

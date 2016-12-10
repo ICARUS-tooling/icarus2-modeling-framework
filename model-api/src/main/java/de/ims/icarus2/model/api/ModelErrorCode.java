@@ -133,6 +133,12 @@ public enum ModelErrorCode implements ErrorCode {
 	 */
 	DRIVER_INVALID_CONTENT(410),
 
+	/**
+	 * Client code attempted to call one of the write methods of the {@link Driver} interface on
+	 * a corpus resource that has been declared as not editable.
+	 */
+	DRIVER_NOT_EDITABLE(411),
+
 	//**************************************************
 	//       5xx  CORPUS VIEW ERRORS
 	//**************************************************

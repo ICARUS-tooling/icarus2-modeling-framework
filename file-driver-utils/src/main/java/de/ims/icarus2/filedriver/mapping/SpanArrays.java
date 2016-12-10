@@ -116,6 +116,7 @@ public class SpanArrays {
 	 * @author Markus Gärtner
 	 * @deprecated
 	 */
+	@Deprecated
 	private static class ShortSpanAdapter implements SpanAdapter {
 
 		// from | to
@@ -279,6 +280,7 @@ public class SpanArrays {
 	 * @author Markus Gärtner
 	 * @deprecated
 	 */
+	@Deprecated
 	private static class IntSpanAdapter implements SpanAdapter {
 
 		// from | to
@@ -442,6 +444,7 @@ public class SpanArrays {
 	 * @author Markus Gärtner
 	 * @deprecated
 	 */
+	@Deprecated
 	private static class LongSpanAdapter implements SpanAdapter {
 
 		// from | to

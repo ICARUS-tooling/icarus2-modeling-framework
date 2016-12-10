@@ -66,7 +66,7 @@ public abstract class AbstractStoredMapping implements WritableMapping {
 		resource = builder.createBufferedIOResource();
 	}
 
-	public BufferedIOResource getResource() {
+	public BufferedIOResource getBufferedResource() {
 		return resource;
 	}
 
@@ -146,6 +146,10 @@ public abstract class AbstractStoredMapping implements WritableMapping {
 		// no-op
 	}
 
+	public void delete() throws IOException {
+		resource.delete();
+	}
+
 	/**
 	 * Allows subclasses to perform compression or other means of
 	 * storage optimization. This method should only be called once
@@ -169,12 +173,12 @@ public abstract class AbstractStoredMapping implements WritableMapping {
 
 		/**
 		 * Creates an accessor that wraps around the main resource as
-		 * returned by {@link AbstractStoredMapping#getResource()}
+		 * returned by {@link AbstractStoredMapping#getBufferedResource()}
 		 *
 		 * @param readOnly
 		 */
 		protected ResourceAccessor(boolean readOnly) {
-			this(AbstractStoredMapping.this.getResource(), readOnly);
+			this(AbstractStoredMapping.this.getBufferedResource(), readOnly);
 		}
 
 		/**

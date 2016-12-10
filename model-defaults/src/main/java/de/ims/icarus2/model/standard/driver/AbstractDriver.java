@@ -356,6 +356,11 @@ public abstract class AbstractDriver implements Driver {
 			throw new ModelException(ModelErrorCode.DRIVER_CONNECTION, "Driver not yet connected: "+manifest.getId());
 	}
 
+	protected void checkEditable() {
+		if(!manifest.getContextManifest().isEditable())
+			throw new ModelException(ModelErrorCode.DRIVER_NOT_EDITABLE, "Driver not editable: "+manifest.getId());
+	}
+
 	/**
 	 * Throws {@link ModelException} with code {@link GlobalErrorCode#DRIVER_READY} in case
 	 * the driver is not currently ready.

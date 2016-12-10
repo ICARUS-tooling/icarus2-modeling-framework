@@ -4,7 +4,7 @@
 	<separator>WHITESPACES</separator>
 	
 	<block layerId="sentence">
-		<component memberType="container" />			
+		<component memberType="container" />	
 		<endDelimiter>EMPTY_LINE</endDelimiter>		
 		<block layerID="token">			
 			<component memberType="item" />			

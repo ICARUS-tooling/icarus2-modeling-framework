@@ -58,7 +58,6 @@ import de.ims.icarus2.filedriver.io.sets.FileSet;
 import de.ims.icarus2.filedriver.mapping.AbstractStoredMapping;
 import de.ims.icarus2.filedriver.mapping.DefaultMappingFactory;
 import de.ims.icarus2.filedriver.mapping.MappingFactory;
-import de.ims.icarus2.filedriver.mapping.MappingImplIdentity;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndex;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexCursor;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexStorage;
@@ -91,7 +90,6 @@ import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.driver.AbstractDriver;
 import de.ims.icarus2.model.standard.driver.BufferedItemManager;
@@ -289,11 +287,6 @@ public class FileDriver extends AbstractDriver {
 			builder.addMapping(mapping);
 		});
 
-		for(LayerManifest layerManifest : manifest.getContextManifest().getLayerManifests(ManifestUtils::isItemLayerManifest)) {
-			Mapping mapping = defaultCreateRootMapping((ItemLayerManifest) layerManifest);
-			builder.addMapping(mapping);
-		}
-
 		return builder.build();
 	}
 
@@ -303,19 +296,6 @@ public class FileDriver extends AbstractDriver {
 	 */
 	protected Mapping defaultCreateMapping(MappingFactory mappingFactory, MappingManifest mappingManifest, Options options) {
 		return FileDriverUtils.createMapping(mappingFactory, mappingManifest, metadataRegistry, options);
-	}
-
-	/**
-	 * Hook to customize creation of root mappings for {@link ItemLayerManifest item layers}.
-	 * The default implementation simply creates a new {@link MappingImplIdentity identity mapping}.
-	 *
-	 * @param layerManifest
-	 * @return
-	 */
-	protected Mapping defaultCreateRootMapping(ItemLayerManifest layerManifest) {
-		//TODO check metadata and create specialized mapping if it's not basic dientity mapping!
-
-		return new MappingImplIdentity(this, layerManifest);
 	}
 
 	public void resetMappings() {
@@ -404,25 +384,29 @@ public class FileDriver extends AbstractDriver {
 	@Override
 	public void addItem(ItemLayer layer, Item item, long index) {
 		checkConnected();
+		checkEditable();
 
-		// TODO Auto-generated method stub
-		super.addItem(layer, item, index);
+		getLayerBuffer(layer).add(item, index);
+
+		//TODO refresh index mapping
 	}
 
 	@Override
 	public void removeItem(ItemLayer layer, Item item, long index) {
 		checkConnected();
+		checkEditable();
 
-		// TODO Auto-generated method stub
-		super.removeItem(layer, item, index);
+		Item removedItem = getLayerBuffer(layer).remove(index);
+
+		//TODO refresh index mapping
 	}
 
 	@Override
 	public void moveItem(ItemLayer layer, Item item, long fromIndex, long toIndex) {
 		checkConnected();
+		checkEditable();
 
-		// TODO Auto-generated method stub
-		super.moveItem(layer, item, fromIndex, toIndex);
+		//TODO refresh content of LayerBuffer for given layer and then schedule update for index mappers?
 	}
 
 	/**
@@ -1093,7 +1077,7 @@ public class FileDriver extends AbstractDriver {
 				missingIndicesCount = requestedItemCount;
 			} else {
 
-				OfLong it = IndexSet.asIterator(indices);
+				OfLong it = IndexUtils.asIterator(indices);
 
 				buffer.load(it, this::onAvailableItem, this::onMissingItem);
 
