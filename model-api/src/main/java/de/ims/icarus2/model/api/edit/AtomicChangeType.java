@@ -29,7 +29,8 @@ import de.ims.icarus2.util.strings.StringResource;
  */
 public enum AtomicChangeType implements StringResource {
 
-	INDEX_CHANGE("index"),
+	@Deprecated
+	ID_CHANGE("index"),
 
 	ITEM_CHANGE("item"),
 	ITEM_MOVE_CHANGE("item-move"),

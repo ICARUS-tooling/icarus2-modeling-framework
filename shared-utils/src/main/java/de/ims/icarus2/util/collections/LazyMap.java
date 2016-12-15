@@ -34,19 +34,19 @@ import java.util.function.Supplier;
  */
 public class LazyMap<K extends Object, V extends Object> implements BiConsumer<K, V> {
 
-	public static <K extends Object, V extends Object> LazyMap<K, V> lazyHashMap(final int capacity) {
+	public static <K extends Object, V extends Object> LazyMap<K, V> lazyNativeHashMap(final int capacity) {
 		return new LazyMap<>(()-> new HashMap<>(capacity));
 	}
 
-	public static <K extends Object, V extends Object> LazyMap<K, V> lazyHashMap() {
+	public static <K extends Object, V extends Object> LazyMap<K, V> lazyNativeHashMap() {
 		return new LazyMap<>(HashMap::new);
 	}
 
-	public static <K extends Object, V extends Object> LazyMap<K, V> lazyTHashMap(final int capacity) {
+	public static <K extends Object, V extends Object> LazyMap<K, V> lazyHashMap(final int capacity) {
 		return new LazyMap<>(()-> new Object2ObjectOpenHashMap<>(capacity));
 	}
 
-	public static <K extends Object, V extends Object> LazyMap<K, V> lazyTHashMap() {
+	public static <K extends Object, V extends Object> LazyMap<K, V> lazyHashMap() {
 		return new LazyMap<>(Object2ObjectOpenHashMap::new);
 	}
 

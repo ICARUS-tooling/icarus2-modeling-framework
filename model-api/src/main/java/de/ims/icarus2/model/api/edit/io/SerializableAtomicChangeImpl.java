@@ -62,65 +62,6 @@ public class SerializableAtomicChangeImpl {
 					Messages.mismatchMessage(msg, ModelUtils.getName(expected), ModelUtils.getName(item)));
 	}
 
-
-	/**
-	 *
-	 * @author Markus Gärtner
-	 *
-	 * @deprecated maintaining the index value of an item is left to the driver implementation that manages it
-	 */
-	public static class IndexChange implements SerializableAtomicChange {
-		protected final Item item;
-		protected long expectedIndex;
-		protected long newIndex;
-
-		public IndexChange(Item item, long expectedIndex, long newIndex) {
-			this.item = item;
-			this.expectedIndex = expectedIndex;
-			this.newIndex = newIndex;
-		}
-
-		protected IndexChange(AtomicChangeProxy proxy) {
-			this(proxy.getItem1(), proxy.getIndex1(), proxy.getIndex2());
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#execute()
-		 */
-		@Override
-		public void execute() {
-			long index = item.getIndex();
-			if(index!=expectedIndex)
-				throw new ModelException(item.getCorpus(), ModelErrorCode.MODEL_CORRUPTED_EDIT, "Expected index "+expectedIndex+" - got "+item); //$NON-NLS-1$ //$NON-NLS-2$
-
-			// Fail-fast for invalid index values
-			item.setIndex(newIndex);
-
-			long tmp = expectedIndex;
-			expectedIndex = newIndex;
-			newIndex = tmp;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#getAffectedMember()
-		 */
-		@Override
-		public CorpusMember getAffectedMember() {
-			return item;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.edit.io.SerializableAtomicChange#toProxy()
-		 */
-		@Override
-		public AtomicChangeProxy toProxy() {
-			return new AtomicChangeProxy(AtomicChangeType.INDEX_CHANGE)
-				.setItem1(item)
-				.setIndex1(expectedIndex)
-				.setIndex2(newIndex);
-		}
-	}
-
 	/**
 	 * Models the {@link CorpusModel#addItem(Container, long, Item)}
 	 * and {@link CorpusModel#removeItem(Container, long)} changes.
@@ -1172,7 +1113,6 @@ public class SerializableAtomicChangeImpl {
 
 		switch (proxy.getType()) {
 
-		case INDEX_CHANGE: return new IndexChange(proxy);
 		case ITEM_CHANGE: return new ItemChange(proxy);
 		case ITEM_MOVE_CHANGE: return new ItemMoveChange(proxy);
 		case ITEMS_CHANGE: return new ItemSequenceChange(proxy);

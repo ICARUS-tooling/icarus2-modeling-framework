@@ -186,7 +186,6 @@ public class ProxyContainer extends AbstractImmutableContainer {
 	 */
 	@Override
 	public boolean isDirty() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 

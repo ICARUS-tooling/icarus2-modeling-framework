@@ -52,7 +52,6 @@ import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.registry.LayerMemberFactory;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
@@ -75,8 +74,6 @@ import de.ims.icarus2.util.nio.SubChannel;
 public abstract class AbstractConverter implements Converter {
 
 	private FileDriver driver;
-
-	private LayerMemberFactory memberFactory;
 
 	private final Int2ObjectMap<Cursor> activeCursors = new Int2ObjectOpenHashMap<>();
 
@@ -106,7 +103,6 @@ public abstract class AbstractConverter implements Converter {
 		checkState("Driver already set", this.driver==null);
 
 		this.driver = driver;
-		memberFactory = driver.newMemberFactory();
 	}
 
 	protected static void checkInterrupted() throws InterruptedException {
@@ -123,10 +119,6 @@ public abstract class AbstractConverter implements Converter {
 					"Converter not yet initialized or already closed again");
 
 		return driver;
-	}
-
-	protected LayerMemberFactory getMemberFactory() {
-		return memberFactory;
 	}
 
 	/**
@@ -171,12 +163,23 @@ public abstract class AbstractConverter implements Converter {
 			throw new ModelException(ModelErrorCode.DRIVER_ERROR,
 					"Duplicate attempt to acquire cursor for file at index: "+fileIndex);
 
-		DelegatingCursor cursor = new DelegatingCursor(fileIndex, layer);
+		DelegatingCursor cursor = createDelegatingCursor(fileIndex, layer);
 
 		// Open now so we have the I/O initialization work out of the way
 		cursor.open();
 
 		return cursor;
+	}
+
+	/**
+	 * Hook for subclasses to create custom cursors.
+	 *
+	 * @param fileIndex
+	 * @param layer
+	 * @return
+	 */
+	protected DelegatingCursor createDelegatingCursor(int fileIndex, ItemLayer layer) {
+		return new DelegatingCursor(fileIndex, layer);
 	}
 
 	/**
@@ -191,7 +194,7 @@ public abstract class AbstractConverter implements Converter {
 	 * @param fileIndex
 	 * @param cursor
 	 */
-	protected void cursorOpened(int fileIndex, Cursor cursor) {
+	protected void cursorOpened(int fileIndex, DelegatingCursor cursor) {
 		activeCursors.put(fileIndex, cursor);
 	}
 
@@ -207,7 +210,7 @@ public abstract class AbstractConverter implements Converter {
 	 * @param fileIndex
 	 * @param cursor
 	 */
-	protected void cursorClosed(int fileIndex, Cursor cursor) {
+	protected void cursorClosed(int fileIndex, DelegatingCursor cursor) {
 		activeCursors.remove(fileIndex);
 	}
 
@@ -221,8 +224,9 @@ public abstract class AbstractConverter implements Converter {
 	 * @param stream
 	 * @return
 	 * @throws IOException
+	 * @throws InterruptedException
 	 */
-	protected abstract Item readItemFromCursor(DelegatingCursor cursor) throws IOException;
+	protected abstract Item readItemFromCursor(DelegatingCursor cursor) throws IOException, InterruptedException;
 
 	/**
 	 * Returns a recommended buffer size when reading in chunks of data block-wise.
@@ -275,6 +279,7 @@ public abstract class AbstractConverter implements Converter {
 	 * @param group
 	 * @return
 	 */
+	@Deprecated
 	protected IndexSourceLookup createIndexSourcesForCursor(LayerGroup group) {
 		checkNotNull(group);
 
@@ -292,7 +297,7 @@ public abstract class AbstractConverter implements Converter {
 	/**
 	 * Traverses the given layer's list of {@link Layer#getBaseLayers() base layers}
 	 * and for each such layer that is located within the same group as the given layer
-	 * itself creates a new {@link MappedIndexSource}. Will throw an exception if the
+	 * itself creates a new {@link MappedComponentSupplier}. Will throw an exception if the
 	 * surrounding driver fails to provide the necessary {@link Mapping} for this combination
 	 * of layers.
 	 * <p>
@@ -301,6 +306,7 @@ public abstract class AbstractConverter implements Converter {
 	 * @param parentLayer
 	 * @throws ModelException if the host driver cannot provide a required {@link Mapping}
 	 */
+	@Deprecated
 	private void collectIndexSources0(ItemLayer parentLayer, List<IndexSource> storage) {
 		DataSet<ItemLayer> baseLayers = parentLayer.getBaseLayers();
 		for(ItemLayer baseLayer : baseLayers) {
@@ -341,7 +347,7 @@ public abstract class AbstractConverter implements Converter {
 	 * @author Markus Gärtner
 	 *
 	 */
-	protected class DelegatingCursor implements Cursor {
+	protected class DelegatingCursor implements Cursor, ModelConstants {
 
 		/**
 		 * Integer index of the file to be loaded
@@ -371,10 +377,10 @@ public abstract class AbstractConverter implements Converter {
 			chunkIndex = getFileDriver().getChunkIndex(primaryLayer);
 		}
 
-		protected ChunkIndexCursor chunkIndexCursor;
-		protected FileChannel fileChannel;
-		protected final SubChannel blockChannel = new SubChannel();
-		protected IndexSourceLookup indexSourceLookup;
+		private ChunkIndexCursor chunkIndexCursor;
+		private FileChannel fileChannel;
+		private final SubChannel blockChannel = new SubChannel();
+		private long currentIndex;
 
 		private volatile boolean open = false;
 
@@ -384,7 +390,6 @@ public abstract class AbstractConverter implements Converter {
 		 * <li>{@link FileChannel#open(Path, java.nio.file.OpenOption...) Opening} of the underlying file channel</li>
 		 * <li>Linking of the block-wise {@link SubChannel} to the open {@link FileChannel}</li>
 		 * <li>{@link ChunkIndex#newCursor(boolean) Acquisition} of a read-only {@link ChunkIndexCursor}</li>
-		 * <li>Creation of a new {@link IndexSourceLookup} ({@link AbstractConverter#createIndexSourcesForCursor(LayerGroup) delegated} to the host converter)</li>
 		 * </ol>
 		 *
 		 * Finally the host converter is {@link AbstractConverter#cursorOpened(int, de.ims.icarus2.filedriver.Converter.Cursor) opened}
@@ -400,9 +405,6 @@ public abstract class AbstractConverter implements Converter {
 
 			// Read-only access to the chunk index
 			chunkIndexCursor = chunkIndex.newCursor(true);
-
-			// Let converter customize the index sources for this cursor
-			indexSourceLookup = createIndexSourcesForCursor(layer.getLayerGroup());
 
 			// Inform converter (will be skipped in case of any exception)
 			cursorOpened(fileIndex, this);
@@ -432,14 +434,25 @@ public abstract class AbstractConverter implements Converter {
 				// Reposition our channel window
 				blockChannel.setOffsets(beginOffset, length);
 
-				// Refresh root of index lookup to point to our current index
-				indexSourceLookup.getIndexSource(0).reset(index);
+				currentIndex = index;
 
 				// Delegate reading to converter
 				result = readItemFromCursor(this);
 			}
 
 			return result;
+		}
+
+		protected void doClose() throws IOException {
+			// No checked exception, so let's close this first
+			chunkIndexCursor.close();
+
+			// This might fail due to I/O stuff beyond our control
+			fileChannel.close();
+
+			currentIndex = NO_INDEX;
+
+			//TODO do other cleanup work
 		}
 
 		/**
@@ -449,14 +462,7 @@ public abstract class AbstractConverter implements Converter {
 		public void close() throws IOException {
 
 			try {
-				// No checked exception, so let's close this first
-				chunkIndexCursor.close();
-
-				// This might fail due to I/O stuff beyond our control
-				fileChannel.close();
-
-				//TODO do other cleanup work
-
+				doClose();
 			} finally {
 				open = false;
 
@@ -488,16 +494,16 @@ public abstract class AbstractConverter implements Converter {
 			return chunkIndexCursor;
 		}
 
-		public IndexSourceLookup getIndexSourceLookup() {
-			return indexSourceLookup;
-		}
-
 		public final FileChannel getFileChannel() {
 			return fileChannel;
 		}
 
 		public final SubChannel getBlockChannel() {
 			return blockChannel;
+		}
+
+		public long getCurrentIndex() {
+			return currentIndex;
 		}
 	}
 
@@ -874,7 +880,7 @@ public abstract class AbstractConverter implements Converter {
 				long result = spanBegin+index;
 				if(result>spanEnd)
 					throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-							Messages.indexOutOfBoundsMessage("MappedIndexSource.indexAt(int)", 0, size(), index));
+							Messages.indexOutOfBoundsMessage("MappedComponentSupplier.indexAt(int)", 0, size(), index));
 				return result;
 			} else {
 				return buffer.indexAt(IcarusUtils.ensureIntegerValueRange(index));

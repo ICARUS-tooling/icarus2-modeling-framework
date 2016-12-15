@@ -45,6 +45,8 @@ import java.util.NoSuchElementException;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import com.google.common.collect.MapMaker;
 
@@ -260,6 +262,30 @@ public final class CollectionUtils {
     	for(long item : items) {
     		collection.add(item);
     	}
+    }
+
+    public static <T extends Object> Set<T> aggregateAsSet(Consumer<Consumer<? super T>> aggregateMethod) {
+    	LazyCollection<T> result = LazyCollection.lazySet();
+
+    	aggregateMethod.accept(result::add);
+
+    	return result.getAsSet();
+    }
+
+    public static <T extends Object> List<T> aggregateAsList(Consumer<Consumer<? super T>> aggregateMethod) {
+    	LazyCollection<T> result = LazyCollection.lazySet();
+
+    	aggregateMethod.accept(result::add);
+
+    	return result.getAsList();
+    }
+
+    public static <K extends Object, V extends Object> Map<K, V> aggregateAsMap(Consumer<BiConsumer<? super K, ? super V>> aggregateMethod) {
+    	LazyMap<K, V> result = LazyMap.lazyHashMap();
+
+    	aggregateMethod.accept(result::add);
+
+    	return result.get();
     }
 
     public static <T extends Comparable<? super T>> List<T> asSortedList(Collection<T> items) {

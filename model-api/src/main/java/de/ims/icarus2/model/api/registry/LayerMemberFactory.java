@@ -41,11 +41,52 @@ import de.ims.icarus2.model.manifest.api.StructureManifest;
  */
 public interface LayerMemberFactory {
 
-	Container newContainer(ContainerManifest manifest, Container host);
+	/**
+	 * Creates a new general container that is linked to the given {@code host} container
+	 * using the given {@code manifest} as hint for optimizing the implementation.
+	 * If the {@code host} is a {@link Container#isProxy() proxy} container than the
+	 * returned type will be an implementation suitable for being a {@link Item#isTopLevel() top-level}
+	 * member.
+	 *
+	 * @param manifest
+	 * @param host
+	 * @param id
+	 * @return
+	 */
+	Container newContainer(ContainerManifest manifest, Container host, long id);
 
-	Structure newStructure(StructureManifest manifest, Container host);
+	/**
+	 * Creates a new general structure that is linked to the given {@code host} container
+	 * using the given {@code manifest} as hint for optimizing the implementation.
+	 * If the {@code host} is a {@link Container#isProxy() proxy} container than the
+	 * returned type will be an implementation suitable for being a {@link Item#isTopLevel() top-level}
+	 * member.
+	 *
+	 * @param manifest
+	 * @param host
+	 * @param id
+	 * @return
+	 */
+	Structure newStructure(StructureManifest manifest, Container host, long id);
 
-	Item newItem(Container host);
+	/**
+	 * Creates a new general item that is linked to the given {@code host} container.
+	 * If the {@code host} is a {@link Container#isProxy() proxy} container than the
+	 * returned type will be an implementation suitable for being a {@link Item#isTopLevel() top-level}
+	 * member.
+	 *
+	 * @param host
+	 * @param id
+	 * @return
+	 */
+	Item newItem(Container host, long id);
 
-	Edge newEdge(Structure host);
+	/**
+	 * Creates a new edge that is linked to the given {@code host} structure.
+	 *
+	 * @param host
+	 * @param id
+	 * @return
+	 */
+	Edge newEdge(Structure host, long id);
 }

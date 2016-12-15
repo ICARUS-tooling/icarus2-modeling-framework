@@ -84,6 +84,16 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		this.owner = structure;
 	}
 
+	/**
+	 * Always returns {@code false}.
+	 *
+	 * @see de.ims.icarus2.model.api.members.item.Item#isTopLevel()
+	 */
+	@Override
+	public boolean isTopLevel() {
+		return false;
+	}
+
 	public abstract int getEdgeCount();
 
 	public abstract E getEdgeAt(int index);

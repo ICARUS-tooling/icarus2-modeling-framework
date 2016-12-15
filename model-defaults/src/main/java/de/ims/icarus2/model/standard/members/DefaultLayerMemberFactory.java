@@ -27,6 +27,9 @@ import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.registry.LayerMemberFactory;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
+import de.ims.icarus2.model.standard.driver.cache.TrackedMember.TrackedContainer;
+import de.ims.icarus2.model.standard.driver.cache.TrackedMember.TrackedItem;
+import de.ims.icarus2.model.standard.driver.cache.TrackedMember.TrackedStructure;
 import de.ims.icarus2.model.standard.members.container.DefaultContainer;
 import de.ims.icarus2.model.standard.members.container.ItemStorage;
 import de.ims.icarus2.model.standard.members.item.DefaultItem;
@@ -44,10 +47,11 @@ public class DefaultLayerMemberFactory implements LayerMemberFactory {
 	 * @see de.ims.icarus2.model.api.registry.LayerMemberFactory#newItem(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public Item newItem(Container host) {
-		DefaultItem item = new DefaultItem();
+	public Item newItem(Container host, long id) {
+		DefaultItem item = host.isProxy() ? new TrackedItem() : new DefaultItem();
 
 		item.setContainer(host);
+		item.setId(id);
 
 		return item;
 	}
@@ -56,7 +60,8 @@ public class DefaultLayerMemberFactory implements LayerMemberFactory {
 	 * @see de.ims.icarus2.model.api.registry.LayerMemberFactory#newEdge(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item, de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
-	public Edge newEdge(Structure host) {
+	public Edge newEdge(Structure host, long id) {
+		//FIXME ignores id
 		return new DefaultEdge(host);
 	}
 
@@ -64,10 +69,11 @@ public class DefaultLayerMemberFactory implements LayerMemberFactory {
 	 * @see de.ims.icarus2.model.api.registry.LayerMemberFactory#newContainer(de.ims.icarus2.model.manifest.api.ContainerManifest, de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public Container newContainer(ContainerManifest manifest, Container host) {
+	public Container newContainer(ContainerManifest manifest, Container host, long id) {
 		ItemStorage itemStorage = createItemStorage(manifest);
 
-		DefaultContainer container = new DefaultContainer();
+		DefaultContainer container = host.isProxy() ? new TrackedContainer() : new DefaultContainer();
+		container.setId(id);
 		container.setContainer(host);
 		container.setItemStorage(itemStorage);
 
@@ -82,11 +88,12 @@ public class DefaultLayerMemberFactory implements LayerMemberFactory {
 	 * @see de.ims.icarus2.model.api.registry.LayerMemberFactory#newStructure(de.ims.icarus2.model.manifest.api.StructureManifest, de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public Structure newStructure(StructureManifest manifest, Container host) {
+	public Structure newStructure(StructureManifest manifest, Container host, long id) {
 		ItemStorage itemStorage = createItemStorage(manifest);
 		EdgeStorage edgeStorage = createEdgeStorage(manifest);
 
-		DefaultStructure structure = new DefaultStructure();
+		DefaultStructure structure = host.isProxy() ? new TrackedStructure() : new DefaultStructure();
+		structure.setId(id);
 		structure.setContainer(host);
 		structure.setItemStorage(itemStorage);
 		structure.setEdgeStorage(edgeStorage);

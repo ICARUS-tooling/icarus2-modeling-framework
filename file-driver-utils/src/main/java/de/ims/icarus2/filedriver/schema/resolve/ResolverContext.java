@@ -34,11 +34,11 @@ public interface ResolverContext {
 	Container currentContainer();
 
 	/**
-	 * Returns the index within the current container that reading is taking place
+	 * Returns the index within the current container that reading is taking place at
 	 *
 	 * @return
 	 */
-	int currentIndex();
+	long currentIndex();
 
 	/**
 	 * Returns the item with which currently read data should be associated

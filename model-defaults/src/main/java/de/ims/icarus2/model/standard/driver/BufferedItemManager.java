@@ -99,7 +99,7 @@ public class BufferedItemManager {
 			return pendingEntries;
 		}
 
-		public void offer(long index, Item item) {
+		public void offer(Item item, long index) {
 			pendingEntries().put(index, item);
 		}
 

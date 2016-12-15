@@ -191,11 +191,8 @@ public interface Item extends CorpusMember, ModelConstants {
 	 * host layer.
 	 * <p>
 	 * An item is required to return a valid non-negative value if it is declared
-	 * to be {@link #isUsable() usable}. Otherwise, for example during construction
-	 * time, a return value of {@link -1} is allowed.
-	 * <p>
-	 * Note that above contract only holds for top-level items in a layer. Nested
-	 * or {@link {@link #isVirtual() virtual} items
+	 * to be {@link #isUsable() usable} and if it is <b>not</b> a {@link #isTopLevel() top-level}
+	 * member! Otherwise, for example during construction time, a return value of {@link -1} is allowed.
 	 *
 	 * @return
 	 */
@@ -290,15 +287,28 @@ public interface Item extends CorpusMember, ModelConstants {
 	}
 
 	/**
-	 * Returns {@code true} if this item is <i>nested</i>, meaning it has a
-	 * valid host container and therefore is not considered a top-level member.
+	 * Returns {@code true} if this item is directly nested within a {@link ItemLayer layer's}
+	 * {@link Container#isProxy() proxy container}. The default implementation returns {@code true}
+	 * if the {@link #getContainer() host container} is a proxy determined by {@link Container#isProxy()}.
+	 * <p>
+	 * Note that certain types of items, like
+	 * {@link Edge edges} or {@link Structure#getVirtualRoot() virtual root nodes} can never be
+	 * top-level members and their implementations should therefore override this method to
+	 * simply always return {@code false}.
 	 *
 	 * @return
 	 */
-	default boolean isNested() {
-		return getContainer()!=null;
+	default boolean isTopLevel() {
+		return getContainer().isProxy();
 	}
 
+	/**
+	 * Comfort interface to model items that are <i>externally</i> managed and therefore need
+	 * setter methods for all important inner fields.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public interface ManagedItem {
 		void setId(long id);
 		void setContainer(Container container);

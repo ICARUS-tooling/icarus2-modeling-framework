@@ -17,6 +17,8 @@
  */
 package de.ims.icarus2.filedriver.schema.table;
 
+import java.util.function.Consumer;
+
 import de.ims.icarus2.filedriver.schema.Schema;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
@@ -40,6 +42,14 @@ public interface TableSchema extends Schema {
 	public static final String DELIMITER_TAB = "TAB";
 	public static final String DELIMITER_WHITESPACES = "WHITESPACES";
 	public static final String DELIMITER_SPACE = "SPACE";
+
+	/**
+	 * Returns the total number of all (recursively nested) {@link BlockSchema} objects
+	 * declared within this schema.
+	 *
+	 * @return
+	 */
+	int getTotalBlockSchemaCount();
 
 	BlockSchema getRootBlock();
 
@@ -157,6 +167,8 @@ public interface TableSchema extends Schema {
 		 * @return
 		 */
 		String getNoEntryLabel();
+
+		void forEachNestedBlock(Consumer<? super BlockSchema> action);
 	}
 
 	public interface MemberSchema {

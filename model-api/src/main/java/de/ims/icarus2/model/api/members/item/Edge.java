@@ -49,6 +49,16 @@ public interface Edge extends Item {
 		return getStructure();
 	}
 
+	/**
+	 * Always returns {@code false}.
+	 *
+	 * @see de.ims.icarus2.model.api.members.item.Item#isTopLevel()
+	 */
+	@Override
+	default boolean isTopLevel() {
+		return false;
+	}
+
 	Item getSource();
 
 	Item getTarget();

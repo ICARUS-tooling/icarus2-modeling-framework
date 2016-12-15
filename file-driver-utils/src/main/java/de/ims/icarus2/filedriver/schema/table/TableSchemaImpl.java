@@ -22,9 +22,11 @@ import static de.ims.icarus2.util.Conditions.checkNotNull;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.function.Consumer;
 
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.manifest.standard.DefaultModifiableIdentity;
+import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.Options;
 
 /**
@@ -36,6 +38,27 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 	private String separator;
 	private String groupId;
 	private BlockSchema root;
+
+	private int blockCount = -1;
+
+	/**
+	 * @see de.ims.icarus2.filedriver.schema.table.TableSchema#getTotalBlockSchemaCount()
+	 */
+	@Override
+	public int getTotalBlockSchemaCount() {
+		if(blockCount==-1) {
+			MutableInteger counter = new MutableInteger(0);
+			countBlockSchemas(getRootBlock(), counter);
+			blockCount = counter.intValue();
+		}
+		return blockCount;
+	}
+
+	private static void countBlockSchemas(BlockSchema blockSchema, MutableInteger counter) {
+		counter.increment();
+
+		blockSchema.forEachNestedBlock(b -> countBlockSchemas(b, counter));
+	}
 
 	/**
 	 * @see de.ims.icarus2.filedriver.schema.table.TableSchema#getGroupId()
@@ -331,6 +354,15 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			return this;
 		}
 
+		/**
+		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema#forEachNestedBlock(java.util.function.Consumer)
+		 */
+		@Override
+		public void forEachNestedBlock(Consumer<? super BlockSchema> action) {
+			if(nestedBlocks!=null) {
+				nestedBlocks.forEach(action);
+			}
+		}
 	}
 
 	public static class MemberSchemaImpl implements MemberSchema {

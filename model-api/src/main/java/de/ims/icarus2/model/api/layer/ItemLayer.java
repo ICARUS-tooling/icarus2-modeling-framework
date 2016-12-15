@@ -22,6 +22,7 @@ package de.ims.icarus2.model.api.layer;
 
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.id.IdManager;
+import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
@@ -58,6 +59,14 @@ public interface ItemLayer extends Layer, ManifestOwner<ItemLayerManifest> {
 	 * @return
 	 */
 	IdManager getIdManager();
+
+	/**
+	 * Returns the single {@link Container#isProxy() proxy} container of this
+	 * layer that all top-level members are connected to.
+	 *
+	 * @return
+	 */
+	Container getProxyContainer();
 
 	/**
 	 * Returns the {@code ItemLayer} that holds the bounding

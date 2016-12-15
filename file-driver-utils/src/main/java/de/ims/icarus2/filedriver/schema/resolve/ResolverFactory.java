@@ -21,6 +21,10 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 
 /**
+ * Factory for creating {@link Resolver} instances from {@code String} values.
+ * This base implementations only supports input {@code Strings} that denote
+ * fully qualified class names of a {@code Resolver} implementation.
+ *
  * @author Markus Gärtner
  *
  */
