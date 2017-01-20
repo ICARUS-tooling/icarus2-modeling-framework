@@ -17,7 +17,7 @@
  */
 package de.ims.icarus2.util.nio;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -70,8 +70,8 @@ public class FastChannelReader extends Reader {
 	}
 
 	public FastChannelReader(ReadableByteChannel ch, CharsetDecoder dec, int mbc) {
-		checkNotNull(ch);
-		checkNotNull(dec);
+		requireNonNull(ch);
+		requireNonNull(dec);
 
 		this.ch = ch;
 		this.decoder = dec;

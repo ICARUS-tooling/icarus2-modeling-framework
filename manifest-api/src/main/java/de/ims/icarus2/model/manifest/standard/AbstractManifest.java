@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.manifest.api.LayerType;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
@@ -38,10 +38,7 @@ import de.ims.icarus2.util.classes.ClassUtils;
  */
 public abstract class AbstractManifest<T extends Manifest> extends AbstractLockable implements Manifest {
 
-	/**
-	 * Package private for serialization reasons.
-	 */
-	TemplateLink<T> template;
+	private TemplateLink<T> template;
 
 	private transient int uid;
 
@@ -63,8 +60,8 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 	}
 
 	protected AbstractManifest(ManifestLocation manifestLocation, ManifestRegistry registry, boolean isAllowedTemplate) {
-		checkNotNull(manifestLocation);
-		checkNotNull(registry);
+		requireNonNull(manifestLocation);
+		requireNonNull(registry);
 
 //		if(!isAllowedTemplate && manifestLocation.isTemplate())
 //			throw new ModelException(ModelError.MANIFEST_INVALID_LOCATION, "Template environment not supported by manifest: "+xmlTag());
@@ -200,7 +197,7 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 	 */
 	@Override
 	public void setVersionManifest(VersionManifest versionManifest) {
-		checkNotNull(versionManifest);
+		requireNonNull(versionManifest);
 		if(this.versionManifest!=null)
 			throw new ManifestException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Version already set on manifest: "+this);
 
@@ -218,7 +215,7 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 	}
 
 	protected void setId0(String id) {
-		checkNotNull(id);
+		requireNonNull(id);
 		if(!ManifestUtils.isValidId(id))
 			throw new IllegalArgumentException("Id format not supported: "+id); //$NON-NLS-1$
 

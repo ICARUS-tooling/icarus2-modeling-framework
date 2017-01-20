@@ -18,8 +18,8 @@
  */
 package de.ims.icarus2.model.standard.highlight;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.lang.ref.WeakReference;
 
@@ -40,7 +40,7 @@ public class WeakAnnotationLink extends WeakReference<AnnotationLayer> implement
 	public WeakAnnotationLink(AnnotationLayer layer, String key) {
 		super(layer);
 
-		checkNotNull(key);
+		requireNonNull(key);
 
 		this.key = key;
 	}

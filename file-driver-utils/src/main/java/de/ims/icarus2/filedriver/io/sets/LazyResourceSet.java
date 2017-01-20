@@ -17,85 +17,95 @@
  */
 package de.ims.icarus2.filedriver.io.sets;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
-import java.nio.file.Path;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Paths;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.io.PathResolver;
 import de.ims.icarus2.model.api.io.ResourcePath;
-import de.ims.icarus2.model.manifest.api.LocationType;
+import de.ims.icarus2.model.api.io.resources.FileResource;
+import de.ims.icarus2.model.api.io.resources.IOResource;
+import de.ims.icarus2.model.api.io.resources.ReadOnlyURLResource;
 
 /**
- * Implements a {@link FileSet} that is linked to a central storage file and
+ * Implements a {@link ResourceSet} that is linked to a central storage file and
  * manages a collection of target files that are resolved with the help of a
  * {@link PathResolver}, provided at construction time. The implementation
- * resolves paths to target files lazily, as soon as they are requested. The
+ * resolves resources to target files lazily, as soon as they are requested. The
  * same policy holds true for the corresponding checksums.
  *
  * @author Markus Gärtner
  *
  */
-public class LazyFileSet implements FileSet {
+public class LazyResourceSet implements ResourceSet {
 
-	private final Int2ObjectMap<Path> paths = new Int2ObjectOpenHashMap<>();
+	private final Int2ObjectMap<IOResource> resources = new Int2ObjectOpenHashMap<>();
 	private final PathResolver pathResolver;
 
 	/**
-	 * Creates a new {@code SingletonFileSet} that points to the given {@code file}
-	 * and uses the provided {@link ChecksumStorage} to store the checksum.
-	 *
 	 * @param pathResolver
 	 * @param storage
 	 */
-	public LazyFileSet(PathResolver pathResolver) {
-		checkNotNull(pathResolver);
+	public LazyResourceSet(PathResolver pathResolver) {
+		requireNonNull(pathResolver);
 
 		this.pathResolver = pathResolver;
 	}
 
 	@Override
 	public String toString() {
-		return getClass().getName()+"["+getFileCount()+" files]";
+		return getClass().getName()+"["+getResourceCount()+" resources]";
 	}
 
 	/**
-	 * @see de.ims.icarus2.filedriver.io.sets.FileSet#getFileCount()
+	 * @see de.ims.icarus2.filedriver.io.sets.ResourceSet#getResourceCount()
 	 */
 	@Override
-	public int getFileCount() {
+	public int getResourceCount() {
 		return pathResolver.getPathCount();
 	}
 
 	/**
-	 * @see de.ims.icarus2.filedriver.io.sets.FileSet#getFileAt(int)
+	 * @see de.ims.icarus2.filedriver.io.sets.ResourceSet#getResourceAt(int)
 	 */
 	@Override
-	public synchronized Path getFileAt(int fileIndex) {
-		Path path = paths.get(fileIndex);
-		if(path==null) {
-			ResourcePath resourcePath = pathResolver.getPath(fileIndex);
+	public synchronized IOResource getResourceAt(int resourceIndex) {
+		IOResource resource = resources.get(resourceIndex);
+		if(resource==null) {
+			ResourcePath resourcePath = pathResolver.getPath(resourceIndex);
 			if(resourcePath==null)
 				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-						"No file available for index: "+fileIndex); //$NON-NLS-1$
-			if(resourcePath.getType()!=LocationType.LOCAL)
+						"No resource available for index: "+resourceIndex); //$NON-NLS-1$
+
+			switch (resourcePath.getType()) {
+			case LOCAL:
+				resource = new FileResource(Paths.get(resourcePath.getPath()));
+				break;
+
+			case REMOTE:
+				try {
+					resource = new ReadOnlyURLResource(new URL(resourcePath.getPath()));
+				} catch (MalformedURLException e) {
+					throw new ModelException(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
+							"Stored path is not a valid URL: "+resourcePath.getPath());
+				}
+				break;
+
+			default:
 				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 						"Resolver returned unsupported path type: "+resourcePath);//TODO more info in exception //$NON-NLS-1$
+			}
 
-			path = Paths.get(resourcePath.getPath());
-
-			// Decision whether or not file paths should be absolute or relative is to be made on client code level!!!
-//			if(!path.isAbsolute()) {
-//				path = path.toAbsolutePath();
-//			}
-
-			paths.put(fileIndex, path);
+			resources.put(resourceIndex, resource);
 		}
 
-		return path;
+		return resource;
 	}
 }

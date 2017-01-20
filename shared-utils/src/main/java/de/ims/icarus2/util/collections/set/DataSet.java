@@ -19,7 +19,7 @@
 package de.ims.icarus2.util.collections.set;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.lang.reflect.Array;
 import java.util.Iterator;
@@ -90,7 +90,7 @@ public interface DataSet<E extends Object> extends Iterable<E> {
 
 	@SuppressWarnings("unchecked")
 	default <T> T[] toArray(T[] array) {
-		checkNotNull(array);
+		requireNonNull(array);
 		int size = entryCount();
 
 		if(array.length<size) {
@@ -162,7 +162,7 @@ public interface DataSet<E extends Object> extends Iterable<E> {
 		 * @param endIndex last index position to be accessed by the iterator (exclusive)
 		 */
 		public DataSetIterator(DataSet<? extends E> source, int beginIndex, int endIndex) {
-			checkNotNull(source);
+			requireNonNull(source);
 			checkArgument(beginIndex>=0);
 			checkArgument(beginIndex<endIndex);
 			checkArgument(endIndex<=source.entryCount());

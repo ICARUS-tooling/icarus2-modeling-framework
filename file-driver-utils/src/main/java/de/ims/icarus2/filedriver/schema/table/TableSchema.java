@@ -28,6 +28,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
+import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.strings.NamedObject;
 
@@ -64,6 +65,10 @@ public interface TableSchema extends Schema {
 	/**
 	 * Returns the {@link LayerGroupManifest#getId() id} of the {@link LayerGroup} top
 	 * level members created via this schema should be placed in.
+	 * <p>
+	 * The returned value is allowed to either be a simple identifier only containing
+	 * the group's {@link LayerGroupManifest#getId() id} or a complex one that denotes
+	 * a {@link ModelUtils#g}
 	 *
 	 * @return
 	 */

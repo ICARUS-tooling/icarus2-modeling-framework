@@ -19,7 +19,7 @@
 package de.ims.icarus2.util.nio;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -45,7 +45,7 @@ public class ByteChannelCharacterSequence implements CharSequence {
 	private transient ByteBuffer buffer = ByteBuffer.allocate(2);
 
 	public ByteChannelCharacterSequence(SeekableByteChannel channel) {
-		checkNotNull(channel);
+		requireNonNull(channel);
 
 		this.channel = channel;
 

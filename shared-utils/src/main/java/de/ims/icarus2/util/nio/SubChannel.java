@@ -18,7 +18,7 @@
 package de.ims.icarus2.util.nio;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -121,7 +121,7 @@ public class SubChannel implements SeekableByteChannel {
 	}
 
 	private final SeekableByteChannel source() {
-		checkNotNull(source);
+		requireNonNull(source);
 		return source;
 	}
 

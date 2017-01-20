@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.standard.members.layers.AbstractLayer;
@@ -58,7 +58,7 @@ public class DefaultAnnotationLayer extends AbstractLayer<AnnotationLayerManifes
 	 */
 	@Override
 	public void setAnnotationStorage(AnnotationStorage storage) {
-		checkNotNull(storage);
+		requireNonNull(storage);
 
 		if(this.storage!=null && this.storage instanceof ManagedAnnotationStorage) {
 			((ManagedAnnotationStorage)this.storage).removeNotify(this);
@@ -84,7 +84,7 @@ public class DefaultAnnotationLayer extends AbstractLayer<AnnotationLayerManifes
 	 */
 	@Override
 	public void setReferenceLayers(DataSet<AnnotationLayer> referenceLayers) {
-		checkNotNull(referenceLayers);
+		requireNonNull(referenceLayers);
 
 		this.referenceLayers = referenceLayers;
 	}

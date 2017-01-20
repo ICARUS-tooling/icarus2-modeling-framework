@@ -17,7 +17,7 @@
  */
 package de.ims.icarus2.model.standard.registry.metadata.policy;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.nio.file.Path;
 
@@ -89,8 +89,8 @@ public abstract class CorpusCentralFileMetadataPolicy<O extends Object> implemen
 	private final Path rootFolder;
 
 	protected CorpusCentralFileMetadataPolicy(Path rootFolder, Format format) {
-		checkNotNull(rootFolder);
-		checkNotNull(format);
+		requireNonNull(rootFolder);
+		requireNonNull(format);
 
 		this.rootFolder = rootFolder;
 		this.format = format;

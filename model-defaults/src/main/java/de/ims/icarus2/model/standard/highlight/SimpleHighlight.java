@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.highlight;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.api.highlight.Highlight;
 import de.ims.icarus2.model.api.highlight.HighlightInfo;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -36,8 +36,8 @@ public class SimpleHighlight implements Highlight {
 	public SimpleHighlight(DataSet<Item> items,
 			DataSet<HighlightInfo> highlightInfos) {
 
-		checkNotNull(items);
-		checkNotNull(highlightInfos);
+		requireNonNull(items);
+		requireNonNull(highlightInfos);
 
 		this.items = items;
 		this.highlightInfos = highlightInfos;
@@ -45,7 +45,7 @@ public class SimpleHighlight implements Highlight {
 
 	public SimpleHighlight(DataSet<Item> items) {
 
-		checkNotNull(items);
+		requireNonNull(items);
 
 		this.items = items;
 		this.highlightInfos = DataSet.emptySet();

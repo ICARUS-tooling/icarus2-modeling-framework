@@ -19,8 +19,8 @@
 package de.ims.icarus2.model.standard.registry;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -28,6 +28,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -58,7 +59,10 @@ import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
+import de.ims.icarus2.model.manifest.standard.DefaultManifestRegistry;
 import de.ims.icarus2.model.standard.corpus.DefaultCorpus;
+import de.ims.icarus2.model.standard.io.DefaultFileManager;
+import de.ims.icarus2.model.standard.registry.metadata.VirtualMetadataRegistry;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.id.Identity;
@@ -108,7 +112,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	private final Properties properties;
 
 	protected DefaultCorpusManager(Builder builder) {
-		checkNotNull(builder);
+		requireNonNull(builder);
 
 		this.manifestRegistry = builder.getManifestRegistry();
 		this.metadataRegistry = builder.getMetadataRegistry();
@@ -137,6 +141,15 @@ public class DefaultCorpusManager implements CorpusManager {
 		}
 	}
 
+	/**
+	 * Reads {@link Properties} from the given {@link URL} using {@link StandardCharsets#UTF_8 UTF-8}
+	 * as character encoding.
+	 *
+	 * @param properties
+	 * @param url
+	 *
+	 * @throws ModelException if an {@link IOException} occurs
+	 */
 	private void readProperties(Properties properties, URL url) {
 		try {
 			properties.load(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8));
@@ -145,6 +158,15 @@ public class DefaultCorpusManager implements CorpusManager {
 		}
 	}
 
+	/**
+	 * Reads {@link Properties} from the given {@link Path} using {@link StandardCharsets#UTF_8 UTF-8}
+	 * as character encoding.
+	 *
+	 * @param properties
+	 * @param path
+	 *
+	 * @throws ModelException if an {@link IOException} occurs
+	 */
 	private void readProperties(Properties properties, Path path) {
 		try {
 			properties.load(Files.newBufferedReader(path, StandardCharsets.UTF_8));
@@ -161,7 +183,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	 */
 	@Override
 	public String getProperty(String key) {
-		checkNotNull(key);
+		requireNonNull(key);
 
 		String value = System.getProperty(key);
 
@@ -247,7 +269,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	 * @return
 	 */
 	protected final CorpusManager.CorpusState getStateUnsafe(CorpusManifest manifest, boolean allowBadState) {
-		checkNotNull(manifest);
+		requireNonNull(manifest);
 		if(manifest.getRegistry()!=manifestRegistry)
 			throw new ModelException(ManifestErrorCode.MANIFEST_ERROR,
 					"Foreign manifest: "+getName(manifest));
@@ -274,8 +296,8 @@ public class DefaultCorpusManager implements CorpusManager {
 	 * @return
 	 */
 	protected final CorpusManager.CorpusState setStateUnsafe(CorpusManifest manifest, CorpusManager.CorpusState state) {
-		checkNotNull(manifest);
-		checkNotNull(state);
+		requireNonNull(manifest);
+		requireNonNull(state);
 
 		CorpusManager.CorpusState oldState = states.get(manifest);
 
@@ -351,7 +373,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	 */
 	@Override
 	public Corpus connect(CorpusManifest manifest) throws InterruptedException {
-		checkNotNull(manifest);
+		requireNonNull(manifest);
 
 		Corpus corpus = null;
 
@@ -457,7 +479,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	 */
 	@Override
 	public void disconnect(CorpusManifest manifest) throws InterruptedException {
-		checkNotNull(manifest);
+		requireNonNull(manifest);
 		tryNonReentrantWrite();
 		try {
 			// For internal sanity checks
@@ -513,7 +535,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	 */
 	@Override
 	public Corpus getLiveCorpus(CorpusManifest manifest) {
-		checkNotNull(manifest);
+		requireNonNull(manifest);
 
 		readLock().lock();
 		try {
@@ -535,8 +557,8 @@ public class DefaultCorpusManager implements CorpusManager {
 	}
 
 	protected final boolean isCorpusInState(CorpusManifest corpus, Predicate<? super CorpusManager.CorpusState> p) {
-		checkNotNull(corpus);
-		checkNotNull(p);
+		requireNonNull(corpus);
+		requireNonNull(p);
 
 		readLock().lock();
 		try {
@@ -669,7 +691,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	 */
 	@Override
 	public void addCorpusLifecycleListener(CorpusLifecycleListener listener) {
-		checkNotNull(listener);
+		requireNonNull(listener);
 
 		lifecycleListeners.remove(listener);
 		lifecycleListeners.add(listener);
@@ -680,7 +702,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	 */
 	@Override
 	public void removeCorpusLifecycleListener(CorpusLifecycleListener listener) {
-		checkNotNull(listener);
+		requireNonNull(listener);
 
 		lifecycleListeners.remove(listener);
 	}
@@ -700,7 +722,7 @@ public class DefaultCorpusManager implements CorpusManager {
 
 	@Override
 	public Collection<CorpusManifest> getCorpora(Predicate<? super CorpusManifest> p) {
-		checkNotNull(p);
+		requireNonNull(p);
 
 		readLock().lock();
 		try {
@@ -736,7 +758,7 @@ public class DefaultCorpusManager implements CorpusManager {
 
 	@Override
 	public Collection<CorpusManifest> getCorpora(CorpusState state) {
-		checkNotNull(state);
+		requireNonNull(state);
 
 		readLock().lock();
 		try {
@@ -854,7 +876,7 @@ public class DefaultCorpusManager implements CorpusManager {
 
 		public Builder corpusMetadataPolicy(
 				MetadataStoragePolicy<CorpusManifest> corpusMetadataPolicy) {
-			checkNotNull(corpusMetadataPolicy);
+			requireNonNull(corpusMetadataPolicy);
 			checkState("Corpus metadata policy already set", this.corpusMetadataPolicy==null);
 
 			this.corpusMetadataPolicy = corpusMetadataPolicy;
@@ -864,7 +886,7 @@ public class DefaultCorpusManager implements CorpusManager {
 
 		public Builder contextMetadataPolicy(
 				MetadataStoragePolicy<ContextManifest> contextMetadataPolicy) {
-			checkNotNull(contextMetadataPolicy);
+			requireNonNull(contextMetadataPolicy);
 			checkState("Context metadata policy already set", this.contextMetadataPolicy==null);
 
 			this.contextMetadataPolicy = contextMetadataPolicy;
@@ -873,7 +895,7 @@ public class DefaultCorpusManager implements CorpusManager {
 		}
 
 		public Builder manifestRegistry(ManifestRegistry manifestRegistry) {
-			checkNotNull(manifestRegistry);
+			requireNonNull(manifestRegistry);
 			checkState("Manifest registry already set", this.manifestRegistry==null);
 
 			this.manifestRegistry = manifestRegistry;
@@ -882,7 +904,7 @@ public class DefaultCorpusManager implements CorpusManager {
 		}
 
 		public Builder metadataRegistry(MetadataRegistry metadataRegistry) {
-			checkNotNull(metadataRegistry);
+			requireNonNull(metadataRegistry);
 			checkState("Metadata registry already set", this.metadataRegistry==null);
 
 			this.metadataRegistry = metadataRegistry;
@@ -891,7 +913,7 @@ public class DefaultCorpusManager implements CorpusManager {
 		}
 
 		public Builder fileManager(FileManager fileManager) {
-			checkNotNull(fileManager);
+			requireNonNull(fileManager);
 			checkState("File manager already set", this.fileManager==null);
 
 			this.fileManager = fileManager;
@@ -900,7 +922,7 @@ public class DefaultCorpusManager implements CorpusManager {
 		}
 
 		public Builder corpusProducer(Function<CorpusManifest, Corpus> corpusProducer) {
-			checkNotNull(corpusProducer);
+			requireNonNull(corpusProducer);
 			checkState("Corpus producer already set", this.corpusProducer==null);
 
 			this.corpusProducer = corpusProducer;
@@ -909,7 +931,7 @@ public class DefaultCorpusManager implements CorpusManager {
 		}
 
 		public Builder properties(Map<String, String> properties) {
-			checkNotNull(properties);
+			requireNonNull(properties);
 			checkState("Properties already set", this.properties==null);
 
 			this.properties = properties;
@@ -918,7 +940,7 @@ public class DefaultCorpusManager implements CorpusManager {
 		}
 
 		public Builder propertiesUrl(URL propertiesUrl) {
-			checkNotNull(propertiesUrl);
+			requireNonNull(propertiesUrl);
 			checkState("Properties URL already set", this.propertiesUrl==null);
 
 			this.propertiesUrl = propertiesUrl;
@@ -927,10 +949,28 @@ public class DefaultCorpusManager implements CorpusManager {
 		}
 
 		public Builder propertiesFile(Path propertiesFile) {
-			checkNotNull(propertiesFile);
+			requireNonNull(propertiesFile);
 			checkState("Properties file already set", this.propertiesFile==null);
 
 			this.propertiesFile = propertiesFile;
+
+			return thisAsCast();
+		}
+
+		/**
+		 * Configures this builder to use the following implementations as instances
+		 * for {@link #fileManager(FileManager) file manager}, {@link #metadataRegistry(MetadataRegistry) metadata registry}
+		 * and {@link #manifestRegistry(ManifestRegistry) manifest registry}:
+		 * <ul>
+		 * <li>{@link DefaultFileManager} with the current directory as root folder</li>
+		 * <li>{@link VirtualMetadataRegistry}</li>
+		 * <li>{@link DefaultManifestRegistry}</li>
+		 * </ul>
+		 */
+		public Builder defaultEnvironment() {
+			fileManager(new DefaultFileManager(Paths.get(".")));
+			metadataRegistry(new VirtualMetadataRegistry());
+			manifestRegistry(new DefaultManifestRegistry());
 
 			return thisAsCast();
 		}

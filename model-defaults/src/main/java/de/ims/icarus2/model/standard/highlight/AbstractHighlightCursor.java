@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.highlight;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.api.highlight.HighlightCursor;
 import de.ims.icarus2.model.api.layer.HighlightLayer;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -33,8 +33,8 @@ public abstract class AbstractHighlightCursor implements HighlightCursor {
 	private final Container target;
 
 	public AbstractHighlightCursor(HighlightLayer layer, Container target) {
-		checkNotNull(layer);
-		checkNotNull(target);
+		requireNonNull(layer);
+		requireNonNull(target);
 
 		this.layer = layer;
 		this.target = target;

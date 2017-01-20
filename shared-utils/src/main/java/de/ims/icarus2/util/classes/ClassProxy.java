@@ -20,7 +20,7 @@
  */
 package de.ims.icarus2.util.classes;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,8 +43,8 @@ public final class ClassProxy {
 	private Map<String, Object> properties;
 
 	public ClassProxy(String className, ClassLoader classLoader) {
-		checkNotNull(className);
-		checkNotNull(classLoader);
+		requireNonNull(className);
+		requireNonNull(classLoader);
 
 		this.className = className;
 		this.classLoader = classLoader;

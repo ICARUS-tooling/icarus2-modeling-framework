@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
@@ -49,7 +49,7 @@ public class Links {
 		transient Reference<O> target;
 
 		public Link(String id) {
-			checkNotNull(id);
+			requireNonNull(id);
 
 			this.id = id;
 		}

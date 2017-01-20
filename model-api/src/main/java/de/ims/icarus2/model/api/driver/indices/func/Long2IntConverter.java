@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.api.driver.indices.func;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
@@ -34,7 +34,7 @@ public class Long2IntConverter implements LongConsumer {
 	private final IntConsumer target;
 
 	public Long2IntConverter(IntConsumer target) {
-		checkNotNull(target);
+		requireNonNull(target);
 
 		this.target = target;
 	}

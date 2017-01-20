@@ -20,8 +20,8 @@ package de.ims.icarus2.model.api.driver.indices.standard;
 
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkSorted;
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.bytes.ByteIterator;
 import it.unimi.dsi.fastutil.bytes.ByteOpenHashSet;
 import it.unimi.dsi.fastutil.bytes.ByteSet;
@@ -109,7 +109,7 @@ public class IndexCollectorFactory implements ModelConstants {
 	}
 
 	public IndexCollectorFactory valueType(IndexValueType valueType) {
-		checkNotNull(valueType);
+		requireNonNull(valueType);
 		checkState(this.valueType == null);
 
 		this.valueType = valueType;
@@ -289,7 +289,7 @@ public class IndexCollectorFactory implements ModelConstants {
 		private long lastIndex = NO_INDEX;
 
 		public UnlimitedSortedSetBuilder(IndexValueType valueType, int chunkSize) {
-			checkNotNull(valueType);
+			requireNonNull(valueType);
 
 			// Override sorting behavior to reflect the fact that we are
 			// checking for sorted input
@@ -703,7 +703,7 @@ public class IndexCollectorFactory implements ModelConstants {
 		}
 
 		public BucketSetBuilder(IndexValueType valueType, int chunkSize, boolean useLastHitCache) {
-			checkNotNull(valueType);
+			requireNonNull(valueType);
 			checkArgument("chunk size must be positive", chunkSize > 0);
 
 			this.valueType = valueType;
@@ -1188,7 +1188,7 @@ public class IndexCollectorFactory implements ModelConstants {
 		}
 
 		public void setParent(Bucket parent) {
-			checkNotNull(parent);
+			requireNonNull(parent);
 			checkArgument(parent!=this);
 
 			this.parent = parent;

@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.api.io;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.net.URL;
 import java.nio.file.Path;
@@ -58,8 +58,8 @@ public class ResourcePath extends Options {
 	 * @param type
 	 */
 	public ResourcePath(String path, LocationType type) {
-		checkNotNull(path);
-		checkNotNull(type);
+		requireNonNull(path);
+		requireNonNull(type);
 
 		this.path = path;
 		this.type = type;

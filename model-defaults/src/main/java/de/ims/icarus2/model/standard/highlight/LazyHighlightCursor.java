@@ -20,7 +20,7 @@ package de.ims.icarus2.model.standard.highlight;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.function.IntFunction;
 
@@ -50,7 +50,7 @@ public class LazyHighlightCursor extends AbstractHighlightCursor {
 		super(layer, target);
 
 		checkArgument("Highlight count must be greater than 0", concurrentHighlightCount>0);
-		checkNotNull(highlightGenerator);
+		requireNonNull(highlightGenerator);
 
 		this.concurrentHighlightCount = concurrentHighlightCount;
 		this.highlightGenerator = highlightGenerator;

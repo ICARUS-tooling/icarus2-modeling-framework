@@ -18,8 +18,8 @@
 package de.ims.icarus2.model.standard.registry.metadata.policy;
 
 import de.ims.icarus2.model.api.registry.CorpusManager;
-import de.ims.icarus2.model.api.registry.MetadataStoragePolicy;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
+import de.ims.icarus2.model.api.registry.MetadataStoragePolicy;
 import de.ims.icarus2.model.standard.registry.metadata.VirtualMetadataRegistry;
 
 /**

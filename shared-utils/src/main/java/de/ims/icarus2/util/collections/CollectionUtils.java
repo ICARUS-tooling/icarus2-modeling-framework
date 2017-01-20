@@ -79,6 +79,16 @@ public final class CollectionUtils {
 		// no-op
 	}
 
+	public static <E extends Object> void forEach(E[] array, Consumer<? super E> action) {
+		if(array==null || array.length==0) {
+			return;
+		}
+
+		for (int i = 0; i < array.length; i++) {
+			action.accept(array[i]);
+		}
+	}
+
 	public static <E extends Object> Set<E> getSetProxy(Set<E> set) {
 		if(set==null)
 			throw new NullPointerException("Invalid set"); //$NON-NLS-1$

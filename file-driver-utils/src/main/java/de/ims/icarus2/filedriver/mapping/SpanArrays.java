@@ -17,7 +17,7 @@
  */
 package de.ims.icarus2.filedriver.mapping;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -93,7 +93,7 @@ public class SpanArrays {
 	}
 
 	public static SpanAdapter createSpanAdapter(IndexValueType indexValueType) {
-		checkNotNull(indexValueType);
+		requireNonNull(indexValueType);
 
 		switch (indexValueType) {
 		case BYTE:

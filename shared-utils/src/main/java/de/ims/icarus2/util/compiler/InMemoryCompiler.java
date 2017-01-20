@@ -17,7 +17,7 @@
  */
 package de.ims.icarus2.util.compiler;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -101,7 +101,7 @@ public class InMemoryCompiler {
 	}
 
 	public void addInputFile(JavaFileObject file) {
-		checkNotNull(file);
+		requireNonNull(file);
 		inputFiles.add(file);
 	}
 

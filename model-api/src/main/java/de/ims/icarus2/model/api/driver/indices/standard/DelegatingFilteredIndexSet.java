@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.api.driver.indices.standard;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
 
@@ -62,7 +62,7 @@ public class DelegatingFilteredIndexSet implements IndexSet {
 	}
 
 	public void setSource(IndexSet source) {
-		checkNotNull(source);
+		requireNonNull(source);
 
 		this.source = source;
 	}

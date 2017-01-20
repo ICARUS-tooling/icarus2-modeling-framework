@@ -18,6 +18,8 @@
  */
 package de.ims.icarus2.util;
 
+import static de.ims.icarus2.util.classes.ClassUtils._int;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -32,7 +34,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  * thrown together. This is useful for example when a manager that holds several closable
  * components is shutting down and needs to at least attempt a close operation of each
  * independent component. In a typical sequential approach the entire shutdown would break
- * when the first exception from a component close method is thrown, leaving subsequent
+ * when the first exception from a component's close method is thrown, leaving subsequent
  * components unclosed, despite them potentially having the ability to close without errors.
  * Using the {@link AccumulatingException.Buffer} utility class an application can collect
  * exceptions from multiple sequential or parallel operations and then throw a single
@@ -105,6 +107,10 @@ public class AccumulatingException extends Exception {
 		private String message;
 		private List<Throwable> exceptions;
 
+		public AccumulatingException toException() {
+			return new AccumulatingException(this);
+		}
+
 		public String getMessage() {
 			return message;
 		}
@@ -121,7 +127,7 @@ public class AccumulatingException extends Exception {
 		 * @param format
 		 */
 		public void setFormattedMessage(String format, Object... args) {
-			this.message = String.format(format, getExceptionCount(), args);
+			this.message = String.format(format, _int(getExceptionCount()), args);
 		}
 
 		public boolean isEmpty() {

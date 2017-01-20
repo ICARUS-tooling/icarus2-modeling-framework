@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.xml;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.io.Writer;
 import java.util.ArrayList;
@@ -49,7 +49,7 @@ public class ManifestXmlWriter extends ManifestXmlProcessor implements ManifestX
 	public ManifestXmlWriter(ManifestLocation manifestLocation, ManifestXmlDelegateFactory delegateFactory) {
 		super(delegateFactory);
 
-		checkNotNull(manifestLocation);
+		requireNonNull(manifestLocation);
 
 		this.manifestLocation = manifestLocation;
 	}
@@ -59,7 +59,7 @@ public class ManifestXmlWriter extends ManifestXmlProcessor implements ManifestX
 	}
 
 	protected void checkManifest(Manifest manifest) {
-		checkNotNull(manifest);
+		requireNonNull(manifest);
 
 		//FIXME enable flag to turn off template check, so we can serialize whatever manifest desired
 		if(manifest.getManifestLocation().isTemplate()!=manifestLocation.isTemplate())
@@ -78,7 +78,7 @@ public class ManifestXmlWriter extends ManifestXmlProcessor implements ManifestX
 	}
 
 	public void addManifests(List<? extends Manifest> manifests) {
-		checkNotNull(manifests);
+		requireNonNull(manifests);
 
 		synchronized (manifests) {
 			for(Manifest manifest : manifests) {

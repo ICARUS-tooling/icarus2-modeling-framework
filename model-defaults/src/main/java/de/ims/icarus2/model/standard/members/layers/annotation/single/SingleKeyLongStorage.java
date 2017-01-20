@@ -21,6 +21,8 @@ package de.ims.icarus2.model.standard.members.layers.annotation.single;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 
+import java.util.function.Supplier;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -144,6 +146,17 @@ public class SingleKeyLongStorage extends AbstractSingleKeyStorage {
 	@Override
 	public void removeAllValues() {
 		annotations.clear();
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#removeAllValues(java.util.function.Supplier)
+	 */
+	@Override
+	public void removeAllValues(Supplier<? extends Item> source) {
+		Item item;
+		while((item=source.get())!=null) {
+			annotations.remove(item);
+		}
 	}
 
 	@Override

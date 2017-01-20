@@ -17,7 +17,7 @@
  */
 package de.ims.icarus2.model.api.driver.id;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 
@@ -42,7 +42,7 @@ public class StaticContinuousIdManager implements IdManager {
 	 * @param layerManifest
 	 */
 	public StaticContinuousIdManager(ItemLayerManifest layerManifest) {
-		checkNotNull(layerManifest);
+		requireNonNull(layerManifest);
 		this.layerManifest = layerManifest;
 	}
 

@@ -18,7 +18,7 @@
 package de.ims.icarus2.filedriver.mapping;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -72,7 +72,7 @@ public class DefaultMappingFactory implements MappingFactory {
 	private Map<MappingManifest, Mapping> instanceLookup = new IdentityHashMap<>();
 
 	public DefaultMappingFactory(Driver driver) {
-		checkNotNull(driver);
+		requireNonNull(driver);
 
 		this.driver = driver;
 	}
@@ -83,7 +83,7 @@ public class DefaultMappingFactory implements MappingFactory {
 
 	@Override
 	public Mapping createMapping(MappingManifest manifest, Options options) {
-		checkNotNull(manifest);
+		requireNonNull(manifest);
 
 		if(options==null) {
 			options = Options.emptyOptions;

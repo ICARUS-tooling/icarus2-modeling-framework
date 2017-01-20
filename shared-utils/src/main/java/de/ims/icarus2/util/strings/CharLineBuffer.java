@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.util.strings;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -60,7 +60,7 @@ public class CharLineBuffer extends Splitable {
 	}
 
 	public void startReading(Reader reader) throws IOException {
-		checkNotNull(reader);
+		requireNonNull(reader);
 
 		reset();
 

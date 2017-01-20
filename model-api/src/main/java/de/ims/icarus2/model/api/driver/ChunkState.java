@@ -26,8 +26,27 @@ import de.ims.icarus2.model.api.members.item.Item;
  */
 public enum ChunkState {
 
+	/**
+	 * Chunk in healthy state
+	 */
 	VALID(1),
+
+	/**
+	 * Chunk in inconsistent state but still valid.
+	 * Client code should take this as an indicator
+	 * to wait for a driver's background operation
+	 * that involves the chunk in question to finish.
+	 */
 	MODIFIED(2),
+
+	/**
+	 * Chunk contains invalid data, has experienced
+	 * untracked changes outside of driver's control
+	 * or an error occurred that prevented it from
+	 * being properly loaded.
+	 * <p>
+	 * Client code should not use the chunk.
+	 */
 	CORRUPTED(3),
 	;
 
@@ -46,6 +65,13 @@ public enum ChunkState {
 		return name()+" ("+statusCode+")"; //$NON-NLS-1$ //$NON-NLS-2$
 	}
 
+	/**
+	 * Returns {@link #VALID} in case the item is {@link Item#isUsable() usable}
+	 * and {@link #CORRUPTED} otherwise.
+	 *
+	 * @param item
+	 * @return
+	 */
 	public static ChunkState forItem(Item item) {
 		return item.isUsable() ? VALID : CORRUPTED;
 	}

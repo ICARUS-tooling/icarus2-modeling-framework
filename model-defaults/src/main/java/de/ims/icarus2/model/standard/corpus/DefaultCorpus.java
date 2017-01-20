@@ -21,8 +21,8 @@ package de.ims.icarus2.model.standard.corpus;
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.model.util.ModelUtils.getUniqueId;
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
@@ -82,6 +82,7 @@ import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.standard.members.container.AbstractImmutableContainer;
+import de.ims.icarus2.model.standard.members.container.ProxyContainer;
 import de.ims.icarus2.model.standard.registry.ContextFactory;
 import de.ims.icarus2.model.standard.view.DefaultCorpusView;
 import de.ims.icarus2.model.standard.view.DefaultCorpusView.CorpusViewBuilder;
@@ -172,7 +173,7 @@ public class DefaultCorpus implements Corpus {
 	private AtomicBoolean closing = new AtomicBoolean(false);
 
 	protected DefaultCorpus(CorpusBuilder builder) {
-		checkNotNull(builder);
+		requireNonNull(builder);
 
 		manager = builder.getManager();
 		manifest = builder.getManifest();
@@ -227,8 +228,8 @@ public class DefaultCorpus implements Corpus {
 	public CorpusView createView(Scope scope, IndexSet[] indices,
 			CorpusAccessMode mode, Options options) throws InterruptedException {
 
-		checkNotNull(scope);
-		checkNotNull(mode);
+		requireNonNull(scope);
+		requireNonNull(mode);
 
 		checkArgument("Scope refers to foreign corpus", scope.getCorpus()==this);
 
@@ -273,7 +274,7 @@ public class DefaultCorpus implements Corpus {
 	}
 
 	private ContextProxy getContextProxy(String id) {
-		checkNotNull(id);
+		requireNonNull(id);
 
 		ContextProxy proxy = rootContexts.get(id);
 
@@ -289,7 +290,7 @@ public class DefaultCorpus implements Corpus {
 	}
 
 	private void addContext(ContextManifest context) {
-		checkNotNull(context);
+		requireNonNull(context);
 
 		Lock lock = getLock();
 
@@ -449,7 +450,7 @@ public class DefaultCorpus implements Corpus {
 	 */
 	@Override
 	public void forEachRootContext(Consumer<? super Context> action) {
-		checkNotNull(action);
+		requireNonNull(action);
 		synchronized (rootContexts) {
 			rootContexts.values().forEach(c -> action.accept(c.getContext()));
 		}
@@ -457,7 +458,7 @@ public class DefaultCorpus implements Corpus {
 
 	@Override
 	public void forEachCustomContext(Consumer<? super Context> action) {
-		checkNotNull(action);
+		requireNonNull(action);
 		synchronized (customContexts) {
 			customContexts.values().forEach(c -> action.accept(c.getContext()));
 		}
@@ -465,7 +466,7 @@ public class DefaultCorpus implements Corpus {
 
 	@Override
 	public void addVirtualContext(VirtualContext context) {
-		checkNotNull(context);
+		requireNonNull(context);
 
 		synchronized (virtualContexts) {
 			String id = context.getManifest().getId();
@@ -482,7 +483,7 @@ public class DefaultCorpus implements Corpus {
 
 	@Override
 	public void removeVirtualContext(VirtualContext context) {
-		checkNotNull(context);
+		requireNonNull(context);
 
 		synchronized (virtualContexts) {
 			String id = context.getManifest().getId();
@@ -497,7 +498,7 @@ public class DefaultCorpus implements Corpus {
 
 	@Override
 	public VirtualContext getVirtualContext(String id) {
-		checkNotNull(id);
+		requireNonNull(id);
 
 		synchronized (virtualContexts) {
 			VirtualContext context = virtualContexts.get(id);
@@ -512,7 +513,7 @@ public class DefaultCorpus implements Corpus {
 
 	@Override
 	public void forEachVirtualContext(Consumer<? super VirtualContext> action) {
-		checkNotNull(action);
+		requireNonNull(action);
 		synchronized (virtualContexts) {
 			virtualContexts.values().forEach(action);
 		}
@@ -602,7 +603,7 @@ public class DefaultCorpus implements Corpus {
 	 * To be called under lock on 'metaDataStorages' field
 	 */
 	private MetaDataStorage getMetaDataStorage(Layer layer, boolean createIfMissing) {
-		checkNotNull(layer);
+		requireNonNull(layer);
 
 		MetaDataStorage storage = metaDataStorages.get(layer);
 
@@ -807,7 +808,7 @@ public class DefaultCorpus implements Corpus {
 		private Driver driver;
 
 		public ContextProxy(ContextManifest manifest) {
-			checkNotNull(manifest);
+			requireNonNull(manifest);
 
 			this.manifest = manifest;
 		}
@@ -896,15 +897,15 @@ public class DefaultCorpus implements Corpus {
 		}
 
 		public void add(ContentType type, MetaData data) {
-			checkNotNull(type);
-			checkNotNull(data);
+			requireNonNull(type);
+			requireNonNull(data);
 
 			getEntry(type, true).add(data);
 		}
 
 		public void remove(ContentType type, MetaData data) {
-			checkNotNull(type);
-			checkNotNull(data);
+			requireNonNull(type);
+			requireNonNull(data);
 
 			Set<MetaData> entry = getEntry(type, false);
 			if(entry!=null) {
@@ -913,8 +914,8 @@ public class DefaultCorpus implements Corpus {
 		}
 
 		public void forEachEntry(Layer layer, BiPredicate<Layer, ContentType> filter, Consumer<MetaData> action) {
-			checkNotNull(filter);
-			checkNotNull(action);
+			requireNonNull(filter);
+			requireNonNull(action);
 
 			if(content.isEmpty()) {
 				return;
@@ -931,6 +932,20 @@ public class DefaultCorpus implements Corpus {
 	}
 
 	private class OverlayLayer implements ItemLayer {
+
+		private final Container proxyContainer;
+
+		OverlayLayer() {
+			proxyContainer = new ProxyContainer(this);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.api.layer.ItemLayer#getProxyContainer()
+		 */
+		@Override
+		public Container getProxyContainer() {
+			return proxyContainer;
+		}
 
 		/**
 		 * @see de.ims.icarus2.model.api.layer.ItemLayer#getIdManager()
@@ -1184,7 +1199,7 @@ public class DefaultCorpus implements Corpus {
 		 */
 		@Override
 		public long indexOfItem(Item item) {
-			checkNotNull(item);
+			requireNonNull(item);
 
 			synchronized (layers) {
 				for(int i=layers.size(); --i>=0;) {
@@ -1245,7 +1260,7 @@ public class DefaultCorpus implements Corpus {
 		private MetadataRegistry metadataRegistry;
 
 		public CorpusBuilder manager(CorpusManager manager) {
-			checkNotNull(manager);
+			requireNonNull(manager);
 			checkState(this.manager==null);
 
 			this.manager = manager;
@@ -1258,7 +1273,7 @@ public class DefaultCorpus implements Corpus {
 		}
 
 		public CorpusBuilder manifest(CorpusManifest manifest) {
-			checkNotNull(manifest);
+			requireNonNull(manifest);
 			checkState(this.manifest==null);
 
 			this.manifest = manifest;
@@ -1271,7 +1286,7 @@ public class DefaultCorpus implements Corpus {
 		}
 
 		public CorpusBuilder metadataRegistry(MetadataRegistry metadataRegistry) {
-			checkNotNull(metadataRegistry);
+			requireNonNull(metadataRegistry);
 			checkState(this.metadataRegistry==null);
 
 			this.metadataRegistry = metadataRegistry;

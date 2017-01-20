@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -100,7 +100,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	}
 
 	protected void setDocumentation0(Documentation documentation) {
-		checkNotNull(documentation);
+		requireNonNull(documentation);
 		if(this.documentation!=null)
 			throw new ManifestException(GlobalErrorCode.ILLEGAL_STATE, "Documentation already set for manifest: "+this);
 
@@ -130,7 +130,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	}
 
 	protected void setOptionsManifest0(OptionsManifest optionsManifest) {
-		checkNotNull(optionsManifest);
+		requireNonNull(optionsManifest);
 
 		this.optionsManifest = optionsManifest;
 	}
@@ -153,7 +153,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 
 	@Override
 	public boolean isLocalProperty(String name) {
-		checkNotNull(name);
+		requireNonNull(name);
 
 		return properties.containsKey(name);
 	}
@@ -167,7 +167,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 
 	@Override
 	public boolean hasProperty(String name) {
-		checkNotNull(name);
+		requireNonNull(name);
 
 		return properties.containsKey(name) || (hasTemplate() && getTemplate().hasProperty(name));
 	}
@@ -177,7 +177,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	 */
 	@Override
 	public Property getProperty(String name) {
-		checkNotNull(name);
+		requireNonNull(name);
 
 		Property property = properties.get(name);
 
@@ -201,9 +201,9 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 
 	protected Property addProperty0(String name, ValueType valueType,
 			boolean multiValue, Object value) {
-		checkNotNull(name);
-		checkNotNull(valueType);
-		checkNotNull(value);
+		requireNonNull(name);
+		requireNonNull(valueType);
+		requireNonNull(value);
 
 		if(properties.containsKey(name))
 			throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID, "Duplicate property name: "+name);
@@ -238,7 +238,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	}
 
 	protected void addProperty0(Property property) {
-		checkNotNull(property);
+		requireNonNull(property);
 
 		String name = property.getName();
 
@@ -321,7 +321,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	}
 
 	protected void setName0(String name) {
-		checkNotNull(name);
+		requireNonNull(name);
 
 		this.name = name;
 	}
@@ -337,7 +337,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	}
 
 	protected void setDescription0(String description) {
-		checkNotNull(description);
+		requireNonNull(description);
 
 		this.description = description;
 	}
@@ -353,7 +353,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	}
 
 	protected void setIcon0(Icon icon) {
-		checkNotNull(icon);
+		requireNonNull(icon);
 
 		this.icon = icon;
 	}
@@ -394,7 +394,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 		}
 
 		public PropertyImpl(Property source) {
-			checkNotNull(source);
+			requireNonNull(source);
 
 			setValueType(source.getValueType());
 			setOption(source.getOption());
@@ -474,7 +474,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 		}
 
 		public void setName(String name) {
-			checkNotNull(name);
+			requireNonNull(name);
 			this.name = name;
 		}
 

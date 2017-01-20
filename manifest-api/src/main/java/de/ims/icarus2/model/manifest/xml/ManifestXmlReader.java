@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.xml;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -134,7 +134,7 @@ public class ManifestXmlReader extends ManifestXmlProcessor implements ManifestX
 	public ManifestXmlReader(ManifestRegistry registry, ManifestXmlDelegateFactory delegateFactory) {
 		super(delegateFactory);
 
-		checkNotNull(registry);
+		requireNonNull(registry);
 
 		this.registry = registry;
 	}
@@ -255,7 +255,7 @@ public class ManifestXmlReader extends ManifestXmlProcessor implements ManifestX
 
 				//TODO instantiate a fresh new corpus manifest with proper linking!
 
-				registry.addCorpus(corpusManifest);
+				registry.addCorpusManifest(corpusManifest);
 			}
 		} finally {
 			reading.set(false);

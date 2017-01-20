@@ -17,7 +17,7 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -40,7 +40,7 @@ public class ProxyContainer extends AbstractImmutableContainer {
 	 * @param layer
 	 */
 	public ProxyContainer(ItemLayer layer) {
-		checkNotNull(layer);
+		requireNonNull(layer);
 
 		this.layer = layer;
 	}

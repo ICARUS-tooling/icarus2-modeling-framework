@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -157,7 +157,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 */
 	@Override
 	public void setKey(String key) {
-		checkNotNull(key);
+		requireNonNull(key);
 
 		this.key = key;
 	}
@@ -203,7 +203,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	}
 
 	protected void addAlias0(String alias) {
-		checkNotNull(alias);
+		requireNonNull(alias);
 
 		if(aliases.contains(alias))
 			throw new IllegalArgumentException("Alias already registered: "+alias); //$NON-NLS-1$
@@ -219,7 +219,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	}
 
 	protected void removeAlias0(String alias) {
-		checkNotNull(alias);
+		requireNonNull(alias);
 
 		if(aliases==null || !aliases.remove(alias))
 			throw new IllegalArgumentException("Unknown alias: "+alias); //$NON-NLS-1$
@@ -373,7 +373,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	}
 
 	private void setValueType0(ValueType valueType) {
-		checkNotNull(valueType);
+		requireNonNull(valueType);
 
 		this.valueType = valueType;
 	}

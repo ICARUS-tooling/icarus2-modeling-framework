@@ -76,7 +76,7 @@ public class StaticNodes {
 
 		counter.setInt(0);
 
-		info.forEachEdge(e -> {result[counter.increment()] = edges.indexOf(e);}, inCount>0, outCount>0);
+		info.forEachEdge(e -> {result[counter.incrementAndGet()] = edges.indexOf(e);}, inCount>0, outCount>0);
 
 		return result;
 	}

@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import javax.swing.Icon;
 
@@ -99,7 +99,7 @@ public class DefaultModifiableIdentity extends AbstractLockable implements Modif
 	}
 
 	protected void setId0(String id) {
-		checkNotNull(id);
+		requireNonNull(id);
 		if(!ManifestUtils.isValidId(id))
 			throw new IllegalArgumentException("Id format not supported: "+id); //$NON-NLS-1$
 

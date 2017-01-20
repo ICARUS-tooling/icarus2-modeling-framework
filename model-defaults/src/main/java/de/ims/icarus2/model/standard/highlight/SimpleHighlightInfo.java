@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.highlight;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Collections;
 import java.util.Map;
@@ -52,8 +52,8 @@ public class SimpleHighlightInfo implements HighlightInfo {
 
 	public SimpleHighlightInfo(HighlightLayer layer, Identity identity,
 			DataSet<AnnotationLink> annotations, CompactProperties properties) {
-		checkNotNull(layer);
-		checkNotNull(identity);
+		requireNonNull(layer);
+		requireNonNull(identity);
 
 		this.layer = layer;
 		this.identity = identity;

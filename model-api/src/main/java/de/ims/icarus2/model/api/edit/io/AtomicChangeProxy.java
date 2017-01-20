@@ -18,8 +18,10 @@
 package de.ims.icarus2.model.api.edit.io;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+
+import java.util.Objects;
+
 import de.ims.icarus2.model.api.edit.AtomicChangeType;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -76,7 +78,7 @@ public final class AtomicChangeProxy {
 	public ValueType valueType;
 
 	public AtomicChangeProxy(AtomicChangeType type) {
-		checkNotNull(type);
+		Objects.requireNonNull(type);
 
 		this.type = type;
 	}
@@ -84,112 +86,112 @@ public final class AtomicChangeProxy {
 	// Access methods with existence check (for serialization code that reconstructs change objects from proxies)
 
 	public AtomicChangeType getType() {
-		checkNotNull("Type not set", type);
+		Objects.requireNonNull(type, "Type not set");
 		return type;
 	}
 
 	public AnnotationLayer getAnnotationLayer() {
-		checkNotNull("Annotation layer not set", annotationLayer);
+		Objects.requireNonNull(annotationLayer, "Annotation layer not set");
 		return annotationLayer;
 	}
 
 	public String getKey() {
-		checkNotNull("Key not set", key);
+		Objects.requireNonNull(key, "Key not set");
 		return key;
 	}
 
 	public Container getContainer() {
-		checkNotNull("Container not set", container);
+		Objects.requireNonNull(container, "Container not set");
 		return container;
 	}
 
 	public Structure getStructure() {
-		checkNotNull("Structure not set", structure);
+		Objects.requireNonNull(structure, "Structure not set");
 		return structure;
 	}
 
 	public Item getItem1() {
-		checkNotNull("Item 1 not set", item1);
+		Objects.requireNonNull(item1, "Item 1 not set");
 		return item1;
 	}
 
 	public Item getItem2() {
-		checkNotNull("Item 2 not set", item2);
+		Objects.requireNonNull(item2, "Item 2 not set");
 		return item2;
 	}
 
 	public Edge getEdge1() {
-		checkNotNull("Edge 1 not set", edge1);
+		Objects.requireNonNull(edge1, "Edge 1 not set");
 		return edge1;
 	}
 
 	public Edge getEdge2() {
-		checkNotNull("Edge 2 not set", edge2);
+		Objects.requireNonNull(edge2, "Edge 2 not set");
 		return edge2;
 	}
 
 	public Fragment getFragment() {
-		checkNotNull("Fragment not set", fragment);
+		Objects.requireNonNull(fragment, "Fragment not set");
 		return fragment;
 	}
 
 	public Position getPosition() {
-		checkNotNull("Position not set", position);
+		Objects.requireNonNull(position, "Position not set");
 		return position;
 	}
 
 	public long getIndex1() {
-		checkNotNull("Index 1 not set", index1);
+		Objects.requireNonNull(index1, "Index 1 not set");
 		return index1.longValue();
 	}
 
 	public long getIndex2() {
-		checkNotNull("Index 2 not set", index2);
+		Objects.requireNonNull(index2, "Index 2 not set");
 		return index2.longValue();
 	}
 
 	public long getExpectedSize() {
-		checkNotNull("Expected size not set", expectedSize);
+		Objects.requireNonNull(expectedSize, "Expected size not set");
 		return expectedSize.longValue();
 	}
 
 	public boolean getIsAdd() {
-		checkNotNull("Add flag not set", isAdd);
+		Objects.requireNonNull(isAdd, "Add flag not set");
 		return isAdd.booleanValue();
 	}
 
 	public boolean getIsSource() {
-		checkNotNull("Source flag not set", isSource);
+		Objects.requireNonNull(isSource, "Source flag not set");
 		return isSource.booleanValue();
 	}
 
 	public boolean getIsBegin() {
-		checkNotNull("Begin flag not set", isBegin);
+		Objects.requireNonNull(isBegin, "Begin flag not set");
 		return isBegin.booleanValue();
 	}
 
 	public DataSequence<? extends Item> getItems() {
-		checkNotNull("Items sequence not set", items);
+		Objects.requireNonNull(items, "Items sequence not set");
 		return items;
 	}
 
 	public DataSequence<? extends Edge> getEdges() {
-		checkNotNull("Edge sequence not set", edges);
+		Objects.requireNonNull(edges, "Edge sequence not set");
 		return edges;
 	}
 
 	public Object getValue1() {
-		checkNotNull("Value 1 not set", value1);
+		Objects.requireNonNull(value1, "Value 1 not set");
 		return value1;
 	}
 
 	public Object getValue2() {
-		checkNotNull("Value 2 not set", value2);
+		Objects.requireNonNull(value2, "Value 2 not set");
 		return value2;
 	}
 
 	public ValueType getValueType() {
-		checkNotNull("Value type not set", valueType);
+		Objects.requireNonNull(valueType, "Value type not set");
 		return valueType;
 	}
 
@@ -200,70 +202,70 @@ public final class AtomicChangeProxy {
 
 
 	public AtomicChangeProxy setAnnotationLayer(AnnotationLayer annotationLayer) {
-		checkNotNull(annotationLayer);
+		Objects.requireNonNull(annotationLayer);
 		checkState("Annotation layer already set", this.annotationLayer==null);
 		this.annotationLayer = annotationLayer;
 		return this;
 	}
 
 	public AtomicChangeProxy setKey(String key) {
-		checkNotNull(key);
+		Objects.requireNonNull(key);
 		checkState("Key already set", this.key==null);
 		this.key = key;
 		return this;
 	}
 
 	public AtomicChangeProxy setContainer(Container container) {
-		checkNotNull(container);
+		Objects.requireNonNull(container);
 		checkState("Container already set", this.container==null);
 		this.container = container;
 		return this;
 	}
 
 	public AtomicChangeProxy setStructure(Structure structure) {
-		checkNotNull(structure);
+		Objects.requireNonNull(structure);
 		checkState("Structure already set", this.structure==null);
 		this.structure = structure;
 		return this;
 	}
 
 	public AtomicChangeProxy setItem1(Item item1) {
-		checkNotNull(item1);
+		Objects.requireNonNull(item1);
 		checkState("Item 1 already set", this.item1==null);
 		this.item1 = item1;
 		return this;
 	}
 
 	public AtomicChangeProxy setItem2(Item item2) {
-		checkNotNull(item2);
+		Objects.requireNonNull(item2);
 		checkState("Item 2 already set", this.item2==null);
 		this.item2 = item2;
 		return this;
 	}
 
 	public AtomicChangeProxy setEdge1(Edge edge1) {
-		checkNotNull(edge1);
+		Objects.requireNonNull(edge1);
 		checkState("Edge 1 already set", this.edge1==null);
 		this.edge1 = edge1;
 		return this;
 	}
 
 	public AtomicChangeProxy setEdge2(Edge edge2) {
-		checkNotNull(edge2);
+		Objects.requireNonNull(edge2);
 		checkState("Edge 2 already set", this.edge2==null);
 		this.edge2 = edge2;
 		return this;
 	}
 
 	public AtomicChangeProxy setFragment(Fragment fragment) {
-		checkNotNull(fragment);
+		Objects.requireNonNull(fragment);
 		checkState("Fragment already set", this.fragment==null);
 		this.fragment = fragment;
 		return this;
 	}
 
 	public AtomicChangeProxy setPosition(Position position) {
-		checkNotNull(position);
+		Objects.requireNonNull(position);
 		checkState("Position already set", this.position==null);
 		this.position = position;
 		return this;
@@ -309,35 +311,35 @@ public final class AtomicChangeProxy {
 	}
 
 	public AtomicChangeProxy setItems(DataSequence<? extends Item> items) {
-		checkNotNull(items);
+		Objects.requireNonNull(items);
 		checkState("Items sequence already set", this.items==null);
 		this.items = items;
 		return this;
 	}
 
 	public AtomicChangeProxy setEdges(DataSequence<? extends Edge> edges) {
-		checkNotNull(edges);
+		Objects.requireNonNull(edges);
 		checkState("Edge sequence already set", this.edges==null);
 		this.edges = edges;
 		return this;
 	}
 
 	public AtomicChangeProxy setValue1(Object value1) {
-		checkNotNull(value1);
+		Objects.requireNonNull(value1);
 		checkState("Value 1 already set", this.value1==null);
 		this.value1 = value1;
 		return this;
 	}
 
 	public AtomicChangeProxy setValue2(Object value2) {
-		checkNotNull(value2);
+		Objects.requireNonNull(value2);
 		checkState("Value 2 already set", this.value2==null);
 		this.value2 = value2;
 		return this;
 	}
 
 	public AtomicChangeProxy setValueType(ValueType valueType) {
-		checkNotNull(valueType);
+		Objects.requireNonNull(valueType);
 		checkState("Value type already set", this.valueType==null);
 		this.valueType = valueType;
 		return this;

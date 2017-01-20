@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.driver.jdbc.indices;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -135,7 +135,7 @@ public class LazyResultSetIndexSet implements IndexSet {
 	}
 
 	public LazyResultSetIndexSet(ResultSetSupplier resultSetSupplier, ToLongFunction<ResultSet> readFunc, int estimatedSize) {
-		checkNotNull(resultSetSupplier);
+		requireNonNull(resultSetSupplier);
 
 		this.resultSetSupplier = resultSetSupplier;
 		this.readFunc = readFunc;

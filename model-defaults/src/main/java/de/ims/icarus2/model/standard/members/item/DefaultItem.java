@@ -18,8 +18,8 @@
  */
 package de.ims.icarus2.model.standard.members.item;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -177,7 +177,7 @@ public class DefaultItem extends AbstractMember implements Item, Item.ManagedIte
 	 */
 	@Override
 	public void setContainer(Container container) {
-		checkNotNull(container);
+		requireNonNull(container);
 
 		this.container = container;
 	}

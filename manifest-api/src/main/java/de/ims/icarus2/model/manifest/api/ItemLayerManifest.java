@@ -124,6 +124,11 @@ public interface ItemLayerManifest extends LayerManifest {
 
 	boolean isLocalFoundationLayerManifest();
 
+	default boolean isPrimaryLayerManifest() {
+		LayerGroupManifest groupManifest = getGroupManifest();
+		return groupManifest!=null && groupManifest.getPrimaryLayerManifest()==this;
+	}
+
 	// Modification methods
 
 	TargetLayerManifest setBoundaryLayerId(String boundaryLayerId);

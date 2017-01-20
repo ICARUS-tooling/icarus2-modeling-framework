@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import de.ims.icarus2.model.manifest.api.events.ManifestEvents;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.events.EventManager;
 import de.ims.icarus2.util.events.Events;
@@ -109,13 +110,13 @@ public interface ManifestRegistry extends EventManager {
 
 	// Corpus methods
 
-	void addCorpus(CorpusManifest manifest);
+	void addCorpusManifest(CorpusManifest manifest);
 
-	void removeCorpus(CorpusManifest manifest);
+	void removeCorpusManifest(CorpusManifest manifest);
 
 	Set<ManifestLocation> getCorpusSources();
 
-	CorpusManifest getCorpus(String id);
+	CorpusManifest getCorpusManifest(String id);
 
 	/**
 	 * Returns {@code true} in case there are other manifests referencing the given one.
@@ -139,7 +140,7 @@ public interface ManifestRegistry extends EventManager {
 		return result.getAsSet();
 	}
 
-	default Collection<CorpusManifest> getCorpora() {
+	default Collection<CorpusManifest> getCorpusManifests() {
 		LazyCollection<CorpusManifest> result = LazyCollection.lazyList();
 
 		forEachCorpus(result);
@@ -147,7 +148,7 @@ public interface ManifestRegistry extends EventManager {
 		return result.getAsList();
 	}
 
-	default Collection<CorpusManifest> getCorpora(Predicate<? super CorpusManifest> p) {
+	default Collection<CorpusManifest> getCorpusManifests(Predicate<? super CorpusManifest> p) {
 		LazyCollection<CorpusManifest> result = LazyCollection.lazyList();
 
 		forEachCorpus(m -> {if(p.test(m)) result.add(m);});
@@ -155,8 +156,8 @@ public interface ManifestRegistry extends EventManager {
 		return result.getAsList();
 	}
 
-	default Collection<CorpusManifest> getCorporaForSource(ManifestLocation manifestLocation) {
-		return getCorpora(m -> manifestLocation.equals(m.getManifestLocation()));
+	default Collection<CorpusManifest> getCorpusManifestsForSource(ManifestLocation manifestLocation) {
+		return getCorpusManifests(m -> manifestLocation.equals(m.getManifestLocation()));
 	}
 
 	boolean hasTemplate(String id);
@@ -164,15 +165,15 @@ public interface ManifestRegistry extends EventManager {
 	Manifest getTemplate(String id);
 
 
-	void addContext(CorpusManifest corpus, ContextManifest context);
+	void addContextManifest(CorpusManifest corpus, ContextManifest context);
 
-	void removeContext(CorpusManifest corpus, ContextManifest context);
+	void removeContextManifest(CorpusManifest corpus, ContextManifest context);
 
 	// Notification methods
 
-	void corpusChanged(CorpusManifest corpus);
+	void corpusManifestChanged(CorpusManifest corpus);
 
-	void contextChanged(ContextManifest context);
+	void contextManifestChanged(ContextManifest context);
 
 	// Template methods
 

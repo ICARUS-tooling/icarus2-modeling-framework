@@ -18,8 +18,8 @@
 package de.ims.icarus2.filedriver;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
@@ -27,15 +27,18 @@ import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 import java.io.IOException;
 import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.LongAdder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.filedriver.FileDriver.LockableFileObject;
 import de.ims.icarus2.filedriver.FileDriverMetadata.ChunkIndexKey;
 import de.ims.icarus2.filedriver.FileDriverMetadata.ContainerKey;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndex;
@@ -43,27 +46,19 @@ import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexCursor;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
-import de.ims.icarus2.model.api.driver.mapping.Mapping;
-import de.ims.icarus2.model.api.driver.mapping.MappingReader;
-import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
+import de.ims.icarus2.model.api.driver.ChunkState;
 import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.api.layer.Layer;
-import de.ims.icarus2.model.api.layer.LayerGroup;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
-import de.ims.icarus2.model.manifest.api.LayerManifest;
-import de.ims.icarus2.model.manifest.api.MappingManifest;
-import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
-import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
-import de.ims.icarus2.model.manifest.util.Messages;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.standard.driver.BufferedItemManager;
+import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
+import de.ims.icarus2.model.standard.driver.ChunkConsumer;
 import de.ims.icarus2.model.util.ModelUtils;
-import de.ims.icarus2.util.IcarusUtils;
-import de.ims.icarus2.util.collections.ArrayUtils;
-import de.ims.icarus2.util.collections.set.DataSet;
+import de.ims.icarus2.util.AccumulatingException;
+import de.ims.icarus2.util.collections.Pool;
 import de.ims.icarus2.util.io.IOUtil;
 import de.ims.icarus2.util.nio.SubChannel;
 
@@ -75,19 +70,19 @@ public abstract class AbstractConverter implements Converter {
 
 	private FileDriver driver;
 
-	private final Int2ObjectMap<Cursor> activeCursors = new Int2ObjectOpenHashMap<>();
+	private final Int2ObjectMap<DelegatingCursor> activeCursors = new Int2ObjectOpenHashMap<>();
 
-	private final Reference2ObjectMap<ItemLayer, BufferedItemManager.InputCache> caches = new Reference2ObjectOpenHashMap<>();
+	private final Reference2ObjectMap<ItemLayer, Pool<BufferedItemManager.InputCache>> cachePools = new Reference2ObjectOpenHashMap<>();
 
 	private static Logger log = LoggerFactory.getLogger(AbstractConverter.class);
 
-	protected BufferedItemManager.InputCache getCacheForLayer(ItemLayer layer) {
-		BufferedItemManager.InputCache cache = caches.get(layer);
-		if(cache==null) {
-			cache = getFileDriver().getLayerBuffer(layer).newCache();
-			caches.put(layer, cache);
+	protected Pool<BufferedItemManager.InputCache> getCachePoolForLayer(ItemLayer layer) {
+		Pool<BufferedItemManager.InputCache> pool = cachePools.get(layer);
+		if(pool==null) {
+			pool = new Pool<>(getFileDriver().getLayerBuffer(layer)::newCache);
+			cachePools.put(layer, pool);
 		}
-		return cache;
+		return pool;
 	}
 
 	/**
@@ -98,7 +93,7 @@ public abstract class AbstractConverter implements Converter {
 	 */
 	@Override
 	public void init(FileDriver driver) {
-		checkNotNull(driver);
+		requireNonNull(driver);
 
 		checkState("Driver already set", this.driver==null);
 
@@ -128,19 +123,29 @@ public abstract class AbstractConverter implements Converter {
 	 * @see de.ims.icarus2.filedriver.Converter#close()
 	 */
 	@Override
-	public void close() {
+	public void close() throws AccumulatingException {
 		driver = null;
 
-		discardAllCaches();
+		// Close cursors first so we avoid race conditions against other processes adding items to caches
 		closeAllCursors();
 	}
 
-	protected void discardAllCaches() {
-		//TODO
-	}
+	protected void closeAllCursors() throws AccumulatingException {
+		AccumulatingException.Buffer exceptionBuffer = new AccumulatingException.Buffer();
 
-	protected void closeAllCursors() {
-		//TODO
+		activeCursors.values().forEach(cursor -> {
+			try {
+				cursor.close();
+			} catch (IOException e) {
+				exceptionBuffer.addException(e);
+				log.error("Failed to close cursor for file '{1}'", cursor.getFile().getResource(), e);
+			}
+		});
+
+		if(!exceptionBuffer.isEmpty()) {
+			exceptionBuffer.setFormattedMessage("Failed to close %d cursors");
+			throw exceptionBuffer.toException();
+		}
 	}
 
 	/**
@@ -150,7 +155,7 @@ public abstract class AbstractConverter implements Converter {
 	 * @see de.ims.icarus2.filedriver.Converter#getCursor(int, de.ims.icarus2.model.api.layer.ItemLayer, de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexStorage)
 	 */
 	@Override
-	public Cursor getCursor(int fileIndex, ItemLayer layer) throws IOException {
+	public DelegatingCursor getCursor(int fileIndex, ItemLayer layer) throws IOException {
 		if(!layer.isPrimaryLayer())
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Cannot create cursor - not a priamry layer: "+ModelUtils.getUniqueId(layer));
@@ -178,9 +183,7 @@ public abstract class AbstractConverter implements Converter {
 	 * @param layer
 	 * @return
 	 */
-	protected DelegatingCursor createDelegatingCursor(int fileIndex, ItemLayer layer) {
-		return new DelegatingCursor(fileIndex, layer);
-	}
+	protected abstract DelegatingCursor createDelegatingCursor(int fileIndex, ItemLayer layer);
 
 	/**
 	 * Callback for {@link DelegatingCursor} instances to signal to their
@@ -194,8 +197,8 @@ public abstract class AbstractConverter implements Converter {
 	 * @param fileIndex
 	 * @param cursor
 	 */
-	protected void cursorOpened(int fileIndex, DelegatingCursor cursor) {
-		activeCursors.put(fileIndex, cursor);
+	protected void cursorOpened(DelegatingCursor cursor) {
+		activeCursors.put(cursor.getFile().getFileIndex(), cursor);
 	}
 
 	/**
@@ -210,12 +213,8 @@ public abstract class AbstractConverter implements Converter {
 	 * @param fileIndex
 	 * @param cursor
 	 */
-	protected void cursorClosed(int fileIndex, DelegatingCursor cursor) {
-		activeCursors.remove(fileIndex);
-	}
-
-	protected Path getFileForIndex(int fileIndex) {
-		return driver.getDataFiles().getFileAt(fileIndex);
+	protected void cursorClosed(DelegatingCursor cursor) {
+		activeCursors.remove(cursor.getFile().getFileIndex());
 	}
 
 	/**
@@ -267,76 +266,9 @@ public abstract class AbstractConverter implements Converter {
 
 		if(bufferSize<0)
 			throw new ModelException(ModelErrorCode.DRIVER_METADATA_MISSING,
-					"Missing information on maximum container size for layer: "+ModelUtils.getUniqueId(sourceLayer));
+					"Missing information on maximum container size for layer: "+ManifestUtils.getUniqueId(sourceLayer));
 
 		return bufferSize;
-	}
-
-	/**
-	 * Creates a dynamic {@link IndexSourceLookup} that can be used for the random-access
-	 * style operations of a {@link Cursor} object.
-	 *
-	 * @param group
-	 * @return
-	 */
-	@Deprecated
-	protected IndexSourceLookup createIndexSourcesForCursor(LayerGroup group) {
-		checkNotNull(group);
-
-		List<IndexSource> indexSources = new ArrayList<>();
-
-		final ItemLayer primaryLayer = group.getPrimaryLayer();
-		indexSources.add(new RootIndexSource(primaryLayer.getManifest()));
-		collectIndexSources0(primaryLayer, indexSources);
-
-		IndexSourceLookup lookup = new IndexSourceLookup(indexSources.size());
-
-		return lookup;
-	}
-
-	/**
-	 * Traverses the given layer's list of {@link Layer#getBaseLayers() base layers}
-	 * and for each such layer that is located within the same group as the given layer
-	 * itself creates a new {@link MappedComponentSupplier}. Will throw an exception if the
-	 * surrounding driver fails to provide the necessary {@link Mapping} for this combination
-	 * of layers.
-	 * <p>
-	 * Collection of index sources is performed in a recursive depth-first traversal.
-	 *
-	 * @param parentLayer
-	 * @throws ModelException if the host driver cannot provide a required {@link Mapping}
-	 */
-	@Deprecated
-	private void collectIndexSources0(ItemLayer parentLayer, List<IndexSource> storage) {
-		DataSet<ItemLayer> baseLayers = parentLayer.getBaseLayers();
-		for(ItemLayer baseLayer : baseLayers) {
-
-			// Ignore base layers outside our "private" groups
-			if(baseLayer.getLayerGroup()!=parentLayer.getLayerGroup()) {
-				continue;
-			}
-
-			// Fetch required mapping and complain of missing
-			Mapping mapping = getFileDriver().getMapping(parentLayer, baseLayer);
-			if(mapping==null)
-				throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-						"Missing mapping from "+ModelUtils.getUniqueId(parentLayer)+" to "+ModelUtils.getUniqueId(baseLayer));
-
-			/*
-			 *  NOTE: this fetches the largest container size for the parent layer.
-			 *  This might be significantly higher than the buffer sizer we need for
-			 *  the given combination (parentLayer -> baseLayer) but is an easy upper
-			 *  boundary and the overhead should be manageable.
-			 */
-			int bufferSize = getRecommendedIndexBufferSize(parentLayer.getManifest());
-
-			storage.add(new MappedIndexSource(mapping, bufferSize));
-
-			// Recursion if base layer has additional dependencies
-			if(!baseLayer.getBaseLayers().isEmpty()) {
-				collectIndexSources0(baseLayer, storage);
-			}
-		}
 	}
 
 	/**
@@ -347,12 +279,7 @@ public abstract class AbstractConverter implements Converter {
 	 * @author Markus Gärtner
 	 *
 	 */
-	protected class DelegatingCursor implements Cursor, ModelConstants {
-
-		/**
-		 * Integer index of the file to be loaded
-		 */
-		protected final int fileIndex;
+	public class DelegatingCursor implements Cursor, ModelConstants {
 
 		/**
 		 * Primary layer of group for which data chunks should be loaded
@@ -360,27 +287,40 @@ public abstract class AbstractConverter implements Converter {
 		protected final ItemLayer layer;
 
 		/**
-		 * Physical resource location
+		 * Physical resource location, index and shared lock
+		 * bundled into one object.
 		 */
-		protected final Path file;
+		protected final LockableFileObject file;
 
 		/**
 		 * Chunk index for accessing physical data chunks, provided by host driver
 		 */
 		protected final ChunkIndex chunkIndex;
 
-		public DelegatingCursor(int fileIndex, ItemLayer primaryLayer) {
-			this.fileIndex = fileIndex;
-			this.layer = primaryLayer;
+		protected final DynamicLoadResult loadResult;
 
-			file = getFileForIndex(fileIndex);
+		public DelegatingCursor(LockableFileObject file, ItemLayer primaryLayer, DynamicLoadResult loadResult) {
+			requireNonNull(file);
+			requireNonNull(primaryLayer);
+			requireNonNull(loadResult);
+
+			this.file = file;
+			this.layer = primaryLayer;
+			this.loadResult = loadResult;
+
 			chunkIndex = getFileDriver().getChunkIndex(primaryLayer);
 		}
 
 		private ChunkIndexCursor chunkIndexCursor;
-		private FileChannel fileChannel;
+		private SeekableByteChannel sourceChannel;
 		private final SubChannel blockChannel = new SubChannel();
 		private long currentIndex;
+
+		/**
+		 * Hint for the {@link #load(long)} method to reset the loadResult instance before
+		 * actually loading a new item.
+		 */
+		private boolean doReset = false;
 
 		private volatile boolean open = false;
 
@@ -400,17 +340,24 @@ public abstract class AbstractConverter implements Converter {
 		public void open() throws IOException {
 
 			// Access raw input
-			fileChannel = FileChannel.open(file, StandardOpenOption.READ);
-			blockChannel.setSource(fileChannel);
+			sourceChannel = file.getResource().getReadChannel();
+			blockChannel.setSource(sourceChannel);
 
 			// Read-only access to the chunk index
 			chunkIndexCursor = chunkIndex.newCursor(true);
 
 			// Inform converter (will be skipped in case of any exception)
-			cursorOpened(fileIndex, this);
+			cursorOpened(this);
 
 			// Only if all configuration steps went well actually set the cursor operational
 			open = true;
+		}
+
+		@Override
+		public LoadResult getResult() {
+			// Tell load() method to reset the result the next time it is called
+			doReset = true;
+			return loadResult;
 		}
 
 		/**
@@ -422,6 +369,12 @@ public abstract class AbstractConverter implements Converter {
 		public Item load(long index) throws IOException, InterruptedException {
 			checkState(open);
 			checkInterrupted();
+
+			// Wipe state of result
+			if(doReset) {
+				loadResult.reset();
+				doReset = false;
+			}
 
 			Item result = null;
 
@@ -438,6 +391,9 @@ public abstract class AbstractConverter implements Converter {
 
 				// Delegate reading to converter
 				result = readItemFromCursor(this);
+
+				// Push info into result
+				loadResult.accept(index, result, ChunkState.forItem(result));
 			}
 
 			return result;
@@ -446,11 +402,12 @@ public abstract class AbstractConverter implements Converter {
 		protected void doClose() throws IOException {
 			// No checked exception, so let's close this first
 			chunkIndexCursor.close();
-
-			// This might fail due to I/O stuff beyond our control
-			fileChannel.close();
+			loadResult.close();
 
 			currentIndex = NO_INDEX;
+
+			// This might fail due to I/O stuff beyond our control
+			sourceChannel.close();
 
 			//TODO do other cleanup work
 		}
@@ -470,20 +427,16 @@ public abstract class AbstractConverter implements Converter {
 				 *  Finally notify converter (we need to do this here in a finally
 				 *  block to ensure proper removal of "old" cursor instances)
 				 */
-				cursorClosed(fileIndex, this);
+				cursorClosed(this);
 			}
 		}
 
-		public final int getFileIndex() {
-			return fileIndex;
+		public final LockableFileObject getFile() {
+			return file;
 		}
 
 		public final ItemLayer getLayer() {
 			return layer;
-		}
-
-		public final Path getFile() {
-			return file;
 		}
 
 		public final ChunkIndex getChunkIndex() {
@@ -494,8 +447,8 @@ public abstract class AbstractConverter implements Converter {
 			return chunkIndexCursor;
 		}
 
-		public final FileChannel getFileChannel() {
-			return fileChannel;
+		public final SeekableByteChannel getSourceChannel() {
+			return sourceChannel;
 		}
 
 		public final SubChannel getBlockChannel() {
@@ -507,55 +460,110 @@ public abstract class AbstractConverter implements Converter {
 		}
 	}
 
-	/**
-	 * Bridge to
-	 *
-	 * @author Markus Gärtner
-	 *
-	 */
-	public static class IndexSourceLookup implements ModelConstants, AutoCloseable {
+	public interface DynamicLoadResult extends LoadResult, ChunkConsumer {
 
 		/**
-		 *
+		 * Resets the internal buffer of this result so that it will
+		 * subsequently report {@code 0} for all count related methods
+		 * unless new chunks are {@link #accept(long, Item, ChunkState) consumed}.
 		 */
-		private final IndexSource[] indexSources;
+		void reset();
+	}
 
-		/**
-		 * Quick lookup storing the {@link LayerManifest#getUID() uid}s
-		 * of source and target layer for the mapping at each level.
-		 */
-		private final int[] keys;
+	protected static class SimpleLoadResult implements DynamicLoadResult {
 
-		public IndexSourceLookup(int depths) {
-			checkArgument(depths>0);
+		private long validChunkCount = 0L;
+		private long modifiedChunkCount = 0L;
+		private long corruptedChunkCount = 0L;
 
-			indexSources = new IndexSource[depths];
-			keys = new int[depths];
+		private final List<InputCache> caches = new ArrayList<>();
+		private boolean published = false;
+		private boolean discarded = false;
+
+		public SimpleLoadResult(Collection<InputCache> caches) {
+			requireNonNull(caches);
+			checkArgument(!caches.isEmpty());
+
+			this.caches.addAll(caches);
 		}
 
-		public IndexSourceLookup(List<IndexSource> sources) {
-			checkNotNull(sources);
-			checkArgument(!sources.isEmpty());
+		/**
+		 * Creates an "empty" load result, i.e. one that is not linked to any
+		 * caches and therefore suitable for the scanning phase of a converter.
+		 */
+		public SimpleLoadResult() {
+			// no-op
+		}
 
-			int size = sources.size();
+		private void checkStillValid() {
+			checkState("Result already published", !published);
+			checkState("Result already discarded", !discarded);
+		}
 
-			indexSources = new IndexSource[size];
-			keys = new int[size];
+		/**
+		 * @see de.ims.icarus2.filedriver.Converter.LoadResult#publish()
+		 */
+		@Override
+		public long publish() {
+			checkStillValid();
+			published = true;
+			LongAdder adder = new LongAdder();
 
-			for(int i=0; i<size; i++) {
-				configureLevel(i, sources.get(i));
+			caches.forEach(c -> adder.add(c.commit()));
+
+			return adder.longValue();
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.Converter.LoadResult#discard()
+		 */
+		@Override
+		public long discard() {
+			checkStillValid();
+			discarded = true;
+			LongAdder adder = new LongAdder();
+
+			caches.forEach(c -> adder.add(c.discard()));
+
+			return adder.longValue();
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.Converter.LoadResult#loadedChunkCount()
+		 */
+		@Override
+		public long loadedChunkCount() {
+			return validChunkCount+modifiedChunkCount+corruptedChunkCount;
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.Converter.LoadResult#chunkCount(de.ims.icarus2.model.api.driver.ChunkState)
+		 */
+		@Override
+		public long chunkCount(ChunkState state) {
+			switch (state) {
+			case VALID: return validChunkCount;
+			case MODIFIED: return modifiedChunkCount;
+			case CORRUPTED: return corruptedChunkCount;
+
+			default:
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Unknown chunk state: "+state);
 			}
 		}
 
-		public IndexSource getIndexSource(int level) {
-			return indexSources[level];
-		}
+		/**
+		 * @see de.ims.icarus2.model.standard.driver.ChunkConsumer#accept(long, de.ims.icarus2.model.api.members.item.Item, de.ims.icarus2.model.api.driver.ChunkState)
+		 */
+		@Override
+		public void accept(long index, Item item, ChunkState state) {
+			switch (state) {
+			case VALID: validChunkCount++; break;
+			case MODIFIED: modifiedChunkCount++; break;
+			case CORRUPTED: corruptedChunkCount++; break;
 
-		public void configureLevel(int level, IndexSource indexSource) {
-			checkState("Level already configured: "+level, indexSources[level]==null);
-
-			indexSources[level] = indexSource;
-			keys[level] = indexSource.getLayerManifest().getUID();
+			default:
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Unknown chunk state: "+state);
+			}
 		}
 
 		/**
@@ -563,329 +571,18 @@ public abstract class AbstractConverter implements Converter {
 		 */
 		@Override
 		public void close() {
-			for(IndexSource indexSource : indexSources) {
-				indexSource.close();
-			}
-		}
-
-		public int getLevel(Mapping mapping) {
-			int index = ArrayUtils.indexOf(keys, mapping.getTargetLayer().getUID());
-			if(index<0)
-				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Index source not available in this lookup: "+mapping.getManifest());
-			return index;
-		}
-
-		public int getLevel(ItemLayerManifest targetLayer) {
-			int index = ArrayUtils.indexOf(keys, targetLayer.getUID());
-			if(index<0)
-				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Index source not available in this lookup: "+targetLayer);
-			return index;
-		}
-	}
-
-	/**
-	 * Generic interface for obtaining values for an item's {@link Item#getIndex() index}.
-	 * Those values can come either from an existing {@link Mapping} implementation or a
-	 * continuous stream of {@code long} values.
-	 *
-	 * This class exists as an intermediate abstraction layer so that converter
-	 * implementations can unify the actual I/O work without worrying how to fetch index
-	 * values for the newly created instances of model members.
-	 *
-	 * @author Markus Gärtner
-	 *
-	 */
-	public static abstract class IndexSource implements AutoCloseable, ModelConstants {
-
-		private final ItemLayerManifest layerManifest;
-
-		protected IndexSource(ItemLayerManifest layerManifest) {
-			checkNotNull(layerManifest);
-
-			this.layerManifest = layerManifest;
+			caches.forEach(InputCache::discard);
+			caches.clear();
 		}
 
 		/**
-		 * Returns the {@code layer} for which this {@link IndexSource} produces values.
-		 * @return
-		 */
-		public final ItemLayerManifest getLayerManifest() {
-			return layerManifest;
-		}
-
-		/**
-		 * Prepares this source to return index values for the specified {@code hostIndex}.
-		 * Note that an implementation is not required to actually use this host index. For
-		 * example a basic index source that provides the original index values for the
-		 * scanning process of a file resource will simply return natural numbers in ascending
-		 * order, completely ignoring the host indices.
-		 * <p>
-		 * It is advised for implementations to store the {@code hostIndex} used for the last
-		 * call to this method in order to prevent unnecessary work in case the same {@link IndexSource}
-		 * is used for multiple tasks.
-		 *
-		 * @param hostIndex
-		 * @throws InterruptedException
-		 */
-		public abstract void reset(long hostIndex) throws InterruptedException;
-
-		/**
-		 * Release internal resources held by this index source.
-		 *
-		 * @see java.lang.AutoCloseable#close()
+		 * @see de.ims.icarus2.filedriver.AbstractConverter.DynamicLoadResult#reset()
 		 */
 		@Override
-		public abstract void close();
-
-		/**
-		 * Returns the number of index values currently available from this source.
-		 * This is used by converter implementations to determine the required size
-		 * of buffer objects when reading in data.
-		 * <p>
-		 * A return value of {@code -1} indicates that the number of index values
-		 * is not known or that it is unlimited.
-		 *
-		 * @return
-		 */
-		public abstract long size();
-
-		/**
-		 * Returns the index value at the specified position.
-		 *
-		 * @param index
-		 * @return
-		 */
-		public abstract long indexAt(long index);
-	}
-
-	public static class RootIndexSource extends IndexSource {
-
-		private long index;
-
-		/**
-		 * @param layerManifest
-		 */
-		public RootIndexSource(ItemLayerManifest layerManifest) {
-			super(layerManifest);
+		public void reset() {
+			caches.forEach(InputCache::discard);
+			validChunkCount = modifiedChunkCount = corruptedChunkCount = 0L;
+			discarded = published = false;
 		}
-
-		/**
-		 * @see de.ims.icarus2.filedriver.AbstractConverter.IndexSource#reset(long)
-		 */
-		@Override
-		public void reset(long hostIndex) {
-			index = hostIndex;
-		}
-
-		/**
-		 * @see de.ims.icarus2.filedriver.AbstractConverter.IndexSource#close()
-		 */
-		@Override
-		public void close() {
-			index = NO_INDEX;
-		}
-
-		/**
-		 * @see de.ims.icarus2.filedriver.AbstractConverter.IndexSource#size()
-		 */
-		@Override
-		public long size() {
-			return index==NO_INDEX ? 0 : 1;
-		}
-
-		/**
-		 * @see de.ims.icarus2.filedriver.AbstractConverter.IndexSource#indexAt(long)
-		 */
-		@Override
-		public long indexAt(long index) {
-			checkArgument(index==0);
-			return this.index;
-		}
-
-	}
-
-	/**
-	 * Implements an {@link IndexSource} that produces a continuous stream of index values
-	 * starting from a specified {@code begin index}. If can have an optional {@code length}
-	 * defined which acts as a limit for arguments passed to the {@link #indexAt(long)} method.
-	 * If no length is defined at construction time this source will produce up to
-	 * {@link Long#MAX_VALUE} distinct index values.
-	 *
-	 * @author Markus Gärtner
-	 *
-	 */
-	public static class ContinuousIndexSource extends IndexSource {
-
-		private final long beginIndex;
-		private final long length;
-
-		public ContinuousIndexSource(ItemLayerManifest layerManifest) {
-			this(layerManifest, 0L, NO_INDEX);
-		}
-
-		public ContinuousIndexSource(ItemLayerManifest layerManifest, long beginIndex) {
-			this(layerManifest, beginIndex, NO_INDEX);
-		}
-
-		public ContinuousIndexSource(ItemLayerManifest layerManifest, long beginIndex, long length) {
-			super(layerManifest);
-
-			checkArgument(beginIndex>=0L);
-
-			this.beginIndex = beginIndex;
-			this.length = length;
-		}
-
-		/**
-		 * @see de.ims.icarus2.filedriver.AbstractConverter.IndexSource#reset(long)
-		 */
-		@Override
-		public void reset(long hostIndex) {
-			// no-op
-		}
-
-		/**
-		 * @see de.ims.icarus2.filedriver.AbstractConverter.IndexSource#close()
-		 */
-		@Override
-		public void close() {
-			// no-op
-		}
-
-		/**
-		 * @see de.ims.icarus2.filedriver.AbstractConverter.IndexSource#size()
-		 */
-		@Override
-		public long size() {
-			return length;
-		}
-
-		/**
-		 * @see de.ims.icarus2.filedriver.AbstractConverter.IndexSource#indexAt(long)
-		 */
-		@Override
-		public long indexAt(long index) {
-			checkArgument(index>=0L);
-			checkArgument(length==NO_INDEX || index<length);
-
-			long result = beginIndex+index;
-			// Overflow protection
-			if(result<0L)
-				throw new ModelException(GlobalErrorCode.INDEX_OVERFLOW,
-						String.format("Long.MAX_VALUE overflow: beginIndex=%d index=%d", Long.valueOf(beginIndex), Long.valueOf(index)));
-			return result;
-		}
-
-	}
-
-	public static class MappedIndexSource extends IndexSource {
-
-		private final Mapping mapping;
-		private final boolean useSpanMapping;
-
-		// SPAN SUPPORT
-		private long spanBegin = NO_INDEX;
-		private long spanEnd = NO_INDEX;
-
-		// GENERAL MAPPING SUPPORT
-		private final MappingReader mappingReader;
-		private final IndexBuffer buffer;
-
-		/**
-		 * @param layerManifest
-		 */
-		public MappedIndexSource(Mapping mapping, int bufferSize) {
-			super(mapping.getTargetLayer());
-
-			MappingManifest mappingManifest = mapping.getManifest();
-			checkArgument("Mapping relation no supported: "+mappingManifest.getRelation(),
-					mappingManifest.getRelation()==Relation.ONE_TO_ONE || mappingManifest.getRelation()==Relation.ONE_TO_MANY);
-
-			checkArgument(bufferSize>0);
-
-			this.mapping = mapping;
-
-			/*
-			 * Important optimization step is to determine whether we can use a span-based
-			 * mapping approach.
-			 */
-
-			MappingReader mappingReader = null;
-			IndexBuffer buffer = null;
-
-			useSpanMapping = (mappingManifest.getRelation()==Relation.ONE_TO_ONE
-					|| mappingManifest.getCoverage()==Coverage.TOTAL_MONOTONIC);
-
-			if(!useSpanMapping) {
-				mappingReader = mapping.newReader();
-				buffer = new IndexBuffer(bufferSize);
-			}
-
-			this.mappingReader = mappingReader;
-			this.buffer = buffer;
-		}
-
-		/**
-		 * @return the mapping
-		 */
-		public Mapping getMapping() {
-			return mapping;
-		}
-
-		/**
-		 * @throws InterruptedException
-		 * @see de.ims.icarus2.filedriver.AbstractConverter.IndexSource#reset(long)
-		 */
-		@Override
-		public void reset(long hostIndex) throws InterruptedException {
-			try {
-				mappingReader.begin();
-
-				if(useSpanMapping) {
-					spanBegin = mappingReader.getBeginIndex(hostIndex, RequestSettings.emptySettings);
-					spanEnd = mappingReader.getEndIndex(hostIndex, RequestSettings.emptySettings);
-				} else {
-					buffer.clear();
-					mappingReader.lookup(hostIndex, buffer, RequestSettings.emptySettings);
-				}
-			} finally {
-				mappingReader.end();
-			}
-		}
-
-		/**
-		 * @see de.ims.icarus2.filedriver.AbstractConverter.IndexSource#close()
-		 */
-		@Override
-		public void close() {
-			if(mappingReader!=null) {
-				mappingReader.close();
-			}
-		}
-
-		/**
-		 * @see de.ims.icarus2.filedriver.AbstractConverter.IndexSource#size()
-		 */
-		@Override
-		public long size() {
-			return useSpanMapping ? (spanEnd-spanBegin+1) : buffer.size();
-		}
-
-		/**
-		 * @see de.ims.icarus2.filedriver.AbstractConverter.IndexSource#indexAt(long)
-		 */
-		@Override
-		public long indexAt(long index) {
-			if(useSpanMapping) {
-				long result = spanBegin+index;
-				if(result>spanEnd)
-					throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-							Messages.indexOutOfBoundsMessage("MappedComponentSupplier.indexAt(int)", 0, size(), index));
-				return result;
-			} else {
-				return buffer.indexAt(IcarusUtils.ensureIntegerValueRange(index));
-			}
-		}
-
 	}
 }

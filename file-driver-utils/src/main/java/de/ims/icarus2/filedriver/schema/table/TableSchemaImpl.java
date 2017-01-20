@@ -17,7 +17,7 @@
  */
 package de.ims.icarus2.filedriver.schema.table;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -55,7 +55,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 	}
 
 	private static void countBlockSchemas(BlockSchema blockSchema, MutableInteger counter) {
-		counter.increment();
+		counter.incrementAndGet();
 
 		blockSchema.forEachNestedBlock(b -> countBlockSchemas(b, counter));
 	}
@@ -93,7 +93,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 	}
 
 	public TableSchemaImpl setRootBlock(BlockSchema root) {
-		checkNotNull(root);
+		requireNonNull(root);
 
 		this.root = root;
 
@@ -101,7 +101,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 	}
 
 	public TableSchemaImpl setSeparator(String separator) {
-		checkNotNull(separator);
+		requireNonNull(separator);
 
 		this.separator = separator;
 
@@ -109,7 +109,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 	}
 
 	public void setGroupId(String groupId) {
-		checkNotNull(groupId);
+		requireNonNull(groupId);
 
 		this.groupId = groupId;
 	}
@@ -208,7 +208,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		@Override
 		public BlockSchema[] getNestedBlocks() {
 
-			BlockSchema[] result = null;
+			BlockSchema[] result = EMPTY_BLOCKS;
 
 			if(nestedBlocks!=null) {
 				result = nestedBlocks.toArray(EMPTY_BLOCKS);
@@ -237,7 +237,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public BlockSchemaImpl setLayerId(String layerId) {
-			checkNotNull(layerId);
+			requireNonNull(layerId);
 
 			this.layerId = layerId;
 
@@ -245,7 +245,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public BlockSchemaImpl setComponentSchema(MemberSchema componentSchema) {
-			checkNotNull(componentSchema);
+			requireNonNull(componentSchema);
 
 			this.componentSchema = componentSchema;
 
@@ -253,7 +253,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public BlockSchemaImpl setBeginDelimiter(AttributeSchema beginDelimiter) {
-			checkNotNull(beginDelimiter);
+			requireNonNull(beginDelimiter);
 
 			this.beginDelimiter = beginDelimiter;
 
@@ -261,7 +261,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public BlockSchemaImpl setEndDelimiter(AttributeSchema endDelimiter) {
-			checkNotNull(endDelimiter);
+			requireNonNull(endDelimiter);
 
 			this.endDelimiter = endDelimiter;
 
@@ -269,7 +269,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public BlockSchemaImpl setFallbackColumn(ColumnSchema fallbackColumn) {
-			checkNotNull(fallbackColumn);
+			requireNonNull(fallbackColumn);
 
 			this.fallbackColumn = fallbackColumn;
 
@@ -277,7 +277,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public BlockSchemaImpl setNoEntryLabel(String noEntryLabel) {
-			checkNotNull(noEntryLabel);
+			requireNonNull(noEntryLabel);
 
 			this.noEntryLabel = noEntryLabel;
 
@@ -285,7 +285,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public BlockSchemaImpl addAttribute(AttributeSchema attribute) {
-			checkNotNull(attribute);
+			requireNonNull(attribute);
 
 			if(attributes==null) {
 				attributes = new ArrayList<>();
@@ -297,7 +297,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public BlockSchemaImpl addColumn(ColumnSchema column) {
-			checkNotNull(column);
+			requireNonNull(column);
 
 			if(columns==null) {
 				columns = new ArrayList<>();
@@ -309,7 +309,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public BlockSchemaImpl addBlock(BlockSchema block) {
-			checkNotNull(block);
+			requireNonNull(block);
 
 			if(nestedBlocks==null) {
 				nestedBlocks = new ArrayList<>();
@@ -325,7 +325,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		 */
 		@Override
 		public Options getOptions() {
-			return options;
+			return options==null ? Options.emptyOptions : options;
 		}
 
 		public BlockSchemaImpl addOption(String key, String value) {
@@ -347,7 +347,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public BlockSchemaImpl setSeparator(String separator) {
-			checkNotNull(separator);
+			requireNonNull(separator);
 
 			this.separator = separator;
 
@@ -387,7 +387,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public MemberSchemaImpl setMemberType(MemberType memberType) {
-			checkNotNull(memberType);
+			requireNonNull(memberType);
 
 			this.memberType = memberType;
 
@@ -425,7 +425,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public AttributeSchemaImpl setPattern(String pattern) {
-			checkNotNull(pattern);
+			requireNonNull(pattern);
 
 			this.pattern = pattern;
 
@@ -433,7 +433,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public AttributeSchemaImpl setResolver(ResolverSchema resolver) {
-			checkNotNull(resolver);
+			requireNonNull(resolver);
 
 			this.resolver = resolver;
 
@@ -449,7 +449,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public AttributeSchemaImpl setTarget(AttributeTarget target) {
-			checkNotNull(target);
+			requireNonNull(target);
 
 			this.target = target;
 
@@ -464,6 +464,14 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		private Boolean isIgnoreColumn;
 		private ResolverSchema resolver;
 		private EnumMap<SubstituteType, SubstituteSchema> substitutes;
+
+		public ColumnSchemaImpl(String name) {
+			setName(name);
+		}
+
+		public ColumnSchemaImpl() {
+			// no-op
+		}
 
 		/**
 		 * @see de.ims.icarus2.util.strings.NamedObject#getName()
@@ -514,7 +522,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public ColumnSchemaImpl setName(String name) {
-			checkNotNull(name);
+			requireNonNull(name);
 
 			this.name = name;
 
@@ -522,7 +530,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public ColumnSchemaImpl setLayerId(String layerId) {
-			checkNotNull(layerId);
+			requireNonNull(layerId);
 
 			this.layerId = layerId;
 
@@ -530,7 +538,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public ColumnSchemaImpl setAnnotationKey(String annotationKey) {
-			checkNotNull(annotationKey);
+			requireNonNull(annotationKey);
 
 			this.annotationKey = annotationKey;
 
@@ -538,7 +546,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public ColumnSchemaImpl setNoEntryLabel(String noEntryLabel) {
-			checkNotNull(noEntryLabel);
+			requireNonNull(noEntryLabel);
 
 			this.noEntryLabel = noEntryLabel;
 
@@ -553,7 +561,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public ColumnSchemaImpl setResolver(ResolverSchema resolver) {
-			checkNotNull(resolver);
+			requireNonNull(resolver);
 
 			this.resolver = resolver;
 
@@ -561,8 +569,8 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public ColumnSchemaImpl addSubstitute(SubstituteType type, SubstituteSchema substitute) {
-			checkNotNull(type);
-			checkNotNull(substitute);
+			requireNonNull(type);
+			requireNonNull(substitute);
 
 			if(substitutes==null) {
 				substitutes = new EnumMap<>(SubstituteType.class);
@@ -614,7 +622,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public SubstituteSchemaImpl setType(SubstituteType type) {
-			checkNotNull(type);
+			requireNonNull(type);
 
 			this.type = type;
 
@@ -622,7 +630,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public SubstituteSchemaImpl setMemberType(MemberType memberType) {
-			checkNotNull(memberType);
+			requireNonNull(memberType);
 
 			this.memberType = memberType;
 
@@ -630,7 +638,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public SubstituteSchemaImpl setName(String name) {
-			checkNotNull(name);
+			requireNonNull(name);
 
 			this.name = name;
 
@@ -661,7 +669,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public ResolverSchemaImpl setType(String type) {
-			checkNotNull(type);
+			requireNonNull(type);
 
 			this.type = type;
 

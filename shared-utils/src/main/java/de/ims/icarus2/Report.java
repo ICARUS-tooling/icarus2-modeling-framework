@@ -17,6 +17,7 @@
  */
 package de.ims.icarus2;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Locale;
@@ -59,9 +60,72 @@ public interface Report<R extends ReportItem> {
      */
     Collection<R> getItems();
 
+    default boolean isEmpty() {
+    	return getItems().isEmpty();
+    }
 
     /**
-     * Report element. Holds all information about particular event.
+     * @author Markus Gärtner
+     *
+     */
+    @FunctionalInterface
+    public interface ReportItemCollector {
+
+    	/**
+    	 * Adds a new report item.
+    	 * <p>
+    	 * This is the main collection method, all other predefined
+    	 * methods in this interface delegate to this method with
+    	 * their respective fixed values for {@link Severity} etc...
+    	 *
+    	 * @param severity
+    	 * @param source
+    	 * @param code
+    	 * @param message
+    	 * @param data
+    	 * @return
+    	 */
+    	void addItem(Severity severity, Identity source, ErrorCode code, String message, Object...data);
+
+    	default void addItem(Severity severity, ErrorCode code, String message) {
+    		addItem(severity, null, code, message, (Object[])null);
+    	}
+
+    	default void addError(ErrorCode code, String message) {
+    		addItem(Severity.ERROR, null, code, message, (Object[])null);
+    	}
+
+    	default void addError(ErrorCode code, String message, Object...data) {
+    		addItem(Severity.ERROR, null, code, message, data);
+    	}
+
+    	default void addWarning(ErrorCode code, String message) {
+    		addItem(Severity.WARNING, null, code, message, (Object[])null);
+    	}
+
+    	default void addWarning(ErrorCode code, String message, Object...data) {
+    		addItem(Severity.WARNING, null, code, message, data);
+    	}
+
+    	default void addInfo(ErrorCode code, String message) {
+    		addItem(Severity.INFO, null, code, message, (Object[])null);
+    	}
+
+    	default void addInfo(ErrorCode code, String message, Object...data) {
+    		addItem(Severity.INFO, null, code, message, data);
+    	}
+
+    	default void addInfo(String message) {
+    		addItem(Severity.INFO, null, GlobalErrorCode.INFO, message, (Object[])null);
+    	}
+
+    	default void addInfo(String message, Object...data) {
+    		addItem(Severity.INFO, null, GlobalErrorCode.INFO, message, data);
+    	}
+    }
+
+    /**
+     * Single report element. Holds all information about particular event.
      *
      * @author Markus Gärtner
      */
@@ -88,13 +152,19 @@ public interface Report<R extends ReportItem> {
         String getMessage();
 
         /**
+         * Returns the local date and time at which the report item has been originally created
+         * @return
+         */
+        LocalDateTime getTimestamp();
+
+        /**
          * @param locale locale to get message for
          * @return message, associated with this report item for given locale
          */
         String getMessage(Locale locale);
 
         default void appendTo(StringBuilder sb) {
-        	sb.append('[').append(getSeverity()).append('-').append(getCode()).append(']');
+        	sb.append(getTimestamp()).append(" [").append(getSeverity()).append('-').append(getCode()).append(']');
 
         	Identity identity = getSource();
         	if(identity!=null) {
@@ -129,9 +199,19 @@ public interface Report<R extends ReportItem> {
         INFO
     }
 
-    default void appendTo(StringBuilder sb) {
+    default String toString(String title) {
+		StringBuilder sb = new StringBuilder();
+		appendTo(sb, title);
+		return sb.toString();
+    }
+
+    default void appendTo(StringBuilder sb, String title) {
     	sb.append("======[errors: ").append(countErrors())
     	.append(" - warnings: ").append(countWarnings()).append("]======").append('\n');
+
+    	if(title!=null) {
+    		sb.append(title).append('\n').append('\n');
+    	}
 
     	for(R item : getItems()) {
     		item.appendTo(sb);

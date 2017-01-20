@@ -279,4 +279,10 @@ public interface CorpusView extends Part<Corpus>, Changeable {
 		void lock(Object key) throws ModelException;
 		void unlock(Object key) throws ModelException;
 	}
+
+	public enum ViewMode {
+		STREAM,
+		RANDOM_ACCESS,
+		;
+	}
 }

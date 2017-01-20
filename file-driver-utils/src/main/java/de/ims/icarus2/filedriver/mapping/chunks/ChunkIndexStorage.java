@@ -18,8 +18,8 @@
 package de.ims.icarus2.filedriver.mapping.chunks;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
@@ -42,7 +42,7 @@ public class ChunkIndexStorage {
 	private final Set<ChunkIndex> chunkIndices = new ReferenceOpenHashSet<>();
 
 	protected ChunkIndexStorage(Builder builder) {
-		checkNotNull(builder);
+		requireNonNull(builder);
 
 		chunkIndexMap.putAll(builder.chunkIndexMap);
 		chunkIndices.addAll(chunkIndexMap.values());
@@ -65,7 +65,7 @@ public class ChunkIndexStorage {
 	}
 
 	public ChunkIndex getChunkIndex(ItemLayerManifest layer) {
-		checkNotNull(layer);
+		requireNonNull(layer);
 
 		int id = layer.getUID();
 		ChunkIndex chunkIndex = chunkIndexMap.get(id);
@@ -86,8 +86,8 @@ public class ChunkIndexStorage {
 		private final Int2ObjectMap<ChunkIndex> chunkIndexMap = new Int2ObjectOpenHashMap<>();
 
 		public Builder add(ItemLayerManifest layer, ChunkIndex chunkIndex) {
-			checkNotNull(layer);
-			checkNotNull(chunkIndex);
+			requireNonNull(layer);
+			requireNonNull(chunkIndex);
 
 			int id = layer.getUID();
 

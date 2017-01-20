@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.api.transfer.spi;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ServiceLoader;
 
@@ -49,7 +49,7 @@ public abstract class CorpusMemberEncoding {
 	private static final ServiceLoader<CorpusMemberEncoding> serviceLoader = ServiceLoader.load(CorpusMemberEncoding.class);
 
 	public static CorpusMemberEncoding getEncoding(String name) {
-		checkNotNull(name);
+		requireNonNull(name);
 
 		synchronized (serviceLoader) {
 			for(CorpusMemberEncoding encoding : serviceLoader) {

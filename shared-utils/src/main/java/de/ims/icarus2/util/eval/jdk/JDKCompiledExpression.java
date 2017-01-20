@@ -17,8 +17,8 @@
  */
 package de.ims.icarus2.util.eval.jdk;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
 
@@ -39,7 +39,7 @@ public abstract class JDKCompiledExpression extends AbstractExpression {
 
 
 	public void setVariables(Collection<? extends VariableDescriptor> variableDescriptors) {
-		checkNotNull(variableDescriptors);
+		requireNonNull(variableDescriptors);
 //		checkArgument(!variableDescriptors.isEmpty());
 		checkState("Variables already defined", this.__variables__==null);
 

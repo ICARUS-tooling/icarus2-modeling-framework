@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.api.driver.indices.standard;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.bytes.ByteList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -67,8 +67,8 @@ public class ArrayIndexSet implements IndexSet {
 	}
 
 	public ArrayIndexSet(IndexValueType valueType, Object indices, int fromIndex, int toIndex, boolean isSorted) {
-		checkNotNull(valueType);
-		checkNotNull(indices);
+		requireNonNull(valueType);
+		requireNonNull(indices);
 
 		valueType.checkBuffer(indices);
 		int size = valueType.length(indices);
@@ -202,7 +202,7 @@ public class ArrayIndexSet implements IndexSet {
 	 * @return
 	 */
 	public static ArrayIndexSet copyOf(IndexSet set, int beginIndex, int endIndex) {
-		checkNotNull(set);
+		requireNonNull(set);
 		checkArgument(beginIndex>=0);
 		checkArgument(beginIndex<=endIndex);
 		checkArgument(endIndex<set.size());
@@ -220,7 +220,7 @@ public class ArrayIndexSet implements IndexSet {
 	}
 
 	public static ArrayIndexSet copyOf(ByteList source) {
-		checkNotNull(source);
+		requireNonNull(source);
 
 		IndexValueType valueType = IndexValueType.BYTE;
 		Object indices = source.toArray();
@@ -229,7 +229,7 @@ public class ArrayIndexSet implements IndexSet {
 	}
 
 	public static ArrayIndexSet copyOf(ShortList source) {
-		checkNotNull(source);
+		requireNonNull(source);
 
 		IndexValueType valueType = IndexValueType.SHORT;
 		Object indices = source.toArray();
@@ -238,7 +238,7 @@ public class ArrayIndexSet implements IndexSet {
 	}
 
 	public static ArrayIndexSet copyOf(IntList source) {
-		checkNotNull(source);
+		requireNonNull(source);
 
 		IndexValueType valueType = IndexValueType.INTEGER;
 		Object indices = source.toArray();
@@ -247,7 +247,7 @@ public class ArrayIndexSet implements IndexSet {
 	}
 
 	public static ArrayIndexSet copyOf(LongList source) {
-		checkNotNull(source);
+		requireNonNull(source);
 
 		IndexValueType valueType = IndexValueType.LONG;
 		Object indices = source.toArray();
@@ -256,7 +256,7 @@ public class ArrayIndexSet implements IndexSet {
 	}
 
 	public static ArrayIndexSet fromIterator(OfInt source) {
-		checkNotNull(source);
+		requireNonNull(source);
 
 		IntList indices = new IntArrayList(1000); //TODO flexible buffer size!!!
 		boolean sorted = true;
@@ -276,7 +276,7 @@ public class ArrayIndexSet implements IndexSet {
 	}
 
 	public static ArrayIndexSet fromIterator(OfLong source) {
-		checkNotNull(source);
+		requireNonNull(source);
 
 		LongList indices = new LongArrayList(1000); //TODO flexible buffer size!!!
 		boolean sorted = true;

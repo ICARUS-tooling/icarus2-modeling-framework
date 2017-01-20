@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.standard.members.layers;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
@@ -59,21 +59,21 @@ public class LayerCache {
 	}
 
 	public static LayerCache fromLayers(Layer...layers) {
-		checkNotNull(layers);
+		requireNonNull(layers);
 		checkArgument(layers.length>0);
 
 		return new LayerCache(_map(layers));
 	}
 
 	public static <L extends Layer> LayerCache fromCollection(Collection<L> layers) {
-		checkNotNull(layers);
+		requireNonNull(layers);
 		checkArgument(!layers.isEmpty());
 
 		return new LayerCache(_map(layers));
 	}
 
 	public static <L extends Layer> LayerCache fromScope(Scope scope) {
-		checkNotNull(scope);
+		requireNonNull(scope);
 
 		Int2ObjectMap<Layer> map = _map(scope.getLayers());
 
@@ -86,7 +86,7 @@ public class LayerCache {
 	private final Int2ObjectMap<Layer> layers;
 
 	private LayerCache(Int2ObjectMap<Layer> layers) {
-		checkNotNull(layers);
+		requireNonNull(layers);
 		this.layers = layers;
 	}
 

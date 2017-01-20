@@ -39,14 +39,38 @@ import de.ims.icarus2.util.strings.StringResource;
 public interface LocationManifest extends Manifest {
 
 	public static final PathType DEFAULT_ROOT_PATH_TYPE = PathType.FILE;
+	public static final boolean DEFAULT_IS_INLINE = false;
 
 //	LocationType getType();
+
+	/**
+	 * Returns {@code true} iff this location manifest contains inline data,
+	 * i.e. it doesn't point to a physical resource but already hosts the
+	 * actual content.
+	 *
+	 * @return
+	 */
+	boolean isInline();
+
+	/**
+	 * If this manifest is declared to host {@link #isInline() inline} data
+	 * returns this content, otherwise invoking this method will throw an
+	 * exception.
+	 *
+	 * @return
+	 * @throws ManifestException if this manifest is not declared to host
+	 * {@link #isInline() inline} data.
+	 */
+	CharSequence getInlineData();
 
 	/**
 	 * Returns the "root" path to the location described by this manifest.
 	 * Depending on the exact location type, the meaning of this root path
 	 * may vary. It can denote a single corpus file, an entire folder or the
 	 * identifier of a database, for example.
+	 * <p>
+	 * Returns {@code null} if this manifest is declared to host {@link #isInline() inline}
+	 * data.
 	 *
 	 * @return
 	 */
@@ -79,6 +103,10 @@ public interface LocationManifest extends Manifest {
 	}
 
 	// Modification methods
+
+	void setIsInline(boolean value);
+
+	void setInlineData(CharSequence data);
 
 	void setRootPath(String path);
 

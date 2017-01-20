@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.xml;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.Map;
@@ -40,7 +40,7 @@ public abstract class ManifestXmlProcessor {
 	private final ManifestXmlDelegateFactory delegateFactory;
 
 	protected ManifestXmlProcessor(ManifestXmlDelegateFactory delegateFactory) {
-		checkNotNull(delegateFactory);
+		requireNonNull(delegateFactory);
 
 		this.delegateFactory = delegateFactory;
 	}

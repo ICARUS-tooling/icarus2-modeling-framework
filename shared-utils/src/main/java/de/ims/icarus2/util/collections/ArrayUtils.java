@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.util.collections;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -158,7 +158,7 @@ public class ArrayUtils {
 	}
 
 	public static void reverse(int[] array, int offset, int length) {
-		checkNotNull(array);
+		requireNonNull(array);
 
 		if(length==-1)
 			length = array.length;
@@ -186,7 +186,7 @@ public class ArrayUtils {
 	}
 
 	public static void reverse(Object[] array, int offset, int length) {
-		checkNotNull(array);
+		requireNonNull(array);
 
 		if(length==-1)
 			length = array.length;

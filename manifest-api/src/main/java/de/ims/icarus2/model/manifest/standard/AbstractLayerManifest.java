@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -95,7 +95,7 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 	}
 
 	protected void setLayerTypeId0(String layerTypeId) {
-		checkNotNull(layerTypeId);
+		requireNonNull(layerTypeId);
 
 		layerType = this.new LayerTypeLink(layerTypeId);
 	}
@@ -147,7 +147,7 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 	}
 
 	protected TargetLayerManifest addBaseLayerId0(String baseLayerId) {
-		checkNotNull(baseLayerId);
+		requireNonNull(baseLayerId);
 
 		checkAllowsTargetLayer();
 		TargetLayerManifest targetLayerManifest = new TargetLayerManifestImpl(baseLayerId);
@@ -163,7 +163,7 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 	}
 
 	protected void removeBaseLayerId0(String baseLayerId) {
-		checkNotNull(baseLayerId);
+		requireNonNull(baseLayerId);
 
 		checkAllowsTargetLayer();
 

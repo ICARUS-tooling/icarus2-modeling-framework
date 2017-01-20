@@ -18,8 +18,8 @@
 package de.ims.icarus2.model.standard.corpus;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
@@ -52,7 +52,7 @@ public class DefaultGeneration implements GenerationControl, EventListener {
 	 * @param corpus
 	 */
 	public DefaultGeneration(Corpus corpus) {
-		checkNotNull(corpus);
+		requireNonNull(corpus);
 		checkState("Corpus must be editable to support mutable generation control", corpus.getManifest().isEditable());
 
 		this.corpus = corpus;

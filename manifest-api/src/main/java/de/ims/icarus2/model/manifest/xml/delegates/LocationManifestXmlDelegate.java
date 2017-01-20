@@ -25,9 +25,9 @@ import org.xml.sax.SAXException;
 
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
-import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathEntry;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
+import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.standard.LocationManifestImpl;
 import de.ims.icarus2.model.manifest.standard.LocationManifestImpl.PathEntryImpl;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
@@ -73,39 +73,59 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 		return TAG_LOCATION;
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.xml.delegates.AbstractManifestXmlDelegate#readAttributes(org.xml.sax.Attributes)
+	 */
+	@Override
+	protected void readAttributes(Attributes attributes) {
+		super.readAttributes(attributes);
+
+		String inline = ManifestXmlUtils.normalize(attributes, ATTR_INLINE);
+		if(inline!=null) {
+			getInstance().setIsInline(Boolean.parseBoolean(inline));
+		}
+	}
+
 	@Override
 	protected void writeElements(XmlSerializer serializer) throws Exception {
 		super.writeElements(serializer);
 
 		LocationManifest manifest = getInstance();
 
-		if(manifest.getRootPath()!=null) {
-			serializer.startElement(TAG_PATH);
-			if(manifest.getRootPathType()!=null) {
-				serializer.writeAttribute(ATTR_TYPE, manifest.getRootPathType().getStringValue());
+		if(manifest.isInline()) {
+			serializer.startElement(TAG_CONTENT);
+			serializer.writeCData(manifest.getInlineData());
+			serializer.endElement(TAG_CONTENT);
+		} else {
+
+			if(manifest.getRootPath()!=null) {
+				serializer.startElement(TAG_PATH);
+				if(manifest.getRootPathType()!=null) {
+					serializer.writeAttribute(ATTR_TYPE, manifest.getRootPathType().getStringValue());
+				}
+				serializer.writeCData(manifest.getRootPath());
+				serializer.endElement(TAG_PATH);
 			}
-			serializer.writeCData(manifest.getRootPath());
-			serializer.endElement(TAG_PATH);
-		}
 
-		// ELEMENTS
+			// ELEMENTS
 
-		// Write rootPath entries
-		for(PathEntry pathEntry : manifest.getPathEntries()) {
-			if(pathEntry.getType()==null)
-				throw new IllegalStateException("Path entry is missing type"); //$NON-NLS-1$
-			if(pathEntry.getValue()==null)
-				throw new IllegalStateException("Path entry is missing value"); //$NON-NLS-1$
+			// Write rootPath entries
+			for(PathEntry pathEntry : manifest.getPathEntries()) {
+				if(pathEntry.getType()==null)
+					throw new IllegalStateException("Path entry is missing type"); //$NON-NLS-1$
+				if(pathEntry.getValue()==null)
+					throw new IllegalStateException("Path entry is missing value"); //$NON-NLS-1$
 
-			serializer.startElement(TAG_PATH_ENTRY);
-			serializer.writeAttribute(ATTR_TYPE, pathEntry.getType().getStringValue());
-			serializer.writeCData(pathEntry.getValue());
-			serializer.endElement(TAG_PATH_ENTRY);
-		}
+				serializer.startElement(TAG_PATH_ENTRY);
+				serializer.writeAttribute(ATTR_TYPE, pathEntry.getType().getStringValue());
+				serializer.writeCData(pathEntry.getValue());
+				serializer.endElement(TAG_PATH_ENTRY);
+			}
 
-		// Write rootPath resolver
-		if(manifest.getPathResolverManifest()!=null) {
-			getPathResolverManifestXmlDelegate().reset(manifest.getPathResolverManifest()).writeXml(serializer);
+			// Write rootPath resolver
+			if(manifest.getPathResolverManifest()!=null) {
+				getPathResolverManifestXmlDelegate().reset(manifest.getPathResolverManifest()).writeXml(serializer);
+			}
 		}
 
 	}
@@ -135,6 +155,9 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 			return getPathResolverManifestXmlDelegate().reset(getInstance());
 		}
 
+		case TAG_CONTENT:
+			break;
+
 		default:
 			return super.startElement(manifestLocation, uri, localName, qName, attributes);
 		}
@@ -158,6 +181,10 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 		case TAG_PATH_ENTRY: {
 			PathEntry pathEntry = new PathEntryImpl(pathType, text);
 			getInstance().addPathEntry(pathEntry);
+		} break;
+
+		case TAG_CONTENT: {
+			getInstance().setInlineData(text);
 		} break;
 
 		default:

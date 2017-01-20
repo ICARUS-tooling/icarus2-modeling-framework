@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.manifest.standard;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +44,9 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	private PathType rootPathType;
 	private PathResolverManifest pathResolverManifest;
 
+	private CharSequence inlineData;
+	private Boolean inline;
+
 	private final List<PathEntry> pathEntries = new ArrayList<>();
 
 	public LocationManifestImpl(ManifestLocation manifestLocation,
@@ -61,9 +64,29 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 		this(contextManifest.getManifestLocation(), contextManifest.getRegistry());
 	}
 
+	protected void checkInline() {
+		if(!isInline())
+			throw new ManifestException(ManifestErrorCode.MANIFEST_ERROR,
+					"Location not declared to host inline data");
+	}
+
+	protected void checkNotInline() {
+		if(isInline())
+			throw new ManifestException(ManifestErrorCode.MANIFEST_ERROR,
+					"Location declared to host inline data");
+	}
+
 	@Override
 	protected boolean isTopLevel() {
 		return false;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.LocationManifest#isInline()
+	 */
+	@Override
+	public boolean isInline() {
+		return inline==null ? DEFAULT_IS_INLINE : inline.booleanValue();
 	}
 
 	@Override
@@ -98,7 +121,17 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	 */
 	@Override
 	public boolean isEmpty() {
-		return rootPath==null && pathResolverManifest==null && pathEntries.isEmpty();
+		return rootPath==null && pathResolverManifest==null && pathEntries.isEmpty() && inlineData==null;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.LocationManifest#getInlineData()
+	 */
+	@Override
+	public CharSequence getInlineData() {
+		checkInline();
+
+		return inlineData;
 	}
 
 	@Override
@@ -111,6 +144,8 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	 */
 	@Override
 	public String getRootPath() {
+		checkNotInline();
+
 		return rootPath;
 	}
 
@@ -119,7 +154,42 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	 */
 	@Override
 	public PathResolverManifest getPathResolverManifest() {
+		checkNotInline();
+
 		return pathResolverManifest;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.LocationManifest#setIsInline(boolean)
+	 */
+	@Override
+	public void setIsInline(boolean value) {
+		checkNotLocked();
+
+		setIsInline0(value);
+	}
+
+	protected void setIsInline0(boolean value) {
+		this.inline = value==DEFAULT_IS_INLINE ? null : Boolean.valueOf(value);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.LocationManifest#setInlineData(java.lang.CharSequence)
+	 */
+	@Override
+	public void setInlineData(CharSequence data) {
+		checkNotLocked();
+		checkInline();
+
+		setInlineData0(data);
+	}
+
+	protected void setInlineData0(CharSequence data) {
+		requireNonNull(data);
+		checkArgument(data.length()>0);
+		checkInline();
+
+		inlineData = data;
 	}
 
 	/**
@@ -133,14 +203,17 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	}
 
 	protected void setRootPath0(String rootPath) {
-		checkNotNull(rootPath);
+		requireNonNull(rootPath);
 		checkArgument(!rootPath.isEmpty());
+		checkNotInline();
 
 		this.rootPath = rootPath;
 	}
 
 	@Override
 	public PathType getRootPathType() {
+		checkNotInline();
+
 		return rootPathType==null ? DEFAULT_ROOT_PATH_TYPE : rootPathType;
 	}
 
@@ -152,7 +225,8 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	}
 
 	protected void setRootPathType0(PathType type) {
-		checkNotNull(type);
+		requireNonNull(type);
+		checkNotInline();
 
 		if(type==DEFAULT_ROOT_PATH_TYPE) {
 			type = null;
@@ -173,12 +247,14 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 		// since the framework will use a default file based resolver in that case!
 //		if (pathResolverManifest == null)
 //			throw new NullPointerException("Invalid pathResolverManifest"); //$NON-NLS-1$
+		checkNotInline();
 
 		this.pathResolverManifest = pathResolverManifest;
 	}
 
 	@Override
 	public void forEachPathEntry(Consumer<? super PathEntry> action) {
+		checkNotInline();
 		pathEntries.forEach(action);
 	}
 
@@ -190,7 +266,8 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	}
 
 	protected void addPathEntry0(PathEntry entry) {
-		checkNotNull(entry);
+		requireNonNull(entry);
+		checkNotInline();
 
 		pathEntries.add(entry);
 	}
@@ -203,7 +280,8 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	}
 
 	protected void removePathEntry0(PathEntry entry) {
-		checkNotNull(entry);
+		requireNonNull(entry);
+		checkNotInline();
 
 		pathEntries.remove(entry);
 	}

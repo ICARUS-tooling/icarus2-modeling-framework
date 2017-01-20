@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.highlight;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.ArrayList;
@@ -69,7 +69,7 @@ public class HighlightInfoBuilder {
 	private final EnumSet<HighlightInfoBuilderOption> options;
 
 	public HighlightInfoBuilder(HighlightLayer layer, EnumSet<HighlightInfoBuilderOption> options) {
-		checkNotNull(layer);
+		requireNonNull(layer);
 
 		this.layer = layer;
 
@@ -81,7 +81,7 @@ public class HighlightInfoBuilder {
 	}
 
 	public HighlightInfoBuilder(HighlightLayer layer, HighlightInfoBuilderOption...options) {
-		checkNotNull(layer);
+		requireNonNull(layer);
 
 		this.layer = layer;
 

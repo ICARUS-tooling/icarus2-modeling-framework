@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.api.path;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.ArrayList;
@@ -58,7 +58,7 @@ public class CorpusGraph {
 	final Lock lock = new ReentrantLock();
 
 	public CorpusGraph(CorpusManifest corpus) {
-		checkNotNull(corpus);
+		requireNonNull(corpus);
 		checkNotTemplate(corpus);
 
 		this.corpus = corpus;
@@ -75,7 +75,7 @@ public class CorpusGraph {
 	}
 
 	public void addContext(ContextManifest context) {
-		checkNotNull(context);
+		requireNonNull(context);
 		checkNotTemplate(context);
 		checkArgument(context.getCorpusManifest()==corpus);
 
@@ -92,7 +92,7 @@ public class CorpusGraph {
 	}
 
 	public Node getNode(LayerManifest layer) {
-		checkNotNull(layer);
+		requireNonNull(layer);
 		//TODO maybe ensure that we only accept layers that are part of the saved corpus!!!
 
 		lock.lock();

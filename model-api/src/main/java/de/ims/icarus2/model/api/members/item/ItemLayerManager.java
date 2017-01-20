@@ -52,7 +52,7 @@ public interface ItemLayerManager extends ModelConstants {
 	 *
 	 * @return
 	 */
-	Collection<Layer> getLayers();
+	Collection<Layer> getItemLayers();
 
 	/**
 	 * Attempts to fetch the number of elements stored in the top-level container for the given

@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -44,7 +44,7 @@ public class ExpressionXmlHandler implements ManifestXmlHandler, ManifestXmlAttr
 	private final ExpressionFactory factory;
 
 	public ExpressionXmlHandler(ExpressionFactory factory) {
-		checkNotNull(factory);
+		requireNonNull(factory);
 
 		this.factory = factory;
 	}

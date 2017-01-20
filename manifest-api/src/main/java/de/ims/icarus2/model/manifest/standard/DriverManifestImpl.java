@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -251,7 +251,7 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 
 	@Override
 	public MappingManifest getMappingManifest(String id) {
-		checkNotNull(id);
+		requireNonNull(id);
 
 		for(MappingManifest manifest : mappingManifests) {
 			if(id.equals(manifest.getId())) {
@@ -274,8 +274,8 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	}
 
 	protected void addMappingManifest0(MappingManifest mappingManifest) {
-		checkNotNull(mappingManifest);
-		checkNotLive();
+		requireNonNull(mappingManifest);
+//		checkNotLive();
 
 		if(mappingManifests.contains(mappingManifest))
 			throw new IllegalArgumentException("Duplicate mapping manifest: "+mappingManifest); //$NON-NLS-1$
@@ -294,8 +294,8 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	}
 
 	protected void removeMappingManifest0(MappingManifest mappingManifest) {
-		checkNotNull(mappingManifest);
-		checkNotLive();
+		requireNonNull(mappingManifest);
+//		checkNotLive();
 
 		if(!mappingManifests.remove(mappingManifest))
 			throw new IllegalArgumentException("Unknown mapping manifest: "+mappingManifest); //$NON-NLS-1$
@@ -312,8 +312,8 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	}
 
 	protected void addModuleManifest0(ModuleManifest moduleManifest) {
-		checkNotNull(moduleManifest);
-		checkNotLive();
+		requireNonNull(moduleManifest);
+//		checkNotLive();
 
 		String moduleId = moduleManifest.getId();
 
@@ -341,8 +341,8 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	}
 
 	protected void removeModuleManifest0(ModuleManifest moduleManifest) {
-		checkNotNull(moduleManifest);
-		checkNotLive();
+		requireNonNull(moduleManifest);
+//		checkNotLive();
 
 		String moduleId = moduleManifest.getId();
 
@@ -363,8 +363,8 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	}
 
 	protected void addModuleSpec0(ModuleSpec moduleSpec) {
-		checkNotNull(moduleSpec);
-		checkNotLive();
+		requireNonNull(moduleSpec);
+//		checkNotLive();
 
 		if(moduleSpecs.contains(moduleSpec))
 			throw new IllegalArgumentException("Duplicate module spec: "+moduleSpec); //$NON-NLS-1$
@@ -383,8 +383,8 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	}
 
 	protected void removeModuleSpec0(ModuleSpec moduleSpec) {
-		checkNotNull(moduleSpec);
-		checkNotLive();
+		requireNonNull(moduleSpec);
+//		checkNotLive();
 
 		if(!moduleSpecs.remove(moduleSpec))
 			throw new IllegalArgumentException("Unknown module spec: "+moduleSpec); //$NON-NLS-1$
@@ -401,8 +401,8 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	}
 
 	protected void setLocationType0(LocationType locationType) {
-		checkNotNull(locationType);
-		checkNotLive();
+		requireNonNull(locationType);
+//		checkNotLive();
 
 		this.locationType = locationType;
 	}
@@ -428,7 +428,7 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		private Documentation documentation;
 
 		public ModuleSpecImpl(DriverManifest driverManifest) {
-			checkNotNull(driverManifest);
+			requireNonNull(driverManifest);
 
 			this.driverManifest = driverManifest;
 		}
@@ -526,7 +526,7 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		}
 
 		protected void setMultiplicity0(Multiplicity multiplicity) {
-			checkNotNull(multiplicity);
+			requireNonNull(multiplicity);
 
 			this.multiplicity = multiplicity;
 		}
@@ -632,7 +632,7 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		}
 
 		protected void setModuleSpecId0(String moduleSpecId) {
-			checkNotNull(moduleSpecId);
+			requireNonNull(moduleSpecId);
 
 			moduleSpec = new ModuleSpecLink(moduleSpecId);
 		}

@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.api.registry;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
@@ -38,7 +38,7 @@ public class LayerLookup {
 	private final CorpusView view;
 
 	public LayerLookup(CorpusView view) {
-		checkNotNull(view);
+		requireNonNull(view);
 
 		this.view = view;
 

@@ -25,7 +25,7 @@
  */
 package de.ims.icarus2.util.events;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -123,7 +123,7 @@ public class EventSource implements EventManager, Serializable {
 	 */
 	@Override
 	public void addListener(String eventName, EventListener listener) {
-		checkNotNull(listener);
+		requireNonNull(listener);
 
 		if (eventListeners == null) {
 			eventListeners = new ArrayList<>();

@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.api.transfer.spi;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.util.function.IntConsumer;
@@ -37,7 +37,7 @@ public abstract class CorpusMemberEncoder {
 	protected final LayerLookup config;
 
 	protected CorpusMemberEncoder(LayerLookup config) {
-		checkNotNull(config);
+		requireNonNull(config);
 
 		this.config = config;
 	}

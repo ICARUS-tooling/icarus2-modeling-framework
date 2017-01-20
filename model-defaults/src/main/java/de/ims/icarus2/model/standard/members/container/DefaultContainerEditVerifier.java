@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -33,7 +33,7 @@ public class DefaultContainerEditVerifier implements ContainerEditVerifier {
 	private Container source;
 
 	public DefaultContainerEditVerifier(Container source) {
-		checkNotNull(source);
+		requireNonNull(source);
 
 		this.source = source;
 	}

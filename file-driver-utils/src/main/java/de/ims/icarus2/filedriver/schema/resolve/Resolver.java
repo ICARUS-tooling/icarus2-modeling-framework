@@ -17,10 +17,16 @@
  */
 package de.ims.icarus2.filedriver.schema.resolve;
 
+import java.util.function.Function;
+
 import de.ims.icarus2.filedriver.Converter;
+import de.ims.icarus2.filedriver.Converter.ReadMode;
+import de.ims.icarus2.filedriver.schema.Schema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.SubstituteType;
+import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
 import de.ims.icarus2.util.Options;
 
 /**
@@ -31,7 +37,14 @@ public interface Resolver {
 
 	//TODO later define methods for the reverse process to actually write into a format!
 
-	default void init(Converter converter, Options options) {
+	/**
+	 *
+	 * @param converter the {@link Converter} instance this resolver will be associated with
+	 * @param componentSuppliers a map-like lookup mechanism to fetch caches associated with
+	 * @param options implementation specific options that have been parsed directly from the underlying {@link Schema}
+	 *
+	 */
+	default void prepareForReading(Converter converter, ReadMode mode, Function<ItemLayer, InputCache> caches, Options options) {
 		// no-op
 	}
 

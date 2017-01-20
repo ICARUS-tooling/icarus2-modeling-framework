@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.util.eval.var;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Markus Gärtner
@@ -56,9 +56,9 @@ public class VariableDescriptor {
 
 
 	public VariableDescriptor(String name, Class<?> namespaceClass, Mode mode, boolean nullable) {
-		checkNotNull(name);
-		checkNotNull(namespaceClass);
-		checkNotNull(mode);
+		requireNonNull(name);
+		requireNonNull(namespaceClass);
+		requireNonNull(mode);
 
 		this.name = name;
 		this.namespaceClass = namespaceClass;

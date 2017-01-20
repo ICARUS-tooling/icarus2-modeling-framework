@@ -17,7 +17,7 @@
  */
 package de.ims.icarus2.util.eval.spi;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ServiceLoader;
 
@@ -109,7 +109,7 @@ public abstract class ExpressionFactoryProvider {
 	 * @throws IllegalArgumentException iff no supported provider could be found for the given {@code name}
 	 */
 	public static ExpressionFactory newFactory(String name) {
-		checkNotNull(name);
+		requireNonNull(name);
 
 		synchronized (serviceLoader) {
 			for(ExpressionFactoryProvider provider : serviceLoader) {

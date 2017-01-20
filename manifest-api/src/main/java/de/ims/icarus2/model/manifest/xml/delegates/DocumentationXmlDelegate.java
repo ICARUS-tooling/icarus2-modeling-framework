@@ -25,8 +25,8 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import de.ims.icarus2.model.manifest.api.Documentation;
-import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.Documentation.Resource;
+import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.standard.DocumentationImpl.ResourceImpl;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;

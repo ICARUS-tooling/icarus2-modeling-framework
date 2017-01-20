@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.driver.virtual;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.function.Supplier;
 
@@ -53,8 +53,8 @@ public class RootContainer extends AbstractImmutableContainer {
 	private final ItemLayer layer;
 
 	public RootContainer(ItemLayer layer, Supplier<? extends ItemList> supplier) {
-		checkNotNull(layer);
-		checkNotNull(supplier);
+		requireNonNull(layer);
+		requireNonNull(supplier);
 
 		this.layer = layer;
 		this.supplier = supplier;
@@ -69,6 +69,14 @@ public class RootContainer extends AbstractImmutableContainer {
 			}
 		}
 		return items;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.item.Item#getId()
+	 */
+	@Override
+	public long getId() {
+		return NO_INDEX;
 	}
 
 	/**

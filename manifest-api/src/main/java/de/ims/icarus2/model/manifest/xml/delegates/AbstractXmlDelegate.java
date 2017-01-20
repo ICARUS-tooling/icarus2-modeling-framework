@@ -18,8 +18,8 @@
  */
 package de.ims.icarus2.model.manifest.xml.delegates;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlDelegate;
 
 /**
@@ -35,7 +35,7 @@ public abstract class AbstractXmlDelegate<M extends Object> implements ManifestX
 	 */
 	@Override
 	public void setInstance(M instance) {
-		checkNotNull("Invalid instance value", instance);
+		requireNonNull(instance, "Invalid instance value");
 		checkState("Instance already set", this.instance==null);
 
 		this.instance = instance;

@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.registry.metadata;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -65,7 +65,7 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 	private static final Map<Path, PlainMetadataRegistry> instances = new WeakHashMap<>();
 
 	public static PlainMetadataRegistry getSharedRegistry(Path file) {
-		checkNotNull(file);
+		requireNonNull(file);
 
 		synchronized (instances) {
 			PlainMetadataRegistry registry = instances.get(file);
@@ -92,7 +92,7 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 	}
 
 	private PlainMetadataRegistry(Path file) {
-		checkNotNull(file);
+		requireNonNull(file);
 
 		this.file = file;
 	}

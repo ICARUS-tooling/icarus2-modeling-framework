@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -132,7 +132,7 @@ public class ItemLayerManifestImpl extends AbstractLayerManifest<ItemLayerManife
 	 */
 	@Override
 	public int indexOfContainerManifest(ContainerManifest containerManifest) {
-		checkNotNull(containerManifest);
+		requireNonNull(containerManifest);
 
 		int index = containerManifests.indexOf(containerManifest);
 
@@ -151,7 +151,7 @@ public class ItemLayerManifestImpl extends AbstractLayerManifest<ItemLayerManife
 	}
 
 	protected void addContainerManifest0(ContainerManifest containerManifest, int level) {
-		checkNotNull(containerManifest);
+		requireNonNull(containerManifest);
 
 		if(level==-1) {
 			level = containerManifests.size();
@@ -168,7 +168,7 @@ public class ItemLayerManifestImpl extends AbstractLayerManifest<ItemLayerManife
 	}
 
 	protected void removeContainerManifest0(ContainerManifest containerManifest) {
-		checkNotNull(containerManifest);
+		requireNonNull(containerManifest);
 
 		if(!containerManifests.remove(containerManifest))
 			throw new ManifestException(ManifestErrorCode.MANIFEST_ERROR,
@@ -209,7 +209,7 @@ public class ItemLayerManifestImpl extends AbstractLayerManifest<ItemLayerManife
 
 	protected TargetLayerManifest setBoundaryLayerId0(String boundaryLayerId) {
 		checkAllowsTargetLayer();
-		checkNotNull(boundaryLayerId);
+		requireNonNull(boundaryLayerId);
 
 		TargetLayerManifest manifest = new TargetLayerManifestImpl(boundaryLayerId);
 		boundaryLayerManifest = manifest;
@@ -250,7 +250,7 @@ public class ItemLayerManifestImpl extends AbstractLayerManifest<ItemLayerManife
 
 	protected TargetLayerManifest setFoundationLayerId0(String foundationLayerId) {
 		checkAllowsTargetLayer();
-		checkNotNull(foundationLayerId);
+		requireNonNull(foundationLayerId);
 
 		TargetLayerManifest manifest = new TargetLayerManifestImpl(foundationLayerId);
 		foundationLayerManifest = manifest;

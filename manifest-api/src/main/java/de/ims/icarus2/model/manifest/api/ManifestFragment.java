@@ -18,6 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessRestriction;
 
@@ -40,4 +41,16 @@ public interface ManifestFragment extends Lockable, TypedManifest {
 	 */
 	@AccessRestriction(AccessMode.READ)
 	String getId();
+
+	/**
+	 * Returns a globally unique identifier that is comprised of the locally unique id and
+	 * the ids of the designated host environment if such exists. In the most simple case
+	 * the globally unique id is equal to {@link #getId()}.
+	 *
+	 * @return
+	 */
+	@AccessRestriction(AccessMode.READ)
+	default String getUniqueId() {
+		return ManifestUtils.getUniqueId(this);
+	}
 }

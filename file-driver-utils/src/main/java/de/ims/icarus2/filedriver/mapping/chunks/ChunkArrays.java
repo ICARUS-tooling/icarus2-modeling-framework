@@ -18,7 +18,7 @@
 package de.ims.icarus2.filedriver.mapping.chunks;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.nio.ByteBuffer;
 
@@ -105,7 +105,7 @@ public class ChunkArrays {
 		private final IndexValueType valueType;
 
 		public DefaultAdapter(IndexValueType valueType) {
-			checkNotNull(valueType);
+			requireNonNull(valueType);
 			this.valueType = valueType;
 		}
 
@@ -229,8 +229,8 @@ public class ChunkArrays {
 		private final IndexValueType fileValueType;
 
 		public DefaultFileAdapter(IndexValueType valueType, IndexValueType fileValueType) {
-			checkNotNull(valueType);
-			checkNotNull(fileValueType);
+			requireNonNull(valueType);
+			requireNonNull(fileValueType);
 			checkArgument("Value space for file id is restricted to int: "+fileValueType,
 					fileValueType.compareTo(IndexValueType.INTEGER)>0);
 

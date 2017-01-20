@@ -262,23 +262,23 @@ public final class ClassUtils {
 		return Long.valueOf(value);
 	}
 
-	public static Double _int(double value) {
+	public static Double _double(double value) {
 		return Double.valueOf(value);
 	}
 
-	public static Float _int(float value) {
+	public static Float _float(float value) {
 		return Float.valueOf(value);
 	}
 
-	public static Short _int(short value) {
+	public static Short _short(short value) {
 		return Short.valueOf(value);
 	}
 
-	public static Byte _int(byte value) {
+	public static Byte _byte(byte value) {
 		return Byte.valueOf(value);
 	}
 
-	public static Boolean _int(boolean value) {
+	public static Boolean _boolean(boolean value) {
 		return Boolean.valueOf(value);
 	}
 

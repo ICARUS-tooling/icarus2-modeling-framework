@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.api.registry;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,8 +35,8 @@ public class SubRegistry implements MetadataRegistry {
 	private final MetadataRegistry source;
 
 	public SubRegistry(MetadataRegistry source, String prefix) {
-		checkNotNull(source);
-		checkNotNull(prefix);
+		requireNonNull(source);
+		requireNonNull(prefix);
 		checkArgument("Prefix must not be empty", !prefix.trim().isEmpty());
 
 		/*
@@ -170,7 +170,7 @@ public class SubRegistry implements MetadataRegistry {
 	public void forEachEntry(String prefix,
 			BiConsumer<? super String, ? super String> action) {
 
-		checkNotNull(prefix);
+		requireNonNull(prefix);
 
 		final int cutoffPoint = this.prefix.length();
 		prefix = this.prefix+'.'+normalizePrefix(prefix);

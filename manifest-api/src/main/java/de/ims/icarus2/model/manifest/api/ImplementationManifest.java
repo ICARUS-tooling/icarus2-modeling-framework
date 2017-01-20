@@ -120,7 +120,7 @@ public interface ImplementationManifest extends MemberManifest {
 
 	void setClassname(String classname);
 
-	void setUseFactory(Boolean useFactory);
+	void setUseFactory(boolean useFactory);
 
 	public enum SourceType implements StringResource {
 

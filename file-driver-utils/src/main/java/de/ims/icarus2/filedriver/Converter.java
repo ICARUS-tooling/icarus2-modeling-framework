@@ -32,6 +32,7 @@ import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.standard.driver.ChunkConsumer;
+import de.ims.icarus2.util.AccumulatingException;
 
 
 /**
@@ -42,6 +43,13 @@ import de.ims.icarus2.model.standard.driver.ChunkConsumer;
  *
  */
 public interface Converter extends AutoCloseable {
+
+	public enum ReadMode {
+		SCAN,
+		CHUNK,
+		FILE,
+		;
+	}
 
 	/**
 	 * Provides a list of properties the converter might be queried for
@@ -61,7 +69,7 @@ public interface Converter extends AutoCloseable {
 		 * <p>
 		 * This is a {@code boolean} property and its default value is {@code false}.
 		 */
-		CHUNK_INDEX_SUPPORTED(Boolean.class, false),
+		CHUNK_INDEX_SUPPORTED(Boolean.class, Boolean.FALSE),
 
 		/**
 		 * Hints for the construction of {@link ChunkIndex} instances as to what
@@ -127,7 +135,7 @@ public interface Converter extends AutoCloseable {
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	long loadFile(int fileIndex, ChunkConsumer action) throws IOException, InterruptedException;
+	LoadResult loadFile(int fileIndex, ChunkConsumer action) throws IOException, InterruptedException;
 
 	/**
 	 * Returns a cursor that allows {@code random-access} style reading of the specified layer.
@@ -150,7 +158,7 @@ public interface Converter extends AutoCloseable {
 	 * @see java.lang.AutoCloseable#close()
 	 */
 	@Override
-	public void close();
+	public void close() throws AccumulatingException;
 
 	/**
 	 * Allows a converter implementation to decide upon what chunk indices to use.
@@ -166,7 +174,11 @@ public interface Converter extends AutoCloseable {
 
 	/**
 	 * Models a {@code random-access} read mechanism to load individual parts of a corpus resource.
-	 *
+	 * A cursor, once obtained from the hosting converter, can be used to load contents from an
+	 * underlying file resource at arbitrary locations.
+	 * <p>
+	 * Note that a cursor is not thread-safe! If client code wishes to distribute loading of file
+	 * resources across multiple threads, it should instantiate one cursor for every thread.
 	 *
 	 * @author Markus Gärtner
 	 *
@@ -177,30 +189,82 @@ public interface Converter extends AutoCloseable {
 
 		Item load(long id) throws IOException, InterruptedException;
 
-		default long loadAll(IndexSet[] indices, ChunkConsumer consumer) throws IOException, InterruptedException {
-			long result = 0L;
+		/**
+		 * Short-hand method to load a large number of items from this cursor.
+		 * The provided {@link ChunkConsumer} will be notified whenever an item has
+		 * been loaded.
+		 *
+		 * @param indices
+		 * @param consumer
+		 * @return the total number of {@link ChunkState#VALID valid} items that have been loaded
+		 * @throws IOException
+		 * @throws InterruptedException
+		 */
+		default LoadResult loadAll(IndexSet[] indices, ChunkConsumer consumer) throws IOException, InterruptedException {
+			// Reset result
+			getResult();
 
 			for(IndexSet set : indices) {
 				for(int i=0; i<set.size(); i++) {
 					long index = set.indexAt(i);
 					Item item = load(index);
-					ChunkState state = ChunkState.forItem(item);
-
-					if(state==ChunkState.VALID) {
-						result++;
-					}
-
-					consumer.accept(index, item, state);
+					consumer.accept(index, item, ChunkState.forItem(item));
 				}
 			}
 
-			return result;
+			return getResult();
 		}
 
 		/**
+		 * Returns a {@link LoadResult} object that encapsulates all data chunks
+		 * that have been loaded since this cursor has been created or this method
+		 * was called the last time, whichever happened more recent.
+		 *
+		 * @return
+		 */
+		LoadResult getResult();
+
+		/**
+		 * Releases all underlying resources and makes this cursor unusable for further
+		 * {@link #load(long) load} operations.
+		 *
 		 * @see java.lang.AutoCloseable#close()
 		 */
 		@Override
 		public void close() throws IOException;
+	}
+
+	interface LoadResult extends AutoCloseable {
+
+		/**
+		 * Commits the loaded data chunks to the respective back-end caches.
+		 */
+		long publish();
+
+		/**
+		 * Discards all the loaded data chunks
+		 */
+		long discard();
+
+		/**
+		 * Returns the total number of data chunks that have been loaded.
+		 *
+		 * @return
+		 */
+		long loadedChunkCount();
+
+		/**
+		 * Returns the number of data chunks that have been loaded and
+		 * were assigned the specified {@link ChunkState state}.
+		 *
+		 * @param state
+		 * @return
+		 */
+		long chunkCount(ChunkState state);
+
+		@Override
+		default void close() {
+			// no-op
+		};
 	}
 }

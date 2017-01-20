@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -115,7 +115,7 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 
 	@Override
 	public LayerType getLayerType(String name) {
-		checkNotNull(name);
+		requireNonNull(name);
 
 		synchronized (layerTypes) {
 			LayerType layerType = layerTypes.get(name);
@@ -130,7 +130,7 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 
 	@Override
 	public void addLayerType(LayerType layerType) {
-		checkNotNull(layerType);
+		requireNonNull(layerType);
 
 		String id = layerType.getId();
 		if(id==null)
@@ -156,7 +156,7 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 
 	@Override
 	public void removeLayerType(LayerType layerType) {
-		checkNotNull(layerType);
+		requireNonNull(layerType);
 
 		String id = layerType.getId();
 		if(id==null)
@@ -194,8 +194,8 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 	}
 
 	@Override
-	public void addCorpus(CorpusManifest manifest) {
-		checkNotNull(manifest);
+	public void addCorpusManifest(CorpusManifest manifest) {
+		requireNonNull(manifest);
 
 		String id = manifest.getId();
 		if(id==null)
@@ -221,8 +221,8 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 	}
 
 	@Override
-	public void removeCorpus(CorpusManifest manifest) {
-		checkNotNull(manifest);
+	public void removeCorpusManifest(CorpusManifest manifest) {
+		requireNonNull(manifest);
 
 		String id = manifest.getId();
 		if(id==null)
@@ -247,8 +247,8 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 	}
 
 	@Override
-	public CorpusManifest getCorpus(String id) {
-		checkNotNull(id);
+	public CorpusManifest getCorpusManifest(String id) {
+		requireNonNull(id);
 
 		CorpusManifest manifest = null;
 		synchronized (corpora) {
@@ -270,7 +270,7 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 
 	@Override
 	public boolean hasTemplate(String id) {
-		checkNotNull(id);
+		requireNonNull(id);
 
 		synchronized (templates) {
 			return templates.containsKey(id);
@@ -286,7 +286,7 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 
 	@Override
 	public Manifest getTemplate(String id) {
-		checkNotNull(id);
+		requireNonNull(id);
 
 		Manifest template = null;
 		synchronized (templates) {
@@ -304,9 +304,9 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 	}
 
 	@Override
-	public void addContext(CorpusManifest corpus, ContextManifest context) {
-		checkNotNull(corpus);
-		checkNotNull(context);
+	public void addContextManifest(CorpusManifest corpus, ContextManifest context) {
+		requireNonNull(corpus);
+		requireNonNull(context);
 
 		if(context.isTemplate())
 			throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
@@ -324,9 +324,9 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 	}
 
 	@Override
-	public void removeContext(CorpusManifest corpus, ContextManifest context) {
-		checkNotNull(corpus);
-		checkNotNull(context);
+	public void removeContextManifest(CorpusManifest corpus, ContextManifest context) {
+		requireNonNull(corpus);
+		requireNonNull(context);
 
 		if(context.isTemplate())
 			throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
@@ -344,16 +344,16 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 	}
 
 	@Override
-	public void corpusChanged(CorpusManifest corpus) {
-		checkNotNull(corpus);
+	public void corpusManifestChanged(CorpusManifest corpus) {
+		requireNonNull(corpus);
 
 		fireEvent(new EventObject(ManifestEvents.CHANGED_CORPUS,
 				"corpus", corpus)); //$NON-NLS-1$
 	}
 
 	@Override
-	public void contextChanged(ContextManifest context) {
-		checkNotNull(context);
+	public void contextManifestChanged(ContextManifest context) {
+		requireNonNull(context);
 
 		fireEvent(new EventObject(ManifestEvents.CHANGED_CONTEXT,
 				"corpus", context.getCorpusManifest(), //$NON-NLS-1$
@@ -383,7 +383,7 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 
 	@Override
 	public void addTemplate(Manifest template) {
-		checkNotNull(template);
+		requireNonNull(template);
 
 		fireEvent(new EventObject(ManifestEvents.ADD_TEMPLATE, "template", template)); //$NON-NLS-1$
 
@@ -399,7 +399,7 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 
 	@Override
 	public void addTemplates(Collection<? extends Manifest> templates) {
-		checkNotNull(templates);
+		requireNonNull(templates);
 
 		Object[] templatesArray = templates.toArray();
 
@@ -505,17 +505,17 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 		private final Counter<Manifest> manifestRefCounter = new Counter<>();
 
 		public boolean isLocked(Manifest manifest) {
-			checkNotNull(manifest);
+			requireNonNull(manifest);
 			return manifestRefCounter.hasCount(manifest);
 		}
 
 		public void lockTemplates(Manifest manifest) {
-			checkNotNull(manifest);
+			requireNonNull(manifest);
 			walkTemplate(manifest, false, 1);
 		}
 
 		public void unlockTemplates(Manifest manifest) {
-			checkNotNull(manifest);
+			requireNonNull(manifest);
 			walkTemplate(manifest, false, -1);
 		}
 

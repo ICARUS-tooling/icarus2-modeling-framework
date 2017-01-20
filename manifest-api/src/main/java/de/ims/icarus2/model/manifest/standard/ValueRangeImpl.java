@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Set;
 
@@ -40,7 +40,7 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 			v -> (v==ValueType.STRING || Comparable.class.isAssignableFrom(v.getBaseClass())));
 
 	public ValueRangeImpl(ValueType valueType) {
-		checkNotNull(valueType);
+		requireNonNull(valueType);
 
 		if(!supportedValueTypes.contains(valueType))
 			throw new UnsupportedValueTypeException(valueType);
@@ -207,7 +207,7 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	}
 
 	protected void setLowerBound0(Object lower) {
-		checkNotNull(lower);
+		requireNonNull(lower);
 
 		checkValue(lower);
 
@@ -225,7 +225,7 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	}
 
 	protected void setUpperBound0(Object upper) {
-		checkNotNull(upper);
+		requireNonNull(upper);
 
 		checkValue(upper);
 
@@ -243,7 +243,7 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	}
 
 	protected void setStepSize0(Object stepSize) {
-		checkNotNull(stepSize);
+		requireNonNull(stepSize);
 
 		checkValue(stepSize);
 

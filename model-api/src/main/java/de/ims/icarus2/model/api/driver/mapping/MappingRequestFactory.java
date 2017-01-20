@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.api.driver.mapping;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.concurrent.Callable;
 
@@ -41,7 +41,7 @@ public class MappingRequestFactory {
 	private RequestSettings settings;
 
 	public MappingRequestFactory reader(MappingReader reader) {
-		checkNotNull(reader);
+		requireNonNull(reader);
 
 		this.reader = reader;
 
@@ -80,13 +80,13 @@ public class MappingRequestFactory {
 	}
 
 	public MappingRequest forIndices(IndexSet...indices) {
-		checkNotNull(indices);
+		requireNonNull(indices);
 
 		return forIndices0(indices);
 	}
 
 	public MappingRequest forIndices(long...indices) {
-		checkNotNull(indices);
+		requireNonNull(indices);
 
 		IndexSet set = new ArrayIndexSet(indices);
 
@@ -94,7 +94,7 @@ public class MappingRequestFactory {
 	}
 
 	public MappingRequest forIndices(int...indices) {
-		checkNotNull(indices);
+		requireNonNull(indices);
 
 		IndexSet set = new ArrayIndexSet(indices);
 
@@ -102,7 +102,7 @@ public class MappingRequestFactory {
 	}
 
 	public MappingRequest forIndices(short...indices) {
-		checkNotNull(indices);
+		requireNonNull(indices);
 
 		IndexSet set = new ArrayIndexSet(indices);
 
@@ -110,7 +110,7 @@ public class MappingRequestFactory {
 	}
 
 	public MappingRequest forIndices(byte...indices) {
-		checkNotNull(indices);
+		requireNonNull(indices);
 
 		IndexSet set = new ArrayIndexSet(indices);
 

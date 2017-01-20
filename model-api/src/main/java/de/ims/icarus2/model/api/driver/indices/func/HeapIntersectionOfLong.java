@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.api.driver.indices.func;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,7 +39,7 @@ import de.ims.icarus2.util.collections.MinHeap.LongMinHeap;
 public class HeapIntersectionOfLong implements PrimitiveIterator.OfLong, ModelConstants {
 
 	public static HeapIntersectionOfLong fromArrays(long[]...arrays) {
-		checkNotNull(arrays);
+		requireNonNull(arrays);
 		checkArgument(arrays.length>2);
 
 		OfLong[] sources = new OfLong[arrays.length];
@@ -52,7 +52,7 @@ public class HeapIntersectionOfLong implements PrimitiveIterator.OfLong, ModelCo
 	}
 
 	public static HeapIntersectionOfLong fromIndices(IndexSet...indices) {
-		checkNotNull(indices);
+		requireNonNull(indices);
 		checkArgument(indices.length>2);
 
 		OfLong[] sources = new OfLong[indices.length];
@@ -65,7 +65,7 @@ public class HeapIntersectionOfLong implements PrimitiveIterator.OfLong, ModelCo
 	}
 
 	public static HeapIntersectionOfLong fromIndices(Collection<IndexSet> indices) {
-		checkNotNull(indices);
+		requireNonNull(indices);
 		checkArgument(indices.size()>2);
 
 		OfLong[] sources = new OfLong[indices.size()];
@@ -86,7 +86,7 @@ public class HeapIntersectionOfLong implements PrimitiveIterator.OfLong, ModelCo
 	private long value = NO_INDEX;
 
 	public HeapIntersectionOfLong(PrimitiveIterator.OfLong[] sources) {
-		checkNotNull(sources);
+		requireNonNull(sources);
 
 		buffer = new PrimitiveIterator.OfLong[sources.length];
 		heap = new LongMinHeap<>(sources.length);

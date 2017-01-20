@@ -18,7 +18,7 @@
 package de.ims.icarus2.model.util.stream;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Spliterator;
 import java.util.function.Consumer;
@@ -45,7 +45,7 @@ public class StructureNodeSpliterator implements Spliterator<Item> {
 	private long pos;
 
 	public StructureNodeSpliterator(Structure source, long pos, long fence) {
-		checkNotNull(source);
+		requireNonNull(source);
 		checkArgument(pos>=-1L);
 		checkArgument(fence>0);
 		checkArgument(fence>pos);
@@ -57,7 +57,7 @@ public class StructureNodeSpliterator implements Spliterator<Item> {
 	}
 
 	public StructureNodeSpliterator(Structure source) {
-		checkNotNull(source);
+		requireNonNull(source);
 
 		this.source = source;
 		this.pos = -1L;

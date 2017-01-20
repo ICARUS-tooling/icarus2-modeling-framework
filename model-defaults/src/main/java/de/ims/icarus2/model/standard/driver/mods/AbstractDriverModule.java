@@ -18,8 +18,8 @@
  */
 package de.ims.icarus2.model.standard.driver.mods;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -52,7 +52,7 @@ public abstract class AbstractDriverModule extends AbstractPart<Driver> implemen
 	private volatile boolean cancelled = false;
 
 	protected AbstractDriverModule(String id) {
-		checkNotNull(id);
+		requireNonNull(id);
 
 		state = new DefaultModuleState(this);
 		identity = new StaticIdentity(id, this);
@@ -183,7 +183,7 @@ public abstract class AbstractDriverModule extends AbstractPart<Driver> implemen
 		private D driver;
 
 		public B driver(D driver) {
-			checkNotNull(driver);
+			requireNonNull(driver);
 			checkState(this.driver==null);
 
 			this.driver = driver;

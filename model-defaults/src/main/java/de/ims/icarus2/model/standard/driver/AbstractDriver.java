@@ -19,8 +19,10 @@
 package de.ims.icarus2.model.standard.driver;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -39,6 +41,7 @@ import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.ChunkInfo;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.DriverListener;
+import de.ims.icarus2.model.api.driver.id.IdManager;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingStorage;
 import de.ims.icarus2.model.api.driver.mods.DriverModule;
@@ -72,6 +75,10 @@ public abstract class AbstractDriver implements Driver {
 
 	private final DriverManifest manifest;
 
+	/**
+	 * Kill flag, once {@code true} this driver should be seen
+	 * as no longer operational.
+	 */
 	private volatile boolean dead = false;
 
 	/**
@@ -79,10 +86,20 @@ public abstract class AbstractDriver implements Driver {
 	 */
 	private volatile boolean allowUncheckedAccess = false;
 	private final AtomicBoolean connected = new AtomicBoolean(false);
+
+	/**
+	 * Host corpus
+	 */
 	private Corpus corpus;
 
+	/**
+	 * Thread-safe list of listeners
+	 */
 	private final List<DriverListener> driverListeners = new CopyOnWriteArrayList<>();
 
+	/**
+	 * Context created by this driver
+	 */
 	private Context context;
 
 	/**
@@ -90,14 +107,21 @@ public abstract class AbstractDriver implements Driver {
 	 */
 	private final Lock lock = new ReentrantLock();
 
+	/**
+	 * Optional mappings, for small data sets or special driver implementations
+	 * this might not be needed at all.
+	 */
 	private MappingStorage mappings;
+
+
+	private final Int2ObjectMap<IdManager> idManagers = new Int2ObjectOpenHashMap<IdManager>();
 
 	protected AbstractDriver(DriverBuilder<?,?> builder) {
 		this(builder.getManifest());
 	}
 
 	protected AbstractDriver(DriverManifest manifest) {
-		checkNotNull(manifest);
+		requireNonNull(manifest);
 
 		this.manifest = manifest;
 	}
@@ -123,7 +147,30 @@ public abstract class AbstractDriver implements Driver {
 
 	@Override
 	public String toString() {
-		return getClass().getName()+"Driver["+manifest.getId()+"]";
+		return getClass().getName()+"@"+manifest.getId();
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.driver.Driver#getIdManager(de.ims.icarus2.model.manifest.api.ItemLayerManifest)
+	 */
+	@Override
+	public IdManager getIdManager(ItemLayerManifest layer) {
+		int key = layer.getUID();
+		IdManager manager = idManagers.get(key);
+		if(manager==null) {
+			synchronized (idManagers) {
+				if((manager = idManagers.get(key))==null) {
+					manager = createIdManager(layer);
+					idManagers.put(key, manager);
+				}
+			}
+		}
+
+		return manager;
+	}
+
+	protected IdManager createIdManager(ItemLayerManifest itemLayerManifest) {
+		return new IdManager.IdentityIdManager(itemLayerManifest);
 	}
 
 	@Override
@@ -137,6 +184,7 @@ public abstract class AbstractDriver implements Driver {
 
 	@Override
 	public void connect(Corpus target) throws InterruptedException {
+		requireNonNull(target);
 
 		Lock lock = getGlobalLock();
 
@@ -162,9 +210,12 @@ public abstract class AbstractDriver implements Driver {
 			// Connect notify AFTER this driver's 'connected' flag has been set!
 			context.connectNotify(this);
 		} finally {
+			// Make sure we go back to verifying access to critical components
 			allowUncheckedAccess = false;
 			lock.unlock();
 		}
+
+		afterConnect();
 	}
 
 	/**
@@ -180,19 +231,29 @@ public abstract class AbstractDriver implements Driver {
 	}
 
 	private void setMappings(MappingStorage mappings) {
-		checkNotNull(mappings);
+		requireNonNull(mappings);
 		checkState(this.mappings==null);
 
 		this.mappings = mappings;
 	}
 
 	private void setContext(Context context) {
-		checkNotNull(context);
+		requireNonNull(context);
 		checkState(this.context==null);
 
 		this.context = context;
 	}
 
+	/**
+	 * Verifies that required internal components have been properly
+	 * initialized. For proper nesting subclasses wishing to add custom
+	 * verification should always include a call to the super method,
+	 * preferably <b>before</b> any checks of their own are being performed.
+	 * <p>
+	 * The default implementation verifies that both the {@link Context}
+	 * and {@link MappingStorage} of this driver are present and throws
+	 * a {@link IllegalStateException} otherwise.
+	 */
 	protected void verifyInternals() {
 
 		checkState("Missing context", context!=null);
@@ -264,7 +325,7 @@ public abstract class AbstractDriver implements Driver {
 		MappingStorage.Builder builder = new MappingStorage.Builder();
 
 		// Allow for subclasses to provide a fallback function
-		BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> fallback = getRegularMappingFallback();
+		BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> fallback = getMappingFallback();
 		if(fallback!=null) {
 			builder.fallback(fallback);
 		}
@@ -277,13 +338,15 @@ public abstract class AbstractDriver implements Driver {
 	 *
 	 * @return
 	 */
-	protected BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> getRegularMappingFallback() {
+	protected BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> getMappingFallback() {
 		return null;
 	}
 
 	@Override
 	public void disconnect(Corpus target) throws InterruptedException {
-		checkNotNull(target);
+		requireNonNull(target);
+
+		beforeDisconnect();
 
 		Lock lock = getGlobalLock();
 
@@ -319,6 +382,10 @@ public abstract class AbstractDriver implements Driver {
 			allowUncheckedAccess = false;
 			lock.unlock();
 		}
+	}
+
+	protected void beforeDisconnect() {
+		// no-op
 	}
 
 	/**
@@ -387,12 +454,12 @@ public abstract class AbstractDriver implements Driver {
 
 	/**
 	 *
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#getLayers()
+	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#getItemLayers()
 	 *
 	 * @throws ModelException in case the driver is currently not connected to any live corpus
 	 */
 	@Override
-	public Collection<Layer> getLayers() {
+	public Collection<Layer> getItemLayers() {
 		return getContext().getLayers(ItemLayer.class);
 	}
 
@@ -424,7 +491,7 @@ public abstract class AbstractDriver implements Driver {
 
 	@Override
 	public void addDriverListener(DriverListener listener) {
-		checkNotNull(listener);
+		requireNonNull(listener);
 
 		if(!driverListeners.contains(listener)) {
 			driverListeners.add(listener);
@@ -433,7 +500,7 @@ public abstract class AbstractDriver implements Driver {
 
 	@Override
 	public void removeDriverListener(DriverListener listener) {
-		checkNotNull(listener);
+		requireNonNull(listener);
 
 		driverListeners.remove(listener);
 	}
@@ -474,8 +541,8 @@ public abstract class AbstractDriver implements Driver {
 	 * @return
 	 */
 	protected <T extends Object> T defaultInstantiateModule(Class<T> resultClass, ModuleManifest manifest) {
-		checkNotNull(resultClass);
-		checkNotNull(manifest);
+		requireNonNull(resultClass);
+		requireNonNull(manifest);
 
 		checkConnected();
 
@@ -583,7 +650,7 @@ public abstract class AbstractDriver implements Driver {
 		private DriverManifest manifest;
 
 		public B manifest(DriverManifest manifest) {
-			checkNotNull(manifest);
+			requireNonNull(manifest);
 			checkState(this.manifest==null);
 
 			this.manifest = manifest;

@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.standard.driver.virtual;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
@@ -56,7 +56,7 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 
 
 	@Override
-	public Collection<Layer> getLayers() {
+	public Collection<Layer> getItemLayers() {
 		return CollectionUtils.getListProxy(layers);
 	}
 
@@ -69,7 +69,7 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 	}
 
 	public RootContainer addLayer(ItemLayer layer, Supplier<ItemList> supplier) {
-		checkNotNull(supplier);
+		requireNonNull(supplier);
 
 		final int uid = layer.getManifest().getUID();
 		RootContainer container = rootContainers.get(uid);
@@ -87,7 +87,7 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 	}
 
 	public void addLayers(Context context) {
-		checkNotNull(context);
+		requireNonNull(context);
 
 		context.forEachLayer(layer -> {
 			if(ModelUtils.isItemLayer(layer)) {
@@ -103,7 +103,7 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 	}
 
 	public RootContainer getRootContainer(ItemLayer layer) {
-		checkNotNull(layer);
+		requireNonNull(layer);
 
 		RootContainer result = rootContainers.get(layer.getManifest().getUID());
 
@@ -174,8 +174,8 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 	@Override
 	public long load(IndexSet[] indices, ItemLayer layer,
 			Consumer<ChunkInfo> action) throws InterruptedException {
-		checkNotNull(indices);
-		checkNotNull(layer);
+		requireNonNull(indices);
+		requireNonNull(layer);
 
 		long count = IndexUtils.count(indices);
 		RootContainer rootContainer = getRootContainer(layer);

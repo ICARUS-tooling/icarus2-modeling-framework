@@ -35,11 +35,11 @@ import org.xml.sax.SAXException;
 
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
-import de.ims.icarus2.model.manifest.api.OptionsManifest;
 import de.ims.icarus2.model.manifest.api.MemberManifest.Property;
+import de.ims.icarus2.model.manifest.api.OptionsManifest;
 import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
-import de.ims.icarus2.model.manifest.standard.DocumentationImpl;
 import de.ims.icarus2.model.manifest.standard.AbstractMemberManifest.PropertyImpl;
+import de.ims.icarus2.model.manifest.standard.DocumentationImpl;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
@@ -293,7 +293,6 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private void addValue(Object value) {
 		if(property.getValue()==null) {
 			property.setValue(new ArrayList<>(4));

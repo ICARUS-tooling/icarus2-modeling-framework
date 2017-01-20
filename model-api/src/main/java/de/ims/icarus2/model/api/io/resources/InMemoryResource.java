@@ -60,7 +60,7 @@ public class InMemoryResource implements IOResource, ModelConstants {
 	}
 
 	private void checkOpen() {
-		if(buffer==null)
+		if(buffer==null || !buffer.isOpen())
 			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Buffer not prepared");
 	}
@@ -90,6 +90,9 @@ public class InMemoryResource implements IOResource, ModelConstants {
 	 */
 	@Override
 	public void delete() throws IOException {
+		if(buffer!=null) {
+			buffer.close();
+		}
 		buffer = null;
 	}
 
@@ -98,6 +101,10 @@ public class InMemoryResource implements IOResource, ModelConstants {
 	 */
 	@Override
 	public void prepare() throws IOException {
+		if(buffer!=null) {
+			return;
+		}
+
 		buffer = new MemoryByteStorage(capacity);
 	}
 

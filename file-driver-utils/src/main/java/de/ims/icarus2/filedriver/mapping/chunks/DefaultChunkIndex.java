@@ -18,8 +18,8 @@
 package de.ims.icarus2.filedriver.mapping.chunks;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -33,7 +33,7 @@ import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.ReadWriteAccessor;
-import de.ims.icarus2.filedriver.io.sets.FileSet;
+import de.ims.icarus2.filedriver.io.sets.ResourceSet;
 import de.ims.icarus2.filedriver.mapping.AbstractStoredMapping;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkArrays.ArrayAdapter;
 import de.ims.icarus2.model.api.ModelException;
@@ -57,7 +57,7 @@ public class DefaultChunkIndex implements ChunkIndex {
 	private static final Logger log = LoggerFactory
 			.getLogger(DefaultChunkIndex.class);
 
-	private final FileSet fileSet;
+	private final ResourceSet resourceSet;
 	private final ChunkArrays.ArrayAdapter arrayAdapter;
 	private final int blockPower;
 	private final int blockMask;
@@ -69,12 +69,12 @@ public class DefaultChunkIndex implements ChunkIndex {
 
 	protected DefaultChunkIndex(Builder builder) {
 
-		FileSet fileSet = builder.getFileSet();
-		this.fileSet = fileSet;
+		ResourceSet resourceSet = builder.getFileSet();
+		this.resourceSet = resourceSet;
 
 		ArrayAdapter arrayAdapter = builder.getArrayAdapter();
 		if(arrayAdapter==null) {
-			arrayAdapter = createAdapter(builder.getIndexValueType(), fileSet);
+			arrayAdapter = createAdapter(builder.getIndexValueType(), resourceSet);
 		}
 
 		this.arrayAdapter = arrayAdapter;
@@ -94,12 +94,12 @@ public class DefaultChunkIndex implements ChunkIndex {
 			.build();
 	}
 
-	protected ArrayAdapter createAdapter(IndexValueType valueType, FileSet fileSet) {
+	protected ArrayAdapter createAdapter(IndexValueType valueType, ResourceSet resourceSet) {
 		if(valueType==null) {
 			valueType = IndexValueType.LONG;
 		}
 
-		int fileCount = fileSet.getFileCount();
+		int fileCount = resourceSet.getResourceCount();
 
 		if(fileCount>1) {
 			IndexValueType fileValueType = IndexValueType.forValue(fileCount);
@@ -117,8 +117,8 @@ public class DefaultChunkIndex implements ChunkIndex {
 	 * @see de.ims.icarus2.filedriver.mapping.chunks.ChunkIndex#getFileSet()
 	 */
 	@Override
-	public FileSet getFileSet() {
-		return fileSet;
+	public ResourceSet getFileSet() {
+		return resourceSet;
 	}
 
 	/**
@@ -521,7 +521,7 @@ public class DefaultChunkIndex implements ChunkIndex {
 	 *
 	 */
 	public static class Builder extends AbstractBuilder<Builder, DefaultChunkIndex> {
-		private FileSet fileSet;
+		private ResourceSet resourceSet;
 		private IndexValueType indexValueType;
 		private Integer blockPower;
 		private ChunkArrays.ArrayAdapter arrayAdapter;
@@ -539,7 +539,7 @@ public class DefaultChunkIndex implements ChunkIndex {
 		}
 
 		public Builder resource(IOResource resource) {
-			checkNotNull(resource);
+			requireNonNull(resource);
 			checkState(this.resource==null);
 
 			this.resource = resource;
@@ -548,7 +548,7 @@ public class DefaultChunkIndex implements ChunkIndex {
 		}
 
 		public Builder blockCache(BlockCache blockCache) {
-			checkNotNull(blockCache);
+			requireNonNull(blockCache);
 			checkState(this.blockCache==null);
 
 			this.blockCache = blockCache;
@@ -568,15 +568,15 @@ public class DefaultChunkIndex implements ChunkIndex {
 			return blockCache;
 		}
 
-		public FileSet getFileSet() {
-			return fileSet;
+		public ResourceSet getFileSet() {
+			return resourceSet;
 		}
 
-		public Builder fileSet(FileSet fileSet) {
-			checkNotNull(fileSet);
-			checkState(this.fileSet==null);
+		public Builder resourceSet(ResourceSet resourceSet) {
+			requireNonNull(resourceSet);
+			checkState(this.resourceSet==null);
 
-			this.fileSet = fileSet;
+			this.resourceSet = resourceSet;
 
 			return thisAsCast();
 		}
@@ -586,7 +586,7 @@ public class DefaultChunkIndex implements ChunkIndex {
 		}
 
 		public Builder arrayAdapter(ChunkArrays.ArrayAdapter arrayAdapter) {
-			checkNotNull(arrayAdapter);
+			requireNonNull(arrayAdapter);
 			checkState(this.arrayAdapter==null);
 
 			this.arrayAdapter = arrayAdapter;
@@ -623,7 +623,7 @@ public class DefaultChunkIndex implements ChunkIndex {
 		protected void validate() {
 			super.validate();
 
-			checkState("Missing file set", fileSet!=null);
+			checkState("Missing file set", resourceSet!=null);
 			checkState("Missing resource", resource!=null);
 			checkState("Missing block cache", blockCache!=null);
 

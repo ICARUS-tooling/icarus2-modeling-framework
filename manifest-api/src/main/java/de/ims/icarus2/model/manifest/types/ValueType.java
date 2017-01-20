@@ -18,6 +18,12 @@
  */
 package de.ims.icarus2.model.manifest.types;
 
+import static de.ims.icarus2.util.classes.ClassUtils._boolean;
+import static de.ims.icarus2.util.classes.ClassUtils._double;
+import static de.ims.icarus2.util.classes.ClassUtils._float;
+import static de.ims.icarus2.util.classes.ClassUtils._int;
+import static de.ims.icarus2.util.classes.ClassUtils._long;
+
 import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -107,8 +113,46 @@ public class ValueType implements StringResource, NamedObject {
 		return String.valueOf(value);
 	}
 
+	/**
+	 * Transform the given {@link CharSequence} into an intermediate
+	 * representation suitable for this value type. The returned value
+	 * is <b>not</b> required to be persistent. If client code wishes to
+	 * further use the returned object, it should use the {@link #persist(Object)}
+	 * method to transform it into a persistent state.
+	 *
+	 * @param s
+	 * @param classLoader
+	 * @return
+	 */
 	public Object parse(CharSequence s, ClassLoader classLoader) {
 		throw new IllegalStateException("Cannot parse data of type '"+getStringValue()+"'"); //$NON-NLS-1$
+	}
+
+	/**
+	 * Transforms the given intermediary representation in a valid
+	 * persistent state that is unaffected by further changes to the
+	 * given original {@code data} object.
+	 * <p>
+	 * The default implementation simply returns the {@code data}
+	 * argument.
+	 *
+	 * @param data
+	 * @return
+	 */
+	public Object persist(Object data) {
+		return data;
+	}
+
+	/**
+	 * Combination of {@link #parse(CharSequence, ClassLoader)} and a subsequent
+	 * {@link #persist(Object)}.
+	 *
+	 * @param s
+	 * @param classLoader
+	 * @return
+	 */
+	public Object parseAndPersist(CharSequence s, ClassLoader classLoader) {
+		return persist(parse(s, classLoader));
 	}
 
 	/**
@@ -211,13 +255,25 @@ public class ValueType implements StringResource, NamedObject {
 		public Object parse(CharSequence s, ClassLoader classLoader) {
 			return s;
 		}
+
+		/**
+		 * Uses the given {@link Object object's} {@link Object#toString() toString()} method
+		 * to create a potentially new {@code String} instance.
+		 *
+		 * @param data
+		 * @return
+		 */
+		@Override
+		public Object persist(Object data) {
+			return data.toString();
+		};
 	};
 
 	public static final String BOOLEAN_TYPE_LABEL = "boolean";
 	public static final ValueType BOOLEAN = new ValueType(BOOLEAN_TYPE_LABEL, Boolean.class, true, true) {
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
-			return StringPrimitives.parseBoolean(s);
+			return _boolean(StringPrimitives.parseBoolean(s));
 		}
 	};
 
@@ -225,7 +281,7 @@ public class ValueType implements StringResource, NamedObject {
 	public static final ValueType INTEGER = new ValueType(INTEGER_TYPE_LABEL, Integer.class, true, true) {
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
-			return StringPrimitives.parseInt(s);
+			return _int(StringPrimitives.parseInt(s));
 		}
 	};
 
@@ -233,7 +289,7 @@ public class ValueType implements StringResource, NamedObject {
 	public static final ValueType LONG = new ValueType(LONG_TYPE_LABEL, Long.class, true, true) {
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
-			return StringPrimitives.parseLong(s);
+			return _long(StringPrimitives.parseLong(s));
 		}
 	};
 
@@ -241,7 +297,7 @@ public class ValueType implements StringResource, NamedObject {
 	public static final ValueType DOUBLE = new ValueType(DOUBLE_TYPE_LABEL, Double.class, true, true) {
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
-			return StringPrimitives.parseDouble(s);
+			return _double(StringPrimitives.parseDouble(s));
 		}
 	};
 
@@ -249,7 +305,7 @@ public class ValueType implements StringResource, NamedObject {
 	public static final ValueType FLOAT = new ValueType(FLOAT_TYPE_LABEL, Float.class, true, true) {
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
-			return StringPrimitives.parseFloat(s);
+			return _float(StringPrimitives.parseFloat(s));
 		}
 	};
 

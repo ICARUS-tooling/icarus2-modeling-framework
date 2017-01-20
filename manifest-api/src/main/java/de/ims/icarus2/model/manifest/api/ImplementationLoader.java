@@ -18,8 +18,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.lang.reflect.Constructor;
 
@@ -82,7 +82,7 @@ public abstract class ImplementationLoader<L extends ImplementationLoader<L>> ex
 	 * @return
 	 */
 	public L manifest(ImplementationManifest manifest) {
-		checkNotNull(manifest);
+		requireNonNull(manifest);
 		checkState(this.manifest==null);
 
 		this.manifest = manifest;
@@ -111,7 +111,7 @@ public abstract class ImplementationLoader<L extends ImplementationLoader<L>> ex
 	 * @return
 	 */
 	public L environment(Object environment) {
-		checkNotNull(environment);
+		requireNonNull(environment);
 		checkState(this.environment==null);
 
 		this.environment = environment;
@@ -126,7 +126,7 @@ public abstract class ImplementationLoader<L extends ImplementationLoader<L>> ex
 	 * @return
 	 */
 	public L message(String message) {
-		checkNotNull(message);
+		requireNonNull(message);
 		checkState(this.message==null);
 
 		this.message = message;
@@ -135,7 +135,7 @@ public abstract class ImplementationLoader<L extends ImplementationLoader<L>> ex
 	}
 
 	public L signature(Class<?>...signature) {
-		checkNotNull(signature);
+		requireNonNull(signature);
 		checkState(this.signature==null);
 
 		this.signature = signature;

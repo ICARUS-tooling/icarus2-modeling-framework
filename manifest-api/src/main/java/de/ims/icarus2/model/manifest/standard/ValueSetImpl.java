@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -164,7 +164,7 @@ public class ValueSetImpl extends AbstractLockable implements ValueSet {
 	}
 
 	protected void addValue0(Object value, int index) {
-		checkNotNull(value);
+		requireNonNull(value);
 		if(index==-1) {
 			index = values.size();
 		}
@@ -187,7 +187,7 @@ public class ValueSetImpl extends AbstractLockable implements ValueSet {
 
 	@Override
 	public int indexOfValue(Object value) {
-		checkNotNull(value);
+		requireNonNull(value);
 
 		return values.indexOf(value);
 	}

@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.lang.reflect.Array;
 import java.util.List;
@@ -64,7 +64,7 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 	}
 
 	public IndexBuffer(IndexValueType valueType, int bufferSize) {
-		checkNotNull(valueType);
+		requireNonNull(valueType);
 
 		if(bufferSize<1)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Buffer size must not be less than 1: "+bufferSize);

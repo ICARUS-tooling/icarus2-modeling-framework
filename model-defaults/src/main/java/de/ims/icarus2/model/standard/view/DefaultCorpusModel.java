@@ -20,8 +20,8 @@ package de.ims.icarus2.model.standard.view;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.util.function.Consumer;
 import java.util.function.ObjLongConsumer;
@@ -117,8 +117,8 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 
 	private static final Logger log = LoggerFactory.getLogger(DefaultCorpusModel.class);
 
-	public DefaultCorpusModel(CorpusModelBuilder builder) {
-		checkNotNull(builder);
+	public DefaultCorpusModel(Builder builder) {
+		requireNonNull(builder);
 		this.itemLayerManager = builder.getItemLayerManager();
 
 		writable = builder.getAccessMode().isWrite();
@@ -271,17 +271,17 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 	//---------------------------------------------
 
 	@Override
-	public boolean isEditable() {
+	public boolean isModelEditable() {
 		return writable;
 	}
 
 	@Override
-	public boolean isActive() {
+	public boolean isModelActive() {
 		return getView().isActive();
 	}
 
 	@Override
-	public boolean isComplete() {
+	public boolean isModelComplete() {
 		CorpusView view = getView();
 
 		return view.getPageSize()>=view.getSize();
@@ -969,8 +969,8 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		private final ItemLayerManager itemLayerManager;
 
 		public BufferedItemLookup(ItemLayerManager itemLayerManager, PageControl pageControl) {
-			checkNotNull(itemLayerManager);
-			checkNotNull(pageControl);
+			requireNonNull(itemLayerManager);
+			requireNonNull(pageControl);
 
 			this.pageControl = pageControl;
 			int capacity = pageControl.getPageSize();
@@ -1163,7 +1163,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		 */
 		@Override
 		public boolean isAlive() {
-			return getModel().isActive();
+			return getModel().isModelActive();
 		}
 
 		/**
@@ -1227,7 +1227,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		 */
 		@Override
 		public boolean isItemsComplete() {
-			return getModel().isComplete();
+			return getModel().isModelComplete();
 		}
 
 		/**
@@ -1255,14 +1255,14 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		}
 	}
 
-	public static class CorpusModelBuilder extends AbstractBuilder<CorpusModelBuilder, CorpusModel> {
+	public static class Builder extends AbstractBuilder<Builder, CorpusModel> {
 
 		private CorpusAccessMode accessMode;
 		private ItemLayerManager itemLayerManager;
 
 
-		public CorpusModelBuilder accessMode(CorpusAccessMode accessMode) {
-			checkNotNull(accessMode);
+		public Builder accessMode(CorpusAccessMode accessMode) {
+			requireNonNull(accessMode);
 			checkState(this.accessMode==null);
 
 			this.accessMode = accessMode;
@@ -1274,8 +1274,8 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 			return accessMode;
 		}
 
-		public CorpusModelBuilder itemLayerManager(ItemLayerManager itemLayerManager) {
-			checkNotNull(itemLayerManager);
+		public Builder itemLayerManager(ItemLayerManager itemLayerManager) {
+			requireNonNull(itemLayerManager);
 			checkState(this.itemLayerManager==null);
 
 			this.itemLayerManager = itemLayerManager;

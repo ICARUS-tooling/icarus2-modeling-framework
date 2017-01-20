@@ -59,5 +59,7 @@ public interface ResolverContext {
 	 * meaning that the code controlling the read operation must not pass it on to other
 	 * subsequent tasks.
 	 */
-	void consumeData();
+	default void consumeData() {
+		// no-op
+	}
 }

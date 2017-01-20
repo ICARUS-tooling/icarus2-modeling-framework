@@ -17,7 +17,7 @@
  */
 package de.ims.icarus2.filedriver.mapping.chunks;
 
-import de.ims.icarus2.filedriver.io.sets.FileSet;
+import de.ims.icarus2.filedriver.io.sets.ResourceSet;
 import de.ims.icarus2.model.api.ModelConstants;
 
 /**
@@ -62,7 +62,7 @@ public interface ChunkIndex extends ModelConstants {
 	 *
 	 * @return
 	 */
-	FileSet getFileSet();
+	ResourceSet getFileSet();
 
 	/**
 	 * @deprecated use {@link #newCursor(boolean)} with a {@code readOnly} parameter of {@code true} instead

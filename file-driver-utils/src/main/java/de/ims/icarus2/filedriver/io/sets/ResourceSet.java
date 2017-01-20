@@ -17,38 +17,39 @@
  */
 package de.ims.icarus2.filedriver.io.sets;
 
-import java.nio.file.Path;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.ObjIntConsumer;
 
+import de.ims.icarus2.model.api.io.resources.IOResource;
+
 /**
- * Stores a collection of files together with their respective checksums.
+ * Stores a collection of (file) resources together with their respective checksums.
  *
  * @author Markus Gärtner
  *
  */
-public interface FileSet {
+public interface ResourceSet {
 
 	/**
-	 * Returns the number of files this storage covers (at least {@code 1}).
+	 * Returns the number of resources this storage covers (at least {@code 1}).
 	 */
-	int getFileCount();
+	int getResourceCount();
 
 	/**
-	 * Returns the physical location of the file specified by the {@code fileIndex}
-	 * argument.
+	 * Returns the abstract location of the resource specified by the
+	 * {@code resourceIndex} argument.
 	 *
-	 * @param fileIndex
+	 * @param resourceIndex
 	 * @return
 	 */
-	Path getFileAt(int fileIndex);
+	IOResource getResourceAt(int resourceIndex);
 
-	default int indexOfFile(Path file) {
-		int fileCount = getFileCount();
+	default int indexOfFile(IOResource file) {
+		int resourceCount = getResourceCount();
 
-		for(int i=0; i<fileCount; i++) {
-			if(getFileAt(i).equals(file)) {
+		for(int i=0; i<resourceCount; i++) {
+			if(getResourceAt(i).equals(file)) {
 				return i;
 			}
 		}
@@ -57,26 +58,26 @@ public interface FileSet {
 	}
 
 	default void forEachFile(IntConsumer action) {
-		int fileCount = getFileCount();
+		int resourceCount = getResourceCount();
 
-		for(int i=0; i<fileCount; i++) {
+		for(int i=0; i<resourceCount; i++) {
 			action.accept(i);
 		}
 	}
 
-	default void forEachFile(ObjIntConsumer<Path> action) {
-		int fileCount = getFileCount();
+	default void forEachFile(ObjIntConsumer<IOResource> action) {
+		int resourceCount = getResourceCount();
 
-		for(int i=0; i<fileCount; i++) {
-			action.accept(getFileAt(i), i);
+		for(int i=0; i<resourceCount; i++) {
+			action.accept(getResourceAt(i), i);
 		}
 	}
 
-	default void forEachFile(Consumer<Path> action) {
-		int fileCount = getFileCount();
+	default void forEachFile(Consumer<IOResource> action) {
+		int resourceCount = getResourceCount();
 
-		for(int i=0; i<fileCount; i++) {
-			action.accept(getFileAt(i));
+		for(int i=0; i<resourceCount; i++) {
+			action.accept(getResourceAt(i));
 		}
 	}
 }

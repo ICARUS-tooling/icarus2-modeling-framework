@@ -317,24 +317,42 @@ public class MutablePrimitives {
 			this.value = value;
 		}
 
-		public int increment() {
-			value++;
-			return value;
+		public int incrementAndGet() {
+			return incrementAndGet(1);
 		}
 
-		public int increment(int delta) {
+		public int incrementAndGet(int delta) {
 			value += delta;
 			return value;
 		}
 
-		public int decrement() {
-			value--;
+		public int decrementAndGet() {
+			return decrementAndGet(1);
+		}
+
+		public int decrementAndGet(int delta) {
+			value -= delta;
 			return value;
 		}
 
-		public int decrement(int delta) {
+		public int getAndIncrement() {
+			return getAndIncrement(1);
+		}
+
+		public int getAndIncrement(int delta) {
+			int result = value;
+			value += delta;
+			return result;
+		}
+
+		public int getAndDecrement() {
+			return getAndDecrement(1);
+		}
+
+		public int getAndDecrement(int delta) {
+			int result = value;
 			value -= delta;
-			return value;
+			return result;
 		}
 
 		/**
@@ -908,24 +926,42 @@ public class MutablePrimitives {
 			this.value = value;
 		}
 
-		public long increment() {
-			value++;
-			return value;
+		public long incrementAndGet() {
+			return incrementAndGet(1);
 		}
 
-		public long increment(long delta) {
+		public long incrementAndGet(long delta) {
 			value += delta;
 			return value;
 		}
 
-		public long decrement() {
-			value--;
+		public long decrementAndGet() {
+			return decrementAndGet(1);
+		}
+
+		public long decrementAndGet(long delta) {
+			value -= delta;
 			return value;
 		}
 
-		public long decrement(long delta) {
+		public long getAndIncrement() {
+			return getAndIncrement(1);
+		}
+
+		public long getAndIncrement(long delta) {
+			long result = value;
+			value += delta;
+			return result;
+		}
+
+		public long getAndDecrement() {
+			return getAndDecrement(1);
+		}
+
+		public long getAndDecrement(long delta) {
+			long result = value;
 			value -= delta;
-			return value;
+			return result;
 		}
 
 		/**

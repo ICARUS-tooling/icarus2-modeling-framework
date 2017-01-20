@@ -20,8 +20,8 @@ package de.ims.icarus2.model.standard.util;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -51,7 +51,7 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 	 * @param corpusManager
 	 */
 	public DefaultImplementationLoader(CorpusManager corpusManager) {
-		checkNotNull(corpusManager);
+		requireNonNull(corpusManager);
 
 		this.corpusManager = corpusManager;
 	}
@@ -61,6 +61,15 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 	}
 
 	public Corpus getCorpus() {
+		Corpus corpus =  this.corpus;
+
+		if(corpus==null) {
+			Object environment = getEnvironment();
+			if(environment instanceof Corpus) {
+				corpus = (Corpus) environment;
+			}
+		}
+
 		return corpus;
 	}
 
@@ -70,7 +79,7 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 	 * @return
 	 */
 	public DefaultImplementationLoader corpus(Corpus corpus) {
-		checkNotNull(corpus);
+		requireNonNull(corpus);
 		checkState(this.corpus==null);
 
 		this.corpus = corpus;
@@ -91,10 +100,11 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 	 */
 	@Override
 	public <T extends Object> T instantiate(Class<T> resultClass) {
-		checkNotNull(resultClass);
-
+		requireNonNull(resultClass);
 		checkState("Cannot use no-args constructor when constructor signature was defined", signature==null);
 
+		final ImplementationManifest manifest = getManifest();
+		final String message = getMessage();
 		final boolean isFactory = manifest.isUseFactory();
 
 		final Class<?> clazz = loadClass();
@@ -105,10 +115,10 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 			instance = clazz.newInstance();
 		} catch (InstantiationException e) {
 			throw new ModelException(corpus, ManifestErrorCode.IMPLEMENTATION_ERROR,
-					message+"Unable to instantiate custom implementation: "+getName(environment), e);
+					message+"Unable to instantiate custom implementation: "+getName(getEnvironment()), e);
 		} catch (IllegalAccessException e) {
 			throw new ModelException(corpus, ManifestErrorCode.IMPLEMENTATION_NOT_ACCESSIBLE,
-					message+"Cannot access custom implementation: "+getName(environment), e);
+					message+"Cannot access custom implementation: "+getName(getEnvironment()), e);
 		}
 
 		if(isFactory) {
@@ -117,8 +127,8 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 			try {
 				instance = factory.create(resultClass, manifest, this);
 			} catch (Exception e) {
-				throw new ModelException(corpus, ManifestErrorCode.IMPLEMENTATION_FACTORY,
-						message+"Delegated instatiation via factory failed: "+getName(environment), e);
+				throw new ModelException(getCorpus(), ManifestErrorCode.IMPLEMENTATION_FACTORY,
+						message+"Delegated instatiation via factory failed: "+getName(getEnvironment()), e);
 			}
 		}
 
@@ -139,8 +149,8 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 	 */
 	@Override
 	public <T extends Object> T instantiate(Class<T> resultClass, Object...params) {
-		checkNotNull(resultClass);
-		checkNotNull(params);
+		requireNonNull(resultClass);
+		requireNonNull(params);
 		checkArgument("Must provide 1 or more constructor arguments", params.length>0);
 
 		checkState("No constructor signature defined", signature!=null);
@@ -152,11 +162,11 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 		try {
 			constructor = clazz.getConstructor(signature);
 		} catch (NoSuchMethodException e) {
-			throw new ModelException(corpus, ManifestErrorCode.IMPLEMENTATION_NOT_FOUND,
-					message+"Missing custom constructor: "+getName(environment), e);
+			throw new ModelException(getCorpus(), ManifestErrorCode.IMPLEMENTATION_NOT_FOUND,
+					message+"Missing custom constructor: "+getName(getEnvironment()), e);
 		} catch (SecurityException e) {
-			throw new ModelException(corpus, ManifestErrorCode.IMPLEMENTATION_NOT_ACCESSIBLE,
-					message+"Cannot access custom constructor: "+getName(environment), e);
+			throw new ModelException(getCorpus(), ManifestErrorCode.IMPLEMENTATION_NOT_ACCESSIBLE,
+					message+"Cannot access custom constructor: "+getName(getEnvironment()), e);
 		}
 
 		Object instance = null;
@@ -164,14 +174,14 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 		try {
 			instance = constructor.newInstance(params);
 		} catch (InstantiationException | InvocationTargetException e) {
-			throw new ModelException(corpus, ManifestErrorCode.IMPLEMENTATION_ERROR,
-					message+"Unable to instantiate custom implementation: "+getName(environment), e);
+			throw new ModelException(getCorpus(), ManifestErrorCode.IMPLEMENTATION_ERROR,
+					message+"Unable to instantiate custom implementation: "+getName(getEnvironment()), e);
 		} catch (IllegalAccessException e) {
-			throw new ModelException(corpus, ManifestErrorCode.IMPLEMENTATION_NOT_ACCESSIBLE,
-					message+"Cannot access custom implementation: "+getName(environment), e);
+			throw new ModelException(getCorpus(), ManifestErrorCode.IMPLEMENTATION_NOT_ACCESSIBLE,
+					message+"Cannot access custom implementation: "+getName(getEnvironment()), e);
 		} catch (IllegalArgumentException e) {
-			throw new ModelException(corpus, ManifestErrorCode.IMPLEMENTATION_ERROR,
-					message+"Provided arguments are illegal for custom constructor: "+getName(environment), e);
+			throw new ModelException(getCorpus(), ManifestErrorCode.IMPLEMENTATION_ERROR,
+					message+"Provided arguments are illegal for custom constructor: "+getName(getEnvironment()), e);
 		}
 
 		return ensureCompatibility(instance, resultClass);

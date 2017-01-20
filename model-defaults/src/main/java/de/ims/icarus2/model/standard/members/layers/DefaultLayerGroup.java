@@ -21,6 +21,7 @@ package de.ims.icarus2.model.standard.members.layers;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 import java.util.Set;
+import java.util.function.Consumer;
 
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
@@ -91,6 +92,14 @@ public class DefaultLayerGroup extends AbstractPart<Context> implements LayerGro
 	@Override
 	public Set<Dependency<LayerGroup>> getDependencies() {
 		return CollectionUtils.getSetProxy(dependencies);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.layer.LayerGroup#forEachLayer(java.util.function.Consumer)
+	 */
+	@Override
+	public void forEachLayer(Consumer<? super Layer> action) {
+		layers.forEach(action);
 	}
 
 	/**

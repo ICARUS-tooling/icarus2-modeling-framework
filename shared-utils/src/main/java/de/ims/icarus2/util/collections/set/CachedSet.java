@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.util.collections.set;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.List;
 
@@ -76,7 +76,7 @@ public class CachedSet<E extends Object> extends AbstractDataSet<E> {
 	}
 
 	public void reset(E[] elements) {
-		checkNotNull(elements);
+		requireNonNull(elements);
 
 		items.clear();
 
@@ -84,7 +84,7 @@ public class CachedSet<E extends Object> extends AbstractDataSet<E> {
 	}
 
 	public void reset(List<? extends E> elements) {
-		checkNotNull(elements);
+		requireNonNull(elements);
 
 		items.clear();
 
@@ -97,7 +97,7 @@ public class CachedSet<E extends Object> extends AbstractDataSet<E> {
 	 */
 	@Override
 	public boolean contains(E element) {
-		checkNotNull(element);
+		requireNonNull(element);
 
 		return items.contains(element);
 	}
@@ -107,7 +107,7 @@ public class CachedSet<E extends Object> extends AbstractDataSet<E> {
 	 */
 	@Override
 	public void add(E element) {
-		checkNotNull(element);
+		requireNonNull(element);
 
 		items.add(element);
 	}

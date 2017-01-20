@@ -18,8 +18,8 @@
  */
 package de.ims.icarus2.model.api.registry;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.strings.StringUtil.getName;
+import static java.util.Objects.requireNonNull;
 
 import java.util.List;
 import java.util.Set;
@@ -60,8 +60,8 @@ public class CorpusVerifier {
 	private Stack<MemberManifest> stack = new Stack<>();
 
 	private CorpusVerifier(CorpusManifest corpusManifest, ReportBuilder<ReportItem> reportBuilder) {
-		checkNotNull(corpusManifest);
-		checkNotNull(reportBuilder);
+		requireNonNull(corpusManifest);
+		requireNonNull(reportBuilder);
 
 		this.corpusManifest = corpusManifest;
 		this.reportBuilder = reportBuilder;

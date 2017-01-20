@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.EnumSet;
 import java.util.function.Consumer;
@@ -123,7 +123,7 @@ public class ContainerManifestImpl extends AbstractMemberManifest<ContainerManif
 	}
 
 	protected void setContainerType0(ContainerType containerType) {
-		checkNotNull(containerType);
+		requireNonNull(containerType);
 
 		this.containerType = containerType;
 	}
@@ -141,7 +141,7 @@ public class ContainerManifestImpl extends AbstractMemberManifest<ContainerManif
 	}
 
 	protected void setContainerFlag0(ContainerFlag flag, boolean active) {
-		checkNotNull(flag);
+		requireNonNull(flag);
 
 		if(active) {
 			containerFlags.add(flag);

@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.members.structure.builder;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.MemberType;
@@ -54,7 +54,7 @@ public class StaticStructure extends DefaultItem implements Structure {
 	private Container boundaryContainer;
 
 	void setNodes(ItemStorage nodes) {
-		checkNotNull(nodes);
+		requireNonNull(nodes);
 
 		this.nodes = nodes;
 
@@ -62,7 +62,7 @@ public class StaticStructure extends DefaultItem implements Structure {
 	}
 
 	void setEdges(EdgeStorage edges) {
-		checkNotNull(edges);
+		requireNonNull(edges);
 
 		this.edges = edges;
 

@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.util.collections;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Comparator;
 import java.util.NoSuchElementException;
@@ -316,7 +316,7 @@ public abstract class Heap {
 		}
 
 		public ObjectHeap(int size, Comparator<? super E> comparator) {
-			checkNotNull(comparator);
+			requireNonNull(comparator);
 
 			values = new Object[size];
 			this.comparator = comparator;

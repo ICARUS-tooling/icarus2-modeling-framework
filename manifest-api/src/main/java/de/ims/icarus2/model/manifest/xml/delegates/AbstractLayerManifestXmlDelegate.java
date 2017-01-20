@@ -22,8 +22,8 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import de.ims.icarus2.model.manifest.api.LayerManifest;
-import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
+import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.xml.XmlSerializer;

@@ -15,15 +15,21 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package de.ims.icarus2.filedriver.schema.resolve;
+package de.ims.icarus2.filedriver.schema.resolve.standard;
 
 import java.util.Arrays;
+import java.util.function.Function;
 import java.util.function.ObjLongConsumer;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.Converter;
+import de.ims.icarus2.filedriver.Converter.ReadMode;
 import de.ims.icarus2.filedriver.FileDriver;
 import de.ims.icarus2.filedriver.FileDriverMetadata.ContainerKey;
+import de.ims.icarus2.filedriver.schema.resolve.BatchResolver;
+import de.ims.icarus2.filedriver.schema.resolve.ResolverContext;
+import de.ims.icarus2.filedriver.schema.resolve.ResolverOptions;
+import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.ItemLayer;
@@ -33,7 +39,7 @@ import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
-import de.ims.icarus2.model.standard.driver.BufferedItemManager.LayerBuffer;
+import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
 import de.ims.icarus2.model.standard.members.structure.builder.StructureBuilder;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Options;
@@ -44,7 +50,7 @@ import de.ims.icarus2.util.strings.StringUtil;
  * @author Markus Gärtner
  *
  */
-public class DependencyStructureResolver implements BatchResolver, ResolverOptions {
+public class DependencyStructureResolver implements BatchResolver, ResolverOptions, ModelConstants {
 
 	public static final String OPTION_OFFSET = "offset";
 	public static final String OPTION_ROOT_LABEL = "root";
@@ -91,7 +97,7 @@ public class DependencyStructureResolver implements BatchResolver, ResolverOptio
 	 * @see de.ims.icarus2.filedriver.schema.resolve.Resolver#init(de.ims.icarus2.util.Options)
 	 */
 	@Override
-	public void init(Converter converter, Options options) {
+	public void prepareForReading(Converter converter, ReadMode mode, Function<ItemLayer, InputCache> caches, Options options) {
 		dependencyLayer = (StructureLayer) options.get(LAYER);
 		if(dependencyLayer==null)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "No layer assigned to this resolver "+getClass());
@@ -115,8 +121,8 @@ public class DependencyStructureResolver implements BatchResolver, ResolverOptio
 		heads = new int[maxItemCount];
 
 		// Link with back-end storage
-		LayerBuffer layerBuffer = driver.getLayerBuffer(dependencyLayer);
-		structureSaveAction = layerBuffer::add;
+		InputCache cache = caches.apply(dependencyLayer);
+		structureSaveAction = cache::offer;
 
 		// Read options
 		offset = options.getInteger(OPTION_OFFSET, 0);
@@ -160,10 +166,10 @@ public class DependencyStructureResolver implements BatchResolver, ResolverOptio
 						"Illegal 'head' value for dependency: "+data+" (resulting in head index "+head+")");
 		}
 
-		Edge edge = structureBuilder.newEdge();
+		Edge edge = structureBuilder.newEdge(NO_INDEX);
 		edge.setTarget(context.currentItem());
 
-		saveHeadInfo(context.currentIndex(), edge, head);
+		saveHeadInfo(IcarusUtils.ensureIntegerValueRange(context.currentIndex()), edge, head);
 
 		return edge;
 	}
@@ -206,7 +212,7 @@ public class DependencyStructureResolver implements BatchResolver, ResolverOptio
 		// Now delegate work to builder
 		structureBuilder.augmented(false);
 		structureBuilder.addNodes(sentence);
-		structureBuilder.addEdges(edges, 0, context.currentIndex());
+		structureBuilder.addEdges(edges, 0, IcarusUtils.ensureIntegerValueRange(context.currentIndex()));
 		structureBuilder.setBoundaryContainer(sentence);
 		structureBuilder.setBaseContainer(sentence);
 		Structure dependencyTree = structureBuilder.build();
@@ -233,5 +239,6 @@ public class DependencyStructureResolver implements BatchResolver, ResolverOptio
 
 		// Make sure we don't hold any pending references to old edges
 		Arrays.fill(edges, null);
+		structureSaveAction = null;
 	}
 }

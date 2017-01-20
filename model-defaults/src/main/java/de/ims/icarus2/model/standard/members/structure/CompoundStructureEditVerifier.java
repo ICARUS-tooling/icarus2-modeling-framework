@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -35,7 +35,7 @@ public class CompoundStructureEditVerifier implements StructureEditVerifier {
 	private ContainerEditVerifier containerEditVerifier;
 
 	public CompoundStructureEditVerifier(ContainerEditVerifier containerEditVerifier) {
-		 checkNotNull(containerEditVerifier);
+		 requireNonNull(containerEditVerifier);
 
 		 this.containerEditVerifier = containerEditVerifier;
 	}

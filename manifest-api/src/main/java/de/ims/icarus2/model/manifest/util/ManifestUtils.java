@@ -22,9 +22,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
+import de.ims.icarus2.model.manifest.api.Embedded;
 import de.ims.icarus2.model.manifest.api.Manifest;
+import de.ims.icarus2.model.manifest.api.ManifestFragment;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
 import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.model.manifest.api.TypedManifest;
 
 /**
  * @author Markus Gärtner
@@ -33,9 +36,11 @@ import de.ims.icarus2.model.manifest.api.ManifestType;
 public class ManifestUtils {
 
 	private static final Pattern idPattern = Pattern.compile(
-			"^\\p{Alpha}([:_\\-\\w]*[\\w])?$"); //$NON-NLS-1$
+			"^\\p{Alpha}([:.\\-\\w]*[\\w])?$"); //$NON-NLS-1$
 
 	private static Matcher idMatcher;
+
+	public static final char ID_SEPARATOR = '@';
 
 	/**
 	 * Verifies the validity of the given {@code id} string.
@@ -90,4 +95,25 @@ public class ManifestUtils {
 	}
 
 	//TODO methods for checking other types so we can use them as method references in lambdas
+
+	public static String getUniqueId(ManifestFragment manifest) {
+		if(manifest instanceof Embedded) {
+			StringBuilder sb = new StringBuilder();
+			buildUniqueId(sb, manifest);
+			return sb.toString();
+		} else {
+			return manifest.getId();
+		}
+	}
+
+	private static void buildUniqueId(StringBuilder sb, ManifestFragment manifest) {
+		if(manifest instanceof Embedded) {
+			TypedManifest host = ((Embedded)manifest).getHost();
+			if(host!=null && host instanceof ManifestFragment) {
+				buildUniqueId(sb, (ManifestFragment)host);
+				sb.append(ID_SEPARATOR);
+			}
+		}
+		sb.append(manifest.getId());
+	}
 }

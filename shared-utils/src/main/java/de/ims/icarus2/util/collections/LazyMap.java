@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.util.collections;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.Collections;
@@ -60,7 +60,7 @@ public class LazyMap<K extends Object, V extends Object> implements BiConsumer<K
 	private Map<K, V> buffer;
 
 	public LazyMap(Supplier<Map<K, V>> supplier) {
-		checkNotNull(supplier);
+		requireNonNull(supplier);
 
 		this.supplier = supplier;
 	}

@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -140,7 +140,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	 */
 	@Override
 	public LayerManifest getLayerManifest(String id) {
-		checkNotNull(id);
+		requireNonNull(id);
 
 //		ensureLookup();
 
@@ -160,7 +160,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	 */
 	@Override
 	public PrerequisiteManifest getPrerequisite(String alias) {
-		checkNotNull(alias);
+		requireNonNull(alias);
 
 		PrerequisiteManifest result = null;
 
@@ -202,8 +202,8 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	}
 
 	protected void addLocationManifest0(LocationManifest manifest) {
-		checkNotNull(manifest);
-		checkNotTemplate();
+		requireNonNull(manifest);
+//		checkNotTemplate();
 
 		if(locationManifests.contains(manifest))
 			throw new IllegalArgumentException("Location already present: "+manifest); //$NON-NLS-1$
@@ -219,8 +219,8 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	}
 
 	protected void removeLocationManifest0(LocationManifest manifest) {
-		checkNotNull(manifest);
-		checkNotTemplate();
+		requireNonNull(manifest);
+//		checkNotTemplate();
 
 		if(!locationManifests.remove(manifest))
 			throw new IllegalArgumentException("Location unknown: "+manifest); //$NON-NLS-1$
@@ -250,16 +250,16 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	 * @param independent the independent to set
 	 */
 	@Override
-	public void setIndependentContext(Boolean independent) {
+	public void setIndependentContext(boolean independent) {
 		checkNotLocked();
 
 		setIndependentContext0(independent);
 	}
 
-	protected void setIndependentContext0(Boolean independent) {
-		checkNotLive();
+	protected void setIndependentContext0(boolean independent) {
+//		checkNotLive();
 
-		this.independent = independent;
+		this.independent = Boolean.valueOf(independent);
 	}
 
 	@Override
@@ -283,16 +283,16 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	 * @param independent the independent to set
 	 */
 	@Override
-	public void setEditable(Boolean editable) {
+	public void setEditable(boolean editable) {
 		checkNotLocked();
 
 		setEditable0(editable);
 	}
 
-	protected void setEditable0(Boolean editable) {
-		checkNotLive();
+	protected void setEditable0(boolean editable) {
+//		checkNotLive();
 
-		this.editable = editable;
+		this.editable = Boolean.valueOf(editable);
 	}
 
 	/**
@@ -400,8 +400,8 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	}
 
 	protected void setPrimaryLayerId0(String primaryLayerId) {
-		checkNotNull(primaryLayerId);
-		checkNotLive();
+		requireNonNull(primaryLayerId);
+//		checkNotLive();
 
 		primaryLayer = new LayerLink(primaryLayerId);
 	}
@@ -441,8 +441,8 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	}
 
 	protected void setFoundationLayerId0(String foundationLayerId) {
-		checkNotNull(foundationLayerId);
-		checkNotLive();
+		requireNonNull(foundationLayerId);
+//		checkNotLive();
 
 		foundationLayer = new LayerLink(foundationLayerId);
 	}
@@ -458,8 +458,8 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	}
 
 	protected void setDriverManifest0(DriverManifest driverManifest) {
-		checkNotNull(driverManifest);
-		checkNotLive();
+		requireNonNull(driverManifest);
+//		checkNotLive();
 
 		this.driverManifest = driverManifest;
 	}
@@ -472,8 +472,8 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	}
 
 	protected PrerequisiteManifest addPrerequisite0(String alias) {
-		checkNotNull(alias);
-		checkNotLive();
+		requireNonNull(alias);
+//		checkNotLive();
 
 		for(int i=0; i<prerequisiteManifests.size(); i++) {
 			if(alias.equals(prerequisiteManifests.get(i).getAlias()))
@@ -494,8 +494,8 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	}
 
 	protected void removePrerequisite0(PrerequisiteManifest prerequisiteManifest) {
-		checkNotNull(prerequisiteManifest);
-		checkNotLive();
+		requireNonNull(prerequisiteManifest);
+//		checkNotLive();
 
 		if(!prerequisiteManifests.remove(prerequisiteManifest))
 			throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
@@ -510,8 +510,8 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	}
 
 	protected void addLayerGroup0(LayerGroupManifest groupManifest) {
-		checkNotNull(groupManifest);
-		checkNotLive();
+		requireNonNull(groupManifest);
+//		checkNotLive();
 
 		if(groupManifest.getContextManifest()!=this)
 			throw new IllegalArgumentException("Layer group already hosted in foreign context: "+groupManifest); //$NON-NLS-1$
@@ -532,8 +532,8 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	}
 
 	protected void removeLayerGroup0(LayerGroupManifest groupManifest) {
-		checkNotNull(groupManifest);
-		checkNotLive();
+		requireNonNull(groupManifest);
+//		checkNotLive();
 
 		if(!groupManifests.remove(groupManifest))
 			throw new IllegalArgumentException("Layer group not present: "+groupManifest); //$NON-NLS-1$
@@ -616,7 +616,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 		private String description;
 
 		PrerequisiteManifestImpl(String alias) {
-			checkNotNull(alias);
+			requireNonNull(alias);
 
 			if(!ManifestUtils.isValidId(alias))
 				throw new IllegalArgumentException("Alias format not supported: "+alias); //$NON-NLS-1$
@@ -639,7 +639,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 		@Override
 		public void setDescription(String description) {
 			checkNotLocked();
-			getContextManifest().checkNotLive();
+//			getContextManifest().checkNotLive();
 
 			this.description = description;
 		}
@@ -698,7 +698,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 		@Override
 		public void setLayerId(String layerId) {
 			checkNotLocked();
-			getContextManifest().checkNotLive();
+//			getContextManifest().checkNotLive();
 
 			this.layerId = layerId;
 		}
@@ -709,7 +709,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 		@Override
 		public void setTypeId(String typeId) {
 			checkNotLocked();
-			getContextManifest().checkNotLive();
+//			getContextManifest().checkNotLive();
 
 			this.typeId = typeId;
 		}
@@ -720,7 +720,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 		@Override
 		public void setContextId(String contextId) {
 			checkNotLocked();
-			getContextManifest().checkNotLive();
+//			getContextManifest().checkNotLive();
 
 			this.contextId = contextId;
 		}

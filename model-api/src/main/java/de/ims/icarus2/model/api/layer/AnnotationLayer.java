@@ -21,6 +21,7 @@
 package de.ims.icarus2.model.api.layer;
 
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.Annotation;
@@ -144,6 +145,14 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 		 * is not editable
 		 */
 		void removeAllValues(String key);
+
+		/**
+		 * Removes from this annotation storage all annotations for
+		 * items returned by the given source.
+		 *
+		 * @param source
+		 */
+		void removeAllValues(Supplier<? extends Item> source);
 
 //		/**
 //		 * Removes from this layer all annotations for the given

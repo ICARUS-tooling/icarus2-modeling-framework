@@ -18,7 +18,8 @@
  */
 package de.ims.icarus2.util.nio;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static de.ims.icarus2.util.Conditions.checkArgument;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -35,18 +36,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * this buffer can either be done manually or by requesting a {@link SeekableByteChannel} implementation
  * that operates directly on this buffer's byte array. Note that this class as well as all
  * {@link #newChannel() byte channels} created by it are thread safe.
- * <p>
- * Implementation detail: There is no mechanic in place to close down an entire instance of this class
- * along with all its currently active channels. A buffer does <b>not</b> retain any information about
- * created and open channels. The only links in place are those from a channel back to its enclosing
- * buffer, so that it is able to access the shared byte data. This means that a buffer instance will
- * be prevented from being {@code gc}ed as long as there is at least a single channel reference around
- * somewhere.
  *
  * @author Markus Gärtner
  *
  */
-public class MemoryByteStorage {
+public class MemoryByteStorage implements AutoCloseable {
 
 	private byte[] buffer;
 
@@ -54,6 +48,8 @@ public class MemoryByteStorage {
 
 	private final Object bufferLock = new Object();
 	private int size = 0;
+
+	private volatile boolean open = true;
 
 	public MemoryByteStorage() {
 		this(8000);
@@ -68,6 +64,18 @@ public class MemoryByteStorage {
 
 	public SeekableByteChannel newChannel() {
 		return this.new SlaveChannel();
+	}
+
+	public boolean isOpen() {
+		return open;
+	}
+
+	/**
+	 * @see java.lang.AutoCloseable#close()
+	 */
+	@Override
+	public void close() {
+		open = false;
 	}
 
 	/**
@@ -85,14 +93,14 @@ public class MemoryByteStorage {
 		return read0(position, dst, null);
 	}
 
-	private int read0(int position, ByteBuffer dst, AtomicInteger aggregate) throws IOException {
-		checkNotNull(dst);
+	private int read0(int position, ByteBuffer dst, AtomicInteger pointer) throws IOException {
+		requireNonNull(dst);
 
 		synchronized (bufferLock) {
 			int size = size();
 
-			if(aggregate!=null) {
-				position = aggregate.get();
+			if(pointer!=null) {
+				position = pointer.get();
 				if(position>=size) {
 					return -1;
 				}
@@ -109,8 +117,8 @@ public class MemoryByteStorage {
 
 			dst.put(buffer, position, bytesToRead);
 
-			if(aggregate!=null) {
-				aggregate.set(position+bytesToRead);
+			if(pointer!=null) {
+				pointer.set(position+bytesToRead);
 			}
 
 			return bytesToRead;
@@ -121,13 +129,13 @@ public class MemoryByteStorage {
 		return write0(position, src, null);
 	}
 
-	private int write0(int position, ByteBuffer src, AtomicInteger aggregate) throws IOException {
-		checkNotNull(src);
+	private int write0(int position, ByteBuffer src, AtomicInteger pointer) throws IOException {
+		requireNonNull(src);
 
 		synchronized (bufferLock) {
 
-			if(aggregate!=null) {
-				position = aggregate.get();
+			if(pointer!=null) {
+				position = pointer.get();
 			}
 
 			int bytesToWrite = Math.min(Integer.MAX_VALUE-position, src.remaining());
@@ -138,8 +146,8 @@ public class MemoryByteStorage {
 
 			size = Math.max(size, position+bytesToWrite);
 
-			if(aggregate!=null) {
-				aggregate.set(position+bytesToWrite);
+			if(pointer!=null) {
+				pointer.set(position+bytesToWrite);
 			}
 
 			return bytesToWrite;
@@ -174,15 +182,11 @@ public class MemoryByteStorage {
 
 		//TODO optimize growth factor
 		double growthFactor = 2.0;
-		if(capacity>1000000) {
+		if(capacity>1_000_000) {
 			growthFactor = 1.5;
 		}
 
 		int newCapacity = Math.max((int)(capacity*growthFactor), required);
-
-		//FIXME
-//		byte[] newBuffer = new byte[newCapacity];
-//		System.arraycopy(buffer, 0, newBuffer, 0, size);
 
 		buffer = Arrays.copyOf(buffer, newCapacity);
 	}
@@ -197,7 +201,7 @@ public class MemoryByteStorage {
 		 */
 		@Override
 		public boolean isOpen() {
-			return !closed.get();
+			return MemoryByteStorage.this.open && !closed.get();
 		}
 
 		/**
@@ -209,7 +213,7 @@ public class MemoryByteStorage {
 		}
 
 		private void checkOpen() throws ClosedChannelException {
-			if(closed.get())
+			if(!isOpen())
 				throw new ClosedChannelException();
 		}
 
@@ -218,8 +222,7 @@ public class MemoryByteStorage {
 		 */
 		@Override
 		public int read(ByteBuffer dst) throws IOException {
-			if (dst == null)
-				throw new NullPointerException("Invalid dst"); //$NON-NLS-1$
+			requireNonNull(dst);
 
 			checkOpen();
 
@@ -231,8 +234,7 @@ public class MemoryByteStorage {
 		 */
 		@Override
 		public int write(ByteBuffer src) throws IOException {
-			if (src == null)
-				throw new NullPointerException("Invalid src"); //$NON-NLS-1$
+			requireNonNull(src);
 
 			checkOpen();
 
@@ -252,10 +254,8 @@ public class MemoryByteStorage {
 		 */
 		@Override
 		public SeekableByteChannel position(long newPosition) throws IOException {
-			if(newPosition<0)
-				throw new IllegalArgumentException("Negative position: "+newPosition); //$NON-NLS-1$
-			if(newPosition>=INT_LIMIT)
-				throw new IllegalArgumentException("Position exceeds integer limit of buffer array: "+newPosition); //$NON-NLS-1$
+			checkArgument("Negative position: "+newPosition, newPosition>=0);
+			checkArgument("Position exceeds integer limit of buffer array: "+newPosition, newPosition<INT_LIMIT);
 
 			checkOpen();
 
@@ -277,8 +277,7 @@ public class MemoryByteStorage {
 		 */
 		@Override
 		public SeekableByteChannel truncate(long size) throws IOException {
-			if(size>=INT_LIMIT)
-				throw new IllegalArgumentException("Size exceeds integer limit of buffer array: "+size); //$NON-NLS-1$
+			checkArgument("Size exceeds integer limit of buffer array: "+size, size<INT_LIMIT);
 
 			MemoryByteStorage.this.truncate((int) size);
 

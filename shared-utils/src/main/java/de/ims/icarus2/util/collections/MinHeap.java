@@ -19,7 +19,7 @@
 package de.ims.icarus2.util.collections;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -302,7 +302,7 @@ public abstract class MinHeap<T extends Object> extends Heap {
 
 		public ObjectMinHeap(int size, Comparator<? super E> comparator) {
 			super(size);
-			checkNotNull(comparator);
+			requireNonNull(comparator);
 
 			values = new Object[size];
 			this.comparator = comparator;

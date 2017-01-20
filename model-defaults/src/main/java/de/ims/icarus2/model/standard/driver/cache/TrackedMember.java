@@ -68,35 +68,35 @@ public interface TrackedMember<L extends ItemLayer> {
 	 */
 	int getUseCounter();
 
-	/**
-	 * Changes the members's host layer to the given one
-	 * @param layer the new host layer or {@code null} (e.g. in case the member is being
-	 * prepared for recycling)
-	 */
-	void setLayer(L layer);
-
-	/**
-	 * Returns the members host layer
-	 *
-	 * @return
-	 */
-	L getLayer();
+//	/**
+//	 * Changes the members's host layer to the given one
+//	 * @param layer the new host layer or {@code null} (e.g. in case the member is being
+//	 * prepared for recycling)
+//	 */
+//	void setLayer(L layer);
+//
+//	/**
+//	 * Returns the members host layer
+//	 *
+//	 * @return
+//	 */
+//	L getLayer();
 
 	public static class TrackedItem extends DefaultItem implements TrackedMember<ItemLayer> {
 
 		private int useCounter;
 
-		private ItemLayer layer;
+//		private ItemLayer layer;
 
-		@Override
-		public ItemLayer getLayer() {
-			return layer;
-		}
+//		@Override
+//		public ItemLayer getLayer() {
+//			return layer;
+//		}
 
-		@Override
-		public void setLayer(ItemLayer layer) {
-			this.layer = layer;
-		}
+//		@Override
+//		public void setLayer(ItemLayer layer) {
+//			this.layer = layer;
+//		}
 
 		/**
 		 * @see de.ims.icarus2.model.standard.driver.cache.TrackedMember#incrementUseCounter()
@@ -130,17 +130,17 @@ public interface TrackedMember<L extends ItemLayer> {
 
 		private int useCounter;
 
-		private FragmentLayer layer;
-
-		@Override
-		public FragmentLayer getLayer() {
-			return layer;
-		}
-
-		@Override
-		public void setLayer(FragmentLayer layer) {
-			this.layer = layer;
-		}
+//		private FragmentLayer layer;
+//
+//		@Override
+//		public FragmentLayer getLayer() {
+//			return layer;
+//		}
+//
+//		@Override
+//		public void setLayer(FragmentLayer layer) {
+//			this.layer = layer;
+//		}
 
 		/**
 		 * @see de.ims.icarus2.model.standard.driver.cache.TrackedMember#incrementUseCounter()
@@ -174,17 +174,17 @@ public interface TrackedMember<L extends ItemLayer> {
 
 		private int useCounter;
 
-		private ItemLayer layer;
-
-		@Override
-		public ItemLayer getLayer() {
-			return layer;
-		}
-
-		@Override
-		public void setLayer(ItemLayer layer) {
-			this.layer = layer;
-		}
+//		private ItemLayer layer;
+//
+//		@Override
+//		public ItemLayer getLayer() {
+//			return layer;
+//		}
+//
+//		@Override
+//		public void setLayer(ItemLayer layer) {
+//			this.layer = layer;
+//		}
 
 		/**
 		 * @see de.ims.icarus2.model.standard.driver.cache.TrackedMember#incrementUseCounter()
@@ -218,17 +218,17 @@ public interface TrackedMember<L extends ItemLayer> {
 
 		private int useCounter;
 
-		private StructureLayer layer;
-
-		@Override
-		public StructureLayer getLayer() {
-			return layer;
-		}
-
-		@Override
-		public void setLayer(StructureLayer layer) {
-			this.layer = layer;
-		}
+//		private StructureLayer layer;
+//
+//		@Override
+//		public StructureLayer getLayer() {
+//			return layer;
+//		}
+//
+//		@Override
+//		public void setLayer(StructureLayer layer) {
+//			this.layer = layer;
+//		}
 
 		/**
 		 * @see de.ims.icarus2.model.standard.driver.cache.TrackedMember#incrementUseCounter()

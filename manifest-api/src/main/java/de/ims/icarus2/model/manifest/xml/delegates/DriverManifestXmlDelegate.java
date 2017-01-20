@@ -23,11 +23,11 @@ import org.xml.sax.SAXException;
 
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec;
 import de.ims.icarus2.model.manifest.api.LocationType;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
-import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
-import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec;
 import de.ims.icarus2.model.manifest.api.Multiplicity;
 import de.ims.icarus2.model.manifest.standard.DocumentationImpl;
 import de.ims.icarus2.model.manifest.standard.DriverManifestImpl;
@@ -43,7 +43,7 @@ import de.ims.icarus2.util.xml.XmlSerializer;
  * @author Markus Gärtner
  *
  */
-public class DriverManifestXmlDelegate extends AbstractMemberManifestXmlDelegate<DriverManifest> {
+public class DriverManifestXmlDelegate extends AbstractForeignImplementationManifestXmlDelegate<DriverManifest> {
 
 	private MappingManifestXmlDelegate mappingManifestXmlDelegate;
 	private ModuleSpecXmlDelegate moduleSpecXmlDelegate;

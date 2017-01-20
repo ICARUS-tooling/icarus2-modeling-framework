@@ -279,7 +279,7 @@ public interface ContextManifest extends MemberManifest, Bindable {
 
 	// Modification methods
 
-	void setEditable(Boolean editable);
+	void setEditable(boolean editable);
 
 	void setDriverManifest(DriverManifest driverManifest);
 
@@ -287,7 +287,7 @@ public interface ContextManifest extends MemberManifest, Bindable {
 
 	void setFoundationLayerId(String foundationLayerId);
 
-	void setIndependentContext(Boolean isIndependent);
+	void setIndependentContext(boolean isIndependent);
 
 	PrerequisiteManifest addPrerequisite(String alias);
 

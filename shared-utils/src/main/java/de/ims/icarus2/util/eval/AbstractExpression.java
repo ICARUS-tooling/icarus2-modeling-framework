@@ -18,8 +18,8 @@
  */
 package de.ims.icarus2.util.eval;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Markus Gärtner
@@ -32,21 +32,21 @@ public abstract class AbstractExpression implements Expression {
 	private String code;
 
 	public void setReturnType(Class<?> returnType) {
-		checkNotNull(returnType);
+		requireNonNull(returnType);
 		checkState("Return type already defined", this.returnType==null);
 
 		this.returnType = returnType;
 	}
 
 	public void setCode(String code) {
-		checkNotNull(code);
+		requireNonNull(code);
 		checkState("Code already defined", this.code==null);
 
 		this.code = code;
 	}
 
 	public void setEnvironment(Environment environment) {
-		checkNotNull(environment);
+		requireNonNull(environment);
 		checkState("Environment already defined", this.environment==null);
 
 		this.environment = environment;

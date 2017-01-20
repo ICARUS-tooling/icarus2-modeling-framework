@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.unbound;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -64,7 +64,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 	public ComplexAnnotationStorage(boolean weakKeys, int initialCapacity, Supplier<AnnotationBundle> bundleFactory) {
 		super(weakKeys, initialCapacity);
 
-		checkNotNull(bundleFactory);
+		requireNonNull(bundleFactory);
 
 		this.bundleFactory = bundleFactory;
 	}
@@ -109,8 +109,8 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		checkNotNull(item);
-		checkNotNull(key);
+		requireNonNull(item);
+		requireNonNull(key);
 
 		if(value==null) {
 			AnnotationBundle bundle = getBuffer(item);

@@ -18,15 +18,20 @@
 package de.ims.icarus2.filedriver.schema.table;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.classes.ClassUtils._int;
+import static de.ims.icarus2.util.strings.StringUtil.getName;
+import static java.util.Objects.requireNonNull;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
@@ -34,6 +39,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
+import java.util.function.Function;
+import java.util.function.ObjLongConsumer;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,13 +50,19 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.Report;
 import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.filedriver.ComponentSupplier;
+import de.ims.icarus2.filedriver.Converter;
+import de.ims.icarus2.filedriver.ElementFlag;
+import de.ims.icarus2.filedriver.FileDataStates;
+import de.ims.icarus2.filedriver.FileDataStates.FileInfo;
 import de.ims.icarus2.filedriver.FileDriver;
+import de.ims.icarus2.filedriver.FileDriver.LockableFileObject;
+import de.ims.icarus2.filedriver.analysis.Analyzer;
 import de.ims.icarus2.filedriver.schema.SchemaBasedConverter;
-import de.ims.icarus2.filedriver.schema.resolve.BasicAnnotationResolver;
 import de.ims.icarus2.filedriver.schema.resolve.BatchResolver;
 import de.ims.icarus2.filedriver.schema.resolve.Resolver;
 import de.ims.icarus2.filedriver.schema.resolve.ResolverContext;
 import de.ims.icarus2.filedriver.schema.resolve.ResolverFactory;
+import de.ims.icarus2.filedriver.schema.resolve.standard.BasicAnnotationResolver;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeTarget;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema;
@@ -55,23 +70,35 @@ import de.ims.icarus2.filedriver.schema.table.TableSchema.ColumnSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.ResolverSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.SubstituteSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.SubstituteType;
+import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.model.api.corpus.Context;
+import de.ims.icarus2.model.api.driver.ChunkState;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
+import de.ims.icarus2.model.api.layer.LayerGroup;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.members.item.Item.ManagedItem;
 import de.ims.icarus2.model.api.registry.LayerMemberFactory;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.Messages;
+import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
 import de.ims.icarus2.model.standard.driver.ChunkConsumer;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
+import de.ims.icarus2.util.MutablePrimitives.MutableLong;
+import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
+import de.ims.icarus2.util.collections.Pool;
 import de.ims.icarus2.util.io.IOUtil;
 import de.ims.icarus2.util.strings.FlexibleSubSequence;
 import de.ims.icarus2.util.strings.StringUtil;
@@ -80,7 +107,7 @@ import de.ims.icarus2.util.strings.StringUtil;
  * @author Markus Gärtner
  *
  */
-public class TableConverter extends SchemaBasedConverter {
+public class TableConverter extends SchemaBasedConverter implements ModelConstants {
 
 	private TableSchema tableSchema;
 
@@ -91,6 +118,20 @@ public class TableConverter extends SchemaBasedConverter {
 	private Charset encoding;
 	private int characterChunkSize;
 
+	private volatile boolean open;
+
+	private final Pool<BlockHandler> blockHandlerPool = new Pool<>(this::createRootBlockHandler, 10);
+
+	public TableConverter() {
+		// no-op
+	}
+
+	public TableConverter(TableSchema tableSchema) {
+		requireNonNull(tableSchema);
+
+		this.tableSchema = tableSchema;
+	}
+
 	private Resolver createResolver(ResolverSchema schema) {
 		if(schema==null) {
 			return null;
@@ -98,7 +139,8 @@ public class TableConverter extends SchemaBasedConverter {
 
 		Resolver resolver = RESOLVER_FACTORY.createResolver(schema.getType());
 
-		resolver.init(this, schema.getOptions());
+//		resolver.prepareForReading(this, schema.getOptions());
+		//FIXME move to init method of blockhandlers
 
 		return resolver;
 	}
@@ -127,13 +169,15 @@ public class TableConverter extends SchemaBasedConverter {
 
 		encoding = driver.getEncoding();
 		memberFactory = driver.newMemberFactory();
+
+		open = true;
 	}
 
 	/**
 	 * @see de.ims.icarus2.filedriver.AbstractConverter#close()
 	 */
 	@Override
-	public void close() {
+	public void close() throws AccumulatingException {
 		encoding = null;
 		characterChunkSize = -1;
 
@@ -141,10 +185,30 @@ public class TableConverter extends SchemaBasedConverter {
 		super.close();
 	}
 
+	public TableSchema getSchema() {
+		checkOpen();
+		return tableSchema;
+	}
+
+	public LayerMemberFactory getSharedMemberFactory() {
+		return memberFactory;
+	}
+
+	private void checkOpen() {
+		if(!open)
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Converter not open");
+	}
+
+	/**
+	 * Used for our {@link Pool} of {@link BlockHandler block handlers} as a {@link Supplier}.
+	 *
+	 * @return
+	 */
 	protected BlockHandler createRootBlockHandler() {
 		// Fail if closed
+		checkOpen();
 
-		//TODO
+		return new BlockHandler(tableSchema.getRootBlock());
 	}
 
 	/**
@@ -153,20 +217,215 @@ public class TableConverter extends SchemaBasedConverter {
 	@Override
 	public Report<ReportItem> scanFile(int fileIndex) throws IOException,
 			InterruptedException {
+		checkOpen();
 
+		@SuppressWarnings("resource")
+		BlockHandler blockHandler = blockHandlerPool.get();
+
+		Map<Layer, Analyzer> analyzers = createAnalyzers(blockHandler.getItemLayer().getLayerGroup());
+
+		//TODO implement custom InputCache instances that act as analyzers and can be "abused" as component consumers
+		Map<ItemLayer, InputCache> caches = new Object2ObjectOpenHashMap<>(analyzers.size());
+
+		/*
+		 * We only need bare component suppliers without back-end storage
+		 */
+		Map<ItemLayer, ComponentSupplier> componentSuppliers = new ComponentSuppliersFactory(this)
+			.rootBlockHandler(blockHandler)
+			.fileIndex(fileIndex)
+			.memberFactory(getSharedMemberFactory())
+			.mode(ReadMode.SCAN)
+			.consumers(layer -> caches.get(layer)::offer)
+			.build();
+
+		InputResolverContext inputContext = new InputResolverContext(componentSuppliers);
+		ItemLayer primaryLayer = blockHandler.getItemLayer();
+		long index = 0L;
+
+		LockableFileObject fileObject = getFileDriver().getFileObject(fileIndex);
+
+		// Notify stack about incoming read operation
+		blockHandler.prepareForReading(this, ReadMode.SCAN, caches::get);
+
+		try(ReadableByteChannel channel = fileObject.getResource().getReadChannel()) {
+
+			LineIterator lines = new BufferedLineIterator(channel, encoding, characterChunkSize);
+
+			/*
+			 *  Continue as long as there's still content in the file.
+			 *  We need both checks since it's possible that while reading the
+			 *  previous block we had to do some lookahead but didn't consume the
+			 *  current line.
+			 */
+			while(lines.hasLine() || lines.next()) {
+
+				// Clear state of handler and context
+				blockHandler.reset();
+				inputContext.reset();
+
+				// Point the context to the layer's proxy container and requested index
+				inputContext.setContainer(primaryLayer.getProxyContainer());
+				inputContext.setIndex(index);
+
+				/*
+				 *  Technically speaking using exceptions for control flow here isn't
+				 *  the best strategy, but with the call depth redesigning all involved
+				 *  facilities (and duplicating) might be overkill in comparison.
+				 */
+				try {
+					// Delegate actual conversion work (which will advance lines on its own)
+					blockHandler.readChunk(lines, inputContext);
+
+					// Fetch item and verify state
+					Item item = inputContext.currentItem();
+
+					/*
+					 *  It's the drivers responsibility to set proper flags on an item, so we do it here.
+					 *
+					 *  Our assumption is that subclasses or factory code that gets called from within
+					 *  the creation process already assigns other flags than ALIVE. Therefore this is
+					 *  the only flag we need to worry about here. It is also the only one that MUST be
+					 *  set in order for a blank item to get assigned VALID chunk state!
+					 */
+					if(item instanceof ManagedItem) {
+						((ManagedItem)item).setAlive(true);
+					}
+
+					/*
+					 *  We "abuse" caches to collect all the items created for a single chunk here.
+					 *
+					 *  Committing the caches will trigger the nested analyzers to collect metadata
+					 *  and then discard the content of the cache.
+					 */
+					caches.values().forEach(InputCache::commit);
+				} catch(ManifestException e) {
+					//TODO add to report
+				}
+
+				// Make sure we advance 1 line in case the last one has been consumed as content
+				if(inputContext.isDataConsumed()) {
+					lines.next();
+				}
+
+				// Next chunk
+				index++;
+			}
+		} finally {
+			blockHandler.close();
+			blockHandlerPool.recycle(blockHandler);
+
+			// Make sure we discard all "cached" data
+			caches.values().forEach(InputCache::discard);
+		}
+
+		//DEBUG
+		getFileDriver().getFileStates().getFileInfo(fileIndex).setFlag(ElementFlag.SCANNED);
 
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	private Map<Layer, Analyzer> createAnalyzers(LayerGroup group) {
+
 	}
 
 	/**
 	 * @see de.ims.icarus2.filedriver.Converter#loadFile(int, de.ims.icarus2.model.standard.driver.ChunkConsumer)
 	 */
 	@Override
-	public long loadFile(int fileIndex, ChunkConsumer action)
+	public LoadResult loadFile(final int fileIndex, final ChunkConsumer action)
 			throws IOException, InterruptedException {
-		// TODO Auto-generated method stub
-		return 0;
+		checkOpen();
+
+		@SuppressWarnings("resource")
+		BlockHandler blockHandler = blockHandlerPool.get();
+
+		// Collect basic caches
+		Map<ItemLayer, InputCache> caches = createCaches(blockHandler.getItemLayer().getLayerGroup(), null);
+
+		/*
+		 * We need component suppliers that are connected to the caches, do not use mapping
+		 * but instead rely on metadata information to get index values
+		 */
+		Map<ItemLayer, ComponentSupplier> componentSuppliers = new ComponentSuppliersFactory(this)
+			.rootBlockHandler(blockHandler)
+			.fileIndex(fileIndex)
+			.memberFactory(getSharedMemberFactory())
+			.mode(ReadMode.FILE)
+			.consumers(layer -> caches.get(layer)::offer)
+			.build();
+
+		InputResolverContext inputContext = new InputResolverContext(componentSuppliers);
+		ItemLayer primaryLayer = blockHandler.getItemLayer();
+		long index = 0L;
+
+		DynamicLoadResult loadResult = new SimpleLoadResult(caches.values());
+
+		LockableFileObject fileObject = getFileDriver().getFileObject(fileIndex);
+
+		// Notify stack about incoming read operation
+		blockHandler.prepareForReading(this, ReadMode.FILE, caches::get);
+
+		try(ReadableByteChannel channel = fileObject.getResource().getReadChannel()) {
+
+			LineIterator lines = new BufferedLineIterator(channel, encoding, characterChunkSize);
+
+			/*
+			 *  Continue as long as there's still content in the file.
+			 *  We need both checks since it's possible that while reading the
+			 *  previous block we had to do some lookahead but didn't consume the
+			 *  current line.
+			 */
+			while(lines.hasLine() || lines.next()) {
+
+				// Clear state of handler and context
+				blockHandler.reset();
+				inputContext.reset();
+
+				// Point the context to the layer's proxy container and requested index
+				inputContext.setContainer(primaryLayer.getProxyContainer());
+				inputContext.setIndex(index);
+
+				// Delegate actual conversion work (which will advance lines on its own)
+				blockHandler.readChunk(lines, inputContext);
+
+				// Fetch item and verify state
+				Item item = inputContext.currentItem();
+
+				/*
+				 *  It's the drivers responsibility to set proper flags on an item, so we do it here.
+				 *
+				 *  Our assumption is that subclasses or factory code that gets called from within
+				 *  the creation process already assigns other flags than ALIVE. Therefore this is
+				 *  the only flag we need to worry about here. It is also the only one that MUST be
+				 *  set in order for a blank item to get assigned VALID chunk state!
+				 */
+				if(item instanceof ManagedItem) {
+					((ManagedItem)item).setAlive(true);
+				}
+
+				ChunkState state = ChunkState.forItem(item);
+				loadResult.accept(index, item, state);
+
+				// Report loaded item and state (if required)
+				if(action!=null) {
+					action.accept(index, item, state);
+				}
+
+				// Make sure we advance 1 line in case the last one has been consumed as content
+				if(inputContext.isDataConsumed()) {
+					lines.next();
+				}
+
+				// Next chunk
+				index++;
+			}
+		} finally {
+			blockHandler.close();
+			blockHandlerPool.recycle(blockHandler);
+		}
+
+		return loadResult;
 	}
 
 	@Override
@@ -209,81 +468,210 @@ public class TableConverter extends SchemaBasedConverter {
 		context.setData(lines.getLine());
 	}
 
-	protected ComponentSupplier[] createComponentSuppliersForCursor(BlockHandler rootBlockHandler) {
-		ComponentSupplier[] componentSuppliers = new ComponentSupplier[tableSchema.getTotalBlockSchemaCount()];
-
-		collectComponentSuppliers0(null, rootBlockHandler, componentSuppliers);
-
-		return componentSuppliers;
-	}
-
-	private void collectComponentSuppliers0(BlockHandler parent, BlockHandler blockHandler, ComponentSupplier[] componentSuppliers) {
-
-
-		ItemLayer layer = blockHandler.getItemLayer();
-
-		ComponentSupplier.Builder builder = new ComponentSupplier.Builder();
-		builder.componentLayer(layer);
-		builder.componentType(blockHandler.getSchema().getComponentSchema().getMemberType());
-		builder.memberFactory(memberFactory);
-		builder.componentConsumer(getCacheForLayer(layer)::offer);
-
-		if(parent!=null) {
-			ItemLayer sourceLayer = parent.getItemLayer();
-			ItemLayer targetLayer = layer;
-			Mapping mapping = getFileDriver().getMapping(sourceLayer, targetLayer);
-			if(mapping==null)
-				throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-						"Missing mapping from "+ModelUtils.getUniqueId(sourceLayer)+" to "+ModelUtils.getUniqueId(targetLayer));
-			/*
-			 *  NOTE: this fetches the largest container size for the parent layer.
-			 *  This might be significantly higher than the buffer sizer we need for
-			 *  the given combination (parentLayer -> baseLayer) but is an easy upper
-			 *  boundary and the overhead should be manageable.
-			 */
-			int bufferSize = getRecommendedIndexBufferSize(sourceLayer.getManifest());
-
-			builder.mapping(mapping);
-			builder.bufferSize(bufferSize);
-		}
-
-		componentSuppliers[blockHandler.getId()] = builder.build();
-
-		BlockHandler[] nestedHandlers = blockHandler.nestedBlockHandlers;
-		if(nestedHandlers!=null) {
-			for(BlockHandler nestedHandler : nestedHandlers) {
-				collectComponentSuppliers0(blockHandler, nestedHandler, componentSuppliers);
-			}
-		}
-	}
-
 	/**
 	 * @see de.ims.icarus2.filedriver.AbstractConverter#createDelegatingCursor(int, de.ims.icarus2.model.api.layer.ItemLayer)
 	 */
 	@Override
 	protected DelegatingCursor createDelegatingCursor(int fileIndex,
-			ItemLayer layer) {
-		return new DelegatingTableCursor(fileIndex, layer, createRootBlockHandler(), encoding, characterChunkSize);
+			ItemLayer itemLayer) {
+		BlockHandler blockHandler = blockHandlerPool.get();
+
+		if(itemLayer!=blockHandler.getItemLayer())
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					Messages.mismatchMessage("Unexpected layer", getName(itemLayer), getName(blockHandler.getItemLayer())));
+
+		// Collect basic caches
+		Map<ItemLayer, InputCache> caches = createCaches(itemLayer.getLayerGroup(), null);
+
+		/*
+		 * We need component suppliers that are connected to the caches, use proper mapping,
+		 * do not query metadata to determine index values and which delegate to the default
+		 * member factory.
+		 */
+		Map<ItemLayer, ComponentSupplier> componentSuppliers = new ComponentSuppliersFactory(this)
+			.rootBlockHandler(blockHandler)
+			.memberFactory(getSharedMemberFactory())
+			.fileIndex(fileIndex)
+			.mode(ReadMode.CHUNK)
+			.consumers(layer -> caches.get(layer)::offer)
+			.build();
+
+		InputResolverContext inputContext = new InputResolverContext(componentSuppliers);
+
+		// Result instance that is linked to our caches
+		DynamicLoadResult loadResult = new SimpleLoadResult(caches.values());
+
+		//TODO shift oversized parameter list of constructor to builder or config object
+		return new DelegatingTableCursor(getFileDriver().getFileObject(fileIndex),
+				blockHandlerPool.get(), inputContext, loadResult, encoding, characterChunkSize, caches::get);
 	}
 
+//	private Map<ItemLayer, InputCache> createCaches(BlockHandler rootBlockHandler) {
+//
+//		Map<ItemLayer, InputCache> caches = new Object2ObjectOpenHashMap<>();
+//		forEachBlock(rootBlockHandler, blockHandler -> {
+//			ItemLayer itemLayer = blockHandler.getItemLayer();
+//			InputCache cache = getFileDriver().getLayerBuffer(itemLayer).newCache();
+//			caches.put(itemLayer, cache);
+//		});
+//
+//		return caches;
+//	}
+
+	/**
+	 * Creates a lookup map to fetch caches for every item layer that is either contained in the specified
+	 * layer group or (indirectly) referenced by layers in the group and which is also a member of the same
+	 * context.
+	 *
+	 * @param group
+	 * @param cacheGen
+	 * @return
+	 */
+	private Map<ItemLayer, InputCache> createCaches(LayerGroup group, Function<ItemLayer, InputCache> cacheGen) {
+
+		final Map<ItemLayer, InputCache> caches = new Object2ObjectOpenHashMap<>();
+
+		final Context context = group.getContext();
+
+		// No recursion: we use a stack to buffer pending layers in
+
+		final Stack<Layer> pendingLayers = new Stack<>();
+
+		group.forEachLayer(pendingLayers::push);
+
+		while(!pendingLayers.isEmpty()) {
+			Layer layer = pendingLayers.pop();
+
+			if(layer.getContext()!=context) {
+				continue;
+			}
+
+			if(ModelUtils.isItemLayer(layer)) {
+				ItemLayer itemLayer = (ItemLayer)layer;
+				InputCache cache;
+				if(cacheGen==null) {
+					cache = getFileDriver().getLayerBuffer(itemLayer).newCache();
+				} else {
+					cache = cacheGen.apply(itemLayer);
+				}
+				caches.put(itemLayer, cache);
+			}
+
+			layer.getBaseLayers().forEachEntry(pendingLayers::push);
+		}
+
+		return caches;
+	}
+
+	public static class AnalyzingInputCache implements InputCache{
+
+		private final List<Item> items = new ObjectArrayList<>(100);
+		private final LongList indices = new LongArrayList(100);
+
+		private final Analyzer analyzer;
+
+		/**
+		 * @param analyzer
+		 */
+		public AnalyzingInputCache(Analyzer analyzer) {
+			requireNonNull(analyzer);
+
+			this.analyzer = analyzer;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache#offer(de.ims.icarus2.model.api.members.item.Item, long)
+		 */
+		@Override
+		public void offer(Item item, long index) {
+			items.add(item);
+			indices.add(index);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache#hasPendingEntries()
+		 */
+		@Override
+		public boolean hasPendingEntries() {
+			return !items.isEmpty();
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache#forEach(java.util.function.ObjLongConsumer)
+		 */
+		@Override
+		public void forEach(ObjLongConsumer<Item> action) {
+			int size = items.size();
+			for(int i=0; i<size; i++) {
+				action.accept(items.get(i), indices.getLong(i));
+			}
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache#discard()
+		 */
+		@Override
+		public int discard() {
+			int size = items.size();
+
+			items.clear();
+			indices.clear();
+
+			return size;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache#commit()
+		 */
+		@Override
+		public int commit() {
+			forEach(analyzer);
+
+			return discard();
+		}
+
+	}
+
+	/**
+	 * Specialized version of a delegating cursor. This implementation manages the
+	 * decoding and buffering of byte chunks in the raw data to a buffer of characters
+	 * accessible to the actual conversion process.
+	 * <p>
+	 * Each cursor of this class has its own instance of {@link InputResolverContext}
+	 * that carries the main information and state during conversion.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	protected class DelegatingTableCursor extends DelegatingCursor {
 
-		private final StringBuilder characterBuffer;
+		// Decoding process
+
 		private final CharsetDecoder decoder;
 		private final ByteBuffer bb;
 		private final CharBuffer cb;
-		private final BlockLineIterator lineIterator;
-		private final InputResolverContext context;
+		private final StringBuilder characterBuffer;
+
+		// "Parsing" process
+		private final SubSequenceLineIterator lineIterator;
+
+		// Conversion controller
 		private final BlockHandler rootBlockHandler;
 
-		public DelegatingTableCursor(int fileIndex, ItemLayer primaryLayer, BlockHandler rootBlockHandler, Charset encoding, int characterChunkSize) {
-			super(fileIndex, primaryLayer);
+		// Externalized state of the conversion process
+		private final InputResolverContext context;
 
-			checkNotNull(rootBlockHandler);
-			checkNotNull(encoding);
+		public DelegatingTableCursor(LockableFileObject file, BlockHandler rootBlockHandler, InputResolverContext context,
+				DynamicLoadResult loadResult, Charset encoding, int characterChunkSize, Function<ItemLayer, InputCache> caches) {
+			super(file, rootBlockHandler.getItemLayer(), loadResult);
+
+			requireNonNull(rootBlockHandler);
+			requireNonNull(context);
+			requireNonNull(encoding);
 			checkArgument(characterChunkSize>0);
 
 			this.rootBlockHandler = rootBlockHandler;
+			this.context = context;
 
 			characterBuffer = new StringBuilder(characterChunkSize);
 			decoder = encoding.newDecoder();
@@ -291,8 +679,9 @@ public class TableConverter extends SchemaBasedConverter {
 			bb = ByteBuffer.allocateDirect(IOUtil.DEFAULT_BUFFER_SIZE);
 			cb = CharBuffer.allocate(IOUtil.DEFAULT_BUFFER_SIZE);
 
-			lineIterator = new BlockLineIterator(characterBuffer);
-			context = new InputResolverContext(createComponentSuppliersForCursor(rootBlockHandler));
+			lineIterator = new SubSequenceLineIterator(characterBuffer);
+
+			rootBlockHandler.prepareForReading(TableConverter.this, ReadMode.CHUNK, caches);
 		}
 
 		/**
@@ -304,6 +693,9 @@ public class TableConverter extends SchemaBasedConverter {
 
 			lineIterator.close();
 			context.close();
+
+			rootBlockHandler.close();
+			blockHandlerPool.recycle(rootBlockHandler);
 		}
 
 		public void clearCharacterBuffer() {
@@ -322,28 +714,49 @@ public class TableConverter extends SchemaBasedConverter {
 		public int fillCharacterBuffer() throws IOException {
 
 			clearCharacterBuffer();
-
 			int count = 0;
+			boolean eos = false;
 
-		    for(;;) {
-		        if(-1 == getBlockChannel().read(bb)) {
-		            decoder.decode(bb, cb, true);
-		            decoder.flush(cb);
-		        	cb.flip();
-		        	count += cb.remaining();
-		            break;
-		        }
-		        bb.flip();
+		    while(!eos) {
+		    	cb.clear();
+				eos = (-1 == getBlockChannel().read(bb));
 
-		        CoderResult res = decoder.decode(bb, cb, false);
-		        if(CoderResult.OVERFLOW == res) {
-		        	cb.flip();
-		        	count += cb.remaining();
-		        	characterBuffer.append(cb);
-		            cb.clear();
-		        } else if (CoderResult.UNDERFLOW == res) {
-		            bb.compact();
-		        }
+			    bb.flip();
+			    CoderResult res = decoder.decode(bb, cb, eos);
+			    if(res.isError())
+			    	res.throwException();
+
+			    if(res.isUnderflow()) {
+			    	bb.compact();
+			    	if(eos) {
+			    		decoder.flush(cb);
+			    	}
+			    }
+			    cb.flip();
+	        	count += cb.remaining();
+	        	characterBuffer.append(cb);
+
+//		        if(-1 == getBlockChannel().read(bb)) {
+//		            decoder.decode(bb, cb, true);
+//		            decoder.flush(cb);
+//		        	cb.flip();
+//		        	count += cb.remaining();
+//		            break;
+//		        }
+//		        bb.flip();
+//
+//		        CoderResult res = decoder.decode(bb, cb, false);
+//		        if(res.isError())
+//		        	res.throwException();
+//
+//		        if(res.isUnderflow()) {
+//		        	bb.compact();
+//		        }
+//
+//	        	cb.flip();
+//	        	count += cb.remaining();
+//	        	characterBuffer.append(cb);
+//	            cb.clear();
 		    }
 
 		    lineIterator.reset();
@@ -359,7 +772,7 @@ public class TableConverter extends SchemaBasedConverter {
 			return decoder;
 		}
 
-		public BlockLineIterator getLineIterator() {
+		public SubSequenceLineIterator getLineIterator() {
 			return lineIterator;
 		}
 
@@ -383,9 +796,9 @@ public class TableConverter extends SchemaBasedConverter {
 		private final Resolver resolver;
 
 		public UnresolvedAttribute(String data, AttributeTarget target, Resolver resolver) {
-			checkNotNull(data);
-			checkNotNull(target);
-			checkNotNull(resolver);
+			requireNonNull(data);
+			requireNonNull(target);
+			requireNonNull(resolver);
 
 			this.data = data;
 			this.target = target;
@@ -406,6 +819,12 @@ public class TableConverter extends SchemaBasedConverter {
 	}
 
 	/**
+	 * Models a task-specific environment for the conversion process.
+	 * In addition of implementing the {@link ResolverContext} interface
+	 * this class stores {@link ComponentSupplier} instances to be used for
+	 * each layer. Since depending on the {@link ReadMode mode} of a load
+	 * operation we require different ways of handling things like component
+	 * creation, caching or analysis.
 	 *
 	 * @author Markus Gärtner
 	 *
@@ -422,17 +841,16 @@ public class TableConverter extends SchemaBasedConverter {
 
 		private final Map<String, Item> namedSubstitues = new Object2ObjectOpenHashMap<>();
 
-		private int lineNumber;
 		private int columnIndex;
 
 		private ObjectArrayList<Item> replacements = new ObjectArrayList<>();
 
 		private List<UnresolvedAttribute> pendingAttributes = new ArrayList<>();
 
-		private final ComponentSupplier[] componentSuppliers;
+		private final Map<ItemLayer, ComponentSupplier> componentSuppliers;
 
-		public InputResolverContext(ComponentSupplier[] componentSuppliers) {
-			checkNotNull(componentSuppliers);
+		public InputResolverContext(Map<ItemLayer, ComponentSupplier> componentSuppliers) {
+			requireNonNull(componentSuppliers);
 
 			this.componentSuppliers = componentSuppliers;
 		}
@@ -452,6 +870,8 @@ public class TableConverter extends SchemaBasedConverter {
 		@Override
 		public void close() {
 			reset();
+
+			componentSuppliers.values().forEach(ComponentSupplier::close);
 		}
 
 		/**
@@ -495,13 +915,13 @@ public class TableConverter extends SchemaBasedConverter {
 		}
 
 		public void setData(CharSequence newData) {
-			checkNotNull(newData);
+			requireNonNull(newData);
 			data = newData;
 			consumed = false;
 		}
 
 		public void setContainer(Container container) {
-			checkNotNull(container);
+			requireNonNull(container);
 			this.container = container;
 		}
 
@@ -510,7 +930,7 @@ public class TableConverter extends SchemaBasedConverter {
 		}
 
 		public void setItem(Item item) {
-			checkNotNull(item);
+			requireNonNull(item);
 
 			this.item = item;
 			replacements.clear();
@@ -525,7 +945,7 @@ public class TableConverter extends SchemaBasedConverter {
 		}
 
 		public void replaceCurrentItem(Item newItem) {
-			checkNotNull(newItem);
+			requireNonNull(newItem);
 
 			replacements.push(item);
 			item = newItem;
@@ -536,7 +956,7 @@ public class TableConverter extends SchemaBasedConverter {
 		}
 
 		public void mapItem(String name, Item item) {
-			checkNotNull(item);
+			requireNonNull(item);
 			namedSubstitues.put(name, item);
 		}
 
@@ -554,7 +974,7 @@ public class TableConverter extends SchemaBasedConverter {
 		}
 
 		public void setPendingItem(Item pendingItem) {
-			checkNotNull(pendingItem);
+			requireNonNull(pendingItem);
 			checkState(this.pendingItem==null);
 			this.pendingItem = pendingItem;
 		}
@@ -588,7 +1008,7 @@ public class TableConverter extends SchemaBasedConverter {
 		}
 
 		public ComponentSupplier getComponentSupplier(BlockHandler blockHandler) {
-			return componentSuppliers[blockHandler.getId()];
+			return componentSuppliers.get(blockHandler.getItemLayer());
 		}
 	}
 
@@ -599,8 +1019,17 @@ public class TableConverter extends SchemaBasedConverter {
 	 * @param <O> result type of the processing step
 	 */
 	@FunctionalInterface
-	public interface ContextProcessor<O extends Object> {
+	public interface ContextProcessor<O extends Object> extends Closeable {
 		O process(InputResolverContext context);
+
+		default void prepareForReading(Converter converter, ReadMode mode, Function<ItemLayer, InputCache> caches) {
+			// no-op
+		}
+
+		@Override
+		default void close() {
+			// no-op
+		}
 	}
 
 	/**
@@ -631,7 +1060,7 @@ public class TableConverter extends SchemaBasedConverter {
 	}
 
 	private ContextProcessor<ScanResult> createProcessor(AttributeSchema attributeSchema) {
-		checkNotNull(attributeSchema);
+		requireNonNull(attributeSchema);
 
 		ContextProcessor<ScanResult> result = null;
 
@@ -668,7 +1097,7 @@ public class TableConverter extends SchemaBasedConverter {
 		private final Matcher matcher;
 
 		public AttributeHandler(AttributeSchema attributeSchema) {
-			checkNotNull(attributeSchema);
+			requireNonNull(attributeSchema);
 
 			this.attributeSchema = attributeSchema;
 			resolver = createResolver(attributeSchema.getResolver());
@@ -681,6 +1110,27 @@ public class TableConverter extends SchemaBasedConverter {
 			}
 
 			matcher = Pattern.compile(pattern).matcher("");
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.schema.table.TableConverter.ContextProcessor#prepareForReading(de.ims.icarus2.filedriver.Converter, de.ims.icarus2.filedriver.Converter.ReadMode, java.util.function.Function)
+		 */
+		@Override
+		public void prepareForReading(Converter converter, ReadMode mode,
+				Function<ItemLayer, InputCache> caches) {
+			if(resolver!=null) {
+				resolver.prepareForReading(converter, mode, caches, attributeSchema.getResolver().getOptions());
+			}
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.schema.table.TableConverter.ContextProcessor#close()
+		 */
+		@Override
+		public void close() {
+			if(resolver!=null) {
+				resolver.close();
+			}
 		}
 
 		/**
@@ -731,7 +1181,7 @@ public class TableConverter extends SchemaBasedConverter {
 		private final boolean multiline;
 
 		public EmptyLineDelimiter(AttributeSchema attributeSchema, boolean multiline) {
-			checkNotNull(attributeSchema);
+			requireNonNull(attributeSchema);
 
 			this.attributeSchema = attributeSchema;
 			this.multiline = multiline;
@@ -777,7 +1227,7 @@ public class TableConverter extends SchemaBasedConverter {
 		private final MemberType requiredType;
 
 		public SubstituteAddHandler(SubstituteSchema substituteSchema) {
-			checkNotNull(substituteSchema);
+			requireNonNull(substituteSchema);
 			checkArgument(substituteSchema.getType()==SubstituteType.ADDITION);
 
 			this.substituteSchema = substituteSchema;
@@ -820,7 +1270,7 @@ public class TableConverter extends SchemaBasedConverter {
 		private final MemberType requiredType;
 
 		public SubstituteReplaceHandler(SubstituteSchema substituteSchema) {
-			checkNotNull(substituteSchema);
+			requireNonNull(substituteSchema);
 			checkArgument(substituteSchema.getType()==SubstituteType.REPLACEMENT);
 
 			this.substituteSchema = substituteSchema;
@@ -863,7 +1313,7 @@ public class TableConverter extends SchemaBasedConverter {
 		private final MemberType requiredType;
 
 		public SubstituteTargetHandler(SubstituteSchema substituteSchema) {
-			checkNotNull(substituteSchema);
+			requireNonNull(substituteSchema);
 			checkArgument(substituteSchema.getType()==SubstituteType.TARGET);
 
 			this.substituteSchema = substituteSchema;
@@ -897,11 +1347,59 @@ public class TableConverter extends SchemaBasedConverter {
 	 *
 	 */
 	interface LineIterator {
+
+		public static final String LINE_BREAK_1 = "\n";
+		public static final String LINE_BREAK_2 = "\r\n";
+
+		/**
+		 * Tries to advance to the next line of text.
+		 *
+		 * @return
+		 */
 		boolean next();
+
+		/**
+		 * Returns the current line of text if available.
+		 *
+		 * @return
+		 */
 		CharSequence getLine();
 
-		default int getLineNumber() {
-			return -1;
+		/**
+		 * Returns {@code true} iff the most recent call to {@link #next()}
+		 * yielded a success.
+		 *
+		 * @return
+		 */
+		boolean hasLine();
+
+		/**
+		 * Returns the number of characters that occurred in the last line-break.
+		 * <p>
+		 * Since this iterator recognizes 2 different types of actual line-breaks, there
+		 * are in total 3 different possible return values:
+		 * <table border="1">
+		 * <tr><th>Count</th><th>Meaning</th></tr>
+		 * <tr><td>0</td><td>No line-break, but end of character sequence reached</td></tr>
+		 * <tr><td>1</td><td>Simple line-feed {@code \n}</td></tr>
+		 * <tr><td>2</td><td>Carriage-return followed by line-feed {@code \r\n}</td></tr>
+		 * </table>
+		 * When scanning data this information should be sufficient to determine
+		 * the number of bytes that was read (usually equal to the number of line-break
+		 * characters).
+		 *
+		 * @return
+		 */
+		int getLineBreakCharacterCount();
+
+		/**
+		 * Optionally returns the current line number if the line iterator is able and configured
+		 * to track lines.
+		 *
+		 * @return
+		 */
+		default long getLineNumber() {
+			return -1L;
 		}
 	}
 
@@ -910,7 +1408,7 @@ public class TableConverter extends SchemaBasedConverter {
 	 * @author Markus Gärtner
 	 *
 	 */
-	private static class BlockLineIterator extends FlexibleSubSequence implements LineIterator {
+	private static class SubSequenceLineIterator extends FlexibleSubSequence implements LineIterator {
 
 		/**
 		 * Flag to signal the end of input sequence
@@ -931,7 +1429,7 @@ public class TableConverter extends SchemaBasedConverter {
 		 */
 		private int lineBreakCharacterCount;
 
-		public BlockLineIterator(CharSequence source) {
+		public SubSequenceLineIterator(CharSequence source) {
 			setSource(source);
 		}
 
@@ -943,12 +1441,16 @@ public class TableConverter extends SchemaBasedConverter {
 			setRange(0, getSource().length()-1);
 		}
 
+		@Override
 		public int getLineBreakCharacterCount() {
 			return lineBreakCharacterCount;
 		}
 
 		/**
-		 * Start at the specified offset and expand till a line break occurs.
+		 * Start at the specified offset and expand till a line-break occurs or the
+		 * end of the underlying character sequence is reached..
+		 * The number of characters involved in that line-break can be queried using
+		 * {@link #getLineBreakCharacterCount()}.
 		 */
 		private void scan(int begin) {
 			lineBreakCharacterCount = 0;
@@ -986,13 +1488,22 @@ public class TableConverter extends SchemaBasedConverter {
 				cursor++;
 			}
 
-			if(length>0) {
+			// To allow empty lines we check for the total number of characters we saw
+			if(length+lineBreakCharacterCount>0) {
 				setOffset(begin);
 				setLength(length);
 				lineReady = true;
 			} else {
 				endOfInput = true;
 			}
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.schema.table.TableConverter.LineIterator#hasLine()
+		 */
+		@Override
+		public boolean hasLine() {
+			return !endOfInput && lineReady;
 		}
 
 		@Override
@@ -1013,6 +1524,361 @@ public class TableConverter extends SchemaBasedConverter {
 
 			return !endOfInput;
 		}
+	}
+
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	private static class BufferedLineIterator implements LineIterator {
+
+		/**
+		 * Keeps track of number of read lines.
+		 * Will be incremented every time we scan over a line break.
+		 */
+		private long lineNumber = -1L;
+
+		private final ReadableByteChannel channel;
+
+		private final CharsetDecoder decoder;
+
+		private final CharBuffer cb;
+		private final ByteBuffer bb;
+
+		private final StringBuilder characterBuffer;
+
+		/**
+		 * Flag to signal the end of input character sequence
+		 */
+		private boolean endOfInput = false;
+
+		/**
+		 * Flag to tell the {@link #hasNext()} method to advance a step
+		 */
+		private boolean lineReady = false;
+
+		/**
+		 * Flag to signal end the end of underlying channel
+		 */
+		private boolean eos = false;
+
+		private int lineBreakCharacterCount;
+
+		public BufferedLineIterator(ReadableByteChannel channel, Charset encoding, int characterChunkSize) {
+			requireNonNull(channel);
+			requireNonNull(encoding);
+			checkArgument(characterChunkSize>0);
+
+			this.channel = channel;
+
+			characterBuffer = new StringBuilder(characterChunkSize);
+			decoder = encoding.newDecoder();
+
+			bb = ByteBuffer.allocateDirect(IOUtil.DEFAULT_BUFFER_SIZE);
+			cb = CharBuffer.allocate(IOUtil.DEFAULT_BUFFER_SIZE);
+
+			cb.flip();
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.schema.table.TableConverter.LineIterator#getLineNumber()
+		 */
+		@Override
+		public long getLineNumber() {
+			return lineNumber;
+		}
+
+		private boolean hasMoreCharacters() {
+			if(!eos && !cb.hasRemaining()) {
+				cb.clear();
+		        try {
+					if(-1 == channel.read(bb)) {
+					    eos = true;
+					}
+
+				    bb.flip();
+				    CoderResult res = decoder.decode(bb, cb, eos);
+				    if(res.isError())
+				    	res.throwException();
+
+				    if(res.isUnderflow()) {
+				    	bb.compact();
+				    	if(eos) {
+				    		decoder.flush(cb);
+				    	}
+				    }
+				} catch (IOException e) {
+					throw new ModelException(GlobalErrorCode.IO_ERROR, "Failed to read from channel", e);
+				}
+	        	cb.flip();
+			}
+
+			return cb.hasRemaining();
+		}
+
+		@Override
+		public int getLineBreakCharacterCount() {
+			return lineBreakCharacterCount;
+		}
+
+		/**
+		 * Expands the internal {@link StringBuilder character buffer} till a line-break occurs or the
+		 * end of the underlying character sequence is reached.
+		 * The number of characters involved in that line-break can be queried using
+		 * {@link #getLineBreakCharacterCount()}.
+		 */
+		private void scan() {
+			lineBreakCharacterCount = 0;
+			characterBuffer.setLength(0);
+
+			boolean expectLF = false;
+
+			char_loop : while(hasMoreCharacters()) {
+				char c = cb.get();
+
+				switch (c) {
+				case '\n': {
+					lineBreakCharacterCount++;
+					break char_loop;
+				}
+
+				case '\r': {
+					expectLF = true;
+					lineBreakCharacterCount++;
+				} break;
+
+				default:
+					if(expectLF)
+						throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT,
+								"Unfinished line-break sequence - missing \\n after \\r character");
+
+					characterBuffer.append(c);
+					break;
+				}
+			}
+
+			// To allow empty lines we check for the total number of characters we saw
+			if(characterBuffer.length()+lineBreakCharacterCount>0) {
+				lineReady = true;
+				lineNumber++;
+			} else {
+				endOfInput = true;
+			}
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.schema.table.TableConverter.LineIterator#hasLine()
+		 */
+		@Override
+		public boolean hasLine() {
+			return !endOfInput && lineReady;
+		}
+
+		@Override
+		public CharSequence getLine() {
+			if(endOfInput || !lineReady)
+				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+						"End of input reached or cursor not advanced previously");
+
+			return characterBuffer;
+		}
+
+		@Override
+		public boolean next() {
+			if(!endOfInput) {
+				scan();
+//				if(hasLine())
+//				System.out.printf("%d: %s\n",lineNumber+1,characterBuffer);
+			}
+
+			return !endOfInput;
+		}
+
+	}
+
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	public static class ComponentSuppliersFactory extends AbstractBuilder<ComponentSuppliersFactory, Map<ItemLayer, ComponentSupplier>> {
+
+		//FIXME change final mapping from block-id to manifest-UID and include ALL relevant layers, so that resolvers can dock on caches
+
+		private Function<ItemLayer, ObjLongConsumer<Item>> consumers;
+
+		private ReadMode mode;
+
+		private LayerMemberFactory memberFactory;
+
+		private BlockHandler rootBlockHandler;
+
+		private int fileIndex = -1;
+
+		private final TableConverter converter;
+
+		public ComponentSuppliersFactory(TableConverter converter) {
+			requireNonNull(converter);
+
+			this.converter = converter;
+		}
+
+		public ComponentSuppliersFactory consumers(Function<ItemLayer, ObjLongConsumer<Item>> consumers) {
+			requireNonNull(consumers);
+			checkState("Consumers map already set", this.consumers==null);
+
+			this.consumers = consumers;
+
+			return thisAsCast();
+		}
+
+		public ComponentSuppliersFactory mode(ReadMode mode) {
+			requireNonNull(mode);
+			checkState("Mode already set", this.mode==null);
+
+			this.mode = mode;
+
+			return thisAsCast();
+		}
+
+		public ComponentSuppliersFactory fileIndex(int fileIndex) {
+			checkArgument(fileIndex>=0);
+			checkState("File index already set", this.fileIndex==-1);
+
+			this.fileIndex = fileIndex;
+
+			return thisAsCast();
+		}
+
+		public ComponentSuppliersFactory memberFactory(LayerMemberFactory memberFactory) {
+			requireNonNull(memberFactory);
+			checkState("Member factory already set", this.memberFactory==null);
+
+			this.memberFactory = memberFactory;
+
+			return thisAsCast();
+		}
+
+		public ComponentSuppliersFactory rootBlockHandler(BlockHandler rootBlockHandler) {
+			requireNonNull(rootBlockHandler);
+			checkState("Root block handler already set", this.rootBlockHandler==null);
+
+			this.rootBlockHandler = rootBlockHandler;
+
+			return thisAsCast();
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.AbstractBuilder#constructor(java.util.function.Function)
+		 */
+		@Override
+		public ComponentSuppliersFactory constructor(
+				Function<ComponentSuppliersFactory, Map<ItemLayer, ComponentSupplier>> constructor) {
+			throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot accept constructor for array");
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.AbstractBuilder#validate()
+		 */
+		@Override
+		protected void validate() {
+			checkState("Missing mode", mode!=null);
+			checkState("Missing root block handler", rootBlockHandler!=null);
+			checkState("Missing member factory", memberFactory!=null);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.AbstractBuilder#create()
+		 */
+		@Override
+		protected Map<ItemLayer, ComponentSupplier> create() {
+			Map<ItemLayer, ComponentSupplier> map = new Object2ObjectOpenHashMap<>();
+
+			collectComponentSuppliers0(rootBlockHandler, map);
+
+			return map;
+		}
+
+		private void collectComponentSuppliers0(BlockHandler blockHandler, Map<ItemLayer, ComponentSupplier> map) {
+
+			ItemLayer layer = blockHandler.getItemLayer();
+
+			ComponentSupplier.Builder builder = new ComponentSupplier.Builder();
+			builder.componentLayer(layer);
+			builder.componentType(blockHandler.getSchema().getComponentSchema().getMemberType());
+			builder.memberFactory(memberFactory);
+
+			ObjLongConsumer<Item> consumer = consumers==null ? null : consumers.apply(layer);
+			if(consumer!=null) {
+				builder.componentConsumer(consumer);
+			}
+
+			// In SCAN mode we only read items, analyze and then immediately discard them
+			if(mode==ReadMode.CHUNK) {
+
+				BlockHandler parent = blockHandler.getParent();
+
+				if(parent!=null) {
+					ItemLayer sourceLayer = parent.getItemLayer();
+					ItemLayer targetLayer = layer;
+					Mapping mapping = converter.getFileDriver().getMapping(sourceLayer, targetLayer);
+					if(mapping==null)
+						throw new ModelException(ModelErrorCode.DRIVER_ERROR,
+								"Missing mapping from "+ModelUtils.getUniqueId(sourceLayer)+" to "+ModelUtils.getUniqueId(targetLayer));
+					/*
+					 *  NOTE: this fetches the largest container size for the parent layer.
+					 *  This might be significantly higher than the buffer sizer we need for
+					 *  the given combination (parentLayer -> baseLayer) but is an easy upper
+					 *  boundary and the overhead should be manageable.
+					 */
+					int bufferSize = converter.getRecommendedIndexBufferSize(sourceLayer.getManifest());
+
+					builder.mapping(mapping);
+					builder.bufferSize(bufferSize);
+				}
+			}
+
+			// Outside of CHUNK mode we can use metadata to determine begin indices for our continuous item streams
+			if(fileIndex!=-1 && mode!=ReadMode.CHUNK) {
+				FileDataStates states = converter.getFileDriver().getFileStates();
+
+				long firstIndex;
+
+				FileInfo fileInfo = states.getFileInfo(fileIndex);
+				firstIndex = fileInfo.getBeginIndex(layer.getManifest());
+				if(firstIndex==NO_INDEX && fileIndex>0) {
+					FileInfo previousInfo = states.getFileInfo(fileIndex-1);
+					firstIndex = previousInfo.getBeginIndex(layer.getManifest());
+				}
+
+				if(firstIndex==NO_INDEX) {
+					firstIndex = 0L;
+				}
+
+
+				if(mode==ReadMode.SCAN) {
+					MutableLong index = new MutableLong(firstIndex);
+					builder.indexSupplier(index::getAndIncrement);
+				} else {
+					builder.firstIndex(firstIndex);
+					long lastIndex = fileInfo.getEndIndex(layer.getManifest());
+					if(lastIndex!=NO_INDEX) {
+						builder.lastIndex(lastIndex);
+					}
+				}
+			}
+
+			map.put(blockHandler.getItemLayer(), builder.build());
+
+			BlockHandler[] nestedHandlers = blockHandler.nestedBlockHandlers;
+			if(nestedHandlers!=null) {
+				for(BlockHandler nestedHandler : nestedHandlers) {
+					collectComponentSuppliers0(nestedHandler, map);
+				}
+			}
+		}
+
 	}
 
 	/**
@@ -1052,8 +1918,8 @@ public class TableConverter extends SchemaBasedConverter {
 		private final String noEntryLabel;
 
 		public ColumnHandler(BlockHandler blockHandler, ColumnSchema columnSchema, int columnIndex) {
-			checkNotNull(blockHandler);
-			checkNotNull(columnSchema);
+			requireNonNull(blockHandler);
+			requireNonNull(columnSchema);
 
 			this.blockHandler = blockHandler;
 			this.columnSchema = columnSchema;
@@ -1088,6 +1954,23 @@ public class TableConverter extends SchemaBasedConverter {
 			this.postprocessingHandler = postprocessingHandler;
 
 			noEntryLabel = columnSchema.getNoEntryLabel();
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.schema.table.TableConverter.ContextProcessor#prepareForReading(de.ims.icarus2.filedriver.Converter, de.ims.icarus2.filedriver.Converter.ReadMode, java.util.function.Function)
+		 */
+		@Override
+		public void prepareForReading(Converter converter, ReadMode mode,
+				Function<ItemLayer, InputCache> caches) {
+			resolver.prepareForReading(converter, mode, caches, columnSchema.getResolver().getOptions());
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.schema.table.TableConverter.ContextProcessor#close()
+		 */
+		@Override
+		public void close() {
+			resolver.close();
 		}
 
 		public boolean isBatchHandler() {
@@ -1142,14 +2025,53 @@ public class TableConverter extends SchemaBasedConverter {
 		public int getColumnIndex() {
 			return columnIndex;
 		}
+
+		public BlockHandler getBlockHandler() {
+			return blockHandler;
+		}
+
+		public ColumnSchema getColumnSchema() {
+			return columnSchema;
+		}
+	}
+
+	private static String getSeparator(BlockHandler blockSchema, TableSchema tableSchema) {
+		String separator = blockSchema.getSchema().getSeparator();
+
+		while(separator==null && blockSchema!=null) {
+			blockSchema = blockSchema.getParent();
+		}
+
+		if(separator==null) {
+			separator = tableSchema.getSeparator();
+		}
+
+		if(separator==null)
+			throw new ModelException(ModelErrorCode.DRIVER_ERROR, "Missing separator specification");
+
+		return separator;
+	}
+
+	private static void closeProcessor(ContextProcessor<?> processor) {
+		if(processor!=null) {
+			processor.close();
+		}
+	}
+
+	private static void prepareProcessorForReading(ContextProcessor<?> processor,
+			Converter converter, ReadMode mode, Function<ItemLayer, InputCache> caches) {
+		if(processor!=null) {
+			processor.prepareForReading(converter, mode, caches);
+		}
 	}
 
 	/**
+	 * Controller
 	 *
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class BlockHandler {
+	public class BlockHandler implements Closeable {
 		private final int blockId;
 
 		private final BlockHandler parent;
@@ -1230,14 +2152,17 @@ public class TableConverter extends SchemaBasedConverter {
 		 */
 		private int[] columnOffsets;
 
-		public BlockHandler(BlockSchema blockSchema, BlockHandler parent, MutableInteger idGen) {
-			checkNotNull(blockSchema);
+		public BlockHandler(BlockSchema blockSchema) {
+			this(blockSchema, null, new MutableInteger(0));
+		}
+
+		private BlockHandler(BlockSchema blockSchema, BlockHandler parent, MutableInteger idGen) {
+			requireNonNull(blockSchema);
 
 			this.parent = parent;
 			this.blockSchema = blockSchema;
 
-			blockId = idGen.intValue();
-			idGen.increment();
+			blockId = idGen.getAndIncrement();
 
 			itemLayer = (ItemLayer) findLayer(blockSchema.getLayerId());
 
@@ -1248,7 +2173,8 @@ public class TableConverter extends SchemaBasedConverter {
 			Matcher separatorMatcher = null;
 			char separatorChar = '\0';
 
-			String separator = blockSchema.getSeparator();
+			String separator = getSeparator(this, tableSchema);
+
 			if(separator.length()==1) {
 				separatorChar = separator.charAt(0);
 			} else {
@@ -1286,6 +2212,9 @@ public class TableConverter extends SchemaBasedConverter {
 			// Column related stuff
 			ColumnSchema[] columnSchemas = blockSchema.getColumns();
 			requiredColumnCount = columnSchemas.length;
+
+			// Make sure we have enough space in our column offset buffer
+			columnOffsets = new int[requiredColumnCount*2];
 
 			List<ColumnHandler> regularHandlers = new ArrayList<>();
 			List<ColumnHandler> batchHandlers = new ArrayList<>();
@@ -1347,12 +2276,46 @@ public class TableConverter extends SchemaBasedConverter {
 			attributeHandlers = null;
 		}
 
+		public BlockHandler getParent() {
+			return parent;
+		}
+
 		public BlockSchema getSchema() {
 			return blockSchema;
 		}
 
 		public ItemLayer getItemLayer() {
 			return itemLayer;
+		}
+
+		public void prepareForReading(Converter converter, ReadMode mode, Function<ItemLayer, InputCache> caches) {
+			CollectionUtils.forEach(columnHandlers, c -> c.prepareForReading(converter, mode, caches));
+			CollectionUtils.forEach(nestedBlockHandlers, b -> b.prepareForReading(converter, mode, caches));
+			CollectionUtils.forEach(attributeHandlers, a -> a.prepareForReading(converter, mode, caches));
+
+			prepareProcessorForReading(beginDelimiter, converter, mode, caches);
+			prepareProcessorForReading(endDelimiter, converter, mode, caches);
+			prepareProcessorForReading(fallbackHandler, converter, mode, caches);
+		}
+
+		public void reset() {
+			//TODO
+		}
+
+		/**
+		 * @see java.io.Closeable#close()
+		 */
+		@Override
+		public void close() {
+			reset();
+
+			CollectionUtils.forEach(columnHandlers, ColumnHandler::close);
+			CollectionUtils.forEach(nestedBlockHandlers, BlockHandler::close);
+			CollectionUtils.forEach(attributeHandlers, ContextProcessor::close);
+
+			closeProcessor(beginDelimiter);
+			closeProcessor(endDelimiter);
+			closeProcessor(fallbackHandler);
 		}
 
 		/**
@@ -1441,12 +2404,14 @@ public class TableConverter extends SchemaBasedConverter {
 		}
 
 		private void saveColumnOffsets(int columnIndex, int begin, int end) {
-			if(columnIndex>=columnOffsets.length) {
-				columnOffsets = Arrays.copyOf(columnOffsets, Math.max(columnOffsets.length<<1, columnIndex));
-			}
 			int idx = columnIndex<<1;
+			if(idx+1>=columnOffsets.length) {
+				columnOffsets = Arrays.copyOf(columnOffsets, Math.max(columnOffsets.length<<1, idx+1));
+			}
 			columnOffsets[idx] = begin;
-			columnOffsets[idx] = end;
+			columnOffsets[idx+1] = end;
+
+//			System.out.printf("saving column col=%d begin=%d end=%d\n", columnIndex, begin, end);
 		}
 
 		private int splitColumns(CharSequence content) {
@@ -1486,7 +2451,8 @@ public class TableConverter extends SchemaBasedConverter {
 
 					while(separatorMatcher.find()) {
 						saveColumnOffsets(columnCount, begin, separatorMatcher.start()-1);
-						begin = separatorMatcher.end()+1;
+						begin = separatorMatcher.end();
+						columnCount++;
 					}
 
 				} finally {
@@ -1497,10 +2463,7 @@ public class TableConverter extends SchemaBasedConverter {
 
 			// Remaining stuff goes into a final column
 			if(begin<=regionEnd) {
-				int idx = columnCount<<1;
-				columnOffsets[idx] = begin;
-				columnOffsets[idx] = regionEnd;
-
+				saveColumnOffsets(columnCount, begin, regionEnd);
 				columnCount++;
 			}
 
@@ -1642,6 +2605,7 @@ public class TableConverter extends SchemaBasedConverter {
 
 			ComponentSupplier componentSupplier = context.getComponentSupplier(this);
 			componentSupplier.reset(index);
+			componentSupplier.setHost(container);
 
 			// Prepare for beginning of content (notify batch resolvers)
 			beginContent(context);
@@ -1654,12 +2618,15 @@ public class TableConverter extends SchemaBasedConverter {
 					throw new ModelException(ModelErrorCode.DRIVER_ERROR, "Failed to produce nested item");
 				Item item = componentSupplier.currentItem();
 
+				// Link context to new item
 				context.setItem(item);
 				if(!isProxyContainer) {
+					// Only for non-top-level items do we need to add them to their host container
 					container.addItem(item);
 				}
 
 				processColumns(lines, context);
+
 				if(!lines.next()) {
 					break;
 				}
@@ -1683,7 +2650,7 @@ public class TableConverter extends SchemaBasedConverter {
 			try {
 				// Preparation pass: save split offsets for all columns
 				final int columnCount = splitColumns(rawContent);
-				if(requiredColumnCount>=columnCount)
+				if(requiredColumnCount>columnCount)
 					throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT,
 							Messages.mismatchMessage("Insufficient columns", _int(requiredColumnCount), _int(columnCount)));
 
@@ -1715,8 +2682,6 @@ public class TableConverter extends SchemaBasedConverter {
 					}
 				}
 
-				context.container.addItem(context.item);
-
 			} finally {
 				context.setData(rawContent);
 				context.setItem(item);
@@ -1724,11 +2689,15 @@ public class TableConverter extends SchemaBasedConverter {
 			}
 		}
 
-		public void reset() {
-			//TODO
+		public int getId() {
+			return blockId;
 		}
 
-		public int getId() {
+		/**
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
 			return blockId;
 		}
 	}

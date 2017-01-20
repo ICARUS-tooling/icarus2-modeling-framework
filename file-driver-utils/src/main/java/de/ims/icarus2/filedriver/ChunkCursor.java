@@ -17,21 +17,19 @@
  */
 package de.ims.icarus2.filedriver;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.SeekableByteChannel;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 
-import de.ims.icarus2.filedriver.io.sets.FileSet;
+import de.ims.icarus2.filedriver.io.sets.ResourceSet;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndex;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexReader;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
+import de.ims.icarus2.model.api.io.resources.IOResource;
 import de.ims.icarus2.util.nio.ByteChannelBlockStream;
 
 /**
@@ -44,7 +42,7 @@ import de.ims.icarus2.util.nio.ByteChannelBlockStream;
 public class ChunkCursor implements Closeable {
 
 	// Initialization stuff
-	private final FileSet dataFiles;
+	private final ResourceSet dataFiles;
 	private final IndexSet[] indices;
 	private final ChunkIndex chunkIndex;
 	private final ByteChannelBlockStream _stream;
@@ -54,7 +52,7 @@ public class ChunkCursor implements Closeable {
 	private int _pos;
 	private boolean _empty;
 	private SeekableByteChannel _channel;
-	private Path _path;
+	private IOResource _resource;
 	private boolean _ready;
 	// random access mode
 	private boolean _ram;
@@ -66,10 +64,10 @@ public class ChunkCursor implements Closeable {
 	private long chunkBegin;
 	private long chunkEnd;
 
-	public ChunkCursor(FileSet dataFiles, IndexSet[] indices, ChunkIndex chunkIndex, int bufferSize) {
-		checkNotNull(dataFiles);
-		checkNotNull(indices);
-		checkNotNull(chunkIndex);
+	public ChunkCursor(ResourceSet dataFiles, IndexSet[] indices, ChunkIndex chunkIndex, int bufferSize) {
+		requireNonNull(dataFiles);
+		requireNonNull(indices);
+		requireNonNull(chunkIndex);
 
 		this.dataFiles = dataFiles;
 		this.indices = indices;
@@ -131,8 +129,8 @@ public class ChunkCursor implements Closeable {
 	}
 
 	private void refreshFile(int fileIndex) throws IOException {
-		_path = dataFiles.getFileAt(fileIndex);
-		_channel = Files.newByteChannel(_path, StandardOpenOption.READ);
+		_resource = dataFiles.getResourceAt(fileIndex);
+		_channel = _resource.getReadChannel();
 	}
 
 	public boolean moveTo(long index) throws IOException {

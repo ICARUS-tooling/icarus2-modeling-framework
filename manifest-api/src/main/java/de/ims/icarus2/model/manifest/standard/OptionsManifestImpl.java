@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -150,7 +150,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 	}
 
 	protected void addOption0(Option option) {
-		checkNotNull(option);
+		requireNonNull(option);
 
 		String id = option.getId();
 
@@ -171,7 +171,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 	}
 
 	protected void removeOption0(Option option) {
-		checkNotNull(option);
+		requireNonNull(option);
 
 		String id = option.getId();
 
@@ -198,7 +198,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 	}
 
 	protected void addGroupIdentifier0(Identity identity) {
-		checkNotNull(identity);
+		requireNonNull(identity);
 
 		if(identity.getId()==null)
 			throw new IllegalArgumentException("Supplied identity declares null id"); //$NON-NLS-1$
@@ -220,7 +220,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 	}
 
 	protected void removeGroupIdentifier0(Identity identity) {
-		checkNotNull(identity);
+		requireNonNull(identity);
 
 		if(!groupIdentifiers.remove(identity))
 			throw new ManifestException(ManifestErrorCode.MANIFEST_ERROR, "No such group identifier: "+identity);
@@ -410,7 +410,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		}
 
 		protected OptionImpl setValueType0(ValueType valueType) {
-			checkNotNull(valueType);
+			requireNonNull(valueType);
 
 			if(!supportedValueTypes.contains(valueType))
 				throw new UnsupportedValueTypeException(valueType);

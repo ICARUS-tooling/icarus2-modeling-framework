@@ -17,7 +17,7 @@
  */
 package de.ims.icarus2.model.api.io;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.nio.file.Path;
 
@@ -92,7 +92,7 @@ public interface FileManager {
 		private final String folderName;
 
 		private CommonFolders(String folderName) {
-			checkNotNull(folderName);
+			requireNonNull(folderName);
 			this.folderName = folderName;
 		}
 

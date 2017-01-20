@@ -23,6 +23,6 @@ import de.ims.icarus2.filedriver.AbstractConverter;
  * @author Markus Gärtner
  *
  */
-public class SchemaBasedConverter extends AbstractConverter {
+public abstract class SchemaBasedConverter extends AbstractConverter {
 
 }

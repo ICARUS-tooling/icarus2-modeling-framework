@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.standard.Links.MemoryLink;
@@ -43,7 +43,7 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	private final DriverManifest driverManifest;
 
 	public MappingManifestImpl(DriverManifest driverManifest) {
-		checkNotNull(driverManifest);
+		requireNonNull(driverManifest);
 
 		this.driverManifest = driverManifest;
 	}
@@ -167,7 +167,7 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	}
 
 	protected void setInverseId0(String inverseId) {
-		checkNotNull(inverseId);
+		requireNonNull(inverseId);
 
 		inverse = new MappingLink(inverseId);
 	}
@@ -183,7 +183,7 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	}
 
 	protected void setCoverage0(Coverage coverage) {
-		checkNotNull(coverage);
+		requireNonNull(coverage);
 
 		this.coverage = coverage;
 	}
@@ -200,7 +200,7 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	}
 
 	protected void setRelation0(Relation relation) {
-		checkNotNull(relation);
+		requireNonNull(relation);
 
 		this.relation = relation;
 	}
@@ -217,7 +217,7 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	}
 
 	protected void setSourceLayerId0(String sourceLayerId) {
-		checkNotNull(sourceLayerId);
+		requireNonNull(sourceLayerId);
 
 		this.sourceLayerId = sourceLayerId;
 	}
@@ -234,7 +234,7 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	}
 
 	protected void setTargetLayerId0(String targetLayerId) {
-		checkNotNull(targetLayerId);
+		requireNonNull(targetLayerId);
 
 		this.targetLayerId = targetLayerId;
 	}
@@ -252,7 +252,7 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	}
 
 	protected void setId0(String id) {
-		checkNotNull(id);
+		requireNonNull(id);
 		this.id = id;
 	}
 

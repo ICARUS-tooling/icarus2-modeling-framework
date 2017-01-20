@@ -19,6 +19,7 @@
 package de.ims.icarus2.model.api.layer;
 
 import java.util.Set;
+import java.util.function.Consumer;
 
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
@@ -50,4 +51,6 @@ public interface LayerGroup extends Part<Context> {
 	ItemLayer getPrimaryLayer();
 
 	Set<Dependency<LayerGroup>> getDependencies();
+
+	void forEachLayer(Consumer<? super Layer> action);
 }

@@ -20,7 +20,7 @@
  */
 package de.ims.icarus2.util.strings;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.awt.Component;
 import java.awt.Font;
@@ -72,6 +72,8 @@ public final class StringUtil {
 		StringBuilder result = new StringBuilder();
 		String index = null;
 
+		int paramsIndex = 0;
+
 		for (int i = 0; i < text.length(); i++) {
 			char c = text.charAt(i);
 
@@ -79,7 +81,13 @@ public final class StringUtil {
 				index = "";
 			} else if (index != null && c == '}') {
 
-				int tmp = Integer.parseInt(index) - 1;
+				int tmp = paramsIndex;
+
+				if(!index.isEmpty()) {
+					tmp = Integer.parseInt(index) - 1;
+				} else {
+					paramsIndex++;
+				}
 
 				if (tmp >= 0 && params!=null && tmp < params.length) {
 					result.append(params[tmp]);
@@ -236,7 +244,7 @@ public final class StringUtil {
 	 * given one is {@code null}.
 	 */
 	public static String notNull(String s, String fallback) {
-		checkNotNull(fallback);
+		requireNonNull(fallback);
 		return s==null ? fallback : s;
 	}
 

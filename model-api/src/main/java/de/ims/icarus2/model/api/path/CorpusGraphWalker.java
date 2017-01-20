@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.api.path;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Markus Gärtner
@@ -29,7 +29,7 @@ public class CorpusGraphWalker {
 	private final CorpusGraph graph;
 
 	public CorpusGraphWalker(CorpusGraph graph) {
-		checkNotNull(graph);
+		requireNonNull(graph);
 
 		this.graph = graph;
 	}

@@ -18,8 +18,8 @@
 package de.ims.icarus2.filedriver.mapping;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -238,7 +238,7 @@ public abstract class AbstractStoredMapping implements WritableMapping {
 		 * @param blockStorage
 		 */
 		public PayloadConverterImpl(IndexBlockStorage blockStorage) {
-			checkNotNull(blockStorage);
+			requireNonNull(blockStorage);
 
 			this.blockStorage = blockStorage;
 		}
@@ -289,7 +289,7 @@ public abstract class AbstractStoredMapping implements WritableMapping {
 		}
 
 		public B resource(IOResource resource) {
-			checkNotNull(resource);
+			requireNonNull(resource);
 			checkState(this.resource==null);
 
 			this.resource = resource;
@@ -298,7 +298,7 @@ public abstract class AbstractStoredMapping implements WritableMapping {
 		}
 
 		public B blockCache(BlockCache blockCache) {
-			checkNotNull(blockCache);
+			requireNonNull(blockCache);
 			checkState(this.blockCache==null);
 
 			this.blockCache = blockCache;

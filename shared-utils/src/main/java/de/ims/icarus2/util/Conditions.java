@@ -63,14 +63,4 @@ public class Conditions {
 		if(!condition)
 			throw new IllegalArgumentException(msg);
 	}
-
-	public static void checkNotNull(Object obj) {
-		if(obj==null)
-			throw new NullPointerException();
-	}
-
-	public static void checkNotNull(String msg, Object obj) {
-		if(obj==null)
-			throw new NullPointerException(msg);
-	}
 }

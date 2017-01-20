@@ -22,6 +22,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.function.Supplier;
 
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -86,6 +87,17 @@ public abstract class AbstractObjectMapStorage<B extends Object> extends Abstrac
 	@Override
 	public void removeAllValues() {
 		annotations.clear();
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#removeAllValues(java.util.function.Supplier)
+	 */
+	@Override
+	public void removeAllValues(Supplier<? extends Item> source) {
+		Item item;
+		while((item=source.get())!=null) {
+			annotations.remove(item);
+		}
 	}
 
 	@Override

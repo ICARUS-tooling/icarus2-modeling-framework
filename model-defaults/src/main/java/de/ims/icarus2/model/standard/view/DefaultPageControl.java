@@ -19,8 +19,8 @@
 package de.ims.icarus2.model.standard.view;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
@@ -66,8 +66,8 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 
 	protected final List<PageListener> pageListeners = new CopyOnWriteArrayList<>();
 
-	protected DefaultPageControl(PageControlBuilder builder) {
-		checkNotNull(builder);
+	protected DefaultPageControl(Builder builder) {
+		requireNonNull(builder);
 
 		PageIndexBuffer pageIndexBuffer = builder.getPageIndexBuffer();
 		if(pageIndexBuffer==null) {
@@ -314,7 +314,7 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 		} catch (ModelException e) {
 			firePageFailed(pageIndex, e);
 			currentPage.setPageState(PageState.BLANK);
-			throw new ModelException(GlobalErrorCode.DELEGATION_FAILED, "Failed to load page: "+pageIndex, e);
+			throw new ModelException(GlobalErrorCode.DELEGATION_FAILED, "Failed to load page for index: "+pageIndex, e);
 		}
 
 		firePageLoaded(pageIndex, size);
@@ -430,7 +430,7 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 		}
 
 		public synchronized void lock(Object key) {
-			checkNotNull(key);
+			requireNonNull(key);
 
 			Object currentKey = getKey();
 
@@ -443,7 +443,7 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 		}
 
 		public synchronized void unlock(Object key) {
-			checkNotNull(key);
+			requireNonNull(key);
 
 			Object currentKey = getKey();
 
@@ -560,7 +560,7 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 		}
 	}
 
-	public static class PageControlBuilder extends AbstractBuilder<PageControlBuilder, PageControl> {
+	public static class Builder extends AbstractBuilder<Builder, PageControl> {
 		private PageIndexBuffer pageIndexBuffer;
 		private IndexSet[] indices;
 		private ItemLayerManager itemLayerManager;
@@ -568,8 +568,8 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 		private int indexCacheSize;
 		private int pageSize;
 
-		public PageControlBuilder pageIndexBuffer(PageIndexBuffer pageIndexBuffer) {
-			checkNotNull(pageIndexBuffer);
+		public Builder pageIndexBuffer(PageIndexBuffer pageIndexBuffer) {
+			requireNonNull(pageIndexBuffer);
 			checkState(this.pageIndexBuffer==null);
 
 			this.pageIndexBuffer = pageIndexBuffer;
@@ -581,8 +581,8 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 			return pageIndexBuffer;
 		}
 
-		public PageControlBuilder indices(IndexSet[] indices) {
-			checkNotNull(indices);
+		public Builder indices(IndexSet[] indices) {
+			requireNonNull(indices);
 			checkState(this.indices==null);
 
 			this.indices = indices;
@@ -594,8 +594,8 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 			return indices;
 		}
 
-		public PageControlBuilder itemLayerManager(ItemLayerManager itemLayerManager) {
-			checkNotNull(itemLayerManager);
+		public Builder itemLayerManager(ItemLayerManager itemLayerManager) {
+			requireNonNull(itemLayerManager);
 			checkState(this.itemLayerManager==null);
 
 			this.itemLayerManager = itemLayerManager;
@@ -607,8 +607,8 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 			return itemLayerManager;
 		}
 
-		public PageControlBuilder indexSetCache(Cache<Integer, IndexSet> indexSetCache) {
-			checkNotNull(indexSetCache);
+		public Builder indexSetCache(Cache<Integer, IndexSet> indexSetCache) {
+			requireNonNull(indexSetCache);
 			checkState(this.indexSetCache==null);
 
 			this.indexSetCache = indexSetCache;
@@ -620,7 +620,7 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 			return indexSetCache;
 		}
 
-		public PageControlBuilder indexCacheSize(int indexCacheSize) {
+		public Builder indexCacheSize(int indexCacheSize) {
 			checkArgument(indexCacheSize>0);
 			checkState(this.indexCacheSize==0);
 
@@ -633,7 +633,7 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 			return indexCacheSize;
 		}
 
-		public PageControlBuilder pageSize(int pageSize) {
+		public Builder pageSize(int pageSize) {
 			checkArgument(pageSize>0);
 			checkState(this.pageSize==0);
 

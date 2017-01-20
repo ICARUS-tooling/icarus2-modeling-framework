@@ -30,6 +30,10 @@ public interface ManifestFactory {
 		return create(type, null, null);
 	}
 
+	default <M extends ManifestFragment> M create(ManifestType type, Object host) {
+		return create(type, host, null);
+	}
+
 	<M extends ManifestFragment> M create(ManifestType type, Object host, Options options);
 
 	ManifestLocation getManifestLocation();

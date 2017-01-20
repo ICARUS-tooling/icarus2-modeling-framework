@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +46,7 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	private Boolean independent;
 
 	public LayerGroupManifestImpl(ContextManifest contextManifest) {
-		checkNotNull(contextManifest);
+		requireNonNull(contextManifest);
 
 		this.contextManifest = contextManifest;
 	}
@@ -57,8 +57,8 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	}
 
 	public LayerGroupManifestImpl(ContextManifest contextManifest, String name) {
-		checkNotNull(contextManifest);
-		checkNotNull(name);
+		requireNonNull(contextManifest);
+		requireNonNull(name);
 
 		this.contextManifest = contextManifest;
 		setName(name);
@@ -131,7 +131,7 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	}
 
 	protected void addLayerManifest0(LayerManifest layerManifest) {
-		checkNotNull(layerManifest);
+		requireNonNull(layerManifest);
 
 		if(layerManifests.contains(layerManifest))
 			throw new IllegalArgumentException("Layer manifest already present in group: "+layerManifest.getId()); //$NON-NLS-1$
@@ -147,7 +147,7 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	}
 
 	protected void removeLayerManifest0(LayerManifest layerManifest) {
-		checkNotNull(layerManifest);
+		requireNonNull(layerManifest);
 
 		if(!layerManifests.remove(layerManifest))
 			throw new IllegalArgumentException("Layer manifest not present in group: "+layerManifest.getId()); //$NON-NLS-1$
@@ -164,7 +164,7 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	}
 
 	protected void setPrimaryLayerId0(String primaryLayerId) {
-		checkNotNull(primaryLayerId);
+		requireNonNull(primaryLayerId);
 
 		primaryLayer = new LayerLink(primaryLayerId);
 	}
@@ -220,7 +220,7 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	 */
 	@Override
 	public LayerManifest getLayerManifest(String id) {
-		checkNotNull(id);
+		requireNonNull(id);
 
 		return lookupLayer(id);
 	}

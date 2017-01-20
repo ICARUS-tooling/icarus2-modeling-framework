@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.members.layers;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.layer.ItemLayer;
@@ -46,7 +46,7 @@ public class AbstractLayer<M extends LayerManifest> extends AbstractPart<LayerGr
 	private final Item itemProxy;
 
 	public AbstractLayer(M manifest) {
-		checkNotNull(manifest);
+		requireNonNull(manifest);
 
 		this.manifest = manifest;
 
@@ -60,7 +60,7 @@ public class AbstractLayer<M extends LayerManifest> extends AbstractPart<LayerGr
 	 */
 	@Override
 	public void setBaseLayers(DataSet<ItemLayer> baseLayers) {
-		checkNotNull(baseLayers);
+		requireNonNull(baseLayers);
 
 //		checkNotSet("Base layers", this.baseLayers, baseLayers);
 

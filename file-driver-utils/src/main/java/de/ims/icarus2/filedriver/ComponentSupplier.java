@@ -18,15 +18,14 @@
 package de.ims.icarus2.filedriver;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.util.function.LongSupplier;
 import java.util.function.LongUnaryOperator;
 import java.util.function.ObjLongConsumer;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.filedriver.AbstractConverter.IndexSource;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
@@ -55,14 +54,14 @@ import de.ims.icarus2.util.annotations.OptionalMethod;
 public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 
 	/**
-	 * Returns the layer that {@code hostIndex} parameters passed
+	 * Returns the layer that {@code sourceIndex} parameters passed
 	 * to {@link #reset(long)} refer to. If this supplier provides
 	 * {@link Item#isTopLevel() top-level} items than this method
 	 * returns {@code null}.
 	 *
 	 * @return
 	 */
-	ItemLayer getHostLayer();
+	ItemLayer getSourceLayer();
 
 	/**
 	 * Returns the layer that items {@link #nextItem() created} by this
@@ -78,13 +77,13 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 	 * {@code hostIndex}.
 	 * <p>
 	 * This is an optional method and implementations are free to
-	 * ignore it.
+	 * ignore its intended effects.
 	 *
 	 * @param hostIndex
 	 * @throws InterruptedException
 	 */
 	@OptionalMethod
-	default void reset(long hostIndex) throws InterruptedException {
+	default void reset(long sourceIndex) throws InterruptedException {
 		// no-op
 	}
 
@@ -110,6 +109,8 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 
 	/**
 	 * Advances to the next index position.
+	 * Returns {@code true} iff there was a valid
+	 * "next" index position.
 	 *
 	 * @return
 	 */
@@ -136,6 +137,14 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 	 */
 	long currentId();
 
+	/**
+	 * Defines a new host container to be used when creating new
+	 * items.
+	 *
+	 * @param host
+	 */
+	void setHost(Container host);
+
 
 	static abstract class AbstractComponentSupplier implements ComponentSupplier {
 		private final ItemLayer hostLayer;
@@ -152,14 +161,14 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		/**
 		 * Creates a component supplier for nested elements.
 		 *
-		 * @param hostLayer
+		 * @param sourceLayer
 		 * @param componentLayer
 		 * @param componentIdManager
 		 */
 		protected AbstractComponentSupplier(Builder builder) {
-			checkNotNull(builder);
+			requireNonNull(builder);
 
-			hostLayer = builder.getHostLayer();
+			hostLayer = builder.getSourceLayer();
 			componentLayer = builder.getComponentLayer();
 			index2IdMapper = builder.getIndex2IdMapper();
 			memberFactory = builder.getMemberFactory();
@@ -168,7 +177,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		}
 
 		@Override
-		public ItemLayer getHostLayer() {
+		public ItemLayer getSourceLayer() {
 			return hostLayer;
 		}
 
@@ -193,6 +202,15 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 			return componentConsumer;
 		}
 
+		/**
+		 * @see de.ims.icarus2.filedriver.ComponentSupplier#setHost(de.ims.icarus2.model.api.members.container.Container)
+		 */
+		@Override
+		public void setHost(Container host) {
+			requireNonNull(host);
+			this.host = host;
+		}
+
 		@Override
 		public void close() {
 			item = null;
@@ -207,7 +225,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 				long id = currentId();
 				item = newComponent(host, id);
 
-				// Only if we actually got some callback to backend storage delegate item and index
+				// Only if we actually got some callback to back-end storage delegate item and index
 				if(componentConsumer!=null) {
 					componentConsumer.accept(item, currentIndex());
 				}
@@ -268,6 +286,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 	}
 
 	/**
+	 * Only returns a single index value specified via the {@link #reset(long)} method.
 	 *
 	 * @author Markus Gärtner
 	 *
@@ -282,8 +301,8 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		}
 
 		@Override
-		public void reset(long hostIndex) {
-			index = hostIndex;
+		public void reset(long sourceIndex) {
+			index = sourceIndex;
 			consumed = false;
 		}
 
@@ -322,7 +341,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 	}
 
 	/**
-	 * Implements an {@link IndexSource} that produces a continuous stream of index values
+	 * Implements an {@link ComponentSupplier} that produces a continuous stream of index values
 	 * starting from a specified {@code begin index}. If can have an optional {@code length}
 	 * defined which acts as a limit for arguments passed to the {@link #indexAt(long)} method.
 	 * If no length is defined at construction time this source will produce up to
@@ -347,12 +366,13 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.AbstractConverter.IndexSource#close()
+		 *
+		 * @see de.ims.icarus2.filedriver.ComponentSupplier.AbstractComponentSupplier#close()
 		 */
 		@Override
 		public void close() {
 			super.close();
-
+			eos = true;
 		}
 
 		@Override
@@ -378,6 +398,56 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 				eos = true;
 			}
 		}
+	}
+
+	public static class StreamedComponentSupplier extends AbstractComponentSupplier {
+
+		private long index = NO_INDEX;
+		private boolean eos = false;
+
+		private final LongSupplier supplier;
+
+		/**
+		 * @param builder
+		 */
+		public StreamedComponentSupplier(Builder builder) {
+			super(builder);
+
+			supplier = builder.getIndexSupplier();
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.ComponentSupplier#available()
+		 */
+		@Override
+		public long available() {
+			return NO_INDEX;
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.ComponentSupplier#currentIndex()
+		 */
+		@Override
+		public long currentIndex() {
+			return index;
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.ComponentSupplier.AbstractComponentSupplier#tryAdvance()
+		 */
+		@Override
+		protected void tryAdvance() {
+			if(eos) {
+				return;
+			}
+
+			index = supplier.getAsLong();
+
+			if(index==NO_INDEX) {
+				eos = true;
+			}
+		}
+
 	}
 
 	public static class MappedComponentSupplier extends AbstractComponentSupplier {
@@ -433,20 +503,20 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		}
 
 		/**
-		 * @throws InterruptedException
-		 * @see de.ims.icarus2.filedriver.AbstractConverter.IndexSource#reset(long)
+		 *
+		 * @see de.ims.icarus2.filedriver.ComponentSupplier#reset(long)
 		 */
 		@Override
-		public void reset(long hostIndex) throws InterruptedException {
+		public void reset(long sourceIndex) throws InterruptedException {
 			try {
 				mappingReader.begin();
 
 				if(useSpanMapping) {
-					spanBegin = mappingReader.getBeginIndex(hostIndex, RequestSettings.emptySettings);
-					spanEnd = mappingReader.getEndIndex(hostIndex, RequestSettings.emptySettings);
+					spanBegin = mappingReader.getBeginIndex(sourceIndex, RequestSettings.emptySettings);
+					spanEnd = mappingReader.getEndIndex(sourceIndex, RequestSettings.emptySettings);
 				} else {
 					buffer.clear();
-					mappingReader.lookup(hostIndex, buffer, RequestSettings.emptySettings);
+					mappingReader.lookup(sourceIndex, buffer, RequestSettings.emptySettings);
 				}
 
 				cursor = NO_INDEX;
@@ -457,7 +527,8 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.AbstractConverter.IndexSource#close()
+		 *
+		 * @see de.ims.icarus2.filedriver.ComponentSupplier.AbstractComponentSupplier#close()
 		 */
 		@Override
 		public void close() {
@@ -529,9 +600,11 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		private LayerMemberFactory memberFactory;
 
 		/**
-		 * Layer of the host container
+		 * Layer the {@code sourceIndex} parameter for the
+		 * {@link ComponentSupplier#reset(long) reset} method
+		 * should refer to.
 		 */
-		private ItemLayer hostLayer;
+		private ItemLayer sourceLayer;
 
 		/**
 		 * Layer of components returned by the supplier
@@ -610,8 +683,11 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		}
 
 		public Builder componentType(MemberType componentType) {
-			checkNotNull(componentType);
+			requireNonNull(componentType);
 			checkState(this.componentType==null);
+			checkArgument("Component type must be one of ITEM, CONTAINER or STRUCTURE",
+					componentType==MemberType.ITEM || componentType==MemberType.CONTAINER
+					|| componentType==MemberType.STRUCTURE);
 
 			this.componentType = componentType;
 
@@ -623,7 +699,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		}
 
 		public Builder memberFactory(LayerMemberFactory memberFactory) {
-			checkNotNull(memberFactory);
+			requireNonNull(memberFactory);
 			checkState(this.memberFactory==null);
 
 			this.memberFactory = memberFactory;
@@ -631,15 +707,15 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 			return thisAsCast();
 		}
 
-		public ItemLayer getHostLayer() {
-			return hostLayer;
+		public ItemLayer getSourceLayer() {
+			return sourceLayer;
 		}
 
-		public Builder hostLayer(ItemLayer hostLayer) {
-			checkNotNull(hostLayer);
-			checkState(this.hostLayer==null);
+		public Builder sourceLayer(ItemLayer sourceLayer) {
+			requireNonNull(sourceLayer);
+			checkState(this.sourceLayer==null);
 
-			this.hostLayer = hostLayer;
+			this.sourceLayer = sourceLayer;
 
 			return thisAsCast();
 		}
@@ -649,7 +725,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		}
 
 		public Builder componentLayer(ItemLayer componentLayer) {
-			checkNotNull(componentLayer);
+			requireNonNull(componentLayer);
 			checkState(this.componentLayer==null);
 
 			this.componentLayer = componentLayer;
@@ -662,7 +738,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		}
 
 		public Builder indexSupplier(LongSupplier indexSupplier) {
-			checkNotNull(indexSupplier);
+			requireNonNull(indexSupplier);
 			checkState(this.indexSupplier==null);
 
 			this.indexSupplier = indexSupplier;
@@ -675,7 +751,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		}
 
 		public Builder index2IdMapper(LongUnaryOperator index2IdMapper) {
-			checkNotNull(index2IdMapper);
+			requireNonNull(index2IdMapper);
 			checkState(this.index2IdMapper==null);
 
 			this.index2IdMapper = index2IdMapper;
@@ -688,7 +764,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		}
 
 		public Builder mapping(Mapping mapping) {
-			checkNotNull(mapping);
+			requireNonNull(mapping);
 			checkState(this.mapping==null);
 
 			this.mapping = mapping;
@@ -701,7 +777,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		}
 
 		public Builder componentConsumer(ObjLongConsumer<Item> componentConsumer) {
-			checkNotNull(componentConsumer);
+			requireNonNull(componentConsumer);
 			checkState(this.componentConsumer==null);
 
 			this.componentConsumer = componentConsumer;
@@ -719,13 +795,13 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 			checkState("Missing component layer", componentLayer!=null);
 			checkState("Missing member factory", memberFactory!=null);
 			if(mapping!=null) {
-				checkState("Missing host layer (required since mapping was defined)", hostLayer!=null);
+				checkState("Missing host layer (required since mapping was defined)", sourceLayer!=null);
 			}
 			if(lastIndex!=null) {
 				checkState("Lower bound 'firstIndex' required when upper bound 'lastIndex' is defined ", firstIndex!=null);
 			}
 			checkState("Must specify at least one method for obtaining index values (mapping, stream or span)",
-					(mapping!=null || indexSupplier!=null || firstIndex!=null) || hostLayer==null);
+					(mapping!=null || indexSupplier!=null || firstIndex!=null) || sourceLayer==null);
 		}
 
 		/**
@@ -738,12 +814,13 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 			} else if(firstIndex!=null) {
 				return new ContinuousComponentSupplier(this);
 			} else if(indexSupplier!=null) {
-				throw new ModelException(GlobalErrorCode.NOT_IMPLEMENTED, "TODO");
-			} else if(hostLayer==null) {
+				return new StreamedComponentSupplier(this);
+			} else if(sourceLayer==null) {
 				return new RootComponentSupplier(this);
 			}
 
-			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Insufficient content in builder to construct component supplier");
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+					"Insufficient content in builder to construct component supplier");
 		}
 
 	}

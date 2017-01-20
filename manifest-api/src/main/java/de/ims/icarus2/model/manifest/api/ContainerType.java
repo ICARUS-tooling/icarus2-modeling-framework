@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -111,7 +111,7 @@ public enum ContainerType implements StringResource {
 	 * is {@code null}
 	 */
 	public boolean supportsOperation(EditOperation operation) {
-		checkNotNull(operation);
+		requireNonNull(operation);
 
 		return operations.contains(operation);
 	}

@@ -19,8 +19,8 @@
 package de.ims.icarus2.model.standard.view;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 import java.util.Collections;
@@ -77,7 +77,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 	protected final Lazy<CorpusModel> model;
 
 	protected DefaultCorpusView(CorpusViewBuilder builder) {
-		checkNotNull(builder);
+		requireNonNull(builder);
 
 		scope = builder.getScope();
 		accessMode = builder.getAccessMode();
@@ -101,7 +101,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 	}
 
 	public PageControl createPageControl() {
-		PageControl pageControl = new DefaultPageControl.PageControlBuilder()
+		PageControl pageControl = new DefaultPageControl.Builder()
 			.indices(indices)
 			.itemLayerManager(itemLayerManager)
 			.pageSize(pageSize)
@@ -113,7 +113,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 	}
 
 	protected CorpusModel createModel() {
-		CorpusModel model = new DefaultCorpusModel.CorpusModelBuilder()
+		CorpusModel model = new DefaultCorpusModel.Builder()
 			.accessMode(accessMode)
 			.itemLayerManager(itemLayerManager)
 			.build();
@@ -308,7 +308,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 		private int pageSize;
 
 		public CorpusViewBuilder scope(Scope scope) {
-			checkNotNull(scope);
+			requireNonNull(scope);
 			checkState(this.scope==null);
 
 			this.scope = scope;
@@ -321,7 +321,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 		}
 
 		public CorpusViewBuilder accessMode(CorpusAccessMode accessMode) {
-			checkNotNull(accessMode);
+			requireNonNull(accessMode);
 			checkState(this.accessMode==null);
 
 			this.accessMode = accessMode;
@@ -334,7 +334,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 		}
 
 		public CorpusViewBuilder indices(IndexSet[] indices) {
-			checkNotNull(indices);
+			requireNonNull(indices);
 			checkState(this.indices==null);
 
 			this.indices = indices;
@@ -347,7 +347,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 		}
 
 		public CorpusViewBuilder itemLayerManager(ItemLayerManager itemLayerManager) {
-			checkNotNull(itemLayerManager);
+			requireNonNull(itemLayerManager);
 			checkState(this.itemLayerManager==null);
 
 			this.itemLayerManager = itemLayerManager;

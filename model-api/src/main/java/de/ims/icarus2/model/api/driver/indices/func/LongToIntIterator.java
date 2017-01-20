@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.api.driver.indices.func;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.PrimitiveIterator.OfInt;
 
@@ -33,7 +33,7 @@ public class LongToIntIterator implements OfInt {
 	private final OfLong source;
 
 	public LongToIntIterator(OfLong source) {
-		checkNotNull(source);
+		requireNonNull(source);
 
 		this.source = source;
 	}

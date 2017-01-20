@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.util.eval;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -48,7 +48,7 @@ public abstract class ExpressionFactory extends Environment {
 	 * @param name The unique name used for this type of factory
 	 */
 	protected ExpressionFactory(String name) {
-		checkNotNull(name);
+		requireNonNull(name);
 
 		this.name = name;
 	}
@@ -58,9 +58,9 @@ public abstract class ExpressionFactory extends Environment {
 	}
 
 	public VariableDescriptor addVariable(String id, Class<?> namespace, Mode mode, boolean nullable) {
-		checkNotNull(id);
-		checkNotNull(namespace);
-		checkNotNull(mode);
+		requireNonNull(id);
+		requireNonNull(namespace);
+		requireNonNull(mode);
 
 		if(variables.containsKey(id))
 			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Duplicate variable id: "+id);
@@ -123,7 +123,7 @@ public abstract class ExpressionFactory extends Environment {
 	 * @param code the code to set
 	 */
 	public void setCode(String code) {
-		checkNotNull(code);
+		requireNonNull(code);
 
 		this.code = code;
 	}
@@ -132,7 +132,7 @@ public abstract class ExpressionFactory extends Environment {
 	 * @param environment the environment to set
 	 */
 	public void setEnvironment(Environment environment) {
-		checkNotNull(environment);
+		requireNonNull(environment);
 
 		this.environment = environment;
 	}
@@ -148,7 +148,7 @@ public abstract class ExpressionFactory extends Environment {
 	 * @param returnType the returnType to set
 	 */
 	public void setReturnType(Class<?> returnType) {
-		checkNotNull(returnType);
+		requireNonNull(returnType);
 
 		this.returnType = returnType;
 	}

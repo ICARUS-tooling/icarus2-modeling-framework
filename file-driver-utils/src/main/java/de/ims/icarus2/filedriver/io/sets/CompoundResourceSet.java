@@ -18,37 +18,38 @@
 package de.ims.icarus2.filedriver.io.sets;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+
+import de.ims.icarus2.model.api.io.resources.IOResource;
 
 /**
  * @author Markus Gärtner
  *
  */
-public final class CompoundFileSet implements FileSet {
+public final class CompoundResourceSet implements ResourceSet {
 
-	private final FileSet[] fileSets;
+	private final ResourceSet[] resourceSets;
 	private final int[] counts;
 	private final int count;
 
-	public CompoundFileSet(List<FileSet> fileSets) {
-		this(fileSets.toArray(new FileSet[0]));
+	public CompoundResourceSet(List<ResourceSet> resourceSets) {
+		this(resourceSets.toArray(new ResourceSet[0]));
 	}
 
-	public CompoundFileSet(FileSet[] fileSets) {
-		checkNotNull(fileSets);
-		checkArgument(fileSets.length>0);
+	public CompoundResourceSet(ResourceSet[] fileSets) {
+		requireNonNull(fileSets);
+		checkArgument("File set empty", fileSets.length>0);
 
-		this.fileSets = fileSets;
+		this.resourceSets = fileSets;
 		counts = new int[fileSets.length];
 
 		int count = 0;
 		for(int i=0; i<fileSets.length; i++) {
 			counts[i] = count;
-			count += fileSets[i].getFileCount();
+			count += fileSets[i].getResourceCount();
 		}
 		this.count = count;
 	}
@@ -56,7 +57,7 @@ public final class CompoundFileSet implements FileSet {
 
 	@Override
 	public String toString() {
-		return "CompoundFileSet["+getFileCount()+" in "+fileSets.length+" sub-sets]";
+		return "CompoundResourceSet["+getResourceCount()+" in "+resourceSets.length+" sub-sets]";
 	}
 
 	private int fileSetIndex(int fileIndex) {
@@ -69,21 +70,21 @@ public final class CompoundFileSet implements FileSet {
 	}
 
 	/**
-	 * @see de.ims.icarus2.filedriver.io.sets.FileSet#getFileCount()
+	 * @see de.ims.icarus2.filedriver.io.sets.ResourceSet#getResourceCount()
 	 */
 	@Override
-	public int getFileCount() {
+	public int getResourceCount() {
 		return count;
 	}
 
 	/**
-	 * @see de.ims.icarus2.filedriver.io.sets.FileSet#getFileAt(int)
+	 * @see de.ims.icarus2.filedriver.io.sets.ResourceSet#getResourceAt(int)
 	 */
 	@Override
-	public Path getFileAt(int fileIndex) {
-		int localIndex = fileSetIndex(fileIndex);
-		fileIndex -= counts[localIndex];
+	public IOResource getResourceAt(int resourceIndex) {
+		int localIndex = fileSetIndex(resourceIndex);
+		resourceIndex -= counts[localIndex];
 
-		return fileSets[localIndex].getFileAt(fileIndex);
+		return resourceSets[localIndex].getResourceAt(resourceIndex);
 	}
 }

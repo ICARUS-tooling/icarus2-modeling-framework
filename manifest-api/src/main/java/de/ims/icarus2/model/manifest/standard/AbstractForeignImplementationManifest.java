@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.manifest.api.ForeignImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
@@ -79,7 +79,7 @@ public abstract class AbstractForeignImplementationManifest<M extends MemberMani
 
 	protected void setImplementationManifest0(
 			ImplementationManifest implementationManifest) {
-		checkNotNull(implementationManifest);
+		requireNonNull(implementationManifest);
 
 		this.implementationManifest = implementationManifest;
 	}

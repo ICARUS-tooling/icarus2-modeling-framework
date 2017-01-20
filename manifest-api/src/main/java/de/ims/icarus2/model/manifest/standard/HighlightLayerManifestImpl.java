@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.EnumSet;
 import java.util.function.Consumer;
@@ -81,7 +81,7 @@ public class HighlightLayerManifestImpl extends AbstractLayerManifest<HighlightL
 	}
 
 	protected void setHighlightFlag0(HighlightFlag flag, boolean active) {
-		checkNotNull(flag);
+		requireNonNull(flag);
 
 		if(active) {
 			highlightFlags.add(flag);
@@ -141,7 +141,7 @@ public class HighlightLayerManifestImpl extends AbstractLayerManifest<HighlightL
 
 	protected void setPrimaryLayerId0(String primaryLayerId) {
 		checkAllowsTargetLayer();
-		checkNotNull(primaryLayerId);
+		requireNonNull(primaryLayerId);
 
 		primaryLayer = new GlobalLayerLink(primaryLayerId);
 	}

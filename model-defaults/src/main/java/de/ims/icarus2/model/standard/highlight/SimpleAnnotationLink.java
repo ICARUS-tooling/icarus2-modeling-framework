@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.highlight;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.api.highlight.HighlightInfo.AnnotationLink;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 
@@ -35,8 +35,8 @@ public class SimpleAnnotationLink implements AnnotationLink {
 	private final String key;
 
 	public SimpleAnnotationLink(AnnotationLayer layer, String key) {
-		checkNotNull(layer);
-		checkNotNull(key);
+		requireNonNull(layer);
+		requireNonNull(key);
 
 		this.layer = layer;
 		this.key = key;

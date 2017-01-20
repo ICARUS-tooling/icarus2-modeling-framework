@@ -20,8 +20,8 @@ package de.ims.icarus2.model.standard.members.structure.builder;
 
 import static de.ims.icarus2.model.util.ModelUtils.isVirtual;
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -71,7 +71,7 @@ import de.ims.icarus2.util.collections.set.SingletonSet;
 public class StructureBuilder implements ModelConstants {
 
 	public static StructureBuilder newBuilder(StructureManifest manifest) {
-		checkNotNull(manifest);
+		requireNonNull(manifest);
 
 		StructureBuilder builder = new StructureBuilder(manifest);
 
@@ -272,7 +272,7 @@ public class StructureBuilder implements ModelConstants {
 
 	public StructureBuilder sortingNodes(SortType sortType) {
 		checkState(nodeSortType==null);
-		checkNotNull(sortType);
+		requireNonNull(sortType);
 
 		nodeSortType = sortType;
 
@@ -285,7 +285,7 @@ public class StructureBuilder implements ModelConstants {
 
 	public StructureBuilder customNodeSorter(Comparator<? super Item> sorter) {
 		checkState(nodeSorter==null);
-		checkNotNull(sorter);
+		requireNonNull(sorter);
 
 		nodeSorter = sorter;
 
@@ -298,7 +298,7 @@ public class StructureBuilder implements ModelConstants {
 
 	public StructureBuilder sortingEdges(SortType sortType) {
 		checkState(edgeSortType==null);
-		checkNotNull(sortType);
+		requireNonNull(sortType);
 
 		edgeSortType = sortType;
 
@@ -311,7 +311,7 @@ public class StructureBuilder implements ModelConstants {
 
 	public StructureBuilder customEdgeSorter(Comparator<? super Edge> sorter) {
 		checkState(edgeSorter==null);
-		checkNotNull(sorter);
+		requireNonNull(sorter);
 
 		edgeSorter = sorter;
 
@@ -324,7 +324,7 @@ public class StructureBuilder implements ModelConstants {
 
 	public StructureBuilder memberFactory(LayerMemberFactory factory) {
 		checkState(memberFactory==null);
-		checkNotNull(factory);
+		requireNonNull(factory);
 
 		memberFactory = factory;
 
@@ -352,14 +352,14 @@ public class StructureBuilder implements ModelConstants {
 	public <R extends RootItem<?>> void setRoot(R item) {
 		checkState(itemStorage == null);
 		checkState(root == null);
-		checkNotNull(item);
+		requireNonNull(item);
 
 		root = item;
 	}
 
 	public void addNode(Item item) {
 		checkState(itemStorage == null);
-		checkNotNull(item);
+		requireNonNull(item);
 
 		augmented |= isVirtual(item);
 
@@ -368,7 +368,7 @@ public class StructureBuilder implements ModelConstants {
 
 	public <I extends Item> void addNodes(I[] items) {
 		checkState(itemStorage == null);
-		checkNotNull(items);
+		requireNonNull(items);
 
 		if(!augmented) {
 			for(int i=0; i<items.length && !augmented; i++) {
@@ -381,7 +381,7 @@ public class StructureBuilder implements ModelConstants {
 
 	public <I extends Item> void addNodes(Collection<I> items) {
 		checkState(itemStorage == null);
-		checkNotNull(items);
+		requireNonNull(items);
 
 		if(!augmented) {
 			for(Iterator<I> it = items.iterator(); it.hasNext() && !augmented;) {
@@ -394,7 +394,7 @@ public class StructureBuilder implements ModelConstants {
 
 	public void addNodes(Container container) {
 		checkState(itemStorage == null);
-		checkNotNull(container);
+		requireNonNull(container);
 
 		int size = IcarusUtils.ensureIntegerValueRange(container.getItemCount());
 		List<Item> nodes = nodes();
@@ -409,35 +409,35 @@ public class StructureBuilder implements ModelConstants {
 
 	public void addEdge(Edge edge) {
 		checkState(edgeStorage == null);
-		checkNotNull(edge);
+		requireNonNull(edge);
 
 		edges().add(edge);
 	}
 
 	public <E extends Edge> void addEdges(E[] edges) {
 		checkState(edgeStorage == null);
-		checkNotNull(edges);
+		requireNonNull(edges);
 
 		CollectionUtils.feedItems(edges(), edges);
 	}
 
 	public <E extends Edge> void addEdges(E[] edges, int offset, int length) {
 		checkState(edgeStorage == null);
-		checkNotNull(edges);
+		requireNonNull(edges);
 
 		CollectionUtils.feedItems(edges(), edges, offset, length);
 	}
 
 	public <E extends Edge> void addEdges(Collection<E> edges) {
 		checkState(edgeStorage == null);
-		checkNotNull(edges);
+		requireNonNull(edges);
 
 		edges().addAll(edges);
 	}
 
 	public void addEdges(Structure structure) {
 		checkState(itemStorage == null);
-		checkNotNull(structure);
+		requireNonNull(structure);
 
 		int size = IcarusUtils.ensureIntegerValueRange(structure.getEdgeCount());
 		List<Edge> nodes = edges();
@@ -449,28 +449,28 @@ public class StructureBuilder implements ModelConstants {
 
 	public void setBaseContainers(DataSet<Container> baseContainers) {
 		checkState(this.baseContainers == null);
-		checkNotNull(baseContainers);
+		requireNonNull(baseContainers);
 
 		this.baseContainers = baseContainers;
 	}
 
 	public void setBaseContainers(Container[] baseContainers) {
 		checkState(this.baseContainers == null);
-		checkNotNull(baseContainers);
+		requireNonNull(baseContainers);
 
 		this.baseContainers = DataSets.createDataSet(baseContainers);
 	}
 
 	public void setBaseContainer(Container baseContainer) {
 		checkState(this.baseContainers == null);
-		checkNotNull(baseContainer);
+		requireNonNull(baseContainer);
 
 		this.baseContainers = new SingletonSet<>(baseContainer);
 	}
 
 	public void setBoundaryContainer(Container boundaryContainer) {
 		checkState(this.boundaryContainer == null);
-		checkNotNull(boundaryContainer);
+		requireNonNull(boundaryContainer);
 
 		this.boundaryContainer = boundaryContainer;
 	}
@@ -506,7 +506,7 @@ public class StructureBuilder implements ModelConstants {
 		checkState(nodes().isEmpty());
 		checkState(root!=null);
 		checkState(this.itemStorage == null);
-		checkNotNull(itemStorage);
+		requireNonNull(itemStorage);
 
 		this.itemStorage = itemStorage;
 	}
@@ -520,7 +520,7 @@ public class StructureBuilder implements ModelConstants {
 	public void setEdges(EdgeStorage edgeStorage) {
 		checkState(edges().isEmpty());
 		checkState(this.edgeStorage == null);
-		checkNotNull(edgeStorage);
+		requireNonNull(edgeStorage);
 
 		this.edgeStorage = edgeStorage;
 	}
@@ -529,19 +529,19 @@ public class StructureBuilder implements ModelConstants {
 	//    CREATION METHODS
 	//**********************************
 
-	public Item newNode() {
-		return getMemberFactory().newItem(currentStructure());
+	public Item newNode(long id) {
+		return getMemberFactory().newItem(currentStructure(), id);
 	}
 
-	public Edge newEdge(Item source, Item target) {
-		Edge edge = getMemberFactory().newEdge(currentStructure());
+	public Edge newEdge(long id, Item source, Item target) {
+		Edge edge = getMemberFactory().newEdge(currentStructure(), id);
 		edge.setSource(source);
 		edge.setTarget(target);
 		return edge;
 	}
 
-	public Edge newEdge() {
-		return getMemberFactory().newEdge(currentStructure());
+	public Edge newEdge(long id) {
+		return getMemberFactory().newEdge(currentStructure(), id);
 	}
 
 	//**********************************

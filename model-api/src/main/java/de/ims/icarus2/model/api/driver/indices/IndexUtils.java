@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.api.driver.indices;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -103,7 +103,7 @@ public class IndexUtils implements ModelConstants {
 	}
 
 	public static void checkNonEmpty(IndexSet[] indices) {
-		checkNotNull(indices);
+		requireNonNull(indices);
 		if(indices.length==0)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Empty indices array"); //$NON-NLS-1$
 		if(count(indices)==0)
@@ -220,7 +220,7 @@ public class IndexUtils implements ModelConstants {
 	}
 
 	public static <I extends Item> IndexSet toIndices(Collection<I> items, boolean forceSorted) {
-		checkNotNull(items);
+		requireNonNull(items);
 		checkArgument(!items.isEmpty());
 
 		IndexBuffer result = new IndexBuffer(items.size());
@@ -445,9 +445,9 @@ public class IndexUtils implements ModelConstants {
 	}
 
 	public static long forEachPair(IndexSet setA, IndexSet setB, LongBinaryOperator action) {
-		checkNotNull(setA);
-		checkNotNull(setB);
-		checkNotNull(action);
+		requireNonNull(setA);
+		requireNonNull(setB);
+		requireNonNull(action);
 
 		int sizeA = setA.size();
 		int sizeB = setB.size();
@@ -465,9 +465,9 @@ public class IndexUtils implements ModelConstants {
 	}
 
 	public static long forEachPair(IndexSet[] indicesA, IndexSet[] indicesB, LongBinaryOperator action) {
-		checkNotNull(indicesA);
-		checkNotNull(indicesB);
-		checkNotNull(action);
+		requireNonNull(indicesA);
+		requireNonNull(indicesB);
+		requireNonNull(action);
 
 		long indicesACount = count(indicesA);
 		long indicesBCount = count(indicesB);
@@ -507,8 +507,8 @@ public class IndexUtils implements ModelConstants {
 	}
 
 	public static void forEachIndex(IndexSet[] indices, LongConsumer action) {
-		checkNotNull(indices);
-		checkNotNull(action);
+		requireNonNull(indices);
+		requireNonNull(action);
 
 		for(IndexSet set : indices) {
 			set.forEachIndex(action);
@@ -516,8 +516,8 @@ public class IndexUtils implements ModelConstants {
 	}
 
 	public static void forEachIndex(IndexSet[] indices, IntConsumer action) {
-		checkNotNull(indices);
-		checkNotNull(action);
+		requireNonNull(indices);
+		requireNonNull(action);
 
 		for(IndexSet set : indices) {
 			set.forEachIndex(action);
@@ -682,7 +682,7 @@ public class IndexUtils implements ModelConstants {
 		public IndexSetIntSpliterator(IndexSet source, int pos, int fence) {
 			super(pos, fence);
 
-			checkNotNull(source);
+			requireNonNull(source);
 
 			this.source = source;
 		}
@@ -736,7 +736,7 @@ public class IndexUtils implements ModelConstants {
 		public IndexSetLongSpliterator(IndexSet source, int pos, int fence) {
 			super(pos, fence);
 
-			checkNotNull(source);
+			requireNonNull(source);
 
 			this.source = source;
 		}
@@ -777,7 +777,7 @@ public class IndexUtils implements ModelConstants {
 	}
 
 	public static OfLong asIterator(IndexSet[] indices) {
-		checkNotNull(indices);
+		requireNonNull(indices);
 
 		if(indices.length==1) {
 			return new OfLongImpl(indices[0]);
@@ -826,7 +826,7 @@ public class IndexUtils implements ModelConstants {
 		 * @param limit end of region to be iterated over, exclusive
 		 */
 		public OfLongImpl(IndexSet source, int start, int limit) {
-			checkNotNull(source);
+			requireNonNull(source);
 			checkArgument(start>=0);
 
 			this.source = source;
@@ -876,7 +876,7 @@ public class IndexUtils implements ModelConstants {
 		private OfLong iterator;
 
 		public CompositeOfLongImpl(IndexSet[] indices) {
-			checkNotNull(indices);
+			requireNonNull(indices);
 			checkArgument(indices.length>0);
 
 			this.indices = indices;
@@ -886,7 +886,7 @@ public class IndexUtils implements ModelConstants {
 		}
 
 		public CompositeOfLongImpl(IndexSet[] indices, int fromIndex, int toIndex) {
-			checkNotNull(indices);
+			requireNonNull(indices);
 			checkArgument(indices.length>0);
 
 			this.indices = indices;

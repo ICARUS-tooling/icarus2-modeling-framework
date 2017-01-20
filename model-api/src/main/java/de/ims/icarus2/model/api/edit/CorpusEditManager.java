@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.api.edit;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -52,7 +52,7 @@ public class CorpusEditManager extends WeakEventSource {
 	private final List<CorpusUndoListener> undoListeners = new CopyOnWriteArrayList<>();
 
 	public CorpusEditManager(Corpus corpus) {
-		checkNotNull(corpus);
+		requireNonNull(corpus);
 
 		this.corpus = corpus;
 
@@ -68,7 +68,7 @@ public class CorpusEditManager extends WeakEventSource {
 	}
 
 	public void beginUpdate(String nameKey) {
-		checkNotNull(nameKey);
+		requireNonNull(nameKey);
 		if(hasActiveUpdate())
 			throw new IllegalStateException("Cannot start named edit '"+nameKey+"' while another edit is already in progress."); //$NON-NLS-1$ //$NON-NLS-2$
 

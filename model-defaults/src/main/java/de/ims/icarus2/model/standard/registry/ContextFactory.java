@@ -19,8 +19,8 @@
 package de.ims.icarus2.model.standard.registry;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +65,7 @@ public class ContextFactory {
 	private Producers producers = new Producers();
 
 	public synchronized ContextFactory implementationLoaderSupplier(Supplier<ImplementationLoader<?>> implementationLoaderSupplier) {
-		checkNotNull(implementationLoaderSupplier);
+		requireNonNull(implementationLoaderSupplier);
 		checkState(producers.implementationLoaderSupplier==null);
 
 		producers.implementationLoaderSupplier = implementationLoaderSupplier;
@@ -74,7 +74,7 @@ public class ContextFactory {
 	}
 
 	public synchronized ContextFactory setMemberFactory(CorpusMemberFactory memberFactory) {
-		checkNotNull(memberFactory);
+		requireNonNull(memberFactory);
 		checkState(producers.memberFactory==null);
 
 		producers.memberFactory = memberFactory;
@@ -84,7 +84,7 @@ public class ContextFactory {
 
 	public synchronized ContextFactory annotationLayerProducer(
 			Function<AnnotationLayerManifest, AnnotationLayer> annotationLayerProducer) {
-		checkNotNull(annotationLayerProducer);
+		requireNonNull(annotationLayerProducer);
 		checkState(producers.annotationLayerProducer==null);
 
 		producers.annotationLayerProducer = annotationLayerProducer;
@@ -94,7 +94,7 @@ public class ContextFactory {
 
 	public synchronized ContextFactory itemLayerProducer(
 			Function<ItemLayerManifest, ItemLayer> itemLayerProducer) {
-		checkNotNull(itemLayerProducer);
+		requireNonNull(itemLayerProducer);
 		checkState(producers.itemLayerProducer==null);
 
 		producers.itemLayerProducer = itemLayerProducer;
@@ -104,7 +104,7 @@ public class ContextFactory {
 
 	public synchronized ContextFactory structureLayerProducer(
 			Function<StructureLayerManifest, StructureLayer> structureLayerProducer) {
-		checkNotNull(structureLayerProducer);
+		requireNonNull(structureLayerProducer);
 		checkState(producers.structureLayerProducer==null);
 
 		producers.structureLayerProducer = structureLayerProducer;
@@ -114,7 +114,7 @@ public class ContextFactory {
 
 	public synchronized ContextFactory fragmentLayerProducer(
 			Function<FragmentLayerManifest, FragmentLayer> fragmentLayerProducer) {
-		checkNotNull(fragmentLayerProducer);
+		requireNonNull(fragmentLayerProducer);
 		checkState(producers.fragmentLayerProducer==null);
 
 		producers.fragmentLayerProducer = fragmentLayerProducer;
@@ -124,7 +124,7 @@ public class ContextFactory {
 
 	public synchronized ContextFactory layerGroupProducer(
 			Function<LayerGroupManifest, LayerGroup> layerGroupProducer) {
-		checkNotNull(layerGroupProducer);
+		requireNonNull(layerGroupProducer);
 		checkState(producers.layerGroupProducer==null);
 
 		producers.layerGroupProducer = layerGroupProducer;
@@ -331,9 +331,9 @@ public class ContextFactory {
 		private final Producers producers;
 
 		public LayerLinker(Corpus corpus, Layer layer, Producers producers) {
-			checkNotNull(corpus);
-			checkNotNull(layer);
-			checkNotNull(producers);
+			requireNonNull(corpus);
+			requireNonNull(layer);
+			requireNonNull(producers);
 
 			this.layer = layer;
 			this.corpus = corpus;

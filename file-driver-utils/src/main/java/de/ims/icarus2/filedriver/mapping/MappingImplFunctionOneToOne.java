@@ -17,8 +17,8 @@
  */
 package de.ims.icarus2.filedriver.mapping;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.util.function.LongUnaryOperator;
 import java.util.function.UnaryOperator;
@@ -248,7 +248,7 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 		}
 
 		public Builder unaryFunction(LongUnaryOperator unaryFunction) {
-			checkNotNull(unaryFunction);
+			requireNonNull(unaryFunction);
 			checkState(this.unaryFunction==null);
 
 			this.unaryFunction = unaryFunction;
@@ -261,7 +261,7 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 		}
 
 		public Builder batchFunction(UnaryOperator<IndexSet> batchFunction) {
-			checkNotNull(batchFunction);
+			requireNonNull(batchFunction);
 			checkState(this.batchFunction==null);
 
 			this.batchFunction = batchFunction;

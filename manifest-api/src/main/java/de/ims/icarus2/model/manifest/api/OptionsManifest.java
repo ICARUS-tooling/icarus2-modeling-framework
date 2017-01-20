@@ -83,7 +83,7 @@ public interface OptionsManifest extends Manifest, Embedded {
 	default boolean hasLocalGroupIdentifiers() {
 		MutableInteger counter = new MutableInteger();
 
-		forEachLocalGroupIdentifier(i -> counter.increment());
+		forEachLocalGroupIdentifier(i -> counter.incrementAndGet());
 
 		return counter.intValue()>0;
 	}
@@ -165,7 +165,7 @@ public interface OptionsManifest extends Manifest, Embedded {
 	default boolean hasLocalOptions() {
 		MutableInteger counter = new MutableInteger();
 
-		forEachLocalOption(o -> {counter.increment();});
+		forEachLocalOption(o -> {counter.incrementAndGet();});
 
 		return counter.intValue()>0;
 	}

@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.PrimitiveIterator.OfLong;
 import java.util.function.IntBinaryOperator;
@@ -40,7 +40,7 @@ public class SynchronizedIndexSet implements IndexSet {
 	private final IndexSet source;
 
 	public SynchronizedIndexSet(IndexSet source) {
-		checkNotNull(source);
+		requireNonNull(source);
 		this.source = source;
 	}
 

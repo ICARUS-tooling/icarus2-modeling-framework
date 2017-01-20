@@ -25,7 +25,7 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 import java.util.Set;
 
@@ -132,6 +132,11 @@ public abstract class ValueVerifier {
 			return error;
 		}
 
+		/**
+		 *
+		 * @param value
+		 * @throws ManifestException
+		 */
 		public abstract void throwException(String value);
 	}
 
@@ -181,7 +186,7 @@ public abstract class ValueVerifier {
 			upper = valueRange==null ? null : (Comparable)valueRange.getUpperBound();
 
 			if(valueSet!=null) {
-				allowedValues = new ObjectOpenHashSet<>(valueSet.valueCount());
+				allowedValues = new ReferenceOpenHashSet<>(valueSet.valueCount());
 				valueSet.forEachValue(allowedValues::add);
 			} else {
 				allowedValues = null;
@@ -242,7 +247,7 @@ public abstract class ValueVerifier {
 
 			if(valueSet!=null) {
 				allowedValues = new IntOpenHashSet(valueSet.valueCount());
-				valueSet.forEachValue(v -> {allowedValues.add(((Number)v).intValue());});
+				valueSet.forEachValue(v -> allowedValues.add(((Number)v).intValue()));
 			} else {
 				allowedValues = null;
 			}
@@ -308,7 +313,7 @@ public abstract class ValueVerifier {
 
 			if(valueSet!=null) {
 				allowedValues = new LongOpenHashSet(valueSet.valueCount());
-				valueSet.forEachValue(v -> {allowedValues.add(((Number)v).longValue());});
+				valueSet.forEachValue(v -> allowedValues.add(((Number)v).longValue()));
 			} else {
 				allowedValues = null;
 			}
@@ -374,7 +379,7 @@ public abstract class ValueVerifier {
 
 			if(valueSet!=null) {
 				allowedValues = new FloatOpenHashSet(valueSet.valueCount());
-				valueSet.forEachValue(v -> {allowedValues.add(((Number)v).floatValue());});
+				valueSet.forEachValue(v -> allowedValues.add(((Number)v).floatValue()));
 			} else {
 				allowedValues = null;
 			}
@@ -441,7 +446,7 @@ public abstract class ValueVerifier {
 
 			if(valueSet!=null) {
 				allowedValues = new DoubleOpenHashSet(valueSet.valueCount());
-				valueSet.forEachValue(v -> {allowedValues.add(((Number)v).doubleValue());});
+				valueSet.forEachValue(v -> allowedValues.add(((Number)v).doubleValue()));
 			} else {
 				allowedValues = null;
 			}

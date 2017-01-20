@@ -184,8 +184,9 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	default Scope createCompleteScope() {
 		ScopeBuilder builder = new ScopeBuilder(this);
 
-		forEachCustomContext(c -> builder.addContext(c));
-		forEachLayer(l -> builder.addLayer(l));
+		forEachRootContext(builder::addContext);
+		forEachCustomContext(builder::addContext);
+		forEachLayer(builder::addLayer);
 
 		builder.setPrimaryLayer(getPrimaryLayer());
 

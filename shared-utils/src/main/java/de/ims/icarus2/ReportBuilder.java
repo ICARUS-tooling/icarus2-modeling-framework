@@ -18,9 +18,10 @@
 package de.ims.icarus2;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Locale;
 
 import de.ims.icarus2.Report.ReportItem;
+import de.ims.icarus2.Report.ReportItemCollector;
 import de.ims.icarus2.Report.Severity;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.id.Identity;
@@ -37,7 +39,8 @@ import de.ims.icarus2.util.strings.StringUtil;
  * @author Markus Gärtner
  *
  */
-public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportBuilder<R>, Report<R>> {
+public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportBuilder<R>, Report<R>>
+		implements ReportItemCollector {
 
 	private final List<R> items = new LinkedList<>();
 	private int errorCount;
@@ -58,7 +61,7 @@ public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportB
 	}
 
 	public ReportBuilder<R> source(Identity source) {
-		checkNotNull(source);
+		requireNonNull(source);
 		checkState("Source already set", this.source==null);
 
 		this.source = source;
@@ -67,10 +70,16 @@ public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportB
 	}
 
 	public ReportBuilder<R> addItem(R item) {
-		checkNotNull(item);
+		requireNonNull(item);
 
 		items.add(item);
 
+		refreshCounts(item);
+
+		return thisAsCast();
+	}
+
+	private void refreshCounts(R item) {
 		switch (item.getSeverity()) {
 		case ERROR:
 			errorCount++;
@@ -78,80 +87,32 @@ public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportB
 
 		case WARNING:
 			warningCount++;
+			break;
 
 		default:
 			break;
 		}
-
-		return thisAsCast();
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
-	public ReportBuilder<R> addItem(Severity severity, Identity source, ErrorCode code, String message, Object...data) {
-		return addItem((R) new ReportItemImpl(severity, source, code, message, data));
-	}
-
-	public ReportBuilder<R> addItem(Severity severity, ErrorCode code, String message) {
-		return addItem(severity, null, code, message, (Object[])null);
-	}
-
-	public ReportBuilder<R> addError(ErrorCode code, String message) {
-		return addItem(Severity.ERROR, null, code, message, (Object[])null);
-	}
-
-	public ReportBuilder<R> addError(ErrorCode code, String message, Object...data) {
-		return addItem(Severity.ERROR, null, code, message, data);
-	}
-
-	public ReportBuilder<R> addWarning(ErrorCode code, String message) {
-		return addItem(Severity.WARNING, null, code, message, (Object[])null);
-	}
-
-	public ReportBuilder<R> addWarning(ErrorCode code, String message, Object...data) {
-		return addItem(Severity.WARNING, null, code, message, data);
-	}
-
-	public ReportBuilder<R> addInfo(ErrorCode code, String message) {
-		return addItem(Severity.INFO, null, code, message, (Object[])null);
-	}
-
-	public ReportBuilder<R> addInfo(ErrorCode code, String message, Object...data) {
-		return addItem(Severity.INFO, null, code, message, data);
-	}
-
-	public ReportBuilder<R> addInfo(String message) {
-		return addItem(Severity.INFO, null, GlobalErrorCode.INFO, message, (Object[])null);
-	}
-
-	public ReportBuilder<R> addInfo(String message, Object...data) {
-		return addItem(Severity.INFO, null, GlobalErrorCode.INFO, message, data);
+	public void addItem(Severity severity, Identity source, ErrorCode code, String message, Object...data) {
+		addItem((R) new ReportItemImpl(LocalDateTime .now(), severity, source, code, message, data));
 	}
 
 	public ReportBuilder<R> addItems(Collection<? extends R> items) {
-		checkNotNull(items);
+		requireNonNull(items);
 		checkArgument("Empty collection of report items", !items.isEmpty());
 
 		this.items.addAll(items);
 
-		for(R item : items) {
-			switch (item.getSeverity()) {
-			case ERROR:
-				errorCount++;
-				break;
-
-			case WARNING:
-				warningCount++;
-
-			default:
-				break;
-			}
-		}
+		items.forEach(this::refreshCounts);
 
 		return thisAsCast();
 	}
 
 	public ReportBuilder<R> addReport(Report<? extends R> report) {
-		checkNotNull(report);
+		requireNonNull(report);
 
 		this.items.addAll(report.getItems());
 
@@ -220,13 +181,19 @@ public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportB
 		}
 
 		/**
+		 * @see de.ims.icarus2.Report#isEmpty()
+		 */
+		@Override
+		public boolean isEmpty() {
+			return items.isEmpty();
+		}
+
+		/**
 		 * @see java.lang.Object#toString()
 		 */
 		@Override
 		public String toString() {
-			StringBuilder sb = new StringBuilder();
-			appendTo(sb);
-			return sb.toString();
+			return toString(null);
 		}
 	}
 
@@ -238,15 +205,20 @@ public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportB
 		private final String message;
 		private final Object[] data;
 
-		private final long timestamp = System.currentTimeMillis();
+		private final LocalDateTime timestamp;
 
-		public ReportItemImpl(Severity severity, Identity source,
+		public ReportItemImpl(LocalDateTime timestamp, Severity severity, Identity source,
 				ErrorCode code, String message, Object...data) {
 
-			checkNotNull(severity);
-			checkNotNull(code);
-			checkNotNull(message);
+			requireNonNull(severity);
+			requireNonNull(code);
+			requireNonNull(message);
 
+			if(timestamp==null) {
+				timestamp = LocalDateTime.now();
+			}
+
+			this.timestamp = timestamp;
 			this.severity = severity;
 			this.source = source;
 			this.code = code;
@@ -284,6 +256,14 @@ public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportB
 		@Override
 		public String getMessage() {
 			return StringUtil.format(message, data);
+		}
+
+		/**
+		 * @see de.ims.icarus2.Report.ReportItem#getTimestamp()
+		 */
+		@Override
+		public LocalDateTime getTimestamp() {
+			return timestamp;
 		}
 
 		/**

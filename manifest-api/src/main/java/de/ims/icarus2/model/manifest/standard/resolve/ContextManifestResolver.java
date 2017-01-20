@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.manifest.standard.resolve;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import javax.swing.Icon;
 
@@ -28,6 +28,7 @@ import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
+import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.Documentable;
 import de.ims.icarus2.model.manifest.api.Documentation;
@@ -36,12 +37,14 @@ import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
+import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerType;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestFactory;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
+import de.ims.icarus2.model.manifest.api.MemberManifest.Property;
 import de.ims.icarus2.model.manifest.api.ModifiableIdentity;
 import de.ims.icarus2.model.manifest.api.OptionsManifest;
 import de.ims.icarus2.model.manifest.api.RasterizerManifest;
@@ -51,9 +54,6 @@ import de.ims.icarus2.model.manifest.api.ValueManifest;
 import de.ims.icarus2.model.manifest.api.ValueRange;
 import de.ims.icarus2.model.manifest.api.ValueSet;
 import de.ims.icarus2.model.manifest.api.VersionManifest;
-import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
-import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
-import de.ims.icarus2.model.manifest.api.MemberManifest.Property;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.util.data.ContentType;
 import de.ims.icarus2.util.id.Identity;
@@ -87,14 +87,14 @@ public class ContextManifestResolver {
 	private final ManifestFactory manifestFactory;
 
 	public ContextManifestResolver(ManifestFactory manifestFactory) {
-		checkNotNull(manifestFactory);
+		requireNonNull(manifestFactory);
 
 		this.manifestFactory = manifestFactory;
 	}
 
 	public ContextManifest toLiveContext(ContextManifest template, CorpusManifest host) {
-		checkNotNull(template);
-		checkNotNull(host);
+		requireNonNull(template);
+		requireNonNull(host);
 		checkArgument("Provided context manifest must be a template", template.isTemplate());
 
 		return cloneContextManifest(template, host);

@@ -17,7 +17,7 @@
  */
 package de.ims.icarus2.model.standard.corpus;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -40,7 +40,7 @@ public class ImmutableGeneration implements GenerationControl {
 	 * @param corpus
 	 */
 	public ImmutableGeneration(Corpus corpus) {
-		checkNotNull(corpus);
+		requireNonNull(corpus);
 
 		this.corpus = corpus;
 	}

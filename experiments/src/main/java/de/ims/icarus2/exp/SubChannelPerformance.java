@@ -323,13 +323,16 @@ public class SubChannelPerformance {
 	        bb.flip();
 
 	        CoderResult res = decoder.decode(bb, cb, false);
-	        if(CoderResult.OVERFLOW == res) {
-	        	cb.flip();
-	        	count += cb.remaining();
-	            cb.clear();
-	        } else if (CoderResult.UNDERFLOW == res) {
-	            bb.compact();
+	        if(res.isError())
+	        	res.throwException();
+
+	        if(res.isUnderflow()) {
+	        	bb.compact();
 	        }
+
+        	cb.flip();
+        	count += cb.remaining();
+            cb.clear();
 	    }
 
 	    return count;

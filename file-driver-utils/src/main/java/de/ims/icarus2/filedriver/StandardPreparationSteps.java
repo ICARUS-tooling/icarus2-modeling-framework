@@ -17,6 +17,9 @@
  */
 package de.ims.icarus2.filedriver;
 
+import static de.ims.icarus2.util.classes.ClassUtils._int;
+import static de.ims.icarus2.util.classes.ClassUtils._long;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,7 +40,7 @@ import de.ims.icarus2.filedriver.FileDriverMetadata.ChunkIndexKey;
 import de.ims.icarus2.filedriver.FileDriverMetadata.DriverKey;
 import de.ims.icarus2.filedriver.FileDriverMetadata.FileKey;
 import de.ims.icarus2.filedriver.FileDriverMetadata.ItemLayerKey;
-import de.ims.icarus2.filedriver.io.sets.FileSet;
+import de.ims.icarus2.filedriver.io.sets.ResourceSet;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
@@ -61,10 +64,10 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 		@Override
 		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
 
-			FileSet dataFiles = driver.getDataFiles();
+			ResourceSet dataFiles = driver.getDataFiles();
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 
-			int fileCount = dataFiles.getFileCount();
+			int fileCount = dataFiles.getResourceCount();
 
 			// Verify that our metadata holds the correct file count
 			String fileCountKey = FileDriverMetadata.DriverKey.FILE_COUNT.getKey();
@@ -72,7 +75,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			if(storedFileCount!=-1 && storedFileCount!=fileCount) {
 				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 						"Corrupted file count in metadata: expected {} - got {} as stored value",
-						Integer.valueOf(fileCount), Integer.valueOf(storedFileCount));
+						_int(fileCount), _int(storedFileCount));
 				return false;
 			} else {
 				metadataRegistry.setIntValue(fileCountKey, fileCount);
@@ -82,12 +85,17 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 			for(int fileIndex = 0; fileIndex < fileCount; fileIndex++) {
 
-				Path path = dataFiles.getFileAt(fileIndex);
+				Path path = dataFiles.getResourceAt(fileIndex).getLocalPath();
+				if(path==null) {
+					reportBuilder.addError(ModelErrorCode.DRIVER_ERROR,
+							"Resource at index {1} is not a local file - cannot compute file metadata", _int(fileIndex));
+					continue;
+				}
 				FileInfo fileInfo = driver.getFileStates().getFileInfo(fileIndex);
 
 				if(path.getNameCount()==0) {
 					reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
-							"Invalid path with 0 name elements for file index {}", Integer.valueOf(fileIndex));
+							"Invalid path with 0 name elements for file index {}", _int(fileIndex));
 					invalidFiles++;
 					continue;
 				}
@@ -103,7 +111,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 				} else if(!pathString.equals(savedPath)) {
 					reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 							"Corrupted metadata for file index {}: expected '{}' - got '{}'",
-							Integer.valueOf(fileIndex), savedPath, pathString);
+							_int(fileIndex), savedPath, pathString);
 					fileInfo.setFlag(ElementFlag.CORRUPTED);
 					invalidFiles++;
 				}
@@ -131,10 +139,10 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 		@Override
 		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
 
-			FileSet dataFiles = driver.getDataFiles();
+			ResourceSet dataFiles = driver.getDataFiles();
 			ContextManifest manifest = driver.getManifest().getContextManifest();
 
-			int fileCount = dataFiles.getFileCount();
+			int fileCount = dataFiles.getResourceCount();
 			int invalidFiles = 0;
 
 			for(int fileIndex = 0; fileIndex < fileCount; fileIndex++) {
@@ -153,7 +161,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 						fileInfo.setFlag(ElementFlag.MISSING);
 						// Signal error, since non-editable data MUST be present
 						reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
-								"Missing file for index {}: {}", Integer.valueOf(fileIndex), path);
+								"Missing file for index {}: {}", _int(fileIndex), path);
 						invalidFiles++;
 					}
 				}
@@ -182,9 +190,9 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
-			FileSet dataFiles = driver.getDataFiles();
+			ResourceSet dataFiles = driver.getDataFiles();
 
-			int fileCount = dataFiles.getFileCount();
+			int fileCount = dataFiles.getResourceCount();
 			int invalidFiles = 0;
 
 			for(int fileIndex = 0; fileIndex < fileCount; fileIndex++) {
@@ -200,7 +208,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 					checksum = FileChecksum.compute(path);
 				} catch (IOException e) {
 					reportBuilder.addError(GlobalErrorCode.IO_ERROR,
-							"Failed to compute checksum for file at index {} : {}", Integer.valueOf(fileIndex), path, e);
+							"Failed to compute checksum for file at index {} : {}", _int(fileIndex), path, e);
 					invalidFiles++;
 					continue;
 				}
@@ -215,7 +223,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 				} else if(!checksumString.equals(savedChecksum)) {
 					reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 							"Invalid checksum stored for file index {}: expected '{}' - got '{}'",
-							Integer.valueOf(fileIndex), checksumString, savedChecksum);
+							_int(fileIndex), checksumString, savedChecksum);
 					fileInfo.setFlag(ElementFlag.CORRUPTED);
 					invalidFiles++;
 				}
@@ -243,9 +251,9 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
-			FileSet dataFiles = driver.getDataFiles();
+			ResourceSet dataFiles = driver.getDataFiles();
 
-			int fileCount = dataFiles.getFileCount();
+			int fileCount = dataFiles.getResourceCount();
 			int invalidFiles = 0;
 
 			long totalBytes = 0L;
@@ -261,7 +269,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 					fileBytes = Files.size(path);
 				} catch (IOException e) {
 					reportBuilder.addError(GlobalErrorCode.IO_ERROR,
-							"Failed to fetch size for file at index {} : {}", Integer.valueOf(fileIndex), path, e);
+							"Failed to fetch size for file at index {} : {}", _int(fileIndex), path, e);
 					invalidFiles++;
 					continue;
 				}
@@ -276,7 +284,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 				} else if(!sizeString.equals(savedSize)) {
 					reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 							"Invalid size stored for file index {}: expected '{}' - got '{}'",
-							Integer.valueOf(fileIndex), sizeString, savedSize);
+							_int(fileIndex), sizeString, savedSize);
 					fileInfo.setFlag(ElementFlag.CORRUPTED);
 					invalidFiles++;
 				}
@@ -327,11 +335,11 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 				throws Exception {
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
-			FileSet dataFiles = driver.getDataFiles();
+			ResourceSet dataFiles = driver.getDataFiles();
 			ContextManifest manifest = driver.getManifest().getContextManifest();
 			List<ItemLayerManifest> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
 
-			int fileCount = dataFiles.getFileCount();
+			int fileCount = dataFiles.getResourceCount();
 
 			int scannedFileCount = 0;
 
@@ -392,9 +400,9 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			ContextManifest manifest = driver.getManifest().getContextManifest();
-			FileSet dataFiles = driver.getDataFiles();
+			ResourceSet dataFiles = driver.getDataFiles();
 
-			int fileCount = dataFiles.getFileCount();
+			int fileCount = dataFiles.getResourceCount();
 			int invalidFiles = 0;
 
 			for(int fileIndex = 0; fileIndex < fileCount; fileIndex++) {
@@ -409,7 +417,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 						driver.scanFile(fileIndex);
 					} catch(IOException | InterruptedException e) { //TODO maybe change back to catch general Exception
 						reportBuilder.addError(GlobalErrorCode.IO_ERROR,
-								"Failed to scan file {} at index {}", fileInfo.getPath(), Integer.valueOf(fileIndex), e);
+								"Failed to scan file {} at index {}", fileInfo.getPath(), _int(fileIndex), e);
 						fileValid = false;
 					}
 
@@ -536,7 +544,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 			if(itemCount==NO_INDEX || beginIndex==NO_INDEX || endIndex==NO_INDEX) {
 				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
-						"Indicies partly missing in metadata for layer {} in file {}", layer.getId(), Integer.valueOf(fileIndex));
+						"Indicies partly missing in metadata for layer {} in file {}", layer.getId(), _int(fileIndex));
 				return false;
 			}
 
@@ -546,7 +554,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			if(itemCount!=(endIndex-beginIndex+1)) {
 				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 						"Total number of items declared for layer {} in file {}  does not match defined span {} to {}",
-						layer.getId(), Integer.valueOf(fileIndex), Long.valueOf(beginIndex), Long.valueOf(endIndex));
+						layer.getId(), _int(fileIndex), _long(beginIndex), _long(endIndex));
 				isValid = false;
 			}
 
@@ -554,7 +562,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			if(lastEndIndex!=NO_INDEX && beginIndex!=(lastEndIndex+1)) {
 				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 						"Non-continuous item indices for layer {} in file {}: expected {} as begin index, but got {}",
-						layer.getId(), Integer.valueOf(fileIndex), Long.valueOf(lastEndIndex+1), Long.valueOf(beginIndex));
+						layer.getId(), _int(fileIndex), _long(lastEndIndex+1), _long(beginIndex));
 				isValid = false;
 			}
 
@@ -562,7 +570,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			if(lastEndIndex==NO_INDEX && fileIndex==0 && beginIndex!=0L) {
 				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 						"First file for layer {} in set must start at item index 0 - got start value {}",
-						layer.getId(), Long.valueOf(beginIndex));
+						layer.getId(), _long(beginIndex));
 				isValid = false;
 			}
 
@@ -572,7 +580,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			fileInfo.setEndIndex(layer, endIndex);
 			fileInfo.setItemCount(layer, itemCount);
 
-			env.put(LAST_END_INDEX_KEY, Long.valueOf(endIndex));
+			env.put(LAST_END_INDEX_KEY, _long(endIndex));
 
 			return isValid;
 		}
@@ -581,13 +589,13 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
 
 			ContextManifest manifest = driver.getManifest().getContextManifest();
-			FileSet dataFiles = driver.getDataFiles();
+			ResourceSet dataFiles = driver.getDataFiles();
 			List<ItemLayerManifest> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
 
-			int fileCount = dataFiles.getFileCount();
+			int fileCount = dataFiles.getResourceCount();
 			int invalidLayers = 0;
 
-			env.put(LAST_END_INDEX_KEY, Long.valueOf(NO_INDEX));
+			env.put(LAST_END_INDEX_KEY, _long(NO_INDEX));
 
 			for(ItemLayerManifest layer : layers) {
 

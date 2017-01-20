@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.util.nio;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -35,6 +35,11 @@ import de.ims.icarus2.util.io.IOUtil;
  * Utility class for reading byte data from a {@link ReadableByteChannel channel} and converting
  * the byte stream into characters one at a time together with providing information about the
  * byte size of each character read.
+ * <p>
+ * IMPLEMENTATION NOTE:
+ * Testing this implementation against the naive approach of decoding a byte stream into
+ * characters, analyzing them for boundaries of a chunk and then again encoding them into bytes
+ * has shown that the naive way is by far the more efficient and faster one.
  *
  * @author Markus Gärtner
  *
@@ -77,8 +82,8 @@ public class ByteCharMapper {
 	private int byteCount;
 
 	public ByteCharMapper(ReadableByteChannel channel, CharsetDecoder decoder, int capacity) {
-		checkNotNull(channel);
-		checkNotNull(decoder);
+		requireNonNull(channel);
+		requireNonNull(decoder);
 
 		this.channel = channel;
 		this.decoder = decoder;

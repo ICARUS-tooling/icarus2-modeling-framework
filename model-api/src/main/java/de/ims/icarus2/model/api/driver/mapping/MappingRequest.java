@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.api.driver.mapping;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -42,7 +42,7 @@ public abstract class MappingRequest implements Callable<IndexSet[]>, ModelConst
 	private final AtomicBoolean lookupStarted = new AtomicBoolean(false);
 
 	protected MappingRequest(MappingReader reader, RequestSettings settings) {
-		checkNotNull(reader);
+		requireNonNull(reader);
 
 		this.reader = reader;
 		this.settings = settings;
@@ -125,7 +125,7 @@ public abstract class MappingRequest implements Callable<IndexSet[]>, ModelConst
 		public MultiValueRequest(MappingReader reader, RequestSettings settings, IndexSet[] indices) {
 			super(reader, settings);
 
-			checkNotNull(indices);
+			requireNonNull(indices);
 
 			this.indices = indices;
 		}

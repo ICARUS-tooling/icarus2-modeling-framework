@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.api.io.resources;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.nio.channels.SeekableByteChannel;
@@ -41,7 +41,7 @@ public final class FileResource implements IOResource {
 	private final Path file;
 
 	public FileResource(Path file) {
-		checkNotNull(file);
+		requireNonNull(file);
 		this.file = file;
 	}
 

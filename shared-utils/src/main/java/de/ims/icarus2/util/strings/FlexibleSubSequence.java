@@ -19,8 +19,8 @@
 package de.ims.icarus2.util.strings;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 public class FlexibleSubSequence extends AbstractString implements AutoCloseable {
 
@@ -71,7 +71,7 @@ public class FlexibleSubSequence extends AbstractString implements AutoCloseable
 	 * @param source the source to set
 	 */
 	public void setSource(CharSequence source) {
-		checkNotNull(source);
+		requireNonNull(source);
 
 		this.source = source;
 	}

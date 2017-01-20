@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.api.driver.indices.standard;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 
@@ -60,7 +60,7 @@ public class DelegatingSpanIndexSet implements IndexSet {
 	}
 
 	public void setSource(IndexSet source) {
-		checkNotNull(source);
+		requireNonNull(source);
 
 		this.source = source;
 
@@ -68,7 +68,7 @@ public class DelegatingSpanIndexSet implements IndexSet {
 	}
 
 	public void setBeginIndex(int beginIndex) {
-		checkNotNull(source);
+		requireNonNull(source);
 		checkArgument(beginIndex>=0 && beginIndex<source.size());
 		checkArgument(beginIndex<=endIndex);
 
@@ -76,7 +76,7 @@ public class DelegatingSpanIndexSet implements IndexSet {
 	}
 
 	public void setEndIndex(int endIndex) {
-		checkNotNull(source);
+		requireNonNull(source);
 		checkArgument(endIndex>=0 && endIndex<source.size());
 		checkArgument(endIndex>=beginIndex);
 
@@ -84,7 +84,7 @@ public class DelegatingSpanIndexSet implements IndexSet {
 	}
 
 	public void resetIndices() {
-		checkNotNull(source);
+		requireNonNull(source);
 
 		beginIndex = 0;
 		endIndex = source.size()-1;

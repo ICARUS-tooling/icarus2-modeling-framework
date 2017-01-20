@@ -18,7 +18,7 @@
 package de.ims.icarus2.filedriver.resolver;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 import java.io.IOException;
@@ -43,7 +43,6 @@ import de.ims.icarus2.model.manifest.api.LocationManifest.PathEntry;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
 import de.ims.icarus2.model.manifest.api.LocationType;
 import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
-import de.ims.icarus2.model.manifest.api.PathResolverManifest;
 
 /**
  * Implements a simple path resolver that is directly linked to a fixed set
@@ -53,11 +52,6 @@ import de.ims.icarus2.model.manifest.api.PathResolverManifest;
  *
  */
 public class DirectPathResolver implements PathResolver {
-
-
-	public static DirectPathResolver forManifest(PathResolverManifest manifest) {
-		return forManifest(manifest.getLocationManifest());
-	}
 
 	/**
 	 * Convenient helper method that scans the provided {@link LocationManifest}
@@ -81,7 +75,7 @@ public class DirectPathResolver implements PathResolver {
 	 * @return
 	 */
 	public static DirectPathResolver forManifest(LocationManifest manifest) {
-		checkNotNull(manifest);
+		requireNonNull(manifest);
 
 		String rootPath = manifest.getRootPath();
 		PathType rootPathType = manifest.getRootPathType();
@@ -194,14 +188,14 @@ public class DirectPathResolver implements PathResolver {
 	private final String[] paths;
 
 	public DirectPathResolver(List<String> paths) {
-		checkNotNull(paths);
+		requireNonNull(paths);
 		checkArgument(!paths.isEmpty());
 
 		this.paths = paths.toArray(new String[paths.size()]);
 	}
 
 	public DirectPathResolver(String...paths) {
-		checkNotNull(paths);
+		requireNonNull(paths);
 		checkArgument(paths.length>0);
 
 		this.paths = paths;

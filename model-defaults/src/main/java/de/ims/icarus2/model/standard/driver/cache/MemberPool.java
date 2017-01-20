@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.driver.cache;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -83,7 +83,7 @@ public class MemberPool<M extends Item> implements Consumer<M>, Supplier<M> {
 	 * @return {@code true} iff there was still enough space available to pool the given {@code member}
 	 */
 	public boolean recycle(M member) {
-		checkNotNull(member);
+		requireNonNull(member);
 		ArrayList<M> pool = ensurePool();
 
 		boolean canAdd = pool.size()<poolSize;
@@ -116,7 +116,7 @@ public class MemberPool<M extends Item> implements Consumer<M>, Supplier<M> {
 	}
 
 	public void recycleAll(Collection<? extends M> members) {
-		checkNotNull(members);
+		requireNonNull(members);
 		ArrayList<M> pool = ensurePool();
 
 		for(M member : members) {
@@ -129,7 +129,7 @@ public class MemberPool<M extends Item> implements Consumer<M>, Supplier<M> {
 	}
 
 	public void recycleAll(DataSequence<? extends M> members) {
-		checkNotNull(members);
+		requireNonNull(members);
 		ArrayList<M> pool = ensurePool();
 
 		for(int i = IcarusUtils.limitToIntegerValueRange(members.entryCount()); i>=0; i--) {

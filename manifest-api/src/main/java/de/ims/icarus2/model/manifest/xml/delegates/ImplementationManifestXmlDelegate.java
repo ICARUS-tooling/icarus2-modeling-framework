@@ -18,7 +18,6 @@
  */
 package de.ims.icarus2.model.manifest.xml.delegates;
 
-import static de.ims.icarus2.model.manifest.xml.ManifestXmlUtils.readFlag;
 import static de.ims.icarus2.model.manifest.xml.ManifestXmlUtils.writeFlag;
 
 import org.xml.sax.Attributes;
@@ -69,15 +68,25 @@ public class ImplementationManifestXmlDelegate extends AbstractMemberManifestXml
 
 		ImplementationManifest manifest = getInstance();
 
-		manifest.setSource(ManifestXmlUtils.normalize(attributes, ATTR_SOURCE));
-		manifest.setClassname(ManifestXmlUtils.normalize(attributes, ATTR_CLASSNAME));
+		String source = ManifestXmlUtils.normalize(attributes, ATTR_SOURCE);
+		if(source!=null) {
+			manifest.setSource(source);
+		}
+
+		String classname = ManifestXmlUtils.normalize(attributes, ATTR_CLASSNAME);
+		if(classname!=null) {
+			manifest.setClassname(classname);
+		}
 
 		String type = ManifestXmlUtils.normalize(attributes, ATTR_SOURCE_TYPE);
 		if(type!=null) {
 			manifest.setSourceType(SourceType.parseSourceType(type));
 		}
 
-		manifest.setUseFactory(readFlag(attributes, ATTR_FACTORY, ImplementationManifest.DEFAULT_USE_FACTORY_VALUE));
+		String useFactory = ManifestXmlUtils.normalize(attributes, ATTR_FACTORY);
+		if(useFactory!=null) {
+			manifest.setUseFactory(Boolean.parseBoolean(useFactory));
+		}
 	}
 
 	/**

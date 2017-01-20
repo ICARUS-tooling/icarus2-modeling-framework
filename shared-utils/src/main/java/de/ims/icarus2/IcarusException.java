@@ -18,6 +18,7 @@
  */
 package de.ims.icarus2;
 
+import static de.ims.icarus2.util.classes.ClassUtils._int;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -59,7 +60,7 @@ public class IcarusException extends RuntimeException {
 	 */
 	@Override
 	public String toString() {
-		return String.format("[%d: %s]", errorCode.code(), errorCode.name(), super.toString());
+		return String.format("[%d: %s] %s", _int(errorCode.code()), errorCode.name(), super.toString());
 	}
 
 	/**

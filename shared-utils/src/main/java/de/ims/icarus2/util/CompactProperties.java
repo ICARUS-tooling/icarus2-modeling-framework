@@ -20,7 +20,7 @@
  */
 package de.ims.icarus2.util;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.io.Serializable;
@@ -71,7 +71,7 @@ public class CompactProperties implements Cloneable, Serializable {
 
 	@SuppressWarnings("unchecked")
 	public Object get(String key) {
-		checkNotNull(key);
+		requireNonNull(key);
 
 		if(table==null)
 			return null;
@@ -132,7 +132,7 @@ public class CompactProperties implements Cloneable, Serializable {
 
 	@SuppressWarnings("unchecked")
 	public void put(String key, Object value) {
-		checkNotNull(key);
+		requireNonNull(key);
 
 		// nothing to do here
 		if(value==null && table==null)
@@ -276,7 +276,7 @@ public class CompactProperties implements Cloneable, Serializable {
 
 	@SuppressWarnings("unchecked")
 	public void copyFrom(CompactProperties other) {
-		checkNotNull(other);
+		requireNonNull(other);
 
 		// One layer deep cloning
 		if(other.table==null) {

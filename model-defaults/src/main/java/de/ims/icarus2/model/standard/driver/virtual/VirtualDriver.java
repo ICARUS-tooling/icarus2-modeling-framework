@@ -20,8 +20,8 @@ package de.ims.icarus2.model.standard.driver.virtual;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
@@ -174,7 +174,7 @@ public class VirtualDriver extends AbstractDriver {
 
 	protected final void ensureLayerMap() {
 		if(idMap.isEmpty()) {
-			for(Layer layer : getItemLayerManager().getLayers()) {
+			for(Layer layer : getItemLayerManager().getItemLayers()) {
 				idMap.put(keyForManifest(layer.getManifest()), (ItemLayer)layer);
 			}
 		}
@@ -235,7 +235,7 @@ public class VirtualDriver extends AbstractDriver {
 	}
 
 	protected final void setItemLayerManager(ItemLayerManager itemLayerManager) {
-		checkNotNull(itemLayerManager);
+		requireNonNull(itemLayerManager);
 		checkState(this.itemLayerManager==null);
 
 		this.itemLayerManager = itemLayerManager;
@@ -291,8 +291,8 @@ public class VirtualDriver extends AbstractDriver {
 	@Override
 	public long load(IndexSet[] indices, ItemLayer layer,
 			Consumer<ChunkInfo> action) throws InterruptedException {
-		checkNotNull(indices);
-		checkNotNull(layer);
+		requireNonNull(indices);
+		requireNonNull(layer);
 
 		// Unlike the ItemLayerManager a driver also has independent listeners to satisfy
 		Consumer<ChunkInfo> compoundAction = c -> {
@@ -318,7 +318,7 @@ public class VirtualDriver extends AbstractDriver {
 		private final Collection<DriverModule> modules = new ArrayList<>();
 
 		public VirtualDriverBuilder itemLayerManager(ItemLayerManager itemLayerManager) {
-			checkNotNull(itemLayerManager);
+			requireNonNull(itemLayerManager);
 			checkState(this.itemLayerManager==null);
 			checkState(this.supplier==null);
 			checkState(this.creator==null);
@@ -334,7 +334,7 @@ public class VirtualDriver extends AbstractDriver {
 		}
 
 		public VirtualDriverBuilder supplier(Supplier<ItemLayerManager> supplier) {
-			checkNotNull(supplier);
+			requireNonNull(supplier);
 			checkState(this.supplier==null);
 			checkState(this.itemLayerManager==null);
 			checkState(this.creator==null);
@@ -350,7 +350,7 @@ public class VirtualDriver extends AbstractDriver {
 		}
 
 		public VirtualDriverBuilder creator(Function<Driver, ItemLayerManager> creator) {
-			checkNotNull(creator);
+			requireNonNull(creator);
 			checkState(this.creator==null);
 			checkState(this.itemLayerManager==null);
 			checkState(this.supplier==null);
@@ -366,7 +366,7 @@ public class VirtualDriver extends AbstractDriver {
 		}
 
 		public VirtualDriverBuilder managerClass(Class<? extends ItemLayerManager> managerClass) {
-			checkNotNull(managerClass);
+			requireNonNull(managerClass);
 			checkState(this.managerClass==null);
 			checkState(this.creator==null);
 			checkState(this.itemLayerManager==null);
@@ -382,14 +382,14 @@ public class VirtualDriver extends AbstractDriver {
 		}
 
 		public void module(DriverModule module) {
-			checkNotNull(module);
+			requireNonNull(module);
 			checkState(!modules.contains(module));
 
 			modules.add(module);
 		}
 
 		public void modules(Collection<? extends DriverModule> modules) {
-			checkNotNull(modules);
+			requireNonNull(modules);
 			checkArgument(!modules.isEmpty());
 
 			this.modules.addAll(modules);

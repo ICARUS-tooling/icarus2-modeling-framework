@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<schema id="test.tier1.tbl" name="Tier-1 Tabular Format" type="de.ims.icarus2.filedriver.schema.table" group-id="main">
+	<separator>WHITESPACES</separator>
+	
+	<block layerId="token">		
+		<component memberType="item" />			
+		<endDelimiter>EMPTY_LINE</endDelimiter>				
+		<option name="trimWhitespaces" value="true" />			
+		<columns fixedOrder="true">
+			<column name="ID" ignore="true" />
+			<column name="FORM" layerId="form" />
+			<column name="LEMMA" layerId="lemma" />
+		</columns>
+	</block>
+</schema>

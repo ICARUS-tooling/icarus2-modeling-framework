@@ -92,7 +92,7 @@ public interface Context extends ManifestOwner<ContextManifest>, Connectible<Dri
 		return getLayers(l -> type.equals(l.getManifest().getLayerType()));
 	}
 
-	default Collection<Layer> getLayers(Class<? extends ItemLayer> clazz) {
+	default Collection<Layer> getLayers(Class<? extends Layer> clazz) {
 		return getLayers(clazz::isInstance);
 	}
 

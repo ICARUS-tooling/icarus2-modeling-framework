@@ -18,7 +18,7 @@
 package de.ims.icarus2.model.util.stream;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Spliterator;
 
@@ -36,7 +36,7 @@ public class ContainerSpliterator extends AbstractFencedSpliterator<Item> {
 
 	public ContainerSpliterator(Container source, long pos, long fence) {
 		super(pos, fence);
-		checkNotNull(source);
+		requireNonNull(source);
 		checkArgument(fence<=source.getItemCount());
 
 		this.source = source;

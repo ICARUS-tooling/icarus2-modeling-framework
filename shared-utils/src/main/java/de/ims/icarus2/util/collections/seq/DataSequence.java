@@ -19,7 +19,7 @@
 package de.ims.icarus2.util.collections.seq;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Iterator;
 import java.util.List;
@@ -129,7 +129,7 @@ public interface DataSequence<E extends Object> extends Iterable<E> {
 		 * @param endIndex last index position to be accessed by the iterator (exclusive)
 		 */
 		public DataSequenceIterator(DataSequence<? extends E> source, long beginIndex, long endIndex) {
-			checkNotNull(source);
+			requireNonNull(source);
 			checkArgument(beginIndex>=0);
 			checkArgument(beginIndex<endIndex);
 			checkArgument(endIndex<=source.entryCount());

@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.view;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
 
@@ -71,7 +71,7 @@ public class PageIndexBuffer {
 	private final long[] offsets;
 
 	public PageIndexBuffer(IndexSet[] indices, int pageSize) {
-		checkNotNull(indices);
+		requireNonNull(indices);
 
 		if(indices.length==0)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Indices array is empty");

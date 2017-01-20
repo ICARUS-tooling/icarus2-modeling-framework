@@ -20,7 +20,7 @@
  */
 package de.ims.icarus2.util;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.io.ObjectStreamException;
 import java.net.URL;
@@ -165,7 +165,7 @@ public final class IconRegistry {
 	}
 
 	public void removeSearchPath(ClassLoader loader, String prefix) {
-		checkNotNull(loader);
+		requireNonNull(loader);
 
 		if(prefix==null)
 			prefix = ""; //$NON-NLS-1$
@@ -196,7 +196,7 @@ public final class IconRegistry {
 	 * @return
 	 */
 	public Icon getIcon(String name) {
-		checkNotNull(name);
+		requireNonNull(name);
 
 		Icon icon = lookupIcon(name);
 

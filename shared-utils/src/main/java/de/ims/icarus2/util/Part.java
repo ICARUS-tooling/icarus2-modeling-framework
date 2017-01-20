@@ -25,7 +25,7 @@ package de.ims.icarus2.util;
  * <p>
  * Note that no method exists in this interface to actually fetch the environment instance.
  * The decision whether or not to expose the associated environment is left to the respective
- * implementation or derived interface.
+ * implementation or derived interfaces.
  *
  * @author Markus Gärtner
  *

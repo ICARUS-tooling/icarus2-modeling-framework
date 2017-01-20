@@ -18,26 +18,26 @@
 				<column name="POS" layerId="part-of-speech" />
 				<column name="PPOS" layerId="predicted-part-of-speech" />
 				<column name="FEAT" layerId="features">
-					<resolver type="de.ims.icarus2.filedriver.schema.resolve.PropertyListResolver">
+					<resolver type="de.ims.icarus2.filedriver.schema.resolve.standard.PropertyListResolver">
 						<option name="separator" value="|" />
 						<option name="assignmentSymbol" value="=" />
 					</resolver>
 				</column>
 				<column name="PFEAT" layerId="predicted-features">
-					<resolver type="de.ims.icarus2.filedriver.schema.resolve.PropertyListResolver">
+					<resolver type="de.ims.icarus2.filedriver.schema.resolve.standard.PropertyListResolver">
 						<option name="separator" value="|" />
 						<option name="assignmentSymbol" value="=" />
 					</resolver>
 				</column>
 				<column name="HEAD" layerId="dependency-syntax">
-					<resolver type="de.ims.icarus2.filedriver.schema.resolve.DependencyStructureResolver">
+					<resolver type="de.ims.icarus2.filedriver.schema.resolve.standard.DependencyStructureResolver">
 						<option name="offset" value="1" />
 						<option name="root" value="0" />
 					</resolver>
 					<substitute type="addition" name="EDGE" memberType="edge" />
 				</column>
 				<column name="PHEAD" layerId="predicted-dependency-syntax">
-					<resolver type="de.ims.icarus2.filedriver.schema.resolve.DependencyStructureResolver">
+					<resolver type="de.ims.icarus2.filedriver.schema.resolve.standard.DependencyStructureResolver">
 						<option name="offset" value="1" />
 						<option name="root" value="0" />
 					</resolver>

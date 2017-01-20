@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.api.edit;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.undo.UndoManager;
@@ -41,7 +41,7 @@ public class CorpusUndoManager extends UndoManager implements CorpusUndoListener
 	private long savedGeneration = 0L;
 
 	public CorpusUndoManager(Corpus corpus) {
-		checkNotNull(corpus);
+		requireNonNull(corpus);
 
 		this.corpus = corpus;
 

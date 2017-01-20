@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Set;
 
@@ -46,7 +46,7 @@ public class ValueManifestImpl extends AbstractLockable implements ValueManifest
 			ValueType.URL_RESOURCE);
 
 	public ValueManifestImpl(ValueType valueType) {
-		checkNotNull(valueType);
+		requireNonNull(valueType);
 
 		if(!supportedValueTypes.contains(valueType))
 			throw new UnsupportedValueTypeException(valueType);
@@ -118,7 +118,7 @@ public class ValueManifestImpl extends AbstractLockable implements ValueManifest
 	}
 
 	protected void setValue0(Object value) {
-		checkNotNull(value);
+		requireNonNull(value);
 
 		this.value = value;
 	}
@@ -133,7 +133,7 @@ public class ValueManifestImpl extends AbstractLockable implements ValueManifest
 	}
 
 	protected void setName0(String name) {
-		checkNotNull(name);
+		requireNonNull(name);
 
 		this.name = name;
 	}

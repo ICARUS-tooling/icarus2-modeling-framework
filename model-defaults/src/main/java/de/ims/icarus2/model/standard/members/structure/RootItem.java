@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.standard.members.structure;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,7 +79,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 	public void setStructure(Structure structure) {
 		if (owner !=null)
 			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_LINKING, "Owning structure already set");
-		checkNotNull(structure);
+		requireNonNull(structure);
 
 		this.owner = structure;
 	}

@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.util.collections.set;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.List;
 
@@ -31,7 +31,7 @@ public class DataSets {
 	public static final int ARRAY_SET_THRESHOLD = 7;
 
 	public static <E extends Object> DataSet<E> createDataSet(List<E> items) {
-		checkNotNull(items);
+		requireNonNull(items);
 
 		int size = items.size();
 
@@ -47,7 +47,7 @@ public class DataSets {
 	}
 
 	public static <E extends Object> DataSet<E> createDataSet(E[] items) {
-		checkNotNull(items);
+		requireNonNull(items);
 
 		int size = items.length;
 

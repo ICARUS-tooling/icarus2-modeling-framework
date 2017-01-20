@@ -15,21 +15,28 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package de.ims.icarus2.filedriver.schema.resolve;
+package de.ims.icarus2.filedriver.schema.resolve.standard;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.Converter;
+import de.ims.icarus2.filedriver.Converter.ReadMode;
+import de.ims.icarus2.filedriver.schema.resolve.Resolver;
+import de.ims.icarus2.filedriver.schema.resolve.ResolverContext;
+import de.ims.icarus2.filedriver.schema.resolve.ResolverOptions;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
+import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationFlag;
+import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.strings.FlexibleSubSequence;
@@ -67,10 +74,10 @@ public class PropertyListResolver implements Resolver, ResolverOptions {
 
 
 	/**
-	 * @see de.ims.icarus2.filedriver.schema.resolve.Resolver#init(de.ims.icarus2.filedriver.Converter, de.ims.icarus2.util.Options)
+	 * @see de.ims.icarus2.filedriver.schema.resolve.Resolver#prepareForReading(de.ims.icarus2.filedriver.Converter, de.ims.icarus2.util.Options)
 	 */
 	@Override
-	public void init(Converter converter, Options options) {
+	public void prepareForReading(Converter converter, ReadMode mode, Function<ItemLayer, InputCache> caches, Options options) {
 		annotationLayer = (AnnotationLayer) options.get(LAYER);
 		if(annotationLayer==null)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "No layer assigned to this resolver "+getClass());
@@ -175,7 +182,7 @@ public class PropertyListResolver implements Resolver, ResolverOptions {
 			return source.currentContainer();
 		}
 		@Override
-		public int currentIndex() {
+		public long currentIndex() {
 			return source.currentIndex();
 		}
 		@Override

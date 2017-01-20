@@ -18,8 +18,8 @@
 package de.ims.icarus2.filedriver.io;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
@@ -156,9 +156,9 @@ public class BufferedIOResource {
 	private int lastReturnedBlockId = -1;
 
 	public BufferedIOResource(IOResource resource, PayloadConverter payloadConverter, BlockCache cache, int cacheSize, int bytesPerBlock) {
-		checkNotNull(resource);
-		checkNotNull(payloadConverter);
-		checkNotNull(cache);
+		requireNonNull(resource);
+		requireNonNull(payloadConverter);
+		requireNonNull(cache);
 		checkArgument(cacheSize>=0);
 
 		this.resource = resource;
@@ -662,7 +662,7 @@ public class BufferedIOResource {
 		}
 
 		public Builder resource(IOResource resource) {
-			checkNotNull(resource);
+			requireNonNull(resource);
 			checkState(this.resource==null);
 
 			this.resource = resource;
@@ -671,7 +671,7 @@ public class BufferedIOResource {
 		}
 
 		public Builder blockCache(BlockCache blockCache) {
-			checkNotNull(blockCache);
+			requireNonNull(blockCache);
 			checkState(this.blockCache==null);
 
 			this.blockCache = blockCache;
@@ -680,7 +680,7 @@ public class BufferedIOResource {
 		}
 
 		public Builder payloadConverter(PayloadConverter payloadConverter) {
-			checkNotNull(payloadConverter);
+			requireNonNull(payloadConverter);
 			checkState(this.payloadConverter==null);
 
 			this.payloadConverter = payloadConverter;

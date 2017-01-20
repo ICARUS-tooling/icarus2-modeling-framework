@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.members.layers.type;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import javax.swing.Icon;
 
@@ -44,16 +44,16 @@ public class LazyLayerType implements LayerType {
 	private final ManifestRegistry registry;
 
 	public LazyLayerType(String id) {
-		checkNotNull(id);
+		requireNonNull(id);
 
 		this.registry = null;
 		this.id = id;
 	}
 
 	public LazyLayerType(ManifestRegistry registry, Identity identity, String layerId) {
-		checkNotNull(registry);
-		checkNotNull(identity);
-		checkNotNull(layerId);
+		requireNonNull(registry);
+		requireNonNull(identity);
+		requireNonNull(layerId);
 
 		if(identity.getId()==null)
 			throw new IllegalArgumentException("Missing 'id' calue from identity"); //$NON-NLS-1$
@@ -124,7 +124,7 @@ public class LazyLayerType implements LayerType {
 	 * @param name the name to set
 	 */
 	public void setName(String name) {
-		checkNotNull(name);
+		requireNonNull(name);
 
 		this.name = name;
 	}
@@ -133,7 +133,7 @@ public class LazyLayerType implements LayerType {
 	 * @param description the description to set
 	 */
 	public void setDescription(String description) {
-		checkNotNull(description);
+		requireNonNull(description);
 
 		this.description = description;
 	}
@@ -142,7 +142,7 @@ public class LazyLayerType implements LayerType {
 	 * @param icon the icon to set
 	 */
 	public void setIcon(Icon icon) {
-		checkNotNull(icon);
+		requireNonNull(icon);
 
 		this.icon = icon;
 	}
@@ -151,7 +151,7 @@ public class LazyLayerType implements LayerType {
 	 * @param layerId the layerId to set
 	 */
 	public void setLayerId(String layerId) {
-		checkNotNull(layerId);
+		requireNonNull(layerId);
 
 		this.layerId = layerId;
 	}

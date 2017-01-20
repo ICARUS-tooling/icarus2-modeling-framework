@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
@@ -111,7 +111,7 @@ public class DefaultEdge extends DefaultItem implements Edge, Recyclable {
 	 */
 	@Override
 	public void setSource(Item source) {
-		checkNotNull(source);
+		requireNonNull(source);
 		this.source = source;
 	}
 
@@ -120,7 +120,7 @@ public class DefaultEdge extends DefaultItem implements Edge, Recyclable {
 	 */
 	@Override
 	public void setTarget(Item target) {
-		checkNotNull(target);
+		requireNonNull(target);
 		this.target = target;
 	}
 

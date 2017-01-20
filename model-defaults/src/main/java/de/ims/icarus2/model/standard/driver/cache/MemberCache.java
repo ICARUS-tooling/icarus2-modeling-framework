@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.driver.cache;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import de.ims.icarus2.GlobalErrorCode;
@@ -118,7 +118,7 @@ public class MemberCache<M extends Item> {
 	 */
 	@AccessRestriction(AccessMode.ALL)
 	public boolean isCached(M member) {
-		checkNotNull(member);
+		requireNonNull(member);
 
 		return cache.containsKey(member.getIndex());
 	}
@@ -132,7 +132,7 @@ public class MemberCache<M extends Item> {
 	 */
 	@AccessRestriction(AccessMode.MANAGE)
 	public boolean register(long key, M member) {
-		checkNotNull(member);
+		requireNonNull(member);
 
 		if(limit>=0 && cache.size()>=limit) {
 			return false;
@@ -161,7 +161,7 @@ public class MemberCache<M extends Item> {
 
 	@AccessRestriction(AccessMode.MANAGE)
 	public void remove(M member) {
-		checkNotNull(member);
+		requireNonNull(member);
 
 		cache.remove(member.getIndex());
 	}

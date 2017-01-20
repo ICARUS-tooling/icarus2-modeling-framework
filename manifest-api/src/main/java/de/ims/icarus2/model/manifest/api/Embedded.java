@@ -24,5 +24,5 @@ package de.ims.icarus2.model.manifest.api;
  */
 public interface Embedded {
 
-	ManifestFragment getHost();
+	TypedManifest getHost();
 }

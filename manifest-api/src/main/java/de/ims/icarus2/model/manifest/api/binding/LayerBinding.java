@@ -18,8 +18,8 @@
 package de.ims.icarus2.model.manifest.api.binding;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
@@ -136,7 +136,7 @@ public final class LayerBinding implements Bindable, Serializable {
 	private final AtomicBoolean isResolved = new AtomicBoolean(false);
 
 	private LayerBinding(Builder builder) {
-		checkNotNull(builder);
+		requireNonNull(builder);
 
 		mappings.putAll(builder.mappings);
 		corpusId = builder.corpusId;
@@ -173,7 +173,7 @@ public final class LayerBinding implements Bindable, Serializable {
 				reportBuilder.source(source);
 			}
 
-			CorpusManifest corpusManifest = registry.getCorpus(corpusId);
+			CorpusManifest corpusManifest = registry.getCorpusManifest(corpusId);
 
 			mappings.forEach((alias, entry) -> resolveEntry(alias, entry, corpusManifest, registry, reportBuilder));
 
@@ -265,7 +265,7 @@ public final class LayerBinding implements Bindable, Serializable {
 	}
 
 	protected Entry getBinding(String alias) {
-		checkNotNull(alias);
+		requireNonNull(alias);
 
 		Entry binding = mappings.get(alias);
 		if(binding==null)
@@ -665,7 +665,7 @@ public final class LayerBinding implements Bindable, Serializable {
 		}
 
 		public Builder addPrerequisite(LayerPrerequisite prerequisite) {
-			checkNotNull(prerequisite);
+			requireNonNull(prerequisite);
 
 			getEntry(prerequisite.getAlias(), true).prerequisite = prerequisite;
 
@@ -677,7 +677,7 @@ public final class LayerBinding implements Bindable, Serializable {
 		}
 
 		public Builder addPointer(String alias, LayerPointer pointer) {
-			checkNotNull(alias);
+			requireNonNull(alias);
 
 			Entry entry = getEntry(alias, true);
 
@@ -693,7 +693,7 @@ public final class LayerBinding implements Bindable, Serializable {
 		}
 
 		public Builder addPointers(String alias, Collection<? extends LayerPointer> pointers) {
-			checkNotNull(alias);
+			requireNonNull(alias);
 			checkArgument("List of pointers is empty", !pointers.isEmpty());
 
 			Entry entry = getEntry(alias, true);
@@ -710,7 +710,7 @@ public final class LayerBinding implements Bindable, Serializable {
 		}
 
 		public Builder corpusId(String corpusId) {
-			checkNotNull(corpusId);
+			requireNonNull(corpusId);
 			checkState("Corpus id already set", this.corpusId==null);
 
 			this.corpusId = corpusId;
@@ -719,7 +719,7 @@ public final class LayerBinding implements Bindable, Serializable {
 		}
 
 		public Builder source(Identity source) {
-			checkNotNull(source);
+			requireNonNull(source);
 			checkState("Source already set", this.source==null);
 
 			this.source = source;

@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
@@ -129,7 +129,7 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	}
 
 	protected void setSourceType0(SourceType sourceType) {
-		checkNotNull(sourceType);
+		requireNonNull(sourceType);
 
 		this.sourceType = sourceType;
 	}
@@ -145,7 +145,7 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	}
 
 	protected void setSource0(String source) {
-		checkNotNull(source);
+		requireNonNull(source);
 
 		this.source = source;
 	}
@@ -161,7 +161,7 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	}
 
 	protected void setClassname0(String classname) {
-		checkNotNull(classname);
+		requireNonNull(classname);
 
 		this.classname = classname;
 	}
@@ -170,13 +170,13 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	 * @param useFactory the useFactory to set
 	 */
 	@Override
-	public void setUseFactory(Boolean useFactory) {
+	public void setUseFactory(boolean useFactory) {
 		checkNotLocked();
 
 		setUseFactory0(useFactory);
 	}
 
-	protected void setUseFactory0(Boolean useFactory) {
-		this.useFactory = useFactory;
+	protected void setUseFactory0(boolean useFactory) {
+		this.useFactory = useFactory==DEFAULT_USE_FACTORY_VALUE ? null : Boolean.valueOf(useFactory);
 	}
 }

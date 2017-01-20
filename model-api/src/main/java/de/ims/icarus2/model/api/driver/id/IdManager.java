@@ -17,6 +17,8 @@
  */
 package de.ims.icarus2.model.api.driver.id;
 
+import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 
@@ -50,4 +52,83 @@ public interface IdManager extends AutoCloseable {
 	 * @return
 	 */
 	long indexOfId(long id);
+
+	public static class IdentityIdManager implements IdManager {
+		private ItemLayerManifest layerManifest;
+
+		/**
+		 * @param layerManifest
+		 */
+		public IdentityIdManager(ItemLayerManifest layerManifest) {
+			requireNonNull(layerManifest);
+
+			this.layerManifest = layerManifest;
+		}
+
+		/**
+		 * Clears the link to this manager's {@link ItemLayerManifest}
+		 * layer manifest.
+		 *
+		 * @see java.lang.AutoCloseable#close()
+		 */
+		@Override
+		public void close() throws Exception {
+			layerManifest = null;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.api.driver.id.IdManager#getLayerManifest()
+		 */
+		@Override
+		public ItemLayerManifest getLayerManifest() {
+			checkState("Manager already closed", layerManifest!=null);
+
+			return layerManifest;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.api.driver.id.IdManager#getIdAt(long)
+		 */
+		@Override
+		public long getIdAt(long index) {
+			return index;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.api.driver.id.IdManager#indexOfId(long)
+		 */
+		@Override
+		public long indexOfId(long id) {
+			return id;
+		}
+
+		/**
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return layerManifest.getUID();
+		}
+
+		/**
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return getClass().getName()+"@"+layerManifest.getUniqueId();
+		}
+
+		/**
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+			if(this==obj) {
+				return true;
+			} else if(obj instanceof IdentityIdManager) {
+				return layerManifest==((IdentityIdManager)obj).layerManifest;
+			}
+			return false;
+		}
+	}
 }

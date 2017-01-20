@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.api.driver.indices.func;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator;
@@ -38,8 +38,8 @@ public class DualIntersectionOfLong implements PrimitiveIterator.OfLong, ModelCo
 
 	public DualIntersectionOfLong(PrimitiveIterator.OfLong left,
 			PrimitiveIterator.OfLong right) {
-		checkNotNull(left);
-		checkNotNull(right);
+		requireNonNull(left);
+		requireNonNull(right);
 
 		this.left = left;
 		this.right = right;

@@ -27,13 +27,15 @@ import java.util.Map;
 import java.util.function.ObjIntConsumer;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.filedriver.io.sets.FileSet;
+import de.ims.icarus2.filedriver.io.sets.ResourceSet;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.manifest.api.ContainerType;
+import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.Counter;
 
 /**
@@ -59,13 +61,18 @@ public class FileDataStates {
 	public FileDataStates(FileDriver driver) {
 
 		// Collect data files
-		FileSet dataFiles = driver.getDataFiles();
-		for(int fileIndex=0; fileIndex<dataFiles.getFileCount(); fileIndex++) {
+		ResourceSet dataFiles = driver.getDataFiles();
+		for(int fileIndex=0; fileIndex<dataFiles.getResourceCount(); fileIndex++) {
 			fileInfos.put(fileIndex, new FileInfo(fileIndex));
 		}
 
-//		List<LayerManifest> layers
-		//FIXME
+		ContextManifest contextManifest = driver.getManifest().getContextManifest();
+		for(LayerManifest layerManifest : contextManifest.getLayerManifests()) {
+
+			if(ManifestUtils.isItemLayerManifest(layerManifest)) {
+				layerInfos.put(layerManifest.getUID(), new LayerInfo((ItemLayerManifest)layerManifest));
+			}
+		}
 
 		//TODO populate other maps/lookups!!!
 	}
@@ -97,11 +104,11 @@ public class FileDataStates {
 		return info;
 	}
 
-	public LayerInfo getLayerInfo(LayerManifest layer) {
-		LayerInfo info = layerInfos.get(layer.getUID());
+	public LayerInfo getLayerInfo(LayerManifest layerManifest) {
+		LayerInfo info = layerInfos.get(layerManifest.getUID());
 		if(info==null)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					"No info available for layer: "+layer.getId());
+					"No info available for layer: "+layerManifest.getId());
 
 		return info;
 	}
@@ -177,6 +184,10 @@ public class FileDataStates {
 			return !state.contains(ElementFlag.CORRUPTED)
 					&& !state.contains(ElementFlag.MISSING)
 					&& !state.contains(ElementFlag.UNUSABLE);
+		}
+
+		public String states2String() {
+			return state.toString();
 		}
 	}
 

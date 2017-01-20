@@ -70,7 +70,7 @@ public interface CorpusModel extends Part<CorpusView>, ModelConstants, Changeabl
 	 * @return {@code true} iff this model was created from a sub corpus that has an
 	 * access mode of {@value CorpusAccessMode#WRITE} or {@value CorpusAccessMode#READ_WRITE}.
 	 */
-	boolean isEditable();
+	boolean isModelEditable();
 
 	/**
 	 * Indicates whether the sub corpus backing this model is complete, i.e. it is holding
@@ -78,24 +78,24 @@ public interface CorpusModel extends Part<CorpusView>, ModelConstants, Changeabl
 	 *
 	 * @return {@code true} iff this model contains the entire corpus.
 	 */
-	boolean isComplete();
+	boolean isModelComplete();
 
 	/**
 	 * Returns {@code true} iff the surrounding {@link CorpusView} is operational and
 	 * all internal resources of this model are in a healthy state. Note that once the
 	 * view that created this model gets closed, this method will always return {@code false}.
 	 */
-	boolean isActive();
+	boolean isModelActive();
 
 	Corpus getCorpus();
 
 	CorpusView getView();
 
-	default ItemLayer getPrimaryLayer() {
+	default ItemLayer fetchPrimaryLayer() {
 		return getView().getScope().getPrimaryLayer();
 	}
 
-	default <L extends Layer> L getLayer(String id) {
+	default <L extends Layer> L fetchLayer(String id) {
 		Scope scope = getView().getScope();
 
 		if(scope.getContextCount()>1)
@@ -114,7 +114,7 @@ public interface CorpusModel extends Part<CorpusView>, ModelConstants, Changeabl
 	}
 
 
-	default <L extends Layer> L getLayer(String contextId, String layerId) {
+	default <L extends Layer> L fetchLayer(String contextId, String layerId) {
 		Scope scope = getView().getScope();
 
 		Context context = getCorpus().getContext(contextId);
@@ -211,6 +211,10 @@ public interface CorpusModel extends Part<CorpusView>, ModelConstants, Changeabl
 	 * available for the specified layer.
 	 */
 	Container getRootContainer(ItemLayer layer);
+
+	default Container getRootContainer() {
+		return getRootContainer(fetchPrimaryLayer());
+	}
 
 	/**
 	 * Fetches the {@link Driver} responsible for the specified layer and attempts to fetch

@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.util.nio;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -44,7 +44,7 @@ public class ByteArrayChannel implements SeekableByteChannel {
 	 * @return
 	 */
 	public static ByteArrayChannel fromChars(CharSequence s) {
-		checkNotNull(s);
+		requireNonNull(s);
 
 		int length = s.length();
 		byte[] data = new byte[length<<1];
@@ -70,7 +70,7 @@ public class ByteArrayChannel implements SeekableByteChannel {
 	}
 
 	public ByteArrayChannel(byte[] data, boolean readOnly) {
-		checkNotNull(data);
+		requireNonNull(data);
 
 		this.data = data;
 		this.readOnly = readOnly;

@@ -20,7 +20,7 @@
  */
 package de.ims.icarus2.util.id;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.net.URL;
 
@@ -41,7 +41,7 @@ public class StaticIdentity implements Identity {
 	protected Icon icon;
 
 	public StaticIdentity(Object owner) {
-		checkNotNull(owner);
+		requireNonNull(owner);
 
 		this.owner = owner;
 	}
@@ -53,7 +53,7 @@ public class StaticIdentity implements Identity {
 	}
 
 	public StaticIdentity(String id, Object owner) {
-		checkNotNull(owner);
+		requireNonNull(owner);
 
 		this.owner = owner;
 
@@ -153,7 +153,7 @@ public class StaticIdentity implements Identity {
 	}
 
 	public void setId(String id) {
-		checkNotNull(id);
+		requireNonNull(id);
 
 		this.id = id;
 	}

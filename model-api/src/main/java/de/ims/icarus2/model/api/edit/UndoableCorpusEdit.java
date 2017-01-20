@@ -19,8 +19,8 @@
 package de.ims.icarus2.model.api.edit;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -125,7 +125,7 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	 * Constructs a new undoable edit for the given corpus.
 	 */
 	public UndoableCorpusEdit(Corpus corpus, boolean significant, String name) {
-		checkNotNull(corpus);
+		requireNonNull(corpus);
 
 		this.corpus = corpus;
 		this.significant = significant;
@@ -408,7 +408,7 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	 * @return
 	 */
 	public static Context getContextForChange(AtomicChange change){
-		checkNotNull(change);
+		requireNonNull(change);
 
 		CorpusMember member = change.getAffectedMember();
 		if(ModelUtils.isNonLayer(member)) {
@@ -432,7 +432,7 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	 * @return
 	 */
 	public static Layer getLayerForChange(AtomicChange change){
-		checkNotNull(change);
+		requireNonNull(change);
 
 		CorpusMember member = change.getAffectedMember();
 		if(ModelUtils.isNonLayer(member)) {
@@ -452,7 +452,7 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	 * member's context) to the given one.
 	 */
 	public boolean isAffected(Context context) {
-		checkNotNull(context);
+		requireNonNull(context);
 
 		for(AtomicChange change : changes) {
 			Context affected = getContextForChange(change);

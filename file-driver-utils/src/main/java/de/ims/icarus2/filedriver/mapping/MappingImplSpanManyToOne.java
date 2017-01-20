@@ -24,8 +24,8 @@ import static de.ims.icarus2.model.api.driver.indices.IndexUtils.isContinuous;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.lastIndex;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.io.BufferedIOResource;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
@@ -596,7 +596,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 		}
 
 		public Builder inverseMapping(Mapping inverseMapping) {
-			checkNotNull(inverseMapping);
+			requireNonNull(inverseMapping);
 			checkState(this.inverseMapping==null);
 
 			this.inverseMapping = inverseMapping;

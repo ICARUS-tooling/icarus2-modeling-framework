@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -128,7 +128,7 @@ public class DocumentationImpl extends DefaultModifiableIdentity implements Docu
 	}
 
 	protected void addResource0(Resource resource) {
-		checkNotNull(resource);
+		requireNonNull(resource);
 
 		resources.add(resource);
 	}
@@ -141,7 +141,7 @@ public class DocumentationImpl extends DefaultModifiableIdentity implements Docu
 	}
 
 	protected void removeResource0(Resource resource) {
-		checkNotNull(resource);
+		requireNonNull(resource);
 
 		resources.remove(resource);
 	}
@@ -190,7 +190,7 @@ public class DocumentationImpl extends DefaultModifiableIdentity implements Docu
 		}
 
 		protected void setUri0(URI uri) {
-			checkNotNull(uri);
+			requireNonNull(uri);
 
 			this.uri = uri;
 		}

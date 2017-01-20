@@ -78,7 +78,8 @@ public interface MappingReader extends SynchronizedAccessor<Mapping>, ModelConst
 	 * Returns the number of indices that are mapped to the given {@code sourceIndex}.
 	 * This is equal to the {@link IndexSet#size() size} of an {@link IndexSet} that would
 	 * be returned for a call to {@link #lookup(long, RequestSettings)} when provided
-	 * with the same {@code sourceIndex} argument.
+	 * with the same {@code sourceIndex} argument but allows for a much more efficient
+	 * implementation since it doesn't need to actually read and return all the index values.
 	 * <p>
 	 * If the implementation is unable to efficiently determine to the number of mapped indices
 	 * without actually loading them it can return {@code -1} to signal an "unknown" size.

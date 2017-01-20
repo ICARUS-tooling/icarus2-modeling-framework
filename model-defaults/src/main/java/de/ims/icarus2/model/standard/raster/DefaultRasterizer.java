@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.standard.raster;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.api.raster.Metric;
 import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.api.raster.RasterAxis;
@@ -36,9 +36,9 @@ public class DefaultRasterizer implements Rasterizer {
 	private final Metric<Position> metric;
 
 	public DefaultRasterizer(RasterAxis[] axes, Metric<Position> metric) {
-		checkNotNull(axes);
+		requireNonNull(axes);
 		checkArgument("Axes array must not be empty", axes.length>0);
-		checkNotNull(metric);
+		requireNonNull(metric);
 
 		this.axes = axes;
 		this.metric = metric;

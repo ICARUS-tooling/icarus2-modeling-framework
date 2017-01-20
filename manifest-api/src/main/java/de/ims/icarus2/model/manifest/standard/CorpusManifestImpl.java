@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -102,8 +102,8 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	}
 
 	protected void addContextManifest0(ContextManifest manifest, boolean isRoot) {
-		checkNotNull(manifest);
-		manifest.checkNotTemplate();
+		requireNonNull(manifest);
+//		manifest.checkNotTemplate();
 
 		if(contextManifestLookup.containsKey(manifest.getId()))
 			throw new IllegalArgumentException("Duplicate context manifest: "+manifest); //$NON-NLS-1$
@@ -124,7 +124,7 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	}
 
 	protected void removeContextManifest0(ContextManifest manifest, boolean isRoot) {
-		checkNotNull(manifest);
+		requireNonNull(manifest);
 
 		if(!customContextManifests.remove(manifest))
 			throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Unknown context manifest: "+manifest); //$NON-NLS-1$
@@ -189,7 +189,7 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	 */
 	@Override
 	public ContextManifest getContextManifest(String id) {
-		checkNotNull(id);
+		requireNonNull(id);
 
 		ContextManifest contextManifest = contextManifestLookup.get(id);
 		//FIXME reevaluate decision to remove exception in case of unknown id to stay consistent with layer group and context level lookups
@@ -301,7 +301,7 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 		private String content;
 
 		public NoteImpl(String name) {
-			checkNotNull(name);
+			requireNonNull(name);
 
 			this.name = name;
 		}

@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.members.structure.builder;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.item.Edge;
@@ -39,8 +39,8 @@ public abstract class AbstractStaticEdgeStorage<R extends Item> extends Abstract
 	protected final LookupList<Edge> edges;
 
 	public AbstractStaticEdgeStorage(R root, LookupList<Edge> edges) {
-		checkNotNull(root);
-		checkNotNull(edges);
+		requireNonNull(root);
+		requireNonNull(edges);
 
 		this.root = root;
 		this.edges = edges;

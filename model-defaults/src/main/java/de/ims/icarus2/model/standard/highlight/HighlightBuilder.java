@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.highlight;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -77,7 +77,7 @@ public class HighlightBuilder {
 	}
 
 	public HighlightBuilder addItem(Item item) {
-		checkNotNull(item);
+		requireNonNull(item);
 
 		itemList.add(item);
 
@@ -91,7 +91,7 @@ public class HighlightBuilder {
 	}
 
 	public HighlightBuilder removeItem(Item item) {
-		checkNotNull(item);
+		requireNonNull(item);
 
 		itemList.remove(item);
 
@@ -133,7 +133,7 @@ public class HighlightBuilder {
 	}
 
 	public HighlightBuilder add(HighlightInfo highlightInfo) {
-		checkNotNull(highlightInfo);
+		requireNonNull(highlightInfo);
 
 		highlightInfoList.add(highlightInfo);
 
@@ -147,7 +147,7 @@ public class HighlightBuilder {
 	}
 
 	public HighlightBuilder removeInfo(HighlightInfo highlightInfo) {
-		checkNotNull(highlightInfo);
+		requireNonNull(highlightInfo);
 
 		highlightInfoList.remove(highlightInfo);
 

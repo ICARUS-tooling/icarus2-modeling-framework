@@ -47,6 +47,8 @@ public interface ManifestXmlAttributes {
 	public static final String ATTR_EDITABLE = "editable"; //$NON-NLS-1$
 	public static final String ATTR_PARALLEL = "parallel"; //$NON-NLS-1$
 
+	public static final String ATTR_INLINE = "inline"; //$NON-NLS-1$
+
 	public static final String ATTR_NAMESPACE = "namespace"; //$NON-NLS-1$
 	public static final String ATTR_CLASS = "class"; //$NON-NLS-1$
 	public static final String ATTR_CLASSNAME = "classname"; //$NON-NLS-1$

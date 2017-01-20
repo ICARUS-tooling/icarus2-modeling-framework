@@ -18,7 +18,7 @@
 package de.ims.icarus2.model.standard.registry.metadata.policy;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.List;
 
@@ -44,7 +44,7 @@ public class PriorityListMetadataPolicy<O extends Object> implements MetadataSto
 	private final MetadataStoragePolicy[] policies;
 
 	public PriorityListMetadataPolicy(MetadataStoragePolicy<? extends O>[] policies) {
-		checkNotNull(policies);
+		requireNonNull(policies);
 		checkArgument(policies.length>0);
 
 		this.policies = new MetadataStoragePolicy[policies.length];
@@ -55,7 +55,7 @@ public class PriorityListMetadataPolicy<O extends Object> implements MetadataSto
 	}
 
 	public PriorityListMetadataPolicy(List<MetadataStoragePolicy<? extends O>> policies) {
-		checkNotNull(policies);
+		requireNonNull(policies);
 		checkArgument(!policies.isEmpty());
 
 		this.policies = new MetadataStoragePolicy[policies.size()];

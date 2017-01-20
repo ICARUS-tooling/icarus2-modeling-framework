@@ -20,7 +20,7 @@ package de.ims.icarus2.model.standard.members.structure.info;
 import static de.ims.icarus2.model.standard.members.structure.info.DefaultStructureInfo.avgIndex;
 import static de.ims.icarus2.model.standard.members.structure.info.DefaultStructureInfo.maxIndex;
 import static de.ims.icarus2.model.standard.members.structure.info.DefaultStructureInfo.minIndex;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 import java.util.Set;
@@ -103,7 +103,7 @@ public class StructureInfoBuilder implements ModelConstants {
 	 * @param structure
 	 */
 	public void reset(Structure structure) {
-		checkNotNull(structure);
+		requireNonNull(structure);
 
 		this.structure = structure;
 

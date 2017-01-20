@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -124,7 +124,7 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	 */
 	@Override
 	public AnnotationManifest getAnnotationManifest(String key) {
-		checkNotNull(key);
+		requireNonNull(key);
 
 		AnnotationManifest manifest = annotationManifests.get(key);
 
@@ -146,7 +146,7 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	}
 
 	protected void addAnnotationManifest0(AnnotationManifest manifest) {
-		checkNotNull(manifest);
+		requireNonNull(manifest);
 
 		String key = manifest.getKey();
 
@@ -164,7 +164,7 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	}
 
 	protected void removeAnnotationManifest0(AnnotationManifest manifest) {
-		checkNotNull(manifest);
+		requireNonNull(manifest);
 
 		String key = manifest.getKey();
 
@@ -203,7 +203,7 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	}
 
 	protected void setDefaultKey0(String defaultKey) {
-		checkNotNull(defaultKey);
+		requireNonNull(defaultKey);
 
 		this.defaultKey = defaultKey;
 	}
@@ -216,7 +216,7 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	}
 
 	protected TargetLayerManifest addReferenceLayerId0(String referenceLayerId) {
-		checkNotNull(referenceLayerId);
+		requireNonNull(referenceLayerId);
 
 		checkAllowsTargetLayer();
 		TargetLayerManifest targetLayerManifest = new TargetLayerManifestImpl(referenceLayerId);
@@ -232,7 +232,7 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	}
 
 	protected void removeReferenceLayerId0(String referenceLayerId) {
-		checkNotNull(referenceLayerId);
+		requireNonNull(referenceLayerId);
 
 		checkAllowsTargetLayer();
 
@@ -259,7 +259,7 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	}
 
 	protected void setAnnotationFlag0(AnnotationFlag flag, boolean active) {
-		checkNotNull(flag);
+		requireNonNull(flag);
 
 		if(active) {
 			annotationFlags.add(flag);

@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.corpus;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -68,8 +68,8 @@ public class DefaultContext implements Context {
 	private final LoadingCache<String, Layer> foreignLayerCache;
 
 	public DefaultContext(Corpus corpus, ContextManifest manifest) {
-		checkNotNull(corpus);
-		checkNotNull(manifest);
+		requireNonNull(corpus);
+		requireNonNull(manifest);
 
 		this.corpus = corpus;
 		this.manifest = manifest;
@@ -174,7 +174,7 @@ public class DefaultContext implements Context {
 	}
 
 	public void addLayerGroup(LayerGroup group) {
-		checkNotNull(group);
+		requireNonNull(group);
 
 		if(layerGroups.contains(group))
 			throw new IllegalArgumentException("Layer group already added: "+ModelUtils.getName(group)); //$NON-NLS-1$
@@ -265,7 +265,7 @@ public class DefaultContext implements Context {
 
 	@Override
 	public void connectNotify(Driver driver) {
-		checkNotNull(driver);
+		requireNonNull(driver);
 
 		if(this.driver!=null)
 			throw new ModelException(getCorpus(), GlobalErrorCode.ILLEGAL_STATE,
@@ -276,7 +276,7 @@ public class DefaultContext implements Context {
 
 	@Override
 	public void disconnectNotify(Driver driver) {
-		checkNotNull(driver);
+		requireNonNull(driver);
 
 		if(this.driver!=driver)
 			throw new ModelException(getCorpus(), GlobalErrorCode.ILLEGAL_STATE,
@@ -329,7 +329,7 @@ public class DefaultContext implements Context {
 	}
 
 	public void addLayer(Layer layer) {
-		checkNotNull(layer);
+		requireNonNull(layer);
 		if(layer.getContext()!=this)
 			throw new ModelException(ManifestErrorCode.MANIFEST_INVALID_ENVIRONMENT,
 					"Foreign layer: "+ModelUtils.getName(layer)); //$NON-NLS-1$
@@ -348,7 +348,7 @@ public class DefaultContext implements Context {
 	}
 
 	public void removeLayer(Layer layer) {
-		checkNotNull(layer);
+		requireNonNull(layer);
 		if(layer.getContext()!=this)
 			throw new ModelException(ManifestErrorCode.MANIFEST_INVALID_ENVIRONMENT,
 					"Foreign layer: "+ModelUtils.getName(layer)); //$NON-NLS-1$

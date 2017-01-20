@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.util;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -63,10 +63,8 @@ import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
-import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.HighlightLayerManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
-import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LocationType;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
@@ -94,7 +92,7 @@ public final class ModelUtils implements ModelConstants {
 	}
 
 	public static String getUniqueId(Layer layer, char separator) {
-		checkNotNull(layer);
+		requireNonNull(layer);
 
 		LayerManifest manifest = layer.getManifest();
 
@@ -104,7 +102,7 @@ public final class ModelUtils implements ModelConstants {
 		if(manifest==null) {
 			Corpus corpus = layer.getCorpus();
 
-			id = corpus.getManifest().getId()+".layer-overlay";
+			id = corpus.getManifest().getId()+separator+"layer-overlay";
 		} else {
 
 			LayerGroup layerGroup = layer.getLayerGroup();
@@ -137,36 +135,6 @@ public final class ModelUtils implements ModelConstants {
 		return id;
 	}
 
-	public static String getUniqueId(LayerManifest manifest) {
-		return getUniqueId(manifest, '.');
-	}
-
-	public static String getUniqueId(LayerManifest manifest, char separator) {
-		checkNotNull(manifest);
-
-		LayerGroupManifest groupManifest = manifest.getGroupManifest();
-		ContextManifest contextManifest = manifest.getContextManifest();
-
-		StringBuilder sb = new StringBuilder();
-
-		if(contextManifest!=null) {
-			CorpusManifest corpusManifest = contextManifest.getCorpusManifest();
-			if(corpusManifest!=null) {
-				sb.append(corpusManifest.getId()).append(separator);
-			}
-
-			sb.append(contextManifest.getId()).append(separator);
-		}
-
-		if(groupManifest!=null) {
-			sb.append(groupManifest.getId()).append(separator);
-		}
-
-		sb.append(manifest.getId());
-
-		return sb.toString();
-	}
-
 	public static boolean isValidValue(Object value, AnnotationManifest manifest) {
 		if(value==null) {
 			return true;
@@ -181,7 +149,7 @@ public final class ModelUtils implements ModelConstants {
 	}
 
 	public static ContextManifest getContextManifest(MemberManifest manifest) {
-		checkNotNull(manifest);
+		requireNonNull(manifest);
 
 		switch (manifest.getManifestType()) {
 		case ANNOTATION_LAYER_MANIFEST:
@@ -278,8 +246,8 @@ public final class ModelUtils implements ModelConstants {
 	}
 
 	public static void dispatchChange(CorpusMember source, AtomicChange change) {
-		checkNotNull(source);
-		checkNotNull(change);
+		requireNonNull(source);
+		requireNonNull(change);
 
 		Corpus corpus = source.getCorpus();
 
@@ -299,7 +267,7 @@ public final class ModelUtils implements ModelConstants {
 	}
 
 	public static ContainerManifest getContainerManifest(Container container) {
-		checkNotNull(container);
+		requireNonNull(container);
 
 		// Fetch the container level and ask the
 		// hosting markable layer manifest for the container
@@ -355,8 +323,8 @@ public final class ModelUtils implements ModelConstants {
 	}
 
 	public static <L extends Layer> Set<L> getLayers(Class<L> clazz, Collection<Layer> layers) {
-		checkNotNull(clazz);
-		checkNotNull(layers);
+		requireNonNull(clazz);
+		requireNonNull(layers);
 
 		Set<L> result = new HashSet<>();
 
@@ -370,7 +338,7 @@ public final class ModelUtils implements ModelConstants {
 	}
 
 	public static Map<String, Object> getProperties(MemberManifest manifest) {
-		checkNotNull(manifest);
+		requireNonNull(manifest);
 
 		Map<String, Object> result = new HashMap<>();
 
@@ -382,7 +350,7 @@ public final class ModelUtils implements ModelConstants {
 	}
 
 	public static Context getContext(CorpusMember member) {
-		checkNotNull(member);
+		requireNonNull(member);
 
 		Layer layer = null;
 
@@ -544,7 +512,7 @@ public final class ModelUtils implements ModelConstants {
 	}
 
 	public static Path pathToFile(ResourcePath path) {
-		checkNotNull(path);
+		requireNonNull(path);
 		if(path.getType()!=LocationType.LOCAL)
 			throw new IllegalArgumentException("ResourcePath needs to be a file: "+path.getPath()); //$NON-NLS-1$
 
@@ -552,7 +520,7 @@ public final class ModelUtils implements ModelConstants {
 	}
 
 	public static URL pathToURL(ResourcePath path) throws MalformedURLException {
-		checkNotNull(path);
+		requireNonNull(path);
 		if(path.getType()!=LocationType.REMOTE)
 			throw new IllegalArgumentException("ResourcePath needs to be a url: "+path.getPath()); //$NON-NLS-1$
 
@@ -560,7 +528,7 @@ public final class ModelUtils implements ModelConstants {
 	}
 
 	public static InputStream openPath(ResourcePath path) throws IOException {
-		checkNotNull(path);
+		requireNonNull(path);
 
 		switch (path.getType()) {
 		case LOCAL:

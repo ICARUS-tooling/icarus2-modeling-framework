@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.util.collections;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
@@ -72,7 +72,7 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 	private Collection<E> buffer;
 
 	public LazyCollection(Supplier<Collection<E>> supplier) {
-		checkNotNull(supplier);
+		requireNonNull(supplier);
 
 		this.supplier = supplier;
 	}

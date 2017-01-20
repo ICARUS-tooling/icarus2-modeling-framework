@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.manifest.api.VersionManifest;
 
 /**
@@ -57,7 +57,7 @@ public class VersionManifestImpl extends AbstractLockable implements VersionMani
 	}
 
 	protected void setFormatId0(String formatId) {
-		checkNotNull(formatId);
+		requireNonNull(formatId);
 
 		this.formatId = formatId;
 	}
@@ -73,7 +73,7 @@ public class VersionManifestImpl extends AbstractLockable implements VersionMani
 	}
 
 	protected void setVersionString0(String versionString) {
-		checkNotNull(versionString);
+		requireNonNull(versionString);
 
 		this.versionString = versionString;
 	}

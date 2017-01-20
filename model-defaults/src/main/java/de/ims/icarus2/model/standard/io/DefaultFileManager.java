@@ -18,7 +18,7 @@
 package de.ims.icarus2.model.standard.io;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.nio.file.Files;
@@ -51,7 +51,7 @@ public class DefaultFileManager implements FileManager {
 	 * @param rootFolder
 	 */
 	public DefaultFileManager(Path rootFolder) {
-		checkNotNull(rootFolder);
+		requireNonNull(rootFolder);
 		checkArgument("Root path must be a directory", Files.isDirectory(rootFolder));
 		//TODO maybe check if folder actually exists, is not a link, etc...
 

@@ -17,8 +17,8 @@
  */
 package de.ims.icarus2.filedriver.mapping;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
@@ -39,10 +39,10 @@ public abstract class AbstractVirtualMapping implements Mapping {
 
 	protected AbstractVirtualMapping(Driver driver, MappingManifest manifest,
 			ItemLayerManifest sourceLayer, ItemLayerManifest targetLayer) {
-		checkNotNull(driver);
-		checkNotNull(manifest);
-		checkNotNull(sourceLayer);
-		checkNotNull(targetLayer);
+		requireNonNull(driver);
+		requireNonNull(manifest);
+		requireNonNull(sourceLayer);
+		requireNonNull(targetLayer);
 
 		this.driver = driver;
 		this.manifest = manifest;
@@ -51,7 +51,7 @@ public abstract class AbstractVirtualMapping implements Mapping {
 	}
 
 	protected AbstractVirtualMapping(MappingBuilder<?, ?> builder) {
-		checkNotNull(builder);
+		requireNonNull(builder);
 
 		driver = builder.getDriver();
 		manifest = builder.getManifest();
@@ -135,7 +135,7 @@ public abstract class AbstractVirtualMapping implements Mapping {
 		private IndexValueType valueType;
 
 		public B driver(Driver driver) {
-			checkNotNull(driver);
+			requireNonNull(driver);
 			checkState(this.driver==null);
 
 			this.driver = driver;
@@ -144,7 +144,7 @@ public abstract class AbstractVirtualMapping implements Mapping {
 		}
 
 		public B manifest(MappingManifest manifest) {
-			checkNotNull(manifest);
+			requireNonNull(manifest);
 			checkState(this.manifest==null);
 
 			this.manifest = manifest;
@@ -153,7 +153,7 @@ public abstract class AbstractVirtualMapping implements Mapping {
 		}
 
 		public B sourceLayer(ItemLayerManifest sourceLayer) {
-			checkNotNull(sourceLayer);
+			requireNonNull(sourceLayer);
 			checkState(this.sourceLayer==null);
 
 			this.sourceLayer = sourceLayer;
@@ -162,7 +162,7 @@ public abstract class AbstractVirtualMapping implements Mapping {
 		}
 
 		public B targetLayer(ItemLayerManifest targetLayer) {
-			checkNotNull(targetLayer);
+			requireNonNull(targetLayer);
 			checkState(this.targetLayer==null);
 
 			this.targetLayer = targetLayer;
@@ -171,7 +171,7 @@ public abstract class AbstractVirtualMapping implements Mapping {
 		}
 
 		public B valueType(IndexValueType valueType) {
-			checkNotNull(valueType);
+			requireNonNull(valueType);
 			checkState(this.valueType==null);
 
 			this.valueType = valueType;

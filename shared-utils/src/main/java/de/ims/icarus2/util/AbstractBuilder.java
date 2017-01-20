@@ -18,8 +18,8 @@
  */
 package de.ims.icarus2.util;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.util.function.Function;
 
@@ -41,7 +41,7 @@ public abstract class AbstractBuilder<B extends AbstractBuilder<B, O>, O extends
 	}
 
 	public B constructor(Function<B, O> constructor) {
-		checkNotNull(constructor);
+		requireNonNull(constructor);
 		checkState(this.constructor==null);
 
 		this.constructor = constructor;

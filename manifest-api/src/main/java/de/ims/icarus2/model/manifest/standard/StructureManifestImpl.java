@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.EnumSet;
 import java.util.function.Consumer;
@@ -119,7 +119,7 @@ public class StructureManifestImpl extends ContainerManifestImpl implements Stru
 	}
 
 	protected void setStructureType0(StructureType structureType) {
-		checkNotNull(structureType);
+		requireNonNull(structureType);
 
 		this.structureType = structureType;
 	}
@@ -137,7 +137,7 @@ public class StructureManifestImpl extends ContainerManifestImpl implements Stru
 	}
 
 	protected void setStructureFlag0(StructureFlag flag, boolean active) {
-		checkNotNull(flag);
+		requireNonNull(flag);
 
 		if(active) {
 			structureFlags.add(flag);

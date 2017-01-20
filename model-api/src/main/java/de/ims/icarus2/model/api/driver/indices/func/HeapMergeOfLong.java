@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.api.driver.indices.func;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -41,7 +41,7 @@ import de.ims.icarus2.util.collections.MinHeap.LongMinHeap;
 public class HeapMergeOfLong implements PrimitiveIterator.OfLong {
 
 	public static HeapMergeOfLong fromArrays(long[]...arrays) {
-		checkNotNull(arrays);
+		requireNonNull(arrays);
 		checkArgument(arrays.length>2);
 
 		OfLong[] sources = new OfLong[arrays.length];
@@ -54,7 +54,7 @@ public class HeapMergeOfLong implements PrimitiveIterator.OfLong {
 	}
 
 	public static HeapMergeOfLong fromIndices(IndexSet...indices) {
-		checkNotNull(indices);
+		requireNonNull(indices);
 		checkArgument(indices.length>2);
 
 		OfLong[] sources = new OfLong[indices.length];
@@ -67,7 +67,7 @@ public class HeapMergeOfLong implements PrimitiveIterator.OfLong {
 	}
 
 	public static HeapMergeOfLong fromIndices(Collection<IndexSet> indices) {
-		checkNotNull(indices);
+		requireNonNull(indices);
 		checkArgument(indices.size()>2);
 
 		OfLong[] sources = new OfLong[indices.size()];
@@ -83,7 +83,7 @@ public class HeapMergeOfLong implements PrimitiveIterator.OfLong {
 	private final LongMinHeap<PrimitiveIterator.OfLong> heap;
 
 	public HeapMergeOfLong(PrimitiveIterator.OfLong[] sources) {
-		checkNotNull(sources);
+		requireNonNull(sources);
 
 		heap = new LongMinHeap<>(sources.length);
 

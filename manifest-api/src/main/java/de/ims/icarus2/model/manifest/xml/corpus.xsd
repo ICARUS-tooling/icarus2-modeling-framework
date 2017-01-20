@@ -285,11 +285,15 @@
 	<xs:complexType name="locationManifestType">
 		<xs:complexContent>
 			<xs:extension base="imf:basicManifestType">
-				<xs:sequence>
-					<xs:element name="path" type="imf:pathEntryType" minOccurs="0"/>
-					<xs:element name="pathEntry" type="imf:pathEntryType" minOccurs="0" maxOccurs="unbounded" />
-					<xs:element name="pathResolver" type="imf:pathResolverManifestType" minOccurs="0" />
-				</xs:sequence>
+				<xs:choice>
+					<xs:element name="content" type="imf:textType" />
+					<xs:sequence>
+						<xs:element name="path" type="imf:pathEntryType" minOccurs="0"/>
+						<xs:element name="pathEntry" type="imf:pathEntryType" minOccurs="0" maxOccurs="unbounded" />
+						<xs:element name="pathResolver" type="imf:pathResolverManifestType" minOccurs="0" />
+					</xs:sequence>
+				</xs:choice>
+				<xs:attribute name="inline" type="xs:boolean" />
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>

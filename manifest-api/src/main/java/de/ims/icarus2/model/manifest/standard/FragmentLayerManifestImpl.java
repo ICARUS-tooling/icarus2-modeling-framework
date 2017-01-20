@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
@@ -153,7 +153,7 @@ public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements 
 	}
 
 	protected TargetLayerManifest setValueLayerId0(String valueLayerId) {
-		checkNotNull(valueLayerId);
+		requireNonNull(valueLayerId);
 
 		checkAllowsTargetLayer();
 		TargetLayerManifest manifest = this.new TargetLayerManifestImpl(valueLayerId);
@@ -172,7 +172,7 @@ public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements 
 	}
 
 	protected void setAnnotationKey0(String key) {
-		checkNotNull(key);
+		requireNonNull(key);
 
 		annotationKey = key;
 	}
@@ -188,7 +188,7 @@ public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements 
 	}
 
 	protected void setRasterizerManifest0(RasterizerManifest rasterizerManifest) {
-		checkNotNull(rasterizerManifest);
+		requireNonNull(rasterizerManifest);
 
 		this.rasterizerManifest = rasterizerManifest;
 	}

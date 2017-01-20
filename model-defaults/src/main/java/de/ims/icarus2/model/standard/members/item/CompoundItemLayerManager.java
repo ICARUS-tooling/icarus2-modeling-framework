@@ -51,10 +51,10 @@ public class CompoundItemLayerManager implements ItemLayerManager {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#getLayers()
+	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#getItemLayers()
 	 */
 	@Override
-	public Collection<Layer> getLayers() {
+	public Collection<Layer> getItemLayers() {
 		LazyCollection<Layer> result = LazyCollection.lazyList();
 
 		managerLookup.keySet().forEach(result);

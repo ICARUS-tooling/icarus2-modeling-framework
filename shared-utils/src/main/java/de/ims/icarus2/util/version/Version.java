@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.util.version;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Markus Gärtner
@@ -30,8 +30,8 @@ public class Version implements Cloneable {
 	private final VersionFormat versionFormat;
 
 	public Version(String versionString, VersionFormat versionFormat) {
-		checkNotNull(versionString);
-		checkNotNull(versionFormat);
+		requireNonNull(versionString);
+		requireNonNull(versionFormat);
 
 		this.versionString = versionString;
 		this.versionFormat = versionFormat;

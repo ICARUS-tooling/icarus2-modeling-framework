@@ -17,7 +17,7 @@
  */
 package de.ims.icarus2.model.api.edit.io;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
@@ -1109,7 +1109,7 @@ public class SerializableAtomicChangeImpl {
 	}
 
 	public static AtomicChange fromProxy(AtomicChangeProxy proxy) {
-		checkNotNull(proxy);
+		requireNonNull(proxy);
 
 		switch (proxy.getType()) {
 

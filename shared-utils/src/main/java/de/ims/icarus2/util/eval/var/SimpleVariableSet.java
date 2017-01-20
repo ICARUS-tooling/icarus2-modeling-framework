@@ -17,7 +17,7 @@
  */
 package de.ims.icarus2.util.eval.var;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
@@ -52,7 +52,7 @@ public class SimpleVariableSet implements VariableSet {
 	private final Object2IntMap<String> variablesLookup;
 
 	public SimpleVariableSet(Collection<? extends VariableDescriptor> variableDescriptors) {
-		checkNotNull(variableDescriptors);
+		requireNonNull(variableDescriptors);
 
 		int size = variableDescriptors.size();
 

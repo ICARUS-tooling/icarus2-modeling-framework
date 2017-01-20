@@ -18,8 +18,8 @@
  */
 package de.ims.icarus2.model.api.driver.mapping;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
@@ -147,7 +147,7 @@ public class MappingStorage {
 		}
 
 		public Builder addMapping(Mapping mapping) {
-			checkNotNull(mapping);
+			requireNonNull(mapping);
 
 			long key = getKey(mapping);
 
@@ -167,7 +167,7 @@ public class MappingStorage {
 		}
 
 		public Builder fallback(BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> fallback) {
-			checkNotNull(fallback);
+			requireNonNull(fallback);
 			checkState(this.fallback==null);
 
 			this.fallback = fallback;

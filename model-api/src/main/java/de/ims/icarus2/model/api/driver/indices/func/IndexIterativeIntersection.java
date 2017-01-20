@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.api.driver.indices.func;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -113,9 +113,9 @@ public class IndexIterativeIntersection extends AbstractIndexSetProcessor {
 	 * @return
 	 */
 	public static boolean intersect(IndexSet set1, IndexSet set2, LongConsumer consumer) {
-		checkNotNull(set1);
-		checkNotNull(set2);
-		checkNotNull(consumer);
+		requireNonNull(set1);
+		requireNonNull(set2);
+		requireNonNull(consumer);
 
 		long max1 = set1.lastIndex();
 		long max2 = set2.lastIndex();

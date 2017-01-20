@@ -186,7 +186,7 @@ public class FileDriverUtils {
 
 	/**
 	 * If {@code s} is not {@code null} this method will create a new {@link FileResource}
-	 * with interpreting {@code s} as the path to a physical file.
+	 * interpreting {@code s} as the path to a physical file.
 	 *
 	 * @param s
 	 * @return

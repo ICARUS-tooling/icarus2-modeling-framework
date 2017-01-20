@@ -17,55 +17,54 @@
  */
 package de.ims.icarus2.filedriver.io.sets;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
-
-import java.nio.file.Path;
+import static java.util.Objects.requireNonNull;
+import de.ims.icarus2.model.api.io.resources.IOResource;
 
 /**
  * @author Markus Gärtner
  *
  */
-public final class SingletonFileSet implements FileSet {
+public final class SingletonResourceSet implements ResourceSet {
 
-	private final Path file;
+	private final IOResource resource;
 
 	/**
-	 * Creates a new {@code SingletonFileSet} that points to the given {@code file}.
+	 * Creates a new {@code SingletonResourceSet} that points to the given {@code resource}.
 	 *
-	 * @param file
+	 * @param resource
 	 * @param storage
 	 */
-	public SingletonFileSet(Path file) {
-		checkNotNull(file);
+	public SingletonResourceSet(IOResource resource) {
+		requireNonNull(resource);
 
-		this.file = file;
+		this.resource = resource;
 	}
 
 	@Override
 	public String toString() {
-		return "SingletonFileSet [path="+file+"]";
+		return "SingletonResourceSet [resource="+resource+"]";
 	}
 
 	/**
-	 * @see de.ims.icarus2.filedriver.io.sets.FileSet#getFileCount()
+	 * @see de.ims.icarus2.filedriver.io.sets.ResourceSet#getResourceCount()
 	 */
 	@Override
-	public int getFileCount() {
+	public int getResourceCount() {
 		return 1;
 	}
 
-	private void checkIndex(int fileIndex) {
-		if(fileIndex!=0)
-			throw new IllegalArgumentException("Invalid file index: "+fileIndex+" - only legal value is 0"); //$NON-NLS-1$ //$NON-NLS-2$
+	private void checkIndex(int resourceIndex) {
+		if(resourceIndex!=0)
+			throw new IllegalArgumentException("Invalid resource index: "+resourceIndex+" - only legal value is 0"); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 
 	/**
-	 * @see de.ims.icarus2.filedriver.io.sets.FileSet#getFileAt(int)
+	 * @see de.ims.icarus2.filedriver.io.sets.ResourceSet#getResourceAt(int)
 	 */
 	@Override
-	public Path getFileAt(int fileIndex) {
-		checkIndex(fileIndex);
+	public IOResource getResourceAt(int resourceIndex) {
+		checkIndex(resourceIndex);
 
-		return file;
+		return resource;
 	}
 }

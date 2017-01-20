@@ -17,17 +17,37 @@
  */
 package de.ims.icarus2.filedriver;
 
-import static de.ims.icarus2.util.Conditions.checkNotNull;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.strings.StringUtil.getName;
+import static java.util.Objects.requireNonNull;
+
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.FileDriver.FileDriverBuilder;
+import de.ims.icarus2.filedriver.io.sets.CompoundResourceSet;
+import de.ims.icarus2.filedriver.io.sets.LazyResourceSet;
+import de.ims.icarus2.filedriver.io.sets.ResourceSet;
+import de.ims.icarus2.filedriver.io.sets.SingletonResourceSet;
+import de.ims.icarus2.filedriver.resolver.DirectPathResolver;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
-import de.ims.icarus2.model.api.members.CorpusMember;
+import de.ims.icarus2.model.api.io.PathResolver;
+import de.ims.icarus2.model.api.io.resources.IOResource;
+import de.ims.icarus2.model.api.io.resources.ReadOnlyStringResource;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.api.registry.SubRegistry;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory;
+import de.ims.icarus2.model.manifest.api.LocationManifest;
+import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
+import de.ims.icarus2.model.manifest.api.PathResolverManifest;
+import de.ims.icarus2.model.standard.util.DefaultImplementationLoader;
 
 /**
  * Wraps a factory implementation around a {@link FileDriverBuilder} to create a new
@@ -41,7 +61,7 @@ public class DefaultFileDriverFactory implements Factory {
 	private FileDriverBuilder builder;
 
 	private void setBuilder(FileDriverBuilder builder) {
-		checkNotNull(builder);
+		requireNonNull(builder);
 		checkState(this.builder==null);
 
 		this.builder = builder;
@@ -56,6 +76,20 @@ public class DefaultFileDriverFactory implements Factory {
 		builder = null;
 	}
 
+	private Corpus getCorpus(ImplementationLoader<?> loader) {
+		if(loader instanceof DefaultImplementationLoader) {
+			return ((DefaultImplementationLoader)loader).getCorpus();
+		} else {
+			Object environment = loader.getEnvironment();
+
+			if(environment instanceof Corpus) {
+				return (Corpus) environment;
+			}
+
+			return null;
+		}
+	}
+
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory#create(java.lang.Class, de.ims.icarus2.model.manifest.api.ImplementationManifest, de.ims.icarus2.model.manifest.api.ImplementationLoader)
 	 */
@@ -65,17 +99,19 @@ public class DefaultFileDriverFactory implements Factory {
 			IllegalAccessException, InstantiationException, ClassCastException {
 
 		final DriverManifest driverManifest = (DriverManifest) manifest.getHostManifest();
-		final Corpus corpus = ((CorpusMember)loader.getEnvironment()).getCorpus();
+		final Corpus corpus = getCorpus(loader);
 
 		// Early sanity checks
-		checkNotNull("No corpus defined", corpus!=null);
+		Objects.requireNonNull(corpus, "No corpus defined");
 		validateDriverManifest(driverManifest);
 
 		final MetadataRegistry registry = createMetadataRegistry(corpus, driverManifest);
 
+		final ResourceSet dataFiles = createResourceSet(corpus, driverManifest.getContextManifest().getLocationManifests());
+
 		// use FileDriverBuilder and add utility method for creation of required parts
 
-		FileDriverBuilder<?> builder = createBuilder();
+		FileDriverBuilder builder = createBuilder();
 
 		setBuilder(builder);
 
@@ -85,6 +121,9 @@ public class DefaultFileDriverFactory implements Factory {
 		// Registry for maintenance data
 		builder.metadataRegistry(registry);
 
+		// Links to all corpus files
+		builder.dataFiles(dataFiles);
+
 		FileDriver driver = builder.build();
 
 		finish();
@@ -92,10 +131,8 @@ public class DefaultFileDriverFactory implements Factory {
 		return resultClass.cast(driver);
 	}
 
-	protected FileDriverBuilder<?> createBuilder() {
-		return null;
-//		return new FileDriverBuilder();
-		//FIXME needs to be changed to determine actual correct (!!) builder implementation
+	protected FileDriverBuilder createBuilder() {
+		return new FileDriverBuilder();
 	}
 
 	/**
@@ -114,5 +151,56 @@ public class DefaultFileDriverFactory implements Factory {
 
 	protected void validateDriverManifest(DriverManifest manifest) {
 		//TODO
+	}
+
+	protected ResourceSet createResourceSet(Corpus corpus, List<LocationManifest> locationManifests) {
+		List<ResourceSet> resourceSets = new ArrayList<>();
+
+		// Collect all resources
+		for(LocationManifest locationManifest : locationManifests) {
+			resourceSets.add(toResozrceSet(corpus, locationManifest));
+		}
+
+		// Wrap collection of resources if needed
+		if(resourceSets.size()==1) {
+			return resourceSets.get(0);
+		} else {
+			return new CompoundResourceSet(resourceSets);
+		}
+	}
+
+	protected ResourceSet toResozrceSet(Corpus corpus, LocationManifest locationManifest) {
+
+
+		if(locationManifest.isInline()) {
+			// Special and easy case for inline data: just wrap it into a read-only resource
+			IOResource resource = new ReadOnlyStringResource(locationManifest.getInlineData().toString(), StandardCharsets.UTF_8); //TODO fetch correct encoding from manifest?
+			return new SingletonResourceSet(resource);
+		} else {
+			PathType rootPathType = locationManifest.getRootPathType();
+
+			if(rootPathType==PathType.FILE || rootPathType==PathType.FOLDER) {
+				PathResolver pathResolver = getResolverForLocation(corpus, locationManifest);
+
+				return new LazyResourceSet(pathResolver);
+			} else
+				//TODO implement handling of other path types
+				throw new ModelException(corpus, GlobalErrorCode.NOT_IMPLEMENTED,
+						"Currently no path types other than FILE or FOLDER are being supported");
+		}
+	}
+
+	protected PathResolver getResolverForLocation(Corpus corpus, LocationManifest locationManifest) {
+		PathResolverManifest pathResolverManifest = locationManifest.getPathResolverManifest();
+		if(pathResolverManifest!=null) {
+			// If our location specifies a custom path resolver -> delegate instantiation
+			return corpus.getManager().newFactory().newImplementationLoader()
+					.manifest(pathResolverManifest.getImplementationManifest())
+					.message("Path resolver for location "+locationManifest+" in corpus "+getName(corpus))
+					.environment(corpus)
+					.instantiate(PathResolver.class);
+		}
+
+		return DirectPathResolver.forManifest(locationManifest);
 	}
 }
