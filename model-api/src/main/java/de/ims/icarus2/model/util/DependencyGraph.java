@@ -20,15 +20,13 @@ package de.ims.icarus2.model.util;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.Stack;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -42,6 +40,10 @@ import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
 import de.ims.icarus2.util.collections.CollectionUtils;
+import it.unimi.dsi.fastutil.Stack;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
  * @author Markus Gärtner
@@ -130,37 +132,18 @@ public class DependencyGraph<E extends Object> {
 
 	}
 
-	// UTILITY FILLERS
-
-	private static void collectLayers(Layer source, Consumer<? super Layer> action, Set<DependencyType> dependencies) {
-		if(dependencies.contains(DependencyType.STRONG)) {
-			source.getBaseLayers().forEachEntry(action);
+	private static Set<DependencyType> toLookup(DependencyType[] dependencyies) {
+		if(dependencyies==null || dependencyies.length==0) {
+			return Collections.emptySet();
 		}
 
-		if(ModelUtils.isItemLayer(source)) {
-			ItemLayer itemLayer = (ItemLayer) source;
-			ItemLayer foundationLayer = itemLayer.getFoundationLayer();
+		Set<DependencyType> result = EnumSet.noneOf(DependencyType.class);
+		CollectionUtils.feedItems(result, dependencyies);
 
-			if(foundationLayer!=null && dependencies.contains(DependencyType.FOUNDATION)) {
-				action.accept(foundationLayer);
-			}
-
-			ItemLayer boundaryLayer = itemLayer.getBoundaryLayer();
-
-			if(boundaryLayer!=null && dependencies.contains(DependencyType.BOUNDARY)) {
-				action.accept(boundaryLayer);
-			}
-
-			if(ModelUtils.isFragmentLayer(source)) {
-				FragmentLayer fragmentLayer = (FragmentLayer) source;
-				AnnotationLayer valueLayer = fragmentLayer.getValueLayer();
-
-				if(valueLayer!=null && dependencies.contains(DependencyType.VALUE)) {
-					action.accept(valueLayer);
-				}
-			}
-		}
+		return result;
 	}
+
+	// UTILITY FILLERS
 
 	/**
 	 * Fills a graph using the given {@link Function} to generate
@@ -175,14 +158,14 @@ public class DependencyGraph<E extends Object> {
 	 */
 	public static <E extends Object> DependencyGraph<E> genericGraph(Class<E> nodeClass, Supplier<? extends E> roots,
 			Function<E, Collection<? extends E>> childFunc) {
-		return createGraph(nodeClass, false, TYPE_UNKNOWN, roots, childFunc);
+		return createGraph(nodeClass, TYPE_UNKNOWN, roots, childFunc);
 	}
 
 	private static <E extends Object> DependencyGraph<E> createGraph(Class<E> nodeClass, int type,
 			Supplier<? extends E> roots, Function<E, Collection<? extends E>> childFunc) {
 		DependencyGraph<E> tree = new DependencyGraph<E>(nodeClass, TYPE_UNKNOWN, roots);
 
-		tree.fill(childFunc);
+		tree.fillWithFunction(childFunc);
 
 		return tree;
 	}
@@ -235,6 +218,7 @@ public class DependencyGraph<E extends Object> {
 		requireNonNull(root);
 
 		roots.add(root);
+		this.root = root;
 	}
 
 	// FILL METHODS
@@ -256,6 +240,40 @@ public class DependencyGraph<E extends Object> {
 		node(to, true).addIncoming(from);
 	}
 
+	static void collectLayers(DependencyGraph<Layer> graph, Set<DependencyType> dependencies) {
+		BiConsumer<Layer, Consumer<? super Layer>> mapper = (source, action) -> {
+			if(dependencies.contains(DependencyType.STRONG)) {
+				source.getBaseLayers().forEachEntry(action);
+			}
+
+			if(ModelUtils.isItemLayer(source)) {
+				ItemLayer itemLayer = (ItemLayer) source;
+				ItemLayer foundationLayer = itemLayer.getFoundationLayer();
+
+				if(foundationLayer!=null && dependencies.contains(DependencyType.FOUNDATION)) {
+					action.accept(foundationLayer);
+				}
+
+				ItemLayer boundaryLayer = itemLayer.getBoundaryLayer();
+
+				if(boundaryLayer!=null && dependencies.contains(DependencyType.BOUNDARY)) {
+					action.accept(boundaryLayer);
+				}
+
+				if(ModelUtils.isFragmentLayer(source)) {
+					FragmentLayer fragmentLayer = (FragmentLayer) source;
+					AnnotationLayer valueLayer = fragmentLayer.getValueLayer();
+
+					if(valueLayer!=null && dependencies.contains(DependencyType.VALUE)) {
+						action.accept(valueLayer);
+					}
+				}
+			}
+		};
+
+		graph.fillWithMapper(mapper);
+	}
+
 	/**
 	 * Fills this graph using the given {@link Function} to generate
 	 * children for a {@code node}. If the function returns either
@@ -267,16 +285,18 @@ public class DependencyGraph<E extends Object> {
 	 *
 	 * @param childFunc
 	 */
-	void fill(Function<E, Collection<? extends E>> childFunc) {
+	void fillWithFunction(Function<E, Collection<? extends E>> childFunc) {
 		ObjectArrayList<E> buffer = new ObjectArrayList<>(roots);
 
 		while(!buffer.isEmpty()) {
 			E source = buffer.pop();
 			Node<E> node = node(source, true);
 
-			if(node.flagSet(FLAG_VISITED)) {
+			// Make sure we can't process already handled nodes
+			if(node.flagSet(FLAG_FILLED)) {
 				continue;
 			}
+			node.setFlag(FLAG_FILLED, true);
 
 			Collection<? extends E> children = childFunc.apply(source);
 
@@ -285,7 +305,29 @@ public class DependencyGraph<E extends Object> {
 					node.addOutgoing(target);
 					node(target, true).addIncoming(source);
 				}
+				buffer.addAll(children);
 			}
+		}
+	}
+
+	void fillWithMapper(BiConsumer<E, Consumer<? super E>> mapper) {
+		ObjectArrayList<E> buffer = new ObjectArrayList<>(roots);
+
+		while(!buffer.isEmpty()) {
+			E source = buffer.pop();
+			Node<E> node = node(source, true);
+
+			// Make sure we can't process already handled nodes
+			if(node.flagSet(FLAG_FILLED)) {
+				continue;
+			}
+			node.setFlag(FLAG_FILLED, true);
+
+			mapper.accept(source, target -> {
+				node.addOutgoing(target);
+				node(target, true).addIncoming(source);
+				buffer.add(target);
+			});
 		}
 	}
 
@@ -328,32 +370,61 @@ public class DependencyGraph<E extends Object> {
 	public int outgoingCount(E content) {
 		requireNonNull(content);
 
-		Node<E> n = new Node<DependencyGraph.E>(content)
+		Node<E> node = node(content, false);
+		return node==null ? 0 : node.outgoingCount();
+	}
+
+	public int incomingCount(E content) {
+		requireNonNull(content);
 
 		Node<E> node = node(content, false);
-		return node==null ? 0 : node.;
+		return node==null ? 0 : node.incomingCount();
 	}
 
-	public Collection<E> childNodes(E parent) {
-		requireNonNull(parent);
-
-		Set<E> children = graph.get(parent);
-		if(children==null) {
-			children = Collections.emptySet();
+	private static <E extends Object> Set<E> unmodifiable(Set<E> set) {
+		if(set==null) {
+			set = Collections.emptySet();
 		} else {
-			children = Collections.unmodifiableSet(children);
+			set = Collections.unmodifiableSet(set);
 		}
-
-		return children;
+		return set;
 	}
 
-	public void forEachChild(E parent, Consumer<? super E> action) {
-		requireNonNull(parent);
+	public Set<E> incomingNodes(E content) {
+		requireNonNull(content);
+
+		Node<E> node = node(content, false);
+		Set<E> incoming = node==null ? null : node.incoming();
+
+		return unmodifiable(incoming);
+	}
+
+	public Set<E> outgoingNodes(E content) {
+		requireNonNull(content);
+
+		Node<E> node = node(content, false);
+		Set<E> outgoing = node==null ? null : node.outgoing();
+
+		return unmodifiable(outgoing);
+	}
+
+	public void forEachIncoming(E content, Consumer<? super E> action) {
+		requireNonNull(content);
 		requireNonNull(action);
 
-		Set<E> children = graph.get(parent);
-		if(children!=null) {
-			children.forEach(action);
+		Node<E> node = node(content, false);
+		if(node!=null) {
+			node.forEachIncoming(action);
+		}
+	}
+
+	public void forEachOutgoing(E content, Consumer<? super E> action) {
+		requireNonNull(content);
+		requireNonNull(action);
+
+		Node<E> node = node(content, false);
+		if(node!=null) {
+			node.forEachOutgoing(action);
 		}
 	}
 
@@ -375,7 +446,17 @@ public class DependencyGraph<E extends Object> {
 		return type==TYPE_LAYER;
 	}
 
-	private static final int FLAG_VISITED = (1<<0);
+	/**
+	 * Used by our filler or builder code to check if we already processed
+	 * a given node,
+	 */
+	private static final int FLAG_FILLED = (1<<0);
+
+	/**
+	 * Used by walker or visitor code to check if a given node has been
+	 * visited previously.
+	 */
+	private static final int FLAG_VISITED = (1<<1);
 
 	private static class Node<E extends Object> {
 		private final E content;
@@ -387,6 +468,10 @@ public class DependencyGraph<E extends Object> {
 			requireNonNull(content);
 
 			this.content = content;
+		}
+
+		E content() {
+			return content;
 		}
 
 		private Set<E> incoming(boolean createIfMissing) {
