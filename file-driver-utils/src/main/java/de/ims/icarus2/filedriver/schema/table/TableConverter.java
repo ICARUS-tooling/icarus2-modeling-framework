@@ -37,6 +37,7 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
@@ -605,6 +606,14 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 			for(int i=0; i<size; i++) {
 				action.accept(items.get(i), indices.getLong(i));
 			}
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache#pendingItemIterator()
+		 */
+		@Override
+		public Iterator<Item> pendingItemIterator() {
+			return items.iterator();
 		}
 
 		/**
@@ -1858,10 +1867,12 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 
 
 				if(mode==ReadMode.SCAN) {
+					// In scan mdoe we can't predict max index
 					MutableLong index = new MutableLong(firstIndex);
 					builder.indexSupplier(index::getAndIncrement);
 				} else {
 					builder.firstIndex(firstIndex);
+					// If available we use information about last index in file
 					long lastIndex = fileInfo.getEndIndex(layer.getManifest());
 					if(lastIndex!=NO_INDEX) {
 						builder.lastIndex(lastIndex);

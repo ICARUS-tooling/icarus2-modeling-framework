@@ -27,8 +27,12 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 import java.lang.ref.WeakReference;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.Objects;
 import java.util.PrimitiveIterator.OfLong;
+import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 import java.util.function.ObjLongConsumer;
 
@@ -92,15 +96,17 @@ public class BufferedItemManager {
 	 */
 	public interface InputCache {
 
-		public void offer(Item item, long index);
+		void offer(Item item, long index);
 
-		public boolean hasPendingEntries();
+		boolean hasPendingEntries();
 
-		public void forEach(ObjLongConsumer<Item> action);
+		void forEach(ObjLongConsumer<Item> action);
 
-		public int discard();
+		Iterator<Item> pendingItemIterator();
 
-		public int commit();
+		int discard();
+
+		int commit();
 
 	}
 
@@ -133,6 +139,14 @@ public class BufferedItemManager {
 		}
 
 		/**
+		 * @see de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache#pendingItemIterator()
+		 */
+		@Override
+		public Iterator<Item> pendingItemIterator() {
+			return null;
+		}
+
+		/**
 		 * @see de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache#discard()
 		 */
 		@Override
@@ -161,11 +175,13 @@ public class BufferedItemManager {
 	static class InputCacheImpl implements InputCache {
 
 		private final WeakReference<LayerBuffer> buffer;
+		private final Consumer<? super InputCache> cleanupAction;
 
 		private volatile Long2ObjectMap<Item> pendingEntries;
 
-		public InputCacheImpl(LayerBuffer buffer) {
+		public InputCacheImpl(LayerBuffer buffer, Consumer<? super InputCache> cleanupAction) {
 			this.buffer = new WeakReference<>(buffer);
+			this.cleanupAction = cleanupAction;
 		}
 
 		public LayerBuffer getBuffer() {
@@ -215,6 +231,19 @@ public class BufferedItemManager {
 		}
 
 		/**
+		 * @see de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache#pendingItemIterator()
+		 */
+		@Override
+		public Iterator<Item> pendingItemIterator() {
+			Long2ObjectMap<Item> pendingEntries = this.pendingEntries;
+			Collection<Item> c = Collections.emptyList();
+			if(pendingEntries!=null) {
+				c = pendingEntries.values();
+			}
+			return c.iterator();
+		}
+
+		/**
 		 * @see de.ims.icarus2.model.standard.driver.InputCache#discard()
 		 */
 		@Override
@@ -224,7 +253,15 @@ public class BufferedItemManager {
 
 			if(pendingEntries!=null && !pendingEntries.isEmpty()) {
 				result = pendingEntries.size();
-				pendingEntries.clear();
+
+				try {
+					if(cleanupAction!=null) {
+						cleanupAction.accept(this);
+					}
+				} finally {
+					// Make sure we really clear our buffer
+					pendingEntries.clear();
+				}
 			}
 
 			return result;
@@ -364,12 +401,13 @@ public class BufferedItemManager {
 
 		/**
 		 * Creates a new {@link InputCache} that when ordered to {@link InputCache#commit()}
-		 * will add its content to this buffer.
+		 * will add its content to this buffer and use the provided {@code action} for
+		 * cleaning up connected data when a {@link InputCache#discard() discard} is called.
 		 *
 		 * @return
 		 */
-		public InputCache newCache() {
-			return new InputCacheImpl(this);
+		public InputCache newCache(Consumer<? super InputCache> cleanupAction) {
+			return new InputCacheImpl(this, cleanupAction);
 		}
 
 		/**

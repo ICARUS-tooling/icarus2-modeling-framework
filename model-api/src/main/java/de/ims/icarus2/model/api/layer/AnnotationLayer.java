@@ -20,6 +20,7 @@
  */
 package de.ims.icarus2.model.api.layer;
 
+import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -153,6 +154,10 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 		 * @param source
 		 */
 		void removeAllValues(Supplier<? extends Item> source);
+
+		default void removeAllValues(Iterator<? extends Item> source) {
+			removeAllValues(() -> {return source.hasNext() ? source.next() : null;});
+		}
 
 //		/**
 //		 * Removes from this layer all annotations for the given

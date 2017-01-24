@@ -18,6 +18,8 @@
  */
 package de.ims.icarus2.model.api.layer;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * @author Markus Gärtner
  *
@@ -28,10 +30,8 @@ public final class Dependency<E extends Object> {
 	private final DependencyType type;
 
 	public Dependency(E target, DependencyType type) {
-		if (target == null)
-			throw new NullPointerException("Invalid target"); //$NON-NLS-1$
-		if (type == null)
-			throw new NullPointerException("Invalid type"); //$NON-NLS-1$
+		requireNonNull(target);
+		requireNonNull(type);
 
 		this.target = target;
 		this.type = type;

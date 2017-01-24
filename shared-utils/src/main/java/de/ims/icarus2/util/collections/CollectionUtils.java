@@ -47,6 +47,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import com.google.common.collect.MapMaker;
 
@@ -267,6 +268,13 @@ public final class CollectionUtils {
 			collection.add((T)items[offset+i]);
 		}
 	}
+
+    public static <T extends Object> void feedItems(Collection<T> collection, Supplier<? extends T> source) {
+    	T item;
+    	while((item=source.get())!=null) {
+    		collection.add(item);
+    	}
+    }
 
     public static void feedItems(LongCollection collection, long...items) {
     	for(long item : items) {

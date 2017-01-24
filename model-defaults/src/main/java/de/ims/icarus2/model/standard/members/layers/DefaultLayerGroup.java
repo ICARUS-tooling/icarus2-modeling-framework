@@ -18,6 +18,7 @@
  */
 package de.ims.icarus2.model.standard.members.layers;
 
+import static java.util.Objects.requireNonNull;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 import java.util.Set;
@@ -47,8 +48,7 @@ public class DefaultLayerGroup extends AbstractPart<Context> implements LayerGro
 	private ItemLayer primaryLayer;
 
 	public DefaultLayerGroup(LayerGroupManifest manifest) {
-		if (manifest == null)
-			throw new NullPointerException("Invalid manifest"); //$NON-NLS-1$
+		requireNonNull(manifest);
 
 		this.manifest = manifest;
 	}
@@ -109,8 +109,7 @@ public class DefaultLayerGroup extends AbstractPart<Context> implements LayerGro
 	 * @param primaryLayer
 	 */
 	public void setPrimaryLayer(ItemLayer primaryLayer) {
-		if (primaryLayer == null)
-			throw new NullPointerException("Invalid primaryLayer"); //$NON-NLS-1$
+		requireNonNull(primaryLayer);
 		if(!layers.contains(primaryLayer))
 			throw new ModelException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "Layer is unknown to this group: "+ModelUtils.getName(primaryLayer)); //$NON-NLS-1$
 
@@ -122,8 +121,7 @@ public class DefaultLayerGroup extends AbstractPart<Context> implements LayerGro
 	 * @param layer
 	 */
 	public void addLayer(Layer layer) {
-		if (layer == null)
-			throw new NullPointerException("Invalid layer"); //$NON-NLS-1$
+		requireNonNull(layer);
 //		if(layers.contains(layer))
 //			throw new IllegalArgumentException("Layer already added: "+ModelUtils.getName(layer)); //$NON-NLS-1$
 
@@ -138,8 +136,7 @@ public class DefaultLayerGroup extends AbstractPart<Context> implements LayerGro
 	 * @param dependency
 	 */
 	public void addDependency(Dependency<LayerGroup> dependency) {
-		if (dependency == null)
-			throw new NullPointerException("Invalid dependency"); //$NON-NLS-1$
+		requireNonNull(dependency);
 //		if(dependencies.contains(dependency))
 //			throw new IllegalArgumentException("Dependency already added: "+dependency); //$NON-NLS-1$
 

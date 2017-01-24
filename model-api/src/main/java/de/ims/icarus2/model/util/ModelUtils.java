@@ -214,6 +214,11 @@ public final class ModelUtils implements ModelConstants {
 		return type==ManifestType.FRAGMENT_LAYER_MANIFEST;
 	}
 
+	public static boolean isFragmentLayer(Layer layer) {
+		ManifestType type = layer.getManifest().getManifestType();
+		return type==ManifestType.FRAGMENT_LAYER_MANIFEST;
+	}
+
 	public static boolean isOverlayLayer(ItemLayer layer) {
 		return layer.getCorpus().getOverlayLayer()==layer;
 	}

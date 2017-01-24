@@ -77,6 +77,18 @@ public class LazyMap<K extends Object, V extends Object> implements BiConsumer<K
 		buffer.put(key, value);
 	}
 
+	public void addReverse(V value, K key) {
+		if(key==null || value==null) {
+			return;
+		}
+
+		if(buffer==null) {
+			buffer = supplier.get();
+		}
+
+		buffer.put(key, value);
+	}
+
 	public void addAll(Map<? extends K, ? extends V> items) {
 		if(items==null || items.isEmpty()) {
 			return;
