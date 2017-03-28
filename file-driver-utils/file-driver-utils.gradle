@@ -1,0 +1,8 @@
+
+description = 'file-driver-utils'
+dependencies {
+  compile project(':model-defaults')
+  compile 'org.apache.lucene:lucene-core:6.2.0'
+    
+  testCompile project(':shared-utils')
+}

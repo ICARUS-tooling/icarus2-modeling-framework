@@ -1,0 +1,11 @@
+rootProject.name = 'core-tools'
+include 'manifest-api', 'shared-utils', 'model-api', 'model-defaults', 'file-driver-utils', 'model-compression'
+
+/*
+project(':manifest-api').projectDir = "$rootDir/manifest-api" as File
+project(':shared-utils').projectDir = "$rootDir/shared-utils" as File
+project(':model-api').projectDir = "$rootDir/model-api" as File
+project(':model-defaults').projectDir = "$rootDir/model-defaults" as File
+project(':file-driver-utils').projectDir = "$rootDir/file-driver-utils" as File
+project(':model-compression').projectDir = "$rootDir/model-compression" as File
+*/

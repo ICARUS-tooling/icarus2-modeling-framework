@@ -1,0 +1,5 @@
+
+description = 'model-defaults'
+dependencies {
+  compile project(':model-api')
+}

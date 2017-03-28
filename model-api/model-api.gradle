@@ -1,0 +1,6 @@
+
+description = 'model-api'
+dependencies {
+  compile project(':shared-utils')
+  compile project(':manifest-api')
+}

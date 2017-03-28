@@ -1,0 +1,35 @@
+subprojects {
+  	apply plugin: 'java'
+	apply plugin: 'eclipse'
+	
+  	sourceCompatibility = 1.8
+  	targetCompatibility = 1.8
+  	
+  	group = 'icarus2'
+  	version = '1.0'
+  	
+  	tasks.withType(JavaCompile) {
+  		options.encoding = 'UTF-8'
+ 	}
+
+  	repositories {
+    	mavenCentral()
+  	}  
+  	
+	dependencies {
+	    compile 'org.slf4j:slf4j-api:1.7.21'
+	    compile 'org.slf4j:slf4j-jdk14:1.7.21'
+	    compile 'com.google.guava:guava:18.0'
+	    compile 'it.unimi.dsi:fastutil:7.0.13'
+	    compile 'com.squareup:javapoet:1.7.0'
+	    
+        testCompile 'junit:junit:4.12'
+	    testCompile 'org.mockito:mockito-core:1.9.5'
+	}
+	
+  	tasks.withType(JavaCompile) {
+  		options.encoding = "UTF-8"
+    	options.fork = true
+    	//options.forkOptions.executable = "C:/Program Files/Java/jdk1.8.0_31/bin/javac"
+	}
+}
