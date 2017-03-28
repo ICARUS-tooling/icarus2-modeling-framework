@@ -1,0 +1,6 @@
+
+description = 'Foundation of the framework - API and default implementation for manifest metadata'
+dependencies {
+  implementation project(':shared-utils')
+  testImplementation project(':shared-utils')
+}

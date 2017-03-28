@@ -1,6 +1,0 @@
-
-description = 'manifest-api'
-dependencies {
-  compile project(':shared-utils')
-  testCompile project(':shared-utils')
-}

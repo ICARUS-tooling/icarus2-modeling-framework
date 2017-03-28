@@ -1,5 +1,5 @@
 
-description = 'model-api'
+description = 'API for actual corpus modeling and interaction'
 dependencies {
   compile project(':shared-utils')
   compile project(':manifest-api')

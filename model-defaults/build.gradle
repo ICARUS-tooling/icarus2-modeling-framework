@@ -1,0 +1,5 @@
+
+description = 'Default implementations for the core model API'
+dependencies {
+  implementation project(':model-api')
+}

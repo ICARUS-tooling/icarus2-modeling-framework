@@ -7,11 +7,11 @@ include 'file-driver-utils'
 include 'model-compression'
 include 'experiments'
 
-/*
+
 project(':manifest-api').projectDir = "$rootDir/manifest-api" as File
 project(':shared-utils').projectDir = "$rootDir/shared-utils" as File
 project(':model-api').projectDir = "$rootDir/model-api" as File
 project(':model-defaults').projectDir = "$rootDir/model-defaults" as File
 project(':file-driver-utils').projectDir = "$rootDir/file-driver-utils" as File
 project(':model-compression').projectDir = "$rootDir/model-compression" as File
-*/
+project(':experiments').projectDir = "$rootDir/experiments" as File

@@ -1,0 +1,5 @@
+
+description = 'Facility for compressed storage of text-based corpus resources'
+dependencies {
+	implementation project(':model-api')
+}

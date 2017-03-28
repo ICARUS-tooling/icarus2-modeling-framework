@@ -1372,78 +1372,8 @@ public class FileDriver extends AbstractDriver {
 
 		LayerBuffer layerBuffer = getLayerBuffer(layer);
 
-
-	}
-
-	protected class ChunkLoader {
-		private final ItemLayer layer;
-		private final IndexSet[] indices;
-
-		private final ChunkIndex chunkIndex;
-
-		private Converter.Cursor cursor;
-
-		private LockableFileObject fileObject;
-		private long stamp;
-
-		public void execute() throws IOException {
-
-			IndexUtils.ensureSorted(indices);
-			OfLong it = IndexUtils.asIterator(indices);
-			@SuppressWarnings("resource")
-			ChunkIndexCursor chunkIndexCursor = chunkIndex.newCursor(true);
-
-			chunkIndexCursor.begin();
-			try {
-
-				try {
-					while(it.hasNext()) {
-						long index = it.nextLong();
-						chunkIndexCursor.moveTo(index);
-
-						int fileIndex = chunkIndexCursor.getFileId();
-						if(fileObject==null || fileIndex!=fileObject.getFileIndex()) {
-							releaseFile();
-							useFile(fileIndex);
-						}
-
-
-					}
-				} finally {
-					releaseFile();
-				}
-
-			} finally {
-				chunkIndexCursor.end();
-				chunkIndexCursor.close();
-			}
-		}
-
-		/**
-		 * First tries to acquire a new Cursor and then locks the file
-		 */
-		private void useFile(int fileIndex) throws IOException {
-
-			cursor = getConverter().getCursor(fileIndex, layer);
-
-			fileObject = getFileObject(fileIndex);
-			stamp = fileObject.getLock().readLock();
-		}
-
-		/**
-		 * First unlocks the file and then closes the Cursor
-		 */
-		private void releaseFile() throws IOException {
-			if(fileObject!=null) {
-				fileObject.getLock().unlockRead(stamp);
-				stamp = 0;
-				fileObject = null;
-			}
-
-			if(cursor!=null) {
-				cursor.close();
-			}
-		}
+		//FIXME
+		return UNSET_LONG;
 	}
 
 	/**

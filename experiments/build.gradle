@@ -1,0 +1,5 @@
+description = 'Collection of experiments conducted during development of the framework'
+
+dependencies {
+	implementation project(':shared-utils')
+}

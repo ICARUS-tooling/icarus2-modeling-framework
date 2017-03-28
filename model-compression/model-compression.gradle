@@ -1,6 +1,0 @@
-
-description = 'model-compression'
-dependencies {
-    compile group: 'junit', name: 'junit', version:'4.12'
-  compile project(':model-api')
-}

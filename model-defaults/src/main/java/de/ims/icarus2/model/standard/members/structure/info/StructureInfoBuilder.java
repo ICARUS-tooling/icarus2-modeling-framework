@@ -123,9 +123,9 @@ public class StructureInfoBuilder implements ModelConstants {
 				minMaxValues[minIndex(field)] = Long.MAX_VALUE;
 				minMaxValues[maxIndex(field)] = Long.MIN_VALUE;
 			} else {
-				avgValues[avgIndex(field)] = StructureInfo.NO_ENTRY_DOUBLE;
-				minMaxValues[minIndex(field)] = StructureInfo.NO_ENTRY_LONG;
-				minMaxValues[maxIndex(field)] = StructureInfo.NO_ENTRY_LONG;
+				avgValues[avgIndex(field)] = ModelConstants.UNSET_DOUBLE;
+				minMaxValues[minIndex(field)] = ModelConstants.UNSET_LONG;
+				minMaxValues[maxIndex(field)] = ModelConstants.UNSET_LONG;
 			}
 		}
 
