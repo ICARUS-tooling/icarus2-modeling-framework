@@ -47,15 +47,15 @@ public class DualIntersectionOfLong implements PrimitiveIterator.OfLong, ModelCo
 		leftVal = nextLeft();
 		rightVal = nextRight();
 
-		value = NO_INDEX;
+		value = UNSET_LONG;
 	}
 
 	private long nextLeft() {
-		return left.hasNext() ? left.nextLong() : NO_INDEX;
+		return left.hasNext() ? left.nextLong() : UNSET_LONG;
 	}
 
 	private long nextRight() {
-		return right.hasNext() ? right.nextLong() : NO_INDEX;
+		return right.hasNext() ? right.nextLong() : UNSET_LONG;
 	}
 
 	/**
@@ -65,8 +65,8 @@ public class DualIntersectionOfLong implements PrimitiveIterator.OfLong, ModelCo
 	public boolean hasNext() {
 
 		// Check if either begining on the stream or if nextLong() has reset the value
-		if(value==NO_INDEX) {
-			while(leftVal!=NO_INDEX && rightVal!=NO_INDEX) {
+		if(value==UNSET_LONG) {
+			while(leftVal!=UNSET_LONG && rightVal!=UNSET_LONG) {
 				if(leftVal<rightVal) {
 					leftVal = nextLeft();
 				} else if(leftVal>rightVal) {
@@ -80,7 +80,7 @@ public class DualIntersectionOfLong implements PrimitiveIterator.OfLong, ModelCo
 			}
 		}
 
-		return value!=NO_INDEX;
+		return value!=UNSET_LONG;
 	}
 
 	/**
@@ -89,12 +89,12 @@ public class DualIntersectionOfLong implements PrimitiveIterator.OfLong, ModelCo
 	@Override
 	public long nextLong() {
 		// Not calling hasNext() since that is the client code's job
-		if(value==NO_INDEX)
+		if(value==UNSET_LONG)
 			throw new NoSuchElementException();
 
 		long result = value;
 		// Indicator for hasNext() to look for refresh next value
-		value = NO_INDEX;
+		value = UNSET_LONG;
 		return result;
 	}
 

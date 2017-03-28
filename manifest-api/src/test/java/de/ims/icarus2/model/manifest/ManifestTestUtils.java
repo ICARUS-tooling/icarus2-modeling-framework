@@ -20,7 +20,6 @@ package de.ims.icarus2.model.manifest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -40,6 +39,7 @@ import de.ims.icarus2.model.manifest.types.Url;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.util.IconWrapper;
 import de.ims.icarus2.util.id.Identity;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner

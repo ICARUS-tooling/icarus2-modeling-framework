@@ -63,11 +63,6 @@ import de.ims.icarus2.model.standard.driver.AbstractDriver;
  * <td>string</td>
  * <td>full or relative {@link Path#toString() path} pointing to the root folder used for metadata storage. This information can be used to pick locations for chunk and content indexes.</td>
  * </tr>
- * <tr>
- * <td></td>
- * <td></td>
- * <td></td>
- * </tr>
  * </table>
  * <p>
  * <b>File metadata "[file-index].&lt;key&gt"</b>
@@ -97,11 +92,6 @@ import de.ims.icarus2.model.standard.driver.AbstractDriver;
  * <td>[layerId].end</td>
  * <td>long</td>
  * <td>id of the last {@link Item item} in a {@link ItemLayer layer's} top level container in the file</td>
- * </tr>
- * <tr>
- * <td></td>
- * <td></td>
- * <td></td>
  * </tr>
  * </table>
  * <p>
@@ -241,6 +231,21 @@ import de.ims.icarus2.model.standard.driver.AbstractDriver;
  * <td>avgBranching</td>
  * <td>double</td>
  * <td>average encountered {@link Structure#getEdgeCount(Item, boolean) branching factor} (number of outgoing edges) encountered for any given node in all {@link Structure}s</td>
+ * </tr>
+ * <tr>
+ * <td>minRoots</td>
+ * <td>int</td>
+ * <td>minimum number of {@link Structure#isRoot(Item) roots} encountered for any given {@link Structure}</td>
+ * </tr>
+ * <tr>
+ * <td>maxRoots</td>
+ * <td>int</td>
+ * <td>maximum number of {@link Structure#isRoot(Item) roots} encountered for any given {@link Structure}</td>
+ * </tr>
+ * <tr>
+ * <td>avgRoots</td>
+ * <td>double</td>
+ * <td>average number of {@link Structure#isRoot(Item) roots} encountered for any given {@link Structure}</td>
  * </tr>
  * </table>
  * <p>
@@ -706,6 +711,10 @@ public class FileDriverMetadata implements ModelConstants {
 		MIN_EDGE_COUNT("minEdgeCount", ValueType.LONG, false),
 		MAX_EDGE_COUNT("maxEdgeCount", ValueType.LONG, false),
 		AVG_EDGE_COUNT("avgEdgeCount", ValueType.DOUBLE, false),
+		// Root counts
+		MIN_ROOTS("minRoots", ValueType.LONG, false),
+		MAX_ROOTS("maxRoots", ValueType.LONG, false),
+		AVG_ROOTS("avgRoots", ValueType.DOUBLE, false),
 
 		// Optional metadata
 
@@ -738,10 +747,16 @@ public class FileDriverMetadata implements ModelConstants {
 		}
 
 		public String getKey(StructureLayerManifest layer, int level) {
+			if(isTypeSubKey)
+				throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
+						"Key requires type context: "+suffix);
 			return getStructureKey(layer, level, suffix);
 		}
 
 		public String getKey(StructureLayerManifest layer, int level, StructureType type) {
+			if(!isTypeSubKey)
+				throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
+						"Key does not allow type context: "+suffix);
 			return getStructureTypeKey(layer, level, type, suffix);
 		}
 

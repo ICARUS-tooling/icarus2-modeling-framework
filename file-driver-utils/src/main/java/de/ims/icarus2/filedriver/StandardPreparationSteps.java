@@ -17,8 +17,8 @@
  */
 package de.ims.icarus2.filedriver;
 
-import static de.ims.icarus2.util.classes.ClassUtils._int;
-import static de.ims.icarus2.util.classes.ClassUtils._long;
+import static de.ims.icarus2.util.classes.Primitives._int;
+import static de.ims.icarus2.util.classes.Primitives._long;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -527,22 +527,22 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			final MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			final FileDataStates states = driver.getFileStates();
 
-			long lastEndIndex = env.getLong(LAST_END_INDEX_KEY, NO_INDEX);
+			long lastEndIndex = env.getLong(LAST_END_INDEX_KEY, UNSET_LONG);
 
 			// Load current metadata
 			String countKey = FileKey.ITEMS.getKey(fileIndex, layer);
 			String beginKey = FileKey.BEGIN.getKey(fileIndex, layer);
 			String endKey = FileKey.END.getKey(fileIndex, layer);
-			long itemCount = metadataRegistry.getLongValue(countKey, NO_INDEX);
-			long beginIndex = metadataRegistry.getLongValue(beginKey, NO_INDEX);
-			long endIndex = metadataRegistry.getLongValue(endKey, NO_INDEX);
+			long itemCount = metadataRegistry.getLongValue(countKey, UNSET_LONG);
+			long beginIndex = metadataRegistry.getLongValue(beginKey, UNSET_LONG);
+			long endIndex = metadataRegistry.getLongValue(endKey, UNSET_LONG);
 
-			if(itemCount==NO_INDEX && beginIndex==NO_INDEX && endIndex==NO_INDEX) {
+			if(itemCount==UNSET_LONG && beginIndex==UNSET_LONG && endIndex==UNSET_LONG) {
 				// Nothing saved for the layer+file, so ignore it
 				return true;
 			}
 
-			if(itemCount==NO_INDEX || beginIndex==NO_INDEX || endIndex==NO_INDEX) {
+			if(itemCount==UNSET_LONG || beginIndex==UNSET_LONG || endIndex==UNSET_LONG) {
 				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 						"Indicies partly missing in metadata for layer {} in file {}", layer.getId(), _int(fileIndex));
 				return false;
@@ -559,7 +559,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			}
 
 			// Make sure the index values form a continuous span over all files
-			if(lastEndIndex!=NO_INDEX && beginIndex!=(lastEndIndex+1)) {
+			if(lastEndIndex!=UNSET_LONG && beginIndex!=(lastEndIndex+1)) {
 				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 						"Non-continuous item indices for layer {} in file {}: expected {} as begin index, but got {}",
 						layer.getId(), _int(fileIndex), _long(lastEndIndex+1), _long(beginIndex));
@@ -567,7 +567,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			}
 
 			// First file must always start at item index 0!!!
-			if(lastEndIndex==NO_INDEX && fileIndex==0 && beginIndex!=0L) {
+			if(lastEndIndex==UNSET_LONG && fileIndex==0 && beginIndex!=0L) {
 				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 						"First file for layer {} in set must start at item index 0 - got start value {}",
 						layer.getId(), _long(beginIndex));
@@ -595,7 +595,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			int fileCount = dataFiles.getResourceCount();
 			int invalidLayers = 0;
 
-			env.put(LAST_END_INDEX_KEY, _long(NO_INDEX));
+			env.put(LAST_END_INDEX_KEY, _long(UNSET_LONG));
 
 			for(ItemLayerManifest layer : layers) {
 

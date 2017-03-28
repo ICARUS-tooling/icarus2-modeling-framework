@@ -17,28 +17,39 @@
  */
 package de.ims.icarus2.filedriver;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import static java.util.Objects.requireNonNull;
 
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.ObjIntConsumer;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.io.sets.ResourceSet;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.model.api.members.container.Container;
+import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
-import de.ims.icarus2.util.Counter;
+import de.ims.icarus2.util.LongCounter;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
+ * Centralized storage of (virtual) metadata for resources managed by
+ * a {@link FileDriver}.
+ *
+ * Not thread-safe!
+ *
  * @author Markus Gärtner
  *
  */
@@ -55,6 +66,10 @@ public class FileDataStates {
 	/**
 	 * Initializes all {@link ElementInfo elements} based on data from the
 	 * given {@code driver}.
+	 * <p>
+	 * Note that this does <b>not</b> include reading the actual metadata
+	 * associated with the driver. This still remains the driver's own
+	 * responsibility.
 	 *
 	 * @param driver
 	 */
@@ -66,6 +81,7 @@ public class FileDataStates {
 			fileInfos.put(fileIndex, new FileInfo(fileIndex));
 		}
 
+		// Collect layers
 		ContextManifest contextManifest = driver.getManifest().getContextManifest();
 		for(LayerManifest layerManifest : contextManifest.getLayerManifests()) {
 
@@ -149,6 +165,9 @@ public class FileDataStates {
 		}
 
 		public void setFlag(ElementFlag flag) {
+			if(flag==ElementFlag.CORRUPTED) {
+				System.out.println();
+			}
 			state.add(flag);
 		}
 
@@ -242,7 +261,7 @@ public class FileDataStates {
 			LayerCoverage cov = stats.get(key);
 
 			if(cov==null && createIfMissing) {
-				cov = new LayerCoverage(NO_INDEX, NO_INDEX, 0L);
+				cov = new LayerCoverage(UNSET_LONG, UNSET_LONG, 0L);
 				stats.put(key, cov);
 			}
 
@@ -251,17 +270,17 @@ public class FileDataStates {
 
 		public long getItemCount(ItemLayerManifest layer) {
 			LayerCoverage cov = getCoverage(layer, false);
-			return cov==null ? NO_INDEX : cov.count;
+			return cov==null ? UNSET_LONG : cov.count;
 		}
 
 		public long getBeginIndex(ItemLayerManifest layer) {
 			LayerCoverage cov = getCoverage(layer, false);
-			return cov==null ? NO_INDEX : cov.first;
+			return cov==null ? UNSET_LONG : cov.first;
 		}
 
 		public long getEndIndex(ItemLayerManifest layer) {
 			LayerCoverage cov = getCoverage(layer, false);
-			return cov==null ? NO_INDEX : cov.last;
+			return cov==null ? UNSET_LONG : cov.last;
 		}
 
 		public void setItemCount(ItemLayerManifest layer, long itemCount) {
@@ -275,6 +294,13 @@ public class FileDataStates {
 		public void setEndIndex(ItemLayerManifest layer, long endIndex) {
 			getCoverage(layer, true).last = endIndex;
 		}
+
+		public void setCoverage(ItemLayerManifest layer, long itemCount, long beginIndex, long endIndex) {
+			LayerCoverage coverage = getCoverage(layer, true);
+			coverage.count = itemCount;
+			coverage.first = beginIndex;
+			coverage.last = endIndex;
+		}
 	}
 
 	private static class LayerCoverage {
@@ -287,31 +313,227 @@ public class FileDataStates {
 		}
 	}
 
-	private static class NumericalStats {
-		long min, max;
-		double avg;
+	public static class NumericalStats {
+		private long min = ModelConstants.UNSET_LONG;
+		private long max = ModelConstants.UNSET_LONG;
+		private double avg = ModelConstants.UNSET_DOUBLE;
+		public long getMin() {
+			return min;
+		}
+		public long getMax() {
+			return max;
+		}
+		public double getAvg() {
+			return avg;
+		}
+		public void setMin(long min) {
+			this.min = min;
+		}
+		public void setMax(long max) {
+			this.max = max;
+		}
+		public void setAvg(double avg) {
+			this.avg = avg;
+		}
+		public void reset() {
+			min = ModelConstants.UNSET_LONG;
+			max = ModelConstants.UNSET_LONG;
+			avg = ModelConstants.UNSET_DOUBLE;
+		}
 	}
 
 	public static class LayerInfo extends ElementInfo {
 		private final ItemLayerManifest layer;
 
 		// Total number of elements in top-level container
-		private long size = NO_INDEX;
+		private long size = UNSET_LONG;
 
-		private Counter<ContainerType> containerTypeCount;
-		private Counter<StructureType> structureTypeCount;
-		private NumericalStats spanSize, itemCount, edgeCount, height, branching;
+		private LongCounter<ContainerType> containerTypeCount;
+		private LongCounter<StructureType> structureTypeCount;
+		private NumericalStats itemCount, spanSize, edgeCount, height, branching, roots;
 
 		public LayerInfo(ItemLayerManifest layer) {
-			this.layer = layer;
+			this.layer = requireNonNull(layer);
 		}
 
+		public ItemLayerManifest getLayer() {
+			return layer;
+		}
+
+		// TOTAL SIZE
+
 		public long getSize() {
-			return size;
+			return size==UNSET_LONG ? 0L : size;
 		}
 
 		public void setSize(long size) {
 			this.size = size;
+		}
+
+		// CONTAINER TYPE
+
+		private LongCounter<ContainerType> containerTypeCount() {
+			if(containerTypeCount==null) {
+				containerTypeCount = new LongCounter<>();
+			}
+			return containerTypeCount;
+		}
+
+		public long getCountForContainerType(ContainerType type) {
+			return containerTypeCount==null ? 0L : containerTypeCount.getCount(type);
+		}
+
+		public void setCountForContainerType(ContainerType type, long count) {
+			containerTypeCount().setCount(type, count);
+		}
+
+		public void addCountForContainerType(ContainerType type, long count) {
+			containerTypeCount().add(type, count);
+		}
+
+		public void addCountsForContainerTypes(LongCounter<ContainerType> counts) {
+			if(!counts.isEmpty()) {
+				containerTypeCount().addAll(counts);
+			}
+		}
+
+		public Set<ContainerType> getEncounteredContainerTypes() {
+			Set<ContainerType> result = Collections.emptySet();
+			if(containerTypeCount!=null && !containerTypeCount.isEmpty()) {
+				result = containerTypeCount.getItems();
+			}
+			return result;
+		}
+
+		// STRUCTURE TYPE
+
+		private LongCounter<StructureType> structureTypeCount() {
+			if(structureTypeCount==null) {
+				structureTypeCount = new LongCounter<>();
+			}
+			return structureTypeCount;
+		}
+
+		public long getCountForStructureType(StructureType type) {
+			return structureTypeCount==null ? 0L : structureTypeCount.getCount(type);
+		}
+
+		public void setCountForStructureType(StructureType type, long count) {
+			structureTypeCount().setCount(type, count);
+		}
+
+		public void addCountForStructureType(StructureType type, long count) {
+			structureTypeCount().add(type, count);
+		}
+
+		public Set<StructureType> getEncounteredStructureTypes() {
+			Set<StructureType> result = Collections.emptySet();
+			if(structureTypeCount!=null && !structureTypeCount.isEmpty()) {
+				result = structureTypeCount.getItems();
+			}
+			return result;
+		}
+
+		public void addCountsForStructureTypes(LongCounter<StructureType> counts) {
+			if(!counts.isEmpty()) {
+				structureTypeCount().addAll(counts);
+			}
+		}
+
+		// ITEM COUNTS
+
+		/**
+		 * Fetches the stats for counting the {@link Container#getItemCount() size}
+		 * of containers.
+		 *
+		 * @return
+		 */
+		public NumericalStats getItemCountStats() {
+			if(itemCount==null) {
+				itemCount = new NumericalStats();
+			}
+
+			return itemCount;
+		}
+
+		// SPAN SIZE
+
+		/**
+		 * Fetches the stats for tracking the span size of containers.
+		 * The span size is the area covered by a container's {@link Container#getBeginOffset() begin}
+		 * and {@link Container#getEndOffset() end} offsets.
+		 *
+		 * @return
+		 */
+		public NumericalStats getSpanSizeStats() {
+			if(spanSize==null) {
+				spanSize = new NumericalStats();
+			}
+
+			return spanSize;
+		}
+
+		// EDGE COUNTS
+
+		/**
+		 * Fetches the stats for counting the {@link Structure#getEdgeCount()number of edges}
+		 * of structures.
+		 *
+		 * @return
+		 */
+		public NumericalStats getEdgeCountStats() {
+			if(edgeCount==null) {
+				edgeCount = new NumericalStats();
+			}
+
+			return edgeCount;
+		}
+
+		// BRANCHING
+
+		/**
+		 * Fetches the stats for tracking the branching factor of structures.
+		 *
+		 * @return
+		 */
+		public NumericalStats getBranchingStats() {
+			if(branching==null) {
+				branching = new NumericalStats();
+			}
+
+			return branching;
+		}
+
+		// HEIGHT
+
+		/**
+		 * Fetches the stats for tracking the {@link Structure#getHeight() height}
+		 * of structures.
+		 *
+		 * @return
+		 */
+		public NumericalStats getHeightStats() {
+			if(height==null) {
+				height = new NumericalStats();
+			}
+
+			return height;
+		}
+
+		// ROOTS
+
+		/**
+		 * Fetches the stats for tracking the number of {@link Structure#isRoot(Item) root}
+		 * nodes of structures.
+		 *
+		 * @return
+		 */
+		public NumericalStats getRootStats() {
+			if(roots==null) {
+				roots = new NumericalStats();
+			}
+
+			return roots;
 		}
 	}
 }

@@ -21,7 +21,6 @@ import static de.ims.icarus2.model.standard.members.structure.info.DefaultStruct
 import static de.ims.icarus2.model.standard.members.structure.info.DefaultStructureInfo.maxIndex;
 import static de.ims.icarus2.model.standard.members.structure.info.DefaultStructureInfo.minIndex;
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 import java.util.Set;
 
@@ -31,6 +30,7 @@ import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureInfo;
 import de.ims.icarus2.model.api.members.structure.StructureInfoField;
 import de.ims.icarus2.model.manifest.api.StructureType;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * This class is not thread-safe in general, but using the static {@link #createInfo(Structure)} method
@@ -182,15 +182,15 @@ public class StructureInfoBuilder implements ModelConstants {
 
 		// Do tree-related stuff here
 		long depth = structure.getDepth(node);
-		if(depth!=NO_INDEX) {
+		if(depth!=UNSET_LONG) {
 			adjust(StructureInfoField.DEPTH, depth);
 		}
 		long height = structure.getHeight(node);
-		if(height!=NO_INDEX) {
+		if(height!=UNSET_LONG) {
 			adjust(StructureInfoField.HEIGHT, height);
 		}
 		long descendants = structure.getDescendantCount(node);
-		if(descendants!=NO_INDEX) {
+		if(descendants!=UNSET_LONG) {
 			adjust(StructureInfoField.DESCENDANTS, descendants);
 		}
 	}

@@ -37,7 +37,6 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
-import de.ims.icarus2.model.api.view.CorpusAccessMode;
 import de.ims.icarus2.model.api.view.CorpusModel;
 import de.ims.icarus2.model.api.view.CorpusView;
 import de.ims.icarus2.model.api.view.CorpusView.PageControl;
@@ -59,6 +58,7 @@ import de.ims.icarus2.model.manifest.xml.ManifestXmlReader;
 import de.ims.icarus2.model.standard.io.DefaultFileManager;
 import de.ims.icarus2.model.standard.registry.DefaultCorpusManager;
 import de.ims.icarus2.model.standard.registry.metadata.VirtualMetadataRegistry;
+import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.Options;
 
 /**
@@ -196,7 +196,7 @@ public class TableConverterTest {
 	@Test
 	public void test1TierSchema() throws IOException, SAXException, InterruptedException {
 
-		CorpusManager corpusManager = new DefaultCorpusManager.Builder()
+		CorpusManager corpusManager = DefaultCorpusManager.newBuilder()
 			.defaultEnvironment()
 			.build();
 
@@ -210,16 +210,16 @@ public class TableConverterTest {
 		CorpusManifest corpusManifest = corpusManager.getManifestRegistry().getCorpusManifest("testCorpus");
 
 		TableSchema tableSchema = create1TierTableSchema();
-		corpusManifest.getRootContextManifests().get(0).getDriverManifest().setPropertyValue("tableSchema", tableSchema);
+		corpusManifest.getRootContextManifest().getDriverManifest().setPropertyValue("tableSchema", tableSchema);
 
 		Corpus corpus = corpusManager.connect(corpusManifest);
 		IndexSet[] indices = IndexUtils.wrap(0L, 4L);
-		CorpusView view = corpus.createView(corpus.createCompleteScope(), indices, CorpusAccessMode.READ, Options.emptyOptions);
+		CorpusView view = corpus.createView(corpus.createCompleteScope(), indices, AccessMode.READ, Options.emptyOptions);
 
 		System.out.println(view.getSize());
 
 		PageControl pageControl = view.getPageControl();
-		pageControl.loadPage(0);
+		pageControl.load();
 
 		CorpusModel model = view.getModel();
 
@@ -238,7 +238,7 @@ public class TableConverterTest {
 	}
 
 	public void xxx() {
-		CorpusManager corpusManager = new DefaultCorpusManager.Builder()
+		CorpusManager corpusManager = DefaultCorpusManager.newBuilder()
 			.manifestRegistry(new DefaultManifestRegistry())
 			.metadataRegistry(new VirtualMetadataRegistry())
 			.fileManager(new DefaultFileManager(Paths.get(".")))

@@ -20,6 +20,7 @@ package de.ims.icarus2.model.standard.members.layers.item;
 
 import static de.ims.icarus2.util.Conditions.checkNotSet;
 import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.model.api.driver.id.IdManager;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;

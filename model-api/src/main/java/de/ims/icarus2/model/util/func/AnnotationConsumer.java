@@ -17,7 +17,8 @@
  */
 package de.ims.icarus2.model.util.func;
 
-import static de.ims.icarus2.util.classes.ClassUtils.cast;
+import static de.ims.icarus2.util.classes.Primitives.cast;
+
 import de.ims.icarus2.model.api.members.item.Item;
 
 /**

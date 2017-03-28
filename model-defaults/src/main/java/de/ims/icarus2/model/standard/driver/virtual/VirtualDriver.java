@@ -22,8 +22,6 @@ import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,6 +43,8 @@ import de.ims.icarus2.model.api.members.item.ItemLayerManager;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.standard.driver.AbstractDriver;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 /**
  * Wraps an {@link ItemLayerManager} implementation and decorates it with the additional
@@ -271,7 +271,7 @@ public class VirtualDriver extends AbstractDriver {
 
 	@Override
 	public long getItemCount(ItemLayerManifest layer) {
-		return (isReady() && isConnected()) ? getItemCount(getLayerForManifest(layer)) : NO_INDEX;
+		return (isReady() && isConnected()) ? getItemCount(getLayerForManifest(layer)) : UNSET_LONG;
 	}
 
 	/**

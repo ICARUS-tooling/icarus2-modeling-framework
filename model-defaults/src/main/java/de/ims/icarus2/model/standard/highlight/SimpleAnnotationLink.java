@@ -19,6 +19,7 @@
 package de.ims.icarus2.model.standard.highlight;
 
 import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.model.api.highlight.HighlightInfo.AnnotationLink;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 

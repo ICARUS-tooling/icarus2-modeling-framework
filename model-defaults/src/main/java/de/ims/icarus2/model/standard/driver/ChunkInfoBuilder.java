@@ -56,11 +56,11 @@ public class ChunkInfoBuilder implements ModelConstants {
 	}
 
 	public boolean addNoIndex(Item item, ChunkState state) {
-		return storage.addChunk(NO_INDEX, item, state);
+		return storage.addChunk(UNSET_LONG, item, state);
 	}
 
 	public boolean addCorrupted(Item item) {
-		return storage.addChunk(NO_INDEX, item, ChunkState.CORRUPTED);
+		return storage.addChunk(UNSET_LONG, item, ChunkState.CORRUPTED);
 	}
 
 	public boolean addCorrupted(long index, Item item) {
@@ -72,7 +72,7 @@ public class ChunkInfoBuilder implements ModelConstants {
 	}
 
 	public boolean addValid(Item item) {
-		return storage.addChunk(NO_INDEX, item, ChunkState.VALID);
+		return storage.addChunk(UNSET_LONG, item, ChunkState.VALID);
 	}
 
 	public boolean addValid(long index, Item item) {
@@ -84,7 +84,7 @@ public class ChunkInfoBuilder implements ModelConstants {
 	}
 
 	public boolean addModified(Item item) {
-		return storage.addChunk(NO_INDEX, item, ChunkState.MODIFIED);
+		return storage.addChunk(UNSET_LONG, item, ChunkState.MODIFIED);
 	}
 
 	public boolean addModified(long index, Item item) {

@@ -304,7 +304,7 @@ public class DefaultChunkIndex implements ChunkIndex {
 			int localIndex = localIndex(index);
 
 			Block block = getBlock(id, false);
-			return block==null ? NO_INDEX : getAdapter().getBeginOffset(block.getData(), localIndex);
+			return block==null ? UNSET_LONG : getAdapter().getBeginOffset(block.getData(), localIndex);
 		}
 
 		/**
@@ -316,7 +316,7 @@ public class DefaultChunkIndex implements ChunkIndex {
 			int localIndex = localIndex(index);
 
 			Block block = getBlock(id, false);
-			return block==null ? NO_INDEX : arrayAdapter.getEndOffset(block.getData(), localIndex);
+			return block==null ? UNSET_LONG : arrayAdapter.getEndOffset(block.getData(), localIndex);
 		}
 
 	}
@@ -389,8 +389,8 @@ public class DefaultChunkIndex implements ChunkIndex {
 
 	private class Cursor extends ResourceAccessor implements ChunkIndexCursor {
 
-		private int id = NO_INDEX_INT;
-		private int localIndex = NO_INDEX_INT;
+		private int id = UNSET_INT;
+		private int localIndex = UNSET_INT;
 		private Block block = null;
 
 		private Cursor(boolean readOnly) {
@@ -457,7 +457,7 @@ public class DefaultChunkIndex implements ChunkIndex {
 		 */
 		@Override
 		public long getBeginOffset() {
-			return block==null ? NO_INDEX : arrayAdapter.getBeginOffset(block.getData(), localIndex);
+			return block==null ? UNSET_LONG : arrayAdapter.getBeginOffset(block.getData(), localIndex);
 		}
 
 		/**
@@ -465,7 +465,7 @@ public class DefaultChunkIndex implements ChunkIndex {
 		 */
 		@Override
 		public long getEndOffset() {
-			return block==null ? NO_INDEX : arrayAdapter.getEndOffset(block.getData(), localIndex);
+			return block==null ? UNSET_LONG : arrayAdapter.getEndOffset(block.getData(), localIndex);
 		}
 
 		private void checkWriteAccess() {

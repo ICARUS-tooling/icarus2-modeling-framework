@@ -24,6 +24,7 @@ import java.nio.channels.SeekableByteChannel;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.nio.MemoryByteStorage;
 
@@ -39,7 +40,7 @@ import de.ims.icarus2.util.nio.MemoryByteStorage;
  * @author Markus Gärtner
  *
  */
-public class InMemoryResource implements IOResource, ModelConstants {
+public class InMemoryResource extends ReadWriteResource implements ModelConstants {
 
 	private MemoryByteStorage buffer;
 
@@ -47,6 +48,12 @@ public class InMemoryResource implements IOResource, ModelConstants {
 	private final int capacity;
 
 	public InMemoryResource(int capacity) {
+		this(capacity, AccessMode.READ_WRITE);
+	}
+
+	public InMemoryResource(int capacity, AccessMode accessMode) {
+		super(accessMode);
+
 		if(capacity<0 || capacity>IcarusUtils.MAX_INTEGER_INDEX)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Capacity must be 0<=capacity<=MAX_INDEX: "+capacity);
@@ -70,6 +77,7 @@ public class InMemoryResource implements IOResource, ModelConstants {
 	 */
 	@Override
 	public SeekableByteChannel getWriteChannel() throws IOException {
+		checkWriteAccess();
 		checkOpen();
 
 		return buffer.newChannel();
@@ -80,6 +88,7 @@ public class InMemoryResource implements IOResource, ModelConstants {
 	 */
 	@Override
 	public SeekableByteChannel getReadChannel() throws IOException {
+		checkReadAccess();
 		checkOpen();
 
 		return buffer.newChannel();
@@ -90,6 +99,8 @@ public class InMemoryResource implements IOResource, ModelConstants {
 	 */
 	@Override
 	public void delete() throws IOException {
+		checkWriteAccess();
+
 		if(buffer!=null) {
 			buffer.close();
 		}

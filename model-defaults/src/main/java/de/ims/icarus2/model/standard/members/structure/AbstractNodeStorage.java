@@ -20,7 +20,6 @@ package de.ims.icarus2.model.standard.members.structure;
 
 import static de.ims.icarus2.model.standard.members.MemberUtils.checkHostStructure;
 import static de.ims.icarus2.model.util.ModelUtils.getName;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +38,7 @@ import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.seq.ListSequence;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * Implements a an {@link EdgeStorage} that stores all the actual structural information

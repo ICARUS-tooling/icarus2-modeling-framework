@@ -18,9 +18,6 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
-import it.unimi.dsi.fastutil.objects.Object2ByteMap;
-import it.unimi.dsi.fastutil.objects.Object2ByteOpenHashMap;
-
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -34,6 +31,8 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.util.ModelUtils;
+import it.unimi.dsi.fastutil.objects.Object2ByteMap;
+import it.unimi.dsi.fastutil.objects.Object2ByteOpenHashMap;
 
 /**
  * @author Markus Gärtner

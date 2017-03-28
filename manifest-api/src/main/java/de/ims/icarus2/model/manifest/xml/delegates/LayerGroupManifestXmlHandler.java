@@ -20,7 +20,6 @@ package de.ims.icarus2.model.manifest.xml.delegates;
 
 import static de.ims.icarus2.model.manifest.xml.ManifestXmlUtils.readFlag;
 import static de.ims.icarus2.model.manifest.xml.ManifestXmlUtils.writeFlag;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -40,6 +39,7 @@ import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.xml.UnexpectedTagException;
 import de.ims.icarus2.util.xml.UnsupportedNestingException;
 import de.ims.icarus2.util.xml.XmlSerializer;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner

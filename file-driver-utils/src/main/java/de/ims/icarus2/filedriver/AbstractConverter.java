@@ -20,10 +20,6 @@ package de.ims.icarus2.filedriver;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
-import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 import java.io.IOException;
 import java.nio.channels.FileChannel;
@@ -53,14 +49,15 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
-import de.ims.icarus2.model.standard.driver.BufferedItemManager;
 import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
 import de.ims.icarus2.model.standard.driver.ChunkConsumer;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AccumulatingException;
-import de.ims.icarus2.util.collections.Pool;
 import de.ims.icarus2.util.io.IOUtil;
 import de.ims.icarus2.util.nio.SubChannel;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner
@@ -70,20 +67,9 @@ public abstract class AbstractConverter implements Converter {
 
 	private FileDriver driver;
 
-	private final Int2ObjectMap<DelegatingCursor> activeCursors = new Int2ObjectOpenHashMap<>();
-
-	private final Reference2ObjectMap<ItemLayer, Pool<BufferedItemManager.InputCache>> cachePools = new Reference2ObjectOpenHashMap<>();
+	private final Int2ObjectMap<DelegatingCursor<?>> activeCursors = new Int2ObjectOpenHashMap<>();
 
 	private static Logger log = LoggerFactory.getLogger(AbstractConverter.class);
-
-	protected Pool<BufferedItemManager.InputCache> getCachePoolForLayer(ItemLayer layer) {
-		Pool<BufferedItemManager.InputCache> pool = cachePools.get(layer);
-		if(pool==null) {
-			pool = new Pool<>(getFileDriver().getLayerBuffer(layer)::newCache);
-			cachePools.put(layer, pool);
-		}
-		return pool;
-	}
 
 	/**
 	 * If subclasses wish to override this method they should ensure to make
@@ -168,7 +154,7 @@ public abstract class AbstractConverter implements Converter {
 			throw new ModelException(ModelErrorCode.DRIVER_ERROR,
 					"Duplicate attempt to acquire cursor for file at index: "+fileIndex);
 
-		DelegatingCursor cursor = createDelegatingCursor(fileIndex, layer);
+		DelegatingCursor<?> cursor = createDelegatingCursor(fileIndex, layer);
 
 		// Open now so we have the I/O initialization work out of the way
 		cursor.open();
@@ -183,7 +169,7 @@ public abstract class AbstractConverter implements Converter {
 	 * @param layer
 	 * @return
 	 */
-	protected abstract DelegatingCursor createDelegatingCursor(int fileIndex, ItemLayer layer);
+	protected abstract DelegatingCursor<?> createDelegatingCursor(int fileIndex, ItemLayer layer);
 
 	/**
 	 * Callback for {@link DelegatingCursor} instances to signal to their
@@ -197,7 +183,7 @@ public abstract class AbstractConverter implements Converter {
 	 * @param fileIndex
 	 * @param cursor
 	 */
-	protected void cursorOpened(DelegatingCursor cursor) {
+	protected void cursorOpened(DelegatingCursor<?> cursor) {
 		activeCursors.put(cursor.getFile().getFileIndex(), cursor);
 	}
 
@@ -213,7 +199,7 @@ public abstract class AbstractConverter implements Converter {
 	 * @param fileIndex
 	 * @param cursor
 	 */
-	protected void cursorClosed(DelegatingCursor cursor) {
+	protected void cursorClosed(DelegatingCursor<?> cursor) {
 		activeCursors.remove(cursor.getFile().getFileIndex());
 	}
 
@@ -225,7 +211,7 @@ public abstract class AbstractConverter implements Converter {
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	protected abstract Item readItemFromCursor(DelegatingCursor cursor) throws IOException, InterruptedException;
+	protected abstract Item readItemFromCursor(DelegatingCursor<?> cursor) throws IOException, InterruptedException;
 
 	/**
 	 * Returns a recommended buffer size when reading in chunks of data block-wise.
@@ -279,7 +265,9 @@ public abstract class AbstractConverter implements Converter {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class DelegatingCursor implements Cursor, ModelConstants {
+	public abstract static class DelegatingCursor<C extends AbstractConverter> implements Cursor<C>, ModelConstants {
+
+		protected final AbstractConverter converter;
 
 		/**
 		 * Primary layer of group for which data chunks should be loaded
@@ -299,16 +287,14 @@ public abstract class AbstractConverter implements Converter {
 
 		protected final DynamicLoadResult loadResult;
 
-		public DelegatingCursor(LockableFileObject file, ItemLayer primaryLayer, DynamicLoadResult loadResult) {
-			requireNonNull(file);
-			requireNonNull(primaryLayer);
-			requireNonNull(loadResult);
+		protected DelegatingCursor(CursorBuilder<?,?> builder) {
+			requireNonNull(builder);
 
-			this.file = file;
-			this.layer = primaryLayer;
-			this.loadResult = loadResult;
-
-			chunkIndex = getFileDriver().getChunkIndex(primaryLayer);
+			converter = builder.getConverter();
+			file = builder.getFile();
+			layer = builder.getPrimaryLayer();
+			loadResult = builder.getLoadResult();
+			chunkIndex = builder.getChunkIndex();
 		}
 
 		private ChunkIndexCursor chunkIndexCursor;
@@ -347,7 +333,7 @@ public abstract class AbstractConverter implements Converter {
 			chunkIndexCursor = chunkIndex.newCursor(true);
 
 			// Inform converter (will be skipped in case of any exception)
-			cursorOpened(this);
+			getConverter().cursorOpened(this);
 
 			// Only if all configuration steps went well actually set the cursor operational
 			open = true;
@@ -358,6 +344,12 @@ public abstract class AbstractConverter implements Converter {
 			// Tell load() method to reset the result the next time it is called
 			doReset = true;
 			return loadResult;
+		}
+
+		@Override
+		@SuppressWarnings("unchecked")
+		public C getConverter() {
+			return (C) converter;
 		}
 
 		/**
@@ -390,7 +382,7 @@ public abstract class AbstractConverter implements Converter {
 				currentIndex = index;
 
 				// Delegate reading to converter
-				result = readItemFromCursor(this);
+				result = getConverter().readItemFromCursor(this);
 
 				// Push info into result
 				loadResult.accept(index, result, ChunkState.forItem(result));
@@ -404,7 +396,7 @@ public abstract class AbstractConverter implements Converter {
 			chunkIndexCursor.close();
 			loadResult.close();
 
-			currentIndex = NO_INDEX;
+			currentIndex = UNSET_LONG;
 
 			// This might fail due to I/O stuff beyond our control
 			sourceChannel.close();
@@ -427,7 +419,7 @@ public abstract class AbstractConverter implements Converter {
 				 *  Finally notify converter (we need to do this here in a finally
 				 *  block to ensure proper removal of "old" cursor instances)
 				 */
-				cursorClosed(this);
+				getConverter().cursorClosed(this);
 			}
 		}
 
@@ -460,6 +452,101 @@ public abstract class AbstractConverter implements Converter {
 		}
 	}
 
+	public static abstract class CursorBuilder<B extends CursorBuilder<B, C>, C extends DelegatingCursor<?>> extends AbstractBuilder<B, C> {
+
+		private LockableFileObject file;
+		private ItemLayer primaryLayer;
+		private DynamicLoadResult loadResult;
+		private ChunkIndex chunkIndex;
+
+		private final AbstractConverter converter;
+
+		protected CursorBuilder(AbstractConverter converter) {
+			this.converter = requireNonNull(converter);
+		}
+
+		public B file(LockableFileObject file) {
+			requireNonNull(file);
+			checkState("File already set", this.file==null);
+
+			this.file = file;
+
+			return thisAsCast();
+		}
+
+		public B primaryLayer(ItemLayer primaryLayer) {
+			requireNonNull(primaryLayer);
+			checkState("Primary layer already set", this.primaryLayer==null);
+
+			this.primaryLayer = primaryLayer;
+
+			return thisAsCast();
+		}
+
+		public B loadResult(DynamicLoadResult loadResult) {
+			requireNonNull(loadResult);
+			checkState("Load result already set", this.loadResult==null);
+
+			this.loadResult = loadResult;
+
+			return thisAsCast();
+		}
+
+		public B chunkIndex(ChunkIndex chunkIndex) {
+			requireNonNull(chunkIndex);
+			checkState("Chunk index already set", this.chunkIndex==null);
+
+			this.chunkIndex = chunkIndex;
+
+			return thisAsCast();
+		}
+
+		public LockableFileObject getFile() {
+			checkState("No file defined", file!=null);
+
+			return file;
+		}
+
+		public ItemLayer getPrimaryLayer() {
+			checkState("No primary layer defined", primaryLayer!=null);
+
+			return primaryLayer;
+		}
+
+		public DynamicLoadResult getLoadResult() {
+			checkState("No load result defined", loadResult!=null);
+
+			return loadResult;
+		}
+
+		public AbstractConverter getConverter() {
+			return converter;
+		}
+
+		public ChunkIndex getChunkIndex() {
+			checkState("No chunk index defined", chunkIndex!=null);
+
+			return chunkIndex;
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.AbstractBuilder#validate()
+		 */
+		@Override
+		protected void validate() {
+			checkState("No file defined", file!=null);
+			checkState("No primary layer defined", primaryLayer!=null);
+			checkState("No load result defined", loadResult!=null);
+			checkState("No chunk index defined", chunkIndex!=null);
+		}
+	}
+
+	/**
+	 * Extends to the basic {@link LoadResult} to be re-usable.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public interface DynamicLoadResult extends LoadResult, ChunkConsumer {
 
 		/**

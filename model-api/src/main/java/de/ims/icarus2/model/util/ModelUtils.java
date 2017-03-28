@@ -197,6 +197,11 @@ public final class ModelUtils implements ModelConstants {
 				|| type==ManifestType.FRAGMENT_LAYER_MANIFEST;
 	}
 
+	public static boolean isStructureLayer(Layer layer) {
+		ManifestType type = layer.getManifest().getManifestType();
+		return type==ManifestType.STRUCTURE_LAYER_MANIFEST;
+	}
+
 	public static boolean isItemLayer(LayerManifest manifest) {
 		ManifestType type = manifest.getManifestType();
 		return type==ManifestType.ITEM_LAYER_MANIFEST
@@ -219,6 +224,16 @@ public final class ModelUtils implements ModelConstants {
 		return type==ManifestType.FRAGMENT_LAYER_MANIFEST;
 	}
 
+	public static boolean isAnnotationLayer(LayerManifest manifest) {
+		ManifestType type = manifest.getManifestType();
+		return type==ManifestType.ANNOTATION_LAYER_MANIFEST;
+	}
+
+	public static boolean isAnnotationLayer(Layer layer) {
+		ManifestType type = layer.getManifest().getManifestType();
+		return type==ManifestType.ANNOTATION_LAYER_MANIFEST;
+	}
+
 	public static boolean isOverlayLayer(ItemLayer layer) {
 		return layer.getCorpus().getOverlayLayer()==layer;
 	}
@@ -238,6 +253,10 @@ public final class ModelUtils implements ModelConstants {
 	public static boolean isContainerOrStructure(CorpusMember member) {
 		return member.getMemberType()==MemberType.CONTAINER
 				|| member.getMemberType()==MemberType.STRUCTURE;
+	}
+
+	public static boolean isStructure(CorpusMember member) {
+		return member.getMemberType()==MemberType.STRUCTURE;
 	}
 
 	public static boolean isElement(CorpusMember member) {

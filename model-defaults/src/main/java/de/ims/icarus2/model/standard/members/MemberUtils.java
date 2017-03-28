@@ -19,6 +19,7 @@
 package de.ims.icarus2.model.standard.members;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;

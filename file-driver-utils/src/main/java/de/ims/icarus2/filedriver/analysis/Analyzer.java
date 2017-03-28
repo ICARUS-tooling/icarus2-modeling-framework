@@ -17,16 +17,13 @@
  */
 package de.ims.icarus2.filedriver.analysis;
 
-import java.util.function.ObjLongConsumer;
-
 import de.ims.icarus2.Report.ReportItemCollector;
-import de.ims.icarus2.model.api.members.item.Item;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface Analyzer extends ObjLongConsumer<Item> {
+public interface Analyzer {
 
 	/**
 	 * Initializes this analyzer to use the given

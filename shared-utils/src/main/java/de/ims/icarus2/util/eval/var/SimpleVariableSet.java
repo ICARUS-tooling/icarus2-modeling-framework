@@ -18,8 +18,6 @@
 package de.ims.icarus2.util.eval.var;
 
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 import java.util.Collection;
 import java.util.function.Consumer;
@@ -36,6 +34,8 @@ import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.MutablePrimitives.MutablePrimitive;
 import de.ims.icarus2.util.MutablePrimitives.MutableShort;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
  * @author Markus Gärtner

@@ -21,7 +21,6 @@ package de.ims.icarus2.model.standard.view;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -37,15 +36,16 @@ import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.members.item.ItemLayerManager;
-import de.ims.icarus2.model.api.view.CorpusAccessMode;
 import de.ims.icarus2.model.api.view.CorpusModel;
 import de.ims.icarus2.model.api.view.CorpusOwner;
 import de.ims.icarus2.model.api.view.CorpusView;
 import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AbstractPart;
+import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.classes.Lazy;
 import de.ims.icarus2.util.events.ChangeSource;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
  * @author Markus Gärtner
@@ -58,7 +58,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 	// Environment
 	protected final Corpus corpus;
 	protected final Scope scope;
-	protected final CorpusAccessMode accessMode;
+	protected final AccessMode accessMode;
 	protected final ChangeSource changeSource;
 
 	// Lifecycle states
@@ -217,7 +217,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 	}
 
 	@Override
-	public CorpusAccessMode getAccessMode() {
+	public AccessMode getAccessMode() {
 		return accessMode;
 	}
 
@@ -302,7 +302,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 	public static class CorpusViewBuilder extends AbstractBuilder<CorpusViewBuilder, CorpusView> {
 
 		private Scope scope;
-		private CorpusAccessMode accessMode;
+		private AccessMode accessMode;
 		private ItemLayerManager itemLayerManager;
 		private IndexSet[] indices;
 		private int pageSize;
@@ -320,7 +320,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 			return scope;
 		}
 
-		public CorpusViewBuilder accessMode(CorpusAccessMode accessMode) {
+		public CorpusViewBuilder accessMode(AccessMode accessMode) {
 			requireNonNull(accessMode);
 			checkState(this.accessMode==null);
 
@@ -329,7 +329,7 @@ public class DefaultCorpusView extends AbstractPart<Corpus> implements CorpusVie
 			return thisAsCast();
 		}
 
-		public CorpusAccessMode getAccessMode() {
+		public AccessMode getAccessMode() {
 			return accessMode;
 		}
 

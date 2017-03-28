@@ -83,7 +83,7 @@ public class HeapIntersectionOfLong implements PrimitiveIterator.OfLong, ModelCo
 	// Buffer for storing streams while checking for a common value
 	private final PrimitiveIterator.OfLong[] buffer;
 
-	private long value = NO_INDEX;
+	private long value = UNSET_LONG;
 
 	public HeapIntersectionOfLong(PrimitiveIterator.OfLong[] sources) {
 		requireNonNull(sources);
@@ -106,7 +106,7 @@ public class HeapIntersectionOfLong implements PrimitiveIterator.OfLong, ModelCo
 	public boolean hasNext() {
 
 		// If required prepare next value to be returned
-		if(value==NO_INDEX && !heap.isEmpty()) {
+		if(value==UNSET_LONG && !heap.isEmpty()) {
 
 			boolean continueSearch = true;
 
@@ -146,7 +146,7 @@ public class HeapIntersectionOfLong implements PrimitiveIterator.OfLong, ModelCo
 			}
 		}
 
-		return value!=NO_INDEX;
+		return value!=UNSET_LONG;
 	}
 
 	/**
@@ -154,11 +154,11 @@ public class HeapIntersectionOfLong implements PrimitiveIterator.OfLong, ModelCo
 	 */
 	@Override
 	public long nextLong() {
-		if (value==NO_INDEX)
+		if (value==UNSET_LONG)
 			throw new NoSuchElementException();
 
 		long result = value;
-		value = NO_INDEX;
+		value = UNSET_LONG;
 		return result;
 	}
 

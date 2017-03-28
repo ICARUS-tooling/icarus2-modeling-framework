@@ -24,7 +24,7 @@ package de.ims.icarus2.filedriver;
 public enum ElementFlag {
 
 	/**
-	 * Element has neither been scanned nor otherwise checked
+	 * Element has neither been scanned or checked
 	 */
 	UNKNOWN,
 
@@ -42,7 +42,8 @@ public enum ElementFlag {
 	/**
 	 * External problems outside the framework control prevented preparation
 	 * of the element and rendered it unusable for further processing. Examples
-	 * for this state include failed file creation or other I/O related errors.
+	 * for this state include failed file creation, invalid content or other
+	 * I/O related errors.
 	 */
 	UNUSABLE,
 

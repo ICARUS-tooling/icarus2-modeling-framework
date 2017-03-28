@@ -182,7 +182,7 @@ public class MemoryByteStorage implements AutoCloseable {
 
 		//TODO optimize growth factor
 		double growthFactor = 2.0;
-		if(capacity>1_000_000) {
+		if(capacity>10_000_000) {
 			growthFactor = 1.5;
 		}
 

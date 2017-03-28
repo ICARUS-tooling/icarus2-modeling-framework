@@ -20,6 +20,7 @@ package de.ims.icarus2.filedriver.schema.table;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.function.Consumer;
@@ -66,14 +67,6 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 	@Override
 	public String getGroupId() {
 		return groupId;
-	}
-
-	/**
-	 * @see de.ims.icarus2.filedriver.schema.Schema#getSchemaTypeName()
-	 */
-	@Override
-	public String getSchemaTypeName() {
-		return SCHEMA_ID;
 	}
 
 	/**
@@ -308,6 +301,18 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			return this;
 		}
 
+		public BlockSchemaImpl addColumns(ColumnSchema...columnSchemas) {
+			requireNonNull(columnSchemas);
+
+			if(columns==null) {
+				columns = new ArrayList<>();
+			}
+
+			Collections.addAll(columns, columnSchemas);
+
+			return this;
+		}
+
 		public BlockSchemaImpl addBlock(BlockSchema block) {
 			requireNonNull(block);
 
@@ -521,6 +526,14 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			return resolver;
 		}
 
+		/**
+		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.ColumnSchema#hasSubstitutes()
+		 */
+		@Override
+		public boolean hasSubstitutes() {
+			return substitutes!=null && !substitutes.isEmpty();
+		}
+
 		public ColumnSchemaImpl setName(String name) {
 			requireNonNull(name);
 
@@ -568,15 +581,15 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			return this;
 		}
 
-		public ColumnSchemaImpl addSubstitute(SubstituteType type, SubstituteSchema substitute) {
-			requireNonNull(type);
+		public ColumnSchemaImpl addSubstitute(SubstituteSchema substitute) {
 			requireNonNull(substitute);
+			requireNonNull(substitute.getType());
 
 			if(substitutes==null) {
 				substitutes = new EnumMap<>(SubstituteType.class);
 			}
 
-			substitutes.put(type, substitute);
+			substitutes.put(substitute.getType(), substitute);
 
 			return this;
 		}

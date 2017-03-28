@@ -26,6 +26,7 @@ import static de.ims.icarus2.model.api.driver.indices.IndexUtils.lastIndex;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.io.BufferedIOResource;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
@@ -158,14 +159,14 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 
 			Block block = getBlock(id, false);
 			if(block==null) {
-				return NO_INDEX;
+				return UNSET_LONG;
 			}
 
 			// Use direct span collection method to avoid object creation!
 			long begin = blockStorage.getSpanBegin(block.getData(), localIndex);
 			long end = blockStorage.getSpanEnd(block.getData(), localIndex);
 
-			return end<begin ? NO_INDEX : (end-begin+1);
+			return end<begin ? UNSET_LONG : (end-begin+1);
 		}
 
 		/**
@@ -216,7 +217,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			int localIndex = localIndex(sourceIndex);
 
 			Block block = getBlock(id, false);
-			return block==null ? NO_INDEX : blockStorage.getSpanBegin(block.getData(), localIndex);
+			return block==null ? UNSET_LONG : blockStorage.getSpanBegin(block.getData(), localIndex);
 		}
 
 		/**
@@ -228,7 +229,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			int localIndex = localIndex(sourceIndex);
 
 			Block block = getBlock(id, false);
-			return block==null ? NO_INDEX : blockStorage.getSpanEnd(block.getData(), localIndex);
+			return block==null ? UNSET_LONG : blockStorage.getSpanEnd(block.getData(), localIndex);
 		}
 
 		/**
@@ -249,7 +250,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 					// Special case of a single big span
 					long beginIndex = getBeginIndex(firstIndex(sourceIndices), null);
 					long endIndex = getEndIndex(firstIndex(sourceIndices), null);
-					if(beginIndex!=NO_INDEX && endIndex!=NO_INDEX) {
+					if(beginIndex!=UNSET_LONG && endIndex!=UNSET_LONG) {
 						collector.add(beginIndex, endIndex);
 						result = true;
 					}
@@ -267,7 +268,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 								long sourceIndex = indices.indexAt(i);
 								long beginIndex = getBeginIndex(sourceIndex, null);
 								long endIndex = getEndIndex(sourceIndex, null);
-								if(beginIndex!=NO_INDEX && endIndex!=NO_INDEX) {
+								if(beginIndex!=UNSET_LONG && endIndex!=UNSET_LONG) {
 									collector.add(beginIndex, endIndex);
 									result = true;
 								}
@@ -288,7 +289,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 						long sourceIndex = indices.indexAt(i);
 						long beginIndex = getBeginIndex(sourceIndex, null);
 						long endIndex = getEndIndex(sourceIndex, null);
-						if(beginIndex!=NO_INDEX && endIndex!=NO_INDEX) {
+						if(beginIndex!=UNSET_LONG && endIndex!=UNSET_LONG) {
 							collector.add(beginIndex, endIndex);
 							result = true;
 						}
@@ -367,7 +368,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 		 * into a global index value.
 		 */
 		private long translate(int id, int localIndex) {
-			return localIndex==-1 ? NO_INDEX : id*entriesPerBlock + localIndex;
+			return localIndex==-1 ? UNSET_LONG : id*entriesPerBlock + localIndex;
 		}
 
 		/**
@@ -391,13 +392,13 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 
 			// Check first block
 			long result = find0(idFrom, localFrom, entriesPerBlock, targetIndex);
-			if(result!=NO_INDEX) {
+			if(result!=UNSET_LONG) {
 				return result;
 			}
 
 			// Check last block
 			result = find0(idTo, 0, localTo, targetIndex);
-			if(result!=NO_INDEX) {
+			if(result!=UNSET_LONG) {
 				return result;
 			}
 
@@ -405,12 +406,12 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			for(int id=idFrom+1; id<idTo; id++) {
 				// Now always include the entire block to search
 				result = find0(id, 0, entriesPerBlock, targetIndex);
-				if(result!=NO_INDEX) {
+				if(result!=UNSET_LONG) {
 					return result;
 				}
 			}
 
-			return NO_INDEX;
+			return UNSET_LONG;
 		}
 
 		private long find0(int id, int localFrom, int localTo, long targetIndex) {
@@ -418,7 +419,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			Block block = getBlock(id, false);
 
 			if(block==null) {
-				return NO_INDEX;
+				return UNSET_LONG;
 			}
 
 			int localIndex = -1;
@@ -438,8 +439,8 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			// Find first span covering the targetBegin
 			long sourceBegin = find(idFrom, idTo, localFrom, localTo, targetBegin);
 
-			if(sourceBegin==NO_INDEX) {
-				return NO_INDEX;
+			if(sourceBegin==UNSET_LONG) {
+				return UNSET_LONG;
 			}
 
 			// Refresh left end of search interval
@@ -449,8 +450,8 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			// Find last span covering targetEnd
 			long sourceEnd = find(idFrom, idTo, localFrom, localTo, targetEnd);
 
-			if(sourceEnd==NO_INDEX) {
-				return NO_INDEX;
+			if(sourceEnd==UNSET_LONG) {
+				return UNSET_LONG;
 			}
 
 			collector.add(sourceBegin, sourceEnd);
@@ -493,7 +494,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 
 						if(from==to) {
 							sourceIndex = find(idFrom, idTo, localFrom, localTo, from);
-							if(sourceIndex==NO_INDEX) {
+							if(sourceIndex==UNSET_LONG) {
 								return false;
 							}
 
@@ -505,7 +506,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 									localFrom, localTo, from, to, collector);
 
 							// Here sourceIndex is the index of the last span that was found
-							if(sourceIndex==NO_INDEX) {
+							if(sourceIndex==UNSET_LONG) {
 								return false;
 							}
 						}
@@ -549,7 +550,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 						while(from<=to) {
 							long sourceIndex = find(idFrom, idTo, localFrom, localTo, from);
 
-							if(sourceIndex==NO_INDEX) {
+							if(sourceIndex==UNSET_LONG) {
 								// Continue through the search space when no match was found
 								from++;
 							} else {

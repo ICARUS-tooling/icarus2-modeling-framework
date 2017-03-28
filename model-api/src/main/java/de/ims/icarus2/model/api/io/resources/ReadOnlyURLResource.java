@@ -20,11 +20,16 @@ package de.ims.icarus2.model.api.io.resources;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.util.AccessMode;
+import de.ims.icarus2.util.io.IOUtil;
+import de.ims.icarus2.util.nio.MemoryByteStorage;
 
 /**
  * @author Markus Gärtner
@@ -32,14 +37,29 @@ import de.ims.icarus2.model.api.ModelException;
  */
 public class ReadOnlyURLResource implements IOResource {
 
-	private final URL url;
+	private URL source;
+
+	private MemoryByteStorage buffer;
 
 	/**
 	 * @param url
 	 */
 	public ReadOnlyURLResource(URL url) {
-		requireNonNull(url);
-		this.url = url;
+		this.source = requireNonNull(url);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.io.resources.IOResource#getAccessMode()
+	 */
+	@Override
+	public AccessMode getAccessMode() {
+		return AccessMode.READ;
+	}
+
+	private void checkOpen() {
+		if(buffer==null || source==null)
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+					"Buffer not prepared or already deleted");
 	}
 
 	/**
@@ -55,7 +75,9 @@ public class ReadOnlyURLResource implements IOResource {
 	 */
 	@Override
 	public SeekableByteChannel getReadChannel() throws IOException {
-		//TODO establish handle and buffer
+		checkOpen();
+
+		return buffer.newChannel();
 	}
 
 	/**
@@ -63,7 +85,8 @@ public class ReadOnlyURLResource implements IOResource {
 	 */
 	@Override
 	public void delete() throws IOException {
-		//TODO close handle
+		buffer = null;
+		source = null;
 	}
 
 	/**
@@ -71,8 +94,28 @@ public class ReadOnlyURLResource implements IOResource {
 	 */
 	@Override
 	public void prepare() throws IOException {
-		// TODO Auto-generated method stub
+		if(buffer!=null) {
+			return;
+		}
 
+		if(source==null)
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Resource already deleted");
+
+		// Copy all data from the URL's stream into local buffer
+		try(InputStream in = source.openStream()) {
+
+			// InputStream needs array, our MemoryByteStorage needs ByteBuffer
+			byte[] b = new byte[IOUtil.DEFAULT_BUFFER_SIZE];
+			ByteBuffer bb = ByteBuffer.wrap(b);
+
+			int len;
+
+			while((len=in.read(b))>0) {
+
+				bb.clear().limit(len);
+				buffer.write(buffer.size(), bb);
+			}
+		}
 	}
 
 	/**
@@ -80,8 +123,9 @@ public class ReadOnlyURLResource implements IOResource {
 	 */
 	@Override
 	public long size() throws IOException {
-		// TODO Auto-generated method stub
-		return 0;
+		checkOpen();
+
+		return buffer.size();
 	}
 
 }

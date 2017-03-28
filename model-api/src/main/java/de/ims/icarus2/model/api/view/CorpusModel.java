@@ -44,10 +44,10 @@ import de.ims.icarus2.model.api.view.CorpusView.PageControl;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.api.ValueSet;
+import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.Changeable;
 import de.ims.icarus2.util.Part;
 import de.ims.icarus2.util.access.AccessControl;
-import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
 import de.ims.icarus2.util.access.AccessRestriction;
 import de.ims.icarus2.util.annotations.OptionalMethod;
@@ -68,7 +68,7 @@ public interface CorpusModel extends Part<CorpusView>, ModelConstants, Changeabl
 	/**
 	 *
 	 * @return {@code true} iff this model was created from a sub corpus that has an
-	 * access mode of {@value CorpusAccessMode#WRITE} or {@value CorpusAccessMode#READ_WRITE}.
+	 * access mode of {@value AccessMode#WRITE} or {@value AccessMode#READ_WRITE}.
 	 */
 	boolean isModelEditable();
 
@@ -87,7 +87,9 @@ public interface CorpusModel extends Part<CorpusView>, ModelConstants, Changeabl
 	 */
 	boolean isModelActive();
 
-	Corpus getCorpus();
+	default Corpus getCorpus() {
+		return getView().getCorpus();
+	}
 
 	CorpusView getView();
 
@@ -252,7 +254,7 @@ public interface CorpusModel extends Part<CorpusView>, ModelConstants, Changeabl
 	 * @return The enclosing container of this item or {@code null} if this
 	 * item is not hosted within a container.
 	 */
-	@AccessRestriction(AccessMode.ALL)
+	@AccessRestriction(de.ims.icarus2.util.access.AccessMode.ALL)
 	Container getContainer(Item item);
 
 	/**
@@ -264,7 +266,7 @@ public interface CorpusModel extends Part<CorpusView>, ModelConstants, Changeabl
 	 *
 	 * @return The enclosing {@code ItemLayer} that hosts this item object.
 	 */
-	@AccessRestriction(AccessMode.ALL)
+	@AccessRestriction(de.ims.icarus2.util.access.AccessMode.ALL)
 	ItemLayer getLayer(Item item);
 
 	/**
@@ -284,7 +286,7 @@ public interface CorpusModel extends Part<CorpusView>, ModelConstants, Changeabl
 	 *
 	 * @return
 	 */
-	@AccessRestriction(AccessMode.ALL)
+	@AccessRestriction(de.ims.icarus2.util.access.AccessMode.ALL)
 	long getIndex(Item item);
 
 //	/**
@@ -312,7 +314,7 @@ public interface CorpusModel extends Part<CorpusView>, ModelConstants, Changeabl
 	 * @return The zero-based offset of this item's begin within the corpus
 	 * or {@code -1} if the item is <i>virtual</i>
 	 */
-	@AccessRestriction(AccessMode.ALL)
+	@AccessRestriction(de.ims.icarus2.util.access.AccessMode.ALL)
 	long getBeginOffset(Item item);
 
 	/**
@@ -330,7 +332,7 @@ public interface CorpusModel extends Part<CorpusView>, ModelConstants, Changeabl
 	 * @return The zero-based offset of this item's end within the corpus
 	 * or {@code -1} if the item is <i>virtual</i>
 	 */
-	@AccessRestriction(AccessMode.ALL)
+	@AccessRestriction(de.ims.icarus2.util.access.AccessMode.ALL)
 	long getEndOffset(Item item);
 
 	/**

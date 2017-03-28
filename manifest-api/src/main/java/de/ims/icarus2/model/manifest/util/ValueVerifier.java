@@ -17,6 +17,14 @@
  */
 package de.ims.icarus2.model.manifest.util;
 
+import java.util.Set;
+
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.manifest.api.AnnotationManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.model.manifest.api.ValueRange;
+import de.ims.icarus2.model.manifest.api.ValueSet;
+import de.ims.icarus2.model.manifest.types.ValueType;
 import it.unimi.dsi.fastutil.doubles.DoubleOpenHashSet;
 import it.unimi.dsi.fastutil.doubles.DoubleSet;
 import it.unimi.dsi.fastutil.floats.FloatOpenHashSet;
@@ -26,15 +34,6 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
-
-import java.util.Set;
-
-import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.manifest.api.AnnotationManifest;
-import de.ims.icarus2.model.manifest.api.ManifestException;
-import de.ims.icarus2.model.manifest.api.ValueRange;
-import de.ims.icarus2.model.manifest.api.ValueSet;
-import de.ims.icarus2.model.manifest.types.ValueType;
 
 /**
  * @author Markus Gärtner

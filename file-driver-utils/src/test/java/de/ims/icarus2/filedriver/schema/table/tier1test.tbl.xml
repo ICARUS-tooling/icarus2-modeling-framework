@@ -5,8 +5,8 @@
 	
 	<block layerId="token">		
 		<component memberType="item" />			
-		<endDelimiter>EMPTY_LINE</endDelimiter>				
-		<option name="trimWhitespaces" value="true" />			
+		<endDelimiter><pattern>EMPTY_LINE</pattern></endDelimiter>				
+		<option name="trimWhitespaces">true</option>			
 		<columns fixedOrder="true">
 			<column name="ID" ignore="true" />
 			<column name="FORM" layerId="form" />

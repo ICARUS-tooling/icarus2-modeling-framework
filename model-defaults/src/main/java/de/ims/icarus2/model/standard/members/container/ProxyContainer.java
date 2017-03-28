@@ -18,6 +18,7 @@
 package de.ims.icarus2.model.standard.members.container;
 
 import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -138,7 +139,7 @@ public class ProxyContainer extends AbstractImmutableContainer {
 	 */
 	@Override
 	public long getIndex() {
-		return NO_INDEX;
+		return UNSET_LONG;
 	}
 
 	/**
@@ -146,7 +147,7 @@ public class ProxyContainer extends AbstractImmutableContainer {
 	 */
 	@Override
 	public long getId() {
-		return NO_INDEX;
+		return UNSET_LONG;
 	}
 
 	/**
@@ -154,7 +155,7 @@ public class ProxyContainer extends AbstractImmutableContainer {
 	 */
 	@Override
 	public long getBeginOffset() {
-		return NO_INDEX;
+		return UNSET_LONG;
 	}
 
 	/**
@@ -162,7 +163,7 @@ public class ProxyContainer extends AbstractImmutableContainer {
 	 */
 	@Override
 	public long getEndOffset() {
-		return NO_INDEX;
+		return UNSET_LONG;
 	}
 
 	/**

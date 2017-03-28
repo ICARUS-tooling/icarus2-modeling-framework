@@ -21,10 +21,6 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.strings.StringUtil.getName;
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 import java.lang.ref.WeakReference;
 import java.util.Collection;
@@ -40,10 +36,15 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.members.item.Item.ManagedItem;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.standard.driver.cache.TrackedMember;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractBuilder;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner
@@ -283,6 +284,19 @@ public class BufferedItemManager {
 			return result;
 		}
 	}
+
+	/**
+	 * An {@link ObjLongConsumer} implementation that is usable as <i>dispose action</i>
+	 * for a {@link LayerBuffer}. This implementation will do nothing except set the
+	 * disposed item's {@link Item#isAlive() alive} flag to {@code false}. This was
+	 *
+	 */
+	public static final ObjLongConsumer<Item> DEFAULT_DISPOSE_ACTION = (item, index) -> {
+		if(item instanceof ManagedItem) {
+			ManagedItem managedItem = (ManagedItem) item;
+			managedItem.setAlive(false);
+		}
+	};
 
 	/**
 	 *

@@ -20,8 +20,6 @@ package de.ims.icarus2.model.standard.driver.virtual;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,6 +42,8 @@ import de.ims.icarus2.model.standard.driver.ChunkInfoBuilder;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner

@@ -26,6 +26,7 @@ import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.events.CorpusListener;
 import de.ims.icarus2.model.api.events.PageListener;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.Changeable;
 import de.ims.icarus2.util.Part;
 
@@ -49,7 +50,7 @@ public interface CorpusView extends Part<Corpus>, Changeable {
 	Scope getScope();
 
 	/**
-	 * Returns the {@link CorpusAccessMode mode} this view was created for.
+	 * Returns the {@link AccessMode mode} this view was created for.
 	 * Note that depending on the access mode a quite large number of methods
 	 * in the associated {@link #getModel() model} have a different default
 	 * behavior. In <i>read-only</i> mode for example all <i>modifying</i>
@@ -57,7 +58,7 @@ public interface CorpusView extends Part<Corpus>, Changeable {
 	 *
 	 * @return
 	 */
-	CorpusAccessMode getAccessMode();
+	AccessMode getAccessMode();
 
 	/**
 	 * Returns the number of element in this corpus view, i.e. the number of items
@@ -253,6 +254,16 @@ public interface CorpusView extends Part<Corpus>, Changeable {
 	     * 			 the index is out of range (<tt>index &lt; 0 || index &gt;= getPageCount()</tt>)
 		 */
 		boolean loadPage(int index) throws InterruptedException;
+
+		/**
+		 * Shorthand method for loading the first page.
+		 *
+		 * @return
+		 * @throws InterruptedException
+		 */
+		default boolean load() throws InterruptedException {
+			return loadPage(0);
+		}
 
 		/**
 		 * Closes the current page or does nothing if no page has been loaded.

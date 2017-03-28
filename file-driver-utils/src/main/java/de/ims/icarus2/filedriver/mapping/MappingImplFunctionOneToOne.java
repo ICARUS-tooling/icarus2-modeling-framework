@@ -131,7 +131,7 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 				throws InterruptedException {
 			long index = lookup0(sourceIndex);
 
-			if(index==NO_INDEX) {
+			if(index==UNSET_LONG) {
 				return false;
 			} else {
 				collector.add(index);
@@ -218,7 +218,7 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 		@Override
 		public long find(long fromSource, long toSource, long targetIndex, RequestSettings settings)
 				throws InterruptedException {
-			return NO_INDEX;
+			return UNSET_LONG;
 		}
 
 		/**

@@ -19,13 +19,10 @@ package de.ims.icarus2.filedriver.schema.table;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
-import static de.ims.icarus2.util.classes.ClassUtils._int;
+import static de.ims.icarus2.util.classes.Primitives._int;
+import static de.ims.icarus2.util.classes.Primitives._long;
 import static de.ims.icarus2.util.strings.StringUtil.getName;
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.longs.LongArrayList;
-import it.unimi.dsi.fastutil.longs.LongList;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -37,19 +34,24 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
+import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.ObjLongConsumer;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.Report;
 import de.ims.icarus2.Report.ReportItem;
+import de.ims.icarus2.ReportBuilder;
 import de.ims.icarus2.filedriver.ComponentSupplier;
 import de.ims.icarus2.filedriver.Converter;
 import de.ims.icarus2.filedriver.ElementFlag;
@@ -58,6 +60,10 @@ import de.ims.icarus2.filedriver.FileDataStates.FileInfo;
 import de.ims.icarus2.filedriver.FileDriver;
 import de.ims.icarus2.filedriver.FileDriver.LockableFileObject;
 import de.ims.icarus2.filedriver.analysis.Analyzer;
+import de.ims.icarus2.filedriver.analysis.AnnotationAnalyzer;
+import de.ims.icarus2.filedriver.analysis.DefaultItemLayerAnalyzer;
+import de.ims.icarus2.filedriver.analysis.DefaultStructureLayerAnalzyer;
+import de.ims.icarus2.filedriver.analysis.ItemLayerAnalyzer;
 import de.ims.icarus2.filedriver.schema.SchemaBasedConverter;
 import de.ims.icarus2.filedriver.schema.resolve.BatchResolver;
 import de.ims.icarus2.filedriver.schema.resolve.Resolver;
@@ -78,9 +84,11 @@ import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.driver.ChunkState;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
+import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
+import de.ims.icarus2.model.api.layer.StructureLayer;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -88,21 +96,28 @@ import de.ims.icarus2.model.api.members.item.Item.ManagedItem;
 import de.ims.icarus2.model.api.registry.LayerMemberFactory;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
-import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
 import de.ims.icarus2.model.standard.driver.ChunkConsumer;
+import de.ims.icarus2.model.util.Graph;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
+import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
+import de.ims.icarus2.util.collections.LazyMap;
 import de.ims.icarus2.util.collections.Pool;
+import de.ims.icarus2.util.collections.WeakHashSet;
 import de.ims.icarus2.util.io.IOUtil;
 import de.ims.icarus2.util.strings.FlexibleSubSequence;
 import de.ims.icarus2.util.strings.StringUtil;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongList;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 /**
  * @author Markus Gärtner
@@ -212,6 +227,8 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 		return new BlockHandler(tableSchema.getRootBlock());
 	}
 
+	private static final int DEFAULT_TEMP_CHUNK_COUNT = 500;
+
 	/**
 	 * @see de.ims.icarus2.filedriver.Converter#scanFile(int, de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexStorage)
 	 */
@@ -223,15 +240,39 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 		@SuppressWarnings("resource")
 		BlockHandler blockHandler = blockHandlerPool.get();
 
-		Map<Layer, Analyzer> analyzers = createAnalyzers(blockHandler.getItemLayer().getLayerGroup());
+		LayerGroup layerGroup = blockHandler.getItemLayer().getLayerGroup();
 
-		//TODO implement custom InputCache instances that act as analyzers and can be "abused" as component consumers
-		Map<ItemLayer, InputCache> caches = new Object2ObjectOpenHashMap<>(analyzers.size());
+		Map<Layer, Analyzer> analyzers = createAnalyzers(layerGroup, fileIndex);
+
+		// For each item layer create a wrapped analyzer that also cleans up related annotation content
+		BiFunction<ItemLayer, Graph<Layer>, InputCache> cacheGen = (layer, graph) -> {
+
+			// Make sure a cleanup will remove all connected annotations
+			Consumer<InputCache> cleanupAction = new AnnotationCleaner()
+					.addStoragesFromLayers(graph.incomingNodes(layer));
+
+			/*
+			 * Contract with the createAnalyzers() method:
+			 *
+			 * For ItemLayer objects the returned analyzer will always be an
+			 * instance of ItemLayerAnalyzer.
+			 */
+			ItemLayerAnalyzer analyzer = (ItemLayerAnalyzer) analyzers.getOrDefault(layer, ItemLayerAnalyzer.EMPTY_ANALYZER);
+
+			return new AnalyzingInputCache(analyzer, cleanupAction);
+		};
+
+		/*
+		 *  Allow for the default facility to handle decision what layers will
+		 *  receive caches, but override the actual implementation with our "empty"
+		 *  cache that only holds the data until an analysis is done.
+		 */
+		final Map<ItemLayer, InputCache> caches = createCaches(layerGroup, cacheGen);
 
 		/*
 		 * We only need bare component suppliers without back-end storage
 		 */
-		Map<ItemLayer, ComponentSupplier> componentSuppliers = new ComponentSuppliersFactory(this)
+		final Map<ItemLayer, ComponentSupplier> componentSuppliers = new ComponentSuppliersFactory(this)
 			.rootBlockHandler(blockHandler)
 			.fileIndex(fileIndex)
 			.memberFactory(getSharedMemberFactory())
@@ -239,14 +280,53 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 			.consumers(layer -> caches.get(layer)::offer)
 			.build();
 
-		InputResolverContext inputContext = new InputResolverContext(componentSuppliers);
+		ObjLongConsumer<Item> topLevelItemAction = new ObjLongConsumer<Item>() {
+
+			// Reduce overhead by only purging our back-end storage every so often
+			private int chunksTillPurge = DEFAULT_TEMP_CHUNK_COUNT;
+
+			@Override
+			public void accept(Item item, long index) {
+				/*
+				 *  It's the drivers responsibility to set proper flags on an item, so we do it here.
+				 *
+				 *  Our assumption is that subclasses or factory code that gets called from within
+				 *  the creation process already assigns other flags than ALIVE. Therefore this is
+				 *  the only flag we need to worry about here. It is also the only one that MUST be
+				 *  set in order for a blank item to get assigned VALID chunk state!
+				 */
+				if(item instanceof ManagedItem) {
+					((ManagedItem)item).setAlive(true);
+				}
+
+				/*
+				 *  We "abuse" caches to collect all the items created for a single chunk here.
+				 *
+				 *  Committing the caches will trigger the nested analyzers to collect metadata
+				 *  and then discard the content of the cache.
+				 */
+				if(--chunksTillPurge<=0) {
+					chunksTillPurge = DEFAULT_TEMP_CHUNK_COUNT;
+					caches.values().forEach(InputCache::commit);
+				}
+			}
+		};
+
+		InputResolverContext inputContext = new InputResolverContext(componentSuppliers, topLevelItemAction);
 		ItemLayer primaryLayer = blockHandler.getItemLayer();
 		long index = 0L;
 
 		LockableFileObject fileObject = getFileDriver().getFileObject(fileIndex);
 
-		// Notify stack about incoming read operation
+		// Notify handler stack about incoming SCAN operation
 		blockHandler.prepareForReading(this, ReadMode.SCAN, caches::get);
+
+		// Use default report builder mechanism and link analyzers to it
+		ReportBuilder<ReportItem> reportBuilder = ReportBuilder.newBuilder(tableSchema);
+		analyzers.values().forEach(a -> a.init(reportBuilder));
+
+		// Flag to keep track whether or not we encountered a "real" error that causes the scan to stop
+		boolean encounteredFatalErrors = false;
 
 		try(ReadableByteChannel channel = fileObject.getResource().getReadChannel()) {
 
@@ -258,7 +338,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 			 *  previous block we had to do some lookahead but didn't consume the
 			 *  current line.
 			 */
-			while(lines.hasLine() || lines.next()) {
+			scan_loop : while(lines.hasLine() || lines.next()) {
 
 				// Clear state of handler and context
 				blockHandler.reset();
@@ -277,30 +357,28 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 					// Delegate actual conversion work (which will advance lines on its own)
 					blockHandler.readChunk(lines, inputContext);
 
-					// Fetch item and verify state
-					Item item = inputContext.currentItem();
+				} catch(RuntimeException e) {
+					// Only care about "soft" errors here (they won't terminate the scanning process)
 
-					/*
-					 *  It's the drivers responsibility to set proper flags on an item, so we do it here.
-					 *
-					 *  Our assumption is that subclasses or factory code that gets called from within
-					 *  the creation process already assigns other flags than ALIVE. Therefore this is
-					 *  the only flag we need to worry about here. It is also the only one that MUST be
-					 *  set in order for a blank item to get assigned VALID chunk state!
-					 */
-					if(item instanceof ManagedItem) {
-						((ManagedItem)item).setAlive(true);
-					}
+					ErrorCode errorCode = ErrorCode.forException(e, GlobalErrorCode.UNKNOWN_ERROR);
 
-					/*
-					 *  We "abuse" caches to collect all the items created for a single chunk here.
-					 *
-					 *  Committing the caches will trigger the nested analyzers to collect metadata
-					 *  and then discard the content of the cache.
-					 */
-					caches.values().forEach(InputCache::commit);
-				} catch(ManifestException e) {
-					//TODO add to report
+					// Report any "soft" problem as error and include physical location
+					reportBuilder.addError(errorCode,
+							"Invalid content in chunk {} in line {}: {}",
+							_long(index), _long(lines.getLineNumber()), e.getMessage());
+
+				} catch(Exception e) {
+					// ""Real" errors will break the scanning process
+
+					reportBuilder.addError(ModelErrorCode.DRIVER_ERROR,
+							"Fatal error in chunk {} in line {}: {}",
+							_long(index), _long(lines.getLineNumber()), e.getMessage());
+
+					// Make sure surrounding code knows about the error condition
+					encounteredFatalErrors = true;
+
+					// Potentially corrupted or unusable data, so stop scanning
+					break scan_loop;
 				}
 
 				// Make sure we advance 1 line in case the last one has been consumed as content
@@ -311,23 +389,61 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 				// Next chunk
 				index++;
 			}
+
+			// If nothing went wrong we still need to make sure that pending data is properly analyzed
+			caches.values().forEach(InputCache::commit);
+
+			// At last make sure all analyzers persist their gathered information
+			analyzers.values().forEach(Analyzer::finish);
+
 		} finally {
 			blockHandler.close();
 			blockHandlerPool.recycle(blockHandler);
 
-			// Make sure we discard all "cached" data
-			caches.values().forEach(InputCache::discard);
+			// Make sure we commit/discard all "cached" data
+			if(encounteredFatalErrors) {
+				caches.values().forEach(InputCache::discard);
+			}
 		}
 
-		//DEBUG
-		getFileDriver().getFileStates().getFileInfo(fileIndex).setFlag(ElementFlag.SCANNED);
+		//TODO access caches and write into states information about number of elements for each layer and begin+end
 
-		// TODO Auto-generated method stub
-		return null;
+		Report<ReportItem> report = reportBuilder.build();
+
+		// Assign respective flag to file
+		ElementFlag flagForFile = report.hasErrors() ? ElementFlag.UNUSABLE : ElementFlag.SCANNED;
+		getFileDriver().getFileStates().getFileInfo(fileIndex).setFlag(flagForFile);
+
+		return report;
 	}
 
-	private Map<Layer, Analyzer> createAnalyzers(LayerGroup group) {
+	/**
+	 * Creates analyzers for the specified {@code group}.
+	 * <p>
+	 * The following relations are mandatory for the returned map:
+	 * <ul>
+	 * <li>If the provided layer is an {@link ItemLayer}, the returned analyzer will be an implementation of {@link ItemLayerAnalyzer}</li>
+	 * <li>If the provided layer is an {@link StructureLayer}, the returned analyzer will be an implementation of {@link DefaultStructureLayerAnalzyer}</li>
+	 * <li>If the provided layer is an {@link AnnotationLayer}, the returned analyzer will be an implementation of {@link AnnotationAnalyzer}</li>
+	 * </ul>
+	 *
+	 * For now this implementation only produces analyzers for item and structure layers.
+	 */
+	protected Map<Layer, Analyzer> createAnalyzers(LayerGroup group, int fileIndex) {
+		LazyMap<Layer, Analyzer> result = LazyMap.lazyHashMap();
+		FileDataStates states = getFileDriver().getFileStates();
 
+		group.forEachLayer(layer -> {
+			if(ModelUtils.isStructureLayer(layer.getManifest())) {
+				result.add(layer, new DefaultStructureLayerAnalzyer(states, (StructureLayer) layer, fileIndex));
+			} else if(ModelUtils.isItemLayer(layer)) {
+				result.add(layer, new DefaultItemLayerAnalyzer(states, (ItemLayer) layer, fileIndex));
+			}
+
+			//TODO also handle annotation layers
+		});
+
+		return result.getAsMap();
 	}
 
 	/**
@@ -356,11 +472,34 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 			.consumers(layer -> caches.get(layer)::offer)
 			.build();
 
-		InputResolverContext inputContext = new InputResolverContext(componentSuppliers);
+		DynamicLoadResult loadResult = new SimpleLoadResult(caches.values());
+
+		final ObjLongConsumer<Item> topLevelItemAction = (item, index) -> {
+
+			/*
+			 *  It's the drivers responsibility to set proper flags on an item, so we do it here.
+			 *
+			 *  Our assumption is that subclasses or factory code that gets called from within
+			 *  the creation process already assigns other flags than ALIVE. Therefore this is
+			 *  the only flag we need to worry about here. It is also the only one that MUST be
+			 *  set in order for a blank item to get assigned VALID chunk state!
+			 */
+			if(item instanceof ManagedItem) {
+				((ManagedItem)item).setAlive(true);
+			}
+
+			ChunkState state = ChunkState.forItem(item);
+			loadResult.accept(index, item, state);
+
+			// Report loaded item and state (if required)
+			if(action!=null) {
+				action.accept(index, item, state);
+			}
+		};
+
+		InputResolverContext inputContext = new InputResolverContext(componentSuppliers, topLevelItemAction);
 		ItemLayer primaryLayer = blockHandler.getItemLayer();
 		long index = 0L;
-
-		DynamicLoadResult loadResult = new SimpleLoadResult(caches.values());
 
 		LockableFileObject fileObject = getFileDriver().getFileObject(fileIndex);
 
@@ -390,33 +529,12 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 				// Delegate actual conversion work (which will advance lines on its own)
 				blockHandler.readChunk(lines, inputContext);
 
-				// Fetch item and verify state
-				Item item = inputContext.currentItem();
-
-				/*
-				 *  It's the drivers responsibility to set proper flags on an item, so we do it here.
-				 *
-				 *  Our assumption is that subclasses or factory code that gets called from within
-				 *  the creation process already assigns other flags than ALIVE. Therefore this is
-				 *  the only flag we need to worry about here. It is also the only one that MUST be
-				 *  set in order for a blank item to get assigned VALID chunk state!
-				 */
-				if(item instanceof ManagedItem) {
-					((ManagedItem)item).setAlive(true);
-				}
-
-				ChunkState state = ChunkState.forItem(item);
-				loadResult.accept(index, item, state);
-
-				// Report loaded item and state (if required)
-				if(action!=null) {
-					action.accept(index, item, state);
-				}
-
 				// Make sure we advance 1 line in case the last one has been consumed as content
 				if(inputContext.isDataConsumed()) {
 					lines.next();
 				}
+
+				index = inputContext.currentIndex();
 
 				// Next chunk
 				index++;
@@ -430,7 +548,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 	}
 
 	@Override
-	protected Item readItemFromCursor(DelegatingCursor cursor)
+	protected Item readItemFromCursor(DelegatingCursor<?> cursor)
 			throws IOException, InterruptedException {
 
 		DelegatingTableCursor tableCursor = (DelegatingTableCursor) cursor;
@@ -473,7 +591,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 	 * @see de.ims.icarus2.filedriver.AbstractConverter#createDelegatingCursor(int, de.ims.icarus2.model.api.layer.ItemLayer)
 	 */
 	@Override
-	protected DelegatingCursor createDelegatingCursor(int fileIndex,
+	protected DelegatingTableCursor createDelegatingCursor(int fileIndex,
 			ItemLayer itemLayer) {
 		BlockHandler blockHandler = blockHandlerPool.get();
 
@@ -497,27 +615,23 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 			.consumers(layer -> caches.get(layer)::offer)
 			.build();
 
-		InputResolverContext inputContext = new InputResolverContext(componentSuppliers);
+		InputResolverContext inputContext = new InputResolverContext(componentSuppliers, null); //TODO verify that we don't need a dedicated action for top-level items here!
 
 		// Result instance that is linked to our caches
 		DynamicLoadResult loadResult = new SimpleLoadResult(caches.values());
 
-		//TODO shift oversized parameter list of constructor to builder or config object
-		return new DelegatingTableCursor(getFileDriver().getFileObject(fileIndex),
-				blockHandlerPool.get(), inputContext, loadResult, encoding, characterChunkSize, caches::get);
+		return new TableCursorBuilder(this)
+				.file(getFileDriver().getFileObject(fileIndex))
+				.rootBlockHandler(blockHandler)
+				.primaryLayer(itemLayer)
+				.context(inputContext)
+				.loadResult(loadResult)
+				.encoding(encoding)
+				.characterChunkSize(characterChunkSize)
+				.caches(caches::get)
+				.chunkIndex(getFileDriver().getChunkIndex(itemLayer))
+				.build();
 	}
-
-//	private Map<ItemLayer, InputCache> createCaches(BlockHandler rootBlockHandler) {
-//
-//		Map<ItemLayer, InputCache> caches = new Object2ObjectOpenHashMap<>();
-//		forEachBlock(rootBlockHandler, blockHandler -> {
-//			ItemLayer itemLayer = blockHandler.getItemLayer();
-//			InputCache cache = getFileDriver().getLayerBuffer(itemLayer).newCache();
-//			caches.put(itemLayer, cache);
-//		});
-//
-//		return caches;
-//	}
 
 	/**
 	 * Creates a lookup map to fetch caches for every item layer that is either contained in the specified
@@ -528,40 +642,82 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 	 * @param cacheGen
 	 * @return
 	 */
-	private Map<ItemLayer, InputCache> createCaches(LayerGroup group, Function<ItemLayer, InputCache> cacheGen) {
+	protected Map<ItemLayer, InputCache> createCaches(LayerGroup group, BiFunction<ItemLayer, Graph<Layer>, InputCache> cacheGen) {
 
 		final Map<ItemLayer, InputCache> caches = new Object2ObjectOpenHashMap<>();
 
 		final Context context = group.getContext();
 
-		// No recursion: we use a stack to buffer pending layers in
+		// Find all (indirect) dependencies of the group within entire context
+		final Graph<Layer> graph = Graph.layerGraph(group, Graph.layersForContext(context));
 
-		final Stack<Layer> pendingLayers = new Stack<>();
+		graph.walkGraph(group.getLayers(), layer -> {
 
-		group.forEachLayer(pendingLayers::push);
-
-		while(!pendingLayers.isEmpty()) {
-			Layer layer = pendingLayers.pop();
-
-			if(layer.getContext()!=context) {
-				continue;
-			}
-
-			if(ModelUtils.isItemLayer(layer)) {
+			// Only care about item layers that are located within our current context
+			if(layer.getContext()==context && (ModelUtils.isItemLayer(layer))) {
 				ItemLayer itemLayer = (ItemLayer)layer;
 				InputCache cache;
+
+				/*
+				 *  If we're supplied a cache generator function -> use it
+				 *
+				 *  Otherwise we'll create a link to related annotation
+				 *  layers (storages) that should get cleaned when a cache
+				 *  gets canceled.
+				 */
 				if(cacheGen==null) {
-					cache = getFileDriver().getLayerBuffer(itemLayer).newCache();
+					Consumer<InputCache> cleanupAction = new AnnotationCleaner()
+							.addStoragesFromLayers(graph.incomingNodes(itemLayer));
+
+					// Let driver component decide on actual cache implementation
+					cache = getFileDriver().getLayerBuffer(itemLayer).newCache(cleanupAction);
 				} else {
-					cache = cacheGen.apply(itemLayer);
+					cache = cacheGen.apply(itemLayer, graph);
 				}
 				caches.put(itemLayer, cache);
+
 			}
 
-			layer.getBaseLayers().forEachEntry(pendingLayers::push);
-		}
+			return true;
+		});
 
 		return caches;
+	}
+
+	public static class AnnotationCleaner implements Consumer<InputCache> {
+		private final Set<AnnotationStorage> storages = new WeakHashSet<>();
+
+		public AnnotationCleaner() {
+			// no-op
+		}
+
+		public AnnotationCleaner(Collection<? extends AnnotationStorage> storages) {
+			this.storages.addAll(storages);
+		}
+
+		public AnnotationCleaner addStoragesFromLayers(Collection<? extends Layer> layers) {
+			for(Layer layer : layers) {
+				if(ModelUtils.isAnnotationLayer(layer)) {
+					addStorage(((AnnotationLayer)layer).getAnnotationStorage());
+				}
+			}
+			return this;
+		}
+
+		public AnnotationCleaner addStorage(AnnotationStorage storage) {
+			storages.add(storage);
+			return this;
+		}
+
+		/**
+		 * @see java.util.function.Consumer#accept(java.lang.Object)
+		 */
+		@Override
+		public void accept(InputCache cache) {
+			for(AnnotationStorage storage : storages) {
+				storage.removeAllValues(cache.pendingItemIterator());
+			}
+		}
 	}
 
 	public static class AnalyzingInputCache implements InputCache{
@@ -569,15 +725,18 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 		private final List<Item> items = new ObjectArrayList<>(100);
 		private final LongList indices = new LongArrayList(100);
 
-		private final Analyzer analyzer;
+		private final ItemLayerAnalyzer analyzer;
+
+		private final Consumer<? super InputCache> cleanupAction;
 
 		/**
 		 * @param analyzer
 		 */
-		public AnalyzingInputCache(Analyzer analyzer) {
+		public AnalyzingInputCache(ItemLayerAnalyzer analyzer, Consumer<? super InputCache> cleanupAction) {
 			requireNonNull(analyzer);
 
 			this.analyzer = analyzer;
+			this.cleanupAction = cleanupAction;
 		}
 
 		/**
@@ -623,8 +782,14 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 		public int discard() {
 			int size = items.size();
 
-			items.clear();
-			indices.clear();
+			try {
+				if(cleanupAction!=null) {
+					cleanupAction.accept(this);
+				}
+			} finally {
+				items.clear();
+				indices.clear();
+			}
 
 			return size;
 		}
@@ -634,8 +799,10 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 		 */
 		@Override
 		public int commit() {
+			// First perform analysis
 			forEach(analyzer);
 
+			// Then proceed by simply discarding all content
 			return discard();
 		}
 
@@ -652,7 +819,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 	 * @author Markus Gärtner
 	 *
 	 */
-	protected class DelegatingTableCursor extends DelegatingCursor {
+	protected static class DelegatingTableCursor extends DelegatingCursor<TableConverter> {
 
 		// Decoding process
 
@@ -670,27 +837,21 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 		// Externalized state of the conversion process
 		private final InputResolverContext context;
 
-		public DelegatingTableCursor(LockableFileObject file, BlockHandler rootBlockHandler, InputResolverContext context,
-				DynamicLoadResult loadResult, Charset encoding, int characterChunkSize, Function<ItemLayer, InputCache> caches) {
-			super(file, rootBlockHandler.getItemLayer(), loadResult);
+		public DelegatingTableCursor(TableCursorBuilder builder) {
+			super(builder);
 
-			requireNonNull(rootBlockHandler);
-			requireNonNull(context);
-			requireNonNull(encoding);
-			checkArgument(characterChunkSize>0);
+			rootBlockHandler = builder.getRootBlockHandler();
+			context = builder.getContext();
 
-			this.rootBlockHandler = rootBlockHandler;
-			this.context = context;
-
-			characterBuffer = new StringBuilder(characterChunkSize);
-			decoder = encoding.newDecoder();
+			characterBuffer = new StringBuilder(builder.getCharacterChunkSize());
+			decoder = builder.getEncoding().newDecoder();
 
 			bb = ByteBuffer.allocateDirect(IOUtil.DEFAULT_BUFFER_SIZE);
 			cb = CharBuffer.allocate(IOUtil.DEFAULT_BUFFER_SIZE);
 
 			lineIterator = new SubSequenceLineIterator(characterBuffer);
 
-			rootBlockHandler.prepareForReading(TableConverter.this, ReadMode.CHUNK, caches);
+			rootBlockHandler.prepareForReading(builder.getConverter(), ReadMode.CHUNK, builder.getCaches());
 		}
 
 		/**
@@ -704,7 +865,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 			context.close();
 
 			rootBlockHandler.close();
-			blockHandlerPool.recycle(rootBlockHandler);
+			getConverter().blockHandlerPool.recycle(rootBlockHandler);
 		}
 
 		public void clearCharacterBuffer() {
@@ -794,6 +955,116 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 		}
 	}
 
+	public static class TableCursorBuilder extends CursorBuilder<TableCursorBuilder, DelegatingTableCursor> {
+
+		private BlockHandler rootBlockHandler;
+		private InputResolverContext context;
+		private Charset encoding;
+		private int characterChunkSize=0;
+		private Function<ItemLayer, InputCache> caches;
+
+		public TableCursorBuilder(TableConverter converter) {
+			super(converter);
+		}
+
+		public TableCursorBuilder rootBlockHandler(BlockHandler rootBlockHandler) {
+			requireNonNull(rootBlockHandler);
+			checkState("Root block handler already set", this.rootBlockHandler==null);
+
+			this.rootBlockHandler = rootBlockHandler;
+
+			return thisAsCast();
+		}
+
+		public TableCursorBuilder context(InputResolverContext context) {
+			requireNonNull(context);
+			checkState("Context already set", this.context==null);
+
+			this.context = context;
+
+			return thisAsCast();
+		}
+
+		public TableCursorBuilder encoding(Charset encoding) {
+			requireNonNull(encoding);
+			checkState("Encoding already set", this.encoding==null);
+
+			this.encoding = encoding;
+
+			return thisAsCast();
+		}
+
+		public TableCursorBuilder characterChunkSize(int characterChunkSize) {
+			checkArgument("Character chunk size must be positive", characterChunkSize>0);
+			checkState("Character chunk size already set", this.characterChunkSize==0);
+
+			this.characterChunkSize = characterChunkSize;
+
+			return thisAsCast();
+		}
+
+		public TableCursorBuilder caches(Function<ItemLayer, InputCache> caches) {
+			requireNonNull(caches);
+			checkState("Caches already set", this.caches==null);
+
+			this.caches = caches;
+
+			return thisAsCast();
+		}
+
+		public BlockHandler getRootBlockHandler() {
+			checkState("Root block handler missing", rootBlockHandler!=null);
+
+			return rootBlockHandler;
+		}
+
+		public InputResolverContext getContext() {
+			checkState("Context missing", context!=null);
+
+			return context;
+		}
+
+		public Charset getEncoding() {
+			checkState("Encoding missing", encoding!=null);
+
+			return encoding;
+		}
+
+		public int getCharacterChunkSize() {
+			checkState("Character chunk size missing", characterChunkSize>0);
+
+			return characterChunkSize;
+		}
+
+		public Function<ItemLayer, InputCache> getCaches() {
+			checkState("Caches missing", caches!=null);
+
+			return caches;
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.AbstractConverter.CursorBuilder#validate()
+		 */
+		@Override
+		protected void validate() {
+			super.validate();
+
+			checkState("Root block handler missing", rootBlockHandler!=null);
+			checkState("Context missing", context!=null);
+			checkState("Encoding missing", encoding!=null);
+			checkState("Character chunk size missing", characterChunkSize>0);
+			checkState("Caches missing", caches!=null);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.AbstractBuilder#create()
+		 */
+		@Override
+		protected DelegatingTableCursor create() {
+			return new DelegatingTableCursor(this);
+		}
+	}
+
 	/**
 	 *
 	 * @author Markus Gärtner
@@ -858,10 +1129,11 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 
 		private final Map<ItemLayer, ComponentSupplier> componentSuppliers;
 
-		public InputResolverContext(Map<ItemLayer, ComponentSupplier> componentSuppliers) {
-			requireNonNull(componentSuppliers);
+		private final ObjLongConsumer<? super Item> topLevelAction;
 
-			this.componentSuppliers = componentSuppliers;
+		public InputResolverContext(Map<ItemLayer, ComponentSupplier> componentSuppliers, ObjLongConsumer<? super Item> topLevelAction) {
+			this.componentSuppliers = requireNonNull(componentSuppliers);
+			this.topLevelAction = topLevelAction;
 		}
 
 		void reset() {
@@ -1019,9 +1291,16 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 		public ComponentSupplier getComponentSupplier(BlockHandler blockHandler) {
 			return componentSuppliers.get(blockHandler.getItemLayer());
 		}
+
+		public ObjLongConsumer<? super Item> getTopLevelAction() {
+			return topLevelAction;
+		}
 	}
 
 	/**
+	 * Basic processor for conversion process that is able to read
+	 * content from a given {@link InputResolverContext context} and
+	 * produces a result.
 	 *
 	 * @author Markus Gärtner
 	 *
@@ -1403,7 +1682,9 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 
 		/**
 		 * Optionally returns the current line number if the line iterator is able and configured
-		 * to track lines.
+		 * to track lines. The result should either be {@code -1} (to indicate that no line has been
+		 * read so far or tracking of lines is not supported) or an actual line number starting from
+		 * {@code 1}.
 		 *
 		 * @return
 		 */
@@ -1595,7 +1876,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 		 */
 		@Override
 		public long getLineNumber() {
-			return lineNumber;
+			return lineNumber==-1L ? -1L : lineNumber+1;
 		}
 
 		private boolean hasMoreCharacters() {
@@ -1856,25 +2137,25 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 
 				FileInfo fileInfo = states.getFileInfo(fileIndex);
 				firstIndex = fileInfo.getBeginIndex(layer.getManifest());
-				if(firstIndex==NO_INDEX && fileIndex>0) {
+				if(firstIndex==UNSET_LONG && fileIndex>0) {
 					FileInfo previousInfo = states.getFileInfo(fileIndex-1);
 					firstIndex = previousInfo.getBeginIndex(layer.getManifest());
 				}
 
-				if(firstIndex==NO_INDEX) {
+				if(firstIndex==UNSET_LONG) {
 					firstIndex = 0L;
 				}
 
 
 				if(mode==ReadMode.SCAN) {
-					// In scan mdoe we can't predict max index
+					// In scan mode we can't predict max index
 					MutableLong index = new MutableLong(firstIndex);
 					builder.indexSupplier(index::getAndIncrement);
 				} else {
 					builder.firstIndex(firstIndex);
 					// If available we use information about last index in file
 					long lastIndex = fileInfo.getEndIndex(layer.getManifest());
-					if(lastIndex!=NO_INDEX) {
+					if(lastIndex!=UNSET_LONG) {
 						builder.lastIndex(lastIndex);
 					}
 				}
@@ -1902,6 +2183,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 		private final BlockHandler blockHandler;
 		private final ColumnSchema columnSchema;
 		private final Resolver resolver;
+		private Resolver replacementResolver;
 		private final int columnIndex;
 
 		/**
@@ -1973,7 +2255,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 		@Override
 		public void prepareForReading(Converter converter, ReadMode mode,
 				Function<ItemLayer, InputCache> caches) {
-			resolver.prepareForReading(converter, mode, caches, columnSchema.getResolver().getOptions());
+			resolver.prepareForReading(converter, mode, caches, resolverOptions(columnSchema.getResolver()));
 		}
 
 		/**
@@ -2044,6 +2326,10 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 		public ColumnSchema getColumnSchema() {
 			return columnSchema;
 		}
+	}
+
+	private static Options resolverOptions(ResolverSchema resolver) {
+		return resolver==null ? Options.emptyOptions : resolver.getOptions();
 	}
 
 	private static String getSeparator(BlockHandler blockSchema, TableSchema tableSchema) {
@@ -2190,21 +2476,28 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 				separatorChar = separator.charAt(0);
 			} else {
 				switch (separator) {
-				case TableSchema.DELIMITER_SPACE:
+				case TableSchema.SEPARATOR_SPACE:
 					separatorChar = ' ';
 					break;
 
-				case TableSchema.DELIMITER_TAB:
+				case TableSchema.SEPARATOR_TAB:
 					separatorChar = '\t';
 					break;
 
-				case TableSchema.DELIMITER_WHITESPACES:
-					separator = "\\s+";
-
-					//$FALL-THROUGH$
-				default:
-					separatorMatcher = Pattern.compile(separator).matcher("");
+				case TableSchema.SEPARATOR_WHITESPACE:
+					separator = "\\s";
 					break;
+
+				case TableSchema.SEPARATOR_WHITESPACES:
+					separator = "\\s+";
+					break;
+
+				default:
+					break;
+				}
+
+				if(separatorChar=='\0') {
+					separatorMatcher = Pattern.compile(separator).matcher("");
 				}
 			}
 
@@ -2530,6 +2823,8 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 
 		/**
 		 * Reads a collection of {@code lines} for the respective layer.
+		 * <p>
+		 * TODO
 		 *
 		 * @param lines
 		 * @param context
@@ -2571,12 +2866,26 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 		private boolean tryReadNestedBlocks(LineIterator lines, InputResolverContext context) throws InterruptedException {
 			if(nestedBlockHandlers!=null) {
 
-				ComponentSupplier componentSupplier = context.getComponentSupplier(this);
 				long index = context.currentIndex();
+				Container host = context.currentContainer();
+				final boolean isProxyContainer = host.isProxy();
+				final ObjLongConsumer<? super Item> topLevelAction = context.getTopLevelAction();
+
+				ComponentSupplier componentSupplier = context.getComponentSupplier(this);
+				componentSupplier.setHost(host);
 				componentSupplier.reset(index);
 				if(!componentSupplier.next())
 					throw new ModelException(ModelErrorCode.DRIVER_ERROR, "Failed to produce container for block");
 				Container container = (Container) componentSupplier.currentItem();
+
+				if(isProxyContainer) {
+					if(topLevelAction!=null) {
+						topLevelAction.accept(container, componentSupplier.currentIndex());
+					}
+				} else {
+					// Only for non-top-level items do we need to add them to their host container
+					host.addItem(container);
+				}
 
 				// Allow all nested block handlers to fully read their content
 				for(int i=0; i<nestedBlockHandlers.length; i++) {
@@ -2611,12 +2920,13 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 		private void readColumnLines(LineIterator lines, InputResolverContext context) throws InterruptedException {
 
 			long index = context.currentIndex();
-			Container container = context.currentContainer();
-			final boolean isProxyContainer = container.isProxy();
+			Container host = context.currentContainer();
+			final boolean isProxyContainer = host.isProxy();
+			final ObjLongConsumer<? super Item> topLevelAction = context.getTopLevelAction();
 
 			ComponentSupplier componentSupplier = context.getComponentSupplier(this);
 			componentSupplier.reset(index);
-			componentSupplier.setHost(container);
+			componentSupplier.setHost(host);
 
 			// Prepare for beginning of content (notify batch resolvers)
 			beginContent(context);
@@ -2631,9 +2941,13 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 
 				// Link context to new item
 				context.setItem(item);
-				if(!isProxyContainer) {
+				if(isProxyContainer) {
+					if(topLevelAction!=null) {
+						topLevelAction.accept(item, componentSupplier.currentIndex());
+					}
+				} else {
 					// Only for non-top-level items do we need to add them to their host container
-					container.addItem(item);
+					host.addItem(item);
 				}
 
 				processColumns(lines, context);

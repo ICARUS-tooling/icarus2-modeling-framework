@@ -78,6 +78,10 @@ import de.ims.icarus2.util.id.Identity;
  */
 public class DefaultCorpusManager implements CorpusManager {
 
+	public static Builder newBuilder() {
+		return new Builder();
+	}
+
 	private final ManifestRegistry manifestRegistry;
 	private final MetadataRegistry metadataRegistry;
 	private final FileManager fileManager;
@@ -837,6 +841,10 @@ public class DefaultCorpusManager implements CorpusManager {
 
 		private URL propertiesUrl;
 		private Path propertiesFile;
+
+		protected Builder() {
+			// no-op
+		}
 
 		public MetadataStoragePolicy<CorpusManifest> getCorpusMetadataPolicy() {
 			return corpusMetadataPolicy;

@@ -18,12 +18,16 @@
  */
 package de.ims.icarus2.util.xml.stream;
 
+import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
+
 import java.util.Arrays;
 import java.util.Stack;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
+import de.ims.icarus2.util.strings.StringResource;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
 /**
@@ -45,10 +49,7 @@ public class XmlStreamSerializer implements XmlSerializer {
 	private Stack<String> trace = new Stack<>();
 
 	public XmlStreamSerializer(XMLStreamWriter writer) {
-		if (writer == null)
-			throw new NullPointerException("Invalid writer"); //$NON-NLS-1$
-
-		this.writer = writer;
+		this.writer = requireNonNull(writer);
 
 		buildIndentBuffer(10);
 	}
@@ -100,9 +101,8 @@ public class XmlStreamSerializer implements XmlSerializer {
 		startElement(name, true);
 	}
 
-	private void startElement(String name, boolean empty) throws XMLStreamException {
-		if(noNesting)
-			throw new IllegalStateException("Cannot nest elements until current one is closed"); //$NON-NLS-1$
+	public void startElement(String name, boolean empty) throws XMLStreamException {
+		checkState("Cannot nest elements until current one is closed", !noNesting);
 
 		writeLineBreak();
 		writeIndent();
@@ -130,6 +130,16 @@ public class XmlStreamSerializer implements XmlSerializer {
 		}
 //		pushAttribute(name, value);
 		writer.writeAttribute(name, value);
+	}
+
+	/**
+	 * @see de.ims.icarus2.util.xml.XmlSerializer#writeAttribute(java.lang.String, de.ims.icarus2.util.strings.StringResource)
+	 */
+	@Override
+	public void writeAttribute(String name, StringResource value) throws XMLStreamException {
+		if(value!=null) {
+			writeAttribute(name, value.getStringValue());
+		}
 	}
 
 	/**
@@ -216,7 +226,7 @@ public class XmlStreamSerializer implements XmlSerializer {
 	 * @see de.ims.icarus2.util.xml.XmlSerializer#writeCData(CharSequence)
 	 */
 	@Override
-	public void writeCData(CharSequence text) throws Exception {
+	public void writeCData(CharSequence text) throws XMLStreamException {
 		writer.writeCData(text.toString());
 		nested = true;
 	}

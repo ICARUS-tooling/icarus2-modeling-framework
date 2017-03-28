@@ -19,7 +19,6 @@
 package de.ims.icarus2.model.standard.members.layers;
 
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 import java.util.Set;
 import java.util.function.Consumer;
@@ -35,6 +34,7 @@ import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.collections.CollectionUtils;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
  * @author Markus Gärtner
@@ -87,11 +87,11 @@ public class DefaultLayerGroup extends AbstractPart<Context> implements LayerGro
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.LayerGroup#getDependencies()
+	 * @see de.ims.icarus2.model.api.layer.LayerGroup#forEachDependency(java.util.function.Consumer)
 	 */
 	@Override
-	public Set<Dependency<LayerGroup>> getDependencies() {
-		return CollectionUtils.getSetProxy(dependencies);
+	public void forEachDependency(Consumer<? super Dependency<LayerGroup>> action) {
+		dependencies.forEach(action);
 	}
 
 	/**

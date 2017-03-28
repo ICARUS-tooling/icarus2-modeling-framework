@@ -4,8 +4,8 @@
  */
 package de.ims.icarus2.util.classes;
 
+import static de.ims.icarus2.util.classes.Primitives.isPrimitiveWrapperClass;
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +38,7 @@ import java.util.Stack;
 import java.util.WeakHashMap;
 
 import de.ims.icarus2.util.collections.CollectionUtils;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
  * @author Markus Gärtner
@@ -162,124 +162,6 @@ public final class ClassUtils {
 			typeArgumentsAsClasses.add(getClass(baseType));
 		}
 		return typeArgumentsAsClasses;
-	}
-
-	private static final Map<Class<?>, Class<?>> primitiveWrapperLookup = new IdentityHashMap<>(9);
-	static {
-		primitiveWrapperLookup.put(Boolean.class, boolean.class);
-		primitiveWrapperLookup.put(Character.class, char.class);
-		primitiveWrapperLookup.put(Byte.class, byte.class);
-		primitiveWrapperLookup.put(Short.class, short.class);
-		primitiveWrapperLookup.put(Integer.class, int.class);
-		primitiveWrapperLookup.put(Long.class, long.class);
-		primitiveWrapperLookup.put(Float.class, float.class);
-		primitiveWrapperLookup.put(Double.class, double.class);
-		primitiveWrapperLookup.put(Void.class, void.class);
-	}
-
-	/**
-	 * Unwraps wrapper types to their primitive type definition.
-	 *
-	 * @param clazz
-	 * @return
-	 */
-	public static Class<?> unwrap(Class<?> clazz) {
-		Class<?> primitiveClass = primitiveWrapperLookup.get(clazz);
-		return primitiveClass==null ? clazz : primitiveClass;
-	}
-
-	private static final Map<Class<?>, Class<?>> primitiveWrappers = new IdentityHashMap<>(9);
-	static {
-		primitiveWrappers.put(boolean.class, Boolean.class);
-		primitiveWrappers.put(char.class, Character.class);
-		primitiveWrappers.put(byte.class, Byte.class);
-		primitiveWrappers.put(short.class, Short.class);
-		primitiveWrappers.put(int.class, Integer.class);
-		primitiveWrappers.put(long.class, Long.class);
-		primitiveWrappers.put(float.class, Float.class);
-		primitiveWrappers.put(double.class, Double.class);
-		primitiveWrappers.put(void.class, Void.class);
-	}
-
-	/**
-	 * Returns the wrapper type for a given class if it is a primitive type.
-	 *
-	 * @param clazz
-	 * @return
-	 */
-	public static Class<?> wrap(Class<?> clazz) {
-		return clazz.isPrimitive() ? primitiveWrappers.get(clazz) : clazz;
-	}
-
-	/**
-	 * Returns whether or not the given class is one of the wrapper classes for
-	 * primitives like {@link Integer}, etc...
-	 *
-	 * @param clazz
-	 * @return
-	 */
-	public static <T extends Object> boolean isPrimitiveWrapperClass(Class<T> clazz) {
-		return clazz==Long.class || clazz==Integer.class
-				|| clazz==Short.class || clazz==Byte.class
-				|| clazz==Float.class || clazz==Double.class
-				|| clazz==Void.class || clazz==Character.class
-				|| clazz==Boolean.class;
-	}
-
-	public static int cast(Integer value) {
-		return value==null ? 0 : value.intValue();
-	}
-
-	public static long cast(Long value) {
-		return value==null ? 0L : value.intValue();
-	}
-
-	public static double cast(Double value) {
-		return value==null ? 0D : value.doubleValue();
-	}
-
-	public static float cast(Float value) {
-		return value==null ? 0F : value.floatValue();
-	}
-
-	public static short cast(Short value) {
-		return value==null ? 0 : value.shortValue();
-	}
-
-	public static byte cast(Byte value) {
-		return value==null ? 0 : value.byteValue();
-	}
-
-	public static boolean cast(Boolean value) {
-		return value==null ? false : value.booleanValue();
-	}
-
-	public static Integer _int(int value) {
-		return Integer.valueOf(value);
-	}
-
-	public static Long _long(long value) {
-		return Long.valueOf(value);
-	}
-
-	public static Double _double(double value) {
-		return Double.valueOf(value);
-	}
-
-	public static Float _float(float value) {
-		return Float.valueOf(value);
-	}
-
-	public static Short _short(short value) {
-		return Short.valueOf(value);
-	}
-
-	public static Byte _byte(byte value) {
-		return Byte.valueOf(value);
-	}
-
-	public static Boolean _boolean(boolean value) {
-		return Boolean.valueOf(value);
 	}
 
 	private static class SerializationBuffer extends ByteArrayInputStream {

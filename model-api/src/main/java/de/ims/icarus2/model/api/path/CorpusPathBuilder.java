@@ -19,6 +19,7 @@
 package de.ims.icarus2.model.api.path;
 
 import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;

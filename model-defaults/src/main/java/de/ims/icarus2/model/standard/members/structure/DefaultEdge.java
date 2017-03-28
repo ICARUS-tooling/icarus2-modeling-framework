@@ -19,6 +19,7 @@
 package de.ims.icarus2.model.standard.members.structure;
 
 import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
@@ -129,7 +130,7 @@ public class DefaultEdge extends DefaultItem implements Edge, Recyclable {
 	 */
 	@Override
 	public long getBeginOffset() {
-		return (source==null || target==null) ? NO_INDEX : Math.min(source.getBeginOffset(), target.getBeginOffset());
+		return (source==null || target==null) ? UNSET_LONG : Math.min(source.getBeginOffset(), target.getBeginOffset());
 	}
 
 	/**
@@ -137,7 +138,7 @@ public class DefaultEdge extends DefaultItem implements Edge, Recyclable {
 	 */
 	@Override
 	public long getEndOffset() {
-		return (source==null || target==null) ? NO_INDEX : Math.min(source.getEndOffset(), target.getEndOffset());
+		return (source==null || target==null) ? UNSET_LONG : Math.min(source.getEndOffset(), target.getEndOffset());
 	}
 
 	/**
@@ -169,7 +170,7 @@ public class DefaultEdge extends DefaultItem implements Edge, Recyclable {
 	 */
 	@Override
 	public long getIndex() {
-		return NO_INDEX;
+		return UNSET_LONG;
 	}
 
 	/**

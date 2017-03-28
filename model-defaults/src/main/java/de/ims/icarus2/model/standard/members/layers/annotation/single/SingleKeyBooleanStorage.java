@@ -18,8 +18,6 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.single;
 
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -30,6 +28,7 @@ import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.util.collections.WeakHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * @author Markus Gärtner

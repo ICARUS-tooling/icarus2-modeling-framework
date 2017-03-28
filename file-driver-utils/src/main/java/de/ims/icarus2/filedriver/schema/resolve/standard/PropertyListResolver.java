@@ -17,8 +17,6 @@
  */
 package de.ims.icarus2.filedriver.schema.resolve.standard;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -41,6 +39,7 @@ import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.strings.FlexibleSubSequence;
 import de.ims.icarus2.util.strings.StringUtil;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * A {@link Resolver} implementation that assumes raw values to be lists of

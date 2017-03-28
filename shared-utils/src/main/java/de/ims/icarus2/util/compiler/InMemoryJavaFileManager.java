@@ -17,8 +17,6 @@
  */
 package de.ims.icarus2.util.compiler;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-
 import java.io.IOException;
 import java.security.SecureClassLoader;
 import java.util.Map;
@@ -28,6 +26,8 @@ import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
+
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner

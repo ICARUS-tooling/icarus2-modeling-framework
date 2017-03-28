@@ -18,8 +18,6 @@
  */
 package de.ims.icarus2.model.standard.members.item;
 
-import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -31,6 +29,7 @@ import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.ItemLayerManager;
 import de.ims.icarus2.util.collections.LazyCollection;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner

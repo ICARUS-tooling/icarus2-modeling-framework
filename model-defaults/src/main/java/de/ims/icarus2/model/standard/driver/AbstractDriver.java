@@ -21,8 +21,6 @@ package de.ims.icarus2.model.standard.driver;
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -63,6 +61,8 @@ import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.model.standard.members.structure.DefaultEdge;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.Options;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 /**
  *
@@ -512,6 +512,16 @@ public abstract class AbstractDriver implements Driver {
 
 		for(DriverListener listener : driverListeners) {
 			listener.chunksLoaded(layer, info);
+		}
+	}
+
+	protected void fireChunksReleased(ItemLayer layer, ChunkInfo info) {
+		if(driverListeners.isEmpty() || info==null || info.chunkCount()==0) {
+			return;
+		}
+
+		for(DriverListener listener : driverListeners) {
+			listener.chunksReleased(layer, info);
 		}
 	}
 

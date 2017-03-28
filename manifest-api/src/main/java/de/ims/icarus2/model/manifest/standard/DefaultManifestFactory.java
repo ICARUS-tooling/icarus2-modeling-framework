@@ -19,7 +19,6 @@
 package de.ims.icarus2.model.manifest.standard;
 
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -45,6 +44,7 @@ import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.standard.DriverManifestImpl.ModuleManifestImpl;
 import de.ims.icarus2.util.Options;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner

@@ -122,7 +122,7 @@ public class SingletonItemStorage implements ItemStorage {
 	 */
 	@Override
 	public long indexOfItem(Container context, Item item) {
-		return (singleton!=null && singleton==item) ? 0L : NO_INDEX;
+		return (singleton!=null && singleton==item) ? 0L : UNSET_LONG;
 	}
 
 	/**
@@ -192,7 +192,7 @@ public class SingletonItemStorage implements ItemStorage {
 	 */
 	@Override
 	public long getBeginOffset(Container context) {
-		return isEmpty() ? NO_INDEX : singleton.getBeginOffset();
+		return isEmpty() ? UNSET_LONG : singleton.getBeginOffset();
 	}
 
 	/**
@@ -200,7 +200,7 @@ public class SingletonItemStorage implements ItemStorage {
 	 */
 	@Override
 	public long getEndOffset(Container context) {
-		return isEmpty() ? NO_INDEX : singleton.getEndOffset();
+		return isEmpty() ? UNSET_LONG : singleton.getEndOffset();
 	}
 
 	/**

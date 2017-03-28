@@ -55,10 +55,12 @@ public enum AnnotationFlag implements StringResource, Flag {
 	INDEXABLE("indexable"),
 
 	/**
-	 * Returns whether this layer only provides annotations for the members
-	 * of the respective {@link ItemLayer}'s direct container. A return
-	 * value of {@code true} indicates that this layer may be queried for
-	 * annotations of nested containers or structures/edges.
+	 * Defines whether a layer only provides annotations for the members
+	 * of the respective {@link ItemLayer}'s direct container. If present
+	 * indicates that a layer may be queried for annotations of nested
+	 * containers or structures/edges.
+	 * <p>
+	 * This is a generalized version of {@link #EDGE_ANNOTATION} or {@link #ELEMENT_ANNOTATION}.
 	 */
 	DEEP_ANNOTATION("deep-annotation"),
 

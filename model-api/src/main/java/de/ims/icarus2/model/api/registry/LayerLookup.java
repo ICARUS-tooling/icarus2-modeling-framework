@@ -19,12 +19,13 @@
 package de.ims.icarus2.model.api.registry;
 
 import static java.util.Objects.requireNonNull;
+
+import de.ims.icarus2.model.api.layer.Layer;
+import de.ims.icarus2.model.api.view.CorpusView;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
-import de.ims.icarus2.model.api.layer.Layer;
-import de.ims.icarus2.model.api.view.CorpusView;
 
 /**
  * @author Markus Gärtner

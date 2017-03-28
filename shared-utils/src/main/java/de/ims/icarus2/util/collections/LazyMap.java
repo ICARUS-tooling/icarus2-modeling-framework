@@ -19,7 +19,6 @@
 package de.ims.icarus2.util.collections;
 
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,6 +26,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
+
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner

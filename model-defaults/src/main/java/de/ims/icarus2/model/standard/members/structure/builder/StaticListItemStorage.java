@@ -96,7 +96,7 @@ public class StaticListItemStorage extends AbstractImmutableItemStorage {
 	 */
 	@Override
 	public long getBeginOffset(Container context) {
-		return beginItem==null ? NO_INDEX : beginItem.getBeginOffset();
+		return beginItem==null ? UNSET_LONG : beginItem.getBeginOffset();
 	}
 
 	/**
@@ -104,7 +104,7 @@ public class StaticListItemStorage extends AbstractImmutableItemStorage {
 	 */
 	@Override
 	public long getEndOffset(Container context) {
-		return endItem==null ? NO_INDEX : endItem.getBeginOffset();
+		return endItem==null ? UNSET_LONG : endItem.getBeginOffset();
 	}
 
 	/**

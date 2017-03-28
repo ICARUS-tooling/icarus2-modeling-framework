@@ -19,6 +19,7 @@
 package de.ims.icarus2.model.standard.members.structure.builder;
 
 import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.MemberType;

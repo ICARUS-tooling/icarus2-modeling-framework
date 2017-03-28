@@ -23,6 +23,7 @@ import java.net.URL;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 
+import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.annotations.OptionalMethod;
 
 /**
@@ -36,6 +37,16 @@ import de.ims.icarus2.util.annotations.OptionalMethod;
  *
  */
 public interface IOResource {
+
+	//TODO allow direct locking mechanism?
+
+	/**
+	 * Returns the {@link AccessMode} that defines whether this resource supports
+	 * read or write operations or both.
+	 *
+	 * @return
+	 */
+	AccessMode getAccessMode();
 
 	/**
 	 * Opens the resource for writing. The returned channel is expected to be fully

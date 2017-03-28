@@ -19,7 +19,6 @@
 package de.ims.icarus2.model.standard.members.structure.builder;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,6 +34,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.util.collections.ArrayUtils;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * Buffer implementation for the construction of {@link Structure} instances.

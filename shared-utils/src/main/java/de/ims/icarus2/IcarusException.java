@@ -18,10 +18,13 @@
  */
 package de.ims.icarus2;
 
-import static de.ims.icarus2.util.classes.ClassUtils._int;
+import static de.ims.icarus2.util.classes.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
 /**
+ * General runtime exception that carries with it an error code
+ * for further details.
+ *
  * @author Markus Gärtner
  *
  */

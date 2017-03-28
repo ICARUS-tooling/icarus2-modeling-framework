@@ -18,9 +18,9 @@
  */
 package de.ims.icarus2;
 
+import de.ims.icarus2.util.id.DuplicateIdentifierException;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import de.ims.icarus2.util.id.DuplicateIdentifierException;
 
 /**
  * @author Markus Gärtner
@@ -42,5 +42,17 @@ public interface ErrorCode {
 
 			_lookup.put(code.code(), code);
 		}
+	}
+
+	public static ErrorCode forException(Exception e) {
+		return forException(e, null);
+	}
+
+	public static ErrorCode forException(Exception e, ErrorCode defaultCode) {
+		if(e instanceof IcarusException) {
+			return ((IcarusException)e).getErrorCode();
+		}
+
+		return defaultCode;
 	}
 }

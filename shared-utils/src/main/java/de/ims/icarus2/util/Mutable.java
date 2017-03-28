@@ -19,7 +19,7 @@ package de.ims.icarus2.util;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusException;
-import de.ims.icarus2.util.classes.ClassUtils;
+import de.ims.icarus2.util.classes.Primitives;
 
 /**
  * @author Markus Gärtner
@@ -41,8 +41,8 @@ public interface Mutable<O extends Object> extends Wrapper<O>, Cloneable {
 
 	public static Mutable<?> forClass(Class<?> clazz, boolean unwrap) {
 
-		if(unwrap && ClassUtils.isPrimitiveWrapperClass(clazz)) {
-			clazz = ClassUtils.unwrap(clazz);
+		if(unwrap && Primitives.isPrimitiveWrapperClass(clazz)) {
+			clazz = Primitives.unwrap(clazz);
 		}
 
 		Mutable<?> result = null;

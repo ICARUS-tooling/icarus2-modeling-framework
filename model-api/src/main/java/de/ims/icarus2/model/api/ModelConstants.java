@@ -25,7 +25,11 @@ package de.ims.icarus2.model.api;
  */
 public interface ModelConstants {
 
-	public static final long NO_INDEX = -1L;
+	public static final long UNSET_LONG = -1L;
 
-	public static final int NO_INDEX_INT = -1;
+	public static final int UNSET_INT = -1;
+
+	public static final double UNSET_DOUBLE = -1D;
+
+	public static final float UNSET_FLOAT = -1F;
 }

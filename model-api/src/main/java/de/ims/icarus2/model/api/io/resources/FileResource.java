@@ -30,18 +30,26 @@ import java.nio.file.StandardOpenOption;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.util.AccessMode;
 
 /**
  * @author Markus Gärtner
  *
  */
-public final class FileResource implements IOResource {
+public final class FileResource extends ReadWriteResource {
 
 
 	private final Path file;
 
 	public FileResource(Path file) {
+		this(file, AccessMode.READ_WRITE);
+	}
+
+	public FileResource(Path file, AccessMode accessMode) {
+		super(accessMode);
+
 		requireNonNull(file);
+
 		this.file = file;
 	}
 
@@ -55,6 +63,8 @@ public final class FileResource implements IOResource {
 	 */
 	@Override
 	public SeekableByteChannel getWriteChannel() throws IOException {
+		checkWriteAccess();
+
 		return Files.newByteChannel(file, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
 	}
 
@@ -63,6 +73,8 @@ public final class FileResource implements IOResource {
 	 */
 	@Override
 	public SeekableByteChannel getReadChannel() throws IOException {
+		checkReadAccess();
+
 		return Files.newByteChannel(file, StandardOpenOption.READ);
 	}
 
@@ -71,6 +83,8 @@ public final class FileResource implements IOResource {
 	 */
 	@Override
 	public void delete() throws IOException {
+		checkWriteAccess();
+
 		Files.delete(file);
 	}
 
@@ -81,6 +95,8 @@ public final class FileResource implements IOResource {
 	public void prepare() throws IOException {
 
 		if(!Files.exists(file, LinkOption.NOFOLLOW_LINKS)) {
+			checkWriteAccess();
+
 			try {
 				Files.createFile(file);
 			} catch (IOException e) {
@@ -99,6 +115,8 @@ public final class FileResource implements IOResource {
 	 */
 	@Override
 	public long size() throws IOException {
+		checkReadAccess();
+
 		return Files.size(file);
 	}
 

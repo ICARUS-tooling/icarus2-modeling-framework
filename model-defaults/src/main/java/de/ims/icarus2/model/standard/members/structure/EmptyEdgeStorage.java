@@ -78,7 +78,7 @@ public class EmptyEdgeStorage extends AbstractImmutableEdgeStorage {
 	 */
 	@Override
 	public long indexOfEdge(Structure context, Edge edge) {
-		return NO_INDEX;
+		return UNSET_LONG;
 	}
 
 	/**
@@ -135,7 +135,7 @@ public class EmptyEdgeStorage extends AbstractImmutableEdgeStorage {
 	 */
 	@Override
 	public long indexOfChild(Structure context, Item child) {
-		return NO_INDEX;
+		return UNSET_LONG;
 	}
 
 	/**
@@ -162,7 +162,7 @@ public class EmptyEdgeStorage extends AbstractImmutableEdgeStorage {
 	 */
 	@Override
 	public long getDepth(Structure context, Item node) {
-		return NO_INDEX;
+		return UNSET_LONG;
 	}
 
 	/**

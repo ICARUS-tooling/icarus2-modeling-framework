@@ -183,7 +183,9 @@ public interface Converter extends AutoCloseable {
 	 * @author Markus Gärtner
 	 *
 	 */
-	interface Cursor extends AutoCloseable {
+	interface Cursor<C extends Converter> extends AutoCloseable {
+
+		C getConverter();
 
 		//TODO
 
@@ -234,15 +236,29 @@ public interface Converter extends AutoCloseable {
 		public void close() throws IOException;
 	}
 
+	/**
+	 * Models a transactional wrapper for loaded data chunks.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	interface LoadResult extends AutoCloseable {
 
 		/**
-		 * Commits the loaded data chunks to the respective back-end caches.
+		 * Commits the loaded (valid) data chunks to the respective back-end caches
+		 * and returns the total number of chunks that have been published this way.
+		 *
+		 * @throws IllegalStateException if this result has already been {@link #publish() published}
+		 * or {@link #discard() discarded} before
 		 */
 		long publish();
 
 		/**
-		 * Discards all the loaded data chunks
+		 * Discards all the loaded data chunks and returns the total number
+		 * of chunks that have been discarded this way.
+		 *
+		 * @throws IllegalStateException if this result has already been {@link #publish() published}
+		 * or {@link #discard() discarded} before
 		 */
 		long discard();
 
@@ -265,6 +281,6 @@ public interface Converter extends AutoCloseable {
 		@Override
 		default void close() {
 			// no-op
-		};
+		}
 	}
 }

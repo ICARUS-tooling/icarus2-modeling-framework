@@ -19,6 +19,7 @@ package de.ims.icarus2.model.api.driver.id;
 
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 

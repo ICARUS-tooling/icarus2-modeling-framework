@@ -18,6 +18,7 @@
 package de.ims.icarus2.filedriver.io.sets;
 
 import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.model.api.io.resources.IOResource;
 
 /**

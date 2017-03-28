@@ -19,7 +19,6 @@ package de.ims.icarus2.model.standard.io;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,6 +27,7 @@ import java.util.Map;
 
 import de.ims.icarus2.model.api.io.FileManager;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner

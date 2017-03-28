@@ -112,7 +112,7 @@ public class IndexUtils implements ModelConstants {
 
 	public static boolean isSorted(IndexSet[] indices) {
 
-		long previousMax = NO_INDEX;
+		long previousMax = UNSET_LONG;
 
 		for(int i=0; i<indices.length; i++) {
 			IndexSet indexSet = indices[i];
@@ -120,7 +120,7 @@ public class IndexUtils implements ModelConstants {
 				return false;
 			}
 
-			if(previousMax!=NO_INDEX && indexSet.firstIndex()<previousMax) {
+			if(previousMax!=UNSET_LONG && indexSet.firstIndex()<previousMax) {
 				return false;
 			}
 		}
@@ -135,14 +135,14 @@ public class IndexUtils implements ModelConstants {
 
 	public static void checkSorted(IndexSet[] indices) {
 
-		long previousMax = NO_INDEX;
+		long previousMax = UNSET_LONG;
 
 		for(int i=0; i<indices.length; i++) {
 			IndexSet indexSet = indices[i];
 			if(!indexSet.isSorted())
 				throw new ModelException(ModelErrorCode.MODEL_UNSORTED_INDEX_SET, "Index set at position "+i+" is unsorted");
 
-			if(previousMax!=NO_INDEX && indexSet.firstIndex()<previousMax)
+			if(previousMax!=UNSET_LONG && indexSet.firstIndex()<previousMax)
 				throw new ModelException(ModelErrorCode.MODEL_UNSORTED_INDEX_SET, "Index set at position "+i+" is overlapping with previous one");
 		}
 	}
@@ -226,7 +226,7 @@ public class IndexUtils implements ModelConstants {
 		IndexBuffer result = new IndexBuffer(items.size());
 
 		boolean requiresSorting = false;
-		long lastIndex = NO_INDEX;
+		long lastIndex = UNSET_LONG;
 
 		//TODO iterate over items, add index values and check if sorting is required!
 
@@ -254,7 +254,7 @@ public class IndexUtils implements ModelConstants {
 	 * or an array of exactly size {@code 1} containing a single {@link SingletonIndexSet}.
 	 */
 	public static IndexSet[] wrap(long index) {
-		return index==NO_INDEX ? EMPTY : new IndexSet[]{new SingletonIndexSet(index)};
+		return index==UNSET_LONG ? EMPTY : new IndexSet[]{new SingletonIndexSet(index)};
 	}
 
 	/**
@@ -278,7 +278,7 @@ public class IndexUtils implements ModelConstants {
 	 * value, otherwise the result will be {@code -1}.
 	 */
 	public static long unwrap(IndexSet[] indices) {
-		return (indices.length==1 && indices[0].size()==1) ? firstIndex(indices) : NO_INDEX;
+		return (indices.length==1 && indices[0].size()==1) ? firstIndex(indices) : UNSET_LONG;
 	}
 
 	public static void sort(IndexSet[] indices) {
@@ -305,7 +305,7 @@ public class IndexUtils implements ModelConstants {
 	public static IndexSet combine(IndexSet[] indices) {
 		long size = 0;
 
-		long previousMax = NO_INDEX;
+		long previousMax = UNSET_LONG;
 		for(IndexSet set : indices) {
 			if(set.firstIndex()<=previousMax)
 				throw new ModelException(GlobalErrorCode.INVALID_INPUT,

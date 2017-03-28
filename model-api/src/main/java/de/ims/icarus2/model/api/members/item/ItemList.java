@@ -50,7 +50,7 @@ public interface ItemList extends ItemLookup {
 	default void removeItem(Item item) {
 		long index = indexOfItem(item);
 
-		if(index==NO_INDEX)
+		if(index==UNSET_LONG)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Unknown item: "+ModelUtils.getName(item));
 

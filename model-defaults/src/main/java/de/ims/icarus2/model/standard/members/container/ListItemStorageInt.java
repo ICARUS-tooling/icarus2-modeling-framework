@@ -278,7 +278,7 @@ public class ListItemStorageInt implements ItemStorage {
 			refreshOffsetItems();
 		}
 
-		return beginItem==null ? NO_INDEX : beginItem.getBeginOffset();
+		return beginItem==null ? UNSET_LONG : beginItem.getBeginOffset();
 	}
 
 	/**
@@ -290,7 +290,7 @@ public class ListItemStorageInt implements ItemStorage {
 			refreshOffsetItems();
 		}
 
-		return endItem==null ? NO_INDEX : endItem.getEndOffset();
+		return endItem==null ? UNSET_LONG : endItem.getEndOffset();
 	}
 
 	/**

@@ -19,6 +19,7 @@
 package de.ims.icarus2.model.standard.members.layers;
 
 import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.layer.ItemLayer;
@@ -193,7 +194,7 @@ public class AbstractLayer<M extends LayerManifest> extends AbstractPart<LayerGr
 		 */
 		@Override
 		public long getBeginOffset() {
-			return NO_INDEX;
+			return UNSET_LONG;
 		}
 
 		/**
@@ -201,7 +202,7 @@ public class AbstractLayer<M extends LayerManifest> extends AbstractPart<LayerGr
 		 */
 		@Override
 		public long getEndOffset() {
-			return NO_INDEX;
+			return UNSET_LONG;
 		}
 
 		/**
@@ -209,7 +210,7 @@ public class AbstractLayer<M extends LayerManifest> extends AbstractPart<LayerGr
 		 */
 		@Override
 		public long getIndex() {
-			return NO_INDEX;
+			return UNSET_LONG;
 		}
 
 		/**
@@ -217,7 +218,7 @@ public class AbstractLayer<M extends LayerManifest> extends AbstractPart<LayerGr
 		 */
 		@Override
 		public long getId() {
-			return NO_INDEX;
+			return UNSET_LONG;
 		}
 
 		/**

@@ -19,12 +19,12 @@
 package de.ims.icarus2.model.manifest.xml;
 
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.Map;
 
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestType;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * Base class for readers or writers of manifest objects that make use of cached

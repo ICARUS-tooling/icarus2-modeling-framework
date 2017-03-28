@@ -166,7 +166,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 	 */
 	@Override
 	public long getIndex() {
-		return NO_INDEX;
+		return UNSET_LONG;
 	}
 
 	/**
@@ -174,7 +174,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 	 */
 	@Override
 	public long getId() {
-		return NO_INDEX;
+		return UNSET_LONG;
 	}
 
 	/**

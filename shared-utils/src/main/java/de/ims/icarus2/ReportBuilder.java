@@ -122,6 +122,18 @@ public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportB
 		return thisAsCast();
 	}
 
+	public int getErrorCount() {
+		return errorCount;
+	}
+
+	public int getWarningCount() {
+		return warningCount;
+	}
+
+	public Identity getSource() {
+		return source;
+	}
+
 	/**
 	 * @see de.ims.icarus2.util.AbstractBuilder#create()
 	 */

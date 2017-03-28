@@ -5,11 +5,11 @@
 	
 	<block layerId="sentence">
 		<component memberType="container" />	
-		<endDelimiter>EMPTY_LINE</endDelimiter>		
+		<endDelimiter><pattern>EMPTY_LINE</pattern></endDelimiter>		
 		<block layerID="token">			
 			<component memberType="item" />			
-			<endDelimiter>EMPTY_LINE</endDelimiter>				
-			<option name="trimWhitespaces" value="true" />			
+			<endDelimiter><pattern>EMPTY_LINE</pattern></endDelimiter>				
+			<option name="trimWhitespaces">true</option>			
 			<columns fixedOrder="true">
 				<column name="ID" ignore="true" />
 				<column name="FORM" layerId="form" />
@@ -19,27 +19,27 @@
 				<column name="PPOS" layerId="predicted-part-of-speech" />
 				<column name="FEAT" layerId="features">
 					<resolver type="de.ims.icarus2.filedriver.schema.resolve.standard.PropertyListResolver">
-						<option name="separator" value="|" />
-						<option name="assignmentSymbol" value="=" />
+						<option name="separator">|</option>
+						<option name="assignmentSymbol">=</option>
 					</resolver>
 				</column>
 				<column name="PFEAT" layerId="predicted-features">
 					<resolver type="de.ims.icarus2.filedriver.schema.resolve.standard.PropertyListResolver">
-						<option name="separator" value="|" />
-						<option name="assignmentSymbol" value="=" />
+						<option name="separator">|</option>
+						<option name="assignmentSymbol">=</option>
 					</resolver>
 				</column>
 				<column name="HEAD" layerId="dependency-syntax">
 					<resolver type="de.ims.icarus2.filedriver.schema.resolve.standard.DependencyStructureResolver">
-						<option name="offset" value="1" />
-						<option name="root" value="0" />
+						<option name="offset">1</option>
+						<option name="root">0</option>
 					</resolver>
 					<substitute type="addition" name="EDGE" memberType="edge" />
 				</column>
 				<column name="PHEAD" layerId="predicted-dependency-syntax">
 					<resolver type="de.ims.icarus2.filedriver.schema.resolve.standard.DependencyStructureResolver">
-						<option name="offset" value="1" />
-						<option name="root" value="0" />
+						<option name="offset">1</option>
+						<option name="root">0</option>
 					</resolver>
 					<substitute type="addition" name="PEDGE" memberType="edge" />
 				</column>

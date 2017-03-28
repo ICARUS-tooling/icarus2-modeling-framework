@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
@@ -51,6 +52,15 @@ public interface CorpusManifest extends MemberManifest {
 		forEachRootContextManifest(result);
 
 		return result.getAsList();
+	}
+
+	@AccessRestriction(AccessMode.READ)
+	default ContextManifest getRootContextManifest() {
+		List<ContextManifest> contexts = getRootContextManifests();
+		if(contexts.size()>1)
+			throw new ManifestException(GlobalErrorCode.ILLEGAL_STATE, "More than 1 root context defined");
+
+		return contexts.get(0);
 	}
 
 	/**

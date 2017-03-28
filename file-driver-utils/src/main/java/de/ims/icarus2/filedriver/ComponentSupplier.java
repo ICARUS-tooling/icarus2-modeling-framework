@@ -215,7 +215,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		public void close() {
 			item = null;
 			host = null;
-			id = NO_INDEX;
+			id = UNSET_LONG;
 		}
 
 		@Override
@@ -235,9 +235,9 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 
 		@Override
 		public long currentId() {
-			if(id==NO_INDEX) {
+			if(id==UNSET_LONG) {
 				long index = currentIndex();
-				if(index==NO_INDEX)
+				if(index==UNSET_LONG)
 					throw new ModelException(ModelErrorCode.DRIVER_ERROR, "No more items available");
 
 				// If no mapper for index -> id, just use identity mapping
@@ -249,14 +249,14 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		@Override
 		public boolean next() {
 			// Reset "iterator" state
-			id = NO_INDEX;
+			id = UNSET_LONG;
 			item = null;
 
 			// Delegate to subclass implementation
 			tryAdvance();
 
 			// If we have valid current index, advance was a success
-			return currentIndex()!=NO_INDEX;
+			return currentIndex()!=UNSET_LONG;
 		}
 
 		protected abstract void tryAdvance();
@@ -309,12 +309,12 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		@Override
 		public void close() {
 			super.close();
-			index = NO_INDEX;
+			index = UNSET_LONG;
 		}
 
 		@Override
 		public long available() {
-			return index==NO_INDEX ? 0 : 1;
+			return index==UNSET_LONG ? 0 : 1;
 		}
 
 		/**
@@ -330,7 +330,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		 */
 		@Override
 		public long currentIndex() {
-			long result = NO_INDEX;
+			long result = UNSET_LONG;
 			if(!consumed) {
 				result = index;
 				consumed = true;
@@ -355,7 +355,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		private final long beginIndex;
 		private final long endIndex;
 
-		private long index = NO_INDEX;
+		private long index = UNSET_LONG;
 		private boolean eos = false;
 
 		public ContinuousComponentSupplier(Builder builder) {
@@ -377,7 +377,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 
 		@Override
 		public long available() {
-			return endIndex==NO_INDEX ? NO_INDEX : (endIndex-beginIndex+1);
+			return endIndex==UNSET_LONG ? UNSET_LONG : (endIndex-beginIndex+1);
 		}
 
 		@Override
@@ -393,8 +393,8 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 
 			index++;
 
-			if(endIndex!=NO_INDEX && index>endIndex) {
-				index = NO_INDEX;
+			if(endIndex!=UNSET_LONG && index>endIndex) {
+				index = UNSET_LONG;
 				eos = true;
 			}
 		}
@@ -402,7 +402,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 
 	public static class StreamedComponentSupplier extends AbstractComponentSupplier {
 
-		private long index = NO_INDEX;
+		private long index = UNSET_LONG;
 		private boolean eos = false;
 
 		private final LongSupplier supplier;
@@ -421,7 +421,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		 */
 		@Override
 		public long available() {
-			return NO_INDEX;
+			return UNSET_LONG;
 		}
 
 		/**
@@ -443,7 +443,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 
 			index = supplier.getAsLong();
 
-			if(index==NO_INDEX) {
+			if(index==UNSET_LONG) {
 				eos = true;
 			}
 		}
@@ -460,10 +460,10 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		private final IndexBuffer buffer;
 
 		// SPAN SUPPORT
-		private long spanBegin = NO_INDEX;
-		private long spanEnd = NO_INDEX;
+		private long spanBegin = UNSET_LONG;
+		private long spanEnd = UNSET_LONG;
 
-		private long cursor = NO_INDEX;
+		private long cursor = UNSET_LONG;
 		private boolean eos = false;
 
 		/**
@@ -519,7 +519,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 					mappingReader.lookup(sourceIndex, buffer, RequestSettings.emptySettings);
 				}
 
-				cursor = NO_INDEX;
+				cursor = UNSET_LONG;
 				eos = false;
 			} finally {
 				mappingReader.end();
@@ -546,9 +546,9 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 
 		@Override
 		public long currentIndex() {
-			long result = NO_INDEX;
+			long result = UNSET_LONG;
 
-			if(cursor!=NO_INDEX) {
+			if(cursor!=UNSET_LONG) {
 				if(useSpanMapping) {
 					result = spanBegin+cursor;
 				} else {
@@ -568,7 +568,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 			cursor++;
 
 			if(cursor>=available()) {
-				cursor = NO_INDEX;
+				cursor = UNSET_LONG;
 				eos = true;
 			}
 		}
@@ -653,7 +653,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		}
 
 		public long getFirstIndex() {
-			return firstIndex==null ? NO_INDEX : firstIndex.longValue();
+			return firstIndex==null ? UNSET_LONG : firstIndex.longValue();
 		}
 
 		public Builder firstIndex(long firstIndex) {
@@ -666,7 +666,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		}
 
 		public long getLastIndex() {
-			return lastIndex==null ? NO_INDEX : lastIndex.longValue();
+			return lastIndex==null ? UNSET_LONG : lastIndex.longValue();
 		}
 
 		public Builder lastIndex(long lastIndex) {

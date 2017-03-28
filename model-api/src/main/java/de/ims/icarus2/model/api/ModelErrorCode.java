@@ -18,9 +18,6 @@
  */
 package de.ims.icarus2.model.api;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-
 import java.util.concurrent.locks.Lock;
 
 import de.ims.icarus2.ErrorCode;
@@ -36,6 +33,8 @@ import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.api.view.CorpusModel;
 import de.ims.icarus2.model.api.view.CorpusView.PageControl;
 import de.ims.icarus2.util.id.DuplicateIdentifierException;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner

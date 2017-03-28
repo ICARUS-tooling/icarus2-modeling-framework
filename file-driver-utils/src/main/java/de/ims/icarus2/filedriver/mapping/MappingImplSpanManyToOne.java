@@ -26,6 +26,7 @@ import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.io.BufferedIOResource;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
@@ -196,7 +197,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 
 			Block block = getBlock(id, false);
 			if(block==null) {
-				return NO_INDEX;
+				return UNSET_LONG;
 			}
 
 			long fromTarget = blockStorage.getSpanBegin(block.getData(), localIndex);
@@ -215,7 +216,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 				throws InterruptedException {
 			long result = lookup0(sourceIndex);
 
-			if(result!=NO_INDEX) {
+			if(result!=UNSET_LONG) {
 				collector.add(result);
 				return true;
 			} else {
@@ -266,7 +267,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 				long beginIndex = lookup0(firstIndex(sourceIndices));
 				long endIndex = lookup0(lastIndex(sourceIndices));
 
-				if(beginIndex!=NO_INDEX && endIndex!=NO_INDEX) {
+				if(beginIndex!=UNSET_LONG && endIndex!=UNSET_LONG) {
 					if(beginIndex==endIndex) {
 						collector.add(beginIndex);
 					} else {
@@ -276,7 +277,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 				}
 			} else {
 				// Current source index to be resolved
-				long sourceIndex = NO_INDEX;
+				long sourceIndex = UNSET_LONG;
 
 				long sourceLimit = lastIndex(sourceIndices);
 
@@ -311,7 +312,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 						sourceIndex = set.indexAt(index);
 
 						long targetIndex = lookup0(sourceIndex);
-						if(targetIndex!=NO_INDEX) {
+						if(targetIndex!=UNSET_LONG) {
 							// Report to collector
 							collector.add(targetIndex);
 							/*
@@ -319,7 +320,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 							 * mapped to 'targetIndex'. This is the end index of that span +1.
 							 *
 							 * Note: Since we got a valid reverse mapping it is impossible
-							 * to get a result of NO_INDEX from the reverse reader!
+							 * to get a result of UNSET_LONG from the reverse reader!
 							 */
 							sourceIndex = inverseReader.getEndIndex(targetIndex, null) + 1;
 
@@ -405,10 +406,10 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 //			long spanBegin = inverseReader.getBeginIndex(targetIndex);
 //			long spanEnd = inverseReader.getEndIndex(targetIndex);
 //
-//			// If span is outside our window, treat it as NO_INDEX result
-//			if(spanBegin==NO_INDEX || spanEnd==NO_INDEX
+//			// If span is outside our window, treat it as UNSET_LONG result
+//			if(spanBegin==UNSET_LONG || spanEnd==UNSET_LONG
 //					|| spanBegin>toSource || spanEnd<fromSource) {
-//				return NO_INDEX;
+//				return UNSET_LONG;
 //			}
 //
 //			return spanBegin;
@@ -444,7 +445,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 //				long spanBegin = inverseReader.getBeginIndex(firstIndex(targetIndices));
 //				long spanEnd = inverseReader.getEndIndex(lastIndex(targetIndices));
 //
-//				if(spanBegin!=NO_INDEX && spanEnd!=NO_INDEX) {
+//				if(spanBegin!=UNSET_LONG && spanEnd!=UNSET_LONG) {
 //					fromSource = Math.max(fromSource, spanBegin);
 //					toSource = Math.min(toSource, spanEnd);
 //

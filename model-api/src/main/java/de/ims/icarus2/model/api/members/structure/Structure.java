@@ -18,6 +18,7 @@
  */
 package de.ims.icarus2.model.api.members.structure;
 
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -88,7 +89,7 @@ public interface Structure extends Container {
 	boolean isAugmented();
 
 	/**
-	 * Returns a set of metadata providing additional information baout this structure.
+	 * Returns a set of metadata providing additional information about this structure.
 	 * <p>
 	 * Note that there is no defined caching policy imposed on the structure implementation,
 	 * meaning that it is perfectly legal to compute a new {@code StructureInfo} object each
@@ -413,6 +414,28 @@ public interface Structure extends Container {
 	 * @return
 	 */
 	Edge newEdge(Item source, Item target);
+
+	/**
+	 * Performs the given {@code action} for every edge in this structure.
+	 * @param action
+	 */
+	default void forEachNode(BiConsumer<? super Structure, ? super Item> action) {
+		long itemCount = getItemCount();
+		for(long i = 0L; i<itemCount; i++) {
+			action.accept(this, getItemAt(i));
+		}
+	}
+
+	/**
+	 * Performs the given {@code action} for every edge in this structure.
+	 * @param action
+	 */
+	default void forEachEdge(BiConsumer<? super Structure, ? super Edge> action) {
+		long edgeCount = getEdgeCount();
+		for(long i = 0L; i<edgeCount; i++) {
+			action.accept(this, getEdgeAt(i));
+		}
+	}
 
 	/**
 	 * Applies the given {@code action} to all edges in the order in which they are returned when

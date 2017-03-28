@@ -167,7 +167,7 @@ public interface Driver extends ItemLayerManager {
 		IndexValueType valueType = IndexValueType.LONG;
 
 		long size = getItemCount(manifest);
-		if(size!=NO_INDEX) {
+		if(size!=UNSET_LONG) {
 			valueType = IndexValueType.forValue(size);
 		}
 
@@ -365,7 +365,7 @@ public interface Driver extends ItemLayerManager {
 	 * of the respective layer group and load chunks of that group. Note that this method must automatically
 	 * increment the reference counters of each of the affected primary layer members by exactly {@code 1}, no matter
 	 * how many lower members are referenced via the original indices. For every chunk of resolved items covered by the
-	 * given indices the supplied {@code action} implementation is used. However, the order in which data chunks appear
+	 * given indices the supplied {@code action} is used. However, the order in which data chunks appear
 	 * when passed to that action is completely undefined and in no way mandatory to be related to the default order
 	 * of items in the layer! Implementations are free to first gather already loaded items while gathering the index
 	 * values of items that need to be loaded, before starting the actual loading of data.
@@ -384,6 +384,16 @@ public interface Driver extends ItemLayerManager {
 	 * to be in a healthy state. Note that this count can be completely different from the number of index values
 	 * contained in the {@code indices} parameter! Only in case the specified {@code layer} is actually the primary layer
 	 * of its surrounding layer group can both counts be expected to be equal.
+	 * <p>
+	 * Each call to this method should be accompanied by a later call to {@link #release(IndexSet[], ItemLayer)} since drivers
+	 * that host non-virtual data are required to keep use-counters for all top-level members of their respective group's
+	 * primary layers. Only once a use counter for an item (or chunk) reaches {@code 0} after a call to the release method
+	 * is the driver allowed to actually remove the data or recycle it into a pool.
+	 * <p>
+	 * Note that driver implementations that rely on data hosted by another driver <b>must</b> use this method to acquire
+	 * data chunks from that other driver and to signal dependencies. By doing so it is guaranteed that the other driver
+	 * cannot (or at least should not as long as it follows the contract of {@code load} and {@link #release(IndexSet[], ItemLayer) release})
+	 * completely release data chunks that are still in use by foreign drivers.
 	 *
 	 * @param indices
 	 * @param layer
@@ -400,4 +410,16 @@ public interface Driver extends ItemLayerManager {
 	@Override
 	long load(IndexSet[] indices, ItemLayer layer,
 			Consumer<ChunkInfo> action) throws InterruptedException;
+
+	/**
+	 * Tells this driver to decrement the use counter for a series of items referenced by the given {@code indices}.
+	 * When a use counter for a item reaches {@code 0} as a result of this method call the driver should remove
+	 * the chunk in question from its internal cache.
+	 *
+	 * This hold of course only true for drivers that host non-virtual data.
+	 *
+	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#release(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer)
+	 */
+	@Override
+	void release(IndexSet[] indices, ItemLayer layer) throws InterruptedException;
 }

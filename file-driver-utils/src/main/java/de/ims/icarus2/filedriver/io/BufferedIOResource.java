@@ -20,9 +20,6 @@ package de.ims.icarus2.filedriver.io;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.ints.IntIterator;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -38,6 +35,9 @@ import de.ims.icarus2.model.api.io.SynchronizedAccessor;
 import de.ims.icarus2.model.api.io.resources.IOResource;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.IcarusUtils;
+import it.unimi.dsi.fastutil.ints.IntIterator;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 
 /**
  * Models an I/O resource that reads from a single physical source and provides synchronized

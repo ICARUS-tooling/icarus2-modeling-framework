@@ -19,6 +19,7 @@
 package de.ims.icarus2.model.manifest.standard;
 
 import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.model.manifest.api.VersionManifest;
 
 /**

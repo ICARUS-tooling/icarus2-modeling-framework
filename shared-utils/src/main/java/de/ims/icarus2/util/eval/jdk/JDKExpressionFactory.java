@@ -36,7 +36,7 @@ import com.squareup.javapoet.TypeSpec;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusException;
-import de.ims.icarus2.util.classes.ClassUtils;
+import de.ims.icarus2.util.classes.Primitives;
 import de.ims.icarus2.util.compiler.InMemoryCompiler;
 import de.ims.icarus2.util.eval.Expression;
 import de.ims.icarus2.util.eval.ExpressionFactory;
@@ -184,7 +184,7 @@ public class JDKExpressionFactory extends ExpressionFactory {
 					String call = "getValue";
 
 					if(type.isPrimitive()) {
-						call = "get"+ClassUtils.wrap(type).getSimpleName();
+						call = "get"+Primitives.wrap(type).getSimpleName();
 					}
 
 					builder.add("__variables__.$L($S);\n", call, variable.getName());
@@ -244,7 +244,7 @@ public class JDKExpressionFactory extends ExpressionFactory {
 				String call = "setValue";
 
 				if(type.isPrimitive()) {
-					call = "set"+ClassUtils.wrap(type).getSimpleName();
+					call = "set"+Primitives.wrap(type).getSimpleName();
 				}
 
 				builder.add("__variables__.$L($S, $L);\n", call, variable.getName(), variable.getName());

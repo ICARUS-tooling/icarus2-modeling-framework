@@ -20,6 +20,7 @@
  */
 package de.ims.icarus2.model.api.members.container;
 
+import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
 import de.ims.icarus2.model.api.members.item.Item;
@@ -164,6 +165,18 @@ public interface Container extends Item, ManifestOwner<ContainerManifest>, ItemL
 
 	default boolean containsItem(Item item) {
 		return indexOfItem(item)>=0L;
+	}
+
+	/**
+	 * Performs the given {@code action} for every element in this container.
+	 *
+	 * @param action
+	 */
+	default void forEachItem(BiConsumer<? super Container, ? super Item> action) {
+		long size = getItemCount();
+		for(long i = 0; i<size; i++) {
+			action.accept(this, getItemAt(i));
+		}
 	}
 
 	/**

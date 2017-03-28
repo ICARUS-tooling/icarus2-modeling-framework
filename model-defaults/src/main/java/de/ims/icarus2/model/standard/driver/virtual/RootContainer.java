@@ -76,7 +76,7 @@ public class RootContainer extends AbstractImmutableContainer {
 	 */
 	@Override
 	public long getId() {
-		return NO_INDEX;
+		return UNSET_LONG;
 	}
 
 	/**
@@ -98,33 +98,33 @@ public class RootContainer extends AbstractImmutableContainer {
 	}
 
 	/**
-	 * Returns {@link ModelConstants#NO_INDEX -1}.
+	 * Returns {@link ModelConstants#UNSET_LONG -1}.
 	 *
 	 * @see de.ims.icarus2.model.api.members.item.Item#getIndex()
 	 */
 	@Override
 	public long getIndex() {
-		return NO_INDEX;
+		return UNSET_LONG;
 	}
 
 	/**
-	 * Returns {@link ModelConstants#NO_INDEX -1}.
+	 * Returns {@link ModelConstants#UNSET_LONG -1}.
 	 *
 	 * @see de.ims.icarus2.model.api.members.item.Item#getBeginOffset()
 	 */
 	@Override
 	public long getBeginOffset() {
-		return NO_INDEX;
+		return UNSET_LONG;
 	}
 
 	/**
-	 * Returns {@link ModelConstants#NO_INDEX -1}.
+	 * Returns {@link ModelConstants#UNSET_LONG -1}.
 	 *
 	 * @see de.ims.icarus2.model.api.members.item.Item#getEndOffset()
 	 */
 	@Override
 	public long getEndOffset() {
-		return NO_INDEX;
+		return UNSET_LONG;
 	}
 
 	/**

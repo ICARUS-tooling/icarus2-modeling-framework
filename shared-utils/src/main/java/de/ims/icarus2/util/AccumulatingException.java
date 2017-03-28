@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.util;
 
-import static de.ims.icarus2.util.classes.ClassUtils._int;
+import static de.ims.icarus2.util.classes.Primitives._int;
 
 import java.util.ArrayList;
 import java.util.Collection;

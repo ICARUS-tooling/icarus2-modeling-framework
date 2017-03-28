@@ -19,7 +19,6 @@
 package de.ims.icarus2.model.standard.highlight;
 
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,6 +37,7 @@ import de.ims.icarus2.util.collections.set.DataSet;
 import de.ims.icarus2.util.collections.set.DataSets;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.id.StaticIdentity;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner

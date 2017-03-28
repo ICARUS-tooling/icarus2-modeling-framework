@@ -18,8 +18,6 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation;
 
-import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
-
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -46,6 +44,7 @@ import de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyO
 import de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationStorage;
 import de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationStorage.AnnotationBundle;
 import de.ims.icarus2.util.Options;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
  * @author Markus Gärtner

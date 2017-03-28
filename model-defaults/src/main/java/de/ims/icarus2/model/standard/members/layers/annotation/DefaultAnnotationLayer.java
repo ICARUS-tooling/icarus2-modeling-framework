@@ -19,6 +19,7 @@
 package de.ims.icarus2.model.standard.members.layers.annotation;
 
 import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.standard.members.layers.AbstractLayer;

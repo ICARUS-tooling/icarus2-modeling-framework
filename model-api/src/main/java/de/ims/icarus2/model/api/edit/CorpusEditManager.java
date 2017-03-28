@@ -18,6 +18,7 @@
  */
 package de.ims.icarus2.model.api.edit;
 
+import static de.ims.icarus2.util.classes.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
@@ -83,7 +84,7 @@ public class CorpusEditManager extends WeakEventSource {
 
 		if (!endingUpdate.get()) {
 			boolean end = endingUpdate.compareAndSet(false, level==1);
-			fireEvent(new EventObject(CorpusEditEvents.END_UPDATE, "edit", currentEdit, "level", level));
+			fireEvent(new EventObject(CorpusEditEvents.END_UPDATE, "edit", currentEdit, "level", _int(level)));
 
 			try {
 				if (end && !currentEdit.isEmpty()) {

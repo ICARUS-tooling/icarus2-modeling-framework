@@ -20,6 +20,7 @@ package de.ims.icarus2.model.api.members.structure;
 
 import java.io.Serializable;
 
+import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.meta.MetaData;
 
 /**
@@ -46,10 +47,7 @@ import de.ims.icarus2.model.api.meta.MetaData;
  * @author Markus Gärtner
  *
  */
-public interface StructureInfo extends MetaData, Serializable {
-
-	public static final double NO_ENTRY_DOUBLE = -1D;
-	public static final long NO_ENTRY_LONG = -1L;
+public interface StructureInfo extends MetaData, ModelConstants, Serializable {
 
 	//TODO add info getter methods for stuff like min/max branching etc
 
@@ -67,6 +65,6 @@ public interface StructureInfo extends MetaData, Serializable {
 	 * @return
 	 */
 	default boolean isUndefined(StructureInfoField field) {
-		return getMin(field)==NO_ENTRY_LONG;
+		return getMin(field)==UNSET_LONG;
 	}
 }

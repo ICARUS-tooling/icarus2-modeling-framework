@@ -755,7 +755,7 @@ public enum IndexValueType implements StringResource {
 	public abstract void copyFrom(IntToLongFunction src, int srcPos, Object array, int destPos, int length);
 
 	public static IndexValueType forValue(long value) {
-		if(value==ModelConstants.NO_INDEX) {
+		if(value==ModelConstants.UNSET_LONG) {
 			return null;
 		}
 

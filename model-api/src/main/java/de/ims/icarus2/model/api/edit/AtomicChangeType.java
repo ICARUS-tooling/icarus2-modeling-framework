@@ -17,11 +17,10 @@
  */
 package de.ims.icarus2.model.api.edit;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-
 import java.util.Map;
 
 import de.ims.icarus2.util.strings.StringResource;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner

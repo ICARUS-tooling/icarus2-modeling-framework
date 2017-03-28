@@ -408,7 +408,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long indexOfChild(Structure context, Item child) {
 			Edge incomingEdge = incomingEdge(context, child);
 			if(incomingEdge==null) {
-				return NO_INDEX;
+				return UNSET_LONG;
 			} else if(incomingEdge.getSource()==root) {
 				return root.indexOfEdge(incomingEdge);
 			} else {
@@ -780,7 +780,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long indexOfChild(Structure context, Item child) {
 			Edge incomingEdge = incomingEdge(context, child);
 			if(incomingEdge==null) {
-				return NO_INDEX;
+				return UNSET_LONG;
 			} else if(incomingEdge.getSource()==root) {
 				return root.indexOfEdge(incomingEdge);
 			} else {
@@ -816,7 +816,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 	 */
 	public static class LargeTreeEdgeStorage extends StaticTreeEdgeStorage {
 
-		private static int NO_INDEX = (int) ModelConstants.NO_INDEX;
+		private static int NO_INDEX = (int) ModelConstants.UNSET_LONG;
 
 		public static LargeTreeEdgeStorage fromBuilder(StructureBuilder builder) {
 			final EdgeBuffer edgeBuffer = builder.edgeBuffer();

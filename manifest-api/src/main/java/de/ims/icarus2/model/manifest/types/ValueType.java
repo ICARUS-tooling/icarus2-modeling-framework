@@ -18,11 +18,11 @@
  */
 package de.ims.icarus2.model.manifest.types;
 
-import static de.ims.icarus2.util.classes.ClassUtils._boolean;
-import static de.ims.icarus2.util.classes.ClassUtils._double;
-import static de.ims.icarus2.util.classes.ClassUtils._float;
-import static de.ims.icarus2.util.classes.ClassUtils._int;
-import static de.ims.icarus2.util.classes.ClassUtils._long;
+import static de.ims.icarus2.util.classes.Primitives._boolean;
+import static de.ims.icarus2.util.classes.Primitives._double;
+import static de.ims.icarus2.util.classes.Primitives._float;
+import static de.ims.icarus2.util.classes.Primitives._int;
+import static de.ims.icarus2.util.classes.Primitives._long;
 
 import java.lang.reflect.Array;
 import java.net.MalformedURLException;
@@ -45,7 +45,7 @@ import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.IconWrapper;
-import de.ims.icarus2.util.classes.ClassUtils;
+import de.ims.icarus2.util.classes.Primitives;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.eval.Expression;
@@ -456,7 +456,7 @@ public class ValueType implements StringResource, NamedObject {
 
 			// We need the (possible) wrapper type since expressions are allowed to
 			// declare primitive return types and we deal with wrappers here!
-			type = ClassUtils.wrap(type);
+			type = Primitives.wrap(type);
 		}
 
 		return type;
@@ -673,7 +673,7 @@ public class ValueType implements StringResource, NamedObject {
 		}
 
 		private static Object createArray(ValueType componentType, int size) {
-			return Array.newInstance(ClassUtils.unwrap(componentType.getBaseClass()), size);
+			return Array.newInstance(Primitives.unwrap(componentType.getBaseClass()), size);
 		}
 
 		private static Object parseStaticSized(CharSequence s, ClassLoader classLoader, ValueType componentType, int size) {
@@ -771,7 +771,7 @@ public class ValueType implements StringResource, NamedObject {
 		 */
 		@Override
 		public boolean isValidType(Class<?> type) {
-			return type.isArray() && componentType.isValidType(ClassUtils.wrap(type.getComponentType()));
+			return type.isArray() && componentType.isValidType(Primitives.wrap(type.getComponentType()));
 		}
 
 		@Override
@@ -789,7 +789,7 @@ public class ValueType implements StringResource, NamedObject {
 			Class<?> componentClass = type.getComponentType();
 
 			// Again we need wrapping of primitive types
-			componentClass = ClassUtils.wrap(componentClass);
+			componentClass = Primitives.wrap(componentClass);
 
 			if(!componentType.isValidType(componentClass))
 				throw new ManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
@@ -893,7 +893,7 @@ public class ValueType implements StringResource, NamedObject {
 		}
 
 		private static Object createArray(ValueType componentType, int size) {
-			return Array.newInstance(ClassUtils.unwrap(componentType.getBaseClass()), size);
+			return Array.newInstance(Primitives.unwrap(componentType.getBaseClass()), size);
 		}
 
 		/**
@@ -982,7 +982,7 @@ public class ValueType implements StringResource, NamedObject {
 		 */
 		@Override
 		public boolean isValidType(Class<?> type) {
-			return type.isArray() && componentType.isValidType(ClassUtils.wrap(type.getComponentType()));
+			return type.isArray() && componentType.isValidType(Primitives.wrap(type.getComponentType()));
 		}
 
 		@Override
@@ -1001,7 +1001,7 @@ public class ValueType implements StringResource, NamedObject {
 			Class<?> componentClass = type.getComponentType();
 
 			// Again we need wrapping of primitive types
-			componentClass = ClassUtils.wrap(componentClass);
+			componentClass = Primitives.wrap(componentClass);
 
 			if(!componentType.isValidType(componentClass))
 				throw new ManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,

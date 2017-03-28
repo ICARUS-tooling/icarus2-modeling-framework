@@ -20,8 +20,6 @@
  */
 package de.ims.icarus2.model.api.corpus;
 
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -49,13 +47,13 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.meta.MetaData;
 import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
-import de.ims.icarus2.model.api.view.CorpusAccessMode;
 import de.ims.icarus2.model.api.view.CorpusView;
 import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.api.view.ScopeBuilder;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.LayerType;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
+import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.collections.LazyCollection;
@@ -63,6 +61,7 @@ import de.ims.icarus2.util.data.ContentType;
 import de.ims.icarus2.util.events.EventListener;
 import de.ims.icarus2.util.id.DuplicateIdentifierException;
 import de.ims.icarus2.util.id.UnknownIdentifierException;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * A {@code Corpus} object is the top-most member of the corpus framework and the
@@ -217,13 +216,13 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	 *
 	 * @see {@link ModelErrorCode#VIEW_ALREADY_OPENED}
 	 */
-	CorpusView createView(Scope scope, IndexSet[] indices, CorpusAccessMode mode, Options options) throws InterruptedException;
+	CorpusView createView(Scope scope, IndexSet[] indices, AccessMode mode, Options options) throws InterruptedException;
 
 	/**
 	 * Creates a new corpus view object that gives access to the entire corpus.
 	 * <p>
 	 * This is done by first creating a {@link #createCompleteScope() full scope} and then forwarding to the
-	 * more general {@link #createView(Scope, IndexSet[], CorpusAccessMode, Options)} method.
+	 * more general {@link #createView(Scope, IndexSet[], AccessMode, Options)} method.
 	 * The scope will contain all the layers and contexts in this corpus and will be assigned as primary layer the
 	 * primary layer of the first root context (as returned by {@link #getRootContext()} unless changed by a subclass).
 	 *
@@ -232,7 +231,7 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	 * @return
 	 * @throws InterruptedException
 	 */
-	default CorpusView createFullView(CorpusAccessMode mode, Options options) throws InterruptedException {
+	default CorpusView createFullView(AccessMode mode, Options options) throws InterruptedException {
 		Scope scope = createCompleteScope();
 		return createView(scope, null, mode, options);
 	}

@@ -129,7 +129,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		if(getEdgeCount(context, child, false) > 0) {
 			return 0;
 		}
-		return NO_INDEX;
+		return UNSET_LONG;
 	}
 
 	/**

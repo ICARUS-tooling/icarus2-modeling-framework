@@ -476,8 +476,8 @@ public class StructureBuilder implements ModelConstants {
 	}
 
 	public void setId(long id) {
-		checkState(this.id==NO_INDEX);
-		checkArgument(id!=NO_INDEX);
+		checkState(this.id==UNSET_LONG);
+		checkArgument(id!=UNSET_LONG);
 
 		this.id = id;
 	}
@@ -589,7 +589,7 @@ public class StructureBuilder implements ModelConstants {
 
 		augmented = false;
 
-		id = NO_INDEX;
+		id = UNSET_LONG;
 	}
 
 	/**

@@ -19,6 +19,7 @@
 package de.ims.icarus2.model.standard.members.layers.item;
 
 import static de.ims.icarus2.util.Conditions.checkNotSet;
+
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.FragmentLayer;
 import de.ims.icarus2.model.api.members.item.Item;

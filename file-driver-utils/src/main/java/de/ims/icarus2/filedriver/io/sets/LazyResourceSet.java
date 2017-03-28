@@ -18,8 +18,6 @@
 package de.ims.icarus2.filedriver.io.sets;
 
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -33,6 +31,8 @@ import de.ims.icarus2.model.api.io.ResourcePath;
 import de.ims.icarus2.model.api.io.resources.FileResource;
 import de.ims.icarus2.model.api.io.resources.IOResource;
 import de.ims.icarus2.model.api.io.resources.ReadOnlyURLResource;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 /**
  * Implements a {@link ResourceSet} that is linked to a central storage file and

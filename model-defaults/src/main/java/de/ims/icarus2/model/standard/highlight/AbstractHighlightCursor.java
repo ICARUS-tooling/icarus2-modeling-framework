@@ -19,6 +19,7 @@
 package de.ims.icarus2.model.standard.highlight;
 
 import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.model.api.highlight.HighlightCursor;
 import de.ims.icarus2.model.api.layer.HighlightLayer;
 import de.ims.icarus2.model.api.members.container.Container;

@@ -21,6 +21,8 @@ package de.ims.icarus2.model.manifest.api;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.swing.text.Highlighter.Highlight;
+
 import de.ims.icarus2.util.Flag;
 import de.ims.icarus2.util.strings.StringResource;
 

@@ -21,13 +21,14 @@
 package de.ims.icarus2.util;
 
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 
 /**

@@ -19,8 +19,7 @@
 package de.ims.icarus2.model.standard.driver.cache;
 
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -31,6 +30,8 @@ import de.ims.icarus2.util.access.AccessRestriction;
 import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Primitive;
 import de.ims.icarus2.util.mem.Reference;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner

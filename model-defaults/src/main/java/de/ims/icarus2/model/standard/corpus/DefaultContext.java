@@ -45,7 +45,6 @@ import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.util.ModelUtils;
-import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**
  * @author Markus Gärtner
@@ -166,11 +165,11 @@ public class DefaultContext implements Context {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.corpus.Context#getLayerGroups()
+	 * @see de.ims.icarus2.model.api.corpus.Context#forEachLayerGroup(java.util.function.Consumer)
 	 */
 	@Override
-	public List<LayerGroup> getLayerGroups() {
-		return CollectionUtils.getListProxy(layerGroups);
+	public void forEachLayerGroup(Consumer<? super LayerGroup> action) {
+		layerGroups.forEach(action);
 	}
 
 	public void addLayerGroup(LayerGroup group) {

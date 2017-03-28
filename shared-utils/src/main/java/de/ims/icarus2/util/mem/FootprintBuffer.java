@@ -18,9 +18,6 @@
  */
 package de.ims.icarus2.util.mem;
 
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-
 import java.lang.reflect.Array;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -29,6 +26,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.strings.StringUtil;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
  * @author Markus Gärtner

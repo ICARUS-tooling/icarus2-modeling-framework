@@ -42,7 +42,7 @@ import de.ims.icarus2.util.collections.LookupList;
  */
 public class StaticNodes {
 
-	private static final int NO_INDEX = (int) ModelConstants.NO_INDEX;
+	private static final int NO_INDEX = (int) ModelConstants.UNSET_LONG;
 	private static final int NO_DEPTH = -1;
 
 	public static final Node EMPTY_NODE = new Node();

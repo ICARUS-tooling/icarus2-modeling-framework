@@ -19,6 +19,7 @@ package de.ims.icarus2.filedriver.mapping;
 
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.firstIndex;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.lastIndex;
+
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;

@@ -28,6 +28,7 @@ import java.nio.charset.Charset;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.io.IOUtil;
 import de.ims.icarus2.util.nio.MemoryByteStorage;
 
@@ -53,6 +54,14 @@ public class ReadOnlyStringResource implements IOResource {
 
 		this.source = source;
 		this.encoding = encoding;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.io.resources.IOResource#getAccessMode()
+	 */
+	@Override
+	public AccessMode getAccessMode() {
+		return AccessMode.READ;
 	}
 
 	private void checkOpen() {

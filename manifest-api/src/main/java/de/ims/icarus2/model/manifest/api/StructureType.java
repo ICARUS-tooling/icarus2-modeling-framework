@@ -18,6 +18,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -53,6 +55,8 @@ public enum StructureType implements StringResource {
 	 * down to the child node itself.
 	 */
 	TREE("tree", true, -1, 1, 1), //$NON-NLS-1$
+
+	//TODO Add FOREST as a means to model N-best tree lists? or move that to a kind of "parallel" structure meta-type?
 
 	/**
 	 * A general graph with the only restriction that edges have to be
@@ -110,8 +114,7 @@ public enum StructureType implements StringResource {
 	 * is {@code null}
 	 */
 	public boolean supportsOperation(EditOperation operation) {
-		if (operation == null)
-			throw new NullPointerException("Invalid operation");  //$NON-NLS-1$
+		requireNonNull(operation);
 
 		return operations.contains(operation);
 	}

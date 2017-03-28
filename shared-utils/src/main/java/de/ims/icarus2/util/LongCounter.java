@@ -18,36 +18,42 @@
  */
 package de.ims.icarus2.util;
 
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-
 import java.util.Set;
 
 import de.ims.icarus2.util.collections.CollectionUtils;
+import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class Counter<T extends Object> {
+public class LongCounter<T extends Object> {
 
-	private final Object2IntOpenHashMap<T> counts = new Object2IntOpenHashMap<>();
+	private final Object2LongOpenHashMap<T> counts = new Object2LongOpenHashMap<>();
 
-	public Counter() {
+	public LongCounter() {
 		// no-op
 	}
 
-	public int increment(T data) {
+	public void copyFrom(LongCounter<? extends T> source) {
+		counts.putAll(source.counts);
+	}
+
+	public void addAll(LongCounter<? extends T> source) {
+		source.counts.object2LongEntrySet().forEach(e -> {
+			add(e.getKey(), e.getLongValue());
+		});
+	}
+
+	public long increment(T data) {
 		return counts.addTo(data, 1) + 1;
 	}
 
-	public int add(T data, int delta) {
-		int c = counts.getInt(data);
+	public long add(T data, long delta) {
+		long c = counts.getLong(data);
 		if(c==counts.defaultReturnValue()) {
 			c = 0;
 		}
-
-		if(delta>0 && Integer.MAX_VALUE-delta<c)
-			throw new IllegalStateException("Positive overflow");
 
 		c += delta;
 
@@ -61,14 +67,14 @@ public class Counter<T extends Object> {
 		return c;
 	}
 
-	public int decrement(T data) {
-		int c = counts.getInt(data);
+	public long decrement(T data) {
+		long c = counts.getLong(data);
 		if(c<1)
 			throw new IllegalStateException("Cannot decrement count for data: "+data); //$NON-NLS-1$
 
 		c--;
 		if(c==0) {
-			counts.removeInt(data);
+			counts.removeLong(data);
 		} else {
 			counts.put(data, c);
 		}
@@ -80,9 +86,13 @@ public class Counter<T extends Object> {
 		counts.clear();
 	}
 
-	public int getCount(Object data) {
-		int c = counts.getInt(data);
+	public long getCount(Object data) {
+		long c = counts.getLong(data);
 		return c==counts.defaultReturnValue() ? 0 : c;
+	}
+
+	public void setCount(T data, long count) {
+		counts.put(data, count);
 	}
 
 	/**
@@ -93,7 +103,7 @@ public class Counter<T extends Object> {
 	 * @return
 	 */
 	public boolean hasCount(Object data) {
-		int c = counts.getInt(data);
+		long c = counts.getLong(data);
 		return c>0;
 	}
 

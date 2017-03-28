@@ -19,7 +19,6 @@ package de.ims.icarus2.filedriver.resolver;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -43,6 +42,7 @@ import de.ims.icarus2.model.manifest.api.LocationManifest.PathEntry;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
 import de.ims.icarus2.model.manifest.api.LocationType;
 import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * Implements a simple path resolver that is directly linked to a fixed set

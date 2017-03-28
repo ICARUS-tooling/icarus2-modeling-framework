@@ -108,7 +108,7 @@ public class EdgeProxyStorage implements ItemStorage {
 	@Override
 	public long indexOfItem(Container context, Item item) {
 		return item.getMemberType()==MemberType.EDGE ?
-				structure.indexOfEdge((Edge) item) : NO_INDEX;
+				structure.indexOfEdge((Edge) item) : UNSET_LONG;
 	}
 
 	/**
@@ -168,7 +168,7 @@ public class EdgeProxyStorage implements ItemStorage {
 	 */
 	@Override
 	public long getBeginOffset(Container context) {
-		return NO_INDEX;
+		return UNSET_LONG;
 	}
 
 	/**
@@ -176,7 +176,7 @@ public class EdgeProxyStorage implements ItemStorage {
 	 */
 	@Override
 	public long getEndOffset(Container context) {
-		return NO_INDEX;
+		return UNSET_LONG;
 	}
 
 	/**

@@ -31,6 +31,7 @@ import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.strings.NamedObject;
+import de.ims.icarus2.util.strings.StringResource;
 
 /**
  * @author Markus Gärtner
@@ -40,9 +41,18 @@ public interface TableSchema extends Schema {
 
 	public static final String SCHEMA_ID = "de.ims.icarus2.filedriver.schema.table";
 
-	public static final String DELIMITER_TAB = "TAB";
-	public static final String DELIMITER_WHITESPACES = "WHITESPACES";
-	public static final String DELIMITER_SPACE = "SPACE";
+	public static final String SEPARATOR_TAB = "TAB";
+	public static final String SEPARATOR_SPACE = "SPACE";
+	public static final String SEPARATOR_WHITESPACE = "WHITESPACE";
+	public static final String SEPARATOR_WHITESPACES = "WHITESPACES";
+
+	/**
+	 * @see de.ims.icarus2.filedriver.schema.Schema#getSchemaTypeName()
+	 */
+	@Override
+	default String getSchemaTypeName() {
+		return SCHEMA_ID;
+	}
 
 	/**
 	 * Returns the total number of all (recursively nested) {@link BlockSchema} objects
@@ -195,13 +205,21 @@ public interface TableSchema extends Schema {
 		boolean isReference();
 	}
 
-	public enum AttributeTarget {
+	public enum AttributeTarget implements StringResource {
 //		CURRENT_BLOCK,
 //		PARENT_BLOCK,
 //		ROOT_BLOCK,
 		NEXT_ITEM,
 		PREVIOUS_ITEM,
 		;
+
+		/**
+		 * @see de.ims.icarus2.util.strings.StringResource#getStringValue()
+		 */
+		@Override
+		public String getStringValue() {
+			return name().toLowerCase();
+		}
 	}
 
 	public interface AttributeSchema {
@@ -281,6 +299,8 @@ public interface TableSchema extends Schema {
 		 * @return
 		 */
 		SubstituteSchema getSubstitute(SubstituteType type);
+
+		boolean hasSubstitutes();
 	}
 
 	/**
@@ -295,7 +315,7 @@ public interface TableSchema extends Schema {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public enum SubstituteType {
+	public enum SubstituteType implements StringResource {
 
 		/**
 		 * Replaces the slot of the column with a new member
@@ -313,6 +333,14 @@ public interface TableSchema extends Schema {
 		 */
 		TARGET,
 		;
+
+		/**
+		 * @see de.ims.icarus2.util.strings.StringResource#getStringValue()
+		 */
+		@Override
+		public String getStringValue() {
+			return name().toLowerCase();
+		}
 	}
 
 	/**

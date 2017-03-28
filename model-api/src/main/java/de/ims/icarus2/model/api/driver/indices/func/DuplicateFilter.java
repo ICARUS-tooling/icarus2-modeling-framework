@@ -35,7 +35,7 @@ import de.ims.icarus2.model.api.ModelException;
  */
 public class DuplicateFilter implements LongConsumer {
 	private final LongConsumer consumer;
-	private long lastReturnedValue = IndexSetMerger.NO_INDEX;
+	private long lastReturnedValue = IndexSetMerger.UNSET_LONG;
 
 	public DuplicateFilter(LongConsumer consumer) {
 		this.consumer = consumer;

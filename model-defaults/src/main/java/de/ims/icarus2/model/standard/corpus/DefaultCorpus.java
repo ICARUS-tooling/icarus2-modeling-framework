@@ -23,9 +23,6 @@ import static de.ims.icarus2.model.util.ModelUtils.getUniqueId;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -70,7 +67,6 @@ import de.ims.icarus2.model.api.meta.MetaData;
 import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.api.registry.CorpusMemberFactory;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
-import de.ims.icarus2.model.api.view.CorpusAccessMode;
 import de.ims.icarus2.model.api.view.CorpusView;
 import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
@@ -88,6 +84,7 @@ import de.ims.icarus2.model.standard.view.DefaultCorpusView;
 import de.ims.icarus2.model.standard.view.DefaultCorpusView.CorpusViewBuilder;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AccumulatingException;
+import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.collections.LazyCollection;
@@ -96,6 +93,9 @@ import de.ims.icarus2.util.data.ContentType;
 import de.ims.icarus2.util.events.EventListener;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.events.Events;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
  * Implements a corpus that manages its contents in a lazy way. {@link Context} instances
@@ -226,7 +226,7 @@ public class DefaultCorpus implements Corpus {
 
 	@Override
 	public CorpusView createView(Scope scope, IndexSet[] indices,
-			CorpusAccessMode mode, Options options) throws InterruptedException {
+			AccessMode mode, Options options) throws InterruptedException {
 
 		requireNonNull(scope);
 		requireNonNull(mode);
@@ -243,7 +243,7 @@ public class DefaultCorpus implements Corpus {
 		if(indices==null) {
 			long itemCount = driver.getItemCount(primaryLayer);
 
-			if(itemCount==ModelConstants.NO_INDEX)
+			if(itemCount==ModelConstants.UNSET_LONG)
 				throw new ModelException(this, ModelErrorCode.DRIVER_METADATA_MISSING,
 						"Cannot create default index set for entire primary layer, since driver has no metadata for its size");
 
@@ -708,12 +708,12 @@ public class DefaultCorpus implements Corpus {
 		private CorpusView currentWriteView;
 		private final Set<CorpusView> readViews = new ReferenceOpenHashSet<>();
 
-		public boolean canOpen(CorpusAccessMode accessMode) {
+		public boolean canOpen(AccessMode accessMode) {
 			return !accessMode.isWrite() || currentWriteView==null;
 		}
 
 		public void addView(CorpusView view) {
-			CorpusAccessMode accessMode = view.getAccessMode();
+			AccessMode accessMode = view.getAccessMode();
 			Corpus corpus = DefaultCorpus.this;
 
 			// Sanity check
@@ -1107,7 +1107,7 @@ public class DefaultCorpus implements Corpus {
 		 */
 		@Override
 		public long getBeginOffset() {
-			return NO_INDEX;
+			return UNSET_LONG;
 		}
 
 		/**
@@ -1115,7 +1115,7 @@ public class DefaultCorpus implements Corpus {
 		 */
 		@Override
 		public long getEndOffset() {
-			return NO_INDEX;
+			return UNSET_LONG;
 		}
 
 		/**
@@ -1167,7 +1167,7 @@ public class DefaultCorpus implements Corpus {
 		 */
 		@Override
 		public long getIndex() {
-			return NO_INDEX;
+			return UNSET_LONG;
 		}
 
 		/**
@@ -1175,7 +1175,7 @@ public class DefaultCorpus implements Corpus {
 		 */
 		@Override
 		public long getId() {
-			return NO_INDEX;
+			return UNSET_LONG;
 		}
 
 		/**
@@ -1209,7 +1209,7 @@ public class DefaultCorpus implements Corpus {
 				}
 			}
 
-			return NO_INDEX;
+			return UNSET_LONG;
 		}
 
 		/**

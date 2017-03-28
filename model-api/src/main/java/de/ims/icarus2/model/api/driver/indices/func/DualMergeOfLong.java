@@ -48,11 +48,11 @@ public class DualMergeOfLong implements PrimitiveIterator.OfLong, ModelConstants
 	}
 
 	private long nextLeft() {
-		return left.hasNext() ? left.nextLong() : NO_INDEX;
+		return left.hasNext() ? left.nextLong() : UNSET_LONG;
 	}
 
 	private long nextRight() {
-		return right.hasNext() ? right.nextLong() : NO_INDEX;
+		return right.hasNext() ? right.nextLong() : UNSET_LONG;
 	}
 
 	/**
@@ -60,7 +60,7 @@ public class DualMergeOfLong implements PrimitiveIterator.OfLong, ModelConstants
 	 */
 	@Override
 	public boolean hasNext() {
-		return leftVal!=NO_INDEX || rightVal!=NO_INDEX;
+		return leftVal!=UNSET_LONG || rightVal!=UNSET_LONG;
 	}
 
 	/**
@@ -70,10 +70,10 @@ public class DualMergeOfLong implements PrimitiveIterator.OfLong, ModelConstants
 	public long nextLong() {
 		long result;
 
-		if(leftVal!=NO_INDEX && leftVal<rightVal) {
+		if(leftVal!=UNSET_LONG && leftVal<rightVal) {
 			result = leftVal;
 			leftVal = nextLeft();
-		} else if(rightVal!=NO_INDEX) {
+		} else if(rightVal!=UNSET_LONG) {
 			result = rightVal;
 			rightVal = nextRight();
 		} else

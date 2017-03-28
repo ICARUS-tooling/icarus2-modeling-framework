@@ -20,10 +20,8 @@ package de.ims.icarus2.filedriver;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkNonEmpty;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
-import static de.ims.icarus2.util.classes.ClassUtils._int;
+import static de.ims.icarus2.util.classes.Primitives._int;
 import static java.util.Objects.requireNonNull;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -32,8 +30,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.PrimitiveIterator.OfLong;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.BiFunction;
@@ -102,9 +102,17 @@ import de.ims.icarus2.model.standard.driver.BufferedItemManager;
 import de.ims.icarus2.model.standard.driver.BufferedItemManager.LayerBuffer;
 import de.ims.icarus2.model.standard.driver.ChunkConsumer;
 import de.ims.icarus2.model.standard.driver.ChunkInfoBuilder;
+import de.ims.icarus2.model.util.Graph;
+import de.ims.icarus2.model.util.Graph.TraversalPolicy;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.classes.Lazy;
+import de.ims.icarus2.util.collections.CollectionUtils;
+import de.ims.icarus2.util.collections.LazyCollection;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 
 /**
@@ -248,6 +256,8 @@ public class FileDriver extends AbstractDriver {
 	}
 
 	/**
+	 * Returns the lookup structure for all kinds of metadata
+	 *
 	 * Should only be used by modules of the driver or other code that takes part in the
 	 * data preparation process!
 	 *
@@ -361,7 +371,7 @@ public class FileDriver extends AbstractDriver {
 	/**
 	 * Generates a lookup key using {@link ItemLayerKey#ITEMS#getKey(ItemLayerManifest)}. This key
 	 * is then used to query the underlying {@link MetadataRegistry} for the mapped
-	 * {@link MetadataRegistry#getLongValue(String, long) long value}, supplying {@value ModelConstants#NO_INDEX}
+	 * {@link MetadataRegistry#getLongValue(String, long) long value}, supplying {@value ModelConstants#UNSET_LONG}
 	 * as default value for the case that no matching entry was found.
 	 *
 	 * TODO refresh description
@@ -375,7 +385,7 @@ public class FileDriver extends AbstractDriver {
 
 		LayerInfo info = getFileStates().getLayerInfo(layer);
 
-		return info==null ? NO_INDEX : info.getSize();
+		return info==null ? UNSET_LONG : info.getSize();
 	}
 
 	public BufferedItemManager.LayerBuffer getLayerBuffer(ItemLayer layer) {
@@ -401,7 +411,7 @@ public class FileDriver extends AbstractDriver {
 			long layerSize = getItemCount(itemLayerManifest);
 
 			// Restrict capacity to 100 millions for now
-			if(layerSize!=NO_INDEX) {
+			if(layerSize>0) {
 				int capacity = (int)Math.min(100_000_000, layerSize);
 				builder.addBuffer(itemLayerManifest, capacity);
 			} else {
@@ -456,6 +466,20 @@ public class FileDriver extends AbstractDriver {
 		return getLayerBuffer(layer).fetch(index);
 	}
 
+	private List<PreparationStep> computeStepList() {
+
+		// Fetch customized steps to be performed next
+		Graph<PreparationStep> stepGraph = Graph.genericGraphFromCollection(PreparationStep.class,
+				getPreparationSteps(), PreparationStep::getPreconditions, Graph.acceptAll());
+
+		LazyCollection<PreparationStep> result = LazyCollection.lazyList();
+
+		// Post-order traversal makes sure each step is added AFTER its precondictions
+		stepGraph.walkTree(TraversalPolicy.POST_ORDER, stepGraph.getRoots(), result);
+
+		return result.getAsList();
+	}
+
 	/**
 	 * This implementation initializes the internal {@link FileDataStates} storage
 	 * before calling the super method.
@@ -478,9 +502,9 @@ public class FileDriver extends AbstractDriver {
 			// Creates context and mappings
 			super.doConnect();
 
-			// Fetch customized steps to be performed next
-			//FIXME move this over to a DAG style execution order making sure of the getPreconditions() result of each step
-			final PreparationStep[] steps = getPreparationSteps();
+			final List<PreparationStep> steps = computeStepList();
+			final int stepCount = steps.size();
+
 			ReportBuilder<ReportItem> reportBuilder = ReportBuilder.newBuilder(getManifest());
 			reportBuilder.addInfo("Connecting to corpus");
 
@@ -490,11 +514,14 @@ public class FileDriver extends AbstractDriver {
 			Options env = new Options();
 			//TODO maybe fill this with internal information not directly accessible via public instance methods
 
-			for(int i=0; i<steps.length; i++) {
+			for(int i=0; i<stepCount; i++) {
 
 				checkInterrupted();
 
-				PreparationStep step = steps[i];
+				PreparationStep step = steps.get(i);
+
+				log.info("Performing preparation step {} of {}: {}",
+						_int(i+1), _int(stepCount), step.name());
 
 				boolean valid = true;
 
@@ -504,10 +531,10 @@ public class FileDriver extends AbstractDriver {
 					// Redundant error handling: Collect error for report AND send directly to logger
 					reportBuilder.addError(ModelErrorCode.DRIVER_ERROR,
 							"Preparation step {} of {} failed: {} - {}",
-							_int(i+1), _int(steps.length), step.name(), e);
+							_int(i+1), _int(stepCount), step.name(), e);
 
 					log.error("Preparation step {} of {} failed: {}",
-							_int(i+1), _int(steps.length), step.name(), e);
+							_int(i+1), _int(stepCount), step.name(), e);
 					valid = false;
 				}
 
@@ -561,8 +588,10 @@ public class FileDriver extends AbstractDriver {
 			throw new InterruptedException();
 	}
 
-	protected PreparationStep[] getPreparationSteps() {
-		return StandardPreparationSteps.values();
+	protected Set<PreparationStep> getPreparationSteps() {
+		Set<PreparationStep> result = new ReferenceOpenHashSet<>();
+		CollectionUtils.feedItems(result, StandardPreparationSteps.values());
+		return result;
 	}
 
 	/**
@@ -579,10 +608,26 @@ public class FileDriver extends AbstractDriver {
 
 		metadataRegistry.beginUpdate();
 		try {
+			// Mandatory delegation to super method before we attempt any cleanup work ourselves
 			super.doDisconnect();
 
-			//TODO shut down converter and persist current filestates in metadata registry
+			//TODO persist current file states in metadata registry
 
+			// Only attempt to close converter if we actually used it
+			if(converter.created()) {
+				@SuppressWarnings("resource")
+				Converter converter = getConverter();
+				try {
+					converter.close();
+				} catch (AccumulatingException e) {
+					log.error("Attempt to close converter failed", e);
+					for(int i=0; i<e.getExceptionCount(); i++) {
+						log.error("Internal converter error "+i, e.getExceptionAt(i));
+					}
+				}
+			}
+
+			// Shut down our storage
 			if(content!=null) {
 				try {
 					content.close();
@@ -615,7 +660,7 @@ public class FileDriver extends AbstractDriver {
 	 *
 	 * @see Arrays#binarySearch(long[], int, int, long)
 	 */
-	private int findFile(long index, ItemLayerManifest layer, int min, int max) {
+	private int findFileForIndex(long index, ItemLayerManifest layer, int min, int max) {
         int low = min;
         int high = max - 1;
 
@@ -648,7 +693,7 @@ public class FileDriver extends AbstractDriver {
 	 * @param fileIndex
 	 * @throws Exception
 	 */
-	public void scanFile(int fileIndex) throws IOException, InterruptedException {
+	public boolean scanFile(int fileIndex) throws IOException, InterruptedException {
 
 		/*
 		 *  Start by checking whether or not we should use a chunk index.
@@ -689,6 +734,10 @@ public class FileDriver extends AbstractDriver {
 		}
 
 		//TODO process report
+		System.out.println(report);
+		//DEBUG
+
+		return !report.hasErrors();
 	}
 
 	/**
@@ -710,7 +759,7 @@ public class FileDriver extends AbstractDriver {
 
 		// Query global settings for file size threshold
 		long fileSizeThreshold = getFileSizeThresholdForChunking();
-		if(fileSizeThreshold!=-1L) {
+		if(fileSizeThreshold!=UNSET_LONG) {
 			long totalSize = 0L;
 
 			ElementInfo globalInfo = getFileStates().getGlobalInfo();
@@ -743,10 +792,10 @@ public class FileDriver extends AbstractDriver {
 		String value = getCorpus().getManager().getProperty(key);
 
 		if(value==null || value.isEmpty()) {
-			return -1L;
+			return UNSET_LONG;
 		}
 
-		long threshold = -1L;
+		long threshold = UNSET_LONG;
 
 		try {
 			threshold = Long.parseLong(value);
@@ -756,7 +805,7 @@ public class FileDriver extends AbstractDriver {
 
 		// Collapse all "invalid" values into the same "ignore" value
 		if(threshold<=0) {
-			threshold = -1;
+			threshold = UNSET_LONG;
 		}
 
 		return threshold;
@@ -916,9 +965,9 @@ public class FileDriver extends AbstractDriver {
 		//  Size of block cache
 		//*******************************************
 		String cacheSizeKey = ChunkIndexKey.CACHE_SIZE.getKey(layerManifest);
-		int cacheSize = metadataRegistry.getIntValue(cacheSizeKey, -1);
+		int cacheSize = metadataRegistry.getIntValue(cacheSizeKey, UNSET_INT);
 
-		if(cacheSize==-1) {
+		if(cacheSize==UNSET_INT) {
 			// Fetch default value from global config
 			String key = FileDriverUtils.CACHE_SIZE_FOR_CHUNKING_PROPERTY;
 			String value = getCorpus().getManager().getProperty(key);
@@ -939,9 +988,9 @@ public class FileDriver extends AbstractDriver {
 		//  Size of blocks for buffering in 2^blockPower frames
 		//*******************************************
 		String blockPowerKey = ChunkIndexKey.BLOCK_POWER.getKey(layerManifest);
-		int blockPower = metadataRegistry.getIntValue(blockPowerKey, -1);
+		int blockPower = metadataRegistry.getIntValue(blockPowerKey, UNSET_INT);
 
-		if(blockPower==-1) {
+		if(blockPower==UNSET_INT) {
 			// Fetch default block power from global config
 			String key = FileDriverUtils.BLOCK_POWER_FOR_CHUNKING_PROPERTY;
 			String value = getCorpus().getManager().getProperty(key);
@@ -995,8 +1044,8 @@ public class FileDriver extends AbstractDriver {
 		Map lookup = (Map) converter.getPropertyValue(ConverterProperty.EXTIMATED_CHUNK_SIZES);
 		String key = groupManifest.getId();
 		Integer value = (Integer) lookup.get(key);
-		int converterEstimation = value!=null ? value.intValue() : -1;
-		if(converterEstimation!=-1) {
+		int converterEstimation = value!=null ? value.intValue() : UNSET_INT;
+		if(converterEstimation!=UNSET_INT) {
 			return converterEstimation;
 		}
 
@@ -1007,7 +1056,7 @@ public class FileDriver extends AbstractDriver {
 		// Check metadata
 		//TODO
 
-		return -1;
+		return UNSET_INT;
 	}
 
 	/**
@@ -1246,11 +1295,11 @@ public class FileDriver extends AbstractDriver {
 
 				// Find first and last file to contain the indices
 
-				int firstFile = findFile(minIndex, layer.getManifest(), 0, fileCount);
+				int firstFile = findFileForIndex(minIndex, layer.getManifest(), 0, fileCount);
 				if(firstFile<0)
 					throw new ModelException(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 							"Could not find file index for item index "+minIndex+" in layer "+ModelUtils.getUniqueId(layer));
-				int lastFile = findFile(maxIndex, layer.getManifest(), firstFile, fileCount);
+				int lastFile = findFileForIndex(maxIndex, layer.getManifest(), firstFile, fileCount);
 				if(lastFile<0)
 					throw new ModelException(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 							"Could not find file index for item index "+maxIndex+" in layer "+ModelUtils.getUniqueId(layer));
@@ -1447,7 +1496,7 @@ public class FileDriver extends AbstractDriver {
 
 			boolean contentIsValid = loadResult.chunkCount(ChunkState.CORRUPTED)==0L;
 
-			if(expectedItemCount!=-1L && loadResult.loadedChunkCount()!=expectedItemCount) {
+			if(expectedItemCount!=UNSET_LONG && loadResult.loadedChunkCount()!=expectedItemCount) {
 				contentIsValid = false;
 			}
 
@@ -1698,6 +1747,9 @@ public class FileDriver extends AbstractDriver {
 		/**
 		 * Name of a {@link Charset} specifying the character encoding of the files
 		 * containing the data for this driver.
+		 * <p>
+		 * Note that if no encoding is specified the driver will use the default
+		 * {@link StandardCharsets#UTF_8 UTF-8} encoding.
 		 */
 		ENCODING("encoding", ValueType.STRING),
 

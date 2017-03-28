@@ -18,9 +18,9 @@
  */
 package de.ims.icarus2.util.mem;
 
-import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
-
 import java.util.Set;
+
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
  * @author Markus Gärtner

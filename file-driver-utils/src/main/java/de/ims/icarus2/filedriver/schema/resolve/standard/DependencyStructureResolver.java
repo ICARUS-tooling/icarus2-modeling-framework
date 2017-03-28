@@ -166,7 +166,7 @@ public class DependencyStructureResolver implements BatchResolver, ResolverOptio
 						"Illegal 'head' value for dependency: "+data+" (resulting in head index "+head+")");
 		}
 
-		Edge edge = structureBuilder.newEdge(NO_INDEX);
+		Edge edge = structureBuilder.newEdge(UNSET_LONG);
 		edge.setTarget(context.currentItem());
 
 		saveHeadInfo(IcarusUtils.ensureIntegerValueRange(context.currentIndex()), edge, head);

@@ -64,7 +64,13 @@ public interface Context extends ManifestOwner<ContextManifest>, Connectible<Dri
 	 * Returns all the layer groups defined in this context
 	 * @return
 	 */
-	List<LayerGroup> getLayerGroups();
+	default List<LayerGroup> getLayerGroups() {
+		LazyCollection<LayerGroup> result = LazyCollection.lazyList();
+		forEachLayerGroup(result);
+		return result.getAsList();
+	}
+
+	void forEachLayerGroup(Consumer<? super LayerGroup> action);
 
 	@Override
 	ContextManifest getManifest();

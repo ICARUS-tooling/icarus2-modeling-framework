@@ -45,6 +45,26 @@ public interface DriverListener {
 	void chunksLoaded(ItemLayer layer, ChunkInfo info);
 
 	/**
+	 * Callback to broadcast the imminent removal of data chunks from a driver's
+	 * internal cache.
+	 * Note that this method will only be called for top-level members!
+	 * A driver instance will fire this event as result to a call to
+	 * its {@link Driver#release(de.ims.icarus2.model.api.driver.indices.IndexSet[], ItemLayer)}
+	 * method when the use counter for at least {@code 1} item reached {@code 0}.
+	 * Note that by the time this method is called the driver is <b>not</b> required
+	 * to still provide access to the items contained in the {@code info} argument.
+	 * The sole purpose of this method is to give other components that rely on a driver's
+	 * content (for example foreign drivers that add annotations to it) get notified
+	 * and have the chance to clean up their own data to stay "synchronized".
+	 *
+	 * @param layer the layer for which data chunks will be removed (typically
+	 * the primary layer of a {@code LayerGroup})
+	 * @param info the collection of data chunks in the form of {@code Item} instances
+	 * that are about to be removed
+	 */
+	void chunksReleased(ItemLayer layer, ChunkInfo info);
+
+	/**
 	 * Signals that a certain set data chunks could not be loaded. The reason is typically
 	 * one of the following:
 	 * <ol>

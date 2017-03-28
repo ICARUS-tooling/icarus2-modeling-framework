@@ -45,8 +45,8 @@ import de.ims.icarus2.util.collections.set.DataSet;
  *
  */
 public class SpanItemStorage implements ItemStorage {
-	protected long beginIndex = NO_INDEX;
-	protected long endIndex = NO_INDEX;
+	protected long beginIndex = UNSET_LONG;
+	protected long endIndex = UNSET_LONG;
 
 	public SpanItemStorage() {
 		// no-op
@@ -83,18 +83,18 @@ public class SpanItemStorage implements ItemStorage {
 	}
 
 	protected boolean isEmpty() {
-		return beginIndex==NO_INDEX || endIndex==NO_INDEX;
+		return beginIndex==UNSET_LONG || endIndex==UNSET_LONG;
 	}
 
 	protected long beginIndex() {
-		if(beginIndex==NO_INDEX)
+		if(beginIndex==UNSET_LONG)
 			throw new ModelException(GlobalErrorCode.MISSING_DATA, "Begin index not set");
 
 		return beginIndex;
 	}
 
 	protected long endIndex() {
-		if(endIndex==NO_INDEX)
+		if(endIndex==UNSET_LONG)
 			throw new ModelException(GlobalErrorCode.MISSING_DATA, "End index not set");
 
 		return endIndex;
@@ -144,7 +144,7 @@ public class SpanItemStorage implements ItemStorage {
 	public long indexOfItem(Container context, Item item) {
 
 		if(isEmpty()) {
-			return NO_INDEX;
+			return UNSET_LONG;
 		}
 
 		long targetIndex = target(context).indexOfItem(item);
@@ -154,7 +154,7 @@ public class SpanItemStorage implements ItemStorage {
 			// Translate index (beginIndex is definitely set here)
 			targetIndex -= beginIndex;
 		} else {
-			targetIndex = NO_INDEX;
+			targetIndex = UNSET_LONG;
 		}
 
 		return targetIndex;
@@ -178,7 +178,7 @@ public class SpanItemStorage implements ItemStorage {
 		if(isEmpty()) {
 			beginIndex = endIndex = target.indexOfItem(item);
 
-			if(beginIndex==NO_INDEX)
+			if(beginIndex==UNSET_LONG)
 				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
 						Messages.foreignItemMessage(null, target, item));
 		} else {
@@ -214,7 +214,7 @@ public class SpanItemStorage implements ItemStorage {
 
 		long size = getItemCount(context);
 		// Begin and end of the span expressed in the target containers space
-		long index0 = NO_INDEX, index1 = NO_INDEX;
+		long index0 = UNSET_LONG, index1 = UNSET_LONG;
 
 		if(index!=0L && index!=size)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
@@ -249,7 +249,7 @@ public class SpanItemStorage implements ItemStorage {
 				// Potentially costly invocation
 				long targetindex = target.indexOfItem(item);
 
-				if(targetindex==NO_INDEX)
+				if(targetindex==UNSET_LONG)
 					throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
 							Messages.foreignItemMessage(null, target, item));
 
@@ -299,7 +299,7 @@ public class SpanItemStorage implements ItemStorage {
 
 		// Mark empty if required
 		if(beginIndex>endIndex) {
-			beginIndex = endIndex = NO_INDEX;
+			beginIndex = endIndex = UNSET_LONG;
 		}
 
 		return item;
@@ -333,7 +333,7 @@ public class SpanItemStorage implements ItemStorage {
 
 		// Mark empty if required
 		if(beginIndex>endIndex) {
-			beginIndex = endIndex = NO_INDEX;
+			beginIndex = endIndex = UNSET_LONG;
 		}
 
 		return sequence;
@@ -390,7 +390,7 @@ public class SpanItemStorage implements ItemStorage {
 	 */
 	@Override
 	public void recycle() {
-		beginIndex = endIndex = NO_INDEX;
+		beginIndex = endIndex = UNSET_LONG;
 	}
 
 	/**

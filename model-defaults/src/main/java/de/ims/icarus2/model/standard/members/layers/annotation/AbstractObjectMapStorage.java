@@ -18,14 +18,13 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.function.Supplier;
 
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.item.Item;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner

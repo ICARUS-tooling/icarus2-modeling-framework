@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.util.Part;
+import de.ims.icarus2.util.collections.LazyCollection;
 
 /**
  * Groups several layers, so that they are guaranteed to be loaded together.
@@ -50,7 +51,13 @@ public interface LayerGroup extends Part<Context> {
 
 	ItemLayer getPrimaryLayer();
 
-	Set<Dependency<LayerGroup>> getDependencies();
+	default Set<Dependency<LayerGroup>> getDependencies() {
+		LazyCollection<Dependency<LayerGroup>> result = LazyCollection.lazySet();
+		forEachDependency(result);
+		return result.getAsSet();
+	}
+
+	void forEachDependency(Consumer<? super Dependency<LayerGroup>> action);
 
 	void forEachLayer(Consumer<? super Layer> action);
 }

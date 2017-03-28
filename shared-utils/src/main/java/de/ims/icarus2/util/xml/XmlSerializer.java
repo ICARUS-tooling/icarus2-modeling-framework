@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.util.xml;
 
-
+import de.ims.icarus2.util.strings.StringResource;
 
 /**
  * @author Markus Gärtner
@@ -53,6 +53,12 @@ public interface XmlSerializer {
 	 * does nothing.
 	 */
 	void writeAttribute(String name, String value) throws Exception;
+
+	default void writeAttribute(String name, StringResource value) throws Exception {
+		if(value!=null) {
+			writeAttribute(name, value.getStringValue());
+		}
+	}
 
 	// PRIMITIVE ATTRIBUTES
 	void writeAttribute(String name, int value) throws Exception;

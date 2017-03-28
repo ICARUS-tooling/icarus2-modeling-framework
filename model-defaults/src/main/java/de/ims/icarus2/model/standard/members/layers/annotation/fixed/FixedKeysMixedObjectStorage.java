@@ -36,7 +36,7 @@ import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.MutablePrimitives.MutablePrimitive;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
-import de.ims.icarus2.util.classes.ClassUtils;
+import de.ims.icarus2.util.classes.Primitives;
 
 /**
  * @author Markus Gärtner
@@ -221,7 +221,7 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 		 * will be treated as 'null'.
 		 */
 		if(value!=null && isPrimitive(index) && !isPrimitiveWrapper(value)) {
-			if(ClassUtils.isPrimitiveWrapperClass(value.getClass())) {
+			if(Primitives.isPrimitiveWrapperClass(value.getClass())) {
 				MutablePrimitive<?> wrapper = (MutablePrimitive<?>) buffer[index];
 
 				if(wrapper==null) {

@@ -98,7 +98,7 @@ public abstract class MappingRequest implements Callable<IndexSet[]>, ModelConst
 		public SingleValueRequest(MappingReader reader, RequestSettings settings, long index) {
 			super(reader, settings);
 
-			checkArgument("Lookup index must be greater than -1", index>NO_INDEX);
+			checkArgument("Lookup index must be greater than -1", index>UNSET_LONG);
 
 			this.index = index;
 		}

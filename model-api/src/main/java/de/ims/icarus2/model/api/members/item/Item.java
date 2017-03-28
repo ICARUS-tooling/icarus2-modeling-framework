@@ -64,7 +64,7 @@ import de.ims.icarus2.util.access.AccessRestriction;
  * <p>
  * An item can optionally provide information about its location in a corpus via the
  * {@link #getBeginOffset() beginOffset} and {@link #getEndOffset() endOffset} values.
- * If returning values other than {@link ModelConstants#NO_INDEX -1} those offsets are
+ * If returning values other than {@link ModelConstants#UNSET_LONG -1} those offsets are
  * expected to define a span in some foundation layer covered by this item. This allows
  * for positional comparison of items originating from different layers as long as they all
  * refer to the same foundation layer. In case at least one of the two aforementioned methods
@@ -178,7 +178,7 @@ public interface Item extends CorpusMember, ModelConstants {
 	 * <p>
 	 * All <i>real</i> items are required to return a non-negative index value unless they
 	 * are marked as {@link #isDirty() dirty} by their managing driver. The only items allowed
-	 * to constantly return {@link ModelConstants#NO_INDEX -1} as index are the {@link Layer#getItemProxy() proxy} items
+	 * to constantly return {@link ModelConstants#UNSET_LONG -1} as index are the {@link Layer#getItemProxy() proxy} items
 	 * assigned to every {@link Layer} and virtual {@link Structure#getVirtualRoot() root} nodes in {@link Structure structures}.
 	 *
 	 * @return
@@ -242,6 +242,20 @@ public interface Item extends CorpusMember, ModelConstants {
 		return getIndex();
 	}
 
+	default long getSpan() {
+		long begin = getBeginOffset();
+		if(begin==UNSET_LONG) {
+			return UNSET_LONG;
+		}
+
+		long end = getEndOffset();
+		if(end==UNSET_LONG) {
+			return UNSET_LONG;
+		}
+
+		return end-begin+1;
+	}
+
 	// Flags
 
 	/**
@@ -283,7 +297,7 @@ public interface Item extends CorpusMember, ModelConstants {
 	 * @return
 	 */
 	default boolean isVirtual() {
-		return getBeginOffset()==NO_INDEX || getEndOffset()==NO_INDEX;
+		return getBeginOffset()==UNSET_LONG || getEndOffset()==UNSET_LONG;
 	}
 
 	/**

@@ -17,9 +17,13 @@
  */
 package de.ims.icarus2;
 
+import static de.ims.icarus2.util.strings.StringUtil.getName;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
+
+import de.ims.icarus2.util.classes.ClassUtils;
+import de.ims.icarus2.util.classes.ClassUtils.Trace;
 
 /**
  * @author Markus Gärtner
@@ -76,6 +80,58 @@ public class TestUtils {
         }
 
         fail(formatted+"expected hash different to "+hash+" for two inequal objects"); //$NON-NLS-1$ //$NON-NLS-2$
+	}
+
+	public static void assertDeepEqual(String msg, Object expected, Object actual, String serializedForm) throws IllegalAccessException {
+
+		// Collect all the differences
+		Trace trace = ClassUtils.deepDiff(expected, actual);
+
+		if(trace.hasMessages()) {
+			failForTrace(msg, trace, expected, serializedForm);
+		}
+	}
+
+	public static void assertDeepNotEqual(String msg, Object expected, Object actual) throws IllegalAccessException {
+
+		// Collect all the differences
+		Trace trace = ClassUtils.deepDiff(expected, actual);
+
+		if(!trace.hasMessages()) {
+			failForEqual(msg, expected, actual);
+		}
+	}
+
+	private static String getId(Object obj) {
+		String id = getName(obj);
+
+		if(id==null) {
+			id = obj.getClass()+"@<unnamed>"; //$NON-NLS-1$
+		}
+		return id;
+	}
+
+
+	private static void failForEqual(String msg, Object original, Object created) {
+		String message = "Expected result of deserialization to be different from original"; //$NON-NLS-1$
+		if(msg!=null) {
+			message = msg+": "+message; //$NON-NLS-1$
+		}
+		fail(message);
+	}
+
+	private static void failForTrace(String msg, Trace trace, Object obj, String xml) {
+		String message = getId(obj);
+
+		message += " result of deserialization is different from original: \n"; //$NON-NLS-1$
+		message += trace.getMessages();
+		message += " {serialized form: "+xml.replaceAll("\\s{2,}", "")+"}"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+
+		if(msg!=null) {
+			message = msg+": "+message; //$NON-NLS-1$
+		}
+
+		fail(message);
 	}
 
 	private static class Dummy {

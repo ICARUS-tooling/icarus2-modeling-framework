@@ -18,6 +18,7 @@
 package de.ims.icarus2.model.api.edit.io;
 
 import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
@@ -48,7 +49,7 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
  * @author Markus Gärtner
  *
  */
-public class SerializableAtomicChangeImpl {
+public class SerializableAtomicModelChange {
 
 	protected static void checkExpectedSize(String msg, long size, long expected) {
 		if(size!=expected)
@@ -1123,7 +1124,7 @@ public class SerializableAtomicChangeImpl {
 		case TERMINAL_CHANGE: return new TerminalChange(proxy);
 		case VALUE_CHANGE: {
 			ValueType valueType = proxy.getValueType();
-			switch (valueType.getStringValue()) {
+			switch (valueType.getStringValue().toLowerCase()) {
 
 			// For "primitive" annotations use the specialized change implementations
 			case ValueType.INTEGER_TYPE_LABEL: return new IntegerValueChange(proxy);
@@ -1139,7 +1140,7 @@ public class SerializableAtomicChangeImpl {
 		}
 
 		default:
-			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Unrecognized change type: "+proxy.type);
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Unrecognized change type: "+proxy.getType());
 		}
 	}
 }

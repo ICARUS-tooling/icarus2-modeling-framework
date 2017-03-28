@@ -66,7 +66,7 @@ public interface ItemLayerManager extends ModelConstants {
 	 * @throws ModelException
 	 */
 	default long getItemCount(ItemLayer layer) {
-		return NO_INDEX;
+		return UNSET_LONG;
 	}
 
 	/**
@@ -112,7 +112,7 @@ public interface ItemLayerManager extends ModelConstants {
 	}
 
 	/**
-	 * Called when data provided by this implementation is no longer required.
+	 * Called when data provided by this manager is no longer required.
 	 * <p>
 	 * When dynamically loading and releasing data, an implementation should keep track of
 	 * the number of times a top level item in its managed layers (or one of its groups) is

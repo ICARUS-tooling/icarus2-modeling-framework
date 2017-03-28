@@ -17,11 +17,12 @@
  */
 package de.ims.icarus2.filedriver.schema.resolve.standard;
 
-import static de.ims.icarus2.util.classes.ClassUtils._boolean;
-import static de.ims.icarus2.util.classes.ClassUtils._double;
-import static de.ims.icarus2.util.classes.ClassUtils._float;
-import static de.ims.icarus2.util.classes.ClassUtils._int;
-import static de.ims.icarus2.util.classes.ClassUtils._long;
+import static de.ims.icarus2.util.classes.Primitives._boolean;
+import static de.ims.icarus2.util.classes.Primitives._double;
+import static de.ims.icarus2.util.classes.Primitives._float;
+import static de.ims.icarus2.util.classes.Primitives._int;
+import static de.ims.icarus2.util.classes.Primitives._long;
+
 import de.ims.icarus2.filedriver.schema.resolve.Resolver;
 import de.ims.icarus2.filedriver.schema.resolve.ResolverContext;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
@@ -184,7 +185,7 @@ public abstract class BasicAnnotationResolver<E extends Object> implements Resol
 		 */
 		@Override
 		public Item process(ResolverContext context) {
-			// Bypassing ValueTyoe.INTEGER.parse() method to prevent boxing!
+			// Bypassing ValueType.INTEGER.parse() method to prevent boxing!
 			final int value = StringPrimitives.parseInt(context.rawData());
 
 			if(verifier!=null) {
@@ -222,7 +223,7 @@ public abstract class BasicAnnotationResolver<E extends Object> implements Resol
 		 */
 		@Override
 		public Item process(ResolverContext context) {
-			// Bypassing ValueTyoe.LONG.parse() method to prevent boxing!
+			// Bypassing ValueType.LONG.parse() method to prevent boxing!
 			final long value = StringPrimitives.parseLong(context.rawData());
 
 			if(verifier!=null) {
@@ -260,7 +261,7 @@ public abstract class BasicAnnotationResolver<E extends Object> implements Resol
 		 */
 		@Override
 		public Item process(ResolverContext context) {
-			// Bypassing ValueTyoe.FLOAT.parse() method to prevent boxing!
+			// Bypassing ValueType.FLOAT.parse() method to prevent boxing!
 			final float value = StringPrimitives.parseFloat(context.rawData());
 
 			if(verifier!=null) {
@@ -298,7 +299,7 @@ public abstract class BasicAnnotationResolver<E extends Object> implements Resol
 		 */
 		@Override
 		public Item process(ResolverContext context) {
-			// Bypassing ValueTyoe.DOUBLE.parse() method to prevent boxing!
+			// Bypassing ValueType.DOUBLE.parse() method to prevent boxing!
 			final double value = StringPrimitives.parseDouble(context.rawData());
 
 			if(verifier!=null) {
@@ -334,7 +335,7 @@ public abstract class BasicAnnotationResolver<E extends Object> implements Resol
 		 */
 		@Override
 		public Item process(ResolverContext context) {
-			// Bypassing ValueTyoe.BOOLEAN.parse() method to prevent boxing!
+			// Bypassing ValueType.BOOLEAN.parse() method to prevent boxing!
 			boolean value = StringPrimitives.parseBoolean(context.rawData());
 
 			if(isPrimitiveConsumer) {

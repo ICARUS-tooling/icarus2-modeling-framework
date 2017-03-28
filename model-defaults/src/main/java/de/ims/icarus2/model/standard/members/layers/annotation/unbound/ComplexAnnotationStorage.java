@@ -31,6 +31,7 @@ import de.ims.icarus2.util.MutablePrimitives.GenericTypeAwareMutablePrimitive;
 import de.ims.icarus2.util.MutablePrimitives.MutablePrimitive;
 import de.ims.icarus2.util.Wrapper;
 import de.ims.icarus2.util.classes.ClassUtils;
+import de.ims.icarus2.util.classes.Primitives;
 
 /**
  * @author Markus Gärtner
@@ -120,7 +121,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		} else {
 			AnnotationBundle bundle = getBuffer(item, true);
 
-			if(ClassUtils.isPrimitiveWrapperClass(value.getClass())) {
+			if(Primitives.isPrimitiveWrapperClass(value.getClass())) {
 				// Will fail with ClassCastException in case previous mappings didn't use primitives!
 				MutablePrimitive<?> current = bundle.getValue(key, DEFAULT_STORAGE_FACTORY);
 				// Let storage implementation handle primitive conversion

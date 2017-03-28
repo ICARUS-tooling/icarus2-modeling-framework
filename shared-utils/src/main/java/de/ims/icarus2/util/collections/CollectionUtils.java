@@ -20,8 +20,6 @@
  */
 package de.ims.icarus2.util.collections;
 
-import it.unimi.dsi.fastutil.longs.LongCollection;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -47,11 +45,13 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import com.google.common.collect.MapMaker;
 
 import de.ims.icarus2.util.Filter;
+import it.unimi.dsi.fastutil.longs.LongCollection;
 
 /**
  * @author Markus Gärtner
@@ -260,6 +260,18 @@ public final class CollectionUtils {
 	}
 
 	public static <T extends Object> void feedItems(
+			Collection<T> collection, T[] items, Predicate<? super T> filter) {
+		if(items==null || items.length==0) {
+			return;
+		}
+		for(T item : items) {
+    		if(filter.test(item)) {
+    			collection.add(item);
+    		}
+		}
+	}
+
+	public static <T extends Object> void feedItems(
 			Collection<T> collection, T[] items, int offset, int length) {
 		if(items==null || items.length==0) {
 			return;
@@ -273,6 +285,23 @@ public final class CollectionUtils {
     	T item;
     	while((item=source.get())!=null) {
     		collection.add(item);
+    	}
+    }
+
+    public static <T extends Object> void feedItems(Collection<T> collection, Collection<? extends T> source, Predicate<? super T> filter) {
+    	for(T item : source) {
+    		if(filter.test(item)) {
+    			collection.add(item);
+    		}
+    	}
+    }
+
+    public static <T extends Object> void feedItems(Collection<T> collection, Supplier<? extends T> source, Predicate<? super T> filter) {
+    	T item;
+    	while((item=source.get())!=null) {
+    		if(filter.test(item)) {
+    			collection.add(item);
+    		}
     	}
     }
 

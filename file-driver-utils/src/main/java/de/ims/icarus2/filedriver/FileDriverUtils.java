@@ -169,11 +169,11 @@ public class FileDriverUtils {
 	}
 
 	public static Integer toInteger(int value) {
-		return value==ModelConstants.NO_INDEX_INT ? null : Integer.valueOf(value);
+		return value==ModelConstants.UNSET_INT ? null : Integer.valueOf(value);
 	}
 
 	public static Long toLong(long value) {
-		return value==ModelConstants.NO_INDEX ? null : Long.valueOf(value);
+		return value==ModelConstants.UNSET_LONG ? null : Long.valueOf(value);
 	}
 
 	public static IndexValueType toValueType(String s) {

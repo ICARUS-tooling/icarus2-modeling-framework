@@ -16,13 +16,13 @@
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  *
  */
-package de.ims.icarus2.model.api.view;
+package de.ims.icarus2.util;
 
 /**
  * @author Markus Gärtner
  *
  */
-public enum CorpusAccessMode {
+public enum AccessMode {
 
 	READ(true, false),
 	WRITE(false, true),
@@ -31,7 +31,7 @@ public enum CorpusAccessMode {
 
 	private final boolean read, write;
 
-	private CorpusAccessMode(boolean read, boolean write) {
+	private AccessMode(boolean read, boolean write) {
 		this.read = read;
 		this.write = write;
 	}
