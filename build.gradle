@@ -1,12 +1,15 @@
-subprojects {
+allprojects {
   	apply plugin: 'java'
 	apply plugin: 'eclipse'
 	
   	sourceCompatibility = 1.8
   	targetCompatibility = 1.8
-  	
+	
   	group = 'icarus2'
   	version = '1.0'
+}
+
+subprojects {
   	
   	tasks.withType(JavaCompile) {
   		options.encoding = 'UTF-8'
@@ -30,6 +33,6 @@ subprojects {
   	tasks.withType(JavaCompile) {
   		options.encoding = "UTF-8"
     	options.fork = true
-    	//options.forkOptions.executable = "C:/Program Files/Java/jdk1.8.0_31/bin/javac"
+    	options.forkOptions.executable = "C:/Program Files/Java/jdk1.8.0_31/bin/javac"
 	}
 }
