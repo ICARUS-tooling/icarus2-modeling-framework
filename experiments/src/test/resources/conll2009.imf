@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates>
+	<context id="conll09" name="CoNLL 2009" baseLayer="sentence" foundationLayer="token">
+		<layerGroup primaryLayer="sentence">			
+			<itemLayer id="token" layerType="item:tokens" />	
+			<itemLayer id="sentence" layerType="item:sentence">
+				<baseLayer layerId="token"/>
+				<container containerType="span"/>
+			</itemLayer>
+			<annotation-layer id="gold-surface" defaultKey="form">	
+				<baseLayer layerId="token"/>
+				<annotation key="id" name="Word Id"/>
+				<annotation key="form" name="Word Form"/>
+				<annotation key="lemma" name="Word Lemma"/>
+				<annotation key="pos" name="Part-Of-Speech" templateId="tagset:STTS"/>
+			</annotation-layer>			
+			<annotation-layer id="gold-features" >
+				<annotationFlag>unknown-keys</annotationFlag>	
+				<baseLayer layerId="token"/>
+			</annotation-layer>					
+			<structureLayer id="gold-parse" layerType="struct:dependency">
+				<base-layer layerId="token"/>
+				<boundary-layer layerId="sentence"/>
+				<structure structureType="tree" />
+			</structureLayer>			
+			<annotationLayer id="gold-dependency-relation">
+				<baseLayer layerId="gold-parse"/>
+				<annotationFlag>edge-annotation</annotationFlag>
+				<annotation key="deprel" name="Dependency Relation"/>
+			</annotationLayer>
+			<!-- "predicted" part skipped due to space limitation -->
+		</layerGroup>
+	</context>
+</templates>

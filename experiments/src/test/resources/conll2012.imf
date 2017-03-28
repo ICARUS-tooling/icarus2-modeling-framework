@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates>
+	<context id="conll12" independent="true" name="CoNLL 2012" primary-layer="document" base-layer="token">
+		<layer-group id="sentence_group" independent="true" primary-layer="document">
+			
+			<!-- SURFACE PART -->
+			
+			<item-layer id="token" layer-type="item:tokens" />	
+			
+			<annotation-layer id="form" layer-type="anno:form" default-key="form">	
+				<base-layer layer-id="token"/>
+				<annotation key="form" name="Word Form"/>
+				<annotation key="pos" name="Part-Of-Speech" template-id="tagset:STTS"/>
+				<annotation key="sense" name="Word Sense"/>
+				<annotation key="speaker" name="Current Speaker"/>
+				<annotation key="partNumber" name="Part number" value-type="integer"/>
+			</annotation-layer>
+			
+			<!-- PHRASE PART -->	
+				
+			<structure-layer id="parse" layer-type="struct:phrase">
+				<base-layer layer-id="token"/>
+				<boundary-layer layer-id="sentence"/>
+				<container container-type="list"/>
+				<structure structure-type="tree" />
+			</structure-layer>
+			
+			<annotation-layer id="parse-bit" deep-annotation="true" default-key="parse">
+				<base-layer layer-id="parse"/>
+				<annotation key="parse" name="Parse Bit"/>
+			</annotation-layer>
+			
+			<!-- MENTIONS PART -->
+				
+			<item-layer id="named-entities" layer-type="item:entities">
+				<base-layer layer-id="token"/>
+				<boundary-layer layer-id="sentence"/>
+				<container container-type="list"/>
+				<container container-type="span"/>
+			</item-layer>
+				
+			<item-layer id="mention" layer-type="item:mentions">
+				<base-layer layer-id="token"/>
+				<boundary-layer layer-id="sentence"/>
+				<container container-type="list"/>
+				<container container-type="span"/>
+			</item-layer>	
+			
+			<annotation-layer id="cluster-id" layer-type="anno:id" default-key="cluster-id">	
+				<base-layer layer-id="mention"/>
+				<annotation key="cluster-id" name="Cluster ID"/>
+			</annotation-layer>	
+		</layer-group>
+			
+		<layer-group id="document_group" independent="false" primary-layer="document">
+			
+			<!-- DOCUMENT PART -->	
+			
+			<item-layer id="document" layer-type="item:documents">
+				<base-layer layer-id="sentence"/>
+				<container container-type="list"/>
+				<container container-type="span"/>
+			</item-layer>
+			
+			<annotation-layer id="document-id">	
+				<base-layer layer-id="document"/>
+				<annotation key="documentId" name="Document ID" default="true"/>
+			</annotation-layer>	
+			
+			<!-- COREFERENCE PART -->	
+				
+			<!-- no cluster layer, since each cluster is explicitly defined via the coreference structure spanning it -->
+		
+			<structure-layer id="coref" layer-type="struct:coreference">
+				<base-layer layer-id="mention"/>
+				<boundary-layer layer-id="document"/>
+				<container container-type="list"/>
+				<structure structure-type="chain" />
+			</structure-layer>
+		</layer-group>
+		
+		<driver template-id="file-driver">
+			
+			<module id="connector" module-spec-id="file.connector">
+				<implementation class="...CONLL12Connector" />
+			</module>
+			
+			<mapping source-layer="sentence" target-layer="token" relation="one-to-many" coverage="total-monotonic" include-reverse="true" />
+			<mapping source-layer="parse" target-layer="sentence" relation="one-to-one" coverage="total-monotonic" include-reverse="true" />
+			<mapping source-layer="mention" target-layer="token" relation="many-to-many" coverage="partial" include-reverse="true" />
+			<mapping source-layer="mention" target-layer="sentence" relation="many-to-one" coverage="partial" include-reverse="true" />
+			
+			<mapping source-layer="document" target-layer="sentence" relation="one-to-many" coverage="total-monotonic" include-reverse="true" />
+			<mapping source-layer="coref" target-layer="mention" relation="one-to-many" coverage="total" include-reverse="true" />
+			<mapping source-layer="coref" target-layer="document" relation="one-to-one" coverage="total-monotonic" include-reverse="true" />
+		</driver>
+	</context>
+	
+	<context id="imsCoref" independent="false" name="IMS Coref Allocation">
+		<prerequisites>
+			<prerequisite type-id="item:tokens" alias="token"/>
+			<prerequisite type-id="item:sentences" alias="sentence"/>
+			<prerequisite type-id="item:documents" alias="document"/>
+		</prerequisites>
+		
+		<layer-group id="root" independent="true" primary-layer="coref">
+			<item-layer id="mention" layer-type="item:mentions">
+				<base-layer layer-id="token"/>
+				<boundary-layer layer-id="sentence"/>
+				<container container-type="list"/>
+				<container container-type="span"/>
+			</item-layer>	
+			
+			<structure-layer id="coref" layer-type="struct:coreference">
+				<base-layer layer-id="mention"/>
+				<boundary-layer layer-id="document"/>
+				<container container-type="list"/>
+				<structure structure-type="tree" />
+			</structure-layer>
+		
+			<annotation-layer id="node-properties" layer-type="anno:properties" unknown-keys="true" name="Node Properties">
+				<base-layer layer-id="mention"/>
+				<annotation key="gender" name="Gender">
+					<values>
+						<value name="Feminine">Fem</value>
+						<value name="Masculine">Masc</value>
+						<value name="Neutral">Neut</value>
+						<value name="Unknown">Unknown</value>
+					</values>
+				</annotation>
+				<annotation key="head" name="Mention Head" value-type="integer">
+					<range>
+						<min>1</min>
+						<max>
+							<eval>
+								<variable name="container" namespace="de.ims.icarus2.model.api.members.container.Container"/>
+								<code><![CDATA[@container.getItemCount()]]></code>
+							</eval>
+						</max>
+					</range>
+				</annotation>
+				<annotation key="number" name="Number" value-type="string">
+					<values>
+						<value name="Singular">Sin</value>
+						<value name="Plural">Plu</value>
+						<value name="Unknown">Unknown</value>
+					</values>
+				</annotation>
+				<annotation key="type" name="Type" value-type="string">
+					<values>
+						<value>Common</value>
+						<value>Name</value>
+						<value>Pronoun</value>
+					</values>
+				</annotation>
+			</annotation-layer>
+			
+			<annotation-layer id="edge-properties" layer-type="anno:properties" unknown-keys="true" name="Edge Properties" type="string">
+				<base-layer layer-id="coref"/>
+				<annotation key="type" name="Type">
+					<values>
+						<value>IDENT</value>
+					</values>
+				</annotation>
+			</annotation-layer>
+		</layer-group>
+		
+		<driver template-id="file-driver">
+			
+			<module id="connector" module-spec-id="file.connector">
+				<implementation class="...IMSCorefConnector" />
+			</module>
+			
+			<mapping source-layer="mention" target-layer="token" relation="many-to-many" coverage="partial" include-reverse="true" />
+			<mapping source-layer="mention" target-layer="sentence" relation="many-to-one" coverage="partial" include-reverse="true" />
+			
+			<mapping source-layer="coref" target-layer="mention" relation="one-to-many" coverage="total" include-reverse="true" />
+			<mapping source-layer="coref" target-layer="document" relation="one-to-one" coverage="total-monotonic" include-reverse="true" />
+		</driver>
+	</context>
+</templates>
