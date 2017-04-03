@@ -17,7 +17,7 @@
  */
 package de.ims.icarus2.model.manifest.api.binding;
 
-import de.ims.icarus2.model.manifest.api.Multiplicity;
+import de.ims.icarus2.util.Multiplicity;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessRestriction;
 import de.ims.icarus2.util.classes.ClassUtils;

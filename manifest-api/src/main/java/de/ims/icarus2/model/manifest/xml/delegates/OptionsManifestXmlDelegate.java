@@ -147,7 +147,7 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 
 				if(extensionPointUid!=null) {
 					serializer.startElement(TAG_EXTENSION_POINT);
-					serializer.writeText(extensionPointUid);
+					serializer.writeTextOrCData(extensionPointUid);
 					serializer.endElement(TAG_EXTENSION_POINT);
 				}
 

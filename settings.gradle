@@ -1,3 +1,7 @@
+
+/*
+ * Basic project structure
+ */
 rootProject.name = 'core-tools'
 include 'manifest-api'
 include 'shared-utils'

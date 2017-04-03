@@ -28,13 +28,13 @@ import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec;
 import de.ims.icarus2.model.manifest.api.LocationType;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
-import de.ims.icarus2.model.manifest.api.Multiplicity;
 import de.ims.icarus2.model.manifest.standard.DocumentationImpl;
 import de.ims.icarus2.model.manifest.standard.DriverManifestImpl;
 import de.ims.icarus2.model.manifest.standard.DriverManifestImpl.ModuleManifestImpl;
 import de.ims.icarus2.model.manifest.standard.DriverManifestImpl.ModuleSpecImpl;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
+import de.ims.icarus2.util.Multiplicity;
 import de.ims.icarus2.util.xml.UnexpectedTagException;
 import de.ims.icarus2.util.xml.UnsupportedNestingException;
 import de.ims.icarus2.util.xml.XmlSerializer;
@@ -298,7 +298,7 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 
 			if(extensionPointUid!=null) {
 				serializer.startElement(TAG_EXTENSION_POINT);
-				serializer.writeText(extensionPointUid);
+				serializer.writeTextOrCData(extensionPointUid);
 				serializer.endElement(TAG_EXTENSION_POINT);
 			}
 

@@ -108,10 +108,10 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema>, TableSch
 		// ELEMENTS
 
 		// Description
-		writeElement(TAG_DESCRIPTION, schema.getDescription(), true);
+		writeElement(TAG_DESCRIPTION, schema.getDescription());
 
 		// Separator
-		writeElement(TAG_SEPARATOR, schema.getSeparator(), false);
+		writeElement(TAG_SEPARATOR, schema.getSeparator());
 
 		// Root block
 		writeBlockSchema(TAG_BLOCK, schema.getRootBlock());
@@ -142,7 +142,7 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema>, TableSch
 		// ELEMENTS
 
 		// Separator
-		writeElement(TAG_SEPARATOR, schema.getSeparator(), false);
+		writeElement(TAG_SEPARATOR, schema.getSeparator());
 
 		// Options
 		writeOptions(schema.getOptions());
@@ -199,7 +199,7 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema>, TableSch
 
 				serializer.startElement(TAG_OPTION);
 				serializer.writeAttribute(ATTR_NAME, key);
-				serializer.writeText(value);
+				serializer.writeTextOrCData(value);
 				serializer.endElement(TAG_OPTION);
 			}
 		}
@@ -236,7 +236,7 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema>, TableSch
 		// ELEMENTS
 
 		// Pattern
-		writeElement(TAG_PATTERN, schema.getPattern(), true);
+		writeElement(TAG_PATTERN, schema.getPattern());
 
 		// Resolver
 		writeResolverSchema(TAG_RESOLVER, schema.getResolver());
@@ -305,21 +305,17 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema>, TableSch
 			return;
 		}
 
-		serializer.startElement(TAG_SUBSTITUTE);
+		serializer.startEmptyElement(TAG_SUBSTITUTE);
 		serializer.writeAttribute(ATTR_TYPE, schema.getType());
 		serializer.writeAttribute(ATTR_NAME, schema.getName());
 		serializer.writeAttribute(ATTR_MEMBER_TYPE, schema.getMemberType());
 		serializer.endElement(TAG_SUBSTITUTE);
 	}
 
-	private void writeElement(String tag, String text, boolean cdata) throws XMLStreamException {
+	private void writeElement(String tag, String text) throws XMLStreamException {
 		if(text!=null) {
 			serializer.startElement(tag);
-			if(cdata) {
-				serializer.writeCData(text);
-			} else {
-				serializer.writeText(text);
-			}
+			serializer.writeTextOrCData(text);
 			serializer.endElement(tag);
 		}
 	}

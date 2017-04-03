@@ -157,7 +157,7 @@ public final class ManifestXmlUtils implements ManifestXmlAttributes, ManifestXm
 		if(value instanceof Expression) {
 			writeEvalElement(serializer, (Expression)value);
 		} else {
-			serializer.writeText(type.toChars(value));
+			serializer.writeTextOrCData(type.toChars(value));
 		}
 	}
 
@@ -195,7 +195,7 @@ public final class ManifestXmlUtils implements ManifestXmlAttributes, ManifestXm
 
 		serializer.startElement(TAG_RESOURCE);
 		ManifestXmlUtils.writeIdentityAttributes(serializer, resource);
-		serializer.writeText(resource.getUri().toString());
+		serializer.writeTextOrCData(resource.getUri().toString());
 		serializer.endElement(TAG_RESOURCE);
 	}
 
@@ -232,7 +232,7 @@ public final class ManifestXmlUtils implements ManifestXmlAttributes, ManifestXm
 
 		// Content
 
-		serializer.writeText(note.getContent());
+		serializer.writeTextOrCData(note.getContent());
 
 		serializer.endElement(TAG_NOTE);
 	}

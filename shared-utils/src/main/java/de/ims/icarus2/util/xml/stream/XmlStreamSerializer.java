@@ -232,6 +232,25 @@ public class XmlStreamSerializer implements XmlSerializer {
 	}
 
 	@Override
+	public void writeTextOrCData(CharSequence text) throws XMLStreamException {
+		int len = text.length();
+
+		boolean hasReservedSymbols = false;
+		for(int i=0; i<len; i++) {
+			if(XmlSerializer.isReservedSymbol(text.charAt(i))) {
+				hasReservedSymbols = true;
+				break;
+			}
+		}
+
+		if(hasReservedSymbols) {
+			writeCData(text);
+		} else {
+			writeText(text);
+		}
+	}
+
+	@Override
 	public void writeLineBreak() throws XMLStreamException {
 		//TODO maybe reduce linebreak to a single newline character and/or do it platform dependent?
 		writer.writeCharacters("\r\n"); //$NON-NLS-1$

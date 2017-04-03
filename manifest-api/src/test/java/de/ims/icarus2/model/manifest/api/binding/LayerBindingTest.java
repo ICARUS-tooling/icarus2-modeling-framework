@@ -31,8 +31,8 @@ import java.util.Set;
 
 import org.junit.Test;
 
-import de.ims.icarus2.model.manifest.api.Multiplicity;
 import de.ims.icarus2.model.manifest.api.binding.LayerBinding.Builder;
+import de.ims.icarus2.util.Multiplicity;
 
 /**
  * @author Markus Gärtner

@@ -142,7 +142,7 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 				} else {
 					Object value = property.getValue();
 
-					serializer.writeText(type.toChars(value));
+					serializer.writeTextOrCData(type.toChars(value));
 				}
 
 				serializer.endElement(TAG_PROPERTY);

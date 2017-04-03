@@ -55,7 +55,7 @@ public class PropertyListResolver implements Resolver, ResolverOptions {
 
 	private AnnotationLayer annotationLayer;
 
-	private Map<String, BasicAnnotationResolver> fixedPropertyResolvers;
+	private Map<String, BasicAnnotationResolver<?>> fixedPropertyResolvers;
 
 	// Configuration
 
@@ -86,7 +86,7 @@ public class PropertyListResolver implements Resolver, ResolverOptions {
 			fixedPropertyResolvers = new Object2ObjectOpenHashMap<>(availableKeys.size());
 
 			for(String annotationKey : availableKeys) {
-				BasicAnnotationResolver nestedResolver = BasicAnnotationResolver.forAnnotation(annotationLayer, annotationKey);
+				BasicAnnotationResolver<?> nestedResolver = BasicAnnotationResolver.forAnnotation(annotationLayer, annotationKey);
 				if(nestedResolver!=null) {
 					fixedPropertyResolvers.put(annotationKey, nestedResolver);
 				}
@@ -111,7 +111,7 @@ public class PropertyListResolver implements Resolver, ResolverOptions {
 	 * @param value parsed value for the property assignment
 	 */
 	private void saveAnnotation(ResolverContext context, String key, CharSequence value) {
-		BasicAnnotationResolver resolver = (fixedPropertyResolvers==null) ? null : fixedPropertyResolvers.get(key);
+		BasicAnnotationResolver<?> resolver = (fixedPropertyResolvers==null) ? null : fixedPropertyResolvers.get(key);
 		if(resolver!=null) {
 			// In case of nested resolver we delegate the work
 			proxyContext.reset(context, value);
@@ -171,6 +171,23 @@ public class PropertyListResolver implements Resolver, ResolverOptions {
 		}
 
 		return item;
+	}
+
+	/**
+	 * @see de.ims.icarus2.filedriver.schema.resolve.Resolver#close()
+	 */
+	@Override
+	public void close() {
+		annotationLayer = null;
+		separator = null;
+		assignmentSymbol = '\0';
+		allowUnknownKeys = false;
+
+		proxyContext.reset(null, null);
+		subSequence.close();
+
+		fixedPropertyResolvers.values().forEach(Resolver::close);
+		fixedPropertyResolvers.clear();
 	}
 
 	private static class ProxyContext implements ResolverContext {

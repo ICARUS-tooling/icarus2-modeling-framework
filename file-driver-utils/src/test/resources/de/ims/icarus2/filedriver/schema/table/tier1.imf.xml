@@ -22,16 +22,19 @@
 			</layerGroup>
 			
 			<location>
-				<path type="file">D:\Workspaces\git\icarus2\file-driver-utils\src\test\java\de\ims\icarus2\filedriver\schema\table\singleBlock.txt</path>
+				<!-- use path relative to projects root folder -->
+				<path type="file">src\test\resources\de\ims\icarus2\filedriver\schema\table\singleBlock.txt</path>
 			</location>
 			
 			<driver>
 				<implementation classname="de.ims.icarus2.filedriver.DefaultFileDriverFactory" factory="true" />
 				<properties>
 					<property name="loadOnConnect" valueType="boolean">true</property>
-					<property name="tableSchema" />
 					<property name="encoding">UTF-8</property>
 				</properties>
+				<module moduleSpecId="converter">
+					
+				</module>
 			</driver>
 		</rootContext>
 	</corpus>

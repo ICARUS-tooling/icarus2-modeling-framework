@@ -15,7 +15,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package de.ims.icarus2.model.manifest.api;
+package de.ims.icarus2.util;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -98,6 +98,14 @@ public enum Multiplicity implements StringResource {
 		}
 
 		return true;
+	}
+
+	public int getRequiredMinimum() {
+		return min;
+	}
+
+	public int getAllowedMaximum() {
+		return max;
 	}
 
 	private static Map<String, Multiplicity> xmlLookup;

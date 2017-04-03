@@ -39,8 +39,8 @@ import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
-import de.ims.icarus2.model.manifest.api.Multiplicity;
 import de.ims.icarus2.model.manifest.standard.Links.Link;
+import de.ims.icarus2.util.Multiplicity;
 import de.ims.icarus2.util.classes.ClassUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
 

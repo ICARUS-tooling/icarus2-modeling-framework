@@ -61,7 +61,6 @@ import de.ims.icarus2.filedriver.mapping.AbstractStoredMapping;
 import de.ims.icarus2.filedriver.mapping.DefaultMappingFactory;
 import de.ims.icarus2.filedriver.mapping.MappingFactory;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndex;
-import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexCursor;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexStorage;
 import de.ims.icarus2.filedriver.mapping.chunks.DefaultChunkIndex;
 import de.ims.icarus2.filedriver.schema.table.TableConverter;
@@ -107,6 +106,7 @@ import de.ims.icarus2.model.util.Graph.TraversalPolicy;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.Options;
+import de.ims.icarus2.util.annotations.PreliminaryValue;
 import de.ims.icarus2.util.classes.Lazy;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
@@ -132,7 +132,7 @@ public class FileDriver extends AbstractDriver {
 	/**
 	 * Storage for our model instances
 	 */
-	protected BufferedItemManager content; //FIXME needs initialization in one of the connection substeps
+	protected BufferedItemManager content;
 
 	/**
 	 * Runtime states for files and associated resources.
@@ -310,7 +310,8 @@ public class FileDriver extends AbstractDriver {
 	}
 
 	/**
-	 * Default implementation delegates directly to {@link FileDriverUtils#createMapping(MappingFactory, MappingManifest, MetadataRegistry, Options)}.
+	 * Default implementation delegates directly to
+	 * {@link FileDriverUtils#createMapping(MappingFactory, MappingManifest, MetadataRegistry, Options)}.
 	 *
 	 */
 	protected Mapping defaultCreateMapping(MappingFactory mappingFactory, MappingManifest mappingManifest, Options options) {
@@ -327,13 +328,14 @@ public class FileDriver extends AbstractDriver {
 			getMappings().forEachMapping(m -> {
 
 				// Try to delete all "stored mappings"
-				if(AbstractStoredMapping.class.isInstance(m)) {
+				if(m instanceof AbstractStoredMapping) {
 					AbstractStoredMapping mapping = (AbstractStoredMapping) m;
 					try {
-						//FIXME creates inconsistency on metadata level when physical resources of a mapping get deleted
 						mapping.delete();
-					} catch (Exception e) {
+					} catch (IOException e) {
 						log.error("Failed to delete mapping storage", e);
+					} finally {
+						//TODO clean up metadata associated with this mapping!
 					}
 				}
 			});
@@ -392,6 +394,7 @@ public class FileDriver extends AbstractDriver {
 		checkConnected();
 
 		if(content==null) {
+			//TODO shift initialization to one of the connection substeps?
 			synchronized (this) {
 				if(content==null) {
 					content = createBufferedItemManager();
@@ -412,7 +415,9 @@ public class FileDriver extends AbstractDriver {
 
 			// Restrict capacity to 100 millions for now
 			if(layerSize>0) {
-				int capacity = (int)Math.min(100_000_000, layerSize);
+				@PreliminaryValue
+				int defaultMinCapacity = 100_000_000;
+				int capacity = (int)Math.min(defaultMinCapacity , layerSize);
 				builder.addBuffer(itemLayerManifest, capacity);
 			} else {
 				builder.addBuffer(itemLayerManifest);

@@ -39,6 +39,7 @@ import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.func.IndexIterativeIntersection;
 import de.ims.icarus2.model.api.driver.indices.func.IndexSetMerger;
+import de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
 import de.ims.icarus2.model.api.driver.indices.standard.SingletonIndexSet;
 import de.ims.icarus2.model.api.driver.indices.standard.SpanIndexSet;
@@ -265,8 +266,24 @@ public class IndexUtils implements ModelConstants {
 	 *
 	 * @throws IllegalArgumentException if {@code from < 0} or {@code to < 0} or {@code to < from}
 	 */
-	public static IndexSet[] wrap(long from, long to) {
+	public static IndexSet[] wrapSpan(long from, long to) {
 		return new IndexSet[]{new SpanIndexSet(from, to)};
+	}
+
+	public static IndexSet[] wrap(long...indices) {
+		return new IndexSet[]{new ArrayIndexSet(IndexValueType.LONG, indices)};
+	}
+
+	public static IndexSet[] wrap(int...indices) {
+		return new IndexSet[]{new ArrayIndexSet(IndexValueType.INTEGER, indices)};
+	}
+
+	public static IndexSet[] wrap(short...indices) {
+		return new IndexSet[]{new ArrayIndexSet(IndexValueType.SHORT, indices)};
+	}
+
+	public static IndexSet[] wrap(byte...indices) {
+		return new IndexSet[]{new ArrayIndexSet(IndexValueType.BYTE, indices)};
 	}
 
 	public static IndexSet[] wrap(IndexSet indices) {

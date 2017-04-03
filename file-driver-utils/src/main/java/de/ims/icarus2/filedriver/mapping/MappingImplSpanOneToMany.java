@@ -23,7 +23,7 @@ import static de.ims.icarus2.model.api.driver.indices.IndexUtils.firstIndex;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.forEachSpan;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.isContinuous;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.lastIndex;
-import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrapSpan;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 
@@ -203,7 +203,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 				return EMPTY;
 			}
 
-			return wrap(
+			return wrapSpan(
 					blockStorage.getSpanBegin(block.getData(), localIndex),
 					blockStorage.getSpanEnd(block.getData(), localIndex));
 		}

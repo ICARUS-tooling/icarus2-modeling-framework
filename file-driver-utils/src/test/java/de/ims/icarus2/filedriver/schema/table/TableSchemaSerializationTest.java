@@ -67,6 +67,7 @@ public class TableSchemaSerializationTest {
 			serializedForm = sw.toString();
 		}
 
+//		System.out.println("--------------------------------------------");
 //		System.out.println(serializedForm); //DEBUG
 
 		try(TableSchemaXmlReader reader = new TableSchemaXmlReader()) {
@@ -139,8 +140,8 @@ public class TableSchemaSerializationTest {
 
 	private BlockSchema createBlock(ColumnSchema...columnSchemas) {
 		return new BlockSchemaImpl()
-				.setBeginDelimiter(createAttributeSchema(AttributeSchema.DELIMITER_EMPTY_LINE, false, null))
-				.setEndDelimiter(createAttributeSchema("####", false, null))
+				.setBeginDelimiter(createAttributeSchema("<s>", false, null))
+				.setEndDelimiter(createAttributeSchema("</s>", false, null))
 				.addAttribute(createAttributeSchema(null, true, AttributeTarget.NEXT_ITEM))
 				.addColumns(columnSchemas)
 				.setColumnOrderFixed(!BlockSchema.DEFAULT_COLUMN_ORDER_FIXED)
@@ -187,6 +188,15 @@ public class TableSchemaSerializationTest {
 
 		initBlock(createBlock());
 
-		checkSerializationResult("Empty");
+		checkSerializationResult("Simple");
+	}
+
+	@Test
+	public void testFull() throws Exception {
+		initDefaults();
+
+		initBlock(createBlock(createColumnSchema(1), createColumnSchema(2), createColumnSchema(3)));
+
+		checkSerializationResult("Full");
 	}
 }

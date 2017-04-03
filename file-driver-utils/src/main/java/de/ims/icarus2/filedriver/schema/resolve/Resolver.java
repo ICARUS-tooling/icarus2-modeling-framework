@@ -40,7 +40,6 @@ public interface Resolver {
 	/**
 	 *
 	 * @param converter the {@link Converter} instance this resolver will be associated with
-	 * @param componentSuppliers a map-like lookup mechanism to fetch caches associated with
 	 * @param options implementation specific options that have been parsed directly from the underlying {@link Schema}
 	 *
 	 */

@@ -82,6 +82,39 @@ public interface XmlSerializer {
 	 */
 	void endElement(String name) throws Exception;
 
+	public static boolean isReservedSymbol(char c) {
+		switch(c) {
+
+			case '<':
+			case '>':
+			case '&':
+			case '"':
+			case '\'':
+				return true;
+
+			default:
+				return false;
+		}
+	}
+
+	default void writeTextOrCData(CharSequence text) throws Exception {
+		int len = text.length();
+
+		boolean hasReservedSymbols = false;
+		for(int i=0; i<len; i++) {
+			if(isReservedSymbol(text.charAt(i))) {
+				hasReservedSymbols = true;
+				break;
+			}
+		}
+
+		if(hasReservedSymbols) {
+			writeCData(text);
+		} else {
+			writeText(text);
+		}
+	}
+
 	/**
 	 * Writes the given {@code text} as content of the current element,
 	 * doing nothing in case the {@code text} argument is {@code null}.

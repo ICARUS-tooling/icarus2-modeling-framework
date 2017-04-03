@@ -94,7 +94,7 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 				serializer.startElement(TAG_CONTENT);
 			}
 
-			serializer.writeText(type.toChars(value));
+			serializer.writeTextOrCData(type.toChars(value));
 
 			if(documentation!=null) {
 				serializer.endElement(TAG_CONTENT);

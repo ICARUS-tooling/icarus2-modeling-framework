@@ -247,7 +247,7 @@ public class DefaultCorpus implements Corpus {
 				throw new ModelException(this, ModelErrorCode.DRIVER_METADATA_MISSING,
 						"Cannot create default index set for entire primary layer, since driver has no metadata for its size");
 
-			indices = IndexUtils.wrap(0L, itemCount-1);
+			indices = IndexUtils.wrapSpan(0L, itemCount-1);
 		}
 
 		int pageSize = options.getInteger(CorpusOption.PARAM_VIEW_PAGE_SIZE, -1);

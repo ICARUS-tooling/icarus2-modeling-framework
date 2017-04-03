@@ -17,6 +17,7 @@
  */
 package de.ims.icarus2.filedriver.schema.table;
 
+import static de.ims.icarus2.util.classes.Primitives._boolean;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
@@ -25,10 +26,13 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.function.Consumer;
 
+import com.google.common.base.Objects;
+
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.manifest.standard.DefaultModifiableIdentity;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.Options;
+import de.ims.icarus2.util.classes.ClassUtils;
 
 /**
  * @author Markus Gärtner
@@ -117,13 +121,13 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		private String separator;
 		private MemberSchema componentSchema;
 		private AttributeSchema beginDelimiter, endDelimiter;
-		private List<AttributeSchema> attributes;
-		private List<ColumnSchema> columns;
+		private final List<AttributeSchema> attributes = new ArrayList<>();
+		private final List<ColumnSchema> columns = new ArrayList<>();
 		private ColumnSchema fallbackColumn;
-		private List<BlockSchema> nestedBlocks;
+		private final List<BlockSchema> nestedBlocks = new ArrayList<>();
 		private String noEntryLabel;
 		private Boolean columnOrderFixed;
-		private Options options;
+		private final Options options = new Options();
 
 		/**
 		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema#getLayerId()
@@ -280,10 +284,6 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		public BlockSchemaImpl addAttribute(AttributeSchema attribute) {
 			requireNonNull(attribute);
 
-			if(attributes==null) {
-				attributes = new ArrayList<>();
-			}
-
 			attributes.add(attribute);
 
 			return this;
@@ -291,10 +291,6 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 
 		public BlockSchemaImpl addColumn(ColumnSchema column) {
 			requireNonNull(column);
-
-			if(columns==null) {
-				columns = new ArrayList<>();
-			}
 
 			columns.add(column);
 
@@ -304,10 +300,6 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		public BlockSchemaImpl addColumns(ColumnSchema...columnSchemas) {
 			requireNonNull(columnSchemas);
 
-			if(columns==null) {
-				columns = new ArrayList<>();
-			}
-
 			Collections.addAll(columns, columnSchemas);
 
 			return this;
@@ -315,10 +307,6 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 
 		public BlockSchemaImpl addBlock(BlockSchema block) {
 			requireNonNull(block);
-
-			if(nestedBlocks==null) {
-				nestedBlocks = new ArrayList<>();
-			}
 
 			nestedBlocks.add(block);
 
@@ -334,10 +322,6 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public BlockSchemaImpl addOption(String key, String value) {
-			if(options==null) {
-				options = new Options();
-			}
-
 			options.put(key, value);
 
 			return this;
@@ -405,6 +389,37 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			return this;
 		}
 
+		/**
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return String.format("Member@[memberType=%s, isReference=%b]",
+					memberType, _boolean(isReference()));
+		}
+
+		/**
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return Objects.hashCode(memberType, isReference);
+		}
+
+		/**
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof MemberSchema) {
+				MemberSchema other = (MemberSchema)obj;
+				return ClassUtils.equals(memberType, other.getMemberType())
+						&& isReference()==other.isReference();
+			}
+			return false;
+		}
 	}
 
 	public static class AttributeSchemaImpl implements AttributeSchema {
@@ -461,6 +476,38 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			return this;
 		}
 
+		/**
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return String.format("Attribute@[pattern=%s, target=%s, resolver=%s]",
+					pattern, target, resolver);
+		}
+
+		/**
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return Objects.hashCode(pattern, resolver, target);
+		}
+
+		/**
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof AttributeSchema) {
+				AttributeSchema other = (AttributeSchema) obj;
+				return ClassUtils.equals(pattern, other.getPattern())
+						&& ClassUtils.equals(target, other.getTarget())
+						&& ClassUtils.equals(resolver, other.getResolver());
+			}
+			return false;
+		}
 	}
 
 	public static class ColumnSchemaImpl implements ColumnSchema {
@@ -468,7 +515,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		private String name, layerId, annotationKey, noEntryLabel;
 		private Boolean isIgnoreColumn;
 		private ResolverSchema resolver;
-		private EnumMap<SubstituteType, SubstituteSchema> substitutes;
+		private final EnumMap<SubstituteType, SubstituteSchema> substitutes = new EnumMap<>(SubstituteType.class);
 
 		public ColumnSchemaImpl(String name) {
 			setName(name);
@@ -585,10 +632,6 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			requireNonNull(substitute);
 			requireNonNull(substitute.getType());
 
-			if(substitutes==null) {
-				substitutes = new EnumMap<>(SubstituteType.class);
-			}
-
 			substitutes.put(substitute.getType(), substitute);
 
 			return this;
@@ -602,6 +645,44 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			return substitutes==null ? null : substitutes.get(type);
 		}
 
+		/**
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return String.format("Column@[name=%s, layerId=%s, annotationKey=%s, noEntryLabel=%s, ignore=%b, resolver=%s, substitutes=%s]",
+					name, layerId, annotationKey, noEntryLabel, isIgnoreColumn, resolver, substitutes);
+		}
+
+		/**
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return Objects.hashCode(name, layerId, annotationKey, noEntryLabel, isIgnoreColumn, resolver, substitutes);
+		}
+
+		/**
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof ColumnSchema) {
+				ColumnSchema other = (ColumnSchema) obj;
+				return ClassUtils.equals(name, other.getName())
+						&& ClassUtils.equals(layerId, other.getLayerId())
+						&& ClassUtils.equals(annotationKey, other.getAnnotationKey())
+						&& ClassUtils.equals(noEntryLabel, other.getNoEntryLabel())
+						&& ClassUtils.equals(resolver, other.getResolver())
+						&& isIgnoreColumn()==other.isIgnoreColumn()
+						&& ClassUtils.equals(getSubstitute(SubstituteType.ADDITION), other.getSubstitute(SubstituteType.ADDITION))
+						&& ClassUtils.equals(getSubstitute(SubstituteType.REPLACEMENT), other.getSubstitute(SubstituteType.REPLACEMENT))
+						&& ClassUtils.equals(getSubstitute(SubstituteType.TARGET), other.getSubstitute(SubstituteType.TARGET));
+			}
+			return false;
+		}
 	}
 
 	public static class SubstituteSchemaImpl implements SubstituteSchema {
@@ -658,12 +739,44 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 			return this;
 		}
 
+		/**
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return String.format("Substitute@[type=%s memberType=%s name=%s]",
+					type, memberType, name);
+		}
+
+		/**
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return Objects.hashCode(type, memberType, name);
+		}
+
+		/**
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof SubstituteSchema) {
+				SubstituteSchema other = (SubstituteSchema) obj;
+				return ClassUtils.equals(type, other.getType())
+						&& ClassUtils.equals(memberType, other.getMemberType())
+						&& ClassUtils.equals(name, other.getName());
+			}
+			return false;
+		}
 	}
 
 	public static class ResolverSchemaImpl implements ResolverSchema {
 
 		private String type;
-		private Options options;
+		private final Options options = new Options();
 
 		/**
 		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.ResolverSchema#getType()
@@ -690,13 +803,41 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		}
 
 		public ResolverSchemaImpl addOption(String key, String value) {
-			if(options==null) {
-				options = new Options();
-			}
-
 			options.put(key, value);
 
 			return this;
+		}
+
+		/**
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return String.format("Resolver@[type=%s, options=%s]",
+					type, options);
+		}
+
+		/**
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return Objects.hashCode(type, options);
+		}
+
+		/**
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof ResolverSchema) {
+				ResolverSchema other = (ResolverSchema) obj;
+				return ClassUtils.equals(type, other.getType())
+						&& ClassUtils.equals(options, other.getOptions());
+			}
+			return false;
 		}
 	}
 }

@@ -96,7 +96,7 @@ public class TableSchemaXmlReader implements ObjectReader<TableSchema>, TableSch
 	}
 
 	private boolean isContext(Class<?> clazz) {
-		return clazz.isInstance(stack.peek());
+		return clazz.isAssignableFrom(stack.peek().getClass());
 	}
 
 	private <E extends Object> E push(E obj) {
@@ -426,6 +426,20 @@ public class TableSchemaXmlReader implements ObjectReader<TableSchema>, TableSch
 		case TAG_DESCRIPTION:
 			peek(TableSchemaImpl.class).setDescription(text());
 			break;
+
+		case TAG_OPTION: {
+			String key = pop(String.class);
+			String value = text();
+
+			if(isContext(BlockSchema.class)) {
+				peek(BlockSchemaImpl.class).addOption(key, value);
+			} else {
+				peek(ResolverSchemaImpl.class).addOption(key, value);
+			}
+		} break;
+
+		// Empty tags
+		// none?
 
 		// "Wrapper" tags
 		case TAG_ATTRIBUTES:

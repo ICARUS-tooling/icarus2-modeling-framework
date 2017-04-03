@@ -1,8 +1,11 @@
 
 description = 'Default implementation for access to file-based corpus resources'
 dependencies {
+  implementation project(':model-api')
   implementation project(':model-defaults')
+  implementation project(':shared-utils')
+  
   implementation 'org.apache.lucene:lucene-core:6.2.0'
-    
-  testImplementation project(':shared-utils')
+  
+  testImplementation project(path: ':shared-utils', configuration: 'testOutput')
 }

@@ -79,6 +79,7 @@ public interface TableSchema extends Schema {
 	 * The returned value is allowed to either be a simple identifier only containing
 	 * the group's {@link LayerGroupManifest#getId() id} or a complex one that denotes
 	 * a {@link ModelUtils#g}
+	 * TODO
 	 *
 	 * @return
 	 */

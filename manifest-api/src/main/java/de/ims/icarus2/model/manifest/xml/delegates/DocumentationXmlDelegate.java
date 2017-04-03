@@ -157,7 +157,7 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 
 			serializer.startElement(TAG_RESOURCE);
 			ManifestXmlUtils.writeIdentityAttributes(serializer, resource);
-			serializer.writeText(resource.getUri().toString());
+			serializer.writeTextOrCData(resource.getUri().toString());
 			serializer.endElement(TAG_RESOURCE);
 		}
 

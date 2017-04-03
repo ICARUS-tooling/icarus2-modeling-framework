@@ -137,9 +137,14 @@ public class DefaultCorpusManager implements CorpusManager {
 			readProperties(clientProperties, builder.getPropertiesUrl());
 		}
 
+		// Attempt to load default properties
 		properties = new Properties();
-		readProperties(properties, DefaultCorpusManager.class.getResource("default-properties.ini"));
+		URL defaultPropertiesUrl = DefaultCorpusManager.class.getResource("default-properties.ini");
+		if(defaultPropertiesUrl==null)
+			throw new ModelException(GlobalErrorCode.INTERNAL_ERROR, "Unable to load default properties");
+		readProperties(properties, defaultPropertiesUrl);
 
+		// Now override with client properties
 		if(!clientProperties.isEmpty()) {
 			properties.putAll(clientProperties);
 		}
@@ -976,11 +981,9 @@ public class DefaultCorpusManager implements CorpusManager {
 		 * </ul>
 		 */
 		public Builder defaultEnvironment() {
-			fileManager(new DefaultFileManager(Paths.get(".")));
-			metadataRegistry(new VirtualMetadataRegistry());
-			manifestRegistry(new DefaultManifestRegistry());
-
-			return thisAsCast();
+			return fileManager(new DefaultFileManager(Paths.get(".")))
+					.metadataRegistry(new VirtualMetadataRegistry())
+					.manifestRegistry(new DefaultManifestRegistry());
 		}
 
 		/**

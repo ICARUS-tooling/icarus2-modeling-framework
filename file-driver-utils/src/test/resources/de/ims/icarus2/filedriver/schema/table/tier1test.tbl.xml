@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<table id="test.tier1.tbl" name="Tier-1 Tabular Format"  group-id="main">
+	<block layerId="token">
+		<separator>WHITESPACES</separator>
+		<component memberType="ITEM"/>
+		<endDelimiter>
+			<pattern>EMPTY_LINE</pattern>
+		</endDelimiter>
+		<columns>
+			<column name="ID" ignore="true"/>
+			<column name="FORM" layerId="form"/>
+			<column name="LEMMA" layerId="lemma"/>
+		</columns>
+	</block>
+</table>

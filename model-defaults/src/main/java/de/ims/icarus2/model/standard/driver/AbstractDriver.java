@@ -652,8 +652,8 @@ public abstract class AbstractDriver implements Driver {
 	 *
 	 * @author Markus Gärtner
 	 *
-	 * @param <B>
-	 * @param <D>
+	 * @param <B> type of the builder, i.e. the return value for all setter methods
+	 * @param <D> type of the {@link Driver} the actual builder implementation will {@link AbstractBuilder#build()}
 	 */
 	public static abstract class DriverBuilder<B extends DriverBuilder<B, D>, D extends Driver> extends AbstractBuilder<B, D> {
 
