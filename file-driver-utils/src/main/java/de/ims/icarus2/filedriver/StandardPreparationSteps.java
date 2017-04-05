@@ -43,10 +43,14 @@ import de.ims.icarus2.filedriver.FileDriverMetadata.ItemLayerKey;
 import de.ims.icarus2.filedriver.io.sets.ResourceSet;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.model.api.driver.mods.DriverModule;
+import de.ims.icarus2.model.api.driver.mods.EmptyModuleMonitor;
+import de.ims.icarus2.model.api.driver.mods.ModuleMonitor;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.Options;
 
 /**
@@ -385,6 +389,40 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 	},
 
 	/**
+	 *
+	 */
+	PREPARE_MODULES {
+		/**
+		 * @see de.ims.icarus2.filedriver.FileDriver.PreparationStep#apply(de.ims.icarus2.filedriver.FileDriver, de.ims.icarus2.ReportBuilder, de.ims.icarus2.util.Options)
+		 */
+		@Override
+		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
+
+			MutableInteger exceptionCounter = new MutableInteger();
+
+			ModuleMonitor monitor = new EmptyModuleMonitor(){
+				@Override
+				public void error(DriverModule module, Exception e) {
+					exceptionCounter.incrementAndGet();
+					reportBuilder.addError(GlobalErrorCode.DELEGATION_FAILED, "Error while preparing modules", e);
+				}
+			};
+
+			driver.prepareModules(monitor);
+
+			return exceptionCounter.intValue()==0;
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.FileDriver.PreparationStep#getPreconditions()
+		 */
+		@Override
+		public Collection<? extends PreparationStep> getPreconditions() {
+			return Arrays.asList(CHECK_LAYER_METADATA);
+		}
+	},
+
+	/**
 	 * Delegate to the driver's {@link FileDriver#scanFile(int)} method for every file
 	 * that hasn't been scanned before.
 	 * This is done in increasing order of the respective {@code file index} to ensure that
@@ -454,7 +492,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 
 		@Override
 		public Collection<? extends PreparationStep> getPreconditions() {
-			return Arrays.asList(CHECK_LAYER_METADATA);
+			return Arrays.asList(PREPARE_MODULES);
 		}
 	},
 

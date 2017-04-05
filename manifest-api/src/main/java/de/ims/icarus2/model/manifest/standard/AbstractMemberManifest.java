@@ -267,11 +267,16 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 		property.setValue(value);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public Object getPropertyValue(String name) {
+	public <V extends Object> V getPropertyValue(String name) {
+		if(!hasProperty(name)) {
+			return null;
+		}
+
 		Property property = getProperty(name);
 
-		return property.getValue();
+		return (V) property.getValue();
 	}
 
 	/**

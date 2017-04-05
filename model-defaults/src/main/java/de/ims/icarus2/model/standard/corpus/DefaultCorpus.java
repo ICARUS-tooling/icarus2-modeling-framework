@@ -83,8 +83,8 @@ import de.ims.icarus2.model.standard.registry.ContextFactory;
 import de.ims.icarus2.model.standard.view.DefaultCorpusView;
 import de.ims.icarus2.model.standard.view.DefaultCorpusView.CorpusViewBuilder;
 import de.ims.icarus2.util.AbstractBuilder;
-import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.AccessMode;
+import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.collections.LazyCollection;
@@ -821,6 +821,10 @@ public class DefaultCorpus implements Corpus {
 			return manifest;
 		}
 
+		/**
+		 * Throws {@link ModelException} with code {@link GlobalErrorCode#ILLEGAL_STATE}
+		 * if the corpus is not marked {@link DefaultCorpus#isActive() active}.
+		 */
 		private void checkActive() {
 			if(!isActive())
 				throw new ModelException(DefaultCorpus.this, GlobalErrorCode.ILLEGAL_STATE,

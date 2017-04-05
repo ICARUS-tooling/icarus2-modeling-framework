@@ -43,6 +43,8 @@ import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.ChunkState;
+import de.ims.icarus2.model.api.driver.Driver;
+import de.ims.icarus2.model.api.driver.mods.ModuleMonitor;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -51,6 +53,7 @@ import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
 import de.ims.icarus2.model.standard.driver.ChunkConsumer;
+import de.ims.icarus2.model.standard.driver.mods.AbstractDriverModule;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AccumulatingException;
@@ -63,57 +66,96 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractConverter implements Converter {
-
-	private FileDriver driver;
+public abstract class AbstractConverter extends AbstractDriverModule implements Converter {
 
 	private final Int2ObjectMap<DelegatingCursor<?>> activeCursors = new Int2ObjectOpenHashMap<>();
 
 	private static Logger log = LoggerFactory.getLogger(AbstractConverter.class);
 
+//	/**
+//	 * If subclasses wish to override this method they should ensure to make
+//	 * a call to {@code super.init()} <b>before</b> any other initialization work.
+//	 *
+//	 * @see de.ims.icarus2.filedriver.Converter#init(de.ims.icarus2.filedriver.FileDriver)
+//	 */
+//	@Override
+//	public void init(FileDriver driver) {
+//		requireNonNull(driver);
+//
+//		checkState("Driver already set", this.driver==null);
+//
+//		this.driver = driver;
+//	}
+
+//	protected static void checkInterrupted() throws InterruptedException {
+//		if(Thread.currentThread().isInterrupted())
+//			throw new InterruptedException();
+//	}
+
+	@Override
+	protected boolean doPrepare(ModuleMonitor monitor) throws InterruptedException {
+		// Nothing to do here
+		return true;
+	}
+
+	@Override
+	protected boolean doReset(ModuleMonitor monitor) throws InterruptedException {
+		// TODO Nothing to do here
+		return true;
+	}
+
+	@Override
+	protected void doCancel() {
+		// no-op
+	}
+
+//	@Override
+//	public FileDriver getFileDriver() {
+//		FileDriver driver = this.driver;
+//
+//		if(driver==null)
+//			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+//					"Converter not yet initialized or already closed again");
+//
+//		return driver;
+//	}
+
 	/**
-	 * If subclasses wish to override this method they should ensure to make
-	 * a call to {@code super.init()} <b>before</b> any other initialization work.
-	 *
-	 * @see de.ims.icarus2.filedriver.Converter#init(de.ims.icarus2.filedriver.FileDriver)
+	 * @see de.ims.icarus2.util.AbstractPart#addNotify(java.lang.Object)
 	 */
 	@Override
-	public void init(FileDriver driver) {
-		requireNonNull(driver);
+	public void addNotify(Driver owner) {
+		checkArgument("Can only be added to a FileDriver instance", FileDriver.class.isInstance(owner));
 
-		checkState("Driver already set", this.driver==null);
-
-		this.driver = driver;
-	}
-
-	protected static void checkInterrupted() throws InterruptedException {
-		if(Thread.currentThread().isInterrupted())
-			throw new InterruptedException();
-	}
-
-	@Override
-	public FileDriver getFileDriver() {
-		FileDriver driver = this.driver;
-
-		if(driver==null)
-			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
-					"Converter not yet initialized or already closed again");
-
-		return driver;
+		super.addNotify(owner);
 	}
 
 	/**
 	 * If subclasses wish to override this method they should ensure to make
-	 * a call to {@code super.close()} <b>after</b> any other cleanup work.
+	 * a call to {@code super.removeNotify(Driver)} <b>after</b> any other cleanup work.
 	 *
-	 * @see de.ims.icarus2.filedriver.Converter#close()
+	 * @see de.ims.icarus2.util.AbstractPart#removeNotify(java.lang.Object)
 	 */
 	@Override
-	public void close() throws AccumulatingException {
-		driver = null;
+	public void removeNotify(Driver owner) {
 
 		// Close cursors first so we avoid race conditions against other processes adding items to caches
-		closeAllCursors();
+		try {
+			closeAllCursors();
+		} catch (AccumulatingException e) {
+			throw new ModelException(ModelErrorCode.DRIVER_ERROR, "Failed to close remaining cursors", e);
+		} finally {
+			super.removeNotify(owner);
+		}
+
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.standard.driver.mods.AbstractDriverModule#getDriver()
+	 */
+	@Override
+	public FileDriver getDriver() {
+		return (FileDriver) super.getDriver();
 	}
 
 	protected void closeAllCursors() throws AccumulatingException {
@@ -141,12 +183,12 @@ public abstract class AbstractConverter implements Converter {
 	 * @see de.ims.icarus2.filedriver.Converter#getCursor(int, de.ims.icarus2.model.api.layer.ItemLayer, de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexStorage)
 	 */
 	@Override
-	public DelegatingCursor getCursor(int fileIndex, ItemLayer layer) throws IOException {
+	public DelegatingCursor<?> getCursor(int fileIndex, ItemLayer layer) throws IOException {
 		if(!layer.isPrimaryLayer())
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Cannot create cursor - not a priamry layer: "+ModelUtils.getUniqueId(layer));
 
-		if(!driver.hasChunkIndex()) {
+		if(!getDriver().hasChunkIndex()) {
 			return null;
 		}
 
@@ -223,7 +265,7 @@ public abstract class AbstractConverter implements Converter {
 
 		// Determine good buffer size for the block-wise stream
 		int bufferSize = IOUtil.DEFAULT_BUFFER_SIZE;
-		MetadataRegistry metadataRegistry = getFileDriver().getMetadataRegistry();
+		MetadataRegistry metadataRegistry = getDriver().getMetadataRegistry();
 		String savedMaxChunkSize = metadataRegistry.getValue(ChunkIndexKey.MAX_CHUNK_SIZE.getKey(layerManifest));
 		if(savedMaxChunkSize!=null) {
 			int maxChunkSize = Integer.parseInt(savedMaxChunkSize);
@@ -244,7 +286,7 @@ public abstract class AbstractConverter implements Converter {
 	 */
 	protected int getRecommendedIndexBufferSize(ItemLayerManifest sourceLayer) {
 		int bufferSize  = -1;
-		MetadataRegistry metadataRegistry = getFileDriver().getMetadataRegistry();
+		MetadataRegistry metadataRegistry = getDriver().getMetadataRegistry();
 		String savedMaxSize = metadataRegistry.getValue(ContainerKey.MAX_ITEM_COUNT.getKey(sourceLayer, 0));
 		if(savedMaxSize!=null) {
 			bufferSize = Integer.parseInt(savedMaxSize);

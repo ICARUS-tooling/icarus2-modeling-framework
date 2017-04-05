@@ -51,6 +51,13 @@ public abstract class AbstractDriverModule extends AbstractPart<Driver> implemen
 	 */
 	private volatile boolean cancelled = false;
 
+	protected AbstractDriverModule() {
+		String id = getClass().getName();
+
+		state = new DefaultModuleState(this);
+		identity = new StaticIdentity(id, this);
+	}
+
 	protected AbstractDriverModule(String id) {
 		requireNonNull(id);
 
@@ -58,7 +65,7 @@ public abstract class AbstractDriverModule extends AbstractPart<Driver> implemen
 		identity = new StaticIdentity(id, this);
 	}
 
-	protected void checkInterrupted() throws InterruptedException {
+	protected static void checkInterrupted() throws InterruptedException {
 		if(Thread.interrupted())
 			throw new InterruptedException();
 	}
@@ -134,7 +141,7 @@ public abstract class AbstractDriverModule extends AbstractPart<Driver> implemen
 
 		/*
 		 *  NOTE: reset should allow a call even when a previous 'prepare()' failed,
-		 *  so that a module can recover from from a premature cancellation.
+		 *  so that a module can recover from a premature cancellation.
 		 */
 
 //		if(!isReady())

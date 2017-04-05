@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 
 import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -65,12 +66,15 @@ public interface MemberManifest extends ModifiableIdentity, Documentable, Manife
 	 * this method should return {@code null}. Note that multi-value
 	 * properties will typically return a collection of values.
 	 *
+	 * @param <V> type of the returned value.
 	 * @param name The name of the property in question
 	 * @return The value of the property with the given name or {@code null}
 	 * if no such property exists.
+	 * @throws ClassCastException in case the actual property value is not
+	 * assignment compatible with the type parameter {@code V}
 	 */
 	@AccessRestriction(AccessMode.READ)
-	Object getPropertyValue(String name);
+	<V extends Object> V getPropertyValue(String name);
 
 	Property addProperty(String name, ValueType valueType, boolean multiValue, Object value);
 
@@ -131,6 +135,14 @@ public interface MemberManifest extends ModifiableIdentity, Documentable, Manife
 		forEachLocalProperty(result);
 
 		return result.getAsSet();
+	}
+
+	default Options getPropertiesAsOptions() {
+		Options options = new Options();
+
+		forEachProperty(p -> options.put(p.getName(), p.getValue()));
+
+		return options;
 	}
 
 	// Modification methods

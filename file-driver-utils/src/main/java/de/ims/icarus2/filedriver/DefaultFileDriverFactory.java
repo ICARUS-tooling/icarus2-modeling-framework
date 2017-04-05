@@ -158,7 +158,7 @@ public class DefaultFileDriverFactory implements Factory {
 
 		// Collect all resources
 		for(LocationManifest locationManifest : locationManifests) {
-			resourceSets.add(toResozrceSet(corpus, locationManifest));
+			resourceSets.add(toResourceSet(corpus, locationManifest));
 		}
 
 		// Wrap collection of resources if needed
@@ -169,7 +169,7 @@ public class DefaultFileDriverFactory implements Factory {
 		}
 	}
 
-	protected ResourceSet toResozrceSet(Corpus corpus, LocationManifest locationManifest) {
+	protected ResourceSet toResourceSet(Corpus corpus, LocationManifest locationManifest) {
 
 
 		if(locationManifest.isInline()) {

@@ -256,7 +256,9 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 			} else {
 				//TODO
 			}
-		} break;
+
+			throw new UnsupportedOperationException();
+		} //break;
 
 		default:
 			break;

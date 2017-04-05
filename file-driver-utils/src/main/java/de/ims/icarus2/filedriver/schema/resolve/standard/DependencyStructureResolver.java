@@ -104,7 +104,7 @@ public class DependencyStructureResolver implements BatchResolver, ResolverOptio
 
 		ItemLayer sentenceLayer = dependencyLayer.getBoundaryLayer();
 
-		FileDriver driver = converter.getFileDriver();
+		FileDriver driver = converter.getDriver();
 
 		// Determine required size of internal buffer arrays
 		MetadataRegistry metadataRegistry = driver.getMetadataRegistry();

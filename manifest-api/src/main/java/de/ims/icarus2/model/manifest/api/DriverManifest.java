@@ -18,7 +18,6 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -171,12 +170,26 @@ public interface DriverManifest extends ForeignImplementationManifest {
 	 */
 	ModuleSpec getModuleSpec(String specId);
 
-	default Collection<ModuleManifest> getModuleManifests(String moduleId) {
-		LazyCollection<ModuleManifest> result = LazyCollection.lazySet();
+	default List<ModuleManifest> getModuleManifests(String moduleId) {
+		LazyCollection<ModuleManifest> result = LazyCollection.lazyList();
 
-		forEachModuleManifest(m -> {if(moduleId.equals(m.getId()))result.add(m);});
+		forEachModuleManifest(m -> {
+			if(moduleId.equals(m.getId()))
+				result.add(m);
+		});
 
-		return result.getAsSet();
+		return result.getAsList();
+	}
+
+	default List<ModuleManifest> getModuleManifests(ModuleSpec moduleSpec) {
+		LazyCollection<ModuleManifest> result = LazyCollection.lazyList();
+
+		forEachModuleManifest(m -> {
+			if(m.getModuleSpec()==moduleSpec)
+				result.add(m);
+		});
+
+		return result.getAsList();
 	}
 
 	// Modification methods

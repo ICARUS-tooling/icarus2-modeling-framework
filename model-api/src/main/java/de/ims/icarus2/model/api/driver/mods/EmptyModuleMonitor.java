@@ -14,31 +14,45 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
- *
  */
 package de.ims.icarus2.model.api.driver.mods;
-
-import de.ims.icarus2.util.id.Identity;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface ModuleState extends Identity {
-
-	boolean isIndeterminate();
-
-	int getProgress();
-
-	int getGoal();
+public class EmptyModuleMonitor implements ModuleMonitor {
 
 	/**
-	 * Returns arguments to be passed to facilities that
-	 * create localized texts for the user. Modules should
-	 * carefully outline the exact order of arguments they
-	 * wish to pass to client code!
-	 *
-	 * @return
+	 * @see de.ims.icarus2.model.api.driver.mods.ModuleMonitor#start(de.ims.icarus2.model.api.driver.mods.DriverModule)
 	 */
-	Object[] getArguments();
+	@Override
+	public void start(DriverModule module) {
+		// no-op
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.driver.mods.ModuleMonitor#progress(de.ims.icarus2.model.api.driver.mods.DriverModule)
+	 */
+	@Override
+	public void progress(DriverModule module) {
+		// no-op
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.driver.mods.ModuleMonitor#end(de.ims.icarus2.model.api.driver.mods.DriverModule)
+	 */
+	@Override
+	public void end(DriverModule module) {
+		// no-op
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.driver.mods.ModuleMonitor#error(de.ims.icarus2.model.api.driver.mods.DriverModule, java.lang.Exception)
+	 */
+	@Override
+	public void error(DriverModule module, Exception e) {
+		// no-op
+	}
+
 }

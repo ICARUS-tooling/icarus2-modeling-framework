@@ -64,6 +64,11 @@ public class DefaultContext implements Context {
 	private final List<LayerGroup> layerGroups = new ArrayList<>(5);
 
 	private final Map<String, Layer> layerLookup = new HashMap<>();
+
+	/**
+	 * Cache to store resolved external layers that are reachable
+	 * via this context.
+	 */
 	private final LoadingCache<String, Layer> foreignLayerCache;
 
 	public DefaultContext(Corpus corpus, ContextManifest manifest) {

@@ -52,6 +52,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.Report;
 import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.ReportBuilder;
+import de.ims.icarus2.filedriver.AbstractConverter;
 import de.ims.icarus2.filedriver.ComponentSupplier;
 import de.ims.icarus2.filedriver.Converter;
 import de.ims.icarus2.filedriver.ElementFlag;
@@ -82,6 +83,7 @@ import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.driver.ChunkState;
+import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
@@ -102,7 +104,6 @@ import de.ims.icarus2.model.standard.driver.ChunkConsumer;
 import de.ims.icarus2.model.util.Graph;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractBuilder;
-import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.Options;
@@ -123,7 +124,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
  * @author Markus Gärtner
  *
  */
-public class TableConverter extends SchemaBasedConverter implements ModelConstants {
+public class TableConverter extends AbstractConverter implements SchemaBasedConverter, ModelConstants {
 
 	private TableSchema tableSchema;
 
@@ -133,8 +134,6 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 
 	private Charset encoding;
 	private int characterChunkSize;
-
-	private volatile boolean open;
 
 	private final Pool<BlockHandler> blockHandlerPool = new Pool<>(this::createRootBlockHandler, 10);
 
@@ -162,11 +161,13 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 	}
 
 	/**
-	 * @see de.ims.icarus2.filedriver.AbstractConverter#init(de.ims.icarus2.filedriver.FileDriver)
+	 * @see de.ims.icarus2.filedriver.AbstractConverter#addNotify(de.ims.icarus2.model.api.driver.Driver)
 	 */
 	@Override
-	public void init(FileDriver driver) {
-		super.init(driver);
+	public void addNotify(Driver owner) {
+		super.addNotify(owner);
+
+		FileDriver driver = (FileDriver) owner;
 
 		ContextManifest contextManifest = driver.getManifest().getContextManifest();
 
@@ -186,33 +187,27 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 		encoding = driver.getEncoding();
 		memberFactory = driver.newMemberFactory();
 
-		open = true;
 	}
 
 	/**
-	 * @see de.ims.icarus2.filedriver.AbstractConverter#close()
+	 * @see de.ims.icarus2.filedriver.AbstractConverter#removeNotify(de.ims.icarus2.model.api.driver.Driver)
 	 */
 	@Override
-	public void close() throws AccumulatingException {
+	public void removeNotify(Driver owner) {
 		encoding = null;
 		characterChunkSize = -1;
 
-		// Delegate to default implementation last
-		super.close();
+		super.removeNotify(owner);
 	}
 
+	@Override
 	public TableSchema getSchema() {
-		checkOpen();
+		checkAdded();
 		return tableSchema;
 	}
 
 	public LayerMemberFactory getSharedMemberFactory() {
 		return memberFactory;
-	}
-
-	private void checkOpen() {
-		if(!open)
-			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Converter not open");
 	}
 
 	/**
@@ -222,7 +217,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 	 */
 	protected BlockHandler createRootBlockHandler() {
 		// Fail if closed
-		checkOpen();
+		checkAdded();
 
 		return new BlockHandler(tableSchema.getRootBlock());
 	}
@@ -235,7 +230,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 	@Override
 	public Report<ReportItem> scanFile(int fileIndex) throws IOException,
 			InterruptedException {
-		checkOpen();
+		checkAdded();
 
 		@SuppressWarnings("resource")
 		BlockHandler blockHandler = blockHandlerPool.get();
@@ -316,7 +311,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 		ItemLayer primaryLayer = blockHandler.getItemLayer();
 		long index = 0L;
 
-		LockableFileObject fileObject = getFileDriver().getFileObject(fileIndex);
+		LockableFileObject fileObject = getDriver().getFileObject(fileIndex);
 
 		// Notify handler stack about incoming SCAN operation
 		blockHandler.prepareForReading(this, ReadMode.SCAN, caches::get);
@@ -412,7 +407,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 
 		// Assign respective flag to file
 		ElementFlag flagForFile = report.hasErrors() ? ElementFlag.UNUSABLE : ElementFlag.SCANNED;
-		getFileDriver().getFileStates().getFileInfo(fileIndex).setFlag(flagForFile);
+		getDriver().getFileStates().getFileInfo(fileIndex).setFlag(flagForFile);
 
 		return report;
 	}
@@ -431,7 +426,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 	 */
 	protected Map<Layer, Analyzer> createAnalyzers(LayerGroup group, int fileIndex) {
 		LazyMap<Layer, Analyzer> result = LazyMap.lazyHashMap();
-		FileDataStates states = getFileDriver().getFileStates();
+		FileDataStates states = getDriver().getFileStates();
 
 		group.forEachLayer(layer -> {
 			if(ModelUtils.isStructureLayer(layer.getManifest())) {
@@ -452,7 +447,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 	@Override
 	public LoadResult loadFile(final int fileIndex, final ChunkConsumer action)
 			throws IOException, InterruptedException {
-		checkOpen();
+		checkAdded();
 
 		@SuppressWarnings("resource")
 		BlockHandler blockHandler = blockHandlerPool.get();
@@ -501,7 +496,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 		ItemLayer primaryLayer = blockHandler.getItemLayer();
 		long index = 0L;
 
-		LockableFileObject fileObject = getFileDriver().getFileObject(fileIndex);
+		LockableFileObject fileObject = getDriver().getFileObject(fileIndex);
 
 		// Notify stack about incoming read operation
 		blockHandler.prepareForReading(this, ReadMode.FILE, caches::get);
@@ -578,7 +573,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 	}
 
 	protected Layer findLayer(String layerId) {
-		return getFileDriver().getContext().getLayer(layerId);
+		return getDriver().getContext().getLayer(layerId);
 	}
 
 	private static void advanceLine(LineIterator lines, InputResolverContext context) {
@@ -621,7 +616,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 		DynamicLoadResult loadResult = new SimpleLoadResult(caches.values());
 
 		return new TableCursorBuilder(this)
-				.file(getFileDriver().getFileObject(fileIndex))
+				.file(getDriver().getFileObject(fileIndex))
 				.rootBlockHandler(blockHandler)
 				.primaryLayer(itemLayer)
 				.context(inputContext)
@@ -629,7 +624,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 				.encoding(encoding)
 				.characterChunkSize(characterChunkSize)
 				.caches(caches::get)
-				.chunkIndex(getFileDriver().getChunkIndex(itemLayer))
+				.chunkIndex(getDriver().getChunkIndex(itemLayer))
 				.build();
 	}
 
@@ -670,7 +665,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 							.addStoragesFromLayers(graph.incomingNodes(itemLayer));
 
 					// Let driver component decide on actual cache implementation
-					cache = getFileDriver().getLayerBuffer(itemLayer).newCache(cleanupAction);
+					cache = getDriver().getLayerBuffer(itemLayer).newCache(cleanupAction);
 				} else {
 					cache = cacheGen.apply(itemLayer, graph);
 				}
@@ -2112,7 +2107,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 				if(parent!=null) {
 					ItemLayer sourceLayer = parent.getItemLayer();
 					ItemLayer targetLayer = layer;
-					Mapping mapping = converter.getFileDriver().getMapping(sourceLayer, targetLayer);
+					Mapping mapping = converter.getDriver().getMapping(sourceLayer, targetLayer);
 					if(mapping==null)
 						throw new ModelException(ModelErrorCode.DRIVER_ERROR,
 								"Missing mapping from "+ModelUtils.getUniqueId(sourceLayer)+" to "+ModelUtils.getUniqueId(targetLayer));
@@ -2131,7 +2126,7 @@ public class TableConverter extends SchemaBasedConverter implements ModelConstan
 
 			// Outside of CHUNK mode we can use metadata to determine begin indices for our continuous item streams
 			if(fileIndex!=-1 && mode!=ReadMode.CHUNK) {
-				FileDataStates states = converter.getFileDriver().getFileStates();
+				FileDataStates states = converter.getDriver().getFileStates();
 
 				long firstIndex;
 

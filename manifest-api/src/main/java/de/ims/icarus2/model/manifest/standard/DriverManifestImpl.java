@@ -223,11 +223,11 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	 * @see de.ims.icarus2.model.manifest.api.DriverManifest#getModuleManifests(java.lang.String)
 	 */
 	@Override
-	public Collection<ModuleManifest> getModuleManifests(String moduleId) {
+	public List<ModuleManifest> getModuleManifests(String moduleId) {
 		if (moduleId == null)
 			throw new NullPointerException("Invalid specId"); //$NON-NLS-1$
 
-		LazyCollection<ModuleManifest> result = LazyCollection.lazyLinkedSet();
+		LazyCollection<ModuleManifest> result = LazyCollection.lazyList();
 
 		result.addAll(moduleManifests.get(moduleId));
 
@@ -235,7 +235,7 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 			result.addAll(getTemplate().getModuleManifests(moduleId));
 		}
 
-		return result.getAsSet();
+		return result.getAsList();
 	}
 
 	public Collection<ModuleManifest> getLocalModuleManifests(String moduleId) {

@@ -31,9 +31,30 @@
 				<properties>
 					<property name="loadOnConnect" valueType="boolean">true</property>
 					<property name="encoding">UTF-8</property>
-				</properties>
-				<module moduleSpecId="converter">
-					
+				</properties>				
+				<module id="converter">
+					<implementation classname="de.ims.icarus2.filedriver.schema.DefaultSchemaConverterFactory" factory="true">
+						<properties>
+							<property name="schemaId">de.ims.icarus2.filedriver.schema.table</property>
+							<property name="schema"><![CDATA[
+							<table id="test.tier1.tbl" name="Tier-1 Tabular Format"  group-id="main">
+								<block layerId="token">
+									<separator>WHITESPACES</separator>
+									<component memberType="ITEM"/>
+									<endDelimiter>
+										<pattern>EMPTY_LINE</pattern>
+									</endDelimiter>
+									<columns>
+										<column name="ID" ignore="true"/>
+										<column name="FORM" layerId="form"/>
+										<column name="LEMMA" layerId="lemma"/>
+									</columns>
+								</block>
+							</table>
+							]]>
+							</property>
+						</properties>
+					</implementation>
 				</module>
 			</driver>
 		</rootContext>

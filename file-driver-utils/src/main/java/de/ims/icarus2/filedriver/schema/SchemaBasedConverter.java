@@ -17,12 +17,14 @@
  */
 package de.ims.icarus2.filedriver.schema;
 
-import de.ims.icarus2.filedriver.AbstractConverter;
+import de.ims.icarus2.filedriver.Converter;
 
 /**
  * @author Markus Gärtner
  *
  */
-public abstract class SchemaBasedConverter extends AbstractConverter {
+public interface SchemaBasedConverter extends Converter {
 
+
+	Schema getSchema();
 }

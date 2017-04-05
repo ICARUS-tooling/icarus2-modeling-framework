@@ -28,11 +28,11 @@ import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexStorage;
 import de.ims.icarus2.model.api.driver.ChunkState;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
+import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.standard.driver.ChunkConsumer;
-import de.ims.icarus2.util.AccumulatingException;
 
 
 /**
@@ -42,7 +42,7 @@ import de.ims.icarus2.util.AccumulatingException;
  * @author Markus Gärtner
  *
  */
-public interface Converter extends AutoCloseable {
+public interface Converter extends DriverModule {
 
 	public enum ReadMode {
 		SCAN,
@@ -107,15 +107,16 @@ public interface Converter extends AutoCloseable {
 		return property.getDefaultValue();
 	}
 
-	/**
-	 * Called by the {@link FileDriver} that uses this converter.
-	 * Meant to perform setup work and initialize internal resources.
-	 *
-	 * @param driver
-	 */
-	void init(FileDriver driver);
+//	/**
+//	 * Called by the {@link FileDriver} that uses this converter.
+//	 * Meant to perform setup work and initialize internal resources.
+//	 *
+//	 * @param driver
+//	 */
+//	void init(FileDriver driver);
 
-	FileDriver getFileDriver();
+	@Override
+	FileDriver getDriver();
 
 	/**
 	 * Preprocessing step that reads the specified corpus file and populates chunking and metadata.
@@ -149,16 +150,16 @@ public interface Converter extends AutoCloseable {
 	 * @return
 	 * @throws IOException
 	 */
-	Cursor getCursor(int fileIndex, ItemLayer layer) throws IOException;
+	Cursor<?> getCursor(int fileIndex, ItemLayer layer) throws IOException;
 
-	/**
-	 * Releases any internal resources and most importantly disconnects from the
-	 * {@link FileDriver driver} supplied by the previous call to {@link #init(FileDriver)}.
-	 *
-	 * @see java.lang.AutoCloseable#close()
-	 */
-	@Override
-	public void close() throws AccumulatingException;
+//	/**
+//	 * Releases any internal resources and most importantly disconnects from the
+//	 * {@link FileDriver driver} supplied by the previous call to {@link #init(FileDriver)}.
+//	 *
+//	 * @see java.lang.AutoCloseable#close()
+//	 */
+//	@Override
+//	public void close() throws AccumulatingException;
 
 	/**
 	 * Allows a converter implementation to decide upon what chunk indices to use.

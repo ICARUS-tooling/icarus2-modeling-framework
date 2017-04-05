@@ -18,6 +18,7 @@
 package de.ims.icarus2.filedriver;
 
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkNonEmpty;
+import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.classes.Primitives._int;
@@ -63,8 +64,6 @@ import de.ims.icarus2.filedriver.mapping.MappingFactory;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndex;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexStorage;
 import de.ims.icarus2.filedriver.mapping.chunks.DefaultChunkIndex;
-import de.ims.icarus2.filedriver.schema.table.TableConverter;
-import de.ims.icarus2.filedriver.schema.table.TableSchema;
 import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
@@ -84,6 +83,7 @@ import de.ims.icarus2.model.api.io.resources.IOResource;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.registry.CorpusMemberFactory;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
@@ -104,7 +104,6 @@ import de.ims.icarus2.model.standard.driver.ChunkInfoBuilder;
 import de.ims.icarus2.model.util.Graph;
 import de.ims.icarus2.model.util.Graph.TraversalPolicy;
 import de.ims.icarus2.model.util.ModelUtils;
-import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.annotations.PreliminaryValue;
 import de.ims.icarus2.util.classes.Lazy;
@@ -192,11 +191,34 @@ public class FileDriver extends AbstractDriver {
 
 	protected Converter createConverter() {
 
-		//DEBUG
-		TableSchema tableSchema = (TableSchema) getManifest().getPropertyValue("tableSchema");
+		// Fetch the (hopefully) single module manifest describing our converter to be used
+		List<ModuleManifest> converterManifests = getManifest().getModuleManifests("converter");
 
-		Converter converter = new TableConverter(tableSchema); //TODO
-		converter.init(this);
+		if(converterManifests.isEmpty())
+			throw new ModelException(ModelErrorCode.DRIVER_ERROR,
+					"No converter modules declared in driver manifest: "+getName(getManifest()));
+		if(converterManifests.size()>1)
+			throw new ModelException(ModelErrorCode.DRIVER_ERROR,
+					"Too many converter modules declared in driver manifest: "+getName(getManifest()));
+
+		ModuleManifest manifest = converterManifests.get(0);
+
+		final CorpusMemberFactory factory = getCorpus().getManager().newFactory();
+
+		Converter converter = factory.newImplementationLoader()
+				.manifest(manifest.getImplementationManifest())
+				.environment(this)
+				.message("Converter for driver "+getName(getManifest()))
+				.instantiate(Converter.class);
+
+
+		//DEBUG
+//		TableSchema tableSchema = (TableSchema) getManifest().getPropertyValue("tableSchema");
+//
+//		Converter converter = new TableConverter(tableSchema); //TODO
+//		converter.init(this);
+
+		converter.addNotify(this);
 
 		return converter;
 	}
@@ -357,7 +379,7 @@ public class FileDriver extends AbstractDriver {
 
 	@Override
 	public void forEachModule(Consumer<? super DriverModule> action) {
-		// no-op
+		action.accept(getConverter());
 	}
 
 	/**
@@ -623,12 +645,9 @@ public class FileDriver extends AbstractDriver {
 				@SuppressWarnings("resource")
 				Converter converter = getConverter();
 				try {
-					converter.close();
-				} catch (AccumulatingException e) {
+					converter.removeNotify(this);
+				} catch (Exception e) {
 					log.error("Attempt to close converter failed", e);
-					for(int i=0; i<e.getExceptionCount(); i++) {
-						log.error("Internal converter error "+i, e.getExceptionAt(i));
-					}
 				}
 			}
 
