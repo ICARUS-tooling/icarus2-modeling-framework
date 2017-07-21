@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015-2016 Markus Gärtner
+ *  Copyright (C) 2015-2016 Markus G�rtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,25 +15,11 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package de.ims.icarus2.model.api.edit.io;
-
-import de.ims.icarus2.model.api.edit.change.AtomicChange;
-
 /**
- * @author Markus Gärtner
+ * Provides facilities to define implementations for interfaces or individual
+ * methods inline as part of an XML document.
+ *
+ * @author Markus G�rtner
  *
  */
-public interface SerializableAtomicChange extends AtomicChange {
-
-
-	/**
-	 * Optional method for creating a unified serializable representation of this
-	 * change. The change implementation is to create a blank new proxy and fill its
-	 * fields with the appropriate contextual information for the type of change it
-	 * models.
-	 *
-	 * @return a filled out {@link AtomicChangeProxy} instance containing all the information
-	 * required to reproduce this change or {@code null} if creating such a proxy is not supported.
-	 */
-	AtomicChangeProxy toProxy();
-}
+package de.ims.icarus2.util.compiler.xml;

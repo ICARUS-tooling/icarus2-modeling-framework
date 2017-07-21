@@ -85,6 +85,32 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 	void setReferenceLayers(DataSet<AnnotationLayer> referenceLayers);
 
 	/**
+	 * Shorthand method to fetch the annotation value for a the specified combination
+	 * of {@code item} and {@code key}.
+	 *
+	 * @param item
+	 * @param key
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	default <T extends Object> T getValue(Item item, String key) {
+		return (T) getAnnotationStorage().getValue(item, key);
+	}
+
+	/**
+	 * Shorthand method to fetch the annotation value for a the specified {@code item}
+	 * using this layer's {@link AnnotationLayerManifest#getDefaultKey() default key}.
+	 *
+	 * @param item
+	 * @param key
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	default <T extends Object> T getValue(Item item) {
+		return (T) getAnnotationStorage().getValue(item, getManifest().getDefaultKey());
+	}
+
+	/**
 	 * @author Markus Gärtner
 	 *
 	 */

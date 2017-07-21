@@ -250,10 +250,17 @@ public class XmlStreamSerializer implements XmlSerializer {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 *
+	 * This implementation simply writes the content of {@link System#lineSeparator()}
+	 * as character output.
+	 *
+	 * @see de.ims.icarus2.util.xml.XmlSerializer#writeLineBreak()
+	 */
 	@Override
 	public void writeLineBreak() throws XMLStreamException {
-		//TODO maybe reduce linebreak to a single newline character and/or do it platform dependent?
-		writer.writeCharacters("\r\n"); //$NON-NLS-1$
+		writer.writeCharacters(System.lineSeparator());
 	}
 
 	/**

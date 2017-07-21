@@ -95,15 +95,6 @@ public class TableConverterTest {
 
 		CorpusManifest corpusManifest = corpusManager.getManifestRegistry().getCorpusManifest("testCorpus");
 
-//		TableSchema tableSchema = create1TierTableSchema();
-//		corpusManifest.getRootContextManifest().getDriverManifest().setPropertyValue("tableSchema", tableSchema);
-
-//		try(TableSchemaXmlWriter w = new TableSchemaXmlWriter()) {
-//			w.init(new PrintWriter(System.out), Options.emptyOptions);
-//
-//			w.writeAll(Collections.singleton(tableSchema));
-//		}
-
 		Corpus corpus = corpusManager.connect(corpusManifest);
 		CorpusView view = corpus.createFullView(AccessMode.READ, null);
 

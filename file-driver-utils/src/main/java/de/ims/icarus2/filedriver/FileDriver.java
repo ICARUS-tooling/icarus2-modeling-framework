@@ -758,7 +758,11 @@ public class FileDriver extends AbstractDriver {
 		}
 
 		//TODO process report
-		System.out.println(report);
+		if(report.hasErrors()) {
+			log.error("Scan of file {} finished with errors:\n{}", _int(fileIndex+1), report);
+		} else if(report.hasWarnings()) {
+			log.warn("Scan of file {} finished with warnings:\n{}", _int(fileIndex+1), report);
+		}
 		//DEBUG
 
 		return !report.hasErrors();

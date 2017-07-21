@@ -22,7 +22,7 @@ import static de.ims.icarus2.util.Conditions.checkState;
 
 import java.util.Objects;
 
-import de.ims.icarus2.model.api.edit.AtomicChangeType;
+import de.ims.icarus2.model.api.edit.change.AtomicChangeType;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;

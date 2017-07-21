@@ -15,25 +15,25 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package de.ims.icarus2.model.api.edit.io;
+package de.ims.icarus2.model.api.edit.change;
 
-import de.ims.icarus2.model.api.edit.change.AtomicChange;
+import de.ims.icarus2.model.api.members.container.Container;
+import de.ims.icarus2.model.api.members.item.Item;
 
 /**
+ *
  * @author Markus Gärtner
  *
+ * @param <E> type of element that was moved
+ * @param <C> type of container the element has been moved within
  */
-public interface SerializableAtomicChange extends AtomicChange {
+public interface AtomicMoveChange<E extends Item, C extends Container> extends AtomicChange {
 
+	E getElement();
 
-	/**
-	 * Optional method for creating a unified serializable representation of this
-	 * change. The change implementation is to create a blank new proxy and fill its
-	 * fields with the appropriate contextual information for the type of change it
-	 * models.
-	 *
-	 * @return a filled out {@link AtomicChangeProxy} instance containing all the information
-	 * required to reproduce this change or {@code null} if creating such a proxy is not supported.
-	 */
-	AtomicChangeProxy toProxy();
+	C getContainer();
+
+	long getSourceIndex();
+
+	long getTargetIndex();
 }

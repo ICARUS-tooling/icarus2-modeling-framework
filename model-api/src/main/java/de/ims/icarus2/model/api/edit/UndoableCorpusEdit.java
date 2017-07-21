@@ -37,6 +37,7 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.corpus.GenerationControl;
+import de.ims.icarus2.model.api.edit.change.AtomicChange;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.CorpusMember;
 import de.ims.icarus2.model.api.members.item.Item;

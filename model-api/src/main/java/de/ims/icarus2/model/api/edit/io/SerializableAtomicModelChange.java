@@ -22,8 +22,8 @@ import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.edit.AtomicChange;
-import de.ims.icarus2.model.api.edit.AtomicChangeType;
+import de.ims.icarus2.model.api.edit.change.AtomicChange;
+import de.ims.icarus2.model.api.edit.change.AtomicChangeType;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.CorpusMember;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -115,7 +115,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#execute()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
 		 */
 		@Override
 		public void execute() {
@@ -136,7 +136,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#getAffectedMember()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
 		 */
 		@Override
 		public CorpusMember getAffectedMember() {
@@ -185,7 +185,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#execute()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
 		 */
 		@Override
 		public void execute() {
@@ -210,7 +210,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#getAffectedMember()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
 		 */
 		@Override
 		public CorpusMember getAffectedMember() {
@@ -298,7 +298,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#execute()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
 		 */
 		@Override
 		public void execute() {
@@ -319,7 +319,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#getAffectedMember()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
 		 */
 		@Override
 		public CorpusMember getAffectedMember() {
@@ -379,7 +379,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#execute()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
 		 */
 		@Override
 		public void execute() {
@@ -400,7 +400,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#getAffectedMember()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
 		 */
 		@Override
 		public CorpusMember getAffectedMember() {
@@ -449,7 +449,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#execute()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
 		 */
 		@Override
 		public void execute() {
@@ -474,7 +474,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#getAffectedMember()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
 		 */
 		@Override
 		public CorpusMember getAffectedMember() {
@@ -548,7 +548,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#execute()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
 		 */
 		@Override
 		public void execute() {
@@ -569,7 +569,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#getAffectedMember()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
 		 */
 		@Override
 		public CorpusMember getAffectedMember() {
@@ -621,7 +621,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#execute()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
 		 */
 		@Override
 		public void execute() {
@@ -636,7 +636,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#getAffectedMember()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
 		 */
 		@Override
 		public CorpusMember getAffectedMember() {
@@ -683,7 +683,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#execute()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
 		 */
 		@Override
 		public void execute() {
@@ -703,7 +703,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#getAffectedMember()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
 		 */
 		@Override
 		public CorpusMember getAffectedMember() {
@@ -780,7 +780,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#execute()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
 		 */
 		@Override
 		public void execute() {
@@ -797,7 +797,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#getAffectedMember()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
 		 */
 		@Override
 		public CorpusMember getAffectedMember() {
@@ -840,7 +840,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#execute()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
 		 */
 		@Override
 		public void execute() {
@@ -857,7 +857,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#getAffectedMember()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
 		 */
 		@Override
 		public CorpusMember getAffectedMember() {
@@ -901,7 +901,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#execute()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
 		 */
 		@Override
 		public void execute() {
@@ -918,7 +918,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#getAffectedMember()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
 		 */
 		@Override
 		public CorpusMember getAffectedMember() {
@@ -962,7 +962,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#execute()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
 		 */
 		@Override
 		public void execute() {
@@ -979,7 +979,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#getAffectedMember()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
 		 */
 		@Override
 		public CorpusMember getAffectedMember() {
@@ -1023,7 +1023,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#execute()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
 		 */
 		@Override
 		public void execute() {
@@ -1040,7 +1040,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#getAffectedMember()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
 		 */
 		@Override
 		public CorpusMember getAffectedMember() {
@@ -1084,7 +1084,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#execute()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
 		 */
 		@Override
 		public void execute() {
@@ -1101,7 +1101,7 @@ public class SerializableAtomicModelChange {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.edit.AtomicChange#getAffectedMember()
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
 		 */
 		@Override
 		public CorpusMember getAffectedMember() {

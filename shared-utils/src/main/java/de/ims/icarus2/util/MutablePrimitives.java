@@ -3,6 +3,14 @@
  */
 package de.ims.icarus2.util;
 
+import static de.ims.icarus2.util.classes.Primitives._boolean;
+import static de.ims.icarus2.util.classes.Primitives._byte;
+import static de.ims.icarus2.util.classes.Primitives._double;
+import static de.ims.icarus2.util.classes.Primitives._float;
+import static de.ims.icarus2.util.classes.Primitives._int;
+import static de.ims.icarus2.util.classes.Primitives._long;
+import static de.ims.icarus2.util.classes.Primitives._short;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusException;
 
@@ -1762,7 +1770,7 @@ public class MutablePrimitives {
 		}
 	}
 
-	public static class GenericMutablePrimitive implements MutablePrimitive<Object> {
+	public static final class GenericMutablePrimitive implements MutablePrimitive<Object> {
 
 		public static final double DEFAULT_EMPTY_VALUE = 0D;
 
@@ -1985,7 +1993,7 @@ public class MutablePrimitives {
 		}
 	}
 
-	public static class GenericTypeAwareMutablePrimitive implements MutablePrimitive<Object> {
+	public static final class GenericTypeAwareMutablePrimitive implements MutablePrimitive<Object> {
 
 		public static final long DEFAULT_EMPTY_VALUE = 0L;
 
@@ -2142,13 +2150,13 @@ public class MutablePrimitives {
 			checkNotNull();
 
 			switch (type) {
-			case BOOLEAN: return booleanValue();
-			case BYTE: return byteValue();
-			case SHORT: return shortValue();
-			case INTEGER: return intValue();
-			case LONG: return longValue();
-			case FLOAT: return floatValue();
-			case DOUBLE: return doubleValue();
+			case BOOLEAN: return _boolean(booleanValue());
+			case BYTE: return _byte(byteValue());
+			case SHORT: return _short(shortValue());
+			case INTEGER: return _int(intValue());
+			case LONG: return _long(longValue());
+			case FLOAT: return _float(floatValue());
+			case DOUBLE: return _double(doubleValue());
 
 			default:
 				return null;

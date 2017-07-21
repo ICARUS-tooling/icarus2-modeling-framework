@@ -30,6 +30,7 @@ import java.util.concurrent.locks.Lock;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
+import de.ims.icarus2.model.api.edit.change.AtomicChange;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.events.EventSource;
 import de.ims.icarus2.util.events.WeakEventSource;

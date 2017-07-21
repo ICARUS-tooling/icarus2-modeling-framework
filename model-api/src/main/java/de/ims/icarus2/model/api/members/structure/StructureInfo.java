@@ -65,6 +65,6 @@ public interface StructureInfo extends MetaData, ModelConstants, Serializable {
 	 * @return
 	 */
 	default boolean isUndefined(StructureInfoField field) {
-		return getMin(field)==UNSET_LONG;
+		return getMin(field)==UNSET_LONG; //FIXME also use Double.compare
 	}
 }

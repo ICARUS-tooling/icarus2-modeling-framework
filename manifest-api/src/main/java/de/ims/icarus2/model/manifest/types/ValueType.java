@@ -572,12 +572,12 @@ public class ValueType implements StringResource, NamedObject {
 
 	public static final class VectorType extends ValueType {
 
-		public static final char SIZE_OPEN = '[';
-		public static final char SIZE_CLOSE = ']';
-		public static final char ELEMENT_SEPARATOR = '|';
-		public static final char ESCAPE_CHARACTER = '\\';
-		public static final char WILDCARD_SIZE_CHARACTER = 'x';
-		public static final String WILDCARD_SIZE_STRING = "x";
+		static final char SIZE_OPEN = '[';
+		static final char SIZE_CLOSE = ']';
+		static final char ELEMENT_SEPARATOR = '|';
+		static final char ESCAPE_CHARACTER = '\\';
+		static final char WILDCARD_SIZE_CHARACTER = 'x';
+		static final String WILDCARD_SIZE_STRING = "x";
 
 		private static final int UNDEFINED_SIZE = -1;
 
@@ -810,7 +810,7 @@ public class ValueType implements StringResource, NamedObject {
 	 */
 	public static final class MatrixType extends ValueType {
 
-		public static final char ROW_SEPARATOR = ';';
+		static final char ROW_SEPARATOR = ';';
 
 		private final int rows, columns;
 		private final ValueType componentType;
@@ -932,6 +932,7 @@ public class ValueType implements StringResource, NamedObject {
 
 					case ROW_SEPARATOR:
 						rowBreak = true;
+						break; //FIXME we had a fall-through here, was that intended?
 
 					case VectorType.ELEMENT_SEPARATOR:
 						Object element = componentType.parse(buffer, classLoader);
