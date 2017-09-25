@@ -32,6 +32,7 @@ import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * Implements a 1-to-1 mapping that is based
@@ -131,7 +132,7 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 				throws InterruptedException {
 			long index = lookup0(sourceIndex);
 
-			if(index==UNSET_LONG) {
+			if(index==IcarusUtils.UNSET_LONG) {
 				return false;
 			} else {
 				collector.add(index);
@@ -218,7 +219,7 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 		@Override
 		public long find(long fromSource, long toSource, long targetIndex, RequestSettings settings)
 				throws InterruptedException {
-			return UNSET_LONG;
+			return IcarusUtils.UNSET_LONG;
 		}
 
 		/**

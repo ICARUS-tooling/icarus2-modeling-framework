@@ -18,7 +18,6 @@
 package de.ims.icarus2.filedriver.mapping.chunks;
 
 import de.ims.icarus2.filedriver.io.sets.ResourceSet;
-import de.ims.icarus2.model.api.ModelConstants;
 
 /**
  * A simple lookup structure to map from item index values to actual
@@ -54,7 +53,7 @@ import de.ims.icarus2.model.api.ModelConstants;
  * @author Markus Gärtner
  *
  */
-public interface ChunkIndex extends ModelConstants {
+public interface ChunkIndex {
 
 	/**
 	 * Returns the file storage that file indices returned by {@link ChunkIndexReader#getFileId(long)}

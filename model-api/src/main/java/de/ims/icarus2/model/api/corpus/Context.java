@@ -55,6 +55,11 @@ public interface Context extends ManifestOwner<ContextManifest>, Connectible<Dri
 	 * a context is not required to declare its own foundation layer, but can use that
 	 * of another context it is depending on. Typically a context's foundation layer
 	 * will be the foundation layer of its declared primary layer.
+	 * <p>
+	 * It is recommended (but not enforced) that the host context of any foundation layer
+	 * be static in the sense that only constructive modifications are possible, i.e.
+	 * only new data points can be appended, but the existing order of elements in the
+	 * foundation layer is to remain unchanged!
 	 *
 	 * @return
 	 */
@@ -176,6 +181,9 @@ public interface Context extends ManifestOwner<ContextManifest>, Connectible<Dri
 	void disconnectNotify(Driver driver);
 
 	/**
+	 * A normal context cannot be structurally changed at runtime while being live.
+	 * Virtual contexts (such as those created programmatically to host search results)
+	 * however can get new (virtual) data added to them (and also have it removed again).
 	 *
 	 * @author Markus Gärtner
 	 *

@@ -219,7 +219,7 @@ public interface DriverManifest extends ForeignImplementationManifest {
 	 *
 	 */
 	@AccessControl(AccessPolicy.DENY)
-	public interface ModuleSpec extends ModifiableIdentity, Lockable, Documentable, TypedManifest {
+	public interface ModuleSpec extends ModifiableCategory, Lockable, Documentable, TypedManifest {
 
 		public static final boolean DEFAULT_IS_CUSTOMIZABLE = false;
 		public static final Multiplicity DEFAULT_MULTIPLICITY = Multiplicity.ONE;

@@ -211,8 +211,6 @@ public interface OptionsManifest extends Manifest, Embedded {
 		 * default value should be returned
 		 * @return The default value for the specified property or {@code null}
 		 * if the property has no default value assigned to it
-		 * @throws NullPointerException if the {@code name} argument
-		 * is {@code null}
 		 */
 		@AccessRestriction(AccessMode.READ)
 		Object getDefaultValue();
@@ -224,8 +222,6 @@ public interface OptionsManifest extends Manifest, Embedded {
 		 * @param name The {@code name} of the property for which the
 		 * type should be returned
 		 * @return The type for the specified property
-		 * @throws NullPointerException if the {@code name} argument
-		 * is {@code null}
 		 */
 		@AccessRestriction(AccessMode.READ)
 		ValueType getValueType();
@@ -237,8 +233,6 @@ public interface OptionsManifest extends Manifest, Embedded {
 		 * @param name The {@code name} of the property for which a
 		 * localized name should be returned
 		 * @return A localized name string for the specified property
-		 * @throws NullPointerException if the {@code name} argument
-		 * is {@code null}
 		 */
 		@Override
 		@AccessRestriction(AccessMode.READ)
@@ -254,8 +248,6 @@ public interface OptionsManifest extends Manifest, Embedded {
 		 * localized description should be returned
 		 * @return A localized description string for the specified property
 		 * or {@code null} if there is no description available for it
-		 * @throws NullPointerException if the {@code name} argument
-		 * is {@code null}
 		 */
 		@Override
 		@AccessRestriction(AccessMode.READ)
@@ -316,8 +308,6 @@ public interface OptionsManifest extends Manifest, Embedded {
 		 *
 		 * @param name
 		 * @return
-		 * @throws NullPointerException if the {@code name} argument
-		 * is {@code null}
 		 */
 		@AccessRestriction(AccessMode.READ)
 		boolean isPublished();
@@ -329,8 +319,6 @@ public interface OptionsManifest extends Manifest, Embedded {
 		 *
 		 * @param name
 		 * @return
-		 * @throws NullPointerException if the {@code name} argument
-		 * is {@code null}
 		 */
 		@AccessRestriction(AccessMode.READ)
 		boolean isMultiValue();
@@ -340,8 +328,6 @@ public interface OptionsManifest extends Manifest, Embedded {
 		 *
 		 * @param name
 		 * @return
-		 * @throws NullPointerException if the {@code name} argument
-		 * is {@code null}
 		 */
 		@AccessRestriction(AccessMode.READ)
 		boolean isAllowNull();

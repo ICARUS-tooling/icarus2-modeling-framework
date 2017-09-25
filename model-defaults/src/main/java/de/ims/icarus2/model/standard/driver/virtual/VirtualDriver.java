@@ -39,10 +39,11 @@ import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.members.item.ItemLayerManager;
+import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.standard.driver.AbstractDriver;
+import de.ims.icarus2.util.IcarusUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
@@ -194,7 +195,7 @@ public class VirtualDriver extends AbstractDriver {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#getItemCount(de.ims.icarus2.model.api.layer.ItemLayer)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#getItemCount(de.ims.icarus2.model.api.layer.ItemLayer)
 	 */
 	@Override
 	public long getItemCount(ItemLayer layer) {
@@ -202,7 +203,7 @@ public class VirtualDriver extends AbstractDriver {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#getItem(de.ims.icarus2.model.api.layer.ItemLayer, long)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#getItem(de.ims.icarus2.model.api.layer.ItemLayer, long)
 	 */
 	@Override
 	public Item getItem(ItemLayer layer, long index) {
@@ -210,7 +211,7 @@ public class VirtualDriver extends AbstractDriver {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#release(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#release(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer)
 	 */
 	@Override
 	public void release(IndexSet[] indices, ItemLayer layer)
@@ -271,7 +272,7 @@ public class VirtualDriver extends AbstractDriver {
 
 	@Override
 	public long getItemCount(ItemLayerManifest layer) {
-		return (isReady() && isConnected()) ? getItemCount(getLayerForManifest(layer)) : UNSET_LONG;
+		return (isReady() && isConnected()) ? getItemCount(getLayerForManifest(layer)) : IcarusUtils.UNSET_LONG;
 	}
 
 	/**

@@ -26,7 +26,6 @@ import java.util.function.LongUnaryOperator;
 import java.util.function.ObjLongConsumer;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
@@ -51,7 +50,7 @@ import de.ims.icarus2.util.annotations.OptionalMethod;
  * @author Markus Gärtner
  *
  */
-public interface ComponentSupplier extends AutoCloseable, ModelConstants {
+public interface ComponentSupplier extends AutoCloseable {
 
 	/**
 	 * Returns the layer that {@code sourceIndex} parameters passed
@@ -215,7 +214,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		public void close() {
 			item = null;
 			host = null;
-			id = UNSET_LONG;
+			id = IcarusUtils.UNSET_LONG;
 		}
 
 		@Override
@@ -235,9 +234,9 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 
 		@Override
 		public long currentId() {
-			if(id==UNSET_LONG) {
+			if(id==IcarusUtils.UNSET_LONG) {
 				long index = currentIndex();
-				if(index==UNSET_LONG)
+				if(index==IcarusUtils.UNSET_LONG)
 					throw new ModelException(ModelErrorCode.DRIVER_ERROR, "No more items available");
 
 				// If no mapper for index -> id, just use identity mapping
@@ -249,14 +248,14 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		@Override
 		public boolean next() {
 			// Reset "iterator" state
-			id = UNSET_LONG;
+			id = IcarusUtils.UNSET_LONG;
 			item = null;
 
 			// Delegate to subclass implementation
 			tryAdvance();
 
 			// If we have valid current index, advance was a success
-			return currentIndex()!=UNSET_LONG;
+			return currentIndex()!=IcarusUtils.UNSET_LONG;
 		}
 
 		protected abstract void tryAdvance();
@@ -309,12 +308,12 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		@Override
 		public void close() {
 			super.close();
-			index = UNSET_LONG;
+			index = IcarusUtils.UNSET_LONG;
 		}
 
 		@Override
 		public long available() {
-			return index==UNSET_LONG ? 0 : 1;
+			return index==IcarusUtils.UNSET_LONG ? 0 : 1;
 		}
 
 		/**
@@ -330,7 +329,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		 */
 		@Override
 		public long currentIndex() {
-			long result = UNSET_LONG;
+			long result = IcarusUtils.UNSET_LONG;
 			if(!consumed) {
 				result = index;
 				consumed = true;
@@ -355,7 +354,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		private final long beginIndex;
 		private final long endIndex;
 
-		private long index = UNSET_LONG;
+		private long index = IcarusUtils.UNSET_LONG;
 		private boolean eos = false;
 
 		public ContinuousComponentSupplier(Builder builder) {
@@ -377,7 +376,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 
 		@Override
 		public long available() {
-			return endIndex==UNSET_LONG ? UNSET_LONG : (endIndex-beginIndex+1);
+			return endIndex==IcarusUtils.UNSET_LONG ? IcarusUtils.UNSET_LONG : (endIndex-beginIndex+1);
 		}
 
 		@Override
@@ -393,8 +392,8 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 
 			index++;
 
-			if(endIndex!=UNSET_LONG && index>endIndex) {
-				index = UNSET_LONG;
+			if(endIndex!=IcarusUtils.UNSET_LONG && index>endIndex) {
+				index = IcarusUtils.UNSET_LONG;
 				eos = true;
 			}
 		}
@@ -402,7 +401,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 
 	public static class StreamedComponentSupplier extends AbstractComponentSupplier {
 
-		private long index = UNSET_LONG;
+		private long index = IcarusUtils.UNSET_LONG;
 		private boolean eos = false;
 
 		private final LongSupplier supplier;
@@ -421,7 +420,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		 */
 		@Override
 		public long available() {
-			return UNSET_LONG;
+			return IcarusUtils.UNSET_LONG;
 		}
 
 		/**
@@ -443,7 +442,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 
 			index = supplier.getAsLong();
 
-			if(index==UNSET_LONG) {
+			if(index==IcarusUtils.UNSET_LONG) {
 				eos = true;
 			}
 		}
@@ -460,10 +459,10 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		private final IndexBuffer buffer;
 
 		// SPAN SUPPORT
-		private long spanBegin = UNSET_LONG;
-		private long spanEnd = UNSET_LONG;
+		private long spanBegin = IcarusUtils.UNSET_LONG;
+		private long spanEnd = IcarusUtils.UNSET_LONG;
 
-		private long cursor = UNSET_LONG;
+		private long cursor = IcarusUtils.UNSET_LONG;
 		private boolean eos = false;
 
 		/**
@@ -519,7 +518,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 					mappingReader.lookup(sourceIndex, buffer, RequestSettings.emptySettings);
 				}
 
-				cursor = UNSET_LONG;
+				cursor = IcarusUtils.UNSET_LONG;
 				eos = false;
 			} finally {
 				mappingReader.end();
@@ -546,9 +545,9 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 
 		@Override
 		public long currentIndex() {
-			long result = UNSET_LONG;
+			long result = IcarusUtils.UNSET_LONG;
 
-			if(cursor!=UNSET_LONG) {
+			if(cursor!=IcarusUtils.UNSET_LONG) {
 				if(useSpanMapping) {
 					result = spanBegin+cursor;
 				} else {
@@ -568,7 +567,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 			cursor++;
 
 			if(cursor>=available()) {
-				cursor = UNSET_LONG;
+				cursor = IcarusUtils.UNSET_LONG;
 				eos = true;
 			}
 		}
@@ -653,7 +652,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		}
 
 		public long getFirstIndex() {
-			return firstIndex==null ? UNSET_LONG : firstIndex.longValue();
+			return firstIndex==null ? IcarusUtils.UNSET_LONG : firstIndex.longValue();
 		}
 
 		public Builder firstIndex(long firstIndex) {
@@ -666,7 +665,7 @@ public interface ComponentSupplier extends AutoCloseable, ModelConstants {
 		}
 
 		public long getLastIndex() {
-			return lastIndex==null ? UNSET_LONG : lastIndex.longValue();
+			return lastIndex==null ? IcarusUtils.UNSET_LONG : lastIndex.longValue();
 		}
 
 		public Builder lastIndex(long lastIndex) {

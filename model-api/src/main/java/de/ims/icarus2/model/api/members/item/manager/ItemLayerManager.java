@@ -16,19 +16,20 @@
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  *
  */
-package de.ims.icarus2.model.api.members.item;
+package de.ims.icarus2.model.api.members.item.manager;
 
 import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.ObjLongConsumer;
 
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.driver.ChunkInfo;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
+import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * Specifies an abstract manager that handles the content of potentially
@@ -37,7 +38,7 @@ import de.ims.icarus2.model.api.layer.Layer;
  * @author Markus Gärtner
  *
  */
-public interface ItemLayerManager extends ModelConstants {
+public interface ItemLayerManager {
 
 	/**
 	 * Returns all {@link ItemLayer item layer} instances that are accessible
@@ -66,7 +67,7 @@ public interface ItemLayerManager extends ModelConstants {
 	 * @throws ModelException
 	 */
 	default long getItemCount(ItemLayer layer) {
-		return UNSET_LONG;
+		return IcarusUtils.UNSET_LONG;
 	}
 
 	/**

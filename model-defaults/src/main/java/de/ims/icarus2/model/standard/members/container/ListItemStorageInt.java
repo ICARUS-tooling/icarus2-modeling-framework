@@ -278,7 +278,7 @@ public class ListItemStorageInt implements ItemStorage {
 			refreshOffsetItems();
 		}
 
-		return beginItem==null ? UNSET_LONG : beginItem.getBeginOffset();
+		return beginItem==null ? IcarusUtils.UNSET_LONG : beginItem.getBeginOffset();
 	}
 
 	/**
@@ -290,7 +290,7 @@ public class ListItemStorageInt implements ItemStorage {
 			refreshOffsetItems();
 		}
 
-		return endItem==null ? UNSET_LONG : endItem.getEndOffset();
+		return endItem==null ? IcarusUtils.UNSET_LONG : endItem.getEndOffset();
 	}
 
 	/**

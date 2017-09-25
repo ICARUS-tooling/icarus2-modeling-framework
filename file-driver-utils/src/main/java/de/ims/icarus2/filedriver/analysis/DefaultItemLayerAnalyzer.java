@@ -27,7 +27,6 @@ import de.ims.icarus2.filedriver.FileDataStates;
 import de.ims.icarus2.filedriver.FileDataStates.FileInfo;
 import de.ims.icarus2.filedriver.FileDataStates.LayerInfo;
 import de.ims.icarus2.filedriver.FileDataStates.NumericalStats;
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -36,13 +35,14 @@ import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.LongCounter;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class DefaultItemLayerAnalyzer extends AbstractFileDriverAnalyzer implements ItemLayerAnalyzer, ModelConstants {
+public class DefaultItemLayerAnalyzer extends AbstractFileDriverAnalyzer implements ItemLayerAnalyzer {
 
 	/**
 	 * Layer this analyzer is collecting information for
@@ -106,13 +106,13 @@ public class DefaultItemLayerAnalyzer extends AbstractFileDriverAnalyzer impleme
 		// Refresh file info
 		FileInfo fileInfo = states.getFileInfo(fileIndex);
 		long beginIndex = fileInfo.getBeginIndex(layerManifest);
-		if(beginIndex==UNSET_LONG) {
+		if(beginIndex==IcarusUtils.UNSET_LONG) {
 			if(fileIndex==0) {
 				beginIndex = 0L;
 			} else {
 				FileInfo previousInfo = states.getFileInfo(fileIndex-1);
 				long previousEndIndex = previousInfo.getEndIndex(layerManifest);
-				if(previousEndIndex==UNSET_LONG)
+				if(previousEndIndex==IcarusUtils.UNSET_LONG)
 					throw new ManifestException(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 							String.format("Missing information of end index for layer %s in file %d",
 									getName(layerManifest), _int(fileIndex)));
@@ -149,7 +149,7 @@ public class DefaultItemLayerAnalyzer extends AbstractFileDriverAnalyzer impleme
 			containerSizes.accept(container.getItemCount());
 
 			long spanSize = container.getSpan();
-			if(spanSize!=UNSET_LONG) {
+			if(spanSize!=IcarusUtils.UNSET_LONG) {
 				spanSizes.accept(spanSize);
 			}
 

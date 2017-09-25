@@ -35,7 +35,7 @@ import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.io.resources.IOResource;
-import de.ims.icarus2.model.api.io.resources.InMemoryResource;
+import de.ims.icarus2.model.api.io.resources.VirtualIOResource;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
@@ -53,7 +53,7 @@ import de.ims.icarus2.util.classes.ClassUtils;
  * <tr><td>unaryFunction</td><td>function, unary</td><td>{@link LongUnaryOperator} for mapping single index values</td></tr>
  * <tr><td>batchFunction</td><td>batch</td><td>{@link UnaryOperator}, parameterized with {@link IndexSet} to map complex collections of index values</td></tr>
  * <tr><td>resource</td><td>storage</td><td>{@link IOResource} implementation to be used for a mapping that relies on storage</td></tr>
- * <tr><td>capacity</td><td>-</td><td>Initial capacity used for an {@link InMemoryResource} that will be instantiated in case no custom {@link IOResource} is specified</td></tr>
+ * <tr><td>capacity</td><td>-</td><td>Initial capacity used for an {@link VirtualIOResource} that will be instantiated in case no custom {@link IOResource} is specified</td></tr>
  * <tr><td>valueType</td><td>indexValueType</td><td>{@link IndexValueType} to be used for the mapping</td></tr>
  * <tr><td>cacheSize</td><td>-</td><td>Size of the cache a mapping should use</td></tr>
  * <tr><td>blockCache</td><td>cache</td><td>{@link BlockCache} implementation for a mapping that relies on storage</td></tr>
@@ -171,7 +171,7 @@ public class DefaultMappingFactory implements MappingFactory {
 		if(!IOResource.class.isInstance(resource)) {
 			int capacity = options.getInteger(FileDriverUtils.MappingProperty.CAPACITY.key(), 1024*1024);
 
-			resource = new InMemoryResource(capacity);
+			resource = new VirtualIOResource(capacity);
 		}
 
 		return (IOResource) resource;

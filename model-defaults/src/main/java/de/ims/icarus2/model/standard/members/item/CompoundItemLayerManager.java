@@ -27,7 +27,7 @@ import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.members.item.ItemLayerManager;
+import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
 import de.ims.icarus2.util.collections.LazyCollection;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
@@ -50,7 +50,7 @@ public class CompoundItemLayerManager implements ItemLayerManager {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#getItemLayers()
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#getItemLayers()
 	 */
 	@Override
 	public Collection<Layer> getItemLayers() {
@@ -62,7 +62,7 @@ public class CompoundItemLayerManager implements ItemLayerManager {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#getItemCount(de.ims.icarus2.model.api.layer.ItemLayer)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#getItemCount(de.ims.icarus2.model.api.layer.ItemLayer)
 	 */
 	@Override
 	public long getItemCount(ItemLayer layer) {
@@ -70,7 +70,7 @@ public class CompoundItemLayerManager implements ItemLayerManager {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#getItem(de.ims.icarus2.model.api.layer.ItemLayer, long)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#getItem(de.ims.icarus2.model.api.layer.ItemLayer, long)
 	 */
 	@Override
 	public Item getItem(ItemLayer layer, long index) {
@@ -78,7 +78,7 @@ public class CompoundItemLayerManager implements ItemLayerManager {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#load(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer, java.util.function.Consumer)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#load(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer, java.util.function.Consumer)
 	 */
 	@Override
 	public long load(IndexSet[] indices, ItemLayer layer,
@@ -87,7 +87,7 @@ public class CompoundItemLayerManager implements ItemLayerManager {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#release(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#release(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer)
 	 */
 	@Override
 	public void release(IndexSet[] indices, ItemLayer layer)

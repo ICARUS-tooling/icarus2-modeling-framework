@@ -27,6 +27,7 @@ import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.ContainerType;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
@@ -108,7 +109,7 @@ public class EdgeProxyStorage implements ItemStorage {
 	@Override
 	public long indexOfItem(Container context, Item item) {
 		return item.getMemberType()==MemberType.EDGE ?
-				structure.indexOfEdge((Edge) item) : UNSET_LONG;
+				structure.indexOfEdge((Edge) item) : IcarusUtils.UNSET_LONG;
 	}
 
 	/**
@@ -168,7 +169,7 @@ public class EdgeProxyStorage implements ItemStorage {
 	 */
 	@Override
 	public long getBeginOffset(Container context) {
-		return UNSET_LONG;
+		return IcarusUtils.UNSET_LONG;
 	}
 
 	/**
@@ -176,7 +177,7 @@ public class EdgeProxyStorage implements ItemStorage {
 	 */
 	@Override
 	public long getEndOffset(Container context) {
-		return UNSET_LONG;
+		return IcarusUtils.UNSET_LONG;
 	}
 
 	/**

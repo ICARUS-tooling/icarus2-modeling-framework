@@ -23,7 +23,6 @@ import java.util.function.Consumer;
 import javax.swing.event.ChangeListener;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -59,7 +58,7 @@ import de.ims.icarus2.util.collections.set.DataSet;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface CorpusModel extends Part<CorpusView>, ModelConstants, Changeable {
+public interface CorpusModel extends Part<CorpusView>, Changeable {
 
 	//---------------------------------------------
 	//			GENERAL METHODS

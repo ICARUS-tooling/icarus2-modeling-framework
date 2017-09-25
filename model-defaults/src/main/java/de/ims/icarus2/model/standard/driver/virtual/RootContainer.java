@@ -22,17 +22,17 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.function.Supplier;
 
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.members.item.ItemList;
+import de.ims.icarus2.model.api.members.item.manager.ItemList;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.standard.members.container.AbstractImmutableContainer;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
 
@@ -76,7 +76,7 @@ public class RootContainer extends AbstractImmutableContainer {
 	 */
 	@Override
 	public long getId() {
-		return UNSET_LONG;
+		return IcarusUtils.UNSET_LONG;
 	}
 
 	/**
@@ -98,33 +98,33 @@ public class RootContainer extends AbstractImmutableContainer {
 	}
 
 	/**
-	 * Returns {@link ModelConstants#UNSET_LONG -1}.
+	 * Returns {@link IcarusUtils#UNSET_LONG -1}.
 	 *
 	 * @see de.ims.icarus2.model.api.members.item.Item#getIndex()
 	 */
 	@Override
 	public long getIndex() {
-		return UNSET_LONG;
+		return IcarusUtils.UNSET_LONG;
 	}
 
 	/**
-	 * Returns {@link ModelConstants#UNSET_LONG -1}.
+	 * Returns {@link IcarusUtils#UNSET_LONG -1}.
 	 *
 	 * @see de.ims.icarus2.model.api.members.item.Item#getBeginOffset()
 	 */
 	@Override
 	public long getBeginOffset() {
-		return UNSET_LONG;
+		return IcarusUtils.UNSET_LONG;
 	}
 
 	/**
-	 * Returns {@link ModelConstants#UNSET_LONG -1}.
+	 * Returns {@link IcarusUtils#UNSET_LONG -1}.
 	 *
 	 * @see de.ims.icarus2.model.api.members.item.Item#getEndOffset()
 	 */
 	@Override
 	public long getEndOffset() {
-		return UNSET_LONG;
+		return IcarusUtils.UNSET_LONG;
 	}
 
 	/**

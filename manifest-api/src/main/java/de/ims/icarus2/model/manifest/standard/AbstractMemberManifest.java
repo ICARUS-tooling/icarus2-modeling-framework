@@ -51,6 +51,7 @@ import de.ims.icarus2.util.collections.CollectionUtils;
 public abstract class AbstractMemberManifest<M extends MemberManifest> extends AbstractManifest<M> implements MemberManifest {
 
 	private String name;
+	private String namespace;
 	private String description;
 	private Icon icon;
 
@@ -292,6 +293,14 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	}
 
 	/**
+	 * @see de.ims.icarus2.model.manifest.api.Category#getNamespace()
+	 */
+	@Override
+	public String getNamespace() {
+		return namespace;
+	}
+
+	/**
 	 * @return the description
 	 */
 	@Override
@@ -329,6 +338,22 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 		requireNonNull(name);
 
 		this.name = name;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.ModifiableCategory#setNamespace(java.lang.String)
+	 */
+	@Override
+	public void setNamespace(String namespace) {
+		checkNotLocked();
+
+		setNamespace0(namespace);
+	}
+
+	protected void setNamespace0(String namespace) {
+		requireNonNull(namespace);
+
+		this.namespace = namespace;
 	}
 
 	/**

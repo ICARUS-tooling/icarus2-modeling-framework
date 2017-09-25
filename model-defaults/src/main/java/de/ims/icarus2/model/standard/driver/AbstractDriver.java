@@ -454,7 +454,7 @@ public abstract class AbstractDriver implements Driver {
 
 	/**
 	 *
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#getItemLayers()
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#getItemLayers()
 	 *
 	 * @throws ModelException in case the driver is currently not connected to any live corpus
 	 */

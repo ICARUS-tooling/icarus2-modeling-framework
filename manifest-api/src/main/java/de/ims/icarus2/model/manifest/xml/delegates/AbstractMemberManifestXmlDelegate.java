@@ -162,6 +162,7 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 		MemberManifest manifest = getInstance();
 
 		serializer.writeAttribute(ATTR_NAME, manifest.getName());
+		serializer.writeAttribute(ATTR_NAMESPACE, getInstance().getNamespace());
 		serializer.writeAttribute(ATTR_DESCRIPTION, manifest.getDescription());
 
 		Icon icon = manifest.getIcon();
@@ -179,6 +180,11 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 	@Override
 	protected void readAttributes(Attributes attributes) {
 		super.readAttributes(attributes);
+
+		String namespace = normalize(attributes, ATTR_NAMESPACE);
+		if(namespace!=null) {
+			getInstance().setNamespace(namespace);
+		}
 
 		String name = normalize(attributes, ATTR_NAME);
 		if(name!=null) {

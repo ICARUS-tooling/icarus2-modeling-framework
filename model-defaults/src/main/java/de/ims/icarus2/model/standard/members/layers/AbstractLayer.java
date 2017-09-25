@@ -31,6 +31,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.util.AbstractPart;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
@@ -194,7 +195,7 @@ public class AbstractLayer<M extends LayerManifest> extends AbstractPart<LayerGr
 		 */
 		@Override
 		public long getBeginOffset() {
-			return UNSET_LONG;
+			return IcarusUtils.UNSET_LONG;
 		}
 
 		/**
@@ -202,7 +203,7 @@ public class AbstractLayer<M extends LayerManifest> extends AbstractPart<LayerGr
 		 */
 		@Override
 		public long getEndOffset() {
-			return UNSET_LONG;
+			return IcarusUtils.UNSET_LONG;
 		}
 
 		/**
@@ -210,7 +211,7 @@ public class AbstractLayer<M extends LayerManifest> extends AbstractPart<LayerGr
 		 */
 		@Override
 		public long getIndex() {
-			return UNSET_LONG;
+			return IcarusUtils.UNSET_LONG;
 		}
 
 		/**
@@ -218,7 +219,7 @@ public class AbstractLayer<M extends LayerManifest> extends AbstractPart<LayerGr
 		 */
 		@Override
 		public long getId() {
-			return UNSET_LONG;
+			return IcarusUtils.UNSET_LONG;
 		}
 
 		/**

@@ -25,6 +25,7 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerType;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.seq.SingletonSequence;
 
@@ -122,7 +123,7 @@ public class SingletonItemStorage implements ItemStorage {
 	 */
 	@Override
 	public long indexOfItem(Container context, Item item) {
-		return (singleton!=null && singleton==item) ? 0L : UNSET_LONG;
+		return (singleton!=null && singleton==item) ? 0L : IcarusUtils.UNSET_LONG;
 	}
 
 	/**
@@ -192,7 +193,7 @@ public class SingletonItemStorage implements ItemStorage {
 	 */
 	@Override
 	public long getBeginOffset(Container context) {
-		return isEmpty() ? UNSET_LONG : singleton.getBeginOffset();
+		return isEmpty() ? IcarusUtils.UNSET_LONG : singleton.getBeginOffset();
 	}
 
 	/**
@@ -200,7 +201,7 @@ public class SingletonItemStorage implements ItemStorage {
 	 */
 	@Override
 	public long getEndOffset(Container context) {
-		return isEmpty() ? UNSET_LONG : singleton.getEndOffset();
+		return isEmpty() ? IcarusUtils.UNSET_LONG : singleton.getEndOffset();
 	}
 
 	/**

@@ -20,8 +20,8 @@ package de.ims.icarus2.model.api.members.structure;
 
 import java.io.Serializable;
 
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.meta.MetaData;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * Models a collection of structure related metadata.
@@ -47,7 +47,7 @@ import de.ims.icarus2.model.api.meta.MetaData;
  * @author Markus Gärtner
  *
  */
-public interface StructureInfo extends MetaData, ModelConstants, Serializable {
+public interface StructureInfo extends MetaData, Serializable {
 
 	//TODO add info getter methods for stuff like min/max branching etc
 
@@ -65,6 +65,6 @@ public interface StructureInfo extends MetaData, ModelConstants, Serializable {
 	 * @return
 	 */
 	default boolean isUndefined(StructureInfoField field) {
-		return getMin(field)==UNSET_LONG; //FIXME also use Double.compare
+		return getMin(field)==IcarusUtils.UNSET_LONG; //FIXME also use Double.compare
 	}
 }

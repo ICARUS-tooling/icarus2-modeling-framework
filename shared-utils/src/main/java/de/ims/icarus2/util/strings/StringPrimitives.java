@@ -242,6 +242,7 @@ public class StringPrimitives {
     }
 
     private static boolean toBoolean(CharSequence s, int offset) {
+    	//TODO switch to something more robust and throw exception if string is neither "true", nor "false"
         return ((s != null)
         		&& s.length()==4
         		&& (s.charAt(0)=='T' || s.charAt(0)=='t')

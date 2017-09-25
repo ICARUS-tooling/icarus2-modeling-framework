@@ -32,7 +32,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -68,7 +67,7 @@ import de.ims.icarus2.util.collections.set.SingletonSet;
  * @author Markus Gärtner
  *
  */
-public class StructureBuilder implements ModelConstants {
+public class StructureBuilder {
 
 	public static StructureBuilder newBuilder(StructureManifest manifest) {
 		requireNonNull(manifest);
@@ -476,8 +475,8 @@ public class StructureBuilder implements ModelConstants {
 	}
 
 	public void setId(long id) {
-		checkState(this.id==UNSET_LONG);
-		checkArgument(id!=UNSET_LONG);
+		checkState(this.id==IcarusUtils.UNSET_LONG);
+		checkArgument(id!=IcarusUtils.UNSET_LONG);
 
 		this.id = id;
 	}
@@ -589,7 +588,7 @@ public class StructureBuilder implements ModelConstants {
 
 		augmented = false;
 
-		id = UNSET_LONG;
+		id = IcarusUtils.UNSET_LONG;
 	}
 
 	/**

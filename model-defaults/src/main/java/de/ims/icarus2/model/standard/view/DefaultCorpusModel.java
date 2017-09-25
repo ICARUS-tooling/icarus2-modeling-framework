@@ -53,8 +53,8 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.members.item.ItemLayerManager;
-import de.ims.icarus2.model.api.members.item.ItemLookup;
+import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
+import de.ims.icarus2.model.api.members.item.manager.ItemLookup;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.api.view.CorpusModel;
@@ -433,7 +433,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 
 	@Override
 	public boolean containsItem(Container container, Item item) {
-		return indexOfItem(container, item)!=UNSET_LONG;
+		return indexOfItem(container, item)!=IcarusUtils.UNSET_LONG;
 	}
 
 	@Override
@@ -477,7 +477,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 	public boolean removeItem(Container c, Item item) {
 		long index = c.indexOfItem(item);
 
-		if(index==UNSET_LONG) {
+		if(index==IcarusUtils.UNSET_LONG) {
 			return false;
 		}
 
@@ -667,7 +667,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 	public boolean removeEdge(Structure structure, Edge edge) {
 		long index = structure.indexOfEdge(edge);
 
-		if(index==UNSET_LONG) {
+		if(index==IcarusUtils.UNSET_LONG) {
 			return false;
 		}
 
@@ -1070,7 +1070,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.members.item.ItemLookup#getItemCount()
+		 * @see de.ims.icarus2.model.api.members.item.manager.ItemLookup#getItemCount()
 		 */
 		@Override
 		public long getItemCount() {
@@ -1080,7 +1080,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.members.item.ItemLookup#getItemAt(long)
+		 * @see de.ims.icarus2.model.api.members.item.manager.ItemLookup#getItemAt(long)
 		 */
 		@Override
 		public Item getItemAt(long index) {
@@ -1090,7 +1090,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.members.item.ItemLookup#indexOfItem(de.ims.icarus2.model.api.members.item.Item)
+		 * @see de.ims.icarus2.model.api.members.item.manager.ItemLookup#indexOfItem(de.ims.icarus2.model.api.members.item.Item)
 		 */
 		@Override
 		public long indexOfItem(Item item) {
@@ -1126,7 +1126,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		 */
 		@Override
 		public long getId() {
-			return UNSET_LONG;
+			return IcarusUtils.UNSET_LONG;
 		}
 
 		/**
@@ -1150,7 +1150,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		 */
 		@Override
 		public long getIndex() {
-			return UNSET_LONG;
+			return IcarusUtils.UNSET_LONG;
 		}
 
 		/**

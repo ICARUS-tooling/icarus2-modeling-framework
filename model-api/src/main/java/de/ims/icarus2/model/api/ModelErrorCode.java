@@ -29,6 +29,7 @@ import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.edit.UndoableCorpusEdit;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.members.item.stream.ItemStream;
 import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.api.view.CorpusModel;
 import de.ims.icarus2.model.api.view.CorpusView.PageControl;
@@ -139,18 +140,47 @@ public enum ModelErrorCode implements ErrorCode {
 	DRIVER_NOT_EDITABLE(411),
 
 	//**************************************************
-	//       5xx  CORPUS VIEW ERRORS
+	//       5xx  STREAM ERRORS
+	//**************************************************
+
+	/**
+	 * A general error occurred when streaming the content
+	 * of a corpus.
+	 */
+	STREAM_ERROR(500),
+
+	/**
+	 * Trying to access the current element in the stream failed.
+	 * This is also used for other "read" methods that require
+	 * access to the current item or associated information.
+	 * <p>
+	 * Typically this kind of error happens when a stream hasn't
+	 * been properly {@link ItemStream#advance() advanced} or if
+	 * it has been {@link ItemStream#flush() flushed} directly
+	 * before calling a method that tries to access the current
+	 * item.
+	 */
+	STREAM_NO_ITEM(501),
+
+	STREAM_MARK_NOT_SUPPORTED(510),
+	STREAM_MARK_NOT_SET(511),
+
+	STREAM_SKIP_NOT_SUPPORTED(510),
+
+
+	//**************************************************
+	//       6xx  CORPUS VIEW ERRORS
 	//**************************************************
 
 	/**
 	 * A general error regarding a view implementation
 	 */
-	VIEW_ERROR(500),
+	VIEW_ERROR(600),
 
 	/**
 	 * Closing a corpus view failed due to some owner not being able to release its lock when asked.
 	 */
-	VIEW_UNCLOSABLE(501),
+	VIEW_UNCLOSABLE(601),
 
 	/**
 	 * Creating a new corpus view in an access mode that would grant write access failed due to some other
@@ -158,25 +188,25 @@ public enum ModelErrorCode implements ErrorCode {
 	 * Note that there can only be one corpus view instance for a particular corpus with write access, but
 	 * an unlimited number of reading views!
 	 */
-	VIEW_ALREADY_OPENED(502),
+	VIEW_ALREADY_OPENED(602),
 
 	/**
 	 * An attempt to fetch the model for a corpus view failed because the data for the current
 	 * page has not yet been loaded.
 	 */
-	VIEW_EMPTY(503),
+	VIEW_EMPTY(603),
 
 	/**
 	 * An attempt was made to call a method on a {@code CorpusView}'s {@link PageControl} that
 	 * failed due to the control being locked.
 	 */
-	VIEW_LOCKED(504),
+	VIEW_LOCKED(604),
 
 	/**
 	 * An already closed view or one of its sub-components has been asked to perform an operation that
 	 * requires the view to still be active.
 	 */
-	VIEW_CLOSED(505),
+	VIEW_CLOSED(605),
 
 	//**************************************************
 	//       8xx  MODEL ERRORS (inc. EDIT MODEL errors)
@@ -295,6 +325,8 @@ public enum ModelErrorCode implements ErrorCode {
 	//FIXME add errors for missing content etc...
 	;
 
+	public static final int SCOPE = 3000;
+
 	private final int code;
 
 	ModelErrorCode(int errorCode) {
@@ -303,11 +335,29 @@ public enum ModelErrorCode implements ErrorCode {
 
 	@Override
 	public int code() {
-		return code;
+		return code+SCOPE;
 	}
 
+	/**
+	 * @see de.ims.icarus2.ErrorCode#scope()
+	 */
+	@Override
+	public int scope() {
+		return SCOPE;
+	}
+
+	/**
+	 * Maps internal codes to enum constants.
+	 */
 	private static final Int2ObjectMap<ModelErrorCode> codeLookup = new Int2ObjectOpenHashMap<>();
 
+	/**
+	 * Resolves the given error code to the matching enum constant.
+	 * {@code Code} can be given both as an internal id or global code.
+	 *
+	 * @param code
+	 * @return
+	 */
 	public static ModelErrorCode forCode(int code) {
 		if(codeLookup.isEmpty()) {
 			synchronized (codeLookup) {
@@ -324,6 +374,10 @@ public enum ModelErrorCode implements ErrorCode {
 		}
 
 		ModelErrorCode error = codeLookup.get(code);
+		if(error==null && code>SCOPE) {
+			code-=SCOPE;
+			error = codeLookup.get(code);
+		}
 
 		if(error==null)
 			throw new IllegalArgumentException("Unknown error code: "+code); //$NON-NLS-1$

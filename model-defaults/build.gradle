@@ -2,4 +2,6 @@
 description = 'Default implementations for the core model API'
 dependencies {
   implementation project(':model-api')
+  
+  testImplementation project(path: ':shared-utils', configuration: 'testOutput')
 }

@@ -24,14 +24,12 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 
-import de.ims.icarus2.model.api.ModelConstants;
-
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface IndexCollector extends ModelConstants, LongConsumer, IntConsumer, Consumer<IndexSet> {
+public interface IndexCollector extends LongConsumer, IntConsumer, Consumer<IndexSet> {
 
 	void add(long index);
 

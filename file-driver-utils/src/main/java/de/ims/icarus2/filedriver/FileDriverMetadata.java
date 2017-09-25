@@ -24,7 +24,6 @@ import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
 import de.ims.icarus2.filedriver.io.RUBlockCache;
 import de.ims.icarus2.filedriver.io.UnlimitedBlockCache;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndex;
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
@@ -289,7 +288,7 @@ import de.ims.icarus2.model.standard.driver.AbstractDriver;
  * @author Markus Gärtner
  *
  */
-public class FileDriverMetadata implements ModelConstants {
+public class FileDriverMetadata {
 
 	// PREFIXES
 

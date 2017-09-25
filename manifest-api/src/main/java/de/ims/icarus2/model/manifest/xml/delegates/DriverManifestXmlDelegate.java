@@ -284,7 +284,7 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 
 			// ATTRIBUTES
 
-			ManifestXmlUtils.writeIdentityAttributes(serializer, spec);
+			ManifestXmlUtils.writeCategoryAttributes(serializer, spec);
 
 			if(spec.isCustomizable()!=ModuleSpec.DEFAULT_IS_CUSTOMIZABLE) {
 				serializer.writeAttribute(ATTR_CUSTOMIZABLE, spec.isCustomizable());

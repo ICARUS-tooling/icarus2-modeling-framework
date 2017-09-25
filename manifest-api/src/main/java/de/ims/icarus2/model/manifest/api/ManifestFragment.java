@@ -43,8 +43,8 @@ public interface ManifestFragment extends Lockable, TypedManifest {
 	String getId();
 
 	/**
-	 * Returns a globally unique identifier that is comprised of the locally unique id and
-	 * the ids of the designated host environment if such exists. In the most simple case
+	 * Returns a globally unique identifier that is comprised of the locally unique {@link #getId() id} and
+	 * the ids of the designated host environment if it exists. In the most simple case
 	 * the globally unique id is equal to {@link #getId()}.
 	 *
 	 * @return

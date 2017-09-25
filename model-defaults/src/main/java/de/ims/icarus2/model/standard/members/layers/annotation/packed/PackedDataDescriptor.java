@@ -14,22 +14,14 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
- *
  */
-package de.ims.icarus2.model.api;
-
+package de.ims.icarus2.model.standard.members.layers.annotation.packed;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface ModelConstants {
+public interface PackedDataDescriptor {
 
-	public static final long UNSET_LONG = -1L;
-
-	public static final int UNSET_INT = -1;
-
-	public static final double UNSET_DOUBLE = -1D;
-
-	public static final float UNSET_FLOAT = -1F;
+	BytePackConverter[] getConverters();
 }

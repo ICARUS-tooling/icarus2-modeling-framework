@@ -28,7 +28,32 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
  */
 public interface ErrorCode {
 
+	/**
+	 * Returns the global error code for this error.
+	 * This is the combination of the {@link #scope() scope}
+	 * and the internal error id:<br>
+	 * <tt><i>code = scope + internal_id</i></tt>
+	 * <br>
+	 * E.g. {@code 1100} for an {@link GlobalErrorCode#UNKNOWN_ERROR unknown error}
+	 * from the {@link GlobalErrorCode global error domain}.
+	 *
+	 * @return the actual numerical code of this error
+	 */
 	int code();
+
+	/**
+	 * Returns the basic value range or <i>scope</i> of this error code.
+	 * This scope is added to the internal id of an error to form the
+	 * public {@link #code() error code}:<br>
+	 * <tt><i>code = scope + internal_id</i></tt>
+	 * <br>
+	 * E.g. {@code 1000} for any error in the {@link GlobalErrorCode global error domain}.
+	 *
+	 * @return
+	 *
+	 * @see #code()
+	 */
+	int scope();
 
 	String name();
 

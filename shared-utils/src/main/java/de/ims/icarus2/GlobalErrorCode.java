@@ -18,6 +18,10 @@
  */
 package de.ims.icarus2;
 
+import de.ims.icarus2.util.id.DuplicateIdentifierException;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+
 /**
  * @author Markus Gärtner
  *
@@ -136,14 +140,10 @@ public enum GlobalErrorCode implements ErrorCode {
 	//       7xx  DATA ERRORS
 	//**************************************************
 
-	/**
-	 * Mismatch between expected size of an array object and its actual length.
-	 *
-	 * FIXME should be removed, only used for 2 error cases in ValueType
-	 */
-	DATA_ARRAY_SIZE(701),
-
+	//TODO do we need this category at all?
 	;
+
+	public static final int SCOPE = 1000;
 
 	private final int code;
 
@@ -156,6 +156,53 @@ public enum GlobalErrorCode implements ErrorCode {
 	 */
 	@Override
 	public int code() {
-		return code;
+		return code+SCOPE;
+	}
+
+	/**
+	 * @see de.ims.icarus2.ErrorCode#scope()
+	 */
+	@Override
+	public int scope() {
+		return SCOPE;
+	}
+
+	/**
+	 * Maps internal codes to enum constants.
+	 */
+	private static final Int2ObjectMap<GlobalErrorCode> codeLookup = new Int2ObjectOpenHashMap<>();
+
+	/**
+	 * Resolves the given error code to the matching enum constant.
+	 * {@code Code} can be given both as an internal id or global code.
+	 *
+	 * @param code
+	 * @return
+	 */
+	public static GlobalErrorCode forCode(int code) {
+		if(codeLookup.isEmpty()) {
+			synchronized (codeLookup) {
+				if (codeLookup.isEmpty()) {
+					for(GlobalErrorCode error : values()) {
+						if(codeLookup.containsKey(error.code))
+							throw new DuplicateIdentifierException("Duplicate error code: "+error); //$NON-NLS-1$
+
+						codeLookup.put(error.code, error);
+					}
+				}
+
+			}
+		}
+
+		GlobalErrorCode error = codeLookup.get(code);
+		if(error==null && code>SCOPE) {
+			code-=SCOPE;
+			error = codeLookup.get(code);
+		}
+
+		if(error==null)
+			throw new IllegalArgumentException("Unknown error code: "+code); //$NON-NLS-1$
+
+		return error;
 	}
 }

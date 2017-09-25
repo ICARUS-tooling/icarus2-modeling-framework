@@ -49,6 +49,8 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
  */
 public interface Structure extends Container {
 
+	//TODO: add support for "multi-structure", i.e. n-best lists, blend-graphs for trees, etc...
+
 	@Override
 	StructureManifest getManifest();
 

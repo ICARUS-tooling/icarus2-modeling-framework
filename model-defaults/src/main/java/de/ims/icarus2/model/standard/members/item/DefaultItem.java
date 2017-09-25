@@ -27,6 +27,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.standard.members.AbstractMember;
 import de.ims.icarus2.model.standard.members.MemberFlags;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Recyclable;
 import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Primitive;
@@ -49,7 +50,7 @@ import de.ims.icarus2.util.mem.ReferenceType;
 public class DefaultItem extends AbstractMember implements Item, Item.ManagedItem, Recyclable {
 
 	@Primitive
-	private long id = UNSET_LONG;
+	private long id = IcarusUtils.UNSET_LONG;
 
 	@Reference(ReferenceType.UPLINK)
 	private Container container;
@@ -81,7 +82,7 @@ public class DefaultItem extends AbstractMember implements Item, Item.ManagedIte
 	@Override
 	public void recycle() {
 		super.recycle();
-		id = UNSET_LONG;
+		id = IcarusUtils.UNSET_LONG;
 		container = null;
 	}
 
@@ -168,7 +169,7 @@ public class DefaultItem extends AbstractMember implements Item, Item.ManagedIte
 	 */
 	@Override
 	public void setId(long id) {
-		checkState("Id already set", this.id==UNSET_LONG);
+		checkState("Id already set", this.id==IcarusUtils.UNSET_LONG);
 
 		this.id = id;
 	}

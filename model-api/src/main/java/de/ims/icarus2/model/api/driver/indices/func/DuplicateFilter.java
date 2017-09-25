@@ -22,6 +22,7 @@ import java.util.function.LongConsumer;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * Implements a stream consumer that filters out duplicates.
@@ -35,7 +36,7 @@ import de.ims.icarus2.model.api.ModelException;
  */
 public class DuplicateFilter implements LongConsumer {
 	private final LongConsumer consumer;
-	private long lastReturnedValue = IndexSetMerger.UNSET_LONG;
+	private long lastReturnedValue = IcarusUtils.UNSET_LONG;
 
 	public DuplicateFilter(LongConsumer consumer) {
 		this.consumer = consumer;

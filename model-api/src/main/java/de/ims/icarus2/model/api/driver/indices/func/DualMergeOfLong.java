@@ -23,13 +23,13 @@ import static java.util.Objects.requireNonNull;
 import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator;
 
-import de.ims.icarus2.model.api.ModelConstants;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class DualMergeOfLong implements PrimitiveIterator.OfLong, ModelConstants {
+public class DualMergeOfLong implements PrimitiveIterator.OfLong {
 
 	private final PrimitiveIterator.OfLong left, right;
 
@@ -48,11 +48,11 @@ public class DualMergeOfLong implements PrimitiveIterator.OfLong, ModelConstants
 	}
 
 	private long nextLeft() {
-		return left.hasNext() ? left.nextLong() : UNSET_LONG;
+		return left.hasNext() ? left.nextLong() : IcarusUtils.UNSET_LONG;
 	}
 
 	private long nextRight() {
-		return right.hasNext() ? right.nextLong() : UNSET_LONG;
+		return right.hasNext() ? right.nextLong() : IcarusUtils.UNSET_LONG;
 	}
 
 	/**
@@ -60,7 +60,7 @@ public class DualMergeOfLong implements PrimitiveIterator.OfLong, ModelConstants
 	 */
 	@Override
 	public boolean hasNext() {
-		return leftVal!=UNSET_LONG || rightVal!=UNSET_LONG;
+		return leftVal!=IcarusUtils.UNSET_LONG || rightVal!=IcarusUtils.UNSET_LONG;
 	}
 
 	/**
@@ -70,10 +70,10 @@ public class DualMergeOfLong implements PrimitiveIterator.OfLong, ModelConstants
 	public long nextLong() {
 		long result;
 
-		if(leftVal!=UNSET_LONG && leftVal<rightVal) {
+		if(leftVal!=IcarusUtils.UNSET_LONG && leftVal<rightVal) {
 			result = leftVal;
 			leftVal = nextLeft();
-		} else if(rightVal!=UNSET_LONG) {
+		} else if(rightVal!=IcarusUtils.UNSET_LONG) {
 			result = rightVal;
 			rightVal = nextRight();
 		} else

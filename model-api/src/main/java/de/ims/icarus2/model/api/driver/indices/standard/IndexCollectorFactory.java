@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.function.LongConsumer;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
@@ -58,7 +57,7 @@ import it.unimi.dsi.fastutil.shorts.ShortSet;
  * @author Markus Gärtner
  *
  */
-public class IndexCollectorFactory implements ModelConstants {
+public class IndexCollectorFactory {
 
 	public static final int UNDEFINED_CHUNK_SIZE = -1;
 	public static final long UNDEFINED_TOTAL_SIZE = -1L;
@@ -286,7 +285,7 @@ public class IndexCollectorFactory implements ModelConstants {
 		private List<IndexSet> chunks;
 		private IndexBuffer buffer;
 
-		private long lastIndex = UNSET_LONG;
+		private long lastIndex = IcarusUtils.UNSET_LONG;
 
 		public UnlimitedSortedSetBuilder(IndexValueType valueType, int chunkSize) {
 			requireNonNull(valueType);

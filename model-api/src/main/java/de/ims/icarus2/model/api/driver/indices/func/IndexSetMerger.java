@@ -23,7 +23,6 @@ import java.util.PrimitiveIterator.OfLong;
 import java.util.function.LongConsumer;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
@@ -39,7 +38,7 @@ import de.ims.icarus2.util.IcarusUtils;
  * @author Markus Gärtner
  *
  */
-public class IndexSetMerger extends AbstractIndexSetProcessor implements ModelConstants {
+public class IndexSetMerger extends AbstractIndexSetProcessor {
 
 	public IndexSetMerger() {
 		estimatedResultSize = 0;

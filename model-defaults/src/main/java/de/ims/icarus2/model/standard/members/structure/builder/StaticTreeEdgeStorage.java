@@ -22,7 +22,6 @@ import static de.ims.icarus2.model.util.ModelUtils.getName;
 
 import java.util.Arrays;
 
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.item.Edge;
@@ -408,7 +407,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long indexOfChild(Structure context, Item child) {
 			Edge incomingEdge = incomingEdge(context, child);
 			if(incomingEdge==null) {
-				return UNSET_LONG;
+				return IcarusUtils.UNSET_LONG;
 			} else if(incomingEdge.getSource()==root) {
 				return root.indexOfEdge(incomingEdge);
 			} else {
@@ -780,7 +779,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long indexOfChild(Structure context, Item child) {
 			Edge incomingEdge = incomingEdge(context, child);
 			if(incomingEdge==null) {
-				return UNSET_LONG;
+				return IcarusUtils.UNSET_LONG;
 			} else if(incomingEdge.getSource()==root) {
 				return root.indexOfEdge(incomingEdge);
 			} else {
@@ -816,7 +815,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 	 */
 	public static class LargeTreeEdgeStorage extends StaticTreeEdgeStorage {
 
-		private static int NO_INDEX = (int) ModelConstants.UNSET_LONG;
+		private static int NO_INDEX = (int) IcarusUtils.UNSET_LONG;
 
 		public static LargeTreeEdgeStorage fromBuilder(StructureBuilder builder) {
 			final EdgeBuffer edgeBuffer = builder.edgeBuffer();

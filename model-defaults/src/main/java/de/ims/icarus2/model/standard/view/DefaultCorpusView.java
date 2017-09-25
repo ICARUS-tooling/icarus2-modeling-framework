@@ -35,7 +35,7 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
-import de.ims.icarus2.model.api.members.item.ItemLayerManager;
+import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
 import de.ims.icarus2.model.api.view.CorpusModel;
 import de.ims.icarus2.model.api.view.CorpusOwner;
 import de.ims.icarus2.model.api.view.CorpusView;

@@ -28,7 +28,6 @@ import java.util.function.ObjIntConsumer;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.io.sets.ResourceSet;
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -39,6 +38,7 @@ import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.LongCounter;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -136,7 +136,7 @@ public class FileDataStates {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static class ElementInfo implements ModelConstants {
+	public static class ElementInfo {
 		private EnumSet<ElementFlag> state = EnumSet.noneOf(ElementFlag.class);
 		private Map<String, String> properties;
 
@@ -261,7 +261,7 @@ public class FileDataStates {
 			LayerCoverage cov = stats.get(key);
 
 			if(cov==null && createIfMissing) {
-				cov = new LayerCoverage(UNSET_LONG, UNSET_LONG, 0L);
+				cov = new LayerCoverage(IcarusUtils.UNSET_LONG, IcarusUtils.UNSET_LONG, 0L);
 				stats.put(key, cov);
 			}
 
@@ -270,17 +270,17 @@ public class FileDataStates {
 
 		public long getItemCount(ItemLayerManifest layer) {
 			LayerCoverage cov = getCoverage(layer, false);
-			return cov==null ? UNSET_LONG : cov.count;
+			return cov==null ? IcarusUtils.UNSET_LONG : cov.count;
 		}
 
 		public long getBeginIndex(ItemLayerManifest layer) {
 			LayerCoverage cov = getCoverage(layer, false);
-			return cov==null ? UNSET_LONG : cov.first;
+			return cov==null ? IcarusUtils.UNSET_LONG : cov.first;
 		}
 
 		public long getEndIndex(ItemLayerManifest layer) {
 			LayerCoverage cov = getCoverage(layer, false);
-			return cov==null ? UNSET_LONG : cov.last;
+			return cov==null ? IcarusUtils.UNSET_LONG : cov.last;
 		}
 
 		public void setItemCount(ItemLayerManifest layer, long itemCount) {
@@ -314,9 +314,9 @@ public class FileDataStates {
 	}
 
 	public static class NumericalStats {
-		private long min = ModelConstants.UNSET_LONG;
-		private long max = ModelConstants.UNSET_LONG;
-		private double avg = ModelConstants.UNSET_DOUBLE;
+		private long min = IcarusUtils.UNSET_LONG;
+		private long max = IcarusUtils.UNSET_LONG;
+		private double avg = IcarusUtils.UNSET_DOUBLE;
 		public long getMin() {
 			return min;
 		}
@@ -336,9 +336,9 @@ public class FileDataStates {
 			this.avg = avg;
 		}
 		public void reset() {
-			min = ModelConstants.UNSET_LONG;
-			max = ModelConstants.UNSET_LONG;
-			avg = ModelConstants.UNSET_DOUBLE;
+			min = IcarusUtils.UNSET_LONG;
+			max = IcarusUtils.UNSET_LONG;
+			avg = IcarusUtils.UNSET_DOUBLE;
 		}
 	}
 
@@ -346,7 +346,7 @@ public class FileDataStates {
 		private final ItemLayerManifest layer;
 
 		// Total number of elements in top-level container
-		private long size = UNSET_LONG;
+		private long size = IcarusUtils.UNSET_LONG;
 
 		private LongCounter<ContainerType> containerTypeCount;
 		private LongCounter<StructureType> structureTypeCount;
@@ -363,7 +363,7 @@ public class FileDataStates {
 		// TOTAL SIZE
 
 		public long getSize() {
-			return size==UNSET_LONG ? 0L : size;
+			return size==IcarusUtils.UNSET_LONG ? 0L : size;
 		}
 
 		public void setSize(long size) {

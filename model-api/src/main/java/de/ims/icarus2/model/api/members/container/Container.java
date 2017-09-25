@@ -24,7 +24,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.members.item.ItemList;
+import de.ims.icarus2.model.api.members.item.manager.ItemList;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;

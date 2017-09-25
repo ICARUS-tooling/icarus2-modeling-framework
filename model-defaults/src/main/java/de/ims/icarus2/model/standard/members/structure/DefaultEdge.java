@@ -26,6 +26,7 @@ import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.standard.members.item.DefaultItem;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Recyclable;
 import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Reference;
@@ -130,7 +131,7 @@ public class DefaultEdge extends DefaultItem implements Edge, Recyclable {
 	 */
 	@Override
 	public long getBeginOffset() {
-		return (source==null || target==null) ? UNSET_LONG : Math.min(source.getBeginOffset(), target.getBeginOffset());
+		return (source==null || target==null) ? IcarusUtils.UNSET_LONG : Math.min(source.getBeginOffset(), target.getBeginOffset());
 	}
 
 	/**
@@ -138,7 +139,7 @@ public class DefaultEdge extends DefaultItem implements Edge, Recyclable {
 	 */
 	@Override
 	public long getEndOffset() {
-		return (source==null || target==null) ? UNSET_LONG : Math.min(source.getEndOffset(), target.getEndOffset());
+		return (source==null || target==null) ? IcarusUtils.UNSET_LONG : Math.min(source.getEndOffset(), target.getEndOffset());
 	}
 
 	/**
@@ -170,7 +171,7 @@ public class DefaultEdge extends DefaultItem implements Edge, Recyclable {
 	 */
 	@Override
 	public long getIndex() {
-		return UNSET_LONG;
+		return IcarusUtils.UNSET_LONG;
 	}
 
 	/**

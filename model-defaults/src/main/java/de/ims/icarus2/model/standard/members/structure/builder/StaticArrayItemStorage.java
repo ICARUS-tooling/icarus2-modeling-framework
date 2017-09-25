@@ -115,7 +115,7 @@ public class StaticArrayItemStorage extends AbstractImmutableItemStorage {
 	public long indexOfItem(Container context, Item item) {
 		int index = Arrays.binarySearch(items, item, sorter);
 
-		return index < 0 ? UNSET_LONG : index;
+		return index < 0 ? IcarusUtils.UNSET_LONG : index;
 	}
 
 	/**

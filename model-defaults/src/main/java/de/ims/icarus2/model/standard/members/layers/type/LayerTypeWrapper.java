@@ -18,6 +18,8 @@
  */
 package de.ims.icarus2.model.standard.members.layers.type;
 
+import static java.util.Objects.requireNonNull;
+
 import javax.swing.Icon;
 
 import org.slf4j.Logger;
@@ -33,7 +35,7 @@ import de.ims.icarus2.util.classes.ClassUtils;
  *
  */
 public class LayerTypeWrapper implements LayerType {
-	
+
 	private static final Logger log = LoggerFactory
 			.getLogger(LayerTypeWrapper.class);
 
@@ -43,20 +45,16 @@ public class LayerTypeWrapper implements LayerType {
 	private final String id;
 
 	public LayerTypeWrapper(String id, ClassProxy proxy) {
-		if (id == null)
-			throw new NullPointerException("Invalid id"); //$NON-NLS-1$
-		if (proxy == null)
-			throw new NullPointerException("Invalid proxy"); //$NON-NLS-1$
+		requireNonNull(id, "Invalid id");
+		requireNonNull(proxy, "Invalid proxy");
 
 		this.id = id;
 		this.source = proxy;
 	}
 
 	public LayerTypeWrapper(String id, String className) {
-		if (id == null)
-			throw new NullPointerException("Invalid id"); //$NON-NLS-1$
-		if (className == null)
-			throw new NullPointerException("Invalid className"); //$NON-NLS-1$
+		requireNonNull(id, "Invalid id");
+		requireNonNull(className, "Invalid class name");
 
 		this.id = id;
 		this.source = className;
@@ -86,6 +84,14 @@ public class LayerTypeWrapper implements LayerType {
 	@Override
 	public String getId() {
 		return id;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.Category#getNamespace()
+	 */
+	@Override
+	public String getNamespace() {
+		return getProxy().getNamespace();
 	}
 
 	/**

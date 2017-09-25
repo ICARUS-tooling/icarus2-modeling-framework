@@ -419,7 +419,7 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		moduleManifests.values().forEach(this::lockNested);
 	}
 
-	public static class ModuleSpecImpl extends DefaultModifiableIdentity implements ModuleSpec {
+	public static class ModuleSpecImpl extends DefaultModifiableCategory implements ModuleSpec {
 
 		private final DriverManifest driverManifest;
 		private boolean customizable = DEFAULT_IS_CUSTOMIZABLE;

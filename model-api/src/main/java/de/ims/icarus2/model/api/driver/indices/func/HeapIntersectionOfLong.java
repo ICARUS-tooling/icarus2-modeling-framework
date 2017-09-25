@@ -26,8 +26,8 @@ import java.util.Collection;
 import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator;
 
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.MinHeap.LongMinHeap;
 
 /**
@@ -36,7 +36,7 @@ import de.ims.icarus2.util.collections.MinHeap.LongMinHeap;
  * @author Markus Gärtner
  *
  */
-public class HeapIntersectionOfLong implements PrimitiveIterator.OfLong, ModelConstants {
+public class HeapIntersectionOfLong implements PrimitiveIterator.OfLong {
 
 	public static HeapIntersectionOfLong fromArrays(long[]...arrays) {
 		requireNonNull(arrays);
@@ -83,7 +83,7 @@ public class HeapIntersectionOfLong implements PrimitiveIterator.OfLong, ModelCo
 	// Buffer for storing streams while checking for a common value
 	private final PrimitiveIterator.OfLong[] buffer;
 
-	private long value = UNSET_LONG;
+	private long value = IcarusUtils.UNSET_LONG;
 
 	public HeapIntersectionOfLong(PrimitiveIterator.OfLong[] sources) {
 		requireNonNull(sources);
@@ -106,7 +106,7 @@ public class HeapIntersectionOfLong implements PrimitiveIterator.OfLong, ModelCo
 	public boolean hasNext() {
 
 		// If required prepare next value to be returned
-		if(value==UNSET_LONG && !heap.isEmpty()) {
+		if(value==IcarusUtils.UNSET_LONG && !heap.isEmpty()) {
 
 			boolean continueSearch = true;
 
@@ -146,7 +146,7 @@ public class HeapIntersectionOfLong implements PrimitiveIterator.OfLong, ModelCo
 			}
 		}
 
-		return value!=UNSET_LONG;
+		return value!=IcarusUtils.UNSET_LONG;
 	}
 
 	/**
@@ -154,11 +154,11 @@ public class HeapIntersectionOfLong implements PrimitiveIterator.OfLong, ModelCo
 	 */
 	@Override
 	public long nextLong() {
-		if (value==UNSET_LONG)
+		if (value==IcarusUtils.UNSET_LONG)
 			throw new NoSuchElementException();
 
 		long result = value;
-		value = UNSET_LONG;
+		value = IcarusUtils.UNSET_LONG;
 		return result;
 	}
 

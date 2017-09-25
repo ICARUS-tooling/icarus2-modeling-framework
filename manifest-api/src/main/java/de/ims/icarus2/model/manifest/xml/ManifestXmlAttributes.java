@@ -24,13 +24,13 @@ package de.ims.icarus2.model.manifest.xml;
  */
 public interface ManifestXmlAttributes {
 
-	public static final String ATTR_CONTENT_TYPE = "content-type"; //$NON-NLS-1$
+	public static final String ATTR_CONTENT_TYPE = "contentType"; //$NON-NLS-1$
 
 	public static final String ATTR_ID = "id"; //$NON-NLS-1$
 	public static final String ATTR_NAME = "name"; //$NON-NLS-1$
 	public static final String ATTR_DESCRIPTION = "description"; //$NON-NLS-1$
 	public static final String ATTR_ICON = "icon"; //$NON-NLS-1$
-	public static final String ATTR_TEMPLATE_ID = "template-id"; //$NON-NLS-1$
+	public static final String ATTR_TEMPLATE_ID = "templateId"; //$NON-NLS-1$
 	public static final String ATTR_VALUE = "value"; //$NON-NLS-1$
 	public static final String ATTR_KEY = "key"; //$NON-NLS-1$
 	public static final String ATTR_TYPE = "type"; //$NON-NLS-1$

@@ -203,14 +203,6 @@ public class BufferedIOResource {
 		return resource;
 	}
 
-//	public final Lock getReadLock() {
-//		return lock.readLock();
-//	}
-
-//	public final Lock getWriteLock() {
-//		return lock.writeLock();
-//	}
-
 	/**
 	 * @return the bytesPerBlock
 	 */

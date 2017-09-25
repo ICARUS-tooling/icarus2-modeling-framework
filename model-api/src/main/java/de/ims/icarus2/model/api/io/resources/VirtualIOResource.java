@@ -22,10 +22,10 @@ import java.io.IOException;
 import java.nio.channels.SeekableByteChannel;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.io.IOUtil;
 import de.ims.icarus2.util.nio.MemoryByteStorage;
 
 /**
@@ -33,25 +33,29 @@ import de.ims.icarus2.util.nio.MemoryByteStorage;
  * <p>
  * Implementation detail: As stated in the description of {@link MemoryByteStorage}
  * a buffer instance will remain in memory while there are still references active
- * to channels created by it. Since this implementations {@link InMemoryResource#delete()}
+ * to channels created by it. Since this implementations {@link VirtualIOResource#delete()}
  * method simply discards the backing buffer object (setting it to {@code null})
  * any channel open at that time will effectively prevent the buffer from getting {@code gc}ed.
  *
  * @author Markus Gärtner
  *
  */
-public class InMemoryResource extends ReadWriteResource implements ModelConstants {
+public class VirtualIOResource extends ReadWriteResource {
 
 	private MemoryByteStorage buffer;
 
 	// Initial capacity for buffer creation
 	private final int capacity;
 
-	public InMemoryResource(int capacity) {
+	public VirtualIOResource() {
+		this(IOUtil.DEFAULT_BUFFER_SIZE, AccessMode.READ_WRITE);
+	}
+
+	public VirtualIOResource(int capacity) {
 		this(capacity, AccessMode.READ_WRITE);
 	}
 
-	public InMemoryResource(int capacity, AccessMode accessMode) {
+	public VirtualIOResource(int capacity, AccessMode accessMode) {
 		super(accessMode);
 
 		if(capacity<0 || capacity>IcarusUtils.MAX_INTEGER_INDEX)

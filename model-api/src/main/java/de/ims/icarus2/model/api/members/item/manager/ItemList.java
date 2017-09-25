@@ -16,12 +16,14 @@
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  *
  */
-package de.ims.icarus2.model.api.members.item;
+package de.ims.icarus2.model.api.members.item.manager;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
+import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
@@ -50,7 +52,7 @@ public interface ItemList extends ItemLookup {
 	default void removeItem(Item item) {
 		long index = indexOfItem(item);
 
-		if(index==UNSET_LONG)
+		if(index==IcarusUtils.UNSET_LONG)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Unknown item: "+ModelUtils.getName(item));
 

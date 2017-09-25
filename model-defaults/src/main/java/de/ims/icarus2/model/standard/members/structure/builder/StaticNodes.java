@@ -23,12 +23,12 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 
 import java.util.Arrays;
 
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.standard.members.structure.builder.EdgeBuffer.NodeInfo;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.collections.LookupList;
 
@@ -42,7 +42,7 @@ import de.ims.icarus2.util.collections.LookupList;
  */
 public class StaticNodes {
 
-	private static final int NO_INDEX = (int) ModelConstants.UNSET_LONG;
+	private static final int NO_INDEX = (int) IcarusUtils.UNSET_LONG;
 	private static final int NO_DEPTH = -1;
 
 	public static final Node EMPTY_NODE = new Node();

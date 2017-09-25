@@ -18,7 +18,6 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -33,7 +32,7 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
  * @author Markus Gärtner
  *
  */
-public interface EdgeStorage extends ModelConstants, Recyclable {
+public interface EdgeStorage extends Recyclable {
 
 	void addNotify(Structure context);
 

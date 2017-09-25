@@ -52,7 +52,7 @@ public enum StructureFlag implements StringResource, Flag {
 	 * avoid verbose declaration of this flag (since in most cases it
 	 * is indeed safe to assume immutable data, which prevents driver
 	 * implementations from having to deal with complexity of mutable
-	 * corpus data)
+	 * corpus data).
 	 */
 	NON_STATIC("non-static"),
 

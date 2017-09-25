@@ -39,6 +39,11 @@ public enum StructureInfoField {
 	DESCENDANTS(StructureType.CHAIN, StructureType.TREE, StructureType.SET),
 	;
 
+	/**
+	 * Indicator for which types of structures this field can be used.
+	 * Set to {@code null} if the field is unrestricted and universally
+	 * applies to all types of structures.
+	 */
 	private final EnumSet<StructureType> supportedTypes;
 
 	StructureInfoField(StructureType...types) {

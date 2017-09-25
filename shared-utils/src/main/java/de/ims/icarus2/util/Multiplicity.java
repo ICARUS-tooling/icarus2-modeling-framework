@@ -31,17 +31,17 @@ import de.ims.icarus2.util.strings.StringResource;
 public enum Multiplicity implements StringResource {
 
 	/**
-	 * Defines an "empty" docking point for external entities
+	 * Defines an "empty" docking point for external entities.
 	 */
 	NONE("none", 0, 0),
 
 	/**
-	 * Docking point for at most one external entity
+	 * Docking point for at most one external entity.
 	 */
 	NONE_OR_ONE("none-or-one", 0, 1),
 
 	/**
-	 * Requires exactly one external entity to be docked
+	 * Requires exactly one external entity to be docked.
 	 */
 	ONE("one", 1, 1),
 
@@ -52,7 +52,7 @@ public enum Multiplicity implements StringResource {
 	ONE_OR_MORE("one-or-more", 1, -1),
 
 	/**
-	 * Unrestricted docking point
+	 * Unrestricted docking point.
 	 */
 	ANY("any", 0, -1),
 	;

@@ -28,6 +28,7 @@ import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.MemberUtils;
 import de.ims.icarus2.model.util.SpanSequence;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
 
@@ -45,8 +46,8 @@ import de.ims.icarus2.util.collections.set.DataSet;
  *
  */
 public class SpanItemStorage implements ItemStorage {
-	protected long beginIndex = UNSET_LONG;
-	protected long endIndex = UNSET_LONG;
+	protected long beginIndex = IcarusUtils.UNSET_LONG;
+	protected long endIndex = IcarusUtils.UNSET_LONG;
 
 	public SpanItemStorage() {
 		// no-op
@@ -83,18 +84,18 @@ public class SpanItemStorage implements ItemStorage {
 	}
 
 	protected boolean isEmpty() {
-		return beginIndex==UNSET_LONG || endIndex==UNSET_LONG;
+		return beginIndex==IcarusUtils.UNSET_LONG || endIndex==IcarusUtils.UNSET_LONG;
 	}
 
 	protected long beginIndex() {
-		if(beginIndex==UNSET_LONG)
+		if(beginIndex==IcarusUtils.UNSET_LONG)
 			throw new ModelException(GlobalErrorCode.MISSING_DATA, "Begin index not set");
 
 		return beginIndex;
 	}
 
 	protected long endIndex() {
-		if(endIndex==UNSET_LONG)
+		if(endIndex==IcarusUtils.UNSET_LONG)
 			throw new ModelException(GlobalErrorCode.MISSING_DATA, "End index not set");
 
 		return endIndex;
@@ -144,7 +145,7 @@ public class SpanItemStorage implements ItemStorage {
 	public long indexOfItem(Container context, Item item) {
 
 		if(isEmpty()) {
-			return UNSET_LONG;
+			return IcarusUtils.UNSET_LONG;
 		}
 
 		long targetIndex = target(context).indexOfItem(item);
@@ -154,7 +155,7 @@ public class SpanItemStorage implements ItemStorage {
 			// Translate index (beginIndex is definitely set here)
 			targetIndex -= beginIndex;
 		} else {
-			targetIndex = UNSET_LONG;
+			targetIndex = IcarusUtils.UNSET_LONG;
 		}
 
 		return targetIndex;
@@ -178,7 +179,7 @@ public class SpanItemStorage implements ItemStorage {
 		if(isEmpty()) {
 			beginIndex = endIndex = target.indexOfItem(item);
 
-			if(beginIndex==UNSET_LONG)
+			if(beginIndex==IcarusUtils.UNSET_LONG)
 				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
 						Messages.foreignItemMessage(null, target, item));
 		} else {
@@ -214,7 +215,7 @@ public class SpanItemStorage implements ItemStorage {
 
 		long size = getItemCount(context);
 		// Begin and end of the span expressed in the target containers space
-		long index0 = UNSET_LONG, index1 = UNSET_LONG;
+		long index0 = IcarusUtils.UNSET_LONG, index1 = IcarusUtils.UNSET_LONG;
 
 		if(index!=0L && index!=size)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
@@ -249,7 +250,7 @@ public class SpanItemStorage implements ItemStorage {
 				// Potentially costly invocation
 				long targetindex = target.indexOfItem(item);
 
-				if(targetindex==UNSET_LONG)
+				if(targetindex==IcarusUtils.UNSET_LONG)
 					throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
 							Messages.foreignItemMessage(null, target, item));
 
@@ -299,7 +300,7 @@ public class SpanItemStorage implements ItemStorage {
 
 		// Mark empty if required
 		if(beginIndex>endIndex) {
-			beginIndex = endIndex = UNSET_LONG;
+			beginIndex = endIndex = IcarusUtils.UNSET_LONG;
 		}
 
 		return item;
@@ -333,7 +334,7 @@ public class SpanItemStorage implements ItemStorage {
 
 		// Mark empty if required
 		if(beginIndex>endIndex) {
-			beginIndex = endIndex = UNSET_LONG;
+			beginIndex = endIndex = IcarusUtils.UNSET_LONG;
 		}
 
 		return sequence;
@@ -390,7 +391,7 @@ public class SpanItemStorage implements ItemStorage {
 	 */
 	@Override
 	public void recycle() {
-		beginIndex = endIndex = UNSET_LONG;
+		beginIndex = endIndex = IcarusUtils.UNSET_LONG;
 	}
 
 	/**

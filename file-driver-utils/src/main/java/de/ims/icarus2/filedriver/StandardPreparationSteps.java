@@ -41,7 +41,6 @@ import de.ims.icarus2.filedriver.FileDriverMetadata.DriverKey;
 import de.ims.icarus2.filedriver.FileDriverMetadata.FileKey;
 import de.ims.icarus2.filedriver.FileDriverMetadata.ItemLayerKey;
 import de.ims.icarus2.filedriver.io.sets.ResourceSet;
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.model.api.driver.mods.EmptyModuleMonitor;
@@ -50,6 +49,7 @@ import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.Options;
 
@@ -57,7 +57,7 @@ import de.ims.icarus2.util.Options;
  * @author Markus Gärtner
  *
  */
-public enum StandardPreparationSteps implements PreparationStep, ModelConstants {
+public enum StandardPreparationSteps implements PreparationStep {
 
 	/**
 	 * Verify that metadata holds the correct number of entries for physical files
@@ -565,22 +565,22 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			final MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			final FileDataStates states = driver.getFileStates();
 
-			long lastEndIndex = env.getLong(LAST_END_INDEX_KEY, UNSET_LONG);
+			long lastEndIndex = env.getLong(LAST_END_INDEX_KEY, IcarusUtils.UNSET_LONG);
 
 			// Load current metadata
 			String countKey = FileKey.ITEMS.getKey(fileIndex, layer);
 			String beginKey = FileKey.BEGIN.getKey(fileIndex, layer);
 			String endKey = FileKey.END.getKey(fileIndex, layer);
-			long itemCount = metadataRegistry.getLongValue(countKey, UNSET_LONG);
-			long beginIndex = metadataRegistry.getLongValue(beginKey, UNSET_LONG);
-			long endIndex = metadataRegistry.getLongValue(endKey, UNSET_LONG);
+			long itemCount = metadataRegistry.getLongValue(countKey, IcarusUtils.UNSET_LONG);
+			long beginIndex = metadataRegistry.getLongValue(beginKey, IcarusUtils.UNSET_LONG);
+			long endIndex = metadataRegistry.getLongValue(endKey, IcarusUtils.UNSET_LONG);
 
-			if(itemCount==UNSET_LONG && beginIndex==UNSET_LONG && endIndex==UNSET_LONG) {
+			if(itemCount==IcarusUtils.UNSET_LONG && beginIndex==IcarusUtils.UNSET_LONG && endIndex==IcarusUtils.UNSET_LONG) {
 				// Nothing saved for the layer+file, so ignore it
 				return true;
 			}
 
-			if(itemCount==UNSET_LONG || beginIndex==UNSET_LONG || endIndex==UNSET_LONG) {
+			if(itemCount==IcarusUtils.UNSET_LONG || beginIndex==IcarusUtils.UNSET_LONG || endIndex==IcarusUtils.UNSET_LONG) {
 				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 						"Indicies partly missing in metadata for layer {} in file {}", layer.getId(), _int(fileIndex));
 				return false;
@@ -597,7 +597,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			}
 
 			// Make sure the index values form a continuous span over all files
-			if(lastEndIndex!=UNSET_LONG && beginIndex!=(lastEndIndex+1)) {
+			if(lastEndIndex!=IcarusUtils.UNSET_LONG && beginIndex!=(lastEndIndex+1)) {
 				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 						"Non-continuous item indices for layer {} in file {}: expected {} as begin index, but got {}",
 						layer.getId(), _int(fileIndex), _long(lastEndIndex+1), _long(beginIndex));
@@ -605,7 +605,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			}
 
 			// First file must always start at item index 0!!!
-			if(lastEndIndex==UNSET_LONG && fileIndex==0 && beginIndex!=0L) {
+			if(lastEndIndex==IcarusUtils.UNSET_LONG && fileIndex==0 && beginIndex!=0L) {
 				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 						"First file for layer {} in set must start at item index 0 - got start value {}",
 						layer.getId(), _long(beginIndex));
@@ -633,7 +633,7 @@ public enum StandardPreparationSteps implements PreparationStep, ModelConstants 
 			int fileCount = dataFiles.getResourceCount();
 			int invalidLayers = 0;
 
-			env.put(LAST_END_INDEX_KEY, _long(UNSET_LONG));
+			env.put(LAST_END_INDEX_KEY, _long(IcarusUtils.UNSET_LONG));
 
 			for(ItemLayerManifest layer : layers) {
 

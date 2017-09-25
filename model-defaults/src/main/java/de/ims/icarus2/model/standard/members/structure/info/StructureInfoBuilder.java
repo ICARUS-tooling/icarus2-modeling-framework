@@ -24,12 +24,12 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Set;
 
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureInfo;
 import de.ims.icarus2.model.api.members.structure.StructureInfoField;
 import de.ims.icarus2.model.manifest.api.StructureType;
+import de.ims.icarus2.util.IcarusUtils;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
@@ -39,7 +39,7 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
  * @author Markus Gärtner
  *
  */
-public class StructureInfoBuilder implements ModelConstants {
+public class StructureInfoBuilder {
 
 	/**
 	 * Computes and returns a fresh new {@link StructureInfo} or {@code null}
@@ -123,9 +123,9 @@ public class StructureInfoBuilder implements ModelConstants {
 				minMaxValues[minIndex(field)] = Long.MAX_VALUE;
 				minMaxValues[maxIndex(field)] = Long.MIN_VALUE;
 			} else {
-				avgValues[avgIndex(field)] = ModelConstants.UNSET_DOUBLE;
-				minMaxValues[minIndex(field)] = ModelConstants.UNSET_LONG;
-				minMaxValues[maxIndex(field)] = ModelConstants.UNSET_LONG;
+				avgValues[avgIndex(field)] = IcarusUtils.UNSET_DOUBLE;
+				minMaxValues[minIndex(field)] = IcarusUtils.UNSET_LONG;
+				minMaxValues[maxIndex(field)] = IcarusUtils.UNSET_LONG;
 			}
 		}
 
@@ -182,15 +182,15 @@ public class StructureInfoBuilder implements ModelConstants {
 
 		// Do tree-related stuff here
 		long depth = structure.getDepth(node);
-		if(depth!=UNSET_LONG) {
+		if(depth!=IcarusUtils.UNSET_LONG) {
 			adjust(StructureInfoField.DEPTH, depth);
 		}
 		long height = structure.getHeight(node);
-		if(height!=UNSET_LONG) {
+		if(height!=IcarusUtils.UNSET_LONG) {
 			adjust(StructureInfoField.HEIGHT, height);
 		}
 		long descendants = structure.getDescendantCount(node);
-		if(descendants!=UNSET_LONG) {
+		if(descendants!=IcarusUtils.UNSET_LONG) {
 			adjust(StructureInfoField.DESCENDANTS, descendants);
 		}
 	}

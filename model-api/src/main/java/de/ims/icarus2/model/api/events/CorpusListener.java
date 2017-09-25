@@ -130,7 +130,7 @@ public interface CorpusListener {
 	void metaDataAdded(CorpusEvent e);
 
 	/**
-	 * A new {@code MetaData} object was removed from the corpus
+	 * An existing {@code MetaData} object was removed from the corpus
 	 * <p>
 	 * The {@code "metadata"} property holds the {@code MetaData}
 	 * that was removed.

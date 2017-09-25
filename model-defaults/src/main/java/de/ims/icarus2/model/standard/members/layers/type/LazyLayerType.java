@@ -22,10 +22,10 @@ import static java.util.Objects.requireNonNull;
 
 import javax.swing.Icon;
 
+import de.ims.icarus2.model.manifest.api.Category;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerType;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.util.id.Identity;
 
 /**
  * @author Markus Gärtner
@@ -35,6 +35,7 @@ public class LazyLayerType implements LayerType {
 
 	private final String id;
 	private String name;
+	private String namespace;
 	private String description;
 	private Icon icon;
 
@@ -50,20 +51,21 @@ public class LazyLayerType implements LayerType {
 		this.id = id;
 	}
 
-	public LazyLayerType(ManifestRegistry registry, Identity identity, String layerId) {
+	public LazyLayerType(ManifestRegistry registry, Category category, String layerId) {
 		requireNonNull(registry);
-		requireNonNull(identity);
+		requireNonNull(category);
 		requireNonNull(layerId);
 
-		if(identity.getId()==null)
+		if(category.getId()==null)
 			throw new IllegalArgumentException("Missing 'id' calue from identity"); //$NON-NLS-1$
 
 		this.registry = registry;
 
-		id = identity.getId();
-		name = identity.getName();
-		description = identity.getDescription();
-		icon = identity.getIcon();
+		id = category.getId();
+		namespace = category.getNamespace();
+		name = category.getName();
+		description = category.getDescription();
+		icon = category.getIcon();
 
 		this.layerId = layerId;
 	}
@@ -74,6 +76,14 @@ public class LazyLayerType implements LayerType {
 	@Override
 	public String getId() {
 		return id;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.Category#getNamespace()
+	 */
+	@Override
+	public String getNamespace() {
+		return namespace;
 	}
 
 	/**
@@ -127,6 +137,15 @@ public class LazyLayerType implements LayerType {
 		requireNonNull(name);
 
 		this.name = name;
+	}
+
+	/**
+	 * @param namespace the namespace to set
+	 */
+	public void setNamespace(String namespace) {
+		requireNonNull(namespace);
+
+		this.namespace = namespace;
 	}
 
 	/**

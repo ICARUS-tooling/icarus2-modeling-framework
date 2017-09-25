@@ -18,7 +18,6 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
@@ -31,7 +30,7 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
  * @author Markus Gärtner
  *
  */
-public interface ItemStorage extends ModelConstants, Recyclable {
+public interface ItemStorage extends Recyclable {
 
 	/**
 	 * Signals that the storage is going to be used in a live environment

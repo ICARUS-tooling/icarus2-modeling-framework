@@ -188,7 +188,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 	 */
 	protected int localIndexForNode(Structure context, Item node) {
 		long nodeIndex = context.indexOfItem(node);
-		if(nodeIndex==UNSET_LONG)
+		if(nodeIndex==IcarusUtils.UNSET_LONG)
 			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
 					"Supplied item is not a legal node in the structure of this storage: "+getName(node));
 

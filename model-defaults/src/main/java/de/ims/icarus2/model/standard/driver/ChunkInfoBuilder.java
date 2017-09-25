@@ -20,16 +20,16 @@ package de.ims.icarus2.model.standard.driver;
 import java.util.ArrayList;
 import java.util.List;
 
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.driver.ChunkInfo;
 import de.ims.icarus2.model.api.driver.ChunkState;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class ChunkInfoBuilder implements ModelConstants {
+public class ChunkInfoBuilder {
 
 	public static final int DEFAULT_CAPACITY = 100;
 
@@ -56,11 +56,11 @@ public class ChunkInfoBuilder implements ModelConstants {
 	}
 
 	public boolean addNoIndex(Item item, ChunkState state) {
-		return storage.addChunk(UNSET_LONG, item, state);
+		return storage.addChunk(IcarusUtils.UNSET_LONG, item, state);
 	}
 
 	public boolean addCorrupted(Item item) {
-		return storage.addChunk(UNSET_LONG, item, ChunkState.CORRUPTED);
+		return storage.addChunk(IcarusUtils.UNSET_LONG, item, ChunkState.CORRUPTED);
 	}
 
 	public boolean addCorrupted(long index, Item item) {
@@ -72,7 +72,7 @@ public class ChunkInfoBuilder implements ModelConstants {
 	}
 
 	public boolean addValid(Item item) {
-		return storage.addChunk(UNSET_LONG, item, ChunkState.VALID);
+		return storage.addChunk(IcarusUtils.UNSET_LONG, item, ChunkState.VALID);
 	}
 
 	public boolean addValid(long index, Item item) {
@@ -84,7 +84,7 @@ public class ChunkInfoBuilder implements ModelConstants {
 	}
 
 	public boolean addModified(Item item) {
-		return storage.addChunk(UNSET_LONG, item, ChunkState.MODIFIED);
+		return storage.addChunk(IcarusUtils.UNSET_LONG, item, ChunkState.MODIFIED);
 	}
 
 	public boolean addModified(long index, Item item) {

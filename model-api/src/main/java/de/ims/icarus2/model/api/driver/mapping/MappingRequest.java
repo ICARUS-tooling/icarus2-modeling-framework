@@ -25,16 +25,16 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
-public abstract class MappingRequest implements Callable<IndexSet[]>, ModelConstants {
+public abstract class MappingRequest implements Callable<IndexSet[]> {
 
 	protected final MappingReader reader;
 	protected final RequestSettings settings;
@@ -98,7 +98,7 @@ public abstract class MappingRequest implements Callable<IndexSet[]>, ModelConst
 		public SingleValueRequest(MappingReader reader, RequestSettings settings, long index) {
 			super(reader, settings);
 
-			checkArgument("Lookup index must be greater than -1", index>UNSET_LONG);
+			checkArgument("Lookup index must be greater than -1", index>IcarusUtils.UNSET_LONG);
 
 			this.index = index;
 		}

@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 
+import de.ims.icarus2.model.manifest.api.Category;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest.Note;
 import de.ims.icarus2.model.manifest.api.Documentation.Resource;
@@ -91,6 +92,16 @@ public final class ManifestXmlUtils implements ManifestXmlAttributes, ManifestXm
 		}
 
 		writeIdentityAttributes(serializer, identity.getId(), identity.getName(), identity.getDescription(), identity.getIcon());
+	}
+
+	public static void writeCategoryAttributes(XmlSerializer serializer, Category category) throws Exception {
+		if(category==null) {
+			return;
+		}
+
+		writeIdentityAttributes(serializer, category.getId(), category.getName(), category.getDescription(), category.getIcon());
+
+		serializer.writeAttribute(ATTR_NAMESPACE, category.getNamespace());
 	}
 
 	public static void writeIdentityAttributes(XmlSerializer serializer, String id, String name, String description, Icon icon) throws Exception {

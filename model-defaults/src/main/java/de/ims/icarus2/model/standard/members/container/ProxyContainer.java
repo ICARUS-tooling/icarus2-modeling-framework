@@ -27,6 +27,7 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
@@ -139,7 +140,7 @@ public class ProxyContainer extends AbstractImmutableContainer {
 	 */
 	@Override
 	public long getIndex() {
-		return UNSET_LONG;
+		return IcarusUtils.UNSET_LONG;
 	}
 
 	/**
@@ -147,7 +148,7 @@ public class ProxyContainer extends AbstractImmutableContainer {
 	 */
 	@Override
 	public long getId() {
-		return UNSET_LONG;
+		return IcarusUtils.UNSET_LONG;
 	}
 
 	/**
@@ -155,7 +156,7 @@ public class ProxyContainer extends AbstractImmutableContainer {
 	 */
 	@Override
 	public long getBeginOffset() {
-		return UNSET_LONG;
+		return IcarusUtils.UNSET_LONG;
 	}
 
 	/**
@@ -163,7 +164,7 @@ public class ProxyContainer extends AbstractImmutableContainer {
 	 */
 	@Override
 	public long getEndOffset() {
-		return UNSET_LONG;
+		return IcarusUtils.UNSET_LONG;
 	}
 
 	/**

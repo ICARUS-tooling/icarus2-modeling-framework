@@ -144,6 +144,10 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 		 */
 		Object getValue(Item item, String key);
 
+		default String getString(Item item, String key) {
+			return (String) getValue(item, key);
+		}
+
 		int getIntegerValue(Item item, String key);
 		float getFloatValue(Item item, String key);
 		double getDoubleValue(Item item, String key);
@@ -225,6 +229,11 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 		 * @throws UnsupportedOperationException if the corpus is not editable
 		 */
 		void setValue(Item item, String key, Object value);
+
+		default void setString(Item item, String key, String value) {
+			setValue(item, key, value);
+		}
+
 		void setIntegerValue(Item item, String key, int value);
 		void setLongValue(Item item, String key, long value);
 		void setFloatValue(Item item, String key, float value);

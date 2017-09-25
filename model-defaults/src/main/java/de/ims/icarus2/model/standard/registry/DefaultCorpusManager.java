@@ -39,8 +39,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.StampedLock;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -100,13 +99,9 @@ public class DefaultCorpusManager implements CorpusManager {
 
 	/**
 	 * Global lock to synchronize manipulation of corpora that are under control
-	 * of this manager. The lock implementation is chosen to support reentrant
-	 * locking although many methods in this class explicitly are designed to
-	 * NOT work with reentrant lock access. For those the {@link #tryNonReentrantWrite()}
-	 * method provides the required semantics to make sure no nested calls to those
-	 * critical code blocks is possible.
+	 * of this manager.
 	 */
-	private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+	private final StampedLock lock = new StampedLock();
 
 	private final MetadataStoragePolicy<CorpusManifest> corpusMetadataPolicy;
 	private final MetadataStoragePolicy<ContextManifest> contextMetadataPolicy;
@@ -223,38 +218,6 @@ public class DefaultCorpusManager implements CorpusManager {
 	public Identity getExtensionIdentity(String extensionuid) {
 		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Implementation does not support identity lookup for extension: "+extensionuid);
-	}
-
-	/**
-	 * Utility method to allow checking the global lock for being held
-	 * in write mode by the current {@link Thread}.
-	 *
-	 * @return
-	 */
-	protected final boolean isCurrentThreadWriting() {
-		return lock.isWriteLockedByCurrentThread();
-	}
-
-	protected final void tryNonReentrantWrite() {
-		if(isCurrentThreadWriting())
-			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
-					"Thread is not allowed to perform nested write actions");
-
-		writeLock().lock();
-
-		if(lock.getWriteHoldCount()>1) {
-			writeLock().unlock();
-			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
-					"Thread is not allowed to perform nested write actions");
-		}
-	}
-
-	protected final Lock readLock() {
-		return lock.readLock();
-	}
-
-	protected final Lock writeLock() {
-		return lock.writeLock();
 	}
 
 	@Override
@@ -386,7 +349,7 @@ public class DefaultCorpusManager implements CorpusManager {
 
 		Corpus corpus = null;
 
-		tryNonReentrantWrite();
+		long stamp = lock.writeLockInterruptibly();
 		try {
 			CorpusManager.CorpusState oldState = getStateUnsafe(manifest, false);
 
@@ -436,7 +399,7 @@ public class DefaultCorpusManager implements CorpusManager {
 			fireCorpusConnected(corpus);
 
 		} finally {
-			writeLock().unlock();
+			lock.unlockWrite(stamp);
 		}
 
 		return corpus;
@@ -489,7 +452,8 @@ public class DefaultCorpusManager implements CorpusManager {
 	@Override
 	public void disconnect(CorpusManifest manifest) throws InterruptedException {
 		requireNonNull(manifest);
-		tryNonReentrantWrite();
+
+		long stamp = lock.writeLockInterruptibly();
 		try {
 			// For internal sanity checks
 			getStateUnsafe(manifest, false);
@@ -522,7 +486,7 @@ public class DefaultCorpusManager implements CorpusManager {
 			fireCorpusDisconnected(manifest);
 
 		} finally {
-			writeLock().unlock();
+			lock.unlockWrite(stamp);
 		}
 	}
 
@@ -535,7 +499,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	 */
 	@Override
 	public void shutdown() throws InterruptedException {
-		// TODO Auto-generated method stub
+		// TODO close down all corpora
 
 	}
 
@@ -546,7 +510,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	public Corpus getLiveCorpus(CorpusManifest manifest) {
 		requireNonNull(manifest);
 
-		readLock().lock();
+		long stamp = lock.readLock();
 		try {
 			Corpus corpus = null;
 			CorpusManager.CorpusState state = getStateUnsafe(manifest, true);
@@ -557,7 +521,7 @@ public class DefaultCorpusManager implements CorpusManager {
 
 			return corpus;
 		} finally {
-			readLock().unlock();
+			lock.unlockRead(stamp);
 		}
 	}
 
@@ -569,14 +533,18 @@ public class DefaultCorpusManager implements CorpusManager {
 		requireNonNull(corpus);
 		requireNonNull(p);
 
-		readLock().lock();
-		try {
-			CorpusManager.CorpusState currentState = getStateUnsafe(corpus, true);
+		long stamp = lock.tryOptimisticRead();
+		CorpusManager.CorpusState currentState = getStateUnsafe(corpus, true);
 
-			return p.test(currentState);
-		} finally {
-			readLock().unlock();
+		if(!lock.validate(stamp)) {
+			stamp = lock.readLock();
+			try {
+				currentState = getStateUnsafe(corpus, true);
+			} finally {
+				lock.unlockRead(stamp);
+			}
 		}
+		return p.test(currentState);
 	}
 
 	/**
@@ -624,7 +592,9 @@ public class DefaultCorpusManager implements CorpusManager {
 	 */
 	@Override
 	public boolean enableCorpus(CorpusManifest corpus) {
-		tryNonReentrantWrite();
+		requireNonNull(corpus);
+
+		long stamp = lock.writeLock();
 		try {
 			// Read state, automatically applying sanity checks
 			final CorpusManager.CorpusState currentState = getStateUnsafe(corpus, false);
@@ -639,7 +609,7 @@ public class DefaultCorpusManager implements CorpusManager {
 
 			return true;
 		} finally {
-			writeLock().unlock();
+			lock.unlockWrite(stamp);
 		}
 	}
 
@@ -648,7 +618,9 @@ public class DefaultCorpusManager implements CorpusManager {
 	 */
 	@Override
 	public boolean disableCorpus(CorpusManifest corpus) {
-		tryNonReentrantWrite();
+		requireNonNull(corpus);
+
+		long stamp = lock.writeLock();
 		try {
 			// Read state, automatically applying sanity checks
 			final CorpusManager.CorpusState currentState = getStateUnsafe(corpus, false);
@@ -663,7 +635,7 @@ public class DefaultCorpusManager implements CorpusManager {
 
 			return true;
 		} finally {
-			writeLock().unlock();
+			lock.unlockWrite(stamp);
 		}
 	}
 
@@ -672,7 +644,9 @@ public class DefaultCorpusManager implements CorpusManager {
 	 */
 	@Override
 	public boolean resetBadCorpus(CorpusManifest corpus) {
-		tryNonReentrantWrite();
+		requireNonNull(corpus);
+
+		long stamp = lock.writeLock();
 		try {
 			// Read state, automatically applying sanity checks
 			final CorpusManager.CorpusState currentState = getStateUnsafe(corpus, true);
@@ -691,7 +665,7 @@ public class DefaultCorpusManager implements CorpusManager {
 
 			return true;
 		} finally {
-			writeLock().unlock();
+			lock.unlockWrite(stamp);
 		}
 	}
 
@@ -721,11 +695,12 @@ public class DefaultCorpusManager implements CorpusManager {
 	 */
 	@Override
 	public Collection<CorpusManifest> getLiveCorpora() {
-		readLock().lock();
+
+		long stamp = lock.readLock();
 		try {
 			return new ArrayList<>(liveCorpora.keySet());
 		} finally {
-			readLock().unlock();
+			lock.unlockRead(stamp);
 		}
 	}
 
@@ -733,7 +708,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	public Collection<CorpusManifest> getCorpora(Predicate<? super CorpusManifest> p) {
 		requireNonNull(p);
 
-		readLock().lock();
+		long stamp = lock.readLock();
 		try {
 			Collection<CorpusManifest> corpora = states.keySet();
 
@@ -761,7 +736,7 @@ public class DefaultCorpusManager implements CorpusManager {
 
 			return result;
 		} finally {
-			readLock().unlock();
+			lock.unlockRead(stamp);
 		}
 	}
 
@@ -769,7 +744,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	public Collection<CorpusManifest> getCorpora(CorpusState state) {
 		requireNonNull(state);
 
-		readLock().lock();
+		long stamp = lock.readLock();
 		try {
 			Set<Entry<CorpusManifest, CorpusState>> entries = states.entrySet();
 
@@ -797,7 +772,7 @@ public class DefaultCorpusManager implements CorpusManager {
 
 			return result;
 		} finally {
-			readLock().unlock();
+			lock.unlockRead(stamp);
 		}
 	}
 

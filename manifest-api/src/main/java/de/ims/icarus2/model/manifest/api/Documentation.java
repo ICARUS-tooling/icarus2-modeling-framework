@@ -65,6 +65,13 @@ public interface Documentation extends ModifiableIdentity, Lockable, TypedManife
 
 	void removeResource(Resource resource);
 
+	/**
+	 * Links to additional resources that can be used for documentation
+	 * purposes.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	@AccessControl(AccessPolicy.DENY)
 	public interface Resource extends ModifiableIdentity, Lockable {
 

@@ -18,7 +18,6 @@
  */
 package de.ims.icarus2.model.api.driver.mapping;
 
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
@@ -47,7 +46,7 @@ import de.ims.icarus2.util.annotations.OptionalMethod;
  * @author Markus Gärtner
  *
  */
-public interface MappingReader extends SynchronizedAccessor<Mapping>, ModelConstants {
+public interface MappingReader extends SynchronizedAccessor<Mapping> {
 
 //	/**
 //	 * Returns the number of mapping entries currently accessible by this reader.

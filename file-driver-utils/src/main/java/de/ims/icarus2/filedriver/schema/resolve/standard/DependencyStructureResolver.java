@@ -29,7 +29,6 @@ import de.ims.icarus2.filedriver.FileDriverMetadata.ContainerKey;
 import de.ims.icarus2.filedriver.schema.resolve.BatchResolver;
 import de.ims.icarus2.filedriver.schema.resolve.ResolverContext;
 import de.ims.icarus2.filedriver.schema.resolve.ResolverOptions;
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.ItemLayer;
@@ -50,7 +49,7 @@ import de.ims.icarus2.util.strings.StringUtil;
  * @author Markus Gärtner
  *
  */
-public class DependencyStructureResolver implements BatchResolver, ResolverOptions, ModelConstants {
+public class DependencyStructureResolver implements BatchResolver, ResolverOptions {
 
 	public static final String OPTION_OFFSET = "offset";
 	public static final String OPTION_ROOT_LABEL = "root";
@@ -166,7 +165,7 @@ public class DependencyStructureResolver implements BatchResolver, ResolverOptio
 						"Illegal 'head' value for dependency: "+data+" (resulting in head index "+head+")");
 		}
 
-		Edge edge = structureBuilder.newEdge(UNSET_LONG);
+		Edge edge = structureBuilder.newEdge(IcarusUtils.UNSET_LONG);
 		edge.setTarget(context.currentItem());
 
 		saveHeadInfo(IcarusUtils.ensureIntegerValueRange(context.currentIndex()), edge, head);

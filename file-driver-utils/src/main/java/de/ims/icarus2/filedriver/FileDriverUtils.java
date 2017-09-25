@@ -27,7 +27,6 @@ import de.ims.icarus2.filedriver.io.RUBlockCache;
 import de.ims.icarus2.filedriver.io.UnlimitedBlockCache;
 import de.ims.icarus2.filedriver.mapping.DefaultMappingFactory;
 import de.ims.icarus2.filedriver.mapping.MappingFactory;
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
@@ -40,6 +39,7 @@ import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Options;
 
 /**
@@ -169,11 +169,11 @@ public class FileDriverUtils {
 	}
 
 	public static Integer toInteger(int value) {
-		return value==ModelConstants.UNSET_INT ? null : Integer.valueOf(value);
+		return value==IcarusUtils.UNSET_INT ? null : Integer.valueOf(value);
 	}
 
 	public static Long toLong(long value) {
-		return value==ModelConstants.UNSET_LONG ? null : Long.valueOf(value);
+		return value==IcarusUtils.UNSET_LONG ? null : Long.valueOf(value);
 	}
 
 	public static IndexValueType toValueType(String s) {

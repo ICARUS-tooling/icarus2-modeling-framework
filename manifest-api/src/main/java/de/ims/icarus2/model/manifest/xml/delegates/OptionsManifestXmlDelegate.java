@@ -211,7 +211,7 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 		}
 
 		case TAG_DEFAULT_VALUE : {
-			// no-op
+			// only handled when closing element
 		} break;
 
 		case TAG_EXTENSION_POINT : {

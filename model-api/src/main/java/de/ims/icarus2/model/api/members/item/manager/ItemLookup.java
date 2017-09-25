@@ -16,12 +16,12 @@
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  *
  */
-package de.ims.icarus2.model.api.members.item;
+package de.ims.icarus2.model.api.members.item.manager;
 
 import java.util.function.Consumer;
 import java.util.function.ObjLongConsumer;
 
-import de.ims.icarus2.model.api.ModelConstants;
+import de.ims.icarus2.model.api.members.item.Item;
 
 /**
  * Specifies an abstract read-only storage for {@code Item} instances.
@@ -34,7 +34,7 @@ import de.ims.icarus2.model.api.ModelConstants;
  * @author Markus Gärtner
  *
  */
-public interface ItemLookup extends ModelConstants {
+public interface ItemLookup {
 
 	long getItemCount();
 

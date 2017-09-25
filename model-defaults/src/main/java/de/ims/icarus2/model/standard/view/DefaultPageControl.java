@@ -41,7 +41,7 @@ import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.events.PageListener;
 import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.api.members.item.ItemLayerManager;
+import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
 import de.ims.icarus2.model.api.view.CorpusView;
 import de.ims.icarus2.model.api.view.CorpusView.PageControl;
 import de.ims.icarus2.model.manifest.util.Messages;

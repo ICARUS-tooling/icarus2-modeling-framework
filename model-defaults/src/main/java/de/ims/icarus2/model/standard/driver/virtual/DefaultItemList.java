@@ -23,7 +23,7 @@ import java.util.Collection;
 import java.util.List;
 
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.members.item.ItemList;
+import de.ims.icarus2.model.api.members.item.manager.ItemList;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.collections.seq.DataSequence;
@@ -49,7 +49,7 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemLookup#getItemCount()
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLookup#getItemCount()
 	 */
 	@Override
 	public long getItemCount() {
@@ -57,7 +57,7 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemLookup#getItemAt(long)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLookup#getItemAt(long)
 	 */
 	@Override
 	public Item getItemAt(long index) {
@@ -65,7 +65,7 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemLookup#indexOfItem(de.ims.icarus2.model.api.members.item.Item)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLookup#indexOfItem(de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
 	public long indexOfItem(Item item) {
@@ -73,7 +73,7 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemList#removeItem(long)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemList#removeItem(long)
 	 */
 	@Override
 	public Item removeItem(long index) {
@@ -81,7 +81,7 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemList#addItem(long, de.ims.icarus2.model.api.members.item.Item)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemList#addItem(long, de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
 	public void addItem(long index, Item item) {
@@ -89,7 +89,7 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemList#moveItem(long, long)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemList#moveItem(long, long)
 	 */
 	@Override
 	public void moveItem(long index0, long index1) {
@@ -97,7 +97,7 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemList#addItems(long, de.ims.icarus2.util.collections.seq.DataSequence)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemList#addItems(long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
 	public void addItems(long index, DataSequence<? extends Item> items) {
@@ -106,7 +106,7 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemList#removeItems(long, long)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemList#removeItems(long, long)
 	 */
 	@Override
 	public DataSequence<? extends Item> removeItems(long index0, long index1) {

@@ -39,7 +39,6 @@ import de.ims.icarus2.filedriver.FileDriverMetadata.ChunkIndexKey;
 import de.ims.icarus2.filedriver.FileDriverMetadata.ContainerKey;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndex;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexCursor;
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.ChunkState;
@@ -57,6 +56,7 @@ import de.ims.icarus2.model.standard.driver.mods.AbstractDriverModule;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AccumulatingException;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.io.IOUtil;
 import de.ims.icarus2.util.nio.SubChannel;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -68,9 +68,9 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
  */
 public abstract class AbstractConverter extends AbstractDriverModule implements Converter {
 
-	private final Int2ObjectMap<DelegatingCursor<?>> activeCursors = new Int2ObjectOpenHashMap<>();
-
 	private static Logger log = LoggerFactory.getLogger(AbstractConverter.class);
+
+	private final Int2ObjectMap<DelegatingCursor<?>> activeCursors = new Int2ObjectOpenHashMap<>();
 
 //	/**
 //	 * If subclasses wish to override this method they should ensure to make
@@ -307,7 +307,7 @@ public abstract class AbstractConverter extends AbstractDriverModule implements 
 	 * @author Markus Gärtner
 	 *
 	 */
-	public abstract static class DelegatingCursor<C extends AbstractConverter> implements Cursor<C>, ModelConstants {
+	public abstract static class DelegatingCursor<C extends AbstractConverter> implements Cursor<C> {
 
 		protected final AbstractConverter converter;
 
@@ -438,7 +438,7 @@ public abstract class AbstractConverter extends AbstractDriverModule implements 
 			chunkIndexCursor.close();
 			loadResult.close();
 
-			currentIndex = UNSET_LONG;
+			currentIndex = IcarusUtils.UNSET_LONG;
 
 			// This might fail due to I/O stuff beyond our control
 			sourceChannel.close();

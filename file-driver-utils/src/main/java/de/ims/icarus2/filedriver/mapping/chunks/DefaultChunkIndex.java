@@ -41,6 +41,7 @@ import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.io.SynchronizedAccessor;
 import de.ims.icarus2.model.api.io.resources.IOResource;
 import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  *
@@ -304,7 +305,7 @@ public class DefaultChunkIndex implements ChunkIndex {
 			int localIndex = localIndex(index);
 
 			Block block = getBlock(id, false);
-			return block==null ? UNSET_LONG : getAdapter().getBeginOffset(block.getData(), localIndex);
+			return block==null ? IcarusUtils.UNSET_LONG : getAdapter().getBeginOffset(block.getData(), localIndex);
 		}
 
 		/**
@@ -316,7 +317,7 @@ public class DefaultChunkIndex implements ChunkIndex {
 			int localIndex = localIndex(index);
 
 			Block block = getBlock(id, false);
-			return block==null ? UNSET_LONG : arrayAdapter.getEndOffset(block.getData(), localIndex);
+			return block==null ? IcarusUtils.UNSET_LONG : arrayAdapter.getEndOffset(block.getData(), localIndex);
 		}
 
 	}
@@ -389,8 +390,8 @@ public class DefaultChunkIndex implements ChunkIndex {
 
 	private class Cursor extends ResourceAccessor implements ChunkIndexCursor {
 
-		private int id = UNSET_INT;
-		private int localIndex = UNSET_INT;
+		private int id = IcarusUtils.UNSET_INT;
+		private int localIndex = IcarusUtils.UNSET_INT;
 		private Block block = null;
 
 		private Cursor(boolean readOnly) {
@@ -457,7 +458,7 @@ public class DefaultChunkIndex implements ChunkIndex {
 		 */
 		@Override
 		public long getBeginOffset() {
-			return block==null ? UNSET_LONG : arrayAdapter.getBeginOffset(block.getData(), localIndex);
+			return block==null ? IcarusUtils.UNSET_LONG : arrayAdapter.getBeginOffset(block.getData(), localIndex);
 		}
 
 		/**
@@ -465,7 +466,7 @@ public class DefaultChunkIndex implements ChunkIndex {
 		 */
 		@Override
 		public long getEndOffset() {
-			return block==null ? UNSET_LONG : arrayAdapter.getEndOffset(block.getData(), localIndex);
+			return block==null ? IcarusUtils.UNSET_LONG : arrayAdapter.getEndOffset(block.getData(), localIndex);
 		}
 
 		private void checkWriteAccess() {

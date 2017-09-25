@@ -46,7 +46,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface MemberManifest extends ModifiableIdentity, Documentable, Manifest, Embedded {
+public interface MemberManifest extends ModifiableCategory, Documentable, Manifest, Embedded {
 
 	/**
 	 * Returns the manifest that describes possible options the

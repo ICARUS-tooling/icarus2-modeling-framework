@@ -78,7 +78,6 @@ import de.ims.icarus2.filedriver.schema.table.TableSchema.ColumnSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.ResolverSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.SubstituteSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.SubstituteType;
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
@@ -104,6 +103,7 @@ import de.ims.icarus2.model.standard.driver.ChunkConsumer;
 import de.ims.icarus2.model.util.Graph;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.Options;
@@ -124,7 +124,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
  * @author Markus Gärtner
  *
  */
-public class TableConverter extends AbstractConverter implements SchemaBasedConverter, ModelConstants {
+public class TableConverter extends AbstractConverter implements SchemaBasedConverter {
 
 	private TableSchema tableSchema;
 
@@ -2132,12 +2132,12 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 				FileInfo fileInfo = states.getFileInfo(fileIndex);
 				firstIndex = fileInfo.getBeginIndex(layer.getManifest());
-				if(firstIndex==UNSET_LONG && fileIndex>0) {
+				if(firstIndex==IcarusUtils.UNSET_LONG && fileIndex>0) {
 					FileInfo previousInfo = states.getFileInfo(fileIndex-1);
 					firstIndex = previousInfo.getBeginIndex(layer.getManifest());
 				}
 
-				if(firstIndex==UNSET_LONG) {
+				if(firstIndex==IcarusUtils.UNSET_LONG) {
 					firstIndex = 0L;
 				}
 
@@ -2150,7 +2150,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 					builder.firstIndex(firstIndex);
 					// If available we use information about last index in file
 					long lastIndex = fileInfo.getEndIndex(layer.getManifest());
-					if(lastIndex!=UNSET_LONG) {
+					if(lastIndex!=IcarusUtils.UNSET_LONG) {
 						builder.lastIndex(lastIndex);
 					}
 				}

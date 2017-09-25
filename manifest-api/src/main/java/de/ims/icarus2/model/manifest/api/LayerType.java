@@ -18,21 +18,24 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import de.ims.icarus2.util.id.Identity;
-
 /**
  * Implements a shared type descriptor for {@code Layer} objects. It is used to
  * group layers according to an abstract description of their content. Besides
  * serving as a mere identifier to that abstract description, a {@code LayerType}
  * optionally provides a {@link LayerManifest} that contains further specifications
  * on how the content might be structured or other informations. Each layer type
- * is globally identifiably by its unique id.
+ * is globally identifiably by its unique id as defined by the {@link Category} contract.
+ * <p>
+ * Note that it is possible to provide category definitions both in this wrapper
+ * and in the associated {@link #getSharedManifest() layer manifest}. In case of
+ * concurrent category definitions the one defined locally by {@link #getId()}
+ * takes priority over the one defined in the nested layer manifest!
  *
  * @author Markus Gärtner
  * @see LayerManifest
  *
  */
-public interface LayerType extends Identity {
+public interface LayerType extends Category {
 
 	/**
 	 * Returns the shared {@code LayerManifest} that further describes layers of

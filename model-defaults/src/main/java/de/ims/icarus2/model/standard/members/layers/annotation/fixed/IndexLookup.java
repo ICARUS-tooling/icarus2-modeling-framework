@@ -18,6 +18,8 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Arrays;
 import java.util.Set;
 
@@ -58,8 +60,7 @@ public abstract class IndexLookup {
 	protected final String[] keys;
 
 	protected IndexLookup(String[] keys) {
-		if (keys == null)
-			throw new NullPointerException("Invalid keys");
+		requireNonNull(keys);
 
 		Arrays.sort(keys);
 

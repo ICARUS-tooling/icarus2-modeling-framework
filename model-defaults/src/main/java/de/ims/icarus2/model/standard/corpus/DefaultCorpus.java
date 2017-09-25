@@ -40,7 +40,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
@@ -243,7 +242,7 @@ public class DefaultCorpus implements Corpus {
 		if(indices==null) {
 			long itemCount = driver.getItemCount(primaryLayer);
 
-			if(itemCount==ModelConstants.UNSET_LONG)
+			if(itemCount==IcarusUtils.UNSET_LONG)
 				throw new ModelException(this, ModelErrorCode.DRIVER_METADATA_MISSING,
 						"Cannot create default index set for entire primary layer, since driver has no metadata for its size");
 
@@ -1111,7 +1110,7 @@ public class DefaultCorpus implements Corpus {
 		 */
 		@Override
 		public long getBeginOffset() {
-			return UNSET_LONG;
+			return IcarusUtils.UNSET_LONG;
 		}
 
 		/**
@@ -1119,7 +1118,7 @@ public class DefaultCorpus implements Corpus {
 		 */
 		@Override
 		public long getEndOffset() {
-			return UNSET_LONG;
+			return IcarusUtils.UNSET_LONG;
 		}
 
 		/**
@@ -1171,7 +1170,7 @@ public class DefaultCorpus implements Corpus {
 		 */
 		@Override
 		public long getIndex() {
-			return UNSET_LONG;
+			return IcarusUtils.UNSET_LONG;
 		}
 
 		/**
@@ -1179,7 +1178,7 @@ public class DefaultCorpus implements Corpus {
 		 */
 		@Override
 		public long getId() {
-			return UNSET_LONG;
+			return IcarusUtils.UNSET_LONG;
 		}
 
 		/**
@@ -1213,7 +1212,7 @@ public class DefaultCorpus implements Corpus {
 				}
 			}
 
-			return UNSET_LONG;
+			return IcarusUtils.UNSET_LONG;
 		}
 
 		/**

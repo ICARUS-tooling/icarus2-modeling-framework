@@ -64,7 +64,6 @@ import de.ims.icarus2.filedriver.mapping.MappingFactory;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndex;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexStorage;
 import de.ims.icarus2.filedriver.mapping.chunks.DefaultChunkIndex;
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.ChunkInfo;
@@ -104,6 +103,7 @@ import de.ims.icarus2.model.standard.driver.ChunkInfoBuilder;
 import de.ims.icarus2.model.util.Graph;
 import de.ims.icarus2.model.util.Graph.TraversalPolicy;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.annotations.PreliminaryValue;
 import de.ims.icarus2.util.classes.Lazy;
@@ -395,7 +395,7 @@ public class FileDriver extends AbstractDriver {
 	/**
 	 * Generates a lookup key using {@link ItemLayerKey#ITEMS#getKey(ItemLayerManifest)}. This key
 	 * is then used to query the underlying {@link MetadataRegistry} for the mapped
-	 * {@link MetadataRegistry#getLongValue(String, long) long value}, supplying {@value ModelConstants#UNSET_LONG}
+	 * {@link MetadataRegistry#getLongValue(String, long) long value}, supplying {@value IcarusUtils#UNSET_LONG}
 	 * as default value for the case that no matching entry was found.
 	 *
 	 * TODO refresh description
@@ -409,7 +409,7 @@ public class FileDriver extends AbstractDriver {
 
 		LayerInfo info = getFileStates().getLayerInfo(layer);
 
-		return info==null ? UNSET_LONG : info.getSize();
+		return info==null ? IcarusUtils.UNSET_LONG : info.getSize();
 	}
 
 	public BufferedItemManager.LayerBuffer getLayerBuffer(ItemLayer layer) {
@@ -484,7 +484,7 @@ public class FileDriver extends AbstractDriver {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#getItem(de.ims.icarus2.model.api.layer.ItemLayer, long)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#getItem(de.ims.icarus2.model.api.layer.ItemLayer, long)
 	 */
 	@Override
 	public Item getItem(ItemLayer layer, long index) {
@@ -787,7 +787,7 @@ public class FileDriver extends AbstractDriver {
 
 		// Query global settings for file size threshold
 		long fileSizeThreshold = getFileSizeThresholdForChunking();
-		if(fileSizeThreshold!=UNSET_LONG) {
+		if(fileSizeThreshold!=IcarusUtils.UNSET_LONG) {
 			long totalSize = 0L;
 
 			ElementInfo globalInfo = getFileStates().getGlobalInfo();
@@ -820,10 +820,10 @@ public class FileDriver extends AbstractDriver {
 		String value = getCorpus().getManager().getProperty(key);
 
 		if(value==null || value.isEmpty()) {
-			return UNSET_LONG;
+			return IcarusUtils.UNSET_LONG;
 		}
 
-		long threshold = UNSET_LONG;
+		long threshold = IcarusUtils.UNSET_LONG;
 
 		try {
 			threshold = Long.parseLong(value);
@@ -833,7 +833,7 @@ public class FileDriver extends AbstractDriver {
 
 		// Collapse all "invalid" values into the same "ignore" value
 		if(threshold<=0) {
-			threshold = UNSET_LONG;
+			threshold = IcarusUtils.UNSET_LONG;
 		}
 
 		return threshold;
@@ -993,9 +993,9 @@ public class FileDriver extends AbstractDriver {
 		//  Size of block cache
 		//*******************************************
 		String cacheSizeKey = ChunkIndexKey.CACHE_SIZE.getKey(layerManifest);
-		int cacheSize = metadataRegistry.getIntValue(cacheSizeKey, UNSET_INT);
+		int cacheSize = metadataRegistry.getIntValue(cacheSizeKey, IcarusUtils.UNSET_INT);
 
-		if(cacheSize==UNSET_INT) {
+		if(cacheSize==IcarusUtils.UNSET_INT) {
 			// Fetch default value from global config
 			String key = FileDriverUtils.CACHE_SIZE_FOR_CHUNKING_PROPERTY;
 			String value = getCorpus().getManager().getProperty(key);
@@ -1016,9 +1016,9 @@ public class FileDriver extends AbstractDriver {
 		//  Size of blocks for buffering in 2^blockPower frames
 		//*******************************************
 		String blockPowerKey = ChunkIndexKey.BLOCK_POWER.getKey(layerManifest);
-		int blockPower = metadataRegistry.getIntValue(blockPowerKey, UNSET_INT);
+		int blockPower = metadataRegistry.getIntValue(blockPowerKey, IcarusUtils.UNSET_INT);
 
-		if(blockPower==UNSET_INT) {
+		if(blockPower==IcarusUtils.UNSET_INT) {
 			// Fetch default block power from global config
 			String key = FileDriverUtils.BLOCK_POWER_FOR_CHUNKING_PROPERTY;
 			String value = getCorpus().getManager().getProperty(key);
@@ -1072,8 +1072,8 @@ public class FileDriver extends AbstractDriver {
 		Map lookup = (Map) converter.getPropertyValue(ConverterProperty.EXTIMATED_CHUNK_SIZES);
 		String key = groupManifest.getId();
 		Integer value = (Integer) lookup.get(key);
-		int converterEstimation = value!=null ? value.intValue() : UNSET_INT;
-		if(converterEstimation!=UNSET_INT) {
+		int converterEstimation = value!=null ? value.intValue() : IcarusUtils.UNSET_INT;
+		if(converterEstimation!=IcarusUtils.UNSET_INT) {
 			return converterEstimation;
 		}
 
@@ -1084,7 +1084,7 @@ public class FileDriver extends AbstractDriver {
 		// Check metadata
 		//TODO
 
-		return UNSET_INT;
+		return IcarusUtils.UNSET_INT;
 	}
 
 	/**
@@ -1092,7 +1092,7 @@ public class FileDriver extends AbstractDriver {
 	 * layer is not the respective primary layer and then delegates to an internal
 	 * {@link #loadPrimaryLayer(IndexSet[], ItemLayer, Consumer) load} method.
 	 *
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#load(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer, java.util.function.Consumer)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#load(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer, java.util.function.Consumer)
 	 */
 	@Override
 	public long load(IndexSet[] indices, ItemLayer layer,
@@ -1267,7 +1267,7 @@ public class FileDriver extends AbstractDriver {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#release(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#release(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer)
 	 */
 	@Override
 	public void release(IndexSet[] indices, ItemLayer layer)
@@ -1401,7 +1401,7 @@ public class FileDriver extends AbstractDriver {
 		LayerBuffer layerBuffer = getLayerBuffer(layer);
 
 		//FIXME
-		return UNSET_LONG;
+		return IcarusUtils.UNSET_LONG;
 	}
 
 	/**
@@ -1454,7 +1454,7 @@ public class FileDriver extends AbstractDriver {
 
 			boolean contentIsValid = loadResult.chunkCount(ChunkState.CORRUPTED)==0L;
 
-			if(expectedItemCount!=UNSET_LONG && loadResult.loadedChunkCount()!=expectedItemCount) {
+			if(expectedItemCount!=IcarusUtils.UNSET_LONG && loadResult.loadedChunkCount()!=expectedItemCount) {
 				contentIsValid = false;
 			}
 

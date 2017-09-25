@@ -84,4 +84,9 @@ public class IcarusUtils {
 			log.error("Failed to close {1}", label, e);
 		}
 	}
+
+	public static final long UNSET_LONG = -1L;
+	public static final int UNSET_INT = -1;
+	public static final double UNSET_DOUBLE = -1D;
+	public static final float UNSET_FLOAT = -1F;
 }

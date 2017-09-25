@@ -36,8 +36,8 @@ import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.members.item.ItemLayerManager;
-import de.ims.icarus2.model.api.members.item.ItemList;
+import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
+import de.ims.icarus2.model.api.members.item.manager.ItemList;
 import de.ims.icarus2.model.standard.driver.ChunkInfoBuilder;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
@@ -115,7 +115,7 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#getItemCount(de.ims.icarus2.model.api.layer.ItemLayer)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#getItemCount(de.ims.icarus2.model.api.layer.ItemLayer)
 	 */
 	@Override
 	public long getItemCount(ItemLayer layer) {
@@ -123,7 +123,7 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#getItem(de.ims.icarus2.model.api.layer.ItemLayer, long)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#getItem(de.ims.icarus2.model.api.layer.ItemLayer, long)
 	 */
 	@Override
 	public Item getItem(ItemLayer layer, long index) {
@@ -169,7 +169,7 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#load(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer, java.util.function.Consumer)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#load(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer, java.util.function.Consumer)
 	 */
 	@Override
 	public long load(IndexSet[] indices, ItemLayer layer,
@@ -208,7 +208,7 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 	/**
 	 * This implementation does not cache data in the usual sense, so this method is empty.
 	 *
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#release(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#release(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer)
 	 */
 	@Override
 	public void release(IndexSet[] indices, ItemLayer layer)

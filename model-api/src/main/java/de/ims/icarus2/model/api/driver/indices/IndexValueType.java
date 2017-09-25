@@ -24,8 +24,8 @@ import java.util.function.IntToLongFunction;
 import java.util.function.LongBinaryOperator;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.ArrayUtils;
 import de.ims.icarus2.util.strings.StringResource;
 
@@ -755,7 +755,7 @@ public enum IndexValueType implements StringResource {
 	public abstract void copyFrom(IntToLongFunction src, int srcPos, Object array, int destPos, int length);
 
 	public static IndexValueType forValue(long value) {
-		if(value==ModelConstants.UNSET_LONG) {
+		if(value==IcarusUtils.UNSET_LONG) {
 			return null;
 		}
 

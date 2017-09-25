@@ -39,6 +39,7 @@ import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
 import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * Mapping implementation that relies on another reverse mapping to map contents of spans to
@@ -197,7 +198,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 
 			Block block = getBlock(id, false);
 			if(block==null) {
-				return UNSET_LONG;
+				return IcarusUtils.UNSET_LONG;
 			}
 
 			long fromTarget = blockStorage.getSpanBegin(block.getData(), localIndex);
@@ -216,7 +217,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 				throws InterruptedException {
 			long result = lookup0(sourceIndex);
 
-			if(result!=UNSET_LONG) {
+			if(result!=IcarusUtils.UNSET_LONG) {
 				collector.add(result);
 				return true;
 			} else {
@@ -267,7 +268,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 				long beginIndex = lookup0(firstIndex(sourceIndices));
 				long endIndex = lookup0(lastIndex(sourceIndices));
 
-				if(beginIndex!=UNSET_LONG && endIndex!=UNSET_LONG) {
+				if(beginIndex!=IcarusUtils.UNSET_LONG && endIndex!=IcarusUtils.UNSET_LONG) {
 					if(beginIndex==endIndex) {
 						collector.add(beginIndex);
 					} else {
@@ -277,7 +278,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 				}
 			} else {
 				// Current source index to be resolved
-				long sourceIndex = UNSET_LONG;
+				long sourceIndex = IcarusUtils.UNSET_LONG;
 
 				long sourceLimit = lastIndex(sourceIndices);
 
@@ -312,7 +313,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 						sourceIndex = set.indexAt(index);
 
 						long targetIndex = lookup0(sourceIndex);
-						if(targetIndex!=UNSET_LONG) {
+						if(targetIndex!=IcarusUtils.UNSET_LONG) {
 							// Report to collector
 							collector.add(targetIndex);
 							/*

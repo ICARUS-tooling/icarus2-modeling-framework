@@ -406,6 +406,7 @@ public class ValueType implements StringResource, NamedObject {
 	public static final ValueType IMAGE = new ValueType(IMAGE_TYPE_LABEL, Icon.class, false, true) {
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
+			//TODO parse string to decide if it should be decoded into an Icon or wrapped
 			return new IconWrapper(s.toString());
 		}
 
@@ -418,6 +419,7 @@ public class ValueType implements StringResource, NamedObject {
 			if(value instanceof IconWrapper) {
 				return ((IconWrapper)value).getStringValue();
 			} else
+				//TODO implement base-64 serialization to embed binary image data
 				throw new IllegalArgumentException("Cannot serialize icon: "+value); //$NON-NLS-1$
 		}
 	};
@@ -722,8 +724,8 @@ public class ValueType implements StringResource, NamedObject {
 			}
 
 			if(elementIndex!=size)
-				throw new ManifestException(GlobalErrorCode.DATA_ARRAY_SIZE,
-						Messages.mismatchMessage("Insufficient elements declared in input string", size, elementIndex));
+				throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
+						Messages.mismatchMessage("Insufficient elements declared in input string", _int(size), _int(elementIndex)));
 
 			return array;
 		}
@@ -866,7 +868,7 @@ public class ValueType implements StringResource, NamedObject {
 			int size = rows*columns;
 
 			if(size!=Array.getLength(value))
-				throw new ManifestException(GlobalErrorCode.DATA_ARRAY_SIZE,
+				throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
 						Messages.sizeMismatchMessage("Invalid size of matrix buffer array", size, Array.getLength(value)));
 
 			for(int row=0; row<rows; row++) {

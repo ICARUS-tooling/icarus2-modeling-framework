@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Set;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.api.ModelConstants;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
@@ -79,7 +78,7 @@ import de.ims.icarus2.model.manifest.util.Messages;
  * @author Markus Gärtner
  *
  */
-public final class ModelUtils implements ModelConstants {
+public final class ModelUtils {
 
 	public static final String SHARED_PROPERTY_PREFIX = "de.ims.icarus2.model";
 

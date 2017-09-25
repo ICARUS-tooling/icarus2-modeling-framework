@@ -47,6 +47,9 @@ import de.ims.icarus2.util.Options;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
+ * A factory that generates annotation storages suitable for
+ * individual provided manifests.
+ *
  * @author Markus Gärtner
  *
  */

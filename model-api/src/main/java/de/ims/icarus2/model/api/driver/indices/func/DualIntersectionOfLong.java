@@ -23,13 +23,13 @@ import static java.util.Objects.requireNonNull;
 import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator;
 
-import de.ims.icarus2.model.api.ModelConstants;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class DualIntersectionOfLong implements PrimitiveIterator.OfLong, ModelConstants {
+public class DualIntersectionOfLong implements PrimitiveIterator.OfLong {
 
 	private final PrimitiveIterator.OfLong left, right;
 
@@ -47,15 +47,15 @@ public class DualIntersectionOfLong implements PrimitiveIterator.OfLong, ModelCo
 		leftVal = nextLeft();
 		rightVal = nextRight();
 
-		value = UNSET_LONG;
+		value = IcarusUtils.UNSET_LONG;
 	}
 
 	private long nextLeft() {
-		return left.hasNext() ? left.nextLong() : UNSET_LONG;
+		return left.hasNext() ? left.nextLong() : IcarusUtils.UNSET_LONG;
 	}
 
 	private long nextRight() {
-		return right.hasNext() ? right.nextLong() : UNSET_LONG;
+		return right.hasNext() ? right.nextLong() : IcarusUtils.UNSET_LONG;
 	}
 
 	/**
@@ -65,8 +65,8 @@ public class DualIntersectionOfLong implements PrimitiveIterator.OfLong, ModelCo
 	public boolean hasNext() {
 
 		// Check if either begining on the stream or if nextLong() has reset the value
-		if(value==UNSET_LONG) {
-			while(leftVal!=UNSET_LONG && rightVal!=UNSET_LONG) {
+		if(value==IcarusUtils.UNSET_LONG) {
+			while(leftVal!=IcarusUtils.UNSET_LONG && rightVal!=IcarusUtils.UNSET_LONG) {
 				if(leftVal<rightVal) {
 					leftVal = nextLeft();
 				} else if(leftVal>rightVal) {
@@ -80,7 +80,7 @@ public class DualIntersectionOfLong implements PrimitiveIterator.OfLong, ModelCo
 			}
 		}
 
-		return value!=UNSET_LONG;
+		return value!=IcarusUtils.UNSET_LONG;
 	}
 
 	/**
@@ -89,12 +89,12 @@ public class DualIntersectionOfLong implements PrimitiveIterator.OfLong, ModelCo
 	@Override
 	public long nextLong() {
 		// Not calling hasNext() since that is the client code's job
-		if(value==UNSET_LONG)
+		if(value==IcarusUtils.UNSET_LONG)
 			throw new NoSuchElementException();
 
 		long result = value;
 		// Indicator for hasNext() to look for refresh next value
-		value = UNSET_LONG;
+		value = IcarusUtils.UNSET_LONG;
 		return result;
 	}
 

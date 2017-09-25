@@ -40,7 +40,7 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.members.item.ItemLayerManager;
+import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
 import de.ims.icarus2.model.api.meta.AnnotationValueDistribution;
 import de.ims.icarus2.model.api.meta.AnnotationValueSet;
 import de.ims.icarus2.model.api.registry.LayerMemberFactory;
@@ -51,6 +51,7 @@ import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.Messages;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.collections.LazyCollection;
 
@@ -167,7 +168,7 @@ public interface Driver extends ItemLayerManager {
 		IndexValueType valueType = IndexValueType.LONG;
 
 		long size = getItemCount(manifest);
-		if(size!=UNSET_LONG) {
+		if(size!=IcarusUtils.UNSET_LONG) {
 			valueType = IndexValueType.forValue(size);
 		}
 
@@ -418,7 +419,7 @@ public interface Driver extends ItemLayerManager {
 	 *
 	 * This hold of course only true for drivers that host non-virtual data.
 	 *
-	 * @see de.ims.icarus2.model.api.members.item.ItemLayerManager#release(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#release(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer)
 	 */
 	@Override
 	void release(IndexSet[] indices, ItemLayer layer) throws InterruptedException;

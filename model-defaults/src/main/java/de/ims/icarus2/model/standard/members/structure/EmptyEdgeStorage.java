@@ -24,6 +24,7 @@ import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.StructureType;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
@@ -78,7 +79,7 @@ public class EmptyEdgeStorage extends AbstractImmutableEdgeStorage {
 	 */
 	@Override
 	public long indexOfEdge(Structure context, Edge edge) {
-		return UNSET_LONG;
+		return IcarusUtils.UNSET_LONG;
 	}
 
 	/**
@@ -135,7 +136,7 @@ public class EmptyEdgeStorage extends AbstractImmutableEdgeStorage {
 	 */
 	@Override
 	public long indexOfChild(Structure context, Item child) {
-		return UNSET_LONG;
+		return IcarusUtils.UNSET_LONG;
 	}
 
 	/**
@@ -162,7 +163,7 @@ public class EmptyEdgeStorage extends AbstractImmutableEdgeStorage {
 	 */
 	@Override
 	public long getDepth(Structure context, Item node) {
-		return UNSET_LONG;
+		return IcarusUtils.UNSET_LONG;
 	}
 
 	/**
