@@ -99,6 +99,7 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 
 			Object noEntryValue = annotationManifest.getNoEntryValue();
 			if(noEntryValue==null) {
+				//FIXME need to resolve default noEntryValue for primitive annotation types
 				continue;
 			}
 
@@ -272,7 +273,9 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 	public void removeAllValues(String key) {
 		final int index = checkKeyAndGetIndex(key);
 		//TODO possibly too expensive, check parallel computation via lambda
-		getAnnotations().forEach((item, buffer) -> buffer[index] = null);
+		getAnnotations().entrySet()
+			.parallelStream() // parallelize the entire operation
+			.forEach(entry -> entry.getValue()[index] = null); // clear the piece of data associated with 'key'
 	}
 
 	protected MutablePrimitive<?> getPrimitive(Item item, String key) {

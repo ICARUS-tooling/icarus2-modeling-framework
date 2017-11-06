@@ -23,5 +23,5 @@ package de.ims.icarus2.model.standard.members.layers.annotation.packed;
  */
 public interface PackedDataDescriptor {
 
-	BytePackConverter[] getConverters();
+	BytePackConverter[] createConverters();
 }

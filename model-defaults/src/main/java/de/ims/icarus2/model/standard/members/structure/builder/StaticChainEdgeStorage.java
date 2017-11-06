@@ -18,6 +18,8 @@
  */
 package de.ims.icarus2.model.standard.members.structure.builder;
 
+import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.item.Edge;
@@ -54,8 +56,8 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 			 *  => x = (B_d - B_e)/(B_f - B_e)
 			 */
 
-			double bytesFullEntry = LargeThinChainEdgeStorage.USED_ENTRY_SIZE;
-			double bytesEmptyEntry = LargeThinChainEdgeStorage.UNUSED_ENTRY_SIZE;
+			double bytesFullEntry = LargeSparseChainEdgeStorage.USED_ENTRY_SIZE;
+			double bytesEmptyEntry = LargeSparseChainEdgeStorage.UNUSED_ENTRY_SIZE;
 			double bytesDefaultEntry = LargeCompleteChainEdgeStorage.ENTRY_SIZE;
 
 			LOAD_THRESHOLD = (bytesDefaultEntry-bytesEmptyEntry) / (bytesFullEntry - bytesEmptyEntry);
@@ -84,7 +86,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		} else if(nodeCount<=CompactChainEdgeStorageLong.MAX_NODE_COUNT) {
 			return CompactChainEdgeStorageLong.fromBuilder(builder);
 		} else if(isSparse(builder)) {
-			return LargeThinChainEdgeStorage.fromBuilder(builder);
+			return LargeSparseChainEdgeStorage.fromBuilder(builder);
 		} else {
 			return LargeCompleteChainEdgeStorage.fromBuilder(builder);
 		}
@@ -193,30 +195,35 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		}
 
 		// 8-bit mask for values ranging from 0 to 255
-		private static final int MASK = 0xFF;
+		private static final int MASK_8 = 0xFF;
+
+		private static final int OFFSET_INCOMING = 0;
+		private static final int OFFSET_OUTGOING = 8;
+		private static final int OFFSET_HEIGHT = 16;
+		private static final int OFFSET_DEPTH = 24;
 
 		private static int extract(int data, int shifts) {
-			return (data >>> shifts) & MASK;
+			return (data >>> shifts) & MASK_8;
 		}
 
 		private static int incoming(int data) {
-			return extract(data, 0)-1;
+			return extract(data, OFFSET_INCOMING)-1;
 		}
 
 		private static int outgoing(int data) {
-			return extract(data, 8)-1;
+			return extract(data, OFFSET_OUTGOING)-1;
 		}
 
 		private static int height(int data) {
-			return extract(data, 16);
+			return extract(data, OFFSET_HEIGHT);
 		}
 
 		private static int depth(int data) {
-			return extract(data, 24)-1;
+			return extract(data, OFFSET_DEPTH)-1;
 		}
 
 		private static int descendants(int data) {
-			return extract(data, 24);
+			return extract(data, OFFSET_HEIGHT);
 		}
 
 		/*
@@ -318,7 +325,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 				return descendants(chainData[0]);
 			} else {
 				int data = chainData[localIndex(context, parent)];
-				return height(data);
+				return descendants(data);
 			}
 		}
 	}
@@ -383,31 +390,36 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 			return new CompactChainEdgeStorageLong(root, edges, chainData);
 		}
 
-		// 8-bit mask for values ranging from 0 to 255
-		private static final long MASK = 0xFFFF;
+		// 8-bit mask for values ranging from 0 to 65535
+		private static final long MASK_16 = 0xFFFF;
+
+		private static final int OFFSET_INCOMING = 0;
+		private static final int OFFSET_OUTGOING = 16;
+		private static final int OFFSET_HEIGHT = 32;
+		private static final int OFFSET_DEPTH = 48;
 
 		private static int extract(long data, int shifts) {
-			return (int) ((data >>> shifts) & MASK);
+			return (int) ((data >>> shifts) & MASK_16);
 		}
 
 		private static int incoming(long data) {
-			return extract(data, 0)-1;
+			return extract(data, OFFSET_INCOMING)-1;
 		}
 
 		private static int outgoing(long data) {
-			return extract(data, 16)-1;
+			return extract(data, OFFSET_OUTGOING)-1;
 		}
 
 		private static int height(long data) {
-			return extract(data, 32);
+			return extract(data, OFFSET_HEIGHT);
 		}
 
 		private static int depth(long data) {
-			return extract(data, 48)-1;
+			return extract(data, OFFSET_DEPTH)-1;
 		}
 
 		private static int descendants(long data) {
-			return extract(data, 48);
+			return extract(data, OFFSET_HEIGHT);
 		}
 
 		/*
@@ -427,8 +439,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		CompactChainEdgeStorageLong(RootItem<Edge> root, LookupList<Edge> edges, long[] chainData) {
 			super(root, edges);
 
-			if (chainData == null)
-				throw new NullPointerException("Invalid chainData");
+			requireNonNull(chainData);
 
 			this.chainData = chainData;
 		}
@@ -509,7 +520,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 				return descendants(chainData[0]);
 			} else {
 				long data = chainData[localIndex(context, parent)];
-				return height(data);
+				return descendants(data);
 			}
 		}
 	}
@@ -519,7 +530,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		/**
 		 * Bytes per entry (2 * long)
 		 */
-		public static final int ENTRY_SIZE = 2*8;
+		public static final int ENTRY_SIZE = 2*Long.BYTES;
 
 		public static LargeCompleteChainEdgeStorage fromBuilder(StructureBuilder builder) {
 			int nodeCount = builder.getNodeCount();
@@ -571,12 +582,15 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 			return new LargeCompleteChainEdgeStorage(root, edges, linkData, sizeData);
 		}
 
+		private static final int OFFSET_OUTGOING = 32;
+		private static final int OFFSET_DEPTH = 32;
+
 		private static int incoming(long data) {
 			return (int) (data);
 		}
 
 		private static int outgoing(long data) {
-			return (int) (data >>> 32);
+			return (int) (data >>> OFFSET_OUTGOING);
 		}
 
 		private static int height(long data) {
@@ -584,11 +598,11 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		}
 
 		private static int depth(long data) {
-			return (int) (data >>> 32);
+			return (int) (data >>> OFFSET_DEPTH);
 		}
 
 		private static int descendants(long data) {
-			return (int) (data >>> 32);
+			return (int) (data >>> OFFSET_DEPTH);
 		}
 
 		/*
@@ -610,10 +624,8 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		LargeCompleteChainEdgeStorage(RootItem<Edge> root, LookupList<Edge> edges, long[] linkData, long[] sizeData) {
 			super(root, edges);
 
-			if (linkData == null)
-				throw new NullPointerException("Invalid linkData");
-			if (sizeData == null)
-				throw new NullPointerException("Invalid sizeData");
+			requireNonNull(linkData, "Invalid linkData");
+			requireNonNull(sizeData, "Invalid sizeData");
 
 			this.linkData = linkData;
 			this.sizeData = sizeData;
@@ -701,16 +713,27 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 
 	}
 
-	public static class LargeThinChainEdgeStorage extends StaticChainEdgeStorage {
+	public static class LargeSparseChainEdgeStorage extends StaticChainEdgeStorage {
 
+		/**
+		 * Size of an empty entry, meaning an unused pointer.
+		 */
 		public static final int UNUSED_ENTRY_SIZE;
+
+		/**
+		 * Size of the actual node and the associated pointer.
+		 */
 		public static final int USED_ENTRY_SIZE;
+
 		static {
 
-			int size = 8 + 4*4;
+			// Object header + 4 int fields
+			int size = 8 + 4*Integer.BYTES;
 
+			// Default assumption of 32bit system
 			int pointerSize = 4;
 
+			// Adjust pointer size of we're on 64bit
 			String arch = System.getProperty("sun.arch.data.model");
 			if(arch.contains("64")) {
 				pointerSize = 8;
@@ -722,7 +745,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 
 		public static final int MAX_NODE_COUNT = (1 << 8)-1;
 
-		public static LargeThinChainEdgeStorage fromBuilder(StructureBuilder builder) {
+		public static LargeSparseChainEdgeStorage fromBuilder(StructureBuilder builder) {
 			int nodeCount = builder.getNodeCount();
 			if(nodeCount>MAX_NODE_COUNT)
 				throw new IllegalArgumentException("Builder contains too many nodes for this implementation: "+nodeCount);
@@ -761,16 +784,15 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 
 			chainData[0] = new NodeInfo(-1, -1, edgeBuffer.getHeight(root), edgeBuffer.getDescendantsCount(root));
 
-			return new LargeThinChainEdgeStorage(root, edges, chainData);
+			return new LargeSparseChainEdgeStorage(root, edges, chainData);
 		}
 
 		private final NodeInfo[] chainData;
 
-		LargeThinChainEdgeStorage(RootItem<Edge> root, LookupList<Edge> edges, NodeInfo[] chainData) {
+		LargeSparseChainEdgeStorage(RootItem<Edge> root, LookupList<Edge> edges, NodeInfo[] chainData) {
 			super(root, edges);
 
-			if (chainData == null)
-				throw new NullPointerException("Invalid chainData");
+			requireNonNull(chainData);
 
 			this.chainData = chainData;
 		}

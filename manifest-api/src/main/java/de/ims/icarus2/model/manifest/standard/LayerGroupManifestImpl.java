@@ -113,14 +113,14 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	 * @param independent the independent to set or {@code null} if the implementation should use the default value
 	 */
 	@Override
-	public void setIndependent(Boolean independent) {
+	public void setIndependent(boolean independent) {
 		checkNotLocked();
 
 		setIndependent0(independent);
 	}
 
-	protected void setIndependent0(Boolean independent) {
-		this.independent = independent;
+	protected void setIndependent0(boolean independent) {
+		this.independent = independent==DEFAULT_INDEPENDENT_VALUE ? null : Boolean.valueOf(independent);
 	}
 
 	@Override

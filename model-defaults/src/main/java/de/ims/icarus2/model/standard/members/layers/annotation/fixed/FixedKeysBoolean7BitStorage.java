@@ -132,19 +132,12 @@ public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 * @see de.ims.icarus2.model.standard.members.layers.annotation.fixed.AbstractFixedKeysBooleanStorage#getNoEntryValue(java.lang.String)
 	 */
 	@Override
-	public Object getValue(Item item, String key) {
-		return Boolean.valueOf(getBooleanValue(item, key));
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.Object)
-	 */
-	@Override
-	public void setValue(Item item, String key, Object value) {
-		setBooleanValue(item, key, ((Boolean)value).booleanValue());
+	protected boolean getNoEntryValue(String key) {
+		int index = checkKeyAndGetIndex(key);
+		return (noEntryValues & (1<<index))!=0x0;
 	}
 
 	@Override

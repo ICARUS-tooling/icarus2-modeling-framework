@@ -28,6 +28,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.IcarusUtils;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 
@@ -42,7 +43,7 @@ public class SingleKeyLongStorage extends AbstractSingleKeyStorage {
 	private Object2LongMap<Item> annotations;
 	private long noEntryValue = DEFAULT_NO_ENTRY_VALUE;
 
-	public static final long DEFAULT_NO_ENTRY_VALUE = -1L;
+	public static final long DEFAULT_NO_ENTRY_VALUE = IcarusUtils.UNSET_LONG;
 
 	public SingleKeyLongStorage() {
 		this(-1);

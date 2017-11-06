@@ -18,13 +18,19 @@
  */
 package de.ims.icarus2.util.version.common;
 
+import static de.ims.icarus2.util.classes.Primitives._char;
+import static de.ims.icarus2.util.classes.Primitives._int;
+
+import java.util.Objects;
 import java.util.StringTokenizer;
 
 import de.ims.icarus2.util.version.Version;
 import de.ims.icarus2.util.version.VersionFormat;
 
 /**
+ * Implements a versioning scheme composed of the following 4 fields:
  *
+ * <tt>MAJOR.MINOR.RELEASE INFO</tt>
  *
  * @author Markus Gärtner
  *
@@ -117,12 +123,12 @@ public class MajorMinorReleaseVersionFormat implements VersionFormat {
 		private final int major, minor, release;
 		private final String info;
 
-		public MajorMinorReleaseVersion(String versionString,
+		private MajorMinorReleaseVersion(String versionString,
 				VersionFormat versionFormat, int major, int minor, int release, String info) {
 			super(versionString, versionFormat);
 
-			if(info==null) {
-				info = "";
+			if("".equals(info)) {
+				info = null;
 			}
 
 			this.major = major;
@@ -148,6 +154,33 @@ public class MajorMinorReleaseVersionFormat implements VersionFormat {
 		}
 
 		/**
+		 * @see de.ims.icarus2.util.version.Version#toString()
+		 */
+		@Override
+		public String toString() {
+			return String.format("%d%s%d%s%d%%s",
+					_int(major), _char(SEPARATOR), _int(minor), _char(SEPARATOR), _int(release),
+					info==null ? "" : " "+info);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.version.Version#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof MajorMinorReleaseVersion) {
+				MajorMinorReleaseVersion other = (MajorMinorReleaseVersion) obj;
+				return major==other.major
+						&& minor==other.minor
+						&& release==other.release
+						&& Objects.equals(info, other.info);
+			}
+			return false;
+		}
+
+		/**
 		 * @see java.lang.Comparable#compareTo(java.lang.Object)
 		 */
 		@Override
@@ -167,12 +200,12 @@ public class MajorMinorReleaseVersionFormat implements VersionFormat {
 				return result;
 			}
 
-			if(info.equals(o.info)) {
+			if(Objects.equals(info, o.info)) {
 				return 0;
-			} else if(info.isEmpty()) {
+			} else if(info==null) {
 				return -1;
 			} else {
-				return o.info.isEmpty() ? 1 : info.compareTo(o.info);
+				return o.info==null ? 1 : info.compareTo(o.info);
 			}
 		}
 	}

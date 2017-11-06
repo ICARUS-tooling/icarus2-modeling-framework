@@ -40,6 +40,11 @@ public enum GlobalErrorCode implements ErrorCode {
 	 */
 	NOT_IMPLEMENTED(3),
 
+	/**
+	 * A method or certain usage of a method is deprecated.
+	 */
+	DEPRECATED(4),
+
 	//**************************************************
 	//       1xx  GENERAL ERRORS
 	//**************************************************

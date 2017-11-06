@@ -75,12 +75,11 @@ public class VirtualResourceProvider implements ResourceProvider {
 
 	public void clear() {
 		directories.clear();
-		resources.values().forEach(t -> {
+		resources.forEach((path, resource) -> {
 			try {
-				t.delete();
+				resource.delete();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				log.warn("Failed to delete  virtual resource for: {}", path, e);
 			}
 		});
 	}

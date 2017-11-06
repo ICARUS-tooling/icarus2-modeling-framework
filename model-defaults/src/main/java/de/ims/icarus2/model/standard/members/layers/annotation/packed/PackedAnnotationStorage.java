@@ -17,31 +17,110 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.packed;
 
+import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
+
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.manifest.api.AnnotationManifest;
+import de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorage;
+import de.ims.icarus2.model.standard.members.layers.annotation.packed.PackedDataManager.PackageHandle;
+import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.Part;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class PackedAnnotationStorage implements AnnotationStorage {
+public class PackedAnnotationStorage implements ManagedAnnotationStorage {
 
 	/**
 	 * The (potentially shared) storage for our annotations.
 	 */
-	private PackedDataManager dataManager;
+	private final Supplier<? extends PackedDataManager<Item,AnnotationStorage>> dataManager;
 
+	private Map<String, PackageHandle> handles = new Object2ObjectOpenHashMap<>();
+
+	public PackedAnnotationStorage(Supplier<? extends PackedDataManager<Item,AnnotationStorage>> dataManager) {
+		this.dataManager = requireNonNull(dataManager);
+	}
+
+	private PackedDataManager<Item,AnnotationStorage> dataManager() {
+		PackedDataManager<Item,AnnotationStorage> dataManager = this.dataManager.get();
+		checkState("Manager for packed data missing", dataManager!=null);
+		return dataManager;
+	}
+
+	/**
+	 * Fetch handle for given key and throw {@link GlobalErrorCode#INVALID_INPUT}
+	 * if no handle available.
+	 */
+	private PackageHandle handleForKey(String key) {
+		requireNonNull(key);
+		PackageHandle handle = handles.get(key);
+		if(handle == null)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Unable to obtain package handle - unknown annotation key: "+key);
+		return handle;
+	}
+
+	/**
+	 * Registers with the underlying {@link PackedDataManager} via
+	 * the {@link Part#addNotify(Object)} method and then fills
+	 * the internal lookup for {@link PackageHandle} object from
+	 * the {@link PackedDataManager#lookupHandles(Set) mapping} in
+	 * the manager.
+	 *
+	 * @see de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorage#addNotify(de.ims.icarus2.model.api.layer.AnnotationLayer)
+	 */
+	@Override
+	public void addNotify(AnnotationLayer layer) {
+
+		// Register with manager
+		PackedDataManager<Item,AnnotationStorage> dataManager = dataManager();
+		dataManager.addNotify(this);
+
+		// Fetch handles
+		Set<AnnotationManifest> manifests = layer.getManifest().getAnnotationManifests();
+		Map<AnnotationManifest, PackageHandle> lookup = dataManager.lookupHandles(manifests);
+
+		for(AnnotationManifest manifest : manifests) {
+			PackageHandle handle = lookup.get(manifest);
+			if(handle==null)
+				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Missing handle for annotation: "+ModelUtils.getName(manifest));
+			handles.put(manifest.getKey(), handle);
+		}
+	}
+
+	/**
+	 * Unregisters from the underlying {@link PackedDataManager} via
+	 * the {@link Part#removeNotify(Object)} method and resets the
+	 * internal lookup for {@link PackageHandle} objects.
+	 *
+	 * @see de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorage#removeNotify(de.ims.icarus2.model.api.layer.AnnotationLayer)
+	 */
+	@Override
+	public void removeNotify(AnnotationLayer layer) {
+		dataManager().removeNotify(this);
+		handles.clear();
+	}
 
 	/**
 	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#collectKeys(de.ims.icarus2.model.api.members.item.Item, java.util.function.Consumer)
 	 */
 	@Override
 	public boolean collectKeys(Item item, Consumer<String> action) {
-		// TODO Auto-generated method stub
-		return false;
+		// Just forwards the request with a customized action that translates handles into annotation keys
+		return dataManager().collectHandles(item, handles.values(),
+				handle -> action.accept(handle.getManifest().getKey()));
 	}
 
 	/**
@@ -49,8 +128,7 @@ public class PackedAnnotationStorage implements AnnotationStorage {
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
-		// TODO Auto-generated method stub
-		return null;
+		return dataManager().getValue(item, handleForKey(key));
 	}
 
 	/**
@@ -58,8 +136,7 @@ public class PackedAnnotationStorage implements AnnotationStorage {
 	 */
 	@Override
 	public int getIntegerValue(Item item, String key) {
-		// TODO Auto-generated method stub
-		return 0;
+		return dataManager().getInteger(item, handleForKey(key));
 	}
 
 	/**
@@ -67,8 +144,7 @@ public class PackedAnnotationStorage implements AnnotationStorage {
 	 */
 	@Override
 	public float getFloatValue(Item item, String key) {
-		// TODO Auto-generated method stub
-		return 0;
+		return dataManager().getFloat(item, handleForKey(key));
 	}
 
 	/**
@@ -76,8 +152,7 @@ public class PackedAnnotationStorage implements AnnotationStorage {
 	 */
 	@Override
 	public double getDoubleValue(Item item, String key) {
-		// TODO Auto-generated method stub
-		return 0;
+		return dataManager().getDouble(item, handleForKey(key));
 	}
 
 	/**
@@ -85,8 +160,7 @@ public class PackedAnnotationStorage implements AnnotationStorage {
 	 */
 	@Override
 	public long getLongValue(Item item, String key) {
-		// TODO Auto-generated method stub
-		return 0;
+		return dataManager().getLong(item, handleForKey(key));
 	}
 
 	/**
@@ -94,26 +168,7 @@ public class PackedAnnotationStorage implements AnnotationStorage {
 	 */
 	@Override
 	public boolean getBooleanValue(Item item, String key) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#removeAllValues()
-	 */
-	@Override
-	public void removeAllValues() {
-		// TODO Auto-generated method stub
-
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#removeAllValues(java.lang.String)
-	 */
-	@Override
-	public void removeAllValues(String key) {
-		// TODO Auto-generated method stub
-
+		return dataManager().getBoolean(item, handleForKey(key));
 	}
 
 	/**
@@ -121,8 +176,7 @@ public class PackedAnnotationStorage implements AnnotationStorage {
 	 */
 	@Override
 	public void removeAllValues(Supplier<? extends Item> source) {
-		// TODO Auto-generated method stub
-
+		throw new ModelException(GlobalErrorCode.DEPRECATED, "Can't clear buffered annotation storage");
 	}
 
 	/**
@@ -130,8 +184,7 @@ public class PackedAnnotationStorage implements AnnotationStorage {
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		// TODO Auto-generated method stub
-
+		dataManager().setValue(item, handleForKey(key), value);
 	}
 
 	/**
@@ -139,8 +192,7 @@ public class PackedAnnotationStorage implements AnnotationStorage {
 	 */
 	@Override
 	public void setIntegerValue(Item item, String key, int value) {
-		// TODO Auto-generated method stub
-
+		dataManager().setInteger(item, handleForKey(key), value);
 	}
 
 	/**
@@ -148,8 +200,7 @@ public class PackedAnnotationStorage implements AnnotationStorage {
 	 */
 	@Override
 	public void setLongValue(Item item, String key, long value) {
-		// TODO Auto-generated method stub
-
+		dataManager().setLong(item, handleForKey(key), value);
 	}
 
 	/**
@@ -157,8 +208,7 @@ public class PackedAnnotationStorage implements AnnotationStorage {
 	 */
 	@Override
 	public void setFloatValue(Item item, String key, float value) {
-		// TODO Auto-generated method stub
-
+		dataManager().setFloat(item, handleForKey(key), value);
 	}
 
 	/**
@@ -166,8 +216,7 @@ public class PackedAnnotationStorage implements AnnotationStorage {
 	 */
 	@Override
 	public void setDoubleValue(Item item, String key, double value) {
-		// TODO Auto-generated method stub
-
+		dataManager().setDouble(item, handleForKey(key), value);
 	}
 
 	/**
@@ -175,8 +224,7 @@ public class PackedAnnotationStorage implements AnnotationStorage {
 	 */
 	@Override
 	public void setBooleanValue(Item item, String key, boolean value) {
-		// TODO Auto-generated method stub
-
+		dataManager().setBoolean(item, handleForKey(key), value);
 	}
 
 	/**
@@ -184,8 +232,7 @@ public class PackedAnnotationStorage implements AnnotationStorage {
 	 */
 	@Override
 	public boolean hasAnnotations() {
-		// TODO Auto-generated method stub
-		return false;
+		return dataManager().hasValues();
 	}
 
 	/**
@@ -193,8 +240,22 @@ public class PackedAnnotationStorage implements AnnotationStorage {
 	 */
 	@Override
 	public boolean hasAnnotations(Item item) {
-		// TODO Auto-generated method stub
-		return false;
+		return dataManager().hasValues(item);
+	}
+
+	@Override
+	public boolean containsItem(Item item) {
+		return dataManager().isRegistered(item);
+	}
+
+	@Override
+	public boolean addItem(Item item) {
+		return dataManager().register(item);
+	}
+
+	@Override
+	public boolean removeItem(Item item) {
+		return dataManager().unregister(item);
 	}
 
 }

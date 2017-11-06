@@ -18,6 +18,8 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
+import static de.ims.icarus2.util.classes.Primitives._int;
+
 import java.util.function.Consumer;
 
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
@@ -57,7 +59,7 @@ public class FixedKeysIntStorage extends AbstractFixedKeysStorage<int[]> {
 
 			Object noEntryValue = annotationManifest.getNoEntryValue();
 			if(noEntryValue==null) {
-				continue;
+				noEntryValue = _int(IcarusUtils.UNSET_INT);
 			}
 
 			noEntryValues[i] = ((Number) noEntryValue).intValue();

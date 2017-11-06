@@ -28,6 +28,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.IcarusUtils;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 
@@ -42,7 +43,7 @@ public class SingleKeyDoubleStorage extends AbstractSingleKeyStorage {
 	private Object2DoubleMap<Item> annotations;
 	private double noEntryValue = DEFAULT_NO_ENTRY_VALUE;
 
-	public static final double DEFAULT_NO_ENTRY_VALUE = -1D;
+	public static final double DEFAULT_NO_ENTRY_VALUE = IcarusUtils.UNSET_DOUBLE;
 
 	public SingleKeyDoubleStorage() {
 		this(-1);

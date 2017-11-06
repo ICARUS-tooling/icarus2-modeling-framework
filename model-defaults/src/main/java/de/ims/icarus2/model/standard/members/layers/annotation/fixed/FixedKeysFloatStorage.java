@@ -18,12 +18,15 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
+import static de.ims.icarus2.util.classes.Primitives._float;
+
 import java.util.function.Consumer;
 
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
@@ -56,7 +59,7 @@ public class FixedKeysFloatStorage extends AbstractFixedKeysStorage<float[]> {
 
 			Object noEntryValue = annotationManifest.getNoEntryValue();
 			if(noEntryValue==null) {
-				continue;
+				noEntryValue = _float(IcarusUtils.UNSET_FLOAT);
 			}
 
 			noEntryValues[i] = ((Number) noEntryValue).floatValue();

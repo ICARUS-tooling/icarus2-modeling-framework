@@ -365,6 +365,8 @@ public abstract class ValueVerifier {
 		private final Number lower, upper, step;
 		private final FloatSet allowedValues;
 
+		private final float stepInvert, accuracy;
+
 		/**
 		 * @param valueRange
 		 * @param valueSet
@@ -375,6 +377,8 @@ public abstract class ValueVerifier {
 			lower = valueRange==null || valueRange.getLowerBound()==null ? null : (Number)valueRange.getLowerBound();
 			upper = valueRange==null || valueRange.getUpperBound()==null ? null : (Number)valueRange.getUpperBound();
 			step = valueRange==null || valueRange.getStepSize()==null ? null : (Number)valueRange.getStepSize();
+			accuracy = step==null ? 0F : step.floatValue() * 0.001F;
+			stepInvert = step==null ? 0F : 1 / step.floatValue();
 
 			if(valueSet!=null) {
 				allowedValues = new FloatOpenHashSet(valueSet.valueCount());
@@ -406,10 +410,14 @@ public abstract class ValueVerifier {
 				return VerificationResult.UPPER_BOUNDARY_VIOLATION;
 			}
 
-			//FIXME implement actual step length check
-//			if(step!=null && value%((Number)step).intValue()!=0) {
-//				return VerificationResult.PRECISION_MISMATCH;
-//			}
+			if(step!=null) {
+				// Calculate the step and delta
+				float steps = value * stepInvert;
+				if((steps-Math.floor(steps))>accuracy) {
+					// Precision mismatch is the case if delta exceeds accuracy
+					return VerificationResult.PRECISION_MISMATCH;
+				}
+			}
 
 			return VerificationResult.VALID;
 		}
@@ -432,6 +440,8 @@ public abstract class ValueVerifier {
 		private final Number lower, upper, step;
 		private final DoubleSet allowedValues;
 
+		private final double stepInvert, accuracy;
+
 		/**
 		 * @param valueRange
 		 * @param valueSet
@@ -442,6 +452,8 @@ public abstract class ValueVerifier {
 			lower = valueRange==null || valueRange.getLowerBound()==null ? null : (Number)valueRange.getLowerBound();
 			upper = valueRange==null || valueRange.getUpperBound()==null ? null : (Number)valueRange.getUpperBound();
 			step = valueRange==null || valueRange.getStepSize()==null ? null : (Number)valueRange.getStepSize();
+			accuracy = step==null ? 0D : step.doubleValue() * 0.000001;
+			stepInvert = step==null ? 0D : 1 / step.doubleValue();
 
 			if(valueSet!=null) {
 				allowedValues = new DoubleOpenHashSet(valueSet.valueCount());
@@ -473,10 +485,14 @@ public abstract class ValueVerifier {
 				return VerificationResult.UPPER_BOUNDARY_VIOLATION;
 			}
 
-			//FIXME implement actual step length check
-//			if(step!=null && value%((Number)step).doubleValue()!=0) {
-//				return VerificationResult.PRECISION_MISMATCH;
-//			}
+			if(step!=null) {
+				// Calculate the step and delta
+				double steps = value * stepInvert;
+				if((steps-Math.floor(steps))>accuracy) {
+					// Precision mismatch is the case if delta exceeds accuracy
+					return VerificationResult.PRECISION_MISMATCH;
+				}
+			}
 
 			return VerificationResult.VALID;
 		}

@@ -18,16 +18,18 @@
 package de.ims.icarus2.model.standard.members.layers.annotation.packed;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import java.util.function.IntFunction;
 import java.util.function.ToIntFunction;
 
+import com.google.common.base.Objects;
+
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.Messages;
+import de.ims.icarus2.model.standard.members.layers.annotation.packed.PackedDataManager.PackageHandle;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.mem.ByteAllocator.Cursor;
 
@@ -62,22 +64,6 @@ public abstract class BytePackConverter {
 	}
 
 	/**
-	 * Returns the byte offset this converter is reading data
-	 * from inside a chunk of bytes.
-	 *
-	 * @return
-	 */
-	public int getOffset() {
-		checkState("Offset not set", offset!=IcarusUtils.UNSET_INT);
-		return offset;
-	}
-
-	public void setOffsett(int offset) {
-		checkArgument("Offset must be 0 or greater", offset>=0);
-		this.offset = offset;
-	}
-
-	/**
 	 * Creates required utility objects that cannot be shared by
 	 * multiple converter instances.
 	 * @return
@@ -86,86 +72,94 @@ public abstract class BytePackConverter {
 		return null;
 	}
 
-	public Object getValue(long raw) {
-
-	}
-
 	// Read method
 
-	public boolean getBoolean(Cursor cursor) {
+	public boolean getBoolean(PackageHandle handle, Cursor cursor) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
 				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.BOOLEAN_TYPE_LABEL));
 	}
 
-	public int getInteger(Cursor cursor) {
+	public int getInteger(PackageHandle handle, Cursor cursor) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
 				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.INTEGER_TYPE_LABEL));
 	}
 
-	public long getLong(Cursor cursor) {
+	public long getLong(PackageHandle handle, Cursor cursor) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
 				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.LONG_TYPE_LABEL));
 	}
 
-	public float getFloat(Cursor cursor) {
+	public float getFloat(PackageHandle handle, Cursor cursor) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
 				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.FLOAT_TYPE_LABEL));
 	}
 
-	public double getDouble(Cursor cursor) {
+	public double getDouble(PackageHandle handle, Cursor cursor) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
 				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.DOUBLE_TYPE_LABEL));
 	}
 
-	public Object getValue(Cursor cursor) {
+	public Object getValue(PackageHandle handle, Cursor cursor) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
 				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.CUSTOM_TYPE_LABEL));
 	}
 
-	public String getString(Cursor cursor) {
+	public String getString(PackageHandle handle, Cursor cursor) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
 				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.STRING_TYPE_LABEL));
 	}
 
 	// Write methods
 
-	public void setBoolean(Cursor cursor, boolean value) {
+	public void setBoolean(PackageHandle handle, Cursor cursor, boolean value) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
 				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.BOOLEAN_TYPE_LABEL));
 	}
 
-	public void setInteger(Cursor cursor, int value) {
+	public void setInteger(PackageHandle handle, Cursor cursor, int value) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
 				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.INTEGER_TYPE_LABEL));
 	}
 
-	public void setLong(Cursor cursor, long value) {
+	public void setLong(PackageHandle handle, Cursor cursor, long value) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
 				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.LONG_TYPE_LABEL));
 	}
 
-	public void setFloat(Cursor cursor, float value) {
+	public void setFloat(PackageHandle handle, Cursor cursor, float value) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
 				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.FLOAT_TYPE_LABEL));
 	}
 
-	public void setDouble(Cursor cursor, double value) {
+	public void setDouble(PackageHandle handle, Cursor cursor, double value) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
 				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.DOUBLE_TYPE_LABEL));
 	}
 
-	public void setValue(Cursor cursor, Object value) {
+	public void setValue(PackageHandle handle, Cursor cursor, Object value) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
 				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.CUSTOM_TYPE_LABEL));
 	}
 
-	public void setString(Cursor cursor, String value) {
+	public void setString(PackageHandle handle, Cursor cursor, String value) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
 				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.STRING_TYPE_LABEL));
 	}
 
+	// Utility
 
-	public static class BitwiseBooleanConverter extends BytePackConverter {
+	/**
+	 * Used to test two annotation values for equality.
+	 *
+	 * @param v1
+	 * @param v2
+	 * @return
+	 */
+	public boolean equal(Object v1, Object v2) {
+		return Objects.equal(v1, v2);
+	}
+
+	public static final class BitwiseBooleanConverter extends BytePackConverter {
 
 		private final byte mask;
 
@@ -220,16 +214,16 @@ public abstract class BytePackConverter {
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getBoolean(de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public boolean getBoolean(Cursor cursor) {
-			return (cursor.getByte(getOffset()) & mask) == mask;
+		public boolean getBoolean(PackageHandle handle, Cursor cursor) {
+			return (cursor.getByte(handle.getOffset()) & mask) == mask;
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#setBoolean(de.ims.icarus2.util.mem.ByteAllocator.Cursor, boolean)
 		 */
 		@Override
-		public void setBoolean(Cursor cursor, boolean value) {
-			int offset = getOffset();
+		public void setBoolean(PackageHandle handle, Cursor cursor, boolean value) {
+			int offset = handle.getOffset();
 			byte block = cursor.getByte(offset);
 
 			if(value) {
@@ -242,7 +236,7 @@ public abstract class BytePackConverter {
 		}
 	}
 
-	public static class BooleanConverter extends BytePackConverter {
+	public static final class BooleanConverter extends BytePackConverter {
 
 		private static final byte TRUE = 0b01;
 		private static final byte FALSE = 0b00;
@@ -267,21 +261,21 @@ public abstract class BytePackConverter {
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getBoolean(de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public boolean getBoolean(Cursor cursor) {
-			return cursor.getByte(getOffset())==TRUE;
+		public boolean getBoolean(PackageHandle handle, Cursor cursor) {
+			return cursor.getByte(handle.getOffset())==TRUE;
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#setBoolean(de.ims.icarus2.util.mem.ByteAllocator.Cursor, boolean)
 		 */
 		@Override
-		public void setBoolean(Cursor cursor, boolean value) {
+		public void setBoolean(PackageHandle handle, Cursor cursor, boolean value) {
 			byte flag = value ? TRUE : FALSE;
-			cursor.setByte(getOffset(), flag);
+			cursor.setByte(handle.getOffset(), flag);
 		}
 	}
 
-	public static class IntConverter extends BytePackConverter {
+	public static final class IntConverter extends BytePackConverter {
 
 		/**
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getValueType()
@@ -303,20 +297,20 @@ public abstract class BytePackConverter {
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getInteger(de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public int getInteger(Cursor cursor) {
-			return cursor.getInt(getOffset());
+		public int getInteger(PackageHandle handle, Cursor cursor) {
+			return cursor.getInt(handle.getOffset());
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#setInteger(de.ims.icarus2.util.mem.ByteAllocator.Cursor, int)
 		 */
 		@Override
-		public void setInteger(Cursor cursor, int value) {
-			cursor.setInt(getOffset(), value);
+		public void setInteger(PackageHandle handle, Cursor cursor, int value) {
+			cursor.setInt(handle.getOffset(), value);
 		}
 	}
 
-	public static class LongConverter extends BytePackConverter {
+	public static final class LongConverter extends BytePackConverter {
 
 		/**
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getValueType()
@@ -338,20 +332,20 @@ public abstract class BytePackConverter {
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getLong(de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public long getLong(Cursor cursor) {
-			return cursor.getLong(getOffset());
+		public long getLong(PackageHandle handle, Cursor cursor) {
+			return cursor.getLong(handle.getOffset());
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#setLong(de.ims.icarus2.util.mem.ByteAllocator.Cursor, long)
 		 */
 		@Override
-		public void setLong(Cursor cursor, long value) {
-			cursor.setLong(getOffset(), value);
+		public void setLong(PackageHandle handle, Cursor cursor, long value) {
+			cursor.setLong(handle.getOffset(), value);
 		}
 	}
 
-	public static class FloatConverter extends BytePackConverter {
+	public static final class FloatConverter extends BytePackConverter {
 
 		/**
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getValueType()
@@ -373,20 +367,20 @@ public abstract class BytePackConverter {
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getFloat(de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public float getFloat(Cursor cursor) {
-			return Float.intBitsToFloat(cursor.getInt(getOffset()));
+		public float getFloat(PackageHandle handle, Cursor cursor) {
+			return Float.intBitsToFloat(cursor.getInt(handle.getOffset()));
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#setFloat(de.ims.icarus2.util.mem.ByteAllocator.Cursor, float)
 		 */
 		@Override
-		public void setFloat(Cursor cursor, float value) {
-			cursor.setInt(getOffset(), Float.floatToIntBits(value));
+		public void setFloat(PackageHandle handle, Cursor cursor, float value) {
+			cursor.setInt(handle.getOffset(), Float.floatToIntBits(value));
 		}
 	}
 
-	public static class DoubleConverter extends BytePackConverter {
+	public static final class DoubleConverter extends BytePackConverter {
 
 		/**
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getValueType()
@@ -408,16 +402,16 @@ public abstract class BytePackConverter {
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getDouble(de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public double getDouble(Cursor cursor) {
-			return Double.longBitsToDouble(cursor.getLong(getOffset()));
+		public double getDouble(PackageHandle handle, Cursor cursor) {
+			return Double.longBitsToDouble(cursor.getLong(handle.getOffset()));
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#setDouble(de.ims.icarus2.util.mem.ByteAllocator.Cursor, double)
 		 */
 		@Override
-		public void setDouble(Cursor cursor, double value) {
-			cursor.setLong(getOffset(), Double.doubleToLongBits(value));
+		public void setDouble(PackageHandle handle, Cursor cursor, double value) {
+			cursor.setLong(handle.getOffset(), Double.doubleToLongBits(value));
 		}
 	}
 
@@ -468,18 +462,18 @@ public abstract class BytePackConverter {
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getValue(de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public Object getValue(Cursor cursor) {
-			return resubstitution.apply((int)cursor.getNBytes(getOffset(), bytes));
+		public Object getValue(PackageHandle handle, Cursor cursor) {
+			return resubstitution.apply((int)cursor.getNBytes(handle.getOffset(), bytes));
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.util.mem.ByteAllocator.Cursor, java.lang.Object)
 		 */
 		@Override
-		public void setValue(Cursor cursor, Object value) {
+		public void setValue(PackageHandle handle, Cursor cursor, Object value) {
 			@SuppressWarnings("unchecked")
 			int index = substitution.applyAsInt((T) value);
-			cursor.setNBytes(getOffset(), index, bytes);
+			cursor.setNBytes(handle.getOffset(), index, bytes);
 		}
 	}
 }

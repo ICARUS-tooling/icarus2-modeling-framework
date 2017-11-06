@@ -20,6 +20,8 @@ package de.ims.icarus2.model.standard.view;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.classes.Primitives._int;
+import static de.ims.icarus2.util.classes.Primitives.cast;
 import static java.util.Objects.requireNonNull;
 
 import java.lang.ref.Reference;
@@ -91,7 +93,7 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 
 							@Override
 							public IndexSet load(Integer key) throws Exception {
-								return DefaultPageControl.this.pageBuffer.createPage(key);
+								return DefaultPageControl.this.pageBuffer.createPage(cast(key));
 							}
 						});
 			}
@@ -109,12 +111,12 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 			// In case of a loading cache we have some additional error handling to do.
 			if(indexSetCache instanceof LoadingCache) {
 				try {
-					indices = ((LoadingCache<Integer, IndexSet>)indexSetCache).get(pageIndex);
+					indices = ((LoadingCache<Integer, IndexSet>)indexSetCache).get(_int(pageIndex));
 				} catch (ExecutionException e) {
 					throw ModelException.unwrap(e);
 				}
 			} else {
-				indices = indexSetCache.getIfPresent(pageIndex);
+				indices = indexSetCache.getIfPresent(_int(pageIndex));
 			}
 		}
 

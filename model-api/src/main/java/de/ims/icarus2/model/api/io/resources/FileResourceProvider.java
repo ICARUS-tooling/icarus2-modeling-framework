@@ -120,7 +120,7 @@ public class FileResourceProvider implements ResourceProvider {
 
 	private void  removeLockWrapper(FileLockWrapper lockWrapper) {
 		synchronized (sharedLocks) {
-			sharedLocks.remove(lockWrapper.uri);
+			sharedLocks.remove(Paths.get(lockWrapper.uri));
 		}
 	}
 
@@ -140,10 +140,6 @@ public class FileResourceProvider implements ResourceProvider {
 			requireNonNull(path);
 
 			this.uri = path.toUri();
-		}
-
-		synchronized boolean hasLock() {
-			return lock!=null;
 		}
 
 		private synchronized FileChannel ensureChannel() throws IOException {

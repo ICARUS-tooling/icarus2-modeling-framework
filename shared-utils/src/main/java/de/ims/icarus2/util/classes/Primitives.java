@@ -117,6 +117,10 @@ public class Primitives {
 		return value==null ? false : value.booleanValue();
 	}
 
+	public static char cast(Character value) {
+		return value==null ? 0 : value.charValue();
+	}
+
 	public static Integer _int(int value) {
 		return Integer.valueOf(value);
 	}
@@ -143,6 +147,10 @@ public class Primitives {
 
 	public static Boolean _boolean(boolean value) {
 		return Boolean.valueOf(value);
+	}
+
+	public static Character _char(char value) {
+		return Character.valueOf(value);
 	}
 
 }

@@ -24,10 +24,13 @@ import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.Annotation;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
+import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
 import de.ims.icarus2.model.manifest.api.ValueSet;
 import de.ims.icarus2.util.collections.set.DataSet;
@@ -110,6 +113,15 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 		return (T) getAnnotationStorage().getValue(item, getManifest().getDefaultKey());
 	}
 
+	default void setValue(Item item, String key, Object value) {
+		getAnnotationStorage().setValue(item, key, value);
+	}
+
+	default void clearValue(Item item, String key) {
+		AnnotationManifest manifest = getManifest().getAnnotationManifest(key);
+		getAnnotationStorage().setValue(item, key, manifest.getNoEntryValue());
+	}
+
 	/**
 	 * @author Markus Gärtner
 	 *
@@ -125,7 +137,6 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 		 * @param action
 		 * @return
 		 * @throws NullPointerException if any one of the two arguments is {@code null}
-		 * @throws UnsupportedOperationException if this layer does not support additional keys
 		 */
 		boolean collectKeys(Item item, Consumer<String> action);
 
@@ -140,7 +151,6 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 		 * @return
 		 * @throws NullPointerException if either the {@code item} or {@code key}
 		 * is {@code null}
-		 * @throws UnsupportedOperationException if this layer does not support additional keys
 		 */
 		Object getValue(Item item, String key);
 
@@ -163,7 +173,10 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 		 * @throws UnsupportedOperationException if the corpus
 		 * is not editable
 		 */
-		void removeAllValues();
+		@Deprecated
+		default void removeAllValues() {
+			throw new ModelException(GlobalErrorCode.DEPRECATED, "To be removed in future build - don't use");
+		}
 
 		/**
 		 * Deletes in this layer all annotations for
@@ -174,38 +187,41 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 		 * @throws UnsupportedOperationException if this layer does not allow multiple keys
 		 * @throws UnsupportedOperationException if the corpus
 		 * is not editable
+		 *
+		 * @deprecated this method defies the idea of light-weight
+		 * annotation storage due to it requiring access to the entire
+		 * data contained in the underlying storage.
 		 */
-		void removeAllValues(String key);
+		@Deprecated
+		default void removeAllValues(String key) {
+			throw new ModelException(GlobalErrorCode.DEPRECATED, "To be removed in future build - don't use");
+		}
+
+		/**
+		 * Removes from this annotation storage all annotations for
+		 * items returned by the given source.
+		 * <p>
+		 * If the {@code source} returns a {@code null} value, the operation
+		 * will stop.
+		 *
+		 *
+		 * @param source the "stream" of items to remove annotation values for
+		 * @throws ModelException with {@link ModelErrorCode#MODEL_CORRUPTED_STATE} in case one of the
+		 * given {@link Item items} is missing from this storage.
+		 */
+		void removeAllValues(Supplier<? extends Item> source);
 
 		/**
 		 * Removes from this annotation storage all annotations for
 		 * items returned by the given source.
 		 *
 		 * @param source
+		 *
+		 * @see #removeAllValues(Supplier)
 		 */
-		void removeAllValues(Supplier<? extends Item> source);
-
 		default void removeAllValues(Iterator<? extends Item> source) {
 			removeAllValues(() -> {return source.hasNext() ? source.next() : null;});
 		}
-
-//		/**
-//		 * Removes from this layer all annotations for the given
-//		 * item.
-//		 * <p>
-//		 * If the {@code recursive} parameter is {@code true} and the supplied
-//		 * {@code item} is a {@link Container} or {@link Structure} then all
-//		 * annotations defined for members of it should be removed as well.
-//		 *
-//		 * @param item the {@code Item} for which annotations should be removed
-//		 * @param recursive if {@code true} removes all annotations defined for
-//		 * elements ({@code Item}s and {@code Edge}s alike) in the supplied
-//		 * {@code Item}
-//		 * @throws NullPointerException if the {@code item} argument is {@code null}
-//		 * @throws UnsupportedOperationException if the corpus
-//		 * is not editable
-//		 */
-//		void removeAllValues(Item item, boolean recursive);
 
 
 		/**
@@ -241,6 +257,14 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 		void setBooleanValue(Item item, String key, boolean value);
 
 		/**
+		 * Tells whether or not there are any annotations available for this storage.
+		 * Note that the scope of the returned value is limited to the current part of
+		 * the surrounding {@link AnnotationLayer} that has already been loaded into
+		 * memory.
+		 * <p>
+		 * The returned value is also only to be taken as an indicator! Depending on the
+		 * storage implementation it could be rather expensive to do a deep analysis of
+		 * the content or backing data structures.
 		 *
 		 * @return {@code true} iff this layer holds at least one valid annotation object.
 		 */

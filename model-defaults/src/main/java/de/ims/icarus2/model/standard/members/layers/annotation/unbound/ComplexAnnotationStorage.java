@@ -42,6 +42,8 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 	// Factory for creating annotation bundles (constructor assigns default implementation)
 	private Supplier<AnnotationBundle> bundleFactory;
 
+	private AnnotationBundle noEntryValues; //FIXME use this
+
 	public static final Supplier<AnnotationBundle> LARGE_BUNDLE_FACTORY = LargeAnnotationBundle::new;
 	public static final Supplier<AnnotationBundle> COMPACT_BUNDLE_FACTORY = CompactAnnotationBundle::new;
 	public static final Supplier<AnnotationBundle> GROWING_BUNDLE_FACTORY = GrowingAnnotationBundle::new;
@@ -122,7 +124,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 			AnnotationBundle bundle = getBuffer(item, true);
 
 			if(Primitives.isPrimitiveWrapperClass(value.getClass())) {
-				// Will fail with ClassCastException in case previous mappings didn't use primitives!
+				// Will fail with ClassCastException in case previous mappings didn't use correct wrapper!
 				MutablePrimitive<?> current = bundle.getValue(key, DEFAULT_STORAGE_FACTORY);
 				// Let storage implementation handle primitive conversion
 				current.fromWrapper(value);

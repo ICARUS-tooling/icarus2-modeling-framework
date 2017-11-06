@@ -83,6 +83,20 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 		add(t);
 	}
 
+	public void forEach(Consumer<? super E> action) {
+		Collection<E> c = buffer;
+		if(c!=null) {
+			c.forEach(action);
+		}
+	}
+
+	public void clear() {
+		Collection<E> c = buffer;
+		if(c!=null) {
+			c.clear();
+		}
+	}
+
 	public void add(E item) {
 		if(item==null) {
 			return;

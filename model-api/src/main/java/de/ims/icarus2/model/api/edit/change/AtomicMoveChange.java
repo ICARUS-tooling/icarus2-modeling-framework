@@ -29,7 +29,9 @@ import de.ims.icarus2.model.api.members.item.Item;
  */
 public interface AtomicMoveChange<E extends Item, C extends Container> extends AtomicChange {
 
-	E getElement();
+	E getSourceElement();
+
+	E getTargetElement();
 
 	C getContainer();
 

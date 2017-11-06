@@ -111,6 +111,15 @@ public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorag
 		annotations = null;
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.standard.members.layers.annotation.fixed.AbstractFixedKeysBooleanStorage#getNoEntryValue(java.lang.String)
+	 */
+	@Override
+	protected boolean getNoEntryValue(String key) {
+		int index = checkKeyAndGetIndex(key);
+		return (noEntryValues & (1<<index))!=0x0;
+	}
+
 	@Override
 	public boolean collectKeys(Item item, Consumer<String> action) {
 		short data = annotations.getShort(item);

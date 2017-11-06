@@ -964,10 +964,12 @@ public interface CorpusModel extends Part<CorpusView>, Changeable {
 	boolean getBooleanValue(AnnotationLayer layer, Item item, String key);
 
 	/**
-	 * Deletes all annotations in this layer
+	 * Deletes all annotations in the specified layer.
 	 * <p>
 	 * Note that this does include all annotations for all keys,
 	 * not only those declares for the default annotation.
+	 * Note further that only values that are part of the current
+	 * {@link PageControl page} will be removed!
 	 *
 	 * @throws UnsupportedOperationException if the corpus
 	 * is not editable
@@ -977,32 +979,16 @@ public interface CorpusModel extends Part<CorpusView>, Changeable {
 	/**
 	 * Deletes in this layer all annotations for
 	 * the given {@code key}.
+	 * <p>
+	 * Note that only values that are part of the current
+	 * {@link PageControl page} will be removed!
 	 *
 	 * @param key The key for which annotations should be
 	 * deleted
-	 * @throws UnsupportedOperationException if this layer does not allow multiple keys
 	 * @throws UnsupportedOperationException if the corpus
 	 * is not editable
 	 */
 	void removeAllValues(AnnotationLayer layer, String key);
-
-//	/**
-//	 * Removes from this layer all annotations for the given
-//	 * item.
-//	 * <p>
-//	 * If the {@code recursive} parameter is {@code true} and the supplied
-//	 * {@code item} is a {@link Container} or {@link Structure} then all
-//	 * annotations defined for members of it should be removed as well.
-//	 *
-//	 * @param item the {@code Item} for which annotations should be removed
-//	 * @param recursive if {@code true} removes all annotations defined for
-//	 * elements ({@code Item}s and {@code Edge}s alike) in the supplied
-//	 * {@code Item}
-//	 * @throws NullPointerException if the {@code item} argument is {@code null}
-//	 * @throws UnsupportedOperationException if the corpus
-//	 * is not editable
-//	 */
-//	void removeAllValues(AnnotationLayer layer, Item item, boolean recursive);
 
 	/**
 	 * Assigns the given {@code value} as new annotation for the specified

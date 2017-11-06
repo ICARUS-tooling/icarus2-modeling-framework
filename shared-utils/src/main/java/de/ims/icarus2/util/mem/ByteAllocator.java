@@ -24,9 +24,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.io.Bits;
 
 /**
+ * Models a byte heap with fixed block size.
+ * This implementation uses a free-list to keep track
+ * of unused entries after they have been {@link #free(int) released}.
+ * <p>
  * Not thread-safe!
  *
  * @author Markus Gärtner
@@ -93,11 +98,29 @@ public class ByteAllocator {
 		return (id%chunkSize) * slotSize;
 	}
 
-	private byte[] getChunk(int chunkIndex) {
-		// Assumption: we can only grow 1 chunk at a time,
-		// so any other chunk index will yield an exception.
-		if(chunkIndex==chunks.size()) {
+	private enum GrowthPolicy {
+		/**
+		 * No new chunks are to be added
+		 */
+		NO_GROWTH,
+		/**
+		 * Append a single chunk if needed
+		 */
+		APPEND,
+		/**
+		 * Add new chunks till a given index can fit
+		 */
+		GROW_TO_FIT,
+		;
+	}
+
+	private byte[] getChunk(int chunkIndex, GrowthPolicy policy) {
+		// Grow our buffer depending on the given policy as needed
+		while(chunkIndex>=chunks.size() && policy!=GrowthPolicy.NO_GROWTH) {
 			chunks.add(createChunk());
+			if(policy==GrowthPolicy.APPEND) {
+				break;
+			}
 		}
 		return chunks.get(chunkIndex);
 	}
@@ -110,7 +133,7 @@ public class ByteAllocator {
 		int chunkIndex = chunkIndex(id);
 		int slotIndex = slotIndex(id);
 
-		byte[] chunk = getChunk(chunkIndex);
+		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
 
 		return Bits.readInt(chunk, slotIndex);
 	}
@@ -119,7 +142,7 @@ public class ByteAllocator {
 		int chunkIndex = chunkIndex(id);
 		int slotIndex = slotIndex(id);
 
-		byte[] chunk = getChunk(chunkIndex);
+		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
 
 		Bits.writeInt(chunk, slotIndex, marker);
 	}
@@ -148,7 +171,7 @@ public class ByteAllocator {
 			id = idGen.getAndIncrement();
 
 			// Make sure we have the associated chunk in memory
-			getChunk(chunkIndex(id));
+			getChunk(chunkIndex(id), GrowthPolicy.APPEND);
 		}
 
 		return id;
@@ -176,96 +199,103 @@ public class ByteAllocator {
 		freeSlot = -1;
 	}
 
-//	// GETxxx methods
-//
-//	public byte getByte(int id, int offset) {
-//		int chunkIndex = chunkIndex(id);
-//		int slotIndex = slotIndex(id);
-//		byte[] chunk = getChunk(chunkIndex);
-//
-//		return chunk[slotIndex+offset];
-//	}
-//
-//	public long getNBytes(int id, int offset, int n) {
-//		int chunkIndex = chunkIndex(id);
-//		int slotIndex = slotIndex(id);
-//		byte[] chunk = getChunk(chunkIndex);
-//
-//		return Bits.readNBytes(chunk, slotIndex+offset, n);
-//	}
-//
-//	public short getShort(int id, int offset) {
-//		int chunkIndex = chunkIndex(id);
-//		int slotIndex = slotIndex(id);
-//		byte[] chunk = getChunk(chunkIndex);
-//
-//		return Bits.readShort(chunk, slotIndex+offset);
-//	}
-//
-//	public int getInt(int id, int offset) {
-//		int chunkIndex = chunkIndex(id);
-//		int slotIndex = slotIndex(id);
-//		byte[] chunk = getChunk(chunkIndex);
-//
-//		return Bits.readInt(chunk, slotIndex+offset);
-//	}
-//
-//	public long getLong(int id, int offset) {
-//		int chunkIndex = chunkIndex(id);
-//		int slotIndex = slotIndex(id);
-//		byte[] chunk = getChunk(chunkIndex);
-//
-//		return Bits.readLong(chunk, slotIndex+offset);
-//	}
-//
-//	// SETxxx methods
-//
-//	public void setByte(int id, int offset, byte value) {
-//		int chunkIndex = chunkIndex(id);
-//		int slotIndex = slotIndex(id);
-//		byte[] chunk = getChunk(chunkIndex);
-//
-//		chunk[slotIndex+offset] = value;
-//	}
-//
-//	public void setNBytes(int id, int offset, long value, int n) {
-//		int chunkIndex = chunkIndex(id);
-//		int slotIndex = slotIndex(id);
-//		byte[] chunk = getChunk(chunkIndex);
-//
-//		Bits.writeNBytes(chunk, slotIndex+offset, value, n);
-//	}
-//
-//	public void setShort(int id, int offset, short value) {
-//		int chunkIndex = chunkIndex(id);
-//		int slotIndex = slotIndex(id);
-//		byte[] chunk = getChunk(chunkIndex);
-//
-//		Bits.writeShort(chunk, slotIndex+offset, value);
-//	}
-//
-//	public void setInt(int id, int offset, int value) {
-//		int chunkIndex = chunkIndex(id);
-//		int slotIndex = slotIndex(id);
-//		byte[] chunk = getChunk(chunkIndex);
-//
-//		Bits.writeInt(chunk, slotIndex+offset, value);
-//	}
-//
-//	public void setLong(int id, int offset, long value) {
-//		int chunkIndex = chunkIndex(id);
-//		int slotIndex = slotIndex(id);
-//		byte[] chunk = getChunk(chunkIndex);
-//
-//		Bits.writeLong(chunk, slotIndex+offset, value);
-//	}
+	/**
+	 * Reduces the size of the internal buffer structures if possible.
+	 */
+	public void trim() {
+		throw new UnsupportedOperationException("Not yet implemented");
+	}
+
+	// GETxxx methods
+
+	public byte getByte(int id, int offset) {
+		int chunkIndex = chunkIndex(id);
+		int slotIndex = slotIndex(id);
+		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
+
+		return chunk[slotIndex+offset];
+	}
+
+	public long getNBytes(int id, int offset, int n) {
+		int chunkIndex = chunkIndex(id);
+		int slotIndex = slotIndex(id);
+		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
+
+		return Bits.readNBytes(chunk, slotIndex+offset, n);
+	}
+
+	public short getShort(int id, int offset) {
+		int chunkIndex = chunkIndex(id);
+		int slotIndex = slotIndex(id);
+		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
+
+		return Bits.readShort(chunk, slotIndex+offset);
+	}
+
+	public int getInt(int id, int offset) {
+		int chunkIndex = chunkIndex(id);
+		int slotIndex = slotIndex(id);
+		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
+
+		return Bits.readInt(chunk, slotIndex+offset);
+	}
+
+	public long getLong(int id, int offset) {
+		int chunkIndex = chunkIndex(id);
+		int slotIndex = slotIndex(id);
+		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
+
+		return Bits.readLong(chunk, slotIndex+offset);
+	}
+
+	// SETxxx methods
+
+	public void setByte(int id, int offset, byte value) {
+		int chunkIndex = chunkIndex(id);
+		int slotIndex = slotIndex(id);
+		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
+
+		chunk[slotIndex+offset] = value;
+	}
+
+	public void setNBytes(int id, int offset, long value, int n) {
+		int chunkIndex = chunkIndex(id);
+		int slotIndex = slotIndex(id);
+		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
+
+		Bits.writeNBytes(chunk, slotIndex+offset, value, n);
+	}
+
+	public void setShort(int id, int offset, short value) {
+		int chunkIndex = chunkIndex(id);
+		int slotIndex = slotIndex(id);
+		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
+
+		Bits.writeShort(chunk, slotIndex+offset, value);
+	}
+
+	public void setInt(int id, int offset, int value) {
+		int chunkIndex = chunkIndex(id);
+		int slotIndex = slotIndex(id);
+		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
+
+		Bits.writeInt(chunk, slotIndex+offset, value);
+	}
+
+	public void setLong(int id, int offset, long value) {
+		int chunkIndex = chunkIndex(id);
+		int slotIndex = slotIndex(id);
+		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
+
+		Bits.writeLong(chunk, slotIndex+offset, value);
+	}
 
 	// Buffer methods
 
 	public void writeBytes(int id, int offset, byte[] bytes, int n) {
 		int chunkIndex = chunkIndex(id);
 		int slotIndex = slotIndex(id);
-		byte[] chunk = getChunk(chunkIndex);
+		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
 
 		System.arraycopy(bytes, 0, chunk, slotIndex+offset, n);
 	}
@@ -273,7 +303,7 @@ public class ByteAllocator {
 	public void readBytes(int id, int offset, byte[] bytes, int n) {
 		int chunkIndex = chunkIndex(id);
 		int slotIndex = slotIndex(id);
-		byte[] chunk = getChunk(chunkIndex);
+		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
 
 		System.arraycopy(chunk, slotIndex+offset, bytes, 0, n);
 	}
@@ -299,15 +329,20 @@ public class ByteAllocator {
 		}
 
 		public void clear() {
-			id = -1;
-			slotIndex = -1;
+			id = IcarusUtils.UNSET_INT;
+			slotIndex = IcarusUtils.UNSET_INT;
 			chunk = null;
 		}
 
 		public Cursor moveTo(int id) {
 			this.id = id;
-			slotIndex = slotIndex(id);
-			chunk = getChunk(chunkIndex(id));
+			if(id==IcarusUtils.UNSET_INT) {
+				slotIndex = IcarusUtils.UNSET_INT;
+				chunk = null;
+			} else {
+				slotIndex = slotIndex(id);
+				chunk = getChunk(chunkIndex(id), GrowthPolicy.NO_GROWTH);
+			}
 			return this;
 		}
 
@@ -318,63 +353,67 @@ public class ByteAllocator {
 			return id;
 		}
 
-		private void checkChunkAvailable() {
-			checkState("No chunk available - use moveTo(int) to move cursor", chunk!=null);
+		public boolean hasChunk() {
+			return chunk!=null;
 		}
 
-//		// GETxxx methods
-//
-//		public byte getByte(int offset) {
-//			checkChunkAvailable();
-//			return chunk[slotIndex+offset];
-//		}
-//
-//		public long getNBytes(int offset, int n) {
-//			checkChunkAvailable();
-//			return Bits.readNBytes(chunk, slotIndex+offset, n);
-//		}
-//
-//		public short getShort(int offset) {
-//			checkChunkAvailable();
-//			return Bits.readShort(chunk, slotIndex+offset);
-//		}
-//
-//		public int getInt(int offset) {
-//			checkChunkAvailable();
-//			return Bits.readInt(chunk, slotIndex+offset);
-//		}
-//
-//		public long getLong(int offset) {
-//			checkChunkAvailable();
-//			return Bits.readLong(chunk, slotIndex+offset);
-//		}
-//
-//		// SETxxx methods
-//
-//		public void setByte(int offset, byte value) {
-//			checkChunkAvailable();
-//			chunk[slotIndex+offset] = value;
-//		}
-//
-//		public void setNBytes(int offset, long value, int n) {
-//			checkChunkAvailable();
-//			Bits.writeNBytes(chunk, slotIndex+offset, value, n);
-//		}
-//
-//		public void setShort(int offset, short value) {
-//			checkChunkAvailable();
-//			Bits.writeShort(chunk, slotIndex+offset, value);
-//		}
-//
-//		public void setInt(int offset, int value) {
-//			checkChunkAvailable();
-//			Bits.writeInt(chunk, slotIndex+offset, value);
-//		}
-//
-//		public void setLong(int offset, long value) {
-//			checkChunkAvailable();
-//			Bits.writeLong(chunk, slotIndex+offset, value);
-//		}
+		private void checkChunkAvailable() {
+			checkState("No chunk available - use moveTo(int) to move cursor", hasChunk());
+		}
+
+		// GETxxx methods
+
+		public byte getByte(int offset) {
+			checkChunkAvailable();
+			return chunk[slotIndex+offset];
+		}
+
+		public long getNBytes(int offset, int n) {
+			checkChunkAvailable();
+			return Bits.readNBytes(chunk, slotIndex+offset, n);
+		}
+
+		public short getShort(int offset) {
+			checkChunkAvailable();
+			return Bits.readShort(chunk, slotIndex+offset);
+		}
+
+		public int getInt(int offset) {
+			checkChunkAvailable();
+			return Bits.readInt(chunk, slotIndex+offset);
+		}
+
+		public long getLong(int offset) {
+			checkChunkAvailable();
+			return Bits.readLong(chunk, slotIndex+offset);
+		}
+
+		// SETxxx methods
+
+		public void setByte(int offset, byte value) {
+			checkChunkAvailable();
+			chunk[slotIndex+offset] = value;
+		}
+
+		public void setNBytes(int offset, long value, int n) {
+			checkChunkAvailable();
+			Bits.writeNBytes(chunk, slotIndex+offset, value, n);
+		}
+
+		public void setShort(int offset, short value) {
+			checkChunkAvailable();
+			Bits.writeShort(chunk, slotIndex+offset, value);
+		}
+
+		public void setInt(int offset, int value) {
+			checkChunkAvailable();
+			Bits.writeInt(chunk, slotIndex+offset, value);
+		}
+
+		public void setLong(int offset, long value) {
+			checkChunkAvailable();
+			Bits.writeLong(chunk, slotIndex+offset, value);
+		}
 
 		// Buffer methods
 

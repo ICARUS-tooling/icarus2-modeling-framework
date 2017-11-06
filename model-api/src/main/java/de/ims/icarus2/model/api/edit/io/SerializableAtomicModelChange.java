@@ -22,8 +22,10 @@ import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.model.api.edit.change.AtomicAddChange;
 import de.ims.icarus2.model.api.edit.change.AtomicChange;
 import de.ims.icarus2.model.api.edit.change.AtomicChangeType;
+import de.ims.icarus2.model.api.edit.change.AtomicMoveChange;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.CorpusMember;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -73,7 +75,7 @@ public class SerializableAtomicModelChange {
 	 * @see CorpusModel#addItem(Container, long, Item)
 	 * @see CorpusModel#removeItem(Container, long)
 	 */
-	public static class ItemChange implements SerializableAtomicChange {
+	public static class ItemChange implements SerializableAtomicChange, AtomicAddChange<Item, Container> {
 
 		protected final Container container;
 		protected final Item item;
@@ -143,6 +145,27 @@ public class SerializableAtomicModelChange {
 			return container;
 		}
 
+		@Override
+		public boolean isAdd() {
+			return add;
+		}
+
+		@Override
+		public Item getElement() {
+			return item;
+		}
+
+		@Override
+		public Container getContainer() {
+			return container;
+		}
+
+		@Override
+		public long getIndex() {
+			return index;
+		}
+
+
 	}
 
 	/**
@@ -152,7 +175,7 @@ public class SerializableAtomicModelChange {
 	 *
 	 * @see CorpusModel#moveItem(Container, long, long)
 	 */
-	public static class ItemMoveChange implements SerializableAtomicChange {
+	public static class ItemMoveChange implements SerializableAtomicChange, AtomicMoveChange<Item, Container> {
 
 		protected final Container container;
 
@@ -215,6 +238,34 @@ public class SerializableAtomicModelChange {
 		@Override
 		public CorpusMember getAffectedMember() {
 			return container;
+		}
+
+		@Override
+		public Item getSourceElement() {
+			return item0;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.api.edit.change.AtomicMoveChange#getTargetElement()
+		 */
+		@Override
+		public Item getTargetElement() {
+			return item1;
+		}
+
+		@Override
+		public Container getContainer() {
+			return container;
+		}
+
+		@Override
+		public long getSourceIndex() {
+			return index0;
+		}
+
+		@Override
+		public long getTargetIndex() {
+			return index1;
 		}
 
 	}
@@ -337,7 +388,7 @@ public class SerializableAtomicModelChange {
 	 * @see CorpusModel#addEdge(Structure, long, Edge)
 	 * @see CorpusModel#removeEdge(Structure, long)
 	 */
-	public static class EdgeChange implements SerializableAtomicChange {
+	public static class EdgeChange implements SerializableAtomicChange, AtomicAddChange<Edge, Structure> {
 
 		protected final Structure structure;
 		protected final Edge edge;
@@ -407,6 +458,26 @@ public class SerializableAtomicModelChange {
 			return structure;
 		}
 
+		@Override
+		public boolean isAdd() {
+			return add;
+		}
+
+		@Override
+		public Edge getElement() {
+			return edge;
+		}
+
+		@Override
+		public Structure getContainer() {
+			return structure;
+		}
+
+		@Override
+		public long getIndex() {
+			return index;
+		}
+
 	}
 
 	/**
@@ -416,7 +487,7 @@ public class SerializableAtomicModelChange {
 	 *
 	 * @see CorpusModel#moveEdge(Structure, long, long)
 	 */
-	public static class EdgeMoveChange implements SerializableAtomicChange {
+	public static class EdgeMoveChange implements SerializableAtomicChange, AtomicMoveChange<Edge, Structure> {
 
 		protected final Structure structure;
 
@@ -479,6 +550,31 @@ public class SerializableAtomicModelChange {
 		@Override
 		public CorpusMember getAffectedMember() {
 			return structure;
+		}
+
+		@Override
+		public Edge getSourceElement() {
+			return edge0;
+		}
+
+		@Override
+		public Edge getTargetElement() {
+			return edge1;
+		}
+
+		@Override
+		public Structure getContainer() {
+			return structure;
+		}
+
+		@Override
+		public long getSourceIndex() {
+			return index0;
+		}
+
+		@Override
+		public long getTargetIndex() {
+			return index1;
 		}
 
 	}

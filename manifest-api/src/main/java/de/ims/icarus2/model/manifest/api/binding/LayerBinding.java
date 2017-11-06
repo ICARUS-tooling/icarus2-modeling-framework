@@ -19,6 +19,7 @@ package de.ims.icarus2.model.manifest.api.binding;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.classes.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
@@ -223,7 +224,7 @@ public final class LayerBinding implements Bindable, Serializable {
 			}
 
 			reportBuilder.addInfo("Alias '%s' - Resolved %d layers, failed %d layers",
-					alias, layers.size(), failedPointers);
+					alias, _int(layers.size()), _int(failedPointers));
 		}
 
 		// Resolve layer type if required

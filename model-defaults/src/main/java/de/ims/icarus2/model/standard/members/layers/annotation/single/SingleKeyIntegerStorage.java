@@ -43,7 +43,7 @@ public class SingleKeyIntegerStorage extends AbstractSingleKeyStorage {
 	private Object2IntMap<Item> annotations;
 	private int noEntryValue = DEFAULT_NO_ENTRY_VALUE;
 
-	public static final int DEFAULT_NO_ENTRY_VALUE = -1;
+	public static final int DEFAULT_NO_ENTRY_VALUE = IcarusUtils.UNSET_INT;
 
 	public SingleKeyIntegerStorage() {
 		this(-1);

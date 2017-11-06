@@ -18,6 +18,8 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
+import static de.ims.icarus2.util.classes.Primitives._boolean;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
@@ -78,11 +80,16 @@ public abstract class AbstractFixedKeysBooleanStorage extends AbstractAnnotation
 		return Boolean.valueOf(getBooleanValue(item, key));
 	}
 
+	protected abstract boolean getNoEntryValue(String key);
+
 	/**
 	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.Object)
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {
+		if(value==null) {
+			value = _boolean(getNoEntryValue(key));
+		}
 		setBooleanValue(item, key, ((Boolean) value).booleanValue());
 	}
 }

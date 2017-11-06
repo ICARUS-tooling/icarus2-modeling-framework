@@ -18,6 +18,8 @@
  */
 package de.ims.icarus2.model.manifest.util;
 
+import static de.ims.icarus2.util.classes.Primitives._long;
+
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 
 
@@ -77,39 +79,39 @@ public class Messages {
 	}
 
 	public static String sizeMismatchMessage(String msg, long expected, long size) {
-		return String.format("%s: expected size %d - got %d", ensureMsg(msg), expected, size); //$NON-NLS-1$
+		return String.format("%s: expected size %d - got %d", ensureMsg(msg), _long(expected), _long(size)); //$NON-NLS-1$
 	}
 
 	public static String offsetMismatchMessage(String msg, long expected, long index) {
-		return String.format("%s: expected offset %d - got %d", ensureMsg(msg), expected, index); //$NON-NLS-1$
+		return String.format("%s: expected offset %d - got %d", ensureMsg(msg), _long(expected), _long(index)); //$NON-NLS-1$
 	}
 
 	public static String illegalOffsetMessage(String msg, long index) {
-		return String.format("%s: unexpected offset %d", ensureMsg(msg), index); //$NON-NLS-1$
+		return String.format("%s: unexpected offset %d", ensureMsg(msg), _long(index)); //$NON-NLS-1$
 	}
 
 	public static String outOfBoundsMessage(String msg, long index, long min, long max) {
-		return String.format("%s: value %d out of bounds [%d,%d]", ensureMsg(msg), index, min, max); //$NON-NLS-1$
+		return String.format("%s: value %d out of bounds [%d,%d]", ensureMsg(msg), _long(index), _long(min), _long(max)); //$NON-NLS-1$
 	}
 
 	public static String insufficientEdgesMessage(String msg, Object node, long required, long count) {
-		return String.format("%s: insufficient edge count of %d at node %s - got %d", ensureMsg(msg), required, node, count); //$NON-NLS-1$
+		return String.format("%s: insufficient edge count of %d at node %s - got %d", ensureMsg(msg), _long(required), node, _long(count)); //$NON-NLS-1$
 	}
 
 	public static String edgesOverflowMessage(String msg, Object node, long max, long count) {
-		return String.format("%s: edge count %d exceeds limit of %d at node %s", ensureMsg(msg), count, max, node); //$NON-NLS-1$
+		return String.format("%s: edge count %d exceeds limit of %d at node %s", ensureMsg(msg), _long(count), _long(max), node); //$NON-NLS-1$
 	}
 
 	public static String indexOutOfBoundsMessage(String msg, Object container, long size, long index) {
-		return String.format("%s: index %d exceeds size %d of container %s", ensureMsg(msg), index, size, container); //$NON-NLS-1$
+		return String.format("%s: index %d exceeds size %d of container %s", ensureMsg(msg), _long(index), _long(size), container); //$NON-NLS-1$
 	}
 
 	public static String indexOutOfBoundsMessage(String msg, long min, long max, long index) {
-		return String.format("%s: index %d exceeds range %d to %d", ensureMsg(msg), index, min, max); //$NON-NLS-1$
+		return String.format("%s: index %d exceeds range %d to %d", ensureMsg(msg), _long(index), _long(min), _long(max)); //$NON-NLS-1$
 	}
 
 	public static String indexNegativeMessage(String msg, Object container, long index) {
-		return String.format("%s: negative index for container %s: %d", ensureMsg(msg), container, index); //$NON-NLS-1$
+		return String.format("%s: negative index for container %s: %d", ensureMsg(msg), container, _long(index)); //$NON-NLS-1$
 	}
 
 	public static String foreignItemMessage(String msg, Object container, Object item) {
@@ -122,7 +124,7 @@ public class Messages {
 
 	public static String nonOverlappingIntervalsMessage(String msg, long expectedBegin, long expectedEnd, long actualBegin, long actualEnd) {
 		return String.format("%s: non overlapping intervals: [%d-%d] is outside legal space [%d,%d]", ensureMsg(msg),
-				actualBegin, actualEnd, expectedBegin, expectedEnd);
+				_long(actualBegin), _long(actualEnd), _long(expectedBegin), _long(expectedEnd));
 	}
 
 	public static String incompatibleFoundationLayersMessage(String msg, Object item0, Object item1, Object fLayer0, Object fLayer1) {
