@@ -9,6 +9,7 @@ include 'model-api'
 include 'model-defaults'
 include 'file-driver-utils'
 include 'model-compression'
+include 'common-formats'
 include 'experiments'
 
 
@@ -18,4 +19,5 @@ project(':model-api').projectDir = "$rootDir/model-api" as File
 project(':model-defaults').projectDir = "$rootDir/model-defaults" as File
 project(':file-driver-utils').projectDir = "$rootDir/file-driver-utils" as File
 project(':model-compression').projectDir = "$rootDir/model-compression" as File
+project(':common-formats').projectDir = "$rootDir/common-formats" as File
 project(':experiments').projectDir = "$rootDir/experiments" as File

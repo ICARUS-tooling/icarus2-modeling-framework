@@ -25,7 +25,7 @@
 		<xs:annotation>
 			<xs:documentation>Contains only template definitions</xs:documentation>
 		</xs:annotation>
-		<xs:sequence>
+		<xs:sequence minOccurs="0" maxOccurs="unbounded">
 			<xs:choice minOccurs="0" maxOccurs="unbounded">
 				<xs:group ref="imf:layerGroup" />
 				<xs:element name="context" type="imf:contextManifestType" />
