@@ -91,7 +91,7 @@
 	
 	<xs:complexType name="noteType">
 		<xs:annotation>
-			<xs:documentation>A simple not or comment that can be attached to a corpus.</xs:documentation>
+			<xs:documentation>A simple note or comment that can be attached to a corpus.</xs:documentation>
 		</xs:annotation>
 		<xs:simpleContent>
 			<xs:extension base="xs:string">
