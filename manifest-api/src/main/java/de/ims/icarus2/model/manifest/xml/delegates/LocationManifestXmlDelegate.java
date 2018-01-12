@@ -30,7 +30,9 @@ import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.standard.LocationManifestImpl;
 import de.ims.icarus2.model.manifest.standard.LocationManifestImpl.PathEntryImpl;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
@@ -70,7 +72,7 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 
 	@Override
 	protected String xmlTag() {
-		return TAG_LOCATION;
+		return ManifestXmlTags.LOCATION;
 	}
 
 	/**
@@ -80,7 +82,7 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 	protected void readAttributes(Attributes attributes) {
 		super.readAttributes(attributes);
 
-		String inline = ManifestXmlUtils.normalize(attributes, ATTR_INLINE);
+		String inline = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.INLINE);
 		if(inline!=null) {
 			getInstance().setIsInline(Boolean.parseBoolean(inline));
 		}
@@ -93,18 +95,18 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 		LocationManifest manifest = getInstance();
 
 		if(manifest.isInline()) {
-			serializer.startElement(TAG_CONTENT);
+			serializer.startElement(ManifestXmlTags.CONTENT);
 			serializer.writeCData(manifest.getInlineData());
-			serializer.endElement(TAG_CONTENT);
+			serializer.endElement(ManifestXmlTags.CONTENT);
 		} else {
 
 			if(manifest.getRootPath()!=null) {
-				serializer.startElement(TAG_PATH);
+				serializer.startElement(ManifestXmlTags.PATH);
 				if(manifest.getRootPathType()!=null) {
-					serializer.writeAttribute(ATTR_TYPE, manifest.getRootPathType().getStringValue());
+					serializer.writeAttribute(ManifestXmlAttributes.TYPE, manifest.getRootPathType().getStringValue());
 				}
 				serializer.writeCData(manifest.getRootPath());
-				serializer.endElement(TAG_PATH);
+				serializer.endElement(ManifestXmlTags.PATH);
 			}
 
 			// ELEMENTS
@@ -116,10 +118,10 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 				if(pathEntry.getValue()==null)
 					throw new IllegalStateException("Path entry is missing value"); //$NON-NLS-1$
 
-				serializer.startElement(TAG_PATH_ENTRY);
-				serializer.writeAttribute(ATTR_TYPE, pathEntry.getType().getStringValue());
+				serializer.startElement(ManifestXmlTags.PATH_ENTRY);
+				serializer.writeAttribute(ManifestXmlAttributes.TYPE, pathEntry.getType().getStringValue());
 				serializer.writeCData(pathEntry.getValue());
-				serializer.endElement(TAG_PATH_ENTRY);
+				serializer.endElement(ManifestXmlTags.PATH_ENTRY);
 			}
 
 			// Write rootPath resolver
@@ -134,28 +136,28 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
-		switch (qName) {
-		case TAG_LOCATION: {
+		switch (localName) {
+		case ManifestXmlTags.LOCATION: {
 			readAttributes(attributes);
 		} break;
 
-		case TAG_PATH: {
-			String type = normalize(attributes, ATTR_TYPE);
+		case ManifestXmlTags.PATH: {
+			String type = normalize(attributes, ManifestXmlAttributes.TYPE);
 			if(type!=null) {
 				getInstance().setRootPathType(PathType.parsePathType(type));
 			}
 		} break;
 
-		case TAG_PATH_ENTRY : {
-			String typeId = ManifestXmlUtils.normalize(attributes, ATTR_TYPE);
+		case ManifestXmlTags.PATH_ENTRY : {
+			String typeId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.TYPE);
 			pathType = PathType.parsePathType(typeId);
 		} break;
 
-		case TAG_PATH_RESOLVER: {
+		case ManifestXmlTags.PATH_RESOLVER: {
 			return getPathResolverManifestXmlDelegate().reset(getInstance());
 		}
 
-		case TAG_CONTENT:
+		case ManifestXmlTags.CONTENT:
 			break;
 
 		default:
@@ -169,21 +171,21 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
-		switch (qName) {
-		case TAG_LOCATION: {
+		switch (localName) {
+		case ManifestXmlTags.LOCATION: {
 			return null;
 		}
 
-		case TAG_PATH: {
+		case ManifestXmlTags.PATH: {
 			getInstance().setRootPath(text);
 		} break;
 
-		case TAG_PATH_ENTRY: {
+		case ManifestXmlTags.PATH_ENTRY: {
 			PathEntry pathEntry = new PathEntryImpl(pathType, text);
 			getInstance().addPathEntry(pathEntry);
 		} break;
 
-		case TAG_CONTENT: {
+		case ManifestXmlTags.CONTENT: {
 			getInstance().setInlineData(text);
 		} break;
 
@@ -201,9 +203,9 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 	public void endNestedHandler(ManifestLocation manifestLocation, String uri,
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
-		switch (qName) {
+		switch (localName) {
 
-		case TAG_PATH_RESOLVER : {
+		case ManifestXmlTags.PATH_RESOLVER : {
 			getInstance().setPathResolverManifest(((PathResolverManifestXmlDelegate) handler).getInstance());
 		} break;
 

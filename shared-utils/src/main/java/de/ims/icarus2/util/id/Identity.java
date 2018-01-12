@@ -22,10 +22,12 @@ package de.ims.icarus2.util.id;
 
 import java.util.Comparator;
 import java.util.Locale;
+import java.util.Objects;
 
 import javax.swing.Icon;
 
 import de.ims.icarus2.util.strings.StringUtil;
+import it.unimi.dsi.fastutil.Hash.Strategy;
 
 /**
  * Models a set of common attributes and aspects associated with
@@ -145,5 +147,18 @@ public interface Identity {
 			}
 		}
 
+	};
+
+	public static final Strategy<Identity> HASH_STRATEGY = new Strategy<Identity>() {
+
+		@Override
+		public int hashCode(Identity id) {
+			return Objects.hash(id.getId());
+		}
+
+		@Override
+		public boolean equals(Identity id0, Identity id1) {
+			return Objects.equals(id0.getId(), id1.getId());
+		}
 	};
 }

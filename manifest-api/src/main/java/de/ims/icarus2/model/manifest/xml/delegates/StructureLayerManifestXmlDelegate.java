@@ -29,7 +29,9 @@ import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.standard.StructureLayerManifestImpl;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
@@ -104,11 +106,11 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 		ItemLayerManifest manifest = getInstance();
 
 		if(manifest.isLocalBoundaryLayerManifest()) {
-			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, TAG_BOUNDARY_LAYER, manifest.getBoundaryLayerManifest());
+			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, ManifestXmlTags.BOUNDARY_LAYER, manifest.getBoundaryLayerManifest());
 		}
 
 		if(manifest.isLocalFoundationLayerManifest()) {
-			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, TAG_FOUNDATION_LAYER, manifest.getFoundationLayerManifest());
+			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, ManifestXmlTags.FOUNDATION_LAYER, manifest.getFoundationLayerManifest());
 		}
 
 		if(manifest.hasLocalContainers()) {
@@ -126,26 +128,26 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
-		switch (qName) {
-		case TAG_STRUCTURE_LAYER: {
+		switch (localName) {
+		case ManifestXmlTags.STRUCTURE_LAYER: {
 			readAttributes(attributes);
 		} break;
 
-		case TAG_BOUNDARY_LAYER: {
-			String boundaryLayerId = ManifestXmlUtils.normalize(attributes, ATTR_LAYER_ID);
+		case ManifestXmlTags.BOUNDARY_LAYER: {
+			String boundaryLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID);
 			getInstance().setBoundaryLayerId(boundaryLayerId);
 		} break;
 
-		case TAG_FOUNDATION_LAYER: {
-			String foundationLayerId = ManifestXmlUtils.normalize(attributes, ATTR_LAYER_ID);
+		case ManifestXmlTags.FOUNDATION_LAYER: {
+			String foundationLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID);
 			getInstance().setFoundationLayerId(foundationLayerId);
 		} break;
 
-		case TAG_CONTAINER: {
+		case ManifestXmlTags.CONTAINER: {
 			return getContainerManifestXmlDelegate().reset(getInstance());
 		}
 
-		case TAG_STRUCTURE: {
+		case ManifestXmlTags.STRUCTURE: {
 			return getStructureManifestXmlDelegate().reset(getInstance());
 		}
 
@@ -160,16 +162,16 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
-		switch (qName) {
-		case TAG_STRUCTURE_LAYER: {
+		switch (localName) {
+		case ManifestXmlTags.STRUCTURE_LAYER: {
 			return null;
 		}
 
-		case TAG_BOUNDARY_LAYER: {
+		case ManifestXmlTags.BOUNDARY_LAYER: {
 			// no-op
 		} break;
 
-		case TAG_FOUNDATION_LAYER: {
+		case ManifestXmlTags.FOUNDATION_LAYER: {
 			// no-op
 		} break;
 
@@ -187,13 +189,13 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 	public void endNestedHandler(ManifestLocation manifestLocation, String uri,
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
-		switch (qName) {
+		switch (localName) {
 
-		case TAG_CONTAINER: {
+		case ManifestXmlTags.CONTAINER: {
 			getInstance().addContainerManifest(((ContainerManifestXmlDelegate) handler).getInstance(), -1);
 		} break;
 
-		case TAG_STRUCTURE: {
+		case ManifestXmlTags.STRUCTURE: {
 			getInstance().addStructureManifest(((StructureManifestXmlDelegate) handler).getInstance(), -1);
 		} break;
 
@@ -208,6 +210,6 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 	 */
 	@Override
 	protected String xmlTag() {
-		return TAG_STRUCTURE_LAYER;
+		return ManifestXmlTags.STRUCTURE_LAYER;
 	}
 }

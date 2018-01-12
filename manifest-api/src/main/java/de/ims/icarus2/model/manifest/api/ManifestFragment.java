@@ -18,9 +18,12 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.Objects;
+
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessRestriction;
+import it.unimi.dsi.fastutil.Hash.Strategy;
 
 /**
  * As the most simple variation of a manifest, a {@code ManifestFragment} only
@@ -53,4 +56,17 @@ public interface ManifestFragment extends Lockable, TypedManifest {
 	default String getUniqueId() {
 		return ManifestUtils.getUniqueId(this);
 	}
+
+	public static final Strategy<ManifestFragment> HASH_STRATEGY = new Strategy<ManifestFragment>() {
+
+		@Override
+		public int hashCode(ManifestFragment frag) {
+			return Objects.hash(frag.getId());
+		}
+
+		@Override
+		public boolean equals(ManifestFragment frag0, ManifestFragment frag1) {
+			return Objects.equals(frag0.getId(), frag1.getId());
+		}
+	};
 }

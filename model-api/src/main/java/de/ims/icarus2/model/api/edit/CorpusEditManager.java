@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.api.edit;
 
-import static de.ims.icarus2.util.classes.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;

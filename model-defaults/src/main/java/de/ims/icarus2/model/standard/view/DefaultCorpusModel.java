@@ -71,11 +71,11 @@ import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.IcarusUtils;
-import de.ims.icarus2.util.classes.Lazy;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
 import de.ims.icarus2.util.events.ChangeSource;
+import de.ims.icarus2.util.lang.Lazy;
 
 /**
  *

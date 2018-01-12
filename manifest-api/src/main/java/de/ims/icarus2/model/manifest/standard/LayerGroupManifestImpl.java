@@ -30,8 +30,8 @@ import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.standard.Links.Link;
-import de.ims.icarus2.util.classes.ClassUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
+import de.ims.icarus2.util.lang.ClassUtils;
 
 /**
  * @author Markus Gärtner

@@ -17,7 +17,7 @@
  */
 package de.ims.icarus2.model.manifest.api.binding;
 
-import de.ims.icarus2.util.classes.ClassUtils;
+import de.ims.icarus2.util.lang.ClassUtils;
 
 /**
  * @author Markus Gärtner

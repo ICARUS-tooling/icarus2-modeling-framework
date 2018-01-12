@@ -40,6 +40,17 @@ public class StaticIdentity implements Identity {
 	protected URL iconLocation;
 	protected Icon icon;
 
+	public StaticIdentity(Identity source) {
+		requireNonNull(source);
+
+		this.owner = requireNonNull(source.getOwner());
+
+		setId(source.getId());
+		setName(source.getName());
+		setDescription(source.getDescription());
+		setIcon(source.getIcon());
+	}
+
 	public StaticIdentity(Object owner) {
 		requireNonNull(owner);
 

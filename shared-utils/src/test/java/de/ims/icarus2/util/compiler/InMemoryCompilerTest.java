@@ -22,9 +22,9 @@ public class InMemoryCompilerTest {
 	        +"this.getClass().getSimpleName();\n"
 	        +"    }\n"
 	        +"}\n";
-		String className = "DynaClass";
+		String className = "DynClass";
 
-		InMemoryCompiler compiler = new InMemoryCompiler(null);
+		InMemoryCompiler compiler = InMemoryCompiler.newInstance();
 
 		compiler.addInputFile(className, code);
 

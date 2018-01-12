@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.util;
 
-import static de.ims.icarus2.util.classes.Primitives._long;
+import static de.ims.icarus2.util.lang.Primitives._long;
 
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 
@@ -75,7 +75,7 @@ public class Messages {
 	}
 
 	public static String missingMappingMessage(String msg, LayerManifest sourceLayer, LayerManifest targetLayer) {
-		return String.format("%s: no mapping from %s to %s", ensureMsg(msg), sourceLayer.getName(), targetLayer.getName()); //$NON-NLS-1$
+		return String.format("%s: no mapping from %s to %s", ensureMsg(msg), sourceLayer.getId(), targetLayer.getId()); //$NON-NLS-1$
 	}
 
 	public static String sizeMismatchMessage(String msg, long expected, long size) {

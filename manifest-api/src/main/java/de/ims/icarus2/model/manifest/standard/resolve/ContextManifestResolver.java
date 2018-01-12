@@ -56,7 +56,10 @@ import de.ims.icarus2.model.manifest.api.ValueSet;
 import de.ims.icarus2.model.manifest.api.VersionManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.util.data.ContentType;
+import de.ims.icarus2.util.id.Identifiable;
 import de.ims.icarus2.util.id.Identity;
+import de.ims.icarus2.util.id.MutableIdentifiable;
+import de.ims.icarus2.util.id.StaticIdentity;
 
 /**
  * Utility class used to create <i>live</i> context manifests from templates.
@@ -134,6 +137,17 @@ public class ContextManifestResolver {
 		String description = source.getDescription();
 		if(description!=null) {
 			target.setDescription(description);
+		}
+	}
+
+	protected void copyIdentity(Identifiable source, MutableIdentifiable target) {
+		if(source==null || target==null) {
+			return;
+		}
+
+		Identity identity = source.getIdentity();
+		if(identity!=null) {
+			target.setIdentity(new StaticIdentity(identity));
 		}
 	}
 

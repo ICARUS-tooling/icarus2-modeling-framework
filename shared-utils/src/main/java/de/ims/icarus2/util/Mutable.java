@@ -19,7 +19,7 @@ package de.ims.icarus2.util;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusException;
-import de.ims.icarus2.util.classes.Primitives;
+import de.ims.icarus2.util.lang.Primitives;
 
 /**
  * @author Markus Gärtner

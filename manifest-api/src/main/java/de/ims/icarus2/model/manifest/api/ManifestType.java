@@ -23,41 +23,51 @@ package de.ims.icarus2.model.manifest.api;
  *
  */
 public enum ManifestType {
-	CONTAINER_MANIFEST,
-	STRUCTURE_MANIFEST,
-	ANNOTATION_MANIFEST,
-	ANNOTATION_LAYER_MANIFEST,
-	ITEM_LAYER_MANIFEST,
-	STRUCTURE_LAYER_MANIFEST,
-	FRAGMENT_LAYER_MANIFEST,
-	HIGHLIGHT_LAYER_MANIFEST,
-	LOCATION_MANIFEST,
-	OPTIONS_MANIFEST,
-	CONTEXT_MANIFEST,
-	CORPUS_MANIFEST,
-	PATH_RESOLVER_MANIFEST,
-	RASTERIZER_MANIFEST,
-	DRIVER_MANIFEST,
-	IMPLEMENTATION_MANIFEST,
-	LAYER_GROUP_MANIFEST,
+	CONTAINER_MANIFEST(true),
+	STRUCTURE_MANIFEST(true),
+	ANNOTATION_MANIFEST(true),
+	ANNOTATION_LAYER_MANIFEST(true),
+	ITEM_LAYER_MANIFEST(true),
+	STRUCTURE_LAYER_MANIFEST(true),
+	FRAGMENT_LAYER_MANIFEST(true),
+	HIGHLIGHT_LAYER_MANIFEST(true),
 
-	MODULE_MANIFEST,
-	MODULE_SPEC,
-	MAPPING_MANIFEST,
-	OPTION,
+	LOCATION_MANIFEST(false),
+	OPTIONS_MANIFEST(true),
+	CONTEXT_MANIFEST(true),
+	CORPUS_MANIFEST(true),
+	PATH_RESOLVER_MANIFEST(true),
+	RASTERIZER_MANIFEST(true),
+	DRIVER_MANIFEST(true),
+	IMPLEMENTATION_MANIFEST(true),
+	LAYER_GROUP_MANIFEST(false),
 
-	VALUE_RANGE,
-	VALUE_SET,
-	VALUE_MANIFEST,
-	DOCUMENTATION,
-	VERSION,
+	MODULE_MANIFEST(true),
+	MODULE_SPEC(false),
+	MAPPING_MANIFEST(false),
+	OPTION(false),
+
+	VALUE_RANGE(false),
+	VALUE_SET(false),
+	VALUE_MANIFEST(false),
+	DOCUMENTATION(false),
+	VERSION(false),
 
 	/**
 	 * Reserved manifest type for use in testing.
 	 * Client code is free to throw an exception whenever this type is
 	 * encountered during runtime.
 	 */
-	DUMMY_MANIFEST,
+	DUMMY_MANIFEST(false),
 	;
 
+	private final boolean supportTemplating;
+
+	ManifestType(boolean supportTemplating) {
+		this.supportTemplating = supportTemplating;
+	}
+
+	public boolean isSupportTemplating() {
+		return supportTemplating;
+	}
 }

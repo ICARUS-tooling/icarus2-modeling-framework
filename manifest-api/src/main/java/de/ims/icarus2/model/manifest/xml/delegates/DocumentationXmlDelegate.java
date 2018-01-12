@@ -29,6 +29,7 @@ import de.ims.icarus2.model.manifest.api.Documentation.Resource;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.standard.DocumentationImpl.ResourceImpl;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.xml.UnexpectedTagException;
 import de.ims.icarus2.util.xml.UnsupportedNestingException;
@@ -67,22 +68,22 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
-		switch (qName) {
-		case TAG_DOCUMENTATION: {
-			ManifestXmlUtils.readIdentity(attributes, getInstance());
+		switch (localName) {
+		case ManifestXmlTags.DOCUMENTATION: {
+			ManifestXmlUtils.readIdentityAttributes(attributes, getInstance());
 		} break;
 
-		case TAG_RESOURCE: {
+		case ManifestXmlTags.RESOURCE: {
 			resource = new ResourceImpl();
-			ManifestXmlUtils.readIdentity(attributes, resource);
+			ManifestXmlUtils.readIdentityAttributes(attributes, resource);
 		} break;
 
-		case TAG_CONTENT: {
+		case ManifestXmlTags.CONTENT: {
 			// no-op
 		} break;
 
 		default:
-			throw new UnexpectedTagException(qName, true, TAG_DOCUMENTATION);
+			throw new UnexpectedTagException(qName, true, ManifestXmlTags.DOCUMENTATION);
 		}
 
 		return this;
@@ -95,16 +96,16 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 			throws SAXException {
-		switch (qName) {
-		case TAG_DOCUMENTATION: {
+		switch (localName) {
+		case ManifestXmlTags.DOCUMENTATION: {
 			return null;
 		}
 
-		case TAG_CONTENT: {
+		case ManifestXmlTags.CONTENT: {
 			getInstance().setContent(text);
 		} break;
 
-		case TAG_RESOURCE: {
+		case ManifestXmlTags.RESOURCE: {
 
 			if(text!=null) {
 				try {
@@ -119,7 +120,7 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 		} break;
 
 		default:
-			throw new UnexpectedTagException(qName, false, TAG_DOCUMENTATION);
+			throw new UnexpectedTagException(qName, false, ManifestXmlTags.DOCUMENTATION);
 		}
 
 		return this;
@@ -132,7 +133,7 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 	public void endNestedHandler(ManifestLocation manifestLocation, String uri,
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
-		throw new UnsupportedNestingException(qName, TAG_DOCUMENTATION);
+		throw new UnsupportedNestingException(qName, ManifestXmlTags.DOCUMENTATION);
 	}
 
 	/**
@@ -142,25 +143,25 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 	public void writeXml(XmlSerializer serializer) throws Exception {
 		Documentation documentation = getInstance();
 
-		serializer.startElement(TAG_DOCUMENTATION);
+		serializer.startElement(ManifestXmlTags.DOCUMENTATION);
 		ManifestXmlUtils.writeIdentityAttributes(serializer, documentation);
 
 		if(documentation.getContent()!=null) {
-			serializer.startElement(TAG_CONTENT);
+			serializer.startElement(ManifestXmlTags.CONTENT);
 			serializer.writeCData(documentation.getContent());
-			serializer.endElement(TAG_CONTENT);
+			serializer.endElement(ManifestXmlTags.CONTENT);
 		}
 
 		for(Resource resource : documentation.getResources()) {
 			if(resource.getUri()==null)
 				throw new IllegalStateException("Resource is missing url"); //$NON-NLS-1$
 
-			serializer.startElement(TAG_RESOURCE);
+			serializer.startElement(ManifestXmlTags.RESOURCE);
 			ManifestXmlUtils.writeIdentityAttributes(serializer, resource);
 			serializer.writeTextOrCData(resource.getUri().toString());
-			serializer.endElement(TAG_RESOURCE);
+			serializer.endElement(ManifestXmlTags.RESOURCE);
 		}
 
-		serializer.endElement(TAG_DOCUMENTATION);
+		serializer.endElement(ManifestXmlTags.DOCUMENTATION);
 	}
 }

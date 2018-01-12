@@ -43,8 +43,8 @@ import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.AccessMode;
-import de.ims.icarus2.util.classes.Lazy;
 import de.ims.icarus2.util.events.ChangeSource;
+import de.ims.icarus2.util.lang.Lazy;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**

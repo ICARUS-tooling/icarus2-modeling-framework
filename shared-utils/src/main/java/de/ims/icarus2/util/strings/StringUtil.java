@@ -40,12 +40,12 @@ import javax.swing.UIManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.ims.icarus2.util.HtmlUtils;
 import de.ims.icarus2.util.id.Identifiable;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.intern.Interner;
 import de.ims.icarus2.util.intern.StrongInterner;
 import de.ims.icarus2.util.intern.WeakInterner;
+import de.ims.icarus2.util.xml.HtmlUtils;
 
 
 /**

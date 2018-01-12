@@ -49,6 +49,8 @@ public abstract class ManifestLocation {
 	private static final Logger log = LoggerFactory
 			.getLogger(ManifestLocation.class);
 
+	//TODO add public static methods to create default manifest locations for URL, FILE and Virtual
+
 	private final ClassLoader classLoader;
 	private final boolean readOnly;
 	private final boolean template;

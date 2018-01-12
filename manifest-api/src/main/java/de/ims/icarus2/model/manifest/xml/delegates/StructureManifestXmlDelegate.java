@@ -29,7 +29,9 @@ import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.standard.StructureManifestImpl;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
@@ -66,12 +68,12 @@ public class StructureManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 
 		// Write container type
 		if(manifest.isLocalContainerType()) {
-			serializer.writeAttribute(ATTR_CONTAINER_TYPE, manifest.getContainerType().getStringValue());
+			serializer.writeAttribute(ManifestXmlAttributes.CONTAINER_TYPE, manifest.getContainerType().getStringValue());
 		}
 
 		// Write structure type
 		if(manifest.isLocalStructureType()) {
-			serializer.writeAttribute(ATTR_STRUCTURE_TYPE, manifest.getStructureType().getStringValue());
+			serializer.writeAttribute(ManifestXmlAttributes.STRUCTURE_TYPE, manifest.getStructureType().getStringValue());
 		}
 	}
 
@@ -82,15 +84,15 @@ public class StructureManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 		StructureManifest manifest = getInstance();
 
 		for(StructureFlag flag : manifest.getActiveLocalStructureFlags()) {
-			serializer.startElement(TAG_STRUCTURE_FLAG);
+			serializer.startElement(ManifestXmlTags.STRUCTURE_FLAG);
 			serializer.writeText(flag.getStringValue());
-			serializer.endElement(TAG_STRUCTURE_FLAG);
+			serializer.endElement(ManifestXmlTags.STRUCTURE_FLAG);
 		}
 
 		for(ContainerFlag flag : getInstance().getActiveLocalContainerFlags()) {
-			serializer.startElement(TAG_CONTAINER_FLAG);
+			serializer.startElement(ManifestXmlTags.CONTAINER_FLAG);
 			serializer.writeText(flag.getStringValue());
-			serializer.endElement(TAG_CONTAINER_FLAG);
+			serializer.endElement(ManifestXmlTags.CONTAINER_FLAG);
 		}
 	}
 
@@ -102,13 +104,13 @@ public class StructureManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 		super.readAttributes(attributes);
 
 		// Read structure type
-		String structureType = ManifestXmlUtils.normalize(attributes, ATTR_STRUCTURE_TYPE);
+		String structureType = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.STRUCTURE_TYPE);
 		if(structureType!=null) {
 			getInstance().setStructureType(StructureType.parseStructureType(structureType));
 		}
 
 		// Read container type
-		String containerType = ManifestXmlUtils.normalize(attributes, ATTR_CONTAINER_TYPE);
+		String containerType = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CONTAINER_TYPE);
 		if(containerType!=null) {
 			getInstance().setContainerType(ContainerType.parseContainerType(containerType));
 		}
@@ -118,16 +120,16 @@ public class StructureManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
-		switch (qName) {
-		case TAG_STRUCTURE: {
+		switch (localName) {
+		case ManifestXmlTags.STRUCTURE: {
 			readAttributes(attributes);
 		} break;
 
-		case TAG_STRUCTURE_FLAG: {
+		case ManifestXmlTags.STRUCTURE_FLAG: {
 			// no-op
 		} break;
 
-		case TAG_CONTAINER_FLAG: {
+		case ManifestXmlTags.CONTAINER_FLAG: {
 			// no-op
 		} break;
 
@@ -142,17 +144,17 @@ public class StructureManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
-		switch (qName) {
-		case TAG_STRUCTURE: {
+		switch (localName) {
+		case ManifestXmlTags.STRUCTURE: {
 			return null;
 		}
 
-		case TAG_STRUCTURE_FLAG: {
+		case ManifestXmlTags.STRUCTURE_FLAG: {
 			getInstance().setStructureFlag(StructureFlag.parseStructureFlag(text), true);
 			return this;
 		}
 
-		case TAG_CONTAINER_FLAG: {
+		case ManifestXmlTags.CONTAINER_FLAG: {
 			getInstance().setContainerFlag(ContainerFlag.parseContainerFlag(text), true);
 			return this;
 		}
@@ -164,6 +166,6 @@ public class StructureManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 
 	@Override
 	protected String xmlTag() {
-		return TAG_STRUCTURE;
+		return ManifestXmlTags.STRUCTURE;
 	}
 }

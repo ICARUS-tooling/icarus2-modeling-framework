@@ -411,7 +411,7 @@ public class CharTableBuffer {
 		 */
 		@Override
 		public char charAt(int index) {
-			if(index>index1-index0)
+			if(index<0 || index>index1-index0)
 				throw new IndexOutOfBoundsException();
 
 			return getRow(row).charAt(index0+index);
@@ -549,7 +549,7 @@ public class CharTableBuffer {
 		 */
 		@Override
 		public char charAt(int index) {
-			if(index>=width)
+			if(index<0 || index>=width)
 				throw new IndexOutOfBoundsException();
 
 			return buffer[index];

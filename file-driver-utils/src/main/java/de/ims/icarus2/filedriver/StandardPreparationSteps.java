@@ -17,8 +17,8 @@
  */
 package de.ims.icarus2.filedriver;
 
-import static de.ims.icarus2.util.classes.Primitives._int;
-import static de.ims.icarus2.util.classes.Primitives._long;
+import static de.ims.icarus2.util.lang.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives._long;
 
 import java.io.IOException;
 import java.nio.file.Files;

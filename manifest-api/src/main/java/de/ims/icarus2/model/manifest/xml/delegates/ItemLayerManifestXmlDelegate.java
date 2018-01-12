@@ -26,7 +26,9 @@ import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.standard.ItemLayerManifestImpl;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
@@ -88,11 +90,11 @@ public class ItemLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelega
 		ItemLayerManifest manifest = getInstance();
 
 		if(manifest.isLocalBoundaryLayerManifest()) {
-			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, TAG_BOUNDARY_LAYER, manifest.getBoundaryLayerManifest());
+			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, ManifestXmlTags.BOUNDARY_LAYER, manifest.getBoundaryLayerManifest());
 		}
 
 		if(manifest.isLocalFoundationLayerManifest()) {
-			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, TAG_FOUNDATION_LAYER, manifest.getFoundationLayerManifest());
+			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, ManifestXmlTags.FOUNDATION_LAYER, manifest.getFoundationLayerManifest());
 		}
 
 		if(manifest.hasLocalContainers()) {
@@ -106,22 +108,22 @@ public class ItemLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelega
 	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
-		switch (qName) {
-		case TAG_ITEM_LAYER: {
+		switch (localName) {
+		case ManifestXmlTags.ITEM_LAYER: {
 			readAttributes(attributes);
 		} break;
 
-		case TAG_BOUNDARY_LAYER: {
-			String boundaryLayerId = ManifestXmlUtils.normalize(attributes, ATTR_LAYER_ID);
+		case ManifestXmlTags.BOUNDARY_LAYER: {
+			String boundaryLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID);
 			getInstance().setBoundaryLayerId(boundaryLayerId);
 		} break;
 
-		case TAG_FOUNDATION_LAYER: {
-			String foundationLayerId = ManifestXmlUtils.normalize(attributes, ATTR_LAYER_ID);
+		case ManifestXmlTags.FOUNDATION_LAYER: {
+			String foundationLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID);
 			getInstance().setFoundationLayerId(foundationLayerId);
 		} break;
 
-		case TAG_CONTAINER: {
+		case ManifestXmlTags.CONTAINER: {
 			return getContainerManifestXmlDelegate().reset(getInstance());
 		}
 
@@ -136,16 +138,16 @@ public class ItemLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelega
 	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
-		switch (qName) {
-		case TAG_ITEM_LAYER: {
+		switch (localName) {
+		case ManifestXmlTags.ITEM_LAYER: {
 			return null;
 		}
 
-		case TAG_BOUNDARY_LAYER: {
+		case ManifestXmlTags.BOUNDARY_LAYER: {
 			// no-op
 		} break;
 
-		case TAG_FOUNDATION_LAYER: {
+		case ManifestXmlTags.FOUNDATION_LAYER: {
 			// no-op
 		} break;
 
@@ -163,9 +165,9 @@ public class ItemLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelega
 	public void endNestedHandler(ManifestLocation manifestLocation, String uri,
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
-		switch (qName) {
+		switch (localName) {
 
-		case TAG_CONTAINER: {
+		case ManifestXmlTags.CONTAINER: {
 			getInstance().addContainerManifest(((ContainerManifestXmlDelegate) handler).getInstance(), -1);
 		} break;
 
@@ -180,6 +182,6 @@ public class ItemLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelega
 	 */
 	@Override
 	protected String xmlTag() {
-		return TAG_ITEM_LAYER;
+		return ManifestXmlTags.ITEM_LAYER;
 	}
 }

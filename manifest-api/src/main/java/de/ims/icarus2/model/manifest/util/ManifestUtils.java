@@ -27,6 +27,7 @@ import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestFragment;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
 import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 
 /**
@@ -84,7 +85,8 @@ public class ManifestUtils {
 
 			return prerequisite.toString();
 		} else if (obj instanceof ManifestOwner) {
-			return ((ManifestOwner<?>)obj).getManifest().getName();
+			MemberManifest manifest = ((ManifestOwner<?>)obj).getManifest();
+			return manifest.getName();
 		} else {
 			return obj.toString();
 		}

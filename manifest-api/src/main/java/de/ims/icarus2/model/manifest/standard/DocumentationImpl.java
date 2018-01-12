@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.model.manifest.api.Documentation;
-import de.ims.icarus2.util.classes.ClassUtils;
+import de.ims.icarus2.util.lang.ClassUtils;
 
 /**
  * @author Markus Gärtner

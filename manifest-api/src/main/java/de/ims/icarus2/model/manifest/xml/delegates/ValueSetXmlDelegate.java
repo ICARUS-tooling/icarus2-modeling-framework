@@ -27,6 +27,7 @@ import de.ims.icarus2.model.manifest.api.ValueSet;
 import de.ims.icarus2.model.manifest.standard.ValueSetImpl;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.xml.UnexpectedTagException;
 import de.ims.icarus2.util.xml.UnsupportedNestingException;
@@ -84,7 +85,7 @@ public class ValueSetXmlDelegate extends AbstractXmlDelegate<ValueSet> {
 	 */
 	@Override
 	public void writeXml(XmlSerializer serializer) throws Exception {
-		serializer.startElement(TAG_VALUE_SET);
+		serializer.startElement(ManifestXmlTags.VALUE_SET);
 
 		ValueType type = getInstance().getValueType();
 
@@ -95,29 +96,29 @@ public class ValueSetXmlDelegate extends AbstractXmlDelegate<ValueSet> {
 				getValueManifestXmlDelegate().reset((ValueManifest) value);
 				getValueManifestXmlDelegate().writeXml(serializer);
 			} else {
-				ManifestXmlUtils.writeValueElement(serializer, TAG_VALUE, value, type);
+				ManifestXmlUtils.writeValueElement(serializer, ManifestXmlTags.VALUE, value, type);
 			}
 		}
-		serializer.endElement(TAG_VALUE_SET);
+		serializer.endElement(ManifestXmlTags.VALUE_SET);
 	}
 
 	@Override
 	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
-		switch (qName) {
-		case TAG_VALUE_SET: {
+		switch (localName) {
+		case ManifestXmlTags.VALUE_SET: {
 			// no-op
 		} break;
 
-		case TAG_VALUE : {
+		case ManifestXmlTags.VALUE : {
 			if(attributes.getLength()>0) {
 				return new ValueManifestXmlDelegate(getInstance().getValueType());
 			}
 		} break;
 
 		default:
-			throw new UnexpectedTagException(qName, true, TAG_VALUE_SET);
+			throw new UnexpectedTagException(qName, true, ManifestXmlTags.VALUE_SET);
 		}
 
 		return this;
@@ -127,19 +128,19 @@ public class ValueSetXmlDelegate extends AbstractXmlDelegate<ValueSet> {
 	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
-		switch (qName) {
-		case TAG_VALUE_SET: {
+		switch (localName) {
+		case ManifestXmlTags.VALUE_SET: {
 			return null;
 		}
 
-		case TAG_VALUE : {
+		case ManifestXmlTags.VALUE : {
 			Object value = getInstance().getValueType().parse(text, manifestLocation.getClassLoader());
 
 			getInstance().addValue(value);
 		} break;
 
 		default:
-			throw new UnexpectedTagException(qName, false, TAG_VALUE_SET);
+			throw new UnexpectedTagException(qName, false, ManifestXmlTags.VALUE_SET);
 		}
 
 		return this;
@@ -152,16 +153,16 @@ public class ValueSetXmlDelegate extends AbstractXmlDelegate<ValueSet> {
 	public void endNestedHandler(ManifestLocation manifestLocation, String uri,
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
-		switch (qName) {
+		switch (localName) {
 
-		case TAG_VALUE : {
+		case ManifestXmlTags.VALUE : {
 			Object value = ((ValueManifestXmlDelegate) handler).getInstance();
 
 			getInstance().addValue(value);
 		} break;
 
 		default:
-			throw new UnsupportedNestingException(qName, TAG_VALUE_SET);
+			throw new UnsupportedNestingException(qName, ManifestXmlTags.VALUE_SET);
 		}
 	}
 }

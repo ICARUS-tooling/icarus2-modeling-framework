@@ -81,6 +81,7 @@ import de.ims.icarus2.model.standard.members.container.ProxyContainer;
 import de.ims.icarus2.model.standard.registry.ContextFactory;
 import de.ims.icarus2.model.standard.view.DefaultCorpusView;
 import de.ims.icarus2.model.standard.view.DefaultCorpusView.CorpusViewBuilder;
+import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.AccumulatingException;
@@ -963,7 +964,7 @@ public class DefaultCorpus implements Corpus {
 		 */
 		@Override
 		public String getName() {
-			return getCorpus().getManifest().getName()+" Overlay Layer"; //$NON-NLS-1$
+			return ModelUtils.getName(this)+" Overlay Layer"; //$NON-NLS-1$
 		}
 
 		/**

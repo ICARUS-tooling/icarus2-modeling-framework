@@ -35,9 +35,9 @@ import javax.swing.SwingUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.ims.icarus2.util.classes.ClassUtils;
 import de.ims.icarus2.util.collections.ArrayUtils;
 import de.ims.icarus2.util.collections.BiDiMap;
+import de.ims.icarus2.util.lang.ClassUtils;
 
 /**
  * @author Markus Gärtner

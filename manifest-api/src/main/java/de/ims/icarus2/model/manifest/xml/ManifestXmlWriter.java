@@ -40,7 +40,7 @@ import de.ims.icarus2.util.xml.stream.XmlStreamSerializer;
  * @author Markus Gärtner
  *
  */
-public class ManifestXmlWriter extends ManifestXmlProcessor implements ManifestXmlTags, ManifestXmlAttributes {
+public class ManifestXmlWriter extends ManifestXmlProcessor {
 
 	private final ManifestLocation manifestLocation;
 
@@ -96,7 +96,7 @@ public class ManifestXmlWriter extends ManifestXmlProcessor implements ManifestX
 
 			XmlSerializer serializer = newSerializer(manifestLocation.getOutput());
 
-			String rootTag = manifestLocation.isTemplate() ? TAG_TEMPLATES : TAG_CORPORA;
+			String rootTag = manifestLocation.isTemplate() ? ManifestXmlTags.TEMPLATES : ManifestXmlTags.CORPORA;
 
 			serializer.startDocument();
 			serializer.startElement(rootTag);
@@ -148,7 +148,27 @@ public class ManifestXmlWriter extends ManifestXmlProcessor implements ManifestX
 		}
 	}
 
+	/**
+	 * Defaults to {@link #defaultCreateSerializer(Writer)}.
+	 * Subclasses can override this method to customize the
+	 * actual serializer implementation to be used.
+	 *
+	 * @param out
+	 * @return
+	 * @throws Exception
+	 */
 	protected XmlSerializer newSerializer(Writer out) throws Exception {
+		return defaultCreateSerializer(out);
+	}
+
+	/**
+	 * @see XmlStreamSerializer
+	 *
+	 * @param out
+	 * @return
+	 * @throws Exception
+	 */
+	public static XmlSerializer defaultCreateSerializer(Writer out) throws Exception {
 
 		XMLOutputFactory factory = XMLOutputFactory.newFactory();
 

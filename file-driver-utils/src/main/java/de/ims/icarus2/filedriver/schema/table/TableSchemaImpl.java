@@ -17,7 +17,7 @@
  */
 package de.ims.icarus2.filedriver.schema.table;
 
-import static de.ims.icarus2.util.classes.Primitives._boolean;
+import static de.ims.icarus2.util.lang.Primitives._boolean;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
@@ -31,8 +31,8 @@ import com.google.common.base.Objects;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.manifest.standard.DefaultModifiableIdentity;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
+import de.ims.icarus2.util.lang.ClassUtils;
 import de.ims.icarus2.util.Options;
-import de.ims.icarus2.util.classes.ClassUtils;
 
 /**
  * @author Markus Gärtner

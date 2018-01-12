@@ -26,8 +26,10 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.model.manifest.api.Category;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.Documentation;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
@@ -41,8 +43,9 @@ import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.standard.Links.Link;
 import de.ims.icarus2.util.Multiplicity;
-import de.ims.icarus2.util.classes.ClassUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
+import de.ims.icarus2.util.lang.ClassUtils;
+import it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet;
 
 /**
  * @author Markus Gärtner
@@ -419,13 +422,15 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		moduleManifests.values().forEach(this::lockNested);
 	}
 
-	public static class ModuleSpecImpl extends DefaultModifiableCategory implements ModuleSpec {
+	public static class ModuleSpecImpl extends DefaultModifiableIdentity implements ModuleSpec {
 
 		private final DriverManifest driverManifest;
 		private boolean customizable = DEFAULT_IS_CUSTOMIZABLE;
 		private Multiplicity multiplicity;
 		private String extensionPointUid;
 		private Documentation documentation;
+
+		private final Set<Category> categories = new ObjectOpenCustomHashSet<>(Category.HASH_STRATEGY);
 
 		public ModuleSpecImpl(DriverManifest driverManifest) {
 			requireNonNull(driverManifest);
@@ -557,6 +562,54 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 
 		protected void setExtensionPointUid0(String extensionPointUid) {
 			this.extensionPointUid = extensionPointUid;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.manifest.api.Categorizable#hasCategory(de.ims.icarus2.model.manifest.api.Category)
+		 */
+		@Override
+		public boolean hasCategory(Category category) {
+			return categories.contains(requireNonNull(category));
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.manifest.api.Categorizable#addCategory(de.ims.icarus2.model.manifest.api.Category)
+		 */
+		@Override
+		public boolean addCategory(Category category) {
+			checkNotLocked();
+
+			return addCategory0(category);
+		}
+
+		protected boolean addCategory0(Category category) {
+			requireNonNull(category);
+
+			return categories.add(category);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.manifest.api.Categorizable#removeCategory(de.ims.icarus2.model.manifest.api.Category)
+		 */
+		@Override
+		public boolean removeCategory(Category category) {
+			checkNotLocked();
+
+			return removeCategory0(category);
+		}
+
+		protected boolean removeCategory0(Category category) {
+			requireNonNull(category);
+
+			return categories.remove(category);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.manifest.api.Categorizable#forEachCategory(java.util.function.Consumer)
+		 */
+		@Override
+		public void forEachCategory(Consumer<? super Category> action) {
+			categories.forEach(action);
 		}
 
 	}

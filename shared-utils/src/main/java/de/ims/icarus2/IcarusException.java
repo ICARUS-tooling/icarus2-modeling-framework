@@ -18,8 +18,10 @@
  */
 package de.ims.icarus2;
 
-import static de.ims.icarus2.util.classes.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
+
+import java.util.Objects;
 
 /**
  * General runtime exception that carries with it an error code
@@ -71,11 +73,13 @@ public class IcarusException extends RuntimeException {
 	 */
 	@Override
 	public boolean equals(Object obj) {
-		if(!super.equals(obj)) {
-			return false;
-		}
-		if(obj instanceof IcarusException) {
-			return errorCode==((IcarusException)obj).errorCode;
+		if(obj==this) {
+			return true;
+		} else if(obj instanceof IcarusException) {
+			IcarusException other = (IcarusException) obj;
+			return errorCode==other.errorCode
+					&& Objects.equals(getMessage(), other.getMessage());
+			//TODO we do ignore stack trace here
 		}
 
 		return false;

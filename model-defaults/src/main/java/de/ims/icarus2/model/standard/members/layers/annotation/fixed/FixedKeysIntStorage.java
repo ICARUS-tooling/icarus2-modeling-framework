@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
-import static de.ims.icarus2.util.classes.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives._int;
 
 import java.util.function.Consumer;
 

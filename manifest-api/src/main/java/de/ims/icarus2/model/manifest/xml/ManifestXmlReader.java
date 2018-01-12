@@ -18,6 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.xml;
 
+import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
@@ -37,19 +38,15 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.DefaultHandler;
 
-import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.Manifest;
-import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.standard.AnnotationLayerManifestImpl;
@@ -68,7 +65,11 @@ import de.ims.icarus2.model.manifest.standard.RasterizerManifestImpl;
 import de.ims.icarus2.model.manifest.standard.StructureLayerManifestImpl;
 import de.ims.icarus2.model.manifest.standard.StructureManifestImpl;
 import de.ims.icarus2.model.manifest.xml.delegates.DefaultManifestXmlDelegateFactory;
+import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.id.Identity;
+import de.ims.icarus2.util.lang.Lazy;
+import de.ims.icarus2.util.xml.XmlHandler;
+import de.ims.icarus2.util.xml.XmlUtils;
 
 /**
  * Important constraints:
@@ -95,52 +96,37 @@ import de.ims.icarus2.util.id.Identity;
  * @author Markus Gärtner
  *
  */
-public class ManifestXmlReader extends ManifestXmlProcessor implements ManifestXmlTags, ManifestXmlAttributes {
+public class ManifestXmlReader extends ManifestXmlProcessor {
 
 	private final Set<ManifestLocation> templateSources = new LinkedHashSet<>();
 	private final Set<ManifestLocation> corpusSources = new LinkedHashSet<>();
 	private final AtomicBoolean reading = new AtomicBoolean(false);
 
-	private final ParseState state = new ParseState();
-
 	private final ManifestRegistry registry;
 
-	private volatile static Schema schema;
+	//TODO use the 2 namespace related fields for checks in the reader/root stack!
+	private final String namespaceUri;
+	private final String namespacePrefix;
+
+	private static final Lazy<Schema> schema = XmlUtils.createShareableSchemaSource(
+			ManifestXmlReader.class.getResource("corpus.xsd"));
 
 	public static Schema getDefaultSchema() {
-		Schema result = schema;
-
-		if(result==null) {
-			synchronized (ManifestXmlReader.class) {
-				result = schema;
-				if(result==null) {
-
-					SchemaFactory factory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
-
-					try {
-						schema = factory.newSchema(ManifestXmlReader.class.getResource("corpus.xsd"));
-					} catch (SAXException e) {
-						throw new ManifestException(GlobalErrorCode.UNKNOWN_ERROR, "Failed to load default manifest xml schema", e);
-					}
-
-					schema = result;
-				}
-			}
-		}
-
-		return result;
+		return schema.value();
 	}
 
-	public ManifestXmlReader(ManifestRegistry registry, ManifestXmlDelegateFactory delegateFactory) {
-		super(delegateFactory);
-
-		requireNonNull(registry);
-
-		this.registry = registry;
+	public static Builder newBuilder() {
+		return new Builder();
 	}
 
-	public ManifestXmlReader(ManifestRegistry registry) {
-		this(registry, new DefaultManifestXmlDelegateFactory());
+	private ManifestXmlReader(Builder builder) {
+		super(builder.getDelegateFactory());
+
+		builder.validate();
+
+		this.registry = builder.getRegistry();
+		this.namespacePrefix = builder.getPrefix();
+		this.namespaceUri = builder.getUri();
 	}
 
 	public void addSource(ManifestLocation source) {
@@ -169,7 +155,7 @@ public class ManifestXmlReader extends ManifestXmlProcessor implements ManifestX
 		List<Manifest> manifests = new ArrayList<>();
 		for(ManifestLocation source : sources) {
 			try (Reader in = source.getInput()) {
-				RootHandler handler = new RootHandler(source);
+				RootHandlerProxy handler = new RootHandlerProxy(source, new ManifestCollector());
 
 				reader.setContentHandler(handler);
 				reader.setErrorHandler(handler);
@@ -235,7 +221,6 @@ public class ManifestXmlReader extends ManifestXmlProcessor implements ManifestX
 		}
 	}
 
-	//FIXME change dependency from java.util.logging to the slf4j!!!
 	public void readAndRegisterAll() throws IOException, SAXException {
 
 		if(!reading.compareAndSet(false, true))
@@ -262,14 +247,35 @@ public class ManifestXmlReader extends ManifestXmlProcessor implements ManifestX
 		}
 	}
 
+	/**
+	 * Delegates to {@link #defaultCreateReader()}.
+	 * Subclasses can override this method to customize the
+	 * actual reader implementation.
+	 *
+	 * @return
+	 * @throws SAXException
+	 */
 	protected XMLReader newReader() throws SAXException {
+		return defaultCreateReader(true);
+	}
+
+	/**
+	 * Creates a default {@link XMLReader} that is namespace aware
+	 * and using the {@link #getDefaultSchema() default schema} for
+	 * manifest instances if the {@code validate} parameter is set
+	 * to {@code true}.
+	 *
+	 * @return
+	 * @throws SAXException
+	 */
+	public static XMLReader defaultCreateReader(boolean validate) throws SAXException {
 		SAXParserFactory parserFactory = SAXParserFactory.newInstance();
 
 		parserFactory.setNamespaceAware(true);
 		parserFactory.setValidating(false);
-		parserFactory.setSchema(getDefaultSchema());
-
-		//FIXME
+		if(validate) {
+			parserFactory.setSchema(getDefaultSchema());
+		}
 
 		SAXParser parser = null;
 		try {
@@ -282,7 +288,7 @@ public class ManifestXmlReader extends ManifestXmlProcessor implements ManifestX
 	}
 
 	@SuppressWarnings("unused")
-	protected class ParseState {
+	protected static class ParseState {
 
 		private final Stack<Object> stack = new Stack<>();
 
@@ -331,19 +337,22 @@ public class ManifestXmlReader extends ManifestXmlProcessor implements ManifestX
 		}
 	}
 
-	protected class RootHandler extends DefaultHandler {
+	public static class RootHandlerProxy extends XmlHandler {
 
-		private final StringBuilder buffer = new StringBuilder();
+		private final ManifestXmlHandler root;
 
 		private final Stack<ManifestXmlHandler> handlers = new Stack<>();
+
+		private final ParseState state = new ParseState();
 
 		// List of all top-level handlers. Used to preserve order of appearance
 		private final List<Manifest> topLevelManifests = new ArrayList<>();
 
 		private final ManifestLocation manifestLocation;
 
-		RootHandler(ManifestLocation manifestLocation) {
-			this.manifestLocation = manifestLocation;
+		public RootHandlerProxy(ManifestLocation manifestLocation, ManifestXmlHandler root) {
+			this.manifestLocation = requireNonNull(manifestLocation);
+			this.root = requireNonNull(root);
 		}
 
 		/**
@@ -357,15 +366,6 @@ public class ManifestXmlReader extends ManifestXmlProcessor implements ManifestX
 			}
 
 			return topLevelManifests;
-		}
-
-		/**
-		 * @see org.xml.sax.helpers.DefaultHandler#characters(char[], int, int)
-		 */
-		@Override
-		public void characters(char[] ch, int start, int length)
-				throws SAXException {
-			buffer.append(ch, start, length);
 		}
 
 		private void push(ManifestXmlHandler handler) {
@@ -385,7 +385,7 @@ public class ManifestXmlReader extends ManifestXmlProcessor implements ManifestX
 		@Override
 		public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
 			if(handlers.isEmpty()) {
-				push(new ManifestCollector());
+				push(root);
 			}
 
 			ManifestXmlHandler current = handlers.peek();
@@ -416,7 +416,11 @@ public class ManifestXmlReader extends ManifestXmlProcessor implements ManifestX
 
 				// Root level means we just add the manifests from the collector
 				if(handlers.isEmpty()) {
-					topLevelManifests.addAll(((ManifestCollector)current).getManifests());
+
+					// If we're used as part of the default reading procedure, collect the top-level manifests
+					if(current instanceof ManifestCollector) {
+						topLevelManifests.addAll(((ManifestCollector)current).getManifests());
+					}
 				} else {
 					// Allow ancestor to collect nested entries
 					ManifestXmlHandler ancestor = handlers.peek();
@@ -456,13 +460,6 @@ public class ManifestXmlReader extends ManifestXmlProcessor implements ManifestX
 		public void fatalError(SAXParseException ex) throws SAXException {
 			throw ex;
 		}
-
-		private String getText() {
-			String text = buffer.length()==0 ? null : buffer.toString().trim();
-			buffer.setLength(0);
-
-			return (text==null || text.isEmpty()) ? null : text;
-		}
 	}
 
 	private final static Map<String, Object> templateHandlers = new HashMap<>();
@@ -471,23 +468,23 @@ public class ManifestXmlReader extends ManifestXmlProcessor implements ManifestX
 
 	static {
 		// Live manifests
-		liveHandlers.put(TAG_CORPUS, CorpusManifestImpl.class);
+		liveHandlers.put(ManifestXmlTags.CORPUS, CorpusManifestImpl.class);
 
 		// Templates
-		templateHandlers.put(TAG_ANNOTATION_LAYER, AnnotationLayerManifestImpl.class);
-		templateHandlers.put(TAG_ANNOTATION, AnnotationManifestImpl.class);
-		templateHandlers.put(TAG_CONTAINER, ContainerManifestImpl.class);
-		templateHandlers.put(TAG_CONTEXT, ContextManifestImpl.class);
-		templateHandlers.put(TAG_DRIVER, DriverManifestImpl.class);
-		templateHandlers.put(TAG_MODULE, ModuleManifestImpl.class);
-		templateHandlers.put(TAG_FRAGMENT_LAYER, FragmentLayerManifestImpl.class);
-		templateHandlers.put(TAG_HIGHLIGHT_LAYER, HighlightLayerManifestImpl.class);
-		templateHandlers.put(TAG_ITEM_LAYER, ItemLayerManifestImpl.class);
-		templateHandlers.put(TAG_OPTIONS, OptionsManifestImpl.class);
-		templateHandlers.put(TAG_PATH_RESOLVER, PathResolverManifestImpl.class);
-		templateHandlers.put(TAG_RASTERIZER, RasterizerManifestImpl.class);
-		templateHandlers.put(TAG_STRUCTURE_LAYER, StructureLayerManifestImpl.class);
-		templateHandlers.put(TAG_STRUCTURE, StructureManifestImpl.class);
+		templateHandlers.put(ManifestXmlTags.ANNOTATION_LAYER, AnnotationLayerManifestImpl.class);
+		templateHandlers.put(ManifestXmlTags.ANNOTATION, AnnotationManifestImpl.class);
+		templateHandlers.put(ManifestXmlTags.CONTAINER, ContainerManifestImpl.class);
+		templateHandlers.put(ManifestXmlTags.CONTEXT, ContextManifestImpl.class);
+		templateHandlers.put(ManifestXmlTags.DRIVER, DriverManifestImpl.class);
+		templateHandlers.put(ManifestXmlTags.MODULE, ModuleManifestImpl.class);
+		templateHandlers.put(ManifestXmlTags.FRAGMENT_LAYER, FragmentLayerManifestImpl.class);
+		templateHandlers.put(ManifestXmlTags.HIGHLIGHT_LAYER, HighlightLayerManifestImpl.class);
+		templateHandlers.put(ManifestXmlTags.ITEM_LAYER, ItemLayerManifestImpl.class);
+		templateHandlers.put(ManifestXmlTags.OPTIONS, OptionsManifestImpl.class);
+		templateHandlers.put(ManifestXmlTags.PATH_RESOLVER, PathResolverManifestImpl.class);
+		templateHandlers.put(ManifestXmlTags.RASTERIZER, RasterizerManifestImpl.class);
+		templateHandlers.put(ManifestXmlTags.STRUCTURE_LAYER, StructureLayerManifestImpl.class);
+		templateHandlers.put(ManifestXmlTags.STRUCTURE, StructureManifestImpl.class);
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -502,7 +499,7 @@ public class ManifestXmlReader extends ManifestXmlProcessor implements ManifestX
 			Object current = handlerLut.get(tag);
 
 			if(current==null)
-				throw new SAXException("No manifest for tag: "+tag+" - template context: "+manifestLocation.isTemplate()); //$NON-NLS-1$
+				throw new SAXException("No manifest delegate for tag: "+tag+" - template context: "+manifestLocation.isTemplate()); //$NON-NLS-1$
 
 			Constructor<?> constructor;
 
@@ -541,16 +538,21 @@ public class ManifestXmlReader extends ManifestXmlProcessor implements ManifestX
 				String uri, String localName, String qName,
 				Attributes attributes) throws SAXException {
 
-			switch (qName) {
-			case TAG_CORPORA: {
-				if(manifestLocation.isTemplate())
-					throw new SAXException("Illegal "+TAG_CORPORA+" tag in template manifest source"); //$NON-NLS-1$ //$NON-NLS-2$
+			switch (localName) {
+
+			case ManifestXmlTags.MANIFEST: {
 				return this;
 			}
 
-			case TAG_TEMPLATES: {
+			case ManifestXmlTags.CORPORA: {
+				if(manifestLocation.isTemplate())
+					throw new SAXException("Illegal "+ManifestXmlTags.CORPORA+" tag in template manifest source"); //$NON-NLS-1$ //$NON-NLS-2$
+				return this;
+			}
+
+			case ManifestXmlTags.TEMPLATES: {
 				if(!manifestLocation.isTemplate())
-					throw new SAXException("Illegal "+TAG_TEMPLATES+" tag in live corpus manifest source"); //$NON-NLS-1$ //$NON-NLS-2$
+					throw new SAXException("Illegal "+ManifestXmlTags.TEMPLATES+" tag in live corpus manifest source"); //$NON-NLS-1$ //$NON-NLS-2$
 				return this;
 			}
 
@@ -559,7 +561,7 @@ public class ManifestXmlReader extends ManifestXmlProcessor implements ManifestX
 				break;
 			}
 
-			Manifest manifest = newInstance(qName, manifestLocation);
+			Manifest manifest = newInstance(localName, manifestLocation);
 			@SuppressWarnings("rawtypes")
 			ManifestXmlDelegate delegate = getDelegate(manifest);
 
@@ -573,6 +575,18 @@ public class ManifestXmlReader extends ManifestXmlProcessor implements ManifestX
 		public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
 				String uri, String localName, String qName, String text)
 				throws SAXException {
+
+			switch (localName) {
+
+			case ManifestXmlTags.CORPORA:
+			case ManifestXmlTags.TEMPLATES:
+				return this;
+
+			default:
+				// no-op
+				break;
+			}
+
 			return null;
 		}
 
@@ -592,5 +606,126 @@ public class ManifestXmlReader extends ManifestXmlProcessor implements ManifestX
 		public List<Manifest> getManifests() {
 			return manifests;
 		}
+	}
+
+	/**
+	 *
+	 * @author Markus
+	 *
+	 */
+	public static class Builder extends AbstractBuilder<Builder, ManifestXmlReader> {
+
+		/**
+		 * Registry to store loaded manifest in
+		 */
+		private ManifestRegistry registry;
+
+		/**
+		 * Source for creating new XML delegates dynamically
+		 */
+		private ManifestXmlDelegateFactory delegateFactory;
+
+		/**
+		 * Namespace URI
+		 */
+		private String uri;
+
+		/**
+		 * Expected prefix for the manifest files
+		 */
+		private String prefix;
+
+		private Builder() {
+			// no-op
+		}
+
+		public ManifestRegistry getRegistry() {
+			return registry;
+		}
+
+		public ManifestXmlDelegateFactory getDelegateFactory() {
+			return delegateFactory;
+		}
+
+		public String getUri() {
+			return uri;
+		}
+
+		public String getPrefix() {
+			return prefix;
+		}
+
+		public Builder registry(ManifestRegistry registry) {
+			requireNonNull(registry);
+			checkState("Registry already set", this.registry==null);
+
+			this.registry = registry;
+
+			return thisAsCast();
+		}
+
+		public Builder delegateFactory(ManifestXmlDelegateFactory delegateFactory ) {
+			requireNonNull(delegateFactory);
+			checkState("Delegate factory already set", this.delegateFactory==null);
+
+			this.delegateFactory = delegateFactory;
+
+			return thisAsCast();
+		}
+
+		public Builder namespacePrefix(String namespacePrefix) {
+			requireNonNull(namespacePrefix);
+			checkState("Registry already set", this.prefix==null);
+
+			this.prefix = namespacePrefix;
+
+			return thisAsCast();
+		}
+
+		public Builder namespaceUri(String namespaceUri) {
+			requireNonNull(namespaceUri);
+			checkState("Namespace URI already set", this.uri==null);
+
+			this.uri = namespaceUri;
+
+			return thisAsCast();
+		}
+
+		/**
+		 * Configures the reader to use {@link ManifestXmlUtils#MANIFEST_NS_PREFIX}
+		 * as {@link #namespacePrefix(String) namespace prefix} and
+		 * {@link ManifestXmlUtils#MANIFEST_NAMESPACE_URI} as
+		 * {@link #namespaceUri(String) namespace URI}, as well as
+		 * setting a new instance of {@link DefaultManifestXmlDelegateFactory}
+		 * as the {@link #delegateFactory(ManifestXmlDelegateFactory) delegate factory}.
+		 *
+		 * @return
+		 *
+		 * @see DefaultManifestXmlDelegateFactory
+		 * @see ManifestXmlUtils#MANIFEST_NAMESPACE_URI
+		 * @see ManifestXmlUtils#MANIFEST_NS_PREFIX
+		 */
+		public Builder useImplementationDefaults() {
+			return delegateFactory(new DefaultManifestXmlDelegateFactory())
+					.namespacePrefix(ManifestXmlUtils.MANIFEST_NS_PREFIX)
+					.namespaceUri(ManifestXmlUtils.MANIFEST_NAMESPACE_URI);
+		}
+
+		@Override
+		protected void validate() {
+			super.validate();
+
+			checkState("Missing registry", registry!=null);
+			checkState("Missing delegate factory", delegateFactory!=null);
+			checkState("Missing namespace uri", uri!=null);
+			checkState("Missing namespace prefix", prefix!=null);
+		}
+
+		@Override
+		protected ManifestXmlReader create() {
+			validate();
+			return new ManifestXmlReader(this);
+		}
+
 	}
 }

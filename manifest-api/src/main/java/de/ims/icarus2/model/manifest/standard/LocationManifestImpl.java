@@ -33,7 +33,7 @@ import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.PathResolverManifest;
-import de.ims.icarus2.util.classes.ClassUtils;
+import de.ims.icarus2.util.lang.ClassUtils;
 
 /**
  * @author Markus Gärtner

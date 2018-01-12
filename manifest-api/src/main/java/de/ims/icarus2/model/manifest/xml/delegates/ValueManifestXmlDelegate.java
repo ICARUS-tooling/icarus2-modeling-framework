@@ -28,7 +28,9 @@ import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ValueManifest;
 import de.ims.icarus2.model.manifest.standard.ValueManifestImpl;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.xml.UnexpectedTagException;
 import de.ims.icarus2.util.xml.UnsupportedNestingException;
@@ -69,14 +71,13 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 
 		boolean isSimple = type.isSimpleType();
 
-		serializer.startElement(TAG_VALUE);
+		serializer.startElement(ManifestXmlTags.VALUE);
 
 		//ATTRIBUTES
-		serializer.writeAttribute(ATTR_NAME, manifest.getName());
-		serializer.writeAttribute(ATTR_DESCRIPTION, manifest.getDescription());
+		ManifestXmlUtils.writeIdentityAttributes(serializer, manifest);
 
 		if(isSimple) {
-			serializer.writeAttribute(ATTR_CONTENT, type.toChars(value).toString());
+			serializer.writeAttribute(ManifestXmlAttributes.CONTENT, type.toChars(value).toString());
 		}
 
 		// CONTENT
@@ -91,29 +92,25 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 
 		if(!isSimple) {
 			if(documentation!=null) {
-				serializer.startElement(TAG_CONTENT);
+				serializer.startElement(ManifestXmlTags.CONTENT);
 			}
 
 			serializer.writeTextOrCData(type.toChars(value));
 
 			if(documentation!=null) {
-				serializer.endElement(TAG_CONTENT);
+				serializer.endElement(ManifestXmlTags.CONTENT);
 			}
 		}
 
-		serializer.endElement(TAG_VALUE);
+		serializer.endElement(ManifestXmlTags.VALUE);
 	}
 
 	protected void readAttributes(Attributes attributes, ManifestLocation manifestLocation) {
 		ValueManifest manifest = getInstance();
 
-		// Name must be specified
-		manifest.setName(ManifestXmlUtils.normalize(attributes, ATTR_NAME));
+		ManifestXmlUtils.readIdentityAttributes(attributes, manifest);
 
-		// Description is optional
-		manifest.setDescription(ManifestXmlUtils.normalize(attributes, ATTR_DESCRIPTION));
-
-		String content = ManifestXmlUtils.normalize(attributes, ATTR_CONTENT);
+		String content = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CONTENT);
 		if(content!=null) {
 			if(!manifest.getValueType().isSimpleType())
 				throw new ManifestException(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE,
@@ -126,23 +123,29 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
-		switch (qName) {
-		case TAG_VALUE: {
+		switch (localName) {
+
+		case ManifestXmlTags.NAME:
+		case ManifestXmlTags.DESCRIPTION:
+		case ManifestXmlTags.ICON:
+			break;
+
+		case ManifestXmlTags.VALUE: {
 			readAttributes(attributes, manifestLocation);
 		} break;
 
-		case TAG_DOCUMENTATION: {
+		case ManifestXmlTags.DOCUMENTATION: {
 			return new DocumentationXmlDelegate();
 		}
 
-		case TAG_CONTENT: {
+		case ManifestXmlTags.CONTENT: {
 			if(getInstance().getValue()!=null)
-				throw new UnexpectedTagException(qName, true, TAG_VALUE);
+				throw new UnexpectedTagException(qName, true, ManifestXmlTags.VALUE);
 			return this;
 		}
 
 		default:
-			throw new UnexpectedTagException(qName, true, TAG_VALUE);
+			throw new UnexpectedTagException(qName, true, ManifestXmlTags.VALUE);
 		}
 
 		return this;
@@ -155,8 +158,24 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 
 		ValueManifest manifest = getInstance();
 
-		switch (qName) {
-		case TAG_VALUE: {
+		switch (localName) {
+
+		case ManifestXmlTags.NAME: {
+			getInstance().setName(text);
+			return this;
+		}
+
+		case ManifestXmlTags.DESCRIPTION: {
+			getInstance().setDescription(text);
+			return this;
+		}
+
+		case ManifestXmlTags.ICON: {
+			getInstance().setIcon(ManifestXmlUtils.iconValue(text, true));
+			return this;
+		}
+
+		case ManifestXmlTags.VALUE: {
 			if(manifest.getDocumentation()==null && text!=null && !text.isEmpty()) {
 				manifest.setValue(manifest.getValueType().parse(text, manifestLocation.getClassLoader()));
 			}
@@ -164,16 +183,16 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 			return null;
 		}
 
-		case TAG_CONTENT: {
+		case ManifestXmlTags.CONTENT: {
 			if(manifest.getValue()!=null)
-				throw new UnexpectedTagException(qName, false, TAG_VALUE);
+				throw new UnexpectedTagException(qName, false, ManifestXmlTags.VALUE);
 
 			manifest.setValue(manifest.getValueType().parse(text, manifestLocation.getClassLoader()));
 			return this;
 		}
 
 		default:
-			throw new UnexpectedTagException(qName, false, TAG_VALUE);
+			throw new UnexpectedTagException(qName, false, ManifestXmlTags.VALUE);
 		}
 	}
 
@@ -184,14 +203,14 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 	public void endNestedHandler(ManifestLocation manifestLocation, String uri,
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
-		switch (qName) {
+		switch (localName) {
 
-		case TAG_DOCUMENTATION: {
+		case ManifestXmlTags.DOCUMENTATION: {
 			getInstance().setDocumentation(((DocumentationXmlDelegate) handler).getInstance());
 		} break;
 
 		default:
-			throw new UnsupportedNestingException(qName, TAG_VALUE);
+			throw new UnsupportedNestingException(qName, ManifestXmlTags.VALUE);
 		}
 	}
 

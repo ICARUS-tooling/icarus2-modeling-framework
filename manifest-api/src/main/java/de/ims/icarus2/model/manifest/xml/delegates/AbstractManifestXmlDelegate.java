@@ -25,7 +25,9 @@ import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.VersionManifest;
 import de.ims.icarus2.model.manifest.standard.VersionManifestImpl;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.xml.UnexpectedTagException;
 import de.ims.icarus2.util.xml.UnsupportedNestingException;
@@ -51,10 +53,10 @@ public abstract class AbstractManifestXmlDelegate<M extends Manifest> extends Ab
 //		if(id==null && isTemplate())
 //			throw new ModelException(ModelError.MANIFEST_INVALID_ID, "Id of "+createDummyId()+" is null");
 
-		serializer.writeAttribute(ATTR_ID, getInstance().getId());
+		serializer.writeAttribute(ManifestXmlAttributes.ID, getInstance().getId());
 
 		if(getInstance().hasTemplate()) {
-			serializer.writeAttribute(ATTR_TEMPLATE_ID, getInstance().getTemplate().getId());
+			serializer.writeAttribute(ManifestXmlAttributes.TEMPLATE_ID, getInstance().getTemplate().getId());
 		}
 	}
 
@@ -75,12 +77,12 @@ public abstract class AbstractManifestXmlDelegate<M extends Manifest> extends Ab
 
 
 	protected void readAttributes(Attributes attributes) {
-		String id = ManifestXmlUtils.normalize(attributes, ATTR_ID);
+		String id = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.ID);
 		if(id!=null) {
 			getInstance().setId(id);
 		}
 
-		String templateId = ManifestXmlUtils.normalize(attributes, ATTR_TEMPLATE_ID);
+		String templateId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.TEMPLATE_ID);
 		if(templateId!=null) {
 			getInstance().setTemplateId(templateId);
 		}
@@ -94,10 +96,10 @@ public abstract class AbstractManifestXmlDelegate<M extends Manifest> extends Ab
 			String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
 
-		if(qName.equals(xmlTag())) {
+		if(localName.equals(xmlTag())) {
 			readAttributes(attributes);
 			return this;
-		} else if(qName.equals(TAG_VERSION)) {
+		} else if(localName.equals(ManifestXmlTags.VERSION)) {
 			return new VersionManifestXmlDelegate(new VersionManifestImpl());
 		} else
 			throw new UnexpectedTagException(qName, true, xmlTag());
@@ -111,7 +113,7 @@ public abstract class AbstractManifestXmlDelegate<M extends Manifest> extends Ab
 			String uri, String localName, String qName, String text)
 			throws SAXException {
 
-		if(qName.equals(xmlTag())) {
+		if(localName.equals(xmlTag())) {
 			return null;
 		} else
 			throw new UnexpectedTagException(qName, false, xmlTag());
@@ -124,7 +126,7 @@ public abstract class AbstractManifestXmlDelegate<M extends Manifest> extends Ab
 	public void endNestedHandler(ManifestLocation manifestLocation, String uri,
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
-		if(qName.equals(TAG_VERSION)) {
+		if(qName.equals(ManifestXmlTags.VERSION)) {
 			getInstance().setVersionManifest(((VersionManifestXmlDelegate) handler).getInstance());
 		} else
 			throw new UnsupportedNestingException(qName, xmlTag());

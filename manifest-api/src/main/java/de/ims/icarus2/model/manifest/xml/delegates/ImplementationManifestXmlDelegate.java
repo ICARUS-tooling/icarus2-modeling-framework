@@ -24,6 +24,8 @@ import org.xml.sax.Attributes;
 
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest.SourceType;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
@@ -44,19 +46,19 @@ public class ImplementationManifestXmlDelegate extends AbstractMemberManifestXml
 		ImplementationManifest manifest = getInstance();
 
 		// Write source
-		serializer.writeAttribute(ATTR_SOURCE, manifest.getSource());
+		serializer.writeAttribute(ManifestXmlAttributes.SOURCE, manifest.getSource());
 
 		// Write classname
-		serializer.writeAttribute(ATTR_CLASSNAME, manifest.getClassname());
+		serializer.writeAttribute(ManifestXmlAttributes.CLASSNAME, manifest.getClassname());
 
 		// Write source type
 		SourceType sourceType = manifest.getSourceType();
 		if(sourceType!=null && sourceType!=SourceType.DEFAULT) {
-			serializer.writeAttribute(ATTR_SOURCE_TYPE, sourceType.getStringValue());
+			serializer.writeAttribute(ManifestXmlAttributes.SOURCE_TYPE, sourceType.getStringValue());
 		}
 
 		// Write flags
-		writeFlag(serializer, ATTR_FACTORY, manifest.isUseFactory(), ImplementationManifest.DEFAULT_USE_FACTORY_VALUE);
+		writeFlag(serializer, ManifestXmlAttributes.FACTORY, manifest.isUseFactory(), ImplementationManifest.DEFAULT_USE_FACTORY_VALUE);
 	}
 
 	/**
@@ -68,22 +70,22 @@ public class ImplementationManifestXmlDelegate extends AbstractMemberManifestXml
 
 		ImplementationManifest manifest = getInstance();
 
-		String source = ManifestXmlUtils.normalize(attributes, ATTR_SOURCE);
+		String source = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.SOURCE);
 		if(source!=null) {
 			manifest.setSource(source);
 		}
 
-		String classname = ManifestXmlUtils.normalize(attributes, ATTR_CLASSNAME);
+		String classname = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CLASSNAME);
 		if(classname!=null) {
 			manifest.setClassname(classname);
 		}
 
-		String type = ManifestXmlUtils.normalize(attributes, ATTR_SOURCE_TYPE);
+		String type = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.SOURCE_TYPE);
 		if(type!=null) {
 			manifest.setSourceType(SourceType.parseSourceType(type));
 		}
 
-		String useFactory = ManifestXmlUtils.normalize(attributes, ATTR_FACTORY);
+		String useFactory = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.FACTORY);
 		if(useFactory!=null) {
 			manifest.setUseFactory(Boolean.parseBoolean(useFactory));
 		}
@@ -94,6 +96,6 @@ public class ImplementationManifestXmlDelegate extends AbstractMemberManifestXml
 	 */
 	@Override
 	protected String xmlTag() {
-		return TAG_IMPLEMENTATION;
+		return ManifestXmlTags.IMPLEMENTATION;
 	}
 }

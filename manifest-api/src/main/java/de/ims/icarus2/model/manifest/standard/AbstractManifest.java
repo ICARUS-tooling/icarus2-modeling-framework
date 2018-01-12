@@ -29,7 +29,7 @@ import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.VersionManifest;
 import de.ims.icarus2.model.manifest.standard.Links.Link;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
-import de.ims.icarus2.util.classes.ClassUtils;
+import de.ims.icarus2.util.lang.ClassUtils;
 
 
 
@@ -165,15 +165,7 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 	 */
 	@Override
 	public final String getId() {
-		//FIXME do we really want to inherit id?
-		String result = id;
-//		if(result==null && hasTemplate()) {
-//			result = getTemplate().getId();
-//		}
-//		if(result==null) {
-//			result = createDummyId();
-//		}
-		return result;
+		return id;
 	}
 
 	/**
@@ -218,7 +210,8 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 	protected void setId0(String id) {
 		requireNonNull(id);
 		if(!ManifestUtils.isValidId(id))
-			throw new IllegalArgumentException("Id format not supported: "+id); //$NON-NLS-1$
+			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
+					"Id format not supported: "+id); //$NON-NLS-1$
 
 		this.id = id;
 	}

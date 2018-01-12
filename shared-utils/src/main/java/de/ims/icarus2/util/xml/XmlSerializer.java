@@ -32,6 +32,14 @@ public interface XmlSerializer {
 	 */
 	void startDocument() throws Exception;
 
+	default void startElement(String name, boolean empty) throws Exception {
+		if(empty) {
+			startEmptyElement(name);
+		} else {
+			startElement(name);
+		}
+	}
+
 	/**
 	 * Starts a new element using the given {@code name} as tag.
 	 * Note that this method will assume a non-empty element to be created
@@ -82,33 +90,8 @@ public interface XmlSerializer {
 	 */
 	void endElement(String name) throws Exception;
 
-	public static boolean isReservedSymbol(char c) {
-		switch(c) {
-
-			case '<':
-			case '>':
-			case '&':
-			case '"':
-			case '\'':
-				return true;
-
-			default:
-				return false;
-		}
-	}
-
 	default void writeTextOrCData(CharSequence text) throws Exception {
-		int len = text.length();
-
-		boolean hasReservedSymbols = false;
-		for(int i=0; i<len; i++) {
-			if(isReservedSymbol(text.charAt(i))) {
-				hasReservedSymbols = true;
-				break;
-			}
-		}
-
-		if(hasReservedSymbols) {
+		if(XmlUtils.hasReservedXMLSymbols(text)) {
 			writeCData(text);
 		} else {
 			writeText(text);

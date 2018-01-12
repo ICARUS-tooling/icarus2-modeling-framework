@@ -23,11 +23,13 @@ import static java.util.Objects.requireNonNull;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import javax.swing.Icon;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.manifest.api.Category;
 import de.ims.icarus2.model.manifest.api.Documentation;
 import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestException;
@@ -38,8 +40,9 @@ import de.ims.icarus2.model.manifest.api.OptionsManifest;
 import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.Messages;
-import de.ims.icarus2.util.classes.ClassUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
+import de.ims.icarus2.util.lang.ClassUtils;
+import it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet;
 
 /**
  *
@@ -51,9 +54,10 @@ import de.ims.icarus2.util.collections.CollectionUtils;
 public abstract class AbstractMemberManifest<M extends MemberManifest> extends AbstractManifest<M> implements MemberManifest {
 
 	private String name;
-	private String namespace;
 	private String description;
 	private Icon icon;
+
+	private final Set<Category> categories = new ObjectOpenCustomHashSet<>(Category.HASH_STRATEGY);
 
 	private final Map<String, Property> properties = new HashMap<>();
 	private OptionsManifest optionsManifest;
@@ -281,52 +285,62 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	}
 
 	/**
-	 * @return the name
+	 * @see de.ims.icarus2.model.manifest.api.Categorizable#hasCategory(de.ims.icarus2.model.manifest.api.Category)
 	 */
+	@Override
+	public boolean hasCategory(Category category) {
+		return categories.contains(requireNonNull(category));
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.Categorizable#addCategory(de.ims.icarus2.model.manifest.api.Category)
+	 */
+	@Override
+	public boolean addCategory(Category category) {
+		checkNotLocked();
+
+		return addCategory0(category);
+	}
+
+	protected boolean addCategory0(Category category) {
+		requireNonNull(category);
+
+		return categories.add(category);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.Categorizable#removeCategory(de.ims.icarus2.model.manifest.api.Category)
+	 */
+	@Override
+	public boolean removeCategory(Category category) {
+		checkNotLocked();
+
+		return removeCategory0(category);
+	}
+
+	protected boolean removeCategory0(Category category) {
+		requireNonNull(category);
+
+		return categories.remove(category);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.Categorizable#forEachCategory(java.util.function.Consumer)
+	 */
+	@Override
+	public void forEachCategory(Consumer<? super Category> action) {
+		categories.forEach(action);
+	}
+
 	@Override
 	public String getName() {
-		String result = name;
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getName();
+		String name = this.name;
+		if(name==null && hasTemplate()) {
+			name = getTemplate().getName();
 		}
-		return result;
+		return name;
 	}
 
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.Category#getNamespace()
-	 */
-	@Override
-	public String getNamespace() {
-		return namespace;
-	}
-
-	/**
-	 * @return the description
-	 */
-	@Override
-	public String getDescription() {
-		String result = description;
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getDescription();
-		}
-		return result;
-	}
-
-	/**
-	 * @return the icon
-	 */
-	@Override
-	public Icon getIcon() {
-		Icon result = icon;
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getIcon();
-		}
-		return result;
-	}
-
-	/**
-	 * @param name the name to set
-	 */
 	@Override
 	public void setName(String name) {
 		checkNotLocked();
@@ -335,30 +349,18 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	}
 
 	protected void setName0(String name) {
-		requireNonNull(name);
-
-		this.name = name;
+		this.name = requireNonNull(name);
 	}
 
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.ModifiableCategory#setNamespace(java.lang.String)
-	 */
 	@Override
-	public void setNamespace(String namespace) {
-		checkNotLocked();
-
-		setNamespace0(namespace);
+	public String getDescription() {
+		String description = this.description;
+		if(description==null && hasTemplate()) {
+			description = getTemplate().getDescription();
+		}
+		return description;
 	}
 
-	protected void setNamespace0(String namespace) {
-		requireNonNull(namespace);
-
-		this.namespace = namespace;
-	}
-
-	/**
-	 * @param description the description to set
-	 */
 	@Override
 	public void setDescription(String description) {
 		checkNotLocked();
@@ -367,14 +369,18 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	}
 
 	protected void setDescription0(String description) {
-		requireNonNull(description);
-
-		this.description = description;
+		this.name = requireNonNull(description);
 	}
 
-	/**
-	 * @param icon the icon to set
-	 */
+	@Override
+	public Icon getIcon() {
+		Icon icon = this.icon;
+		if(icon==null && hasTemplate()) {
+			icon = getTemplate().getIcon();
+		}
+		return icon;
+	}
+
 	@Override
 	public void setIcon(Icon icon) {
 		checkNotLocked();
@@ -383,17 +389,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	}
 
 	protected void setIcon0(Icon icon) {
-		requireNonNull(icon);
-
-		this.icon = icon;
-	}
-
-	/**
-	 * @see de.ims.icarus2.util.id.Identity#getOwner()
-	 */
-	@Override
-	public Object getOwner() {
-		return this;
+		this.icon = requireNonNull(icon);
 	}
 
 	@Override

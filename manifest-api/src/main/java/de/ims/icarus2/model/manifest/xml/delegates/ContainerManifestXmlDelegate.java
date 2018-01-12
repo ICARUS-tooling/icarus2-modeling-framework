@@ -27,7 +27,9 @@ import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.standard.ContainerManifestImpl;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
@@ -64,7 +66,7 @@ public class ContainerManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 
 		// Write container type
 		if(manifest.isLocalContainerType()) {
-			serializer.writeAttribute(ATTR_CONTAINER_TYPE, manifest.getContainerType().getStringValue());
+			serializer.writeAttribute(ManifestXmlAttributes.CONTAINER_TYPE, manifest.getContainerType().getStringValue());
 		}
 	}
 
@@ -73,9 +75,9 @@ public class ContainerManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 		super.writeElements(serializer);
 
 		for(ContainerFlag flag : getInstance().getActiveLocalContainerFlags()) {
-			serializer.startElement(TAG_CONTAINER_FLAG);
+			serializer.startElement(ManifestXmlTags.CONTAINER_FLAG);
 			serializer.writeText(flag.getStringValue());
-			serializer.endElement(TAG_CONTAINER_FLAG);
+			serializer.endElement(ManifestXmlTags.CONTAINER_FLAG);
 		}
 	}
 
@@ -84,7 +86,7 @@ public class ContainerManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 		super.readAttributes(attributes);
 
 		// Read container type
-		String containerType = ManifestXmlUtils.normalize(attributes, ATTR_CONTAINER_TYPE);
+		String containerType = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CONTAINER_TYPE);
 		if(containerType!=null) {
 			getInstance().setContainerType(ContainerType.parseContainerType(containerType));
 		}
@@ -94,12 +96,12 @@ public class ContainerManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
-		switch (qName) {
-		case TAG_CONTAINER: {
+		switch (localName) {
+		case ManifestXmlTags.CONTAINER: {
 			readAttributes(attributes);
 		} break;
 
-		case TAG_CONTAINER_FLAG: {
+		case ManifestXmlTags.CONTAINER_FLAG: {
 			// no-op
 		} break;
 
@@ -114,12 +116,12 @@ public class ContainerManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
-		switch (qName) {
-		case TAG_CONTAINER: {
+		switch (localName) {
+		case ManifestXmlTags.CONTAINER: {
 			return null;
 		}
 
-		case TAG_CONTAINER_FLAG: {
+		case ManifestXmlTags.CONTAINER_FLAG: {
 			getInstance().setContainerFlag(ContainerFlag.parseContainerFlag(text), true);
 			return this;
 		}
@@ -131,6 +133,6 @@ public class ContainerManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 
 	@Override
 	protected String xmlTag() {
-		return TAG_CONTAINER;
+		return ManifestXmlTags.CONTAINER;
 	}
 }

@@ -26,7 +26,9 @@ import de.ims.icarus2.model.manifest.api.ValueRange;
 import de.ims.icarus2.model.manifest.standard.ExpressionXmlHandler;
 import de.ims.icarus2.model.manifest.standard.ValueRangeImpl;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.eval.ExpressionFactory;
 import de.ims.icarus2.util.eval.spi.ExpressionFactoryProvider;
@@ -75,33 +77,33 @@ public class ValueRangeXmlDelegate extends AbstractXmlDelegate<ValueRange> {
 		ValueRange range = getInstance();
 		ValueType type = range.getValueType();
 
-		serializer.startElement(TAG_VALUE_RANGE);
+		serializer.startElement(ManifestXmlTags.VALUE_RANGE);
 
 		// ATTRIBUTES
 		if(range.isLowerBoundInclusive()!=ValueRange.DEFAULT_LOWER_INCLUSIVE_VALUE) {
-			serializer.writeAttribute(ATTR_INCLUDE_MIN, range.isLowerBoundInclusive());
+			serializer.writeAttribute(ManifestXmlAttributes.INCLUDE_MIN, range.isLowerBoundInclusive());
 		}
 		if(range.isUpperBoundInclusive()!=ValueRange.DEFAULT_UPPER_INCLUSIVE_VALUE) {
-			serializer.writeAttribute(ATTR_INCLUDE_MAX, range.isUpperBoundInclusive());
+			serializer.writeAttribute(ManifestXmlAttributes.INCLUDE_MAX, range.isUpperBoundInclusive());
 		}
 
 		// ELEMENTS
 
-		ManifestXmlUtils.writeValueElement(serializer, TAG_MIN, range.getLowerBound(), type);
-		ManifestXmlUtils.writeValueElement(serializer, TAG_MAX, range.getUpperBound(), type);
-		ManifestXmlUtils.writeValueElement(serializer, TAG_STEP_SIZE, range.getStepSize(), type);
-		serializer.endElement(TAG_VALUE_RANGE);
+		ManifestXmlUtils.writeValueElement(serializer, ManifestXmlTags.MIN, range.getLowerBound(), type);
+		ManifestXmlUtils.writeValueElement(serializer, ManifestXmlTags.MAX, range.getUpperBound(), type);
+		ManifestXmlUtils.writeValueElement(serializer, ManifestXmlTags.STEP_SIZE, range.getStepSize(), type);
+		serializer.endElement(ManifestXmlTags.VALUE_RANGE);
 	}
 
 	/**
 	 * @param attributes
 	 */
 	protected void readAttributes(Attributes attributes) {
-		String lowerIncluded = ManifestXmlUtils.normalize(attributes, ATTR_INCLUDE_MIN);
+		String lowerIncluded = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.INCLUDE_MIN);
 		if(lowerIncluded!=null) {
 			getInstance().setLowerBoundInclusive(Boolean.parseBoolean(lowerIncluded));
 		}
-		String upperIncluded = ManifestXmlUtils.normalize(attributes, ATTR_INCLUDE_MAX);
+		String upperIncluded = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.INCLUDE_MAX);
 		if(upperIncluded!=null) {
 			getInstance().setUpperBoundInclusive(Boolean.parseBoolean(upperIncluded));
 		}
@@ -111,25 +113,25 @@ public class ValueRangeXmlDelegate extends AbstractXmlDelegate<ValueRange> {
 	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
-		switch (qName) {
-		case TAG_VALUE_RANGE: {
+		switch (localName) {
+		case ManifestXmlTags.VALUE_RANGE: {
 			readAttributes(attributes);
 		} break;
 
-		case TAG_MIN : {
+		case ManifestXmlTags.MIN : {
 			currentField = MIN_FIELD;
 		} break;
 
-		case TAG_MAX : {
+		case ManifestXmlTags.MAX : {
 			currentField = MAX_FIELD;
 		} break;
 
-		case TAG_STEP_SIZE : {
+		case ManifestXmlTags.STEP_SIZE : {
 			currentField = STEP_SIZE_FIELD;
 		} break;
 
-		case TAG_EVAL : {
-			String type = ManifestXmlUtils.normalize(attributes, ATTR_TYPE);
+		case ManifestXmlTags.EVAL : {
+			String type = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.TYPE);
 			if(type==null) {
 				type = ExpressionFactoryProvider.GENERIC_JAVA_TYPE;
 			}
@@ -145,7 +147,7 @@ public class ValueRangeXmlDelegate extends AbstractXmlDelegate<ValueRange> {
 		}
 
 		default:
-			throw new UnexpectedTagException(qName, true, TAG_VALUE_RANGE);
+			throw new UnexpectedTagException(qName, true, ManifestXmlTags.VALUE_RANGE);
 		}
 
 		return this;
@@ -158,31 +160,31 @@ public class ValueRangeXmlDelegate extends AbstractXmlDelegate<ValueRange> {
 		ValueRange range = getInstance();
 		ValueType valueType = range.getValueType();
 
-		switch (qName) {
-		case TAG_VALUE_RANGE: {
+		switch (localName) {
+		case ManifestXmlTags.VALUE_RANGE: {
 			return null;
 		}
 
-		case TAG_MIN : {
+		case ManifestXmlTags.MIN : {
 			if(text!=null && range.getLowerBound()==null) {
 				range.setLowerBound(valueType.parse(text, manifestLocation.getClassLoader()));
 			}
 		} break;
 
-		case TAG_MAX : {
+		case ManifestXmlTags.MAX : {
 			if(text!=null && range.getUpperBound()==null) {
 				range.setUpperBound(valueType.parse(text, manifestLocation.getClassLoader()));
 			}
 		} break;
 
-		case TAG_STEP_SIZE : {
+		case ManifestXmlTags.STEP_SIZE : {
 			if(text!=null && range.getStepSize()==null) {
 				range.setStepSize(valueType.parse(text, manifestLocation.getClassLoader()));
 			}
 		} break;
 
 		default:
-			throw new UnexpectedTagException(qName, false, TAG_VALUE_RANGE);
+			throw new UnexpectedTagException(qName, false, ManifestXmlTags.VALUE_RANGE);
 		}
 
 		return this;
@@ -195,9 +197,9 @@ public class ValueRangeXmlDelegate extends AbstractXmlDelegate<ValueRange> {
 	public void endNestedHandler(ManifestLocation manifestLocation, String uri,
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
-		switch (qName) {
+		switch (localName) {
 
-		case TAG_EVAL : {
+		case ManifestXmlTags.EVAL : {
 			switch (currentField) {
 			case MIN_FIELD:
 				getInstance().setLowerBound(((ExpressionXmlHandler) handler).createExpression());
@@ -219,7 +221,7 @@ public class ValueRangeXmlDelegate extends AbstractXmlDelegate<ValueRange> {
 		} break;
 
 		default:
-			throw new UnsupportedNestingException(qName, TAG_VALUE_RANGE);
+			throw new UnsupportedNestingException(qName, ManifestXmlTags.VALUE_RANGE);
 		}
 	}
 }

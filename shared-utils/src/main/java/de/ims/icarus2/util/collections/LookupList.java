@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Link;
 import de.ims.icarus2.util.mem.Primitive;
+import it.unimi.dsi.fastutil.Hash.Strategy;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
@@ -56,7 +57,7 @@ public class LookupList<E extends Object> implements Iterable<E> {
      * Lookup table to map from items to their respective index in the list
      */
     @Link
-	private Object2IntMap<Object> lookup;
+	private Object2IntMap<E> lookup;
     /**
      * Modification counter for detection of concurrent modifications during iterator traversal
      */
@@ -453,7 +454,23 @@ public class LookupList<E extends Object> implements Iterable<E> {
         }
     }
 
-    private boolean checkRequiresLookup() {
+    /**
+     * Creates the {@link Object2IntMap} to be used for lookup
+     * purposes.
+     *
+     * Subclasses can override this method if they need to
+     * add a custom {@link Strategy hash strategy} or perform
+     * other special customizations.
+     *
+     * @param capacity
+     * @return
+     */
+    protected Object2IntMap<E> createLookup(int capacity) {
+    	return new Object2IntOpenHashMap<>(size);
+    }
+
+    @SuppressWarnings("unchecked")
+	private boolean checkRequiresLookup() {
 
     	boolean requires = size>=MIN_LOOKUP_SIZE;
 
@@ -461,12 +478,12 @@ public class LookupList<E extends Object> implements Iterable<E> {
 
     		if(lookup==null) {
 	    		// Create and fill lookup
-	    		lookup = new Object2IntOpenHashMap<>(size);
+	    		lookup = createLookup(size);
     		}
 
             if(dirtyIndex!=-1 && dirtyIndex<size) {
             	for(int i=dirtyIndex; i<size; i++) {
-            		lookup.put(items[i], i);
+            		lookup.put((E)items[i], i);
             	}
             	dirtyIndex = -1;
             }

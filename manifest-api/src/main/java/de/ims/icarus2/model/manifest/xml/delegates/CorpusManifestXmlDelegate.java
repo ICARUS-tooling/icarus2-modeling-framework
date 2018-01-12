@@ -30,7 +30,9 @@ import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest.Note;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.standard.CorpusManifestImpl.NoteImpl;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.date.DateUtils;
 import de.ims.icarus2.util.xml.XmlSerializer;
@@ -76,12 +78,12 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 
 		// Write editable flag
 		if(manifest.isEditable()!=CorpusManifest.DEFAULT_EDITABLE_VALUE) {
-			serializer.writeAttribute(ATTR_EDITABLE, manifest.isEditable());
+			serializer.writeAttribute(ManifestXmlAttributes.EDITABLE, manifest.isEditable());
 		}
 
 		// Write parallel flag
 		if(manifest.isParallel()!=CorpusManifest.DEFAULT_PARALLEL_VALUE) {
-			serializer.writeAttribute(ATTR_EDITABLE, manifest.isParallel());
+			serializer.writeAttribute(ManifestXmlAttributes.EDITABLE, manifest.isParallel());
 		}
 	}
 
@@ -97,14 +99,14 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 		// Write notes
 		List<Note> notes = manifest.getNotes();
 		if(!notes.isEmpty()) {
-			serializer.startElement(TAG_NOTES);
+			serializer.startElement(ManifestXmlTags.NOTES);
 			for(Iterator<Note> it = notes.iterator(); it.hasNext();) {
 				ManifestXmlUtils.writeNoteElement(serializer, it.next());
 				if(it.hasNext()) {
 					serializer.writeLineBreak();
 				}
 			}
-			serializer.endElement(TAG_NOTES);
+			serializer.endElement(ManifestXmlTags.NOTES);
 		}
 
 		// Write contained root context manifests
@@ -137,12 +139,12 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 
 		CorpusManifest manifest = getInstance();
 
-		String editable = ManifestXmlUtils.normalize(attributes, ATTR_EDITABLE);
+		String editable = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.EDITABLE);
 		if(editable!=null) {
 			manifest.setEditable(Boolean.parseBoolean(editable));
 		}
 
-		String parallel = ManifestXmlUtils.normalize(attributes, ATTR_PARALLEL);
+		String parallel = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.PARALLEL);
 		if(parallel!=null) {
 			manifest.setParallel(Boolean.parseBoolean(parallel));
 		}
@@ -152,27 +154,27 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
-		switch (qName) {
-		case TAG_CORPUS: {
+		switch (localName) {
+		case ManifestXmlTags.CORPUS: {
 			readAttributes(attributes);
 		} break;
 
-		case TAG_ROOT_CONTEXT: {
+		case ManifestXmlTags.ROOT_CONTEXT: {
 			return getContextManifestXmlDelegate().reset(getInstance()).root(true);
 		}
 
-		case TAG_CONTEXT: {
+		case ManifestXmlTags.CONTEXT: {
 			return getContextManifestXmlDelegate().reset(getInstance()).root(false);
 		}
 
-		case TAG_NOTES: {
+		case ManifestXmlTags.NOTES: {
 			// no-op
 		} break;
 
-		case TAG_NOTE: {
-			String name = ManifestXmlUtils.normalize(attributes, ATTR_NAME);
+		case ManifestXmlTags.NOTE: {
+			String name = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.NAME);
 			note = new NoteImpl(name);
-			String date = ManifestXmlUtils.normalize(attributes, ATTR_DATE);
+			String date = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.DATE);
 			try {
 				note.setModificationDate(DateUtils.parseDate(date));
 			} catch (ParseException e) {
@@ -191,15 +193,15 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
-		switch (qName) {
-		case TAG_CORPUS: {
+		switch (localName) {
+		case ManifestXmlTags.CORPUS: {
 			return null;
 		}
 
-		case TAG_NOTES: {
+		case ManifestXmlTags.NOTES: {
 			return this;
 		}
-		case TAG_NOTE: {
+		case ManifestXmlTags.NOTE: {
 			note.changeContent(text);
 
 			return this;
@@ -217,13 +219,13 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 	public void endNestedHandler(ManifestLocation manifestLocation, String uri,
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
-		switch (qName) {
+		switch (localName) {
 
-		case TAG_ROOT_CONTEXT: {
+		case ManifestXmlTags.ROOT_CONTEXT: {
 			getInstance().addRootContextManifest(((ContextManifestXmlDelegate) handler).getInstance());
 		} break;
 
-		case TAG_CONTEXT: {
+		case ManifestXmlTags.CONTEXT: {
 			getInstance().addCustomContextManifest(((ContextManifestXmlDelegate) handler).getInstance());
 		} break;
 
@@ -238,6 +240,6 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 	 */
 	@Override
 	protected String xmlTag() {
-		return TAG_CORPUS;
+		return ManifestXmlTags.CORPUS;
 	}
 }

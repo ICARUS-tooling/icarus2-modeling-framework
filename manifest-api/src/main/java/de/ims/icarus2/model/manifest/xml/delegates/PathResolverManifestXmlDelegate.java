@@ -21,6 +21,7 @@ package de.ims.icarus2.model.manifest.xml.delegates;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.PathResolverManifest;
 import de.ims.icarus2.model.manifest.standard.PathResolverManifestImpl;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 
 /**
  * @author Markus Gärtner
@@ -52,6 +53,6 @@ public class PathResolverManifestXmlDelegate extends AbstractForeignImplementati
 	 */
 	@Override
 	protected String xmlTag() {
-		return TAG_PATH_RESOLVER;
+		return ManifestXmlTags.PATH_RESOLVER;
 	}
 }

@@ -18,12 +18,15 @@
  */
 package de.ims.icarus2.util.version.common;
 
-import static de.ims.icarus2.util.classes.Primitives._char;
-import static de.ims.icarus2.util.classes.Primitives._int;
+import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.lang.Primitives._char;
+import static de.ims.icarus2.util.lang.Primitives._int;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
 import java.util.StringTokenizer;
 
+import de.ims.icarus2.util.strings.StringPrimitives;
 import de.ims.icarus2.util.version.Version;
 import de.ims.icarus2.util.version.VersionFormat;
 
@@ -71,7 +74,10 @@ public class MajorMinorReleaseVersionFormat implements VersionFormat {
 	 * @see de.ims.icarus2.util.version.VersionFormat#parseVersion(java.lang.String)
 	 */
 	@Override
-	public Version parseVersion(String versionString) {
+	public MajorMinorReleaseVersion parseVersion(String versionString) {
+		requireNonNull(versionString);
+    	checkArgument("Version string must not be empty", !versionString.isEmpty());
+
         int major = 0;
         int minor = 0;
         int release = 0;
@@ -87,9 +93,21 @@ public class MajorMinorReleaseVersionFormat implements VersionFormat {
         	if(field==Field.INFO) {
         		info += token;
         	} else {
-        		try {
-        			// Try parsing token as number field
-        			int numericValue = Integer.parseInt(token);
+
+        		int lastChar = token.length()-1;
+
+        		// Scan till end of digit sequence
+        		int lastDigit = -1;
+        		for(int i=0; i<token.length(); i++) {
+        			if(!Character.isDigit(token.charAt(i))) {
+        				break;
+        			}
+
+        			lastDigit++;
+        		}
+
+        		if(lastDigit>-1) {
+        			int numericValue = StringPrimitives.parseInt(token, 0, lastDigit);
 
         			switch (field) {
 					case MAJOR: major = numericValue; break;
@@ -102,10 +120,12 @@ public class MajorMinorReleaseVersionFormat implements VersionFormat {
 
         			// Step through fields in proper order
         			field = field.next();
-        		} catch(NumberFormatException e) {
-        			// As soon as a token is not a number anymore we'll have to treat the remaining parts as info
+        		}
+
+        		if(lastDigit<lastChar) {
+        			// As soon as a token contains more than digits we'll have to treat the remaining parts as info
         			field = Field.INFO;
-        			info = token;
+        			info = token.substring(lastDigit+1);
         		}
         	}
         }

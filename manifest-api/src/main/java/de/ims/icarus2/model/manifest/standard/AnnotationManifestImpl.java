@@ -32,8 +32,8 @@ import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.ValueRange;
 import de.ims.icarus2.model.manifest.api.ValueSet;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.util.classes.ClassUtils;
 import de.ims.icarus2.util.data.ContentType;
+import de.ims.icarus2.util.lang.ClassUtils;
 
 /**
  * FIXME missing value type when parsing might break the implementation (maybe use lazy value parsing?)

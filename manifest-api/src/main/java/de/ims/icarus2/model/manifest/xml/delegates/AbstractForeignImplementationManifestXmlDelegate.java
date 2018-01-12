@@ -25,6 +25,7 @@ import de.ims.icarus2.model.manifest.api.ForeignImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.standard.ImplementationManifestImpl;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
 /**
@@ -65,8 +66,8 @@ public abstract class AbstractForeignImplementationManifestXmlDelegate<M extends
 	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
-		switch (qName) {
-		case TAG_IMPLEMENTATION: {
+		switch (localName) {
+		case ManifestXmlTags.IMPLEMENTATION: {
 			return getImplementationManifestXmlDelegate().reset(new ImplementationManifestImpl(getInstance()));
 		}
 
@@ -82,8 +83,8 @@ public abstract class AbstractForeignImplementationManifestXmlDelegate<M extends
 	public void endNestedHandler(ManifestLocation manifestLocation, String uri,
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
-		switch (qName) {
-		case TAG_IMPLEMENTATION: {
+		switch (localName) {
+		case ManifestXmlTags.IMPLEMENTATION: {
 			getInstance().setImplementationManifest(((ImplementationManifestXmlDelegate) handler).getInstance());
 		} break;
 

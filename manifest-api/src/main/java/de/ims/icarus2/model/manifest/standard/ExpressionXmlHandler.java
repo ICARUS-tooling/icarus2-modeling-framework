@@ -39,7 +39,7 @@ import de.ims.icarus2.util.xml.UnsupportedNestingException;
  * @author Markus Gärtner
  *
  */
-public class ExpressionXmlHandler implements ManifestXmlHandler, ManifestXmlAttributes, ManifestXmlTags {
+public class ExpressionXmlHandler implements ManifestXmlHandler {
 
 	private final ExpressionFactory factory;
 
@@ -57,18 +57,18 @@ public class ExpressionXmlHandler implements ManifestXmlHandler, ManifestXmlAttr
 			String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
 		switch (qName) {
-		case TAG_EVAL: {
+		case ManifestXmlTags.EVAL: {
 			// no-op
 		} break;
 
-		case TAG_CODE: {
+		case ManifestXmlTags.CODE: {
 			// no-op
 		} break;
 
-		case TAG_VARIABLE: {
-			String name = ManifestXmlUtils.normalize(attributes, ATTR_NAME);
-			String classname = ManifestXmlUtils.normalize(attributes, ATTR_CLASS);
-			String pluginId = ManifestXmlUtils.normalize(attributes, ATTR_PLUGIN_ID);
+		case ManifestXmlTags.VARIABLE: {
+			String name = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.NAME);
+			String classname = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CLASS);
+			String pluginId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.PLUGIN_ID);
 
 			ClassLoader classLoader = getClass().getClassLoader();
 
@@ -89,7 +89,7 @@ public class ExpressionXmlHandler implements ManifestXmlHandler, ManifestXmlAttr
 		} break;
 
 		default:
-			throw new UnexpectedTagException(qName, true, TAG_EVAL);
+			throw new UnexpectedTagException(qName, true, ManifestXmlTags.EVAL);
 		}
 
 		return this;
@@ -103,20 +103,20 @@ public class ExpressionXmlHandler implements ManifestXmlHandler, ManifestXmlAttr
 			String uri, String localName, String qName, String text)
 			throws SAXException {
 		switch (qName) {
-		case TAG_EVAL: {
+		case ManifestXmlTags.EVAL: {
 			return null;
 		}
 
-		case TAG_CODE: {
+		case ManifestXmlTags.CODE: {
 			factory.setCode(text);
 		} break;
 
-		case TAG_VARIABLE: {
+		case ManifestXmlTags.VARIABLE: {
 			// no-op
 		} break;
 
 		default:
-			throw new UnexpectedTagException(qName, false, TAG_EVAL);
+			throw new UnexpectedTagException(qName, false, ManifestXmlTags.EVAL);
 		}
 
 		return this;
@@ -129,7 +129,7 @@ public class ExpressionXmlHandler implements ManifestXmlHandler, ManifestXmlAttr
 	public void endNestedHandler(ManifestLocation manifestLocation, String uri,
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
-		throw new UnsupportedNestingException(qName, TAG_EVAL);
+		throw new UnsupportedNestingException(qName, ManifestXmlTags.EVAL);
 	}
 
 	public Expression createExpression() {

@@ -19,8 +19,8 @@ package de.ims.icarus2.filedriver.schema.table;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
-import static de.ims.icarus2.util.classes.Primitives._int;
-import static de.ims.icarus2.util.classes.Primitives._long;
+import static de.ims.icarus2.util.lang.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives._long;
 import static de.ims.icarus2.util.strings.StringUtil.getName;
 import static java.util.Objects.requireNonNull;
 
@@ -70,7 +70,7 @@ import de.ims.icarus2.filedriver.schema.resolve.BatchResolver;
 import de.ims.icarus2.filedriver.schema.resolve.Resolver;
 import de.ims.icarus2.filedriver.schema.resolve.ResolverContext;
 import de.ims.icarus2.filedriver.schema.resolve.ResolverFactory;
-import de.ims.icarus2.filedriver.schema.resolve.standard.BasicAnnotationResolver;
+import de.ims.icarus2.filedriver.schema.resolve.common.BasicAnnotationResolver;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeTarget;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema;

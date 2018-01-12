@@ -18,11 +18,11 @@
  */
 package de.ims.icarus2.model.manifest.types;
 
-import static de.ims.icarus2.util.classes.Primitives._boolean;
-import static de.ims.icarus2.util.classes.Primitives._double;
-import static de.ims.icarus2.util.classes.Primitives._float;
-import static de.ims.icarus2.util.classes.Primitives._int;
-import static de.ims.icarus2.util.classes.Primitives._long;
+import static de.ims.icarus2.util.lang.Primitives._boolean;
+import static de.ims.icarus2.util.lang.Primitives._double;
+import static de.ims.icarus2.util.lang.Primitives._float;
+import static de.ims.icarus2.util.lang.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives._long;
 
 import java.lang.reflect.Array;
 import java.net.MalformedURLException;
@@ -44,11 +44,11 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.Messages;
-import de.ims.icarus2.util.IconWrapper;
-import de.ims.icarus2.util.classes.Primitives;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.eval.Expression;
+import de.ims.icarus2.util.icon.IconWrapper;
+import de.ims.icarus2.util.lang.Primitives;
 import de.ims.icarus2.util.nio.ByteArrayChannel;
 import de.ims.icarus2.util.nio.ByteChannelCharacterSequence;
 import de.ims.icarus2.util.strings.NamedObject;

@@ -44,7 +44,7 @@ import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.Options;
-import de.ims.icarus2.util.classes.ClassUtils;
+import de.ims.icarus2.util.lang.ClassUtils;
 
 /**
  *

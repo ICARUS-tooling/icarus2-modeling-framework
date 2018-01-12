@@ -20,7 +20,8 @@ package de.ims.icarus2.util.strings;
 /**
  * @author Markus Gärtner
  *
- */public interface Describable extends Nameable {
+ */
+public interface Describable extends Nameable {
 
 	String getDescription();
 

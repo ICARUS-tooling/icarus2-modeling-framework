@@ -31,11 +31,9 @@ import de.ims.icarus2.model.manifest.types.ValueType;
  * @author Markus Gärtner
  *
  */
-public class ValueManifestImpl extends AbstractLockable implements ValueManifest {
+public class ValueManifestImpl extends DefaultModifiableIdentity implements ValueManifest {
 
 	private Object value;
-	private String name;
-	private String description;
 	private Documentation documentation;
 	private final ValueType valueType;
 
@@ -71,22 +69,6 @@ public class ValueManifestImpl extends AbstractLockable implements ValueManifest
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.ValueManifest#getName()
-	 */
-	@Override
-	public String getName() {
-		return name;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.ValueManifest#getDescription()
-	 */
-	@Override
-	public String getDescription() {
-		return description;
-	}
-
-	/**
 	 * @return the documentation
 	 */
 	@Override
@@ -111,6 +93,7 @@ public class ValueManifestImpl extends AbstractLockable implements ValueManifest
 	/**
 	 * @param value the value to set
 	 */
+	@Override
 	public void setValue(Object value) {
 		checkNotLocked();
 
@@ -121,38 +104,6 @@ public class ValueManifestImpl extends AbstractLockable implements ValueManifest
 		requireNonNull(value);
 
 		this.value = value;
-	}
-
-	/**
-	 * @param name the name to set
-	 */
-	public void setName(String name) {
-		checkNotLocked();
-
-		setName0(name);
-	}
-
-	protected void setName0(String name) {
-		requireNonNull(name);
-
-		this.name = name;
-	}
-
-	/**
-	 * @param description the description to set
-	 */
-	public void setDescription(String description) {
-		checkNotLocked();
-
-		setDescription0(description);
-	}
-
-	protected void setDescription0(String description) {
-		//FIXME really allow null for description?
-//		if (description == null)
-//			throw new NullPointerException("Invalid description");  //$NON-NLS-1$
-
-		this.description = description;
 	}
 
 }

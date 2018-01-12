@@ -29,6 +29,7 @@ import javax.xml.stream.XMLStreamWriter;
 
 import de.ims.icarus2.util.strings.StringResource;
 import de.ims.icarus2.util.xml.XmlSerializer;
+import de.ims.icarus2.util.xml.XmlUtils;
 
 /**
  * @author Markus Gärtner
@@ -101,6 +102,7 @@ public class XmlStreamSerializer implements XmlSerializer {
 		startElement(name, true);
 	}
 
+	@Override
 	public void startElement(String name, boolean empty) throws XMLStreamException {
 		checkState("Cannot nest elements until current one is closed", !noNesting);
 
@@ -233,17 +235,7 @@ public class XmlStreamSerializer implements XmlSerializer {
 
 	@Override
 	public void writeTextOrCData(CharSequence text) throws XMLStreamException {
-		int len = text.length();
-
-		boolean hasReservedSymbols = false;
-		for(int i=0; i<len; i++) {
-			if(XmlSerializer.isReservedSymbol(text.charAt(i))) {
-				hasReservedSymbols = true;
-				break;
-			}
-		}
-
-		if(hasReservedSymbols) {
+		if(XmlUtils.hasReservedXMLSymbols(text)) {
 			writeCData(text);
 		} else {
 			writeText(text);
@@ -269,10 +261,6 @@ public class XmlStreamSerializer implements XmlSerializer {
 	@Override
 	public void startDocument() throws XMLStreamException {
 		writer.writeStartDocument();
-
-		//FIXME enable DOCTYPE section once schema file is reworked!
-//		writeLineBreak();
-//		writer.writeDTD("<!DOCTYPE model SYSTEM \"corpus.dtd\">"); //$NON-NLS-1$
 	}
 
 	/**

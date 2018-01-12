@@ -17,7 +17,7 @@
  */
 package de.ims.icarus2.filedriver.analysis;
 
-import static de.ims.icarus2.util.classes.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.strings.StringUtil.getName;
 import static java.util.Objects.requireNonNull;
 

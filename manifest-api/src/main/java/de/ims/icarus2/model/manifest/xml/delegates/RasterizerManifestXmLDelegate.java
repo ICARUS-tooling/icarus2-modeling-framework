@@ -21,6 +21,7 @@ package de.ims.icarus2.model.manifest.xml.delegates;
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 import de.ims.icarus2.model.manifest.api.RasterizerManifest;
 import de.ims.icarus2.model.manifest.standard.RasterizerManifestImpl;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 
 /**
  * @author Markus Gärtner
@@ -53,6 +54,6 @@ public class RasterizerManifestXmLDelegate extends AbstractForeignImplementation
 	 */
 	@Override
 	protected String xmlTag() {
-		return TAG_RASTERIZER;
+		return ManifestXmlTags.RASTERIZER;
 	}
 }

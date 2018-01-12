@@ -18,7 +18,7 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
-import static de.ims.icarus2.util.classes.Primitives._boolean;
+import static de.ims.icarus2.util.lang.Primitives._boolean;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;

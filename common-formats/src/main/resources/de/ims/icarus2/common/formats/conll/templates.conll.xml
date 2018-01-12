@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<imf:manifest  xmlns:imf="http://www.ims.uni-stuttgart.de/icarus/xml/manifest"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.ims.uni-stuttgart.de/icarus/xml/manifest corpus.xsd">
+	
+	<imf:templates>
+	
+		<imf:context id="common.format.conll09" independent="true" foundationLayer="token" primaryLayer="sentence">
+			<imf:version>1.0</imf:version>
+			<imf:documentation>
+				<imf:content>Format for data used in the CoNLL-2009 Shared Task: Syntactic and Semantic Dependencies in Multiple Languages</imf:content>
+				<imf:resource name="Task website with description" id="url">https://ufal.mff.cuni.cz/conll2009-st/task-description.html</imf:resource>
+			</imf:documentation>
+			
+			<imf:layerGroup name="Sentence Group" primaryLayer="common.layer.token" id="sentenceGroup">
+				<imf:itemLayer id="token" layerType="common.layer.token" />
+				<imf:itemLayer id="sentence" layerType="common.layer.sentence">
+					<imf:baseLayer layerId="tokens"/>
+					<imf:foundationLayer layerId="tokens"/>
+					<imf:container containerType="span" />
+				</imf:itemLayer>
+				<imf:annotationLayer id="form" layerType="common.layer.form">
+					<imf:baseLayer layerId="token"/>
+					<imf:annotation key="form" valueType="string" />
+				</imf:annotationLayer>
+				<imf:structureLayer id="predictedDependency" layerType="common.layer.dependencySyntax">
+					<imf:baseLayer layerId="token"/>
+					<imf:boundaryLayer layerId="sentence"/>
+					<imf:foundationLayer layerId="token"/>
+					<imf:structure containerType="span" structureType="tree" />
+				</imf:structureLayer>
+				<imf:structureLayer id="goldDependency" layerType="common.layer.dependencySyntax">
+					<imf:baseLayer layerId="token"/>
+					<imf:boundaryLayer layerId="sentence"/>
+					<imf:foundationLayer layerId="token"/>
+					<imf:structure containerType="span" structureType="tree" />
+				</imf:structureLayer>
+				<imf:annotationLayer id="goldPos" layerType="common.layer.pos">
+					<imf:baseLayer layerId="token"/>
+					<imf:annotation key="pos" templateId="common.tags.stts" />
+				</imf:annotationLayer>
+				<imf:annotationLayer id="predictedPos" layerType="common.layer.pos">
+					<imf:baseLayer layerId="token"/>
+					<imf:annotation key="ppos" templateId="common.tags.stts" />
+				</imf:annotationLayer>
+				<imf:annotationLayer id="goldLemma" layerType="common.layer.lemma">
+					<imf:baseLayer layerId="token"/>
+					<imf:annotation key="lemma" valueType="string" />
+				</imf:annotationLayer>
+				<imf:annotationLayer id="predictedLemma" layerType="common.layer.lemma">
+					<imf:baseLayer layerId="token"/>
+					<imf:annotation key="plemma" valueType="string" />
+				</imf:annotationLayer>
+				<imf:annotationLayer id="goldFeatures" layerType="common.layer.morph">
+					<imf:baseLayer layerId="token"/>
+					<imf:annotation key="feat" valueType="string" />
+				</imf:annotationLayer>
+				<imf:annotationLayer id="predictedFeatures" layerType="common.layer.morph">
+					<imf:baseLayer layerId="token"/>
+					<imf:annotation key="pfeat" valueType="string" />
+				</imf:annotationLayer>
+				<imf:annotationLayer id="goldDependencyRelation" layerType="common.layer.dependencyRelation">
+					<imf:baseLayer layerId="goldDependency"/>
+					<imf:annotationFlag>edge-annotation</imf:annotationFlag>
+					<imf:annotation key="deprel" valueType="string" />
+				</imf:annotationLayer>
+				<imf:annotationLayer id="predictedDependencyRelation" layerType="common.layer.dependencyRelation">
+					<imf:baseLayer layerId="predictedDependency"/>
+					<imf:annotationFlag>edge-annotation</imf:annotationFlag>
+					<imf:annotation key="deprel" valueType="string" />
+				</imf:annotationLayer>
+			</imf:layerGroup>
+			
+			<imf:driver>
+				<imf:implementation classname="de.ims.icarus2.common.formats.conll.drivers.CoNLL2009FileDriver" />
+			</imf:driver>
+		</imf:context>
+	</imf:templates>
+</imf:manifest>

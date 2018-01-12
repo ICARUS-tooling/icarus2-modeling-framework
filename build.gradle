@@ -33,6 +33,7 @@ subprojects {
 	    implementation 'com.google.guava:guava:18.0'
 	    implementation 'it.unimi.dsi:fastutil:7.0.13'
 	    implementation 'com.squareup:javapoet:1.7.0'
+	    implementation 'org.opengis.cite.xerces:xercesImpl-xsd11:2.12-beta-r1667115'
 	    
         testImplementation 'junit:junit:4.12'
 	    testImplementation 'org.mockito:mockito-core:1.9.5'

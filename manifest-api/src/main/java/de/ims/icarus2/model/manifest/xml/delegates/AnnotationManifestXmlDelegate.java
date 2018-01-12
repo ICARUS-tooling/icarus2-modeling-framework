@@ -26,7 +26,9 @@ import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.standard.AnnotationManifestImpl;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.data.ContentTypeRegistry;
 import de.ims.icarus2.util.xml.XmlSerializer;
@@ -103,21 +105,21 @@ public class AnnotationManifestXmlDelegate extends AbstractMemberManifestXmlDele
 
 		// Write key
 		if(manifest.isLocalKey()) {
-			serializer.writeAttribute(ATTR_KEY, manifest.getKey());
+			serializer.writeAttribute(ManifestXmlAttributes.KEY, manifest.getKey());
 		}
 
 		// Write value type
 		//TODO for now we ALWAYS serialize the (possibly) inherited type
 //		if(manifest.isLocalValueType()) {
-			serializer.writeAttribute(ATTR_VALUE_TYPE, ManifestXmlUtils.getSerializedForm(manifest.getValueType()));
+			serializer.writeAttribute(ManifestXmlAttributes.VALUE_TYPE, ManifestXmlUtils.getSerializedForm(manifest.getValueType()));
 //		}
 
 		if(manifest.isLocalContentType()) {
-			serializer.writeAttribute(ATTR_CONTENT_TYPE, manifest.getContentType().getId());
+			serializer.writeAttribute(ManifestXmlAttributes.CONTENT_TYPE, manifest.getContentType().getId());
 		}
 
 		if(manifest.isAllowUnknownValues()!=AnnotationManifest.DEFAULT_ALLOW_UNKNOWN_VALUES) {
-			serializer.writeAttribute(ATTR_ALLOW_UNKNOWN_VALUES, manifest.isAllowUnknownValues());
+			serializer.writeAttribute(ManifestXmlAttributes.ALLOW_UNKNOWN_VALUES, manifest.isAllowUnknownValues());
 		}
 	}
 
@@ -130,7 +132,7 @@ public class AnnotationManifestXmlDelegate extends AbstractMemberManifestXmlDele
 
 		AnnotationManifest manifest = getInstance();
 
-		String key = ManifestXmlUtils.normalize(attributes, ATTR_KEY);
+		String key = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.KEY);
 		if(key!=null) {
 			manifest.setKey(key);
 		}
@@ -140,12 +142,12 @@ public class AnnotationManifestXmlDelegate extends AbstractMemberManifestXmlDele
 			manifest.setValueType(valueType);
 		}
 
-		String contentTypeId = ManifestXmlUtils.normalize(attributes, ATTR_CONTENT_TYPE);
+		String contentTypeId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CONTENT_TYPE);
 		if(contentTypeId!=null) {
 			manifest.setContentType(ContentTypeRegistry.getInstance().getType(contentTypeId));
 		}
 
-		String allowUnknownValues = ManifestXmlUtils.normalize(attributes, ATTR_ALLOW_UNKNOWN_VALUES);
+		String allowUnknownValues = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.ALLOW_UNKNOWN_VALUES);
 		if(allowUnknownValues!=null) {
 			manifest.setAllowUnknownValues(Boolean.parseBoolean(allowUnknownValues));
 		}
@@ -180,24 +182,24 @@ public class AnnotationManifestXmlDelegate extends AbstractMemberManifestXmlDele
 	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
-		switch (qName) {
-		case TAG_ANNOTATION: {
+		switch (localName) {
+		case ManifestXmlTags.ANNOTATION: {
 			readAttributes(attributes);
 		} break;
 
-		case TAG_ALIAS: {
-			getInstance().addAlias(ManifestXmlUtils.normalize(attributes, ATTR_NAME));
+		case ManifestXmlTags.ALIAS: {
+			getInstance().addAlias(ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.NAME));
 		} break;
 
-		case TAG_NO_ENTRY_VALUE: {
+		case ManifestXmlTags.NO_ENTRY_VALUE: {
 			// no-op
 		} break;
 
-		case TAG_VALUE_SET: {
+		case ManifestXmlTags.VALUE_SET: {
 			return getValueSetXmlDelegate().reset(getInstance().getValueType());
 		}
 
-		case TAG_VALUE_RANGE: {
+		case ManifestXmlTags.VALUE_RANGE: {
 			return getValueRangeXmlDelegate().reset(getInstance().getValueType());
 		}
 
@@ -212,16 +214,16 @@ public class AnnotationManifestXmlDelegate extends AbstractMemberManifestXmlDele
 	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
-		switch (qName) {
-		case TAG_ANNOTATION: {
+		switch (localName) {
+		case ManifestXmlTags.ANNOTATION: {
 			return null;
 		}
 
-		case TAG_ALIAS: {
+		case ManifestXmlTags.ALIAS: {
 			// no-op
 		} break;
 
-		case TAG_NO_ENTRY_VALUE: {
+		case ManifestXmlTags.NO_ENTRY_VALUE: {
 			getInstance().setNoEntryValue(getInstance().getValueType().parse(text, manifestLocation.getClassLoader()));
 		} break;
 
@@ -240,12 +242,12 @@ public class AnnotationManifestXmlDelegate extends AbstractMemberManifestXmlDele
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
 
-		switch (qName) {
-		case TAG_VALUE_SET: {
+		switch (localName) {
+		case ManifestXmlTags.VALUE_SET: {
 			getInstance().setValueSet(((ValueSetXmlDelegate) handler).getInstance());
 		} break;
 
-		case TAG_VALUE_RANGE: {
+		case ManifestXmlTags.VALUE_RANGE: {
 			getInstance().setValueRange(((ValueRangeXmlDelegate) handler).getInstance());
 		} break;
 
@@ -260,6 +262,6 @@ public class AnnotationManifestXmlDelegate extends AbstractMemberManifestXmlDele
 	 */
 	@Override
 	protected String xmlTag() {
-		return TAG_ANNOTATION;
+		return ManifestXmlTags.ANNOTATION;
 	}
 }

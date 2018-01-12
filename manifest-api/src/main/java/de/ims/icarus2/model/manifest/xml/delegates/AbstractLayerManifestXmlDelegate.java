@@ -24,7 +24,9 @@ import org.xml.sax.SAXException;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
@@ -46,7 +48,7 @@ public abstract class AbstractLayerManifestXmlDelegate<L extends LayerManifest> 
 
 		// Write layer type
 		if(manifest.isLocalLayerType()) {
-			serializer.writeAttribute(ATTR_LAYER_TYPE, manifest.getLayerType().getId());
+			serializer.writeAttribute(ManifestXmlAttributes.LAYER_TYPE, manifest.getLayerType().getId());
 		}
 	}
 
@@ -59,7 +61,7 @@ public abstract class AbstractLayerManifestXmlDelegate<L extends LayerManifest> 
 
 		// Write base layers
 		for(TargetLayerManifest layerManifest : getInstance().getLocalBaseLayerManifests()) {
-			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, TAG_BASE_LAYER, layerManifest);
+			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, ManifestXmlTags.BASE_LAYER, layerManifest);
 		}
 	}
 
@@ -70,7 +72,7 @@ public abstract class AbstractLayerManifestXmlDelegate<L extends LayerManifest> 
 	protected void readAttributes(Attributes attributes) {
 		super.readAttributes(attributes);
 
-		String layerTypeId = ManifestXmlUtils.normalize(attributes, ATTR_LAYER_TYPE);
+		String layerTypeId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_TYPE);
 		if(layerTypeId!=null) {
 			getInstance().setLayerTypeId(layerTypeId);
 		}
@@ -83,9 +85,9 @@ public abstract class AbstractLayerManifestXmlDelegate<L extends LayerManifest> 
 	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
-		switch (qName) {
-		case TAG_BASE_LAYER: {
-			String baseLayerId = ManifestXmlUtils.normalize(attributes, ATTR_LAYER_ID);
+		switch (localName) {
+		case ManifestXmlTags.BASE_LAYER: {
+			String baseLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID);
 			getInstance().addBaseLayerId(baseLayerId);
 		} break;
 
@@ -103,8 +105,8 @@ public abstract class AbstractLayerManifestXmlDelegate<L extends LayerManifest> 
 	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 			throws SAXException {
-		switch (qName) {
-		case TAG_BASE_LAYER: {
+		switch (localName) {
+		case ManifestXmlTags.BASE_LAYER: {
 			// no-op
 		} break;
 

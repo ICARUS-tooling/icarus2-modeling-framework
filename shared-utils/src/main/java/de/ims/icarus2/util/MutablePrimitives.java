@@ -3,13 +3,13 @@
  */
 package de.ims.icarus2.util;
 
-import static de.ims.icarus2.util.classes.Primitives._boolean;
-import static de.ims.icarus2.util.classes.Primitives._byte;
-import static de.ims.icarus2.util.classes.Primitives._double;
-import static de.ims.icarus2.util.classes.Primitives._float;
-import static de.ims.icarus2.util.classes.Primitives._int;
-import static de.ims.icarus2.util.classes.Primitives._long;
-import static de.ims.icarus2.util.classes.Primitives._short;
+import static de.ims.icarus2.util.lang.Primitives._boolean;
+import static de.ims.icarus2.util.lang.Primitives._byte;
+import static de.ims.icarus2.util.lang.Primitives._double;
+import static de.ims.icarus2.util.lang.Primitives._float;
+import static de.ims.icarus2.util.lang.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives._long;
+import static de.ims.icarus2.util.lang.Primitives._short;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusException;
@@ -1877,7 +1877,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public Object get() {
-			return storage;
+			return _double(storage);
 		}
 
 		/**

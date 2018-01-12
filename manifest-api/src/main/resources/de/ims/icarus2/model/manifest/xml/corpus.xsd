@@ -1,1638 +1,1761 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet type="text/xsl" href="xs3p.xsl"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-	targetNamespace="http://www.ikarus-systems.net/icarus/xml/manifest"
-	xmlns:imf="http://www.ikarus-systems.net/icarus/xml/manifest"
-	elementFormDefault="qualified">
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	targetNamespace="http://www.ims.uni-stuttgart.de/icarus/xml/manifest"
+	xmlns:imf="http://www.ims.uni-stuttgart.de/icarus/xml/manifest"
+	xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning"
+	vc:minVersion="1.1"
+	attributeFormDefault="unqualified"
+	elementFormDefault="qualified"
+	version="1.0">
 	
-	<xs:annotation>
-		<xs:documentation>This schema defines the legal elements of the ICARUS2 component metadata framework.</xs:documentation>
-	</xs:annotation>
+	<xsd:annotation>
+		<xsd:documentation>This schema defines the legal elements of the ICARUS2 component metadata framework.</xsd:documentation>
+	</xsd:annotation>
 	
-	<xs:element name="corpora" type="imf:corporaType">
-		<xs:annotation>
-			<xs:documentation>Groups live corpora together. No template definitions allowed in this context.</xs:documentation>
-		</xs:annotation>
-	</xs:element>
+	<xsd:element name="manifest">
+		<xsd:annotation>
+			<xsd:documentation>
+			</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:choice>
+				<xsd:element name="corpora" type="imf:corporaType">
+					<xsd:annotation>
+						<xsd:documentation>Groups live corpora together. No template definitions allowed in this context.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				
+				<xsd:element name="templates" type="imf:templatesType">
+					<xsd:annotation>
+						<xsd:documentation>Groups templates together. No live corpora allowed in this context.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+			</xsd:choice>
+		</xsd:complexType>
+	</xsd:element>
 	
-	<xs:element name="templates" type="imf:templatesType">
-		<xs:annotation>
-			<xs:documentation>Groups templates together. No live corpora allowed in this context.</xs:documentation>
-		</xs:annotation>
-	</xs:element>
+	<xsd:complexType name="templatesType">
+		<xsd:annotation>
+			<xsd:documentation>Contains only template definitions</xsd:documentation>
+		</xsd:annotation>
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:group ref="imf:layerGroup" />
+			<xsd:element name="context" type="imf:contextManifestType" />
+			<xsd:element name="driver" type="imf:driverManifestType" />
+			<xsd:element name="annotation" type="imf:annotationManifestType" />
+			<xsd:element name="container" type="imf:containerManifestType" />
+			<xsd:element name="structure" type="imf:structureManifestType" />
+			<xsd:element name="rasterizer" type="imf:rasterizerManifestType" />
+			<xsd:element name="pathResolver" type="imf:pathResolverManifestType" />
+			<xsd:element name="module" type="imf:moduleManifestType" />
+			<xsd:element name="options" type="imf:optionsManifestType" />
+		</xsd:choice>
+	</xsd:complexType>
 	
-	<xs:complexType name="templatesType">
-		<xs:annotation>
-			<xs:documentation>Contains only template definitions</xs:documentation>
-		</xs:annotation>
-		<xs:sequence minOccurs="0" maxOccurs="unbounded">
-			<xs:choice minOccurs="0" maxOccurs="unbounded">
-				<xs:group ref="imf:layerGroup" />
-				<xs:element name="context" type="imf:contextManifestType" />
-				<xs:element name="driver" type="imf:driverManifestType" />
-				<xs:element name="annotation" type="imf:annotationManifestType" />
-				<xs:element name="container" type="imf:containerManifestType" />
-				<xs:element name="structure" type="imf:structureManifestType" />
-				<xs:element name="rasterizer" type="imf:rasterizerManifestType" />
-				<xs:element name="pathResolver" type="imf:pathResolverManifestType" />
-			</xs:choice>
-		</xs:sequence>
-	</xs:complexType>
+	<xsd:complexType name="corporaType">
+		<xsd:annotation>
+			<xsd:documentation>Contains only live corpora, i.e. fully configured "corpus" elements that are no templates and which do not contain any template declarations.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="corpus" type="imf:corpusManifestType" minOccurs="0" maxOccurs="unbounded">
+				<xsd:annotation>
+					<xsd:documentation>A live corpus instance.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
 	
-	<xs:complexType name="corporaType">
-		<xs:annotation>
-			<xs:documentation>Contains only live corpora, i.e. fully configured "corpus" elements that are no templates and which do not contain any template declarations.</xs:documentation>
-		</xs:annotation>
-		<xs:sequence>
-			<xs:element name="corpus" type="imf:corpusManifestType" minOccurs="0" maxOccurs="unbounded">
-				<xs:annotation>
-					<xs:documentation>A live corpus instance.</xs:documentation>
-				</xs:annotation>
-			</xs:element>
-		</xs:sequence>
-	</xs:complexType>
+	<xsd:complexType name="corpusManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Top-level member of the corpus framework. Bundles resources from different contexts and pools them into a single namespace.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:basicMemberManifestType">
+				<xsd:sequence>
+					<xsd:element name="note" type="imf:noteType" minOccurs="0" maxOccurs="unbounded">
+						<xsd:annotation>
+							<xsd:documentation>User-originating comments attached to the corpus.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="rootContext" type="imf:contextManifestType" minOccurs="1" maxOccurs="unbounded">
+						<xsd:annotation>
+							<xsd:documentation>The contexts that have been designated to act as root(s).</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="context" type="imf:contextManifestType" minOccurs="0" maxOccurs="unbounded">
+						<xsd:annotation>
+							<xsd:documentation>Additional data sources of corpus data in the form of context instances.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:attribute name="editable" type="xsd:boolean" default="false">
+					<xsd:annotation>
+						<xsd:documentation>Flag to indicate whether or not the corpus is meant to be edited by the user.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+				<xsd:attribute name="parallel" type="xsd:boolean" default="false">
+					<xsd:annotation>
+						<xsd:documentation>Flag to indicate whether or not this corpus describes a parallel data set, in which case it is allowed to have multiple root contexts.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="corpusManifestType">
-		<xs:annotation>
-			<xs:documentation>Top-level member of the corpus framework. Bundles resources from different contexts and pools them into a single namespace.</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:basicMemberManifestType">
-				<xs:sequence>
-					<xs:element name="note" type="imf:noteType" minOccurs="0" maxOccurs="unbounded">
-						<xs:annotation>
-							<xs:documentation>User-originating comments attached to the corpus.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-					<xs:element name="rootContext" type="imf:contextManifestType" minOccurs="1" maxOccurs="unbounded">
-						<xs:annotation>
-							<xs:documentation>The contexts that have been designated to act as root(s).</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-					<xs:element name="context" type="imf:contextManifestType" maxOccurs="unbounded">
-						<xs:annotation>
-							<xs:documentation>Additional data sources of corpus data in the form of context instances.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-				</xs:sequence>
-				<xs:attribute name="editable" type="xs:boolean" default="false">
-					<xs:annotation>
-						<xs:documentation>Flag to indicate whether or not the corpus is meant to be edited by the user.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-				<xs:attribute name="parallel" type="xs:boolean" default="false">
-					<xs:annotation>
-						<xs:documentation>Flag to indicate whether or not this corpus describes a parallel data set, in which case it is allowed to have multiple root contexts.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="noteType">
+		<xsd:annotation>
+			<xsd:documentation>A simple note or comment that can be attached to a corpus.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:simpleContent>
+			<xsd:extension base="xsd:string">
+				<xsd:attribute name="name" type="xsd:string">
+					<xsd:annotation>
+						<xsd:documentation>A kind of "title" for the note.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+				<xsd:attribute name="date" type="xsd:string">
+					<xsd:annotation>
+						<xsd:documentation>Automatically recorded date of creation for the note.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>			
+			</xsd:extension>
+		</xsd:simpleContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="noteType">
-		<xs:annotation>
-			<xs:documentation>A simple note or comment that can be attached to a corpus.</xs:documentation>
-		</xs:annotation>
-		<xs:simpleContent>
-			<xs:extension base="xs:string">
-				<xs:attribute name="name" type="xs:string">
-					<xs:annotation>
-						<xs:documentation>A kind of "title" for the note.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-				<xs:attribute name="date" type="xs:string">
-					<xs:annotation>
-						<xs:documentation>Automatically recorded date of creation for the note.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>			
-			</xs:extension>
-		</xs:simpleContent>
-	</xs:complexType>
+	<xsd:complexType name="contextManifestType">
+		<xsd:annotation>
+			<xsd:documentation>A context bundles all the corpus data originating from a single source, such a file or database.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:basicMemberManifestType">
+				<xsd:sequence>
+					<xsd:element name="location" type="imf:locationManifestType" minOccurs="0" maxOccurs="unbounded">
+						<xsd:annotation>
+							<xsd:documentation>Defines the physical location(s) which the data for this context is stored at.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="prerequisites" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Specifies a series of abstract dependencies to external components of the corpus.</xsd:documentation>
+						</xsd:annotation>
+						<xsd:complexType>
+							<xsd:sequence>
+								<xsd:element name="prerequisite" type="imf:prerequisiteType" maxOccurs="unbounded">
+									<xsd:annotation>
+										<xsd:documentation>A single docking point for external layers.</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+						</xsd:complexType>
+					</xsd:element>
+					<xsd:element name="layerGroup" type="imf:layerGroupManifestType" minOccurs="0" maxOccurs="unbounded">
+						<xsd:annotation>
+							<xsd:documentation>Groups layers that cannot be physically distinguished from each other efficiently.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="driver" type="imf:driverManifestType" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Specifies the module used to perform transformations between this context's physical form and the model representation.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:attribute name="primaryLayer" type="imf:identifierAttr">
+					<xsd:annotation>
+						<xsd:documentation>The layer that defines the preferred atomicity of items in this context.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+				<xsd:attribute name="foundationLayer" type="imf:identifierAttr">
+					<xsd:annotation>
+						<xsd:documentation>The layer that defines the basic atomicity of items in or referenced by layer sin this context. </xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+				<xsd:attribute name="independent" type="xsd:boolean" default="false">
+					<xsd:annotation>
+						<xsd:documentation>Flag to indicate whether or not this context can be used entirely without other contexts, i.e. if it is suitable to act as a root context of a corpus.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+				<xsd:attribute name="editable" type="xsd:boolean" default="false">
+					<xsd:annotation>
+						<xsd:documentation>Flag to indicate whether or not it is possible for the user to modify content of this context.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="contextManifestType">
-		<xs:annotation>
-			<xs:documentation>A context bundles all the corpus data originating from a single source, such a file or database.</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:basicMemberManifestType">
-				<xs:sequence>
-					<xs:element name="location" type="imf:locationManifestType" minOccurs="0" maxOccurs="unbounded">
-						<xs:annotation>
-							<xs:documentation>Defines the physical location(s) which the data for this context is stored at.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-					<xs:element name="prerequisites" minOccurs="0">
-						<xs:annotation>
-							<xs:documentation>Specifies a series of abstract dependencies to external components of the corpus.</xs:documentation>
-						</xs:annotation>
-						<xs:complexType>
-							<xs:sequence>
-								<xs:element name="prerequisite" type="imf:prerequisiteType" maxOccurs="unbounded">
-									<xs:annotation>
-										<xs:documentation>A single docking point for external layers.</xs:documentation>
-									</xs:annotation>
-								</xs:element>
-							</xs:sequence>
-						</xs:complexType>
-					</xs:element>
-					<xs:element name="layerGroup" type="imf:layerGroupManifestType" minOccurs="0" maxOccurs="unbounded">
-						<xs:annotation>
-							<xs:documentation>Groups layers that cannot be physically distinguished from each other efficiently.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-					<xs:element name="driver" type="imf:driverManifestType" minOccurs="0">
-						<xs:annotation>
-							<xs:documentation>Specifies the module used to perform transformations between this context's physical form and the model representation.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-				</xs:sequence>
-				<xs:attribute name="primaryLayer" type="imf:identifierAttr">
-					<xs:annotation>
-						<xs:documentation>The layer that defines the preferred atomicity of items in this context.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-				<xs:attribute name="foundationLayer" type="imf:identifierAttr">
-					<xs:annotation>
-						<xs:documentation>The layer that defines the basic atomicity of items in or referenced by layer sin this context. </xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-				<xs:attribute name="independent" type="xs:boolean" default="false">
-					<xs:annotation>
-						<xs:documentation>Flag to indicate whether or not this context can be used entirely without other contexts, i.e. if it is suitable to act as a root context of a corpus.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-				<xs:attribute name="editable" type="xs:boolean" default="false">
-					<xs:annotation>
-						<xs:documentation>Flag to indicate whether or not it is possible for the user to modify content of this context.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="prerequisiteType">
+		<xsd:annotation>
+			<xsd:documentation>Defines an external dependency to foreign layers.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:attribute name="description" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>Textual information intended for users. Should describe general purpose of this dependency.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="contextId" type="imf:identifierAttr">
+			<xsd:annotation>
+				<xsd:documentation>Identifier of the context hosting the target layer. Only available if this prerequisite has already been resolved or uses hard-binding</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="layerId" type="imf:identifierAttr">
+			<xsd:annotation>
+				<xsd:documentation>Identifier of the target layer. Only available if this prerequisite has already been resolved or uses hard-binding.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="layerType" type="imf:identifierAttr">
+			<xsd:annotation>
+				<xsd:documentation>For unresolved prerequisites this defines the abstract specification of allowed layers.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="alias" type="imf:identifierAttr">
+			<xsd:annotation>
+				<xsd:documentation>The identifier to use locally for the target layer.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+	</xsd:complexType>
 	
-	<xs:complexType name="prerequisiteType">
-		<xs:annotation>
-			<xs:documentation>Defines an external dependency to foreign layers.</xs:documentation>
-		</xs:annotation>
-		<xs:attribute name="contextId" type="imf:identifierAttr">
-			<xs:annotation>
-				<xs:documentation>Identifier of the context hosting the target layer. Only available if this prerequisite has already been resolved or uses hard-binding</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="layerId" type="imf:identifierAttr">
-			<xs:annotation>
-				<xs:documentation>Identifier of the target layer. Only available if this prerequisite has already been resolved or uses hard-binding.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="layerType" type="imf:identifierAttr">
-			<xs:annotation>
-				<xs:documentation>For unresolved prerequisites this defines the abstract specification of allowed layers.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="alias" type="imf:identifierAttr">
-			<xs:annotation>
-				<xs:documentation>The identifier to use locally for the target layer.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-	</xs:complexType>
+	<xsd:complexType name="driverManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Contains all the modules and links to implementations for determining how to transform between a context's physical form and its model representation.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:foreignImplementationManifestType">
+				<xsd:sequence>
+					<xsd:element name="moduleSpec" type="imf:moduleSpecType" minOccurs="0" maxOccurs="unbounded">
+						<xsd:annotation>
+							<xsd:documentation>Extension-point for configurable components the driver is using.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="module" type="imf:moduleManifestType" minOccurs="0" maxOccurs="unbounded">
+						<xsd:annotation>
+							<xsd:documentation>Actually docked extensions for configurable components the driver is using.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="mapping" type="imf:mappingManifestType" minOccurs="0" maxOccurs="unbounded">
+						<xsd:annotation>
+							<xsd:documentation>Definitions for available mappings between layers in this context.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:attribute name="locationType" type="imf:locationTypeAttr">
+					<xsd:annotation>
+						<xsd:documentation>Hint on which type of resources the driver is depending to access corpus data.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="driverManifestType">
-		<xs:annotation>
-			<xs:documentation>Contains all the modules and links to implementations for determining how to transform between a context's physical form and its model representation.</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:foreignImplementationManifestType">
-				<xs:sequence>
-					<xs:element name="moduleSpec" type="imf:moduleSpecType" minOccurs="0" maxOccurs="unbounded">
-						<xs:annotation>
-							<xs:documentation>Extension-point for configurable components the driver is using.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-					<xs:element name="module" type="imf:moduleManifestType" minOccurs="0" maxOccurs="unbounded">
-						<xs:annotation>
-							<xs:documentation>Actually docked extensions for configurable components the driver is using.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-					<xs:element name="mapping" type="imf:mappingManifestType" minOccurs="0" maxOccurs="unbounded">
-						<xs:annotation>
-							<xs:documentation>Definitions for available mappings between layers in this context.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-				</xs:sequence>
-				<xs:attribute name="locationType" type="imf:locationTypeAttr">
-					<xs:annotation>
-						<xs:documentation>Hint on which type of resources the driver is depending to access corpus data.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="moduleManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Defines an actual implementation for a "moduleSpec" declaration.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:foreignImplementationManifestType">
+				<xsd:attribute name="moduleSpecId" type="imf:identifierAttr">
+					<xsd:annotation>
+						<xsd:documentation>Identifier of the module specification this module is docked to.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="moduleManifestType">
-		<xs:annotation>
-			<xs:documentation>Defines an actual implementation for a "moduleSpec" declaration.</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:foreignImplementationManifestType">
-				<xs:attribute name="moduleSpecId" type="imf:identifierAttr">
-					<xs:annotation>
-						<xs:documentation>Identifier of the module specification this module is docked to.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="moduleSpecType">
+		<xsd:annotation>
+			<xsd:documentation>Part of the driver plugin architecture. Specifies the basic properties for a set of modules that can be used to change the default behavior of a driver.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:identityType">
+				<xsd:sequence>
+					<xsd:element name="extensionPoint" type="imf:identifierType">
+						<xsd:annotation>
+							<xsd:documentation>Links to the definition for legal plugins that can be used as modules for this specification.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:attribute name="customizable" type="xsd:boolean">
+					<xsd:annotation>
+						<xsd:documentation>Defines whether or not the behavior of modules for this specification can be configured by the user.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+				<xsd:attribute name="multiplicity" type="imf:multiplicityAttr" default="one">
+					<xsd:annotation>
+						<xsd:documentation>Defines how many modules can be registered for this specification.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="moduleSpecType">
-		<xs:annotation>
-			<xs:documentation>Part of the driver plugin architecture. Specifies the basic properties for a set of modules that can be used to change the default behavior of a driver.</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:identityType">
-				<xs:sequence>
-					<xs:element name="extensionPoint" type="imf:identifierType">
-						<xs:annotation>
-							<xs:documentation>Links to the definition for legal plugins that can be used as modules for this specification.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-				</xs:sequence>
-				<xs:attribute name="customizable" type="xs:boolean">
-					<xs:annotation>
-						<xs:documentation>Defines whether or not the behavior of modules for this specification can be configured by the user.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-				<xs:attribute name="multiplicity" type="imf:multiplicityAttr" default="one">
-					<xs:annotation>
-						<xs:documentation>Defines how many modules can be registered for this specification.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="layerGroupManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Groups one or more layers that are logically connected in a way that makes it impossible or impractical to access them separately.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:identityType">
+				<xsd:sequence>
+					<xsd:group ref="imf:layerGroup" />
+				</xsd:sequence>
+				<xsd:attribute name="independent" type="xsd:boolean" default="false">
+					<xsd:annotation>
+						<xsd:documentation>Flag indicating whether or not the layers of this group are completely independent of any foreign corpus content.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+				<xsd:attribute name="primaryLayer" type="imf:identifierAttr" use="required">
+					<xsd:annotation>
+						<xsd:documentation>The layer defining the granularity of this group.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="layerGroupManifestType">
-		<xs:annotation>
-			<xs:documentation>Groups one or more layers that are logically connected in a way that makes it impossible or impractical to access them separately.</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:identityType">
-				<xs:sequence>
-					<xs:group ref="imf:layerGroup" />
-				</xs:sequence>
-				<xs:attribute name="independent" type="xs:boolean" default="false">
-					<xs:annotation>
-						<xs:documentation>Flag indicating whether or not the layers of this group are completely independent of any foreign corpus content.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-				<xs:attribute name="primaryLayer" type="imf:identifierAttr" use="required">
-					<xs:annotation>
-						<xs:documentation>The layer defining the granularity of this group.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="highlightLayerManifestType">
+		<xsd:annotation>
+			<xsd:documentation>A special type of virtual layer. Designed to store programmatically generated meta-annotations attached to (groups of) items. </xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:layerManifestType">
+				<xsd:sequence>
+					<xsd:element name="highlightFlag" type="imf:highlightFlagType" minOccurs="0" maxOccurs="unbounded">
+						<xsd:annotation>
+							<xsd:documentation>Flags indicating certain properties of this layer.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:attribute name="primaryLayer" type="imf:identifierAttr" use="required">
+					<xsd:annotation>
+						<xsd:documentation>The layer that defines the granularity of highlight cursors for this layer.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="highlightLayerManifestType">
-		<xs:annotation>
-			<xs:documentation>A special type of virtual layer. Designed to store programmatically generated meta-annotations attached to (groups of) items. </xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:layerManifestType">
-				<xs:sequence>
-					<xs:element name="highlightFlag" type="imf:highlightFlagType" minOccurs="0" maxOccurs="unbounded">
-						<xs:annotation>
-							<xs:documentation>Flags indicating certain properties of this layer.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-				</xs:sequence>
-				<xs:attribute name="primaryLayer" type="imf:identifierAttr" use="required">
-					<xs:annotation>
-						<xs:documentation>The layer that defines the granularity of highlight cursors for this layer.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="annotationLayerManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Groups tightly related annotations into a layer.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:layerManifestType">
+				<xsd:sequence>
+					<xsd:element name="annotationFlag" type="imf:annotationFlagType" minOccurs="0" maxOccurs="unbounded">
+						<xsd:annotation>
+							<xsd:documentation>Flags indicating certain properties of this layer.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="annotation" type="imf:annotationManifestType" minOccurs="0" maxOccurs="unbounded">
+						<xsd:annotation>
+							<xsd:documentation>Specifications of the actual annotation types this layer exposes.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:attribute name="defaultKey" type="imf:identifierAttr" use="optional">
+					<xsd:annotation>
+						<xsd:documentation>If this layer contains multiple annotations type, one of them has to be designated as default.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="annotationLayerManifestType">
-		<xs:annotation>
-			<xs:documentation>Groups tightly related annotations into a layer.</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:layerManifestType">
-				<xs:sequence>
-					<xs:element name="annotationFlag" type="imf:annotationFlagType" minOccurs="0" maxOccurs="unbounded">
-						<xs:annotation>
-							<xs:documentation>Flags indicating certain properties of this layer.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-					<xs:element name="annotation" type="imf:annotationManifestType" minOccurs="0" maxOccurs="unbounded">
-						<xs:annotation>
-							<xs:documentation>Specifications of the actual annotation types this layer exposes.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-				</xs:sequence>
-				<xs:attribute name="defaultKey" type="imf:identifierAttr" use="optional">
-					<xs:annotation>
-						<xs:documentation>If this layer contains multiple annotations type, one of them has to be designated as default.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="annotationManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Defines properties for a single annotation type within an annotation layer.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:basicMemberManifestType">
+				<xsd:sequence>
+					<xsd:element name="alias" minOccurs="0" maxOccurs="unbounded">
+						<xsd:complexType>
+							<xsd:attribute name="name" type="imf:identifierAttr">
+								<xsd:annotation>
+									<xsd:documentation>Alternate identifier usable for this annotation. Usually this will be used to provide common abbreviations such as "pos" for "part-of-speech".</xsd:documentation>
+								</xsd:annotation>
+							</xsd:attribute>
+						</xsd:complexType>
+					</xsd:element>
+					<xsd:element name="valueSet" type="imf:valueSetType" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Predefined set of legal values, e.g. a tagset.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="valueRange" type="imf:valueRangeType" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Range of legal values.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="noEntryValue" type="imf:genericValueType" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Defines the value that represents the absence of any valid value. For complex types this is not needed, but primitive annotations need a defined "null" value.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:attribute name="key" type="imf:identifierAttr">
+					<xsd:annotation>
+						<xsd:documentation>The main identifier usable for this annotation type.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+				<xsd:attribute name="contentType" type="imf:identifierAttr">
+					<xsd:annotation>
+						<xsd:documentation>If the value type is "custom" then this attribute identifies the actual content type.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+				<xsd:attribute name="valueType" type="imf:valueTypeAttr">
+					<xsd:annotation>
+						<xsd:documentation>Identifier of the type that describes the content for this annotation.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+				<xsd:attribute name="allowUnknownValues" type="xsd:boolean">
+					<xsd:annotation>
+						<xsd:documentation>If set to true this flag allows annotation values outside the predefined domains of "valueSet" and "valueRange".</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="annotationManifestType">
-		<xs:annotation>
-			<xs:documentation>Defines properties for a single annotation type within an annotation layer.</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:basicMemberManifestType">
-				<xs:sequence>
-					<xs:element name="alias" minOccurs="0" maxOccurs="unbounded">
-						<xs:complexType>
-							<xs:attribute name="name" type="imf:identifierAttr">
-								<xs:annotation>
-									<xs:documentation>Alternate identifier usable for this annotation. Usually this will be used to provide common abbreviations such as "pos" for "part-of-speech".</xs:documentation>
-								</xs:annotation>
-							</xs:attribute>
-						</xs:complexType>
-					</xs:element>
-					<xs:element name="valueSet" type="imf:valueSetType" minOccurs="0">
-						<xs:annotation>
-							<xs:documentation>Predefined set of legal values, e.g. a tagset.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-					<xs:element name="valueRange" type="imf:valueRangeType" minOccurs="0">
-						<xs:annotation>
-							<xs:documentation>Range of legal values.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-					<xs:element name="noEntryValue" type="imf:genericValueType" minOccurs="0">
-						<xs:annotation>
-							<xs:documentation>Defines the value that represents the absence of any valid value. For complex types this is not needed, but primitive annotations need a defined "null" value.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-				</xs:sequence>
-				<xs:attribute name="key" type="imf:identifierAttr">
-					<xs:annotation>
-						<xs:documentation>The main identifier usable for this annotation type.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-				<xs:attribute name="contentType" type="imf:identifierAttr">
-					<xs:annotation>
-						<xs:documentation>If the value type is "custom" then this attribute identifies the actual content type.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-				<xs:attribute name="valueType" type="imf:valueTypeAttr">
-					<xs:annotation>
-						<xs:documentation>Identifier of the type that describes the content for this annotation.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-				<xs:attribute name="allowUnknownValues" type="xs:boolean">
-					<xs:annotation>
-						<xs:documentation>If set to true this flag allows annotation values outside the predefined domains of "valueSet" and "valueRange".</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="fragmentLayerManifestType">
+		<xsd:annotation>
+			<xsd:documentation>A special type of logical management layer that allows it to effectively break existing atomic units into even smaller ones by fragmenting them according to rasterization on annotation values.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:itemLayerManifestType">
+				<xsd:sequence>
+					<xsd:element name="valueLayer" type="imf:targetLayerType">
+						<xsd:annotation>
+							<xsd:documentation>Layer that holds annotation values to be used for fragmentation by this layer.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="rasterizer" type="imf:rasterizerManifestType">
+						<xsd:annotation>
+							<xsd:documentation>Defines the method used for rastering.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:attribute name="annotationKey" type="imf:identifierAttr">
+					<xsd:annotation>
+						<xsd:documentation>Key of the annotation manifest that holds values to be used for fragmentation by this layer.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="fragmentLayerManifestType">
-		<xs:annotation>
-			<xs:documentation>A special type of logical management layer that allows it to effectively break existing atomic units into even smaller ones by fragmenting them according to rasterization on annotation values.</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:itemLayerManifestType">
-				<xs:sequence>
-					<xs:element name="valueLayer" type="imf:targetLayerType">
-						<xs:annotation>
-							<xs:documentation>Layer that holds annotation values to be used for fragmentation by this layer.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-					<xs:element name="rasterizer" type="imf:rasterizerManifestType">
-						<xs:annotation>
-							<xs:documentation>Defines the method used for rastering.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-				</xs:sequence>
-				<xs:attribute name="annotationKey" type="imf:identifierAttr">
-					<xs:annotation>
-						<xs:documentation>Key of the annotation manifest that holds values to be used for fragmentation by this layer.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="rasterizerManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Defines the implementation to use for rastering values for the process of fragmentation.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:foreignImplementationManifestType" />
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="rasterizerManifestType">
-		<xs:annotation>
-			<xs:documentation>Defines the implementation to use for rastering values for the process of fragmentation.</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:foreignImplementationManifestType" />
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="structureLayerManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Structure layer contains the mandatory container definition from 'Item Layer' and at least 1 structure declaration, after which an arbitrary number of containers and structures may follow</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:basicItemLayerManifestType">
+				<xsd:sequence>
+					<xsd:element name="structure" type="imf:structureManifestType">
+						<xsd:annotation>
+							<xsd:documentation></xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:choice minOccurs="0" maxOccurs="unbounded">
+						<xsd:element name="structure" type="imf:structureManifestType">
+							<xsd:annotation>
+								<xsd:documentation></xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="container" type="imf:containerManifestType">
+							<xsd:annotation>
+								<xsd:documentation></xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+					</xsd:choice>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="structureLayerManifestType">
-		<xs:annotation>
-			<xs:documentation>Structure layer contains the mandatory container definition from 'Item Layer' and at least 1 structure declaration, after which an arbitrary number of containers and structures may follow</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:itemLayerManifestType">
-				<xs:sequence>
-					<xs:element name="structure" type="imf:structureManifestType">
-						<xs:annotation>
-							<xs:documentation></xs:documentation>
-						</xs:annotation>
-					</xs:element>
-					<xs:choice minOccurs="0" maxOccurs="unbounded">
-						<xs:element name="structure" type="imf:structureManifestType">
-							<xs:annotation>
-								<xs:documentation></xs:documentation>
-							</xs:annotation>
-						</xs:element>
-						<xs:element name="container" type="imf:containerManifestType">
-							<xs:annotation>
-								<xs:documentation></xs:documentation>
-							</xs:annotation>
-						</xs:element>
-					</xs:choice>
-				</xs:sequence>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="itemLayerManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Item layer contains at least 1 container definition</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:basicItemLayerManifestType">
+				<xsd:sequence>
+					<xsd:element name="container" type="imf:containerManifestType" minOccurs="0" maxOccurs="unbounded">
+						<xsd:annotation>
+							<xsd:documentation></xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="itemLayerManifestType">
-		<xs:annotation>
-			<xs:documentation>Item layer contains at least 1 container definition</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:layerManifestType">
-				<xs:sequence>
-					<xs:element name="boundaryLayer" type="imf:targetLayerType" minOccurs="0">
-						<xs:annotation>
-							<xs:documentation>Defines natural boundaries for containers in this layer.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-					<xs:element name="foundationLayer" type="imf:targetLayerType" minOccurs="0">
-						<xs:annotation>
-							<xs:documentation>Defines what layer to use to represent basic atomic units for this layer.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-					<xs:element name="container" type="imf:containerManifestType" maxOccurs="unbounded">
-						<xs:annotation>
-							<xs:documentation></xs:documentation>
-						</xs:annotation>
-					</xs:element>
-				</xs:sequence>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="basicItemLayerManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Item layer contains at least 1 container definition</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:layerManifestType">
+				<xsd:sequence>
+					<xsd:element name="boundaryLayer" type="imf:targetLayerType" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Defines natural boundaries for containers in this layer.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="foundationLayer" type="imf:targetLayerType" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Defines what layer to use to represent basic atomic units for this layer.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="structureManifestType">
-		<xs:annotation>
-			<xs:documentation>As an extension to containers, structures introduce the ability to define relations between items in a corpus.</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:containerManifestType">
-				<xs:sequence>
-					<xs:element name="structureFlag" type="imf:structureFlagType" minOccurs="0" maxOccurs="unbounded">
-						<xs:annotation>
-							<xs:documentation>List of flags to define additional properties and/or behavior of this structure.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-				</xs:sequence>
-				<xs:attribute name="structureType" type="imf:structureTypeAttr">
-					<xs:annotation>
-						<xs:documentation>Specifies the allowed structure type.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="structureManifestType">
+		<xsd:annotation>
+			<xsd:documentation>As an extension to containers, structures introduce the ability to define relations between items in a corpus.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:containerManifestType">
+				<xsd:sequence>
+					<xsd:element name="structureFlag" type="imf:structureFlagType" minOccurs="0" maxOccurs="unbounded">
+						<xsd:annotation>
+							<xsd:documentation>List of flags to define additional properties and/or behavior of this structure.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:attribute name="structureType" type="imf:structureTypeAttr">
+					<xsd:annotation>
+						<xsd:documentation>Specifies the allowed structure type.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="containerManifestType">
-		<xs:annotation>
-			<xs:documentation>Containers are the most basic unit of logical ordering in a corpus.</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:basicMemberManifestType">
-				<xs:sequence>
-					<xs:element name="containerFlag" type="imf:containerFlagType" minOccurs="0" maxOccurs="unbounded">
-						<xs:annotation>
-							<xs:documentation>List of flags to define additional properties and/or behavior of this container.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-				</xs:sequence>
-				<xs:attribute name="containerType" type="imf:containerTypeAttr">
-					<xs:annotation>
-						<xs:documentation>Specifies the allowed container type.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="containerManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Containers are the most basic unit of logical ordering in a corpus.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:basicMemberManifestType">
+				<xsd:sequence>
+					<xsd:element name="containerFlag" type="imf:containerFlagType" minOccurs="0" maxOccurs="unbounded">
+						<xsd:annotation>
+							<xsd:documentation>List of flags to define additional properties and/or behavior of this container.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:attribute name="containerType" type="imf:containerTypeAttr">
+					<xsd:annotation>
+						<xsd:documentation>Specifies the allowed container type.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="layerManifestType">
-		<xs:annotation>
-			<xs:documentation>Basic definition of a layer in a corpus. Layers are the bottom-most organizational units in a corpus.</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:basicMemberManifestType">
-				<xs:sequence>
-					<xs:element name="baseLayer" type="imf:targetLayerType" minOccurs="0" maxOccurs="unbounded">
-						<xs:annotation>
-							<xs:documentation>List of other layers this layer depends on.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-				</xs:sequence>
-				<xs:attribute name="layerType" type="imf:identifierAttr">
-					<xs:annotation>
-						<xs:documentation>Link to abstract layer definition.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="layerManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Basic definition of a layer in a corpus. Layers are the bottom-most organizational units in a corpus.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:basicMemberManifestType">
+				<xsd:sequence>
+					<xsd:element name="baseLayer" type="imf:targetLayerType" minOccurs="0" maxOccurs="unbounded">
+						<xsd:annotation>
+							<xsd:documentation>List of other layers this layer depends on.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:attribute name="layerType" type="imf:identifierAttr">
+					<xsd:annotation>
+						<xsd:documentation>Link to abstract layer definition.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="targetLayerType">
-		<xs:annotation>
-			<xs:documentation>Represents the target of a layer dependency.</xs:documentation>
-		</xs:annotation>
-		<xs:attribute name="layerId" type="imf:identifierAttr" use="required">
-			<xs:annotation>
-				<xs:documentation>Identifier of target layer, has to be defined in context-local scope.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-	</xs:complexType>
+	<xsd:complexType name="targetLayerType">
+		<xsd:annotation>
+			<xsd:documentation>Represents the target of a layer dependency.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:attribute name="layerId" type="imf:identifierAttr" use="required">
+			<xsd:annotation>
+				<xsd:documentation>Identifier of target layer, has to be defined in context-local scope.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+	</xsd:complexType>
 	
-	<xs:complexType name="locationManifestType">
-		<xs:annotation>
-			<xs:documentation>Specifies an abstract location from which to load the actual content of a context.</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:basicManifestType">
-				<xs:choice>
-					<xs:element name="content" type="imf:textType">
-						<xs:annotation>
-							<xs:documentation>If the "inline" flag is true, then this contains the inline form of the data for the surrounding context.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-					<xs:sequence>
-						<xs:element name="path" type="imf:pathEntryType" minOccurs="0">
-							<xs:annotation>
-								<xs:documentation>Path to the root of this location.</xs:documentation>
-							</xs:annotation>
-						</xs:element>
-						<xs:element name="pathEntry" type="imf:pathEntryType" minOccurs="0" maxOccurs="unbounded">
-							<xs:annotation>
-								<xs:documentation>Optional links to additional resoruces. Expected to be relative to the main path.</xs:documentation>
-							</xs:annotation>
-						</xs:element>
-						<xs:element name="pathResolver" type="imf:pathResolverManifestType" minOccurs="0">
-							<xs:annotation>
-								<xs:documentation>Defines the implementation to use for resolving path expressions into actually accessible resources.</xs:documentation>
-							</xs:annotation>
-						</xs:element>
-					</xs:sequence>
-				</xs:choice>
-				<xs:attribute name="inline" type="xs:boolean">
-					<xs:annotation>
-						<xs:documentation>Flag to indicate if this location manifest contains inline data, i.e. it doesn't point to a physical resource but already hosts the actual content.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="locationManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Specifies an abstract location from which to load the actual content of a context.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:basicManifestType">
+				<xsd:choice>
+					<xsd:element name="content" type="imf:textType">
+						<xsd:annotation>
+							<xsd:documentation>If the "inline" flag is true, then this contains the inline form of the data for the surrounding context.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:sequence>
+						<xsd:element name="path" type="imf:pathEntryType" minOccurs="0">
+							<xsd:annotation>
+								<xsd:documentation>Path to the root of this location.</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="pathEntry" type="imf:pathEntryType" minOccurs="0" maxOccurs="unbounded">
+							<xsd:annotation>
+								<xsd:documentation>Optional links to additional resoruces. Expected to be relative to the main path.</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="pathResolver" type="imf:pathResolverManifestType" minOccurs="0">
+							<xsd:annotation>
+								<xsd:documentation>Defines the implementation to use for resolving path expressions into actually accessible resources.</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+					</xsd:sequence>
+				</xsd:choice>
+				<xsd:attribute name="inline" type="xsd:boolean">
+					<xsd:annotation>
+						<xsd:documentation>Flag to indicate if this location manifest contains inline data, i.e. it doesn't point to a physical resource but already hosts the actual content.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="pathResolverManifestType">
-		<xs:annotation>
-			<xs:documentation>Link to an implementation for resolving abstract path definitions to actual resources that can be accessed by the framework.</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:foreignImplementationManifestType" />
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="pathResolverManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Link to an implementation for resolving abstract path definitions to actual resources that can be accessed by the framework.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:foreignImplementationManifestType" />
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="foreignImplementationManifestType">
-		<xs:annotation>
-			<xs:documentation>Adds to a basic member manifest the ability to directly specify the implementation to be used. Note that this can override many default settings for the framework!</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:basicMemberManifestType">
-				<xs:sequence>
-					<xs:element name="implementation" type="imf:implementationManifestType" minOccurs="0">
-						<xs:annotation>
-							<xs:documentation>The actual manifest specifying the implementation details and all associated options and/or settings.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-				</xs:sequence>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="foreignImplementationManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Adds to a basic member manifest the ability to directly specify the implementation to be used. Note that this can override many default settings for the framework!</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:basicMemberManifestType">
+				<xsd:sequence>
+					<xsd:element name="implementation" type="imf:implementationManifestType" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>The actual manifest specifying the implementation details and all associated options and/or settings.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="implementationManifestType">
-		<xs:annotation>
-			<xs:documentation>Defines the actual Java implementation to be used for a certain corpus member.</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:basicMemberManifestType">
-				<xs:attribute name="source" type="xs:string" use="optional">
-					<xs:annotation>
-						<xs:documentation>Depending on the "sourceType" defines how to interpret the "classname" value</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-				<xs:attribute name="classname" type="imf:qualifiedClassNameAttr" use="required">
-					<xs:annotation>
-						<xs:documentation>Fully qualified name of the Java class implementation referenced by this manifest.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-				<xs:attribute name="sourceType" type="imf:sourceTypeAttr" default="default">
-					<xs:annotation>
-						<xs:documentation>Specifies how to interpret the "source" attribute and how to actually load the class defined by "classname".</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-				<xs:attribute name="factory" type="xs:boolean">
-					<xs:annotation>
-						<xs:documentation>Flag to indicate whether or not the specified class is to be used as a factory (de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory).</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="implementationManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Defines the actual Java implementation to be used for a certain corpus member.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:basicMemberManifestType">
+				<xsd:attribute name="source" type="xsd:string" use="optional">
+					<xsd:annotation>
+						<xsd:documentation>Depending on the "sourceType" defines how to interpret the "classname" value</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+				<xsd:attribute name="classname" type="imf:qualifiedClassNameAttr" use="required">
+					<xsd:annotation>
+						<xsd:documentation>Fully qualified name of the Java class implementation referenced by this manifest.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+				<xsd:attribute name="sourceType" type="imf:sourceTypeAttr" default="default">
+					<xsd:annotation>
+						<xsd:documentation>Specifies how to interpret the "source" attribute and how to actually load the class defined by "classname".</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+				<xsd:attribute name="factory" type="xsd:boolean">
+					<xsd:annotation>
+						<xsd:documentation>Flag to indicate whether or not the specified class is to be used as a factory (de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory).</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="basicMemberManifestType">
-		<xs:annotation>
-			<xs:documentation>Basic manifest for actual members of a corpus. This includes options, documentation and arbitrary keyy-value properties set for the member.</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:basicManifestType">
-				<xs:sequence>
-					<xs:group ref="imf:documentationGroup" />
-					<xs:element name="options" type="imf:optionsManifestType" minOccurs="0" />
-					<xs:element name="properties" minOccurs="0">
-						<xs:annotation>
-							<xs:documentation>Settings for this member, either predefined or the result of a user interacting with the Options provided.</xs:documentation>
-						</xs:annotation>
-						<xs:complexType mixed="true">
-							<xs:sequence>
-								<xs:element name="property" type="imf:propertyType" maxOccurs="unbounded"/>
-							</xs:sequence>
-						</xs:complexType>
-					</xs:element>
-				</xs:sequence>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="basicMemberManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Basic manifest for actual members of a corpus. This includes options, documentation and arbitrary keyy-value properties set for the member.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:basicManifestType">
+				<xsd:sequence>
+					<xsd:group ref="imf:documentationGroup" />
+					<xsd:group ref="imf:identityGroup" />
+					<xsd:element name="categories" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Collection of category definitions</xsd:documentation>
+						</xsd:annotation>
+						<xsd:complexType>
+							<xsd:sequence>
+								<xsd:element name="category" type="imf:categoryType" />
+							</xsd:sequence>
+						</xsd:complexType>
+					</xsd:element>
+					<xsd:element name="options" type="imf:optionsManifestType" minOccurs="0" />
+					<xsd:element name="properties" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Settings for this member, either predefined or the result of a user interacting with the Options provided.</xsd:documentation>
+						</xsd:annotation>
+						<xsd:complexType mixed="true">
+							<xsd:sequence>
+								<xsd:element name="property" type="imf:propertyType" maxOccurs="unbounded"/>
+							</xsd:sequence>
+						</xsd:complexType>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:attributeGroup ref="imf:partialIdentity" />
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="optionsManifestType">
-		<xs:annotation>
-			<xs:documentation>Specifies a collection of options bundled for a certain host element.</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="imf:basicManifestType">
-				<xs:sequence>
-					<xs:element name="option" type="imf:optionType" maxOccurs="unbounded">
-						<xs:annotation>
-							<xs:documentation>Collection of individual options. No specific order is enforced.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-					<xs:element name="group" type="imf:optionalIdentityType">
-						<xs:annotation>
-							<xs:documentation>Predefined groups that options can be associated with. This is to be taken as a hint for graphical interfaces on how to present options to the user.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-				</xs:sequence>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xsd:complexType name="optionsManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Specifies a collection of options bundled for a certain host element.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:basicManifestType">
+				<xsd:sequence>
+					<xsd:element name="option" type="imf:optionType" maxOccurs="unbounded">
+						<xsd:annotation>
+							<xsd:documentation>Collection of individual options. No specific order is enforced.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="group" type="imf:identityType">
+						<xsd:annotation>
+							<xsd:documentation>Predefined groups that options can be associated with. This is to be taken as a hint for graphical interfaces on how to present options to the user.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="optionType" mixed="true">
-		<xs:annotation>
-			<xs:documentation>Specifies properties of an option for which the user can change values.</xs:documentation>
-		</xs:annotation>
-		<xs:all>
-			<xs:element name="extensionPoint" type="imf:identifierType">
-				<xs:annotation>
-					<xs:documentation>Currently not used.</xs:documentation>
-				</xs:annotation>
-			</xs:element>
-			<xs:element name="defaultValue" type="imf:textType">
-				<xs:annotation>
-					<xs:documentation>Value (or list of values) to be used when the user doesn't define or select a custom value.</xs:documentation>
-				</xs:annotation>
-			</xs:element>
-			<xs:element name="valueSet" type="imf:valueSetType">
-				<xs:annotation>
-					<xs:documentation>Limitation of legal values via an enumeration of values.</xs:documentation>
-				</xs:annotation>
-			</xs:element>
-			<xs:element name="valueRange" type="imf:valueRangeType">
-				<xs:annotation>
-					<xs:documentation>Limitation of legal values via a bounded range model.</xs:documentation>
-				</xs:annotation>
-			</xs:element>
-		</xs:all>
-		<xs:attributeGroup ref="imf:identity" />
-		<xs:attribute name="valueType" type="imf:valueTypeAttr" use="required">
-			<xs:annotation>
-				<xs:documentation>Type specification for legal values of this option.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="published" type="xs:boolean" use="optional" default="true">
-			<xs:annotation>
-				<xs:documentation>Flag to indicate whether or not this option is actually meant to be presented to the user.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="allowNull" type="xs:boolean" use="optional" default="true">
-			<xs:annotation>
-				<xs:documentation>Flag to indicate whether or not this option allows the user to set "null" value(s).</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="multiValue" type="xs:boolean" use="optional" default="false">
-			<xs:annotation>
-				<xs:documentation>Flag to indicate whether or not this option can take multiple values.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="group" type="imf:identifierAttr" use="optional">
-			<xs:annotation>
-				<xs:documentation>Identifier of a group this option should be associated with.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-	</xs:complexType>
+	<xsd:complexType name="optionType" mixed="true">
+		<xsd:annotation>
+			<xsd:documentation>Specifies properties of an option for which the user can change values.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:all>
+			<xsd:element name="extensionPoint" type="imf:identifierType">
+				<xsd:annotation>
+					<xsd:documentation>Currently not used.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="defaultValue" type="imf:textType">
+				<xsd:annotation>
+					<xsd:documentation>Value (or list of values) to be used when the user doesn't define or select a custom value.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="valueSet" type="imf:valueSetType">
+				<xsd:annotation>
+					<xsd:documentation>Limitation of legal values via an enumeration of values.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="valueRange" type="imf:valueRangeType">
+				<xsd:annotation>
+					<xsd:documentation>Limitation of legal values via a bounded range model.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:all>
+		<xsd:attributeGroup ref="imf:fullIdentity" />
+		<xsd:attribute name="valueType" type="imf:valueTypeAttr" use="required">
+			<xsd:annotation>
+				<xsd:documentation>Type specification for legal values of this option.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="published" type="xsd:boolean" use="optional" default="true">
+			<xsd:annotation>
+				<xsd:documentation>Flag to indicate whether or not this option is actually meant to be presented to the user.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="allowNull" type="xsd:boolean" use="optional" default="true">
+			<xsd:annotation>
+				<xsd:documentation>Flag to indicate whether or not this option allows the user to set "null" value(s).</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="multiValue" type="xsd:boolean" use="optional" default="false">
+			<xsd:annotation>
+				<xsd:documentation>Flag to indicate whether or not this option can take multiple values.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="group" type="imf:identifierAttr" use="optional">
+			<xsd:annotation>
+				<xsd:documentation>Identifier of a group this option should be associated with.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+	</xsd:complexType>
 	
-	<xs:complexType name="propertyType" mixed="true">
-		<xs:annotation>
-			<xs:documentation>Defines a basic key-value property.</xs:documentation>
-		</xs:annotation>
-		<xs:sequence>
-			<xs:element name="value" type="xs:string">
-				<xs:annotation>
-					<xs:documentation>Arbitrary number of values associated with this property.</xs:documentation>
-				</xs:annotation>
-			</xs:element>
-		</xs:sequence>
-		<xs:attribute name="name" type="imf:identifierAttr">
-			<xs:annotation>
-				<xs:documentation>Key of this property.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="valueType" type="imf:valueTypeAttr">
-			<xs:annotation>
-				<xs:documentation>Type specification for this property's value.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-	</xs:complexType>
+	<xsd:complexType name="propertyType" mixed="true">
+		<xsd:annotation>
+			<xsd:documentation>Defines a basic key-value property.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="value" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+				<xsd:annotation>
+					<xsd:documentation>Arbitrary number of values associated with this property.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+		<xsd:attribute name="name" type="imf:identifierAttr">
+			<xsd:annotation>
+				<xsd:documentation>Key of this property.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="valueType" type="imf:valueTypeAttr">
+			<xsd:annotation>
+				<xsd:documentation>Type specification for this property's value.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+	</xsd:complexType>
 	
-	<xs:complexType name="basicManifestType">
-		<xs:annotation>
-			<xs:documentation>Defines basic properties of a full-grown Manifest.</xs:documentation>
-		</xs:annotation>
-		<xs:sequence>
-			<xs:element name="version" type="imf:versionManifestType" minOccurs="0">
-				<xs:annotation>
-					<xs:documentation>Optional version information for a resource.</xs:documentation>
-				</xs:annotation>
-			</xs:element>
-		</xs:sequence>
-		<xs:attribute name="id" type="imf:identifierAttr" use="optional">
-			<xs:annotation>
-				<xs:documentation>An identifier that is unique within the surrounding scope.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="templateId" type="imf:identifierAttr" use="optional">
-			<xs:annotation>
-				<xs:documentation>Reference to the template this manifest should inherit properties from.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-	</xs:complexType>
+	<xsd:complexType name="basicManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Defines basic properties of a full-grown Manifest.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="version" type="imf:versionManifestType" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Optional version information for a resource.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+		<xsd:attribute name="id" type="imf:identifierAttr" use="optional">
+			<xsd:annotation>
+				<xsd:documentation>An identifier that is unique within the surrounding scope.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="templateId" type="imf:identifierAttr" use="optional">
+			<xsd:annotation>
+				<xsd:documentation>Reference to the template this manifest should inherit properties from.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+	</xsd:complexType>
 	
-	<xs:complexType name="pathEntryType">
-		<xs:annotation>
-			<xs:documentation>Defines an abstract path usable inside a LocationManifest.</xs:documentation>
-		</xs:annotation>
-		<xs:simpleContent>
-			<xs:extension base="xs:string">
-				<xs:attribute name="type" type="imf:pathTypeAttr" use="required" />
-			</xs:extension>
-		</xs:simpleContent>
-	</xs:complexType>
+	<xsd:complexType name="pathEntryType">
+		<xsd:annotation>
+			<xsd:documentation>Defines an abstract path usable inside a LocationManifest.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:simpleContent>
+			<xsd:extension base="xsd:string">
+				<xsd:attribute name="type" type="imf:pathTypeAttr" use="required" />
+			</xsd:extension>
+		</xsd:simpleContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="mappingManifestType">
-		<xs:annotation>
-			<xs:documentation>Specifies properties of a mapping between 2 item layers.</xs:documentation>
-		</xs:annotation>
-		<xs:attribute name="id" type="imf:identifierAttr" use="required">
-			<xs:annotation>
-				<xs:documentation>Locally unique identifier for this mapping.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="sourceLayer" type="imf:identifierAttr" use="required">
-			<xs:annotation>
-				<xs:documentation>Identifier of the source layer for this mapping.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="targetLayer" type="imf:identifierAttr" use="required">
-			<xs:annotation>
-				<xs:documentation>Identifier of the target layer for this mapping.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="relation" type="imf:relationAttr" use="required">
-			<xs:annotation>
-				<xs:documentation>Specifies multiplicity related properties of this mapping.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="coverage" type="imf:coverageAttr" use="required">
-			<xs:annotation>
-				<xs:documentation>Specifies mathematical properties of this mapping.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="inverseMapping" type="imf:identifierAttr" use="optional">
-			<xs:annotation>
-				<xs:documentation>Identifier used for the inverse mapping, if one exists.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-	</xs:complexType>
+	<xsd:complexType name="mappingManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Specifies properties of a mapping between 2 item layers.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:attribute name="id" type="imf:identifierAttr" use="required">
+			<xsd:annotation>
+				<xsd:documentation>Locally unique identifier for this mapping.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="sourceLayer" type="imf:identifierAttr" use="required">
+			<xsd:annotation>
+				<xsd:documentation>Identifier of the source layer for this mapping.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="targetLayer" type="imf:identifierAttr" use="required">
+			<xsd:annotation>
+				<xsd:documentation>Identifier of the target layer for this mapping.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="relation" type="imf:relationAttr" use="required">
+			<xsd:annotation>
+				<xsd:documentation>Specifies multiplicity related properties of this mapping.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="coverage" type="imf:coverageAttr" use="required">
+			<xsd:annotation>
+				<xsd:documentation>Specifies mathematical properties of this mapping.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="inverseMapping" type="imf:identifierAttr" use="optional">
+			<xsd:annotation>
+				<xsd:documentation>Identifier used for the inverse mapping, if one exists.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+	</xsd:complexType>
 	
-	<xs:complexType name="valueSetType">
-		<xs:annotation>
-			<xs:documentation>Defines legal values by an enumeration of value statements/manifests.</xs:documentation>
-		</xs:annotation>
-		<xs:sequence>
-			<xs:element name="value" type="imf:genericValueType" maxOccurs="unbounded" />
-		</xs:sequence>
-	</xs:complexType>
+	<xsd:complexType name="valueSetType">
+		<xsd:annotation>
+			<xsd:documentation>Defines legal values by an enumeration of value statements/manifests.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="value" type="imf:genericValueType" maxOccurs="unbounded" />
+		</xsd:sequence>
+	</xsd:complexType>
 	
-	<xs:complexType name="valueRangeType">
-		<xs:annotation>
-			<xs:documentation>Defines legal values by a bounded range model.</xs:documentation>
-		</xs:annotation>
-		<xs:sequence>
-			<xs:element name="min" type="imf:expressionValueType">
-				<xs:annotation>
-					<xs:documentation>Smallest legal element.</xs:documentation>
-				</xs:annotation>
-			</xs:element>
-			<xs:element name="max" type="imf:expressionValueType">
-				<xs:annotation>
-					<xs:documentation>Largest legal element.</xs:documentation>
-				</xs:annotation>
-			</xs:element>
-		</xs:sequence>
-		<xs:attribute name="includeMin" type="xs:boolean" default="true" use="optional">
-			<xs:annotation>
-				<xs:documentation>Flag to indicate whether or not the "min" value should be considered inclusive.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="includeMax" type="xs:boolean" default="true" use="optional">
-			<xs:annotation>
-				<xs:documentation>Flag to indicate whether or not the "max" value should be considered inclusive.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-	</xs:complexType>
+	<xsd:complexType name="valueRangeType">
+		<xsd:annotation>
+			<xsd:documentation>Defines legal values by a bounded range model.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="min" type="imf:expressionValueType">
+				<xsd:annotation>
+					<xsd:documentation>Smallest legal element.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="max" type="imf:expressionValueType">
+				<xsd:annotation>
+					<xsd:documentation>Largest legal element.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+		<xsd:attribute name="includeMin" type="xsd:boolean" default="true" use="optional">
+			<xsd:annotation>
+				<xsd:documentation>Flag to indicate whether or not the "min" value should be considered inclusive.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="includeMax" type="xsd:boolean" default="true" use="optional">
+			<xsd:annotation>
+				<xsd:documentation>Flag to indicate whether or not the "max" value should be considered inclusive.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+	</xsd:complexType>
 	
-	<xs:complexType name="expressionValueType" mixed="true">
-		<xs:annotation>
-			<xs:documentation>Embedded code that can be evaluated by the framework.</xs:documentation>
-		</xs:annotation>
-		<xs:sequence>
-			<xs:element name="eval" type="imf:evalType" minOccurs="0" />
-		</xs:sequence>
-	</xs:complexType>
+	<xsd:complexType name="expressionValueType" mixed="true">
+		<xsd:annotation>
+			<xsd:documentation>Embedded code that can be evaluated by the framework.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="eval" type="imf:evalType" minOccurs="0" />
+		</xsd:sequence>
+	</xsd:complexType>
 	
-	<xs:complexType name="genericValueType" mixed="true">
-		<xs:annotation>
-			<xs:documentation>Either contains the textual representation of a single value or wraps it and adds identity attributes and optional documentation</xs:documentation>
-		</xs:annotation>
-		<xs:sequence>
-			<xs:group ref="imf:documentationGroup" />
-			<xs:element name="content" type="imf:textType" minOccurs="0" maxOccurs="1" />
-		</xs:sequence>
-		<xs:attributeGroup ref="imf:optionalIdentity" />
-	</xs:complexType>
+	<xsd:complexType name="genericValueType" mixed="true">
+		<xsd:annotation>
+			<xsd:documentation>Either contains the textual representation of a single value or wraps it and adds identity attributes and optional documentation</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:group ref="imf:identityGroup" />
+			<xsd:group ref="imf:documentationGroup" />
+			<xsd:element name="content" type="imf:textType" minOccurs="0" maxOccurs="1" />
+		</xsd:sequence>
+		<xsd:attributeGroup ref="imf:fullIdentity" />
+	</xsd:complexType>
 
-	<xs:complexType name="documentationManifestType">
-		<xs:annotation>
-			<xs:documentation>Documentation of another element by means of a content text which might contain embedded markups and a collection of external resource references.</xs:documentation>
-		</xs:annotation>
-		<xs:sequence>
-			<xs:element name="content" type="xs:string" minOccurs="0" maxOccurs="1">
-				<xs:annotation>
-					<xs:documentation>Textual content of the documentation. May contain any form of text including escaped html or other formattings. </xs:documentation>
-				</xs:annotation>
-			</xs:element>
-			<xs:element name="resource" minOccurs="0" maxOccurs="unbounded">
-				<xs:annotation>
-					<xs:documentation>Link to an external resource via URI.</xs:documentation>
-				</xs:annotation>
-				<xs:complexType>
-					<xs:simpleContent>
-						<xs:extension base="xs:anyURI">
-							<xs:attributeGroup ref="imf:identity" />
-						</xs:extension>
-					</xs:simpleContent>
-				</xs:complexType>
-			</xs:element>
-		</xs:sequence>
-		<xs:attributeGroup ref="imf:optionalIdentity" />
-	</xs:complexType>
+	<xsd:complexType name="documentationManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Documentation of another element by means of a content text which might contain embedded markups and a collection of external resource references.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="content" type="xsd:string" minOccurs="0" maxOccurs="1">
+				<xsd:annotation>
+					<xsd:documentation>Textual content of the documentation. May contain any form of text including escaped html or other formattings. </xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="resource" minOccurs="0" maxOccurs="unbounded">
+				<xsd:annotation>
+					<xsd:documentation>Link to an external resource via URI.</xsd:documentation>
+				</xsd:annotation>
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="xsd:anyURI">
+							<xsd:attributeGroup ref="imf:optionalIdentity" />
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+		</xsd:sequence>
+		<xsd:attributeGroup ref="imf:optionalIdentity" />
+	</xsd:complexType>
 	
-	<xs:complexType name="valueManifestType">
-		<xs:annotation>
-			<xs:documentation>Wraps a single value and adds identity attributes and optional documentation</xs:documentation>
-		</xs:annotation>
-		<xs:sequence>
-			<xs:group ref="imf:documentationGroup" />
-			<xs:element name="content" type="imf:textType" minOccurs="0" maxOccurs="1">
-				<xs:annotation>
-					<xs:documentation>Serialized form of the value wrapped by this manifest.</xs:documentation>
-				</xs:annotation>
-			</xs:element>
-		</xs:sequence>
-		<xs:attributeGroup ref="imf:identity" />
-	</xs:complexType>
+	<xsd:complexType name="valueManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Wraps a single value and adds identity attributes and optional documentation</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:group ref="imf:documentationGroup" />
+			<xsd:element name="content" type="imf:textType" minOccurs="0" maxOccurs="1">
+				<xsd:annotation>
+					<xsd:documentation>Serialized form of the value wrapped by this manifest.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+		<xsd:attributeGroup ref="imf:fullIdentity" />
+	</xsd:complexType>
 	
-	<xs:complexType name="evalType">
-		<xs:annotation>
-			<xs:documentation>Encapsulates an expression, i.e. all the variable declarations and the code to be executed/interpreted.</xs:documentation>
-		</xs:annotation>
-		<xs:sequence>
-			<xs:element name="variable" minOccurs="1" maxOccurs="unbounded">
-				<xs:annotation>
-					<xs:documentation>Variable declared for late runtime binding. The type of the variable is defined by the 'namespace' attribute</xs:documentation>
-				</xs:annotation>
-				<xs:complexType>
-					<xs:simpleContent>
-						<xs:extension base="xs:string">
-							<xs:attribute name="name" type="imf:simpleNameAttr">
-								<xs:annotation>
-									<xs:documentation>Local name of the variable.</xs:documentation>
-								</xs:annotation>
-							</xs:attribute>
-							<xs:attribute name="namespace" type="imf:qualifiedClassNameAttr">
-								<xs:annotation>
-									<xs:documentation>Java type of the variable.</xs:documentation>
-								</xs:annotation>
-							</xs:attribute>
-						</xs:extension>
-					</xs:simpleContent>
-				</xs:complexType>
-			</xs:element>
-			<xs:element name="code" type="xs:string">
-				<xs:annotation>
-					<xs:documentation>Code content of an expression to be executed</xs:documentation>
-				</xs:annotation>
-			</xs:element>
-		</xs:sequence>
-	</xs:complexType>
+	<xsd:complexType name="evalType">
+		<xsd:annotation>
+			<xsd:documentation>Encapsulates an expression, i.e. all the variable declarations and the code to be executed/interpreted.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="variable" minOccurs="1" maxOccurs="unbounded">
+				<xsd:annotation>
+					<xsd:documentation>Variable declared for late runtime binding. The type of the variable is defined by the 'namespace' attribute</xsd:documentation>
+				</xsd:annotation>
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="xsd:string">
+							<xsd:attribute name="name" type="imf:simpleNameAttr">
+								<xsd:annotation>
+									<xsd:documentation>Local name of the variable.</xsd:documentation>
+								</xsd:annotation>
+							</xsd:attribute>
+							<xsd:attribute name="namespace" type="imf:qualifiedClassNameAttr">
+								<xsd:annotation>
+									<xsd:documentation>Java type of the variable.</xsd:documentation>
+								</xsd:annotation>
+							</xsd:attribute>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="code" type="xsd:string">
+				<xsd:annotation>
+					<xsd:documentation>Code content of an expression to be executed</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
 	
-	<xs:complexType name="versionManifestType">
-		<xs:annotation>
-			<xs:documentation>Self-explanatory version definition with version format specification and the actual version string.</xs:documentation>
-		</xs:annotation>
-		<xs:simpleContent>
-			<xs:extension base="xs:string">
-				<xs:attribute name="versionFormat" type="imf:identifierAttr">
-					<xs:annotation>
-						<xs:documentation>Format id that serves as a URI for a certain type of version format.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-			</xs:extension>
-		</xs:simpleContent>
-	</xs:complexType>
+	<xsd:complexType name="versionManifestType">
+		<xsd:annotation>
+			<xsd:documentation>Self-explanatory version definition with version format specification and the actual version string.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:simpleContent>
+			<xsd:extension base="xsd:string">
+				<xsd:attribute name="versionFormat" type="imf:identifierAttr">
+					<xsd:annotation>
+						<xsd:documentation>Format id that serves as a URI for a certain type of version format.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+			</xsd:extension>
+		</xsd:simpleContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="textType">
-		<xs:annotation>
-			<xs:documentation>Type with arbitrary text content.</xs:documentation>
-		</xs:annotation>
-		<xs:simpleContent>
-			<xs:extension base="xs:string" />
-		</xs:simpleContent>
-	</xs:complexType>
+	<xsd:complexType name="textType">
+		<xsd:annotation>
+			<xsd:documentation>Type with arbitrary text content.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:simpleContent>
+			<xsd:extension base="xsd:string" />
+		</xsd:simpleContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="identifierType">
-		<xs:annotation>
-			<xs:documentation>Type with string content that can be used as a valid identifier.</xs:documentation>
-		</xs:annotation>
-		<xs:simpleContent>
-	        <xs:restriction base="imf:textType">
-	    		<xs:pattern value="[A-Za-z][:_\-\w]+\w"></xs:pattern>
-	    	</xs:restriction>
-		</xs:simpleContent>
-	</xs:complexType>
+	<xsd:complexType name="identifierType">
+		<xsd:annotation>
+			<xsd:documentation>Type with string content that can be used as a valid identifier.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:simpleContent>
+	        <xsd:restriction base="imf:textType">
+	    		<xsd:pattern value="[A-Za-z][:_\-\w]+\w"></xsd:pattern>
+	    	</xsd:restriction>
+		</xsd:simpleContent>
+	</xsd:complexType>
 	
-	<xs:complexType name="identityType">
-		<xs:annotation>
-			<xs:documentation>Type with all identity related fields (besides the icon) being mandatory.</xs:documentation>
-		</xs:annotation>
-		<xs:attributeGroup ref="imf:identity" />
-	</xs:complexType>
+	<xsd:complexType name="categoryType">
+		<xsd:annotation>
+			<xsd:documentation>Type with category definition and optional identity fields.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="id" type="imf:identifierAttr">
+				<xsd:annotation>
+					<xsd:documentation>Machine readable identifier of the element</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="namespace" type="xsd:string">
+				<xsd:annotation>
+					<xsd:documentation>Namespace (typically a URI) to bind the id to. This is used to link to established categories, such as ISOCat/DatCatInfo</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="name" type="xsd:string" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Human readable identifier of the element</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="description" type="xsd:string" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Simple free text documentation of the element.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="icon" type="xsd:base64Binary" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Either a name of registered icon object or embedded base-64 binary text.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+		<xsd:attributeGroup ref="imf:category" />
+	</xsd:complexType>
 	
-	<xs:complexType name="optionalIdentityType">
-		<xs:annotation>
-			<xs:documentation>Type with all identity related fields being optional.</xs:documentation>
-		</xs:annotation>
-		<xs:attributeGroup ref="imf:optionalIdentity" />
-	</xs:complexType>
+	<xsd:complexType name="identityType">
+		<xsd:annotation>
+			<xsd:documentation>Type with optional identity fields or elements.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:group ref="imf:identityGroup" />
+		<xsd:attributeGroup ref="imf:fullIdentity" />
+	</xsd:complexType>
 	
+	<xsd:simpleType name="valueTypeAttr">
+		<xsd:annotation>
+			<xsd:documentation>Constants for basic value types and a general pattern for value type identifiers.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="unknown">
+				<xsd:annotation>
+					<xsd:documentation>Equivalent of the usual "other" type. No direct support is provided for values of this type, but they can be stored and accessed. Currently no support for (de)serialization.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="custom">
+				<xsd:annotation>
+					<xsd:documentation>Slightly more robust type than "unknown". This type assumes plugins or other modules attached to the framework that are able to handle the actual content. Currently no support for (de)serialization.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="extension">
+				<xsd:annotation>
+					<xsd:documentation>Currently unused type.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="enum">
+				<xsd:annotation>
+					<xsd:documentation>Values are constants defined in a Java enum class.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="string">
+				<xsd:annotation>
+					<xsd:documentation>Content is a sequence of UTF-16 characters.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="boolean">
+				<xsd:annotation>
+					<xsd:documentation>Fixed value set of either "true" or "false" while ignoring cases.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="integer">
+				<xsd:annotation>
+					<xsd:documentation>Basic signed 32-bit Java int value.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="long">
+				<xsd:annotation>
+					<xsd:documentation>Basic signed 64-bit Java long value.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="double">
+				<xsd:annotation>
+					<xsd:documentation>Basic double precision (64-bit) Java floating point value.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="float">
+				<xsd:annotation>
+					<xsd:documentation>Basic single precision (32-bit) Java floating point value.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="uri">
+				<xsd:annotation>
+					<xsd:documentation>Simple Uniform Resource Identifier (URI).</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="url">
+				<xsd:annotation>
+					<xsd:documentation>Simple Uniform Resource Locator (URL).</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="file">
+				<xsd:annotation>
+					<xsd:documentation>Path definition on a local or network file system. Note that values for this type can encode operating system dependent path syntax.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="url-resource">
+				<xsd:annotation>
+					<xsd:documentation>A "url" with added title and description information. Currently no support for (de)serialization.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="link">
+				<xsd:annotation>
+					<xsd:documentation>A "uri" with added title and description information. Currently no support for (de)serialization.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="image">
+				<xsd:annotation>
+					<xsd:documentation>Either a name of an already registered icon resource or embedded base-64 encoded binary data of an image.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="image-resource">
+				<xsd:annotation>
+					<xsd:documentation>An "image" with added title and description information. Currently no support for (de)serialization.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="binary">
+				<xsd:annotation>
+					<xsd:documentation>Raw embedded binary data, usually wrapped into a CDATA section.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<!-- TODO find out why this was here 
+			<xsd:pattern value="[a-z][a-z\-]*[a-z]\[x|[1-9][0-9]*\]" />
+			 -->
+		</xsd:restriction>
+	</xsd:simpleType>
 	
-	<xs:simpleType name="valueTypeAttr">
-		<xs:annotation>
-			<xs:documentation>Constants for basic value types and a general pattern for value type identifiers.</xs:documentation>
-		</xs:annotation>
-		<xs:restriction base="xs:string">
-			<xs:enumeration value="unknown">
-				<xs:annotation>
-					<xs:documentation>Equivalent of the usual "other" type. No direct support is provided for values of this type, but they can be stored and accessed. Currently no support for (de)serialization.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="custom">
-				<xs:annotation>
-					<xs:documentation>Slightly more robust type than "unknown". This type assumes plugins or other modules attached to the framework that are able to handle the actual content. Currently no support for (de)serialization.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="extension">
-				<xs:annotation>
-					<xs:documentation>Currently unused type.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="enum">
-				<xs:annotation>
-					<xs:documentation>Values are constants defined in a Java enum class.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="string">
-				<xs:annotation>
-					<xs:documentation>Content is a sequence of UTF-16 characters.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="boolean">
-				<xs:annotation>
-					<xs:documentation>Fixed value set of either "true" or "false" while ignoring cases.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="integer">
-				<xs:annotation>
-					<xs:documentation>Basic signed 32-bit Java int value.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="long">
-				<xs:annotation>
-					<xs:documentation>Basic signed 64-bit Java long value.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="double">
-				<xs:annotation>
-					<xs:documentation>Basic double precision (64-bit) Java int value.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="float">
-				<xs:annotation>
-					<xs:documentation>Basic single precision (32-bit) Java int value.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="uri">
-				<xs:annotation>
-					<xs:documentation>Simple Uniform Resource Identifier (URI).</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="url">
-				<xs:annotation>
-					<xs:documentation>Simple Uniform Resource Locator (URL).</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="file">
-				<xs:annotation>
-					<xs:documentation>Path definition on a local or network file system. Note that values for this type can encode operating system dependent path syntax.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="url-resource">
-				<xs:annotation>
-					<xs:documentation>A "url" with added title and description information. Currently no support for (de)serialization.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="link">
-				<xs:annotation>
-					<xs:documentation>A "uri" with added title and description information. Currently no support for (de)serialization.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="image">
-				<xs:annotation>
-					<xs:documentation>Either a name of an already registered icon resource or embedded base-64 encoded binary data of an image.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="image-resource">
-				<xs:annotation>
-					<xs:documentation>An "image" with added title and description information. Currently no support for (de)serialization.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="binary">
-				<xs:annotation>
-					<xs:documentation>Raw embedded binary data, usually wrapped into a CDATA section.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:pattern value="[a-z][a-z\-]*[a-z]\[x|[1-9][0-9]*\]" />
-		</xs:restriction>
-	</xs:simpleType>
+	<xsd:simpleType name="coverageAttr">
+		<xsd:annotation>
+			<xsd:documentation>Constants defining exploitable mathematical properties of the mapping function</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="total">
+				<xsd:annotation>
+					<xsd:documentation>The entire target index space is covered, but the mapped areas might overlap or be in a somewhat "random" fashion (meaning the mapping implementation describes a surjective function).</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="partial">
+				<xsd:annotation>
+					<xsd:documentation>No exploitable patterns available in the way of index mapping.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="monotonic">
+				<xsd:annotation>
+					<xsd:documentation>Mapped areas in the target space follow the same order as their source indices and do not overlap (i.e. the mapping describes an injective function).</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="total-monotonic">
+				<xsd:annotation>
+					<xsd:documentation>Same as "monotonic", but with the added constraint that the entire target space is covered, following a bijective function.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
 	
-	<xs:simpleType name="coverageAttr">
-		<xs:annotation>
-			<xs:documentation>Constants defining exploitable mathematical properties of the mapping function</xs:documentation>
-		</xs:annotation>
-		<xs:restriction base="xs:string">
-			<xs:enumeration value="total">
-				<xs:annotation>
-					<xs:documentation>The entire target index space is covered, but the mapped areas might overlap or be in a somewhat "random" fashion (meaning the mapping implementation describes a surjective function).</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="partial">
-				<xs:annotation>
-					<xs:documentation>No exploitable patterns available in the way of index mapping.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="monotonic">
-				<xs:annotation>
-					<xs:documentation>Mapped areas in the target space follow the same order as their source indices and do not overlap (i.e. the mapping describes an injective function).</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="total-monotonic">
-				<xs:annotation>
-					<xs:documentation>Same as "monotonic", but with the added constraint that the entire target space is covered, following a bijective function.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-		</xs:restriction>
-	</xs:simpleType>
-	
-	<xs:simpleType name="relationAttr">
-		<xs:annotation>
-			<xs:documentation>Models the actual quantitative relation type of a mapping, i.e. the relative number of elements on both sides of the mapping. The possible values are "one"and "many", which leads to 4 different relation types with varying levels of complexity when it comes to implementing them.</xs:documentation>
-		</xs:annotation>
-		<xs:restriction base="xs:string">
-			<xs:enumeration value="one-to-one">
-				<xs:annotation>
-					<xs:documentation>Elements from the source and target layer are mapped one to one. If the corresponding Coverage is "total-monotonic" this equals the identity function.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="one-to-many">
-				<xs:annotation>
-					<xs:documentation>A single element in the source layer may hold an arbitrary number of elements from the target layer. Typical examples are all kinds of aggregating markable layers that feature containers as top level elements. Possible lookup structures include span lists (begin- and end-index for each source element) for source layers that host span elements and complete content lists (a list of exact target indices) for non-monotonic source layer members. While span lists are fairly easy to map to memory chunks or arrays, content lists pose some serious drawbacks, potentially requiring an additional layer of indices to map source elements to their respective sublist in a data block. The corresponding index function is injective.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="many-to-one">
-				<xs:annotation>
-					<xs:documentation>An arbitrary number of (not necessarily monotonic) elements in the source layer map to a common member of the target layer.
+	<xsd:simpleType name="relationAttr">
+		<xsd:annotation>
+			<xsd:documentation>Models the actual quantitative relation type of a mapping, i.e. the relative number of elements on both sides of the mapping. The possible values are "one"and "many", which leads to 4 different relation types with varying levels of complexity when it comes to implementing them.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="one-to-one">
+				<xsd:annotation>
+					<xsd:documentation>Elements from the source and target layer are mapped one to one. If the corresponding Coverage is "total-monotonic" this equals the identity function.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="one-to-many">
+				<xsd:annotation>
+					<xsd:documentation>A single element in the source layer may hold an arbitrary number of elements from the target layer. Typical examples are all kinds of aggregating markable layers that feature containers as top level elements. Possible lookup structures include span lists (begin- and end-index for each source element) for source layers that host span elements and complete content lists (a list of exact target indices) for non-monotonic source layer members. While span lists are fairly easy to map to memory chunks or arrays, content lists pose some serious drawbacks, potentially requiring an additional layer of indices to map source elements to their respective sublist in a data block. The corresponding index function is injective.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="many-to-one">
+				<xsd:annotation>
+					<xsd:documentation>An arbitrary number of (not necessarily monotonic) elements in the source layer map to a common member of the target layer.
 		 
 		 If the target elements are spans, than an efficient lookup can be created by dividing the source layer into chunks of items and then save for each such chunk the first and last element in the target layer that is truly contained in this chunk (with respect to its begin- and end-offset). To lookup a target the algorithm then first determines the correct chunk according to the source elements index and then performs a binary search on the spans in that chunk to find the target element. Performance can be controlled by adjusting chunk size to a value that provides a good tradeoff between required memory space to store the index information and the speed incurred by the binary search (which serves as a constant cost factor in the performance formula).
 		 
-		 In the case of non-monotonic elements in the target layer (e.g. clusters of source items) the above technique fails and it might be required to store a dedicated target index value for each source element.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="many-to-many">
-				<xs:annotation>
-					<xs:documentation>As the most complex relation version, this one maps an arbitrary number of source elements to an again arbitrary number of target elements/containers. As an example imagine entities in the source layer being grouped into category containers in the target layer, allowing each entity to be assigned many different categories at once.
+		 In the case of non-monotonic elements in the target layer (e.g. clusters of source items) the above technique fails and it might be required to store a dedicated target index value for each source element.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="many-to-many">
+				<xsd:annotation>
+					<xsd:documentation>As the most complex relation version, this one maps an arbitrary number of source elements to an again arbitrary number of target elements/containers. As an example imagine entities in the source layer being grouped into category containers in the target layer, allowing each entity to be assigned many different categories at once.
 		 
 		 Depending on the container type of the target elements, this version gets easy or very expensive.
 		 
 		 If the target elements are spans, than it is possible to use the strategy proposed for the "many-to-one" relation with a slight addition: When the first target container is found using binary search within the chunk, then neighbors to both sides are added to the result collection, until containers are encountered for both ends, that do not contain the source element. The complexity in this case is limited by the maximum "nesting depth" of spans in the target layer, which remains to be evaluated as a proper upper bound. Looking in the neighborhood of the first successful match is possible due to the sorted nature of top-level layer elements and the sorting rules for spans (span locality).
 		 
-		 For non-monotonic target elements the rules for the "one-to-many" relation apply.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-		</xs:restriction>
-	</xs:simpleType>
+		 For non-monotonic target elements the rules for the "one-to-many" relation apply.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
 	
-	<xs:simpleType name="pathTypeAttr">
-		<xs:annotation>
-			<xs:documentation>Constants indicating how location information for a (distributed) is to be interpreted. This mainly concerns local resources.</xs:documentation>
-		</xs:annotation>
-		<xs:restriction base="xs:string">
-			<xs:enumeration value="file">
-				<xs:annotation>
-					<xs:documentation>Describes direct pointers to a data file.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="folder">
-				<xs:annotation>
-					<xs:documentation>Describes a pointer to some data folder from which to pick the actual data files. Usually this is accompanied by a PathResolverManifest declaration in the hosting LocationManifest as a means of filtering files or defining the required file ending, etc...</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="pattern">
-				<xs:annotation>
-					<xs:documentation>Currently unused type.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="identifier">
-				<xs:annotation>
-					<xs:documentation>Defines an abstract pointer to some arbitrary resource. It is the responsibility of the respective path resolver to manage access to that resource. Format and meaning of this path type is thus resolver implementation dependent.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="custom">
-				<xs:annotation>
-					<xs:documentation>Signals that all information on how to access the location's data is implemented directly by the path resolver used to access it.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-		</xs:restriction>
-	</xs:simpleType>
+	<xsd:simpleType name="pathTypeAttr">
+		<xsd:annotation>
+			<xsd:documentation>Constants indicating how location information for a (distributed) is to be interpreted. This mainly concerns local resources.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="file">
+				<xsd:annotation>
+					<xsd:documentation>Describes direct pointers to a data file.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="folder">
+				<xsd:annotation>
+					<xsd:documentation>Describes a pointer to some data folder from which to pick the actual data files. Usually this is accompanied by a PathResolverManifest declaration in the hosting LocationManifest as a means of filtering files or defining the required file ending, etc...</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="pattern">
+				<xsd:annotation>
+					<xsd:documentation>Currently unused type.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="identifier">
+				<xsd:annotation>
+					<xsd:documentation>Defines an abstract pointer to some arbitrary resource. It is the responsibility of the respective path resolver to manage access to that resource. Format and meaning of this path type is thus resolver implementation dependent.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="custom">
+				<xsd:annotation>
+					<xsd:documentation>Signals that all information on how to access the location's data is implemented directly by the path resolver used to access it.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
 	
-	<xs:simpleType name="locationTypeAttr">
-		<xs:annotation>
-			<xs:documentation>Constants to define the type of location a resource should/can be loaded from.</xs:documentation>
-		</xs:annotation>
-		<xs:restriction base="xs:string">
-			<xs:enumeration value="local">
-				<xs:annotation>
-					<xs:documentation>Specifies that a certain location denotes a local file object accessible via a simple path string.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="remote">
-				<xs:annotation>
-					<xs:documentation>Marks a location as remotely accessible via a dedicated URL</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="service">
-				<xs:annotation>
-					<xs:documentation>The location describes a remote or local service which should be used to access data. Typically this type of location requires additional ModuleSpec specifications in a driver manifest to define the interface to the service.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="database">
-				<xs:annotation>
-					<xs:documentation>Locations with this type denote a database of arbitrary implementation. It is up to the ResourcePath or LocationManifest to provide additional information to properly access the database.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-		</xs:restriction>
-	</xs:simpleType>
+	<xsd:simpleType name="locationTypeAttr">
+		<xsd:annotation>
+			<xsd:documentation>Constants to define the type of location a resource should/can be loaded from.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="local">
+				<xsd:annotation>
+					<xsd:documentation>Specifies that a certain location denotes a local file object accessible via a simple path string.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="remote">
+				<xsd:annotation>
+					<xsd:documentation>Marks a location as remotely accessible via a dedicated URL</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="service">
+				<xsd:annotation>
+					<xsd:documentation>The location describes a remote or local service which should be used to access data. Typically this type of location requires additional ModuleSpec specifications in a driver manifest to define the interface to the service.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="database">
+				<xsd:annotation>
+					<xsd:documentation>Locations with this type denote a database of arbitrary implementation. It is up to the ResourcePath or LocationManifest to provide additional information to properly access the database.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
 	
-	<xs:simpleType name="multiplicityAttr">
-		<xs:annotation>
-			<xs:documentation>Defines the multiplicity of allowed (external) elements in a certain context.</xs:documentation>
-		</xs:annotation>
-		<xs:restriction base="xs:string">
-			<xs:enumeration value="none">
-				<xs:annotation>
-					<xs:documentation>Defines an "empty" docking point for external entities.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="none-or-one">
-				<xs:annotation>
-					<xs:documentation>Docking point for at most one external entity.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="one">
-				<xs:annotation>
-					<xs:documentation>Requires exactly one external entity to be docked.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="one-or-more">
-				<xs:annotation>
-					<xs:documentation>Requires at least one external entity to be docked but poses no upper limit.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="any">
-				<xs:annotation>
-					<xs:documentation>Unrestricted docking point.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-		</xs:restriction>
-	</xs:simpleType>
+	<xsd:simpleType name="multiplicityAttr">
+		<xsd:annotation>
+			<xsd:documentation>Defines the multiplicity of allowed (external) elements in a certain context.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="none">
+				<xsd:annotation>
+					<xsd:documentation>Defines an "empty" docking point for external entities.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="none-or-one">
+				<xsd:annotation>
+					<xsd:documentation>Docking point for at most one external entity.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="one">
+				<xsd:annotation>
+					<xsd:documentation>Requires exactly one external entity to be docked.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="one-or-more">
+				<xsd:annotation>
+					<xsd:documentation>Requires at least one external entity to be docked but poses no upper limit.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="any">
+				<xsd:annotation>
+					<xsd:documentation>Unrestricted docking point.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
 	
-	<xs:simpleType name="sourceTypeAttr">
-		<xs:annotation>
-			<xs:documentation>Specifies how the "soruce" definition of an ImplementationManifest is to be interpreted.</xs:documentation>
-		</xs:annotation>
-		<xs:restriction base="xs:string">
-			<xs:enumeration value="extension">
-				<xs:annotation>
-					<xs:documentation>Source is a globally unique extension uid in the form: &lt;plugin-uid&gt;@&lt;extension-id&gt;
+	<xsd:simpleType name="sourceTypeAttr">
+		<xsd:annotation>
+			<xsd:documentation>Specifies how the "soruce" definition of an ImplementationManifest is to be interpreted.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="extension">
+				<xsd:annotation>
+					<xsd:documentation>Source is a globally unique extension uid in the form: &lt;plugin-uid&gt;@&lt;extension-id&gt;
 		 
-		 Note that in this case the classname parameter is optional (and in fact it would be redundant, since the extension in question is already required to contain a class parameter!</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="plugin">
-				<xs:annotation>
-					<xs:documentation>Source is the globally unique identifier of a plugin, used to fetch the class loader which has access to the implementation. The classname parameter defines the fully qualified name of the implementing class.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="extern">
-				<xs:annotation>
-					<xs:documentation>Since for simple additions creation of an entire plugin could easily be considered overkill, there is the option to provide the class file of an implementation in the {@code external} folder. The source would then be the file name. Per convention, if the referenced file is a mere class file, its name must equal the fully qualified name of the class contained. If the file is a jar archive, an additional class name must be specified, otherwise the jar's manifest file will be accessed to check for a main class declaration.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="default">
-				<xs:annotation>
-					<xs:documentation>When the target class is accessible via the class loader that loaded the model plugin, the only thing required is the classname parameter (the source is not needed any more!).</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-		</xs:restriction>
-	</xs:simpleType>
+		 Note that in this case the classname parameter is optional (and in fact it would be redundant, since the extension in question is already required to contain a class parameter!</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="plugin">
+				<xsd:annotation>
+					<xsd:documentation>Source is the globally unique identifier of a plugin, used to fetch the class loader which has access to the implementation. The classname parameter defines the fully qualified name of the implementing class.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="extern">
+				<xsd:annotation>
+					<xsd:documentation>Since for simple additions creation of an entire plugin could easily be considered overkill, there is the option to provide the class file of an implementation in the {@code external} folder. The source would then be the file name. Per convention, if the referenced file is a mere class file, its name must equal the fully qualified name of the class contained. If the file is a jar archive, an additional class name must be specified, otherwise the jar's manifest file will be accessed to check for a main class declaration.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="default">
+				<xsd:annotation>
+					<xsd:documentation>When the target class is accessible via the class loader that loaded the model plugin, the only thing required is the classname parameter (the source is not needed any more!).</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
 	
-	<xs:simpleType name="containerTypeAttr">
-		<xs:annotation>
-			<xs:documentation>Constants usable as types for a ContainerManifest</xs:documentation>
-		</xs:annotation>
-		<xs:restriction base="xs:string">
-			<xs:enumeration value="singleton">
-				<xs:annotation>
-					<xs:documentation>The container holds a single item.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="span">
-				<xs:annotation>
-					<xs:documentation>The container holds an ordered and continuous list of items.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="set">
-				<xs:annotation>
-					<xs:documentation>The container holds a non-continuous but ordered collection of items.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-		</xs:restriction>
-	</xs:simpleType>
+	<xsd:simpleType name="containerTypeAttr">
+		<xsd:annotation>
+			<xsd:documentation>Constants usable as types for a ContainerManifest</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="singleton">
+				<xsd:annotation>
+					<xsd:documentation>The container holds a single item.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="span">
+				<xsd:annotation>
+					<xsd:documentation>The container holds an ordered and continuous list of items.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="set">
+				<xsd:annotation>
+					<xsd:documentation>The container holds a non-continuous but ordered collection of items.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
 	
-	<xs:simpleType name="structureTypeAttr">
-		<xs:annotation>
-			<xs:documentation>Constants usable as types for a StructureManifest</xs:documentation>
-		</xs:annotation>
-		<xs:restriction base="xs:string">
-			<xs:enumeration value="set">
-				<xs:annotation>
-					<xs:documentation>An unordered collection of nodes, not connected by any edges. This is by far the most basic type of structure.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="chain">
-				<xs:annotation>
-					<xs:documentation>An ordered sequence of nodes, each with at most one predecessor and successor. Edges in this structure are expected to be directed only!</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="tree">
-				<xs:annotation>
-					<xs:documentation>A hierarchically ordered collection of nodes where each node is assigned at most one parent and is allowed to have an arbitrary number of children. All edges are directed from a parent down to the child node itself.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="directed-graph">
-				<xs:annotation>
-					<xs:documentation>A general graph with the only restriction that edges have to be directed.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="graph">
-				<xs:annotation>
-					<xs:documentation>Being the most unbounded and therefore most complex type a graph does not pose any restrictions on nodes or edges.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-		</xs:restriction>
-	</xs:simpleType>
+	<xsd:simpleType name="structureTypeAttr">
+		<xsd:annotation>
+			<xsd:documentation>Constants usable as types for a StructureManifest</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="set">
+				<xsd:annotation>
+					<xsd:documentation>An unordered collection of nodes, not connected by any edges. This is by far the most basic type of structure.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="chain">
+				<xsd:annotation>
+					<xsd:documentation>An ordered sequence of nodes, each with at most one predecessor and successor. Edges in this structure are expected to be directed only!</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="tree">
+				<xsd:annotation>
+					<xsd:documentation>A hierarchically ordered collection of nodes where each node is assigned at most one parent and is allowed to have an arbitrary number of children. All edges are directed from a parent down to the child node itself.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="directed-graph">
+				<xsd:annotation>
+					<xsd:documentation>A general graph with the only restriction that edges have to be directed.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="graph">
+				<xsd:annotation>
+					<xsd:documentation>Being the most unbounded and therefore most complex type a graph does not pose any restrictions on nodes or edges.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
 	
-	<xs:simpleType name="containerFlagType">
-		<xs:annotation>
-			<xs:documentation>Constants usable for flags in the context of a ContainerManifest</xs:documentation>
-		</xs:annotation>
-		<xs:restriction base="xs:string">
-			<xs:enumeration value="virtual">
-				<xs:annotation>
-					<xs:documentation></xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="empty">
-				<xs:annotation>
-					<xs:documentation></xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="non-static">
-				<xs:annotation>
-					<xs:documentation></xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="duplicates">
-				<xs:annotation>
-					<xs:documentation></xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="ordered">
-				<xs:annotation>
-					<xs:documentation></xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="virtual">
-				<xs:annotation>
-					<xs:documentation></xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-		</xs:restriction>
-	</xs:simpleType>
+	<xsd:simpleType name="containerFlagType">
+		<xsd:annotation>
+			<xsd:documentation>Constants usable for flags in the context of a ContainerManifest</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="virtual">
+				<xsd:annotation>
+					<xsd:documentation></xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="empty">
+				<xsd:annotation>
+					<xsd:documentation></xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="non-static">
+				<xsd:annotation>
+					<xsd:documentation></xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="duplicates">
+				<xsd:annotation>
+					<xsd:documentation></xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="ordered">
+				<xsd:annotation>
+					<xsd:documentation></xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="virtual">
+				<xsd:annotation>
+					<xsd:documentation></xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
 	
-	<xs:simpleType name="structureFlagType">
-		<xs:annotation>
-			<xs:documentation>Constants usable for flags in the context of a StructureManifest</xs:documentation>
-		</xs:annotation>
-		<xs:restriction base="xs:string">
-			<xs:enumeration value="virtual" >
-				<xs:annotation>
-					<xs:documentation>Specifies whether edges are allowed to be virtual (i.e. they may have virtual items assigned to them as terminals). Note that this restriction only applies to edges that are not attached to the virtual root node of a structure!</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="empty" >
-				<xs:annotation>
-					<xs:documentation>Specifies whether or not structures are allowed to have an edge count of 0, i.e. being empty.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="non-static" >
-				<xs:annotation>
-					<xs:documentation>Arrangement of edges in a structure can be altered by the user. Note that the default assumption is that edges are immutable, to avoid verbose declaration of this flag (since in most cases it is indeed safe to assume immutable data, which prevents driver implementations from having to deal with complexity of mutable corpus data).</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="loops" >
-				<xs:annotation>
-					<xs:documentation>Signals that edges in a structure are allowed to have the same item assigned as source and target terminal.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="parallel" >
-				<xs:annotation>
-					<xs:documentation>Signals that for a given pair of terminals there may exist more than one edge between them with the same direction.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="ordered" >
-				<xs:annotation>
-					<xs:documentation>Specifies whether or not a structure requires its edges to be arranged according to the default item ordering defined by the model.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="partial" >
-				<xs:annotation>
-					<xs:documentation>Signals that a structure is not required to use all its nodes. If set a structure is not allowed to host nodes for which the edge count is 0. This property exists to enable optimization for very compact implementations of certain structure types like StructureType.CHAIN where the total number of possible edges is fixed by the number of nodes.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="multi-root" >
-				<xs:annotation>
-					<xs:documentation>Specifies whether or not a structure may have more than 1 edge assigned to its virtual root node (effectively meaning that it has in fact several "real" root nodes).</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-		</xs:restriction>
-	</xs:simpleType>
+	<xsd:simpleType name="structureFlagType">
+		<xsd:annotation>
+			<xsd:documentation>Constants usable for flags in the context of a StructureManifest</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="virtual" >
+				<xsd:annotation>
+					<xsd:documentation>Specifies whether edges are allowed to be virtual (i.e. they may have virtual items assigned to them as terminals). Note that this restriction only applies to edges that are not attached to the virtual root node of a structure!</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="empty" >
+				<xsd:annotation>
+					<xsd:documentation>Specifies whether or not structures are allowed to have an edge count of 0, i.e. being empty.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="non-static" >
+				<xsd:annotation>
+					<xsd:documentation>Arrangement of edges in a structure can be altered by the user. Note that the default assumption is that edges are immutable, to avoid verbose declaration of this flag (since in most cases it is indeed safe to assume immutable data, which prevents driver implementations from having to deal with complexity of mutable corpus data).</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="loops" >
+				<xsd:annotation>
+					<xsd:documentation>Signals that edges in a structure are allowed to have the same item assigned as source and target terminal.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="parallel" >
+				<xsd:annotation>
+					<xsd:documentation>Signals that for a given pair of terminals there may exist more than one edge between them with the same direction.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="ordered" >
+				<xsd:annotation>
+					<xsd:documentation>Specifies whether or not a structure requires its edges to be arranged according to the default item ordering defined by the model.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="partial" >
+				<xsd:annotation>
+					<xsd:documentation>Signals that a structure is not required to use all its nodes. If set a structure is not allowed to host nodes for which the edge count is 0. This property exists to enable optimization for very compact implementations of certain structure types like StructureType.CHAIN where the total number of possible edges is fixed by the number of nodes.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="multi-root" >
+				<xsd:annotation>
+					<xsd:documentation>Specifies whether or not a structure may have more than 1 edge assigned to its virtual root node (effectively meaning that it has in fact several "real" root nodes).</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
 	
-	<xs:simpleType name="annotationFlagType">
-		<xs:annotation>
-			<xs:documentation>Constants usable for flags in the context of a AnnotationLayerManifest</xs:documentation>
-		</xs:annotation>
-		<xs:restriction base="xs:string">
-			<xs:enumeration value="searchable">
-				<xs:annotation>
-					<xs:documentation>Flag to tell the framework if it is possible to efficiently perform search operations on the annotation content.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="indexable">
-				<xs:annotation>
-					<xs:documentation>Defines if it is possible to build an index for the content of a layer. This is of course only of importance if the layer in question actually supports search operations as defined via the "searchable" flag.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="deep-annotation">
-				<xs:annotation>
-					<xs:documentation>Defines whether a layer only provides annotations for the members of the respective ItemLayer's direct container. If present indicates that a layer may be queried for annotations of nested containers or structures/edges.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="element-annotation">
-				<xs:annotation>
-					<xs:documentation>A special case of "deep-annotation" only applicable when the target layer contains Container or Structure objects as top level targets for this annotation layer. The flag indicates that annotations are only meant for the direct elements of those containers!</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="node-annotation">
-				<xs:annotation>
-					<xs:documentation>A special case of "element-annotation" that signals that an annotation is only meant for the nodes of a certain structure.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="edge-annotation">
-				<xs:annotation>
-					<xs:documentation>A special case of "element-annotation" that signals that an annotation is only meant for the edges of a certain structure.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="unknown-keys">
-				<xs:annotation>
-					<xs:documentation>Defines whether an AnnotationLayer derived from this manifest should be able to handle keys that have not been declared within a nested AnnotationManifest. Note that when a format allows arbitrary properties on the annotation level and therefore decides to allow those unknown keys it loses some of the robustness a finite declaration of supported keys and their values provides!</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-		</xs:restriction>
-	</xs:simpleType>
+	<xsd:simpleType name="annotationFlagType">
+		<xsd:annotation>
+			<xsd:documentation>Constants usable for flags in the context of a AnnotationLayerManifest</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="searchable">
+				<xsd:annotation>
+					<xsd:documentation>Flag to tell the framework if it is possible to efficiently perform search operations on the annotation content.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="indexable">
+				<xsd:annotation>
+					<xsd:documentation>Defines if it is possible to build an index for the content of a layer. This is of course only of importance if the layer in question actually supports search operations as defined via the "searchable" flag.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="deep-annotation">
+				<xsd:annotation>
+					<xsd:documentation>Defines whether a layer only provides annotations for the members of the respective ItemLayer's direct container. If present indicates that a layer may be queried for annotations of nested containers or structures/edges.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="element-annotation">
+				<xsd:annotation>
+					<xsd:documentation>A special case of "deep-annotation" only applicable when the target layer contains Container or Structure objects as top level targets for this annotation layer. The flag indicates that annotations are only meant for the direct elements of those containers!</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="node-annotation">
+				<xsd:annotation>
+					<xsd:documentation>A special case of "element-annotation" that signals that an annotation is only meant for the nodes of a certain structure.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="edge-annotation">
+				<xsd:annotation>
+					<xsd:documentation>A special case of "element-annotation" that signals that an annotation is only meant for the edges of a certain structure.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="unknown-keys">
+				<xsd:annotation>
+					<xsd:documentation>Defines whether an AnnotationLayer derived from this manifest should be able to handle keys that have not been declared within a nested AnnotationManifest. Note that when a format allows arbitrary properties on the annotation level and therefore decides to allow those unknown keys it loses some of the robustness a finite declaration of supported keys and their values provides!</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
 	
-	<xs:simpleType name="highlightFlagType">
-		<xs:annotation>
-			<xs:documentation>Constants usable for flags in the context of a HighlightLayerManifest</xs:documentation>
-		</xs:annotation>
-		<xs:restriction base="xs:string">
-			<xs:enumeration value="deep-highlighting">
-				<xs:annotation>
-					<xs:documentation>Flag to indicate whether or not the highlight information is exlusive to the defined base layers or if it can be applied to nexted elements as well</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>			
-			<xs:enumeration value="editable">
-				<xs:annotation>
-					<xs:documentation>Flag to indicate whether or not the highlight information can be altered by the suer.</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-		</xs:restriction>
-	</xs:simpleType>
+	<xsd:simpleType name="highlightFlagType">
+		<xsd:annotation>
+			<xsd:documentation>Constants usable for flags in the context of a HighlightLayerManifest</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="deep-highlighting">
+				<xsd:annotation>
+					<xsd:documentation>Flag to indicate whether or not the highlight information is exlusive to the defined base layers or if it can be applied to nexted elements as well</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>			
+			<xsd:enumeration value="editable">
+				<xsd:annotation>
+					<xsd:documentation>Flag to indicate whether or not the highlight information can be altered by the suer.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
 
-	<xs:simpleType name="complexNameAttr">
-		<xs:annotation>
-			<xs:documentation>A more complex identifier that allows some special characters and whitespaces</xs:documentation>
-		</xs:annotation>
-		<xs:restriction base="xs:string">
-			<xs:pattern value="[A-Za-z][\w \-_]*" />
-		</xs:restriction>
-	</xs:simpleType>
+	<xsd:simpleType name="complexNameAttr">
+		<xsd:annotation>
+			<xsd:documentation>A more complex identifier that allows some special characters and whitespaces</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:pattern value="[A-Za-z][\w \-_]*" />
+		</xsd:restriction>
+	</xsd:simpleType>
 
-	<xs:simpleType name="simpleNameAttr">
-		<xs:annotation>
-			<xs:documentation>A compact identifier starting with a upper- or lowercase letter and otherwise only containing alphanumeric characters without any whitespaces</xs:documentation>
-		</xs:annotation>
-		<xs:restriction base="xs:string">
-			<xs:pattern value="[A-Za-z]\w*" />
-		</xs:restriction>
-	</xs:simpleType>
+	<xsd:simpleType name="simpleNameAttr">
+		<xsd:annotation>
+			<xsd:documentation>A compact identifier starting with a upper- or lowercase letter and otherwise only containing alphanumeric characters without any whitespaces</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:pattern value="[A-Za-z]\w*" />
+		</xsd:restriction>
+	</xsd:simpleType>
 
-    <xs:simpleType name="identifierAttr">
-        <xs:annotation>
-        	<xs:documentation>General format of identifiers, minimum length of 3 characters, starting with a letter character, followed by any positive number of any one of alphanumeric, colon, underscore or hyphen and ended by an alphanumeric character</xs:documentation>
-        </xs:annotation>
-        <xs:restriction base="xs:string">
-    		<xs:pattern value="[A-Za-z][:_\-\w]+\w" />
-    	</xs:restriction>
-    </xs:simpleType>
+    <xsd:simpleType name="identifierAttr">
+        <xsd:annotation>
+        	<xsd:documentation>General format of identifiers, minimum length of 3 characters, starting with a letter character, followed by any positive number of any one of alphanumeric, colon, underscore, dot or hyphen and ended by an alphanumeric character</xsd:documentation>
+        </xsd:annotation>
+        <xsd:restriction base="xsd:string">
+    		<xsd:pattern value="[A-Za-z][:_\.\-\w]+\w" />
+    	</xsd:restriction>
+    </xsd:simpleType>
 
-    <xs:simpleType name="qualifiedClassNameAttr">
-        <xs:annotation>
-        	<xs:documentation>Fully qualified class name of a java class. Note that the pattern used expresses a less strict version of the java identifier format by allowing lower case letters to be used in the beginning of the final class name!</xs:documentation>
-        </xs:annotation>
-        <xs:restriction base="xs:string">
-    		<xs:pattern value="([a-z][a-z_0-9]*\.)*[A-Z_]($[A-Za-z_]|[\w_])*" />
-    	</xs:restriction>
-    </xs:simpleType>
+    <xsd:simpleType name="qualifiedClassNameAttr">
+        <xsd:annotation>
+        	<xsd:documentation>Fully qualified class name of a java class. Note that the pattern used expresses a less strict version of the java identifier format by allowing lower case letters to be used in the beginning of the final class name!</xsd:documentation>
+        </xsd:annotation>
+        <xsd:restriction base="xsd:string">
+    		<xsd:pattern value="([a-z][a-z_0-9]*\.)*[A-Z_]($[A-Za-z_]|[\w_])*" />
+    	</xsd:restriction>
+    </xsd:simpleType>
     
-    
+    <xsd:attributeGroup name="category">
+    	<xsd:annotation>
+    		<xsd:documentation>Identifiable entity that is associated with a namespace to bind the id field to.</xsd:documentation>
+    	</xsd:annotation>
+		<xsd:attribute name="id" type="imf:identifierAttr" use="required">
+			<xsd:annotation>
+				<xsd:documentation>Machine readable identifier of the element</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="namespace" type="xsd:string" use="required">
+			<xsd:annotation>
+				<xsd:documentation>Namespace (typically a URI) to bind the id to. This is used to link to established categories, such as ISOCat/DatCatInfo</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="name" type="imf:complexNameAttr" use="optional">
+			<xsd:annotation>
+				<xsd:documentation>Human readable identifier of the element</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="description" type="xsd:string" use="optional">
+			<xsd:annotation>
+				<xsd:documentation>Simple free text documentation of the element.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="icon" type="xsd:string" use="optional">
+			<xsd:annotation>
+				<xsd:documentation>Either a name of registered icon object or embedded base-64 binary text.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+    </xsd:attributeGroup>
 	
-	<xs:attributeGroup name="identity">
-		<xs:attribute name="id" type="imf:identifierAttr" use="required">
-			<xs:annotation>
-				<xs:documentation>Machine readable identifier of the element</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="name" type="imf:complexNameAttr" use="required">
-			<xs:annotation>
-				<xs:documentation>Human readable identifier of the element</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="description" type="xs:string" use="optional">
-			<xs:annotation>
-				<xs:documentation>Simple free text documentation of the element.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="icon" type="xs:string" use="optional">
-			<xs:annotation>
-				<xs:documentation>Either a name of registered icon object or embedded base-64 binary text.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-	</xs:attributeGroup>
+	<xsd:attributeGroup name="optionalIdentity">
+		<xsd:annotation>
+			<xsd:documentation>Entity with mandatory identifier fields.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:attribute name="id" type="imf:identifierAttr" use="optional">
+			<xsd:annotation>
+				<xsd:documentation>Machine readable identifier of the element</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attributeGroup ref="imf:partialIdentity" />
+	</xsd:attributeGroup>
 	
-	<xs:attributeGroup name="optionalIdentity">
-		<xs:attribute name="id" type="imf:identifierAttr" use="optional">
-			<xs:annotation>
-				<xs:documentation>Machine readable identifier of the element</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="name" type="imf:complexNameAttr" use="optional">
-			<xs:annotation>
-				<xs:documentation>Human readable identifier of the element</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="description" type="xs:string" use="optional">
-			<xs:annotation>
-				<xs:documentation>Simple free text documentation of the element.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="icon" type="xs:string" use="optional">
-			<xs:annotation>
-				<xs:documentation>Either a name of registered icon object or embedded base-64 binary text.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-	</xs:attributeGroup>
+	<xsd:attributeGroup name="fullIdentity">
+		<xsd:annotation>
+			<xsd:documentation>Entity with mandatory identifier fields.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:attribute name="id" type="imf:identifierAttr" use="required">
+			<xsd:annotation>
+				<xsd:documentation>Machine readable identifier of the element</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attributeGroup ref="imf:partialIdentity" />
+	</xsd:attributeGroup>
 	
-	<xs:group name="layerGroup">
-		<xs:sequence>
-			<xs:choice maxOccurs="unbounded">
-				<xs:element name="itemLayer" type="imf:itemLayerManifestType" />
-				<xs:element name="structureLayer" type="imf:structureLayerManifestType" />
-				<xs:element name="fragmentLayer" type="imf:fragmentLayerManifestType" />
-				<xs:element name="annotationLayer" type="imf:annotationLayerManifestType" />
-				<xs:element name="highlightLayer" type="imf:highlightLayerManifestType" />
-			</xs:choice>
-		</xs:sequence>
-	</xs:group>
+	<xsd:attributeGroup name="partialIdentity">
+		<xsd:annotation>
+			<xsd:documentation>Equivalent of the identity attribute group with all the field optional.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:attribute name="name" type="imf:complexNameAttr" use="optional">
+			<xsd:annotation>
+				<xsd:documentation>Human readable identifier of the element</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="description" type="xsd:string" use="optional">
+			<xsd:annotation>
+				<xsd:documentation>Simple free text documentation of the element.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="icon" type="xsd:string" use="optional">
+			<xsd:annotation>
+				<xsd:documentation>Either a name of registered icon object or embedded base-64 binary text.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+	</xsd:attributeGroup>
 	
-	<xs:group name="documentationGroup">
-		<xs:sequence>
-			<xs:element name="documentation" type="imf:documentationManifestType" minOccurs="0" maxOccurs="1">
-				<xs:annotation>
-					<xs:documentation>Documentation provided by creator of resource</xs:documentation>
-				</xs:annotation>
-			</xs:element>
-		</xs:sequence>
-	</xs:group>
+	<xsd:group name="layerGroup">
+		<xsd:sequence>
+			<xsd:choice maxOccurs="unbounded">
+				<xsd:element name="itemLayer" type="imf:itemLayerManifestType" />
+				<xsd:element name="structureLayer" type="imf:structureLayerManifestType" />
+				<xsd:element name="fragmentLayer" type="imf:fragmentLayerManifestType" />
+				<xsd:element name="annotationLayer" type="imf:annotationLayerManifestType" />
+				<xsd:element name="highlightLayer" type="imf:highlightLayerManifestType" />
+			</xsd:choice>
+		</xsd:sequence>
+	</xsd:group>
+	
+	<xsd:group name="documentationGroup">
+		<xsd:sequence>
+			<xsd:element name="documentation" type="imf:documentationManifestType" minOccurs="0" maxOccurs="1">
+				<xsd:annotation>
+					<xsd:documentation>Documentation provided by creator of resource</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:group>
+	
+	<xsd:group name="identityGroup">
+		<xsd:annotation>
+			<xsd:documentation>Type with all identity related fields being optional.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="name" type="xsd:string" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Human readable identifier of the element</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="description" type="xsd:string" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Simple free text documentation of the element.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="icon" type="xsd:string" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Either a name of registered icon object or embedded base-64 binary text.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:group>
 
-</xs:schema>
+</xsd:schema>

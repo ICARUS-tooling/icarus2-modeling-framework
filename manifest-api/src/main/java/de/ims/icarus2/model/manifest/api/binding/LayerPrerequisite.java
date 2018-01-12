@@ -20,7 +20,7 @@ package de.ims.icarus2.model.manifest.api.binding;
 import de.ims.icarus2.util.Multiplicity;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessRestriction;
-import de.ims.icarus2.util.classes.ClassUtils;
+import de.ims.icarus2.util.lang.ClassUtils;
 
 /**
  * Models a requirement an entity can publish to let others know what kinds of layers

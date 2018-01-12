@@ -27,7 +27,7 @@ import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ValueRange;
 import de.ims.icarus2.model.manifest.types.UnsupportedValueTypeException;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.util.classes.ClassUtils;
+import de.ims.icarus2.util.lang.ClassUtils;
 
 public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 

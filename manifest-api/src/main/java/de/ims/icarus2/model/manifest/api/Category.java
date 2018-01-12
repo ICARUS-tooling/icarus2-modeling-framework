@@ -17,7 +17,10 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.Objects;
+
 import de.ims.icarus2.util.id.Identity;
+import it.unimi.dsi.fastutil.Hash.Strategy;
 
 /**
  * Link to a category or term definition.
@@ -45,9 +48,21 @@ public interface Category extends Identity {
 	 * unlike the original contract of {@link Identity} the
 	 * value returned by this method must follow the defined
 	 * vocabulary of the designated {@link #getNamespace() namespace}!
-	 *
-	 * @see de.ims.icarus2.util.id.Identity#getId()
 	 */
 	@Override
 	String getId();
+
+	public static final Strategy<Category> HASH_STRATEGY = new Strategy<Category>() {
+
+		@Override
+		public int hashCode(Category cat) {
+			return Objects.hash(cat.getId(), cat.getNamespace());
+		}
+
+		@Override
+		public boolean equals(Category cat0, Category cat1) {
+			return Objects.equals(cat0.getId(), cat1.getId())
+					&& Objects.equals(cat0.getNamespace(), cat1.getNamespace());
+		}
+	};
 }

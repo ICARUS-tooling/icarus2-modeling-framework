@@ -107,14 +107,25 @@ public class ArrayUtils {
 		return max;
 	}
 
-	public static void fillAscending(int[] a) {
+	public static int[] fillAscending(int[] a) {
 		for(int i=0; i<a.length; i++)
 			a[i] = i;
+
+		return a;
 	}
 
-	public static void fillAscending(Integer[] a) {
+	public static long[] fillAscending(long[] a) {
+		for(int i=0; i<a.length; i++)
+			a[i] = i;
+
+		return a;
+	}
+
+	public static Integer[] fillAscending(Integer[] a) {
 		for(int i=0; i<a.length; i++)
 			a[i] = Integer.valueOf(i);
+
+		return a;
 	}
 
 	public static boolean isAscending(int[] a) {

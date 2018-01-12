@@ -21,6 +21,7 @@ package de.ims.icarus2.model.manifest.xml.delegates;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
+import de.ims.icarus2.model.manifest.api.Category;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
@@ -32,7 +33,9 @@ import de.ims.icarus2.model.manifest.standard.DocumentationImpl;
 import de.ims.icarus2.model.manifest.standard.DriverManifestImpl;
 import de.ims.icarus2.model.manifest.standard.DriverManifestImpl.ModuleManifestImpl;
 import de.ims.icarus2.model.manifest.standard.DriverManifestImpl.ModuleSpecImpl;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.Multiplicity;
 import de.ims.icarus2.util.xml.UnexpectedTagException;
@@ -107,7 +110,7 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 		DriverManifest manifest = getInstance();
 
 		if(manifest.isLocalLocationType()) {
-			serializer.writeAttribute(ATTR_LOCATION_TYPE, manifest.getLocationType().getStringValue());
+			serializer.writeAttribute(ManifestXmlAttributes.LOCATION_TYPE, manifest.getLocationType().getStringValue());
 		}
 	}
 
@@ -143,7 +146,7 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 	protected void readAttributes(Attributes attributes) {
 		super.readAttributes(attributes);
 
-		String locationType = ManifestXmlUtils.normalize(attributes, ATTR_LOCATION_TYPE);
+		String locationType = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LOCATION_TYPE);
 		if(locationType!=null) {
 			getInstance().setLocationType(LocationType.parseLocationType(locationType));
 		}
@@ -153,20 +156,20 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
-		switch (qName) {
-		case TAG_DRIVER: {
+		switch (localName) {
+		case ManifestXmlTags.DRIVER: {
 			readAttributes(attributes);
 		} break;
 
-		case TAG_MAPPING: {
+		case ManifestXmlTags.MAPPING: {
 			return getMappingManifestXmlDelegate().reset(getInstance());
 		}
 
-		case TAG_MODULE_SPEC: {
+		case ManifestXmlTags.MODULE_SPEC: {
 			return getModuleSpecXmlDelegate().reset(getInstance());
 		}
 
-		case TAG_MODULE: {
+		case ManifestXmlTags.MODULE: {
 			return getModuleManifestXmlDelegate().reset(getInstance());
 		}
 
@@ -181,16 +184,16 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
-		switch (qName) {
-		case TAG_DRIVER: {
+		switch (localName) {
+		case ManifestXmlTags.DRIVER: {
 			return null;
 		}
 
-		case TAG_MODULE_SPEC: {
+		case ManifestXmlTags.MODULE_SPEC: {
 			// no-op
 		} break;
 
-		case TAG_MODULE: {
+		case ManifestXmlTags.MODULE: {
 			// no-op
 		} break;
 
@@ -208,17 +211,17 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 	public void endNestedHandler(ManifestLocation manifestLocation, String uri,
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
-		switch (qName) {
+		switch (localName) {
 
-		case TAG_MAPPING: {
+		case ManifestXmlTags.MAPPING: {
 			getInstance().addMappingManifest(((MappingManifestXmlDelegate) handler).getInstance());
 		} break;
 
-		case TAG_MODULE_SPEC: {
+		case ManifestXmlTags.MODULE_SPEC: {
 			getInstance().addModuleSpec(((ModuleSpecXmlDelegate) handler).getInstance());
 		} break;
 
-		case TAG_MODULE: {
+		case ManifestXmlTags.MODULE: {
 			getInstance().addModuleManifest(((ModuleManifestXmlDelegate) handler).getInstance());
 		} break;
 
@@ -233,7 +236,7 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 	 */
 	@Override
 	protected String xmlTag() {
-		return TAG_DRIVER;
+		return ManifestXmlTags.DRIVER;
 	}
 
 	public static class ModuleSpecXmlDelegate extends AbstractXmlDelegate<ModuleSpec> {
@@ -277,32 +280,32 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 			String extensionPointUid = spec.getExtensionPointUid();
 
 			if(extensionPointUid==null) {
-				serializer.startEmptyElement(TAG_MODULE_SPEC);
+				serializer.startEmptyElement(ManifestXmlTags.MODULE_SPEC);
 			} else {
-				serializer.startElement(TAG_MODULE_SPEC);
+				serializer.startElement(ManifestXmlTags.MODULE_SPEC);
 			}
 
 			// ATTRIBUTES
 
-			ManifestXmlUtils.writeCategoryAttributes(serializer, spec);
+			ManifestXmlUtils.writeIdentityAttributes(serializer, spec);
 
 			if(spec.isCustomizable()!=ModuleSpec.DEFAULT_IS_CUSTOMIZABLE) {
-				serializer.writeAttribute(ATTR_CUSTOMIZABLE, spec.isCustomizable());
+				serializer.writeAttribute(ManifestXmlAttributes.CUSTOMIZABLE, spec.isCustomizable());
 			}
 
 			if(spec.getMultiplicity()!=ModuleSpec.DEFAULT_MULTIPLICITY) {
-				serializer.writeAttribute(ATTR_MULTIPLICITY, spec.getMultiplicity().getStringValue());
+				serializer.writeAttribute(ManifestXmlAttributes.MULTIPLICITY, spec.getMultiplicity().getStringValue());
 			}
 
 			// ELEMENTS
 
 			if(extensionPointUid!=null) {
-				serializer.startElement(TAG_EXTENSION_POINT);
+				serializer.startElement(ManifestXmlTags.EXTENSION_POINT);
 				serializer.writeTextOrCData(extensionPointUid);
-				serializer.endElement(TAG_EXTENSION_POINT);
+				serializer.endElement(ManifestXmlTags.EXTENSION_POINT);
 			}
 
-			serializer.endElement(TAG_MODULE_SPEC);
+			serializer.endElement(ManifestXmlTags.MODULE_SPEC);
 		}
 
 		/**
@@ -312,14 +315,14 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 
 			ModuleSpec spec = getInstance();
 
-			ManifestXmlUtils.readIdentity(attributes, spec);
+			ManifestXmlUtils.readIdentityAttributes(attributes, spec);
 
-			String customizable = ManifestXmlUtils.normalize(attributes, ATTR_CUSTOMIZABLE);
+			String customizable = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CUSTOMIZABLE);
 			if(customizable!=null) {
 				spec.setCustomizable(Boolean.parseBoolean(customizable));
 			}
 
-			String multiplicity = ManifestXmlUtils.normalize(attributes, ATTR_MULTIPLICITY);
+			String multiplicity = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.MULTIPLICITY);
 			if(multiplicity!=null) {
 				spec.setMultiplicity(Multiplicity.parseMultiplicity(multiplicity));
 			}
@@ -332,21 +335,35 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 		public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
 				String uri, String localName, String qName,
 				Attributes attributes) throws SAXException {
-			switch (qName) {
-			case TAG_MODULE_SPEC: {
+			switch (localName) {
+			case ManifestXmlTags.MODULE_SPEC: {
 				readAttributes(attributes);
 			} break;
 
-			case TAG_DOCUMENTATION: {
+			case ManifestXmlTags.NAME:
+			case ManifestXmlTags.DESCRIPTION:
+			case ManifestXmlTags.ICON:
+				break;
+
+			case ManifestXmlTags.DOCUMENTATION: {
 				return getDocumentationXmlDelegate().reset(new DocumentationImpl());
 			}
 
-			case TAG_EXTENSION_POINT: {
+			case ManifestXmlTags.EXTENSION_POINT: {
 				// no-op
 			} break;
 
+			case ManifestXmlTags.CATEGORIES: {
+				// no-op
+			} break;
+
+			case ManifestXmlTags.CATEGORY: {
+				Category category = ManifestXmlUtils.readCategory(attributes);
+				getInstance().addCategory(category);
+			} break;
+
 			default:
-				throw new UnexpectedTagException(qName, true, TAG_MODULE_SPEC);
+				throw new UnexpectedTagException(qName, true, ManifestXmlTags.MODULE_SPEC);
 			}
 
 			return this;
@@ -359,17 +376,33 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 		public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
 				String uri, String localName, String qName, String text)
 				throws SAXException {
-			switch (qName) {
-			case TAG_MODULE_SPEC: {
+			switch (localName) {
+			case ManifestXmlTags.MODULE_SPEC: {
 				return null;
 			}
 
-			case TAG_EXTENSION_POINT: {
+			case ManifestXmlTags.EXTENSION_POINT: {
 				getInstance().setExtensionPointUid(text);
 			} break;
 
+			case ManifestXmlTags.CATEGORIES:
+			case ManifestXmlTags.CATEGORY:
+				break;
+
+			case ManifestXmlTags.NAME: {
+				getInstance().setName(text);
+			} break;
+
+			case ManifestXmlTags.DESCRIPTION: {
+				getInstance().setDescription(text);
+			} break;
+
+			case ManifestXmlTags.ICON: {
+				getInstance().setIcon(ManifestXmlUtils.iconValue(text, true));
+			} break;
+
 			default:
-				throw new UnexpectedTagException(qName, false, TAG_MODULE_SPEC);
+				throw new UnexpectedTagException(qName, false, ManifestXmlTags.MODULE_SPEC);
 			}
 
 			return this;
@@ -382,14 +415,14 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 		public void endNestedHandler(ManifestLocation manifestLocation,
 				String uri, String localName, String qName,
 				ManifestXmlHandler handler) throws SAXException {
-			switch (qName) {
+			switch (localName) {
 
-			case TAG_DOCUMENTATION: {
+			case ManifestXmlTags.DOCUMENTATION: {
 				getInstance().setDocumentation(((DocumentationXmlDelegate) handler).getInstance());
 			} break;
 
 			default:
-				throw new UnsupportedNestingException(qName, TAG_MODULE_SPEC);
+				throw new UnsupportedNestingException(qName, ManifestXmlTags.MODULE_SPEC);
 			}
 		}
 	}
@@ -410,7 +443,7 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 		protected void readAttributes(Attributes attributes) {
 			super.readAttributes(attributes);
 
-			String moduleSpecId = ManifestXmlUtils.normalize(attributes, ATTR_MODULE_SPEC_ID);
+			String moduleSpecId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.MODULE_SPEC_ID);
 			if(moduleSpecId!=null) {
 				getInstance().setModuleSpecId(moduleSpecId);
 			}
@@ -427,7 +460,7 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 			ModuleManifest manifest = getInstance();
 
 			if(manifest.getModuleSpec()!=null) {
-				serializer.writeAttribute(ATTR_MODULE_SPEC_ID, manifest.getModuleSpec().getId());
+				serializer.writeAttribute(ManifestXmlAttributes.MODULE_SPEC_ID, manifest.getModuleSpec().getId());
 			}
 		}
 
@@ -436,7 +469,7 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 		 */
 		@Override
 		protected String xmlTag() {
-			return TAG_MODULE;
+			return ManifestXmlTags.MODULE;
 		}
 	}
 }

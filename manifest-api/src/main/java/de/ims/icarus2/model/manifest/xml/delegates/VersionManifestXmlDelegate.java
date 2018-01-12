@@ -23,7 +23,9 @@ import org.xml.sax.SAXException;
 
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.VersionManifest;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.xml.UnexpectedTagException;
 import de.ims.icarus2.util.xml.UnsupportedNestingException;
@@ -50,15 +52,15 @@ public class VersionManifestXmlDelegate extends AbstractXmlDelegate<VersionManif
 	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
-		if(qName.equals(TAG_VERSION)) {
-			String formatId = ManifestXmlUtils.normalize(attributes, ATTR_VERSION_FORMAT);
+		if(qName.equals(ManifestXmlTags.VERSION)) {
+			String formatId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.VERSION_FORMAT);
 			if(formatId!=null) {
 				getInstance().setFormatId(formatId);
 			}
 
 			return this;
 		} else
-			throw new UnexpectedTagException(qName, true, TAG_VERSION);
+			throw new UnexpectedTagException(qName, true, ManifestXmlTags.VERSION);
 	}
 
 	/**
@@ -68,12 +70,12 @@ public class VersionManifestXmlDelegate extends AbstractXmlDelegate<VersionManif
 	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 			throws SAXException {
-		if(qName.equals(TAG_VERSION)) {
+		if(qName.equals(ManifestXmlTags.VERSION)) {
 			getInstance().setVersionString(text);
 
 			return null;
 		} else
-			throw new UnexpectedTagException(qName, false, TAG_VERSION);
+			throw new UnexpectedTagException(qName, false, ManifestXmlTags.VERSION);
 	}
 
 	/**
@@ -83,7 +85,7 @@ public class VersionManifestXmlDelegate extends AbstractXmlDelegate<VersionManif
 	public void endNestedHandler(ManifestLocation manifestLocation, String uri,
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
-		throw new UnsupportedNestingException(qName, TAG_VERSION);
+		throw new UnsupportedNestingException(qName, ManifestXmlTags.VERSION);
 	}
 
 	/**
@@ -94,17 +96,17 @@ public class VersionManifestXmlDelegate extends AbstractXmlDelegate<VersionManif
 		if(getInstance().getVersionString()==null)
 			throw new IllegalArgumentException("Invalid version string in manifest"); //$NON-NLS-1$
 
-		serializer.startElement(TAG_VERSION);
+		serializer.startElement(ManifestXmlTags.VERSION);
 
 		// ATTRIBUTES
 		String formatId = getInstance().getFormatId();
 		if(!VersionManifest.DEFAULT_VERSION_FORMAT_ID.equals(formatId)) {
-			serializer.writeAttribute(ATTR_VERSION_FORMAT, formatId);
+			serializer.writeAttribute(ManifestXmlAttributes.VERSION_FORMAT, formatId);
 		}
 
 		// CONTENT
 		serializer.writeCData(getInstance().getVersionString());
 
-		serializer.endElement(TAG_VERSION);
+		serializer.endElement(ManifestXmlTags.VERSION);
 	}
 }

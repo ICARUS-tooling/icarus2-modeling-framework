@@ -26,16 +26,16 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
-import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.OptionsManifest;
 import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
 import de.ims.icarus2.model.manifest.api.ValueRange;
 import de.ims.icarus2.model.manifest.api.ValueSet;
 import de.ims.icarus2.model.manifest.standard.DefaultModifiableIdentity;
-import de.ims.icarus2.model.manifest.standard.OptionsManifestImpl;
 import de.ims.icarus2.model.manifest.standard.OptionsManifestImpl.OptionImpl;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.id.Identity;
@@ -74,13 +74,6 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 		}
 
 		return valueRangeXmlDelegate;
-	}
-
-	public OptionsManifestXmlDelegate reset(MemberManifest memberManifest) {
-		reset();
-		setInstance(new OptionsManifestImpl(memberManifest));
-
-		return this;
 	}
 
 	/**
@@ -123,36 +116,36 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 				String extensionPointUid = option.getExtensionPointUid();
 
 				if(defaultValue==null && valueSet==null && valueRange==null && extensionPointUid==null) {
-					serializer.startEmptyElement(TAG_OPTION);
+					serializer.startEmptyElement(ManifestXmlTags.OPTION);
 				} else {
-					serializer.startElement(TAG_OPTION);
+					serializer.startElement(ManifestXmlTags.OPTION);
 				}
 
 				// Attributes
 
 				ManifestXmlUtils.writeIdentityAttributes(serializer, option);
-				serializer.writeAttribute(ATTR_VALUE_TYPE, ManifestXmlUtils.getSerializedForm(type));
+				serializer.writeAttribute(ManifestXmlAttributes.VALUE_TYPE, ManifestXmlUtils.getSerializedForm(type));
 				if(option.isPublished()!=Option.DEFAULT_PUBLISHED_VALUE) {
-					serializer.writeAttribute(ATTR_PUBLISHED, option.isPublished());
+					serializer.writeAttribute(ManifestXmlAttributes.PUBLISHED, option.isPublished());
 				}
 				if(option.isMultiValue()!=Option.DEFAULT_MULTIVALUE_VALUE) {
-					serializer.writeAttribute(ATTR_MULTI_VALUE, option.isMultiValue());
+					serializer.writeAttribute(ManifestXmlAttributes.MULTI_VALUE, option.isMultiValue());
 				}
 				if(option.isAllowNull()!=Option.DEFAULT_ALLOW_NULL) {
-					serializer.writeAttribute(ATTR_ALLOW_NULL, option.isAllowNull());
+					serializer.writeAttribute(ManifestXmlAttributes.ALLOW_NULL, option.isAllowNull());
 				}
-				serializer.writeAttribute(ATTR_GROUP, option.getOptionGroupId());
+				serializer.writeAttribute(ManifestXmlAttributes.GROUP, option.getOptionGroupId());
 
 				// Elements
 
 				if(extensionPointUid!=null) {
-					serializer.startElement(TAG_EXTENSION_POINT);
+					serializer.startElement(ManifestXmlTags.EXTENSION_POINT);
 					serializer.writeTextOrCData(extensionPointUid);
-					serializer.endElement(TAG_EXTENSION_POINT);
+					serializer.endElement(ManifestXmlTags.EXTENSION_POINT);
 				}
 
 				if(defaultValue!=null) {
-					ManifestXmlUtils.writeValueElement(serializer, TAG_DEFAULT_VALUE, defaultValue, type);
+					ManifestXmlUtils.writeValueElement(serializer, ManifestXmlTags.DEFAULT_VALUE, defaultValue, type);
 				}
 
 				if(valueSet!=null) {
@@ -163,7 +156,7 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 					getValueRangeXmlDelegate().reset(valueRange).writeXml(serializer);
 				}
 
-				serializer.endElement(TAG_OPTION);
+				serializer.endElement(ManifestXmlTags.OPTION);
 			}
 		}
 
@@ -172,11 +165,11 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 			List<Identity> identities = CollectionUtils.asSortedList(manifest.getLocalGroupIdentifiers(), Identity.COMPARATOR);
 
 			for(Identity group : identities) {
-				serializer.startEmptyElement(TAG_GROUP);
+				serializer.startEmptyElement(ManifestXmlTags.GROUP);
 
-				// ATTRIBUTES
+				// ManifestXmlAttributes.ATTRIBUTES
 				ManifestXmlUtils.writeIdentityAttributes(serializer, group);
-				serializer.endElement(TAG_GROUP);
+				serializer.endElement(ManifestXmlTags.GROUP);
 			}
 		}
 	}
@@ -185,36 +178,36 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
-		switch (qName) {
-		case TAG_OPTIONS: {
+		switch (localName) {
+		case ManifestXmlTags.OPTIONS: {
 			readAttributes(attributes);
 		} break;
 
-		case TAG_OPTION: {
+		case ManifestXmlTags.OPTION: {
 			option = new OptionImpl();
 			readOptionAttributes(attributes);
 		} break;
 
-		case TAG_GROUP: {
+		case ManifestXmlTags.GROUP: {
 			DefaultModifiableIdentity identity = new DefaultModifiableIdentity();
-			ManifestXmlUtils.readIdentity(attributes, identity);
+			ManifestXmlUtils.readIdentityAttributes(attributes, identity);
 
 			getInstance().addGroupIdentifier(identity);
 		} break;
 
-		case TAG_VALUE_RANGE : {
+		case ManifestXmlTags.VALUE_RANGE : {
 			return getValueRangeXmlDelegate().reset(option.getValueType());
 		}
 
-		case TAG_VALUE_SET : {
+		case ManifestXmlTags.VALUE_SET : {
 			return getValueSetXmlDelegate().reset(option.getValueType());
 		}
 
-		case TAG_DEFAULT_VALUE : {
+		case ManifestXmlTags.DEFAULT_VALUE : {
 			// only handled when closing element
 		} break;
 
-		case TAG_EXTENSION_POINT : {
+		case ManifestXmlTags.EXTENSION_POINT : {
 			// no-op
 		} break;
 
@@ -229,25 +222,25 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
-		switch (qName) {
-		case TAG_OPTIONS: {
+		switch (localName) {
+		case ManifestXmlTags.OPTIONS: {
 			return null;
 		}
 
-		case TAG_GROUP: {
+		case ManifestXmlTags.GROUP: {
 			// no-op
 		} break;
 
-		case TAG_OPTION: {
+		case ManifestXmlTags.OPTION: {
 			getInstance().addOption(option);
 			option = null;
 		} break;
 
-		case TAG_DEFAULT_VALUE : {
+		case ManifestXmlTags.DEFAULT_VALUE : {
 			addDefaultValue(option.getValueType().parse(text, manifestLocation.getClassLoader()));
 		} break;
 
-		case TAG_EXTENSION_POINT : {
+		case ManifestXmlTags.EXTENSION_POINT : {
 			option.setExtensionPointUid(text);
 		} break;
 
@@ -281,13 +274,13 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 	public void endNestedHandler(ManifestLocation manifestLocation, String uri,
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
-		switch (qName) {
+		switch (localName) {
 
-		case TAG_VALUE_RANGE : {
+		case ManifestXmlTags.VALUE_RANGE : {
 			option.setSupportedRange(((ValueRangeXmlDelegate)handler).getInstance());
 		} break;
 
-		case TAG_VALUE_SET : {
+		case ManifestXmlTags.VALUE_SET : {
 			option.setSupportedValues(((ValueSetXmlDelegate) handler).getInstance());
 		} break;
 
@@ -302,30 +295,30 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 	 */
 	protected void readOptionAttributes(Attributes attributes) {
 		option.setValueType(ManifestXmlUtils.typeValue(attributes));
-		ManifestXmlUtils.readIdentity(attributes, option);
+		ManifestXmlUtils.readIdentityAttributes(attributes, option);
 
-		String published = ManifestXmlUtils.normalize(attributes, ATTR_PUBLISHED);
+		String published = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.PUBLISHED);
 		if(published!=null) {
 			option.setPublished(Boolean.parseBoolean(published));
 		} else {
 			option.setPublished(Option.DEFAULT_PUBLISHED_VALUE);
 		}
 
-		String multivalue = ManifestXmlUtils.normalize(attributes, ATTR_MULTI_VALUE);
+		String multivalue = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.MULTI_VALUE);
 		if(multivalue!=null) {
 			option.setMultiValue(Boolean.parseBoolean(multivalue));
 		} else {
 			option.setMultiValue(Option.DEFAULT_MULTIVALUE_VALUE);
 		}
 
-		String allowNull = ManifestXmlUtils.normalize(attributes, ATTR_ALLOW_NULL);
+		String allowNull = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.ALLOW_NULL);
 		if(allowNull!=null) {
 			option.setAllowNull(Boolean.parseBoolean(allowNull));
 		} else {
 			option.setAllowNull(Option.DEFAULT_ALLOW_NULL);
 		}
 
-		option.setOptionGroup(ManifestXmlUtils.normalize(attributes, ATTR_GROUP));
+		option.setOptionGroup(ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.GROUP));
 	}
 
 	/**
@@ -333,7 +326,7 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 	 */
 	@Override
 	protected String xmlTag() {
-		return TAG_OPTIONS;
+		return ManifestXmlTags.OPTIONS;
 	}
 
 }

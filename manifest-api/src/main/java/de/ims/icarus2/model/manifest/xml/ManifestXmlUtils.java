@@ -18,39 +18,49 @@
  */
 package de.ims.icarus2.model.manifest.xml;
 
+import static de.ims.icarus2.util.lang.Primitives._boolean;
+
 import javax.swing.Icon;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusException;
 import de.ims.icarus2.model.manifest.api.Category;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest.Note;
 import de.ims.icarus2.model.manifest.api.Documentation.Resource;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.api.ModifiableIdentity;
+import de.ims.icarus2.model.manifest.standard.DefaultCategory;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.util.IconWrapper;
 import de.ims.icarus2.util.date.DateUtils;
 import de.ims.icarus2.util.eval.Expression;
 import de.ims.icarus2.util.eval.var.VariableDescriptor;
+import de.ims.icarus2.util.icon.IconRegistry;
+import de.ims.icarus2.util.icon.IconWrapper;
+import de.ims.icarus2.util.icon.ImageSerializer;
 import de.ims.icarus2.util.id.Identity;
+import de.ims.icarus2.util.strings.NamedObject;
 import de.ims.icarus2.util.strings.StringResource;
 import de.ims.icarus2.util.xml.XmlSerializer;
+import de.ims.icarus2.util.xml.XmlUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
-public final class ManifestXmlUtils implements ManifestXmlAttributes, ManifestXmlTags {
-
-	private static final Logger log = LoggerFactory
-			.getLogger(ManifestXmlUtils.class);
+public final class ManifestXmlUtils {
 
 	private ManifestXmlUtils() {
-		// no-op
+		throw new IcarusException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Instantiation not supported");
 	}
+
+	public static final String MANIFEST_LABEL = "Manifest";
+
+	public static final String MANIFEST_NAMESPACE_URI = XmlUtils.ICARUS_NS_URI+MANIFEST_LABEL;
+
+	public static final String MANIFEST_NS_PREFIX = XmlUtils.ICARUS_NS;
 
 	/**
 	 * Check whether a flag is set and differs from a given default value. Only if both conditions are met
@@ -101,18 +111,22 @@ public final class ManifestXmlUtils implements ManifestXmlAttributes, ManifestXm
 
 		writeIdentityAttributes(serializer, category.getId(), category.getName(), category.getDescription(), category.getIcon());
 
-		serializer.writeAttribute(ATTR_NAMESPACE, category.getNamespace());
+		serializer.writeAttribute(ManifestXmlAttributes.NAMESPACE, category.getNamespace());
 	}
 
 	public static void writeIdentityAttributes(XmlSerializer serializer, String id, String name, String description, Icon icon) throws Exception {
-		serializer.writeAttribute(ATTR_ID, id);
-		serializer.writeAttribute(ATTR_NAME, name);
-		serializer.writeAttribute(ATTR_DESCRIPTION, description);
+		serializer.writeAttribute(ManifestXmlAttributes.ID, id);
 
-		if(icon instanceof StringResource) {
-			serializer.writeAttribute(ATTR_ICON, ((StringResource)icon).getStringValue());
-		} else if(icon != null) {
-			log.warn("Skipping serialization of icon for identity: {}", (id==null ? id : "<unnamed>")); //$NON-NLS-1$ //$NON-NLS-2$
+		if(name!=null && !XmlUtils.hasIllegalAttributeSymbols(name)) {
+			serializer.writeAttribute(ManifestXmlAttributes.NAME, name);
+		}
+		if(description!=null && !XmlUtils.hasIllegalAttributeSymbols(description)) {
+			serializer.writeAttribute(ManifestXmlAttributes.DESCRIPTION, description);
+		}
+
+		String iconString = serialize(icon);
+		if(iconString!=null && !XmlUtils.hasIllegalAttributeSymbols(iconString)) {
+			serializer.writeAttribute(ManifestXmlAttributes.ICON, iconString);
 		}
 	}
 
@@ -134,15 +148,46 @@ public final class ManifestXmlUtils implements ManifestXmlAttributes, ManifestXm
 		serializer.startEmptyElement(name);
 
 		// ATTRIBUTES
-		serializer.writeAttribute(ATTR_LAYER_ID, getSerializedForm(manifest));
+		serializer.writeAttribute(ManifestXmlAttributes.LAYER_ID, getSerializedForm(manifest));
 
 		serializer.endElement(name);
 	}
 
 	public static void writeAliasElement(XmlSerializer serializer, String alias) throws Exception {
-		serializer.startEmptyElement(TAG_ALIAS);
-		serializer.writeAttribute(ATTR_NAME, alias);
-		serializer.endElement(TAG_ALIAS);
+		serializer.startEmptyElement(ManifestXmlTags.ALIAS);
+		serializer.writeAttribute(ManifestXmlAttributes.NAME, alias);
+		serializer.endElement(ManifestXmlTags.ALIAS);
+	}
+
+	public static void writeElement(XmlSerializer serializer, String name, String content) throws Exception {
+		serializer.startEmptyElement(name);
+		serializer.writeTextOrCData(content);
+		serializer.endElement(name);
+	}
+
+	public static void writeIdentityFieldElements(XmlSerializer serializer, Identity identity) throws Exception {
+		writeIdentityFieldElements(serializer, identity.getName(), identity.getDescription(), identity.getIcon());
+	}
+
+	public static void writeIdentityFieldElements(XmlSerializer serializer, String name, String description, Icon icon) throws Exception {
+
+
+		// Nest identity information if needed
+		if(name!=null && XmlUtils.hasIllegalAttributeSymbols(name)) {
+			writeElement(serializer, ManifestXmlTags.NAME, name);
+		}
+
+		if(description!=null && XmlUtils.hasIllegalAttributeSymbols(description)) {
+			writeElement(serializer, ManifestXmlTags.DESCRIPTION, description);
+		}
+
+		if(icon!=null) {
+			String iconString = ManifestXmlUtils.serialize(icon);
+			if(iconString==null || XmlUtils.hasIllegalAttributeSymbols(iconString)) {
+				iconString = ImageSerializer.icon2String(icon);
+				writeElement(serializer, ManifestXmlTags.ICON, iconString);
+			}
+		}
 	}
 
 	public static void writeValueElement(XmlSerializer serializer, String name, Object value, ValueType type) throws Exception {
@@ -173,60 +218,61 @@ public final class ManifestXmlUtils implements ManifestXmlAttributes, ManifestXm
 	}
 
 	public static void writeEvalElement(XmlSerializer serializer, Expression expression) throws Exception {
-		serializer.startElement(TAG_EVAL);
+		serializer.startElement(ManifestXmlTags.EVAL);
 
 		if(expression.hasVariables()) {
 			for(VariableDescriptor variableDescriptor : expression.getVariables().getVariables()) {
-				serializer.startEmptyElement(TAG_VARIABLE);
-				serializer.writeAttribute(ATTR_NAME, variableDescriptor.getName());
-				serializer.writeAttribute(ATTR_CLASS, variableDescriptor.getNamespaceClass().getName());
+				serializer.startEmptyElement(ManifestXmlTags.VARIABLE);
+				serializer.writeAttribute(ManifestXmlAttributes.NAME, variableDescriptor.getName());
+				serializer.writeAttribute(ManifestXmlAttributes.CLASS, variableDescriptor.getNamespaceClass().getName());
 
 				//FIXME introduce a workaround to carry on plugin information on the variable level
 //				ClassLoader loader = variable.getNamespaceClass().getClassLoader();
 //				if(PluginUtil.isPluginClassLoader(loader)) {
 //					PluginDescriptor descriptor = PluginUtil.getDescriptor(loader);
-//					serializer.writeAttribute(ATTR_PLUGIN_ID, descriptor.getId());
+//					serializer.writeAttribute(PLUGIN_ID, descriptor.getId());
 //				}
 
-				serializer.endElement(TAG_VARIABLE);
+				serializer.endElement(ManifestXmlTags.VARIABLE);
 			}
 
 		}
 
-		serializer.startElement(TAG_CODE);
+		serializer.startElement(ManifestXmlTags.CODE);
 		serializer.writeCData(expression.getCode());
-		serializer.endElement(TAG_CODE);
+		serializer.endElement(ManifestXmlTags.CODE);
 
-		serializer.endElement(TAG_EVAL);
+		serializer.endElement(ManifestXmlTags.EVAL);
 	}
 
 	public static void writeResourceElement(XmlSerializer serializer, Resource resource) throws Exception {
 		if(resource.getUri()==null)
 			throw new IllegalStateException("Resource is missing url"); //$NON-NLS-1$
 
-		serializer.startElement(TAG_RESOURCE);
+		serializer.startElement(ManifestXmlTags.RESOURCE);
 		ManifestXmlUtils.writeIdentityAttributes(serializer, resource);
 		serializer.writeTextOrCData(resource.getUri().toString());
-		serializer.endElement(TAG_RESOURCE);
+		serializer.endElement(ManifestXmlTags.RESOURCE);
 	}
 
 	public static void writePrerequisiteElement(XmlSerializer serializer, PrerequisiteManifest manifest) throws Exception {
 
-		serializer.startEmptyElement(TAG_PREREQUISITE);
+		serializer.startEmptyElement(ManifestXmlTags.PREREQUISITE);
 
 		// ATTRIBUTES
 
-		serializer.writeAttribute(ATTR_CONTEXT_ID, manifest.getContextId());
-		serializer.writeAttribute(ATTR_LAYER_ID, manifest.getLayerId());
+		serializer.writeAttribute(ManifestXmlAttributes.CONTEXT_ID, manifest.getContextId());
+		serializer.writeAttribute(ManifestXmlAttributes.LAYER_ID, manifest.getLayerId());
 
 		// Only write the layer type attribute for unresolved prerequisites!
 		if(manifest.getUnresolvedForm()==null) {
-			serializer.writeAttribute(ATTR_TYPE_ID, manifest.getTypeId());
+			serializer.writeAttribute(ManifestXmlAttributes.TYPE_ID, manifest.getTypeId());
 		}
 
-		serializer.writeAttribute(ATTR_ALIAS, manifest.getAlias());
+		serializer.writeAttribute(ManifestXmlAttributes.ALIAS, manifest.getAlias());
+		serializer.writeAttribute(ManifestXmlAttributes.DESCRIPTION, manifest.getDescription());
 
-		serializer.endElement(TAG_PREREQUISITE);
+		serializer.endElement(ManifestXmlTags.PREREQUISITE);
 	}
 
 	public static void writeNoteElement(XmlSerializer serializer, Note note) throws Exception {
@@ -234,48 +280,76 @@ public final class ManifestXmlUtils implements ManifestXmlAttributes, ManifestXm
 			return;
 		}
 
-		serializer.startElement(TAG_NOTE);
+		serializer.startElement(ManifestXmlTags.NOTE);
 
 		// Attributes
 
-		serializer.writeAttribute(ATTR_NAME, note.getName());
-		serializer.writeAttribute(ATTR_DATE, DateUtils.formatDate(note.getModificationDate()));
+		serializer.writeAttribute(ManifestXmlAttributes.NAME, note.getName());
+		serializer.writeAttribute(ManifestXmlAttributes.DATE, DateUtils.formatDate(note.getModificationDate()));
 
 		// Content
 
 		serializer.writeTextOrCData(note.getContent());
 
-		serializer.endElement(TAG_NOTE);
+		serializer.endElement(ManifestXmlTags.NOTE);
 	}
 
 	//*******************************************
 	//               READ METHOD
 	//*******************************************
 
-	public static void readIdentity(Attributes attr, ModifiableIdentity identity) {
-		String id = normalize(attr, ATTR_ID);
+	public static void readIdentityAttributes(Attributes attr, ModifiableIdentity identity) {
+		String id = normalize(attr, ManifestXmlAttributes.ID);
 		if(id!=null) {
 			identity.setId(id);
 		}
 
-		String name = normalize(attr, ATTR_NAME);
+		String name = normalize(attr, ManifestXmlAttributes.NAME);
 		if(name!=null) {
 			identity.setName(name);
 		}
 
-		String description = normalize(attr, ATTR_DESCRIPTION);
+		String description = normalize(attr, ManifestXmlAttributes.DESCRIPTION);
 		if(description!=null) {
 			identity.setDescription(description);
 		}
 
-		String icon = normalize(attr, ATTR_ICON);
+		String icon = normalize(attr, ManifestXmlAttributes.ICON);
 		if(icon!=null) {
 			identity.setIcon(iconValue(icon));
 		}
 	}
 
+	public static Category readCategory(Attributes attr) {
+
+		DefaultCategory category = new DefaultCategory();
+
+		String namespace = normalize(attr, ManifestXmlAttributes.NAMESPACE);
+		if(namespace!=null) {
+			category.setNamespace(namespace);
+		}
+
+		readIdentityAttributes(attr, category);
+
+		// Returned value is to be treated as read-only
+		category.lock();
+
+		return category;
+	}
+
+	public static Icon iconValue(String text, boolean allowSerializedForm) {
+		IconRegistry iconRegistry = IconRegistry.getGlobalRegistry();
+		// Try icon name first (can occur if it contains illegal attribute symbols)
+		if(!allowSerializedForm || iconRegistry.hasIconInfo(text)) {
+			return new IconWrapper(text);
+		} else {
+			// Otherwise assume we have a serialized image here
+			return ImageSerializer.string2Icon(text);
+		}
+	}
+
 	public static Icon iconValue(String iconName) {
-		return new IconWrapper(iconName);
+		return iconValue(iconName, false);
 	}
 
 	public static Icon iconValue(Attributes attr, String key) {
@@ -333,7 +407,7 @@ public final class ManifestXmlUtils implements ManifestXmlAttributes, ManifestXm
 	}
 
 	public static ValueType typeValue(Attributes attr) {
-		String s = normalize(attr, ATTR_VALUE_TYPE);
+		String s = normalize(attr, ManifestXmlAttributes.VALUE_TYPE);
 		return typeValue(s);
 	}
 
@@ -343,12 +417,29 @@ public final class ManifestXmlUtils implements ManifestXmlAttributes, ManifestXm
 
 	public static Boolean boolValue(Attributes attr, String key) {
 		String s = normalize(attr, key);
-		return s==null ? null : booleanValue(s);
+		return s==null ? null : _boolean(booleanValue(s));
 	}
 
 	public static String normalize(Attributes attr, String name) {
 		String value = attr.getValue(name);
 
+		return normalize(value);
+	}
+
+	public static String normalize(String value) {
 		return (value==null || value.isEmpty()) ? null : value;
+	}
+
+	public static String serialize(Object value) {
+		if(value == null) {
+			return null;
+		} else if(value instanceof StringResource) {
+			return ((StringResource) value).getStringValue();
+		} else if(value instanceof NamedObject) {
+			return ((NamedObject) value).getName();
+		}
+
+		// If we couldn't find any way to perform simple serialization, default to null
+		return null;
 	}
 }

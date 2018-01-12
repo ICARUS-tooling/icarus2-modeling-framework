@@ -45,6 +45,7 @@ public enum GlobalErrorCode implements ErrorCode {
 	 */
 	DEPRECATED(4),
 
+
 	//**************************************************
 	//       1xx  GENERAL ERRORS
 	//**************************************************

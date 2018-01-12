@@ -20,7 +20,6 @@ package de.ims.icarus2.util.collections;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
-import java.util.EmptyStackException;
 import java.util.Stack;
 
 import com.google.common.base.Supplier;
@@ -37,6 +36,11 @@ public class Pool<E extends Object> implements AutoCloseable {
 
 	private final int capacity;
 
+	/**
+	 * Actual pool content.
+	 * Must make sure to let no {@code null} objects sneak
+	 * in here.
+	 */
 	private final Stack<E> buffer;
 
 	public Pool(Supplier<? extends E> supplier) {
@@ -53,17 +57,34 @@ public class Pool<E extends Object> implements AutoCloseable {
 	}
 
 	public E get() {
-		try {
-			return buffer.pop();
-		} catch(EmptyStackException e) {
-			return supplier.get();
+		// Refactored from using the EmptyStackException for control flow to just synchronizing
+		synchronized (buffer) {
+			if(buffer.isEmpty()) {
+				return supplier.get();
+			} else {
+				return buffer.pop();
+			}
 		}
 	}
 
 	public void recycle(E element) {
+		requireNonNull(element);
+
 		if(buffer.size()<capacity) {
 			buffer.push(element);
 		}
+	}
+
+	public int size() {
+		return buffer.size();
+	}
+
+	public int capacity() {
+		return capacity;
+	}
+
+	public boolean isEmpty() {
+		return buffer.isEmpty();
 	}
 
 	/**

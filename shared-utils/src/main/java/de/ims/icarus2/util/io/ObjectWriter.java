@@ -29,6 +29,13 @@ import de.ims.icarus2.util.Options;
  */
 public interface ObjectWriter<E extends Object> extends AutoCloseable {
 
+	/**
+	 * Initialize underlying resources and link to the
+	 * supplied {@link Writer} instance for serialization.
+	 *
+	 * @param output
+	 * @param options
+	 */
 	void init(Writer output, Options options);
 
 	/**
@@ -69,6 +76,15 @@ public interface ObjectWriter<E extends Object> extends AutoCloseable {
 		writeFooter();
 	}
 
+	/**
+	 * Write an unspecified number of elements to the underlying character stream.
+	 * This call wraps the write process inside the proper {@link #writeHeader()}
+	 * and {@link #writeFooter()} invocations.
+	 *
+	 * @param source
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
 	default void writeAll(Iterable<? extends E> source) throws IOException, InterruptedException {
 		writeHeader();
 

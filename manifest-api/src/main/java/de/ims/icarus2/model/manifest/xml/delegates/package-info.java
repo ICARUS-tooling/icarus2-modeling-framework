@@ -1,6 +1,6 @@
 /*
  *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015-2016 Markus G�rtner
+ *  Copyright (C) 2015-2016 Markus Gärtner
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * interface for all members of the manifest framework and an efficient lookup mechanism to fetch the correct
  * delegate for a given manifest object.
  *
- * @author Markus G�rtner
+ * @author Markus Gärtner
  *
  */
 package de.ims.icarus2.model.manifest.xml.delegates;

@@ -46,7 +46,17 @@ import de.ims.icarus2.util.collections.LazyCollection;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface MemberManifest extends ModifiableCategory, Documentable, Manifest, Embedded {
+public interface MemberManifest extends ModifiableIdentity, Categorizable, Documentable, Manifest, Embedded {
+
+	/**
+	 * Returns this very manifest as the owner of the identity.
+	 *
+	 * @see de.ims.icarus2.util.id.Identity#getOwner()
+	 */
+	@Override
+	default Object getOwner() {
+		return this;
+	}
 
 	/**
 	 * Returns the manifest that describes possible options the
@@ -76,6 +86,17 @@ public interface MemberManifest extends ModifiableCategory, Documentable, Manife
 	@AccessRestriction(AccessMode.READ)
 	<V extends Object> V getPropertyValue(String name);
 
+	/**
+	 *
+	 * @param name
+	 * @param valueType
+	 * @param multiValue
+	 * @param value
+	 * @return
+	 *
+	 * @throws ManifestException of type {@link ManifestErrorCode#MANIFEST_DUPLICATE_ID} if
+	 * a property for the given {@code name} already exists
+	 */
 	Property addProperty(String name, ValueType valueType, boolean multiValue, Object value);
 
 	void addProperty(Property property);
@@ -186,13 +207,7 @@ public interface MemberManifest extends ModifiableCategory, Documentable, Manife
 
 		Option getOption();
 
-//		boolean isEmbedded();
-
 		boolean isMultiValue();
-
-//		String getRawValue();
-
-//		PropertyHandler getHandler();
 
 		// Modification methods
 
@@ -218,12 +233,5 @@ public interface MemberManifest extends ModifiableCategory, Documentable, Manife
 		Property clone();
 
 		public abstract void setMultiValue(boolean multiValue);
-	}
-
-	@Deprecated
-	public interface PropertyHandler {
-		Object read(String propertyString) throws Exception;
-
-//		String write(Object propertyValue) throws Exception;
 	}
 }

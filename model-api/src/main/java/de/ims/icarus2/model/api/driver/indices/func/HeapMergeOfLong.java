@@ -27,12 +27,12 @@ import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator;
 
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
-import de.ims.icarus2.util.collections.MinHeap.LongMinHeap;
+import de.ims.icarus2.util.collections.MappedMinHeap.MappedLongMinHeap;
 
 /**
  * Implements the <i>merge</i> operation for iterators over long index values.
  * The implementation itself is again a long iterator and uses an internal
- * {@link LongMinHeap heap} to store the current minimal values of each input
+ * {@link MappedLongMinHeap heap} to store the current minimal values of each input
  * iterator, requiring the inputs (from whatever source) to be in <b>sorted order</b>!
  *
  * @author Markus Gärtner
@@ -80,12 +80,12 @@ public class HeapMergeOfLong implements PrimitiveIterator.OfLong {
 		return new HeapMergeOfLong(sources);
 	}
 
-	private final LongMinHeap<PrimitiveIterator.OfLong> heap;
+	private final MappedLongMinHeap<PrimitiveIterator.OfLong> heap;
 
 	public HeapMergeOfLong(PrimitiveIterator.OfLong[] sources) {
 		requireNonNull(sources);
 
-		heap = new LongMinHeap<>(sources.length);
+		heap = new MappedLongMinHeap<>(sources.length);
 
 		for(int i=0; i<sources.length; i++) {
 			OfLong source = sources[i];

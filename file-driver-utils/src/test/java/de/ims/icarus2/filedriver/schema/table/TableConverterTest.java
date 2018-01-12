@@ -87,7 +87,10 @@ public class TableConverterTest {
 			.build();
 
 		// Get template
-		ManifestXmlReader manifestXmlReader = new ManifestXmlReader(corpusManager.getManifestRegistry());
+		ManifestXmlReader manifestXmlReader = ManifestXmlReader.newBuilder()
+				.registry(corpusManager.getManifestRegistry())
+				.useImplementationDefaults()
+				.build();
 		manifestXmlReader.addSource(new ManifestLocation.URLManifestLocation(
 				TableConverterTest.class.getResource("tier1.imf.xml"),
 				getClass().getClassLoader(), true, false));

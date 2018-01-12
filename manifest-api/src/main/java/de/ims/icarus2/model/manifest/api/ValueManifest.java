@@ -19,7 +19,6 @@
 package de.ims.icarus2.model.manifest.api;
 
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.util.strings.Describable;
 
 
 /**
@@ -31,7 +30,7 @@ import de.ims.icarus2.util.strings.Describable;
  * @author Markus Gärtner
  *
  */
-public interface ValueManifest extends Documentable, Describable, TypedManifest {
+public interface ValueManifest extends Documentable, ModifiableIdentity, TypedManifest {
 
 	/**
 	 * Returns the value this manifest wraps and describes.
@@ -39,25 +38,6 @@ public interface ValueManifest extends Documentable, Describable, TypedManifest 
 	 * @return
 	 */
 	Object getValue();
-
-	/**
-	 * Returns the (optional) name for this value, which is not required to be
-	 * localized.
-	 * <p>
-	 * This is an optional method.
-	 *
-	 * @return The name of this value or {@code null} if the value is unnamed
-	 */
-	@Override
-	String getName();
-
-	/**
-	 * Returns the (preferably localized) textual description of this value.
-	 *
-	 * @return A textual description of this value
-	 */
-	@Override
-	String getDescription();
 
 	ValueType getValueType();
 

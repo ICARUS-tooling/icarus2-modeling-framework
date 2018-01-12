@@ -3,6 +3,12 @@
  */
 package de.ims.icarus2.util;
 
+import static de.ims.icarus2.util.lang.Primitives._boolean;
+import static de.ims.icarus2.util.lang.Primitives._double;
+import static de.ims.icarus2.util.lang.Primitives._float;
+import static de.ims.icarus2.util.lang.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives._long;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -114,7 +120,7 @@ public class Options extends HashMap<String, Object> implements Cloneable {
 		Object result = get(key);
 		if(result instanceof String) {
 			try {
-				result = Integer.parseInt((String) result);
+				result = _int(Integer.parseInt((String) result));
 			} catch(NumberFormatException e) {
 				// ignore
 			}
@@ -131,7 +137,7 @@ public class Options extends HashMap<String, Object> implements Cloneable {
 		Object result = get(key);
 		if(result instanceof String) {
 			try {
-				result = Long.parseLong((String) result);
+				result = _long(Long.parseLong((String) result));
 			} catch(NumberFormatException e) {
 				// ignore
 			}
@@ -148,7 +154,7 @@ public class Options extends HashMap<String, Object> implements Cloneable {
 		Object result = get(key);
 		if(result instanceof String) {
 			try {
-				result = Double.parseDouble((String) result);
+				result = _double(Double.parseDouble((String) result));
 			} catch(NumberFormatException e) {
 				// ignore
 			}
@@ -165,7 +171,7 @@ public class Options extends HashMap<String, Object> implements Cloneable {
 		Object result = get(key);
 		if(result instanceof String) {
 			try {
-				result = Float.parseFloat((String) result);
+				result = _float(Float.parseFloat((String) result));
 			} catch(NumberFormatException e) {
 				// ignore
 			}
@@ -182,7 +188,7 @@ public class Options extends HashMap<String, Object> implements Cloneable {
 		Object result = get(key);
 		if(result instanceof String) {
 			try {
-				result = Boolean.parseBoolean((String) result);
+				result = _boolean(Boolean.parseBoolean((String) result));
 			} catch(NumberFormatException e) {
 				// ignore
 			}

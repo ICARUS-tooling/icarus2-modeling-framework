@@ -18,69 +18,127 @@
  */
 package de.ims.icarus2.util.collections;
 
-import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
-import java.util.function.BiConsumer;
-import java.util.function.ObjDoubleConsumer;
-import java.util.function.ObjIntConsumer;
-import java.util.function.ObjLongConsumer;
+import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
+import java.util.function.IntConsumer;
+import java.util.function.LongConsumer;
+
 
 /**
+ * Implements a min-heap. This abstract base class only provides
+ * the general <i>heapify</i> methods and basic internal navigation
+ * support when presenting the heap via an array.
+ * The derived classes {@link IntMinHeap}, {@link LongMinHeap},
+ * {@link DoubleMinHeap} and {@link ObjectMinHeap} finally provide
+ * specialized implementations for the respective primites or
+ * general objects.
+ *
+ * Note that this implementation and its subclasses use a backing
+ * array of static size, which is instantiated at constructor time.
+ * Exceeding that capacity will result in an {@link ArrayIndexOutOfBoundsException}
+ * being thrown when inserting a new value!
+ *
  * @author Markus Gärtner
  *
  */
-public abstract class MinHeap<T extends Object> extends Heap {
+public abstract class MinHeap {
 
-	// Mapped objects, order matches values in heap
-	protected final Object[] elements;
+	// Number of elements currently in the heap
+	protected int size;
 
-	protected MinHeap(int size) {
-		checkArgument(size>0);
-
-		elements = new Object[size];
+	public int size() {
+		return size;
 	}
 
-	@SuppressWarnings("unchecked")
-	public T peekObject() {
-		if(size<1)
-			throw new NoSuchElementException();
-
-		return (T) elements[0];
+	public boolean isEmpty() {
+		return size==0;
 	}
 
-	@Override
 	public void clear() {
-		super.clear();
-		Arrays.fill(elements, null);
+		size = 0;
 	}
 
-	@Override
-	protected void swap(int index0, int index1) {
-		// Default value swap
-		super.swap(index0, index1);
+	protected void refreshUp(int nodeIndex) {
+		if (nodeIndex != 0) {
+			int parentIndex = parent(nodeIndex);
 
-		// Now do the element swap
-		Object tmpObj = elements[index0];
-		elements[index0] = elements[index1];
-		elements[index1] = tmpObj;
+			if (compareValuesAt(parentIndex, nodeIndex)>0) {
+				swap(nodeIndex, parentIndex);
+				refreshUp(parentIndex);
+			}
+		}
+	}
+
+	protected void refreshDown(int nodeIndex) {
+
+		int minIndex;
+
+		int leftChildIndex = left(nodeIndex);
+
+		int rightChildIndex = right(nodeIndex);
+
+		if (rightChildIndex >= size) {
+			if (leftChildIndex >= size) {
+				return;
+			} else {
+				minIndex = leftChildIndex;
+			}
+		} else {
+			if (compareValuesAt(leftChildIndex, rightChildIndex)<=0) {
+				minIndex = leftChildIndex;
+			} else {
+				minIndex = rightChildIndex;
+			}
+		}
+
+		if (compareValuesAt(nodeIndex, minIndex)>0) {
+			swap(nodeIndex, minIndex);
+			refreshDown(minIndex);
+		}
+
+	}
+
+	protected abstract int compareValuesAt(int index0, int index1);
+	protected abstract void swapValues(int index0, int index1);
+
+	protected void swap(int index0, int index1) {
+		swapValues(index0, index1);
+	}
+
+	/**
+	 * Computes index of the given node's left child
+	 */
+	protected static int left(int nodeIndex) {
+		return (nodeIndex<<1) + 1;
+	}
+
+	/**
+	 * Computes index of the given node's right child
+	 */
+	protected static int right(int nodeIndex) {
+		return (nodeIndex<<1) + 2;
+	}
+
+	/**
+	 * Computes index of the given node's parent
+	 */
+	protected static int parent(int nodeIndex) {
+		return (nodeIndex - 1) >>> 1;
 	}
 
 	/**
 	 *
 	 * @author Markus Gärtner
 	 *
-	 * @param <T>
 	 */
-	public static class IntMinHeap<T extends Object> extends MinHeap<T> implements ObjIntConsumer<T> {
+	public static class IntMinHeap extends MinHeap implements IntConsumer {
 		private final int[] values;
 
 		public IntMinHeap(int size) {
-			super(size);
-
 			values = new int[size];
 		}
 
@@ -92,29 +150,25 @@ public abstract class MinHeap<T extends Object> extends Heap {
 		}
 
 		/**
-		 * @see de.ims.icarus2.util.collections.MinHeap#compareValuesAt(int, int)
+		 * @see de.ims.icarus2.util.collections.MappedMinHeap#compareValuesAt(int, int)
 		 */
 		@Override
 		protected int compareValuesAt(int index0, int index1) {
 			return Integer.compare(values[index0], values[index1]);
 		}
 
-		public void push(T source, int value) {
+		public void push(int value) {
 			int index = size;
 			size++;
-			elements[index] = source;
 			values[index] = value;
 
 			refreshUp(index);
 		}
 
-		public T pop() {
+		public int pop() {
 			size--;
 
-			@SuppressWarnings("unchecked")
-			T result = (T)elements[0];
-
-			elements[0] = elements[size];
+			int result = values[0];
 			values[0] = values[size];
 
 			if (size > 0) {
@@ -132,11 +186,11 @@ public abstract class MinHeap<T extends Object> extends Heap {
 		}
 
 		/**
-		 * @see java.util.function.ObjIntConsumer#accept(java.lang.Object, int)
+		 * @see java.util.function.IntConsumer#accept(int)
 		 */
 		@Override
-		public void accept(T t, int value) {
-			push(t, value);
+		public void accept(int value) {
+			push(value);
 		}
 	}
 
@@ -144,14 +198,11 @@ public abstract class MinHeap<T extends Object> extends Heap {
 	 *
 	 * @author Markus Gärtner
 	 *
-	 * @param <T>
 	 */
-	public static class LongMinHeap<T extends Object> extends MinHeap<T> implements ObjLongConsumer<T> {
+	public static class LongMinHeap extends MinHeap implements LongConsumer {
 		private final long[] values;
 
 		public LongMinHeap(int size) {
-			super(size);
-
 			values = new long[size];
 		}
 
@@ -163,29 +214,25 @@ public abstract class MinHeap<T extends Object> extends Heap {
 		}
 
 		/**
-		 * @see de.ims.icarus2.util.collections.MinHeap#compareValuesAt(int, int)
+		 * @see de.ims.icarus2.util.collections.MappedMinHeap#compareValuesAt(int, int)
 		 */
 		@Override
 		protected int compareValuesAt(int index0, int index1) {
 			return Long.compare(values[index0], values[index1]);
 		}
 
-		public void push(T source, long value) {
+		public void push(long value) {
 			int index = size;
 			size++;
-			elements[index] = source;
 			values[index] = value;
 
 			refreshUp(index);
 		}
 
-		public T pop() {
+		public long pop() {
 			size--;
 
-			@SuppressWarnings("unchecked")
-			T result = (T)elements[0];
-
-			elements[0] = elements[size];
+			long result = values[0];
 			values[0] = values[size];
 
 			if (size > 0) {
@@ -203,11 +250,11 @@ public abstract class MinHeap<T extends Object> extends Heap {
 		}
 
 		/**
-		 * @see java.util.function.ObjLongConsumer#accept(java.lang.Object, long)
+		 * @see java.util.function.LongConsumer#accept(long)
 		 */
 		@Override
-		public void accept(T t, long value) {
-			push(t, value);
+		public void accept(long value) {
+			push(value);
 		}
 	}
 
@@ -215,14 +262,11 @@ public abstract class MinHeap<T extends Object> extends Heap {
 	 *
 	 * @author Markus Gärtner
 	 *
-	 * @param <T>
 	 */
-	public static class DoubleMinHeap<T extends Object> extends MinHeap<T> implements ObjDoubleConsumer<T> {
+	public static class DoubleMinHeap extends MinHeap implements DoubleConsumer {
 		private final double[] values;
 
 		public DoubleMinHeap(int size) {
-			super(size);
-
 			values = new double[size];
 		}
 
@@ -234,29 +278,25 @@ public abstract class MinHeap<T extends Object> extends Heap {
 		}
 
 		/**
-		 * @see de.ims.icarus2.util.collections.MinHeap#compareValuesAt(int, int)
+		 * @see de.ims.icarus2.util.collections.MappedMinHeap#compareValuesAt(int, int)
 		 */
 		@Override
 		protected int compareValuesAt(int index0, int index1) {
 			return Double.compare(values[index0], values[index1]);
 		}
 
-		public void push(T source, double value) {
+		public void push(double value) {
 			int index = size;
 			size++;
-			elements[index] = source;
 			values[index] = value;
 
 			refreshUp(index);
 		}
 
-		public T pop() {
+		public double pop() {
 			size--;
 
-			@SuppressWarnings("unchecked")
-			T result = (T)elements[0];
-
-			elements[0] = elements[size];
+			double result = values[0];
 			values[0] = values[size];
 
 			if (size > 0) {
@@ -274,11 +314,11 @@ public abstract class MinHeap<T extends Object> extends Heap {
 		}
 
 		/**
-		 * @see java.util.function.ObjDoubleConsumer#accept(java.lang.Object, double)
+		 * @see java.util.function.DoubleConsumer#accept( double)
 		 */
 		@Override
-		public void accept(T t, double value) {
-			push(t, value);
+		public void accept(double value) {
+			push(value);
 		}
 	}
 
@@ -286,22 +326,18 @@ public abstract class MinHeap<T extends Object> extends Heap {
 	 *
 	 * @author Markus Gärtner
 	 *
-	 * @param <T> type of the associated elements in the heap
-	 * @param <E> type of the values in the heap
 	 */
-	public static class ObjectMinHeap<E extends Object, T extends Object> extends MinHeap<T> implements BiConsumer<T, E> {
+	public static class ObjectMinHeap<E extends Object> extends MinHeap implements Consumer<E> {
 		private final Object[] values;
 		private final Comparator<? super E> comparator;
 
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		public ObjectMinHeap(int size) {
-			super(size);
 			values = new Object[size];
 			comparator = (o1, o2) -> ((Comparable)o1).compareTo(o2);
 		}
 
 		public ObjectMinHeap(int size, Comparator<? super E> comparator) {
-			super(size);
 			requireNonNull(comparator);
 
 			values = new Object[size];
@@ -309,15 +345,15 @@ public abstract class MinHeap<T extends Object> extends Heap {
 		}
 
 		@SuppressWarnings("unchecked")
-		public T peekValue() {
+		public E peekValue() {
 			if(size<1)
 				throw new NoSuchElementException();
 
-			return (T) values[0];
+			return (E) values[0];
 		}
 
 		/**
-		 * @see de.ims.icarus2.util.collections.MinHeap#compareValuesAt(int, int)
+		 * @see de.ims.icarus2.util.collections.MappedMinHeap#compareValuesAt(int, int)
 		 */
 		@SuppressWarnings("unchecked")
 		@Override
@@ -325,22 +361,19 @@ public abstract class MinHeap<T extends Object> extends Heap {
 			return comparator.compare((E)values[index0], (E)values[index1]);
 		}
 
-		public void push(T source, E value) {
+		public void push(E value) {
 			int index = size;
 			size++;
-			elements[index] = source;
 			values[index] = value;
 
 			refreshUp(index);
 		}
 
-		public T pop() {
+		public E pop() {
 			size--;
 
 			@SuppressWarnings("unchecked")
-			T result = (T)elements[0];
-
-			elements[0] = elements[size];
+			E result = (E) values[0];
 			values[0] = values[size];
 
 			if (size > 0) {
@@ -357,9 +390,13 @@ public abstract class MinHeap<T extends Object> extends Heap {
 			values[index1] = tmp;
 		}
 
+		/**
+		 * @see java.util.function.DoubleConsumer#accept( double)
+		 */
 		@Override
-		public void accept(T t, E u) {
-			push(t, u);
+		public void accept(E value) {
+			push(value);
 		}
 	}
+
 }

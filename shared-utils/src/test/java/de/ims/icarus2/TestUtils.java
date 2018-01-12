@@ -22,8 +22,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-import de.ims.icarus2.util.classes.ClassUtils;
-import de.ims.icarus2.util.classes.ClassUtils.Trace;
+import de.ims.icarus2.util.lang.ClassUtils;
+import de.ims.icarus2.util.lang.ClassUtils.Trace;
 
 /**
  * @author Markus Gärtner

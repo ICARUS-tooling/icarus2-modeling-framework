@@ -39,8 +39,8 @@ import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.IcarusUtils;
-import de.ims.icarus2.util.classes.ClassUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
+import de.ims.icarus2.util.lang.ClassUtils;
 
 /**
  * Provides a collection of ready-to-use implementations of {@link SerializableAtomicChange} functionality

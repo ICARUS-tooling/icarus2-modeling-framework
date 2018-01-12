@@ -417,7 +417,7 @@ public interface Driver extends ItemLayerManager {
 	 * When a use counter for a item reaches {@code 0} as a result of this method call the driver should remove
 	 * the chunk in question from its internal cache.
 	 *
-	 * This hold of course only true for drivers that host non-virtual data.
+	 * This holds of course only true for drivers that host non-virtual data.
 	 *
 	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#release(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer)
 	 */

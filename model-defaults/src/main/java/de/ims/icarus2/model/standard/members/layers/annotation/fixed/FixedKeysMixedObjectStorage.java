@@ -36,7 +36,7 @@ import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.MutablePrimitives.MutablePrimitive;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
-import de.ims.icarus2.util.classes.Primitives;
+import de.ims.icarus2.util.lang.Primitives;
 
 /**
  * @author Markus Gärtner

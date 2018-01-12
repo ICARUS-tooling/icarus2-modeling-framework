@@ -26,7 +26,9 @@ import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.standard.FragmentLayerManifestImpl;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
@@ -97,7 +99,7 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 	protected void readAttributes(Attributes attributes) {
 		super.readAttributes(attributes);
 
-		String annotationKey = ManifestXmlUtils.normalize(attributes, ATTR_ANNOTATION_KEY);
+		String annotationKey = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.ANNOTATION_KEY);
 		if(annotationKey!=null) {
 			getInstance().setAnnotationKey(annotationKey);
 		}
@@ -113,7 +115,7 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 		FragmentLayerManifest manifest = getInstance();
 
 		if(manifest.isLocalAnnotationKey()) {
-			serializer.writeAttribute(ATTR_ANNOTATION_KEY, manifest.getAnnotationKey());
+			serializer.writeAttribute(ManifestXmlAttributes.ANNOTATION_KEY, manifest.getAnnotationKey());
 		}
 	}
 
@@ -127,11 +129,11 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 		FragmentLayerManifest manifest = getInstance();
 
 		if(manifest.isLocalBoundaryLayerManifest()) {
-			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, TAG_BOUNDARY_LAYER, manifest.getBoundaryLayerManifest());
+			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, ManifestXmlTags.BOUNDARY_LAYER, manifest.getBoundaryLayerManifest());
 		}
 
 		if(manifest.isLocalFoundationLayerManifest()) {
-			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, TAG_FOUNDATION_LAYER, manifest.getFoundationLayerManifest());
+			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, ManifestXmlTags.FOUNDATION_LAYER, manifest.getFoundationLayerManifest());
 		}
 
 		if(manifest.hasLocalContainers()) {
@@ -141,7 +143,7 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 		}
 
 		if(manifest.isLocalValueLayerManifest()) {
-			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, TAG_VALUE_LAYER, manifest.getValueLayerManifest());
+			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, ManifestXmlTags.VALUE_LAYER, manifest.getValueLayerManifest());
 		}
 
 		if(manifest.isLocalRasterizerManifest()) {
@@ -153,31 +155,31 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
-		switch (qName) {
-		case TAG_FRAGMENT_LAYER: {
+		switch (localName) {
+		case ManifestXmlTags.FRAGMENT_LAYER: {
 			readAttributes(attributes);
 		} break;
 
-		case TAG_BOUNDARY_LAYER: {
-			String boundaryLayerId = ManifestXmlUtils.normalize(attributes, ATTR_LAYER_ID);
+		case ManifestXmlTags.BOUNDARY_LAYER: {
+			String boundaryLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID);
 			getInstance().setBoundaryLayerId(boundaryLayerId);
 		} break;
 
-		case TAG_FOUNDATION_LAYER: {
-			String foundationLayerId = ManifestXmlUtils.normalize(attributes, ATTR_LAYER_ID);
+		case ManifestXmlTags.FOUNDATION_LAYER: {
+			String foundationLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID);
 			getInstance().setFoundationLayerId(foundationLayerId);
 		} break;
 
-		case TAG_CONTAINER: {
+		case ManifestXmlTags.CONTAINER: {
 			return getContainerManifestXmlDelegate().reset(getInstance());
 		}
 
-		case TAG_VALUE_LAYER: {
-			String valueLayerId = ManifestXmlUtils.normalize(attributes, ATTR_LAYER_ID);
+		case ManifestXmlTags.VALUE_LAYER: {
+			String valueLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID);
 			getInstance().setValueLayerId(valueLayerId);
 		} break;
 
-		case TAG_RASTERIZER: {
+		case ManifestXmlTags.RASTERIZER: {
 			return getRasterizerManifestXmLDelegate().reset(getInstance());
 		}
 
@@ -192,20 +194,20 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
-		switch (qName) {
-		case TAG_FRAGMENT_LAYER: {
+		switch (localName) {
+		case ManifestXmlTags.FRAGMENT_LAYER: {
 			return null;
 		}
 
-		case TAG_BOUNDARY_LAYER: {
+		case ManifestXmlTags.BOUNDARY_LAYER: {
 			// no-op
 		} break;
 
-		case TAG_FOUNDATION_LAYER: {
+		case ManifestXmlTags.FOUNDATION_LAYER: {
 			// no-op
 		} break;
 
-		case TAG_VALUE_LAYER: {
+		case ManifestXmlTags.VALUE_LAYER: {
 			// no-op
 		} break;
 
@@ -223,13 +225,13 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 	public void endNestedHandler(ManifestLocation manifestLocation, String uri,
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
-		switch (qName) {
+		switch (localName) {
 
-		case TAG_CONTAINER: {
+		case ManifestXmlTags.CONTAINER: {
 			getInstance().addContainerManifest(((ContainerManifestXmlDelegate) handler).getInstance(), -1);
 		} break;
 
-		case TAG_RASTERIZER: {
+		case ManifestXmlTags.RASTERIZER: {
 			getInstance().setRasterizerManifest(((RasterizerManifestXmLDelegate) handler).getInstance());
 		} break;
 
@@ -244,6 +246,6 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 	 */
 	@Override
 	protected String xmlTag() {
-		return TAG_FRAGMENT_LAYER;
+		return ManifestXmlTags.FRAGMENT_LAYER;
 	}
 }

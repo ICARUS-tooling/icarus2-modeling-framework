@@ -21,6 +21,9 @@ package de.ims.icarus2.util.xml;
 import org.xml.sax.SAXException;
 
 /**
+ * Signals an invalid element beginning or ending within a certain
+ * context/environment.
+ *
  * @author Markus Gärtner
  *
  */

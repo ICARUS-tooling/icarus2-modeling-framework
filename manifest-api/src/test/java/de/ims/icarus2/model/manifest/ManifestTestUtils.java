@@ -37,7 +37,7 @@ import de.ims.icarus2.model.manifest.types.DefaultLink;
 import de.ims.icarus2.model.manifest.types.DefaultUrlResource;
 import de.ims.icarus2.model.manifest.types.Url;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.util.IconWrapper;
+import de.ims.icarus2.util.icon.IconWrapper;
 import de.ims.icarus2.util.id.Identity;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 

@@ -36,7 +36,7 @@ public class Links {
 	 * Implements a lazy link that stores the referent after resolution
 	 * in a {@link WeakReference}.
 	 * <p>
-	 * The target is allowed
+	 * The target is allowed to be {@code null}.
 	 *
 	 * @author Markus Gärtner
 	 *

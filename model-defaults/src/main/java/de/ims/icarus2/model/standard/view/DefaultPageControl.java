@@ -20,8 +20,8 @@ package de.ims.icarus2.model.standard.view;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
-import static de.ims.icarus2.util.classes.Primitives._int;
-import static de.ims.icarus2.util.classes.Primitives.cast;
+import static de.ims.icarus2.util.lang.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives.cast;
 import static java.util.Objects.requireNonNull;
 
 import java.lang.ref.Reference;

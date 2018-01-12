@@ -28,7 +28,7 @@ import java.util.PrimitiveIterator;
 
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.util.IcarusUtils;
-import de.ims.icarus2.util.collections.MinHeap.LongMinHeap;
+import de.ims.icarus2.util.collections.MappedMinHeap.MappedLongMinHeap;
 
 /**
  *
@@ -79,7 +79,7 @@ public class HeapIntersectionOfLong implements PrimitiveIterator.OfLong {
 	}
 
 	// Min-heap of the last returned values of each stream
-	private final LongMinHeap<PrimitiveIterator.OfLong> heap;
+	private final MappedLongMinHeap<PrimitiveIterator.OfLong> heap;
 	// Buffer for storing streams while checking for a common value
 	private final PrimitiveIterator.OfLong[] buffer;
 
@@ -89,7 +89,7 @@ public class HeapIntersectionOfLong implements PrimitiveIterator.OfLong {
 		requireNonNull(sources);
 
 		buffer = new PrimitiveIterator.OfLong[sources.length];
-		heap = new LongMinHeap<>(sources.length);
+		heap = new MappedLongMinHeap<>(sources.length);
 
 		for(int i=0; i<sources.length; i++) {
 			OfLong source = sources[i];

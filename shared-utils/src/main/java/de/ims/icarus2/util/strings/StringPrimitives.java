@@ -35,11 +35,6 @@ public class StringPrimitives {
     public static int parseInt(CharSequence s, int radix, int from, int to)
                 throws NumberFormatException
     {
-        /*
-         * WARNING: This method may be invoked early during VM initialization
-         * before IntegerCache is initialized. Care must be taken to not use
-         * the valueOf method.
-         */
 
         if (s == null) {
             throw new NumberFormatException("null"); //$NON-NLS-1$

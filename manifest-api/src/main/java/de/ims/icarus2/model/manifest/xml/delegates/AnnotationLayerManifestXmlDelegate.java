@@ -31,7 +31,9 @@ import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.standard.AnnotationLayerManifestImpl;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
@@ -93,7 +95,7 @@ public class AnnotationLayerManifestXmlDelegate extends AbstractLayerManifestXml
 
 		// Write default key
 		if(manifest.isLocalDefaultKey()) {
-			serializer.writeAttribute(ATTR_DEFAULT_KEY, manifest.getDefaultKey());
+			serializer.writeAttribute(ManifestXmlAttributes.DEFAULT_KEY, manifest.getDefaultKey());
 		}
 	}
 
@@ -107,7 +109,7 @@ public class AnnotationLayerManifestXmlDelegate extends AbstractLayerManifestXml
 		AnnotationLayerManifest manifest = getInstance();
 
 		// Read default key
-		String defaultKey = ManifestXmlUtils.normalize(attributes, ATTR_DEFAULT_KEY);
+		String defaultKey = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.DEFAULT_KEY);
 		if(defaultKey!=null) {
 			manifest.setDefaultKey(defaultKey);
 		}
@@ -124,7 +126,7 @@ public class AnnotationLayerManifestXmlDelegate extends AbstractLayerManifestXml
 
 		// Write reference layers
 		for(TargetLayerManifest layerManifest : getInstance().getLocalReferenceLayerManifests()) {
-			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, TAG_REFERENCE_LAYER, layerManifest);
+			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, ManifestXmlTags.REFERENCE_LAYER, layerManifest);
 		}
 
 		// Write annotation manifests
@@ -136,9 +138,9 @@ public class AnnotationLayerManifestXmlDelegate extends AbstractLayerManifestXml
 		}
 
 		for(AnnotationFlag flag : manifest.getLocalActiveAnnotationFlags()) {
-			serializer.startElement(TAG_ANNOTATION_FLAG);
+			serializer.startElement(ManifestXmlTags.ANNOTATION_FLAG);
 			serializer.writeText(flag.getStringValue());
-			serializer.endElement(TAG_ANNOTATION_FLAG);
+			serializer.endElement(ManifestXmlTags.ANNOTATION_FLAG);
 		}
 	}
 
@@ -149,21 +151,21 @@ public class AnnotationLayerManifestXmlDelegate extends AbstractLayerManifestXml
 	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
-		switch (qName) {
-		case TAG_ANNOTATION_LAYER: {
+		switch (localName) {
+		case ManifestXmlTags.ANNOTATION_LAYER: {
 			readAttributes(attributes);
 		} break;
 
-		case TAG_REFERENCE_LAYER: {
-			String referenceLayerId = ManifestXmlUtils.normalize(attributes, ATTR_LAYER_ID);
+		case ManifestXmlTags.REFERENCE_LAYER: {
+			String referenceLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID);
 			getInstance().addReferenceLayerId(referenceLayerId);
 		} break;
 
-		case TAG_ANNOTATION: {
+		case ManifestXmlTags.ANNOTATION: {
 			return getAnnotationManifestXmlDelegate().reset(getInstance());
 		}
 
-		case TAG_ANNOTATION_FLAG: {
+		case ManifestXmlTags.ANNOTATION_FLAG: {
 			// no-op;
 		} break;
 
@@ -181,16 +183,16 @@ public class AnnotationLayerManifestXmlDelegate extends AbstractLayerManifestXml
 	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 			throws SAXException {
-		switch (qName) {
-		case TAG_ANNOTATION_LAYER: {
+		switch (localName) {
+		case ManifestXmlTags.ANNOTATION_LAYER: {
 			return null;
 		}
 
-		case TAG_REFERENCE_LAYER: {
+		case ManifestXmlTags.REFERENCE_LAYER: {
 			return this;
 		}
 
-		case TAG_ANNOTATION_FLAG: {
+		case ManifestXmlTags.ANNOTATION_FLAG: {
 			getInstance().setAnnotationFlag(AnnotationFlag.parseAnnotationFlag(text), true);
 			return this;
 		}
@@ -207,8 +209,8 @@ public class AnnotationLayerManifestXmlDelegate extends AbstractLayerManifestXml
 	public void endNestedHandler(ManifestLocation manifestLocation, String uri,
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
-		switch (qName) {
-		case TAG_ANNOTATION: {
+		switch (localName) {
+		case ManifestXmlTags.ANNOTATION: {
 			getInstance().addAnnotationManifest(((AnnotationManifestXmlDelegate) handler).getInstance());
 		} break;
 
@@ -223,6 +225,6 @@ public class AnnotationLayerManifestXmlDelegate extends AbstractLayerManifestXml
 	 */
 	@Override
 	protected String xmlTag() {
-		return TAG_ANNOTATION_LAYER;
+		return ManifestXmlTags.ANNOTATION_LAYER;
 	}
 }

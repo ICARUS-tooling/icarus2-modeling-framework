@@ -27,7 +27,7 @@ import de.ims.icarus2.model.manifest.api.ManifestLocation;
  * @author Markus Gärtner
  *
  */
-public interface ManifestXmlHandler extends ManifestXmlAttributes, ManifestXmlTags {
+public interface ManifestXmlHandler {
 
 	ManifestXmlHandler startElement(ManifestLocation manifestLocation, String uri, String localName, String qName,
 			Attributes attributes) throws SAXException;

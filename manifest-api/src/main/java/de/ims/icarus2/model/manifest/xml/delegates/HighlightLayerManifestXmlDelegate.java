@@ -26,7 +26,9 @@ import de.ims.icarus2.model.manifest.api.HighlightLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.standard.HighlightLayerManifestImpl;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
@@ -66,7 +68,7 @@ public class HighlightLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 
 		// Write default key
 		if(manifest.isLocalPrimaryLayerManifest()) {
-			serializer.writeAttribute(ATTR_PRIMARY_LAYER, manifest.getPrimaryLayerManifest().getId());
+			serializer.writeAttribute(ManifestXmlAttributes.PRIMARY_LAYER, manifest.getPrimaryLayerManifest().getId());
 		}
 	}
 
@@ -80,7 +82,7 @@ public class HighlightLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 		HighlightLayerManifest manifest = getInstance();
 
 		// Read primary layer id
-		String primaryLayerId = ManifestXmlUtils.normalize(attributes, ATTR_PRIMARY_LAYER);
+		String primaryLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.PRIMARY_LAYER);
 		if(primaryLayerId!=null) {
 			manifest.setPrimaryLayerId(primaryLayerId);
 		}
@@ -96,9 +98,9 @@ public class HighlightLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 		HighlightLayerManifest manifest = getInstance();
 
 		for(HighlightFlag flag : manifest.getActiveLocalHighlightFlags()) {
-			serializer.startElement(TAG_HIGHLIGHT_FLAG);
+			serializer.startElement(ManifestXmlTags.HIGHLIGHT_FLAG);
 			serializer.writeText(flag.getStringValue());
-			serializer.endElement(TAG_HIGHLIGHT_FLAG);
+			serializer.endElement(ManifestXmlTags.HIGHLIGHT_FLAG);
 		}
 	}
 
@@ -109,12 +111,12 @@ public class HighlightLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
-		switch (qName) {
-		case TAG_HIGHLIGHT_LAYER: {
+		switch (localName) {
+		case ManifestXmlTags.HIGHLIGHT_LAYER: {
 			readAttributes(attributes);
 		} break;
 
-		case TAG_HIGHLIGHT_FLAG: {
+		case ManifestXmlTags.HIGHLIGHT_FLAG: {
 			// no-op;
 		} break;
 
@@ -132,12 +134,12 @@ public class HighlightLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 			throws SAXException {
-		switch (qName) {
-		case TAG_HIGHLIGHT_LAYER: {
+		switch (localName) {
+		case ManifestXmlTags.HIGHLIGHT_LAYER: {
 			return null;
 		}
 
-		case TAG_HIGHLIGHT_FLAG: {
+		case ManifestXmlTags.HIGHLIGHT_FLAG: {
 			getInstance().setHighlightFlag(HighlightFlag.parseHighlightFlag(text), true);
 			return this;
 		}
@@ -152,7 +154,7 @@ public class HighlightLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 	 */
 	@Override
 	protected String xmlTag() {
-		return TAG_HIGHLIGHT_LAYER;
+		return ManifestXmlTags.HIGHLIGHT_LAYER;
 	}
 
 }
