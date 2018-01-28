@@ -18,6 +18,8 @@
  */
 package de.ims.icarus2.model.manifest.types;
 
+import static java.util.Objects.requireNonNull;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -30,10 +32,7 @@ public class Url {
 	private final URL url;
 
 	public Url(URL url) {
-		if (url == null)
-			throw new NullPointerException("Invalid url"); //$NON-NLS-1$
-
-		this.url = url;
+		this.url = requireNonNull(url);
 	}
 
 	public Url(String spec) throws MalformedURLException {

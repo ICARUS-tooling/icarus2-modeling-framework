@@ -20,13 +20,17 @@
  */
 package de.ims.icarus2.util.xml;
 
+import static de.ims.icarus2.util.lang.Primitives._int;
+
 import java.awt.Color;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import de.ims.icarus2.util.collections.ArrayUtils;
 
 /**
- * 
+ *
  * @author Markus Gärtner
  *
  */
@@ -37,11 +41,11 @@ public final class HtmlUtils {
 
 	public static String hexString(Color color) {
 		return String.format("#%02X%02X%02X",  //$NON-NLS-1$
-				color.getRed(), 
-				color.getGreen(),
-				color.getBlue());
+				_int(color.getRed()),
+				_int(color.getGreen()),
+				_int(color.getBlue()));
 	}
-	
+
 	private static Map<Object, Object> htmlReplacements = ArrayUtils.asMap(
 		60, "&lt;", //< //$NON-NLS-1$
 		62, "&gt;", //> //$NON-NLS-1$
@@ -86,75 +90,85 @@ public final class HtmlUtils {
 		169, "&copy;", //© //$NON-NLS-1$
 		8364, "&euro;" //€ //$NON-NLS-1$
 	);
-	
+
 	public static String escapeHTML(String s) {
 		StringBuffer sb = new StringBuffer(s.length());
 		int n = s.length();
 		for (int i = 0; i < n; i++) {
 			char c = s.charAt(i);
 			Object r = htmlReplacements.get((int)c);
-			
+
 			sb.append(r==null ? c : r);
 		}
 		return sb.toString();
 	}
-	
-	public static String revertBreaks(String s) {
-		return s.replaceAll("<[bB][rR]>", "\n"); //$NON-NLS-1$ //$NON-NLS-2$
+
+	private static final Matcher BREAK_MATCHER = Pattern.compile("<[bB][rR]>").matcher("");
+
+	/**
+	 * Replaces all occurrences of the html break tag
+	 * {@code <br>} into regular newline symbols.
+	 * @param s
+	 * @return
+	 */
+	public static String revertBreaks(CharSequence s) {
+		synchronized (BREAK_MATCHER) {
+			return BREAK_MATCHER.reset(s).replaceAll("\n");
+		}
 	}
-	
+
 	public static abstract class HtmlBuilder {
 		protected StringBuilder builder;
-		
+
 		protected boolean building = false;
-		
+
 		protected HtmlBuilder(int capacity) {
 			builder = new StringBuilder(capacity);
 		}
-		
+
 		protected HtmlBuilder() {
 			this(40);
 		}
-		
+
 		public HtmlBuilder start() {
 			builder.setLength(0);
 			building = true;
 			start0();
-			
+
 			return this;
 		}
-		
+
 		public boolean isBuilding() {
 			return building;
 		}
-		
+
 		public HtmlBuilder finish() {
 			finish0();
 			building = false;
-			
+
 			return this;
 		}
-		
+
 		protected abstract void finish0();
-		
+
 		protected abstract void start0();
-		
+
 		public String getResult() {
 			return building ? null : builder.toString();
 		}
 	}
-	
+
 	public static class HtmlTableBuilder extends HtmlBuilder {
-		
+
 		protected int columnCount = DEFAULT_COLUMN_COUNT;
-		
+
 		protected boolean leadingColon = false;
 		protected boolean headerSet = false;
-		
+
 		public static final int DEFAULT_COLUMN_COUNT = 2;
 
 		/**
-		 * 
+		 *
 		 */
 		public HtmlTableBuilder() {
 			super(100);
@@ -166,26 +180,26 @@ public final class HtmlUtils {
 		public HtmlTableBuilder(int capacity) {
 			super(capacity);
 		}
-		
+
 		@Override
 		public HtmlTableBuilder start() {
 			return start(DEFAULT_COLUMN_COUNT, false);
 		}
-		
+
 		public HtmlTableBuilder start(int columnCount) {
 			return start(columnCount, false);
 		}
-		
+
 		public HtmlTableBuilder start(boolean leadingColon) {
 			return start(DEFAULT_COLUMN_COUNT, leadingColon);
 		}
-		
+
 		public HtmlTableBuilder start(int columnCount, boolean leadingColon) {
 			super.start();
-			this.columnCount = columnCount; 
+			this.columnCount = columnCount;
 			this.leadingColon = leadingColon;
 			headerSet = false;
-			
+
 			return this;
 		}
 
@@ -198,59 +212,59 @@ public final class HtmlUtils {
 		protected void start0() {
 			builder.append("<html><table width=\"100%\">"); //$NON-NLS-1$
 		}
-		
+
 		public HtmlTableBuilder setHeader(Object...items) {
 			if(headerSet || items.length!=columnCount)
 				throw new IllegalArgumentException();
-			
+
 			builder.append("<colgroup>"); //$NON-NLS-1$
-			
+
 			for(Object item : items)
 				builder.append("<col width=\"").append(String.valueOf(item)) //$NON-NLS-1$
 						.append("\" />"); //$NON-NLS-1$
 
 			builder.append("</colgroup>"); //$NON-NLS-1$
-			
+
 			return this;
 		}
-		
+
 		public HtmlTableBuilder addRowEscaped(String...items) {
 			builder.append("<tr>"); //$NON-NLS-1$
-			
+
 			for(int i=0; i<items.length; i++) {
 				if(i>=columnCount)
 					break;
-				
+
 				builder.append("<td>").append(escapeHTML(items[i])) //$NON-NLS-1$
 						.append((i==0 && leadingColon) ? ":</td>" : "</td>"); //$NON-NLS-1$ //$NON-NLS-2$
 			}
-			
+
 			if(items.length<columnCount)
 				for(int i=columnCount-1; i>=items.length; i--)
 					builder.append("<td></td>"); //$NON-NLS-1$
 
 			builder.append("</tr>"); //$NON-NLS-1$
-			
+
 			return this;
 		}
-		
+
 		public HtmlTableBuilder addRow(String...items) {
 			builder.append("<tr>"); //$NON-NLS-1$
-			
+
 			for(int i=0; i<items.length; i++) {
 				if(i>=columnCount)
 					break;
-				
+
 				builder.append("<td>").append(items[i]) //$NON-NLS-1$
 						.append((i==0 && leadingColon) ? ":</td>" : "</td>"); //$NON-NLS-1$ //$NON-NLS-2$
 			}
-			
+
 			if(items.length<columnCount)
 				for(int i=columnCount-1; i>=items.length; i--)
 					builder.append("<td></td>"); //$NON-NLS-1$
 
 			builder.append("</tr>"); //$NON-NLS-1$
-			
+
 			return this;
 		}
 
@@ -267,9 +281,9 @@ public final class HtmlUtils {
 		public HtmlTableBuilder setColumnCount(int columnCount) {
 			if(isBuilding())
 				throw new IllegalStateException();
-			
+
 			this.columnCount = columnCount;
-			
+
 			return this;
 		}
 
@@ -285,17 +299,17 @@ public final class HtmlUtils {
 		 */
 		public HtmlTableBuilder setLeadingColon(boolean leadingColon) {
 			this.leadingColon = leadingColon;
-			
+
 			return this;
-		}		
+		}
 	}
-	
+
 	public static class HtmlLineBuilder extends HtmlBuilder {
-		
+
 		protected boolean omitBreakIfEmpty = true;
 
 		/**
-		 * 
+		 *
 		 */
 		public HtmlLineBuilder() {
 			super();
@@ -307,16 +321,16 @@ public final class HtmlUtils {
 		public HtmlLineBuilder(int capacity) {
 			super(capacity);
 		}
-		
+
 		@Override
 		public HtmlLineBuilder start() {
 			return start(true);
 		}
-		
+
 		public HtmlLineBuilder start(boolean omitBreakIfEmpty) {
 			super.start();
 			this.omitBreakIfEmpty = omitBreakIfEmpty;
-			
+
 			return this;
 		}
 
@@ -329,48 +343,48 @@ public final class HtmlUtils {
 		protected void finish0() {
 			builder.append("</html>"); //$NON-NLS-1$
 		}
-		
+
 		public HtmlLineBuilder newLine() {
 			if(!omitBreakIfEmpty || builder.length()>6) // length of '<html>'
 				builder.append("<br>"); //$NON-NLS-1$
-			
+
 			return this;
 		}
-		
+
 		public HtmlLineBuilder appendEscaped(String item) {
 			return appendEscaped(item, null);
 		}
-		
+
 		public HtmlLineBuilder appendEscaped(String item, Color color) {
 			return append(escapeHTML(item), color);
 		}
-		
+
 		public HtmlLineBuilder append(String item) {
 			return append(item, null);
 		}
-		
+
 		public HtmlLineBuilder append(String item, Color color) {
 			if(color!=null)
 				builder.append("<font color=\"").append(hexString(color)).append("\">"); //$NON-NLS-1$ //$NON-NLS-2$
 			builder.append(item);
 			if(color!=null)
 				builder.append("</font>"); //$NON-NLS-1$
-			
+
 			return this;
 		}
-		
+
 		public HtmlLineBuilder appendIfNonempty(String item) {
 			return appendIfNonempty(item, null);
 		}
-		
+
 		public HtmlLineBuilder appendIfNonempty(String item, Color color) {
 			if(builder.length()>6) {
 				return append(item, color);
 			}
-			
+
 			return this;
 		}
-		
+
 		public boolean isEmpty() {
 			return builder.length()<= (building ? 6 : 13);
 		}
@@ -387,8 +401,8 @@ public final class HtmlUtils {
 		 */
 		public HtmlLineBuilder setOmitBreakIfEmpty(boolean omitBreakIfEmpty) {
 			this.omitBreakIfEmpty = omitBreakIfEmpty;
-			
+
 			return this;
-		}		
+		}
 	}
 }

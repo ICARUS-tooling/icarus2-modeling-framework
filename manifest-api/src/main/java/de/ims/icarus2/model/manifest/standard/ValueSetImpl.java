@@ -39,17 +39,13 @@ public class ValueSetImpl extends AbstractLockable implements ValueSet {
 	private final List<Object> values = new ArrayList<>();
 
 	public ValueSetImpl(ValueType valueType) {
-		if (valueType == null)
-			throw new NullPointerException("Invalid valueType"); //$NON-NLS-1$
-
-		this.valueType = valueType;
+		this.valueType = requireNonNull(valueType);
 	}
 
 	public ValueSetImpl(ValueType valueType, Collection<?> items) {
 		this(valueType);
 
-		if (items == null)
-			throw new NullPointerException("Invalid items"); //$NON-NLS-1$
+		requireNonNull(items);
 
 		values.addAll(items);
 	}
@@ -57,8 +53,7 @@ public class ValueSetImpl extends AbstractLockable implements ValueSet {
 	public ValueSetImpl(ValueType valueType, Object...items) {
 		this(valueType);
 
-		if (items == null)
-			throw new NullPointerException("Invalid items"); //$NON-NLS-1$
+		requireNonNull(items);
 
 		CollectionUtils.feedItems(values, items);
 	}
@@ -66,11 +61,10 @@ public class ValueSetImpl extends AbstractLockable implements ValueSet {
 	public ValueSetImpl(ValueType valueType, Class<?> enumClass) {
 		this(valueType);
 
+		requireNonNull(enumClass);
+
 		if(!ValueType.ENUM.equals(valueType))
 			throw new IllegalArgumentException("Cannot use the enum based constructor for other value types than "+ValueType.ENUM); //$NON-NLS-1$
-
-		if (enumClass == null)
-			throw new NullPointerException("Invalid enumClass"); //$NON-NLS-1$
 
 		CollectionUtils.feedItems(values, (Object[]) enumClass.getEnumConstants());
 	}

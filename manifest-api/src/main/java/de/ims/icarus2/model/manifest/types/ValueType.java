@@ -18,6 +18,7 @@
  */
 package de.ims.icarus2.model.manifest.types;
 
+import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.lang.Primitives._boolean;
 import static de.ims.icarus2.util.lang.Primitives._double;
 import static de.ims.icarus2.util.lang.Primitives._float;
@@ -48,6 +49,7 @@ import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.eval.Expression;
 import de.ims.icarus2.util.icon.IconWrapper;
+import de.ims.icarus2.util.icon.ImageSerializer;
 import de.ims.icarus2.util.lang.Primitives;
 import de.ims.icarus2.util.nio.ByteArrayChannel;
 import de.ims.icarus2.util.nio.ByteChannelCharacterSequence;
@@ -68,26 +70,20 @@ public class ValueType implements StringResource, NamedObject {
 
 	private static Map<String, ValueType> xmlLookup = new HashMap<>();
 
-	//TODO implement matrix type?
 	public static ValueType parseValueType(String s) {
 		ValueType result = xmlLookup.get(s);
 
 		if(result==null) {
-			int sepIdx = s.indexOf(VectorType.SIZE_OPEN);
-			if(sepIdx!=-1) {
-				String typeName = s.substring(0, sepIdx);
-
-				ValueType componentType = parseValueType(typeName);
-
-				String sizeString = s.substring(sepIdx+1, s.length()-1);
-
-				if(VectorType.WILDCARD_SIZE_STRING.equals(sizeString)) {
-					result = new VectorType(componentType);
-				} else {
-					int size = Integer.parseInt(sizeString);
-
-					result = new VectorType(componentType, size);
-				}
+			/*
+			 * Try more complex value types next.
+			 * This requires the internal checker methods to
+			 * be tested first, since the parseXxxType methods
+			 * react to invalid input with exceptions.
+			 */
+			if(VectorType.isVectorType(s)) {
+				result = VectorType.parseVectorType(s);
+			} else if(MatrixType.isMatrixType(s)) {
+				result = MatrixType.parseMatrixType(s);
 			} else
 				throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_TYPE,
 						"Not a known value type definition: "+s); //$NON-NLS-1$
@@ -101,6 +97,9 @@ public class ValueType implements StringResource, NamedObject {
 	}
 
 	private ValueType(String xmlForm, Class<?> baseClass, boolean simple, boolean basic) {
+		// Make sure every xmlForm is unique
+		checkState("Duplicate XML-form of value type: "+xmlForm, !xmlLookup.containsKey(xmlForm));
+
 		this.baseClass = baseClass;
 		this.xmlForm = xmlForm;
 		this.simple = simple;
@@ -218,6 +217,11 @@ public class ValueType implements StringResource, NamedObject {
 //			Extension extension = (Extension) value;
 //			return extension.getUniqueId();
 //		}
+	};
+
+	public static final String REF_TYPE_LABEL = "ref";
+	public static final ValueType REF = new ValueType(REF_TYPE_LABEL, Ref.class, false, false) {
+		//FIXME implement (de)serialization of ref objects
 	};
 
 	public static final String ENUM_TYPE_LABEL = "enum";
@@ -418,9 +422,9 @@ public class ValueType implements StringResource, NamedObject {
 		public CharSequence toChars(Object value) {
 			if(value instanceof IconWrapper) {
 				return ((IconWrapper)value).getStringValue();
-			} else
-				//TODO implement base-64 serialization to embed binary image data
-				throw new IllegalArgumentException("Cannot serialize icon: "+value); //$NON-NLS-1$
+			} else {
+				return ImageSerializer.icon2String((Icon) value);
+			}
 		}
 	};
 
@@ -572,7 +576,53 @@ public class ValueType implements StringResource, NamedObject {
 		return "ValueType@"+xmlForm; //$NON-NLS-1$
 	}
 
+	/**
+	 *
+	 * The serialized form of this value type adheres to the following format:<br>
+	 * {@code <component_type>[<size>]}<br>
+	 * Where {@code size} is either a valid positive integer defining the number
+	 * of elements in the vector, or the <i>wildcard symbol</i> {@ x} to signal
+	 * that vectors for this type can vary in size.
+	 *
+	 * @author Markus
+	 *
+	 */
 	public static final class VectorType extends ValueType {
+
+		static boolean isVectorType(String s) {
+			int last = s.length()-1;
+			int open = s.indexOf(SIZE_OPEN);
+			return open>0 && open<last && s.charAt(last)==SIZE_CLOSE;
+		}
+
+		public static VectorType parseVectorType(String s) {
+			VectorType result;
+
+			int openIdx = s.indexOf(SIZE_OPEN);
+			if(openIdx!=-1) {
+				if(s.charAt(s.length()-1)!=SIZE_CLOSE)
+					throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_TYPE,
+							"Invalid vector type definition: "+s);
+
+				String typeName = s.substring(0, openIdx);
+
+				ValueType componentType = parseValueType(typeName);
+
+				String sizeString = s.substring(openIdx+1, s.length()-1);
+
+				if(WILDCARD_SIZE_STRING.equals(sizeString)) {
+					result = new VectorType(componentType);
+				} else {
+					int size = Integer.parseInt(sizeString);
+
+					result = new VectorType(componentType, size);
+				}
+			} else
+				throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_TYPE,
+						"Not a valid vector type definition: "+s); //$NON-NLS-1$
+
+			return result;
+		}
 
 		static final char SIZE_OPEN = '[';
 		static final char SIZE_CLOSE = ']';
@@ -588,8 +638,16 @@ public class ValueType implements StringResource, NamedObject {
 
 		private final transient Object emptyArray;
 
+		private static String toXmlForm(ValueType componentType, int size) {
+			if(size==UNDEFINED_SIZE) {
+				return componentType.getStringValue()+SIZE_OPEN+WILDCARD_SIZE_CHARACTER+SIZE_CLOSE;
+			} else {
+				return componentType.getStringValue()+SIZE_OPEN+size+SIZE_CLOSE;
+			}
+		}
+
 		public VectorType(ValueType componentType, int size) {
-			super(componentType.getStringValue()+SIZE_OPEN+size+SIZE_CLOSE, Object.class, false, true);
+			super(toXmlForm(componentType, size), Object.class, false, true);
 
 			if(size<1)
 				throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Size has to be greater than 0: "+size); //$NON-NLS-1$
@@ -601,7 +659,7 @@ public class ValueType implements StringResource, NamedObject {
 		}
 
 		public VectorType(ValueType componentType) {
-			super(componentType.getStringValue()+SIZE_OPEN+WILDCARD_SIZE_CHARACTER+SIZE_CLOSE, Object.class, false, true);
+			super(toXmlForm(componentType, UNDEFINED_SIZE), Object.class, false, true);
 
 			this.size = UNDEFINED_SIZE;
 			this.componentType = componentType;
@@ -806,13 +864,54 @@ public class ValueType implements StringResource, NamedObject {
 	 * matrix data in.
 	 * <p>
 	 * Rows of the matrix will be concatenated into the buffer array.
+	 * <p>
+	 * The serialized form of this value type adheres to the following format:<br>
+	 * {@code <component_type>[<rows>,<cols>]}
 	 *
 	 * @author Markus Gärtner
 	 *
 	 */
 	public static final class MatrixType extends ValueType {
 
+		static boolean isMatrixType(String s) {
+			int last = s.length()-1;
+			int open = s.indexOf(VectorType.SIZE_OPEN);
+			int sep = s.indexOf(SIZE_SEPARATOR, open);
+			return open>0 && open<sep && sep<last
+					&& s.charAt(last)==VectorType.SIZE_CLOSE;
+		}
+
+		public static MatrixType parseMatrixType(String s) {
+			MatrixType result;
+
+			int openIdx = s.indexOf(VectorType.SIZE_OPEN);
+			if(openIdx!=-1) {
+				if(s.charAt(s.length()-1)!=VectorType.SIZE_CLOSE)
+					throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_TYPE,
+							"Invalid vector type definition: "+s);
+
+				int sepIdx = s.indexOf(SIZE_SEPARATOR, openIdx);
+
+				String typeName = s.substring(0, openIdx);
+
+				ValueType componentType = parseValueType(typeName);
+
+				String rowSizeString = s.substring(openIdx+1, sepIdx);
+				String colSizeString = s.substring(sepIdx+1, s.length()-1);
+
+				int rowSize = Integer.parseInt(rowSizeString);
+				int colSize = Integer.parseInt(colSizeString);
+
+				result = new MatrixType(componentType, rowSize, colSize);
+			} else
+				throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_TYPE,
+						"Not a valid matrix value type definition: "+s); //$NON-NLS-1$
+
+			return result;
+		}
+
 		static final char ROW_SEPARATOR = ';';
+		static final char SIZE_SEPARATOR = ',';
 
 		private final int rows, columns;
 		private final ValueType componentType;
@@ -820,9 +919,7 @@ public class ValueType implements StringResource, NamedObject {
 		private final transient Object emptyArray;
 
 		private static String toXmlForm(ValueType componentType, int rows, int columns) {
-			return (componentType==null ? "" : componentType.getStringValue())
-					+VectorType.SIZE_OPEN+rows+VectorType.SIZE_CLOSE
-					+VectorType.SIZE_OPEN+columns+VectorType.SIZE_CLOSE;
+			return componentType.getStringValue()+VectorType.SIZE_OPEN+rows+SIZE_SEPARATOR+columns+VectorType.SIZE_CLOSE;
 		}
 
 		public MatrixType(ValueType componentType, int rows, int columns) {

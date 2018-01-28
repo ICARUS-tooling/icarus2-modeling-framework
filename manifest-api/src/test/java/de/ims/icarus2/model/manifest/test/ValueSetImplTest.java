@@ -238,11 +238,10 @@ public class ValueSetImplTest {
 		testXml(ValueType.BOOLEAN);
 	}
 
-	//FIXME tests disabled due to blocking internet call by URL.equals(Object) method!
-//	@Test
-//	public void testXmlUrlSet() throws Exception {
-//		testXml(ValueType.URL);
-//	}
+	@Test
+	public void testXmlUrlSet() throws Exception {
+		testXml(ValueType.URL);
+	}
 
 	@Test
 	public void testXmlUrlResourceSet() throws Exception {

@@ -29,6 +29,7 @@ import de.ims.icarus2.util.eval.Expression;
  * @author Markus Gärtner
  *
  */
+@SuppressWarnings("boxing")
 public class JDKExpressionFactoryTest {
 
 	@Test
