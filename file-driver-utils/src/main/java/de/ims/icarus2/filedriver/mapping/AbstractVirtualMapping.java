@@ -51,7 +51,7 @@ public abstract class AbstractVirtualMapping implements Mapping {
 		this.targetLayer = targetLayer;
 	}
 
-	protected AbstractVirtualMapping(MappingBuilder<?, ?> builder) {
+	protected AbstractVirtualMapping(AbstractMappingBuilder<?, ?> builder) {
 		requireNonNull(builder);
 
 		driver = builder.getDriver();
@@ -129,11 +129,15 @@ public abstract class AbstractVirtualMapping implements Mapping {
 	 * @param <B>
 	 * @param <M>
 	 */
-	public static abstract class MappingBuilder<B extends MappingBuilder<B, M>, M extends Mapping> extends AbstractBuilder<B, M> {
+	public static abstract class AbstractMappingBuilder<B extends AbstractMappingBuilder<B, M>, M extends Mapping> extends AbstractBuilder<B, M> {
 		private Driver driver;
 		private MappingManifest manifest;
 		private ItemLayerManifest sourceLayer, targetLayer;
 		private IndexValueType valueType;
+
+		protected AbstractMappingBuilder() {
+			// no-op
+		}
 
 		public B driver(Driver driver) {
 			requireNonNull(driver);

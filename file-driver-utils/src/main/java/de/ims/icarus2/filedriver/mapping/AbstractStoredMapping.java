@@ -29,7 +29,7 @@ import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.ReadWriteAccessor;
-import de.ims.icarus2.filedriver.mapping.AbstractVirtualMapping.MappingBuilder;
+import de.ims.icarus2.filedriver.mapping.AbstractVirtualMapping.AbstractMappingBuilder;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
@@ -56,7 +56,7 @@ public abstract class AbstractStoredMapping implements WritableMapping {
 	private final ItemLayerManifest targetLayer;
 	private final BufferedIOResource resource;
 
-	protected AbstractStoredMapping(StoredMappingBuilder<?,?> builder) {
+	protected AbstractStoredMapping(AbstractStoredMappingBuilder<?,?> builder) {
 
 		driver = builder.getDriver();
 		manifest = builder.getManifest();
@@ -274,10 +274,14 @@ public abstract class AbstractStoredMapping implements WritableMapping {
 	 * @param <B>
 	 * @param <M>
 	 */
-	public static abstract class StoredMappingBuilder<B extends MappingBuilder<B, M>, M extends Mapping> extends MappingBuilder<B, M> {
+	public static abstract class AbstractStoredMappingBuilder<B extends AbstractMappingBuilder<B, M>, M extends Mapping> extends AbstractMappingBuilder<B, M> {
 		private Integer cacheSize;
 		private IOResource resource;
 		private BlockCache blockCache;
+
+		protected AbstractStoredMappingBuilder() {
+			// no-op
+		}
 
 		public B cacheSize(int cacheSize) {
 			checkArgument(cacheSize>0);

@@ -52,6 +52,10 @@ import de.ims.icarus2.util.annotations.OptionalMethod;
  */
 public interface ComponentSupplier extends AutoCloseable {
 
+	public static Builder newBuilder() {
+		return new Builder();
+	}
+
 	/**
 	 * Returns the layer that {@code sourceIndex} parameters passed
 	 * to {@link #reset(long)} refer to. If this supplier provides
@@ -574,7 +578,7 @@ public interface ComponentSupplier extends AutoCloseable {
 
 	}
 
-	static class Builder extends AbstractBuilder<Builder, ComponentSupplier> {
+	public static class Builder extends AbstractBuilder<Builder, ComponentSupplier> {
 
 		/**
 		 * Abstract transformer to get ids for our index values.
@@ -637,6 +641,10 @@ public interface ComponentSupplier extends AutoCloseable {
 		 * Backend consumer that new components will be sent to.
 		 */
 		private ObjLongConsumer<Item> componentConsumer;
+
+		protected Builder() {
+			// no-op
+		}
 
 		public int getBufferSize() {
 			return bufferSize==null ? 0 : bufferSize.intValue();

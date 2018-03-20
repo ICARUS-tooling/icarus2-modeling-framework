@@ -46,6 +46,10 @@ import de.ims.icarus2.util.IcarusUtils;
  */
 public class MappingImplOneToOne extends AbstractStoredMapping {
 
+	public static Builder newBuilder() {
+		return new Builder();
+	}
+
 	private final IndexBlockStorage blockStorage;
 
 	public static final int DEFAULT_BLOCK_POWER = 14;
@@ -479,9 +483,13 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static class Builder extends StoredMappingBuilder<Builder, MappingImplOneToOne> {
+	public static class Builder extends AbstractStoredMappingBuilder<Builder, MappingImplOneToOne> {
 
 		private Integer blockPower;
+
+		protected Builder() {
+			// no-op
+		}
 
 		public int getBlockPower() {
 			return blockPower==null ? DEFAULT_BLOCK_POWER : blockPower.intValue();
@@ -505,7 +513,7 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.mapping.AbstractStoredMapping.StoredMappingBuilder#createBufferedIOResource()
+		 * @see de.ims.icarus2.filedriver.mapping.AbstractStoredMapping.AbstractStoredMappingBuilder#createBufferedIOResource()
 		 */
 		@Override
 		public BufferedIOResource createBufferedIOResource() {
@@ -513,7 +521,7 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 			int bytesPerBlock = getEntriesPerBlock()*blockStorage.spanSize();
 			PayloadConverter payloadConverter = new PayloadConverterImpl(blockStorage);
 
-			return new BufferedIOResource.Builder()
+			return BufferedIOResource.newBuilder()
 				.resource(getResource())
 				.blockCache(getBlockCache())
 				.cacheSize(getCacheSize())

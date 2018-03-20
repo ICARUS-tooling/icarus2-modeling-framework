@@ -86,7 +86,7 @@ public class DefaultMappingFactory implements MappingFactory {
 		requireNonNull(manifest);
 
 		if(options==null) {
-			options = Options.emptyOptions;
+			options = Options.NONE;
 		}
 
 		Mapping mapping = createFunctionMapping(manifest, options);
@@ -204,7 +204,7 @@ public class DefaultMappingFactory implements MappingFactory {
 		return new MappingImplIdentity(driver, manifest, sourceLayer, targetLayer);
 	}
 
-	protected <B extends AbstractVirtualMapping.MappingBuilder<B, ?>> B initMappingBuilder(B builder, MappingManifest manifest, Options options) {
+	protected <B extends AbstractVirtualMapping.AbstractMappingBuilder<B, ?>> B initMappingBuilder(B builder, MappingManifest manifest, Options options) {
 		builder.driver(driver);
 		builder.manifest(manifest);
 
@@ -249,7 +249,7 @@ public class DefaultMappingFactory implements MappingFactory {
 		return result;
 	}
 
-	protected <B extends AbstractStoredMapping.StoredMappingBuilder<B, ?>> B initStoredMappingBuilder(B builder, MappingManifest manifest, Options options) {
+	protected <B extends AbstractStoredMapping.AbstractStoredMappingBuilder<B, ?>> B initStoredMappingBuilder(B builder, MappingManifest manifest, Options options) {
 		initMappingBuilder(builder, manifest, options);
 
 		builder.resource(getResource(options));

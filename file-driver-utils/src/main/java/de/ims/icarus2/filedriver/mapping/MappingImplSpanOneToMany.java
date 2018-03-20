@@ -67,6 +67,10 @@ import de.ims.icarus2.util.IcarusUtils;
  */
 public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 
+	public static Builder newBuilder() {
+		return new Builder();
+	}
+
 	private final IndexBlockStorage blockStorage;
 
 	public static final int DEFAULT_BLOCK_POWER = 14;
@@ -163,7 +167,6 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 				return IcarusUtils.UNSET_LONG;
 			}
 
-			// Use direct span collection method to avoid object creation!
 			long begin = blockStorage.getSpanBegin(block.getData(), localIndex);
 			long end = blockStorage.getSpanEnd(block.getData(), localIndex);
 
@@ -242,7 +245,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 		@Override
 		public boolean lookup(IndexSet[] sourceIndices, IndexCollector collector, RequestSettings settings)
 				throws InterruptedException {
-			ensureSorted(sourceIndices);
+			ensureSorted(sourceIndices, settings);
 
 			boolean result = false;
 
@@ -312,7 +315,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 		@Override
 		public long getBeginIndex(IndexSet[] sourceIndices, RequestSettings settings)
 				throws InterruptedException {
-			ensureSorted(sourceIndices);
+			ensureSorted(sourceIndices, settings);
 
 			// Optimized handling of monotonic coverage: use only first source index
 			if(coverage.isMonotonic()) {
@@ -468,7 +471,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 		public boolean find(final long fromSource, final long toSource,
 				final IndexSet[] targetIndices, final IndexCollector collector, RequestSettings settings)
 				throws InterruptedException {
-			ensureSorted(targetIndices);
+			ensureSorted(targetIndices, settings);
 
 			if(coverage.isMonotonic()) {
 
@@ -666,9 +669,13 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static class Builder extends StoredMappingBuilder<Builder, MappingImplSpanOneToMany> {
+	public static class Builder extends AbstractStoredMappingBuilder<Builder, MappingImplSpanOneToMany> {
 
 		private Integer blockPower;
+
+		protected Builder() {
+			// no-op
+		}
 
 		public int getBlockPower() {
 			return blockPower==null ? DEFAULT_BLOCK_POWER : blockPower.intValue();
@@ -692,7 +699,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.mapping.AbstractStoredMapping.StoredMappingBuilder#createBufferedIOResource()
+		 * @see de.ims.icarus2.filedriver.mapping.AbstractStoredMapping.AbstractStoredMappingBuilder#createBufferedIOResource()
 		 */
 		@Override
 		public BufferedIOResource createBufferedIOResource() {
@@ -700,7 +707,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			int bytesPerBlock = getEntriesPerBlock()*blockStorage.spanSize();
 			PayloadConverter payloadConverter = new PayloadConverterImpl(blockStorage);
 
-			return new BufferedIOResource.Builder()
+			return BufferedIOResource.newBuilder()
 				.resource(getResource())
 				.blockCache(getBlockCache())
 				.cacheSize(getCacheSize())

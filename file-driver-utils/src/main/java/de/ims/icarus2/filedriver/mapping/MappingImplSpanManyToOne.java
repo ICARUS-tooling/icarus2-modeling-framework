@@ -54,6 +54,10 @@ import de.ims.icarus2.util.IcarusUtils;
  */
 public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 
+	public static Builder newBuilder() {
+		return new Builder();
+	}
+
 	private final IndexBlockStorage blockStorage;
 
 	private static final int DEFAULT_GROUP_POWER = 8;
@@ -259,7 +263,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 		@Override
 		public boolean lookup(IndexSet[] sourceIndices, IndexCollector collector, RequestSettings settings)
 				throws InterruptedException {
-			ensureSorted(sourceIndices);
+			ensureSorted(sourceIndices, settings);
 
 			boolean result = false;
 
@@ -375,7 +379,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 		@Override
 		public long getEndIndex(IndexSet[] sourceIndices, RequestSettings settings)
 				throws InterruptedException {
-			ensureSorted(sourceIndices);
+			ensureSorted(sourceIndices, settings);
 
 			// Optimized handling of monotonic inverseCoverage: use only last source index
 			if(inverseCoverage.isMonotonic()) {
@@ -573,11 +577,15 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static class Builder extends StoredMappingBuilder<Builder, MappingImplSpanManyToOne> {
+	public static class Builder extends AbstractStoredMappingBuilder<Builder, MappingImplSpanManyToOne> {
 
 		private Integer blockPower;
 		private Integer groupPower;
 		private Mapping inverseMapping;
+
+		protected Builder() {
+			// no-op
+		}
 
 		public Builder blockPower(int blockPower) {
 			checkArgument(blockPower>0);
@@ -627,7 +635,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.mapping.AbstractStoredMapping.StoredMappingBuilder#createBufferedIOResource()
+		 * @see de.ims.icarus2.filedriver.mapping.AbstractStoredMapping.AbstractStoredMappingBuilder#createBufferedIOResource()
 		 */
 		@Override
 		public BufferedIOResource createBufferedIOResource() {
@@ -635,7 +643,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 			int bytesPerBlock = getEntriesPerBlock()*blockStorage.spanSize();
 			PayloadConverter payloadConverter = new PayloadConverterImpl(blockStorage);
 
-			return new BufferedIOResource.Builder()
+			return BufferedIOResource.newBuilder()
 				.resource(getResource())
 				.blockCache(getBlockCache())
 				.cacheSize(getCacheSize())

@@ -1848,6 +1848,9 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 */
 		private boolean eos = false;
 
+		/**
+		 * Number of characters used to signal the last line-break.
+		 */
 		private int lineBreakCharacterCount;
 
 		public BufferedLineIterator(ReadableByteChannel channel, Charset encoding, int characterChunkSize) {
@@ -2089,7 +2092,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 			ItemLayer layer = blockHandler.getItemLayer();
 
-			ComponentSupplier.Builder builder = new ComponentSupplier.Builder();
+			ComponentSupplier.Builder builder = ComponentSupplier.newBuilder();
 			builder.componentLayer(layer);
 			builder.componentType(blockHandler.getSchema().getComponentSchema().getMemberType());
 			builder.memberFactory(memberFactory);
@@ -2324,7 +2327,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 	}
 
 	private static Options resolverOptions(ResolverSchema resolver) {
-		return resolver==null ? Options.emptyOptions : resolver.getOptions();
+		return resolver==null ? Options.NONE : resolver.getOptions();
 	}
 
 	private static String getSeparator(BlockHandler blockSchema, TableSchema tableSchema) {
@@ -2332,6 +2335,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		while(separator==null && blockSchema!=null) {
 			blockSchema = blockSchema.getParent();
+			separator = blockSchema.getSchema().getSeparator();
 		}
 
 		if(separator==null) {

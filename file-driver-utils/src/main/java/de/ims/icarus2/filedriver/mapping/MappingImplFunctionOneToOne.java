@@ -42,6 +42,10 @@ import de.ims.icarus2.util.IcarusUtils;
  */
 public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 
+	public static Builder newBuilder() {
+		return new Builder();
+	}
+
 	private final LongUnaryOperator unaryFunction;
 	private final UnaryOperator<IndexSet> batchFunction;
 
@@ -239,10 +243,14 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static class Builder extends MappingBuilder<Builder, MappingImplFunctionOneToOne> {
+	public static class Builder extends AbstractMappingBuilder<Builder, MappingImplFunctionOneToOne> {
 
 		private LongUnaryOperator unaryFunction;
 		private UnaryOperator<IndexSet> batchFunction;
+
+		protected Builder() {
+			// no-op
+		}
 
 		public LongUnaryOperator getUnaryFunction() {
 			return unaryFunction;
@@ -271,7 +279,7 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.mapping.AbstractVirtualMapping.MappingBuilder#validate()
+		 * @see de.ims.icarus2.filedriver.mapping.AbstractVirtualMapping.AbstractMappingBuilder#validate()
 		 */
 		@Override
 		protected void validate() {

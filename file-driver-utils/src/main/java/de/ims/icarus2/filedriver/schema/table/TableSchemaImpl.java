@@ -318,7 +318,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity implements TableS
 		 */
 		@Override
 		public Options getOptions() {
-			return options==null ? Options.emptyOptions : options;
+			return options==null ? Options.NONE : options;
 		}
 
 		public BlockSchemaImpl addOption(String key, String value) {

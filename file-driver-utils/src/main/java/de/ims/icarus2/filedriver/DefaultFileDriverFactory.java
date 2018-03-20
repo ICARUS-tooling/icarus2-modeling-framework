@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Objects;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.filedriver.FileDriver.FileDriverBuilder;
+import de.ims.icarus2.filedriver.FileDriver.Builder;
 import de.ims.icarus2.filedriver.io.sets.CompoundResourceSet;
 import de.ims.icarus2.filedriver.io.sets.LazyResourceSet;
 import de.ims.icarus2.filedriver.io.sets.ResourceSet;
@@ -50,7 +50,7 @@ import de.ims.icarus2.model.manifest.api.PathResolverManifest;
 import de.ims.icarus2.model.standard.util.DefaultImplementationLoader;
 
 /**
- * Wraps a factory implementation around a {@link FileDriverBuilder} to create a new
+ * Wraps a factory implementation around a {@link Builder} to create a new
  * {@link FileDriver} instance.
  *
  * @author Markus Gärtner
@@ -58,16 +58,16 @@ import de.ims.icarus2.model.standard.util.DefaultImplementationLoader;
  */
 public class DefaultFileDriverFactory implements Factory {
 
-	private FileDriverBuilder builder;
+	private Builder builder;
 
-	private void setBuilder(FileDriverBuilder builder) {
+	private void setBuilder(Builder builder) {
 		requireNonNull(builder);
 		checkState(this.builder==null);
 
 		this.builder = builder;
 	}
 
-	protected FileDriverBuilder getBuilder() {
+	protected Builder getBuilder() {
 		checkState(builder!=null);
 		return builder;
 	}
@@ -109,9 +109,9 @@ public class DefaultFileDriverFactory implements Factory {
 
 		final ResourceSet dataFiles = createResourceSet(corpus, driverManifest.getContextManifest().getLocationManifests());
 
-		// use FileDriverBuilder and add utility method for creation of required parts
+		// use Builder and add utility method for creation of required parts
 
-		FileDriverBuilder builder = createBuilder();
+		Builder builder = createBuilder();
 
 		setBuilder(builder);
 
@@ -131,8 +131,8 @@ public class DefaultFileDriverFactory implements Factory {
 		return resultClass.cast(driver);
 	}
 
-	protected FileDriverBuilder createBuilder() {
-		return new FileDriverBuilder();
+	protected Builder createBuilder() {
+		return new Builder();
 	}
 
 	/**

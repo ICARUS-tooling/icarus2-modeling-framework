@@ -120,6 +120,10 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
  */
 public class FileDriver extends AbstractDriver {
 
+	public static Builder newBuilder() {
+		return new Builder();
+	}
+
 	private static final int DEFAULT_CHUNK_INFO_SIZE = 200;
 
 	/**
@@ -178,7 +182,7 @@ public class FileDriver extends AbstractDriver {
 	 * @param corpus
 	 * @throws ModelException
 	 */
-	protected FileDriver(FileDriverBuilder builder) {
+	protected FileDriver(Builder builder) {
 		super(builder);
 
 		metadataRegistry = builder.getMetadataRegistry();
@@ -428,7 +432,7 @@ public class FileDriver extends AbstractDriver {
 	}
 
 	protected BufferedItemManager createBufferedItemManager() {
-		BufferedItemManager.Builder builder = new BufferedItemManager.Builder();
+		BufferedItemManager.Builder builder = BufferedItemManager.newBuilder();
 
 		for(LayerManifest layerManifest : getContext().getManifest().getLayerManifests(ManifestUtils::isItemLayerManifest)) {
 			ItemLayerManifest itemLayerManifest = (ItemLayerManifest) layerManifest;
@@ -1640,11 +1644,15 @@ public class FileDriver extends AbstractDriver {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static class FileDriverBuilder extends DriverBuilder<FileDriverBuilder, FileDriver> {
+	public static class Builder extends DriverBuilder<Builder, FileDriver> {
 		private ResourceSet dataFiles;
 		private MetadataRegistry metadataRegistry;
 
-		public FileDriverBuilder metadataRegistry(MetadataRegistry metadataRegistry) {
+		protected Builder() {
+			// no-op
+		}
+
+		public Builder metadataRegistry(MetadataRegistry metadataRegistry) {
 			requireNonNull(metadataRegistry);
 			checkState(this.metadataRegistry==null);
 
@@ -1657,7 +1665,7 @@ public class FileDriver extends AbstractDriver {
 			return metadataRegistry;
 		}
 
-		public FileDriverBuilder dataFiles(ResourceSet dataFiles) {
+		public Builder dataFiles(ResourceSet dataFiles) {
 			requireNonNull(dataFiles);
 			checkState(this.dataFiles==null);
 

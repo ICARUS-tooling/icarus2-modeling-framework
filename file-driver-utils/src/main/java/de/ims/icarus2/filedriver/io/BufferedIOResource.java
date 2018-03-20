@@ -83,6 +83,10 @@ import it.unimi.dsi.fastutil.ints.IntSet;
  */
 public class BufferedIOResource {
 
+	public static Builder newBuilder() {
+		return new Builder();
+	}
+
 	/**
 	 * Maximum size of supported I/O objects, limited to 32 Gigabytes
 	 */
@@ -634,6 +638,10 @@ public class BufferedIOResource {
 		private IOResource resource;
 		private BlockCache blockCache;
 		private PayloadConverter payloadConverter;
+
+		protected Builder() {
+			// no-op
+		}
 
 		public Builder cacheSize(int cacheSize) {
 			checkArgument(cacheSize>=0);

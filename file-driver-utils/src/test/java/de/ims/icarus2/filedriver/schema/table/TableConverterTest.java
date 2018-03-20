@@ -32,9 +32,9 @@ import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.registry.CorpusManager;
-import de.ims.icarus2.model.api.view.CorpusModel;
-import de.ims.icarus2.model.api.view.CorpusView;
-import de.ims.icarus2.model.api.view.CorpusView.PageControl;
+import de.ims.icarus2.model.api.view.paged.CorpusModel;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlReader;
@@ -99,7 +99,7 @@ public class TableConverterTest {
 		CorpusManifest corpusManifest = corpusManager.getManifestRegistry().getCorpusManifest("testCorpus");
 
 		Corpus corpus = corpusManager.connect(corpusManifest);
-		CorpusView view = corpus.createFullView(AccessMode.READ, null);
+		PagedCorpusView view = corpus.createFullView(AccessMode.READ, null);
 
 		System.out.println(view.getSize());
 
@@ -111,13 +111,13 @@ public class TableConverterTest {
 		Container rootContainer = model.getRootContainer();
 		System.out.println(rootContainer.getItemCount());
 
-		AnnotationLayer formLayer = model.fetchLayer("form");
-		AnnotationLayer lemmaLayer = model.fetchLayer("lemma");
+		AnnotationLayer formLayer = view.fetchLayer("form");
+		AnnotationLayer lemmaLayer = view.fetchLayer("lemma");
 
 		for(int i=0; i<rootContainer.getItemCount(); i++) {
 			Item item = rootContainer.getItemAt(i);
-			Object form = formLayer.getAnnotationStorage().getValue(item, null);
-			Object lemma = lemmaLayer.getAnnotationStorage().getValue(item, null);
+			Object form = formLayer.getValue(item);
+			Object lemma = lemmaLayer.getValue(item);
 			System.out.printf("index=%d form=%s lemma=%s\n",item.getIndex(),form, lemma);
 		}
 	}
