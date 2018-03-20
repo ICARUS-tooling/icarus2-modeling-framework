@@ -29,8 +29,8 @@ import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.events.CorpusLifecycleListener;
 import de.ims.icarus2.model.api.io.FileManager;
 import de.ims.icarus2.model.api.members.CorpusMember;
-import de.ims.icarus2.model.api.view.CorpusModel;
-import de.ims.icarus2.model.api.view.CorpusView;
+import de.ims.icarus2.model.api.view.paged.CorpusModel;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
@@ -47,7 +47,7 @@ import de.ims.icarus2.util.id.Identity;
  * <li>Once requested to connect, a corpus transitions to the <b>connecting</b> state. This will either last
  * until it is properly connected or the manager encountered an error in which case the corpus will be marked as <b>bad</b>.</li>
  * <li>A <b>connected</b> corpus can finally be interacted with in terms of its content, which means client code
- * can query its {@link Driver drivers} or request {@link CorpusView views} to inspect data.</li>
+ * can query its {@link Driver drivers} or request {@link PagedCorpusView views} to inspect data.</li>
  * <li>After a live corpus is no longer required it can be requested to start <b>disconnecting</b> which will
  * cause it to close all open views and release previously held data. Again, errors during this phase will result
  * in the corpus marked as bad by the manager.</li>
@@ -203,7 +203,7 @@ public interface CorpusManager {
 	Corpus getLiveCorpus(CorpusManifest manifest);
 
 	/**
-	 * Disconnects from the specified {@code corpus}, closing and releasing all {@link CorpusView views}
+	 * Disconnects from the specified {@code corpus}, closing and releasing all {@link PagedCorpusView views}
 	 * and {@link CorpusModel models} it is currently holding open. After successful disconnect the corpus
 	 * will be removed from the internal list of <i>active</i> corpora. Note that the actual release of
 	 * currently used data is delegated to the active corpus instance by invoking its {@link Corpus#close() close}

@@ -21,11 +21,18 @@ package de.ims.icarus2.model.api.registry;
 import java.util.function.BiConsumer;
 
 /**
+ * Models a storage for maintenance data of various framework members.
+ *
+ *
  * @author Markus Gärtner
  *
  */
 public interface MetadataRegistry extends AutoCloseable {
 
+	/**
+	 * Initialize the connection to this registry and
+	 * prepare it for usage.
+	 */
 	void open();
 
 	String getValue(String key);

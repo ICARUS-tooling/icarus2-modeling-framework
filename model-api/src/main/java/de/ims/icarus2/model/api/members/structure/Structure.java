@@ -365,7 +365,7 @@ public interface Structure extends Container {
 	Edge removeEdge(long index);
 
 	/**
-	 * Removes from this structure all edges.
+	 * Removes from this structure all edges in the given range.
 	 * @throws UnsupportedOperationException if the corpus
 	 * is not editable or the operation is not supported by the implementation
 	 */

@@ -153,7 +153,7 @@ public class ContextFactory {
 			throw new NullPointerException("Invalid manifest"); //$NON-NLS-1$
 
 		if(options==null) {
-			options = Options.emptyOptions;
+			options = Options.NONE;
 		}
 
 		// Fetch snapshot of producers and make sure we can create every possible member!
@@ -529,6 +529,10 @@ public class ContextFactory {
 
 	public static class Producers implements Cloneable {
 		public Supplier<ImplementationLoader<?>> implementationLoaderSupplier;
+		/**
+		 * Fallback to be used in case there's no specialized producer
+		 * available for a certain layer member.
+		 */
 		public CorpusMemberFactory memberFactory;
 		public Function<AnnotationLayerManifest, AnnotationLayer> annotationLayerProducer;
 		public Function<ItemLayerManifest, ItemLayer> itemLayerProducer;

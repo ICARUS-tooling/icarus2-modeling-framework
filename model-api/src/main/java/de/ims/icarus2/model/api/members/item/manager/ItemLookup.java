@@ -29,7 +29,8 @@ import de.ims.icarus2.model.api.members.item.Item;
  * a lookup method to fetch the index within the storage a given item
  * is located at.
  * <p>
- * Note that all index values returned or expected are of type {@link long}!
+ * Note that all index values returned or taken as input parameters
+ * are of type {@link long}!
  *
  * @author Markus Gärtner
  *

@@ -468,10 +468,11 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	}
 
 	/**
-	 * Must be called under write lock.
 	 * Sets the byte chunks for the specified
 	 * handles to their respective noEntryValue
 	 * representations.
+	 * <p>
+	 * Must be called under write lock.
 	 */
 	private void clearCurrent(PackageHandle[] handles) {
 

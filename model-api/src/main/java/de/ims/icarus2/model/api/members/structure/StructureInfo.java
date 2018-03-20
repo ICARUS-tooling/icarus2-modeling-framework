@@ -38,7 +38,7 @@ import de.ims.icarus2.util.IcarusUtils;
  * As a matter of consistency all three methods, when provided with
  * the same {@link StructureInfoField field} argument, should either
  * all return their respective <i>no-entry</i> sentinel value
- * ({@link #NO_ENTRY_LONG} or {@link #NO_ENTRY_DOUBLE}) or all provide
+ * ({@link IcarusUtils#UNSET_LONG} or {@link IcarusUtils#UNSET_DOUBLE}) or all provide
  * a valid meaningful result.
  * This way it is sufficient for the default implementation of
  * {@link #isUndefined(StructureInfoField)} to only use one {@code long}
@@ -59,12 +59,12 @@ public interface StructureInfo extends MetaData, Serializable {
 	 * Returns {@code true} iff this metadata set does not contain valid
 	 * data for the given {@code field}. The default implementation uses
 	 * the return value of {@link #getMin(StructureInfoField)} with the
-	 * supplied {@code field} and checks its equality to {@link #NO_ENTRY_LONG}.
+	 * supplied {@code field} and checks its equality to {@link IcarusUtils#UNSET_LONG}.
 	 *
 	 * @param field
 	 * @return
 	 */
 	default boolean isUndefined(StructureInfoField field) {
-		return getMin(field)==IcarusUtils.UNSET_LONG; //FIXME also use Double.compare
+		return getMin(field)==IcarusUtils.UNSET_LONG;
 	}
 }

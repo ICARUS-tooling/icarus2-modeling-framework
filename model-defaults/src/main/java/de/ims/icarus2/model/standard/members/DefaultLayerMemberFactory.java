@@ -22,6 +22,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
+import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.registry.LayerMemberFactory;
@@ -32,6 +33,7 @@ import de.ims.icarus2.model.standard.driver.cache.TrackedMember.TrackedItem;
 import de.ims.icarus2.model.standard.driver.cache.TrackedMember.TrackedStructure;
 import de.ims.icarus2.model.standard.members.container.DefaultContainer;
 import de.ims.icarus2.model.standard.members.container.ItemStorage;
+import de.ims.icarus2.model.standard.members.item.DefaultFragment;
 import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.model.standard.members.structure.DefaultEdge;
 import de.ims.icarus2.model.standard.members.structure.DefaultStructure;
@@ -66,6 +68,20 @@ public class DefaultLayerMemberFactory implements LayerMemberFactory {
 	}
 
 	/**
+	 * @see de.ims.icarus2.model.api.registry.LayerMemberFactory#newFragment(de.ims.icarus2.model.api.members.container.Container, long)
+	 */
+	@Override
+	public Fragment newFragment(Container host, long id, Item item) {
+		DefaultFragment fragment = new DefaultFragment();
+
+		fragment.setItem(item);
+		fragment.setContainer(host);
+		fragment.setId(id);
+
+		return fragment;
+	}
+
+	/**
 	 * @see de.ims.icarus2.model.api.registry.LayerMemberFactory#newContainer(de.ims.icarus2.model.manifest.api.ContainerManifest, de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
@@ -81,6 +97,7 @@ public class DefaultLayerMemberFactory implements LayerMemberFactory {
 	}
 
 	protected ItemStorage createItemStorage(ContainerManifest manifest) {
+		//TODO implement
 		throw new ModelException(GlobalErrorCode.NOT_IMPLEMENTED, "TODO");
 	}
 
@@ -102,6 +119,7 @@ public class DefaultLayerMemberFactory implements LayerMemberFactory {
 	}
 
 	protected EdgeStorage createEdgeStorage(StructureManifest manifest) {
+		//TODO implement
 		throw new ModelException(GlobalErrorCode.NOT_IMPLEMENTED, "TODO");
 	}
 }

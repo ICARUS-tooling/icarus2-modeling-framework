@@ -659,6 +659,10 @@ public abstract class AbstractDriver implements Driver {
 
 		private DriverManifest manifest;
 
+		protected DriverBuilder() {
+			// no-op
+		}
+
 		public B manifest(DriverManifest manifest) {
 			requireNonNull(manifest);
 			checkState(this.manifest==null);

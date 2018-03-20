@@ -52,6 +52,10 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
  */
 public class BufferedItemManager {
 
+	public static Builder newBuilder() {
+		return new Builder();
+	}
+
 	//TODO create builder that allows driver to inject recycle actions through LayerBuffer constructors
 	private final Int2ObjectMap<LayerBuffer> layerBuffers;
 
@@ -511,6 +515,10 @@ public class BufferedItemManager {
 	public static class Builder extends AbstractBuilder<Builder, BufferedItemManager> {
 
 		private final Int2ObjectMap<LayerBuffer> layerBuffers = new Int2ObjectOpenHashMap<>();
+
+		protected Builder() {
+			// no-op
+		}
 
 		/**
 		 * Adds a new {@link LayerBuffer} for the specified {@link ItemLayerManifest layer}

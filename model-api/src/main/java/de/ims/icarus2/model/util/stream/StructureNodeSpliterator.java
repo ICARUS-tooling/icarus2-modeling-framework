@@ -27,6 +27,8 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 
 /**
+ * TODO mention that when starting at -1 for initial pos, the virtual root node will be returned first!
+ *
  * @author Markus Gärtner
  *
  */
@@ -46,10 +48,10 @@ public class StructureNodeSpliterator implements Spliterator<Item> {
 
 	public StructureNodeSpliterator(Structure source, long pos, long fence) {
 		requireNonNull(source);
-		checkArgument(pos>=-1L);
-		checkArgument(fence>0);
-		checkArgument(fence>pos);
-		checkArgument(fence<=source.getItemCount());
+		checkArgument("pos must be positive or 0",pos>=-1L);
+		checkArgument("fence must be positive",fence>0);
+		checkArgument("fence must be greater than pos",fence>pos);
+		checkArgument("fence cannot exceed structrue size",fence<=source.getItemCount());
 
 		this.source = source;
 		this.pos = pos;

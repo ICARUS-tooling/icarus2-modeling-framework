@@ -27,8 +27,8 @@ import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.CorpusMember;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.structure.Structure;
-import de.ims.icarus2.model.api.view.CorpusModel;
-import de.ims.icarus2.model.api.view.CorpusView;
+import de.ims.icarus2.model.api.view.paged.CorpusModel;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.access.AccessControl;
@@ -171,7 +171,7 @@ public interface Item extends CorpusMember {
 	 * {@link Container#indexOfItem(Item)}! The latter returns the <i>current</i> position
 	 * of a item within that container's internal storage.
 	 * This index can change over time and is most likely different when using containers from
-	 * multiple {@link CorpusView}s.
+	 * multiple {@link PagedCorpusView}s.
 	 * The result of the {@code #getIndex()} method on the other hand is constant,
 	 * no matter where the item in question is stored. The only way to modify
 	 * a item's index is to remove or insert other items into the underlying data.

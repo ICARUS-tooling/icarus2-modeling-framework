@@ -601,8 +601,6 @@ public class Graph<E extends Object> {
 		 */
 		PRE_ORDER,
 
-//		IN_ORDER,
-
 		/**
 		 * Process children first, then node itself
 		 */

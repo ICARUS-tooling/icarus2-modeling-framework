@@ -21,7 +21,7 @@ package de.ims.icarus2.model.api.registry;
 import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.model.api.layer.Layer;
-import de.ims.icarus2.model.api.view.CorpusView;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
@@ -36,9 +36,9 @@ public class LayerLookup {
 	private final Reference2IntMap<Layer> layerIds = new Reference2IntOpenHashMap<>();
 	private final Int2ObjectMap<Layer> layerLookup = new Int2ObjectOpenHashMap<>();
 
-	private final CorpusView view;
+	private final PagedCorpusView view;
 
-	public LayerLookup(CorpusView view) {
+	public LayerLookup(PagedCorpusView view) {
 		requireNonNull(view);
 
 		this.view = view;
@@ -52,7 +52,7 @@ public class LayerLookup {
 		//TODO sanity check for making sure that we didn't get duplicate uids?
 	}
 
-	public CorpusView getView() {
+	public PagedCorpusView getView() {
 		return view;
 	}
 

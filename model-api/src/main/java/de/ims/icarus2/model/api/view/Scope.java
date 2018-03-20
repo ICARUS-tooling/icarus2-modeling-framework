@@ -51,6 +51,21 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  */
 public class Scope {
 
+	public static Scope withLayers(Corpus corpus, String...layerIds) {
+		ScopeBuilder builder = new ScopeBuilder(corpus);
+
+		for(String layerId : layerIds) {
+			Layer layer = corpus.getLayer(layerId, true);
+			builder.addContext(layer.getContext());
+			builder.addLayer(layer);
+		}
+
+		builder.addContext(corpus.getRootContext());
+		builder.setPrimaryLayer(corpus.getPrimaryLayer());
+
+		return builder.build();
+	}
+
 	private final Corpus corpus;
 	private final ItemLayer primaryLayer;
 	private final List<Context> contexts;

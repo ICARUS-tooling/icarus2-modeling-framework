@@ -64,7 +64,7 @@ public class AnnotationStorageFactory {
 			throw new NullPointerException("Invalid layerManifest");
 
 		if(options==null) {
-			options = Options.emptyOptions;
+			options = Options.NONE;
 		}
 
 		this.layerManifest = layerManifest;

@@ -21,7 +21,7 @@ package de.ims.icarus2.model.api.path;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.view.CorpusView;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
 
 /**
  *
@@ -31,7 +31,7 @@ import de.ims.icarus2.model.api.view.CorpusView;
  */
 public interface CorpusPath {
 
-	CorpusView getSource();
+	PagedCorpusView getSource();
 
 	int getElementCount();
 
@@ -123,7 +123,7 @@ public interface CorpusPath {
 		}
 
 		@Override
-		public CorpusView getSource() {
+		public PagedCorpusView getSource() {
 			return null;
 		}
 	};

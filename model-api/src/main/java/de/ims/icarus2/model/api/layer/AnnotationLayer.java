@@ -63,6 +63,10 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 	 * Returns the background storage that holds the actual annotation data in this
 	 * layer and is directly managed by the driver that created this layer and its
 	 * context.
+	 * <p>
+	 * The returned {@link AnnotationStorage} instance also gives access to all
+	 * the specialized setter and getter methods for working with primitive annotation
+	 * types for efficiency reasons.
 	 *
 	 * @return
 	 */

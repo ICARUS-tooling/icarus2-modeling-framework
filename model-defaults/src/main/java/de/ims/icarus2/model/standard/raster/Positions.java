@@ -30,7 +30,7 @@ import de.ims.icarus2.model.api.raster.Position;
  */
 public class Positions {
 
-	public static Position createPosition(long... values) {
+	public static Position create(long... values) {
 		switch (values.length) {
 		case 0:
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Empty values array - cannot create position");
@@ -116,8 +116,7 @@ public class Positions {
 		 */
 		@Override
 		public int compareTo(Position1D o) {
-			// FIXME consider int overflow!
-			return (int)(x-o.x);
+			return Long.compare(x, o.x);
 		}
 
 	}

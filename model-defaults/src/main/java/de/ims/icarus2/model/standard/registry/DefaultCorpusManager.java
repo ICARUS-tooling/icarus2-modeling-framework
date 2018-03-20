@@ -431,7 +431,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	 * was set at creation time and creates a new {@link SubRegistry sub registry} with the
 	 * {@link Manifest#getId() id} of the given {@link CorpusManifest manifest} as prefix.
 	 * <p>
-	 * Actual instantiation will then be delegated to a new {@link DefaultCorpus.CorpusBuilder}.
+	 * Actual instantiation will then be delegated to a new {@link DefaultCorpus.Builder}.
 	 *
 	 * @param manifest
 	 * @return
@@ -439,7 +439,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	 */
 	protected Corpus instantiate(CorpusManifest manifest) throws InterruptedException {
 
-		return new DefaultCorpus.CorpusBuilder()
+		return DefaultCorpus.newBuilder()
 			.manager(this)
 			.manifest(manifest)
 			.metadataRegistry(new SubRegistry(metadataRegistry, manifest.getId()))

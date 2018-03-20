@@ -89,4 +89,28 @@ public interface LayerMemberFactory {
 	 * @return
 	 */
 	Edge newEdge(Structure host, long id);
+
+	default Edge newEdge(Structure host, long id, Item source, Item target) {
+		Edge edge = newEdge(host, id);
+		edge.setSource(source);
+		edge.setTarget(target);
+		return edge;
+	}
+
+	/**
+	 * Creates a new fragment that is linked to the specified {@code host} container.
+	 *
+	 * @param host
+	 * @param begin
+	 * @param end
+	 * @return
+	 */
+	Fragment newFragment(Container host, long id, Item item);
+
+	default Fragment newFragment(Container host, long id, Item item, Position begin, Position end) {
+		Fragment fragment = newFragment(host, id, item);
+		fragment.setFragmentBegin(begin);
+		fragment.setFragmentEnd(end);
+		return fragment;
+	}
 }

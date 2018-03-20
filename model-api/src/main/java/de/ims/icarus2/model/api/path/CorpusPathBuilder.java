@@ -23,7 +23,7 @@ import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.view.CorpusView;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
 
 /**
  * @author Markus Gärtner
@@ -31,9 +31,9 @@ import de.ims.icarus2.model.api.view.CorpusView;
  */
 public class CorpusPathBuilder {
 
-	private final CorpusView view;
+	private final PagedCorpusView view;
 
-	public CorpusPathBuilder(CorpusView view) {
+	public CorpusPathBuilder(PagedCorpusView view) {
 		requireNonNull(view);
 
 		this.view = view;

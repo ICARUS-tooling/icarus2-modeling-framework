@@ -47,6 +47,7 @@ import de.ims.icarus2.model.api.corpus.Context.VirtualContext;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.corpus.CorpusOption;
 import de.ims.icarus2.model.api.corpus.GenerationControl;
+import de.ims.icarus2.model.api.corpus.OwnableCorpusPart;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.id.IdManager;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
@@ -66,8 +67,9 @@ import de.ims.icarus2.model.api.meta.MetaData;
 import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.api.registry.CorpusMemberFactory;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
-import de.ims.icarus2.model.api.view.CorpusView;
 import de.ims.icarus2.model.api.view.Scope;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
+import de.ims.icarus2.model.api.view.streamed.StreamedCorpusView;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
@@ -76,11 +78,11 @@ import de.ims.icarus2.model.manifest.api.ImplementationLoader;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.standard.members.container.AbstractImmutableContainer;
 import de.ims.icarus2.model.standard.members.container.ProxyContainer;
 import de.ims.icarus2.model.standard.registry.ContextFactory;
-import de.ims.icarus2.model.standard.view.DefaultCorpusView;
-import de.ims.icarus2.model.standard.view.DefaultCorpusView.CorpusViewBuilder;
+import de.ims.icarus2.model.standard.view.paged.DefaultPagedCorpusView;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AccessMode;
@@ -131,6 +133,10 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
  */
 public class DefaultCorpus implements Corpus {
 
+	public static Builder newBuilder() {
+		return new Builder();
+	}
+
 	private final CorpusManager manager;
 	private final CorpusManifest manifest;
 	private final MetadataRegistry metadataRegistry;
@@ -168,11 +174,11 @@ public class DefaultCorpus implements Corpus {
 	private final Map<Layer, MetaDataStorage> metaDataStorages = new Object2ObjectOpenHashMap<>();
 	private final Map<String, VirtualContext> virtualContexts = new LinkedHashMap<>();
 
-	private final ViewStorage viewStorage = new ViewStorage();
+	private final CorpusPartStorage corpusPartStorage = new CorpusPartStorage();
 
 	private AtomicBoolean closing = new AtomicBoolean(false);
 
-	protected DefaultCorpus(CorpusBuilder builder) {
+	protected DefaultCorpus(Builder builder) {
 		requireNonNull(builder);
 
 		manager = builder.getManager();
@@ -204,9 +210,11 @@ public class DefaultCorpus implements Corpus {
 		manifest.getRegistry().addListener(Events.ADDED, manifestTracker);
 
 		if(manifest.isEditable()) {
-			generationControl = new DefaultGeneration(this);
+			generationControl = DefaultGenerationControl.newBuilder()
+					//FIXME properly setup the builder
+					.build();
 		} else {
-			generationControl = new ImmutableGeneration(this);
+			generationControl = new ImmutableGenerationControl(this);
 		}
 	}
 
@@ -225,7 +233,7 @@ public class DefaultCorpus implements Corpus {
 	}
 
 	@Override
-	public CorpusView createView(Scope scope, IndexSet[] indices,
+	public PagedCorpusView createView(Scope scope, IndexSet[] indices,
 			AccessMode mode, Options options) throws InterruptedException {
 
 		requireNonNull(scope);
@@ -234,7 +242,7 @@ public class DefaultCorpus implements Corpus {
 		checkArgument("Scope refers to foreign corpus", scope.getCorpus()==this);
 
 		if(options==null) {
-			options = Options.emptyOptions;
+			options = Options.NONE;
 		}
 
 		ItemLayer primaryLayer = scope.getPrimaryLayer();
@@ -253,23 +261,83 @@ public class DefaultCorpus implements Corpus {
 		int pageSize = options.getInteger(CorpusOption.PARAM_VIEW_PAGE_SIZE, -1);
 
 		if(pageSize==-1) {
+			//TODO introduce mechanism to fetch global settings from central CorpusManager
 			pageSize = CorpusOption.DEFAULT_VIEW_PAGE_SIZE;
 		}
 
-		// TODO determine page size and fetch the correct ItemLayerManager, then create DefaultCorpusView instance
-		return new CorpusViewBuilder()
-			.accessMode(mode)
-			.scope(scope)
-			.indices(indices)
-			.itemLayerManager(driver)
-			.pageSize(pageSize)
-			.build();
+		synchronized (corpusPartStorage) {
+			if(!corpusPartStorage.canOpen(mode))
+				throw new ModelException(this, ModelErrorCode.VIEW_ALREADY_OPENED,
+						"Cannot open another view in mode: "+mode);
+
+			PagedCorpusView view = DefaultPagedCorpusView.newBuilder()
+				.accessMode(mode)
+				.scope(scope)
+				.indices(indices)
+				.itemLayerManager(driver)
+				.pageSize(pageSize)
+				.build();
+
+			corpusPartStorage.addPart(view, mode);
+
+			return view;
+		}
 	}
 
 	@Override
-	public void forEachView(Consumer<? super CorpusView> action) {
-		synchronized (viewStorage) {
-			viewStorage.forEachView(action);
+	public void forEachView(Consumer<? super PagedCorpusView> action) {
+		synchronized (corpusPartStorage) {
+			corpusPartStorage.forEachPart(part -> {
+				if(part instanceof PagedCorpusView) {
+					action.accept((PagedCorpusView) part);
+				}
+			});
+		}
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.corpus.Corpus#createStream(de.ims.icarus2.model.api.view.Scope, de.ims.icarus2.util.AccessMode, de.ims.icarus2.util.Options)
+	 */
+	@Override
+	public StreamedCorpusView createStream(Scope scope, AccessMode mode, Options options) throws InterruptedException {
+
+		requireNonNull(scope);
+		requireNonNull(mode);
+
+		checkArgument("Scope refers to foreign corpus", scope.getCorpus()==this);
+
+		if(options==null) {
+			options = Options.NONE;
+		}
+
+		ItemLayer primaryLayer = scope.getPrimaryLayer();
+		Driver driver = primaryLayer.getContext().getDriver();
+
+		synchronized (corpusPartStorage) {
+			if(!corpusPartStorage.canOpen(mode))
+				throw new ModelException(this, ModelErrorCode.VIEW_ALREADY_OPENED,
+						"Cannot open another stream in mode: "+mode);
+
+			//TODO
+			StreamedCorpusView stream = null;
+
+			corpusPartStorage.addPart(stream, mode);
+
+			return stream;
+		}
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.corpus.Corpus#forEachStream(java.util.function.Consumer)
+	 */
+	@Override
+	public void forEachStream(Consumer<? super StreamedCorpusView> action) {
+		synchronized (corpusPartStorage) {
+			corpusPartStorage.forEachPart(part -> {
+				if(part instanceof StreamedCorpusView) {
+					action.accept((StreamedCorpusView) part);
+				}
+			});
 		}
 	}
 
@@ -319,6 +387,30 @@ public class DefaultCorpus implements Corpus {
 		return getContextProxy(id).getDriver();
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.api.corpus.Corpus#getLayer(java.lang.String)
+	 */
+	@SuppressWarnings("unchecked")
+	@Override
+	public <L extends Layer> L getLayer(String qualifiedLayerId, boolean nativeOnly) {
+		String layerId = ManifestUtils.extractElementId(qualifiedLayerId);
+		Context context = null;
+
+		String contextId = ManifestUtils.extractHostId(qualifiedLayerId);
+		if(contextId!=null) {
+			context = getContext(contextId);
+		}
+
+		if(context==null) {
+			context = getRootContext();
+		}
+
+		Layer layer = nativeOnly ?
+				context.getNativeLayer(layerId) : context.getLayer(layerId);
+
+		return (L) layer;
+	}
+
 	//TODO somewhere say a few words about the design decision of using InterruptedException as indicator for user originated cancellation
 	@Override
 	public void close() throws AccumulatingException, InterruptedException {
@@ -336,9 +428,9 @@ public class DefaultCorpus implements Corpus {
 
 			AccumulatingException.Buffer buffer = new AccumulatingException.Buffer();
 
-			// Close views first
+			// Close open views and streams first
 			try {
-				viewStorage.close();
+				corpusPartStorage.close();
 			} catch (AccumulatingException e) {
 				/*
 				 *  Anti-pattern: destroys info from the caught AccumulatingException itself.
@@ -346,6 +438,15 @@ public class DefaultCorpus implements Corpus {
 				 *  and we are only interested in the wrapped exceptions!
 				 */
 				buffer.addExceptionsFrom(e);
+			}
+
+			// Close virtual contexts and their drivers now
+			for(VirtualContext context : virtualContexts.values()) {
+				try {
+					context.removeNotify(this);
+				} catch (Exception e) {
+					buffer.addException(e);
+				}
 			}
 
 			// Close custom contexts and their drivers now
@@ -697,55 +798,54 @@ public class DefaultCorpus implements Corpus {
 	}
 
 	/**
-	 * Storage class for currently active corpus views.
+	 * Storage class for currently active corpus parts.
 	 * All method in this class should be called under synchronization
 	 * on the current instance.
 	 *
 	 * @author Markus Gärtner
 	 *
 	 */
-	private final class ViewStorage implements ChangeListener {
-		private CorpusView currentWriteView;
-		private final Set<CorpusView> readViews = new ReferenceOpenHashSet<>();
+	private final class CorpusPartStorage implements ChangeListener {
+		private OwnableCorpusPart currentWritePart;
+		private final Set<OwnableCorpusPart> readParts = new ReferenceOpenHashSet<>();
 
-		public boolean canOpen(AccessMode accessMode) {
-			return !accessMode.isWrite() || currentWriteView==null;
+		private boolean canOpen(AccessMode accessMode) {
+			return !accessMode.isWrite() || currentWritePart==null;
 		}
 
-		public void addView(CorpusView view) {
-			AccessMode accessMode = view.getAccessMode();
+		private void addPart(OwnableCorpusPart part, AccessMode accessMode) {
 			Corpus corpus = DefaultCorpus.this;
 
 			// Sanity check
-			if(accessMode.isWrite() && currentWriteView!=null)
+			if(!canOpen(accessMode))
 				throw new ModelException(corpus, ModelErrorCode.VIEW_ERROR,
-						"Cannot hold open more than 1 writing view for corpus: "+getName(corpus));
+						"Cannot hold open more than 1 writing view or stream for corpus: "+getName(corpus));
 
 			// Now add and register listener
-			if(view instanceof DefaultCorpusView) {
-				((DefaultCorpusView)view).addChangeListener(this);
-			}
+			part.addChangeListener(this);
 
 			if(accessMode.isWrite()) {
-				currentWriteView = view;
+				currentWritePart = part;
 			} else {
-				readViews.add(view);
+				readParts.add(part);
 			}
+
+			part.addNotify(corpus);
 		}
 
-		public Set<CorpusView> getViews() {
-			LazyCollection<CorpusView> snapshot = LazyCollection.lazySet();
+		private Set<OwnableCorpusPart> getParts() {
+			LazyCollection<OwnableCorpusPart> snapshot = LazyCollection.lazySet();
 
-			snapshot.addAll(readViews);
-			if(currentWriteView!=null) {
-				snapshot.add(currentWriteView);
+			snapshot.addAll(readParts);
+			if(currentWritePart!=null) {
+				snapshot.add(currentWritePart);
 			}
 
 			return snapshot.getAsSet();
 		}
 
-		public void close() throws InterruptedException, AccumulatingException {
-			Set<CorpusView> snapshot = getViews();
+		private void close() throws InterruptedException, AccumulatingException {
+			Set<OwnableCorpusPart> snapshot = getParts();
 
 			if(snapshot.isEmpty()) {
 				return;
@@ -753,39 +853,41 @@ public class DefaultCorpus implements Corpus {
 
 			AccumulatingException.Buffer buffer = new AccumulatingException.Buffer();
 
-			for(CorpusView view : snapshot) {
+			for(@SuppressWarnings("resource") OwnableCorpusPart part : snapshot) {
 				try {
-					view.close();
-					view.removeNotify(DefaultCorpus.this);
+					part.close();
 				} catch(InterruptedException e) {
 					// Need to catch and re-throw here to allow the more general catch phrase below
 					throw e;
 				} catch(Exception e) {
 					buffer.addException(e);
+				} finally {
+					// Make sure we unregister from the corpus part
+					part.removeNotify(DefaultCorpus.this);
 				}
 			}
 
 			if(!buffer.isEmpty()) {
-				buffer.setFormattedMessage("Failed to close %d views");
+				buffer.setFormattedMessage("Failed to close %d parts");
 				throw new AccumulatingException(buffer);
 			}
 		}
 
-		public void forEachView(Consumer<? super CorpusView> action) {
-			if(currentWriteView!=null) {
-				action.accept(currentWriteView);
+		private void forEachPart(Consumer<? super OwnableCorpusPart> action) {
+			if(currentWritePart!=null) {
+				action.accept(currentWritePart);
 			}
 
-			readViews.forEach(action);
+			readParts.forEach(action);
 		}
 
-		private void removeView(CorpusView view) {
-			view.removeChangeListener(this);
+		private void removePart(OwnableCorpusPart part) {
+			part.removeChangeListener(this);
 
-			if(view==currentWriteView) {
-				currentWriteView = null;
+			if(part==currentWritePart) {
+				currentWritePart = null;
 			} else {
-				readViews.remove(view);
+				readParts.remove(part);
 			}
 		}
 
@@ -794,10 +896,10 @@ public class DefaultCorpus implements Corpus {
 		 */
 		@Override
 		public void stateChanged(ChangeEvent e) {
-			CorpusView view = (CorpusView) e.getSource();
+			PagedCorpusView view = (PagedCorpusView) e.getSource();
 			if(!view.isActive()) {
 				synchronized (this) {
-					removeView(view);
+					removePart(view);
 				}
 			}
 		}
@@ -875,8 +977,13 @@ public class DefaultCorpus implements Corpus {
 
 				Context context = driver.getContext();
 
+				// Let the driver do its work
 				driver.disconnect(corpus);
 
+				// Notify context
+				context.removeNotify(corpus);
+
+				// Finally let the rest of the world know
 				corpusEventManager.fireContextRemoved(context);
 			}
 		}
@@ -1258,12 +1365,16 @@ public class DefaultCorpus implements Corpus {
 		}
 	}
 
-	public static class CorpusBuilder extends AbstractBuilder<CorpusBuilder, Corpus> {
+	public static class Builder extends AbstractBuilder<Builder, Corpus> {
 		private CorpusManager manager;
 		private CorpusManifest manifest;
 		private MetadataRegistry metadataRegistry;
 
-		public CorpusBuilder manager(CorpusManager manager) {
+		protected Builder() {
+			// no-op
+		}
+
+		public Builder manager(CorpusManager manager) {
 			requireNonNull(manager);
 			checkState(this.manager==null);
 
@@ -1276,7 +1387,7 @@ public class DefaultCorpus implements Corpus {
 			return manager;
 		}
 
-		public CorpusBuilder manifest(CorpusManifest manifest) {
+		public Builder manifest(CorpusManifest manifest) {
 			requireNonNull(manifest);
 			checkState(this.manifest==null);
 
@@ -1289,7 +1400,7 @@ public class DefaultCorpus implements Corpus {
 			return manifest;
 		}
 
-		public CorpusBuilder metadataRegistry(MetadataRegistry metadataRegistry) {
+		public Builder metadataRegistry(MetadataRegistry metadataRegistry) {
 			requireNonNull(metadataRegistry);
 			checkState(this.metadataRegistry==null);
 

@@ -125,10 +125,9 @@ public class ScopeBuilder {
 		if (context == null)
 			throw new NullPointerException("Invalid context"); //$NON-NLS-1$
 
-		if(contexts.contains(context))
-			throw new IllegalArgumentException("Context already contained: "+context); //$NON-NLS-1$
-
-		contexts.add(context);
+		if(!contexts.contains(context)) {
+			contexts.add(context);
+		}
 
 		return this;
 	}
@@ -175,13 +174,12 @@ public class ScopeBuilder {
 		if (layer == null)
 			throw new NullPointerException("Invalid layer"); //$NON-NLS-1$
 
-		if(layers.contains(layer))
-			throw new IllegalArgumentException("Layer already contained: "+layer); //$NON-NLS-1$
-
 		if(!contexts.contains(layer.getContext()))
 			throw new IllegalArgumentException("Unknown context for layer: "+layer); //$NON-NLS-1$
 
-		layers.add(layer);
+		if(!layers.contains(layer)) {
+			layers.add(layer);
+		}
 
 		return this;
 	}

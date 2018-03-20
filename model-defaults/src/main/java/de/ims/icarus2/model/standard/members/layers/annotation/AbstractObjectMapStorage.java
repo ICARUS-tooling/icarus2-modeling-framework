@@ -33,7 +33,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 public abstract class AbstractObjectMapStorage<B extends Object> extends AbstractAnnotationStorage {
 
 	/**
-	 * Maps items to their respective array of annotation values.
+	 * Maps items to their respective buffer of annotation values.
 	 */
 	private Map<Item, B> annotations;
 

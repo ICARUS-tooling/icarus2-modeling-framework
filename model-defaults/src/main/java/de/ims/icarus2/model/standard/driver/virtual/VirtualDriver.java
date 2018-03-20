@@ -56,20 +56,24 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
  */
 public class VirtualDriver extends AbstractDriver {
 
+	public static Builder newBuilder() {
+		return new Builder();
+	}
+
 	private ItemLayerManager itemLayerManager;
 
 	private final Int2ObjectMap<ItemLayer> idMap = new Int2ObjectOpenHashMap<>();
 
 	private final Collection<DriverModule> modules = new ArrayList<>();
 
-	private transient VirtualDriverBuilder builder;
+	private transient Builder builder;
 
 	/**
 	 * @param manifest
 	 * @param corpus
 	 * @throws ModelException
 	 */
-	protected VirtualDriver(VirtualDriverBuilder builder)
+	protected VirtualDriver(Builder builder)
 			throws ModelException {
 		super(builder);
 
@@ -80,7 +84,7 @@ public class VirtualDriver extends AbstractDriver {
 
 	/**
 	 * Creates a new {@link ItemLayerManager} for this driver by trying to use
-	 * the following optional settings from the {@link VirtualDriverBuilder}
+	 * the following optional settings from the {@link Builder}
 	 * supplied at constructor time (in the given order):
 	 * <ol>
 	 * <li>If a finished {@link ItemLayerManager} instance has been supplied, it will be used</li>
@@ -137,9 +141,9 @@ public class VirtualDriver extends AbstractDriver {
 	 * Fallback method in the process of creating a new {@link ItemLayerManager} for this driver.
 	 * This method is called only from within {@link #createItemLayerManager()} and then only in
 	 * case all other ways of creating the manager have failed. For those alternatives check the
-	 * setter methods in the {@link VirtualDriverBuilder} class.
+	 * setter methods in the {@link Builder} class.
 	 *
-	 * @see VirtualDriverBuilder
+	 * @see Builder
 	 *
 	 * @return
 	 */
@@ -309,7 +313,7 @@ public class VirtualDriver extends AbstractDriver {
 		return getItemLayerManager().load(indices, layer, compoundAction);
 	}
 
-	public static class VirtualDriverBuilder extends DriverBuilder<VirtualDriverBuilder, VirtualDriver> {
+	public static class Builder extends DriverBuilder<Builder, VirtualDriver> {
 
 		private ItemLayerManager itemLayerManager;
 		private Supplier<ItemLayerManager> supplier;
@@ -318,7 +322,11 @@ public class VirtualDriver extends AbstractDriver {
 
 		private final Collection<DriverModule> modules = new ArrayList<>();
 
-		public VirtualDriverBuilder itemLayerManager(ItemLayerManager itemLayerManager) {
+		protected Builder() {
+			// no-op
+		}
+
+		public Builder itemLayerManager(ItemLayerManager itemLayerManager) {
 			requireNonNull(itemLayerManager);
 			checkState(this.itemLayerManager==null);
 			checkState(this.supplier==null);
@@ -334,7 +342,7 @@ public class VirtualDriver extends AbstractDriver {
 			return itemLayerManager;
 		}
 
-		public VirtualDriverBuilder supplier(Supplier<ItemLayerManager> supplier) {
+		public Builder supplier(Supplier<ItemLayerManager> supplier) {
 			requireNonNull(supplier);
 			checkState(this.supplier==null);
 			checkState(this.itemLayerManager==null);
@@ -350,7 +358,7 @@ public class VirtualDriver extends AbstractDriver {
 			return supplier;
 		}
 
-		public VirtualDriverBuilder creator(Function<Driver, ItemLayerManager> creator) {
+		public Builder creator(Function<Driver, ItemLayerManager> creator) {
 			requireNonNull(creator);
 			checkState(this.creator==null);
 			checkState(this.itemLayerManager==null);
@@ -366,7 +374,7 @@ public class VirtualDriver extends AbstractDriver {
 			return creator;
 		}
 
-		public VirtualDriverBuilder managerClass(Class<? extends ItemLayerManager> managerClass) {
+		public Builder managerClass(Class<? extends ItemLayerManager> managerClass) {
 			requireNonNull(managerClass);
 			checkState(this.managerClass==null);
 			checkState(this.creator==null);

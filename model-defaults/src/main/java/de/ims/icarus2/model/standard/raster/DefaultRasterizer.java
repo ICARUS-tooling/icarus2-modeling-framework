@@ -19,6 +19,7 @@
 package de.ims.icarus2.model.standard.raster;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.model.api.raster.Metric;
@@ -36,7 +37,7 @@ public class DefaultRasterizer implements Rasterizer {
 	private final RasterAxis[] axes;
 	private final Metric<Position> metric;
 
-	public DefaultRasterizer(RasterAxis[] axes, Metric<Position> metric) {
+	public DefaultRasterizer(Metric<Position> metric, RasterAxis...axes) {
 		requireNonNull(axes);
 		checkArgument("Axes array must not be empty", axes.length>0);
 		requireNonNull(metric);
@@ -69,9 +70,9 @@ public class DefaultRasterizer implements Rasterizer {
 		if(values.length!=axes.length)
 			throw new IllegalArgumentException(Messages.mismatchMessage(
 					"Provided number of vector elements does not equal axes count",
-					axes.length, values.length));
+					_int(axes.length), _int(values.length)));
 
-		return Positions.createPosition(values);
+		return Positions.create(values);
 	}
 
 	/**
