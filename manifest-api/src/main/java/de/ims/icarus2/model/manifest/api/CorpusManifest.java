@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
@@ -150,6 +151,25 @@ public interface CorpusManifest extends MemberManifest {
 	 */
 	@AccessRestriction(AccessMode.READ)
 	ContextManifest getContextManifest(String id);
+
+	@SuppressWarnings("unchecked")
+	default <M extends LayerManifest> M getLayerManifest(String qualifiedLayerId) {
+		String layerId = ManifestUtils.extractElementId(qualifiedLayerId);
+		ContextManifest contextManifest = null;
+
+		String contextId = ManifestUtils.extractHostId(qualifiedLayerId);
+		if(contextId!=null) {
+			contextManifest = getContextManifest(contextId);
+		}
+
+		if(contextManifest==null) {
+			contextManifest = getRootContextManifest();
+		}
+
+		LayerManifest layerManifest = contextManifest.getLayerManifest(layerId);
+
+		return (M) layerManifest;
+	}
 
 	/**
 	 * Returns {@code true} if the corpus described by this manifest can

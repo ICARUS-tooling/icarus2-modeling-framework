@@ -118,4 +118,32 @@ public class ManifestUtils {
 		}
 		sb.append(manifest.getId());
 	}
+
+	/**
+	 * If the given {@code id} denotes a unique identifier with a host part
+	 * (i.e. it is of the form {@code host_id@element_id}), this method
+	 * returns the {@code host_id} section. Otherwise the returned value
+	 * will be {@code null}.
+	 *
+	 * @param id
+	 * @return
+	 */
+	public static String extractHostId(String id) {
+		int idx = id.indexOf(ID_SEPARATOR);
+		return idx==-1 ? null : id.substring(0, idx);
+	}
+
+	/**
+	 * If the given {@code id} denotes a unique identifier with a host part
+	 * (i.e. it is of the form {@code host_id@element_id}), this method
+	 * returns the {@code element_id} section. Otherwise the entire
+	 * {@code id} parameter is returned.
+	 *
+	 * @param id
+	 * @return
+	 */
+	public static String extractElementId(String id) {
+		int idx = id.indexOf(ID_SEPARATOR);
+		return idx==-1 ? id : id.substring(idx+1);
+	}
 }
