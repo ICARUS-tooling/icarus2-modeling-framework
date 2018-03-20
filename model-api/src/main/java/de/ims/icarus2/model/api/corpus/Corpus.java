@@ -47,9 +47,11 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.meta.MetaData;
 import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
-import de.ims.icarus2.model.api.view.CorpusView;
 import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.api.view.ScopeBuilder;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
+import de.ims.icarus2.model.api.view.streamed.StreamedCorpusView;
+import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.LayerType;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
@@ -192,6 +194,28 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 		return builder.build();
 	}
 
+	//TODO add method for creating streaming access to a specified sub-corpus (i.e. begin and end indices of the section to be streamed)
+
+	/**
+	 *
+	 * @param scope
+	 * @param accessMode
+	 * @param options
+	 * @return
+	 * @throws InterruptedException
+	 */
+	StreamedCorpusView createStream(Scope scope, AccessMode accessMode, Options options) throws InterruptedException;
+
+	void forEachStream(Consumer<? super StreamedCorpusView> action);
+
+	default Set<StreamedCorpusView> getStreams(Predicate<? super StreamedCorpusView> p) {
+		LazyCollection<StreamedCorpusView> buffer = LazyCollection.lazySet();
+
+		forEachStream(v -> {if(p.test(v))buffer.add(v);});
+
+		return buffer.getAsSet();
+	}
+
 	/**
 	 * Creates a new corpus view object that provides a filtered view on the sub-corpus
 	 * defined by the given scope and indices. If the {@code indices} argument is {@code null}
@@ -216,7 +240,7 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	 *
 	 * @see {@link ModelErrorCode#VIEW_ALREADY_OPENED}
 	 */
-	CorpusView createView(Scope scope, IndexSet[] indices, AccessMode mode, Options options) throws InterruptedException;
+	PagedCorpusView createView(Scope scope, IndexSet[] indices, AccessMode mode, Options options) throws InterruptedException;
 
 	/**
 	 * Creates a new corpus view object that gives access to the entire corpus.
@@ -231,15 +255,15 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	 * @return
 	 * @throws InterruptedException
 	 */
-	default CorpusView createFullView(AccessMode mode, Options options) throws InterruptedException {
+	default PagedCorpusView createFullView(AccessMode mode, Options options) throws InterruptedException {
 		Scope scope = createCompleteScope();
 		return createView(scope, null, mode, options);
 	}
 
-	void forEachView(Consumer<? super CorpusView> action);
+	void forEachView(Consumer<? super PagedCorpusView> action);
 
-	default Set<CorpusView> getViews(Predicate<? super CorpusView> p) {
-		LazyCollection<CorpusView> buffer = LazyCollection.lazySet();
+	default Set<PagedCorpusView> getViews(Predicate<? super PagedCorpusView> p) {
+		LazyCollection<PagedCorpusView> buffer = LazyCollection.lazySet();
 
 		forEachView(v -> {if(p.test(v))buffer.add(v);});
 
@@ -270,6 +294,25 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	VirtualContext getVirtualContext(String id);
 
 	Driver getDriver(String id);
+
+	/**
+	 * Looks up the specified layer. If this corpus has only one context or
+	 * if the layer to be resolved is expected to be located in the root context,
+	 * {@code qualifiedLayerId} can be a simple layer id, otherwise it must
+	 * be fully qualified, i.e. also specify the context to resolve the layer
+	 * from.
+	 * <p>
+	 * If the {@code nativeOnly} option is set, then only layers natively
+	 * declared on a layer can be found. Otherwise layers available through
+	 * dependencies and accessible via local aliases can be resolved as well.
+	 *
+	 * @param qualifiedLayerId the id of the layer to be resolved
+	 * @param nativeOnly indicator whether or not the resolution process is allowed
+	 * to resolve the given {@code qualifiedLayerId} to external layers that are
+	 * linked via aliases of {@link ContextManifest#getPrerequisites() prerequisites}.
+	 * @return
+	 */
+	<L extends Layer> L getLayer(String qualifiedLayerId, boolean nativeOnly);
 
 	/**
 	 * Registers the given listener to the internal list of registered

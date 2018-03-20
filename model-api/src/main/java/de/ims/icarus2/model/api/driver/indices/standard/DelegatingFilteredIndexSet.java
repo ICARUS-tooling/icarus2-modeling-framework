@@ -27,10 +27,7 @@ import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 
 /**
- * Models a window to another index set (the {@code source}). The content of this index set
- * represents a continuous slice of the {@code source}, defined by a {@link #getBeginIndex() begin}
- * and {@link #getEndIndex() end} index. Both of those window boundaries can be changed at any time,
- * making this a very flexible way of looking at sub-sections of another index set.
+ * Models a window to another index set (the {@code source}) that can be discontinuous.
  *
  * @author Markus Gärtner
  *

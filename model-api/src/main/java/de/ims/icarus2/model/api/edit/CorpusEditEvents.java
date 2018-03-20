@@ -24,7 +24,7 @@ import javax.swing.event.UndoableEditListener;
  * @author Markus Gärtner
  *
  */
-public interface CorpusEditEvents {
+public class CorpusEditEvents {
 
 	/**
 	 * Fired when the update level is increased

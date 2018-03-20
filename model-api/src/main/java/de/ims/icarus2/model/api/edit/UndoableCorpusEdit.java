@@ -18,7 +18,6 @@
  */
 package de.ims.icarus2.model.api.edit;
 
-import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
@@ -37,6 +36,7 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.corpus.GenerationControl;
+import de.ims.icarus2.model.api.corpus.GenerationControl.Stage;
 import de.ims.icarus2.model.api.edit.change.AtomicChange;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.CorpusMember;
@@ -73,9 +73,15 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 
 	/**
 	 * Specifies this undoable edit is significant. Default is true.
+	 * This value can be {@link #isSignificant() queried} by client
+	 * code to decide whether or not to include an edit in a computation
+	 * or for a user interface.
 	 */
 	private final boolean significant;
 
+	/**
+	 * Info whether or not this edit can currently be reversed.
+	 */
 	private boolean reversible = true;
 
 	/**
@@ -85,17 +91,15 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 
 	// Consistency check fields
 
-	static final long UNSET_GENERATION_STAGE = -1L;
-
 	/**
 	 * Generation stage of the associated corpus <b>before</b> the edit took place.
 	 */
-	private long oldGenerationStage = UNSET_GENERATION_STAGE;
+	private Stage oldGenerationStage = null;
 
 	/**
 	 * Generation stage of the associated corpus <b>after</b> the edit took place.
 	 */
-	private long newGenerationStage = UNSET_GENERATION_STAGE;
+	private Stage newGenerationStage = null;
 
 	/**
 	 * Constructs a new undoable edit for the given corpus.
@@ -108,7 +112,7 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	 * Constructs a new undoable edit for the given corpus and sets its generation stage fields.
 	 * This constructor is mainly intended for use with edit serialization frameworks.
 	 */
-	public UndoableCorpusEdit(Corpus corpus, long oldGenerationStage, long newGenerationStage) {
+	public UndoableCorpusEdit(Corpus corpus, Stage oldGenerationStage, Stage newGenerationStage) {
 		this(corpus, true, null);
 
 		setOldGenerationStage(oldGenerationStage);
@@ -193,8 +197,8 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	}
 
 	private boolean isGenerationInSync() {
-		return newGenerationStage!=UNSET_GENERATION_STAGE // ensures that the edit is complete
-				&& newGenerationStage==getCorpus().getGenerationControl().getStage(); // ensures that this is the most up2date edit
+		return newGenerationStage!=null // ensures that the edit is complete
+				&& newGenerationStage.compareTo(getCorpus().getGenerationControl().getStage())==0; // ensures that this is the most up2date edit
 	}
 
 	/**
@@ -227,10 +231,10 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	 */
 	private void checkGenerationPreChange() {
 		GenerationControl generationControl = getCorpus().getGenerationControl();
-		long currentStage = generationControl.getStage();
-		long expectedStage = getNewGenerationStage();
+		Stage currentStage = generationControl.getStage();
+		Stage expectedStage = getNewGenerationStage();
 
-		if(currentStage!=newGenerationStage)
+		if(currentStage.compareTo(newGenerationStage)!=0)
 			throw new ModelException(getCorpus(), ModelErrorCode.EDIT_GENERATION_OUT_OF_SYNC,
 					Messages.mismatchMessage("Cannot execute operation, corpus generation stage out of sync", expectedStage, currentStage));
 	}
@@ -243,8 +247,8 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	 */
 	private void checkAndRefreshGenerationPostChange() {
 		GenerationControl generationControl = getCorpus().getGenerationControl();
-		long oldStage = getOldGenerationStage();
-		long newStage = getNewGenerationStage();
+		Stage oldStage = getOldGenerationStage();
+		Stage newStage = getNewGenerationStage();
 
 		// Final consistency check. If this succeeds we're golden
 		if(!generationControl.step(newStage, oldStage))
@@ -516,34 +520,32 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	/**
 	 * @return the oldGenerationStage
 	 */
-	public long getOldGenerationStage() {
+	public Stage getOldGenerationStage() {
 		return oldGenerationStage;
 	}
 
 	/**
 	 * @param oldGenerationStage the oldGenerationStage to set
 	 */
-	void setOldGenerationStage(long oldGenerationStage) {
-		checkArgument(oldGenerationStage!=UNSET_GENERATION_STAGE);
-		checkState(this.oldGenerationStage==UNSET_GENERATION_STAGE);
+	void setOldGenerationStage(Stage oldGenerationStage) {
+		checkState(this.oldGenerationStage==null);
 
-		this.oldGenerationStage = oldGenerationStage;
+		this.oldGenerationStage = requireNonNull(oldGenerationStage);
 	}
 
 	/**
 	 * @return the newGenerationStage
 	 */
-	public long getNewGenerationStage() {
+	public Stage getNewGenerationStage() {
 		return newGenerationStage;
 	}
 
 	/**
 	 * @param newGenerationStage the newGenerationStage to set
 	 */
-	void setNewGenerationStage(long newGenerationStage) {
-		checkArgument(newGenerationStage!=UNSET_GENERATION_STAGE);
-		checkState(this.newGenerationStage==UNSET_GENERATION_STAGE);
+	void setNewGenerationStage(Stage newGenerationStage) {
+		checkState(this.newGenerationStage==null);
 
-		this.newGenerationStage = newGenerationStage;
+		this.newGenerationStage = requireNonNull(newGenerationStage);
 	}
 }

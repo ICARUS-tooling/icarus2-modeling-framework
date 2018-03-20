@@ -30,6 +30,7 @@ import java.util.concurrent.locks.Lock;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
+import de.ims.icarus2.model.api.corpus.GenerationControl.Stage;
 import de.ims.icarus2.model.api.edit.change.AtomicChange;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.events.EventSource;
@@ -62,7 +63,7 @@ public class CorpusEditManager extends WeakEventSource {
 	}
 
 	public void beginUpdate() {
-		fireEvent(new EventObject(CorpusEditEvents.BEGIN_UPDATE, "edit", currentEdit, "level", updateLevel.incrementAndGet()));
+		fireEvent(new EventObject(CorpusEditEvents.BEGIN_UPDATE, "edit", currentEdit, "level", _int(updateLevel.incrementAndGet())));
 	}
 
 	public boolean hasActiveUpdate() {
@@ -89,6 +90,9 @@ public class CorpusEditManager extends WeakEventSource {
 
 			try {
 				if (end && !currentEdit.isEmpty()) {
+
+					//TODO move inner block into a customizable hook function
+
 					// Notify listeners about imminent undoable edit
 					fireEvent(new EventObject(CorpusEditEvents.BEFORE_UNDO, "edit", currentEdit));
 
@@ -98,7 +102,7 @@ public class CorpusEditManager extends WeakEventSource {
 
 					// Finalize generation information of edit
 					//FIXME should we ensure some proper synchronization on the generation control here?
-					if(publishedEdit.getNewGenerationStage()==UndoableCorpusEdit.UNSET_GENERATION_STAGE) {
+					if(publishedEdit.getNewGenerationStage()==null) {
 						publishedEdit.setNewGenerationStage(getCorpus().getGenerationControl().getStage());
 					}
 
@@ -120,39 +124,7 @@ public class CorpusEditManager extends WeakEventSource {
 
 	protected void dispatchEdit(UndoableCorpusEdit edit) {
 
-		//TODO the following commented out part should be removed?
-
-//		GenerationControl generationControl = getCorpus().getGenerationControl();
-//		Lock lock = getCorpus().getLock();
-//
-//		lock.lock();
-//		try {
-//			long oldStage = edit.getOldGenerationStage();
-//			long newStage;
-//
-//			// If it's the first time the given edit gets dispatched, only advance the generation stage and save it
-//			if(oldStage==-1L) {
-//				oldStage = generationControl.getStage();
-//				newStage = generationControl.advance();
-//			} else {
-//				/* We're "reverting" from the post state of the given edit to its pre state,
-//				 * therefore the stages get switched.
-//				 *
-//				 */
-//				oldStage = edit.getNewGenerationStage();
-//				newStage = edit.getOldGenerationStage();
-//
-//				// Expected "old" stage is the new stage after the edit has originally been performed
-//				generationControl.step(oldStage, newStage);
-//			}
-//
-//			edit.setOldGenerationStage(oldStage);
-//			edit.setNewGenerationStage(newStage);
-//		} finally {
-//			lock.unlock();
-//		}
-
-		// END-TODO
+		// Only need to fire the event. A corpus' generation control will listen to the appropriate event time on its own
 
 		fireEvent(new EventObject(CorpusEditEvents.CHANGE, "edit", edit)); //$NON-NLS-1$
 	}
@@ -250,7 +222,7 @@ public class CorpusEditManager extends WeakEventSource {
 		lock.lock();
 		try {
 			UndoableCorpusEdit edit = currentEdit;
-			long stage = getCorpus().getGenerationControl().getStage();
+			Stage stage = getCorpus().getGenerationControl().getStage();
 
 			// Fire the "raw" change before executing it
 			fireEvent(new EventObject(CorpusEditEvents.EXECUTE, "change", change)); //$NON-NLS-1$
@@ -264,7 +236,7 @@ public class CorpusEditManager extends WeakEventSource {
 			 * Note that we need that extra check since the setter methods for stages in the edit
 			 * class only ever allow a single invocation each!
 			 */
-			if(edit.isEmpty() && edit.getOldGenerationStage()==UndoableCorpusEdit.UNSET_GENERATION_STAGE) {
+			if(edit.isEmpty() && edit.getOldGenerationStage()==null) {
 				edit.setOldGenerationStage(stage);
 			}
 

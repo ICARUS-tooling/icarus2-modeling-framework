@@ -35,15 +35,17 @@ public interface CorpusLifecycleListener {
 	 * event is fired when a corpus failed one of above mentioned requests and as a
 	 * result got marked as {@link CorpusManager#isBadCorpus(CorpusManifest) bad} by
 	 * the manager.
-	 * @param manager TODO
-	 * @param corpus
+	 *
+	 * @param manager the {@link CorpusManager} manager that is responsible for the new corpus
+	 * @param corpus the manifest of the corpus that changed
 	 */
 	void corpusChanged(CorpusManager manager, CorpusManifest corpus);
 
 	/**
 	 * The given {@code corpus} was connected successfully and can now be interacted with.
-	 * @param manager TODO
-	 * @param corpus
+	 *
+	 * @param manager the {@link CorpusManager} manager that is responsible for the new corpus
+	 * @param corpus the corpus the manager connected to successfully
 	 */
 	void corpusConnected(CorpusManager manager, Corpus corpus);
 
@@ -51,22 +53,25 @@ public interface CorpusLifecycleListener {
 	 * The specified {@code corpus} was disconnected successfully and is no longer available
 	 * for interaction. All previously held references of the previous live corpus should be
 	 * discarded immediately, since their behavior might be unpredictable or unstable.
-	 * @param manager TODO
-	 * @param corpus
+	 *
+	 * @param manager the {@link CorpusManager} manager that is responsible for the new corpus
+	 * @param corpus the manifest of the corpus the manager disconnected from
 	 */
 	void corpusDisconnected(CorpusManager manager, CorpusManifest corpus);
 
 	/**
 	 * The given {@code corpus} was previously disabled and now got enabled again.
-	 * @param manager TODO
-	 * @param corpus
+	 *
+	 * @param manager the {@link CorpusManager} manager that is responsible for the new corpus
+	 * @param corpus the manifest of the corpus that got (re-)enabled
 	 */
 	void corpusEnabled(CorpusManager manager, CorpusManifest corpus);
 
 	/**
 	 * The given {@code corpus} was previously enabled and now got disabled by client code.
-	 * @param manager TODO
-	 * @param corpus
+	 *
+	 * @param manager the {@link CorpusManager} manager that is responsible for the new corpus
+	 * @param corpus the manifest of the corpus that got disabled
 	 */
 	void corpusDisabled(CorpusManager manager, CorpusManifest corpus);
 }

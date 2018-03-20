@@ -19,6 +19,7 @@
 package de.ims.icarus2.model.api.driver.indices;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.Conditions.checkState;
 
 import java.sql.ResultSet;
 import java.util.Comparator;
@@ -86,7 +87,7 @@ public interface IndexSet {
 	 * Special return value for the {@link #size()} method indicating that
 	 * the implementation does not know about the total number of entries.
 	 */
-	public static final int UNKNOWN_SIZE = -1;
+	public static final int UNKNOWN_SIZE = IcarusUtils.UNSET_INT;
 
 	/**
 	 * Returns the number of index values in this set.
@@ -218,7 +219,7 @@ public interface IndexSet {
 		}
 	}
 
-	// TRANSVERSAL
+	// TRASVERSAL
 
 	default void forEachIndex(LongConsumer action) {
 		forEachIndex(action, 0, size());
@@ -299,11 +300,13 @@ public interface IndexSet {
 
 		int size = size();
 
+		checkState("Cannot split index set of unknown size", size!=UNKNOWN_SIZE);
+
 		if(chunkSize>=size) {
 			return IndexUtils.wrap(this);
 		}
 
-		long chunks = (long)Math.ceil((double)size/chunkSize);
+		int chunks = (int)Math.ceil((double)size/chunkSize);
 
 		if(chunks>IcarusUtils.MAX_INTEGER_INDEX)
 			throw new ModelException(GlobalErrorCode.INDEX_OVERFLOW, "Cannot create array of size: "+chunks); //$NON-NLS-1$

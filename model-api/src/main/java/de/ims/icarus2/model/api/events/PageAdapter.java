@@ -19,7 +19,7 @@
 package de.ims.icarus2.model.api.events;
 
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.view.CorpusView.PageControl;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl;
 
 /**
  * @author Markus Gärtner
@@ -28,7 +28,7 @@ import de.ims.icarus2.model.api.view.CorpusView.PageControl;
 public class PageAdapter implements PageListener {
 
 	/**
-	 * @see de.ims.icarus2.model.api.events.PageListener#pageClosing(de.ims.icarus2.model.api.view.CorpusView.PageControl, int)
+	 * @see de.ims.icarus2.model.api.events.PageListener#pageClosing(de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl, int)
 	 */
 	@Override
 	public void pageClosing(PageControl source, int page) {
@@ -36,7 +36,7 @@ public class PageAdapter implements PageListener {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.events.PageListener#pageClosed(de.ims.icarus2.model.api.view.CorpusView.PageControl, int)
+	 * @see de.ims.icarus2.model.api.events.PageListener#pageClosed(de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl, int)
 	 */
 	@Override
 	public void pageClosed(PageControl source, int page) {
@@ -44,7 +44,7 @@ public class PageAdapter implements PageListener {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.events.PageListener#pageLoading(de.ims.icarus2.model.api.view.CorpusView.PageControl, int, int)
+	 * @see de.ims.icarus2.model.api.events.PageListener#pageLoading(de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl, int, int)
 	 */
 	@Override
 	public void pageLoading(PageControl source, int page, int size) {
@@ -52,7 +52,7 @@ public class PageAdapter implements PageListener {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.events.PageListener#pageLoaded(de.ims.icarus2.model.api.view.CorpusView.PageControl, int, int)
+	 * @see de.ims.icarus2.model.api.events.PageListener#pageLoaded(de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl, int, int)
 	 */
 	@Override
 	public void pageLoaded(PageControl source, int page, int size) {
@@ -60,7 +60,7 @@ public class PageAdapter implements PageListener {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.events.PageListener#pageFailed(de.ims.icarus2.model.api.view.CorpusView.PageControl, int, de.ims.icarus2.model.api.ModelException)
+	 * @see de.ims.icarus2.model.api.events.PageListener#pageFailed(de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl, int, de.ims.icarus2.model.api.ModelException)
 	 */
 	@Override
 	public void pageFailed(PageControl source, int page, ModelException ex) {

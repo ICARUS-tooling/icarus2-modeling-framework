@@ -34,7 +34,7 @@ import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.raster.Position;
-import de.ims.icarus2.model.api.view.CorpusModel;
+import de.ims.icarus2.model.api.view.paged.CorpusModel;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.util.ModelUtils;

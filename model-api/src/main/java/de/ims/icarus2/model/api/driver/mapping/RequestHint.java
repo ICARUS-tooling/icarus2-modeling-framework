@@ -39,7 +39,21 @@ public enum RequestHint implements Flag {
 	 */
 	CONNECTIVITY_OFFLINE,
 
-	//TODO
+	/**
+	 * Specifies that any indices provided as input for the request (in the form
+	 * of {@link IndexSet} instances) are sorted. This effectively overrides the
+	 * info given by individual index sets via their {@link IndexSet#isSorted()}
+	 * methods.
+	 * <p>
+	 * This hint exists to work around the fact that the info from an index set is
+	 * usually done on a best-effort basis.
+	 */
 	INPUT_ORDER_SORTED,
+
+	/**
+	 * Signals that a mapping should not throw an exception when encountering
+	 * indices that it has no entries for.
+	 */
+	IGNORE_UNKNOWN_INDICES,
 	;
 }

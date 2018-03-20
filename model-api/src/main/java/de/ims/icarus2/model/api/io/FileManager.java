@@ -60,7 +60,7 @@ public interface FileManager {
 	 * at a central location.
 	 * <p>
 	 * If the file manager implementation does not support corpus specific
-	 * folders, then this method schould return {@code null}.
+	 * folders, then this method should return {@code null}.
 	 *
 	 * @param manifest
 	 * @return

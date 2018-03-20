@@ -30,7 +30,7 @@ import de.ims.icarus2.model.api.members.CorpusMember;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.meta.MetaData;
-import de.ims.icarus2.model.api.view.CorpusView;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
 import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**
@@ -166,7 +166,7 @@ public class CorpusEvent {
 		return (MetaData) getProperty(METADATA_PROPERTY);
 	}
 
-	public CorpusView getCorpusView() {
-		return (CorpusView) getProperty(VIEW_PROPERTY);
+	public PagedCorpusView getCorpusView() {
+		return (PagedCorpusView) getProperty(VIEW_PROPERTY);
 	}
 }

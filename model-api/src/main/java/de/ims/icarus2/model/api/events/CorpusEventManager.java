@@ -25,7 +25,7 @@ import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.meta.MetaData;
-import de.ims.icarus2.model.api.view.CorpusView;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
 import de.ims.icarus2.model.util.ModelUtils;
 
 /**
@@ -254,39 +254,39 @@ public class CorpusEventManager {
 		}
 	}
 
-	public void fireCorpusViewCreated(CorpusView corpusView) {
-		if (corpusView == null)
+	public void fireCorpusViewCreated(PagedCorpusView pagedCorpusView) {
+		if (pagedCorpusView == null)
 			throw new NullPointerException("Invalid corpusView"); //$NON-NLS-1$
 
-		checkProvidedCorpus(corpusView.getCorpus());
+		checkProvidedCorpus(pagedCorpusView.getCorpus());
 
 		if(listeners.isEmpty()) {
 			return;
 		}
 
 		CorpusEvent event = new CorpusEvent(corpus,
-				CorpusEvent.VIEW_PROPERTY, corpusView);
+				CorpusEvent.VIEW_PROPERTY, pagedCorpusView);
 
 		for(CorpusListener listener : listeners) {
-			listener.corpusViewCreated(event);
+			listener.corpusPartCreated(event);
 		}
 	}
 
-	public void fireCorpusViewDestroyed(CorpusView corpusView) {
-		if (corpusView == null)
+	public void fireCorpusViewDestroyed(PagedCorpusView pagedCorpusView) {
+		if (pagedCorpusView == null)
 			throw new NullPointerException("Invalid corpusView"); //$NON-NLS-1$
 
-		checkProvidedCorpus(corpusView.getCorpus());
+		checkProvidedCorpus(pagedCorpusView.getCorpus());
 
 		if(listeners.isEmpty()) {
 			return;
 		}
 
 		CorpusEvent event = new CorpusEvent(corpus,
-				CorpusEvent.VIEW_PROPERTY, corpusView);
+				CorpusEvent.VIEW_PROPERTY, pagedCorpusView);
 
 		for(CorpusListener listener : listeners) {
-			listener.corpusViewDestroyed(event);
+			listener.corpusPartDestroyed(event);
 		}
 	}
 }

@@ -142,7 +142,7 @@ public interface CorpusListener {
 	 */
 	void metaDataRemoved(CorpusEvent e);
 
-	void corpusViewCreated(CorpusEvent e);
+	void corpusPartCreated(CorpusEvent e);
 
-	void corpusViewDestroyed(CorpusEvent e);
+	void corpusPartDestroyed(CorpusEvent e);
 }

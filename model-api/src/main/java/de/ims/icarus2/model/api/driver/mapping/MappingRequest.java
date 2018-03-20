@@ -68,7 +68,7 @@ public abstract class MappingRequest implements Callable<IndexSet[]> {
 	 * a {@code null} result ({@link ModelErrorCode#INTERNAL_ERROR}).
 	 */
 	@Override
-	public IndexSet[] call() throws Exception {
+	public IndexSet[] call() throws InterruptedException {
 		if(!lookupStarted.compareAndSet(false, true))
 			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Lookup operation already initiated");
 

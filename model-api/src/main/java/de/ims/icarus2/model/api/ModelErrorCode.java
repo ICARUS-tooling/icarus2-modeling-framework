@@ -21,6 +21,9 @@ package de.ims.icarus2.model.api;
 import java.util.concurrent.locks.Lock;
 
 import de.ims.icarus2.ErrorCode;
+import de.ims.icarus2.ErrorCodeScope;
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusException;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.corpus.GenerationControl;
 import de.ims.icarus2.model.api.driver.Driver;
@@ -29,13 +32,10 @@ import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.edit.UndoableCorpusEdit;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.members.item.stream.ItemStream;
 import de.ims.icarus2.model.api.raster.Position;
-import de.ims.icarus2.model.api.view.CorpusModel;
-import de.ims.icarus2.model.api.view.CorpusView.PageControl;
-import de.ims.icarus2.util.id.DuplicateIdentifierException;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import de.ims.icarus2.model.api.view.paged.CorpusModel;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl;
+import de.ims.icarus2.model.api.view.streamed.StreamedCorpusView;
 
 /**
  * @author Markus Gärtner
@@ -85,22 +85,6 @@ public enum ModelErrorCode implements ErrorCode {
 	DRIVER_ERROR(400),
 
 	/**
-	 * An unexpected I/O exception occurred during access to some indexing system associated with a
-	 * {@link Driver}.
-	 */
-	DRIVER_INDEX_IO(401),
-
-	/**
-	 * Client code attempted to write to an index file in a manner other than using existing index
-	 * values or appending to the greatest current index value. This restriction is imposed by the default
-	 * implementations for the {@link Mapping} interface provided by file based {@link Driver}s. Note that
-	 * the {@code Mapping} interface does not define write mechanics itself, since for example database
-	 * backed implementations might directly link to the database's own indexing system and therefore
-	 * not support client originated write operations on the index!
-	 */
-	DRIVER_INDEX_WRITE_VIOLATION(402),
-
-	/**
 	 * A driver implementation failed to create a proper checksum for an index or content file.
 	 */
 	DRIVER_CHECKSUM_FAIL(403),
@@ -139,6 +123,33 @@ public enum ModelErrorCode implements ErrorCode {
 	 */
 	DRIVER_NOT_EDITABLE(411),
 
+	/**
+	 * A general error occurred when interacting with a member of the index or mapping
+	 * framework, such as a {@link IndexSet} or {@link Mapping}.
+	 */
+	DRIVER_INDEX_ERROR(420),
+
+	/**
+	 * An unexpected I/O exception occurred during access to some indexing system associated with a
+	 * {@link Driver}.
+	 */
+	DRIVER_INDEX_IO(421),
+
+	/**
+	 * Client code attempted to write to an index file in a manner other than using existing index
+	 * values or appending to the greatest current index value. This restriction is imposed by the default
+	 * implementations for the {@link Mapping} interface provided by file based {@link Driver}s. Note that
+	 * the {@code Mapping} interface does not define write mechanics itself, since for example database
+	 * backed implementations might directly link to the database's own indexing system and therefore
+	 * not support client originated write operations on the index!
+	 */
+	DRIVER_INDEX_WRITE_VIOLATION(422),
+
+	/**
+	 * An attempt to {@link IndexSet#sort() sort} an {@link IndexSet} failed.
+	 */
+	DRIVER_INDEX_SORT(423),
+
 	//**************************************************
 	//       5xx  STREAM ERRORS
 	//**************************************************
@@ -155,8 +166,8 @@ public enum ModelErrorCode implements ErrorCode {
 	 * access to the current item or associated information.
 	 * <p>
 	 * Typically this kind of error happens when a stream hasn't
-	 * been properly {@link ItemStream#advance() advanced} or if
-	 * it has been {@link ItemStream#flush() flushed} directly
+	 * been properly {@link StreamedCorpusView#advance() advanced} or if
+	 * it has been {@link StreamedCorpusView#flush() flushed} directly
 	 * before calling a method that tries to access the current
 	 * item.
 	 */
@@ -197,7 +208,7 @@ public enum ModelErrorCode implements ErrorCode {
 	VIEW_EMPTY(603),
 
 	/**
-	 * An attempt was made to call a method on a {@code CorpusView}'s {@link PageControl} that
+	 * An attempt was made to call a method on a {@code PagedCorpusView}'s {@link PageControl} that
 	 * failed due to the control being locked.
 	 */
 	VIEW_LOCKED(604),
@@ -325,31 +336,28 @@ public enum ModelErrorCode implements ErrorCode {
 	//FIXME add errors for missing content etc...
 	;
 
-	public static final int SCOPE = 3000;
+	public static final ErrorCodeScope SCOPE = ErrorCodeScope.newScope(3000, ModelErrorCode.class.getSimpleName());
 
 	private final int code;
 
 	ModelErrorCode(int errorCode) {
 		this.code = errorCode;
+
+		ErrorCode.register(this);
 	}
 
 	@Override
 	public int code() {
-		return code+SCOPE;
+		return code+SCOPE.getCode();
 	}
 
 	/**
 	 * @see de.ims.icarus2.ErrorCode#scope()
 	 */
 	@Override
-	public int scope() {
+	public ErrorCodeScope scope() {
 		return SCOPE;
 	}
-
-	/**
-	 * Maps internal codes to enum constants.
-	 */
-	private static final Int2ObjectMap<ModelErrorCode> codeLookup = new Int2ObjectOpenHashMap<>();
 
 	/**
 	 * Resolves the given error code to the matching enum constant.
@@ -359,30 +367,16 @@ public enum ModelErrorCode implements ErrorCode {
 	 * @return
 	 */
 	public static ModelErrorCode forCode(int code) {
-		if(codeLookup.isEmpty()) {
-			synchronized (codeLookup) {
-				if (codeLookup.isEmpty()) {
-					for(ModelErrorCode error : values()) {
-						if(codeLookup.containsKey(error.code))
-							throw new DuplicateIdentifierException("Duplicate error code: "+error); //$NON-NLS-1$
+		SCOPE.checkCode(code);
 
-						codeLookup.put(error.code, error);
-					}
-				}
-
-			}
-		}
-
-		ModelErrorCode error = codeLookup.get(code);
-		if(error==null && code>SCOPE) {
-			code-=SCOPE;
-			error = codeLookup.get(code);
-		}
+		ErrorCode error = ErrorCode.forCode(code);
 
 		if(error==null)
-			throw new IllegalArgumentException("Unknown error code: "+code); //$NON-NLS-1$
+			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Unknown error code: "+code);
+		if(!ModelErrorCode.class.isInstance(error))
+			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Corrupted mapping for error code: "+code);
 
-		return error;
+		return ModelErrorCode.class.cast(error);
 	}
 
 }

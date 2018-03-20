@@ -19,6 +19,8 @@
 package de.ims.icarus2.model.api.driver.indices;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.lang.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives._long;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
@@ -42,6 +44,8 @@ import de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
 import de.ims.icarus2.model.api.driver.indices.standard.SingletonIndexSet;
 import de.ims.icarus2.model.api.driver.indices.standard.SpanIndexSet;
+import de.ims.icarus2.model.api.driver.mapping.RequestHint;
+import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.IcarusUtils;
@@ -144,19 +148,39 @@ public class IndexUtils {
 
 			if(previousMax!=IcarusUtils.UNSET_LONG && indexSet.firstIndex()<previousMax)
 				throw new ModelException(ModelErrorCode.MODEL_UNSORTED_INDEX_SET, "Index set at position "+i+" is overlapping with previous one");
+
+			previousMax = indexSet.lastIndex();
 		}
 	}
 
 	public static void ensureSorted(IndexSet indices) {
 		if(!indices.isSorted()) {
-			indices.sort();
+			if(!indices.hasFeatures(IndexSet.FEATURE_CAN_SORT))
+				throw new ModelException(ModelErrorCode.DRIVER_INDEX_SORT, "Sorting not supported by index set");
+
+			if(!indices.sort())
+				throw new ModelException(ModelErrorCode.DRIVER_INDEX_SORT, "Sorting failed due to index set internal reasons");
 		}
+	}
+
+	public static void ensureSorted(IndexSet indices, RequestSettings settings) {
+		if(settings.isHintSet(RequestHint.INPUT_ORDER_SORTED)) {
+			return;
+		}
+		ensureSorted(indices);
 	}
 
 	public static void ensureSorted(IndexSet[] indices) {
 		for(int i=0; i<indices.length; i++) {
 			ensureSorted(indices[i]);
 		}
+	}
+
+	public static void ensureSorted(IndexSet[] indices, RequestSettings settings) {
+		if(settings.isHintSet(RequestHint.INPUT_ORDER_SORTED)) {
+			return;
+		}
+		ensureSorted(indices);
 	}
 
 	public static long count(IndexSet[] indices) {
@@ -259,8 +283,9 @@ public class IndexUtils {
 
 	/**
 	 *
-	 * @param from
-	 * @param to
+	 *
+	 * @param from smallest index value to include
+	 * @param to largest index value to include
 	 * @return
 	 *
 	 * @throws IllegalArgumentException if {@code from < 0} or {@code to < 0} or {@code to < from}
@@ -469,7 +494,7 @@ public class IndexUtils {
 		int sizeB = setB.size();
 		if(sizeA!=sizeB)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					Messages.mismatchMessage("Mismatching index set sizes", sizeA, sizeB));
+					Messages.mismatchMessage("Mismatching index set sizes", _int(sizeA), _int(sizeB)));
 
 		long result = 0L;
 
@@ -489,7 +514,7 @@ public class IndexUtils {
 		long indicesBCount = count(indicesB);
 		if(indicesACount!=indicesBCount)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					Messages.mismatchMessage("Mismatching index value counts", indicesACount, indicesBCount));
+					Messages.mismatchMessage("Mismatching index value counts", _long(indicesACount), _long(indicesBCount)));
 
 		long result = 0L;
 
@@ -542,6 +567,16 @@ public class IndexUtils {
 
 	public interface SpanProcedure {
 
+		/**
+		 * Process the given span defined by the (inclusive) end values of
+		 * {@code from} and {@code to}. Returns {@code true} iff processing
+		 * should continue.
+		 *
+		 * @param from
+		 * @param to
+		 * @return
+		 * @throws InterruptedException
+		 */
 		boolean process(long from, long to) throws InterruptedException;
 	}
 

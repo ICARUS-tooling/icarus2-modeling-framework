@@ -30,12 +30,18 @@ import de.ims.icarus2.util.collections.ArrayUtils;
 import de.ims.icarus2.util.strings.StringResource;
 
 /**
+ * Models the different value spaces available for index values.
  *
  * @author Markus Gärtner
  *
  */
 public enum IndexValueType implements StringResource {
 
+	//TODO implement a workaround against the limitations of small signed int types?
+
+	/**
+	 * Smallest value space
+	 */
 	BYTE("byte", Byte.TYPE, byte[].class) {
 		@Override
 		public Object newArray(int bufferSize) {
@@ -591,7 +597,7 @@ public enum IndexValueType implements StringResource {
 	 * @return
 	 */
 	public boolean isValidSubstitute(IndexValueType other) {
-		return other.ordinal()<=ordinal();
+		return other.maxValue()<=maxValue();
 	}
 
 	// Instantiation methods

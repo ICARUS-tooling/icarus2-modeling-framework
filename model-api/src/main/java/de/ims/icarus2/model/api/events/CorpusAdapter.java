@@ -92,18 +92,18 @@ public class CorpusAdapter implements CorpusListener {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.events.CorpusListener#corpusViewCreated(de.ims.icarus2.model.api.events.CorpusEvent)
+	 * @see de.ims.icarus2.model.api.events.CorpusListener#corpusPartCreated(de.ims.icarus2.model.api.events.CorpusEvent)
 	 */
 	@Override
-	public void corpusViewCreated(CorpusEvent e) {
+	public void corpusPartCreated(CorpusEvent e) {
 		// no-op
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.events.CorpusListener#corpusViewDestroyed(de.ims.icarus2.model.api.events.CorpusEvent)
+	 * @see de.ims.icarus2.model.api.events.CorpusListener#corpusPartDestroyed(de.ims.icarus2.model.api.events.CorpusEvent)
 	 */
 	@Override
-	public void corpusViewDestroyed(CorpusEvent e) {
+	public void corpusPartDestroyed(CorpusEvent e) {
 		// no-op
 	}
 

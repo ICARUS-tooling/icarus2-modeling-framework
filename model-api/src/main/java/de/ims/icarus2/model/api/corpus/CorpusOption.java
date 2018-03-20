@@ -18,19 +18,20 @@
  */
 package de.ims.icarus2.model.api.corpus;
 
-import de.ims.icarus2.model.api.view.CorpusView;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
 
 /**
  *
  * @author Markus Gärtner
  *
  */
-public interface CorpusOption {
+public class CorpusOption {
+
 
 	public static final String PARAM_PREFIX = "icarus2.model.api.";
 
 	/**
-	 * Key for fetching the {@code page size} to be used when creating a new {@link CorpusView}.
+	 * Key for fetching the {@code page size} to be used when creating a new {@link PagedCorpusView}.
 	 * <p>
 	 * The type of this property is {@code int}.
 	 *
@@ -39,7 +40,7 @@ public interface CorpusOption {
 	public static final String PARAM_VIEW_PAGE_SIZE = PARAM_PREFIX+"viewPageSize";
 
 	/**
-	 * Default value for the page size of a new {@link CorpusView}.
+	 * Default value for the page size of a new {@link PagedCorpusView}.
 	 * Implementations are encouraged to use this value if client code did not specify another one.
 	 *
 	 * @see #PARAM_VIEW_PAGE_SIZE

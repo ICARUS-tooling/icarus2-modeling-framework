@@ -59,6 +59,14 @@ public class IndexSetMerger extends AbstractIndexSetProcessor {
 		estimatedResultSize += indexSet.size();
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.api.driver.indices.func.AbstractIndexSetProcessor#isRequiresSortedInput()
+	 */
+	@Override
+	protected boolean isRequiresSortedInput() {
+		return true;
+	}
+
 	public IndexSet mergeAllToSingle() {
 		if(buffer.isEmpty()) {
 			return null;
