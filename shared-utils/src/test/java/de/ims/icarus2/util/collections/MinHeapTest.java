@@ -123,14 +123,14 @@ public class MinHeapTest {
 		DoubleMinHeap heap = new DoubleMinHeap(20);
 
 		// Basic test with sorted input
-		double[] values = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+		double[] values = {0.1, 1.2, 2.3, 3.4, 4.5, 5.6, 6.7, 7.8, 8.9, 9.001};
 
 		// Test with random input
-		values = new double[] {-1,  4,  2, 600,  0,  2, -5,  8, -999};
+		values = new double[] {-1.1,  4.5,  2.3, 600.006,  0.0,  2.3, -5.4,  8.9, -999.111};
 		test(heap, values);
 
 		// Test with negative input only
-		values = new double[] {-1, -2, -4, -3, -7, -999, -5, -3};
+		values = new double[] {-1.1, -2.3, -4.3, -3.4, -7.8, -999.111, -5.4, -3.2};
 		test(heap, values);
 	}
 
@@ -165,8 +165,22 @@ public class MinHeapTest {
 
 	}
 
+	@SuppressWarnings("boxing")
 	@Test
 	public void testObjectMinHeap() throws Exception {
+
+		/*
+		 * NOTE:
+		 *
+		 * We use Integer here as representative of any random
+		 * Comparable. This should be enough to prove the basic
+		 * correctness of the heap implementation. Otherwise we'd
+		 * need to use the version that also takes a Comparator
+		 * and then carefully design test sequences that honor
+		 * that comparator. For simplicity reasons we refrain
+		 * from that (potentially error prone) alternative and
+		 * stick with a bare Integer test.
+		 */
 
 		ObjectMinHeap<Integer> heap = new ObjectMinHeap<>(20);
 

@@ -70,8 +70,18 @@ public final class IconRegistry {
 		return globalRegistry;
 	}
 
+	/**
+	 * Creates a new registry instance with the given {@code parent}.
+	 * If the {@code parent} argument is {@code null} then the #
+	 * {@link #getGlobalRegistry() global} registry will be used instead.
+	 *
+	 * @param parent
+	 * @return
+	 */
 	public static IconRegistry newRegistry(IconRegistry parent) {
-		// TODO maybe force globalRegistry to be fallback parent?
+		if(parent==null) {
+			parent = getGlobalRegistry();
+		}
 		return new IconRegistry(parent);
 	}
 

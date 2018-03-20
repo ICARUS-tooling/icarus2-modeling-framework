@@ -58,7 +58,7 @@ public class IcarusApiException extends Exception {
 	public boolean equals(Object obj) {
 		if(obj==this) {
 			return true;
-		} else if(obj instanceof IcarusException) {
+		} else if(obj instanceof IcarusApiException) {
 			IcarusApiException other = (IcarusApiException) obj;
 			return errorCode==other.errorCode
 					&& Objects.equals(getMessage(), other.getMessage());

@@ -31,8 +31,8 @@ import java.nio.charset.CoderResult;
 
 /**
  * This is kind of a clone of the internal {@code sun.nio.cs.StreamDecoder} provided by the JRE via
- * {@link Channels#newReader(java.nio.channels.ReadableByteChannel, java.nio.charset.CharsetDecoder, int)}
- * . The main difference is that this implementation is designed for
+ * {@link Channels#newReader(java.nio.channels.ReadableByteChannel, java.nio.charset.CharsetDecoder, int)}.
+ * The main difference is that this implementation is designed for
  * single-thread use and therefore does not use any synchronization. In addition
  * it will make use of a {@link ByteBuffer#allocateDirect(int) directly
  * allocated} {@link ByteBuffer} to improve performance.
@@ -41,9 +41,6 @@ import java.nio.charset.CoderResult;
  *
  */
 public class FastChannelReader extends Reader {
-
-	private static final int MIN_BYTE_BUFFER_SIZE = 32;
-	private static final int DEFAULT_BYTE_BUFFER_SIZE = 8192;
 
 	private volatile boolean isOpen = true;
 
@@ -65,19 +62,18 @@ public class FastChannelReader extends Reader {
 
 	private final ReadableByteChannel ch;
 
-	public FastChannelReader(ReadableByteChannel ch, Charset cs, int mbc) {
-		this(ch, cs.newDecoder(), mbc);
+	public FastChannelReader(ReadableByteChannel ch, CharsetDecoder dec, int mbc) {
+		this(ch, dec, mbc, true);
 	}
 
-	public FastChannelReader(ReadableByteChannel ch, CharsetDecoder dec, int mbc) {
+	public FastChannelReader(ReadableByteChannel ch, CharsetDecoder dec, int mbc, boolean allocateDirect) {
 		requireNonNull(ch);
 		requireNonNull(dec);
 
 		this.ch = ch;
 		this.decoder = dec;
 		this.cs = dec.charset();
-		this.bb = ByteBuffer.allocateDirect(mbc < 0 ? DEFAULT_BYTE_BUFFER_SIZE
-				: (mbc < MIN_BYTE_BUFFER_SIZE ? MIN_BYTE_BUFFER_SIZE : mbc));
+		this.bb = NIOUtil.allocate(mbc, allocateDirect);
 		bb.flip();
 	}
 
@@ -257,6 +253,7 @@ public class FastChannelReader extends Reader {
 	}
 
 	void implClose() throws IOException {
+		//FIXME why do we close the underlying channel? should we leave that to client code?
 		ch.close();
 	}
 

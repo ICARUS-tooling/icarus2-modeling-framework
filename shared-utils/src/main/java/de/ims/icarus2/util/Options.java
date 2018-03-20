@@ -9,6 +9,7 @@ import static de.ims.icarus2.util.lang.Primitives._float;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
 
+import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,7 +24,7 @@ public class Options extends HashMap<String, Object> implements Cloneable {
 	 */
 	private static final long serialVersionUID = 6318648432239062316L;
 
-	public static final Options emptyOptions = new Options() {
+	public static final Options NONE = new Options() {
 
 		/**
 		 *
@@ -97,10 +98,10 @@ public class Options extends HashMap<String, Object> implements Cloneable {
 		super.putAll(m);
 	}
 
-	public void dump() {
-		System.out.println("Options: "); //$NON-NLS-1$
+	public void dump(PrintStream out) {
+		out.println("Options: "); //$NON-NLS-1$
 		for(Entry<String, Object> entry : entrySet())
-			System.out.printf("  -key=%s value=%s\n",  //$NON-NLS-1$
+			out.printf("  -key=%s value=%s\n",  //$NON-NLS-1$
 					entry.getKey(), String.valueOf(entry.getValue()));
 	}
 

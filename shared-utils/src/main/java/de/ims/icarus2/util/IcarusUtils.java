@@ -42,6 +42,14 @@ public class IcarusUtils {
 		return String.valueOf(value);
 	}
 
+	/**
+	 * Checks if the provided {@code value} exceeds {@link #MAX_INTEGER_INDEX}.
+	 * Throws {@link IcarusException} with code {@link GlobalErrorCode#INDEX_OVERFLOW}
+	 * if that's the case and otherwise returns the supplied value.
+	 *
+	 * @param value
+	 * @return
+	 */
 	public static int ensureIntegerValueRange(long value) {
 		if(value>MAX_INTEGER_INDEX)
 			throw new IcarusException(GlobalErrorCode.INDEX_OVERFLOW, "Not a legal value in integer range: "+value);
@@ -85,8 +93,20 @@ public class IcarusUtils {
 		}
 	}
 
+	/**
+	 * Value representing an unset long variable (-1L).
+	 */
 	public static final long UNSET_LONG = -1L;
+	/**
+	 * Value representing an unset int variable (-1).
+	 */
 	public static final int UNSET_INT = -1;
+	/**
+	 * Value representing an unset double variable (-1D).
+	 */
 	public static final double UNSET_DOUBLE = -1D;
+	/**
+	 * Value representing an unset float variable (-1F).
+	 */
 	public static final float UNSET_FLOAT = -1F;
 }

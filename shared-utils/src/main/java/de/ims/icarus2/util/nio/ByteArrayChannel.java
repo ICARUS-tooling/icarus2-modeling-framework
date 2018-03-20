@@ -39,6 +39,8 @@ public class ByteArrayChannel implements SeekableByteChannel {
 	 * Each character in the original sequence is decoded into 2 bytes and then
 	 * stored in the backing array of the channel. The higher byte of each character
 	 * is stored first, followed by the lower byte.
+	 * <p>
+	 * This method does <b>not</b> rely on any character encoding!
 	 *
 	 * @param s
 	 * @return
@@ -85,10 +87,12 @@ public class ByteArrayChannel implements SeekableByteChannel {
 	}
 
 	/**
+	 * Does nothing on this implementation.
+	 *
 	 * @see java.nio.channels.Channel#close()
 	 */
 	@Override
-	public void close() throws IOException {
+	public void close() {
 		// no-op
 	}
 
@@ -97,7 +101,7 @@ public class ByteArrayChannel implements SeekableByteChannel {
 	 */
 	@Override
 	public int read(ByteBuffer dst) throws IOException {
-		int length = Math.min(dst.remaining(), data.length-position+1);
+		int length = Math.min(dst.remaining(), data.length-position);
 
 		dst.put(data, position, length);
 		position += length;
@@ -113,7 +117,7 @@ public class ByteArrayChannel implements SeekableByteChannel {
 		if(readOnly)
 			throw new IOException("Channel is read-only");
 
-		int length = Math.min(src.remaining(), data.length-position+1);
+		int length = Math.min(src.remaining(), data.length-position);
 
 		src.get(data, position, length);
 		position += length;

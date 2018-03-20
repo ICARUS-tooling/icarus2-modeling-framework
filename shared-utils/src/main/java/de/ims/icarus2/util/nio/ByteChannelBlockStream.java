@@ -18,12 +18,17 @@
  */
 package de.ims.icarus2.util.nio;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 
 /**
+ * Models access to a {@link SeekableByteChannel} as an {@link InputStream}
+ * which is limited to a specific block of data in that channel.
+ *
  * @author Markus Gärtner
  *
  */
@@ -40,16 +45,24 @@ public class ByteChannelBlockStream extends InputStream {
 	private boolean eos = false;
 
 	public ByteChannelBlockStream(SeekableByteChannel channel) {
-		this(channel, 8000);
+		this(channel, -1);
 	}
 
 	public ByteChannelBlockStream(SeekableByteChannel channel, int bufferSize) {
+		this(channel, bufferSize, false);
+	}
+
+	public ByteChannelBlockStream(SeekableByteChannel channel, int bufferSize, boolean allocateDirect) {
 		setChannel(channel);
-		buffer = ByteBuffer.allocate(bufferSize);
+		buffer = NIOUtil.allocate(bufferSize, allocateDirect);
 	}
 
 	public ByteChannelBlockStream(int bufferSize) {
-		buffer = ByteBuffer.allocate(bufferSize);
+		this(bufferSize, false);
+	}
+
+	public ByteChannelBlockStream(int bufferSize, boolean allocateDirect) {
+		buffer = NIOUtil.allocate(bufferSize, allocateDirect);
 	}
 
 	/**
@@ -63,10 +76,7 @@ public class ByteChannelBlockStream extends InputStream {
 	 * @param channel the channel to set
 	 */
 	public void setChannel(SeekableByteChannel channel) {
-		if (channel == null)
-			throw new NullPointerException("Invalid channel"); //$NON-NLS-1$
-
-		this.channel = channel;
+		this.channel = requireNonNull(channel);
 		position = -1L;
 		remaining = -1L;
 		eos = false;
@@ -74,15 +84,23 @@ public class ByteChannelBlockStream extends InputStream {
 
 	public void reload(long position, long size) {
 		if(position<0)
-			throw new IllegalArgumentException("Position is negative: "+position); //$NON-NLS-1$
+			throw new IllegalArgumentException("Position is negative: "+position);
 		if(size<0)
-			throw new IllegalArgumentException("Size is negative: "+size); //$NON-NLS-1$
+			throw new IllegalArgumentException("Size is negative: "+size);
 
 		this.position = position;
 		this.remaining = size;
 
 		eos = size==0;
 		buffer.limit(0);
+	}
+
+	public long position() {
+		return position;
+	}
+
+	public long remaining() {
+		return remaining;
 	}
 
 	private void fillBuffer() throws IOException {
@@ -105,6 +123,8 @@ public class ByteChannelBlockStream extends InputStream {
 		} else {
 			remaining -= bytesRead;
 			position += bytesRead;
+
+			buffer.flip();
 		}
 	}
 

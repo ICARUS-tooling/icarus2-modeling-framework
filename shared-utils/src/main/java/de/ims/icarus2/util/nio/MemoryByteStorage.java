@@ -29,6 +29,8 @@ import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import de.ims.icarus2.util.IcarusUtils;
+
 /**
  * Implements a byte storage based on a backing byte array.
  * The size of the storage is dynamically adjusted when {@link #write(int, ByteBuffer) write}
@@ -44,7 +46,7 @@ public class MemoryByteStorage implements AutoCloseable {
 
 	private byte[] buffer;
 
-	private static final long INT_LIMIT = (long) Integer.MAX_VALUE;
+	private static final long INT_LIMIT = (long) IcarusUtils.MAX_INTEGER_INDEX;
 
 	private final Object bufferLock = new Object();
 	private int size = 0;

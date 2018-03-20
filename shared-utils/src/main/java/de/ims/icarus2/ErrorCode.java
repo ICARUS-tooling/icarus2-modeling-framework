@@ -19,8 +19,6 @@
 package de.ims.icarus2;
 
 import de.ims.icarus2.util.id.DuplicateIdentifierException;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner
@@ -53,20 +51,22 @@ public interface ErrorCode {
 	 *
 	 * @see #code()
 	 */
-	int scope();
+	ErrorCodeScope scope();
 
 	String name();
-
-	static final Int2ObjectMap<ErrorCode> _lookup = new Int2ObjectOpenHashMap<>();
 
 	@SafeVarargs
 	public static <E extends ErrorCode> void register(E... codes) {
 		for(ErrorCode code : codes) {
-			if(_lookup.containsKey(code.code()))
+			if(ErrorCodeLookup.map.containsKey(code.code()))
 				throw new DuplicateIdentifierException("Duplicate error code "+code.code()+" - attempted to register: "+code);
 
-			_lookup.put(code.code(), code);
+			ErrorCodeLookup.map.put(code.code(), code);
 		}
+	}
+
+	public static ErrorCode forCode(int code) {
+		return ErrorCodeLookup.map.get(code);
 	}
 
 	public static ErrorCode forException(Exception e) {

@@ -34,25 +34,30 @@ import de.ims.icarus2.IcarusException;
  */
 public class SubChannel implements SeekableByteChannel {
 
-//	private final ByteBuffer buffer;
-
 	/**
 	 * Underlying channel to delegate actual I/O work to
 	 */
 	private SeekableByteChannel source;
 
 	/**
-	 * Flag to indicate that {@link #close()} has been called
+	 * Flag to indicate that {@link #close()} has been called.
+	 * As long as this value remains {@code false} (the initial
+	 * value) the channel is considered to be {@link #isOpen()}.
 	 */
 	private boolean closed = false;
 
-//	public SubChannel() {
-//		this(IOUtil.DEFAULT_BUFFER_SIZE);
-//	}
+	public SubChannel() {
+		// no-op
+	}
 
-//	public SubChannel(int bufferSize) {
-//		buffer = ByteBuffer.allocate(bufferSize);
-//	}
+	public SubChannel(SeekableByteChannel source) {
+		setSource(source);
+	}
+
+	public SubChannel(SeekableByteChannel source, long beginOffset, long length) {
+		setSource(source);
+		setOffsets(beginOffset, length);
+	}
 
 	/**
 	 * Starting point of this channel expressed in offset value
@@ -70,8 +75,9 @@ public class SubChannel implements SeekableByteChannel {
 	 */
 	private long length;
 
-	public void setSource(SeekableByteChannel source) {
+	public SubChannel setSource(SeekableByteChannel source) {
 		this.source = source;
+		return this;
 	}
 
 	public SeekableByteChannel getSource() {
@@ -86,7 +92,7 @@ public class SubChannel implements SeekableByteChannel {
 		return length;
 	}
 
-	public void setOffsets(long beginOffset, long length) {
+	public SubChannel setOffsets(long beginOffset, long length) {
 		checkArgument(beginOffset>=0L);
 		checkArgument(length>=0);
 
@@ -94,6 +100,8 @@ public class SubChannel implements SeekableByteChannel {
 		this.length = length;
 
 		position = 0L;
+
+		return this;
 	}
 
 	/**
@@ -132,7 +140,7 @@ public class SubChannel implements SeekableByteChannel {
 	public int read(ByteBuffer dst) throws IOException {
 		checkOpen();
 
-		long remaining = length-position-1;
+		long remaining = length-position;
 
 		if(remaining<=0L) {
 			return -1;
@@ -143,9 +151,11 @@ public class SubChannel implements SeekableByteChannel {
 		int bytesToRead = (int) Math.min(remaining, bufferCapacity);
 
 		if(bytesToRead>0) {
-			if(bytesToRead<bufferCapacity) {
+			if(bytesToRead<=bufferCapacity) {
+				// Keep track of original limit
 				int limit = dst.limit();
 
+				// Reset limit to
 				dst.limit(limit - (bufferCapacity-bytesToRead));
 				bytesToRead = source().position(beginOffset+position).read(dst);
 				dst.limit(limit);//TODO verify that we need to do this step
@@ -168,7 +178,7 @@ public class SubChannel implements SeekableByteChannel {
 	public int write(ByteBuffer src) throws IOException {
 		checkOpen();
 
-		long remaining = length-position-1;
+		long remaining = length-position;
 
 		if(remaining<=0L) {
 			return -1;
@@ -179,12 +189,16 @@ public class SubChannel implements SeekableByteChannel {
 		int bytesToWrite = (int) Math.min(remaining, bufferCapacity);
 
 		if(bytesToWrite>0) {
-			if(bytesToWrite<bufferCapacity) {
+			if(bytesToWrite<=bufferCapacity) {
+				// Keep track of original limit
 				int limit = src.limit();
 
+				// Reset limit to not allow too many elements
 				src.limit(limit - (bufferCapacity-bytesToWrite));
+				// Usual write delegation
 				bytesToWrite = source().position(beginOffset+position).write(src);
-				src.limit(limit);//TODO verify that we need to do this step
+				// Change limit back to stored value
+				src.limit(limit);
 			} else {
 				bytesToWrite = source().position(beginOffset+position).write(src);
 			}

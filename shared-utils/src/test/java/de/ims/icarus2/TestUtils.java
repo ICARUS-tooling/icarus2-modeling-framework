@@ -31,6 +31,30 @@ import de.ims.icarus2.util.lang.ClassUtils.Trace;
  */
 public class TestUtils {
 
+	public static final String LOREM_IPSUM_ASCII =
+			"0f73n 51m1l4r c0mm4ndz @R j00, 4r3 Wh0 4cc355 k0n"
+    		+ "t@kt da. 0u7 (0py 3x4|\\/|3|\\|3d 1F, |7 No+ p@g3"
+    		+ " 51m1l4r. 4|| p4g3, r3zUltz 45, y3r +o p4g3 tHUm8"
+    		+ "41|_. 1T M155In9 4bund4n7 4r3, 1nf0 kvv3r33, 4v41"
+    		+ "|4b|3 aLL @R. 0n d3n +H@T 7|24n5|473d, h@x 0f Wh3"
+    		+ "n f34tUr3.";
+
+	public static final String LOREM_IPSUM_ISO =
+			"Lorem ipsum dolor sit amet, ex sit hinc choro err"
+					  + "oribus, pericula intellegat mei ea. Has ea idqu"
+					  + "e quaestio aliquando, sumo illum oratio te sit,"
+					  + " te quot consequat elaboraret eam. Est cu natum"
+					  + " accusamus patrioque. Eu ius quis ludus indoctu"
+					  + "m.";
+
+	public static final String LOREM_IPSUM_CHINESE =
+			"王直妹晃惑生際験刺楽可海杯焼。国力梗印力者準結費用転豊歌傷下"
+		    		+ "情密門食何。先工号録成司胃般都転国写。影高滞文勝参育仕新男過"
+		    		+ "政天大談人元交。打持南本内客凶鳥文時愛崎師援注広。注記展覧走"
+		    		+ "所女共勝店写提東育格摩致迎木。題管経辺思必時気軍提田帰国皇球"
+		    		+ "北暮理。草権労球国球地国変億慶査造備快。触帝希及生生男国無始"
+		    		+ "策中。";
+
     private static boolean isEquals(Object expected, Object actual) {
         return expected.equals(actual);
     }

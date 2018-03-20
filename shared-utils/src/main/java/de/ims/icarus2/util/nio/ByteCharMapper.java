@@ -40,30 +40,8 @@ import java.nio.charset.CoderResult;
  * @author Markus Gärtner
  *
  */
+@Deprecated
 public class ByteCharMapper {
-
-//	public static void main(String[] args) throws IOException {
-//		MemoryByteStorage buffer = new MemoryByteStorage(1024);
-//
-//		String s = "This is a blöder € test";
-//
-//		SeekableByteChannel channel = buffer.newChannel();
-//		byte[] bytes = s.getBytes("UTF-8");
-//		channel.write(ByteBuffer.wrap(bytes));
-//		channel.position(0);
-//
-//		System.out.println(Arrays.toString(bytes));
-//
-//		ByteCharMapper mapper = new ByteCharMapper(channel, IOUtil.UTF8_CHARSET.newDecoder(), 10);
-//
-//		int c;
-//		while((c = mapper.nextCharacter())!=-1) {
-//			System.out.printf("char='%s' len=%d\n", (char)c, mapper.byteCount);
-//			if(c=='l') {
-//				c++;
-//			}
-//		}
-//	}
 
 	private final ReadableByteChannel channel;
 	private final CharsetDecoder decoder;

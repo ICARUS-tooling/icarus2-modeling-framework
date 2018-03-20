@@ -59,7 +59,7 @@ public interface DataSequence<E extends Object> extends Iterable<E> {
 	 *
 	 * @param index
 	 * @return
-	 * @throws ModelExceptionif the backing data is unreachable or if
+	 * @throws ModelException if the backing data is unreachable or if
 	 * modifications have been made to the backing data that rendered
 	 * it inconsistent.
 	 * @throws IndexOutOfBoundsException if the given index lies outside the
@@ -67,12 +67,26 @@ public interface DataSequence<E extends Object> extends Iterable<E> {
 	 */
 	E elementAt(long index);
 
+	/**
+	 * Applies the given {@code action} sequentially to every {@link #elementAt(long) element}
+	 * in this sequence.
+	 * @param action
+	 */
 	default void forEachEntry(Consumer<? super E> action) {
 		for(long i =0L; i<entryCount(); i++) {
 			action.accept(elementAt(i));
 		}
 	}
 
+	/**
+	 * Helper method to transform the content of this sequence into a regular
+	 * {@link List}. Note that this method will fail if the size of this
+	 * sequence exceeds the capacity of integer addressing.
+	 *
+	 * @see IcarusUtils#ensureIntegerValueRange(long)
+	 *
+	 * @return
+	 */
 	default List<E> getEntries() {
 		int size = IcarusUtils.ensureIntegerValueRange(entryCount());
 

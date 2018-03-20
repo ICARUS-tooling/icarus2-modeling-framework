@@ -18,10 +18,6 @@
  */
 package de.ims.icarus2;
 
-import de.ims.icarus2.util.id.DuplicateIdentifierException;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-
 /**
  * @author Markus Gärtner
  *
@@ -149,12 +145,14 @@ public enum GlobalErrorCode implements ErrorCode {
 	//TODO do we need this category at all?
 	;
 
-	public static final int SCOPE = 1000;
+	public static final ErrorCodeScope SCOPE = ErrorCodeScope.newScope(1000, GlobalErrorCode.class.getSimpleName());
 
 	private final int code;
 
 	private GlobalErrorCode(int code) {
 		this.code = code;
+
+		ErrorCode.register(this);
 	}
 
 	/**
@@ -162,21 +160,16 @@ public enum GlobalErrorCode implements ErrorCode {
 	 */
 	@Override
 	public int code() {
-		return code+SCOPE;
+		return code+SCOPE.getCode();
 	}
 
 	/**
 	 * @see de.ims.icarus2.ErrorCode#scope()
 	 */
 	@Override
-	public int scope() {
+	public ErrorCodeScope scope() {
 		return SCOPE;
 	}
-
-	/**
-	 * Maps internal codes to enum constants.
-	 */
-	private static final Int2ObjectMap<GlobalErrorCode> codeLookup = new Int2ObjectOpenHashMap<>();
 
 	/**
 	 * Resolves the given error code to the matching enum constant.
@@ -186,29 +179,15 @@ public enum GlobalErrorCode implements ErrorCode {
 	 * @return
 	 */
 	public static GlobalErrorCode forCode(int code) {
-		if(codeLookup.isEmpty()) {
-			synchronized (codeLookup) {
-				if (codeLookup.isEmpty()) {
-					for(GlobalErrorCode error : values()) {
-						if(codeLookup.containsKey(error.code))
-							throw new DuplicateIdentifierException("Duplicate error code: "+error); //$NON-NLS-1$
+		SCOPE.checkCode(code);
 
-						codeLookup.put(error.code, error);
-					}
-				}
-
-			}
-		}
-
-		GlobalErrorCode error = codeLookup.get(code);
-		if(error==null && code>SCOPE) {
-			code-=SCOPE;
-			error = codeLookup.get(code);
-		}
+		ErrorCode error = ErrorCode.forCode(code);
 
 		if(error==null)
-			throw new IllegalArgumentException("Unknown error code: "+code); //$NON-NLS-1$
+			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Unknown error code: "+code);
+		if(!GlobalErrorCode.class.isInstance(error))
+			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Corrupted mapping for error code: "+code);
 
-		return error;
+		return GlobalErrorCode.class.cast(error);
 	}
 }
