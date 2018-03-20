@@ -16,12 +16,13 @@
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  *
  */
-package de.ims.icarus2.model.api.view;
+package de.ims.icarus2.model.api.corpus;
 
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
 import de.ims.icarus2.util.id.Identity;
 
 /**
- * Represents a single owner that can acquire partial ownership of a {@link CorpusView}.
+ * Represents a single owner that can acquire partial ownership of a {@link PagedCorpusView}.
  * A corpus view will be prevented from being closed as long as at least one registered
  * owner still holds partial ownership of it. Note that each {@code CorpusOwner} can
  * only hold partial ownership to at most one corpus view object at any given time!
@@ -33,7 +34,7 @@ public interface CorpusOwner extends Identity {
 
 	/**
 	 * Attempts to release the owners's hold on the one single corpus view it currently owns.
-	 * If the owner could successfully stops its current processing of the view and was
+	 * If the owner could successfully stop its current processing of the view and was
 	 * able to disconnect from it, this method returns {@code true}. A return
 	 * value of {@code false} indicates, that the owner was unable to release connected
 	 * resources and that the view will continue to be prevented from getting closed.

@@ -16,7 +16,7 @@
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  *
  */
-package de.ims.icarus2.model.standard.view;
+package de.ims.icarus2.model.standard.view.paged;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkArgument;
@@ -57,9 +57,9 @@ import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
 import de.ims.icarus2.model.api.members.item.manager.ItemLookup;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.raster.Position;
-import de.ims.icarus2.model.api.view.CorpusModel;
-import de.ims.icarus2.model.api.view.CorpusView;
-import de.ims.icarus2.model.api.view.CorpusView.PageControl;
+import de.ims.icarus2.model.api.view.paged.CorpusModel;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.StructureType;
@@ -82,7 +82,11 @@ import de.ims.icarus2.util.lang.Lazy;
  * @author Markus Gärtner
  *
  */
-public class DefaultCorpusModel extends AbstractPart<CorpusView> implements CorpusModel {
+public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements CorpusModel {
+
+	public static Builder newBuilder() {
+		return new Builder();
+	}
 
 	protected final boolean writable;
 	protected final boolean readable;
@@ -136,7 +140,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 	//---------------------------------------------
 
 	@Override
-	public void addNotify(CorpusView owner) {
+	public void addNotify(PagedCorpusView owner) {
 		super.addNotify(owner);
 
 		owner.getCorpus().addCorpusListener(viewObserver);
@@ -150,7 +154,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 	 * @param owner
 	 */
 	@Override
-	public void removeNotify(CorpusView owner) {
+	public void removeNotify(PagedCorpusView owner) {
 		super.removeNotify(owner);
 
 		owner.getCorpus().removeCorpusListener(viewObserver);
@@ -182,7 +186,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 	}
 
 	protected ItemLookup createItemLookup() {
-		CorpusView view = getView();
+		PagedCorpusView view = getView();
 		PageControl pageControl = view.getPageControl();
 
 		BufferedItemLookup itemLookup = new BufferedItemLookup(itemLayerManager, pageControl);
@@ -282,13 +286,13 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 
 	@Override
 	public boolean isModelComplete() {
-		CorpusView view = getView();
+		PagedCorpusView view = getView();
 
 		return view.getPageSize()>=view.getSize();
 	}
 
 	@Override
-	public CorpusView getView() {
+	public PagedCorpusView getView() {
 		checkAdded();
 		return getOwner();
 	}
@@ -947,7 +951,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 	protected class ViewObserver extends CorpusAdapter {
 
 		@Override
-		public void corpusViewDestroyed(CorpusEvent e) {
+		public void corpusPartDestroyed(CorpusEvent e) {
 			if(e.getCorpusView()==getView()) {
 				//TODO disconnect all resources!!
 			}
@@ -1016,7 +1020,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.events.PageListener#pageClosing(de.ims.icarus2.model.api.view.CorpusView.PageControl, int)
+		 * @see de.ims.icarus2.model.api.events.PageListener#pageClosing(de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl, int)
 		 */
 		@Override
 		public void pageClosing(PageControl source, int page) {
@@ -1026,7 +1030,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.events.PageListener#pageClosed(de.ims.icarus2.model.api.view.CorpusView.PageControl, int)
+		 * @see de.ims.icarus2.model.api.events.PageListener#pageClosed(de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl, int)
 		 */
 		@Override
 		public void pageClosed(PageControl source, int page) {
@@ -1036,7 +1040,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.events.PageListener#pageLoading(de.ims.icarus2.model.api.view.CorpusView.PageControl, int, int)
+		 * @see de.ims.icarus2.model.api.events.PageListener#pageLoading(de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl, int, int)
 		 */
 		@Override
 		public void pageLoading(PageControl source, int page, int size) {
@@ -1046,7 +1050,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.events.PageListener#pageLoaded(de.ims.icarus2.model.api.view.CorpusView.PageControl, int, int)
+		 * @see de.ims.icarus2.model.api.events.PageListener#pageLoaded(de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl, int, int)
 		 */
 		@Override
 		public void pageLoaded(PageControl source, int page, int size) {
@@ -1060,7 +1064,7 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.events.PageListener#pageFailed(de.ims.icarus2.model.api.view.CorpusView.PageControl, int, de.ims.icarus2.model.api.ModelException)
+		 * @see de.ims.icarus2.model.api.events.PageListener#pageFailed(de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl, int, de.ims.icarus2.model.api.ModelException)
 		 */
 		@Override
 		public void pageFailed(PageControl source, int page, ModelException ex) {
@@ -1254,6 +1258,10 @@ public class DefaultCorpusModel extends AbstractPart<CorpusView> implements Corp
 
 		private AccessMode accessMode;
 		private ItemLayerManager itemLayerManager;
+
+		protected Builder() {
+			// no-op
+		}
 
 
 		public Builder accessMode(AccessMode accessMode) {

@@ -16,20 +16,17 @@
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  *
  */
-package de.ims.icarus2.model.api.view;
+package de.ims.icarus2.model.api.view.paged;
 
 import java.util.function.Consumer;
 
 import javax.swing.event.ChangeListener;
 
-import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.Annotation;
 import de.ims.icarus2.model.api.members.CorpusMember;
 import de.ims.icarus2.model.api.members.MemberType;
@@ -39,7 +36,8 @@ import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.raster.Position;
-import de.ims.icarus2.model.api.view.CorpusView.PageControl;
+import de.ims.icarus2.model.api.view.Scope;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.api.ValueSet;
@@ -54,11 +52,14 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
+ * Provides a wrapper around <i>raw</i> read and write methods of
+ * various lower-level framework members.
+ *
  * @author Markus Gärtner
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface CorpusModel extends Part<CorpusView>, Changeable {
+public interface CorpusModel extends Part<PagedCorpusView>, Changeable {
 
 	//---------------------------------------------
 	//			GENERAL METHODS
@@ -80,7 +81,7 @@ public interface CorpusModel extends Part<CorpusView>, Changeable {
 	boolean isModelComplete();
 
 	/**
-	 * Returns {@code true} iff the surrounding {@link CorpusView} is operational and
+	 * Returns {@code true} iff the surrounding {@link PagedCorpusView} is operational and
 	 * all internal resources of this model are in a healthy state. Note that once the
 	 * view that created this model gets closed, this method will always return {@code false}.
 	 */
@@ -90,47 +91,7 @@ public interface CorpusModel extends Part<CorpusView>, Changeable {
 		return getView().getCorpus();
 	}
 
-	CorpusView getView();
-
-	default ItemLayer fetchPrimaryLayer() {
-		return getView().getScope().getPrimaryLayer();
-	}
-
-	default <L extends Layer> L fetchLayer(String id) {
-		Scope scope = getView().getScope();
-
-		if(scope.getContextCount()>1)
-			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
-					"Cannot perform layer lookup with simple id in presence of more than 1 context");
-
-		Context context = scope.getPrimaryLayer().getContext();
-
-		L layer = context.getLayer(id);
-
-		if(!scope.containsLayer(layer))
-			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					"No such layer available in current scope: "+id);
-
-		return layer;
-	}
-
-
-	default <L extends Layer> L fetchLayer(String contextId, String layerId) {
-		Scope scope = getView().getScope();
-
-		Context context = getCorpus().getContext(contextId);
-		if(!scope.containsContext(context))
-			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					"No such context available in current scope: "+contextId);
-
-		L layer = context.getLayer(layerId);
-
-		if(!scope.containsLayer(layer))
-			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					"No such layer available in current scope: "+layerId);
-
-		return layer;
-	}
+	PagedCorpusView getView();
 
 	/**
 	 * Adds a {@code ChangeListener} to the list of registered listeners.
@@ -197,7 +158,7 @@ public interface CorpusModel extends Part<CorpusView>, Changeable {
 
 	/**
 	 * Returns the container that stores the top level elements of the specified layer
-	 * for the enclosing {@link CorpusView}.
+	 * for the enclosing {@link PagedCorpusView}.
 	 * <p>
 	 * Note that this method will fail for all layers except the one designated as the
 	 * <i>primary layer</i> of the {@link Scope} responsible for the vertical filtering
@@ -214,7 +175,7 @@ public interface CorpusModel extends Part<CorpusView>, Changeable {
 	Container getRootContainer(ItemLayer layer);
 
 	default Container getRootContainer() {
-		return getRootContainer(fetchPrimaryLayer());
+		return getRootContainer(getView().fetchPrimaryLayer());
 	}
 
 	/**
@@ -275,10 +236,10 @@ public interface CorpusModel extends Part<CorpusView>, Changeable {
 	 * bounding offsets.
 	 * <p>
 	 * Do <b>not</b> mix up the returned index with the result of a call to
-	 * {@link Container#indexOfItem(Item)}! The latter is limited to integer values
+	 * {@link Container#indexOfItem(Item)}! The latter is limited to values within the container's size
 	 * and returns the <i>current</i> position of a item within that container's internal storage.
 	 * This index can change over time and is most likely different when using containers from
-	 * multiple {@link CorpusView}s.
+	 * multiple {@link PagedCorpusView views}.
 	 * The result of the {@code #getIndex()} method on the other features a much larger value space
 	 * and is constant, no matter where the item in question is stored. The only way to modify
 	 * a item's index is to remove or insert other items into the underlying data.

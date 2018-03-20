@@ -20,6 +20,7 @@ package de.ims.icarus2.model.standard.corpus;
 import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.corpus.GenerationControl;
@@ -28,19 +29,21 @@ import de.ims.icarus2.model.api.corpus.GenerationControl;
  * Implements a generation control without any state.
  * The {@link #getStage()} method will always return {@link GenerationControl#INITIAL_STAGE}
  * and both modification methods ({@link #advance()} and {@link #step(long, long)}) will
- * throw a {@link ModelException} when called.
+ * throw a {@link ModelException} of code {@link GlobalErrorCode#ILLEGAL_STATE} when called.
  *
  * @author Markus Gärtner
  *
  */
-public class ImmutableGeneration implements GenerationControl {
+public class ImmutableGenerationControl implements GenerationControl {
 
 	private final Corpus corpus;
+
+	private final Stage stage = new EmptyStage();
 
 	/**
 	 * @param corpus
 	 */
-	public ImmutableGeneration(Corpus corpus) {
+	public ImmutableGenerationControl(Corpus corpus) {
 		requireNonNull(corpus);
 
 		this.corpus = corpus;
@@ -58,24 +61,33 @@ public class ImmutableGeneration implements GenerationControl {
 	 * @see de.ims.icarus2.model.api.corpus.GenerationControl#getStage()
 	 */
 	@Override
-	public long getStage() {
-		return 1;
+	public Stage getStage() {
+		return stage;
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.api.corpus.GenerationControl#advance()
 	 */
 	@Override
-	public long advance() {
+	public Stage advance() {
 		throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Corpus is immutable - cannot advance generation stage");
 	}
 
+
+	@Override
+	public boolean step(Stage expectedStage, Stage newStage) {
+		throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Corpus is immutable - cannot alter generation stage");
+	}
+
 	/**
-	 * @see de.ims.icarus2.model.api.corpus.GenerationControl#step(long, long)
+	 * @see de.ims.icarus2.model.api.corpus.GenerationControl#parseStage(java.lang.String)
 	 */
 	@Override
-	public boolean step(long expectedId, long newId) {
-		throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Corpus is immutable - cannot alter generation stage");
+	public Stage parseStage(String s) {
+		if(EmptyStage.LABEL.equals(s)) {
+			return stage;
+		} else
+			throw new ModelException(corpus, ModelErrorCode.MODEL_INVALID_REQUEST, "Not a valid serialized form of stage: "+s);
 	}
 
 	/**
@@ -86,4 +98,26 @@ public class ImmutableGeneration implements GenerationControl {
 		// no-op
 	}
 
+	private static final class EmptyStage implements Stage {
+
+		public static final String LABEL = "INITIAL_STAGE";
+
+		/**
+		 * @see java.lang.Comparable#compareTo(java.lang.Object)
+		 */
+		@Override
+		public int compareTo(Stage o) {
+			return equals(o) ? 0 : 1;
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.strings.StringResource#getStringValue()
+		 */
+		@Override
+		public String getStringValue() {
+			return LABEL;
+		}
+
+		//TODO hashCode, equals and toString methods!
+	}
 }

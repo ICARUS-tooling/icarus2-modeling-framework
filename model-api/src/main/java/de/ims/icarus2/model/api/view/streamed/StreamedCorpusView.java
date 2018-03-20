@@ -15,15 +15,15 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package de.ims.icarus2.model.api.members.item.stream;
+package de.ims.icarus2.model.api.view.streamed;
 
 import java.util.Set;
 
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.model.api.corpus.OwnableCorpusPart;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.view.Scope;
-import de.ims.icarus2.util.Changeable;
+import de.ims.icarus2.model.api.view.CorpusView;
 
 /**
  * Implements a <i>forward-only</i> traversal mechanism for
@@ -31,9 +31,7 @@ import de.ims.icarus2.util.Changeable;
  * @author Markus Gärtner
  *
  */
-public interface ItemStream extends Changeable, AutoCloseable {
-
-	Scope getScope();
+public interface StreamedCorpusView extends CorpusView, OwnableCorpusPart {
 
 	// Configuration part
 
@@ -102,7 +100,10 @@ public interface ItemStream extends Changeable, AutoCloseable {
 	 * no active item is available or {@link ModelErrorCode#STREAM_MARK_NOT_SUPPORTED}
 	 * if the stream implementation does not support marks.
 	 */
-	boolean mark();
+	default boolean mark() {
+		throw new ModelException(ModelErrorCode.STREAM_MARK_NOT_SUPPORTED,
+				"Default implemenattion does not support mark");
+	}
 
 	/**
 	 *
@@ -111,7 +112,10 @@ public interface ItemStream extends Changeable, AutoCloseable {
 	 * @throws ModelException with {@link ModelErrorCode#STREAM_MARK_NOT_SUPPORTED}
 	 * if the stream implementation does not support marks.
 	 */
-	boolean clearMark();
+	default boolean clearMark() {
+		throw new ModelException(ModelErrorCode.STREAM_MARK_NOT_SUPPORTED,
+				"Default implemenattion does not support mark");
+	}
 
 	/**
 	 *
@@ -121,7 +125,10 @@ public interface ItemStream extends Changeable, AutoCloseable {
 	 * no mark has been set previously or {@link ModelErrorCode#STREAM_MARK_NOT_SUPPORTED}
 	 * if the stream implementation does not support marks.
 	 */
-	boolean reset();
+	default boolean reset() {
+		throw new ModelException(ModelErrorCode.STREAM_MARK_NOT_SUPPORTED,
+				"Default implemenattion does not support mark");
+	}
 
 	/**
 	 * Closes this stream and releases all associated resources.

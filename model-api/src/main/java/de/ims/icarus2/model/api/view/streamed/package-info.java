@@ -16,12 +16,12 @@
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  */
 /**
- * Specialized sub-part of managing collections of items. As opposed to
- * the general manager mechanisms from the {@docRoot de.ims.icarusmodel.api.members.item.manager}
+ * Specialized sub-part for managing collections of items. As opposed to
+ * the general manager mechanisms from the {@link de.ims.icarusmodel.api.view}
  * package the interfaces in this one focus on modeling the access as
  * a one-way stream with limited options for navigation or modification.
  *
  * @author Markus Gärtner
  *
  */
-package de.ims.icarus2.model.api.members.item.stream;
+package de.ims.icarus2.model.api.view.streamed;

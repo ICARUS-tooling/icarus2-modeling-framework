@@ -16,7 +16,7 @@
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  *
  */
-package de.ims.icarus2.model.standard.view;
+package de.ims.icarus2.model.standard.view.paged;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
@@ -44,8 +44,8 @@ import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.events.PageListener;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
-import de.ims.icarus2.model.api.view.CorpusView;
-import de.ims.icarus2.model.api.view.CorpusView.PageControl;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AbstractPart;
@@ -54,7 +54,11 @@ import de.ims.icarus2.util.AbstractPart;
  * @author Markus Gärtner
  *
  */
-public class DefaultPageControl extends AbstractPart<CorpusView> implements PageControl {
+public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements PageControl {
+
+	public static Builder newBuilder() {
+		return new Builder();
+	}
 
 	protected final PageIndexBuffer pageBuffer;
 	protected final ItemLayerManager itemLayerManager;
@@ -153,16 +157,16 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.view.CorpusView.PageControl#getView()
+	 * @see de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl#getView()
 	 */
 	@Override
-	public CorpusView getView() {
+	public PagedCorpusView getView() {
 		checkAdded();
 		return getOwner();
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.view.CorpusView.PageControl#getPageSize()
+	 * @see de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl#getPageSize()
 	 */
 	@Override
 	public int getPageSize() {
@@ -171,7 +175,7 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.view.CorpusView.PageControl#getPageCount()
+	 * @see de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl#getPageCount()
 	 */
 	@Override
 	public int getPageCount() {
@@ -180,7 +184,7 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.view.CorpusView.PageControl#getIndices()
+	 * @see de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl#getIndices()
 	 */
 	@Override
 	public IndexSet getIndices() {
@@ -190,7 +194,7 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.view.CorpusView.PageControl#getPageIndex()
+	 * @see de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl#getPageIndex()
 	 */
 	@Override
 	public int getPageIndex() {
@@ -200,7 +204,7 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.view.CorpusView.PageControl#loadPage(int)
+	 * @see de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl#loadPage(int)
 	 */
 	@Override
 	public boolean loadPage(int index) throws InterruptedException {
@@ -236,7 +240,7 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.view.CorpusView.PageControl#closePage()
+	 * @see de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl#closePage()
 	 */
 	@Override
 	public boolean closePage() throws InterruptedException {
@@ -323,7 +327,7 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.view.CorpusView.PageControl#isPageLoaded()
+	 * @see de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl#isPageLoaded()
 	 */
 	@Override
 	public boolean isPageLoaded() {
@@ -332,7 +336,7 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.view.CorpusView.PageControl#addPageListener(de.ims.icarus2.model.api.events.PageListener)
+	 * @see de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl#addPageListener(de.ims.icarus2.model.api.events.PageListener)
 	 */
 	@Override
 	public void addPageListener(PageListener listener) {
@@ -341,7 +345,7 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.view.CorpusView.PageControl#removePageListener(de.ims.icarus2.model.api.events.PageListener)
+	 * @see de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl#removePageListener(de.ims.icarus2.model.api.events.PageListener)
 	 */
 	@Override
 	public void removePageListener(PageListener listener) {
@@ -349,7 +353,7 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.view.CorpusView.PageControl#isLocked()
+	 * @see de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl#isLocked()
 	 */
 	@Override
 	public boolean isLocked() {
@@ -357,7 +361,7 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.view.CorpusView.PageControl#lock(java.lang.Object)
+	 * @see de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl#lock(java.lang.Object)
 	 */
 	@Override
 	public void lock(Object key) {
@@ -365,7 +369,7 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.view.CorpusView.PageControl#unlock(java.lang.Object)
+	 * @see de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl#unlock(java.lang.Object)
 	 */
 	@Override
 	public void unlock(Object key) {
@@ -569,6 +573,10 @@ public class DefaultPageControl extends AbstractPart<CorpusView> implements Page
 		private Cache<Integer, IndexSet> indexSetCache;
 		private int indexCacheSize;
 		private int pageSize;
+
+		protected Builder() {
+			// no-op
+		}
 
 		public Builder pageIndexBuffer(PageIndexBuffer pageIndexBuffer) {
 			requireNonNull(pageIndexBuffer);

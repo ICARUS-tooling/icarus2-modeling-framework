@@ -16,7 +16,7 @@
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  *
  */
-package de.ims.icarus2.model.standard.view;
+package de.ims.icarus2.model.standard.view.paged;
 
 import static java.util.Objects.requireNonNull;
 
@@ -29,7 +29,7 @@ import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
-import de.ims.icarus2.model.api.view.CorpusView.PageControl;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl;
 import de.ims.icarus2.model.manifest.util.Messages;
 
 /**
