@@ -66,7 +66,7 @@ public class StructureInfoBuilder {
 
 	private static ThreadLocal<StructureInfoBuilder> _builders = ThreadLocal.withInitial(StructureInfoBuilder::new);
 
-	private static final StructureInfoField[] _fields = StructureInfoField.values();
+//	private static final StructureInfoField[] _fields = StructureInfoField.values();
 
 	/**
 	 * The structure to compute metadata for.
@@ -84,12 +84,12 @@ public class StructureInfoBuilder {
 	/**
 	 * Summed up values for individual fields.
 	 */
-	private final long[] sums = new long[_fields.length];
+	private final long[] sums = new long[DefaultStructureInfo._fields.length];
 
 	/**
 	 * Number of nodes encountered for individual fields.
 	 */
-	private final long[] counts = new long[_fields.length];
+	private final long[] counts = new long[DefaultStructureInfo._fields.length];
 
 	private final Set<Item> visitedNodes = new ObjectOpenHashSet<>(200);
 
@@ -107,18 +107,18 @@ public class StructureInfoBuilder {
 
 		this.structure = structure;
 
-		avgValues = new double[_fields.length];
-		minMaxValues = new long[_fields.length*2];
+		avgValues = new double[DefaultStructureInfo._fields.length];
+		minMaxValues = new long[DefaultStructureInfo._fields.length*2];
 	}
 
 	public StructureInfo build() {
 		final StructureType type = structure.getStructureType();
 		final boolean isGraph = type==StructureType.GRAPH || type==StructureType.DIRECTED_GRAPH;
 
-		for(StructureInfoField field : _fields) {
+		for(StructureInfoField field : DefaultStructureInfo._fields) {
 			if(field.isTypeSupported(type)) {
-				sums[field.ordinal()] = 0;
-				counts[field.ordinal()] = 0;
+				sums[DefaultStructureInfo.index(field)] = 0;
+				counts[DefaultStructureInfo.index(field)] = 0;
 				avgValues[avgIndex(field)] = 0D;
 				minMaxValues[minIndex(field)] = Long.MAX_VALUE;
 				minMaxValues[maxIndex(field)] = Long.MIN_VALUE;
@@ -140,9 +140,9 @@ public class StructureInfoBuilder {
 		}
 
 		// Finalize stuff
-		for(StructureInfoField field : _fields) {
+		for(StructureInfoField field : DefaultStructureInfo._fields) {
 			if(field.isTypeSupported(type)) {
-				int index = field.ordinal();
+				int index = DefaultStructureInfo.index(field);
 				if(counts[index]>0L) {
 					avgValues[avgIndex(field)] = (double)sums[index] / (double)counts[index];
 				}
@@ -164,8 +164,8 @@ public class StructureInfoBuilder {
 			minMaxValues[index] = value;
 		}
 
-		sums[field.ordinal()] += value;
-		counts[field.ordinal()] ++;
+		sums[DefaultStructureInfo.index(field)] += value;
+		counts[DefaultStructureInfo.index(field)] ++;
 	}
 
 	private void computeGraphNodeData(Item node) {

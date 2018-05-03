@@ -20,7 +20,6 @@ package de.ims.icarus2.model.api.driver.indices.func;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.function.LongConsumer;
 
@@ -31,12 +30,18 @@ import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
 
 
 /**
+ * Calculates the intersection of a collection of sorted {@link IndexSet}
+ * instances.
+ * <p>
+ * This class is not thread-safe!
+ *
  * @author Markus Gärtner
  *
  */
 public class IndexIterativeIntersection extends AbstractIndexSetProcessor {
 
 	public IndexIterativeIntersection() {
+		super(true);
 		estimatedResultSize = Long.MAX_VALUE;
 	}
 
@@ -58,9 +63,15 @@ public class IndexIterativeIntersection extends AbstractIndexSetProcessor {
 		estimatedResultSize = Math.min(estimatedResultSize, indexSet.size());
 	}
 
+	/**
+	 * Returns the result of intersecting all the {@link IndexSet}
+	 * instances that have been {@link #add(Collection) added} to
+	 * this processor so far.
+	 * @return
+	 */
 	public IndexSet intersectAll() {
 		if(buffer.isEmpty()) {
-			return null;
+			return IndexUtils.EMPTY_SET;
 		} else if(buffer.size()==1) {
 			return buffer.get(0);
 		}
@@ -77,23 +88,26 @@ public class IndexIterativeIntersection extends AbstractIndexSetProcessor {
 		IndexBuffer activeBuffer = tmp1;
 		IndexBuffer result = null;
 
-		// Create sorted array of input sets (in ascending order)
-		//TODO have us operate on the raw buffer list of index sets instead of cloning it into an array!
-		IndexSet[] indices = buffer.toArray(new IndexSet[buffer.size()]);
-		Arrays.sort(indices, IndexSet.INDEX_SET_SIZE_SORTER);
+		/*
+		 *  Create sorted array of input sets (in ascending order of size).
+		 *  This way chances are higher to approach the exit condition earlier
+		 *  if no intersection exists.
+		 */
+		buffer.sort(IndexSet.INDEX_SET_SIZE_SORTER);
 
 		// Intersect sets iteratively, using the result of previous intersection if possible
-		for(int i=1; i<indices.length; i++) {
+		for(int i=1; i<buffer.size(); i++) {
 
 			activeBuffer.clear();
 
 			// As soon as an intersection is reported empty, break up
-			if(!intersect(indices[i-1], indices[i], activeBuffer)) {
-				return null;
+			if(!intersect(buffer.get(i-1), buffer.get(i), activeBuffer)) {
+				return IndexUtils.EMPTY_SET;
 			}
 
 			// Store resulting intersection at current position in array
-			indices[i] = result = activeBuffer;
+			result = activeBuffer;
+			buffer.set(i, activeBuffer);
 			// Swap buffer to the one used before
 			activeBuffer = (activeBuffer==tmp1) ? tmp2 : tmp1;
 		}
@@ -106,13 +120,16 @@ public class IndexIterativeIntersection extends AbstractIndexSetProcessor {
 	 * the specified {@link LongConsumer consumer}. Returns {@code true} only if there exists a
 	 * valid intersection of {@code set1} and {@code set2} (i.e. the {@code consumer} will
 	 * hold at least one index value common to both input sets).
+	 * <p>
+	 * Set to private so we don't have to perform additional checks against unsorted index sets
+	 * or those of unknown size.
 	 *
-	 * @param set1
-	 * @param set2
-	 * @param buffer
-	 * @return
+	 * @param set1 first set of the intersection
+	 * @param set2 second set of the intersection
+	 * @param buffer collector to send individuals values that are contained in the intersection
+	 * @return {@code true} iff the intersection of the two sets is not empty.
 	 */
-	public static boolean intersect(IndexSet set1, IndexSet set2, LongConsumer consumer) {
+	private static boolean intersect(IndexSet set1, IndexSet set2, LongConsumer consumer) {
 		requireNonNull(set1);
 		requireNonNull(set2);
 		requireNonNull(consumer);

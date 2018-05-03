@@ -26,6 +26,7 @@ import java.util.PrimitiveIterator.OfInt;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
+import java.util.function.IntToLongFunction;
 import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
@@ -36,9 +37,11 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
+import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.collections.ArrayUtils;
 
 /**
  * Implements a modifiable {@link IndexSet} with a fixed size buffer that can
@@ -57,7 +60,7 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 	private final IndexValueType valueType;
 	private int size;
 
-	private boolean sorted = false;
+	private boolean sorted = true;
 
 	public IndexBuffer(int bufferSize) {
 		this(IndexValueType.LONG, bufferSize);
@@ -193,9 +196,10 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 	@Override
 	public void add(long index) {
 		checkCapacity(1);
+
+		sorted &= lastIndex()<=index;
 		valueType.set(buffer, size, index);
 
-		sorted = false;
 		size++;
 	}
 
@@ -203,6 +207,8 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 	public void add(long from, long to) {
 		int length = IcarusUtils.ensureIntegerValueRange(to-from+1);
 		checkCapacity(length);
+
+		sorted &= lastIndex()<=from;
 		valueType.copyFrom(i -> from+i, 0, buffer, size, length);
 
 		sorted = false;
@@ -223,9 +229,12 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 
 	public void add(byte[] indices, int offset, int length) {
 		checkCapacity(length);
+
+		if(sorted) {
+			sorted &= lastIndex()<=indices[offset] && ArrayUtils.isSorted(indices, offset, offset+length);
+		}
 		valueType.copyFrom(indices, offset, buffer, size, length);
 
-		sorted = false;
 		size += length;
 	}
 
@@ -235,9 +244,12 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 
 	public void add(short[] indices, int offset, int length) {
 		checkCapacity(length);
+
+		if(sorted) {
+			sorted &= lastIndex()<=indices[offset] && ArrayUtils.isSorted(indices, offset, offset+length);
+		}
 		valueType.copyFrom(indices, offset, buffer, size, length);
 
-		sorted = false;
 		size += length;
 	}
 
@@ -247,9 +259,12 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 
 	public void add(int[] indices, int offset, int length) {
 		checkCapacity(length);
+
+		if(sorted) {
+			sorted &= lastIndex()<=indices[offset] && ArrayUtils.isSorted(indices, offset, offset+length);
+		}
 		valueType.copyFrom(indices, offset, buffer, size, length);
 
-		sorted = false;
 		size += length;
 	}
 
@@ -259,9 +274,12 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 
 	public void add(long[] indices, int offset, int length) {
 		checkCapacity(length);
+
+		if(sorted) {
+			sorted &= lastIndex()<=indices[offset] && ArrayUtils.isSorted(indices, offset, offset+length);
+		}
 		valueType.copyFrom(indices, offset, buffer, size, length);
 
-		sorted = false;
 		size += length;
 	}
 
@@ -288,6 +306,10 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		int addCount = endIndex-beginIndex;
 		checkCapacity(addCount);
 
+		if(sorted) {
+			sorted &= lastIndex()<=indices.indexAt(beginIndex) && IndexUtils.isSorted(indices, beginIndex, endIndex);
+		}
+
 		switch (valueType) {
 		case BYTE:
 			indices.export(beginIndex, endIndex, (byte[])buffer, size);
@@ -306,7 +328,6 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 			throw new IllegalStateException();
 		}
 
-		sorted = false;
 		size += addCount;
 	}
 
@@ -331,9 +352,19 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 
 	public void add(Item[] items, int offset, int length) {
 		checkCapacity(length);
-		valueType.copyFrom(i -> items[i].getIndex(), offset, buffer, size, length);
+		IntToLongFunction src;
 
-		sorted = false;
+		if(sorted) {
+			src = i -> {
+				long index = items[i].getIndex();
+				sorted &= lastIndex()<=index;
+				return index;
+			};
+		} else {
+			src = i -> items[i].getIndex();
+		}
+		valueType.copyFrom(src, offset, buffer, size, length);
+
 		size += length;
 	}
 
@@ -349,9 +380,18 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		int addCount = endIndex-beginIndex;
 		checkCapacity(addCount);
 
-		valueType.copyFrom(i -> items.get(i).getIndex(), beginIndex, buffer, size, addCount);
+		IntToLongFunction src;
+		if(sorted) {
+			src = i -> {
+				long index = items.get(i).getIndex();
+				sorted &= lastIndex()<=index;
+				return index;
+			};
+		} else {
+			src = i -> items.get(i).getIndex();
+		}
+		valueType.copyFrom(src, beginIndex, buffer, size, addCount);
 
-		sorted = false;
 		size += addCount;
 	}
 

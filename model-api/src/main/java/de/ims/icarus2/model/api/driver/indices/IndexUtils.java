@@ -59,6 +59,44 @@ public class IndexUtils {
 
 	public static final IndexSet[] EMPTY = new IndexSet[0];
 
+	public static final IndexSet EMPTY_SET = new IndexSet() {
+
+		@Override
+		public IndexSet subSet(int fromIndex, int toIndex) {
+			throw new ArrayIndexOutOfBoundsException(fromIndex);
+		}
+
+		@Override
+		public boolean sort() {
+			return true;
+		}
+
+		@Override
+		public int size() {
+			return 0;
+		}
+
+		@Override
+		public boolean isSorted() {
+			return true;
+		}
+
+		@Override
+		public long indexAt(int index) {
+			throw new ArrayIndexOutOfBoundsException(index);
+		}
+
+		@Override
+		public IndexValueType getIndexValueType() {
+			return IndexValueType.BYTE;
+		}
+
+		@Override
+		public IndexSet externalize() {
+			return this;
+		}
+	};
+
 	public static IndexValueType getDominantType(IndexSet[] indices) {
 		return getDominantType(indices, 0, indices.length);
 	}
@@ -132,6 +170,25 @@ public class IndexUtils {
 		return true;
 	}
 
+	/**
+	 *
+	 * Checks whether a given section of the given {@link IndexSet} is sorted
+	 *
+	 * @param indices index set for which to check a specified section
+	 * @param from first index to check (inclusive)
+	 * @param to last index to check (exclusive)
+	 * @return {@code true} iff the specified section of the index set is sorted
+	 */
+	public static boolean isSorted(IndexSet indices, int from, int to) {
+		for(int i=from+1; i<to; i++) {
+			if(indices.indexAt(i-1)>indices.indexAt(i)) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	public static void checkSorted(IndexSet indices) {
 		if(!indices.isSorted())
 			throw new ModelException(ModelErrorCode.MODEL_UNSORTED_INDEX_SET, "Index set is unsorted");
@@ -183,6 +240,13 @@ public class IndexUtils {
 		ensureSorted(indices);
 	}
 
+	/**
+	 * Sums and returns the total number of values in the
+	 * given {@code indices}.
+	 *
+	 * @param indices
+	 * @return
+	 */
 	public static long count(IndexSet[] indices) {
 		long result = 0;
 
@@ -193,6 +257,13 @@ public class IndexUtils {
 		return result;
 	}
 
+	/**
+	 * Returns the {@link IndexSet#size() size}  of the smallest
+	 * {@link IndexSet} amongst the given {@code indices}.
+	 *
+	 * @param indices
+	 * @return
+	 */
 	public static int minSize(IndexSet[] indices) {
 		int result = 0;
 
@@ -206,6 +277,13 @@ public class IndexUtils {
 		return result;
 	}
 
+	/**
+	 * Returns the {@link IndexSet#size() size}  of the largest
+	 * {@link IndexSet} amongst the given {@code indices}.
+	 *
+	 * @param indices
+	 * @return
+	 */
 	public static int maxSize(IndexSet[] indices) {
 		int result = 0;
 
@@ -220,7 +298,7 @@ public class IndexUtils {
 	}
 
 	public static boolean isContinuous(IndexSet indices) {
-		return indices.isSorted() && indices.lastIndex()-indices.firstIndex()==indices.size()-1;
+		return indices.isSorted() && indices.firstIndex()+indices.size()-1==indices.lastIndex();
 	}
 
 	public static boolean isContinuous(IndexSet indices, int from, int to) {
@@ -383,20 +461,6 @@ public class IndexUtils {
 
 	public static IndexSet[] mergeToArray(Collection<? extends IndexSet> indices) {
 		return new IndexSetMerger(indices).mergeAllToArray();
-	}
-
-	public static IndexSet intersect(IndexSet set1, IndexSet set2) {
-		if(set1.firstIndex()>set2.lastIndex() || set1.lastIndex()<set2.firstIndex()) {
-			return null;
-		}
-
-		IndexBuffer buffer = new IndexBuffer(Math.min(set1.size(), set2.size()));
-
-		if(IndexIterativeIntersection.intersect(set1, set2, buffer)) {
-			return buffer;
-		}
-
-		return null;
 	}
 
 	public static IndexSet intersect(IndexSet...indices) {

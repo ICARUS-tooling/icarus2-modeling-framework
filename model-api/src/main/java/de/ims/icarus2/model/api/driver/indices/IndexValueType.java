@@ -752,7 +752,7 @@ public enum IndexValueType implements StringResource {
 
 	/**
 	 *
-	 * @param src source virtual source array
+	 * @param src virtual source array
 	 * @param srcPos position of the first element in the source array to copy
 	 * @param array target array to copy data into
 	 * @param destPos position in the target array to place the first copied element into

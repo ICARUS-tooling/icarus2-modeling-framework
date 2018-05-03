@@ -30,7 +30,6 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.layers.annotation.packed.PackedDataManager.PackageHandle;
-import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.mem.ByteAllocator.Cursor;
 
 /**
@@ -38,8 +37,6 @@ import de.ims.icarus2.util.mem.ByteAllocator.Cursor;
  *
  */
 public abstract class BytePackConverter {
-
-	private int offset = IcarusUtils.UNSET_INT;
 
 	public abstract ValueType getValueType();
 
@@ -177,7 +174,7 @@ public abstract class BytePackConverter {
 		}
 
 		/**
-		 * Returns the bit index within a 32-bit integer that this
+		 * Returns the bit index within a single byte that this
 		 * converter is using.
 		 *
 		 * @return the bit

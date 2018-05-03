@@ -30,7 +30,7 @@ import de.ims.icarus2.model.standard.members.container.AbstractImmutableItemStor
 import de.ims.icarus2.util.IcarusUtils;
 
 /**
- * Array based storage for small containers using binary search for the
+ * Array based sorted storage for small containers using binary search for the
  * {@link #indexOfItem(Container, Item) index lookup} method.
  *
  * @author Markus Gärtner
@@ -38,7 +38,7 @@ import de.ims.icarus2.util.IcarusUtils;
  */
 public class StaticArrayItemStorage extends AbstractImmutableItemStorage {
 
-	public static final int MAX_SIZE = 256;
+	public static final int MAX_SIZE = 1<<10;
 
 	private static final Comparator<Item> sorter = new Comparator<Item>() {
 
@@ -60,6 +60,13 @@ public class StaticArrayItemStorage extends AbstractImmutableItemStorage {
 
 	private final Item[] items;
 
+	/**
+	 * Constructs a new {@code StaticArrayItemStorage} containing the given collection
+	 * of items.
+	 * <p>
+	 * Note that the internal array buffer will be sorted!
+	 * @param items
+	 */
 	public StaticArrayItemStorage(Collection<? extends Item> items) {
 		if(items.size()>MAX_SIZE)
 			throw new IllegalArgumentException("Buffer size not supported: "+items.size());

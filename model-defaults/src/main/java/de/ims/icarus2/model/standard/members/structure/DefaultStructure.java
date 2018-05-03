@@ -316,7 +316,7 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 		 *  a Container implementation that is bound to already have the
 		 *  means of creating a ContainerEditVerifier.
 		 *  We will use that verifier to forward it to the StructureEditVerifier
-		 *  implementation as a 'hint' on how to handle
+		 *  implementation as a 'hint' on how to handle nodes.
 		 */
 		ContainerEditVerifier containerEditVerifier = super.createEditVerifier();
 

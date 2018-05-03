@@ -134,10 +134,14 @@ public class DefaultPagedCorpusView extends AbstractCorpusView implements PagedC
 		return model.value();
 	}
 
-	protected static class Builder extends AbstractCorpusView.Builder<Builder, DefaultPagedCorpusView> {
+	public static class Builder extends AbstractCorpusView.Builder<Builder, DefaultPagedCorpusView> {
 		private ItemLayerManager itemLayerManager;
 		private IndexSet[] indices;
 		private int pageSize;
+
+		protected Builder() {
+			// no-op
+		}
 
 		public Builder indices(IndexSet[] indices) {
 			requireNonNull(indices);

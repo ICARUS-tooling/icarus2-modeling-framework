@@ -28,6 +28,12 @@ import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 
 /**
+ * Basic template for a utility class that processes multiple {@link IndexSet}
+ * instances and produces a result {@link IndexSet}.
+ * The basic protocol for this is that client code provides index sets via the
+ * various {@link #add(Collection)} methods and then calls the implementation
+ * specific processing method (e.g. {@link IndexIterativeIntersection#intersectAll()}.
+ *
  * @author Markus Gärtner
  *
  */
@@ -36,6 +42,15 @@ public abstract class AbstractIndexSetProcessor {
 	protected final List<IndexSet> buffer = new ArrayList<>();
 
 	protected long estimatedResultSize;
+
+	private final boolean requiresSortedInput;
+
+	/**
+	 * @param requiresSortedInput
+	 */
+	public AbstractIndexSetProcessor(boolean requiresSortedInput) {
+		this.requiresSortedInput = requiresSortedInput;
+	}
 
 	/**
 	 * Called whenever a new {@link IndexSet} is added to this processor so that
@@ -55,8 +70,8 @@ public abstract class AbstractIndexSetProcessor {
 	 *
 	 * @return
 	 */
-	protected boolean isRequiresSortedInput() {
-		return true;
+	public final boolean isRequiresSortedInput() {
+		return requiresSortedInput;
 	}
 
 	protected void checkNewIndexSet(IndexSet set) {

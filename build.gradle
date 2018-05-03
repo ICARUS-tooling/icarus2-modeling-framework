@@ -2,6 +2,8 @@ allprojects {
   	apply plugin: 'java'
 	apply plugin: 'eclipse'
 	
+	apply plugin: 'com.github.jk1.dependency-license-report'
+	
   	sourceCompatibility = 1.8
   	targetCompatibility = 1.8
 	
@@ -13,7 +15,7 @@ description = 'ICARUS 2 framework root'
 	
 // Gradle Wrapper
 task wrapper(type: Wrapper) { 
-	gradleVersion = "4.4" 
+	gradleVersion = "4.6" 
 }
 
 subprojects {
@@ -37,5 +39,7 @@ subprojects {
 	    
         testImplementation 'junit:junit:4.12'
 	    testImplementation 'org.mockito:mockito-core:1.9.5'
+	    
+	    classpath 'gradle.plugin.com.github.jk1:gradle-license-report:0.8'
 	}
 }

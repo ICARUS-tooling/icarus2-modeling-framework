@@ -28,7 +28,18 @@ public class DefaultStructureInfo implements StructureInfo {
 
 	private static final long serialVersionUID = -2562709334248640742L;
 
-	private static final StructureInfoField[] _fields = StructureInfoField.values();
+	/**
+	 * Package-private so that {@link StructureInfoBuilder} can access it for consistency.
+	 * In case we ever decide to
+	 */
+	static final StructureInfoField[] _fields = StructureInfoField.values();
+
+	/**
+	 * Package-private so that {@link StructureInfoBuilder} can access it for consistency.
+	 */
+	static int index(StructureInfoField field) {
+		return field.ordinal();
+	}
 
 	/**
 	 * Use {@link StructureInfoField#ordinal() ordinal} to get index for entry

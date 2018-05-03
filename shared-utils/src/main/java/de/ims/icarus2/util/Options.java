@@ -24,6 +24,9 @@ public class Options extends HashMap<String, Object> implements Cloneable {
 	 */
 	private static final long serialVersionUID = 6318648432239062316L;
 
+	/**
+	 * An immutable and empty option instances.
+	 */
 	public static final Options NONE = new Options() {
 
 		/**

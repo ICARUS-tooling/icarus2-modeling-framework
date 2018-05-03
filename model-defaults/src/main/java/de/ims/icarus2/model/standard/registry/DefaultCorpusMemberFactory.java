@@ -64,13 +64,14 @@ public class DefaultCorpusMemberFactory implements CorpusMemberFactory {
 
 	/**
 	 * Creates a new instance of {@link DefaultContext}.
+	 * This implementation delegates the task to a new instance of
+	 * {@link ContextFactory} with the given parameters.
 	 *
 	 * @see de.ims.icarus2.model.api.registry.CorpusMemberFactory#createContext(de.ims.icarus2.model.api.corpus.Corpus, de.ims.icarus2.model.manifest.api.ContextManifest, de.ims.icarus2.util.Options)
 	 */
 	@Override
 	public Context createContext(Corpus corpus, ContextManifest manifest,
 			Options options) {
-//		return new DefaultContext(corpus, manifest);
 		return new ContextFactory().createContext(corpus, manifest, options);
 	}
 

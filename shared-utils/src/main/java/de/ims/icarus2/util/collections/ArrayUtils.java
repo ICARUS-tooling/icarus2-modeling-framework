@@ -261,7 +261,8 @@ public class ArrayUtils {
 		return list;
 	}
 
-	public static Map<Object, Object> asMap(Object...items) {
+	@SuppressWarnings("unchecked")
+	public static <K extends Object, V extends Object> Map<K, V> asMap(Object...items) {
 		int size = items==null ? 0 : items.length;
 		Map<Object, Object> map = new HashMap<>(Math.min(10, size/2));
 
@@ -271,10 +272,11 @@ public class ArrayUtils {
 			}
 		}
 
-		return map;
+		return (Map<K, V>) map;
 	}
 
-	public static Map<Object, Object> asLinkedMap(Object...items) {
+	@SuppressWarnings("unchecked")
+	public static <K extends Object, V extends Object> Map<K, V> asLinkedMap(Object...items) {
 		int size = items==null ? 0 : items.length;
 		Map<Object, Object> map = new LinkedHashMap<>(Math.min(10, size/2));
 
@@ -284,7 +286,81 @@ public class ArrayUtils {
 			}
 		}
 
-		return map;
+		return (Map<K, V>) map;
+	}
+
+	// ARRAY SORT CHECKS
+
+	/**
+	 * Checks whether a given section of the given array is sorted
+	 *
+	 * @param a array for which to check a specified section
+	 * @param from first index to check (inclusive)
+	 * @param to last index to check (exclusive)
+	 * @return {@code true} iff the specified section of the array is sorted
+	 */
+	public static boolean isSorted(int[] a, int from, int to) {
+		for(int i=from+1; i<to; i++) {
+			if(a[i-1]>a[i]) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Checks whether a given section of the given array is sorted
+	 *
+	 * @param a array for which to check a specified section
+	 * @param from first index to check (inclusive)
+	 * @param to last index to check (exclusive)
+	 * @return {@code true} iff the specified section of the array is sorted
+	 */
+	public static boolean isSorted(long[] a, int from, int to) {
+		for(int i=from+1; i<to; i++) {
+			if(a[i-1]>a[i]) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Checks whether a given section of the given array is sorted
+	 *
+	 * @param a array for which to check a specified section
+	 * @param from first index to check (inclusive)
+	 * @param to last index to check (exclusive)
+	 * @return {@code true} iff the specified section of the array is sorted
+	 */
+	public static boolean isSorted(short[] a, int from, int to) {
+		for(int i=from+1; i<to; i++) {
+			if(a[i-1]>a[i]) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Checks whether a given section of the given array is sorted
+	 *
+	 * @param a array for which to check a specified section
+	 * @param from first index to check (inclusive)
+	 * @param to last index to check (exclusive)
+	 * @return {@code true} iff the specified section of the array is sorted
+	 */
+	public static boolean isSorted(byte[] a, int from, int to) {
+		for(int i=from+1; i<to; i++) {
+			if(a[i-1]>a[i]) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	// ARRAY COPY BYTE

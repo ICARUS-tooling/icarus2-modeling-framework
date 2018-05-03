@@ -33,7 +33,7 @@ import de.ims.icarus2.util.IcarusUtils;
  * <p>
  * Note that no direct link to the original {@code Structure} object
  * is required, therefore client code can freely store this metadata
- * without having to worries.
+ * without having to worry.
  * <p>
  * As a matter of consistency all three methods, when provided with
  * the same {@link StructureInfoField field} argument, should either

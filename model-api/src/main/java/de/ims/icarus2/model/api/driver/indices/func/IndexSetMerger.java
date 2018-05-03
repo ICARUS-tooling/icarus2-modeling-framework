@@ -41,6 +41,7 @@ import de.ims.icarus2.util.IcarusUtils;
 public class IndexSetMerger extends AbstractIndexSetProcessor {
 
 	public IndexSetMerger() {
+		super(true);
 		estimatedResultSize = 0;
 	}
 
@@ -57,14 +58,6 @@ public class IndexSetMerger extends AbstractIndexSetProcessor {
 	@Override
 	protected void refreshEstimatedResultSize(IndexSet indexSet) {
 		estimatedResultSize += indexSet.size();
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.driver.indices.func.AbstractIndexSetProcessor#isRequiresSortedInput()
-	 */
-	@Override
-	protected boolean isRequiresSortedInput() {
-		return true;
 	}
 
 	public IndexSet mergeAllToSingle() {
