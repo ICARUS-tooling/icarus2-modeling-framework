@@ -336,7 +336,19 @@ public enum ModelErrorCode implements ErrorCode {
 	//FIXME add errors for missing content etc...
 	;
 
-	public static final ErrorCodeScope SCOPE = ErrorCodeScope.newScope(3000, ModelErrorCode.class.getSimpleName());
+	private static volatile ErrorCodeScope SCOPE;
+
+	public static ErrorCodeScope getScope() {
+		ErrorCodeScope scope = SCOPE;
+		if(scope==null) {
+			synchronized (ModelErrorCode.class) {
+				if((scope = SCOPE) == null) {
+					scope = SCOPE = ErrorCodeScope.newScope(3000, ModelErrorCode.class.getSimpleName());
+				}
+			}
+		}
+		return scope;
+	}
 
 	private final int code;
 
@@ -348,7 +360,7 @@ public enum ModelErrorCode implements ErrorCode {
 
 	@Override
 	public int code() {
-		return code+SCOPE.getCode();
+		return code+getScope().getCode();
 	}
 
 	/**
@@ -356,7 +368,7 @@ public enum ModelErrorCode implements ErrorCode {
 	 */
 	@Override
 	public ErrorCodeScope scope() {
-		return SCOPE;
+		return getScope();
 	}
 
 	/**
@@ -367,7 +379,7 @@ public enum ModelErrorCode implements ErrorCode {
 	 * @return
 	 */
 	public static ModelErrorCode forCode(int code) {
-		SCOPE.checkCode(code);
+		getScope().checkCode(code);
 
 		ErrorCode error = ErrorCode.forCode(code);
 

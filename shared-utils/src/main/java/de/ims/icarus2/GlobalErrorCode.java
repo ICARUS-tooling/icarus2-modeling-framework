@@ -145,7 +145,19 @@ public enum GlobalErrorCode implements ErrorCode {
 	//TODO do we need this category at all?
 	;
 
-	public static final ErrorCodeScope SCOPE = ErrorCodeScope.newScope(1000, GlobalErrorCode.class.getSimpleName());
+	private static volatile ErrorCodeScope SCOPE;
+
+	public static ErrorCodeScope getScope() {
+		ErrorCodeScope scope = SCOPE;
+		if(scope==null) {
+			synchronized (GlobalErrorCode.class) {
+				if((scope = SCOPE) == null) {
+					scope = SCOPE = ErrorCodeScope.newScope(1000, GlobalErrorCode.class.getSimpleName());
+				}
+			}
+		}
+		return scope;
+	}
 
 	private final int code;
 
@@ -160,7 +172,7 @@ public enum GlobalErrorCode implements ErrorCode {
 	 */
 	@Override
 	public int code() {
-		return code+SCOPE.getCode();
+		return code+getScope().getCode();
 	}
 
 	/**
@@ -168,7 +180,7 @@ public enum GlobalErrorCode implements ErrorCode {
 	 */
 	@Override
 	public ErrorCodeScope scope() {
-		return SCOPE;
+		return getScope();
 	}
 
 	/**
@@ -179,7 +191,7 @@ public enum GlobalErrorCode implements ErrorCode {
 	 * @return
 	 */
 	public static GlobalErrorCode forCode(int code) {
-		SCOPE.checkCode(code);
+		getScope().checkCode(code);
 
 		ErrorCode error = ErrorCode.forCode(code);
 
