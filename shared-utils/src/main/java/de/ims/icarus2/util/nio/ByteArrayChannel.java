@@ -18,6 +18,7 @@
  */
 package de.ims.icarus2.util.nio;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
@@ -66,6 +67,7 @@ public class ByteArrayChannel implements SeekableByteChannel {
 	private final boolean readOnly;
 
 	private int position;
+	private int size;
 
 	public ByteArrayChannel(byte[] data) {
 		this(data, true);
@@ -76,6 +78,7 @@ public class ByteArrayChannel implements SeekableByteChannel {
 
 		this.data = data;
 		this.readOnly = readOnly;
+		size = data.length;
 	}
 
 	/**
@@ -101,12 +104,12 @@ public class ByteArrayChannel implements SeekableByteChannel {
 	 */
 	@Override
 	public int read(ByteBuffer dst) throws IOException {
-		int length = Math.min(dst.remaining(), data.length-position);
+		int length = Math.min(dst.remaining(), intSize()-position);
 
 		dst.put(data, position, length);
 		position += length;
 
-		return length;
+		return length<=0 ? -1 : length;
 	}
 
 	/**
@@ -117,7 +120,7 @@ public class ByteArrayChannel implements SeekableByteChannel {
 		if(readOnly)
 			throw new IOException("Channel is read-only");
 
-		int length = Math.min(src.remaining(), data.length-position);
+		int length = Math.min(src.remaining(), intSize()-position);
 
 		src.get(data, position, length);
 		position += length;
@@ -145,11 +148,43 @@ public class ByteArrayChannel implements SeekableByteChannel {
 	}
 
 	/**
+	 * Limits the internal size of this channel.
+	 *
+	 * @param limit
+	 * @return
+	 */
+	public SeekableByteChannel limit(int limit) {
+		checkArgument(limit>=-1 && limit<=data.length);
+		if(limit==-1) {
+			size = data.length;
+		} else {
+			size = limit;
+		}
+		return this;
+	}
+
+	/**
+	 * Sets the {@link #size() size} of this channel to the current
+	 * {@link #position() position} and then sets the position to {@code 0};
+	 * @return
+	 */
+	public SeekableByteChannel flip() {
+		size = position;
+		position = 0;
+
+		return this;
+	}
+
+	/**
 	 * @see java.nio.channels.SeekableByteChannel#size()
 	 */
 	@Override
 	public long size() throws IOException {
-		return data.length;
+		return intSize();
+	}
+
+	private int intSize() {
+		return size;
 	}
 
 	/**

@@ -21,6 +21,7 @@ import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
+import java.util.concurrent.ExecutionException;
 
 import de.ims.icarus2.util.Mutable;
 import de.ims.icarus2.util.eval.AbstractExpression;
@@ -84,17 +85,21 @@ public abstract class JDKCompiledExpression extends AbstractExpression {
 		return __variables__!=null;
 	}
 
-	protected abstract void executeCode();
+	protected abstract void executeCode() throws Exception;
 
 	/**
 	 * @see de.ims.icarus2.util.eval.Expression#evaluate()
 	 */
 	@Override
-	public Object evaluate() {
+	public Object evaluate() throws ExecutionException {
 
 		//TODO init variables for inner execution
 
-		executeCode();
+		try {
+			executeCode();
+		} catch (Exception e) {
+			throw new ExecutionException(e);
+		}
 
 		return __result__;
 	}

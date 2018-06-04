@@ -27,6 +27,9 @@ import javax.lang.model.element.Modifier;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.JavaFile;
@@ -47,6 +50,8 @@ import de.ims.icarus2.util.lang.Primitives;
  *
  */
 public class JDKExpressionFactory extends ExpressionFactory {
+
+	private static final Logger log = LoggerFactory.getLogger(JDKExpressionFactory.class);
 
 	private static final AtomicLong expressionCounter = new AtomicLong(0L);
 
@@ -78,6 +83,7 @@ public class JDKExpressionFactory extends ExpressionFactory {
 				.addModifiers(Modifier.PUBLIC, Modifier.FINAL)
 				.returns(TypeName.VOID)
 				.addAnnotation(ClassName.get(Override.class))
+				.addException(Exception.class)
 				.addCode(code)
 				.build();
 
@@ -223,10 +229,14 @@ public class JDKExpressionFactory extends ExpressionFactory {
 			sb.append(rawCode, lastEnd, rawCode.length());
 		}
 
-//		System.out.println(sb.toString());
+		final String code = sb.toString();
+
+		if(log.isDebugEnabled()) {
+			log.debug("Code to compile: {}", code);
+		}
 
 //		builder.beginControlFlow("inner_statement:");
-		builder.add(sb.toString());
+		builder.add(code);
 //		builder.endControlFlow();
 
 		if(!variables.isEmpty()) {

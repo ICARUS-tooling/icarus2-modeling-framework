@@ -93,27 +93,4 @@ public class VariableDescriptor {
 	public boolean isNullable() {
 		return nullable;
 	}
-
-
-	/**
-	 * Assigns this variable's internal value to given one.
-	 * If the provided {@code value} is {@code null} it will first
-	 * be cast to an instance of the appropriate  {@link #getNamespaceClass() namespace}.
-	 *
-	 * @param value the value to set
-	 *
-	 * @throws ClassCastException if the given {@code value} is not assignment compatible with
-	 * the {@link #getNamespaceClass() namespace} for this variable.
-	 * @throws IcarusException iff the given {@code value} is {@code null} and this variable is
-	 * not declared to be {@link #isNullable() nullable}.
-	 *
-	 * @see Class#cast(Object)
-	 */
-//	public void setValue(Object value) {
-//
-//		if(value==null && !nullable)
-//			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "VariableDescriptor does not support null value: "+getName());
-//
-//		this.value = namespaceClass.cast(value);
-//	}
 }

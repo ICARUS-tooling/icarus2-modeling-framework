@@ -517,7 +517,7 @@ public class LookupList<E extends Object> implements Iterable<E> {
      */
     private void unmap(E item) {
     	if(item!=null && lookup!=null) {
-    		lookup.remove(item);
+    		lookup.removeInt(item);
     	}
     }
 

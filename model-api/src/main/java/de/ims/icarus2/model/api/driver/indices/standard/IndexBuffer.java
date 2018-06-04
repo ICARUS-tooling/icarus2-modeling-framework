@@ -137,7 +137,7 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 	 */
 	@Override
 	public long firstIndex() {
-		return size>=0 ? valueType.get(buffer, 0) : IcarusUtils.UNSET_LONG;
+		return size>0 ? valueType.get(buffer, 0) : IcarusUtils.UNSET_LONG;
 	}
 
 	/**
@@ -145,7 +145,7 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 	 */
 	@Override
 	public long lastIndex() {
-		return size>=0 ? valueType.get(buffer, size-1) : IcarusUtils.UNSET_LONG;
+		return size>0 ? valueType.get(buffer, size-1) : IcarusUtils.UNSET_LONG;
 	}
 
 	@Override

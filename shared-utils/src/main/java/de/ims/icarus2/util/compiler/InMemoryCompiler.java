@@ -116,7 +116,7 @@ public class InMemoryCompiler {
 	 * @param diagnosticListener
 	 * @return
 	 */
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({ "rawtypes", "boxing" })
 	public boolean compile(DiagnosticListener diagnosticListener) {
 		if(inputFiles.isEmpty())
 			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Nothing to compile - no input files specified");

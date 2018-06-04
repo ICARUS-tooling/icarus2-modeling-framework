@@ -20,6 +20,7 @@ package de.ims.icarus2.util.eval.var;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.GlobalErrorCode;
@@ -34,8 +35,7 @@ import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.MutablePrimitives.MutablePrimitive;
 import de.ims.icarus2.util.MutablePrimitives.MutableShort;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner
@@ -43,37 +43,25 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  */
 public class SimpleVariableSet implements VariableSet {
 
-	private final VariableDescriptor[] descriptors;
-	private final Mutable<?>[] variables;
-
 	/**
-	 * Maps descriptor names to index values for above arrays
+	 * Maps descriptor names to storages and descriptors
 	 */
-	private final Object2IntMap<String> variablesLookup;
+	private final Map<String, Variable> variablesLookup;
 
 	public SimpleVariableSet(Collection<? extends VariableDescriptor> variableDescriptors) {
 		requireNonNull(variableDescriptors);
 
-		int size = variableDescriptors.size();
+		variablesLookup = new Object2ObjectOpenHashMap<>();
 
-		descriptors = new VariableDescriptor[size];
-		variables = new Mutable[size];
-
-		variablesLookup = new Object2IntOpenHashMap<String>(size);
-		variablesLookup.defaultReturnValue(-1);
-
-		int index = 0;
 		for(VariableDescriptor descriptor : variableDescriptors) {
 			String name = descriptor.getName();
 
 			if(variablesLookup.containsKey(name))
 				throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Duplicate variable name: "+name);
 
-			descriptors[index] = descriptor;
-			variablesLookup.put(name, index);
-			variables[index] = createStorage(descriptor);
+			Variable variable = new Variable(createStorage(descriptor), descriptor);
 
-			index++;
+			variablesLookup.put(name, variable);
 		}
 	}
 
@@ -86,8 +74,8 @@ public class SimpleVariableSet implements VariableSet {
 	 */
 	@Override
 	public void forEachVariable(Consumer<? super VariableDescriptor> action) {
-		for(int i=0; i<descriptors.length; i++) {
-			action.accept(descriptors[i]);
+		for(Variable variable : variablesLookup.values()) {
+			action.accept(variable.descriptor);
 		}
 	}
 
@@ -96,26 +84,18 @@ public class SimpleVariableSet implements VariableSet {
 	 */
 	@Override
 	public VariableDescriptor getVariable(String name) {
-		return descriptors[getIndexFor(name)];
+		return getVariableFor(name).descriptor;
 	}
 
-	protected int getIndexFor(String variableName) {
-		int index = variablesLookup.getInt(variableName);
-		if(index==-1)
+	protected Variable getVariableFor(String variableName) {
+		Variable variable = variablesLookup.get(variableName);
+		if(variable==null)
 			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Unknown variable name: "+variableName);
-		return index;
+		return variable;
 	}
 
-	protected final Mutable<? extends Object> getStorage(String name) {
-		return variables[getIndexFor(name)];
-	}
-
-	protected final Mutable<? extends Object> storageAt(int index) {
-		return variables[index];
-	}
-
-	protected final VariableDescriptor variableAt(int index) {
-		return descriptors[index];
+	protected Mutable<?> getStorage(String variableName) {
+		return getVariableFor(variableName).storage;
 	}
 
 	/**
@@ -123,10 +103,10 @@ public class SimpleVariableSet implements VariableSet {
 	 */
 	@Override
 	public void setValue(String variableName, Object value) {
-		int index = getIndexFor(variableName);
-		if(value==null && !variableAt(index).isNullable())
+		Variable variable = getVariableFor(variableName);
+		if(value==null && !variable.descriptor.isNullable())
 			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Variable is not nullable: "+variableName);
-		storageAt(index).set(value);
+		variable.storage.set(value);
 	}
 
 	/**
@@ -350,6 +330,16 @@ public class SimpleVariableSet implements VariableSet {
 		} else {
 			Object value = storage.get();
 			return (value instanceof Boolean) ? ((Boolean)value).booleanValue() : MutableBoolean.DEFAULT_EMPTY_VALUE;
+		}
+	}
+
+	private static class Variable {
+		final Mutable<?> storage;
+		final VariableDescriptor descriptor;
+
+		public Variable(Mutable<?> storage, VariableDescriptor descriptor) {
+			this.storage = requireNonNull(storage);
+			this.descriptor = requireNonNull(descriptor);
 		}
 	}
 }

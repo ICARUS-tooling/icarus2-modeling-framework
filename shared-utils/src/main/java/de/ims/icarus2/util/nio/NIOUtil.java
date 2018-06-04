@@ -12,7 +12,7 @@ import java.util.Random;
  */
 public class NIOUtil {
 
-	private static final Random RANDOM = new Random(System.currentTimeMillis()^NIOTestUtil.class.hashCode());
+	private static final Random RANDOM = new Random(System.currentTimeMillis()^NIOUtil.class.hashCode());
 
 	private static final byte[] EMPTY_BYTES = {};
 

@@ -2,8 +2,7 @@ package de.ims.icarus2.util.compiler;
 
 import static org.junit.Assert.assertTrue;
 
-import javax.tools.Diagnostic;
-import javax.tools.DiagnosticCollector;
+import javax.tools.DiagnosticListener;
 
 import org.junit.Test;
 
@@ -22,19 +21,15 @@ public class InMemoryCompilerTest {
 	        +"this.getClass().getSimpleName();\n"
 	        +"    }\n"
 	        +"}\n";
-		String className = "DynClass";
+		String className = "DynaClass";
 
 		InMemoryCompiler compiler = InMemoryCompiler.newInstance();
 
 		compiler.addInputFile(className, code);
 
-		DiagnosticCollector<?> collector = new DiagnosticCollector<>();
+		DiagnosticListener<?> collector = d -> System.out.println(d);
 
 		assertTrue("Compilation failed", compiler.compile(collector));
-
-		for(Diagnostic<?> diagnostic : collector.getDiagnostics()) {
-			System.out.println(diagnostic);
-		}
 
 		ClassLoader classLoader = compiler.getFileManager().getClassLoader(null);
 

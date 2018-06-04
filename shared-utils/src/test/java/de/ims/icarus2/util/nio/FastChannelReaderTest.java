@@ -74,7 +74,7 @@ public class FastChannelReaderTest {
 		try(Writer writer = Channels.newWriter(channel, encoding.newEncoder(), -1)) {
 			writer.write(text);
 		}
-		channel.position(0);
+		channel.flip();
 
 		reader = new FastChannelReader(channel, encoding.newDecoder(), bufferSize, allocateDirect);
 	}

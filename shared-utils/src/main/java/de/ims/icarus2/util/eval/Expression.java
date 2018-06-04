@@ -17,6 +17,8 @@
  */
 package de.ims.icarus2.util.eval;
 
+import java.util.concurrent.ExecutionException;
+
 import de.ims.icarus2.util.eval.var.VariableSet;
 
 
@@ -44,5 +46,5 @@ public interface Expression {
 	 * @return
 	 */
 	//TODO determine a sensible exception type
-	public Object evaluate();
+	public Object evaluate() throws ExecutionException;
 }
