@@ -48,7 +48,7 @@ public enum StructureFlag implements StringResource, Flag {
 	/**
 	 * Arrangement of edges in a structure can be altered by the user.
 	 * <p>
-	 * Note that the default assumption is that edges are immutable, to
+	 * Note that the default assumption is that edges are immutable to
 	 * avoid verbose declaration of this flag (since in most cases it
 	 * is indeed safe to assume immutable data, which prevents driver
 	 * implementations from having to deal with complexity of mutable
@@ -90,6 +90,11 @@ public enum StructureFlag implements StringResource, Flag {
 	 * several "real" root nodes).
 	 */
 	MULTI_ROOT("multi-root"),
+
+	/**
+	 * TODO explain projectivity (within the context of dependency relations?)
+	 */
+	PROJECTIVE("projective"),
 
 	;
 	private final String xmlForm;

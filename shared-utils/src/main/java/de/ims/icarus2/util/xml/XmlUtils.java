@@ -126,27 +126,4 @@ public class XmlUtils {
 				return false;
 		}
 	}
-
-//	private static Matcher createAttributeMatcher() {
-//		return Pattern.compile("[\n\r\t]+").matcher(""); //TODO add more reserved symbols that would make the framework prefer embedded elements over attributes
-//	}
-//
-//	private static final Pool<Matcher> ATTRIBUTE_MATCHERS= new Pool<>(XmlUtils::createAttributeMatcher, 10);
-//
-//	public static boolean isLegalAttribute(CharSequence s) {
-//
-//		// Empty and non-existent character sequences are always legal attributes
-//		if(s==null || s.length()==0) {
-//			return true;
-//		}
-//
-//		Matcher matcher = ATTRIBUTE_MATCHERS.get();
-//
-//		try {
-//			return !matcher.find();
-//		} finally {
-//			matcher.reset();
-//			ATTRIBUTE_MATCHERS.recycle(matcher);
-//		}
-//	}
 }

@@ -3,7 +3,7 @@
 	targetNamespace="http://www.ims.uni-stuttgart.de/icarus/xml/manifest"
 	xmlns:imf="http://www.ims.uni-stuttgart.de/icarus/xml/manifest"
 	xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning"
-	vc:minVersion="1.1"
+	vc:minVersion="1.0"
 	attributeFormDefault="unqualified"
 	elementFormDefault="qualified"
 	version="1.0">

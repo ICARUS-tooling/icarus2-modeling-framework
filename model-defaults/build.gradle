@@ -4,4 +4,6 @@ dependencies {
   implementation project(':model-api')
   
   testImplementation project(path: ':shared-utils', configuration: 'testOutput')
+  
+  testImplementation 'com.fasterxml.uuid:java-uuid-generator:3.1.4'
 }
