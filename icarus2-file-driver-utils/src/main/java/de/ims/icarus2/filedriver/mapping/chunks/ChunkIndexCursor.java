@@ -60,7 +60,7 @@ public interface ChunkIndexCursor extends SynchronizedAccessor<ChunkIndex>, Flus
 	 *
 	 * @param index the address of the data chunk subsequent calls to getters
 	 * 		  and setters should refer to.
-	 * @return {@code true} iff the cursor points to a valid chunk of data
+	 * @return {@code true} iff the cursor points to a valid (existing) chunk of data
 	 */
 	boolean moveTo(long index);
 
