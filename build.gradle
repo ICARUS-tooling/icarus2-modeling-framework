@@ -1,26 +1,31 @@
 
 plugins {
-  id 'com.github.jk1.dependency-license-report' version '1.2'
+	id 'com.github.jk1.dependency-license-report' version '1.2'
+    id "com.github.hierynomus.license" version "0.14.0"
 }
 
 allprojects {
   	apply plugin: 'java'
 	apply plugin: 'eclipse'
 	
-	apply plugin: 'com.github.jk1.dependency-license-report'
+	apply plugin: 'com.github.jk1.dependency-license-report' 
 	
   	sourceCompatibility = 1.8
   	targetCompatibility = 1.8
 	
   	group = 'icarus2'
   	version = '0.0.1'
+
+  	repositories {
+    	mavenCentral()
+  	}  
 }
 
 description = 'ICARUS 2 framework root'
 	
 // Gradle Wrapper
-task wrapper(type: Wrapper) { 
-	gradleVersion = "4.6" 
+wrapper { 
+	gradleVersion = "4.8" 
 }
 
 subprojects {
@@ -29,10 +34,6 @@ subprojects {
   		options.encoding = 'UTF-8'
     	options.fork = true
  	}
-
-  	repositories {
-    	mavenCentral()
-  	}  
   	
 	dependencies {
 	    // https://mvnrepository.com/artifact/org.slf4j/slf4j-api

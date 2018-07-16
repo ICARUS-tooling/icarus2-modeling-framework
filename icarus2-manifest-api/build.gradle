@@ -1,0 +1,7 @@
+
+description = 'Foundation of the framework - API and default implementation for manifest metadata'
+dependencies {
+  implementation project(':icarus2-shared-utils')
+  
+  testImplementation project(path: ':icarus2-shared-utils', configuration: 'testOutput')
+}

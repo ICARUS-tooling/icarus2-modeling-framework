@@ -1,0 +1,6 @@
+
+description = 'API for actual corpus modeling and interaction'
+dependencies {
+  compile project(':icarus2-shared-utils')
+  compile project(':icarus2-manifest-api')
+}

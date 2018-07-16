@@ -1,5 +1,5 @@
 
 description = 'Collection of drivers for widely used corpus storage/serialization formats'
 dependencies {
-	implementation project(':file-driver-utils')
+	implementation project(':icarus2-file-driver-utils')
 }
