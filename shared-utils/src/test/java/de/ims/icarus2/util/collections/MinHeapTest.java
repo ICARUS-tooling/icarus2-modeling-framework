@@ -3,12 +3,12 @@
  */
 package de.ims.icarus2.util.collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.util.collections.MinHeap.DoubleMinHeap;
 import de.ims.icarus2.util.collections.MinHeap.IntMinHeap;

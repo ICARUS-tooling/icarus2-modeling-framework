@@ -3,23 +3,19 @@
  */
 package de.ims.icarus2.util.collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Markus
  *
  */
 public class PoolTest {
-
-	@Rule
-	public ExpectedException thrown= ExpectedException.none();
 
 	private Pool<Object> pool;
 
@@ -37,15 +33,16 @@ public class PoolTest {
 		}
 	}
 
-	@Before
+	@BeforeEach
 	public void prepare() {
 		pool = new Pool<>(Object::new, CUSTOM_CAPACITY);
 	}
 
 	@Test
 	public void testNullSupplier() throws Exception {
-		thrown.expect(NullPointerException.class);
-		pool = new Pool<>(null);
+		Assertions.assertThrows(NullPointerException.class, () -> {
+			pool = new Pool<>(null);
+		});
 	}
 
 	@Test
@@ -55,14 +52,16 @@ public class PoolTest {
 
 	@Test
 	public void testNullRecycle() throws Exception {
-		thrown.expect(NullPointerException.class);
-		pool.recycle(null);
+		Assertions.assertThrows(NullPointerException.class, () -> {
+			pool.recycle(null);
+		});
 	}
 
 	@Test
 	public void testNegativeCapacity() throws Exception {
-		thrown.expect(IllegalArgumentException.class);
-		pool = new Pool<>(Object::new, -999);
+		Assertions.assertThrows(IllegalArgumentException.class, () -> {
+			pool = new Pool<>(Object::new, -999);
+		});
 	}
 
 	@Test

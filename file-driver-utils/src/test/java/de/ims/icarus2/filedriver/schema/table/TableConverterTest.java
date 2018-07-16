@@ -19,7 +19,7 @@ package de.ims.icarus2.filedriver.schema.table;
 
 import java.io.IOException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.AttributeSchemaImpl;

@@ -18,6 +18,8 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,11 +53,22 @@ public class ListItemStorageInt implements ItemStorage {
 
 	public static final int DEFAULT_CAPACITY = 10;
 
+	/**
+	 * Local storage for items
+	 */
 	protected final LookupList<Item> items;
 
-	// The cached items found to represent the smallest and highest offset values
+	/**
+	 *  The cached items found to represent the smallest and highest offset values
+	 *
+	 *  @see #doStoreItemsForOffset
+	 */
 	protected Item beginItem, endItem;
 
+	/**
+	 * Flag to indicate whether or not we should store the items
+	 * for smallest and largest offset in this container.
+	 */
 	protected boolean doStoreItemsForOffset = false;
 
 	public ListItemStorageInt() {
@@ -102,7 +115,7 @@ public class ListItemStorageInt implements ItemStorage {
 	@Override
 	public void addNotify(Container context) {
 
-		ItemLayerManifest layerManifest = context.getLayer().getManifest();
+		ItemLayerManifest layerManifest = context.getManifest().getLayerManifest();
 		TargetLayerManifest foundationManifest = layerManifest.getFoundationLayerManifest();
 
 		doStoreItemsForOffset = foundationManifest!=null;
@@ -147,6 +160,7 @@ public class ListItemStorageInt implements ItemStorage {
 	 */
 	@Override
 	public long indexOfItem(Container context, Item item) {
+		requireNonNull(item);
 		return items.indexOf(item);
 	}
 
@@ -211,6 +225,7 @@ public class ListItemStorageInt implements ItemStorage {
 	 */
 	@Override
 	public void addItem(Container context, long index, Item item) {
+		requireNonNull(item);
 		items.add(IcarusUtils.ensureIntegerValueRange(index), item);
 	}
 
@@ -221,6 +236,7 @@ public class ListItemStorageInt implements ItemStorage {
 	public void addItems(Container context, long index,
 			DataSequence<? extends Item> items) {
 
+		requireNonNull(items);
 		this.items.addAll(IcarusUtils.ensureIntegerValueRange(index),
 				new DataSequenceCollectionWrapper<>(items));
 

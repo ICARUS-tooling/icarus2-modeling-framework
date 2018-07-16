@@ -18,8 +18,8 @@ package de.ims.icarus2.model.manifest;
  */
 
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -208,10 +208,10 @@ public class ManifestTestUtils {
 
 			if(resultType.isPrimitive() || Collection.class.isAssignableFrom(resultType)) {
 				// Use equality for wrapped primitives or collection types
-				assertEquals("Method '"+method+"' ignored template value", templateValue, instanceValue); //$NON-NLS-1$ //$NON-NLS-2$
+				assertEquals(templateValue, instanceValue, "Method '"+method+"' ignored template value"); //$NON-NLS-1$ //$NON-NLS-2$
 			} else {
 				// Use identity for all objects
-				assertSame("Method '"+method+"' ignored template value", templateValue, instanceValue); //$NON-NLS-1$ //$NON-NLS-2$
+				assertSame(templateValue, instanceValue, "Method '"+method+"' ignored template value"); //$NON-NLS-1$ //$NON-NLS-2$
 			}
 		}
 	}

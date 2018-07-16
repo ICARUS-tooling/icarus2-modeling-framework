@@ -18,9 +18,9 @@
 package de.ims.icarus2;
 
 import static de.ims.icarus2.util.strings.StringUtil.getName;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import de.ims.icarus2.util.lang.ClassUtils;
 import de.ims.icarus2.util.lang.ClassUtils.Trace;
@@ -72,8 +72,8 @@ public class TestUtils {
 	}
 
 	public static void assertHashContract(String message, Object expected, Object actual) {
-		assertNotNull("Expected", expected); //$NON-NLS-1$
-		assertNotNull("Actual", actual); //$NON-NLS-1$
+		assertNotNull(expected, "Expected"); //$NON-NLS-1$
+		assertNotNull(actual, "Actual"); //$NON-NLS-1$
 
 		int expectedHash = expected.hashCode();
 		int actualHash = actual.hashCode();

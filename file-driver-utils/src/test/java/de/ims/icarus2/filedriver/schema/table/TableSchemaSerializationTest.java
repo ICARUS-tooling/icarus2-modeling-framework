@@ -24,8 +24,8 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Collections;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeTarget;
@@ -87,7 +87,7 @@ public class TableSchemaSerializationTest {
 		assertDeepEqual(msg, original, deserialized, serializedForm);
 	}
 
-	@Before
+	@BeforeEach
 	public void prepare() {
 		original = new TableSchemaImpl();
 	}

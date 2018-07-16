@@ -78,6 +78,15 @@ public class DefaultItemLayer extends AbstractLayer<ItemLayerManifest> implement
 	}
 
 	/**
+	 * Forces this layer to use the supplied {@link IdManager} instance.
+	 *
+	 * @param idManager the idManager to set
+	 */
+	public void setIdManager(IdManager idManager) {
+		this.idManager = idManager;
+	}
+
+	/**
 	 * @param boundaryLayer the boundaryLayer to set
 	 */
 	@Override

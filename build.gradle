@@ -1,8 +1,13 @@
+
+plugins {
+  id 'com.github.jk1.dependency-license-report' version '1.2'
+}
+
 allprojects {
   	apply plugin: 'java'
 	apply plugin: 'eclipse'
 	
-	//apply plugin: 'com.github.jk1.dependency-license-report'
+	apply plugin: 'com.github.jk1.dependency-license-report'
 	
   	sourceCompatibility = 1.8
   	targetCompatibility = 1.8
@@ -30,16 +35,38 @@ subprojects {
   	}  
   	
 	dependencies {
-	    implementation 'org.slf4j:slf4j-api:1.7.21'
-	    implementation 'org.slf4j:slf4j-jdk14:1.7.21'
-	    implementation 'com.google.guava:guava:18.0'
-	    implementation 'it.unimi.dsi:fastutil:8.1.1'
-	    implementation 'com.squareup:javapoet:1.7.0'
-	    implementation 'org.opengis.cite.xerces:xercesImpl-xsd11:2.12-beta-r1667115'
+	    // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
+		implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+
+	    // https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14
+		implementation group: 'org.slf4j', name: 'slf4j-jdk14', version: '1.7.25'
+
+	    // https://mvnrepository.com/artifact/com.google.guava/guava
+		implementation group: 'com.google.guava', name: 'guava', version: '25.1-jre'
+
+	    // https://mvnrepository.com/artifact/it.unimi.dsi/fastutil
+		implementation group: 'it.unimi.dsi', name: 'fastutil', version: '8.2.1'
+
+	    // https://mvnrepository.com/artifact/com.squareup/javapoet
+		implementation group: 'com.squareup', name: 'javapoet', version: '1.11.1'
 	    
-        testImplementation 'junit:junit:4.12'
-	    testImplementation 'org.mockito:mockito-core:1.9.5'
+	    // https://mvnrepository.com/artifact/xerces/xercesImpl
+		implementation group: 'xerces', name: 'xercesImpl', version: '2.12.0'
 	    
-	    //classpath 'gradle.plugin.com.github.jk1:gradle-license-report:0.8'
+        // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
+		testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.3.0-M1'
+		// https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine
+		testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.3.0-M1'		
+		// https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-params
+		testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: '5.3.0-M1'
+		
+
+	    // https://mvnrepository.com/artifact/org.mockito/mockito-core
+		testImplementation group: 'org.mockito', name: 'mockito-core', version: '2.+'
+
+	}
+		
+	test {
+	    useJUnitPlatform()
 	}
 }

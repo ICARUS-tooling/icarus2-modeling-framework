@@ -4,15 +4,16 @@
 package de.ims.icarus2.util.nio;
 
 import static de.ims.icarus2.util.nio.NIOTestUtil.assertContentEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Markus
@@ -25,23 +26,25 @@ public class ByteArrayChannelTest {
 
 	private static final int SIZE = 100;
 
-	@Before
+	@BeforeEach
 	public void prepare() {
 		data = new byte[SIZE];
 		channel = new ByteArrayChannel(data, false);
 	}
 
-	@After
+	@AfterEach
 	public void cleanup() {
 		channel.close();
 		data = null;
 	}
 
-	@Test(expected=IOException.class)
+	@Test
 	public void testReadOnly() throws Exception {
-		channel = new ByteArrayChannel(data);
+		Assertions.assertThrows(IOException.class, () -> {
+			channel = new ByteArrayChannel(data);
 
-		channel.write(NIOUtil.emptyBuffer());
+			channel.write(NIOUtil.emptyBuffer());
+		});
 	}
 
 	@Test

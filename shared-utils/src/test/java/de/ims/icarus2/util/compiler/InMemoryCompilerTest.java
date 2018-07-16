@@ -1,10 +1,10 @@
 package de.ims.icarus2.util.compiler;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import javax.tools.DiagnosticListener;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -29,7 +29,7 @@ public class InMemoryCompilerTest {
 
 		DiagnosticListener<?> collector = d -> System.out.println(d);
 
-		assertTrue("Compilation failed", compiler.compile(collector));
+		assertTrue(compiler.compile(collector), "Compilation failed");
 
 		ClassLoader classLoader = compiler.getFileManager().getClassLoader(null);
 

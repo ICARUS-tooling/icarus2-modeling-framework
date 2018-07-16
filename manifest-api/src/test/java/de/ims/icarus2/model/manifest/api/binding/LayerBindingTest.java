@@ -19,17 +19,18 @@ package de.ims.icarus2.model.manifest.api.binding;
 
 import static de.ims.icarus2.TestUtils.assertHashContract;
 import static de.ims.icarus2.TestUtils.assertObjectContract;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.api.binding.LayerBinding.Builder;
 import de.ims.icarus2.util.Multiplicity;
@@ -62,20 +63,24 @@ public class LayerBindingTest {
 
 	private static final String CORPUS_ID = "corpusId";
 
-	@Test(expected=IllegalStateException.class)
+	@Test
 	public void testMissingCorpusId() throws Exception {
-		LayerBinding.Builder builder = LayerBinding.newBuilder();
+		assertThrows(IllegalStateException.class, () -> {
+			LayerBinding.Builder builder = LayerBinding.newBuilder();
 
-		builder.addPointer(ALIAS_1, CONTEX_ID_1, LAYER_ID_1);
+			builder.addPointer(ALIAS_1, CONTEX_ID_1, LAYER_ID_1);
 
-		builder.build();
+			builder.build();
+		});
 	}
 
-	@Test(expected=IllegalStateException.class)
+	@Test
 	public void testEmptyBuilder() throws Exception {
-		LayerBinding.Builder builder = LayerBinding.newBuilder();
+		assertThrows(IllegalStateException.class, () -> {
+			LayerBinding.Builder builder = LayerBinding.newBuilder();
 
-		builder.build();
+			builder.build();
+		});
 	}
 
 	@Test

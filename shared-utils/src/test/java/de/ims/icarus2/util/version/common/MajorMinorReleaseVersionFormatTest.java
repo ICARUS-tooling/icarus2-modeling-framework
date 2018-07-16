@@ -3,13 +3,12 @@
  */
 package de.ims.icarus2.util.version.common;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.util.version.common.MajorMinorReleaseVersionFormat.MajorMinorReleaseVersion;
 
@@ -19,12 +18,9 @@ import de.ims.icarus2.util.version.common.MajorMinorReleaseVersionFormat.MajorMi
  */
 public class MajorMinorReleaseVersionFormatTest {
 
-	@Rule
-	public ExpectedException thrown= ExpectedException.none();
-
 	private MajorMinorReleaseVersionFormat format;
 
-	@Before
+	@BeforeEach
 	public void prepare() {
 		format = new MajorMinorReleaseVersionFormat();
 	}
@@ -48,22 +44,24 @@ public class MajorMinorReleaseVersionFormatTest {
 
 		assertNotNull(version);
 
-		assertEquals("major field:", major, version.getMajor());
-		assertEquals("minor field:", minor, version.getMinor());
-		assertEquals("release field:", release, version.getRelease());
-		assertEquals("info field:", info, version.getInfo());
-		assertEquals("version string field:", versionString, version.getVersionString());
+		assertEquals(major, version.getMajor(), "major field:");
+		assertEquals(minor, version.getMinor(), "minor field:");
+		assertEquals(release, version.getRelease(), "release field:");
+		assertEquals(info, version.getInfo(), "info field:");
+		assertEquals(versionString, version.getVersionString(), "version string field:");
 	}
 
 	@Test
 	public void testEmpty() throws Exception {
-		thrown.expect(IllegalArgumentException.class);
-		format.parseVersion("");
+		assertThrows(IllegalArgumentException.class, () -> {
+			format.parseVersion("");
+		});
 	}
 
 	@Test
 	public void testNull() throws Exception {
-		thrown.expect(NullPointerException.class);
-		format.parseVersion(null);
+		assertThrows(NullPointerException.class, () -> {
+			format.parseVersion(null);
+		});
 	}
 }

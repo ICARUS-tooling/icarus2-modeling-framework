@@ -25,15 +25,15 @@
  */
 package de.ims.icarus2.util.collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Iterator;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Markus Gärtner
@@ -52,7 +52,7 @@ public class LookupListTest {
 
 	private LookupList<Object> list;
 
-	@Before
+	@BeforeEach
 	public void prepare() {
 		list = new LookupList<>();
 	}
@@ -71,30 +71,30 @@ public class LookupListTest {
 		// Test size
 
 		list.add(dummy1);
-		assertEquals("Size after adding 1 item must be 1", list.size(), 1); //$NON-NLS-1$
+		assertEquals(list.size(), 1, "Size after adding 1 item must be 1"); //$NON-NLS-1$
 
 		list.add(dummy2);
-		assertEquals("Size after adding 2 items must be s", list.size(), 2); //$NON-NLS-1$
+		assertEquals(list.size(), 2, "Size after adding 2 items must be s"); //$NON-NLS-1$
 
 		// Test indexOf()
 
-		assertEquals("Index of dummy1 must be 0", list.indexOf(dummy1), 0); //$NON-NLS-1$
-		assertEquals("Index of dummy2 must be 1", list.indexOf(dummy2), 1); //$NON-NLS-1$
-		assertEquals("Index of dummy3 must be -1", list.indexOf(dummy3), -1); //$NON-NLS-1$
+		assertEquals(list.indexOf(dummy1), 0, "Index of dummy1 must be 0"); //$NON-NLS-1$
+		assertEquals(list.indexOf(dummy2), 1, "Index of dummy2 must be 1"); //$NON-NLS-1$
+		assertEquals(list.indexOf(dummy3), -1, "Index of dummy3 must be -1"); //$NON-NLS-1$
 
 		// Test contains()
 
-		assertTrue("List must contain dummy1", list.contains(dummy1)); //$NON-NLS-1$
-		assertTrue("List must contain dummy2", list.contains(dummy2)); //$NON-NLS-1$
-		assertTrue("List must not contain dummy3", !list.contains(dummy3)); //$NON-NLS-1$
+		assertTrue(list.contains(dummy1), "List must contain dummy1"); //$NON-NLS-1$
+		assertTrue(list.contains(dummy2), "List must contain dummy2"); //$NON-NLS-1$
+		assertFalse(list.contains(dummy3), "List must not contain dummy3"); //$NON-NLS-1$
 
 		// Test insert
 
 		list.add(1, dummy3);
 
-		assertEquals("Index of dummy3 must be 1", list.indexOf(dummy3), 1); //$NON-NLS-1$
-		assertEquals("Index of dummy2 must be 2", list.indexOf(dummy2), 2); //$NON-NLS-1$
-		assertTrue("List must contain dummy3", list.contains(dummy3)); //$NON-NLS-1$
+		assertEquals(list.indexOf(dummy3), 1, "Index of dummy3 must be 1"); //$NON-NLS-1$
+		assertEquals(list.indexOf(dummy2), 2, "Index of dummy2 must be 2"); //$NON-NLS-1$
+		assertTrue(list.contains(dummy3), "List must contain dummy3"); //$NON-NLS-1$
 
 		// Test clear
 		list = new LookupList<>();
@@ -104,7 +104,7 @@ public class LookupListTest {
 
 		assertEquals(list.size(), 3);
 		list.clear();
-		assertTrue("List must be empty after clearing", list.isEmpty()); //$NON-NLS-1$
+		assertTrue(list.isEmpty(), "List must be empty after clearing"); //$NON-NLS-1$
 
 		// Test remove
 
@@ -112,11 +112,11 @@ public class LookupListTest {
 		list.add(dummy1);
 
 		list.remove(dummy1);
-		assertFalse("List must not contain dummy1 after removal", list.contains(dummy1)); //$NON-NLS-1$
+		assertFalse(list.contains(dummy1), "List must not contain dummy1 after removal"); //$NON-NLS-1$
 
 		list.add(dummy2);
 		list.remove(0);
-		assertFalse("List must not contain dummy2 after removal", list.contains(dummy2)); //$NON-NLS-1$
+		assertFalse(list.contains(dummy2), "List must not contain dummy2 after removal"); //$NON-NLS-1$
 	}
 
 	@Test

@@ -29,13 +29,12 @@ import static de.ims.icarus2.TestUtils.assertHashContract;
 import static de.ims.icarus2.TestUtils.assertObjectContract;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.getTestValues;
 import static de.ims.icarus2.model.manifest.xml.ManifestXmlTestUtils.assertSerializationEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.standard.ValueSetImpl;
 import de.ims.icarus2.model.manifest.types.ValueType;
@@ -48,18 +47,15 @@ import de.ims.icarus2.model.manifest.xml.delegates.ValueSetXmlDelegate;
  */
 public class ValueSetImplTest {
 
-	@Rule
-	public ExpectedException thrown= ExpectedException.none();
-
 	private void testAdd(ValueType valueType) throws Exception {
 
 		ValueSetImpl valueSet = new ValueSetImpl(valueType);
 
-		assertSame("Value type corrupted", valueType, valueSet.getValueType()); //$NON-NLS-1$
+		assertSame(valueType, valueSet.getValueType(), "Value type corrupted"); //$NON-NLS-1$
 
 		Object[] values = getTestValues(valueType);
 
-		assertNotNull("Test value array empty", values); //$NON-NLS-1$
+		assertNotNull(values, "Test value array empty"); //$NON-NLS-1$
 
 		for(Object value : values) {
 			valueSet.addValue(value);
@@ -68,7 +64,7 @@ public class ValueSetImplTest {
 		assertEquals(values.length, valueSet.valueCount());
 
 		for(int i=0; i<values.length; i++) {
-			assertSame("Mismatching item at index "+i, values[i], valueSet.getValueAt(i)); //$NON-NLS-1$
+			assertSame(values[i], valueSet.getValueAt(i), "Mismatching item at index "+i); //$NON-NLS-1$
 		}
 	}
 
@@ -77,7 +73,7 @@ public class ValueSetImplTest {
 		ValueSetImpl valueSet = new ValueSetImpl(valueType);
 		Object[] values = getTestValues(valueType);
 
-		assertNotNull("Test value array empty", values); //$NON-NLS-1$
+		assertNotNull(values, "Test value array empty"); //$NON-NLS-1$
 
 		for(Object value : values) {
 			valueSet.addValue(value);
@@ -106,8 +102,7 @@ public class ValueSetImplTest {
 	public void testAddNull() throws Exception {
 		ValueSetImpl valueSet = new ValueSetImpl(ValueType.STRING);
 
-		thrown.expect(NullPointerException.class);
-		valueSet.addValue(null);
+		assertThrows(NullPointerException.class, () -> valueSet.addValue(null));
 	}
 
 	// CONSTRUCTION
@@ -229,8 +224,7 @@ public class ValueSetImplTest {
 
 	@Test
 	public void testXmlImageResourceSet() throws Exception {
-		thrown.expect(UnsupportedOperationException.class);
-		testXml(ValueType.IMAGE_RESOURCE);
+		assertThrows(UnsupportedOperationException.class, () -> testXml(ValueType.IMAGE_RESOURCE));
 	}
 
 	@Test
@@ -245,19 +239,16 @@ public class ValueSetImplTest {
 
 	@Test
 	public void testXmlUrlResourceSet() throws Exception {
-		thrown.expect(UnsupportedOperationException.class);
-		testXml(ValueType.URL_RESOURCE);
+		assertThrows(UnsupportedOperationException.class, () -> testXml(ValueType.URL_RESOURCE));
 	}
 
 	@Test
 	public void testXmlUnknownSet() throws Exception {
-		thrown.expect(UnsupportedOperationException.class);
-		testXml(ValueType.UNKNOWN);
+		assertThrows(UnsupportedOperationException.class, () -> testXml(ValueType.UNKNOWN));
 	}
 
 	@Test
 	public void testXmlCustomSet() throws Exception {
-		thrown.expect(UnsupportedOperationException.class);
-		testXml(ValueType.CUSTOM);
+		assertThrows(UnsupportedOperationException.class, () -> testXml(ValueType.CUSTOM));
 	}
 }

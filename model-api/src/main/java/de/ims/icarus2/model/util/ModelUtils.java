@@ -303,7 +303,15 @@ public final class ModelUtils {
 			container = parent;
 		}
 
-		ItemLayerManifest manifest = container.getManifest().getLayerManifest(); // was container.getLayer().getManifest()
+		/*
+		 * Implementation info:
+		 *   was container.getLayer().getManifest()
+		 *
+		 * Changed to this version as a result of the policy to switch
+		 * contexts as early as possible from live items/containers to
+		 * the respective manifest framework members.
+		 */
+		ItemLayerManifest manifest = container.getManifest().getLayerManifest();
 
 		return manifest.getContainerManifest(level);
 	}

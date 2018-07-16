@@ -17,33 +17,35 @@
  */
 package de.ims.icarus2.model.standard.members;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.stream.Stream;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import de.ims.icarus2.model.api.driver.id.IdManager;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.standard.members.container.DefaultContainer;
+import de.ims.icarus2.model.standard.members.container.ListItemStorageInt;
+import de.ims.icarus2.model.standard.members.layers.item.DefaultItemLayer;
 
 /**
  * @author Markus Gärtner
  *
  */
-@RunWith(Parameterized.class)
 public class ContainerTest {
 
 	@SuppressWarnings("boxing")
@@ -69,41 +71,35 @@ public class ContainerTest {
 		when(layerManifest.getContainerManifest(0)).thenReturn(rootManifest);
 		when(layerManifest.getContainerManifest(1)).thenReturn(containerManifest);
 
+		DefaultItemLayer layer = new DefaultItemLayer(layerManifest);
+		layer.setIdManager(new IdManager.IdentityIdManager(layerManifest));
+
 		Container root = mock(Container.class);
 		when(root.getManifest()).thenReturn(rootManifest);
+		when(root.getLayer()).thenReturn(layer);
 
 		return root;
 	}
 
-	@Parameters(name= "{index}: Type={0} Impl={1}") // Use implementing class as name
-    public static Iterable<Object[]> data() {
-    	List<Object[]> result = new ArrayList<>();
+    static Stream<Arguments> data() {
+    	List<Arguments> data = new ArrayList<>();
 
-    	//
+    	// List container
+    	DefaultContainer container1 = new DefaultContainer();
+    	container1.setContainer(mockRoot(ContainerType.LIST));
+    	container1.setItemStorage(new ListItemStorageInt());
+    	data.add(Arguments.of(container1.getContainerType(), container1));
 
-    	return result;
+    	//TODO
+
+    	return data.stream();
     }
 
-	protected final Supplier<Container> producer;
-	protected final ContainerType containerType;
+	@ParameterizedTest(name= "run #{index}: Type={0} Impl= {1}")
+	@MethodSource("data")
+	public void testAppend(ContainerType type, Container container) throws Exception {
 
-	// Instantiated per test
-	private Container container;
-	private ContainerEditVerifier editVerifier;
-
-	public ContainerTest(ContainerType containerType, Supplier<Container> producer) {
-		this.containerType = containerType;
-		this.producer = producer;
-	}
-
-	@Before
-	public void prepare() {
-		container = producer.get();
-		editVerifier = container.createEditVerifier();
-	}
-
-	@Test
-	public void testAppend() throws Exception {
+		ContainerEditVerifier editVerifier = container.createEditVerifier();
 
 		Item item = mockItem(1);
 
@@ -116,13 +112,17 @@ public class ContainerTest {
 		}
 	}
 
-	@Test(expected=NullPointerException.class)
-	public void testAppendNull() throws Exception {
-
+	@ParameterizedTest(name= "run #{index}: Type={0} Impl= {1}")
+	@MethodSource("data")
+	public void testAppendNull(ContainerType type, Container container) throws Exception {
+		ContainerEditVerifier editVerifier = container.createEditVerifier();
 		Item item = mockItem(1);
 		// Need to make sure we don't fail for other reasons
 		if(editVerifier.canAddItem(0, item)) {
-			container.addItem(null);
+
+			assertThrows(NullPointerException.class, () -> {
+				container.addItem(null);
+			});
 		}
 	}
 }

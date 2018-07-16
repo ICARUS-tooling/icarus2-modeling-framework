@@ -4,19 +4,20 @@
 package de.ims.icarus2.util.nio;
 
 import static de.ims.icarus2.util.nio.NIOTestUtil.assertContentEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SeekableByteChannel;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Markus
@@ -31,7 +32,7 @@ public class SubChannelTest {
 	private static final int SIZE = 100;
 
 	@SuppressWarnings("resource")
-	@Before
+	@BeforeEach
 	public void prepare() throws IOException {
 		data = new byte[SIZE];
 		channel = new ByteArrayChannel(data, false);
@@ -39,7 +40,7 @@ public class SubChannelTest {
 		subChannel = new SubChannel(channel).setOffsets(0, channel.size());
 	}
 
-	@After
+	@AfterEach
 	public void cleanup() throws IOException {
 		subChannel.close();
 		channel.close();
@@ -117,9 +118,11 @@ public class SubChannelTest {
 		assertFalse(subChannel.isOpen());
 	}
 
-	@Test(expected=ClosedChannelException.class)
+	@Test
 	public void testClosed() throws Exception {
-		subChannel.close();
-		subChannel.write(NIOUtil.emptyBuffer());
+		assertThrows(ClosedChannelException.class, () -> {
+			subChannel.close();
+			subChannel.write(NIOUtil.emptyBuffer());
+		});
 	}
 }

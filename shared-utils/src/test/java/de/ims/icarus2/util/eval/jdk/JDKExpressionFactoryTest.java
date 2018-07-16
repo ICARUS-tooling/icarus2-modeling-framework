@@ -17,11 +17,11 @@
  */
 package de.ims.icarus2.util.eval.jdk;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.util.eval.Expression;
 
