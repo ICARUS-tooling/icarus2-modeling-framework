@@ -1,10 +1,14 @@
 
 description = 'Default implementations for the core model API'
+
+// internal dependencies
 dependencies {
 	implementation project(':icarus2-model-api')
   
 	testImplementation project(path: ':icarus2-shared-utils', configuration: 'testOutput')
-  
-	// https://mvnrepository.com/artifact/com.fasterxml.uuid/java-uuid-generator
-	testImplementation group: 'com.fasterxml.uuid', name: 'java-uuid-generator', version: '3.1.5'
+}
+
+configurations {
+	// external dependencies managed by root build.gradle
+	testImplementation.extendsFrom(junit, mockito, uuid)
 }

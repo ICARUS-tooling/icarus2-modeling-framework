@@ -1,13 +1,18 @@
 
 description = 'Default implementation for access to file-based corpus resources'
+
+// internal dependencies
 dependencies {
 	implementation project(':icarus2-model-api')
 	implementation project(':icarus2-model-defaults')
 	implementation project(':icarus2-shared-utils')
   
-  	// https://mvnrepository.com/artifact/org.apache.lucene/lucene-core
-	implementation group: 'org.apache.lucene', name: 'lucene-core', version: '7.4.0'
-
-  
 	testImplementation project(path: ':icarus2-shared-utils', configuration: 'testOutput')
+}
+
+configurations {
+	// external dependencies managed by root build.gradle
+	implementation.extendsFrom(lucene)
+	
+	testImplementation.extendsFrom(junit, mockito)
 }

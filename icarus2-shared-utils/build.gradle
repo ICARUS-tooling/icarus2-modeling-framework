@@ -2,6 +2,10 @@
 description = 'Shared utility classes for common tasks'
 
 configurations {
+	// external dependencies managed by root build.gradle
+	implementation.extendsFrom(slf4j, guava, fastutil, javapoet) 		
+ 	testImplementation.extendsFrom(junit, mockito)
+ 	
     testOutput.extendsFrom (testCompile)
 }
 

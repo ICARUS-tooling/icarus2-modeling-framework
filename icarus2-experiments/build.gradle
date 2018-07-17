@@ -1,5 +1,7 @@
+
 description = 'Collection of experiments conducted during development of the framework'
 
+// internal dependencies
 dependencies {
 	implementation project(':icarus2-shared-utils')
 }

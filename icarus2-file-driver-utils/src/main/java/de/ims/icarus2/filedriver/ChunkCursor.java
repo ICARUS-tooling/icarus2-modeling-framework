@@ -39,6 +39,7 @@ import de.ims.icarus2.util.nio.ByteChannelBlockStream;
  * @author Markus Gärtner
  *
  */
+@Deprecated
 public class ChunkCursor implements Closeable {
 
 	// Initialization stuff

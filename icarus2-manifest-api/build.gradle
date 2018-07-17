@@ -1,7 +1,16 @@
 
-description = 'Foundation of the framework - API and default implementation for manifest metadata'
+description = 'Foundation of the framework - provides API and default implementation for manifest metadata'
+
+// internal dependencies
 dependencies {
   implementation project(':icarus2-shared-utils')
   
   testImplementation project(path: ':icarus2-shared-utils', configuration: 'testOutput')
+}
+
+configurations {
+	// external dependencies managed by root build.gradle
+	implementation.extendsFrom(xerces)
+	
+	testImplementation.extendsFrom(junit, mockito)
 }

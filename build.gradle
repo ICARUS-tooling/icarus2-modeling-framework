@@ -4,6 +4,9 @@ plugins {
     id "com.github.hierynomus.license" version "0.14.0"
 }
 
+// Load version definitions for dependencies. Info will be stored in 'versions' map
+apply from: 'versions.gradle'
+
 allprojects {
   	apply plugin: 'java'
 	apply plugin: 'eclipse'
@@ -19,6 +22,59 @@ allprojects {
   	repositories {
     	mavenCentral()
   	}  
+	  	
+	configurations {
+		slf4j
+		guava
+		fastutil
+		javapoet
+		xerces
+		lucene
+		
+		junit
+		mockito
+		uuid
+	}
+	  	
+	dependencies {
+		
+		// RUNTIME ENVIRONMENT
+	
+	    // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
+		slf4j "org.slf4j:slf4j-api:${versions.slf4jVersion}"
+	    // https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14
+		slf4j "org.slf4j:slf4j-jdk14:${versions.slf4jVersion}"
+	
+	    // https://mvnrepository.com/artifact/com.google.guava/guava
+		guava "com.google.guava:guava:${versions.guavaVersion}"
+	
+	    // https://mvnrepository.com/artifact/it.unimi.dsi/fastutil
+		fastutil "it.unimi.dsi:fastutil:${versions.fastutilVersion}"
+	
+	    // https://mvnrepository.com/artifact/com.squareup/javapoet
+		javapoet "com.squareup:javapoet:${versions.javapoetVersion}"
+	    
+	    // https://mvnrepository.com/artifact/xerces/xercesImpl
+		xerces "xerces:xercesImpl:${versions.xercesVersion}"
+	  
+	  	// https://mvnrepository.com/artifact/org.apache.lucene/lucene-core
+		lucene "org.apache.lucene:lucene-core:${versions.luceneVersion}"
+			
+		// TEST ENVIRONMENT
+		    
+	    // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
+		junit "org.junit.jupiter:junit-jupiter-api:${versions.junitVersion}"
+		// https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine
+		junit "org.junit.jupiter:junit-jupiter-engine:${versions.junitVersion}"		
+		// https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-params
+		junit "org.junit.jupiter:junit-jupiter-params:${versions.junitVersion}"
+			
+	    // https://mvnrepository.com/artifact/org.mockito/mockito-core
+		mockito "org.mockito:mockito-core:${versions.mockitoVersion}"
+	  
+		// https://mvnrepository.com/artifact/com.fasterxml.uuid/java-uuid-generator
+		uuid "com.fasterxml.uuid:java-uuid-generator:${versions.uuidVersion}"
+	}
 }
 
 description = 'ICARUS 2 framework root'
@@ -28,44 +84,22 @@ wrapper {
 	gradleVersion = "4.8" 
 }
 
+task iterateDeclaredDependencies {
+    doLast {
+        DependencySet dependencySet = configurations.slf4j.dependencies
+
+        dependencySet.each {
+            logger.quiet "$it.group:$it.name:$it.version"
+        }
+    }
+}
+
 subprojects {
   	
   	tasks.withType(JavaCompile) {
   		options.encoding = 'UTF-8'
     	options.fork = true
  	}
-  	
-	dependencies {
-	    // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-		implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
-
-	    // https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14
-		implementation group: 'org.slf4j', name: 'slf4j-jdk14', version: '1.7.25'
-
-	    // https://mvnrepository.com/artifact/com.google.guava/guava
-		implementation group: 'com.google.guava', name: 'guava', version: '25.1-jre'
-
-	    // https://mvnrepository.com/artifact/it.unimi.dsi/fastutil
-		implementation group: 'it.unimi.dsi', name: 'fastutil', version: '8.2.1'
-
-	    // https://mvnrepository.com/artifact/com.squareup/javapoet
-		implementation group: 'com.squareup', name: 'javapoet', version: '1.11.1'
-	    
-	    // https://mvnrepository.com/artifact/xerces/xercesImpl
-		implementation group: 'xerces', name: 'xercesImpl', version: '2.12.0'
-	    
-        // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
-		testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.3.0-M1'
-		// https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine
-		testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.3.0-M1'		
-		// https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-params
-		testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: '5.3.0-M1'
-		
-
-	    // https://mvnrepository.com/artifact/org.mockito/mockito-core
-		testImplementation group: 'org.mockito', name: 'mockito-core', version: '2.+'
-
-	}
 		
 	test {
 	    useJUnitPlatform()
@@ -77,7 +111,6 @@ subprojects {
 	
 	    includeProjectDependencies = true
 
-	
 	    aliases = [
 	        (apacheTwo) : ['The Apache Software License, Version 2.0', 'Apache 2', 'Apache License Version 2.0', 'Apache License, Version 2.0', 'Apache License 2.0', license('Apache License', 'http://www.apache.org/licenses/LICENSE-2.0')],
 	        (bsd) : ['BSD', license('New BSD License', 'http://www.opensource.org/licenses/bsd-license.php')]
@@ -91,7 +124,7 @@ subprojects {
 		ext.name = 'Markus Gärtner'
 		ext.email = 'markus.gaertner@uni-stuttgart.de'
 		
-		header = project.file('LICENSE_HEADER')
+		header = project.file('../LICENSE_HEADER')
 		includes(["**/*.java", "**/*.properties", "**/*.ini", "**/*.xml"])
 		dryRun = true
 	}

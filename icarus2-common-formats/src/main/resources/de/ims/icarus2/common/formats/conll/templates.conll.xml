@@ -12,7 +12,7 @@
 				<imf:resource name="Task website with description" id="url">https://ufal.mff.cuni.cz/conll2009-st/task-description.html</imf:resource>
 			</imf:documentation>
 			
-			<imf:layerGroup name="Sentence Group" primaryLayer="common.layer.token" id="sentenceGroup">
+			<imf:layerGroup name="Sentence Group" primaryLayer="token" id="sentenceGroup">
 				<imf:itemLayer id="token" layerType="common.layer.token" />
 				<imf:itemLayer id="sentence" layerType="common.layer.sentence">
 					<imf:baseLayer layerId="tokens"/>
