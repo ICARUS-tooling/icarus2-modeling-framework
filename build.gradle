@@ -8,16 +8,27 @@ plugins {
 apply from: 'versions.gradle'
 
 allprojects {
-  	apply plugin: 'java'
 	apply plugin: 'eclipse'
+	
+  	group = 'icarus2'
+  	version = '0.0.1'
+}
+
+description = 'ICARUS 2 framework root'
+	
+// Gradle Wrapper
+wrapper { 
+	gradleVersion = "4.8" 
+}
+
+
+subprojects {
+  	apply plugin: 'java'
 	
 	apply plugin: 'com.github.hierynomus.license'
 	
   	sourceCompatibility = 1.8
   	targetCompatibility = 1.8
-	
-  	group = 'icarus2'
-  	version = '0.0.1'
 
   	repositories {
     	mavenCentral()
@@ -75,26 +86,6 @@ allprojects {
 		// https://mvnrepository.com/artifact/com.fasterxml.uuid/java-uuid-generator
 		uuid "com.fasterxml.uuid:java-uuid-generator:${versions.uuidVersion}"
 	}
-}
-
-description = 'ICARUS 2 framework root'
-	
-// Gradle Wrapper
-wrapper { 
-	gradleVersion = "4.8" 
-}
-
-task iterateDeclaredDependencies {
-    doLast {
-        DependencySet dependencySet = configurations.slf4j.dependencies
-
-        dependencySet.each {
-            logger.quiet "$it.group:$it.name:$it.version"
-        }
-    }
-}
-
-subprojects {
   	
   	tasks.withType(JavaCompile) {
   		options.encoding = 'UTF-8'
