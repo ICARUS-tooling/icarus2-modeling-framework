@@ -26,7 +26,6 @@ import java.util.Objects;
 
 import javax.swing.Icon;
 
-import de.ims.icarus2.util.strings.StringUtil;
 import it.unimi.dsi.fastutil.Hash.Strategy;
 
 /**
@@ -48,8 +47,6 @@ public interface Identity {
 	 * <p>
 	 * Note that at the very least every identity <b>must</b>
 	 * always provide a valid id!
-	 *
-	 * @see StringUtil#is
 	 */
 	String getId();
 

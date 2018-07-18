@@ -87,7 +87,8 @@ public class XmlStreamSerializer implements XmlSerializer {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.xml.XmlSerializer#startElement(java.lang.String)
+	 *
+	 * @see de.ims.icarus2.util.xml.XmlSerializer#startElement(java.lang.String)
 	 */
 	@Override
 	public void startElement(String name) throws XMLStreamException {
@@ -95,7 +96,8 @@ public class XmlStreamSerializer implements XmlSerializer {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.xml.XmlSerializer#startEmptyElement(java.lang.String)
+	 *
+	 * @see de.ims.icarus2.util.xml.XmlSerializer#startEmptyElement(java.lang.String)
 	 */
 	@Override
 	public void startEmptyElement(String name) throws XMLStreamException {
@@ -123,7 +125,8 @@ public class XmlStreamSerializer implements XmlSerializer {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.xml.XmlSerializer#writeAttribute(java.lang.String, java.lang.String)
+	 *
+	 * @see de.ims.icarus2.util.xml.XmlSerializer#writeAttribute(java.lang.String, java.lang.String)
 	 */
 	@Override
 	public void writeAttribute(String name, String value) throws XMLStreamException {
@@ -145,7 +148,8 @@ public class XmlStreamSerializer implements XmlSerializer {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.xml.XmlSerializer#writeAttribute(java.lang.String, int)
+	 *
+	 * @see de.ims.icarus2.util.xml.XmlSerializer#writeAttribute(java.lang.String, int)
 	 */
 	@Override
 	public void writeAttribute(String name, int value) throws XMLStreamException {
@@ -154,7 +158,8 @@ public class XmlStreamSerializer implements XmlSerializer {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.xml.XmlSerializer#writeAttribute(java.lang.String, long)
+	 *
+	 * @see de.ims.icarus2.util.xml.XmlSerializer#writeAttribute(java.lang.String, long)
 	 */
 	@Override
 	public void writeAttribute(String name, long value) throws XMLStreamException {
@@ -163,7 +168,8 @@ public class XmlStreamSerializer implements XmlSerializer {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.xml.XmlSerializer#writeAttribute(java.lang.String, double)
+	 *
+	 * @see de.ims.icarus2.util.xml.XmlSerializer#writeAttribute(java.lang.String, double)
 	 */
 	@Override
 	public void writeAttribute(String name, double value) throws XMLStreamException {
@@ -172,7 +178,8 @@ public class XmlStreamSerializer implements XmlSerializer {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.xml.XmlSerializer#writeAttribute(java.lang.String, float)
+	 *
+	 * @see de.ims.icarus2.util.xml.XmlSerializer#writeAttribute(java.lang.String, float)
 	 */
 	@Override
 	public void writeAttribute(String name, float value) throws XMLStreamException {
@@ -181,7 +188,8 @@ public class XmlStreamSerializer implements XmlSerializer {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.xml.XmlSerializer#writeAttribute(java.lang.String, boolean)
+	 *
+	 * @see de.ims.icarus2.util.xml.XmlSerializer#writeAttribute(java.lang.String, boolean)
 	 */
 	@Override
 	public void writeAttribute(String name, boolean value) throws XMLStreamException {
@@ -190,7 +198,8 @@ public class XmlStreamSerializer implements XmlSerializer {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.xml.XmlSerializer#endElement(java.lang.String)
+	 *
+	 * @see de.ims.icarus2.util.xml.XmlSerializer#endElement(java.lang.String)
 	 */
 	@Override
 	public void endElement(String name) throws XMLStreamException {
@@ -214,7 +223,8 @@ public class XmlStreamSerializer implements XmlSerializer {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.xml.XmlSerializer#writeText(CharSequence)
+	 *
+	 * @see de.ims.icarus2.util.xml.XmlSerializer#writeText(java.lang.CharSequence)
 	 */
 	@Override
 	public void writeText(CharSequence text) throws XMLStreamException {
@@ -225,7 +235,8 @@ public class XmlStreamSerializer implements XmlSerializer {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.xml.XmlSerializer#writeCData(CharSequence)
+	 *
+	 * @see de.ims.icarus2.util.xml.XmlSerializer#writeCData(java.lang.CharSequence)
 	 */
 	@Override
 	public void writeCData(CharSequence text) throws XMLStreamException {
@@ -256,7 +267,8 @@ public class XmlStreamSerializer implements XmlSerializer {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.xml.XmlSerializer#startDocument()
+	 *
+	 * @see de.ims.icarus2.util.xml.XmlSerializer#startDocument()
 	 */
 	@Override
 	public void startDocument() throws XMLStreamException {
@@ -264,7 +276,8 @@ public class XmlStreamSerializer implements XmlSerializer {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.xml.XmlSerializer#endDocument()
+	 *
+	 * @see de.ims.icarus2.util.xml.XmlSerializer#endDocument()
 	 */
 	@Override
 	public void endDocument() throws XMLStreamException {
@@ -272,7 +285,8 @@ public class XmlStreamSerializer implements XmlSerializer {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.xml.XmlSerializer#close()
+	 *
+	 * @see de.ims.icarus2.util.xml.XmlSerializer#close()
 	 */
 	@Override
 	public void close() throws Exception {

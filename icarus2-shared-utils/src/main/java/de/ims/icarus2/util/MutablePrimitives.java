@@ -56,7 +56,7 @@ public class MutablePrimitives {
 		 * of the implementing class to cast to the correct wrapper
 		 * and retrieve the primitive value.
 		 *
-		 * @param value
+		 * @param wrapper
 		 */
 		void fromWrapper(Object wrapper);
 

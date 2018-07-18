@@ -57,7 +57,7 @@ public class InMemoryJavaFileManager extends ForwardingJavaFileManager {
 	/**
 	 * Will initialize the manager with the specified standard java file manager
 	 *
-	 * @param standardManger
+	 * @param fileManager
 	 */
 	@SuppressWarnings("unchecked")
 	public InMemoryJavaFileManager(JavaFileManager fileManager) {

@@ -27,7 +27,7 @@ import java.util.function.Supplier;
 
 /**
  * Class to lazily initialize a value based on provided Factory method or
- * class's default constructor inspired from C# Lazy&lt;T> using Lambda and
+ * class's default constructor inspired from C# Lazy&lt;T&gt; using Lambda and
  * Method reference capabilities of Java 8. All exceptions resulting from
  * factory methods are cascaded to caller. Exceptions from default constructor
  * is wrapped as a RuntimeException. Throws NullPointerException if the factory
@@ -35,11 +35,11 @@ import java.util.function.Supplier;
  * both Thread safe(default) and unsafe versions. Usage examples
  *
  * <pre>
- * public Lazy&lt;IntensiveResource> r = Lazy.create(IntensiveResource.class, false);
+ * public Lazy&lt;IntensiveResource&gt; r = Lazy.create(IntensiveResource.class, false);
  *
- * public Lazy&lt;IntensiveResource> r1 = Lazy.create(IntensiveResource::buildResource);
+ * public Lazy&lt;IntensiveResource&gt; r1 = Lazy.create(IntensiveResource::buildResource);
  *
- * public Lazy&lt;IntensiveResource> r2 = Lazy.create(() -> return new IntensiveResource());
+ * public Lazy&lt;IntensiveResource&gt; r2 = Lazy.create(() -&gt; return new IntensiveResource());
  * </pre>
  *
  * Invoking toString() will cause the object to be initialized. Accessing the

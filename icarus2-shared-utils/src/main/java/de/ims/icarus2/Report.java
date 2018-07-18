@@ -83,7 +83,6 @@ public interface Report<R extends ReportItem> {
     	 * @param code
     	 * @param message
     	 * @param data
-    	 * @return
     	 */
     	void addItem(Severity severity, Identity source, ErrorCode code, String message, Object...data);
 

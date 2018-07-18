@@ -105,6 +105,10 @@ subprojects {
 	    useJUnitPlatform()
 	}
 	
+	javadoc {
+	    options.encoding = 'UTF-8'
+	}
+	
 	downloadLicenses {
 	    ext.apacheTwo = license('Apache License, Version 2.0', 'http://opensource.org/licenses/Apache-2.0')
 	    ext.bsd = license('BSD License', 'http://www.opensource.org/licenses/bsd-license.php')

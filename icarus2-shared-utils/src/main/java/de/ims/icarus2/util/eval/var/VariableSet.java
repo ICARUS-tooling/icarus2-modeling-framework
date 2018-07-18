@@ -125,9 +125,9 @@ public interface VariableSet {
 	 * @param value
 	 *
 	 * @throws ClassCastException if the given {@code value} is not assignment compatible with
-	 * the {@link #getNamespaceClass() namespace} for the variable.
+	 * the {@link VariableDescriptor#getNamespaceClass() namespace} for the variable.
 	 * @throws IcarusException iff the given {@code value} is {@code null} and the variable is
-	 * not declared to be {@link #isNullable() nullable}.
+	 * not declared to be {@link VariableDescriptor#isNullable() nullable}.
 	 */
 	void setValue(String variableName, Object value);
 

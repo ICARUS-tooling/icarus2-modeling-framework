@@ -21,17 +21,17 @@
 package de.ims.icarus2.util.events;
 
 /**
- * @author Markus Gärtner 
+ * @author Markus Gärtner
  *
  */
 public interface EventListener extends java.util.EventListener {
 
 	/**
-	 * Signals the occurrence 
-	 * 
+	 * Signals the occurrence
+	 *
 	 * @param sender source of the event, typically an instance of
 	 * {@link EventSource}
-	 * @param the event to be dispatched 
+	 * @param event the event to be dispatched
 	 */
 	void invoke(Object sender, EventObject event);
 }

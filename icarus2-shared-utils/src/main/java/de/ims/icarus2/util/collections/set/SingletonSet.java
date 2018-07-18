@@ -50,7 +50,8 @@ public class SingletonSet<E extends Object> extends AbstractDataSet<E> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.collections.set.DataSet#containerAt(int)
+	 *
+	 * @see de.ims.icarus2.util.collections.set.DataSet#entryAt(int)
 	 */
 	@Override
 	public E entryAt(int index) {

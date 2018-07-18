@@ -66,7 +66,8 @@ public class IconWrapper implements Icon, StringResource, NamedObject {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.util.StringResource.XmlResource#getStringValue()
+	 *
+	 * @see de.ims.icarus2.util.strings.StringResource#getStringValue()
 	 */
 	@Override
 	public String getStringValue() {
