@@ -119,8 +119,17 @@ subprojects {
 		ext.name = 'Markus Gärtner'
 		ext.email = 'markus.gaertner@uni-stuttgart.de'
 		
-		header = project.file('../LICENSE_HEADER')
+		header = rootProject.file('LICENSE_HEADER')
+		
 		includes(["**/*.java", "**/*.properties", "**/*.ini", "**/*.xml"])
-		dryRun = true
+		excludes(["**/package-info.java"])
+		
+		mapping {
+			java = 'SLASHSTAR_STYLE'
+		}
+		
+		useDefaultMappings=true
+		dryRun = false
+		strictCheck=true
 	}
 }
