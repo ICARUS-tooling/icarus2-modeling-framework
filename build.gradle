@@ -24,7 +24,8 @@ wrapper {
 
 subprojects {
   	apply plugin: 'java'
-	
+  	apply plugin: 'findbugs'
+  	
 	apply plugin: 'com.github.hierynomus.license'
 	
   	sourceCompatibility = 1.8
@@ -35,13 +36,16 @@ subprojects {
   	}  
 	  	
 	configurations {
+		
+		// RUNTIME ENVIRONMENT
 		slf4j
 		guava
 		fastutil
 		javapoet
 		xerces
 		lucene
-		
+			
+		// TEST ENVIRONMENT
 		junit
 		mockito
 		uuid
@@ -131,5 +135,20 @@ subprojects {
 		useDefaultMappings=true
 		dryRun = false
 		strictCheck=true
+	}
+	
+	findbugs {
+	    toolVersion = "3.0.1"
+	    ignoreFailures = false
+	    effort = "max"
+	    showProgress = false
+	    reportLevel = "medium"
+	}
+	
+	tasks.withType(FindBugs) {
+	    reports {
+	        xml.enabled false
+	        html.enabled true
+	    }
 	}
 }
