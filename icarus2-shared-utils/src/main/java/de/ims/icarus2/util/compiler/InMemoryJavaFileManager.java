@@ -18,6 +18,8 @@
 package de.ims.icarus2.util.compiler;
 
 import java.io.IOException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.security.SecureClassLoader;
 import java.util.Map;
 
@@ -41,18 +43,7 @@ public class InMemoryJavaFileManager extends ForwardingJavaFileManager {
 	 */
 	private final Map<String, ByteArrayJavaFileObject> classBytesLookup = new Object2ObjectOpenHashMap<>();
 
-	private final ClassLoader sharedClassLoader = new SecureClassLoader() {
-		@Override
-		protected Class<?> findClass(String name) throws ClassNotFoundException {
-			ByteArrayJavaFileObject fileObject = getJavaFileObject(name, false, true);
-			if(fileObject==null)
-				throw new ClassNotFoundException("No compiled class saved in this manager for name: "+name);
-
-			byte[] b = fileObject.getBytes();
-
-			return super.defineClass(name, b, 0, b.length);
-		}
-	};
+	private final ClassLoader sharedClassLoader;
 
 	/**
 	 * Will initialize the manager with the specified standard java file manager
@@ -62,6 +53,23 @@ public class InMemoryJavaFileManager extends ForwardingJavaFileManager {
 	@SuppressWarnings("unchecked")
 	public InMemoryJavaFileManager(JavaFileManager fileManager) {
 		super(fileManager);
+
+		PrivilegedAction<ClassLoader> createLoader = () -> {
+			return new SecureClassLoader() {
+				@Override
+				protected Class<?> findClass(String name) throws ClassNotFoundException {
+					ByteArrayJavaFileObject fileObject = getJavaFileObject(name, false, true);
+					if(fileObject==null)
+						throw new ClassNotFoundException("No compiled class saved in this manager for name: "+name);
+
+					byte[] b = fileObject.getBytes();
+
+					return super.defineClass(name, b, 0, b.length);
+				}
+			};
+		};
+
+		sharedClassLoader = AccessController.doPrivileged(createLoader);
 	}
 
 	/**

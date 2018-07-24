@@ -48,10 +48,13 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  * @author Markus Gärtner
  *
  */
-public class PropertyListResolver implements Resolver, ResolverOptions {
+public class PropertyListResolver implements Resolver {
 
 	public static final String OPTION_SEPARATOR = "separator";
 	public static final String OPTION_ASSIGNMENT_SYMBOL = "assignmentSymbol";
+
+	public static final String DEFAULT_SEPARATOR = ";";
+	public static final String DEFAULT_ASSIGNMENT_SYMBOL = "=";
 
 	private AnnotationLayer annotationLayer;
 
@@ -77,9 +80,12 @@ public class PropertyListResolver implements Resolver, ResolverOptions {
 	 */
 	@Override
 	public void prepareForReading(Converter converter, ReadMode mode, Function<ItemLayer, InputCache> caches, Options options) {
-		annotationLayer = (AnnotationLayer) options.get(LAYER);
+		annotationLayer = (AnnotationLayer) options.get(ResolverOptions.LAYER);
 		if(annotationLayer==null)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "No layer assigned to this resolver "+getClass());
+
+		separator = options.get(OPTION_SEPARATOR, DEFAULT_SEPARATOR);
+		separator = options.get(OPTION_ASSIGNMENT_SYMBOL, DEFAULT_ASSIGNMENT_SYMBOL);
 
 		Set<String> availableKeys = annotationLayer.getManifest().getAvailableKeys();
 		if(!availableKeys.isEmpty()) {

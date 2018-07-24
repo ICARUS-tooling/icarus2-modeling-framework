@@ -33,7 +33,7 @@ import java.util.Map;
 import javax.swing.Icon;
 
 import de.ims.icarus2.util.collections.CollectionUtils;
-import de.ims.icarus2.util.events.EventListener;
+import de.ims.icarus2.util.events.SimpleEventListener;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.events.Events;
 import de.ims.icarus2.util.events.WeakEventSource;
@@ -333,15 +333,15 @@ public final class ContentTypeRegistry {
 		return CollectionUtils.isTrue(type.getProperties(), ContentType.STRICT_INHERITANCE);
 	}
 
-	public void addListener(String eventName, EventListener listener) {
+	public void addListener(String eventName, SimpleEventListener listener) {
 		eventSource.addListener(eventName, listener);
 	}
 
-	public void removeListener(EventListener listener, String eventName) {
+	public void removeListener(SimpleEventListener listener, String eventName) {
 		eventSource.removeListener(listener, eventName);
 	}
 
-	public void removeListener(EventListener listener) {
+	public void removeListener(SimpleEventListener listener) {
 		eventSource.removeListener(listener);
 	}
 

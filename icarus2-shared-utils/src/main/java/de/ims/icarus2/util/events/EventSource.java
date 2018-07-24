@@ -57,9 +57,9 @@ public class EventSource implements EventManager, Serializable {
 	 */
 	protected Object eventSource;
 
-	protected transient AtomicInteger deadListenerCount = new AtomicInteger(0);
+	protected AtomicInteger deadListenerCount = new AtomicInteger(0);
 
-	protected transient int deadListenerTreshold = 5;
+	protected int deadListenerTreshold = 5;
 
 	/**
 	 * Flag to enable or disable firing of events.
@@ -119,10 +119,10 @@ public class EventSource implements EventManager, Serializable {
 	 * events in the case the {@code eventName} parameter is {@code null}
 	 * @param eventName name of events to listen for or {@code null} if
 	 * the listener is meant to receive all fired events
-	 * @param listener the {@code EventListener} to be registered
+	 * @param listener the {@code SimpleEventListener} to be registered
 	 */
 	@Override
-	public void addListener(String eventName, EventListener listener) {
+	public void addListener(String eventName, SimpleEventListener listener) {
 		requireNonNull(listener);
 
 		if (eventListeners == null) {
@@ -134,18 +134,18 @@ public class EventSource implements EventManager, Serializable {
 	}
 
 	/**
-	 * Removes the given {@code EventListener} from all events
+	 * Removes the given {@code SimpleEventListener} from all events
 	 * it was previously registered for.
-	 * @param listener the {@code EventListener} to be removed
+	 * @param listener the {@code SimpleEventListener} to be removed
 	 */
 	@Override
-	public void removeListener(EventListener listener) {
+	public void removeListener(SimpleEventListener listener) {
 		removeListener(listener, null);
 	}
 
 	/**
 	 * Removes from the list of registered listeners all pairs
-	 * matching the given combination of {@code EventListener}
+	 * matching the given combination of {@code SimpleEventListener}
 	 * and {@code eventName}. If {@code eventName} is {@code null}
 	 * then all occurrences of the given {@code listener} will be
 	 * removed.
@@ -153,7 +153,7 @@ public class EventSource implements EventManager, Serializable {
 	 * @param eventName
 	 */
 	@Override
-	public void removeListener(EventListener listener, String eventName) {
+	public void removeListener(SimpleEventListener listener, String eventName) {
 		if (eventListeners != null) {
 			for (int i = eventListeners.size() - 2; i > -1; i -= 2) {
 				if (eventListeners.get(i + 1) == listener
@@ -168,7 +168,7 @@ public class EventSource implements EventManager, Serializable {
 
 	/**
 	 * Fires the given {@code event} using this object as {@code source}
-	 * for the call to {@link EventListener#invoke(Object, EventObject)}}
+	 * for the call to {@link SimpleEventListener#invoke(Object, EventObject)}}
 	 * if no source was specified by {@link #setEventSource(Object)}
 	 * @param event
 	 */
@@ -191,7 +191,7 @@ public class EventSource implements EventManager, Serializable {
 	}
 
 	/**
-	 * Dispatches the given {@code event} to all registered {@code EventListener}s
+	 * Dispatches the given {@code event} to all registered {@code SimpleEventListener}s
 	 * that listen to the name of this {@code EventObject} or that are registered
 	 * as {@code 'catch all'}-listeners
 	 * @param event
@@ -213,7 +213,7 @@ public class EventSource implements EventManager, Serializable {
 
 			for (int i = 0; i < size; i += 2) {
 				String listen = (String) eventListeners.get(i);
-				EventListener listener = (EventListener) eventListeners.get(i + 1);
+				SimpleEventListener listener = (SimpleEventListener) eventListeners.get(i + 1);
 
 				if(listener==null) {
 					deadListenerCount.incrementAndGet();

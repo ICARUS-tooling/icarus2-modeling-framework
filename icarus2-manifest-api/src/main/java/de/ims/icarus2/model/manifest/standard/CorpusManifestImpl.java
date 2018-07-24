@@ -132,7 +132,7 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 
 		Collection<ContextManifest> storage = isRoot ? rootContextManifests : customContextManifests;
 
-		storage.remove(manifest.getId());
+		storage.remove(manifest);
 	}
 
 	/**

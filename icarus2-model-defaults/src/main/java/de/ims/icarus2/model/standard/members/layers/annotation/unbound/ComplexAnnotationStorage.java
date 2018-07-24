@@ -18,8 +18,10 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.unbound;
 
+import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -29,9 +31,10 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.standard.members.layers.annotation.AbstractObjectMapStorage;
 import de.ims.icarus2.util.MutablePrimitives.GenericTypeAwareMutablePrimitive;
 import de.ims.icarus2.util.MutablePrimitives.MutablePrimitive;
+import de.ims.icarus2.util.Wrapper;
 import de.ims.icarus2.util.lang.ClassUtils;
 import de.ims.icarus2.util.lang.Primitives;
-import de.ims.icarus2.util.Wrapper;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner
@@ -350,8 +353,8 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 
 	public static class GrowingAnnotationBundle implements AnnotationBundle {
 
-		public static final int DEFAULT_CAPACITY = 6;
-		public static final int ARRAY_THRESHOLD = 24;
+		public static final int DEFAULT_CAPACITY = 8;
+		public static final int ARRAY_THRESHOLD = 16;
 
 		private Object data;
 
@@ -393,26 +396,80 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		@Override
 		public boolean setValue(String key, Object value) {
 			if(data instanceof Object[]) {
-				Object[] arary = (Object[]) data;
-				for(int i=0; i<arary.length-1; i+=2) {
-					if(arary[i]==null || arary[i].equals(key)) {
-						arary[i] = key;
-						arary[i+1] = value;
-						return true;
+				Object[] array = (Object[]) data;
+				if(value==null) {
+					// Seek and remove entry
+					for(int i=0; i<array.length-1; i+=2) {
+						if(array[i]!=null && array[i].equals(key)) {
+							array[i] = null;
+							array[i+1] = null;
+							return true;
+						}
+					}
+				} else {
+					// Seek and insert or update entry
+					for(int i=0; i<array.length-1; i+=2) {
+						if(array[i]==null || array[i].equals(key)) {
+							array[i] = key;
+							array[i+1] = value;
+							return true;
+						}
+					}
+
+					// No slot found, so we have to grow the buffer
+
+					// If we've already exceeded array space go and transform into map
+					if(array.length>=ARRAY_THRESHOLD) {
+						growToMap();
+						doMapOp(key, value);
+					} else {
+						// Otherwise stay in array form and grow
+						int newSlot = array.length;
+						array = growArray();
+						array[newSlot] = key;
+						array[newSlot+1] = value;
 					}
 				}
 			} else {
-				@SuppressWarnings("unchecked")
-				Map<String, Object> map = (Map<String, Object>)data;
-				if(value==null) {
-					map.remove(key);
-				} else {
-					//TODO this assignment was missing. need to check if simply throwing the mapping into the map is ok
-					map.put(key, value);
-				}
+				doMapOp(key, value);
 			}
 
 			return false;
+		}
+
+		private Object[] growArray() {
+			Object[] array = (Object[]) data;
+			array = Arrays.copyOf(array, array.length*2);
+			data = array;
+			return array;
+		}
+
+		private void growToMap() {
+			Map<String, Object> map = new Object2ObjectOpenHashMap<>();
+			Object[] array = (Object[]) data;
+			for(int i=0; i<array.length-1; i+=2) {
+				map.put((String) array[i], array[i+1]);
+			}
+			data = map;
+		}
+
+		private void maybeShrink() {
+			@SuppressWarnings("unchecked")
+			Map<String, Object> map = (Map<String, Object>)data;
+
+			checkState(map.size()>ARRAY_THRESHOLD);
+		}
+
+		private void doMapOp(String key, Object value) {
+			@SuppressWarnings("unchecked")
+			Map<String, Object> map = (Map<String, Object>)data;
+			if(value==null) {
+				map.remove(key);
+				maybeShrink();
+			} else {
+				//TODO this assignment was missing. need to check if simply throwing the mapping into the map is ok
+				map.put(key, value);
+			}
 		}
 
 		/**

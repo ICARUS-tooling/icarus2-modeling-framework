@@ -5,6 +5,8 @@ ext {
 	// Ensure a 'version' namespace for accessing the properties later
 	versions = [:]
 
+	versions.jcipVersion = '1.0'
+	versions.spotbugsVersion = '3.1.3'
 	versions.slf4jVersion = '1.7.25'
 	versions.guavaVersion = '25.1-jre'
 	versions.fastutilVersion = '8.2.1'

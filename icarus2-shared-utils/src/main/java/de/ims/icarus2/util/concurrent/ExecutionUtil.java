@@ -16,6 +16,10 @@ public class ExecutionUtil {
 	private static ExecutorService executorService;
 
 	private static RejectedExecutionHandler rejectedExecutionHandler;
+	static {
+		rejectedExecutionHandler = null;
+		//TODO if we ever need to implement a default policy for rejected executions, add it here
+	}
 
 	private static synchronized ExecutorService getExecutorService() {
 

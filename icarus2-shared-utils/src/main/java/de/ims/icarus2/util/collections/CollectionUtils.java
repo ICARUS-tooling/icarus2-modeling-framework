@@ -507,8 +507,8 @@ public final class CollectionUtils {
 			return false;
 		}
 
-		for(K key : m1.keySet()) {
-			if(!m1.get(key).equals(m2.get(key))) {
+		for(Map.Entry<K, V> e : m1.entrySet()) {
+			if(!e.getValue().equals(m2.get(e.getKey()))) {
 				return false;
 			}
 		}

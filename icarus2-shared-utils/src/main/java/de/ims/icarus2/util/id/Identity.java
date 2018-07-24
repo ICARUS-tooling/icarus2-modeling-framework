@@ -82,7 +82,8 @@ public interface Identity {
 	Object getOwner();
 
 	/**
-	 * Name based comparator
+	 * Prioritizing comparator that uses names if available for bot identities
+	 * and defaults to ids otherwise.
 	 */
 	public static final Comparator<Identity> COMPARATOR = new Comparator<Identity>() {
 
@@ -90,18 +91,17 @@ public interface Identity {
 		public int compare(Identity i1, Identity i2) {
 			String name1 = i1.getName();
 			String name2 = i2.getName();
-			if(name1!=null && name2!=null) {
-				return name1.compareTo(name2);
+			if(name1==null || name2==null) {
+				return ID_COMPARATOR.compare(i1, i2);
 			} else {
-				return i1.getId().compareTo(i2.getId());
+				return name1.compareTo(name2);
 			}
 		}
 
 	};
 
 	/**
-	 * Prioritizing comparator that uses names if available
-	 * and defaults to ids otherwise.
+	 * Name based comparator
 	 */
 	public static final Comparator<Identity> NAME_COMPARATOR = new Comparator<Identity>() {
 
@@ -110,9 +110,9 @@ public interface Identity {
 			String name1 = i1.getName();
 			String name2 = i2.getName();
 
-			if(name1==name2) {
+			if(Objects.equals(name1, name2)) {
 				return 0;
-			} else if(name1==null) {
+			} if(name1==null) {
 				return -1;
 			} else if(name2==null) {
 				return 1;
@@ -133,7 +133,7 @@ public interface Identity {
 			String id1 = i1.getId();
 			String id2 = i2.getId();
 
-			if(id1==id2) {
+			if(Objects.equals(id1, id2)) {
 				return 0;
 			} else if(id1==null) {
 				return -1;
@@ -146,6 +146,9 @@ public interface Identity {
 
 	};
 
+	/**
+	 * A {@link Strategy} implementation based on an identity's {@link #getId() id}
+	 */
 	public static final Strategy<Identity> HASH_STRATEGY = new Strategy<Identity>() {
 
 		@Override

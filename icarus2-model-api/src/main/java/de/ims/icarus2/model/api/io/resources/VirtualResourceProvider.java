@@ -138,13 +138,23 @@ public class VirtualResourceProvider implements ResourceProvider {
 				continue;
 			}
 
-			if(path.getParent().equals(folder)) {
+			Path parent = path.getParent();
+			if(parent==null) {
+				continue;
+			}
+
+			if(parent.equals(folder)) {
 				if(matcher==null) {
 					stream.add(path);
 					continue;
 				}
 
-				matcher.reset(path.getFileName().toString());
+				Path fileName = path.getFileName();
+				if(fileName==null) {
+					continue;
+				}
+
+				matcher.reset(fileName.toString());
 				if(matcher.matches()) {
 					stream.add(path);
 				}

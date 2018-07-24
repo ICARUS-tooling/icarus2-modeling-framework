@@ -25,6 +25,7 @@ import static java.util.Objects.requireNonNull;
 import java.awt.Component;
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.text.Collator;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -64,8 +65,27 @@ public final class StringUtil {
 	public static final String NATIVE_INTERN_PROPERTY =
 			"de.ims.icarus2.strings.useNativeIntern"; //$NON-NLS-1$
 
+	private static final Locale ICARUS_LOCALE;
+	static {
+		ICARUS_LOCALE = new Locale("en", "us");
+	}
+
+	private static final Collator NAME_COMPARATOR;
+	static {
+		NAME_COMPARATOR = Collator.getInstance(ICARUS_LOCALE);
+		NAME_COMPARATOR.setStrength(Collator.PRIMARY);
+	}
+
 	private StringUtil() {
 		// no-op
+	}
+
+	public static Collator getCollator() {
+		return NAME_COMPARATOR;
+	}
+
+	public static int compareLocaleAware(String s1, String s2) {
+		return NAME_COMPARATOR.compare(s1, s2);
 	}
 
 	public static String format(String text, Object...params) {

@@ -92,9 +92,9 @@ import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.collections.set.DataSet;
 import de.ims.icarus2.util.data.ContentType;
-import de.ims.icarus2.util.events.EventListener;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.events.Events;
+import de.ims.icarus2.util.events.SimpleEventListener;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
@@ -318,7 +318,7 @@ public class DefaultCorpus implements Corpus {
 				throw new ModelException(this, ModelErrorCode.VIEW_ALREADY_OPENED,
 						"Cannot open another stream in mode: "+mode);
 
-			//TODO
+			//TODO actually build the stream
 			StreamedCorpusView stream = null;
 
 			corpusPartStorage.addPart(stream, mode);
@@ -774,10 +774,10 @@ public class DefaultCorpus implements Corpus {
 		return overlayContainer;
 	}
 
-	private final class ManifestTracker implements EventListener {
+	private final class ManifestTracker implements SimpleEventListener {
 
 		/**
-		 * @see de.ims.icarus2.util.events.EventListener#invoke(java.lang.Object, de.ims.icarus2.util.events.EventObject)
+		 * @see de.ims.icarus2.util.events.SimpleEventListener#invoke(java.lang.Object, de.ims.icarus2.util.events.EventObject)
 		 */
 		@Override
 		public void invoke(Object sender, EventObject event) {

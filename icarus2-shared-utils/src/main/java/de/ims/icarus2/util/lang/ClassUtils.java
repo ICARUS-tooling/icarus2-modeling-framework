@@ -896,9 +896,9 @@ public final class ClassUtils {
 			return false;
 		}
 
-		for(Object key : m1.keySet()) {
-			Object value1 = m1.get(key);
-			Object value2 = m2.get(key);
+		for(Map.Entry<?, ?> entry : m1.entrySet()) {
+			Object value1 = entry.getValue();
+			Object value2 = m2.get(entry.getKey());
 
 			if(value1==value2) {
 				continue;

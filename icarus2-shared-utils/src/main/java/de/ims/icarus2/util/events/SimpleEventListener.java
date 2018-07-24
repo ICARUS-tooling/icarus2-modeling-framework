@@ -24,7 +24,7 @@ package de.ims.icarus2.util.events;
  * @author Markus Gärtner
  *
  */
-public interface EventListener extends java.util.EventListener {
+public interface SimpleEventListener extends java.util.EventListener {
 
 	/**
 	 * Signals the occurrence

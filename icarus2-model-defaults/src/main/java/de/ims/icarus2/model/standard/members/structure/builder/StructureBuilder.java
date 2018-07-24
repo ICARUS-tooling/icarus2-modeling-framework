@@ -489,6 +489,11 @@ public class StructureBuilder {
 		edges().clear();
 	}
 
+	public void clear() {
+		clearEdges();
+		clearNodes();
+	}
+
 	/**
 	 * Directly sets the {@code ItemStorage} instance to be used for the current
 	 * building process.

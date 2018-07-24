@@ -49,7 +49,7 @@ import de.ims.icarus2.util.strings.StringUtil;
  * @author Markus Gärtner
  *
  */
-public class DependencyStructureResolver implements BatchResolver, ResolverOptions {
+public class DependencyStructureResolver implements BatchResolver {
 
 	public static final String OPTION_OFFSET = "offset";
 	public static final String OPTION_ROOT_LABEL = "root";
@@ -97,11 +97,13 @@ public class DependencyStructureResolver implements BatchResolver, ResolverOptio
 	 */
 	@Override
 	public void prepareForReading(Converter converter, ReadMode mode, Function<ItemLayer, InputCache> caches, Options options) {
-		dependencyLayer = (StructureLayer) options.get(LAYER);
+		dependencyLayer = (StructureLayer) options.get(ResolverOptions.LAYER);
 		if(dependencyLayer==null)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "No layer assigned to this resolver "+getClass());
 
 		ItemLayer sentenceLayer = dependencyLayer.getBoundaryLayer();
+
+		structureBuilder = StructureBuilder.newBuilder(dependencyLayer.getManifest().getRootStructureManifest());
 
 		FileDriver driver = converter.getDriver();
 
@@ -178,7 +180,7 @@ public class DependencyStructureResolver implements BatchResolver, ResolverOptio
 	 */
 	@Override
 	public void beginBatch(ResolverContext context) {
-		// no-op
+		structureBuilder.clear();
 	}
 
 	/**

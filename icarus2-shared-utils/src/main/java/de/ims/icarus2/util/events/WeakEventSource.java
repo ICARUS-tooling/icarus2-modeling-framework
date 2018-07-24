@@ -54,20 +54,20 @@ public class WeakEventSource extends EventSource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.events.EventSource#addListener(java.lang.String, de.ims.icarus2.util.events.EventListener)
+	 * @see de.ims.icarus2.util.events.EventSource#addListener(java.lang.String, de.ims.icarus2.util.events.SimpleEventListener)
 	 */
 	@Override
-	public void addListener(String eventName, EventListener listener) {
-		EventListener proxy = ListenerProxies.getProxy(EventListener.class, listener);
+	public void addListener(String eventName, SimpleEventListener listener) {
+		SimpleEventListener proxy = ListenerProxies.getProxy(SimpleEventListener.class, listener);
 		super.addListener(eventName, proxy);
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.events.EventSource#removeListener(de.ims.icarus2.util.events.EventListener, java.lang.String)
+	 * @see de.ims.icarus2.util.events.EventSource#removeListener(de.ims.icarus2.util.events.SimpleEventListener, java.lang.String)
 	 */
 	@Override
-	public void removeListener(EventListener listener, String eventName) {
-		EventListener proxy = ListenerProxies.getProxy(EventListener.class, listener);
+	public void removeListener(SimpleEventListener listener, String eventName) {
+		SimpleEventListener proxy = ListenerProxies.getProxy(SimpleEventListener.class, listener);
 		super.removeListener(proxy, eventName);
 	}
 
@@ -77,10 +77,10 @@ public class WeakEventSource extends EventSource {
 //	 * events in the case the {@code eventName} parameter is {@code null}
 //	 * @param eventName name of events to listen for or {@code null} if
 //	 * the listener is meant to receive all fired events
-//	 * @param listener the {@code EventListener} to be registered
+//	 * @param listener the {@code SimpleEventListener} to be registered
 //	 */
 //	@Override
-//	public void addListener(String eventName, EventListener listener) {
+//	public void addListener(String eventName, SimpleEventListener listener) {
 //		Exceptions.testNullArgument(listener, "listener"); //$NON-NLS-1$
 //		
 //		if (eventListeners == null) {
@@ -92,7 +92,7 @@ public class WeakEventSource extends EventSource {
 
 //	/**
 //	 * Removes from the list of registered listeners all pairs
-//	 * matching the given combination of {@code EventListener}
+//	 * matching the given combination of {@code SimpleEventListener}
 //	 * and {@code eventName}. If {@code eventName} is {@code null}
 //	 * then all occurrences of the given {@code listener} will be
 //	 * removed.
@@ -100,7 +100,7 @@ public class WeakEventSource extends EventSource {
 //	 * @param eventName
 //	 */
 //	@Override
-//	public void removeEventListener(EventListener listener, String eventName) {
+//	public void removeEventListener(SimpleEventListener listener, String eventName) {
 //		if (eventListeners != null) {
 //			for (int i=eventListeners.size()-1; i>-1; i--) {
 //				Entry entry = (Entry)eventListeners.get(i);
@@ -118,7 +118,7 @@ public class WeakEventSource extends EventSource {
 //	}
 
 //	/**
-//	 * Dispatches the given {@code event} to all registered {@code EventListener}s
+//	 * Dispatches the given {@code event} to all registered {@code SimpleEventListener}s
 //	 * that listen to the name of this {@code EventObject} or that are registered
 //	 * as {@code 'catch all'}-listeners
 //	 * @param event
@@ -141,7 +141,7 @@ public class WeakEventSource extends EventSource {
 //					deadListenerCount++;
 //					continue;
 //				}
-//				EventListener listener = entry.ref.get();
+//				SimpleEventListener listener = entry.ref.get();
 //				if(listener==null) {
 //					deadListenerCount++;
 //				} else if(entry.eventName==null || entry.eventName.equals(event.getName())) {
@@ -166,11 +166,11 @@ public class WeakEventSource extends EventSource {
 //	}
 
 //	private class Entry {
-//		private WeakReference<EventListener> ref;
+//		private WeakReference<SimpleEventListener> ref;
 //		private String eventName;
 //		
-//		private Entry(EventListener listener, String eventName) {
-//			this.ref = new WeakReference<EventListener>(listener);
+//		private Entry(SimpleEventListener listener, String eventName) {
+//			this.ref = new WeakReference<SimpleEventListener>(listener);
 //			this.eventName = eventName;
 //		}
 //		

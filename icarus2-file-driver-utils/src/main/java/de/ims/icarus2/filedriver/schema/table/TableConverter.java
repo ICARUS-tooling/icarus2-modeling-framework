@@ -1531,7 +1531,10 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			Item newItem = null;
 			try {
 				newItem = context.getPendingItem();
-				if(newItem==null || newItem.getMemberType()!=requiredType)
+				if(newItem==null)
+					throw new ModelException(ModelErrorCode.DRIVER_ERROR,
+							"Missing new item");
+				if(newItem.getMemberType()!=requiredType)
 					throw new ModelException(ModelErrorCode.DRIVER_ERROR,
 							Messages.mismatchMessage("Invalid member-type of new item", requiredType, newItem.getMemberType()));
 
@@ -1573,7 +1576,10 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			Item newItem = null;
 			try {
 				newItem = context.getPendingItem();
-				if(newItem==null || newItem.getMemberType()!=requiredType)
+				if(newItem==null)
+					throw new ModelException(ModelErrorCode.DRIVER_ERROR,
+							"Missing new item");
+				if(newItem.getMemberType()!=requiredType)
 					throw new ModelException(ModelErrorCode.DRIVER_ERROR,
 							Messages.mismatchMessage("Invalid member-type of new item", requiredType, newItem.getMemberType()));
 
@@ -2671,7 +2677,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 						// For multiline attributes save the handler
 						case PARTLY_MATCHED: {
-							pendingAttributeHandler = attributeHandler;
+							this.pendingAttributeHandler = attributeHandler;
 							return true;
 						}
 						case MATCHED: return true;

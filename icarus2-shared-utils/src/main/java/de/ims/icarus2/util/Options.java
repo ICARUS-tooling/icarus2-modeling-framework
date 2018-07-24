@@ -17,7 +17,7 @@ import java.util.Map;
  * @author Markus Gärtner
  *
  */
-public class Options extends HashMap<String, Object> implements Cloneable {
+public class Options extends HashMap<String, Object> {
 
 	/**
 	 *
@@ -104,7 +104,7 @@ public class Options extends HashMap<String, Object> implements Cloneable {
 	public void dump(PrintStream out) {
 		out.println("Options: "); //$NON-NLS-1$
 		for(Entry<String, Object> entry : entrySet())
-			out.printf("  -key=%s value=%s\n",  //$NON-NLS-1$
+			out.printf("  -key=%s value=%s%n",  //$NON-NLS-1$
 					entry.getKey(), String.valueOf(entry.getValue()));
 	}
 
@@ -207,7 +207,7 @@ public class Options extends HashMap<String, Object> implements Cloneable {
 
 	@Override
 	public Options clone() {
-		return new Options(this);
+		return (Options) super.clone();
 	}
 
 	// Collection of commonly used option keys

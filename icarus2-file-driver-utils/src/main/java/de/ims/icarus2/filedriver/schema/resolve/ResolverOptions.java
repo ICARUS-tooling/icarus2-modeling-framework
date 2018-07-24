@@ -21,7 +21,7 @@ package de.ims.icarus2.filedriver.schema.resolve;
  * @author Markus Gärtner
  *
  */
-public interface ResolverOptions {
+public final class ResolverOptions {
 
 	//TODO define common set of options to pass layers or converter states to a resolver via Options object!
 

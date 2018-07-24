@@ -28,6 +28,8 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -102,7 +104,13 @@ public class ExternalClassLoader extends URLClassLoader {
 		URL[] urls = new URL[urlList.size()];
 		urlList.toArray(urls);
 
-		return new ExternalClassLoader(urls, rootFolder, parent);
+		return AccessController.doPrivileged(new PrivilegedAction<ExternalClassLoader>() {
+
+			@Override
+			public ExternalClassLoader run() {
+				return new ExternalClassLoader(urls, rootFolder, parent);
+			}
+		});
 	}
 
 	private ExternalClassLoader(URL[] urls, Path rootFolder, ClassLoader parent) {
@@ -177,7 +185,9 @@ public class ExternalClassLoader extends URLClassLoader {
 
 				URL url = jarFile.toUri().toURL();
 
-				loader = new URLClassLoader(new URL[]{url}, this);
+				PrivilegedAction<URLClassLoader> createLoader = () -> new URLClassLoader(new URL[]{url}, this);
+
+				loader = AccessController.doPrivileged(createLoader);
 
 				jarLoaders.put(jarName, loader);
 				closeables.put(loader, null);

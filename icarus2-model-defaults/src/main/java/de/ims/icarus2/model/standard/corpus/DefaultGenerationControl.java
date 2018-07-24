@@ -34,7 +34,7 @@ import de.ims.icarus2.model.api.edit.CorpusEditEvents;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.AbstractBuilder;
-import de.ims.icarus2.util.events.EventListener;
+import de.ims.icarus2.util.events.SimpleEventListener;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.io.IOUtil;
 import it.unimi.dsi.fastutil.Stack;
@@ -43,7 +43,7 @@ import it.unimi.dsi.fastutil.Stack;
  * @author Markus Gärtner
  *
  */
-public class DefaultGenerationControl implements GenerationControl, EventListener {
+public class DefaultGenerationControl implements GenerationControl, SimpleEventListener {
 
 	public static Builder newBuilder() {
 		return new Builder();
@@ -235,7 +235,7 @@ public class DefaultGenerationControl implements GenerationControl, EventListene
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.events.EventListener#invoke(java.lang.Object, de.ims.icarus2.util.events.EventObject)
+	 * @see de.ims.icarus2.util.events.SimpleEventListener#invoke(java.lang.Object, de.ims.icarus2.util.events.EventObject)
 	 */
 	@Override
 	public void invoke(Object sender, EventObject event) {

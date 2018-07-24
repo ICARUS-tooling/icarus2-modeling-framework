@@ -33,8 +33,7 @@ public final class Bits {
 		long v = 0L;
 
 		while(n-->0) {
-			v <<= 8;
-			v |= array[offset++];
+			v = ((v << 8) |  (array[offset++] & 0xff));
 		}
 
 		return v;

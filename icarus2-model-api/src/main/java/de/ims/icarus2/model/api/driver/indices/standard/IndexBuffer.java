@@ -197,7 +197,7 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 	public void add(long index) {
 		checkCapacity(1);
 
-		sorted &= lastIndex()<=index;
+		sorted = sorted && lastIndex()<=index;
 		valueType.set(buffer, size, index);
 
 		size++;
@@ -208,7 +208,7 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		int length = IcarusUtils.ensureIntegerValueRange(to-from+1);
 		checkCapacity(length);
 
-		sorted &= lastIndex()<=from;
+		sorted = sorted && lastIndex()<=from;
 		valueType.copyFrom(i -> from+i, 0, buffer, size, length);
 
 		sorted = false;
@@ -231,7 +231,7 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		checkCapacity(length);
 
 		if(sorted) {
-			sorted &= lastIndex()<=indices[offset] && ArrayUtils.isSorted(indices, offset, offset+length);
+			sorted = sorted && lastIndex()<=indices[offset] && ArrayUtils.isSorted(indices, offset, offset+length);
 		}
 		valueType.copyFrom(indices, offset, buffer, size, length);
 
@@ -246,7 +246,7 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		checkCapacity(length);
 
 		if(sorted) {
-			sorted &= lastIndex()<=indices[offset] && ArrayUtils.isSorted(indices, offset, offset+length);
+			sorted = sorted && lastIndex()<=indices[offset] && ArrayUtils.isSorted(indices, offset, offset+length);
 		}
 		valueType.copyFrom(indices, offset, buffer, size, length);
 
@@ -261,7 +261,7 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		checkCapacity(length);
 
 		if(sorted) {
-			sorted &= lastIndex()<=indices[offset] && ArrayUtils.isSorted(indices, offset, offset+length);
+			sorted = sorted && lastIndex()<=indices[offset] && ArrayUtils.isSorted(indices, offset, offset+length);
 		}
 		valueType.copyFrom(indices, offset, buffer, size, length);
 
@@ -276,7 +276,7 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		checkCapacity(length);
 
 		if(sorted) {
-			sorted &= lastIndex()<=indices[offset] && ArrayUtils.isSorted(indices, offset, offset+length);
+			sorted = sorted && lastIndex()<=indices[offset] && ArrayUtils.isSorted(indices, offset, offset+length);
 		}
 		valueType.copyFrom(indices, offset, buffer, size, length);
 
@@ -307,7 +307,7 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		checkCapacity(addCount);
 
 		if(sorted) {
-			sorted &= lastIndex()<=indices.indexAt(beginIndex) && IndexUtils.isSorted(indices, beginIndex, endIndex);
+			sorted = sorted && lastIndex()<=indices.indexAt(beginIndex) && IndexUtils.isSorted(indices, beginIndex, endIndex);
 		}
 
 		switch (valueType) {
@@ -357,7 +357,7 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		if(sorted) {
 			src = i -> {
 				long index = items[i].getIndex();
-				sorted &= lastIndex()<=index;
+				sorted = sorted && lastIndex()<=index;
 				return index;
 			};
 		} else {
@@ -384,7 +384,7 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		if(sorted) {
 			src = i -> {
 				long index = items.get(i).getIndex();
-				sorted &= lastIndex()<=index;
+				sorted = sorted && lastIndex()<=index;
 				return index;
 			};
 		} else {

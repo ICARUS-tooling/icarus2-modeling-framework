@@ -42,7 +42,7 @@ import de.ims.icarus2.util.events.Events;
  * registry or until {@link #resetUIDs() reset} manually.
  * <p>
  * Clients that wish to be notified about changes to the registry can subscribe by
- * {@link #addListener(String, de.ims.icarus2.util.events.EventListener) adding a listener}.
+ * {@link #addListener(String, de.ims.icarus2.util.events.SimpleEventListener) adding a listener}.
  * The registry will fire {@link Events#ADD add}, {@link Events#REMOVE remove} and {@link Events#CHANGE change} events
  * <b>before</b> the respective changes are made, giving subscribed listeners the chance to interrupt illegal changes
  * (typically a {@link CorpusManager manager} responsible for a registry will subscribe and intercept changes so that

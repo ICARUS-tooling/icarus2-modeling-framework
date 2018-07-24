@@ -23,6 +23,8 @@ import static de.ims.icarus2.util.lang.Primitives._char;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
+import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.StringTokenizer;
 
@@ -38,7 +40,10 @@ import de.ims.icarus2.util.version.VersionFormat;
  * @author Markus Gärtner
  *
  */
-public class MajorMinorReleaseVersionFormat implements VersionFormat {
+public class MajorMinorReleaseVersionFormat implements VersionFormat, Serializable {
+
+	private static final long serialVersionUID = 4387226642863523438L;
+
 
 	/**
 	 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
@@ -178,7 +183,7 @@ public class MajorMinorReleaseVersionFormat implements VersionFormat {
 		 */
 		@Override
 		public String toString() {
-			return String.format("%d%s%d%s%d%%s",
+			return String.format("%d%s%d%s%d%s",
 					_int(major), _char(SEPARATOR), _int(minor), _char(SEPARATOR), _int(release),
 					info==null ? "" : " "+info);
 		}
@@ -188,16 +193,23 @@ public class MajorMinorReleaseVersionFormat implements VersionFormat {
 		 */
 		@Override
 		public boolean equals(Object obj) {
-			if(obj==this) {
-				return true;
-			} else if(obj instanceof MajorMinorReleaseVersion) {
-				MajorMinorReleaseVersion other = (MajorMinorReleaseVersion) obj;
-				return major==other.major
-						&& minor==other.minor
-						&& release==other.release
-						&& Objects.equals(info, other.info);
-			}
-			return false;
+			if(obj==this) return true;
+			if(obj==null || obj.getClass()!=getClass()) return false;
+			MajorMinorReleaseVersion other = (MajorMinorReleaseVersion) obj;
+			return major==other.major
+					&& minor==other.minor
+					&& release==other.release
+					&& Objects.equals(info, other.info);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.version.Version#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return Arrays.hashCode(new int[] {
+					major, minor, release, info==null ? 0 : info.hashCode()
+			});
 		}
 
 		/**

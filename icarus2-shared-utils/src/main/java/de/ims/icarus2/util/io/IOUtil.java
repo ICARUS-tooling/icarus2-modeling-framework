@@ -177,8 +177,11 @@ public final class IOUtil {
 	}
 
 	public static boolean isGZipSource(Path path) {
-		if(path.getNameCount()>0) {
+		if(path!=null && path.getNameCount()>0) {
 			path = path.getFileName();
+		}
+		if(path==null) {
+			return false;
 		}
 		return isGZipSource(path.toString());
 	}

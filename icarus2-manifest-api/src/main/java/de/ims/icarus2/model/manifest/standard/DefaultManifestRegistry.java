@@ -42,7 +42,7 @@ import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.events.ManifestEvents;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.Counter;
-import de.ims.icarus2.util.events.EventListener;
+import de.ims.icarus2.util.events.SimpleEventListener;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.events.EventSource;
 import de.ims.icarus2.util.events.WeakEventSource;
@@ -469,29 +469,29 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 	/**
 	 * @param eventName
 	 * @param listener
-	 * @see de.ims.icarus2.util.events.EventSource#addListener(java.lang.String, de.ims.icarus2.util.events.EventListener)
+	 * @see de.ims.icarus2.util.events.EventSource#addListener(java.lang.String, de.ims.icarus2.util.events.SimpleEventListener)
 	 */
 	@Override
-	public void addListener(String eventName, EventListener listener) {
+	public void addListener(String eventName, SimpleEventListener listener) {
 		eventSource.addListener(eventName, listener);
 	}
 
 	/**
 	 * @param listener
-	 * @see de.ims.icarus2.util.events.EventSource#removeListener(de.ims.icarus2.util.events.EventListener)
+	 * @see de.ims.icarus2.util.events.EventSource#removeListener(de.ims.icarus2.util.events.SimpleEventListener)
 	 */
 	@Override
-	public void removeListener(EventListener listener) {
+	public void removeListener(SimpleEventListener listener) {
 		eventSource.removeListener(listener);
 	}
 
 	/**
 	 * @param listener
 	 * @param eventName
-	 * @see de.ims.icarus2.util.events.EventSource#removeListener(de.ims.icarus2.util.events.EventListener, java.lang.String)
+	 * @see de.ims.icarus2.util.events.EventSource#removeListener(de.ims.icarus2.util.events.SimpleEventListener, java.lang.String)
 	 */
 	@Override
-	public void removeListener(EventListener listener, String eventName) {
+	public void removeListener(SimpleEventListener listener, String eventName) {
 		eventSource.removeListener(listener, eventName);
 	}
 

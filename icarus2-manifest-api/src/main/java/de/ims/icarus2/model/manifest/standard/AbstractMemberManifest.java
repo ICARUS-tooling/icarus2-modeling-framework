@@ -369,7 +369,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	}
 
 	protected void setDescription0(String description) {
-		this.name = requireNonNull(description);
+		this.description = requireNonNull(description);
 	}
 
 	@Override

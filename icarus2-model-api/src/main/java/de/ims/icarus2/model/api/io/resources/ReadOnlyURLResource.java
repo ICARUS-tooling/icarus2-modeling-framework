@@ -104,6 +104,8 @@ public class ReadOnlyURLResource implements IOResource {
 		// Copy all data from the URL's stream into local buffer
 		try(InputStream in = source.openStream()) {
 
+			buffer = new MemoryByteStorage();
+
 			// InputStream needs array, our MemoryByteStorage needs ByteBuffer
 			byte[] b = new byte[IOUtil.DEFAULT_BUFFER_SIZE];
 			ByteBuffer bb = ByteBuffer.wrap(b);

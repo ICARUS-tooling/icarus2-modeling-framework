@@ -145,9 +145,14 @@ public interface Mutable<O extends Object> extends Wrapper<O>, Cloneable {
 		/**
 		 * @see java.lang.Object#clone()
 		 */
+		@SuppressWarnings("unchecked")
 		@Override
-		public Object clone() {
-			return new MutableObject<>(value);
+		public Mutable<O> clone() {
+			try {
+				return (Mutable<O>) super.clone();
+			} catch (CloneNotSupportedException e) {
+				throw new IllegalStateException("Not cloneable");
+			}
 		}
 
 		/**

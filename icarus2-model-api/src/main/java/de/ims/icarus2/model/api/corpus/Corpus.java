@@ -60,7 +60,7 @@ import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.data.ContentType;
-import de.ims.icarus2.util.events.EventListener;
+import de.ims.icarus2.util.events.SimpleEventListener;
 import de.ims.icarus2.util.id.DuplicateIdentifierException;
 import de.ims.icarus2.util.id.UnknownIdentifierException;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -100,7 +100,7 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
  * active edit and to finally commit all pending changes to a single undoable edit. While an
  * edit is in progress the model will fire several events whenever the update-level is increased or
  * decreased (via the {@link CorpusEditManager#beginUpdate()} or {@link CorpusEditManager#endUpdate()}
- * methods) and when the final edit is committed. These events are forwarded to common {@link EventListener}
+ * methods) and when the final edit is committed. These events are forwarded to common {@link SimpleEventListener}
  * instances, while the final edit is also delegated to all the registered {@link CorpusUndoListener}s,
  * including the shared {@link CorpusUndoManager} of the corpus affected by the changes.
  *

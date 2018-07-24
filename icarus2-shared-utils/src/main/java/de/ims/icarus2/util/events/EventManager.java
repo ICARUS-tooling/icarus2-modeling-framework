@@ -24,9 +24,9 @@ package de.ims.icarus2.util.events;
  */
 public interface EventManager {
 
-	void addListener(String eventName, EventListener listener);
+	void addListener(String eventName, SimpleEventListener listener);
 
-	void removeListener(EventListener listener);
+	void removeListener(SimpleEventListener listener);
 
-	void removeListener(EventListener listener, String eventName);
+	void removeListener(SimpleEventListener listener, String eventName);
 }

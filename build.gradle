@@ -2,6 +2,7 @@
 plugins {
 	//id 'com.github.jk1.dependency-license-report' version '1.2'
     id "com.github.hierynomus.license" version "0.14.0"
+	id "com.github.spotbugs" version "1.6.2"
 }
 
 // Load version definitions for dependencies. Info will be stored in 'versions' map
@@ -24,8 +25,8 @@ wrapper {
 
 subprojects {
   	apply plugin: 'java'
-  	apply plugin: 'findbugs'
-  	
+  	apply plugin: 'maven-publish'
+  	apply plugin: 'com.github.spotbugs'  	
 	apply plugin: 'com.github.hierynomus.license'
 	
   	sourceCompatibility = 1.8
@@ -36,6 +37,11 @@ subprojects {
   	}  
 	  	
 	configurations {
+	
+		// COMPILE ENVIRONMENT
+		spotbugs {
+			exclude group:'com.google.code.findbugs', module:'findbugs'
+		}
 		
 		// RUNTIME ENVIRONMENT
 		slf4j
@@ -52,6 +58,12 @@ subprojects {
 	}
 	  	
 	dependencies {
+	
+		// COMPILE ENVIRONMENT
+		
+		spotbugs "net.jcip:jcip-annotations:${versions.jcipVersion}"
+  		spotbugs "com.github.spotbugs:spotbugs:${versions.spotbugsVersion}"
+		spotbugs "com.github.spotbugs:spotbugs-annotations:${versions.spotbugsVersion}"
 		
 		// RUNTIME ENVIRONMENT
 	
@@ -126,26 +138,29 @@ subprojects {
 		header = rootProject.file('LICENSE_HEADER')
 		
 		includes(["**/*.java", "**/*.properties", "**/*.ini", "**/*.xml"])
+		
+		// pakage-info.java already has a documentation header, don't need conflicts here!
 		excludes(["**/package-info.java"])
 		
 		mapping {
 			java = 'SLASHSTAR_STYLE'
 		}
 		
-		useDefaultMappings=true
+	    ignoreFailures = true
+		useDefaultMappings = true
 		dryRun = false
 		strictCheck=true
 	}
 	
-	findbugs {
-	    toolVersion = "3.0.1"
-	    ignoreFailures = false
+	spotbugs {
+	    toolVersion = "3.1.3"
+	    ignoreFailures = true
 	    effort = "max"
 	    showProgress = false
 	    reportLevel = "medium"
 	}
 	
-	tasks.withType(FindBugs) {
+	tasks.withType(com.github.spotbugs.SpotBugsTask) {
 	    reports {
 	        xml.enabled false
 	        html.enabled true

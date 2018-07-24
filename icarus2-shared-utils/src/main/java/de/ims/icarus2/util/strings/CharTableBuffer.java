@@ -96,7 +96,7 @@ public class CharTableBuffer {
 
 	public String getErrorMessage(String prefix) {
 		return String.format(
-				"%s - error in block:\n==== starting at line %d\n%s\n==== ending at line %d", //$NON-NLS-1$
+				"%s - error in block:%n==== starting at line %d%n%s%n==== ending at line %d", //$NON-NLS-1$
 				prefix, getBlockBegin(), toString(), getBlockEnd());
 	}
 
