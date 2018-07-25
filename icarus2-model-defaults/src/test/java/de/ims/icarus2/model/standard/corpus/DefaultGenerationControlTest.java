@@ -43,7 +43,7 @@ import it.unimi.dsi.fastutil.Stack;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 /**
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 public class DefaultGenerationControlTest {

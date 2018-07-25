@@ -31,7 +31,7 @@ import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.manifest.util.Messages;
 
 /**
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 public class VirtualIndexSet implements IndexSet {

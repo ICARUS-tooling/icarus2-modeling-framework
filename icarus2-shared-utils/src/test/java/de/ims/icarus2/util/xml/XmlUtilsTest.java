@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 /**
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 public class XmlUtilsTest {

@@ -42,7 +42,7 @@ import de.ims.icarus2.IcarusException;
 /**
  * Utility class with methods to convert between images/icons and a Base64 string representation.
  *
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 public class ImageSerializer {

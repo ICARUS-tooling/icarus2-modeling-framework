@@ -3,7 +3,7 @@
  * model the popular formats used in various
  * CoNLL Sared Task events.
  *
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 package de.ims.icarus2.common.formats.conll;

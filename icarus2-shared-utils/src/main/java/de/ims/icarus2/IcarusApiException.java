@@ -25,7 +25,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.Objects;
 
 /**
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 public class IcarusApiException extends Exception {

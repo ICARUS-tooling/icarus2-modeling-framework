@@ -20,7 +20,7 @@
 package de.ims.icarus2.util.id;
 
 /**
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 public interface MutableIdentifiable extends Identifiable {

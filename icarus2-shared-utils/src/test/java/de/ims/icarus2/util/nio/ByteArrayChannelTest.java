@@ -32,7 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 public class ByteArrayChannelTest {

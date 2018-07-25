@@ -3,7 +3,7 @@
  * and to apply certain filter or merge mechanisms to create new {@code de.ims.icarus2.model.api.driver.indices.IndexSet}
  * objects.
  *
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 package de.ims.icarus2.model.api.driver.indices.func;

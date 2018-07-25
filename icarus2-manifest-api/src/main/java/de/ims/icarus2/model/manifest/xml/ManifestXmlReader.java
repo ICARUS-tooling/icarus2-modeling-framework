@@ -608,7 +608,7 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 
 	/**
 	 *
-	 * @author Markus
+	 * @author Markus Gärtner
 	 *
 	 */
 	public static class Builder extends AbstractBuilder<Builder, ManifestXmlReader> {

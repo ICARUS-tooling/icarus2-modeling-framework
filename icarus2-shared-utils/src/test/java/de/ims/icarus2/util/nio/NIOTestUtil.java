@@ -27,7 +27,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 
 /**
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 public class NIOTestUtil {

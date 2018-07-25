@@ -26,7 +26,7 @@ import de.ims.icarus2.util.Changeable;
 import de.ims.icarus2.util.Part;
 
 /**
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 public interface OwnableCorpusPart extends AutoCloseable, Changeable, Part<Corpus> {

@@ -307,7 +307,7 @@ public class DefaultGenerationControl implements GenerationControl, SimpleEventL
 
 	/**
 	 *
-	 * @author Markus
+	 * @author Markus Gärtner
 	 *
 	 */
 	public static class Builder extends AbstractBuilder<Builder, DefaultGenerationControl> {

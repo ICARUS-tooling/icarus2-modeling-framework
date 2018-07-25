@@ -31,7 +31,7 @@ package de.ims.icarus2.model.manifest.types;
  * layer interfaces will define adequate sub-interfaces for modelling
  * the type of linking they suppport.
  *
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 public interface Ref<O extends Object> {

@@ -23,7 +23,7 @@ import java.nio.ByteBuffer;
 import java.util.Random;
 
 /**
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 public class NIOUtil {

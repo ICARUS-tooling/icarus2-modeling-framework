@@ -36,7 +36,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import de.ims.icarus2.util.TestUtils;
 
 /**
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 public class FastChannelReaderTest {

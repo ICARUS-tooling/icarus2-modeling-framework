@@ -25,7 +25,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 /**
  * Proxy class that only holds the map for looking up error codes.
  *
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 final class ErrorCodeLookup {

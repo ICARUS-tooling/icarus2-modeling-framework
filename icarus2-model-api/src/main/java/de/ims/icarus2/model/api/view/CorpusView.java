@@ -31,7 +31,7 @@ import de.ims.icarus2.util.AccessMode;
  * Models the basic properties of a {@code view} on a corpus,
  * i.e. a filtered part of its content.
  *
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 public interface CorpusView {

@@ -42,7 +42,7 @@ import de.ims.icarus2.util.xml.XmlSerializer;
 import de.ims.icarus2.util.xml.XmlUtils;
 
 /**
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 @Unused

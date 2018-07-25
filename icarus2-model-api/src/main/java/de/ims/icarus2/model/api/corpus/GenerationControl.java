@@ -81,7 +81,7 @@ public interface GenerationControl {
 	/**
 	 * A marker for a certain stage in a corpus' modification life-cycle.
 	 *
-	 * @author Markus
+	 * @author Markus Gärtner
 	 *
 	 */
 	public interface Stage extends Comparable<Stage>, StringResource {

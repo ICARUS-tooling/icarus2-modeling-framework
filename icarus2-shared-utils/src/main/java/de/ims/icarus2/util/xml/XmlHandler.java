@@ -23,7 +23,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 public class XmlHandler extends DefaultHandler {

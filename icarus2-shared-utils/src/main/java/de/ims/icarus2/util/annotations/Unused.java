@@ -36,7 +36,7 @@ import java.lang.annotation.Target;
 /**
  *  Marker annotation to signal that something is not (currently) in use
  *
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 public @interface Unused {

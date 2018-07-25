@@ -25,8 +25,10 @@ import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.util.id.Identity;
 
 /**
+ *
  * @author Markus Gärtner
  *
+ * @param <R>
  */
 public interface Report<R extends ReportItem> {
 

@@ -582,7 +582,7 @@ public class ValueType implements StringResource, NamedObject {
 	 * of elements in the vector, or the <i>wildcard symbol</i> {@ x} to signal
 	 * that vectors for this type can vary in size.
 	 *
-	 * @author Markus
+	 * @author Markus Gärtner
 	 *
 	 */
 	public static final class VectorType extends ValueType {

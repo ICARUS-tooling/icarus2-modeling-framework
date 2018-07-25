@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
 import de.ims.icarus2.util.version.common.MajorMinorReleaseVersionFormat.MajorMinorReleaseVersion;
 
 /**
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 public class MajorMinorReleaseVersionFormatTest {

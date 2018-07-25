@@ -32,7 +32,7 @@ import de.ims.icarus2.util.collections.MinHeap.LongMinHeap;
 import de.ims.icarus2.util.collections.MinHeap.ObjectMinHeap;
 
 /**
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 public class MinHeapTest {

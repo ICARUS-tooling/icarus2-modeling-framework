@@ -26,7 +26,7 @@ import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.collections.LazyCollection;
 
 /**
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 public interface Categorizable {

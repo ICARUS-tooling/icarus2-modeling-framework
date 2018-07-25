@@ -44,7 +44,7 @@ import de.ims.icarus2.util.events.ChangeSource;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
- * @author Markus
+ * @author Markus Gärtner
  *
  */
 public abstract class AbstractCorpusView extends AbstractPart<Corpus> implements CorpusView, OwnableCorpusPart {
@@ -223,7 +223,7 @@ public abstract class AbstractCorpusView extends AbstractPart<Corpus> implements
 
 	/**
 	 *
-	 * @author Markus
+	 * @author Markus Gärtner
 	 *
 	 * @param <B>
 	 * @param <V>
