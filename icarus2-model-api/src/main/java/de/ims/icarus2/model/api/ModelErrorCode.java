@@ -174,7 +174,7 @@ public enum ModelErrorCode implements ErrorCode {
 	STREAM_MARK_NOT_SUPPORTED(510),
 	STREAM_MARK_NOT_SET(511),
 
-	STREAM_SKIP_NOT_SUPPORTED(510),
+	STREAM_SKIP_NOT_SUPPORTED(520),
 
 
 	//**************************************************
