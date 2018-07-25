@@ -22,7 +22,7 @@ package de.ims.icarus2.model.manifest.api.events;
  * @author Markus Gärtner
  *
  */
-public interface ManifestEvents {
+public final class ManifestEvents {
 
 	public static final String ADD_CORPUS = "add_corpus";
 	public static final String ADDED_CORPUS = "added_corpus";
