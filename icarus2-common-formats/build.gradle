@@ -5,8 +5,3 @@ description = 'Collection of drivers for widely used corpus storage/serializatio
 dependencies {
 	implementation project(':icarus2-file-driver-utils')
 }
-
-configurations {
-	// external dependencies managed by root build.gradle
-	testImplementation.extendsFrom(junit, mockito)
-}

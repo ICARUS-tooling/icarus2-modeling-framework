@@ -6,4 +6,4 @@ jdk:
 before_install:
   - chmod a+x gradlew
 
-sccript: ./gradlew build
+sccript: ./gradlew build --scan

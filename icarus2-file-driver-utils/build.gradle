@@ -12,7 +12,5 @@ dependencies {
 
 configurations {
 	// external dependencies managed by root build.gradle
-	implementation.extendsFrom(slf4j, lucene)
-	
-	testImplementation.extendsFrom(junit, mockito)
+	implementation.extendsFrom(lucene)
 }

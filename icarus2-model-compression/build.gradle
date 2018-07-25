@@ -5,8 +5,3 @@ description = 'Facility for compressed storage of text-based corpus resources'
 dependencies {
 	implementation project(':icarus2-model-api')
 }
-
-configurations {
-	// external dependencies managed by root build.gradle
-	testImplementation.extendsFrom(junit, mockito)
-}
