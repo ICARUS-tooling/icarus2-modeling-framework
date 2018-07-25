@@ -17,7 +17,7 @@
  */
 package de.ims.icarus2.filedriver.schema.table;
 
-import static de.ims.icarus2.TestUtils.assertDeepEqual;
+import static de.ims.icarus2.util.TestUtils.assertDeepEqual;
 
 import java.io.IOException;
 import java.io.StringReader;

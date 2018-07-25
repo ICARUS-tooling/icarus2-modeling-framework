@@ -3,11 +3,11 @@ description = 'API for actual corpus modeling and interaction'
 
 // internal dependencies
 dependencies {
-  implementation project(':icarus2-shared-utils')
-  implementation project(':icarus2-manifest-api')
+  api(project(':icarus2-shared-utils'))
+  api(project(':icarus2-manifest-api'))
 }
 
 configurations {
 	// external dependencies managed by root build.gradle
-	testImplementation.extendsFrom(junit, mockito)
+	implementation.extendsFrom(slf4j)
 }

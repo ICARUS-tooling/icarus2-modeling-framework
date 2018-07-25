@@ -1,0 +1,12 @@
+
+description = 'Shared test classes'
+
+// internal dependencies
+dependencies {
+	api(project(':icarus2-shared-utils'))
+}
+
+configurations {
+	// external dependencies managed by root build.gradle	
+	api.extendsFrom(junit)
+}

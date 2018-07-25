@@ -3,16 +3,16 @@ description = 'Default implementation for access to file-based corpus resources'
 
 // internal dependencies
 dependencies {
-	implementation project(':icarus2-model-api')
-	implementation project(':icarus2-model-defaults')
-	implementation project(':icarus2-shared-utils')
+	api(project(':icarus2-model-api'))
+	api(project(':icarus2-model-defaults'))
+	api(project(':icarus2-shared-utils'))
   
-	testImplementation project(path: ':icarus2-shared-utils', configuration: 'testOutput')
+	testImplementation project(path: ':icarus2-shared-utils', configuration: 'tests')
 }
 
 configurations {
 	// external dependencies managed by root build.gradle
-	implementation.extendsFrom(lucene)
+	implementation.extendsFrom(slf4j, lucene)
 	
 	testImplementation.extendsFrom(junit, mockito)
 }

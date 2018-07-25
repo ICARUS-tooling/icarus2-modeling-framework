@@ -3,8 +3,9 @@
  * Basic project structure
  */
 rootProject.name = 'icarus2-core-tools'
-include 'icarus2-manifest-api'
+
 include 'icarus2-shared-utils'
+include 'icarus2-manifest-api'
 include 'icarus2-model-api'
 include 'icarus2-model-defaults'
 include 'icarus2-file-driver-utils'
@@ -13,8 +14,8 @@ include 'icarus2-common-formats'
 include 'icarus2-experiments'
 
 
-project(':icarus2-manifest-api').projectDir = "$rootDir/icarus2-manifest-api" as File
 project(':icarus2-shared-utils').projectDir = "$rootDir/icarus2-shared-utils" as File
+project(':icarus2-manifest-api').projectDir = "$rootDir/icarus2-manifest-api" as File
 project(':icarus2-model-api').projectDir = "$rootDir/icarus2-model-api" as File
 project(':icarus2-model-defaults').projectDir = "$rootDir/icarus2-model-defaults" as File
 project(':icarus2-file-driver-utils').projectDir = "$rootDir/icarus2-file-driver-utils" as File

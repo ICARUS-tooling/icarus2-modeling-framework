@@ -15,7 +15,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package de.ims.icarus2;
+package de.ims.icarus2.util;
 
 import static de.ims.icarus2.util.strings.StringUtil.getName;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -26,6 +26,10 @@ import de.ims.icarus2.util.lang.ClassUtils;
 import de.ims.icarus2.util.lang.ClassUtils.Trace;
 
 /**
+ * Collection of useful testing methods.
+ *
+ * TODO: move shared testing code into a dedicated subproject (as main/java source) for proper dependency declarations
+ *
  * @author Markus Gärtner
  *
  */

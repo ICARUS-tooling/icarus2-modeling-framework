@@ -3,17 +3,7 @@ description = 'Shared utility classes for common tasks'
 
 configurations {
 	// external dependencies managed by root build.gradle
-	implementation.extendsFrom(slf4j, guava, fastutil, javapoet) 		
- 	testImplementation.extendsFrom(junit, mockito, spotbugs)
- 	
-    testOutput.extendsFrom (testCompile)
-}
-
-task jarTest (type: Jar, dependsOn: testClasses) {
-    from sourceSets.test.output
-    classifier = 'test'
-}
-
-artifacts {
-    testOutput jarTest
+	api.extendsFrom(guava, fastutil)
+	
+	implementation.extendsFrom(javapoet)
 }

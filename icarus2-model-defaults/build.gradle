@@ -3,12 +3,12 @@ description = 'Default implementations for the core model API'
 
 // internal dependencies
 dependencies {
-	implementation project(':icarus2-model-api')
+	api(project(':icarus2-model-api'))
   
-	testImplementation project(path: ':icarus2-shared-utils', configuration: 'testOutput')
+	testImplementation(project(path: ':icarus2-shared-utils', configuration: 'tests'))
 }
 
 configurations {
 	// external dependencies managed by root build.gradle
-	testImplementation.extendsFrom(junit, mockito, uuid)
+	testImplementation.extendsFrom(uuid)
 }
