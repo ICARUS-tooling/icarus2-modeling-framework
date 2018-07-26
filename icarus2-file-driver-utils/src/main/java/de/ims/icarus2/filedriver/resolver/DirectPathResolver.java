@@ -20,10 +20,10 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.DirectoryStream;
 import java.nio.file.DirectoryStream.Filter;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -36,6 +36,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.io.PathResolver;
 import de.ims.icarus2.model.api.io.ResourcePath;
+import de.ims.icarus2.model.api.io.resources.ResourceProvider;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathEntry;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
@@ -55,9 +56,9 @@ public class DirectPathResolver implements PathResolver {
 	/**
 	 * Convenient helper method that scans the provided {@link LocationManifest}
 	 * and extracts all the paths in it.
-	 * Note that the {@code manifest} must be of type {@link PathType#FILE FILE}
-	 * or {@link PathType#FOLDER FOLDER} and must contain a valid
-	 * {@link LocationManifest#getRootPath() root-path}!
+	 * Note that the {@code manifest} must be of type {@link PathType#FILE FILE},
+	 * {@link PathType#RESOURCE} or {@link PathType#FOLDER FOLDER} and for the last two
+	 * must contain a valid {@link LocationManifest#getRootPath() root-path}!
 	 * <p>
 	 * For manifests of type {@link PathType#FILE FILE} the method will take the
 	 * declared root-path as the sole file the returned resolver is going to contain.
@@ -68,39 +69,58 @@ public class DirectPathResolver implements PathResolver {
 	 * files in the root folder will be included. Otherwise the given entries will be
 	 * used to {@link Path#resolve(String) resolve} the final paths relative to the root folder
 	 * in case they are of type {@link PathType#FILE file} or used for scanning the folder content.
-	 *
+	 * <p>
+	 * For manifests of type {@link PathType#RESOURCE} will try to use the current class
+	 * loader to {@link ClassLoader#getResource(String) resolve} the resource, transform
+	 * the {@link URL} into a {@link Path} and then use those paths as the resolved elements.
 	 *
 	 * @param manifest
 	 * @return
 	 */
-	public static DirectPathResolver forManifest(LocationManifest manifest) {
+	public static DirectPathResolver forManifest(LocationManifest manifest, ResourceProvider resourceProvider) {
 		requireNonNull(manifest);
 
 		String rootPath = manifest.getRootPath();
 		PathType rootPathType = manifest.getRootPathType();
 
-		checkArgument("Can only handle file or folder locations",
-				rootPathType==PathType.FILE || rootPathType==PathType.FOLDER);
+		checkArgument("Can only handle file, resource or folder locations",
+				rootPathType==PathType.FILE || rootPathType==PathType.FOLDER || rootPathType==PathType.RESOURCE);
 		checkArgument("Manifest must define a root path", rootPath!=null);
 
 
 		if(rootPathType==PathType.FILE) {
 			return new DirectPathResolver(rootPath);
+		}
+
+		// We only allow shallow nesting, therefore only look for regular files within the root folder
+		List<PathEntry> pathEntries = manifest.getPathEntries();
+		List<String> files = new ArrayList<>();
+
+		if(rootPathType==PathType.RESOURCE) {
+			ClassLoader classLoader = DirectPathResolver.class.getClassLoader();
+			URL url = classLoader.getResource(rootPath);
+			Path path;
+
+			try {
+				path = Paths.get(url.toURI());
+			} catch (URISyntaxException e) {
+				throw new ModelException(ManifestErrorCode.MANIFEST_ERROR,
+						"Declared resource path cannot be transformed to a proper URI: "+url, e);
+			}
+
+			files.add(path.toString());
 		} else { // can only be PathType.FOLDER now
-
-			// We only allow shallow nesting, therefore only look for regular files within the root folder
-			List<PathEntry> pathEntries = manifest.getPathEntries();
-
-			List<String> files = new ArrayList<>();
 
 			Path root = Paths.get(rootPath);
 
 			// No path entries means that we should add all regular files in the folder
 			if(pathEntries.isEmpty()) {
-				try (DirectoryStream<Path> stream = Files.newDirectoryStream(root, Files::isRegularFile)) {
+				try (DirectoryStream<Path> stream = resourceProvider.children(root, null)) {
 
 					for(Path path : stream) {
-						files.add(path.toString());
+						if(!resourceProvider.isDirectory(path)) {
+							files.add(path.toString());
+						}
 					}
 				} catch (IOException e) {
 					throw new ModelException(GlobalErrorCode.IO_ERROR,
@@ -113,8 +133,11 @@ public class DirectPathResolver implements PathResolver {
 				Set<String> directFiles = new ObjectOpenHashSet<>();
 
 				for(PathEntry entry : pathEntries) {
-					// Explicit file entries get resolved directly
-					if(entry.getType()==PathType.FILE) {
+
+					switch (entry.getType()) {
+
+					case FILE: {
+						// Explicit file entries get resolved directly
 						String value = entry.getValue();
 						if(value==null || value.isEmpty())
 							throw new ModelException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
@@ -122,12 +145,21 @@ public class DirectPathResolver implements PathResolver {
 
 						directFiles.add(value);
 						files.add(root.resolve(value).toString());
-					} else if(entry.getType()==PathType.PATTERN) {
+					} break;
+
+					case PATTERN: {
 						// For pattern entries we collect them and wait for a second pass
 						patterns.add(entry.getValue());
-					} else
+					} break;
+
+					case RESOURCE: {
+
+					} break;
+
+					default:
 						throw new ModelException(ManifestErrorCode.MANIFEST_ERROR,
 								"Can only handle FILE or PATTERN path types inside FOLDER: got "+entry.getType());
+					}
 				}
 
 				// Scan pass on the folder in case we have patterns being defined
@@ -140,7 +172,7 @@ public class DirectPathResolver implements PathResolver {
 
 					Filter<Path> filter = p -> {
 						// Ignore links (or any non-regular file) for pattern matching
-						if(!Files.isRegularFile(p, LinkOption.NOFOLLOW_LINKS)) {
+						if(resourceProvider.isDirectory(p)) {
 							return false;
 						}
 						//TODO needs checking if we can safely assume a non-empty path
@@ -164,10 +196,12 @@ public class DirectPathResolver implements PathResolver {
 					};
 
 					// Scan folder content
-					try (DirectoryStream<Path> stream = Files.newDirectoryStream(root, filter)) {
+					try (DirectoryStream<Path> stream = resourceProvider.children(root, null)) {
 
 						for(Path path : stream) {
-							files.add(path.toString());
+							if(filter.accept(path)) {
+								files.add(path.toString());
+							}
 						}
 					} catch (IOException e) {
 						throw new ModelException(GlobalErrorCode.IO_ERROR,
@@ -175,13 +209,13 @@ public class DirectPathResolver implements PathResolver {
 					}
 				}
 			}
-
-			if(files.isEmpty())
-				throw new ModelException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
-						"No valid entries found for file resolver");
-
-			return new DirectPathResolver(files);
 		}
+
+		if(files.isEmpty())
+			throw new ModelException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
+					"No valid entries found for file resolver");
+
+		return new DirectPathResolver(files);
 	}
 
 	private final String[] paths;

@@ -26,8 +26,7 @@
 			<imf:rootContext id="test.tier1.format" independent="true" name="Tier-1 Tabular Format" primaryLayer="token" foundationLayer="token">
 				
 				<imf:location>
-					<!-- use path relative to projects root folder -->
-					<imf:path type="file">src\test\resources\de\ims\icarus2\filedriver\schema\table\singleBlock.txt</imf:path>
+					<imf:path type="resource">de/ims/icarus2/filedriver/schema/table/singleBlock.txt</imf:path>
 				</imf:location>
 				
 				<imf:layerGroup id="main" independent="true" primaryLayer="token">

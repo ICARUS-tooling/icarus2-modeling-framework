@@ -23,7 +23,6 @@ import static java.util.Objects.requireNonNull;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.FileDriver.Builder;
@@ -37,6 +36,8 @@ import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.io.PathResolver;
 import de.ims.icarus2.model.api.io.resources.IOResource;
 import de.ims.icarus2.model.api.io.resources.ReadOnlyStringResource;
+import de.ims.icarus2.model.api.io.resources.ResourceProvider;
+import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.api.registry.SubRegistry;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
@@ -101,12 +102,14 @@ public class DefaultFileDriverFactory implements Factory {
 		final Corpus corpus = getCorpus(loader);
 
 		// Early sanity checks
-		Objects.requireNonNull(corpus, "No corpus defined");
+		requireNonNull(corpus, "No corpus defined");
 		validateDriverManifest(driverManifest);
 
 		final MetadataRegistry registry = createMetadataRegistry(corpus, driverManifest);
 
-		final ResourceSet dataFiles = createResourceSet(corpus, driverManifest.getContextManifest().getLocationManifests());
+		final ResourceProvider resourceProvider = createResourceProvider(corpus, driverManifest);
+
+		final ResourceSet dataFiles = createResourceSet(corpus, resourceProvider, driverManifest.getContextManifest().getLocationManifests());
 
 		// use Builder and add utility method for creation of required parts
 
@@ -116,11 +119,8 @@ public class DefaultFileDriverFactory implements Factory {
 
 		// Fill builder
 		builder.manifest(driverManifest);
-
-		// Registry for maintenance data
+		builder.resourceProvider(resourceProvider);
 		builder.metadataRegistry(registry);
-
-		// Links to all corpus files
 		builder.dataFiles(dataFiles);
 
 		FileDriver driver = builder.build();
@@ -132,6 +132,18 @@ public class DefaultFileDriverFactory implements Factory {
 
 	protected Builder createBuilder() {
 		return new Builder();
+	}
+
+	/**
+	 * Default implementation simply uses the {@link ResourceProvider} associated with the
+	 * {@link CorpusManager manager} of the specified {@code corpus} argument.
+	 *
+	 * @param corpus
+	 * @param driverManifest
+	 * @return
+	 */
+	protected ResourceProvider createResourceProvider(Corpus corpus, DriverManifest driverManifest) {
+		return corpus.getManager().getResourceProvider();
 	}
 
 	/**
@@ -152,12 +164,12 @@ public class DefaultFileDriverFactory implements Factory {
 		//TODO
 	}
 
-	protected ResourceSet createResourceSet(Corpus corpus, List<LocationManifest> locationManifests) {
+	protected ResourceSet createResourceSet(Corpus corpus, ResourceProvider resourceProvider, List<LocationManifest> locationManifests) {
 		List<ResourceSet> resourceSets = new ArrayList<>();
 
 		// Collect all resources
 		for(LocationManifest locationManifest : locationManifests) {
-			resourceSets.add(toResourceSet(corpus, locationManifest));
+			resourceSets.add(toResourceSet(corpus, resourceProvider, locationManifest));
 		}
 
 		// Wrap collection of resources if needed
@@ -168,7 +180,7 @@ public class DefaultFileDriverFactory implements Factory {
 		}
 	}
 
-	protected ResourceSet toResourceSet(Corpus corpus, LocationManifest locationManifest) {
+	protected ResourceSet toResourceSet(Corpus corpus, ResourceProvider resourceProvider, LocationManifest locationManifest) {
 
 
 		if(locationManifest.isInline()) {
@@ -178,18 +190,24 @@ public class DefaultFileDriverFactory implements Factory {
 		} else {
 			PathType rootPathType = locationManifest.getRootPathType();
 
-			if(rootPathType==PathType.FILE || rootPathType==PathType.FOLDER) {
-				PathResolver pathResolver = getResolverForLocation(corpus, locationManifest);
+			switch (rootPathType) {
+			case FILE:
+			case RESOURCE:
+			case FOLDER: {
+				PathResolver pathResolver = getResolverForLocation(corpus, resourceProvider, locationManifest);
 
 				return new LazyResourceSet(pathResolver);
-			} else
+			}
+
+			default:
 				//TODO implement handling of other path types
 				throw new ModelException(corpus, GlobalErrorCode.NOT_IMPLEMENTED,
-						"Currently no path types other than FILE or FOLDER are being supported");
+						"Currently no root path types other than FILE, RESOURCE or FOLDER are being supported: "+rootPathType);
+			}
 		}
 	}
 
-	protected PathResolver getResolverForLocation(Corpus corpus, LocationManifest locationManifest) {
+	protected PathResolver getResolverForLocation(Corpus corpus, ResourceProvider resourceProvider, LocationManifest locationManifest) {
 		PathResolverManifest pathResolverManifest = locationManifest.getPathResolverManifest();
 		if(pathResolverManifest!=null) {
 			// If our location specifies a custom path resolver -> delegate instantiation
@@ -200,6 +218,6 @@ public class DefaultFileDriverFactory implements Factory {
 					.instantiate(PathResolver.class);
 		}
 
-		return DirectPathResolver.forManifest(locationManifest);
+		return DirectPathResolver.forManifest(locationManifest, resourceProvider);
 	}
 }

@@ -20,7 +20,6 @@ import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -44,6 +43,7 @@ import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.model.api.driver.mods.EmptyModuleMonitor;
 import de.ims.icarus2.model.api.driver.mods.ModuleMonitor;
+import de.ims.icarus2.model.api.io.resources.ResourceProvider;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
@@ -144,6 +144,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 
 			ResourceSet dataFiles = driver.getDataFiles();
 			ContextManifest manifest = driver.getManifest().getContextManifest();
+			ResourceProvider resourceProvider = driver.getResourceProvider();
 
 			int fileCount = dataFiles.getResourceCount();
 			int invalidFiles = 0;
@@ -155,11 +156,11 @@ public enum StandardPreparationSteps implements PreparationStep {
 
 //				state.setFormatted("fileConnector.checkFileExistence", fileIndex, fileCount, path.getFileName().toString());
 
-				if(!Files.exists(path)) {
+				if(!resourceProvider.exists(path)) {
 
 					// If context is editable, we allow for missing files and create them here
 					if(manifest.isEditable()) {
-						Files.createFile(path);
+						resourceProvider.create(path, false);
 					} else {
 						fileInfo.setFlag(ElementFlag.MISSING);
 						// Signal error, since non-editable data MUST be present
@@ -255,6 +256,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			ResourceSet dataFiles = driver.getDataFiles();
+			ResourceProvider resourceProvider = driver.getResourceProvider();
 
 			int fileCount = dataFiles.getResourceCount();
 			int invalidFiles = 0;
@@ -269,7 +271,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 				long fileBytes = 0L;
 
 				try {
-					fileBytes = Files.size(path);
+					fileBytes = resourceProvider.getResource(path).size();
 				} catch (IOException e) {
 					reportBuilder.addError(GlobalErrorCode.IO_ERROR,
 							"Failed to fetch size for file at index {} : {}", _int(fileIndex), path, e);
@@ -501,6 +503,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
+			ResourceProvider resourceProvider = driver.getResourceProvider();
 			ContextManifest manifest = driver.getManifest().getContextManifest();
 			List<ItemLayerManifest> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
 
@@ -524,7 +527,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 
 				Path path = Paths.get(savedPath);
 
-				if(!Files.exists(path)) {
+				if(!resourceProvider.exists(path)) {
 
 					layerInfo.setFlag(ElementFlag.MISSING);
 					// Signal error, since non-editable data MUST be present

@@ -54,6 +54,7 @@ import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.standard.members.DefaultLayerMemberFactory;
 import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.model.standard.members.structure.DefaultEdge;
@@ -111,7 +112,10 @@ public abstract class AbstractDriver implements Driver {
 	 */
 	private MappingStorage mappings;
 
-
+	/**
+	 * Maps {@link Manifest#getUID() ids} of managed layers to their repsective
+	 * {@link IdManager} instances.
+	 */
 	private final Int2ObjectMap<IdManager> idManagers = new Int2ObjectOpenHashMap<IdManager>();
 
 	protected AbstractDriver(DriverBuilder<?,?> builder) {

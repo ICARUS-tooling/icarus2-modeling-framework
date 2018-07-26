@@ -78,6 +78,7 @@ import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.model.api.io.FileManager;
 import de.ims.icarus2.model.api.io.resources.FileResource;
 import de.ims.icarus2.model.api.io.resources.IOResource;
+import de.ims.icarus2.model.api.io.resources.ResourceProvider;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -134,7 +135,7 @@ public class FileDriver extends AbstractDriver {
 	/**
 	 * Storage for our model instances
 	 */
-	protected BufferedItemManager content;
+	protected volatile BufferedItemManager content;
 
 	/**
 	 * Runtime states for files and associated resources.
@@ -168,6 +169,11 @@ public class FileDriver extends AbstractDriver {
 	protected final ResourceSet dataFiles;
 
 	/**
+	 * Abstraction for the actual file system
+	 */
+	protected final ResourceProvider resourceProvider;
+
+	/**
 	 * Locks for individual files.
 	 * <p>
 	 * Will be populated lazily when actually needed.
@@ -186,6 +192,7 @@ public class FileDriver extends AbstractDriver {
 
 		metadataRegistry = builder.getMetadataRegistry();
 		dataFiles = builder.getDataFiles();
+		resourceProvider = builder.getResourceProvider();
 
 		fileObjects = new Int2ObjectOpenHashMap<>(dataFiles.getResourceCount());
 
@@ -291,6 +298,13 @@ public class FileDriver extends AbstractDriver {
 	public FileDataStates getFileStates() {
 		checkConnected();
 		return states;
+	}
+
+	/**
+	 * @return the resource provider associated with this driver
+	 */
+	public ResourceProvider getResourceProvider() {
+		return resourceProvider;
 	}
 
 	/**
@@ -504,7 +518,7 @@ public class FileDriver extends AbstractDriver {
 
 		LazyCollection<PreparationStep> result = LazyCollection.lazyList();
 
-		// Post-order traversal makes sure each step is added AFTER its precondictions
+		// Post-order traversal makes sure each step is added AFTER its preconditions
 		stepGraph.walkTree(TraversalPolicy.POST_ORDER, stepGraph.getRoots(), result);
 
 		return result.getAsList();
@@ -1646,9 +1660,23 @@ public class FileDriver extends AbstractDriver {
 	public static class Builder extends DriverBuilder<Builder, FileDriver> {
 		private ResourceSet dataFiles;
 		private MetadataRegistry metadataRegistry;
+		private ResourceProvider resourceProvider;
 
 		protected Builder() {
 			// no-op
+		}
+
+		public Builder resourceProvider(ResourceProvider resourceProvider) {
+			requireNonNull(resourceProvider);
+			checkState(this.resourceProvider==null);
+
+			this.resourceProvider = resourceProvider;
+
+			return thisAsCast();
+		}
+
+		public ResourceProvider getResourceProvider() {
+			return resourceProvider;
 		}
 
 		public Builder metadataRegistry(MetadataRegistry metadataRegistry) {
@@ -1683,6 +1711,7 @@ public class FileDriver extends AbstractDriver {
 
 			checkState("Missing data file set", dataFiles!=null);
 			checkState("Missing metadata registry", metadataRegistry!=null);
+			checkState("Missing resource provider", resourceProvider!=null);
 
 			//TODO
 		}
