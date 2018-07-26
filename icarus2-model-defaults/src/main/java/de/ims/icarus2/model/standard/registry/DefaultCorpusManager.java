@@ -46,6 +46,8 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.events.CorpusLifecycleListener;
 import de.ims.icarus2.model.api.io.FileManager;
+import de.ims.icarus2.model.api.io.resources.FileResourceProvider;
+import de.ims.icarus2.model.api.io.resources.ResourceProvider;
 import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.api.registry.CorpusMemberFactory;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
@@ -82,6 +84,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	private final ManifestRegistry manifestRegistry;
 	private final MetadataRegistry metadataRegistry;
 	private final FileManager fileManager;
+	private final ResourceProvider resourceProvider;
 
 	private final Function<CorpusManifest, Corpus> corpusProducer;
 
@@ -111,14 +114,15 @@ public class DefaultCorpusManager implements CorpusManager {
 	protected DefaultCorpusManager(Builder builder) {
 		requireNonNull(builder);
 
-		this.manifestRegistry = builder.getManifestRegistry();
-		this.metadataRegistry = builder.getMetadataRegistry();
-		this.fileManager = builder.getFileManager();
+		manifestRegistry = builder.getManifestRegistry();
+		metadataRegistry = builder.getMetadataRegistry();
+		fileManager = builder.getFileManager();
+		resourceProvider = builder.getResourceProvider();
 
-		this.corpusMetadataPolicy = builder.getCorpusMetadataPolicy();
-		this.contextMetadataPolicy = builder.getContextMetadataPolicy();
+		corpusMetadataPolicy = builder.getCorpusMetadataPolicy();
+		contextMetadataPolicy = builder.getContextMetadataPolicy();
 
-		this.corpusProducer = builder.getCorpusProducer();
+		corpusProducer = builder.getCorpusProducer();
 
 		Properties clientProperties = new Properties();
 
@@ -305,9 +309,20 @@ public class DefaultCorpusManager implements CorpusManager {
 		return metadataRegistry;
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.api.registry.CorpusManager#getFileManager()
+	 */
 	@Override
 	public FileManager getFileManager() {
 		return fileManager;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.registry.CorpusManager#getResourceProvider()
+	 */
+	@Override
+	public ResourceProvider getResourceProvider() {
+		return resourceProvider;
 	}
 
 	/**
@@ -812,6 +827,7 @@ public class DefaultCorpusManager implements CorpusManager {
 		private ManifestRegistry manifestRegistry;
 		private MetadataRegistry metadataRegistry;
 		private FileManager fileManager;
+		private ResourceProvider resourceProvider;
 
 		private Function<CorpusManifest, Corpus> corpusProducer;
 
@@ -858,6 +874,19 @@ public class DefaultCorpusManager implements CorpusManager {
 
 		public Path getPropertiesFile() {
 			return propertiesFile;
+		}
+
+		public ResourceProvider getResourceProvider() {
+			return resourceProvider;
+		}
+
+		public Builder resourceProvider(ResourceProvider resourceProvider) {
+			requireNonNull(resourceProvider);
+			checkState(this.resourceProvider==null);
+
+			this.resourceProvider = resourceProvider;
+
+			return thisAsCast();
 		}
 
 		public Builder corpusMetadataPolicy(
@@ -945,16 +974,19 @@ public class DefaultCorpusManager implements CorpusManager {
 
 		/**
 		 * Configures this builder to use the following implementations as instances
-		 * for {@link #fileManager(FileManager) file manager}, {@link #metadataRegistry(MetadataRegistry) metadata registry}
+		 * for {@link #fileManager(FileManager) file manager}, {@link #resourceProvider(ResourceProvider)},
+		 * {@link #metadataRegistry(MetadataRegistry) metadata registry}
 		 * and {@link #manifestRegistry(ManifestRegistry) manifest registry}:
 		 * <ul>
-		 * <li>{@link DefaultFileManager} with the current directory as root folder</li>
+		 * <li>{@link DefaultFileManager} with the {@code user.dir} directory as root folder</li>
+		 * <li>{@link FileResourceProvider}</li>
 		 * <li>{@link VirtualMetadataRegistry}</li>
 		 * <li>{@link DefaultManifestRegistry}</li>
 		 * </ul>
 		 */
 		public Builder defaultEnvironment() {
-			return fileManager(new DefaultFileManager(Paths.get(".")))
+			return fileManager(new DefaultFileManager(Paths.get(System.getProperty("user.dir"))))
+					.resourceProvider(new FileResourceProvider())
 					.metadataRegistry(new VirtualMetadataRegistry())
 					.manifestRegistry(new DefaultManifestRegistry());
 		}
@@ -967,6 +999,7 @@ public class DefaultCorpusManager implements CorpusManager {
 			checkState("Manifest registry missing", manifestRegistry!=null);
 			checkState("Metadata registry missing", metadataRegistry!=null);
 			checkState("File manager missing", fileManager!=null);
+			checkState("Missing resource provider", resourceProvider!=null);
 		}
 
 		/**

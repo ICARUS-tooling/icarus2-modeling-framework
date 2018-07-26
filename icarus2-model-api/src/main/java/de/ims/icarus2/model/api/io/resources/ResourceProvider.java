@@ -43,7 +43,7 @@ public interface ResourceProvider {
 	 *
 	 * @see #exists(Path)
 	 */
-	boolean create(Path path) throws IOException;
+	boolean create(Path path, boolean directory) throws IOException;
 
 	boolean isDirectory(Path path);
 

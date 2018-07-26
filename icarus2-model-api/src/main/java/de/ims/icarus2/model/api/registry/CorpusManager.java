@@ -26,6 +26,7 @@ import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.events.CorpusLifecycleListener;
 import de.ims.icarus2.model.api.io.FileManager;
+import de.ims.icarus2.model.api.io.resources.ResourceProvider;
 import de.ims.icarus2.model.api.members.CorpusMember;
 import de.ims.icarus2.model.api.view.paged.CorpusModel;
 import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
@@ -137,6 +138,14 @@ public interface CorpusManager {
 	 * @return
 	 */
 	FileManager getFileManager();
+
+	/**
+	 * Returns the optional resource provider that is used to access the content of
+	 * resources associated with a corpus or the framework in general.
+	 *
+	 * @return
+	 */
+	ResourceProvider getResourceProvider();
 
 	/**
 	 * Returns the {@link MetadataStoragePolicy policy} to be used for creating metadata

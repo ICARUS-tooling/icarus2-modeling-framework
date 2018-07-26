@@ -80,11 +80,11 @@ public class FileResourceProvider implements ResourceProvider {
 	 * @see bwfdm.replaydh.io.resources.ResourceProvider#create(java.nio.file.Path)
 	 */
 	@Override
-	public boolean create(Path path) throws IOException {
+	public boolean create(Path path, boolean directory) throws IOException {
 		boolean exists = Files.exists(path, LinkOption.NOFOLLOW_LINKS);
 
 		if(!exists) {
-			if(Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
+			if(directory) {
 				Files.createDirectory(path);
 			} else {
 				Files.createFile(path);

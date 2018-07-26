@@ -71,13 +71,15 @@ public class VirtualResourceProvider implements ResourceProvider {
 	 * @see bwfdm.replaydh.io.resources.ResourceProvider#create(java.nio.file.Path)
 	 */
 	@Override
-	public boolean create(Path path) throws IOException {
-		boolean hasResource = resources.containsKey(path);
-		if(!hasResource) {
+	public boolean create(Path path, boolean directory) throws IOException {
+		if(directory) {
+			return directories.add(path);
+		} else if(!resources.containsKey(path)) {
 			resources.put(path, createResource());
+			return true;
 		}
 
-		return !hasResource;
+		return false;
 	}
 
 	/**
