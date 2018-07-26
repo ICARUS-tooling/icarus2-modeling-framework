@@ -44,7 +44,7 @@ public interface ResourceSet {
 	 */
 	IOResource getResourceAt(int resourceIndex);
 
-	default int indexOfFile(IOResource file) {
+	default int indexOfResource(IOResource file) {
 		int resourceCount = getResourceCount();
 
 		for(int i=0; i<resourceCount; i++) {
@@ -56,7 +56,7 @@ public interface ResourceSet {
 		return -1;
 	}
 
-	default void forEachFile(IntConsumer action) {
+	default void forEachResource(IntConsumer action) {
 		int resourceCount = getResourceCount();
 
 		for(int i=0; i<resourceCount; i++) {
@@ -64,7 +64,7 @@ public interface ResourceSet {
 		}
 	}
 
-	default void forEachFile(ObjIntConsumer<IOResource> action) {
+	default void forEachResource(ObjIntConsumer<IOResource> action) {
 		int resourceCount = getResourceCount();
 
 		for(int i=0; i<resourceCount; i++) {
@@ -72,7 +72,7 @@ public interface ResourceSet {
 		}
 	}
 
-	default void forEachFile(Consumer<IOResource> action) {
+	default void forEachResource(Consumer<IOResource> action) {
 		int resourceCount = getResourceCount();
 
 		for(int i=0; i<resourceCount; i++) {
