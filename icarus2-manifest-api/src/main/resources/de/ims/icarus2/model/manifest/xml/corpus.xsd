@@ -1289,6 +1289,11 @@
 					<xsd:documentation>Describes a pointer to some data folder from which to pick the actual data files. Usually this is accompanied by a PathResolverManifest declaration in the hosting LocationManifest as a means of filtering files or defining the required file ending, etc...</xsd:documentation>
 				</xsd:annotation>
 			</xsd:enumeration>
+			<xsd:enumeration value="resource">
+				<xsd:annotation>
+					<xsd:documentation>Points to a resource that is available via a ClassLoader.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
 			<xsd:enumeration value="pattern">
 				<xsd:annotation>
 					<xsd:documentation>Currently unused type.</xsd:documentation>

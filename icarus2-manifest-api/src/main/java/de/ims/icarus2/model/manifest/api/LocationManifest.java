@@ -121,7 +121,15 @@ public interface LocationManifest extends Manifest {
 		/**
 		 * Describes direct pointers to a data file.
 		 */
-		FILE("file"), //$NON-NLS-1$
+		FILE("file"),
+
+		/**
+		 * Points to a resource that is available via {@link ClassLoader#getResource(String)}.
+		 *
+		 * Note that there is currently some uncertainty as to which class loader to use for
+		 * accessing the resource.
+		 */
+		RESOURCE("resource"), //TODO specify default protocol for accessing resources
 
 		/**
 		 * Describes a pointer to some data folder from which to pick the actual data files.
@@ -129,26 +137,26 @@ public interface LocationManifest extends Manifest {
 		 * hosting {@link LocationManifest} as a means of filtering files or defining the
 		 * required file ending, etc...
 		 */
-		FOLDER("folder"), //$NON-NLS-1$
+		FOLDER("folder"),
 
 		/**
 		 * Currently unused type.
 		 *
 		 */
-		PATTERN("pattern"), //$NON-NLS-1$
+		PATTERN("pattern"),
 
 		/**
 		 * Defines an abstract pointer to some arbitrary resource. It is the responsibility of the
 		 * respective path resolver to manage access to that resource. Format and meaning of this
 		 * path type is thus resolver implementation dependent.
 		 */
-		IDENTIFIER("identifier"), //$NON-NLS-1$
+		IDENTIFIER("identifier"),
 
 		/**
 		 * Signals that all information on how to access the location's data is implemented directly
 		 * by the path resolver used to access it.
 		 */
-		CUSTOM("custom"); //$NON-NLS-1$
+		CUSTOM("custom");
 
 		private final String xmlForm;
 
