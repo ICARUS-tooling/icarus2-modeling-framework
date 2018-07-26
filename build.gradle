@@ -61,6 +61,7 @@ subprojects {
 		uuid
 		// default testing functionality
 		testImplementation.extendsFrom(junit, mockito)
+		//compileOnly.extendsFrom(junitLauncher)
 	
 		// configuration for the test code artifact
 		tests.extendsFrom(testImplementation)
@@ -104,6 +105,8 @@ subprojects {
 		junit "org.junit.jupiter:junit-jupiter-engine:${versions.junitVersion}"		
 		// https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-params
 		junit "org.junit.jupiter:junit-jupiter-params:${versions.junitVersion}"
+		
+		junit "org.junit.platform:junit-platform-runner:${versions.junitRunnerVersion}"
 			
 	    // https://mvnrepository.com/artifact/org.mockito/mockito-core
 		mockito "org.mockito:mockito-core:${versions.mockitoVersion}"
