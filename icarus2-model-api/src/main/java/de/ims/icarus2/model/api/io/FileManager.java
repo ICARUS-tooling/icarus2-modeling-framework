@@ -20,11 +20,22 @@ import static java.util.Objects.requireNonNull;
 
 import java.nio.file.Path;
 
+import de.ims.icarus2.model.api.io.resources.ResourceProvider;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 
 /**
+ * Models access to resources associated to corpora or the
+ * modeling framework in general. Note that this interface is
+ * only meant to provide the <b>locations</b> of those resources,
+ * not their actual content!
+ *
+ * For accessing the content of resources located via this interface
+ * client code should use an instance of {@link ResourceProvider} associated
+ * with the entity that provided the {@code FileManager}.
+ *
  * @author Markus Gärtner
  *
+ * @see ResourceProvider
  */
 public interface FileManager {
 

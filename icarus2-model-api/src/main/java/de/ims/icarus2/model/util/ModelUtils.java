@@ -321,26 +321,35 @@ public final class ModelUtils {
 	}
 
 	public static String getName(Object obj) {
+		String result = null;
+
 		if(obj instanceof PrerequisiteManifest) {
 			PrerequisiteManifest prerequisite = (PrerequisiteManifest)obj;
 			String id = prerequisite.getLayerId();
-			if(id!=null)
-				return "Required layer-id: "+id; //$NON-NLS-1$
-
-			String typeName = prerequisite.getTypeId();
-			if(typeName!=null && !typeName.isEmpty())
-				return "Required type-id: "+typeName; //$NON-NLS-1$
-
-			return prerequisite.toString();
+			if(id!=null) {
+				result = "Required layer-id: "+id; //$NON-NLS-1$
+			} else {
+				String typeName = prerequisite.getTypeId();
+				if(typeName!=null && !typeName.isEmpty())
+					result = "Required type-id: "+typeName; //$NON-NLS-1$
+				else
+					result = prerequisite.toString();
+			}
 		} else if (obj instanceof ManifestOwner) {
-			return ((ManifestOwner<?>)obj).getManifest().getName();
+			result = ((ManifestOwner<?>)obj).getManifest().getName();
 		} else if (obj instanceof LayerGroup) {
-			return ((LayerGroup)obj).getManifest().getName();
+			result = ((LayerGroup)obj).getManifest().getName();
 		} else if (obj instanceof NamedCorpusMember) {
-			return ((NamedCorpusMember)obj).getName();
+			result = ((NamedCorpusMember)obj).getName();
 		} else {
-			return obj.toString();
+			result = obj.toString();
 		}
+
+		if(result==null) {
+			result = "<unnamed "+obj.getClass()+">";
+		}
+
+		return result;
 	}
 
 	public static Set<ItemLayer> getItemLayers(Corpus corpus) {

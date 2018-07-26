@@ -2336,11 +2336,10 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 	}
 
 	private static String getSeparator(BlockHandler blockSchema, TableSchema tableSchema) {
-		String separator = blockSchema.getSchema().getSeparator();
+		String separator = null;
 
-		while(separator==null && blockSchema!=null) {
+		while(blockSchema!=null && (separator = blockSchema.getSchema().getSeparator())==null) {
 			blockSchema = blockSchema.getParent();
-			separator = blockSchema.getSchema().getSeparator();
 		}
 
 		if(separator==null) {
