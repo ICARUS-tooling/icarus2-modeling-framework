@@ -18,9 +18,9 @@ package de.ims.icarus2.model.manifest.standard;
 
 import static java.util.Objects.requireNonNull;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -294,7 +294,7 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 
 	public static class NoteImpl implements Note {
 
-		private Date modificationDate;
+		private LocalDateTime modificationDate;
 		private final String name;
 		private String content;
 
@@ -330,7 +330,7 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 		 * @see de.ims.icarus2.model.manifest.api.CorpusManifest.Note#getModificationDate()
 		 */
 		@Override
-		public Date getModificationDate() {
+		public LocalDateTime getModificationDate() {
 			return modificationDate;
 		}
 
@@ -353,7 +353,7 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 		/**
 		 * @param modificationDate the modificationDate to set
 		 */
-		public void setModificationDate(Date modificationDate) {
+		public void setModificationDate(LocalDateTime modificationDate) {
 			if (modificationDate == null)
 				throw new NullPointerException("Invalid modificationDate"); //$NON-NLS-1$
 
@@ -366,7 +366,7 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 		@Override
 		public void setContent(String content) {
 			changeContent(content);
-			modificationDate = new Date();
+			modificationDate = LocalDateTime.now();
 		}
 
 		/**

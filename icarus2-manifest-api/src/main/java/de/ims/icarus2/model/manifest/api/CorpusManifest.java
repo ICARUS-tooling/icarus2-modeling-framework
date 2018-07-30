@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -273,7 +273,7 @@ public interface CorpusManifest extends MemberManifest {
 		 * the note was created, this method will return the date of the note's creation.
 		 * @return
 		 */
-		Date getModificationDate();
+		LocalDateTime getModificationDate();
 
 		/**
 		 * Returns the title of this note. The returned {@code String} is always non-null and never empty.

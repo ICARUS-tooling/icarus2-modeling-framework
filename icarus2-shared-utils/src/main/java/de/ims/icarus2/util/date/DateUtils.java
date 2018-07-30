@@ -17,9 +17,10 @@
 package de.ims.icarus2.util.date;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
 
 import de.ims.icarus2.util.strings.StringUtil;
 
@@ -32,31 +33,29 @@ public class DateUtils {
 
 	private static final String DATE_PATTERN = "yyyy-MM-dd HH:mm:ss"; //$NON-NLS-1$
 
-	private static SimpleDateFormat createFormat() {
-		SimpleDateFormat format = new SimpleDateFormat(DATE_PATTERN);
-		format.setTimeZone(TimeZone.getTimeZone("GMT")); //$NON-NLS-1$
-		return format;
+	private static DateTimeFormatter createFormat() {
+		return DateTimeFormatter.ofPattern(DATE_PATTERN).withZone(ZoneId.of("GMZ"));
 	}
 
-	private static SimpleDateFormat dateInFormat = createFormat();
-	private static SimpleDateFormat dateOutFormat = createFormat();
-	private static SimpleDateFormat localDateFormat = new SimpleDateFormat(DATE_PATTERN);
+	private static DateTimeFormatter dateInFormat = createFormat();
+	private static DateTimeFormatter dateOutFormat = createFormat();
+	private static DateTimeFormatter localDateFormat = DateTimeFormatter.ofPattern(DATE_PATTERN);
 
-	public static String formatDate(Date date) {
-		if(date==null) {
+	public static String formatDate(TemporalAccessor temporal) {
+		if(temporal==null) {
 			return null;
 		}
 		synchronized (dateOutFormat) {
-			return dateOutFormat.format(date);
+			return dateOutFormat.format(temporal);
 		}
 	}
 
-	public static String formatLocalDate(Date date) {
-		if(date==null) {
+	public static String formatLocalDate(TemporalAccessor temporal) {
+		if(temporal==null) {
 			return null;
 		}
 		synchronized (localDateFormat) {
-			return localDateFormat.format(date);
+			return localDateFormat.format(temporal);
 		}
 	}
 
@@ -92,13 +91,9 @@ public class DateUtils {
 		return sb.length()==0 ? "<1S" : sb.toString();
 	}
 
-	public static long getTime(Date date) {
-		return date==null ? 0L : date.getTime();
-	}
-
-	public static Date parseDate(String s) throws ParseException {
+	public static LocalDateTime parseDate(String s) throws ParseException {
 		synchronized (dateInFormat) {
-			return dateInFormat.parse(s);
+			return dateInFormat.parse(s, LocalDateTime::from);
 		}
 	}
 }
