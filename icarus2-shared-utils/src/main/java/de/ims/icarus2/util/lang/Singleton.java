@@ -25,5 +25,5 @@ package de.ims.icarus2.util.lang;
  *
  */
 public interface Singleton {
-
+	// marker interface
 }
