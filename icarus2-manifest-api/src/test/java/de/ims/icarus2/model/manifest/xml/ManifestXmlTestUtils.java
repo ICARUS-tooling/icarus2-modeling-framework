@@ -33,9 +33,10 @@ import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlReader.RootHandlerProxy;
+import de.ims.icarus2.test.DiffUtils;
+import de.ims.icarus2.test.DiffUtils.Trace;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.lang.ClassUtils;
-import de.ims.icarus2.util.lang.ClassUtils.Trace;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
 
@@ -97,7 +98,7 @@ public class ManifestXmlTestUtils {
 		assertEquals(1, manifests.size());
 		Manifest newManifest = manifests.get(0);
 
-		Trace trace = ClassUtils.deepDiff(manifest, newManifest);
+		Trace trace = DiffUtils.deepDiff(manifest, newManifest);
 
 		if(trace.hasMessages()) {
 			failForTrace(msg, trace, manifest, xml);
@@ -158,7 +159,7 @@ public class ManifestXmlTestUtils {
 		reader.parse(inputSource);
 		// END XML boilerplate stuff
 
-		Trace trace = ClassUtils.deepDiff(instance, newInstance);
+		Trace trace = DiffUtils.deepDiff(instance, newInstance);
 
 		if(trace.hasMessages()) {
 			failForTrace(msg, trace, instance, xml);

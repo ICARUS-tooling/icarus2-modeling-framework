@@ -16,8 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.api.binding;
 
-import static de.ims.icarus2.util.TestUtils.assertHashContract;
-import static de.ims.icarus2.util.TestUtils.assertObjectContract;
+import static de.ims.icarus2.test.TestUtils.assertHashContract;
+import static de.ims.icarus2.test.TestUtils.assertObjectContract;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;

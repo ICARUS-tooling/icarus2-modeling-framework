@@ -14,15 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.ims.icarus2.util;
+package de.ims.icarus2.test;
 
-import static de.ims.icarus2.util.strings.StringUtil.getName;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import de.ims.icarus2.util.lang.ClassUtils;
-import de.ims.icarus2.util.lang.ClassUtils.Trace;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+import de.ims.icarus2.test.DiffUtils.Trace;
 
 /**
  * Collection of useful testing methods.
@@ -112,7 +113,7 @@ public class TestUtils {
 	public static void assertDeepEqual(String msg, Object expected, Object actual, String serializedForm) throws IllegalAccessException {
 
 		// Collect all the differences
-		Trace trace = ClassUtils.deepDiff(expected, actual);
+		Trace trace = DiffUtils.deepDiff(expected, actual);
 
 		if(trace.hasMessages()) {
 			failForTrace(msg, trace, expected, serializedForm);
@@ -122,7 +123,7 @@ public class TestUtils {
 	public static void assertDeepNotEqual(String msg, Object expected, Object actual) throws IllegalAccessException {
 
 		// Collect all the differences
-		Trace trace = ClassUtils.deepDiff(expected, actual);
+		Trace trace = DiffUtils.deepDiff(expected, actual);
 
 		if(!trace.hasMessages()) {
 			failForEqual(msg, expected, actual);
@@ -130,12 +131,20 @@ public class TestUtils {
 	}
 
 	private static String getId(Object obj) {
-		String id = getName(obj);
+		String id = null;
+
+		try {
+			Method method = obj.getClass().getMethod("getName");
+			id = (String) method.invoke(obj);
+		} catch(NoSuchMethodException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			// ignore
+		}
 
 		if(id==null) {
-			id = obj.getClass()+"@<unnamed>"; //$NON-NLS-1$
+			id = "<unnamed>";
 		}
-		return id;
+
+		return obj.getClass()+"@["+id+"]";
 	}
 
 
