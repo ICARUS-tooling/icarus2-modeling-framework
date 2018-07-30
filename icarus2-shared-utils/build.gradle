@@ -1,6 +1,11 @@
 
 description = 'Shared utility classes for common tasks'
 
+// internal dependencies
+dependencies {
+	testImplementation(project(':icarus2-shared-tests'))
+}
+
 configurations {
 	// external dependencies managed by root build.gradle
 	api.extendsFrom(guava, fastutil)

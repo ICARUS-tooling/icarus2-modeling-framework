@@ -25,6 +25,7 @@ wrapper {
 subprojects {
   	apply plugin: 'java-library'
   	//apply plugin: 'maven-publish'
+  	apply plugin: 'checkstyle'
   	apply plugin: 'com.github.spotbugs'  	
 	apply plugin: 'com.github.hierynomus.license'
 	
@@ -156,7 +157,7 @@ subprojects {
 		
 		mapping {
 			// Per default the plugin uses full javadoc style for license headers.
-			// We prefer normal multiline comment style to sitinguish it from the
+			// We prefer normal multiline comment style to distinguish it from the
 			// documentation after package and import statements.
 			java = 'SLASHSTAR_STYLE'
 		}
@@ -190,6 +191,18 @@ subprojects {
 			sourceSets*.resources.srcDirs*.each { it.mkdirs() }
     	}   
     }
+    
+    checkstyle {
+	    ignoreFailures = true
+    }
+    
+    // Switch checkstyle reporting to be html only
+    tasks.withType(Checkstyle) {
+	    reports {
+	        xml.enabled false
+	        html.enabled true
+	    }
+	}
     
 	// Bundle test classes into a jar usable for other projects
 	task testJar(type: Jar, dependsOn: testClasses) {
