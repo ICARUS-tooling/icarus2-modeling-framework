@@ -53,6 +53,11 @@ public interface Documentation extends ModifiableIdentity, Lockable, TypedManife
 		return ManifestType.DOCUMENTATION;
 	}
 
+	/**
+	 * Apply {@code action} to each registered resource in this documentation
+	 * in the order they have been added.
+	 * @param action
+	 */
 	void forEachResource(Consumer<? super Resource> action);
 
 	// Modification methods

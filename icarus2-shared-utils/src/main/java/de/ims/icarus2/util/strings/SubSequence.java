@@ -16,18 +16,41 @@
  */
 package de.ims.icarus2.util.strings;
 
+/**
+ * Implements a static slice of characters from a given source {@link CharSequence}.
+ * Note that 'static' in this contest only refers to the location of the slice within
+ * the source sequence! This class does not perform any caching, so any changes to
+ * characters of the source sequence within the frame defined at constructor time are
+ * visible through this class.
+ *
+ * @author Markus Gärtner
+ *
+ */
 public class SubSequence extends AbstractString {
 
 	private final CharSequence source;
 	private final int offset;
 	private final int len;
 
+	/**
+	 *
+	 * @param source original sequence to slice subsequence from
+	 * @param offset index of first character to include in the subsequence
+	 * @param len total length of the subsequence
+	 *
+	 * @throws NullPointerException iff {@code source} is {@code null}
+	 * @throws IndexOutOfBoundsException if {@code offset < 0} or
+	 * 	if{@code offset} equals or exceeds {@code source.length()}
+	 * @throws IllegalArgumentException if {@code len < 0} or
+	 * 	if {@code offset + len} exceed {@code source.length()}
+	 *
+	 */
 	public SubSequence(CharSequence source, int offset, int len) {
 		if (source == null)
 			throw new NullPointerException("Invalid source"); //$NON-NLS-1$
 		if(offset<0 || offset>=source.length())
 			throw new IndexOutOfBoundsException("offset"); //$NON-NLS-1$
-		if(len<0 || len>=source.length()-offset)
+		if(len<0 || offset+len>source.length())
 			throw new IllegalArgumentException("length"); //$NON-NLS-1$
 
 		this.source = source;

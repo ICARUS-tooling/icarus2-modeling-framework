@@ -29,9 +29,9 @@ import java.util.Map;
 import javax.swing.Icon;
 
 import de.ims.icarus2.util.collections.CollectionUtils;
-import de.ims.icarus2.util.events.SimpleEventListener;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.events.Events;
+import de.ims.icarus2.util.events.SimpleEventListener;
 import de.ims.icarus2.util.events.WeakEventSource;
 import de.ims.icarus2.util.id.DuplicateIdentifierException;
 import de.ims.icarus2.util.id.UnknownIdentifierException;
@@ -428,14 +428,6 @@ public final class ContentTypeRegistry {
 		@Override
 		public Icon getIcon() {
 			return null;
-		}
-
-		/**
-		 * @see de.ims.icarus2.util.id.Identity#getOwner()
-		 */
-		@Override
-		public Object getOwner() {
-			return this;
 		}
 
 		/**

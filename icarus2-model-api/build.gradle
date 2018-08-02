@@ -5,4 +5,5 @@ description = 'API for actual corpus modeling and interaction'
 dependencies {
   api(project(':icarus2-shared-utils'))
   api(project(':icarus2-manifest-api'))
+  testImplementation(project(':icarus2-shared-tests'))
 }

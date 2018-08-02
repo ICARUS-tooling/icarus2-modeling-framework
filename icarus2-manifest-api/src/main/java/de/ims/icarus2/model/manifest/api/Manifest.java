@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;

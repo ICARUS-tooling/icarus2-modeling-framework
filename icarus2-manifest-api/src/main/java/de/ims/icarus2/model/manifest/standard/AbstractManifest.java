@@ -18,9 +18,9 @@ package de.ims.icarus2.model.manifest.standard;
 
 import static java.util.Objects.requireNonNull;
 
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.LayerType;
 import de.ims.icarus2.model.manifest.api.Manifest;
-import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
@@ -188,6 +188,12 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 	 */
 	@Override
 	public void setVersionManifest(VersionManifest versionManifest) {
+		checkNotLocked();
+
+		setVersionManifest0(versionManifest);
+	}
+
+	protected void setVersionManifest0(VersionManifest versionManifest) {
 		requireNonNull(versionManifest);
 		if(this.versionManifest!=null)
 			throw new ManifestException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Version already set on manifest: "+this);

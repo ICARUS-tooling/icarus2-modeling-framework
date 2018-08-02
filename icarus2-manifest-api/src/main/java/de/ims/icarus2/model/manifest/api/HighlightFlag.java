@@ -16,12 +16,10 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import javax.swing.text.Highlighter.Highlight;
 
 import de.ims.icarus2.util.Flag;
+import de.ims.icarus2.util.LazyNameStore;
 import de.ims.icarus2.util.strings.StringResource;
 
 /**
@@ -69,18 +67,9 @@ public enum HighlightFlag implements StringResource, Flag {
 		return xmlForm;
 	}
 
-	private static Map<String, HighlightFlag> xmlLookup;
+	private static LazyNameStore<HighlightFlag> store = new LazyNameStore<>(HighlightFlag.class);
 
 	public static HighlightFlag parseHighlightFlag(String s) {
-		if(xmlLookup==null) {
-			// No real need to care about concurrency here
-			Map<String, HighlightFlag> map = new HashMap<>();
-			for(HighlightFlag type : values()) {
-				map.put(type.xmlForm, type);
-			}
-			xmlLookup = map;
-		}
-
-		return xmlLookup.get(s);
+		return store.lookup(s);
 	}
 }

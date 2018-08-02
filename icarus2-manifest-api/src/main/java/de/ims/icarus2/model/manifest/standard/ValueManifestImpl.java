@@ -18,8 +18,6 @@ package de.ims.icarus2.model.manifest.standard;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.Set;
-
 import de.ims.icarus2.model.manifest.api.Documentation;
 import de.ims.icarus2.model.manifest.api.ValueManifest;
 import de.ims.icarus2.model.manifest.types.UnsupportedValueTypeException;
@@ -35,16 +33,10 @@ public class ValueManifestImpl extends DefaultModifiableIdentity implements Valu
 	private Documentation documentation;
 	private final ValueType valueType;
 
-	private static final Set<ValueType> supportedValueTypes = ValueType.filterWithout(
-			ValueType.UNKNOWN,
-			ValueType.CUSTOM,
-			ValueType.IMAGE_RESOURCE,
-			ValueType.URL_RESOURCE);
-
 	public ValueManifestImpl(ValueType valueType) {
 		requireNonNull(valueType);
 
-		if(!supportedValueTypes.contains(valueType))
+		if(!ValueManifest.SUPPORTED_VALUE_TYPES.contains(valueType))
 			throw new UnsupportedValueTypeException(valueType);
 
 		this.valueType = valueType;
@@ -85,7 +77,7 @@ public class ValueManifestImpl extends DefaultModifiableIdentity implements Valu
 	}
 
 	protected void setDocumentation0(Documentation documentation) {
-		this.documentation = documentation;
+		this.documentation = requireNonNull(documentation);
 	}
 
 	/**
@@ -100,6 +92,8 @@ public class ValueManifestImpl extends DefaultModifiableIdentity implements Valu
 
 	protected void setValue0(Object value) {
 		requireNonNull(value);
+
+		valueType.checkValue(value);
 
 		this.value = value;
 	}

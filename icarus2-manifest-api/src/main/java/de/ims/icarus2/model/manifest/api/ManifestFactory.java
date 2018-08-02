@@ -16,6 +16,9 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 import de.ims.icarus2.util.Options;
 
 /**
@@ -23,6 +26,10 @@ import de.ims.icarus2.util.Options;
  *
  */
 public interface ManifestFactory {
+
+	default Set<ManifestType> getSupportedTypes() {
+		return EnumSet.allOf(ManifestType.class);
+	}
 
 	default <M extends ManifestFragment> M create(ManifestType type) {
 		return create(type, null, null);

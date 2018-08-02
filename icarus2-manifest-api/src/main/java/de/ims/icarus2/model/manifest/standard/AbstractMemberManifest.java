@@ -27,9 +27,9 @@ import java.util.function.Consumer;
 import javax.swing.Icon;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.Category;
 import de.ims.icarus2.model.manifest.api.Documentation;
-import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
@@ -133,7 +133,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	}
 
 	protected void setOptionsManifest0(OptionsManifest optionsManifest) {
-		requireNonNull(optionsManifest);
+		// Former contract contained a null check
 
 		this.optionsManifest = optionsManifest;
 	}
@@ -224,6 +224,8 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 			property.setOption(option);
 		}
 
+		valueType.checkValue(value);
+
 		property.setValueType(valueType);
 		property.setValue(value);
 		property.setMultiValue(multiValue);
@@ -262,6 +264,10 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 
 		Property property = getProperty(name);
 
+		/* Make sure that we only ever modify local properties!
+		 * Side effect of this strategy is that after modifying
+		 * a property it effectively becomes a local one.
+		 */
 		if(!isLocalProperty(name)) {
 			property = property.clone();
 			addProperty(property);
@@ -394,9 +400,9 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	public void lock() {
 		super.lock();
 
-		if(optionsManifest!=null) {
-			optionsManifest.lock();
-		}
+		lockNested(optionsManifest, documentation);
+
+		lockNested(properties.values());
 	}
 
 	/**

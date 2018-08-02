@@ -24,6 +24,10 @@ import java.util.regex.Pattern;
  */
 public abstract class AbstractString implements CharSequence, Comparable<CharSequence> {
 
+	/**
+	 * Cached hash value to speed up frequent calls to {@link #hashCode()}.
+	 * Can be reset by calling {@link #resetHash()}.
+	 */
 	private int hash;
 
 	/**
@@ -31,15 +35,6 @@ public abstract class AbstractString implements CharSequence, Comparable<CharSeq
 	 */
 	@Override
 	public CharSequence subSequence(int start, int end) {
-//		int size = end-start+1;
-//
-//		char[] ca = new char[size];
-//
-//		while(size-- > 0) {
-//			ca[size] = charAt(start+size);
-//		}
-//
-//		return new String(ca);
 		return new SubSequence(this, start, end-start+1);
 	}
 
@@ -49,6 +44,7 @@ public abstract class AbstractString implements CharSequence, Comparable<CharSeq
 
 	/**
 	 * @see java.lang.Object#hashCode()
+	 * @see String#hashCode()
 	 */
 	@Override
 	public int hashCode() {
@@ -62,6 +58,7 @@ public abstract class AbstractString implements CharSequence, Comparable<CharSeq
 
 	/**
 	 * @see java.lang.Object#equals(java.lang.Object)
+	 * @see String#equals(Object)
 	 */
 	@Override
 	public boolean equals(Object obj) {
@@ -74,6 +71,7 @@ public abstract class AbstractString implements CharSequence, Comparable<CharSeq
 
 	/**
 	 * @see java.lang.Object#toString()
+	 * @see StringUtil#intern(CharSequence)
 	 */
 	@Override
 	public String toString() {

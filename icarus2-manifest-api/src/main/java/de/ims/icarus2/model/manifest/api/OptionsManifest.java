@@ -202,49 +202,40 @@ public interface OptionsManifest extends Manifest, Embedded {
 		String getId();
 
 		/**
-		 * Returns the default value for the property specified by the
-		 * {@code name} argument
+		 * Returns the default value for the property specified for this option
 		 *
-		 * @param name The {@code name} of the property for which the
-		 * default value should be returned
-		 * @return The default value for the specified property or {@code null}
+		 * @return The default value for this property or {@code null}
 		 * if the property has no default value assigned to it
 		 */
 		@AccessRestriction(AccessMode.READ)
 		Object getDefaultValue();
 
 		/**
-		 * Returns the type of the specified property. This method never
+		 * Returns the type of this property. This method never
 		 * returns {@code null}.
 		 *
-		 * @param name The {@code name} of the property for which the
-		 * type should be returned
-		 * @return The type for the specified property
+		 * @return The type for this property
 		 */
 		@AccessRestriction(AccessMode.READ)
 		ValueType getValueType();
 
 		/**
-		 * Returns a localized name string of the specified property, that
+		 * Returns a localized name string of this property, that
 		 * is suitable for presentation in user interfaces.
 		 *
-		 * @param name The {@code name} of the property for which a
-		 * localized name should be returned
-		 * @return A localized name string for the specified property
+		 * @return A localized name string for this property
 		 */
 		@Override
 		@AccessRestriction(AccessMode.READ)
 		String getName();
 
 		/**
-		 * Returns a localized description string of the specified property, that
+		 * Returns a localized description string of this property, that
 		 * is suitable for presentation in user interfaces.
 		 * <p>
 		 * This is an optional method
 		 *
-		 * @param name The {@code name} of the property for which a
-		 * localized description should be returned
-		 * @return A localized description string for the specified property
+		 * @return A localized description string for this property
 		 * or {@code null} if there is no description available for it
 		 */
 		@Override

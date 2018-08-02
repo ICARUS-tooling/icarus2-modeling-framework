@@ -107,12 +107,4 @@ public enum EditOperation implements Identity {
 	public Icon getIcon() {
 		return null;
 	}
-
-	/**
-	 * @see de.ims.icarus2.util.id.Identity#getOwner()
-	 */
-	@Override
-	public Object getOwner() {
-		return this;
-	}
 }

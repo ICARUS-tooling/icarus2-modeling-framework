@@ -17,7 +17,7 @@
 package de.ims.icarus2.model.manifest.types;
 
 import de.ims.icarus2.IcarusException;
-import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 
 
 /**

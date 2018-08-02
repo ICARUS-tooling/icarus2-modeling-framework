@@ -37,11 +37,11 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.io.PathResolver;
 import de.ims.icarus2.model.api.io.ResourcePath;
 import de.ims.icarus2.model.api.io.resources.ResourceProvider;
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathEntry;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
 import de.ims.icarus2.model.manifest.api.LocationType;
-import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**

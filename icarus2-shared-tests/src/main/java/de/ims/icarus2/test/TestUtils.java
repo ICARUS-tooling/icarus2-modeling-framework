@@ -16,12 +16,22 @@
  */
 package de.ims.icarus2.test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
+
+import org.junit.jupiter.api.function.Executable;
 
 import de.ims.icarus2.test.DiffUtils.Trace;
 
@@ -58,6 +68,74 @@ public class TestUtils {
 		    		+ "所女共勝店写提東育格摩致迎木。題管経辺思必時気軍提田帰国皇球"
 		    		+ "北暮理。草権労球国球地国変億慶査造備快。触帝希及生生男国無始"
 		    		+ "策中。";
+
+	public static final String EMOJI = "👍"; // thumbs-up emoji
+
+	public static void assertNPE(Executable executable) {
+		assertThrows(NullPointerException.class, executable);
+	}
+
+	/**
+	 * Assert that a method implementing the {@code for-each loop} provides
+	 * a set of previously registered objects in a specified order.
+	 *
+	 * @param loop
+	 * @param expected
+	 */
+	@SuppressWarnings("unchecked")
+	public static <K extends Object, A extends Consumer<? super K>> void assertForEachSorted(Consumer<A> loop, K...expected) {
+		List<K> actual = new ArrayList<>();
+
+		Consumer<K> action = actual::add;
+
+		loop.accept((A)action);
+
+		assertEquals(expected.length, actual.size());
+
+		for(int i=0; i<expected.length; i++) {
+			assertEquals(expected[i], actual.get(i), "Mismatch at index "+i);
+		}
+	}
+
+	/**
+	 * Assert that a method implementing the {@code for-each loop} provides
+	 * a set of previously registered objects in no specific order.
+	 *
+	 * @param loop
+	 * @param expected
+	 */
+	@SuppressWarnings("unchecked")
+	public static <K extends Object, A extends Consumer<? super K>> void assertForEachUnsorted(Consumer<A> loop, K...expected) {
+		Set<K> actual = new HashSet<>();
+
+		Consumer<K> action = actual::add;
+
+		loop.accept((A)action);
+
+		assertEquals(expected.length, actual.size());
+
+		for(int i=0; i<expected.length; i++) {
+			assertTrue(actual.contains(expected[i]));
+		}
+	}
+
+	/**
+	 * Assert that a method implementing the {@code for-each loop} provides
+	 * a total of {@code 0} objects.
+	 *
+	 * @param loop
+	 * @param expected
+	 */
+	@SuppressWarnings("unchecked")
+	public static <K extends Object, A extends Consumer<? super K>> void assertForEachEmpty(Consumer<A> loop) {
+		Set<K> actual = new HashSet<>();
+
+		Consumer<K> action = actual::add;
+
+		loop.accept((A)action);
+
+		assertTrue(actual.isEmpty());
+	}
 
     private static boolean isEquals(Object expected, Object actual) {
         return expected.equals(actual);

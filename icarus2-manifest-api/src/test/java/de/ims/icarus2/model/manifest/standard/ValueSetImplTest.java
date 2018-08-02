@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.ims.icarus2.model.manifest.test;
+package de.ims.icarus2.model.manifest.standard;
 
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.getTestValues;
 import static de.ims.icarus2.model.manifest.xml.ManifestXmlTestUtils.assertSerializationEquals;
@@ -33,10 +33,9 @@ import de.ims.icarus2.model.manifest.xml.delegates.ValueSetXmlDelegate;
 
 /**
  * @author Markus Gärtner
- * @version $Id: ValueSetImplTest.java 332 2014-12-16 12:55:39Z mcgaerty $
  *
  */
-public class ValueSetImplTest {
+class ValueSetImplTest {
 
 	private void testAdd(ValueType valueType) throws Exception {
 

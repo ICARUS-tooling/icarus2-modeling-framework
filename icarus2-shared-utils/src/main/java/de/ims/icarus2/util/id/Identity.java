@@ -71,13 +71,6 @@ public interface Identity {
 	Icon getIcon();
 
 	/**
-	 * Returns the optional entity that this identity is
-	 * associated with.
-	 * @return
-	 */
-	Object getOwner();
-
-	/**
 	 * Prioritizing comparator that uses names if available for bot identities
 	 * and defaults to ids otherwise.
 	 */

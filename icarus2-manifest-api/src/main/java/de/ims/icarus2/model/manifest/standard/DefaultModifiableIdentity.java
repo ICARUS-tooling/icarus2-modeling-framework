@@ -147,14 +147,6 @@ public class DefaultModifiableIdentity extends AbstractLockable implements Modif
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.id.Identity#getOwner()
-	 */
-	@Override
-	public Object getOwner() {
-		return this;
-	}
-
-	/**
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override

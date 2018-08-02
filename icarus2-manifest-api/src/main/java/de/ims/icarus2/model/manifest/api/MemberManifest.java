@@ -19,6 +19,7 @@ package de.ims.icarus2.model.manifest.api;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.util.Options;
@@ -46,15 +47,6 @@ import de.ims.icarus2.util.collections.LazyCollection;
 @AccessControl(AccessPolicy.DENY)
 public interface MemberManifest extends ModifiableIdentity, Categorizable, Documentable, Manifest, Embedded {
 
-	/**
-	 * Returns this very manifest as the owner of the identity.
-	 *
-	 * @see de.ims.icarus2.util.id.Identity#getOwner()
-	 */
-	@Override
-	default Object getOwner() {
-		return this;
-	}
 
 	/**
 	 * Returns the manifest that describes possible options the
@@ -70,7 +62,7 @@ public interface MemberManifest extends ModifiableIdentity, Categorizable, Docum
 
 	/**
 	 * Returns the property assigned to this manifest for the given
-	 * name. If their is no property with the given name available
+	 * name. If there is no property with the given name available
 	 * this method should return {@code null}. Note that multi-value
 	 * properties will typically return a collection of values.
 	 *
@@ -175,14 +167,19 @@ public interface MemberManifest extends ModifiableIdentity, Categorizable, Docum
 	 * @param value The new value for the property, allowed to be {@code null}
 	 * if stated so in the {@code OptionsManifest} for this manifest
 	 * @throws NullPointerException if the {@code name} argument is {@code null}
-	 * @throws IllegalArgumentException if the {@code value} argument does not
-	 * fulfill the contract described in the {@code OptionsManifest} of this
-	 * manifest.
+	 * @throws ManifestException of type {@link ManifestErrorCode#MANIFEST_TYPE_CAST}
+	 * if the {@code value} argument does not fulfill the contract described in the
+	 * {@code OptionsManifest} of this manifest.
 	 * @throws UnsupportedOperationException if the manifest does not declare
 	 * any properties the user can modify.
 	 */
 	void setPropertyValue(String name, Object value);
 
+	/**
+	 * Attaches a new {@link OptionsManifest} to this manifest or
+	 * removes the current one when supplying a {@code null} parameter.
+	 * @param optionsManifest
+	 */
 	void setOptionsManifest(OptionsManifest optionsManifest);
 
 	// Modification methods
@@ -230,6 +227,6 @@ public interface MemberManifest extends ModifiableIdentity, Categorizable, Docum
 		 */
 		Property clone();
 
-		public abstract void setMultiValue(boolean multiValue);
+		void setMultiValue(boolean multiValue);
 	}
 }

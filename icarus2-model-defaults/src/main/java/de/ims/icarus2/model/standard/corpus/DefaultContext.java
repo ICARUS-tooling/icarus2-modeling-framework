@@ -39,9 +39,9 @@ import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
 import de.ims.icarus2.model.api.members.MemberType;
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
-import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.util.ModelUtils;
 
 /**

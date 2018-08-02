@@ -117,14 +117,6 @@ public class LayerTypeWrapper implements LayerType {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.id.Identity#getOwner()
-	 */
-	@Override
-	public Object getOwner() {
-		return getProxy().getOwner();
-	}
-
-	/**
 	 * @see de.ims.icarus2.model.manifest.api.LayerType#getSharedManifest()
 	 */
 	@Override

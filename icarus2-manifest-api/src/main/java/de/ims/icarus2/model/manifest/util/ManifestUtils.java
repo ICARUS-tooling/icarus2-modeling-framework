@@ -50,7 +50,7 @@ public class ManifestUtils {
 	 * <li>they start with an alphabetic character (lower and upper case are allowed)</li>
 	 * <li>subsequent characters may be alphabetic or digits</li>
 	 * <li>no whitespaces, control characters or code points with 2 or more bytes are allowed</li>
-	 * <li>no special characters are allowed besides the following 2: _- (underscore, hyphen)</li>
+	 * <li>no special characters are allowed besides the following 3: _-. (underscore, hyphen, dot)</li>
 	 * </ul>
 	 *
 	 * Attempting to use any other string as an identifier for arbitrary members of a corpus will

@@ -75,13 +75,4 @@ public class ProxyIdentity implements Identity {
 	public Icon getIcon() {
 		return identity.getIcon();
 	}
-
-	/**
-	 * @return
-	 * @see de.ims.icarus2.util.id.Identity#getOwner()
-	 */
-	@Override
-	public Object getOwner() {
-		return identity.getOwner();
-	};
 }

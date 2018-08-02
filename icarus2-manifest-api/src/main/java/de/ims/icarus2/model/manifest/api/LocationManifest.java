@@ -16,11 +16,10 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.util.LazyNameStore;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -180,18 +179,10 @@ public interface LocationManifest extends Manifest {
 			return xmlForm;
 		}
 
-		private static Map<String, PathType> xmlLookup;
+		private static LazyNameStore<PathType> store = new LazyNameStore<>(PathType.class);
 
 		public static PathType parsePathType(String s) {
-			if(xmlLookup==null) {
-				Map<String, PathType> map = new HashMap<>();
-				for(PathType type : values()) {
-					map.put(type.xmlForm, type);
-				}
-				xmlLookup = map;
-			}
-
-			return xmlLookup.get(s);
+			return store.lookup(s);
 		}
 	}
 

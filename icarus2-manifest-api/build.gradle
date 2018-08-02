@@ -5,6 +5,7 @@ description = 'Foundation of the framework - provides API and default implementa
 dependencies {
 	api project(':icarus2-shared-utils')  
 	testImplementation(project(':icarus2-shared-tests'))
+	//testImplementation(project(path ':icarus2-shared-utils', configuration 'tests'))
 }
 
 configurations {

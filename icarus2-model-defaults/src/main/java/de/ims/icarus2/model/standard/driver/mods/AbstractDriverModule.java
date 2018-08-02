@@ -52,15 +52,15 @@ public abstract class AbstractDriverModule extends AbstractPart<Driver> implemen
 	protected AbstractDriverModule() {
 		String id = getClass().getName();
 
-		state = new DefaultModuleState(this);
-		identity = new StaticIdentity(id, this);
+		state = new DefaultModuleState(id);
+		identity = new StaticIdentity(id);
 	}
 
 	protected AbstractDriverModule(String id) {
 		requireNonNull(id);
 
-		state = new DefaultModuleState(this);
-		identity = new StaticIdentity(id, this);
+		state = new DefaultModuleState(id);
+		identity = new StaticIdentity(id);
 	}
 
 	protected static void checkInterrupted() throws InterruptedException {

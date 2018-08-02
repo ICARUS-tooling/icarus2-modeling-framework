@@ -15,27 +15,12 @@
  * limitations under the License.
  */
 package de.ims.icarus2.model.manifest;
-/*
- *  ICARUS 2 -  Interactive platform for Corpus Analysis and Research tools, University of Stuttgart
- *  Copyright (C) 2015-2016 Markus Gärtner
- *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see http://www.gnu.org/licenses.
- */
-
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -43,11 +28,20 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.junit.jupiter.api.function.Executable;
+import org.mockito.Mockito;
+
 import de.ims.icarus2.model.manifest.api.Manifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.model.manifest.api.ManifestLocation;
+import de.ims.icarus2.model.manifest.api.ManifestRegistry;
+import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.types.DefaultIconLink;
 import de.ims.icarus2.model.manifest.types.DefaultLink;
 import de.ims.icarus2.model.manifest.types.DefaultUrlResource;
@@ -55,15 +49,17 @@ import de.ims.icarus2.model.manifest.types.Url;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.util.icon.IconWrapper;
 import de.ims.icarus2.util.id.Identity;
+import de.ims.icarus2.util.nio.ByteArrayChannel;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner
  *
  */
+@SuppressWarnings("boxing")
 public class ManifestTestUtils {
 
-	private static final Map<ValueType, Object[]> testValues = new Object2ObjectOpenHashMap<>();
+	private static final Map<ValueType, TestInfo> testValues = new Object2ObjectOpenHashMap<>();
 
 	public enum TestEnum {
 		TEST1,
@@ -78,24 +74,40 @@ public class ManifestTestUtils {
 //		doReturn(extensions[2]).when(EXTENSION_TYPE).parse("extension3", null); //$NON-NLS-1$
 //	}
 
-	private static void addTestValues(ValueType type, Object...values) {
-		testValues.put(type, values);
+	private static class TestInfo {
+		Object illegalValue;
+		Object[] legalValues;
+		/**
+		 * @param illegalValue
+		 * @param legalValues
+		 */
+		public TestInfo(Object illegalValue, Object[] legalValues) {
+			super();
+			this.illegalValue = illegalValue;
+			this.legalValues = legalValues;
+		}
+	}
+
+	private static void addTestValues(ValueType type, Object illegalValue, Object...values) {
+		testValues.put(type, new TestInfo(illegalValue, values));
 	}
 	static {
-		addTestValues(ValueType.STRING, "test1", "test2", "test3");  //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$
-		addTestValues(ValueType.INTEGER, 1, 20, 300);
-		addTestValues(ValueType.LONG, 1L, 20L, 300L);
-		addTestValues(ValueType.FLOAT, 1.1F, 2.5F, 3F);
-		addTestValues(ValueType.DOUBLE, 1.765324D, 2.56789D, -3D);
-		addTestValues(ValueType.BOOLEAN, true, false);
-		addTestValues(ValueType.ENUM, (Object[]) TestEnum.values());
-		addTestValues(ValueType.IMAGE,
+		addTestValues(ValueType.STRING, -1, "test1", "test2", "test3");  //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$
+		addTestValues(ValueType.INTEGER, "illegal", 1, 20, 300);
+		addTestValues(ValueType.LONG, "illegal", 1L, 20L, 300L);
+		addTestValues(ValueType.FLOAT, "illegal", 1.1F, 2.5F, 3F);
+		addTestValues(ValueType.DOUBLE, "illegal", 1.765324D, 2.56789D, -3D);
+		addTestValues(ValueType.BOOLEAN, "illegal", true, false);
+		addTestValues(ValueType.ENUM, "illegal", (Object[]) TestEnum.values());
+		addTestValues(ValueType.IMAGE, "illegal",
 				new IconWrapper("testIconName1"), //$NON-NLS-1$
 				new IconWrapper("testIconName2"), //$NON-NLS-1$
 				new IconWrapper("testIconName3")); //$NON-NLS-1$
 
+		addTestValues(ValueType.BINARY_STREAM, 1, ByteArrayChannel.fromChars("this is a test"));
+
 		try {
-			addTestValues(ValueType.URL,
+			addTestValues(ValueType.URL, "illegal",
 					new Url("http://www.uni-stuttgart.de"), //$NON-NLS-1$
 					new Url("http://www.uni-stuttgart.de/linguistik"), //$NON-NLS-1$
 					new Url("http://www.dict.cc")); //$NON-NLS-1$
@@ -104,7 +116,7 @@ public class ManifestTestUtils {
 		}
 
 		try {
-			addTestValues(ValueType.URI,
+			addTestValues(ValueType.URI, "illegal",
 					new URI("mailto:xzy"), //$NON-NLS-1$
 					new URI("/ref/some/relative/data"), //$NON-NLS-1$
 					new URI("http://www.dict.cc#marker")); //$NON-NLS-1$
@@ -113,7 +125,7 @@ public class ManifestTestUtils {
 		}
 
 		try {
-			addTestValues(ValueType.URL_RESOURCE,
+			addTestValues(ValueType.URL_RESOURCE, "illegal",
 					new DefaultUrlResource(new Url("http://www.uni-stuttgart.de"), "Url-Link 1", "Some test url link"), //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 					new DefaultUrlResource(new Url("http://www.uni-stuttgart.de/linguistik"), "Url-Link 2", "Another url link"), //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 					new DefaultUrlResource(new Url("http://www.dict.cc"), "Url-Link 3 (no desciption)")); //$NON-NLS-1$ //$NON-NLS-2$
@@ -122,7 +134,7 @@ public class ManifestTestUtils {
 		}
 
 		try {
-			addTestValues(ValueType.LINK,
+			addTestValues(ValueType.LINK, "illegal",
 					new DefaultLink(new URI("mailto:xzy"), "Link 1", "Some test link"), //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 					new DefaultLink(new URI("/ref/some/relative/data"), "Link 2", "Another link"), //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 					new DefaultLink(new URI("http://www.dict.cc#marker"), "Link 3 (no desciption)")); //$NON-NLS-1$ //$NON-NLS-2$
@@ -130,20 +142,20 @@ public class ManifestTestUtils {
 			// ignore
 		}
 
-		addTestValues(ValueType.IMAGE_RESOURCE,
+		addTestValues(ValueType.IMAGE_RESOURCE, "illegal",
 				new DefaultIconLink(new IconWrapper("testIconName1"), "Icon-Link 1", "Some test icon link"), //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 				new DefaultIconLink(new IconWrapper("testIconName2"), "Icon-Link 2", "Some test icon link"), //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 				new DefaultIconLink(new IconWrapper("testIconName3"), "Icon-Link 3 (no description)")); //$NON-NLS-1$ //$NON-NLS-2$$
 
-		addTestValues(ValueType.UNKNOWN, new Object(), new int[3], 456);
-		addTestValues(ValueType.CUSTOM, new Dummy(), new Dummy(), new Dummy());
+		addTestValues(ValueType.UNKNOWN, null, new Object(), new int[3], 456);
+		addTestValues(ValueType.CUSTOM, null, new Dummy(), new Dummy(), new Dummy());
 
-		addTestValues(ValueType.EXTENSION,
+		addTestValues(ValueType.EXTENSION, -1,
 				"my.plugin@extension1",
 				"my.plugin@extension2",
 				"my.plugin2@extension1");
 
-		addTestValues(ValueType.FILE,
+		addTestValues(ValueType.FILE, "illegal",
 				Paths.get("someFile"),
 				Paths.get("anotherFile"),
 				Paths.get("some","path","with","a","file.txt"));
@@ -151,20 +163,32 @@ public class ManifestTestUtils {
 		//FIXME add some test values for the other more complex types!
 	}
 
+	public static Set<ValueType> getAvailableTestTypes() {
+		return Collections.unmodifiableSet(testValues.keySet());
+	}
+
 	public static Object[] getTestValues(ValueType type) {
-		Object[] values = testValues.get(type);
-		if(values==null)
+		TestInfo info = testValues.get(type);
+		if(info==null)
 			throw new IllegalArgumentException("No test values for type: "+type);
 
-		return values;
+		return info.legalValues;
 	}
 
 	public static Object getTestValue(ValueType type) {
-		Object[] values = testValues.get(type);
-		if(values==null)
+		TestInfo info = testValues.get(type);
+		if(info==null)
 			throw new IllegalArgumentException("No test values for type: "+type);
 
-		return values[0];
+		return info.legalValues[0];
+	}
+
+	public static Object getIllegalValue(ValueType type) {
+		TestInfo info = testValues.get(type);
+		if(info==null)
+			throw new IllegalArgumentException("No test values for type: "+type);
+
+		return info.illegalValue;
 	}
 
 	private static final Set<String> methodBlacklist = new HashSet<>();
@@ -249,4 +273,46 @@ public class ManifestTestUtils {
 		}
 	}
 
+	public static <M extends TypedManifest> M mockTypedManifest(ManifestType type) {
+		Class<? extends TypedManifest> clazz = type.getBaseClass();
+		if(clazz==null)
+			throw new InternalError("Cannot create mock for manifest type: "+type);
+
+		@SuppressWarnings("unchecked")
+		M manifest = (M) mock(clazz);
+
+		if(Manifest.class.isAssignableFrom(clazz)) {
+			Manifest fullManifest = (Manifest) manifest;
+			ManifestRegistry registry = Mockito.mock(ManifestRegistry.class);
+			ManifestLocation location = Mockito.mock(ManifestLocation.class);
+
+			when(fullManifest.getManifestLocation()).thenReturn(location);
+			when(fullManifest.getRegistry()).thenReturn(registry);
+		}
+
+		return manifest;
+	}
+
+	public static void assertMalformedId(Manifest manifest, String id) {
+		ManifestException exception = assertThrows(ManifestException.class, () -> manifest.setId(id));
+		assertEquals(ManifestErrorCode.MANIFEST_INVALID_ID, exception.getErrorCode());
+	}
+
+	public static void assertValidId(Manifest manifest, String id) {
+		manifest.setId(id);
+		assertEquals(id, manifest.getId());
+	}
+
+	/**
+	 * {@link #assertManifestException(ManifestErrorCode, Executable) Assert} {@link ManifestErrorCode#MANIFEST_TYPE_CAST}
+	 * @param executable
+	 */
+	public static void assertIllegalValue(Executable executable) {
+		assertManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST, executable);
+	}
+
+	public static void assertManifestException(ManifestErrorCode errorCode, Executable executable) {
+		ManifestException exception = assertThrows(ManifestException.class, executable);
+		assertEquals(errorCode, exception.getErrorCode());
+	}
 }

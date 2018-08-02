@@ -29,7 +29,6 @@ import javax.swing.ImageIcon;
  */
 public class StaticIdentity implements Identity {
 
-	protected final Object owner;
 	protected String id;
 	protected String name;
 	protected String description;
@@ -39,45 +38,23 @@ public class StaticIdentity implements Identity {
 	public StaticIdentity(Identity source) {
 		requireNonNull(source);
 
-		this.owner = requireNonNull(source.getOwner());
-
 		setId(source.getId());
 		setName(source.getName());
 		setDescription(source.getDescription());
 		setIcon(source.getIcon());
 	}
 
-	public StaticIdentity(Object owner) {
-		requireNonNull(owner);
-
-		this.owner = owner;
-	}
-
 	public StaticIdentity(String id) {
-		this.owner = null;
-
-		setId(id);
-	}
-
-	public StaticIdentity(String id, Object owner) {
-		requireNonNull(owner);
-
-		this.owner = owner;
-
 		setId(id);
 	}
 
 	public StaticIdentity(String id, String description, Icon icon) {
-		this.owner = this;
-
 		setId(id);
 		setDescription(description);
 		setIcon(icon);
 	}
 
 	public StaticIdentity(String id, String name, String description, Icon icon) {
-		this.owner = this;
-
 		setId(id);
 		setName(name);
 		setDescription(description);
@@ -120,14 +97,6 @@ public class StaticIdentity implements Identity {
 		}
 
 		return icon;
-	}
-
-	/**
-	 * @see de.ims.icarus2.util.id.Identity#getOwner()
-	 */
-	@Override
-	public Object getOwner() {
-		return owner==null ? this : owner;
 	}
 
 	/**

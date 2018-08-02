@@ -20,9 +20,12 @@ import static java.util.Objects.requireNonNull;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
@@ -31,7 +34,6 @@ import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
-import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestFactory;
 import de.ims.icarus2.model.manifest.api.ManifestFragment;
@@ -134,6 +136,14 @@ public class DefaultManifestFactory implements ManifestFactory {
 		registerInfo(ManifestType.STRUCTURE_MANIFEST, StructureManifestImpl.class, StructureLayerManifest.class);
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.ManifestFactory#getSupportedTypes()
+	 */
+	@Override
+	public Set<ManifestType> getSupportedTypes() {
+		return Collections.unmodifiableSet(_info.keySet());
+	}
+
 	protected static ManifestFragmentInfo getInfo(ManifestType type) {
 		ManifestFragmentInfo info = _info.get(type);
 
@@ -167,14 +177,14 @@ public class DefaultManifestFactory implements ManifestFactory {
 		if(host==null) {
 			if(info.baseConstructor==null)
 				throw new ManifestException(ManifestErrorCode.IMPLEMENTATION_FACTORY,
-						"Cannot instantiate manifest without matching host environment: "+type);
+						"Cannot instantiate manifest "+type+" without matching host environment: "+info.hostClass);
 
 			try {
 				result = (ManifestFragment) info.baseConstructor.newInstance(manifestLocation, registry);
 			} catch (InstantiationException | IllegalAccessException
 					| IllegalArgumentException | InvocationTargetException e) {
 				throw new ManifestException(ManifestErrorCode.IMPLEMENTATION_ERROR,
-						"Failed to create new instance of type "+type+" via base constructor");
+						"Failed to create new instance of type "+type+" via base constructor", e);
 			}
 		} else {
 			if(info.hostConstructor==null)
@@ -194,7 +204,7 @@ public class DefaultManifestFactory implements ManifestFactory {
 			} catch (InstantiationException | IllegalAccessException
 					| IllegalArgumentException | InvocationTargetException e) {
 				throw new ManifestException(ManifestErrorCode.IMPLEMENTATION_ERROR,
-						"Failed to create new instance of type "+type+" via host constructor");
+						"Failed to create new instance of type "+type+" via host constructor", e);
 			}
 		}
 

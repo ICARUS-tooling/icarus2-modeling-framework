@@ -21,7 +21,7 @@ import static java.util.Objects.requireNonNull;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
-import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;

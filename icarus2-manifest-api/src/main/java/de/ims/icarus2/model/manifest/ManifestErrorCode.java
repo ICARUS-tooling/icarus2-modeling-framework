@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.ims.icarus2.model.manifest.api;
+package de.ims.icarus2.model.manifest;
 
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.ErrorCodeScope;

@@ -36,10 +36,10 @@ import de.ims.icarus2.filedriver.schema.table.TableConverter;
 import de.ims.icarus2.filedriver.schema.table.TableSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchemaXmlReader;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory;
-import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
 import de.ims.icarus2.util.io.IOUtil;
 
 /**

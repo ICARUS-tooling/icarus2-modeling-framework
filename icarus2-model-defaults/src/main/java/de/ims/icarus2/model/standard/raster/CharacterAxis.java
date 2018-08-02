@@ -57,14 +57,6 @@ public class CharacterAxis implements RasterAxis {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.id.Identity#getOwner()
-	 */
-	@Override
-	public Object getOwner() {
-		return this;
-	}
-
-	/**
 	 * @see de.ims.icarus2.model.api.raster.RasterAxis#getMaxValue()
 	 */
 	@Override

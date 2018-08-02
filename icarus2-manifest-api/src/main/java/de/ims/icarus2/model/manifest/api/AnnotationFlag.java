@@ -17,10 +17,9 @@
 package de.ims.icarus2.model.manifest.api;
 
 import java.awt.Container;
-import java.util.HashMap;
-import java.util.Map;
 
 import de.ims.icarus2.util.Flag;
+import de.ims.icarus2.util.LazyNameStore;
 import de.ims.icarus2.util.strings.StringResource;
 
 /**
@@ -123,18 +122,10 @@ public enum AnnotationFlag implements StringResource, Flag {
 		return xmlForm;
 	}
 
-	private static Map<String, AnnotationFlag> xmlLookup;
+	private static LazyNameStore<AnnotationFlag> store = new LazyNameStore<>(AnnotationFlag.class);
 
 	public static AnnotationFlag parseAnnotationFlag(String s) {
-		if(xmlLookup==null) {
-			Map<String, AnnotationFlag> map = new HashMap<>();
-			for(AnnotationFlag type : values()) {
-				map.put(type.xmlForm, type);
-			}
-			xmlLookup = map;
-		}
-
-		return xmlLookup.get(s);
+		return store.lookup(s);
 	}
 
 }

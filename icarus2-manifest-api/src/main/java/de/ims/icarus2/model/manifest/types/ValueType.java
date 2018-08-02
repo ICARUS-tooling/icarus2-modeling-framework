@@ -40,7 +40,7 @@ import java.util.function.Predicate;
 import javax.swing.Icon;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.collections.CollectionUtils;
@@ -491,8 +491,18 @@ public class ValueType implements StringResource, NamedObject {
 	 * @param exclusions
 	 * @return
 	 */
-	public static Set<ValueType> filterWithout(ValueType...exclusions) {
-		Set<ValueType> filter = new HashSet<>(xmlLookup.values());
+	public static Set<ValueType> filterWithout(boolean basicOnly, ValueType...exclusions) {
+		Set<ValueType> filter = new HashSet<>();
+
+		if(basicOnly) {
+			for(ValueType valueType : xmlLookup.values()) {
+				if(valueType.isBasicType()) {
+					filter.add(valueType);
+				}
+			}
+		} else {
+			filter.addAll(xmlLookup.values());
+		}
 
 		if(exclusions!=null) {
 			for(ValueType type : exclusions) {
@@ -501,6 +511,10 @@ public class ValueType implements StringResource, NamedObject {
 		}
 
 		return filter;
+	}
+
+	public static Set<ValueType> filterWithout(ValueType...exclusions) {
+		return filterWithout(false, exclusions);
 	}
 
 	/**
@@ -535,6 +549,13 @@ public class ValueType implements StringResource, NamedObject {
 		return filter.getAsSet();
 	}
 
+	/**
+	 *
+	 * @param value
+	 * @return
+	 *
+	 * @throws ManifestException with type {@link ManifestErrorCode#MANIFEST_TYPE_CAST} if the value check fails
+	 */
 	public Class<?> checkValue(Object value) {
 		Class<?> type = extractClass(value);
 

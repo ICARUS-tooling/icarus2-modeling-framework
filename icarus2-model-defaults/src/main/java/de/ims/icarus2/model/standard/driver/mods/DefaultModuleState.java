@@ -20,6 +20,7 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 
 import de.ims.icarus2.model.api.driver.mods.ModuleState;
+import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.id.StaticIdentity;
 
 /**
@@ -35,11 +36,19 @@ public class DefaultModuleState extends StaticIdentity implements ModuleState {
 	private Object[] arguments;
 
 	/**
-	 * @param id
-	 * @param owner
+	 * @param source
 	 */
-	public DefaultModuleState(Object owner) {
-		super(owner);
+	public DefaultModuleState(Identity source) {
+		super(source);
+		// TODO Auto-generated constructor stub
+	}
+
+	/**
+	 * @param id
+	 */
+	public DefaultModuleState(String id) {
+		super(id);
+		// TODO Auto-generated constructor stub
 	}
 
 	/**

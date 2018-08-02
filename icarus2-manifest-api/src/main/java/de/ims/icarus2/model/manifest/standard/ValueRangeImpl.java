@@ -20,7 +20,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Set;
 
-import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ValueRange;
 import de.ims.icarus2.model.manifest.types.UnsupportedValueTypeException;

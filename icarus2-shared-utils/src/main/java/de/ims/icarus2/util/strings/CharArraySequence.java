@@ -22,13 +22,19 @@ public class CharArraySequence extends AbstractString {
 	private final int offset;
 	private final int len;
 
+	public CharArraySequence() {
+		buffer = null;
+		offset = -1;
+		len = 0;
+	}
+
 	public CharArraySequence(char[] buffer, int offset, int len) {
 		if (buffer == null)
 			throw new NullPointerException("Invalid buffer"); //$NON-NLS-1$
 		if(offset<0 || offset>=buffer.length)
 			throw new IndexOutOfBoundsException("offset"); //$NON-NLS-1$
-		if(len<0 || len>=buffer.length-offset)
-			throw new IllegalArgumentException("length"); //$NON-NLS-1$
+		if(len<0 || len>buffer.length-offset)
+			throw new IndexOutOfBoundsException("length"); //$NON-NLS-1$
 
 		this.buffer = buffer;
 		this.offset = offset;
@@ -60,10 +66,10 @@ public class CharArraySequence extends AbstractString {
 	@Override
 	public CharSequence subSequence(int start, int end) {
 		if(start<0 || start>=len)
-			throw new IllegalArgumentException("start"); //$NON-NLS-1$
-		if(end<0 || end>=len || end<start)
-			throw new IllegalArgumentException("end"); //$NON-NLS-1$
+			throw new IndexOutOfBoundsException("start"); //$NON-NLS-1$
+		if(end<0 || end>len || end<start)
+			throw new IndexOutOfBoundsException("end"); //$NON-NLS-1$
 
-		return new CharArraySequence(buffer, offset+start, end-start+1);
+		return new CharArraySequence(buffer, offset+start, end-start);
 	}
 }

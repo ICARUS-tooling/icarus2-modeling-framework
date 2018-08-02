@@ -45,6 +45,9 @@ import de.ims.icarus2.util.xml.XmlSerializer;
 import de.ims.icarus2.util.xml.XmlUtils;
 
 /**
+ * Collection of shared utility methods for transforming between
+ * certain manifest types and their xml serializations.
+ *
  * @author Markus Gärtner
  *
  */

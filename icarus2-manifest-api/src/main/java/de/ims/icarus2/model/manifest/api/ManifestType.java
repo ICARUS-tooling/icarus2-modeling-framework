@@ -16,56 +16,144 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.EnumSet;
+import java.util.Set;
+
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec;
+
 /**
  * @author Markus Gärtner
  *
  */
 public enum ManifestType {
-	CONTAINER_MANIFEST(true),
-	STRUCTURE_MANIFEST(true),
-	ANNOTATION_MANIFEST(true),
-	ANNOTATION_LAYER_MANIFEST(true),
-	ITEM_LAYER_MANIFEST(true),
-	STRUCTURE_LAYER_MANIFEST(true),
-	FRAGMENT_LAYER_MANIFEST(true),
-	HIGHLIGHT_LAYER_MANIFEST(true),
+	CONTAINER_MANIFEST(ContainerManifest.class, true),
+	STRUCTURE_MANIFEST(StructureManifest.class, true),
+	ANNOTATION_MANIFEST(AnnotationManifest.class, true),
 
-	LOCATION_MANIFEST(false),
-	OPTIONS_MANIFEST(true),
-	CONTEXT_MANIFEST(true),
-	CORPUS_MANIFEST(true),
-	PATH_RESOLVER_MANIFEST(true),
-	RASTERIZER_MANIFEST(true),
-	DRIVER_MANIFEST(true),
-	IMPLEMENTATION_MANIFEST(true),
-	LAYER_GROUP_MANIFEST(false),
+	ANNOTATION_LAYER_MANIFEST(AnnotationLayerManifest.class, true),
+	ITEM_LAYER_MANIFEST(ItemLayerManifest.class, true),
+	STRUCTURE_LAYER_MANIFEST(StructureLayerManifest.class, true),
+	FRAGMENT_LAYER_MANIFEST(FragmentLayerManifest.class, true),
+	HIGHLIGHT_LAYER_MANIFEST(HighlightLayerManifest.class, true),
 
-	MODULE_MANIFEST(true),
-	MODULE_SPEC(false),
-	MAPPING_MANIFEST(false),
-	OPTION(false),
+	LOCATION_MANIFEST(LocationManifest.class, false),
+	OPTIONS_MANIFEST(OptionsManifest.class, true),
+	CONTEXT_MANIFEST(ContextManifest.class, true),
+	CORPUS_MANIFEST(CorpusManifest.class, true),
+	PATH_RESOLVER_MANIFEST(PathResolverManifest.class, true),
+	RASTERIZER_MANIFEST(RasterizerManifest.class, true),
+	DRIVER_MANIFEST(DriverManifest.class, true),
+	IMPLEMENTATION_MANIFEST(ImplementationManifest.class, true),
+	LAYER_GROUP_MANIFEST(LayerGroupManifest.class, false),
 
-	VALUE_RANGE(false),
-	VALUE_SET(false),
-	VALUE_MANIFEST(false),
-	DOCUMENTATION(false),
-	VERSION(false),
+	MODULE_MANIFEST(ModuleManifest.class, true),
+	MODULE_SPEC(ModuleSpec.class, false),
+	MAPPING_MANIFEST(MappingManifest.class, false),
+	OPTION(OptionsManifest.Option.class, false),
+
+	VALUE_RANGE(ValueRange.class, false),
+	VALUE_SET(ValueSet.class, false),
+	VALUE_MANIFEST(ValueManifest.class, false),
+	DOCUMENTATION(Documentation.class, false),
+	VERSION(VersionManifest.class, false),
 
 	/**
 	 * Reserved manifest type for use in testing.
 	 * Client code is free to throw an exception whenever this type is
 	 * encountered during runtime.
 	 */
-	DUMMY_MANIFEST(false),
+	DUMMY_MANIFEST(null, false),
 	;
+
+	private static final EnumSet<ManifestType> memberTypes = EnumSet.of(
+			ITEM_LAYER_MANIFEST, STRUCTURE_LAYER_MANIFEST, ANNOTATION_LAYER_MANIFEST,
+			FRAGMENT_LAYER_MANIFEST, HIGHLIGHT_LAYER_MANIFEST,
+
+			CONTAINER_MANIFEST, STRUCTURE_MANIFEST, ANNOTATION_MANIFEST,
+
+			CONTEXT_MANIFEST, CORPUS_MANIFEST,
+
+			DRIVER_MANIFEST, MODULE_MANIFEST, PATH_RESOLVER_MANIFEST, RASTERIZER_MANIFEST);
+
+	public static Set<ManifestType> getMemberTypes() {
+		return memberTypes.clone();
+	}
+
+	private static final EnumSet<ManifestType> layerTypes = EnumSet.of(
+			ITEM_LAYER_MANIFEST, STRUCTURE_LAYER_MANIFEST, ANNOTATION_LAYER_MANIFEST,
+			FRAGMENT_LAYER_MANIFEST, HIGHLIGHT_LAYER_MANIFEST);
+
+	public static Set<ManifestType> getLayerTypes() {
+		return layerTypes.clone();
+	}
+
+	static {
+		ANNOTATION_LAYER_MANIFEST.require(LAYER_GROUP_MANIFEST);
+		ITEM_LAYER_MANIFEST.require(LAYER_GROUP_MANIFEST);
+		STRUCTURE_LAYER_MANIFEST.require(LAYER_GROUP_MANIFEST);
+		FRAGMENT_LAYER_MANIFEST.require(LAYER_GROUP_MANIFEST);
+		HIGHLIGHT_LAYER_MANIFEST.require(LAYER_GROUP_MANIFEST);
+
+		LAYER_GROUP_MANIFEST.require(CONTEXT_MANIFEST);
+
+		ANNOTATION_MANIFEST.require(ANNOTATION_LAYER_MANIFEST);
+
+		CONTAINER_MANIFEST.require(ITEM_LAYER_MANIFEST, STRUCTURE_LAYER_MANIFEST);
+		STRUCTURE_MANIFEST.require(STRUCTURE_LAYER_MANIFEST);
+
+		CONTEXT_MANIFEST.require(CORPUS_MANIFEST);
+
+		DRIVER_MANIFEST.require(CONTEXT_MANIFEST);
+
+		MODULE_MANIFEST.require(DRIVER_MANIFEST);
+
+		MODULE_SPEC.require(DRIVER_MANIFEST);
+
+		OPTION.require(memberTypes);
+
+		IMPLEMENTATION_MANIFEST.require(memberTypes);
+
+		PATH_RESOLVER_MANIFEST.require(LOCATION_MANIFEST);
+
+		RASTERIZER_MANIFEST.require(FRAGMENT_LAYER_MANIFEST);
+	}
 
 	private final boolean supportTemplating;
 
-	ManifestType(boolean supportTemplating) {
+	private final Class<? extends TypedManifest> baseClass;
+
+	private ManifestType[] requiredEnvironment;
+
+	ManifestType(Class<? extends TypedManifest> baseClass, boolean supportTemplating) {
 		this.supportTemplating = supportTemplating;
+		this.baseClass = baseClass;
 	}
 
 	public boolean isSupportTemplating() {
 		return supportTemplating;
+	}
+
+	private void require(ManifestType...required) {
+		requiredEnvironment = required;
+	}
+
+	private void require(Set<ManifestType> required) {
+		requiredEnvironment = required.toArray(new ManifestType[required.size()]);
+	}
+
+	public ManifestType[] getRequiredEnvironment() {
+		return requiredEnvironment==null || requiredEnvironment.length==0 ? null : requiredEnvironment.clone();
+	}
+
+	public boolean requiresEnvironment() {
+		return requiredEnvironment!=null && requiredEnvironment.length>0;
+	}
+
+	/**
+	 * @return the baseClass
+	 */
+	public Class<? extends TypedManifest> getBaseClass() {
+		return baseClass;
 	}
 }

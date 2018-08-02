@@ -16,10 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import de.ims.icarus2.util.Flag;
+import de.ims.icarus2.util.LazyNameStore;
 import de.ims.icarus2.util.strings.StringResource;
 
 /**
@@ -109,17 +107,10 @@ public enum StructureFlag implements StringResource, Flag {
 		return xmlForm;
 	}
 
-	private static Map<String, StructureFlag> xmlLookup;
+
+	private static LazyNameStore<StructureFlag> store = new LazyNameStore<>(StructureFlag.class);
 
 	public static StructureFlag parseStructureFlag(String s) {
-		if(xmlLookup==null) {
-			Map<String, StructureFlag> map = new HashMap<>();
-			for(StructureFlag type : values()) {
-				map.put(type.xmlForm, type);
-			}
-			xmlLookup = map;
-		}
-
-		return xmlLookup.get(s);
+		return store.lookup(s);
 	}
 }

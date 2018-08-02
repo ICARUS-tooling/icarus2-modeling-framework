@@ -29,7 +29,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  * @author Markus Gärtner
  *
  */
-public interface Categorizable {
+public interface Categorizable extends Lockable {
 
 	boolean addCategory(Category category);
 

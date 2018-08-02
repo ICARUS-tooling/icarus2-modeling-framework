@@ -36,7 +36,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  * environment! Otherwise it will not be possible to resolve the targets of
  * those relations. Not complying to this specification will result in
  * a {@link ModelException} of type {@value ModelError#MANIFEST_MISSING_ENVIRONMENT}
- * being thrown during parsing or at verification time.
+ * being thrown during parsing of the manifest or at verification time.
  *
  * @author Markus Gärtner
  *

@@ -55,11 +55,15 @@ public interface Category extends Identity {
 
 		@Override
 		public int hashCode(Category cat) {
-			return Objects.hash(cat.getId(), cat.getNamespace());
+			return cat==null ? 0 : 1+Objects.hash(cat.getId(), cat.getNamespace());
 		}
 
 		@Override
 		public boolean equals(Category cat0, Category cat1) {
+			if(cat0==null || cat1==null) {
+				return cat0==cat1;
+			}
+
 			return Objects.equals(cat0.getId(), cat1.getId())
 					&& Objects.equals(cat0.getNamespace(), cat1.getNamespace());
 		}

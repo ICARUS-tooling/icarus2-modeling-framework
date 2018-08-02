@@ -19,6 +19,7 @@ package de.ims.icarus2.model.manifest.api;
 import java.net.URL;
 
 import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec;
+import de.ims.icarus2.util.LazyNameStore;
 import de.ims.icarus2.util.strings.StringResource;
 
 /**
@@ -31,12 +32,12 @@ public enum LocationType implements StringResource {
 	 * Specifies that a certain location denotes a local file object
 	 * accessible via a simple path string.
 	 */
-	LOCAL,
+	LOCAL("local"),
 
 	/**
 	 * Marks a location as remotely accessible via a dedicated {@link URL}
 	 */
-	REMOTE,
+	REMOTE("remote"),
 
 	/**
 	 * The location describes a remote or local service which should be used
@@ -44,24 +45,35 @@ public enum LocationType implements StringResource {
 	 * {@link ModuleSpec} specifications in a driver manifest to define the
 	 * interface to the service.
 	 */
-	SERVICE,
+	SERVICE("service"),
 
 	/**
 	 * Locations with this type denote a database of arbitrary implementation.
 	 * It is up to the {@link ResourcePath} or {@link LocationManifest} to provide
 	 * additional information to properly access the database.
 	 */
-	DATABASE;
+	DATABASE("database");
+
+	private final String xmlForm;
+
+	/**
+	 * @param xmlForm
+	 */
+	private LocationType(String xmlForm) {
+		this.xmlForm = xmlForm;
+	}
+
+	private static final LazyNameStore<LocationType> store = new LazyNameStore<>(LocationType.class);
 
 	/**
 	 * @see de.ims.icarus2.model.util.StringResource.XmlResource#getStringValue()
 	 */
 	@Override
 	public String getStringValue() {
-		return name().toLowerCase();
+		return xmlForm;
 	}
 
 	public static LocationType parseLocationType(String s) {
-		return valueOf(s.toUpperCase());
+		return store.lookup(s);
 	}
 }

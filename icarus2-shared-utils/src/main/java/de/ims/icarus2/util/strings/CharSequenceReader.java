@@ -46,6 +46,16 @@ public class CharSequenceReader extends Reader {
 		this.source = source;
 	}
 
+	/**
+	 * @return the source
+	 */
+	public CharSequence getSource() {
+		return source;
+	}
+
+	/**
+	 * Resets this reader's {@link #getSource() source} to the empty string.
+	 */
 	public void clear() {
 		setSource("");
 	}
@@ -81,10 +91,15 @@ public class CharSequenceReader extends Reader {
 	}
 
 	/**
+	 * Calls {@link #clear()} and then resets all internal fields for position
+	 * and mark.
+	 * Calling this method repeatedly has no negative side effects.
+	 *
 	 * @see java.io.Reader#close()
 	 */
 	@Override
-	public void close() throws IOException {
+	public void close() {
+		clear();
 		close0();
 	}
 
@@ -112,7 +127,7 @@ public class CharSequenceReader extends Reader {
 	}
 
 	@Override
-	public boolean ready() throws IOException {
+	public boolean ready() {
 		return true;
 	}
 
@@ -121,6 +136,14 @@ public class CharSequenceReader extends Reader {
 		return true;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 *
+	 * Implementation note: The {@code readAheadLimit} parameter has no effect
+	 * for this implementation as no internal buffering is performed.
+	 *
+	 * @see java.io.Reader#mark(int)
+	 */
 	@Override
 	public void mark(int readAheadLimit) throws IOException {
 		mark = pos;

@@ -38,6 +38,7 @@ import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlReader;
 import de.ims.icarus2.model.standard.registry.DefaultCorpusManager;
+import de.ims.icarus2.test.annotations.ResourceTest;
 import de.ims.icarus2.util.AccessMode;
 
 /**
@@ -79,6 +80,7 @@ public class TableConverterTest {
 	}
 
 	@Test
+	@ResourceTest
 	public void test1TierSchema() throws IOException, SAXException, InterruptedException {
 
 		CorpusManager corpusManager = DefaultCorpusManager.newBuilder()

@@ -16,6 +16,9 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.Collections;
+import java.util.Set;
+
 import de.ims.icarus2.model.manifest.types.ValueType;
 
 
@@ -29,6 +32,15 @@ import de.ims.icarus2.model.manifest.types.ValueType;
  *
  */
 public interface ValueManifest extends Documentable, ModifiableIdentity, TypedManifest {
+
+
+	public static final Set<ValueType> SUPPORTED_VALUE_TYPES =
+				Collections.unmodifiableSet(ValueType.filterWithout(
+			true,
+			ValueType.UNKNOWN,
+			ValueType.CUSTOM,
+			ValueType.IMAGE_RESOURCE,
+			ValueType.URL_RESOURCE));
 
 	/**
 	 * Returns the value this manifest wraps and describes.

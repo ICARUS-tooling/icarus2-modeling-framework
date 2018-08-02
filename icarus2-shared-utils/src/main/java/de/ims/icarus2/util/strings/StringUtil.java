@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.util.strings;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import java.awt.Component;
@@ -120,33 +121,18 @@ public final class StringUtil {
 		return result.toString();
 	}
 
+	/**
+	 * Current implementation ignores the {@code locale} parameter and
+	 * delegates to {@link #format(String, Object...)}.
+	 *
+	 * @param locale
+	 * @param text
+	 * @param params
+	 * @return
+	 */
 	//FIXME actually implement locale sensitive output!
 	public static String format(Locale locale, String text, Object...params) {
-		StringBuilder result = new StringBuilder();
-		String index = null;
-
-		for (int i = 0; i < text.length(); i++) {
-			char c = text.charAt(i);
-
-			if (c == '{') {
-				index = "";
-			} else if (index != null && c == '}') {
-
-				int tmp = Integer.parseInt(index) - 1;
-
-				if (tmp >= 0 && params!=null && tmp < params.length) {
-					result.append(params[tmp]);
-				}
-
-				index = null;
-			} else if (index != null) {
-				index += c;
-			} else {
-				result.append(c);
-			}
-		}
-
-		return result.toString();
+		return format(text, params);
 	}
 
 	public static final Comparator<CharSequence> CHAR_SEQUENCE_COMPARATOR = new Comparator<CharSequence>() {
@@ -235,6 +221,10 @@ public final class StringUtil {
 	}
 
 	public static boolean equals(CharSequence cs, CharSequence other) {
+		if(cs==null || other==null) {
+			return cs==other;
+		}
+
 		if(cs.length()!=other.length()) {
 			return false;
 		}
@@ -258,13 +248,15 @@ public final class StringUtil {
 	/**
 	 * Returns the specified {@code fallback} string in case the
 	 * given one is {@code null}.
+	 *
+	 * @throws NullPointerException in case {@code fallback} is {@code null}
 	 */
 	public static String notNull(String s, String fallback) {
 		requireNonNull(fallback);
 		return s==null ? fallback : s;
 	}
 
-	private static final Pattern lineBreak = Pattern.compile("\r\n|\n\r|\n|\r"); //$NON-NLS-1$
+	private static final Pattern lineBreak = Pattern.compile("\r\n|\n|\r"); //$NON-NLS-1$
 
 	public static String[] splitLines(String s) {
 		return s==null ? null : lineBreak.split(s);
@@ -314,12 +306,19 @@ public final class StringUtil {
 		return new String(tmp);
 	}
 
+	/**
+	 *
+	 * @param cs
+	 * @param beginIndex the beginning index, inclusive
+	 * @param endIndex the ending index, exclusive
+	 * @return
+	 */
 	public static String toString(CharSequence cs, int beginIndex, int endIndex) {
 		if(cs instanceof String) {
 			return ((String) cs).substring(beginIndex, endIndex);
 		}
 
-		int length = endIndex-beginIndex+1;
+		int length = endIndex-beginIndex;
 
 		char[] tmp = new char[length];
 
@@ -329,73 +328,6 @@ public final class StringUtil {
 
 		return new String(tmp);
 	}
-
-	/**
-	 * @see String#regionMatches(int, String, int, int)
-	 */
-    public static boolean regionMatches(CharSequence s, int toffset, CharSequence other, int ooffset,
-            int len) {
-    	int size = s.length();
-    	int sizeo = other.length();
-        int to = toffset;
-        int po = ooffset;
-        // Note: toffset, ooffset, or len might be near -1>>>1.
-        if ((ooffset < 0) || (toffset < 0)
-                || (toffset > (long)size - len)
-                || (ooffset > (long)sizeo - len)) {
-            return false;
-        }
-        while (len-- > 0) {
-            if (s.charAt(to++) != other.charAt(po++)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-	/**
-	 * @see String#regionMatches(boolean, int, String, int, int)
-	 */
-    public static boolean regionMatches(CharSequence s, boolean ignoreCase, int toffset,
-            CharSequence other, int ooffset, int len) {
-    	int size = s.length();
-    	int sizeo = other.length();
-        int to = toffset;
-        int po = ooffset;
-        // Note: toffset, ooffset, or len might be near -1>>>1.
-        if ((ooffset < 0) || (toffset < 0)
-                || (toffset > (long)size - len)
-                || (ooffset > (long)sizeo - len)) {
-            return false;
-        }
-        while (len-- > 0) {
-            char c1 = s.charAt(to++);
-            char c2 = other.charAt(po++);
-            if (c1 == c2) {
-                continue;
-            }
-            if (ignoreCase) {
-                // If characters don't match but case may be ignored,
-                // try converting both characters to uppercase.
-                // If the results match, then the comparison scan should
-                // continue.
-                char u1 = Character.toUpperCase(c1);
-                char u2 = Character.toUpperCase(c2);
-                if (u1 == u2) {
-                    continue;
-                }
-                // Unfortunately, conversion to uppercase does not work properly
-                // for the Georgian alphabet, which has strange rules about case
-                // conversion.  So we need to make one last check before
-                // exiting.
-                if (Character.toLowerCase(u1) == Character.toLowerCase(u2)) {
-                    continue;
-                }
-            }
-            return false;
-        }
-        return true;
-    }
 
 	/**
 	 * @see String#startsWith(String, int)
@@ -462,6 +394,10 @@ public final class StringUtil {
 	 * @see String#indexOf(int, int)
 	 */
     public static int indexOf(CharSequence s, char ch, int fromIndex, int toIndex) {
+    	if(s.length()==0) {
+    		return -1;
+    	}
+
         if (fromIndex < 0) {
             fromIndex = 0;
         } else if (fromIndex > toIndex) {
@@ -488,6 +424,10 @@ public final class StringUtil {
 	 * @see String#lastIndexOf(int, int)
 	 */
     public static int lastIndexOf(CharSequence s, char ch, int fromIndex) {
+    	if(s.length()==0) {
+    		return -1;
+    	}
+
         int i = Math.min(fromIndex, s.length() - 1);
         for (; i >= 0; i--) {
             if (s.charAt(i) == ch) {
@@ -599,6 +539,15 @@ public final class StringUtil {
         }
     }
 
+    /**
+     *
+     * @param obj
+     * @return
+     *
+     * @see NamedObject
+     * @see Identifiable
+     * @see Identity
+     */
 	public static String getName(Object obj) {
 		if(obj==null)
 			return null;
@@ -614,6 +563,13 @@ public final class StringUtil {
 		return obj.toString();
 	}
 
+	/**
+	 *
+	 * @param obj
+	 * @return
+	 *
+	 * @see TextItem
+	 */
 	public static String asText(Object obj) {
 		if(obj==null)
 			return null;
@@ -1152,15 +1108,26 @@ public final class StringUtil {
 	 * @return
 	 */
 	public static int writeHexString(long val, char[] dst, int offset) {
+		checkArgument(val!=Long.MIN_VALUE);
+
+		boolean negative = val<0L;
+		if(negative) {
+			val = -val;
+			dst[offset++] = '-';
+		}
         int mag = Long.SIZE - Long.numberOfLeadingZeros(val);
         int chars = Math.max(((mag + 3) >>>2), 1);
 
         int charPos = chars;
-        int mask = (1 << 4) - 1;
+        final int mask = (1 << 4) - 1;
         do {
         	dst[offset + --charPos] = digits[((int) val) & mask];
             val >>>= 4;
         } while (val != 0 && charPos > 0);
+
+        if(negative) {
+        	chars++;
+        }
 
         return chars;
 	}

@@ -22,6 +22,12 @@ package de.ims.icarus2.util;
  */
 public interface Flag {
 
+	/**
+	 * Returns the name of this flag which is never {@code null} and must
+	 * be unique within a flag's namespace.
+	 *
+	 * @return
+	 */
 	String name();
 
 }

@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 
 /**
  * A one-way lock mechanism.

@@ -17,7 +17,7 @@
 package de.ims.icarus2.model.manifest.xml.delegates;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.manifest.api.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlDelegate;
