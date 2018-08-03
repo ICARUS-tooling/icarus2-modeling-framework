@@ -257,7 +257,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	protected void setIndependentContext0(boolean independent) {
 //		checkNotLive();
 
-		this.independent = Boolean.valueOf(independent);
+		this.independent = (independent==DEFAULT_INDEPENDENT_VALUE && !hasTemplate()) ? null :  Boolean.valueOf(independent);
 	}
 
 	@Override
@@ -290,7 +290,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	protected void setEditable0(boolean editable) {
 //		checkNotLive();
 
-		this.editable = Boolean.valueOf(editable);
+		this.editable = (editable==DEFAULT_EDITABLE_VALUE && !hasTemplate()) ? null : Boolean.valueOf(editable);
 	}
 
 	/**

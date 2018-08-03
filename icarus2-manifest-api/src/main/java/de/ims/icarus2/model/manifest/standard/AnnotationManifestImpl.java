@@ -190,7 +190,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 */
 	@Override
 	public boolean isLocalAlias(String alias) {
-		return aliases.contains(alias);
+		return aliases.contains(requireNonNull(alias));
 	}
 
 	@Override
@@ -229,12 +229,24 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 */
 	@Override
 	public boolean isAllowUnknownValues() {
-		return allowUnknownValues==null ? DEFAULT_ALLOW_UNKNOWN_VALUES : allowUnknownValues.booleanValue();
+		if(allowUnknownValues!=null) {
+			return allowUnknownValues.booleanValue();
+		} else if(hasTemplate()) {
+			return getTemplate().isAllowUnknownValues();
+		} else {
+			return DEFAULT_ALLOW_UNKNOWN_VALUES;
+		}
 	}
 
 	@Override
 	public void setAllowUnknownValues(boolean allowUnknownValues) {
-		this.allowUnknownValues = (allowUnknownValues == DEFAULT_ALLOW_UNKNOWN_VALUES) ? null : Boolean.valueOf(allowUnknownValues);
+		checkNotLocked();
+
+		setAllowUnknownValues0(allowUnknownValues);
+	}
+
+	protected void setAllowUnknownValues0(boolean allowUnknownValues) {
+		this.allowUnknownValues = (allowUnknownValues == DEFAULT_ALLOW_UNKNOWN_VALUES && !hasTemplate()) ? null : Boolean.valueOf(allowUnknownValues);
 	}
 
 	/**
@@ -324,7 +336,11 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 
 	@Override
 	public Object getNoEntryValue() {
-		return noEntryValue;
+		Object result = noEntryValue;
+		if(result==null && hasTemplate()) {
+			result = getTemplate().getNoEntryValue();
+		}
+		return result;
 	}
 
 	/**

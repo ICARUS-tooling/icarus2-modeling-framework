@@ -176,6 +176,6 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	}
 
 	protected void setUseFactory0(boolean useFactory) {
-		this.useFactory = useFactory==DEFAULT_USE_FACTORY_VALUE ? null : Boolean.valueOf(useFactory);
+		this.useFactory = (useFactory==DEFAULT_USE_FACTORY_VALUE && !hasTemplate()) ? null : Boolean.valueOf(useFactory);
 	}
 }

@@ -198,7 +198,7 @@ public interface AnnotationManifest extends MemberManifest {
 	boolean isLocalValueSet();
 
 	/**
-	 * Returns the type of this annotation
+	 * Returns the type of this annotation.
 	 */
 	@AccessRestriction(AccessMode.READ)
 	ValueType getValueType();

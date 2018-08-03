@@ -224,6 +224,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 			property.setOption(option);
 		}
 
+		//FIXME handle multiValue flag for type check here!
 		valueType.checkValue(value);
 
 		property.setValueType(valueType);

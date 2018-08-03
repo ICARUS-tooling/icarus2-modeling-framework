@@ -143,7 +143,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 			TestUtils.assertNPE(() -> manifest.addProperty(name, null, false, value));
 			TestUtils.assertNPE(() -> manifest.addProperty(name, valueType, false, null));
 
-			Property property = manifest.addProperty(nameM, valueType, false, value);
+			Property property = manifest.addProperty(name, valueType, false, value);
 			assertNotNull(property);
 			assertEquals(valueType, property.getValueType());
 			assertNull(property.getOption());
@@ -521,9 +521,10 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 			TestUtils.assertNPE(() -> manifest.setPropertyValue(null, value));
 			ManifestTestUtils.assertManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
 					() -> manifest.setPropertyValue(name, value2));
-			ManifestTestUtils.assertIllegalValue(() -> manifest.setPropertyValue(name, illegalValue));
 
 			manifest.addProperty(name, valueType, false, value);
+
+			ManifestTestUtils.assertIllegalValue(() -> manifest.setPropertyValue(name, illegalValue));
 
 			manifest.lock();
 			LockableTest.assertLocked(() -> manifest.setPropertyValue(name, value2));

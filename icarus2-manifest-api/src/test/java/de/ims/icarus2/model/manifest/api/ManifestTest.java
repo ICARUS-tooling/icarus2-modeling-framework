@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -27,12 +28,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Collection;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.util.function.ObjBoolConsumer;
 
 /**
  * @author Markus Gärtner
@@ -58,7 +68,329 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest 
 		return location;
 	}
 
+	@SuppressWarnings("boxing")
+	public static ManifestRegistry mockManifestRegistry() {
+		ManifestRegistry registry = mock(ManifestRegistry.class);
+		AtomicInteger uuidGen = new AtomicInteger(0);
+		when(registry.createUID()).then(invocation -> uuidGen.incrementAndGet());
+		return registry;
+	}
+
 	M createUnlocked(ManifestRegistry registry, ManifestLocation location);
+
+	/**
+	 * @see #assertDerivativeGetter(Class, Object, Object, Object, Function, BiConsumer)
+	 *
+	 * @param argType type of the getter method's argument
+	 * @param defaultValue internal default value for the tested property if available
+	 * @param getter getter method to obtain current value
+	 * @param setter setter method to set new value
+	 */
+	default <K extends Object> void assertDerivativeGetter(
+			Class<K> argType, K defaultValue, Function<M,K> getter, BiConsumer<M, K> setter) {
+		assertDerivativeGetter(mock(argType), mock(argType), defaultValue, getter, setter);
+	}
+
+	/**
+	 * Utility method to simplify testing of common patterns in the manifest
+	 * framework.
+	 *
+	 * This method will perform the following steps in order:
+	 * <ol>
+	 * <li>Create {@link #createUnlocked() unlocked} instance for testing</li>
+	 * <li>Check that {@code getter} result is {@code null} or equal to {@code defaultValue}</li>
+	 * <li>Call {@code getter} with  a mocked value</li>
+	 * <li>Assert that {@code getter} returns previously set value</li>
+	 * <li>Check if {@code #getExpectedType() manifest type} supports {@link ManifestType#isSupportTemplating() templating}
+	 *  and exists if it doesn't</li>
+	 * <li>Create {@link #createTemplate() template} instance for testing</li>
+	 * <li>Assign mocked property via {@code getter}</li>
+	 * <li>Create {@link #createDerived(Manifest) derived} manifest from template</li>
+	 * <li>Assert that {@code getter} on derived manifest returns value from {@code template}</li>
+	 * <li>Set another mocked value via {@code getter} on derived manifest</li>
+	 * <li>Assert that derived {@code getter} returns new value</li>
+	 * <li>Assert that template {@code getter} result is unaffected by changes to derived manifest</li>
+	 * </ol>
+	 *
+	 * @param value1 value to be used for {@code getter} on the main test instance and template
+	 * @param value2 value to be used for {@code getter} on the derived manifest
+	 * @param defaultValue internal default value for the tested property if available
+	 * @param getter getter method to obtain current value
+	 * @param setter setter method to set new value
+	 */
+	default <K extends Object> void assertDerivativeGetter(
+			K value1, K value2, K defaultValue, Function<M,K> getter, BiConsumer<M, K> setter) {
+		M manifest = createUnlocked();
+
+		if(defaultValue==null) {
+			assertNull(getter.apply(manifest));
+		} else {
+			assertEquals(defaultValue, getter.apply(manifest));
+		}
+
+		setter.accept(manifest, value1);
+		assertEquals(value1, getter.apply(manifest));
+
+		if(getExpectedType().isSupportTemplating()) {
+			M template = createTemplate();
+			setter.accept(template, value1);
+			M derived = createDerived(template);
+
+			assertEquals(value1, getter.apply(derived));
+
+			setter.accept(derived, value2);
+			assertEquals(value2, getter.apply(derived));
+			assertEquals(value1, getter.apply(template));
+		}
+	}
+
+	default <K extends Object> void assertDerivativeAccumulativeGetter(
+			Class<K> argType, Function<M,? extends Collection<K>> getter, BiConsumer<M, K> adder) {
+		assertDerivativeAccumulativeGetter(mock(argType), mock(argType), getter, adder);
+	}
+
+	@SuppressWarnings("unchecked")
+	default <K extends Object> void assertDerivativeAccumulativeGetter(
+			K value1, K value2, Function<M,? extends Collection<K>> getter, BiConsumer<M, K> adder) {
+		M manifest = createUnlocked();
+
+		assertTrue(getter.apply(manifest).isEmpty());
+
+		adder.accept(manifest, value1);
+		TestUtils.assertCollectionEquals(getter.apply(manifest), value1);
+
+		if(getExpectedType().isSupportTemplating()) {
+			M template = createTemplate();
+			adder.accept(template, value1);
+			M derived = createDerived(template);
+
+			TestUtils.assertCollectionEquals(getter.apply(derived), value1);
+
+			adder.accept(derived, value2);
+			TestUtils.assertCollectionEquals(getter.apply(derived), value1, value2);
+			TestUtils.assertCollectionEquals(getter.apply(template), value1);
+		}
+	}
+
+	default <K extends Object> void assertDerivativeAccumulativeLocalGetter(
+			Class<K> argType, Function<M,? extends Collection<K>> getter, BiConsumer<M, K> adder) {
+		assertDerivativeAccumulativeLocalGetter(mock(argType), mock(argType), getter, adder);
+	}
+
+	@SuppressWarnings("unchecked")
+	default <K extends Object> void assertDerivativeAccumulativeLocalGetter(
+			K value1, K value2, Function<M,? extends Collection<K>> getter, BiConsumer<M, K> adder) {
+		M manifest = createUnlocked();
+
+		assertTrue(getter.apply(manifest).isEmpty());
+
+		adder.accept(manifest, value1);
+		TestUtils.assertCollectionEquals(getter.apply(manifest), value1);
+
+		if(getExpectedType().isSupportTemplating()) {
+			M template = createTemplate();
+			adder.accept(template, value1);
+			M derived = createDerived(template);
+
+			assertTrue(getter.apply(derived).isEmpty());
+
+			adder.accept(derived, value2);
+			TestUtils.assertCollectionEquals(getter.apply(derived), value2);
+			TestUtils.assertCollectionEquals(getter.apply(template), value1);
+		}
+	}
+
+
+	default <K extends Object, A extends Consumer<? super K>> void assertDerivativeForEach(
+			Class<K> argType, Function<M,Consumer<A>> forEachGen, BiConsumer<M, K> adder) {
+		assertDerivativeForEach(mock(argType), mock(argType), forEachGen, adder);
+	}
+
+	@SuppressWarnings("unchecked")
+	default <K extends Object, A extends Consumer<? super K>> void assertDerivativeForEach(
+			K value1, K value2, Function<M,Consumer<A>> forEachGen, BiConsumer<M, K> adder) {
+
+		M manifest = createUnlocked();
+
+		TestUtils.assertNPE(() -> forEachGen.apply(manifest));
+
+		TestUtils.assertForEachEmpty(forEachGen.apply(manifest));
+
+		adder.accept(manifest, value1);
+		TestUtils.assertForEachUnsorted(forEachGen.apply(manifest), value1);
+
+		adder.accept(manifest, value2);
+		TestUtils.assertForEachUnsorted(forEachGen.apply(manifest), value1, value2);
+
+		M template = createTemplate();
+		adder.accept(template, value1);
+		M derived = createDerived(template);
+
+		TestUtils.assertForEachUnsorted(forEachGen.apply(derived), value1);
+
+		adder.accept(derived, value2);
+
+		TestUtils.assertForEachUnsorted(forEachGen.apply(derived), value1, value2);
+		TestUtils.assertForEachUnsorted(forEachGen.apply(template), value1);
+	}
+
+	default <K extends Object, A extends Consumer<? super K>> void assertDerivativeForEachLocal(
+			Class<K> argType, Function<M,Consumer<A>> forEachGen, BiConsumer<M, K> adder) {
+		assertDerivativeForEachLocal(mock(argType), mock(argType), forEachGen, adder);
+	}
+
+	@SuppressWarnings("unchecked")
+	default <K extends Object, A extends Consumer<? super K>> void assertDerivativeForEachLocal(
+			K value1, K value2, Function<M,Consumer<A>> forEachLocalGen, BiConsumer<M, K> adder) {
+
+		M manifest = createUnlocked();
+
+		TestUtils.assertNPE(() -> forEachLocalGen.apply(manifest));
+
+		TestUtils.assertForEachEmpty(forEachLocalGen.apply(manifest));
+
+		adder.accept(manifest, value1);
+		TestUtils.assertForEachUnsorted(forEachLocalGen.apply(manifest), value1);
+
+		adder.accept(manifest, value2);
+		TestUtils.assertForEachUnsorted(forEachLocalGen.apply(manifest), value1, value2);
+
+		M template = createTemplate();
+		adder.accept(template, value1);
+		M derived = createDerived(template);
+
+		TestUtils.assertForEachEmpty(forEachLocalGen.apply(derived));
+
+		adder.accept(derived, value2);
+
+		TestUtils.assertForEachUnsorted(forEachLocalGen.apply(derived), value2);
+		TestUtils.assertForEachUnsorted(forEachLocalGen.apply(template), value1);
+	}
+
+	/**
+	 * @see #assertDerivativeIsLocal(Class, Object, Object, Predicate, BiConsumer)
+	 *
+	 * @param argType
+	 * @param value1
+	 * @param value2
+	 * @param isLocalCheck
+	 * @param setter
+	 */
+	default <K extends Object> void assertDerivativeIsLocal(
+			Class<K> argType, Predicate<M> isLocalCheck, BiConsumer<M, K> setter) {
+		assertDerivativeIsLocal(mock(argType), mock(argType), isLocalCheck, setter);
+	}
+
+	/**
+	 * @see #assertDerivativeGetter(Class, Object, Object, Object, Function, BiConsumer)
+	 *
+	 * @param argType
+	 * @param value1
+	 * @param value2
+	 * @param defaultValue
+	 * @param getter
+	 * @param setter
+	 */
+	default <K extends Object> void assertDerivativeIsLocal(
+			K value1, K value2, Predicate<M> isLocalCheck, BiConsumer<M, K> setter) {
+		M manifest = createUnlocked();
+
+		assertFalse(isLocalCheck.test(manifest));
+
+		setter.accept(manifest, value1);
+		assertTrue(isLocalCheck.test(manifest));
+
+		if(getExpectedType().isSupportTemplating()) {
+			M template = createTemplate();
+			setter.accept(template, value1);
+			M derived = createDerived(template);
+
+			assertFalse(isLocalCheck.test(derived));
+
+			setter.accept(derived, value2);
+			assertTrue(isLocalCheck.test(derived));
+		}
+	}
+
+	default <K extends Object> void assertDerivativeAccumulativeIsLocal(
+			Class<K> argType, BiPredicate<M, K> isLocalCheck, BiConsumer<M, K> adder) {
+		assertDerivativeAccumulativeIsLocal(mock(argType), mock(argType), isLocalCheck, adder);
+	}
+
+	default <K extends Object> void assertDerivativeAccumulativeIsLocal(
+			K value1, K value2, BiPredicate<M, K> isLocalCheck, BiConsumer<M, K> adder) {
+		M manifest = createUnlocked();
+
+		TestUtils.assertNPE(() -> isLocalCheck.test(manifest, null));
+
+		assertFalse(isLocalCheck.test(manifest, value1));
+
+		adder.accept(manifest, value1);
+		assertTrue(isLocalCheck.test(manifest, value1));
+
+		adder.accept(manifest, value2);
+		assertTrue(isLocalCheck.test(manifest, value2));
+
+		if(getExpectedType().isSupportTemplating()) {
+			M template = createTemplate();
+			adder.accept(template, value1);
+			M derived = createDerived(template);
+
+			assertFalse(isLocalCheck.test(derived, value1));
+
+			adder.accept(derived, value2);
+			assertTrue(isLocalCheck.test(derived, value2));
+		}
+	}
+
+	@SuppressWarnings("boxing")
+	default void assertDerivativeFlagGetter(Boolean defaultValue, Predicate<M> getter, ObjBoolConsumer<M> setter) {
+		M manifest = createUnlocked();
+
+		if(defaultValue!=null) {
+			assertEquals(defaultValue.booleanValue(), getter.test(manifest));
+		}
+
+		setter.accept(manifest, true);
+		assertTrue(getter.test(manifest));
+		setter.accept(manifest, false);
+		assertFalse(getter.test(manifest));
+
+		if(getExpectedType().isSupportTemplating()) {
+			M template = createTemplate();
+			M derived = createDerived(template);
+
+			setter.accept(template, true);
+			assertTrue(getter.test(derived));
+			setter.accept(template, false);
+			assertFalse(getter.test(derived));
+
+			setter.accept(derived, true);
+			assertTrue(getter.test(derived));
+
+			setter.accept(derived, false);
+			assertFalse(getter.test(derived));
+		}
+	}
+
+	default <K extends Object> void assertSetter(BiConsumer<M, K> setter, K value,
+			boolean checkNPE, @SuppressWarnings("unchecked") K...illegalValues) {
+		M manifest = createUnlocked();
+
+		if(checkNPE) {
+			TestUtils.assertNPE(() -> setter.accept(manifest, null));
+		}
+
+		setter.accept(manifest, value);
+
+		for(K illegalValue : illegalValues) {
+			ManifestTestUtils.assertIllegalValue(() -> setter.accept(manifest, illegalValue));
+		}
+
+		manifest.lock();
+
+		LockableTest.assertLocked(() -> setter.accept(manifest, value));
+	}
 
 	/**
 	 * Creates a manifest instance for testing that is registered as a template

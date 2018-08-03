@@ -259,6 +259,13 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 	 */
 	@Override
 	public void setIsTemplate(boolean isTemplate) {
+		checkNotLocked();
+
+		setIsTemplate0(isTemplate);
+	}
+
+	protected void setIsTemplate0(boolean isTemplate) {
+
 		if(!manifestLocation.isTemplate())
 			throw new ManifestException(ManifestErrorCode.MANIFEST_ERROR,
 					"Manifest location does not allow templates: "+ManifestUtils.getName(this));

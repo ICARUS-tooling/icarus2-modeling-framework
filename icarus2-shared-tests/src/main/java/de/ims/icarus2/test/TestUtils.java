@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -135,6 +136,34 @@ public class TestUtils {
 		loop.accept((A)action);
 
 		assertTrue(actual.isEmpty());
+	}
+
+	public static <E extends Object> void assertCollectionEquals(
+			Collection<? extends E> expected, Collection<? extends E> actual) {
+		assertEquals(expected.size(), actual.size());
+
+		for(E element : expected) {
+			assertTrue(actual.contains(element), "Missing element: "+element);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <E extends Object> void assertCollectionEquals(Collection<? extends E> actual, E...expected) {
+		assertEquals(expected.length, actual.size());
+
+		for(E element : expected) {
+			assertTrue(actual.contains(element), "Missing element: "+element);
+		}
+	}
+
+	public static <E extends Object> void assertListEquals(
+			List<? extends E> expected, List<? extends E> actual) {
+		assertEquals(expected.size(), actual.size());
+
+		for(int i=0; i<expected.size(); i++) {
+			assertEquals(expected.get(i), actual.get(i),
+					"Mismatch at index "+i+": expected "+expected.get(i)+" - got "+actual.get(i));
+		}
 	}
 
     private static boolean isEquals(Object expected, Object actual) {
