@@ -79,7 +79,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	default void testSetSourceType() {
 
 		for(SourceType sourceType : SourceType.values()) {
-			assertSetter(ImplementationManifest::setSourceType, sourceType, true);
+			assertLockableSetter(ImplementationManifest::setSourceType, sourceType, true);
 		}
 	}
 
@@ -89,7 +89,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	@Test
 	default void testSetSource() {
 
-		assertSetter(ImplementationManifest::setSource, "source", true);
+		assertLockableSetter(ImplementationManifest::setSource, "source", true);
 	}
 
 	/**
@@ -97,7 +97,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	 */
 	@Test
 	default void testSetClassname() {
-		assertSetter(ImplementationManifest::setClassname, "classname", true);
+		assertLockableSetter(ImplementationManifest::setClassname, "classname", true);
 	}
 
 	/**
@@ -105,7 +105,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	 */
 	@Test
 	default void testSetUseFactory() {
-		assertSetter(ImplementationManifest::setUseFactory);
+		assertLockableSetter(ImplementationManifest::setUseFactory);
 	}
 
 }

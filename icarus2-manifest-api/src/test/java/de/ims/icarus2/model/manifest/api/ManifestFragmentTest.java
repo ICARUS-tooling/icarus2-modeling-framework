@@ -27,14 +27,11 @@ import org.junit.jupiter.api.Test;
  * @author Markus Gärtner
  *
  */
-public interface ManifestFragmentTest extends TypedManifestTest, LockableTest {
-
-	@Override
-	ManifestFragment createUnlocked();
+public interface ManifestFragmentTest<M extends ManifestFragment> extends TypedManifestTest<M>, LockableTest<M> {
 
 	@Test
 	default void testGetId() {
-		ManifestFragment manifest = createUnlocked();
+		M manifest = createUnlocked();
 		if(manifest!=null) {
 			assertNotNull(manifest.getId());
 		}
@@ -42,7 +39,7 @@ public interface ManifestFragmentTest extends TypedManifestTest, LockableTest {
 
 	@Test
 	default void testGetUniqueId() {
-		ManifestFragment manifest = createUnlocked();
+		M manifest = createUnlocked();
 		if(manifest!=null) {
 			assertNotNull(manifest.getUniqueId());
 		}

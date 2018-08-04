@@ -6,8 +6,6 @@ package de.ims.icarus2.model.manifest.standard;
 import java.util.Collections;
 import java.util.Set;
 
-import de.ims.icarus2.model.manifest.ManifestTestUtils;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
@@ -29,17 +27,6 @@ class StructureManifestImplTest implements StructureManifestTest<StructureManife
 	public StructureManifest createHosted(ManifestLocation manifestLocation, ManifestRegistry registry,
 			TypedManifest host) {
 		return new StructureManifestImpl(manifestLocation, registry, (StructureLayerManifest)host);
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.ManifestTest#createUnlocked(de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry)
-	 */
-	@Override
-	public StructureManifest createUnlocked(ManifestLocation location, ManifestRegistry registry) {
-		// IMPORTANT: only force non-null host when we don't need a template!
-		ItemLayerManifest layerManifest = location.isTemplate() ? null
-				: ManifestTestUtils.mockTypedManifest(ManifestType.STRUCTURE_LAYER_MANIFEST);
-		return createHosted(location, registry, layerManifest);
 	}
 
 	/**

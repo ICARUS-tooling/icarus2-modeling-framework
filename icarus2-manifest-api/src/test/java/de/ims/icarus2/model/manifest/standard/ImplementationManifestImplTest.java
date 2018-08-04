@@ -33,7 +33,7 @@ import de.ims.icarus2.model.manifest.api.TypedManifest;
  * @author Markus Gärtner
  *
  */
-class ImplementationManifestImplTest implements ImplementationManifestTest {
+class ImplementationManifestImplTest implements ImplementationManifestTest<ImplementationManifest> {
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
@@ -50,14 +50,6 @@ class ImplementationManifestImplTest implements ImplementationManifestTest {
 	public ImplementationManifest createHosted(ManifestLocation manifestLocation, ManifestRegistry registry,
 			TypedManifest host) {
 		return new ImplementationManifestImpl(manifestLocation, registry, (MemberManifest) host);
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.ManifestTest#createUnlocked(de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry)
-	 */
-	@Override
-	public ImplementationManifest createUnlocked(ManifestLocation location, ManifestRegistry registry) {
-		return new ImplementationManifestImpl(location, registry, null);
 	}
 
 	/**

@@ -33,9 +33,9 @@ import de.ims.icarus2.model.manifest.types.ValueType;
  * @author Markus Gärtner
  *
  */
-public interface ValueManifestTest extends DocumentableTest, ModifiableIdentityTest, TypedManifestTest {
+public interface ValueManifestTest<M extends ValueManifest> extends DocumentableTest<M>, ModifiableIdentityTest, TypedManifestTest<M> {
 
-	ValueManifest createWithType(ValueType valueType);
+	M createWithType(ValueType valueType);
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#createEmpty()
@@ -62,7 +62,7 @@ public interface ValueManifestTest extends DocumentableTest, ModifiableIdentityT
 	 * @see de.ims.icarus2.model.manifest.api.DocumentableTest#createUnlocked()
 	 */
 	@Override
-	default ValueManifest createUnlocked() {
+	default M createUnlocked() {
 		return createWithType(ValueType.STRING);
 	}
 
@@ -81,7 +81,7 @@ public interface ValueManifestTest extends DocumentableTest, ModifiableIdentityT
 	default void testGetValue() {
 		for(ValueType valueType : ValueManifest.SUPPORTED_VALUE_TYPES) {
 
-			ValueManifest empty = createWithType(valueType);
+			M empty = createWithType(valueType);
 			assertNull(empty.getValue());
 		}
 	}
@@ -93,7 +93,7 @@ public interface ValueManifestTest extends DocumentableTest, ModifiableIdentityT
 	default void testGetValueType() {
 		for(ValueType valueType : ValueManifest.SUPPORTED_VALUE_TYPES) {
 
-			ValueManifest empty = createWithType(valueType);
+			M empty = createWithType(valueType);
 			assertEquals(valueType, empty.getValueType());
 		}
 	}
@@ -105,20 +105,13 @@ public interface ValueManifestTest extends DocumentableTest, ModifiableIdentityT
 	default void testSetValue() {
 		for(ValueType valueType : ValueManifest.SUPPORTED_VALUE_TYPES) {
 
-			ValueManifest manifest = createWithType(valueType);
+			M manifest = createWithType(valueType);
 
 			Object testValue = ManifestTestUtils.getTestValue(valueType);
-
-			manifest.setValue(testValue);
-			assertEquals(testValue, manifest.getValue());
-
 			Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
-			if(illegalValue!=null) {
-				ManifestTestUtils.assertIllegalValue(() -> manifest.setValue(illegalValue));
-			}
 
-			manifest.lock();
-			LockableTest.assertLocked(() -> manifest.setValue(null));
+			LockableTest.assertLockableSetter(manifest,
+					ValueManifest::setValue, testValue, true, illegalValue);
 		}
 	}
 

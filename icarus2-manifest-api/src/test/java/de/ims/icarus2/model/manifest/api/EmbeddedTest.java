@@ -32,7 +32,7 @@ import de.ims.icarus2.model.manifest.ManifestTestUtils;
  * @author Markus Gärtner
  *
  */
-public interface EmbeddedTest {
+public interface EmbeddedTest<E extends Embedded> {
 
 	/**
 	 * Return all the allowed host types or an empty set in case there
@@ -47,7 +47,7 @@ public interface EmbeddedTest {
 	 * @return
 	 * @throws Exception
 	 */
-	Embedded createEmbedded(TypedManifest host) throws Exception;
+	E createEmbedded(TypedManifest host) throws Exception;
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.Embedded#getHost()}.
@@ -59,7 +59,7 @@ public interface EmbeddedTest {
 
 		for(ManifestType hostType : allowedHostTypes) {
 			TypedManifest host = ManifestTestUtils.mockTypedManifest(hostType);
-			Embedded embedded = createEmbedded(host);
+			E embedded = createEmbedded(host);
 			assertNotNull(embedded.getHost());
 			assertSame(host, embedded.getHost());
 		}

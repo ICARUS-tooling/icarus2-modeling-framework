@@ -19,7 +19,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
 
@@ -27,22 +28,15 @@ import org.junit.jupiter.api.Test;
  * @author Markus Gärtner
  *
  */
-public interface RasterizerManifestTest {
+public interface RasterizerManifestTest<M extends RasterizerManifest> extends ForeignImplementationManifestTest<M> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.RasterizerManifest#getLayerManifest()}.
 	 */
 	@Test
 	default void testGetLayerManifest() {
-		fail("Not yet implemented");
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.RasterizerManifest#getHost()}.
-	 */
-	@Test
-	default void testGetHost() {
-		fail("Not yet implemented");
+		assertNull(createTemplate().getLayerManifest());
+		assertNotNull(createUnlocked().getLayerManifest());
 	}
 
 }

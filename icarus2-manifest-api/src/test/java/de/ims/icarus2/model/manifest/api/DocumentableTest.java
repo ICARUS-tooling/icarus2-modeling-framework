@@ -32,21 +32,21 @@ import de.ims.icarus2.test.TestUtils;
  * @author Markus Gärtner
  *
  */
-public interface DocumentableTest extends LockableTest {
+public interface DocumentableTest<D extends Documentable> extends LockableTest<D> {
 
 	/**
 	 * Create an unlocked instance of {@link Documentable} for testing
 	 * @return
 	 */
 	@Override
-	Documentable createUnlocked();
+	D createUnlocked();
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.Documentable#getDocumentation()}.
 	 */
 	@Test
 	default void testGetDocumentation() {
-		Documentable documentable = createUnlocked();
+		D documentable = createUnlocked();
 
 		assertNull(documentable.getDocumentation());
 	}
@@ -56,7 +56,7 @@ public interface DocumentableTest extends LockableTest {
 	 */
 	@Test
 	default void testSetDocumentation() {
-		Documentable documentable = createUnlocked();
+		D documentable = createUnlocked();
 
 		// Test with null
 		TestUtils.assertNPE(() -> documentable.setDocumentation(null));

@@ -32,6 +32,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -47,7 +48,7 @@ import de.ims.icarus2.util.Options;
  *
  */
 public interface MemberManifestTest<M extends MemberManifest> extends ModifiableIdentityTest,
-	CategorizableTest, DocumentableTest, ManifestTest<M>, EmbeddedTest {
+	CategorizableTest<M>, DocumentableTest<M>, ManifestTest<M>, EmbeddedTest<M> {
 
 
 	M createHosted(ManifestLocation manifestLocation, ManifestRegistry registry, TypedManifest host);
@@ -91,7 +92,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#createEmbedded(de.ims.icarus2.model.manifest.api.TypedManifest)
 	 */
 	@Override
-	default Embedded createEmbedded(TypedManifest host) {
+	default M createEmbedded(TypedManifest host) {
 		return createHosted(mockManifestLocation(false), mockManifestRegistry(), host);
 	}
 
@@ -99,6 +100,25 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	default M createUnlocked() {
 		// Need explicit declaration due to unifying methods from ManifestTet and CategorizableTest
 		return ManifestTest.super.createUnlocked();
+	}
+
+	/**
+	 * Ensures that an appropriate host manifest is created and used for
+	 * {@link #createHosted(ManifestLocation, ManifestRegistry, TypedManifest)}
+	 * in case the given {@link ManifestLocation} is declared to hold
+	 * {@link ManifestLocation#isTemplate() templates}.
+	 *
+	 * @see de.ims.icarus2.model.manifest.api.ManifestTest#createUnlocked(de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry)
+	 */
+	@Override
+	default M createUnlocked(ManifestLocation location, ManifestRegistry registry) {
+		TypedManifest host = null;
+		Set<ManifestType> hostTypes = getAllowedHostTypes();
+		if(!location.isTemplate() && !hostTypes.isEmpty()) {
+			host = mockTypedManifest(hostTypes.iterator().next());
+		}
+
+		return createHosted(location, registry, host);
 	}
 
 	/**
@@ -488,7 +508,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testSetOptionsManifest() {
-		assertSetter(MemberManifest::setOptionsManifest, mock(OptionsManifest.class), false);
+		assertLockableSetter(MemberManifest::setOptionsManifest, mock(OptionsManifest.class), false);
 	}
 
 }

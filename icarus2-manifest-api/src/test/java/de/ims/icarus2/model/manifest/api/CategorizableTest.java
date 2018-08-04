@@ -20,7 +20,6 @@
 package de.ims.icarus2.model.manifest.api;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -33,10 +32,7 @@ import de.ims.icarus2.test.TestUtils;
  * @author Markus Gärtner
  *
  */
-public interface CategorizableTest extends LockableTest {
-
-	@Override
-	Categorizable createUnlocked();
+public interface CategorizableTest<C extends Categorizable> extends LockableTest<C> {
 
 	public static Category mockCategory(String id) {
 		Category category = mock(Category.class);
@@ -49,15 +45,8 @@ public interface CategorizableTest extends LockableTest {
 	 */
 	@Test
 	default void testAddCategory() {
-		Categorizable categorizable = createUnlocked();
-
-		Category category = mockCategory("cat1");
-		categorizable.addCategory(category);
-		categorizable.addCategory(category);
-
-		categorizable.addCategory(mockCategory("cat2"));
-
-		assertThrows(NullPointerException.class, () -> categorizable.addCategory(null));
+		assertLockableAccumulativeAdd(Categorizable::addCategory, null, true, false,
+				mockCategory("cat1"), mockCategory("cat2"));
 	}
 
 	/**
@@ -65,20 +54,8 @@ public interface CategorizableTest extends LockableTest {
 	 */
 	@Test
 	default void testRemoveCategory() {
-		Categorizable categorizable = createUnlocked();
-
-		Category category = mockCategory("cat1");
-		categorizable.addCategory(category);
-
-		assertTrue(categorizable.hasCategory(category));
-
-		categorizable.removeCategory(category);
-		assertFalse(categorizable.hasCategory(category));
-
-		assertThrows(NullPointerException.class, () -> categorizable.removeCategory(null));
-
-		categorizable.lock();
-		LockableTest.assertLocked(() -> categorizable.addCategory(category));
+		assertLockableAccumulativeRemove(Categorizable::addCategory, Categorizable::removeCategory,
+				Categorizable::getCategories, true, false, mockCategory("cat1"), mockCategory("cat2"));
 	}
 
 	/**
@@ -86,7 +63,9 @@ public interface CategorizableTest extends LockableTest {
 	 */
 	@Test
 	default void testForEachCategory() {
-		Categorizable categorizable = createUnlocked();
+
+
+		C categorizable = createUnlocked();
 
 		TestUtils.assertForEachEmpty(categorizable::forEachCategory);
 
@@ -108,7 +87,7 @@ public interface CategorizableTest extends LockableTest {
 	 */
 	@Test
 	default void testGetCategories() {
-		Categorizable categorizable = createUnlocked();
+		C categorizable = createUnlocked();
 
 		assertTrue(categorizable.getCategories().isEmpty());
 
@@ -131,7 +110,7 @@ public interface CategorizableTest extends LockableTest {
 	 */
 	@Test
 	default void testHasCategory() {
-		Categorizable categorizable = createUnlocked();
+		C categorizable = createUnlocked();
 
 		TestUtils.assertNPE(() -> categorizable.hasCategory(null));
 

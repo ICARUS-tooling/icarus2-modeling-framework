@@ -19,7 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Test;
 
@@ -27,14 +27,16 @@ import org.junit.jupiter.api.Test;
  * @author Markus Gärtner
  *
  */
-public interface ForeignImplementationManifestTest {
+public interface ForeignImplementationManifestTest<M extends ForeignImplementationManifest> extends MemberManifestTest<M> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ForeignImplementationManifest#getImplementationManifest()}.
 	 */
 	@Test
 	default void testGetImplementationManifest() {
-		assert
+		assertDerivativeGetter(mock(ImplementationManifest.class), mock(ImplementationManifest.class), null,
+				ForeignImplementationManifest::getImplementationManifest,
+				ForeignImplementationManifest::setImplementationManifest);
 	}
 
 	/**
@@ -42,7 +44,9 @@ public interface ForeignImplementationManifestTest {
 	 */
 	@Test
 	default void testIsLocalImplementation() {
-		fail("Not yet implemented");
+		assertDerivativeIsLocal(mock(ImplementationManifest.class), mock(ImplementationManifest.class),
+				ForeignImplementationManifest::isLocalImplementation,
+				ForeignImplementationManifest::setImplementationManifest);
 	}
 
 	/**
@@ -50,7 +54,8 @@ public interface ForeignImplementationManifestTest {
 	 */
 	@Test
 	default void testSetImplementationManifest() {
-		fail("Not yet implemented");
+		assertLockableSetter(ForeignImplementationManifest::setImplementationManifest,
+				mock(ImplementationManifest.class), true);
 	}
 
 }

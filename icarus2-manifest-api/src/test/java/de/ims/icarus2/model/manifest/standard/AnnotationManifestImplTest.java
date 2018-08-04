@@ -18,7 +18,7 @@ import de.ims.icarus2.model.manifest.api.TypedManifest;
  * @author Markus Gärtner
  *
  */
-class AnnotationManifestImplTest implements AnnotationManifestTest {
+class AnnotationManifestImplTest implements AnnotationManifestTest<AnnotationManifest> {
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
@@ -35,14 +35,6 @@ class AnnotationManifestImplTest implements AnnotationManifestTest {
 	public AnnotationManifest createHosted(ManifestLocation manifestLocation, ManifestRegistry registry,
 			TypedManifest host) {
 		return new AnnotationManifestImpl(manifestLocation, registry, (AnnotationLayerManifest) host);
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.ManifestTest#createUnlocked(de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry)
-	 */
-	@Override
-	public AnnotationManifest createUnlocked(ManifestLocation location, ManifestRegistry registry) {
-		return new AnnotationManifestImpl(location, registry);
 	}
 
 	/**

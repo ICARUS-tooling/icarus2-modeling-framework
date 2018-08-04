@@ -27,11 +27,12 @@ import org.junit.jupiter.api.Test;
  * @author Markus Gärtner
  *
  */
-public interface ValueSetTest {
+public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, TypedManifestTest<V> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#getManifestType()}.
 	 */
+	@Override
 	@Test
 	default void testGetManifestType() {
 		fail("Not yet implemented");
