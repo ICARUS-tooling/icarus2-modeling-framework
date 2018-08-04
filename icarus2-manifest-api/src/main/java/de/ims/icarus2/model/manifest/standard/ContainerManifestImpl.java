@@ -99,7 +99,7 @@ public class ContainerManifestImpl extends AbstractMemberManifest<ContainerManif
 		}
 
 		if(result==null) {
-			result = ContainerType.LIST;
+			result = DEFAULT_CONTAINER_TYPE;
 		}
 
 		return result;

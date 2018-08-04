@@ -19,30 +19,26 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.test.TestUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface ContainerManifestTest {
+public interface ContainerManifestTest extends MemberManifestTest<ContainerManifest> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifest#getLayerManifest()}.
 	 */
 	@Test
 	default void testGetLayerManifest() {
-		fail("Not yet implemented");
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifest#getHost()}.
-	 */
-	@Test
-	default void testGetHost() {
-		fail("Not yet implemented");
+		assertNotNull(createUnlocked().getLayerManifest());
+		assertNull(createTemplate().getLayerManifest());
 	}
 
 	/**
@@ -50,7 +46,11 @@ public interface ContainerManifestTest {
 	 */
 	@Test
 	default void testGetContainerType() {
-		fail("Not yet implemented");
+		for(ContainerType containerType : ContainerType.values()) {
+			assertDerivativeGetter(containerType, TestUtils.other(containerType),
+					ContainerManifest.DEFAULT_CONTAINER_TYPE,
+					ContainerManifest::getContainerType, ContainerManifest::setContainerType);
+		}
 	}
 
 	/**
@@ -58,7 +58,10 @@ public interface ContainerManifestTest {
 	 */
 	@Test
 	default void testIsLocalContainerType() {
-		fail("Not yet implemented");
+		for(ContainerType containerType : ContainerType.values()) {
+			assertDerivativeIsLocal(containerType, TestUtils.other(containerType),
+					ContainerManifest::isLocalContainerType, ContainerManifest::setContainerType);
+		}
 	}
 
 	/**
@@ -66,7 +69,11 @@ public interface ContainerManifestTest {
 	 */
 	@Test
 	default void testIsContainerFlagSet() {
-		fail("Not yet implemented");
+		for(ContainerFlag flag : ContainerFlag.values()) {
+			assertDerivativeFlagGetter(Boolean.FALSE,
+					m -> m.isContainerFlagSet(flag),
+					(m, active) -> m.setContainerFlag(flag, active));
+		}
 	}
 
 	/**
@@ -74,7 +81,9 @@ public interface ContainerManifestTest {
 	 */
 	@Test
 	default void testForEachActiveContainerFlag() {
-		fail("Not yet implemented");
+		assertDerivativeForEach(ContainerFlag.NON_STATIC, ContainerFlag.DUPLICATES,
+				m -> m::forEachActiveContainerFlag,
+				(m,flag) -> m.setContainerFlag(flag, true));
 	}
 
 	/**
@@ -82,7 +91,9 @@ public interface ContainerManifestTest {
 	 */
 	@Test
 	default void testForEachActiveLocalContainerFlag() {
-		fail("Not yet implemented");
+		assertDerivativeForEachLocal(ContainerFlag.NON_STATIC, ContainerFlag.DUPLICATES,
+				m -> m::forEachActiveLocalContainerFlag,
+				(m,flag) -> m.setContainerFlag(flag, true));
 	}
 
 	/**
@@ -90,7 +101,9 @@ public interface ContainerManifestTest {
 	 */
 	@Test
 	default void testGetActiveContainerFlags() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeGetter(ContainerFlag.NON_STATIC, ContainerFlag.DUPLICATES,
+				ContainerManifest::getActiveContainerFlags,
+				(m,flag) -> m.setContainerFlag(flag, true));
 	}
 
 	/**
@@ -98,7 +111,9 @@ public interface ContainerManifestTest {
 	 */
 	@Test
 	default void testGetActiveLocalContainerFlags() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeLocalGetter(ContainerFlag.NON_STATIC, ContainerFlag.DUPLICATES,
+				ContainerManifest::getActiveLocalContainerFlags,
+				(m,flag) -> m.setContainerFlag(flag, true));
 	}
 
 	/**
@@ -106,7 +121,7 @@ public interface ContainerManifestTest {
 	 */
 	@Test
 	default void testGetParentManifest() {
-		fail("Not yet implemented");
+		assertNull(createUnlocked().getParentManifest());
 	}
 
 	/**
@@ -114,7 +129,7 @@ public interface ContainerManifestTest {
 	 */
 	@Test
 	default void testGetElementManifest() {
-		fail("Not yet implemented");
+		assertNull(createUnlocked().getElementManifest());
 	}
 
 	/**
@@ -122,7 +137,9 @@ public interface ContainerManifestTest {
 	 */
 	@Test
 	default void testSetContainerType() {
-		fail("Not yet implemented");
+		for(ContainerType containerType : ContainerType.values()) {
+			assertSetter(ContainerManifest::setContainerType, containerType, true);
+		}
 	}
 
 	/**
@@ -130,7 +147,9 @@ public interface ContainerManifestTest {
 	 */
 	@Test
 	default void testSetContainerFlag() {
-		fail("Not yet implemented");
+		for(ContainerFlag flag : ContainerFlag.values()) {
+			assertSetter((m, active) -> m.setContainerFlag(flag, active));
+		}
 	}
 
 }

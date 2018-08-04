@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
  * @author Markus Gärtner
  *
  */
-public interface StructureManifestTest {
+public interface StructureManifestTest extends ContainerManifestTest {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.StructureManifest#getStructureType()}.

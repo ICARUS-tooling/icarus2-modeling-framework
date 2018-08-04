@@ -22,8 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
@@ -155,6 +157,12 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 */
 	@Override
 	public void setKey(String key) {
+		checkNotLocked();
+
+		setKey0(key);
+	}
+
+	private void setKey0(String key) {
 		requireNonNull(key);
 
 		this.key = key;
@@ -200,11 +208,11 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 		addAlias0(alias);
 	}
 
-	protected void addAlias0(String alias) {
+	private void addAlias0(String alias) {
 		requireNonNull(alias);
 
 		if(aliases.contains(alias))
-			throw new IllegalArgumentException("Alias already registered: "+alias); //$NON-NLS-1$
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Alias already registered: "+alias); //$NON-NLS-1$
 
 		aliases.add(alias);
 	}
@@ -216,11 +224,11 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 		removeAlias0(alias);
 	}
 
-	protected void removeAlias0(String alias) {
+	private void removeAlias0(String alias) {
 		requireNonNull(alias);
 
 		if(aliases==null || !aliases.remove(alias))
-			throw new IllegalArgumentException("Unknown alias: "+alias); //$NON-NLS-1$
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Unknown alias: "+alias); //$NON-NLS-1$
 	}
 
 	/**
@@ -245,7 +253,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 		setAllowUnknownValues0(allowUnknownValues);
 	}
 
-	protected void setAllowUnknownValues0(boolean allowUnknownValues) {
+	private void setAllowUnknownValues0(boolean allowUnknownValues) {
 		this.allowUnknownValues = (allowUnknownValues == DEFAULT_ALLOW_UNKNOWN_VALUES && !hasTemplate()) ? null : Boolean.valueOf(allowUnknownValues);
 	}
 

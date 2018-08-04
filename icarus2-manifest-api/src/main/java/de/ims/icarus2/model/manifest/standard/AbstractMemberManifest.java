@@ -140,6 +140,8 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 
 	@Override
 	public void forEachProperty(Consumer<? super Property> action) {
+		requireNonNull(action);
+
 		// Derived properties first
 		if(hasTemplate()) {
 			getTemplate().forEachProperty(action);
@@ -151,6 +153,8 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 
 	@Override
 	public void forEachLocalProperty(Consumer<? super Property> action) {
+		requireNonNull(action);
+
 		properties.values().forEach(action);
 	}
 
@@ -162,8 +166,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	}
 
 	public boolean isInheritedProperty(String name) {
-		if (name == null)
-			throw new NullPointerException("Invalid name");
+		requireNonNull(name);
 
 		return hasTemplate() && getTemplate().hasProperty(name);
 	}
@@ -224,12 +227,9 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 			property.setOption(option);
 		}
 
-		//FIXME handle multiValue flag for type check here!
-		valueType.checkValue(value);
-
 		property.setValueType(valueType);
-		property.setValue(value);
 		property.setMultiValue(multiValue);
+		property.setValue(value);
 
 		addProperty0(property);
 
@@ -268,6 +268,8 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 		/* Make sure that we only ever modify local properties!
 		 * Side effect of this strategy is that after modifying
 		 * a property it effectively becomes a local one.
+		 *
+		 * TODO: introduce flag on property when it got "adopted" and upon setting it to null, remove again from local pool
 		 */
 		if(!isLocalProperty(name)) {
 			property = property.clone();
@@ -440,12 +442,13 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 				Property result = (Property) super.clone();
 
 				if(value!=null) {
-					result.setValue(ClassUtils.clone(value));
+					result.setValue(ClassUtils.tryClone(value));
 				}
 
 				return result;
 			} catch (CloneNotSupportedException e) {
-				throw new IllegalStateException();
+				throw new ManifestException(GlobalErrorCode.DELEGATION_FAILED,
+						"Failed to clone property "+getName(), e);
 			}
 		}
 
@@ -483,12 +486,34 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 			return multiValue;
 		}
 
+		private void checkValue(Object value) {
+			if(value==null) {
+				return;
+			}
+
+			ValueType valueType = this.valueType;
+			if(valueType==null && option!=null) {
+				valueType = option.getValueType();
+			}
+
+			if(valueType!=null) {
+				if(value instanceof Collection) {
+					for(Object val : (Collection<?>) value) {
+						valueType.checkValue(val);
+					}
+				} else {
+					valueType.checkValue(value);
+				}
+			}
+		}
+
 		/**
 		 * @see de.ims.icarus2.model.manifest.api.MemberManifest.Property#setValue(java.lang.Object)
 		 */
 		@Override
 		public void setValue(Object value) {
-			//FIXME use option link and value type to verify correct data
+			checkValue(value);
+
 			this.value = value;
 		}
 
@@ -502,6 +527,8 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 
 		public void setOption(Option option) {
 			this.option = option;
+
+			checkValue(value);
 		}
 
 		public void setName(String name) {
@@ -511,6 +538,8 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 
 		public void setValueType(ValueType valueType) {
 			this.valueType = valueType;
+
+			checkValue(value);
 		}
 
 		@Override

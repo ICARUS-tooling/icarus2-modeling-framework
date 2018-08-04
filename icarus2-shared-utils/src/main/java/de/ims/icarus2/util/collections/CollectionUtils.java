@@ -48,6 +48,7 @@ import com.google.common.collect.MapMaker;
 
 import de.ims.icarus2.util.Filter;
 import it.unimi.dsi.fastutil.longs.LongCollection;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * @author Markus Gärtner
@@ -417,6 +418,16 @@ public final class CollectionUtils {
 	public static boolean firstSetBoolean(Map<String, String> map, boolean defaultValue, String...keys) {
 		String val = firstSet(map, keys);
 		return val==null ? defaultValue : Boolean.parseBoolean(val);
+	}
+
+	public static <E extends Object> List<E> list(E...items) {
+		return Arrays.asList(items);
+	}
+
+	public static <E extends Object> Set<E> set(E...items) {
+		Set<E> set = new ObjectOpenHashSet<>();
+		Collections.addAll(set, items);
+		return set;
 	}
 
 	public static String toString(Collection<?> collection) {

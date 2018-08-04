@@ -36,6 +36,7 @@ import java.util.Set;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.Mockito;
 
+import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
@@ -104,7 +105,10 @@ public class ManifestTestUtils {
 				new IconWrapper("testIconName2"), //$NON-NLS-1$
 				new IconWrapper("testIconName3")); //$NON-NLS-1$
 
-		addTestValues(ValueType.BINARY_STREAM, 1, ByteArrayChannel.fromChars("this is a test"));
+		addTestValues(ValueType.BINARY_STREAM, 1,
+				ByteArrayChannel.fromChars("this is a test"),
+				ByteArrayChannel.fromChars("this is another slightly longer test...\n still a test"),
+				ByteArrayChannel.fromChars("this is the third and final test"));
 
 		try {
 			addTestValues(ValueType.URL, "illegal",
@@ -311,7 +315,7 @@ public class ManifestTestUtils {
 		assertManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST, executable);
 	}
 
-	public static void assertManifestException(ManifestErrorCode errorCode, Executable executable) {
+	public static void assertManifestException(ErrorCode errorCode, Executable executable) {
 		ManifestException exception = assertThrows(ManifestException.class, executable);
 		assertEquals(errorCode, exception.getErrorCode());
 	}

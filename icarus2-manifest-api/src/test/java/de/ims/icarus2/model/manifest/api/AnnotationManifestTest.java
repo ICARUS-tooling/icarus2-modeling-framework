@@ -5,7 +5,6 @@ package de.ims.icarus2.model.manifest.api;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Test;
@@ -181,6 +180,7 @@ public interface AnnotationManifestTest extends MemberManifestTest<AnnotationMan
 
 		for(ValueType valueType : ManifestTestUtils.getAvailableTestTypes()) {
 			Object[] values = ManifestTestUtils.getTestValues(valueType);
+			assertTrue(values.length>1, "Insufficient test valeus for type: "+valueType);
 			Object value1 = values[0];
 			Object value2 = values[1];
 
@@ -220,7 +220,7 @@ public interface AnnotationManifestTest extends MemberManifestTest<AnnotationMan
 	 */
 	@Test
 	default void testAddAlias() {
-		fail("Not yet implemented");
+		assertAccumulativeAdd(AnnotationManifest::addAlias, null, true, true, "alias1", "alias2", "alias3");
 	}
 
 	/**
@@ -228,7 +228,8 @@ public interface AnnotationManifestTest extends MemberManifestTest<AnnotationMan
 	 */
 	@Test
 	default void testRemoveAlias() {
-		fail("Not yet implemented");
+		assertAccumulativeRemove(AnnotationManifest::addAlias, AnnotationManifest::removeAlias,
+				AnnotationManifest::getAliases, true, true, "alias1", "alias2", "alias3");
 	}
 
 	/**
@@ -270,8 +271,9 @@ public interface AnnotationManifestTest extends MemberManifestTest<AnnotationMan
 	default void testSetNoEntryValue() {
 		for(ValueType valueType : ManifestTestUtils.getAvailableTestTypes()) {
 			Object value = ManifestTestUtils.getTestValue(valueType);
-			Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
-			assertSetter(AnnotationManifest::setNoEntryValue, value, false, illegalValue);
+			//TODO verify if we need value check for noEntryValue field
+//			Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
+			assertSetter(AnnotationManifest::setNoEntryValue, value, false/*, illegalValue*/);
 		}
 	}
 
@@ -280,7 +282,7 @@ public interface AnnotationManifestTest extends MemberManifestTest<AnnotationMan
 	 */
 	@Test
 	default void testSetAllowUnknownValues() {
-		assertSetter(AnnotationManifest::setAllowUnknownValues, true, false);
+		assertSetter(AnnotationManifest::setAllowUnknownValues);
 	}
 
 }

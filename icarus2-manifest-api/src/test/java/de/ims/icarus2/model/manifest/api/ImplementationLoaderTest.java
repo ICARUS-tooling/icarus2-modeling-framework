@@ -15,18 +15,21 @@
  * limitations under the License.
  */
 /**
- * 
+ *
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.test.annotations.PostponedTest;
 
 /**
  * @author Markus Gärtner
  *
  */
+@PostponedTest
 class ImplementationLoaderTest {
 
 	/**

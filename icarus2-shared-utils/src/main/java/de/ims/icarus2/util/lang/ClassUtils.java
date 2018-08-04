@@ -169,7 +169,7 @@ public final class ClassUtils {
 	private static class SerializationBuffer extends ByteArrayInputStream {
 		final ByteArrayOutputStream out;
 		final ObjectOutputStream objOut;
-		final ObjectInputStream objIn;
+		ObjectInputStream objIn;
 
 		SerializationBuffer() {
 			super(new byte[1<<10]);
@@ -177,12 +177,6 @@ public final class ClassUtils {
 			out = new ByteArrayOutputStream(1<<12);
 			try {
 				objOut = new ObjectOutputStream(new BufferedOutputStream(out, 1<<10));
-			} catch (IOException e) {
-				throw new InternalError();
-			}
-
-			try {
-				objIn = new ObjectInputStream(this);
 			} catch (IOException e) {
 				throw new InternalError();
 			}
@@ -203,7 +197,9 @@ public final class ClassUtils {
 			objOut.flush();
 
 			reset(out.toByteArray());
-			objIn.reset();
+			if(objIn==null) {
+				objIn = new ObjectInputStream(this);
+			}
 
 			return objIn.readObject();
 		}
@@ -242,5 +238,14 @@ public final class ClassUtils {
 		}
 
 		throw new CloneNotSupportedException("Cannot clone object: "+source);
+	}
+
+	public static Object tryClone(Object source) {
+		try {
+			return clone(source);
+		} catch (CloneNotSupportedException e) {
+			// Best effort, just return original object if we can't clone...
+			return source;
+		}
 	}
 }

@@ -19,10 +19,10 @@
  */
 package de.ims.icarus2.test.annotations;
 
-import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Disabled;
  */
 @Documented
 @Retention(RUNTIME)
-@Target(METHOD)
+@Target({ElementType.METHOD, ElementType.TYPE})
 @Disabled("soon™")
 public @interface PostponedTest {
 	/**

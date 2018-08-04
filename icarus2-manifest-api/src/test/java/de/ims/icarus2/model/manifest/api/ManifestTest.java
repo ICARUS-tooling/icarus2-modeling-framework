@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
@@ -38,6 +39,7 @@ import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
@@ -49,17 +51,6 @@ import de.ims.icarus2.util.function.ObjBoolConsumer;
  *
  */
 public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest {
-
-	/**
-	 * Create an empty and unlocked manifest for testing.
-	 * The used {@link ManifestLocation} will report to not host templates.
-	 *
-	 * @see de.ims.icarus2.model.manifest.api.ManifestFragmentTest#createUnlocked()
-	 */
-	@Override
-	default M createUnlocked() {
-		return createUnlocked(mock(ManifestRegistry.class), mockManifestLocation(false));
-	}
 
 	@SuppressWarnings("boxing")
 	public static ManifestLocation mockManifestLocation(boolean template) {
@@ -212,7 +203,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest 
 
 		M manifest = createUnlocked();
 
-		TestUtils.assertNPE(() -> forEachGen.apply(manifest));
+		TestUtils.assertForEachNPE(forEachGen.apply(manifest));
 
 		TestUtils.assertForEachEmpty(forEachGen.apply(manifest));
 
@@ -245,7 +236,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest 
 
 		M manifest = createUnlocked();
 
-		TestUtils.assertNPE(() -> forEachLocalGen.apply(manifest));
+		TestUtils.assertForEachNPE(forEachLocalGen.apply(manifest));
 
 		TestUtils.assertForEachEmpty(forEachLocalGen.apply(manifest));
 
@@ -379,6 +370,8 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest 
 
 		if(checkNPE) {
 			TestUtils.assertNPE(() -> setter.accept(manifest, null));
+		} else {
+			setter.accept(manifest, null);
 		}
 
 		setter.accept(manifest, value);
@@ -390,6 +383,98 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest 
 		manifest.lock();
 
 		LockableTest.assertLocked(() -> setter.accept(manifest, value));
+	}
+
+	default void assertSetter(ObjBoolConsumer<M> setter) {
+		M manifest = createUnlocked();
+
+		setter.accept(manifest, true);
+		setter.accept(manifest, false);
+
+		manifest.lock();
+
+		LockableTest.assertLocked(() -> setter.accept(manifest, true));
+	}
+
+	default <K extends Object> void assertAccumulativeAdd(BiConsumer<M, K> adder,
+			K[] illegalValues, boolean checkNPE, boolean checkDuplicate, @SuppressWarnings("unchecked") K...values) {
+		M manifest = createUnlocked();
+
+		int valCount = values.length;
+		assertTrue(valCount>2, "Insufficient test values - need more than 2");
+
+		if(checkNPE) {
+			TestUtils.assertNPE(() -> adder.accept(manifest, null));
+		}
+
+		// Test with first (n-1)th values and keep last one for testing under lock
+		for(int i=0; i<valCount-1; i++) {
+			adder.accept(manifest, values[i]);
+		}
+
+		if(checkDuplicate) {
+			ManifestTestUtils.assertManifestException(GlobalErrorCode.INVALID_INPUT, () -> adder.accept(manifest, values[0]));
+		}
+
+		if(illegalValues!=null) {
+			for(K illegalValue : illegalValues) {
+				ManifestTestUtils.assertIllegalValue(() -> adder.accept(manifest, illegalValue));
+			}
+		}
+
+		manifest.lock();
+
+		LockableTest.assertLocked(() -> adder.accept(manifest, values[valCount-1]));
+	}
+
+	default <K extends Object, C extends Collection<K>> void assertAccumulativeRemove(BiConsumer<M, K> adder, BiConsumer<M, K> remover,
+			Function<M, C> getter, boolean checkNPE, boolean checkInvalidRemove,
+					@SuppressWarnings("unchecked") K...values) {
+		M manifest = createUnlocked();
+
+		int valCount = values.length;
+		assertTrue(valCount>2, "Insufficient test values - need more than 2");
+
+		for(K value : values) {
+			adder.accept(manifest, value);
+		}
+
+		TestUtils.assertNPE(() -> remover.accept(manifest, null));
+
+		TestUtils.assertCollectionEquals(getter.apply(manifest), values);
+
+		remover.accept(manifest, values[0]);
+
+		TestUtils.assertCollectionEquals(getter.apply(manifest), Arrays.copyOfRange(values, 1, valCount));
+
+		if(checkInvalidRemove) {
+			ManifestTestUtils.assertManifestException(GlobalErrorCode.INVALID_INPUT,
+					() -> remover.accept(manifest, values[0]));
+		}
+
+		for(int i=1; i<valCount; i++) {
+			remover.accept(manifest, values[i]);
+		}
+
+		assertTrue(getter.apply(manifest).isEmpty());
+
+
+		adder.accept(manifest, values[0]);
+
+		manifest.lock();
+
+		LockableTest.assertLocked(() -> remover.accept(manifest, values[0]));
+	}
+
+	/**
+	 * Create an empty and unlocked manifest for testing.
+	 * The used {@link ManifestLocation} will report to not host templates.
+	 *
+	 * @see de.ims.icarus2.model.manifest.api.ManifestFragmentTest#createUnlocked()
+	 */
+	@Override
+	default M createUnlocked() {
+		return createUnlocked(mockManifestRegistry(), mockManifestLocation(false));
 	}
 
 	/**

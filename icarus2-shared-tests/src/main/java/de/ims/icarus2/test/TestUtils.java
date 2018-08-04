@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -138,6 +139,10 @@ public class TestUtils {
 		assertTrue(actual.isEmpty());
 	}
 
+	public static <K extends Object, A extends Consumer<? super K>> void assertForEachNPE(Consumer<A> loop) {
+		assertNPE(() -> loop.accept(null));
+	}
+
 	public static <E extends Object> void assertCollectionEquals(
 			Collection<? extends E> expected, Collection<? extends E> actual) {
 		assertEquals(expected.size(), actual.size());
@@ -164,6 +169,21 @@ public class TestUtils {
 			assertEquals(expected.get(i), actual.get(i),
 					"Mismatch at index "+i+": expected "+expected.get(i)+" - got "+actual.get(i));
 		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <E extends Enum<E>> E other(E value) {
+		Enum<E>[] values = value.getDeclaringClass().getEnumConstants();
+		assertTrue(values.length>0);
+		int pos = Arrays.binarySearch(values, value);
+		assertTrue(pos>=0);
+
+		pos++;
+		if(pos>=values.length) {
+			pos = 0;
+		}
+
+		return (E) values[pos];
 	}
 
     private static boolean isEquals(Object expected, Object actual) {

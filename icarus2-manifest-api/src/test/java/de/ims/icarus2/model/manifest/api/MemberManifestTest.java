@@ -135,9 +135,12 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 		for(ValueType valueType : ManifestTestUtils.getAvailableTestTypes()) {
 			M manifest = createUnlocked();
 			Object value = ManifestTestUtils.getTestValue(valueType);
+			Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
 
-			ManifestTestUtils.assertIllegalValue(() -> manifest.addProperty(
-					nameM, valueType, false, ManifestTestUtils.getIllegalValue(valueType)));
+			if(illegalValue!=null) {
+				ManifestTestUtils.assertIllegalValue(() -> manifest.addProperty(
+						nameM, valueType, false, illegalValue));
+			}
 
 			TestUtils.assertNPE(() -> manifest.addProperty(null, valueType, false, value));
 			TestUtils.assertNPE(() -> manifest.addProperty(name, null, false, value));
@@ -152,9 +155,9 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 			Object valueM = Collections.singleton(value);
 			Property propertyM = manifest.addProperty(nameM, valueType, true, valueM);
 			assertNotNull(propertyM);
-			assertEquals(valueType, property.getValueType());
-			assertNull(property.getOption());
-			assertEquals(valueM, property.getValue());
+			assertEquals(valueType, propertyM.getValueType());
+			assertNull(propertyM.getOption());
+			assertEquals(valueM, propertyM.getValue());
 
 			manifest.lock();
 			LockableTest.assertLocked(() -> manifest.addProperty(name+"_1", valueType, false, value));
@@ -309,31 +312,8 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testForEachProperty() {
-		M manifest = createUnlocked();
-		String name = "property123";
-
-		TestUtils.assertNPE(() -> manifest.forEachProperty(null));
-
-		TestUtils.assertForEachEmpty(manifest::forEachProperty);
-
-		Property property = mockProperty(name, ValueType.STRING, false, "test");
-		manifest.addProperty(property);
-
-		TestUtils.assertForEachUnsorted(manifest::forEachProperty, property);
-
-		if(getExpectedType().isSupportTemplating()) {
-			M template = createTemplate();
-			template.addProperty(property);
-			M derived = createDerived(template);
-
-			TestUtils.assertForEachUnsorted(derived::forEachProperty, property);
-
-			String name2 = "property123_1";
-			Property property2 = mockProperty(name2, ValueType.STRING, false, "test");
-			derived.addProperty(property2);
-
-			TestUtils.assertForEachUnsorted(derived::forEachProperty, property, property2);
-		}
+		assertDerivativeForEach(mockProperty("property1"), mockProperty("property2"),
+				m -> m::forEachProperty, MemberManifest::addProperty);
 	}
 
 	/**
@@ -341,31 +321,8 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testForEachLocalProperty() {
-		M manifest = createUnlocked();
-		String name = "property123";
-
-		TestUtils.assertNPE(() -> manifest.forEachLocalProperty(null));
-
-		TestUtils.assertForEachEmpty(manifest::forEachLocalProperty);
-
-		Property property = mockProperty(name, ValueType.STRING, false, "test");
-		manifest.addProperty(property);
-
-		TestUtils.assertForEachUnsorted(manifest::forEachLocalProperty, property);
-
-		if(getExpectedType().isSupportTemplating()) {
-			M template = createTemplate();
-			template.addProperty(property);
-			M derived = createDerived(template);
-
-			TestUtils.assertForEachEmpty(derived::forEachLocalProperty);
-
-			String name2 = "property123_1";
-			Property property2 = mockProperty(name2, ValueType.STRING, false, "test");
-			derived.addProperty(property2);
-
-			TestUtils.assertForEachUnsorted(derived::forEachLocalProperty, property2);
-		}
+		assertDerivativeForEachLocal(mockProperty("property1"), mockProperty("property2"),
+				m -> m::forEachLocalProperty, MemberManifest::addProperty);
 	}
 
 	/**
@@ -373,31 +330,8 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testIsLocalProperty() {
-		M manifest = createUnlocked();
-		String name = "property123";
-
-		TestUtils.assertNPE(() -> manifest.isLocalProperty(null));
-
-		assertFalse(manifest.isLocalProperty(name));
-
-		Property property = mockProperty(name, ValueType.STRING, false, "test");
-		manifest.addProperty(property);
-
-		assertTrue(manifest.isLocalProperty(name));
-
-		if(getExpectedType().isSupportTemplating()) {
-			M template = createTemplate();
-			template.addProperty(property);
-			M derived = createDerived(template);
-
-			assertFalse(derived.isLocalProperty(name));
-
-			String name2 = "property123_1";
-			Property property2 = mockProperty(name2, ValueType.STRING, false, "test");
-			derived.addProperty(property2);
-
-			assertTrue(derived.isLocalProperty(name2));
-		}
+		assertDerivativeAccumulativeIsLocal(mockProperty("property1"), mockProperty("property2"),
+				(m, p) -> m.isLocalProperty(p.getName()), MemberManifest::addProperty);
 	}
 
 	/**
@@ -405,30 +339,8 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testGetProperties() {
-		M manifest = createUnlocked();
-		String name = "property123";
-
-		assertTrue(manifest.getProperties().isEmpty());
-
-		Property property = mockProperty(name, ValueType.STRING, false, "test");
-		manifest.addProperty(property);
-
-		assertTrue(manifest.getProperties().contains(property));
-
-		if(getExpectedType().isSupportTemplating()) {
-			M template = createTemplate();
-			template.addProperty(property);
-			M derived = createDerived(template);
-
-			assertTrue(derived.getProperties().contains(property));
-
-			String name2 = "property123_1";
-			Property property2 = mockProperty(name2, ValueType.STRING, false, "test");
-			derived.addProperty(property2);
-
-			assertFalse(template.getProperties().contains(property2));
-			assertTrue(derived.getProperties().contains(property2));
-		}
+		assertDerivativeAccumulativeGetter(mockProperty("property1"), mockProperty("property2"),
+				MemberManifest::getProperties, MemberManifest::addProperty);
 	}
 
 	/**
@@ -436,30 +348,8 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testGetLocalProperties() {
-		M manifest = createUnlocked();
-		String name = "property123";
-
-		assertTrue(manifest.getLocalProperties().isEmpty());
-
-		Property property = mockProperty(name, ValueType.STRING, false, "test");
-		manifest.addProperty(property);
-
-		assertTrue(manifest.getLocalProperties().contains(property));
-
-		if(getExpectedType().isSupportTemplating()) {
-			M template = createTemplate();
-			template.addProperty(property);
-			M derived = createDerived(template);
-
-			assertTrue(derived.getLocalProperties().isEmpty());
-
-			String name2 = "property123_1";
-			Property property2 = mockProperty(name2, ValueType.STRING, false, "test");
-			derived.addProperty(property2);
-
-			assertFalse(template.getLocalProperties().contains(property2));
-			assertTrue(derived.getLocalProperties().contains(property2));
-		}
+		assertDerivativeAccumulativeLocalGetter(mockProperty("property1"), mockProperty("property2"),
+				MemberManifest::getLocalProperties, MemberManifest::addProperty);
 	}
 
 	public static void assertPropertiesAsOptions(Options options, Property...properties) {
@@ -524,7 +414,9 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 
 			manifest.addProperty(name, valueType, false, value);
 
-			ManifestTestUtils.assertIllegalValue(() -> manifest.setPropertyValue(name, illegalValue));
+			if(illegalValue!=null) {
+				ManifestTestUtils.assertIllegalValue(() -> manifest.setPropertyValue(name, illegalValue));
+			}
 
 			manifest.lock();
 			LockableTest.assertLocked(() -> manifest.setPropertyValue(name, value2));
@@ -547,15 +439,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testSetOptionsManifest() {
-		M manifest = createUnlocked();
-
-		manifest.setOptionsManifest(null);
-
-		OptionsManifest optionsManifest = mock(OptionsManifest.class);
-		manifest.setOptionsManifest(optionsManifest);
-
-		manifest.lock();
-		LockableTest.assertLocked(() -> manifest.setOptionsManifest(optionsManifest));
+		assertSetter(MemberManifest::setOptionsManifest, mock(OptionsManifest.class), false);
 	}
 
 }
