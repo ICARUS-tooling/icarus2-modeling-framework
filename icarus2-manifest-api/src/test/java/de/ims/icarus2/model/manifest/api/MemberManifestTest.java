@@ -19,6 +19,9 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestLocation;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestRegistry;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -45,6 +48,52 @@ import de.ims.icarus2.util.Options;
  */
 public interface MemberManifestTest<M extends MemberManifest> extends ModifiableIdentityTest,
 	CategorizableTest, DocumentableTest, ManifestTest<M>, EmbeddedTest {
+
+
+	M createHosted(ManifestLocation manifestLocation, ManifestRegistry registry, TypedManifest host);
+
+	@Test
+	default void testConstructorManifestLocationManifestRegistryHost() throws Exception {
+
+		for(ManifestType manifestType : getAllowedHostTypes()) {
+
+			ManifestLocation location = mockManifestLocation(false);
+			ManifestRegistry registry = mockManifestRegistry();
+			TypedManifest host = mockTypedManifest(manifestType);
+
+			M manifest = create(
+					new Class<?>[]{ManifestLocation.class, ManifestRegistry.class, manifestType.getBaseClass()},
+					location, registry, host);
+
+			assertSame(location, manifest.getManifestLocation());
+			assertSame(registry, manifest.getRegistry());
+			assertSame(host, manifest.getHost());
+		}
+	}
+
+	@Test
+	default void testConstructorHost() throws Exception {
+
+		for(ManifestType manifestType : getAllowedHostTypes()) {
+
+			TypedManifest host = mockTypedManifest(manifestType);
+
+			M manifest = create(
+					new Class<?>[]{manifestType.getBaseClass()}, host);
+
+			assertSame(host, manifest.getHost());
+			assertNotNull(manifest.getRegistry());
+			assertNotNull(manifest.getManifestLocation());
+		}
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#createEmbedded(de.ims.icarus2.model.manifest.api.TypedManifest)
+	 */
+	@Override
+	default Embedded createEmbedded(TypedManifest host) {
+		return createHosted(mockManifestLocation(false), mockManifestRegistry(), host);
+	}
 
 	@Override
 	default M createUnlocked() {

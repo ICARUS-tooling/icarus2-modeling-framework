@@ -30,7 +30,7 @@ import de.ims.icarus2.test.TestUtils;
  * @author Markus Gärtner
  *
  */
-public interface ContainerManifestTest extends MemberManifestTest<ContainerManifest> {
+public interface ContainerManifestTest<M extends ContainerManifest> extends MemberManifestTest<M> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifest#getLayerManifest()}.
@@ -81,9 +81,11 @@ public interface ContainerManifestTest extends MemberManifestTest<ContainerManif
 	 */
 	@Test
 	default void testForEachActiveContainerFlag() {
-		assertDerivativeForEach(ContainerFlag.NON_STATIC, ContainerFlag.DUPLICATES,
-				m -> m::forEachActiveContainerFlag,
-				(m,flag) -> m.setContainerFlag(flag, true));
+		for(ContainerFlag flag : ContainerFlag.values()) {
+			assertDerivativeForEach(flag, TestUtils.other(flag),
+					m -> m::forEachActiveContainerFlag,
+					(m,f) -> m.setContainerFlag(f, true));
+		}
 	}
 
 	/**
@@ -91,9 +93,11 @@ public interface ContainerManifestTest extends MemberManifestTest<ContainerManif
 	 */
 	@Test
 	default void testForEachActiveLocalContainerFlag() {
-		assertDerivativeForEachLocal(ContainerFlag.NON_STATIC, ContainerFlag.DUPLICATES,
-				m -> m::forEachActiveLocalContainerFlag,
-				(m,flag) -> m.setContainerFlag(flag, true));
+		for(ContainerFlag flag : ContainerFlag.values()) {
+			assertDerivativeForEachLocal(flag, TestUtils.other(flag),
+					m -> m::forEachActiveLocalContainerFlag,
+					(m,f) -> m.setContainerFlag(f, true));
+		}
 	}
 
 	/**
@@ -101,9 +105,11 @@ public interface ContainerManifestTest extends MemberManifestTest<ContainerManif
 	 */
 	@Test
 	default void testGetActiveContainerFlags() {
-		assertDerivativeAccumulativeGetter(ContainerFlag.NON_STATIC, ContainerFlag.DUPLICATES,
-				ContainerManifest::getActiveContainerFlags,
-				(m,flag) -> m.setContainerFlag(flag, true));
+		for(ContainerFlag flag : ContainerFlag.values()) {
+			assertDerivativeAccumulativeGetter(flag, TestUtils.other(flag),
+					ContainerManifest::getActiveContainerFlags,
+					(m,f) -> m.setContainerFlag(f, true));
+		}
 	}
 
 	/**
@@ -111,9 +117,11 @@ public interface ContainerManifestTest extends MemberManifestTest<ContainerManif
 	 */
 	@Test
 	default void testGetActiveLocalContainerFlags() {
-		assertDerivativeAccumulativeLocalGetter(ContainerFlag.NON_STATIC, ContainerFlag.DUPLICATES,
-				ContainerManifest::getActiveLocalContainerFlags,
-				(m,flag) -> m.setContainerFlag(flag, true));
+		for(ContainerFlag flag : ContainerFlag.values()) {
+			assertDerivativeAccumulativeLocalGetter(flag, TestUtils.other(flag),
+					ContainerManifest::getActiveLocalContainerFlags,
+					(m,f) -> m.setContainerFlag(f, true));
+		}
 	}
 
 	/**

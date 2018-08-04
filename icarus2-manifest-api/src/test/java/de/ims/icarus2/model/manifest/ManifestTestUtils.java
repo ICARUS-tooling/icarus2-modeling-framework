@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.Mockito;
@@ -318,5 +319,20 @@ public class ManifestTestUtils {
 	public static void assertManifestException(ErrorCode errorCode, Executable executable) {
 		ManifestException exception = assertThrows(ManifestException.class, executable);
 		assertEquals(errorCode, exception.getErrorCode());
+	}
+
+	@SuppressWarnings("boxing")
+	public static ManifestLocation mockManifestLocation(boolean template) {
+		ManifestLocation location = mock(ManifestLocation.class);
+		when(location.isTemplate()).thenReturn(template);
+		return location;
+	}
+
+	@SuppressWarnings("boxing")
+	public static ManifestRegistry mockManifestRegistry() {
+		ManifestRegistry registry = mock(ManifestRegistry.class);
+		AtomicInteger uuidGen = new AtomicInteger(0);
+		when(registry.createUID()).then(invocation -> uuidGen.incrementAndGet());
+		return registry;
 	}
 }

@@ -19,22 +19,26 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
 import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.test.TestUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface StructureManifestTest extends ContainerManifestTest {
+public interface StructureManifestTest<M extends StructureManifest> extends ContainerManifestTest<M> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.StructureManifest#getStructureType()}.
 	 */
 	@Test
 	default void testGetStructureType() {
-		fail("Not yet implemented");
+		for(StructureType structureType : StructureType.values()) {
+			assertDerivativeGetter(structureType, TestUtils.other(structureType),
+					StructureManifest.DEFAULT_STRUCTURE_TYPE,
+					StructureManifest::getStructureType, StructureManifest::setStructureType);
+		}
 	}
 
 	/**
@@ -42,7 +46,10 @@ public interface StructureManifestTest extends ContainerManifestTest {
 	 */
 	@Test
 	default void testIsLocalStructureType() {
-		fail("Not yet implemented");
+		for(StructureType structureType : StructureType.values()) {
+			assertDerivativeIsLocal(structureType, TestUtils.other(structureType),
+					StructureManifest::isLocalStructureType, StructureManifest::setStructureType);
+		}
 	}
 
 	/**
@@ -50,7 +57,11 @@ public interface StructureManifestTest extends ContainerManifestTest {
 	 */
 	@Test
 	default void testIsStructureFlagSet() {
-		fail("Not yet implemented");
+		for(StructureFlag flag : StructureFlag.values()) {
+			assertDerivativeFlagGetter(Boolean.FALSE,
+					m -> m.isStructureFlagSet(flag),
+					(m, active) -> m.setStructureFlag(flag, active));
+		}
 	}
 
 	/**
@@ -58,7 +69,11 @@ public interface StructureManifestTest extends ContainerManifestTest {
 	 */
 	@Test
 	default void testForEachActiveStructureFlag() {
-		fail("Not yet implemented");
+		for(StructureFlag flag : StructureFlag.values()) {
+			assertDerivativeForEach(flag, TestUtils.other(flag),
+					m -> m::forEachActiveStructureFlag,
+					(m,f) -> m.setStructureFlag(f, true));
+		}
 	}
 
 	/**
@@ -66,7 +81,11 @@ public interface StructureManifestTest extends ContainerManifestTest {
 	 */
 	@Test
 	default void testForEachActiveLocalStructureFlag() {
-		fail("Not yet implemented");
+		for(StructureFlag flag : StructureFlag.values()) {
+			assertDerivativeForEachLocal(flag, TestUtils.other(flag),
+					m -> m::forEachActiveLocalStructureFlag,
+					(m,f) -> m.setStructureFlag(f, true));
+		}
 	}
 
 	/**
@@ -74,7 +93,11 @@ public interface StructureManifestTest extends ContainerManifestTest {
 	 */
 	@Test
 	default void testGetActiveStructureFlags() {
-		fail("Not yet implemented");
+		for(StructureFlag flag : StructureFlag.values()) {
+			assertDerivativeAccumulativeGetter(flag, TestUtils.other(flag),
+					StructureManifest::getActiveStructureFlags,
+					(m,f) -> m.setStructureFlag(f, true));
+		}
 	}
 
 	/**
@@ -82,7 +105,11 @@ public interface StructureManifestTest extends ContainerManifestTest {
 	 */
 	@Test
 	default void testGetActiveLocalStructureFlags() {
-		fail("Not yet implemented");
+		for(StructureFlag flag : StructureFlag.values()) {
+			assertDerivativeAccumulativeLocalGetter(flag, TestUtils.other(flag),
+					StructureManifest::getActiveLocalStructureFlags,
+					(m,f) -> m.setStructureFlag(f, true));
+		}
 	}
 
 	/**
@@ -90,7 +117,9 @@ public interface StructureManifestTest extends ContainerManifestTest {
 	 */
 	@Test
 	default void testSetStructureType() {
-		fail("Not yet implemented");
+		for(StructureType structureType : StructureType.values()) {
+			assertSetter(StructureManifest::setStructureType, structureType, true);
+		}
 	}
 
 	/**
@@ -98,7 +127,9 @@ public interface StructureManifestTest extends ContainerManifestTest {
 	 */
 	@Test
 	default void testSetStructureFlag() {
-		fail("Not yet implemented");
+		for(StructureFlag flag : StructureFlag.values()) {
+			assertSetter((m, active) -> m.setStructureFlag(flag, active));
+		}
 	}
 
 }

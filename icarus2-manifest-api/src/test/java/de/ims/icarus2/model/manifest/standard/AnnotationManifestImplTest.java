@@ -3,21 +3,14 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static org.junit.jupiter.api.Assertions.assertSame;
-
 import java.util.Collections;
 import java.util.Set;
 
-import org.junit.jupiter.api.Test;
-
-import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifestTest;
-import de.ims.icarus2.model.manifest.api.Embedded;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestTest;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 
@@ -28,41 +21,27 @@ import de.ims.icarus2.model.manifest.api.TypedManifest;
 class AnnotationManifestImplTest implements AnnotationManifestTest {
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.standard.AnnotationManifestImpl#AnnotationManifestImpl(de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.AnnotationLayerManifest)}.
-	 */
-	@Test
-	void testAnnotationManifestImplManifestLocationManifestRegistryAnnotationLayerManifest() {
-		AnnotationLayerManifest layerManifest = ManifestTestUtils.mockTypedManifest(ManifestType.ANNOTATION_LAYER_MANIFEST);
-		ManifestLocation manifestLocation = ManifestTest.mockManifestLocation(false);
-		ManifestRegistry registry = ManifestTest.mockManifestRegistry();
-
-		AnnotationManifest manifest = new AnnotationManifestImpl(manifestLocation, registry, layerManifest);
-
-		assertSame(layerManifest, manifest.getHost());
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.standard.AnnotationManifestImpl#AnnotationManifestImpl(de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry)}.
-	 */
-	@Test
-	void testAnnotationManifestImplManifestLocationManifestRegistry() {
-		createUnlocked();
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.standard.AnnotationManifestImpl#AnnotationManifestImpl(de.ims.icarus2.model.manifest.api.AnnotationLayerManifest)}.
-	 */
-	@Test
-	void testAnnotationManifestImplAnnotationLayerManifest() {
-		AnnotationLayerManifest layerManifest = ManifestTestUtils.mockTypedManifest(ManifestType.ANNOTATION_LAYER_MANIFEST);
-		new AnnotationManifestImpl(layerManifest);
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.ManifestTest#createUnlocked(de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.ManifestLocation)
+	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public AnnotationManifest createUnlocked(ManifestRegistry registry, ManifestLocation location) {
+	public Class<? extends AnnotationManifest> getTestTargetClass() {
+		return AnnotationManifestImpl.class;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.MemberManifestTest#createHosted(de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.TypedManifest)
+	 */
+	@Override
+	public AnnotationManifest createHosted(ManifestLocation manifestLocation, ManifestRegistry registry,
+			TypedManifest host) {
+		return new AnnotationManifestImpl(manifestLocation, registry, (AnnotationLayerManifest) host);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.ManifestTest#createUnlocked(de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry)
+	 */
+	@Override
+	public AnnotationManifest createUnlocked(ManifestLocation location, ManifestRegistry registry) {
 		return new AnnotationManifestImpl(location, registry);
 	}
 
@@ -80,14 +59,6 @@ class AnnotationManifestImplTest implements AnnotationManifestTest {
 	@Override
 	public Set<ManifestType> getAllowedHostTypes() {
 		return Collections.singleton(ManifestType.ANNOTATION_LAYER_MANIFEST);
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#createEmbedded(de.ims.icarus2.model.manifest.api.TypedManifest)
-	 */
-	@Override
-	public Embedded createEmbedded(TypedManifest host) {
-		return new AnnotationManifestImpl((AnnotationLayerManifest) host);
 	}
 
 }

@@ -87,7 +87,7 @@ public class StructureManifestImpl extends ContainerManifestImpl implements Stru
 		}
 
 		if(result==null) {
-			result = StructureType.SET;
+			result = DEFAULT_STRUCTURE_TYPE;
 		}
 
 		return result;

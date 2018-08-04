@@ -17,7 +17,7 @@ import de.ims.icarus2.util.data.ContentType;
  * @author Markus Gärtner
  *
  */
-public interface AnnotationManifestTest extends MemberManifestTest<AnnotationManifest> {
+public interface AnnotationManifestTest<M extends AnnotationManifest> extends MemberManifestTest<M> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationManifest#getLayerManifest()}.

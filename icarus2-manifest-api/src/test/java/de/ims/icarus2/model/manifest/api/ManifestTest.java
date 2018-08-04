@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestLocation;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestRegistry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -30,7 +32,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
@@ -43,6 +44,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
+import de.ims.icarus2.test.GenericTest;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.util.function.ObjBoolConsumer;
 
@@ -50,24 +52,20 @@ import de.ims.icarus2.util.function.ObjBoolConsumer;
  * @author Markus Gärtner
  *
  */
-public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest {
+public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest, GenericTest<M> {
 
-	@SuppressWarnings("boxing")
-	public static ManifestLocation mockManifestLocation(boolean template) {
-		ManifestLocation location = mock(ManifestLocation.class);
-		when(location.isTemplate()).thenReturn(template);
-		return location;
+	M createUnlocked(ManifestLocation location, ManifestRegistry registry);
+
+	@Test
+	default void testConstructorManifestLocationManifestRegistry() throws Exception {
+		ManifestLocation location = mockManifestLocation(true);
+		ManifestRegistry registry = mockManifestRegistry();
+
+		M manifest = create(new Class<?>[]{ManifestLocation.class, ManifestRegistry.class}, location, registry);
+
+		assertSame(location, manifest.getManifestLocation());
+		assertSame(registry, manifest.getRegistry());
 	}
-
-	@SuppressWarnings("boxing")
-	public static ManifestRegistry mockManifestRegistry() {
-		ManifestRegistry registry = mock(ManifestRegistry.class);
-		AtomicInteger uuidGen = new AtomicInteger(0);
-		when(registry.createUID()).then(invocation -> uuidGen.incrementAndGet());
-		return registry;
-	}
-
-	M createUnlocked(ManifestRegistry registry, ManifestLocation location);
 
 	/**
 	 * @see #assertDerivativeGetter(Class, Object, Object, Object, Function, BiConsumer)
@@ -474,7 +472,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest 
 	 */
 	@Override
 	default M createUnlocked() {
-		return createUnlocked(mockManifestRegistry(), mockManifestLocation(false));
+		return createUnlocked(ManifestTestUtils.mockManifestLocation(false), ManifestTestUtils.mockManifestRegistry());
 	}
 
 	/**
@@ -489,7 +487,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest 
 		ManifestRegistry registry = mock(ManifestRegistry.class);
 
 		String id = "templateId";
-		M template = createUnlocked(registry, mockManifestLocation(true));
+		M template = createUnlocked(ManifestTestUtils.mockManifestLocation(true), registry);
 		template.setIsTemplate(true);
 		template.setId(id);
 
@@ -513,7 +511,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest 
 		assertTrue(template.getRegistry().hasTemplate(template.getId()));
 		assertSame(template, template.getRegistry().getTemplate(template.getId()));
 
-		M derived = createUnlocked(template.getRegistry(), mockManifestLocation(false));
+		M derived = createUnlocked(ManifestTestUtils.mockManifestLocation(false), template.getRegistry());
 		derived.setTemplateId(template.getId());
 
 		assertSame(template, derived.getTemplate());
@@ -632,7 +630,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest 
 	 */
 	@Test
 	default void testSetIsTemplate() {
-		Manifest manifest = createUnlocked(mock(ManifestRegistry.class), mockManifestLocation(true));
+		Manifest manifest = createUnlocked(ManifestTestUtils.mockManifestLocation(true), mock(ManifestRegistry.class));
 
 		manifest.setIsTemplate(true);
 		assertTrue(manifest.isTemplate());

@@ -34,7 +34,7 @@ public interface ForeignImplementationManifestTest {
 	 */
 	@Test
 	default void testGetImplementationManifest() {
-		fail("Not yet implemented");
+		assert
 	}
 
 	/**

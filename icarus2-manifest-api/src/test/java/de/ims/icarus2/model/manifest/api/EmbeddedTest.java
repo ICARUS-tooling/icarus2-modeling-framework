@@ -45,14 +45,16 @@ public interface EmbeddedTest {
 	 * Create the {@link Embedded} instance under test with the specified host.
 	 *
 	 * @return
+	 * @throws Exception
 	 */
-	Embedded createEmbedded(TypedManifest host);
+	Embedded createEmbedded(TypedManifest host) throws Exception;
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.Embedded#getHost()}.
+	 * @throws Exception
 	 */
 	@Test
-	default void testGetHost() {
+	default void testGetHost() throws Exception {
 		Set<ManifestType> allowedHostTypes = getAllowedHostTypes();
 
 		for(ManifestType hostType : allowedHostTypes) {
@@ -62,5 +64,4 @@ public interface EmbeddedTest {
 			assertSame(host, embedded.getHost());
 		}
 	}
-
 }

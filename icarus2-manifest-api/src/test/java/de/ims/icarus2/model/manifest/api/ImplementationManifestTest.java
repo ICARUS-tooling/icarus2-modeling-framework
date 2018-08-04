@@ -28,15 +28,7 @@ import de.ims.icarus2.test.TestUtils;
  * @author Markus Gärtner
  *
  */
-public interface ImplementationManifestTest extends MemberManifestTest<ImplementationManifest> {
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ImplementationManifest#getHostManifest()}.
-	 */
-	@Test
-	default void testGetHostManifest() {
-		testGetHost();
-	}
+public interface ImplementationManifestTest<M extends ImplementationManifest> extends MemberManifestTest<M> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ImplementationManifest#getSourceType()}.
