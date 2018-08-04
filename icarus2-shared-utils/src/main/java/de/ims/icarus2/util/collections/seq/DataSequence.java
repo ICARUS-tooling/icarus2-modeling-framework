@@ -89,11 +89,9 @@ public interface DataSequence<E extends Object> extends Iterable<E> {
 	default List<E> getEntries() {
 		int size = IcarusUtils.ensureIntegerValueRange(entryCount());
 
-		LazyCollection<E> result = LazyCollection.lazyList(size);
-
-		forEachEntry(result);
-
-		return result.getAsList();
+		return LazyCollection.<E>lazyList(size)
+				.addFromForEach(this::forEachEntry)
+				.getAsList();
 	}
 
 	/**

@@ -16,9 +16,11 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.Set;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.eval.Expression;
 
 /**
@@ -28,7 +30,7 @@ import de.ims.icarus2.util.eval.Expression;
  * <p>
  * Values in this collection can have any of the following types:
  * <ul>
- * <li>{@link Expression} relying on the environment the set is used in to generate the final values</li>
+ * <li>An {@link Expression} relying on the environment this set is used in to generate the final values</li>
  * <li>A wrapper object around a primitive value</li>
  * <li>The value as an object</li>
  * </ul>
@@ -44,11 +46,11 @@ public interface ValueSet extends Lockable, TypedManifest {
 
 	void forEachValue(Consumer<? super Object> action);
 
-//	int getIntegerValueAt(int index);
-//	long getLongValueAt(int index);
-//	float getFloatValueAt(int index);
-//	double getDoubleValueAt(int index);
-//	boolean getBooleanValueAt(int index);
+	default Set<Object> getValues() {
+		return LazyCollection.lazySet(valueCount())
+				.addFromForEach(this::forEachValue)
+				.getAsSet();
+	}
 
 	/**
 	 * Returns the type of this set

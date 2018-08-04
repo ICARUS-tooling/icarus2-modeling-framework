@@ -81,42 +81,54 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 		add(t);
 	}
 
-	public void forEach(Consumer<? super E> action) {
+	public LazyCollection<E> forEach(Consumer<? super E> action) {
 		Collection<E> c = buffer;
 		if(c!=null) {
 			c.forEach(action);
 		}
+
+		return this;
 	}
 
-	public void clear() {
+	public LazyCollection<E> clear() {
 		Collection<E> c = buffer;
 		if(c!=null) {
 			c.clear();
 		}
+
+		return this;
 	}
 
-	public void add(E item) {
-		if(item==null) {
-			return;
+	public LazyCollection<E> add(E item) {
+		if(item!=null) {
+
+			if(buffer==null) {
+				buffer = supplier.get();
+			}
+
+			buffer.add(item);
 		}
 
-		if(buffer==null) {
-			buffer = supplier.get();
-		}
-
-		buffer.add(item);
+		return this;
 	}
 
-	public void addAll(Collection<? extends E> items) {
-		if(items==null || items.isEmpty()) {
-			return;
+	public LazyCollection<E> addAll(Collection<? extends E> items) {
+		if(items!=null && !items.isEmpty()) {
+			if(buffer==null) {
+				buffer = supplier.get();
+			}
+
+			buffer.addAll(items);
 		}
 
-		if(buffer==null) {
-			buffer = supplier.get();
-		}
+		return this;
+	}
 
-		buffer.addAll(items);
+	@SuppressWarnings("unchecked")
+	public <C extends Consumer<? super E>> LazyCollection<E> addFromForEach(Consumer<C> forEach) {
+		Consumer<E> action = this::add;
+		forEach.accept((C)action);
+		return this;
 	}
 
 	public <C extends Collection<E>> C get() {

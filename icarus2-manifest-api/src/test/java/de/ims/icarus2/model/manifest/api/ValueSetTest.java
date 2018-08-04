@@ -23,18 +23,21 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.types.ValueType;
+
 /**
  * @author Markus Gärtner
  *
  */
 public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, TypedManifestTest<V> {
 
+	V createWithType(ValueType valueType);
+
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#getManifestType()}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#getValues()}.
 	 */
-	@Override
 	@Test
-	default void testGetManifestType() {
+	default void testValues() {
 		fail("Not yet implemented");
 	}
 

@@ -61,19 +61,15 @@ public interface DataSet<E extends Object> extends Iterable<E> {
 	}
 
 	default Set<E> toSet() {
-		LazyCollection<E> result = LazyCollection.lazySet(entryCount());
-
-		forEachEntry(result);
-
-		return result.getAsSet();
+		return LazyCollection.<E>lazySet(entryCount())
+				.addFromForEach(this::forEachEntry)
+				.getAsSet();
 	}
 
 	default List<E> toList() {
-		LazyCollection<E> result = LazyCollection.lazyList(entryCount());
-
-		forEachEntry(result);
-
-		return result.getAsList();
+		return LazyCollection.<E>lazyList(entryCount())
+				.addFromForEach(this::forEachEntry)
+				.getAsList();
 	}
 
 	default Object[] toArray() {
