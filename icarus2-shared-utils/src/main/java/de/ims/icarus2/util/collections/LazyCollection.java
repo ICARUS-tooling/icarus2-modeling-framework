@@ -25,6 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
@@ -99,14 +100,21 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 		return this;
 	}
 
+	protected void ensureBuffer() {
+		if(buffer==null) {
+			buffer = supplier.get();
+		}
+	}
+
+	protected void addExpectingBuffer(E item) {
+		buffer.add(item);
+	}
+
 	public LazyCollection<E> add(E item) {
 		if(item!=null) {
+			ensureBuffer();
 
-			if(buffer==null) {
-				buffer = supplier.get();
-			}
-
-			buffer.add(item);
+			addExpectingBuffer(item);
 		}
 
 		return this;
@@ -114,9 +122,7 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 
 	public LazyCollection<E> addAll(Collection<? extends E> items) {
 		if(items!=null && !items.isEmpty()) {
-			if(buffer==null) {
-				buffer = supplier.get();
-			}
+			ensureBuffer();
 
 			buffer.addAll(items);
 		}
@@ -124,9 +130,29 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 		return this;
 	}
 
+	public <K extends Object> LazyCollection<E> addAll(Collection<? extends K> items, Function<K, E> transform) {
+		if(items!=null && !items.isEmpty()) {
+			ensureBuffer();
+
+			items.forEach(val -> addExpectingBuffer(transform.apply(val)));
+		}
+
+		return this;
+	}
+
 	@SuppressWarnings("unchecked")
 	public <C extends Consumer<? super E>> LazyCollection<E> addFromForEach(Consumer<C> forEach) {
-		Consumer<E> action = this::add;
+		ensureBuffer();
+		Consumer<E> action = this::addExpectingBuffer;
+		forEach.accept((C)action);
+		return this;
+	}
+
+	@SuppressWarnings("unchecked")
+	public <K extends Object, C extends Consumer<? super K>> LazyCollection<E> addFromForEach(
+			Consumer<C> forEach, Function<K, E> transform) {
+		ensureBuffer();
+		Consumer<K> action = val -> addExpectingBuffer(transform.apply(val));
 		forEach.accept((C)action);
 		return this;
 	}

@@ -155,7 +155,7 @@ public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements 
 		requireNonNull(valueLayerId);
 
 		checkAllowsTargetLayer();
-		TargetLayerManifest manifest = this.new TargetLayerManifestImpl(valueLayerId);
+		TargetLayerManifest manifest = createTargetLayerManifest(valueLayerId);
 		valueManifest = manifest;
 		return manifest;
 	}

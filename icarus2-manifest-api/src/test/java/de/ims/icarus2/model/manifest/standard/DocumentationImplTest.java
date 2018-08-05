@@ -32,7 +32,7 @@ import de.ims.icarus2.model.manifest.api.DocumentationTest;
  * @author Markus Gärtner
  *
  */
-class DocumentationImplTest implements DocumentationTest {
+class DocumentationImplTest implements DocumentationTest<Documentation> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.standard.DocumentationImpl#DocumentationImpl()}.

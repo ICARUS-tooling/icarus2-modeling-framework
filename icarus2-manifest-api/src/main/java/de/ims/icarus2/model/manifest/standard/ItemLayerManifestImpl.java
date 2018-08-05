@@ -209,7 +209,7 @@ public class ItemLayerManifestImpl extends AbstractLayerManifest<ItemLayerManife
 		checkAllowsTargetLayer();
 		requireNonNull(boundaryLayerId);
 
-		TargetLayerManifest manifest = new TargetLayerManifestImpl(boundaryLayerId);
+		TargetLayerManifest manifest = createTargetLayerManifest(boundaryLayerId);
 		boundaryLayerManifest = manifest;
 		return manifest;
 	}
@@ -250,7 +250,7 @@ public class ItemLayerManifestImpl extends AbstractLayerManifest<ItemLayerManife
 		checkAllowsTargetLayer();
 		requireNonNull(foundationLayerId);
 
-		TargetLayerManifest manifest = new TargetLayerManifestImpl(foundationLayerId);
+		TargetLayerManifest manifest = createTargetLayerManifest(foundationLayerId);
 		foundationLayerManifest = manifest;
 		return manifest;
 	}

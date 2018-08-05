@@ -148,7 +148,7 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 		requireNonNull(baseLayerId);
 
 		checkAllowsTargetLayer();
-		TargetLayerManifest targetLayerManifest = new TargetLayerManifestImpl(baseLayerId);
+		TargetLayerManifest targetLayerManifest = createTargetLayerManifest(baseLayerId);
 		baseLayerManifests.add(targetLayerManifest);
 		return targetLayerManifest;
 	}
@@ -173,6 +173,18 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 		}
 
 		throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "No base layer manifest defined for id: "+baseLayerId);
+	}
+
+	protected Link<LayerManifest> createLayerLink(String id) {
+		return new GlobalLayerLink(id);
+	}
+
+	protected Link<PrerequisiteManifest> createPrerequisiteLink(String id) {
+		return new PrerequisiteLink(id);
+	}
+
+	protected TargetLayerManifest createTargetLayerManifest(String id) {
+		return new TargetLayerManifestImpl(id);
 	}
 
 	protected class GlobalLayerLink extends Link<LayerManifest> {
@@ -216,12 +228,12 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 
 	public class TargetLayerManifestImpl implements TargetLayerManifest {
 
-		private GlobalLayerLink resolvedLayer;
-		private PrerequisiteLink prerequisite;
+		private Link<LayerManifest> resolvedLayer;
+		private Link<PrerequisiteManifest> prerequisite;
 
 		public TargetLayerManifestImpl(String targetId) {
-			resolvedLayer = new GlobalLayerLink(targetId);
-			prerequisite = new PrerequisiteLink(targetId);
+			resolvedLayer = createLayerLink(targetId);
+			prerequisite = createPrerequisiteLink(targetId);
 		}
 
 		/**

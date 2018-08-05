@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.getOrMockManifestLocation;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.getOrMockManifestRegistry;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestLocation;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestRegistry;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
@@ -53,14 +55,21 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 
 	M createHosted(ManifestLocation manifestLocation, ManifestRegistry registry, TypedManifest host);
 
-	@Test
-	default void testConstructorManifestLocationManifestRegistryHost() throws Exception {
+	/**
+	 * Attempts to call a triple argument constructor with mocks of all
+	 * the {@link #getAllowedHostTypes() allowed host types}. The constructor
+	 * call has the following signature: <br>
+	 * ({@link ManifestLocation}, {@link ManifestRegistry}, {@code mockedHost})
+	 *
+	 * @throws Exception
+	 */
+	default void assertConstructorManifestLocationManifestRegistryHost() throws Exception {
 
 		for(ManifestType manifestType : getAllowedHostTypes()) {
 
-			ManifestLocation location = mockManifestLocation(false);
-			ManifestRegistry registry = mockManifestRegistry();
 			TypedManifest host = mockTypedManifest(manifestType);
+			ManifestLocation location = getOrMockManifestLocation(host, false);
+			ManifestRegistry registry = getOrMockManifestRegistry(host);
 
 			M manifest = create(
 					new Class<?>[]{ManifestLocation.class, ManifestRegistry.class, manifestType.getBaseClass()},
@@ -72,8 +81,33 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 		}
 	}
 
-	@Test
-	default void testConstructorHost() throws Exception {
+	@SuppressWarnings("unchecked")
+	default void assertConstructorManifestLocationManifestRegistryHost(
+			Class<? extends TypedManifest>...hostClasses) throws Exception {
+
+		for(Class<? extends TypedManifest> hostClass : hostClasses) {
+
+			TypedManifest host = mockTypedManifest(hostClass);
+			ManifestLocation location = getOrMockManifestLocation(host, false);
+			ManifestRegistry registry = getOrMockManifestRegistry(host);
+
+			M manifest = create(
+					new Class<?>[]{ManifestLocation.class, ManifestRegistry.class, hostClass},
+					location, registry, host);
+
+			assertSame(location, manifest.getManifestLocation());
+			assertSame(registry, manifest.getRegistry());
+			assertSame(host, manifest.getHost());
+		}
+	}
+
+	/**
+	 * Attempts to call a single argument constructor with mocks of all
+	 * the {@link #getAllowedHostTypes() allowed host types}.
+	 *
+	 * @throws Exception
+	 */
+	default void assertConstructorHost() throws Exception {
 
 		for(ManifestType manifestType : getAllowedHostTypes()) {
 
@@ -86,6 +120,39 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 			assertNotNull(manifest.getRegistry());
 			assertNotNull(manifest.getManifestLocation());
 		}
+	}
+
+	@SuppressWarnings("unchecked")
+	default void assertConstructorHost(Class<? extends TypedManifest>...hostClasses) throws Exception {
+
+		for(Class<? extends TypedManifest> hostClass : hostClasses) {
+
+			TypedManifest host = mockTypedManifest(hostClass);
+
+			M manifest = create(
+					new Class<?>[]{hostClass}, host);
+
+			assertSame(host, manifest.getHost());
+			assertNotNull(manifest.getRegistry());
+			assertNotNull(manifest.getManifestLocation());
+		}
+	}
+
+	/**
+	 * Calls {@link ManifestTest#testMandatoryConstructors()} and then
+	 * asserts the validity of the following constructors:
+	 *
+	 * {@link #assertConstructorHost()}
+	 * {@link #assertConstructorManifestLocationManifestRegistryHost()}
+	 *
+	 * @see de.ims.icarus2.model.manifest.api.ManifestTest#testMandatoryConstructors()
+	 */
+	@Override
+	default void testMandatoryConstructors() throws Exception {
+		ManifestTest.super.testMandatoryConstructors();
+
+		assertConstructorHost();
+		assertConstructorManifestLocationManifestRegistryHost();
 	}
 
 	/**

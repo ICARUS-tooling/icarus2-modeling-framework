@@ -23,7 +23,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.api.Documentation;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.util.lang.ClassUtils;
 
 /**
@@ -128,6 +130,9 @@ public class DocumentationImpl extends DefaultModifiableIdentity implements Docu
 	protected void addResource0(Resource resource) {
 		requireNonNull(resource);
 
+		if(resources.contains(resource))
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Resource already added: "+resource);
+
 		resources.add(resource);
 	}
 
@@ -140,6 +145,9 @@ public class DocumentationImpl extends DefaultModifiableIdentity implements Docu
 
 	protected void removeResource0(Resource resource) {
 		requireNonNull(resource);
+
+		if(!resources.contains(resource))
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Unknown resource: "+resource);
 
 		resources.remove(resource);
 	}

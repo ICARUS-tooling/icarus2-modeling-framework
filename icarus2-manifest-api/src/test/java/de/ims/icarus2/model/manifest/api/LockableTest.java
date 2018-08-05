@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
-import de.ims.icarus2.model.manifest.ManifestFrameworkTest;
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.util.function.ObjBoolConsumer;
 
 /**
@@ -95,13 +95,24 @@ public interface LockableTest<L extends Lockable> {
 		assertLockableSetter(createUnlocked(), setter, value, checkNPE, illegalValues);
 	}
 
+	@SuppressWarnings("unchecked")
 	public static <L extends Lockable, K extends Object> void assertLockableSetter(L lockable, BiConsumer<L, K> setter, K value,
+			boolean checkNPE, K...illegalValues) {
+		assertLockableSetter(lockable, setter, (K[]) new Object[] {value}, checkNPE, illegalValues);
+	}
+
+	default <K extends Object> void assertLockableSetter(BiConsumer<L, K> setter, K[] values,
 			boolean checkNPE, @SuppressWarnings("unchecked") K...illegalValues) {
-		ManifestFrameworkTest.assertSetter(lockable, setter, value, checkNPE, illegalValues);
+		assertLockableSetter(createUnlocked(), setter, values, checkNPE, illegalValues);
+	}
+
+	public static <L extends Lockable, K extends Object> void assertLockableSetter(L lockable, BiConsumer<L, K> setter, K[] values,
+			boolean checkNPE, @SuppressWarnings("unchecked") K...illegalValues) {
+		ManifestTestUtils.assertSetter(lockable, setter, values, checkNPE, illegalValues);
 
 		lockable.lock();
 
-		LockableTest.assertLocked(() -> setter.accept(lockable, value));
+		LockableTest.assertLocked(() -> setter.accept(lockable, values[0]));
 	}
 
 	default void assertLockableSetter(ObjBoolConsumer<L> setter) {
@@ -109,7 +120,7 @@ public interface LockableTest<L extends Lockable> {
 	}
 
 	public static <L extends Lockable> void assertLockableSetter(L lockable, ObjBoolConsumer<L> setter) {
-		ManifestFrameworkTest.assertSetter(lockable, setter);
+		ManifestTestUtils.assertSetter(lockable, setter);
 
 		lockable.lock();
 
@@ -124,7 +135,7 @@ public interface LockableTest<L extends Lockable> {
 	public static <L extends Lockable, K extends Object> void assertLockableAccumulativeAdd(
 			L lockable, BiConsumer<L, K> adder,
 			K[] illegalValues, boolean checkNPE, boolean checkDuplicate, @SuppressWarnings("unchecked") K...values) {
-		ManifestFrameworkTest.assertAccumulativeAdd(lockable, adder, illegalValues, checkNPE, checkDuplicate, values);
+		ManifestTestUtils.assertAccumulativeAdd(lockable, adder, illegalValues, checkNPE, checkDuplicate, values);
 
 		lockable.lock();
 
@@ -142,7 +153,7 @@ public interface LockableTest<L extends Lockable> {
 			L lockable, BiConsumer<L, K> adder, BiConsumer<L, K> remover,
 			Function<L, C> getter, boolean checkNPE, boolean checkInvalidRemove,
 					@SuppressWarnings("unchecked") K...values) {
-		ManifestFrameworkTest.assertAccumulativeRemove(lockable, adder, remover, getter, checkNPE, checkInvalidRemove, values);
+		ManifestTestUtils.assertAccumulativeRemove(lockable, adder, remover, getter, checkNPE, checkInvalidRemove, values);
 
 		lockable.lock();
 

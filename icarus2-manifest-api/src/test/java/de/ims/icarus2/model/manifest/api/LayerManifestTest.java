@@ -19,22 +19,38 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
+import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
+import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.util.collections.LazyCollection;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface LayerManifestTest {
+public interface LayerManifestTest<M extends LayerManifest> extends MemberManifestTest<M> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.LayerManifest#getContextManifest()}.
 	 */
 	@Test
 	default void testGetContextManifest() {
-		fail("Not yet implemented");
+		assertNotNull(createUnlocked().getContextManifest());
+		assertNull(createTemplate().getContextManifest());
 	}
 
 	/**
@@ -42,15 +58,33 @@ public interface LayerManifestTest {
 	 */
 	@Test
 	default void testGetGroupManifest() {
-		fail("Not yet implemented");
+		assertNotNull(createUnlocked().getGroupManifest());
+		assertNull(createTemplate().getGroupManifest());
+	}
+
+	public static LayerType mockLayerType(String id) {
+		LayerType type = mock(LayerType.class);
+		when(type.getId()).thenReturn(id);
+		return type;
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.LayerManifest#getHost()}.
+	 * Creates a wrapper around {@link LayerManifest#setLayerTypeId(String)} to turn it into
+	 * a {@link BiConsumer} that takes a {@link LayerManifest} and {@link LayerType} and
+	 * internally accessing the underlying mocked {@link ManifestRegistry} to ensure the
+	 * given {@link LayerType} is {@link ManifestRegistry#getLayerType(String) available}.
+	 *
+	 * @return
 	 */
-	@Test
-	default void testGetHost() {
-		fail("Not yet implemented");
+	public static <M extends LayerManifest> BiConsumer<M, LayerType> inject_setLayerTypeId() {
+		// Ensure our mocked LayerType is available from the registry
+		return (m, type) -> {
+			ManifestRegistry mockedRegistry = TestUtils.assertMock(m.getRegistry());
+			String id = type.getId();
+			when(mockedRegistry.getLayerType(id)).thenReturn(type);
+
+			m.setLayerTypeId(id);
+		};
 	}
 
 	/**
@@ -58,7 +92,8 @@ public interface LayerManifestTest {
 	 */
 	@Test
 	default void testGetLayerType() {
-		fail("Not yet implemented");
+		assertDerivativeGetter(mockLayerType("type1"), mockLayerType("type2"), null,
+				LayerManifest::getLayerType, inject_setLayerTypeId());
 	}
 
 	/**
@@ -66,7 +101,41 @@ public interface LayerManifestTest {
 	 */
 	@Test
 	default void testIsLocalLayerType() {
-		fail("Not yet implemented");
+		assertDerivativeIsLocal(mockLayerType("type1"), mockLayerType("type2"),
+				LayerManifest::isLocalLayerType, inject_setLayerTypeId());
+	}
+
+	/**
+	 * Creates a wrapper around {@link LayerManifest#forEachBaseLayerManifest(Consumer)} that
+	 * provides a {@code forEach} signature for {@code String} values instead of
+	 * {@link TargetLayerManifest}. This way it can be used together with the modifier methods
+	 * such as {@link LayerManifest#addBaseLayerId(String)} for testing.
+	 *
+	 * @return
+	 */
+	public static <M extends LayerManifest, C extends Consumer<String>>
+			Function<M, Consumer<C>> inject_forEachBaseLayerManifest(boolean localOnly) {
+		return m -> LazyCollection.<String>lazyList()
+				.addFromForEach(localOnly ? m::forEachLocalBaseLayerManifest
+						: m::forEachBaseLayerManifest, t -> ((TargetLayerManifest)t).getLayerId())
+				::forEach;
+	}
+
+	public static <M extends LayerManifest> BiConsumer<M, String> inject_addBaseLayerManifest() {
+		return (m, id) -> {
+			LayerManifest target = mock(LayerManifest.class);
+			ContextManifest contextManifest = TestUtils.assertMock(m.getContextManifest());
+
+			when(contextManifest.getLayerManifest(id)).thenReturn(target);
+
+			TargetLayerManifest targetLayerManifest = m.addBaseLayerId(id);
+			assertNotNull(targetLayerManifest);
+			assertEquals(id, targetLayerManifest.getLayerId());
+			assertSame(m, targetLayerManifest.getLayerManifest());
+			assertSame(m, targetLayerManifest.getHost());
+
+			assertSame(target, targetLayerManifest.getResolvedLayerManifest());
+		};
 	}
 
 	/**
@@ -74,7 +143,7 @@ public interface LayerManifestTest {
 	 */
 	@Test
 	default void testForEachBaseLayerManifest() {
-		fail("Not yet implemented");
+		assertDerivativeForEach("layer", "layer", inject_forEachBaseLayerManifest(false), inject_addBaseLayerManifest());
 	}
 
 	/**
@@ -82,7 +151,22 @@ public interface LayerManifestTest {
 	 */
 	@Test
 	default void testForEachLocalBaseLayerManifest() {
-		fail("Not yet implemented");
+		assertDerivativeForEach("layer", "layer", inject_forEachBaseLayerManifest(true), inject_addBaseLayerManifest());
+	}
+
+	/**
+	 * Creates a wrapper around {@link LayerManifest#getBaseLayerManifests()} that returns a list
+	 * of ids instead of the raw layer manifests.
+	 *
+	 * @return
+	 */
+	public static <M extends LayerManifest> Function<M, List<String>> transform_getBaseLayerManifests(boolean localOnly) {
+		return m -> {
+			return LazyCollection.<String>lazyList()
+					.addAll(localOnly ? m.getLocalBaseLayerManifests()
+							: m.getBaseLayerManifests(), t -> t.getLayerId())
+					.getAsList();
+		};
 	}
 
 	/**
@@ -90,7 +174,8 @@ public interface LayerManifestTest {
 	 */
 	@Test
 	default void testGetBaseLayerManifests() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeGetter("layer", "layer",
+				transform_getBaseLayerManifests(false), inject_addBaseLayerManifest());
 	}
 
 	/**
@@ -98,7 +183,8 @@ public interface LayerManifestTest {
 	 */
 	@Test
 	default void testGetLocalBaseLayerManifests() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeGetter("layer", "layer",
+				transform_getBaseLayerManifests(true), inject_addBaseLayerManifest());
 	}
 
 	/**
@@ -106,7 +192,8 @@ public interface LayerManifestTest {
 	 */
 	@Test
 	default void testSetLayerTypeId() {
-		fail("Not yet implemented");
+		assertLockableSetter(LayerManifest::setLayerTypeId, ManifestTestUtils.getLegalIdValues(),
+				true, ManifestTestUtils.getIllegalIdValues());
 	}
 
 	/**
@@ -114,7 +201,8 @@ public interface LayerManifestTest {
 	 */
 	@Test
 	default void testAddBaseLayerId() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeAdd(inject_addBaseLayerManifest(),
+				ManifestTestUtils.getIllegalIdValues(), true, true, ManifestTestUtils.getLegalIdValues());
 	}
 
 	/**
@@ -122,7 +210,9 @@ public interface LayerManifestTest {
 	 */
 	@Test
 	default void testRemoveBaseLayerId() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeRemove(LayerManifest::addBaseLayerId,
+				LayerManifest::removeBaseLayerId, transform_getBaseLayerManifests(false), true, true,
+				"layer1", "layer2", "layer3");
 	}
 
 }

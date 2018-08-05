@@ -3,6 +3,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -24,7 +25,8 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Me
 	 */
 	@Test
 	default void testGetLayerManifest() {
-		assertNull(createUnlocked().getLayerManifest());
+		assertNotNull(createUnlocked().getLayerManifest());
+		assertNull(createTemplate().getLayerManifest());
 	}
 
 	/**

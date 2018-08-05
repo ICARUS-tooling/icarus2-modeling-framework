@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertManifestException;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertSetter;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestLocation;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestRegistry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -40,7 +42,6 @@ import java.util.function.Predicate;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
-import de.ims.icarus2.model.manifest.ManifestFrameworkTest;
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.test.GenericTest;
@@ -55,8 +56,13 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 
 	M createUnlocked(ManifestLocation location, ManifestRegistry registry);
 
-	@Test
-	default void testConstructorManifestLocationManifestRegistry() throws Exception {
+	/**
+	 * Attempts to call a dual argument constructor with the following signature: <br>
+	 * ({@link ManifestLocation}, {@link ManifestRegistry})
+	 *
+	 * @throws Exception
+	 */
+	default void assertConstructorManifestLocationManifestRegistry() throws Exception {
 		ManifestLocation location = mockManifestLocation(true);
 		ManifestRegistry registry = mockManifestRegistry();
 
@@ -64,6 +70,20 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 
 		assertSame(location, manifest.getManifestLocation());
 		assertSame(registry, manifest.getRegistry());
+	}
+
+	/**
+	 * Calls {@link GenericTest#testMandatoryConstructors()} and then
+	 * asserts the validity of the following constructors:
+	 *
+	 * {@link #assertConstructorManifestLocationManifestRegistry()}
+	 *
+	 * @see de.ims.icarus2.test.GenericTest#testMandatoryConstructors()
+	 */
+	@Override
+	default void testMandatoryConstructors() throws Exception {
+		GenericTest.super.testMandatoryConstructors();
+		assertConstructorManifestLocationManifestRegistry();
 	}
 
 	/**
@@ -96,7 +116,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	default <K extends Object> void assertDerivativeGetter(
 			K value1, K value2, K defaultValue, Function<M,K> getter, BiConsumer<M, K> setter) {
 
-		ManifestFrameworkTest.assertGetter(createUnlocked(), value1, value2, defaultValue, getter, setter);
+		ManifestTestUtils.assertGetter(createUnlocked(), value1, value2, defaultValue, getter, setter);
 
 		if(getExpectedType().isSupportTemplating()) {
 			M template = createTemplate();
@@ -115,7 +135,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	default <K extends Object> void assertDerivativeAccumulativeGetter(
 			K value1, K value2, Function<M,? extends Collection<K>> getter, BiConsumer<M, K> adder) {
 
-		ManifestFrameworkTest.assertAccumulativeGetter(createUnlocked(), value1, value2, getter, adder);
+		ManifestTestUtils.assertAccumulativeGetter(createUnlocked(), value1, value2, getter, adder);
 
 		if(getExpectedType().isSupportTemplating()) {
 			M template = createTemplate();
@@ -134,7 +154,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	default <K extends Object> void assertDerivativeAccumulativeLocalGetter(
 			K value1, K value2, Function<M,? extends Collection<K>> getter, BiConsumer<M, K> adder) {
 
-		ManifestFrameworkTest.assertAccumulativeLocalGetter(createUnlocked(), value1, value2, getter, adder);
+		ManifestTestUtils.assertAccumulativeLocalGetter(createUnlocked(), value1, value2, getter, adder);
 
 		if(getExpectedType().isSupportTemplating()) {
 			M template = createTemplate();
@@ -153,7 +173,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	default <K extends Object, A extends Consumer<? super K>> void assertDerivativeForEach(
 			K value1, K value2, Function<M,Consumer<A>> forEachGen, BiConsumer<M, K> adder) {
 
-		ManifestFrameworkTest.assertForEach(createUnlocked(), value1, value2, forEachGen, adder);
+		ManifestTestUtils.assertForEach(createUnlocked(), value1, value2, forEachGen, adder);
 
 		if(getExpectedType().isSupportTemplating()) {
 			M template = createTemplate();
@@ -173,7 +193,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	default <K extends Object, A extends Consumer<? super K>> void assertDerivativeForEachLocal(
 			K value1, K value2, Function<M,Consumer<A>> forEachLocalGen, BiConsumer<M, K> adder) {
 
-		ManifestFrameworkTest.assertForEachLocal(createUnlocked(), value1, value2, forEachLocalGen, adder);
+		ManifestTestUtils.assertForEachLocal(createUnlocked(), value1, value2, forEachLocalGen, adder);
 
 		if(getExpectedType().isSupportTemplating()) {
 			M template = createTemplate();
@@ -195,7 +215,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	default <K extends Object> void assertDerivativeIsLocal(
 			K value1, K value2, Predicate<M> isLocalCheck, BiConsumer<M, K> setter) {
 
-		ManifestFrameworkTest.assertIsLocal(createUnlocked(), value1, value2, isLocalCheck, setter);
+		ManifestTestUtils.assertIsLocal(createUnlocked(), value1, value2, isLocalCheck, setter);
 
 		if(getExpectedType().isSupportTemplating()) {
 			M template = createTemplate();
@@ -212,7 +232,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	default <K extends Object> void assertDerivativeAccumulativeIsLocal(
 			K value1, K value2, BiPredicate<M, K> isLocalCheck, BiConsumer<M, K> adder) {
 
-		ManifestFrameworkTest.assertAccumulativeIsLocal(createUnlocked(), value1, value2, isLocalCheck, adder);
+		ManifestTestUtils.assertAccumulativeIsLocal(createUnlocked(), value1, value2, isLocalCheck, adder);
 
 		if(getExpectedType().isSupportTemplating()) {
 			M template = createTemplate();
@@ -228,7 +248,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 
 	default void assertDerivativeFlagGetter(Boolean defaultValue, Predicate<M> getter, ObjBoolConsumer<M> setter) {
 
-		ManifestFrameworkTest.assertFlagGetter(createUnlocked(), defaultValue, getter, setter);
+		ManifestTestUtils.assertFlagGetter(createUnlocked(), defaultValue, getter, setter);
 
 		if(getExpectedType().isSupportTemplating()) {
 			M template = createTemplate();
@@ -357,55 +377,8 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 */
 	@Test
 	default void testSetId() {
-		Manifest manifest = createUnlocked();
-
-		ManifestTestUtils.assertMalformedId(manifest, "");
-		ManifestTestUtils.assertMalformedId(manifest, "a");
-		ManifestTestUtils.assertMalformedId(manifest, "aa");
-		ManifestTestUtils.assertMalformedId(manifest, "123");
-		ManifestTestUtils.assertMalformedId(manifest, "123abc");
-		ManifestTestUtils.assertMalformedId(manifest, "%$§!()");
-		ManifestTestUtils.assertMalformedId(manifest, "abc:def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc/def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc@def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc+def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc~def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc#def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc'def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc*def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc=def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc&def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc%def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc$def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc§def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc\"def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc!def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc{def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc}def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc[def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc]def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc(def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc)def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc\\def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc`def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc´def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc°def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc^def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc<def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc>def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc|def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc;def");
-		ManifestTestUtils.assertMalformedId(manifest, "abc"+TestUtils.EMOJI+"def");
-
-		ManifestTestUtils.assertValidId(manifest, "abc");
-		ManifestTestUtils.assertValidId(manifest, "abc123");
-		ManifestTestUtils.assertValidId(manifest, "abcdef");
-		ManifestTestUtils.assertValidId(manifest, "abc-def");
-		ManifestTestUtils.assertValidId(manifest, "abc_def");
-		ManifestTestUtils.assertValidId(manifest, "abc.def");
-		ManifestTestUtils.assertValidId(manifest, "abc-def123");
-		ManifestTestUtils.assertValidId(manifest, "abc_def123");
-		ManifestTestUtils.assertValidId(manifest, "abc.def123");
+		assertSetter(createUnlocked(), Manifest::setId, ManifestTestUtils.getLegalIdValues(),
+				true, ManifestTestUtils.getIllegalIdValues());
 	}
 
 	/**
@@ -413,7 +386,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 */
 	@Test
 	default void testSetIsTemplate() {
-		Manifest manifest = createUnlocked(ManifestTestUtils.mockManifestLocation(true), mock(ManifestRegistry.class));
+		M manifest = createUnlocked(ManifestTestUtils.mockManifestLocation(true), mock(ManifestRegistry.class));
 
 		manifest.setIsTemplate(true);
 		assertTrue(manifest.isTemplate());
@@ -432,11 +405,11 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 */
 	@Test
 	default void testSetTemplateId() {
-		Manifest manifest = createUnlocked();
+		M manifest = createUnlocked();
 
 		String id = "test123";
 
-		Manifest template = mock(Manifest.class);
+		M template = createTemplate();
 
 		ManifestRegistry registry = manifest.getRegistry();
 		when(registry.getTemplate(id)).thenReturn(template);
@@ -464,7 +437,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 */
 	@Test
 	default void testGetManifestLocation() {
-		Manifest unlocked = createUnlocked();
+		M unlocked = createUnlocked();
 
 		assertNotNull(unlocked.getManifestLocation());
 
@@ -484,20 +457,16 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 */
 	@Test
 	default void testSetVersionManifest() {
-		Manifest manifest = createUnlocked();
+		assertLockableSetter(Manifest::setVersionManifest, mock(VersionManifest.class), true);
 
-		VersionManifest versionManifest = mock(VersionManifest.class);
-		manifest.setVersionManifest(versionManifest);
-		assertSame(versionManifest, manifest.getVersionManifest());
-
-		TestUtils.assertNPE(() -> manifest.setVersionManifest(null));
-
-		ManifestTestUtils.assertManifestException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
-				() -> manifest.setVersionManifest(versionManifest));
-
-		Manifest lockedManifest = createUnlocked();
-		lockedManifest.lock();
-		LockableTest.assertLocked(() -> lockedManifest.setVersionManifest(versionManifest));
+		/*
+		 *  Additional test, since contract requires that any attempt
+		 *  after the first to set a version manifest must fail.
+		 */
+		M manifest = createUnlocked();
+		manifest.setVersionManifest(mock(VersionManifest.class));
+		assertManifestException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
+				() -> manifest.setVersionManifest(mock(VersionManifest.class)));
 	}
 
 }

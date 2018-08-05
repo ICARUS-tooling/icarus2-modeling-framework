@@ -23,12 +23,24 @@ import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.api.ImplementationManifest.SourceType;
 import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.annotations.OverrideTest;
 
 /**
  * @author Markus Gärtner
  *
  */
 public interface ImplementationManifestTest<M extends ImplementationManifest> extends MemberManifestTest<M> {
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.MemberManifestTest#testMandatoryConstructors()
+	 */
+	@SuppressWarnings("unchecked")
+	@Override
+	@OverrideTest
+	default void testMandatoryConstructors() throws Exception {
+		assertConstructorHost(MemberManifest.class);
+		assertConstructorManifestLocationManifestRegistryHost(MemberManifest.class);
+	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ImplementationManifest#getSourceType()}.

@@ -19,27 +19,24 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertAccumulativeGetter;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertGetter;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.Documentation.Resource;
-import de.ims.icarus2.test.TestUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface DocumentationTest extends LockableTest, ModifiableIdentityTest {
-
-	@Override
-	Documentation createUnlocked();
+public interface DocumentationTest<D extends Documentation> extends LockableTest<D>, ModifiableIdentityTest {
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#createEmpty()
@@ -62,7 +59,8 @@ public interface DocumentationTest extends LockableTest, ModifiableIdentityTest 
 	 */
 	@Test
 	default void testGetContent() {
-		assertNull(createUnlocked().getContent());
+		assertGetter(createUnlocked(), "content1", "content2", null,
+				Documentation::getContent, Documentation::setContent);
 	}
 
 	/**
@@ -70,7 +68,9 @@ public interface DocumentationTest extends LockableTest, ModifiableIdentityTest 
 	 */
 	@Test
 	default void testGetResources() {
-		assertTrue(createUnlocked().getResources().isEmpty());
+		assertAccumulativeGetter(createUnlocked(),
+				mock(Resource.class), mock(Resource.class),
+				Documentation::getResources, Documentation::addResource);
 	}
 
 	/**
@@ -78,19 +78,9 @@ public interface DocumentationTest extends LockableTest, ModifiableIdentityTest 
 	 */
 	@Test
 	default void testForEachResource() {
-		Resource[] resources = {
-			mock(Resource.class),
-			mock(Resource.class),
-			mock(Resource.class),
-			mock(Resource.class),
-		};
-
-		Documentation documentation = createUnlocked();
-		for(Resource resource : resources) {
-			documentation.addResource(resource);
-		}
-
-		TestUtils.assertForEachSorted(documentation::forEachResource, resources);
+		ManifestTestUtils.assertForEach(createUnlocked(),
+				mock(Resource.class), mock(Resource.class),
+				(Function<D, Consumer<Consumer<? super Resource>>>)d -> d::forEachResource, Documentation::addResource);
 	}
 
 	/**
@@ -98,16 +88,7 @@ public interface DocumentationTest extends LockableTest, ModifiableIdentityTest 
 	 */
 	@Test
 	default void testSetContent() {
-		Documentation documentation = createUnlocked();
-
-		documentation.setContent("content");
-		assertEquals("content", documentation.getContent());
-
-		documentation.setContent(null);
-		assertNull(documentation.getContent());
-
-		documentation.lock();
-		LockableTest.assertLocked(() -> documentation.setContent("content"));
+		assertLockableSetter(Documentation::setContent, "content", false);
 	}
 
 	/**
@@ -115,20 +96,9 @@ public interface DocumentationTest extends LockableTest, ModifiableIdentityTest 
 	 */
 	@Test
 	default void testAddResource() {
-		Documentation documentation = createUnlocked();
-
-		Resource resource = mock(Resource.class);
-		documentation.addResource(resource);
-
-		List<Resource> resources = documentation.getResources();
-
-		assertEquals(1, resources.size());
-		assertTrue(resources.contains(resource));
-
-		assertThrows(NullPointerException.class, () -> documentation.addResource(null));
-
-		documentation.lock();
-		LockableTest.assertLocked(() -> documentation.addResource(resource));
+		assertLockableAccumulativeAdd(Documentation::addResource,
+				null, true, true,
+				mock(Resource.class), mock(Resource.class));
 	}
 
 	/**
@@ -136,23 +106,9 @@ public interface DocumentationTest extends LockableTest, ModifiableIdentityTest 
 	 */
 	@Test
 	default void testRemoveResource() {
-		Documentation documentation = createUnlocked();
-
-		Resource resource1 = mock(Resource.class);
-		Resource resource2 = mock(Resource.class);
-
-		documentation.addResource(resource1);
-		documentation.addResource(resource2);
-
-		documentation.removeResource(resource1);
-
-		List<Resource> resources = documentation.getResources();
-
-		assertEquals(1, resources.size());
-		assertTrue(resources.contains(resource2));
-
-		documentation.lock();
-		LockableTest.assertLocked(() -> documentation.removeResource(resource2));
+		assertLockableAccumulativeRemove(Documentation::addResource,
+				Documentation::removeResource, Documentation::getResources,
+				true, true, mock(Resource.class), mock(Resource.class));
 	}
 
 }

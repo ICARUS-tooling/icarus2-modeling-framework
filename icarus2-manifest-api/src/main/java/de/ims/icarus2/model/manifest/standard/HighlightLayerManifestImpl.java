@@ -29,6 +29,7 @@ import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.model.manifest.standard.Links.Link;
 
 /**
  * @author Markus Gärtner
@@ -37,7 +38,7 @@ import de.ims.icarus2.model.manifest.api.ManifestType;
 public class HighlightLayerManifestImpl extends AbstractLayerManifest<HighlightLayerManifest> implements HighlightLayerManifest {
 
 	private EnumSet<HighlightFlag> highlightFlags;
-	private GlobalLayerLink primaryLayer;
+	private Link<LayerManifest> primaryLayer;
 
 	/**
 	 * @param manifestLocation
@@ -141,6 +142,6 @@ public class HighlightLayerManifestImpl extends AbstractLayerManifest<HighlightL
 		checkAllowsTargetLayer();
 		requireNonNull(primaryLayerId);
 
-		primaryLayer = new GlobalLayerLink(primaryLayerId);
+		primaryLayer = createLayerLink(primaryLayerId);
 	}
 }

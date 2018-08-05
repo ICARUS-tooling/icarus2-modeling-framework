@@ -217,7 +217,7 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 		requireNonNull(referenceLayerId);
 
 		checkAllowsTargetLayer();
-		TargetLayerManifest targetLayerManifest = new TargetLayerManifestImpl(referenceLayerId);
+		TargetLayerManifest targetLayerManifest = createTargetLayerManifest(referenceLayerId);
 		referenceLayerManifests.add(targetLayerManifest);
 		return targetLayerManifest;
 	}

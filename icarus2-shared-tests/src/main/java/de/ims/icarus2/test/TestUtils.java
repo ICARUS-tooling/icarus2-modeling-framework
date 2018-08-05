@@ -34,6 +34,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import org.junit.jupiter.api.function.Executable;
+import org.mockito.MockingDetails;
+import org.mockito.Mockito;
 
 import de.ims.icarus2.test.DiffUtils.Trace;
 
@@ -72,6 +74,12 @@ public class TestUtils {
 		    		+ "策中。";
 
 	public static final String EMOJI = "👍"; // thumbs-up emoji
+
+	public static <T extends Object> T assertMock(T mock) {
+		MockingDetails mockingDetails = Mockito.mockingDetails(mock);
+		assertTrue(mockingDetails.isMock());
+		return mock;
+	}
 
 	public static void assertNPE(Executable executable) {
 		assertThrows(NullPointerException.class, executable);
