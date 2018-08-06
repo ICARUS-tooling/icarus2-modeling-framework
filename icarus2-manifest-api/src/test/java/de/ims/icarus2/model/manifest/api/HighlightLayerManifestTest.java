@@ -19,9 +19,14 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_genericSetter;
+import static de.ims.icarus2.model.manifest.api.LayerManifestTest.mockItemLayerManifest;
+import static de.ims.icarus2.model.manifest.api.LayerManifestTest.transform_layerManifestId;
 
 import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
+import de.ims.icarus2.test.TestUtils;
 
 /**
  * @author Markus Gärtner
@@ -34,7 +39,11 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	 */
 	@Test
 	default void testGetPrimaryLayerManifest() {
-		fail("Not yet implemented");
+		assertDerivativeGetter(
+				mockItemLayerManifest("layer1"),
+				mockItemLayerManifest("layer2"), null,
+				HighlightLayerManifest::getPrimaryLayerManifest,
+				inject_genericSetter(HighlightLayerManifest::setPrimaryLayerId, transform_layerManifestId()));
 	}
 
 	/**
@@ -42,7 +51,11 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	 */
 	@Test
 	default void testIsLocalPrimaryLayerManifest() {
-		fail("Not yet implemented");
+		assertDerivativeIsLocal(
+				mockItemLayerManifest("layer1"),
+				mockItemLayerManifest("layer2"),
+				HighlightLayerManifest::isLocalPrimaryLayerManifest,
+				inject_genericSetter(HighlightLayerManifest::setPrimaryLayerId, transform_layerManifestId()));
 	}
 
 	/**
@@ -50,7 +63,11 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	 */
 	@Test
 	default void testIsHighlightFlagSet() {
-		fail("Not yet implemented");
+		for(HighlightFlag flag : HighlightFlag.values()) {
+			assertDerivativeFlagGetter(Boolean.FALSE,
+					m -> m.isHighlightFlagSet(flag),
+					(m, active) -> m.setHighlightFlag(flag, active));
+		}
 	}
 
 	/**
@@ -58,7 +75,11 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	 */
 	@Test
 	default void testIsLocalHighlightFlagSet() {
-		fail("Not yet implemented");
+		for(HighlightFlag flag : HighlightFlag.values()) {
+			assertDerivativeLocalFlagGetter(Boolean.FALSE,
+					m -> m.isLocalHighlightFlagSet(flag),
+					(m, active) -> m.setHighlightFlag(flag, active));
+		}
 	}
 
 	/**
@@ -66,7 +87,11 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	 */
 	@Test
 	default void testForEachActiveHighlightFlag() {
-		fail("Not yet implemented");
+		for(HighlightFlag flag : HighlightFlag.values()) {
+			assertDerivativeForEach(flag, TestUtils.other(flag),
+					m -> m::forEachActiveHighlightFlag,
+					(m,f) -> m.setHighlightFlag(f, true));
+		}
 	}
 
 	/**
@@ -74,7 +99,11 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	 */
 	@Test
 	default void testForEachActiveLocalHighlightFlag() {
-		fail("Not yet implemented");
+		for(HighlightFlag flag : HighlightFlag.values()) {
+			assertDerivativeForEachLocal(flag, TestUtils.other(flag),
+					m -> m::forEachActiveLocalHighlightFlag,
+					(m,f) -> m.setHighlightFlag(f, true));
+		}
 	}
 
 	/**
@@ -82,7 +111,11 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	 */
 	@Test
 	default void testGetActiveHighlightFlags() {
-		fail("Not yet implemented");
+		for(HighlightFlag flag : HighlightFlag.values()) {
+			assertDerivativeAccumulativeGetter(flag, TestUtils.other(flag),
+					HighlightLayerManifest::getActiveHighlightFlags,
+					(m,f) -> m.setHighlightFlag(f, true));
+		}
 	}
 
 	/**
@@ -90,7 +123,11 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	 */
 	@Test
 	default void testGetActiveLocalHighlightFlags() {
-		fail("Not yet implemented");
+		for(HighlightFlag flag : HighlightFlag.values()) {
+			assertDerivativeAccumulativeLocalGetter(flag, TestUtils.other(flag),
+					HighlightLayerManifest::getActiveLocalHighlightFlags,
+					(m,f) -> m.setHighlightFlag(f, true));
+		}
 	}
 
 	/**
@@ -98,7 +135,9 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	 */
 	@Test
 	default void testSetPrimaryLayerId() {
-		fail("Not yet implemented");
+		assertLockableSetter(
+				HighlightLayerManifest::setPrimaryLayerId,
+				"layer1", true, ManifestTestUtils.getIllegalIdValues());
 	}
 
 	/**
@@ -106,7 +145,11 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	 */
 	@Test
 	default void testSetHighlightFlag() {
-		fail("Not yet implemented");
+		for(HighlightFlag flag : HighlightFlag.values()) {
+			assertDerivativeAccumulativeGetter(flag, TestUtils.other(flag),
+					HighlightLayerManifest::getActiveHighlightFlags,
+					(m,f) -> m.setHighlightFlag(f, true));
+		}
 	}
 
 }

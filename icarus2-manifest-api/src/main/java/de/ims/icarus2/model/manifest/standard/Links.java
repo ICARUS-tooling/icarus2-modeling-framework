@@ -21,6 +21,8 @@ import static java.util.Objects.requireNonNull;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
+
 
 /**
  * Collection implementations for lazy linking of foreign objects.
@@ -48,6 +50,8 @@ public class Links {
 
 		public Link(String id) {
 			requireNonNull(id);
+
+			ManifestUtils.checkId(id);
 
 			this.id = id;
 		}

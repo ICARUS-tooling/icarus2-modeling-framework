@@ -98,8 +98,8 @@ public class DefaultModifiableIdentity extends AbstractLockable implements Modif
 
 	protected void setId0(String id) {
 		requireNonNull(id);
-		if(!ManifestUtils.isValidId(id))
-			throw new IllegalArgumentException("Id format not supported: "+id); //$NON-NLS-1$
+
+		ManifestUtils.checkId(id);
 
 		this.id = id;
 	}

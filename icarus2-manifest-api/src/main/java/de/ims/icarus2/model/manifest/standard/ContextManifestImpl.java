@@ -616,8 +616,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 		PrerequisiteManifestImpl(String alias) {
 			requireNonNull(alias);
 
-			if(!ManifestUtils.isValidId(alias))
-				throw new IllegalArgumentException("Alias format not supported: "+alias); //$NON-NLS-1$
+			ManifestUtils.checkId(alias);
 
 			this.alias = alias;
 			this.unresolvedForm = new PrerequisiteLink(alias);

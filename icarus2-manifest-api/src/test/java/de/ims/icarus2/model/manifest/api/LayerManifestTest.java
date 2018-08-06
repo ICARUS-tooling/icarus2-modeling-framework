@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -79,6 +80,37 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 		LayerType type = mock(LayerType.class);
 		when(type.getId()).thenReturn(id);
 		return type;
+	}
+
+	public static <M extends LayerManifest> M mockLayerManifest(Class<M> clazz, String id) {
+		M manifest = mockTypedManifest(clazz);
+		when(manifest.getId()).thenReturn(id);
+		return manifest;
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <M extends ItemLayerManifest> M mockItemLayerManifest(String id) {
+		return (M) mockLayerManifest(ItemLayerManifest.class, id);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <M extends StructureLayerManifest> M mockStructureLayerManifest(String id) {
+		return (M) mockLayerManifest(StructureLayerManifest.class, id);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <M extends FragmentLayerManifest> M mockFragmentLayerManifest(String id) {
+		return (M) mockLayerManifest(FragmentLayerManifest.class, id);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <M extends AnnotationLayerManifest> M mockAnnotationLayerManifest(String id) {
+		return (M) mockLayerManifest(AnnotationLayerManifest.class, id);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <M extends HighlightLayerManifest> M mockHighlightLayerManifest(String id) {
+		return (M) mockLayerManifest(HighlightLayerManifest.class, id);
 	}
 
 	/**
@@ -163,6 +195,13 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 		};
 	}
 
+	public static <M extends LayerManifest, K extends Object, T extends Object> BiConsumer<M, K> inject_genericSetter(
+			BiConsumer<M, T> setter, Function<K, T> transform) {
+		return (m, val) -> {
+			setter.accept(m, transform.apply(val));
+		};
+	}
+
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.LayerManifest#forEachBaseLayerManifest(java.util.function.Consumer)}.
 	 */
@@ -178,7 +217,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	 */
 	@Test
 	default void testForEachLocalBaseLayerManifest() {
-		assertDerivativeForEach("layer1", "layer2",
+		assertDerivativeForEachLocal("layer1", "layer2",
 				inject_forEachTargetLayerManifest(m -> m::forEachLocalBaseLayerManifest),
 				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
 	}
@@ -190,20 +229,38 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	 * @return
 	 */
 	public static <M extends LayerManifest, T extends Object, K extends Object> Function<M, List<K>> transform_genericCollectionGetter(
-			Function<M, ? extends Collection<T>> getter, Function<T, K> transformer) {
+			Function<M, ? extends Collection<T>> getter, Function<T, K> transform) {
 		return m -> {
 			return LazyCollection.<K>lazyList()
-					.addAll(getter.apply(m), transformer)
+					.addAll(getter.apply(m), transform)
 					.getAsList();
 		};
 	}
 
+	public static <M extends LayerManifest, T extends Object, K extends Object> Function<M, K> transform_genericValue(
+			Function<M, T> getter, Function<T, K> transform) {
+		return m -> {
+			return transform.apply(getter.apply(m));
+		};
+	}
+
 	/**
-	 * Helper function for consistency.
+	 * Helper function to be used for consistency.
 	 * Transforms a {@link TargetLayerManifest} into a {@link String} by using
 	 * the manifest's {@link TargetLayerManifest#getLayerId() layer id}.
 	 */
-	public static final Function<TargetLayerManifest, String> T_TARGET_LAYER_ID = t -> t.getLayerId();
+	public static Function<TargetLayerManifest, String> transform_targetLayerId() {
+		return t -> t.getLayerId();
+	}
+
+	/**
+	 * Helper function to be used for consistency.
+	 * Transforms a {@link LayerManifest} into a {@link String} by using
+	 * the manifest's {@link LayerManifest#getId() id}.
+	 */
+	public static <M extends LayerManifest> Function<M, String> transform_layerManifestId(){
+		return m -> m.getId();
+	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.LayerManifest#getBaseLayerManifests()}.
@@ -211,7 +268,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	@Test
 	default void testGetBaseLayerManifests() {
 		assertDerivativeAccumulativeGetter("layer1", "layer2",
-				transform_genericCollectionGetter(LayerManifest::getBaseLayerManifests, T_TARGET_LAYER_ID),
+				transform_genericCollectionGetter(LayerManifest::getBaseLayerManifests, transform_targetLayerId()),
 				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
 	}
 
@@ -221,7 +278,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	@Test
 	default void testGetLocalBaseLayerManifests() {
 		assertDerivativeAccumulativeGetter("layer1", "layer2",
-				transform_genericCollectionGetter(LayerManifest::getLocalBaseLayerManifests, T_TARGET_LAYER_ID),
+				transform_genericCollectionGetter(LayerManifest::getLocalBaseLayerManifests, transform_targetLayerId()),
 				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
 	}
 
@@ -252,7 +309,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	default void testRemoveBaseLayerId() {
 		assertLockableAccumulativeRemove(LayerManifest::addBaseLayerId,
 				LayerManifest::removeBaseLayerId,
-				transform_genericCollectionGetter(LayerManifest::getBaseLayerManifests, T_TARGET_LAYER_ID), true, true,
+				transform_genericCollectionGetter(LayerManifest::getBaseLayerManifests, transform_targetLayerId()), true, true,
 				"layer1", "layer2", "layer3");
 	}
 

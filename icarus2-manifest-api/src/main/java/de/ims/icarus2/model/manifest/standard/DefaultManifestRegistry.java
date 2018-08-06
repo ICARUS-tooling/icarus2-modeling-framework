@@ -40,9 +40,9 @@ import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.events.ManifestEvents;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.Counter;
-import de.ims.icarus2.util.events.SimpleEventListener;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.events.EventSource;
+import de.ims.icarus2.util.events.SimpleEventListener;
 import de.ims.icarus2.util.events.WeakEventSource;
 
 /**
@@ -134,9 +134,8 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 		if(id==null)
 			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
 					"Missing id on layer type"); //$NON-NLS-1$
-		if(!ManifestUtils.isValidId(id))
-			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
-					"Invaid layer id: "+id); //$NON-NLS-1$
+
+		ManifestUtils.checkId(id);
 
 		fireEvent(new EventObject(ManifestEvents.ADD_LAYER_TYPE, "layerType", layerType)); //$NON-NLS-1$
 
@@ -160,9 +159,8 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 		if(id==null)
 			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
 					"Missing id on layer type"); //$NON-NLS-1$
-		if(!ManifestUtils.isValidId(id))
-			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
-					"Invaid layer id: "+id); //$NON-NLS-1$
+
+		ManifestUtils.checkId(id);
 
 		fireEvent(new EventObject(ManifestEvents.REMOVE_LAYER_TYPE, "layerType", layerType)); //$NON-NLS-1$
 
@@ -199,9 +197,8 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 		if(id==null)
 			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
 					"Missing corpus id"); //$NON-NLS-1$
-		if(!ManifestUtils.isValidId(id))
-			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
-					"Invaid corpus id: "+id); //$NON-NLS-1$
+
+		ManifestUtils.checkId(id);
 
 		fireEvent(new EventObject(ManifestEvents.ADD_CORPUS, "corpus", manifest)); //$NON-NLS-1$
 
@@ -370,9 +367,9 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 		if(id==null)
 			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
 					"Template does not declare valid identifier"); //$NON-NLS-1$
-		if(!ManifestUtils.isValidId(id))
-			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
-					"Invalid template id: "+id); //$NON-NLS-1$
+
+		ManifestUtils.checkId(id);
+
 		Manifest current = templates.get(id);
 		if(current!=null && current!=template)
 			throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
@@ -439,9 +436,8 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 		if(id==null)
 			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
 					"Template does not declare valid identifier"); //$NON-NLS-1$
-		if(!ManifestUtils.isValidId(id))
-			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
-					"Invalid template id: "+id); //$NON-NLS-1$
+
+		ManifestUtils.checkId(id);
 
 		if(isLocked(template))
 			throw new ManifestException(ManifestErrorCode.MANIFEST_LOCKED,

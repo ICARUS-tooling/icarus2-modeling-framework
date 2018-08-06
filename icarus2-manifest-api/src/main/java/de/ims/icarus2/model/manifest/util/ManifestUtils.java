@@ -19,9 +19,11 @@ package de.ims.icarus2.model.manifest.util;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.Embedded;
 import de.ims.icarus2.model.manifest.api.Manifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestFragment;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
 import de.ims.icarus2.model.manifest.api.ManifestType;
@@ -66,6 +68,13 @@ public class ManifestUtils {
 
 			return idMatcher.matches();
 		}
+	}
+
+	public static void checkId(String id) {
+		if(!isValidId(id))
+			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
+					"Id format not supported: "+id);
+
 	}
 
 	public static String getName(Object obj) {

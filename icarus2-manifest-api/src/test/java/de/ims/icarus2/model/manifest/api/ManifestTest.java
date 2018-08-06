@@ -86,6 +86,10 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 		assertConstructorManifestLocationManifestRegistry();
 	}
 
+	public static <K extends Object> Function<K, K> identity(){
+		return k -> k;
+	}
+
 	/**
 	 * Utility method to simplify testing of common patterns in the manifest
 	 * framework.
@@ -112,6 +116,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 * @param defaultValue internal default value for the tested property if available
 	 * @param getter getter method to obtain current value
 	 * @param setter setter method to set new value
+	 *
 	 */
 	default <K extends Object> void assertDerivativeGetter(
 			K value1, K value2, K defaultValue, Function<M,K> getter, BiConsumer<M, K> setter) {
@@ -258,6 +263,35 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 			assertTrue(getter.test(derived));
 			setter.accept(template, false);
 			assertFalse(getter.test(derived));
+
+			setter.accept(derived, true);
+			assertTrue(getter.test(derived));
+
+			setter.accept(derived, false);
+			assertFalse(getter.test(derived));
+		}
+	}
+
+	default void assertDerivativeLocalFlagGetter(Boolean defaultValue, Predicate<M> getter, ObjBoolConsumer<M> setter) {
+
+		ManifestTestUtils.assertFlagGetter(createUnlocked(), defaultValue, getter, setter);
+
+		if(getExpectedType().isSupportTemplating()) {
+			M template = createTemplate();
+			M derived = createDerived(template);
+
+			setter.accept(template, true);
+			if(defaultValue!=null) {
+				assertTrue(getter.test(derived)==defaultValue.booleanValue());
+			} else {
+				assertFalse(getter.test(derived));
+			}
+			setter.accept(template, false);
+			if(defaultValue!=null) {
+				assertTrue(getter.test(derived)==defaultValue.booleanValue());
+			} else {
+				assertFalse(getter.test(derived));
+			}
 
 			setter.accept(derived, true);
 			assertTrue(getter.test(derived));

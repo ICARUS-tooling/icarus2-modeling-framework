@@ -201,8 +201,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		if(identity.getId()==null)
 			throw new IllegalArgumentException("Supplied identity declares null id"); //$NON-NLS-1$
 
-		if(!ManifestUtils.isValidId(identity.getId()))
-			throw new IllegalArgumentException("Supplied identity declares invalid id: "+identity.getId()); //$NON-NLS-1$
+		ManifestUtils.checkId(identity.getId());
 
 		if(groupIdentifiers.contains(identity))
 			throw new IllegalArgumentException("Duplicate group identifier: "+identity); //$NON-NLS-1$
@@ -429,8 +428,8 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		}
 
 		protected OptionImpl setOptionGroup0(String group) {
-			if(group!=null && !ManifestUtils.isValidId(group))
-				throw new IllegalArgumentException("Supplied group id is not valid: "+group); //$NON-NLS-1$
+
+			ManifestUtils.checkId(group);
 
 			this.group = group;
 

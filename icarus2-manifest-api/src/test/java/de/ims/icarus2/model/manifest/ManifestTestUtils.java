@@ -352,6 +352,14 @@ public class ManifestTestUtils {
 		assertManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST, executable);
 	}
 
+	/**
+	 * {@link #assertManifestException(ManifestErrorCode, Executable) Assert} {@link ManifestErrorCode#MANIFEST_TYPE_CAST}
+	 * @param executable
+	 */
+	public static void assertIllegalId(Executable executable) {
+		assertManifestException(ManifestErrorCode.MANIFEST_INVALID_ID, executable);
+	}
+
 	public static void assertManifestException(ErrorCode errorCode, Executable executable) {
 		ManifestException exception = assertThrows(ManifestException.class, executable);
 		assertEquals(errorCode, exception.getErrorCode());
@@ -385,6 +393,8 @@ public class ManifestTestUtils {
 		for(K value : values) {
 			setter.accept(instance, value);
 		}
+
+		//TODO allow the type of assertion for illegal values to be customized
 
 		for(K illegalValue : illegalValues) {
 			assertIllegalValue(() -> setter.accept(instance, illegalValue));
