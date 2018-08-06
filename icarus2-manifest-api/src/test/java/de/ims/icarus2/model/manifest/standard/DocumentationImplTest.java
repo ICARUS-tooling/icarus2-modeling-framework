@@ -25,14 +25,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-import de.ims.icarus2.model.manifest.api.Documentation;
 import de.ims.icarus2.model.manifest.api.DocumentationTest;
 
 /**
  * @author Markus Gärtner
  *
  */
-class DocumentationImplTest implements DocumentationTest<Documentation> {
+class DocumentationImplTest implements DocumentationTest<DocumentationImpl> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.standard.DocumentationImpl#DocumentationImpl()}.
@@ -58,7 +57,7 @@ class DocumentationImplTest implements DocumentationTest<Documentation> {
 	 * @see de.ims.icarus2.model.manifest.api.DocumentationTest#createUnlocked()
 	 */
 	@Override
-	public Documentation createUnlocked() {
+	public DocumentationImpl createUnlocked() {
 		return new DocumentationImpl();
 	}
 

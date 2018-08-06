@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
  * @author Markus Gärtner
  *
  */
-public interface HighlightLayerManifestTest {
+public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> extends LayerManifestTest<M> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.HighlightLayerManifest#getPrimaryLayerManifest()}.

@@ -133,7 +133,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 
 	@SuppressWarnings("unchecked")
 	default <K extends Object> void assertDerivativeAccumulativeGetter(
-			K value1, K value2, Function<M,? extends Collection<K>> getter, BiConsumer<M, K> adder) {
+			K value1, K value2, Function<M, ? extends Collection<K>> getter, BiConsumer<M, K> adder) {
 
 		ManifestTestUtils.assertAccumulativeGetter(createUnlocked(), value1, value2, getter, adder);
 

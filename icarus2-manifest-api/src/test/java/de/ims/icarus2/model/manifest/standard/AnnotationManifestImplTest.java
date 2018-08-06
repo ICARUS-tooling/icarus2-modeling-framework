@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.Set;
 
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
-import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifestTest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
@@ -34,13 +33,13 @@ import de.ims.icarus2.model.manifest.api.TypedManifest;
  * @author Markus Gärtner
  *
  */
-class AnnotationManifestImplTest implements AnnotationManifestTest<AnnotationManifest> {
+class AnnotationManifestImplTest implements AnnotationManifestTest<AnnotationManifestImpl> {
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends AnnotationManifest> getTestTargetClass() {
+	public Class<? extends AnnotationManifestImpl> getTestTargetClass() {
 		return AnnotationManifestImpl.class;
 	}
 
@@ -48,7 +47,7 @@ class AnnotationManifestImplTest implements AnnotationManifestTest<AnnotationMan
 	 * @see de.ims.icarus2.model.manifest.api.MemberManifestTest#createHosted(de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.TypedManifest)
 	 */
 	@Override
-	public AnnotationManifest createHosted(ManifestLocation manifestLocation, ManifestRegistry registry,
+	public AnnotationManifestImpl createHosted(ManifestLocation manifestLocation, ManifestRegistry registry,
 			TypedManifest host) {
 		return new AnnotationManifestImpl(manifestLocation, registry, (AnnotationLayerManifest) host);
 	}

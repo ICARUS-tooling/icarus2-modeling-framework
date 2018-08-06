@@ -26,12 +26,17 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
@@ -43,6 +48,14 @@ import de.ims.icarus2.util.collections.LazyCollection;
  *
  */
 public interface LayerManifestTest<M extends LayerManifest> extends MemberManifestTest<M> {
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
+	 */
+	@Override
+	default Set<ManifestType> getAllowedHostTypes() {
+		return Collections.singleton(ManifestType.LAYER_GROUP_MANIFEST);
+	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.LayerManifest#getContextManifest()}.
@@ -106,29 +119,41 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	}
 
 	/**
-	 * Creates a wrapper around {@link LayerManifest#forEachBaseLayerManifest(Consumer)} that
+	 * Creates a wrapper around the given {@code forEachGen} that
 	 * provides a {@code forEach} signature for {@code String} values instead of
 	 * {@link TargetLayerManifest}. This way it can be used together with the modifier methods
 	 * such as {@link LayerManifest#addBaseLayerId(String)} for testing.
 	 *
 	 * @return
 	 */
-	public static <M extends LayerManifest, C extends Consumer<String>>
-			Function<M, Consumer<C>> inject_forEachBaseLayerManifest(boolean localOnly) {
+	public static <M extends LayerManifest, C extends Consumer<String>, A extends Consumer<? super TargetLayerManifest>>
+			Function<M, Consumer<C>> inject_forEachTargetLayerManifest(Function<M, Consumer<A>> forEachGen) {
 		return m -> LazyCollection.<String>lazyList()
-				.addFromForEach(localOnly ? m::forEachLocalBaseLayerManifest
-						: m::forEachBaseLayerManifest, t -> ((TargetLayerManifest)t).getLayerId())
+				.addFromForEach(forEachGen.apply(m), t -> t.getLayerId())
 				::forEach;
 	}
 
-	public static <M extends LayerManifest> BiConsumer<M, String> inject_addBaseLayerManifest() {
+	/**
+	 * Creates a wrapper around a {@code creator} function that produces {@link TargetLayerManifest}
+	 * objects. The created {@link BiFunction function} takes a {@link String} and calls the specified
+	 * {@code creator}. Subsequently the created {@link TargetLayerManifest} is tested for various
+	 * consistency predicates.
+	 * <p>
+	 * This method expects the {@link LayerManifest} supplied to the created function to have a
+	 * {@link Mockito#mock(Class) mocked} instance of {@link ContextManifest} associated with it.
+	 *
+	 * @param creator
+	 * @return
+	 */
+	public static <M extends LayerManifest> BiConsumer<M, String> inject_createTargetLayerManifest(
+			BiFunction<M, String, TargetLayerManifest> creator) {
 		return (m, id) -> {
 			LayerManifest target = mock(LayerManifest.class);
 			ContextManifest contextManifest = TestUtils.assertMock(m.getContextManifest());
 
 			when(contextManifest.getLayerManifest(id)).thenReturn(target);
 
-			TargetLayerManifest targetLayerManifest = m.addBaseLayerId(id);
+			TargetLayerManifest targetLayerManifest = creator.apply(m, id);
 			assertNotNull(targetLayerManifest);
 			assertEquals(id, targetLayerManifest.getLayerId());
 			assertSame(m, targetLayerManifest.getLayerManifest());
@@ -143,7 +168,9 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	 */
 	@Test
 	default void testForEachBaseLayerManifest() {
-		assertDerivativeForEach("layer", "layer", inject_forEachBaseLayerManifest(false), inject_addBaseLayerManifest());
+		assertDerivativeForEach("layer1", "layer2",
+				inject_forEachTargetLayerManifest(m -> m::forEachBaseLayerManifest),
+				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
 	}
 
 	/**
@@ -151,31 +178,41 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	 */
 	@Test
 	default void testForEachLocalBaseLayerManifest() {
-		assertDerivativeForEach("layer", "layer", inject_forEachBaseLayerManifest(true), inject_addBaseLayerManifest());
+		assertDerivativeForEach("layer1", "layer2",
+				inject_forEachTargetLayerManifest(m -> m::forEachLocalBaseLayerManifest),
+				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
 	}
 
 	/**
-	 * Creates a wrapper around {@link LayerManifest#getBaseLayerManifests()} that returns a list
-	 * of ids instead of the raw layer manifests.
+	 * Creates a wrapper around a generic getter method that returns a collection
+	 * and transforms the result based on the specified {@code transform} function.
 	 *
 	 * @return
 	 */
-	public static <M extends LayerManifest> Function<M, List<String>> transform_getBaseLayerManifests(boolean localOnly) {
+	public static <M extends LayerManifest, T extends Object, K extends Object> Function<M, List<K>> transform_genericCollectionGetter(
+			Function<M, ? extends Collection<T>> getter, Function<T, K> transformer) {
 		return m -> {
-			return LazyCollection.<String>lazyList()
-					.addAll(localOnly ? m.getLocalBaseLayerManifests()
-							: m.getBaseLayerManifests(), t -> t.getLayerId())
+			return LazyCollection.<K>lazyList()
+					.addAll(getter.apply(m), transformer)
 					.getAsList();
 		};
 	}
+
+	/**
+	 * Helper function for consistency.
+	 * Transforms a {@link TargetLayerManifest} into a {@link String} by using
+	 * the manifest's {@link TargetLayerManifest#getLayerId() layer id}.
+	 */
+	public static final Function<TargetLayerManifest, String> T_TARGET_LAYER_ID = t -> t.getLayerId();
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.LayerManifest#getBaseLayerManifests()}.
 	 */
 	@Test
 	default void testGetBaseLayerManifests() {
-		assertDerivativeAccumulativeGetter("layer", "layer",
-				transform_getBaseLayerManifests(false), inject_addBaseLayerManifest());
+		assertDerivativeAccumulativeGetter("layer1", "layer2",
+				transform_genericCollectionGetter(LayerManifest::getBaseLayerManifests, T_TARGET_LAYER_ID),
+				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
 	}
 
 	/**
@@ -183,8 +220,9 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	 */
 	@Test
 	default void testGetLocalBaseLayerManifests() {
-		assertDerivativeAccumulativeGetter("layer", "layer",
-				transform_getBaseLayerManifests(true), inject_addBaseLayerManifest());
+		assertDerivativeAccumulativeGetter("layer1", "layer2",
+				transform_genericCollectionGetter(LayerManifest::getLocalBaseLayerManifests, T_TARGET_LAYER_ID),
+				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
 	}
 
 	/**
@@ -201,8 +239,10 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	 */
 	@Test
 	default void testAddBaseLayerId() {
-		assertLockableAccumulativeAdd(inject_addBaseLayerManifest(),
-				ManifestTestUtils.getIllegalIdValues(), true, true, ManifestTestUtils.getLegalIdValues());
+		assertLockableAccumulativeAdd(
+				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId),
+				ManifestTestUtils.getIllegalIdValues(),
+				true, true, ManifestTestUtils.getLegalIdValues());
 	}
 
 	/**
@@ -211,7 +251,8 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	@Test
 	default void testRemoveBaseLayerId() {
 		assertLockableAccumulativeRemove(LayerManifest::addBaseLayerId,
-				LayerManifest::removeBaseLayerId, transform_getBaseLayerManifests(false), true, true,
+				LayerManifest::removeBaseLayerId,
+				transform_genericCollectionGetter(LayerManifest::getBaseLayerManifests, T_TARGET_LAYER_ID), true, true,
 				"layer1", "layer2", "layer3");
 	}
 

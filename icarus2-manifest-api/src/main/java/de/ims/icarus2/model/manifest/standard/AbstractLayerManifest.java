@@ -131,6 +131,14 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 		baseLayerManifests.forEach(action);
 	}
 
+	/**
+	 * Verifies that this layer is properly hosted within an enclosing
+	 * {@link LayerGroupManifest} and {@link ContextManifest}.
+	 * If the check fails an exception is thrown.
+	 *
+	 * @throws ManifestException of type {@link ManifestErrorCode#MANIFEST_MISSING_ENVIRONMENT}
+	 * if the host check fails.
+	 */
 	protected void checkAllowsTargetLayer() {
 		if(layerGroupManifest==null || layerGroupManifest.getContextManifest()==null)
 			throw new ManifestException(ManifestErrorCode.MANIFEST_MISSING_ENVIRONMENT,

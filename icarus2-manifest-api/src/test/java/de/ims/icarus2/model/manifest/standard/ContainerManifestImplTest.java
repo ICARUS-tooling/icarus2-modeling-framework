@@ -23,7 +23,6 @@ import static de.ims.icarus2.util.collections.CollectionUtils.set;
 
 import java.util.Set;
 
-import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerManifestTest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
@@ -35,13 +34,13 @@ import de.ims.icarus2.model.manifest.api.TypedManifest;
  * @author Markus Gärtner
  *
  */
-class ContainerManifestImplTest implements ContainerManifestTest<ContainerManifest> {
+class ContainerManifestImplTest implements ContainerManifestTest<ContainerManifestImpl> {
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends ContainerManifest> getTestTargetClass() {
+	public Class<? extends ContainerManifestImpl> getTestTargetClass() {
 		return ContainerManifestImpl.class;
 	}
 
@@ -49,7 +48,7 @@ class ContainerManifestImplTest implements ContainerManifestTest<ContainerManife
 	 * @see de.ims.icarus2.model.manifest.api.MemberManifestTest#createHosted(de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.TypedManifest)
 	 */
 	@Override
-	public ContainerManifest createHosted(ManifestLocation manifestLocation, ManifestRegistry registry,
+	public ContainerManifestImpl createHosted(ManifestLocation manifestLocation, ManifestRegistry registry,
 			TypedManifest host) {
 		return new ContainerManifestImpl(manifestLocation, registry, (ItemLayerManifest)host);
 	}

@@ -77,7 +77,7 @@ public class TestUtils {
 
 	public static <T extends Object> T assertMock(T mock) {
 		MockingDetails mockingDetails = Mockito.mockingDetails(mock);
-		assertTrue(mockingDetails.isMock());
+		assertTrue(mockingDetails.isMock(), "Given object is not a mock: "+mock);
 		return mock;
 	}
 

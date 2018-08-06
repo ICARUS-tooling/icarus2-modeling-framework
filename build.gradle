@@ -194,6 +194,7 @@ subprojects {
     
     checkstyle {
 	    ignoreFailures = true
+	    showViolations = false
     }
     
     // Switch checkstyle reporting to be html only

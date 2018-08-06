@@ -120,6 +120,12 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 		return this;
 	}
 
+	/**
+	 * Directly adds the given colelction of items.
+	 *
+	 * @param items
+	 * @return
+	 */
 	public LazyCollection<E> addAll(Collection<? extends E> items) {
 		if(items!=null && !items.isEmpty()) {
 			ensureBuffer();
@@ -130,11 +136,19 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 		return this;
 	}
 
-	public <K extends Object> LazyCollection<E> addAll(Collection<? extends K> items, Function<K, E> transform) {
+	/**
+	 * Adds the given collection of items by first transforming each of them into
+	 * the proper type used for storing objects in this {@code LazyCollection}.
+	 *
+	 * @param items
+	 * @param transformer
+	 * @return
+	 */
+	public <K extends Object> LazyCollection<E> addAll(Collection<? extends K> items, Function<K, E> transformer) {
 		if(items!=null && !items.isEmpty()) {
 			ensureBuffer();
 
-			items.forEach(val -> addExpectingBuffer(transform.apply(val)));
+			items.forEach(val -> addExpectingBuffer(transformer.apply(val)));
 		}
 
 		return this;
