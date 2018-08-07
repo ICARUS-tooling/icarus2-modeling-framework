@@ -16,7 +16,6 @@
  */
 package de.ims.icarus2.util.strings;
 
-import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import java.awt.Component;
@@ -1055,47 +1054,50 @@ public final class StringUtil {
 	 */
 	public static long parseHexString(char[] src, int offset, int len) {
 
-        long result = 0;
-        boolean negative = false;
-        int i = offset;
-        long limit = -Long.MAX_VALUE;
-        long multmin;
-        int digit;
+		String tmp = new String(src, offset, len);
+		return Long.parseUnsignedLong(tmp, 16);
 
-        if (len > 0) {
-            char firstChar = src[offset];
-            if (firstChar < '0') { // Possible leading "+" or "-"
-                if (firstChar == '-') {
-                    negative = true;
-                    limit = Long.MIN_VALUE;
-                } else if (firstChar != '+')
-                    throw forInputString(src, offset, len);
-
-                if (len == 1) // Cannot have lone "+" or "-"
-                    throw forInputString(src, offset, len);
-                i++;
-            }
-            multmin = limit >>> 4;
-            while (i < len) {
-                // Accumulating negatively avoids surprises near MAX_VALUE
-                digit = Character.digit(src[i++], 16);
-                if (digit < 0) {
-                    throw forInputString(src, offset, len);
-                }
-                if (result < multmin) {
-                    throw forInputString(src, offset, len);
-                }
-                result <<= 4;
-                if (result < limit + digit) {
-                    throw forInputString(src, offset, len);
-                }
-                result -= digit;
-            }
-        } else {
-            throw forInputString(src, offset, len);
-        }
-
-        return negative ? result : -result;
+//        long result = 0;
+//        boolean negative = false;
+//        int i = offset;
+//        long limit = -Long.MAX_VALUE;
+//        long multmin;
+//        int digit;
+//
+//        if (len > 0) {
+//            char firstChar = src[offset];
+//            if (firstChar < '0') { // Possible leading "+" or "-"
+//                if (firstChar == '-') {
+//                    negative = true;
+//                    limit = Long.MIN_VALUE;
+//                } else if (firstChar != '+')
+//                    throw forInputString(src, offset, len);
+//
+//                if (len == 1) // Cannot have lone "+" or "-"
+//                    throw forInputString(src, offset, len);
+//                i++;
+//            }
+//            multmin = limit >>> 4;
+//            while (i < len) {
+//                // Accumulating negatively avoids surprises near MAX_VALUE
+//                digit = Character.digit(src[i++], 16);
+//                if (digit < 0) {
+//                    throw forInputString(src, offset, len);
+//                }
+//                if (result < multmin) {
+//                    throw forInputString(src, offset, len);
+//                }
+//                result <<= 4;
+//                if (result < limit + digit) {
+//                    throw forInputString(src, offset, len);
+//                }
+//                result -= digit;
+//            }
+//        } else {
+//            throw forInputString(src, offset, len);
+//        }
+//
+//        return negative ? result : -result;
 	}
 
 	/**
@@ -1108,27 +1110,31 @@ public final class StringUtil {
 	 * @return
 	 */
 	public static int writeHexString(long val, char[] dst, int offset) {
-		checkArgument(val!=Long.MIN_VALUE);
+		String tmp = Long.toHexString(val);
+		tmp.getChars(0, tmp.length(), dst, offset);
+		return tmp.length();
 
-		boolean negative = val<0L;
-		if(negative) {
-			val = -val;
-			dst[offset++] = '-';
-		}
-        int mag = Long.SIZE - Long.numberOfLeadingZeros(val);
-        int chars = Math.max(((mag + 3) >>>2), 1);
-
-        int charPos = chars;
-        final int mask = (1 << 4) - 1;
-        do {
-        	dst[offset + --charPos] = digits[((int) val) & mask];
-            val >>>= 4;
-        } while (val != 0 && charPos > 0);
-
-        if(negative) {
-        	chars++;
-        }
-
-        return chars;
+//		checkArgument(val!=Long.MIN_VALUE);
+//
+//		boolean negative = val<0L;
+//		if(negative) {
+//			val = -val;
+//			dst[offset++] = '-';
+//		}
+//        int mag = Long.SIZE - Long.numberOfLeadingZeros(val);
+//        int chars = Math.max(((mag + 3) >>>2), 1);
+//
+//        int charPos = chars;
+//        final int mask = (1 << 4) - 1;
+//        do {
+//        	dst[offset + --charPos] = digits[((int) val) & mask];
+//            val >>>= 4;
+//        } while (val != 0 && charPos > 0);
+//
+//        if(negative) {
+//        	chars++;
+//        }
+//
+//        return chars;
 	}
 }

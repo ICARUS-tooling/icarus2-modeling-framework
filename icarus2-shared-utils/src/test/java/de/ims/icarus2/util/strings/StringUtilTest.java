@@ -533,7 +533,7 @@ class StringUtilTest {
 	@Test
 	void testHexString() {
 		long[] samples = {
-				Long.MIN_VALUE+1, -100, -1, 0, 1, 100, Long.MAX_VALUE
+				Long.MIN_VALUE, -100, -1, 0, 1, 100, Long.MAX_VALUE
 		};
 
 		for(long sample : samples) {
