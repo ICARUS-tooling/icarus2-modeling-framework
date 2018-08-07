@@ -19,9 +19,13 @@
  */
 package de.ims.icarus2.test;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.lang.reflect.Constructor;
+import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 /**
  * @author Markus Gärtner
@@ -58,4 +62,14 @@ public interface GenericTest<T extends Object> {
 	default void testMandatoryConstructors() throws Exception {
 		// no-op
 	}
+
+	public static <K extends Object> K NO_DEFAULT() {
+		return (K) null;
+	}
+
+	public static <K extends Object> K[] NO_ILLEGAL() {
+		return (K[]) null;
+	}
+
+	public static final Consumer<Executable> NO_CHECK = e -> fail("Not meant to have legality check called");
 }

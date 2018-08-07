@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.GenericTest.NO_DEFAULT;
 import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Test;
@@ -34,7 +35,7 @@ public interface ForeignImplementationManifestTest<M extends ForeignImplementati
 	 */
 	@Test
 	default void testGetImplementationManifest() {
-		assertDerivativeGetter(mock(ImplementationManifest.class), mock(ImplementationManifest.class), null,
+		assertDerivativeGetter(mock(ImplementationManifest.class), mock(ImplementationManifest.class), NO_DEFAULT(),
 				ForeignImplementationManifest::getImplementationManifest,
 				ForeignImplementationManifest::setImplementationManifest);
 	}
@@ -55,7 +56,7 @@ public interface ForeignImplementationManifestTest<M extends ForeignImplementati
 	@Test
 	default void testSetImplementationManifest() {
 		assertLockableSetter(ForeignImplementationManifest::setImplementationManifest,
-				mock(ImplementationManifest.class), true);
+				mock(ImplementationManifest.class), true, TYPE_CAST_CHECK);
 	}
 
 }

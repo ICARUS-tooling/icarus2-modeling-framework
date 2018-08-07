@@ -575,7 +575,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testSetOptionsManifest() {
-		assertLockableSetter(MemberManifest::setOptionsManifest, mock(OptionsManifest.class), false);
+		assertLockableSetter(MemberManifest::setOptionsManifest, mock(OptionsManifest.class), false, TYPE_CAST_CHECK);
 	}
 
 }

@@ -61,4 +61,12 @@ class DocumentationImplTest implements DocumentationTest<DocumentationImpl> {
 		return new DocumentationImpl();
 	}
 
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
+	 */
+	@Override
+	public Class<? extends DocumentationImpl> getTestTargetClass() {
+		return DocumentationImpl.class;
+	}
+
 }

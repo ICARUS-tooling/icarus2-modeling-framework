@@ -118,7 +118,7 @@ public interface StructureManifestTest<M extends StructureManifest> extends Cont
 	@Test
 	default void testSetStructureType() {
 		for(StructureType structureType : StructureType.values()) {
-			assertLockableSetter(StructureManifest::setStructureType, structureType, true);
+			assertLockableSetter(StructureManifest::setStructureType, structureType, true, TYPE_CAST_CHECK);
 		}
 	}
 

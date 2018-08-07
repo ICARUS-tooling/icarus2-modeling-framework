@@ -146,7 +146,7 @@ public interface ContainerManifestTest<M extends ContainerManifest> extends Memb
 	@Test
 	default void testSetContainerType() {
 		for(ContainerType containerType : ContainerType.values()) {
-			assertLockableSetter(ContainerManifest::setContainerType, containerType, true);
+			assertLockableSetter(ContainerManifest::setContainerType, containerType, true, TYPE_CAST_CHECK);
 		}
 	}
 

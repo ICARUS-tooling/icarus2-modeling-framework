@@ -40,6 +40,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
@@ -52,7 +53,10 @@ import de.ims.icarus2.util.function.ObjBoolConsumer;
  * @author Markus Gärtner
  *
  */
-public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<M>, GenericTest<M> {
+public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<M> {
+
+
+	public static final Consumer<Executable> ILLEGAL_ID_CHECK = ManifestTestUtils::assertIllegalId;
 
 	M createUnlocked(ManifestLocation location, ManifestRegistry registry);
 
@@ -82,7 +86,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 */
 	@Override
 	default void testMandatoryConstructors() throws Exception {
-		GenericTest.super.testMandatoryConstructors();
+		ManifestFragmentTest.super.testMandatoryConstructors();
 		assertConstructorManifestLocationManifestRegistry();
 	}
 
@@ -412,7 +416,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	@Test
 	default void testSetId() {
 		assertSetter(createUnlocked(), Manifest::setId, ManifestTestUtils.getLegalIdValues(),
-				true, ManifestTestUtils.getIllegalIdValues());
+				true, ILLEGAL_ID_CHECK, ManifestTestUtils.getIllegalIdValues());
 	}
 
 	/**
@@ -491,7 +495,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 */
 	@Test
 	default void testSetVersionManifest() {
-		assertLockableSetter(Manifest::setVersionManifest, mock(VersionManifest.class), true);
+		assertLockableSetter(Manifest::setVersionManifest, mock(VersionManifest.class), true, TYPE_CAST_CHECK);
 
 		/*
 		 *  Additional test, since contract requires that any attempt

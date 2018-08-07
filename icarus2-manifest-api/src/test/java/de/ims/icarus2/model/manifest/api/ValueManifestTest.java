@@ -111,7 +111,7 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 			Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
 
 			LockableTest.assertLockableSetter(manifest,
-					ValueManifest::setValue, testValue, true, illegalValue);
+					ValueManifest::setValue, testValue, true, TYPE_CAST_CHECK, illegalValue);
 		}
 	}
 

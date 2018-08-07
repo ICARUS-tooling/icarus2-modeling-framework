@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.GenericTest.NO_DEFAULT;
+
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.api.ImplementationManifest.SourceType;
@@ -60,7 +62,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	 */
 	@Test
 	default void testGetSource() {
-		assertDerivativeGetter("source", "source2", null,
+		assertDerivativeGetter("source", "source2", NO_DEFAULT(),
 				ImplementationManifest::getSource, ImplementationManifest::setSource);
 	}
 
@@ -69,7 +71,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	 */
 	@Test
 	default void testGetClassname() {
-		assertDerivativeGetter("classname", "classname2", null,
+		assertDerivativeGetter("classname", "classname2", NO_DEFAULT(),
 				ImplementationManifest::getClassname, ImplementationManifest::setClassname);
 	}
 
@@ -91,7 +93,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	default void testSetSourceType() {
 
 		for(SourceType sourceType : SourceType.values()) {
-			assertLockableSetter(ImplementationManifest::setSourceType, sourceType, true);
+			assertLockableSetter(ImplementationManifest::setSourceType, sourceType, true, TYPE_CAST_CHECK);
 		}
 	}
 
@@ -101,7 +103,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	@Test
 	default void testSetSource() {
 
-		assertLockableSetter(ImplementationManifest::setSource, "source", true);
+		assertLockableSetter(ImplementationManifest::setSource, "source", true, TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -109,7 +111,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	 */
 	@Test
 	default void testSetClassname() {
-		assertLockableSetter(ImplementationManifest::setClassname, "classname", true);
+		assertLockableSetter(ImplementationManifest::setClassname, "classname", true, TYPE_CAST_CHECK);
 	}
 
 	/**

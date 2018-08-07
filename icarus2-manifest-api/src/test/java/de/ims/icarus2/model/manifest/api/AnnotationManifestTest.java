@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.GenericTest.NO_DEFAULT;
+import static de.ims.icarus2.test.GenericTest.NO_ILLEGAL;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -50,7 +52,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Me
 	 */
 	@Test
 	default void testGetKey() {
-		assertDerivativeGetter("key1", "key2", null, AnnotationManifest::getKey, AnnotationManifest::setKey);
+		assertDerivativeGetter("key1", "key2", NO_DEFAULT(), AnnotationManifest::getKey, AnnotationManifest::setKey);
 	}
 
 	/**
@@ -138,7 +140,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Me
 	 */
 	@Test
 	default void testGetValueSet() {
-		assertDerivativeGetter(mock(ValueSet.class), mock(ValueSet.class), null,
+		assertDerivativeGetter(mock(ValueSet.class), mock(ValueSet.class), NO_DEFAULT(),
 				AnnotationManifest::getValueSet, AnnotationManifest::setValueSet);
 	}
 
@@ -189,7 +191,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Me
 			Object value1 = values[0];
 			Object value2 = values[1];
 
-			assertDerivativeGetter(value1, value2, null,
+			assertDerivativeGetter(value1, value2, NO_DEFAULT(),
 					AnnotationManifest::getNoEntryValue, AnnotationManifest::setNoEntryValue);
 		}
 	}
@@ -216,7 +218,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Me
 	 */
 	@Test
 	default void testGetContentType() {
-		assertDerivativeGetter(mock(ContentType.class), mock(ContentType.class), null,
+		assertDerivativeGetter(mock(ContentType.class), mock(ContentType.class), NO_DEFAULT(),
 				AnnotationManifest::getContentType, AnnotationManifest::setContentType);
 	}
 
@@ -234,7 +236,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Me
 	 */
 	@Test
 	default void testSetKey() {
-		assertLockableSetter(AnnotationManifest::setKey, "key", true);
+		assertLockableSetter(AnnotationManifest::setKey, "key", true, TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -242,7 +244,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Me
 	 */
 	@Test
 	default void testAddAlias() {
-		assertLockableAccumulativeAdd(AnnotationManifest::addAlias, null, true, true, "alias1", "alias2", "alias3");
+		assertLockableAccumulativeAdd(AnnotationManifest::addAlias, NO_ILLEGAL(), TYPE_CAST_CHECK, true, true, "alias1", "alias2", "alias3");
 	}
 
 	/**
@@ -259,7 +261,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Me
 	 */
 	@Test
 	default void testSetValueRange() {
-		assertLockableSetter(AnnotationManifest::setValueRange, mock(ValueRange.class), false);
+		assertLockableSetter(AnnotationManifest::setValueRange, mock(ValueRange.class), false, TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -267,7 +269,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Me
 	 */
 	@Test
 	default void testSetValueSet() {
-		assertLockableSetter(AnnotationManifest::setValueSet, mock(ValueSet.class), false);
+		assertLockableSetter(AnnotationManifest::setValueSet, mock(ValueSet.class), false, TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -275,7 +277,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Me
 	 */
 	@Test
 	default void testSetValueType() {
-		assertLockableSetter(AnnotationManifest::setValueType, mock(ValueType.class), true);
+		assertLockableSetter(AnnotationManifest::setValueType, mock(ValueType.class), true, TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -283,7 +285,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Me
 	 */
 	@Test
 	default void testSetContentType() {
-		assertLockableSetter(AnnotationManifest::setContentType, mock(ContentType.class), false);
+		assertLockableSetter(AnnotationManifest::setContentType, mock(ContentType.class), false, TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -295,7 +297,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Me
 			Object value = ManifestTestUtils.getTestValue(valueType);
 			//TODO verify if we need value check for noEntryValue field
 //			Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
-			assertLockableSetter(AnnotationManifest::setNoEntryValue, value, false/*, illegalValue*/);
+			assertLockableSetter(AnnotationManifest::setNoEntryValue, value, false, TYPE_CAST_CHECK/*, illegalValue*/);
 		}
 	}
 

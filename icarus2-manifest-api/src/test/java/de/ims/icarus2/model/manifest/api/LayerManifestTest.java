@@ -20,6 +20,7 @@
 package de.ims.icarus2.model.manifest.api;
 
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
+import static de.ims.icarus2.test.GenericTest.NO_DEFAULT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -137,7 +138,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	 */
 	@Test
 	default void testGetLayerType() {
-		assertDerivativeGetter(mockLayerType("type1"), mockLayerType("type2"), null,
+		assertDerivativeGetter(mockLayerType("type1"), mockLayerType("type2"), NO_DEFAULT(),
 				LayerManifest::getLayerType, inject_setLayerTypeId());
 	}
 
@@ -288,7 +289,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	@Test
 	default void testSetLayerTypeId() {
 		assertLockableSetter(LayerManifest::setLayerTypeId, ManifestTestUtils.getLegalIdValues(),
-				true, ManifestTestUtils.getIllegalIdValues());
+				true, ILLEGAL_ID_CHECK, ManifestTestUtils.getIllegalIdValues());
 	}
 
 	/**
@@ -298,7 +299,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	default void testAddBaseLayerId() {
 		assertLockableAccumulativeAdd(
 				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId),
-				ManifestTestUtils.getIllegalIdValues(),
+				ManifestTestUtils.getIllegalIdValues(), ILLEGAL_ID_CHECK,
 				true, true, ManifestTestUtils.getLegalIdValues());
 	}
 

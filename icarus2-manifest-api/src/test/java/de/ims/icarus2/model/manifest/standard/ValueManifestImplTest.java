@@ -36,4 +36,12 @@ class ValueManifestImplTest implements ValueManifestTest<ValueManifestImpl> {
 		return new ValueManifestImpl(valueType);
 	}
 
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
+	 */
+	@Override
+	public Class<? extends ValueManifestImpl> getTestTargetClass() {
+		return ValueManifestImpl.class;
+	}
+
 }

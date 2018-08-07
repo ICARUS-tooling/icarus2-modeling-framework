@@ -352,6 +352,15 @@ public class ManifestTestUtils {
 		assertManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST, executable);
 	}
 
+	public static void assertIllegalValue(Consumer<Executable> legalityCheck, Executable executable) {
+
+		if(legalityCheck==null) {
+			legalityCheck = ManifestTestUtils::assertIllegalValue;
+		}
+
+		legalityCheck.accept(executable);
+	}
+
 	/**
 	 * {@link #assertManifestException(ManifestErrorCode, Executable) Assert} {@link ManifestErrorCode#MANIFEST_TYPE_CAST}
 	 * @param executable
@@ -368,7 +377,7 @@ public class ManifestTestUtils {
 	// ASSERTIONS FOR METHOD PATTERNS
 
 	public static <T extends Object, K extends Object> void assertSetter(T instance, BiConsumer<T, K> setter, K value,
-			boolean checkNPE, @SuppressWarnings("unchecked") K...illegalValues) {
+			boolean checkNPE, Consumer<Executable> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
 		if(checkNPE) {
 			TestUtils.assertNPE(() -> setter.accept(instance, null));
 		} else {
@@ -378,12 +387,12 @@ public class ManifestTestUtils {
 		setter.accept(instance, value);
 
 		for(K illegalValue : illegalValues) {
-			assertIllegalValue(() -> setter.accept(instance, illegalValue));
+			assertIllegalValue(legalityCheck, () -> setter.accept(instance, illegalValue));
 		}
 	}
 
 	public static <T extends Object, K extends Object> void assertSetter(T instance, BiConsumer<T, K> setter, K[] values,
-			boolean checkNPE, @SuppressWarnings("unchecked") K...illegalValues) {
+			boolean checkNPE, Consumer<Executable> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
 		if(checkNPE) {
 			TestUtils.assertNPE(() -> setter.accept(instance, null));
 		} else {
@@ -394,10 +403,8 @@ public class ManifestTestUtils {
 			setter.accept(instance, value);
 		}
 
-		//TODO allow the type of assertion for illegal values to be customized
-
 		for(K illegalValue : illegalValues) {
-			assertIllegalValue(() -> setter.accept(instance, illegalValue));
+			assertIllegalValue(legalityCheck, () -> setter.accept(instance, illegalValue));
 		}
 	}
 
@@ -408,7 +415,7 @@ public class ManifestTestUtils {
 
 	public static <T extends Object, K extends Object> void assertAccumulativeAdd(
 			T instance, BiConsumer<T, K> adder,
-			K[] illegalValues, boolean checkNPE, boolean checkDuplicate, @SuppressWarnings("unchecked") K...values) {
+			K[] illegalValues, Consumer<Executable> legalityCheck, boolean checkNPE, boolean checkDuplicate, @SuppressWarnings("unchecked") K...values) {
 
 		if(checkNPE) {
 			TestUtils.assertNPE(() -> adder.accept(instance, null));
@@ -424,7 +431,7 @@ public class ManifestTestUtils {
 
 		if(illegalValues!=null) {
 			for(K illegalValue : illegalValues) {
-				assertIllegalValue(() -> adder.accept(instance, illegalValue));
+				assertIllegalValue(legalityCheck, () -> adder.accept(instance, illegalValue));
 			}
 		}
 	}

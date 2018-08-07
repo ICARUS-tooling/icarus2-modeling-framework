@@ -22,6 +22,7 @@ package de.ims.icarus2.model.manifest.api;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_genericSetter;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.mockItemLayerManifest;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.transform_layerManifestId;
+import static de.ims.icarus2.test.GenericTest.NO_DEFAULT;
 
 import org.junit.jupiter.api.Test;
 
@@ -41,7 +42,7 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	default void testGetPrimaryLayerManifest() {
 		assertDerivativeGetter(
 				mockItemLayerManifest("layer1"),
-				mockItemLayerManifest("layer2"), null,
+				mockItemLayerManifest("layer2"), NO_DEFAULT(),
 				HighlightLayerManifest::getPrimaryLayerManifest,
 				inject_genericSetter(HighlightLayerManifest::setPrimaryLayerId, transform_layerManifestId()));
 	}
@@ -137,7 +138,7 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	default void testSetPrimaryLayerId() {
 		assertLockableSetter(
 				HighlightLayerManifest::setPrimaryLayerId,
-				"layer1", true, ManifestTestUtils.getIllegalIdValues());
+				"layer1", true, ILLEGAL_ID_CHECK, ManifestTestUtils.getIllegalIdValues());
 	}
 
 	/**

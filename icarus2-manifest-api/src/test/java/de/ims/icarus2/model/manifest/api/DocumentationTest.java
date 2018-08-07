@@ -21,6 +21,8 @@ package de.ims.icarus2.model.manifest.api;
 
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertAccumulativeGetter;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertGetter;
+import static de.ims.icarus2.test.GenericTest.NO_DEFAULT;
+import static de.ims.icarus2.test.GenericTest.NO_ILLEGAL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
@@ -59,7 +61,7 @@ public interface DocumentationTest<D extends Documentation> extends LockableTest
 	 */
 	@Test
 	default void testGetContent() {
-		assertGetter(createUnlocked(), "content1", "content2", null,
+		assertGetter(createUnlocked(), "content1", "content2", NO_DEFAULT(),
 				Documentation::getContent, Documentation::setContent);
 	}
 
@@ -88,7 +90,7 @@ public interface DocumentationTest<D extends Documentation> extends LockableTest
 	 */
 	@Test
 	default void testSetContent() {
-		assertLockableSetter(Documentation::setContent, "content", false);
+		assertLockableSetter(Documentation::setContent, "content", false, TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -97,7 +99,7 @@ public interface DocumentationTest<D extends Documentation> extends LockableTest
 	@Test
 	default void testAddResource() {
 		assertLockableAccumulativeAdd(Documentation::addResource,
-				null, true, true,
+				NO_ILLEGAL(), NO_CHECK, true, true,
 				mock(Resource.class), mock(Resource.class));
 	}
 

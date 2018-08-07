@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.GenericTest.NO_ILLEGAL;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -46,7 +47,7 @@ public interface CategorizableTest<C extends Categorizable> extends LockableTest
 	 */
 	@Test
 	default void testAddCategory() {
-		assertLockableAccumulativeAdd(Categorizable::addCategory, null, true, false,
+		assertLockableAccumulativeAdd(Categorizable::addCategory, NO_ILLEGAL(), NO_CHECK, true, false,
 				mockCategory("cat1"), mockCategory("cat2"), mockCategory("cat3"));
 	}
 
