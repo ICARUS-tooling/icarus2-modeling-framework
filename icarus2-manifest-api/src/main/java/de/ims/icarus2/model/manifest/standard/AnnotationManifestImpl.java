@@ -78,8 +78,11 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 		this(layerManifest.getManifestLocation(), layerManifest.getRegistry(), layerManifest);
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
+	 */
 	@Override
-	public AnnotationLayerManifest getLayerManifest() {
+	public AnnotationLayerManifest getHost() {
 		return layerManifest;
 	}
 

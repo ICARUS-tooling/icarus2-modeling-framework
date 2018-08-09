@@ -42,7 +42,9 @@ public interface ContextManifest extends MemberManifest, Bindable {
 	public static final boolean DEFAULT_EDITABLE_VALUE = false;
 
 	@AccessRestriction(AccessMode.READ)
-	CorpusManifest getCorpusManifest();
+	default CorpusManifest getCorpusManifest() {
+		return getHost();
+	}
 
 	@AccessRestriction(AccessMode.READ)
 	DriverManifest getDriverManifest();
@@ -62,9 +64,7 @@ public interface ContextManifest extends MemberManifest, Bindable {
 	}
 
 	@Override
-	default public ManifestFragment getHost() {
-		return getCorpusManifest();
-	};
+	CorpusManifest getHost();
 
 	/**
 	 * Returns a list of prerequisites describing other layers a corpus

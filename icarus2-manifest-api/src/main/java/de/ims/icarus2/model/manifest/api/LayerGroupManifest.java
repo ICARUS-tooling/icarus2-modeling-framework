@@ -34,12 +34,17 @@ import de.ims.icarus2.util.collections.LazyCollection;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface LayerGroupManifest extends ModifiableIdentity, ManifestFragment {
+public interface LayerGroupManifest extends ModifiableIdentity, ManifestFragment, Embedded {
 
 	public static final boolean DEFAULT_INDEPENDENT_VALUE = false;
 
 	@AccessRestriction(AccessMode.READ)
-	ContextManifest getContextManifest();
+	default ContextManifest getContextManifest() {
+		return getHost();
+	}
+
+	@Override
+	ContextManifest getHost();
 
 	@AccessRestriction(AccessMode.READ)
 	int layerCount();

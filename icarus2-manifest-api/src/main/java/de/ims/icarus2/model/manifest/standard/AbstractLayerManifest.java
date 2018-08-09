@@ -71,14 +71,15 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 	 */
 	@Override
 	public ContextManifest getContextManifest() {
-		return layerGroupManifest==null ? null : layerGroupManifest.getContextManifest();
+		return getGroupManifest()==null ? null : getGroupManifest().getContextManifest();
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.LayerManifest#getGroupManifest()
+	 *
+	 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
 	 */
 	@Override
-	public LayerGroupManifest getGroupManifest() {
+	public LayerGroupManifest getHost() {
 		return layerGroupManifest;
 	}
 
@@ -140,7 +141,7 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 	 * if the host check fails.
 	 */
 	protected void checkAllowsTargetLayer() {
-		if(layerGroupManifest==null || layerGroupManifest.getContextManifest()==null)
+		if(getGroupManifest()==null || getGroupManifest().getContextManifest()==null)
 			throw new ManifestException(ManifestErrorCode.MANIFEST_MISSING_ENVIRONMENT,
 					"Cannot make links to other layers without enclosing layer group or context: "+getId()); //$NON-NLS-1$
 	}
@@ -283,10 +284,10 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest#getLayerManifest()
+		 * @see de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest#getHost()
 		 */
 		@Override
-		public LayerManifest getLayerManifest() {
+		public LayerManifest getHost() {
 			return AbstractLayerManifest.this;
 		}
 

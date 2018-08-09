@@ -45,6 +45,7 @@ import org.mockito.Mockito;
 
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.manifest.api.Embedded;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
@@ -316,6 +317,16 @@ public class ManifestTestUtils {
 		return mockTypedManifest(clazz);
 	}
 
+	public static <M extends TypedManifest> M mockTypedManifest(ManifestType type, boolean mockHierarchy) {
+		M manifest = mockTypedManifest(type);
+
+		if(mockHierarchy) {
+			mockHierarchy(type, manifest);
+		}
+
+		return manifest;
+	}
+
 	public static <M extends TypedManifest> M mockTypedManifest(Class<? extends TypedManifest> clazz) {
 		@SuppressWarnings("unchecked")
 		M manifest = (M) mock(clazz);
@@ -330,6 +341,24 @@ public class ManifestTestUtils {
 		}
 
 		return manifest;
+	}
+
+	private static <M extends TypedManifest> void mockHierarchy(ManifestType type, M manifest) {
+		TypedManifest current = manifest;
+		ManifestType currentType = type;
+
+		ManifestType[] envTypes = null;
+		while(Embedded.class.isAssignableFrom(currentType.getBaseClass())
+				&& (envTypes = currentType.getRequiredEnvironment()) != null) {
+			ManifestType hostType = envTypes[0];
+			TypedManifest host = mockTypedManifest(hostType);
+
+			Embedded embedded = (Embedded)current;
+			when(embedded.getHost()).thenReturn(host);
+
+			current = host;
+			currentType = hostType;
+		}
 	}
 
 	// ASSERTIONS FOR CONTENT
@@ -348,36 +377,36 @@ public class ManifestTestUtils {
 	 * {@link #assertManifestException(ManifestErrorCode, Executable) Assert} {@link ManifestErrorCode#MANIFEST_TYPE_CAST}
 	 * @param executable
 	 */
-	public static void assertIllegalValue(Executable executable) {
-		assertManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST, executable);
+	public static void assertIllegalValue(Executable executable, Object value) {
+		assertManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST, executable, "Testing illegal value - "+String.valueOf(value));
 	}
 
-	public static void assertIllegalValue(Consumer<Executable> legalityCheck, Executable executable) {
+	public static void assertIllegalValue(BiConsumer<Executable, Object> legalityCheck, Executable executable, Object value) {
 
 		if(legalityCheck==null) {
 			legalityCheck = ManifestTestUtils::assertIllegalValue;
 		}
 
-		legalityCheck.accept(executable);
+		legalityCheck.accept(executable, value);
 	}
 
 	/**
 	 * {@link #assertManifestException(ManifestErrorCode, Executable) Assert} {@link ManifestErrorCode#MANIFEST_TYPE_CAST}
 	 * @param executable
 	 */
-	public static void assertIllegalId(Executable executable) {
-		assertManifestException(ManifestErrorCode.MANIFEST_INVALID_ID, executable);
+	public static void assertIllegalId(Executable executable, Object id) {
+		assertManifestException(ManifestErrorCode.MANIFEST_INVALID_ID, executable, "Testing illegal id - "+String.valueOf(id));
 	}
 
-	public static void assertManifestException(ErrorCode errorCode, Executable executable) {
-		ManifestException exception = assertThrows(ManifestException.class, executable);
-		assertEquals(errorCode, exception.getErrorCode());
+	public static void assertManifestException(ErrorCode errorCode, Executable executable, String msg) {
+		ManifestException exception = assertThrows(ManifestException.class, executable, msg);
+		assertEquals(errorCode, exception.getErrorCode(), msg);
 	}
 
 	// ASSERTIONS FOR METHOD PATTERNS
 
 	public static <T extends Object, K extends Object> void assertSetter(T instance, BiConsumer<T, K> setter, K value,
-			boolean checkNPE, Consumer<Executable> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
+			boolean checkNPE, BiConsumer<Executable, Object> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
 		if(checkNPE) {
 			TestUtils.assertNPE(() -> setter.accept(instance, null));
 		} else {
@@ -387,12 +416,12 @@ public class ManifestTestUtils {
 		setter.accept(instance, value);
 
 		for(K illegalValue : illegalValues) {
-			assertIllegalValue(legalityCheck, () -> setter.accept(instance, illegalValue));
+			assertIllegalValue(legalityCheck, () -> setter.accept(instance, illegalValue), illegalValue);
 		}
 	}
 
 	public static <T extends Object, K extends Object> void assertSetter(T instance, BiConsumer<T, K> setter, K[] values,
-			boolean checkNPE, Consumer<Executable> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
+			boolean checkNPE, BiConsumer<Executable, Object> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
 		if(checkNPE) {
 			TestUtils.assertNPE(() -> setter.accept(instance, null));
 		} else {
@@ -404,7 +433,7 @@ public class ManifestTestUtils {
 		}
 
 		for(K illegalValue : illegalValues) {
-			assertIllegalValue(legalityCheck, () -> setter.accept(instance, illegalValue));
+			assertIllegalValue(legalityCheck, () -> setter.accept(instance, illegalValue), illegalValue);
 		}
 	}
 
@@ -415,7 +444,7 @@ public class ManifestTestUtils {
 
 	public static <T extends Object, K extends Object> void assertAccumulativeAdd(
 			T instance, BiConsumer<T, K> adder,
-			K[] illegalValues, Consumer<Executable> legalityCheck, boolean checkNPE, boolean checkDuplicate, @SuppressWarnings("unchecked") K...values) {
+			K[] illegalValues, BiConsumer<Executable, Object> legalityCheck, boolean checkNPE, boolean checkDuplicate, @SuppressWarnings("unchecked") K...values) {
 
 		if(checkNPE) {
 			TestUtils.assertNPE(() -> adder.accept(instance, null));
@@ -426,12 +455,14 @@ public class ManifestTestUtils {
 		}
 
 		if(checkDuplicate) {
-			assertManifestException(GlobalErrorCode.INVALID_INPUT, () -> adder.accept(instance, values[0]));
+			assertManifestException(GlobalErrorCode.INVALID_INPUT,
+					() -> adder.accept(instance, values[0]),
+					"Testing duplicate value - "+String.valueOf(values[0]));
 		}
 
 		if(illegalValues!=null) {
 			for(K illegalValue : illegalValues) {
-				assertIllegalValue(legalityCheck, () -> adder.accept(instance, illegalValue));
+				assertIllegalValue(legalityCheck, () -> adder.accept(instance, illegalValue), illegalValue);
 			}
 		}
 	}
@@ -455,7 +486,8 @@ public class ManifestTestUtils {
 
 		if(checkInvalidRemove) {
 			assertManifestException(GlobalErrorCode.INVALID_INPUT,
-					() -> remover.accept(instance, values[0]));
+					() -> remover.accept(instance, values[0]),
+					"Testing invalid remove value - "+String.valueOf(values[0]));
 		}
 
 		for(int i=1; i<values.length; i++) {

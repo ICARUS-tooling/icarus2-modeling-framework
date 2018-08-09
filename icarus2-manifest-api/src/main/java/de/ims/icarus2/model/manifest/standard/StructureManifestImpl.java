@@ -102,11 +102,11 @@ public class StructureManifestImpl extends ContainerManifestImpl implements Stru
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.standard.manifest.ContainerManifestImpl#getResolvedLayerManifest()
+	 * @see de.ims.icarus2.model.manifest.standard.ContainerManifestImpl#getHost()
 	 */
 	@Override
-	public StructureLayerManifest getLayerManifest() {
-		return (StructureLayerManifest) super.getLayerManifest();
+	public StructureLayerManifest getHost() {
+		return (StructureLayerManifest) super.getHost();
 	}
 
 	@Override

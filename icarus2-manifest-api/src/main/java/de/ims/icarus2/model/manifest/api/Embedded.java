@@ -17,6 +17,15 @@
 package de.ims.icarus2.model.manifest.api;
 
 /**
+ * Models a basic unidirectional hierarchical relation between an embedded
+ * manifest component and its host.
+ * <p>
+ * Implementation note: Any interface or class implementing or extending this
+ * interface should use the {@link #getHost()} method as the singular point
+ * of access to the surrounding host manifest. If another return type is
+ * required, a proxy method can be declared or the method can be overridden
+ * with a more specific type.
+ *
  * @author Markus Gärtner
  *
  */

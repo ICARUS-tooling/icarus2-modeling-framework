@@ -26,10 +26,10 @@ import de.ims.icarus2.util.access.AccessPolicy;
 @AccessControl(AccessPolicy.DENY)
 public interface PathResolverManifest extends ForeignImplementationManifest {
 
-	LocationManifest getLocationManifest();
+	default LocationManifest getLocationManifest() {
+		return getHost();
+	}
 
 	@Override
-	default public ManifestFragment getHost() {
-		return getLocationManifest();
-	};
+	LocationManifest getHost();
 }

@@ -40,12 +40,12 @@ import de.ims.icarus2.util.id.UnknownIdentifierException;
 @AccessControl(AccessPolicy.DENY)
 public interface OptionsManifest extends Manifest, Embedded {
 
-	MemberManifest getMemberManifest();
+	default MemberManifest getMemberManifest() {
+		return getHost();
+	}
 
 	@Override
-	default public ManifestFragment getHost() {
-		return getMemberManifest();
-	};
+	MemberManifest getHost();
 
 	/**
 	 * Returns the names of all available options for the target

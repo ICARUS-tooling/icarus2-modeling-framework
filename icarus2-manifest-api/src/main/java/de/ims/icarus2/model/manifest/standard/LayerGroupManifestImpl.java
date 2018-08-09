@@ -63,10 +63,11 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.LayerGroupManifest#getContextManifest()
+	 *
+	 * @see de.ims.icarus2.model.manifest.api.LayerGroupManifest#getHost()
 	 */
 	@Override
-	public ContextManifest getContextManifest() {
+	public ContextManifest getHost() {
 		return contextManifest;
 	}
 

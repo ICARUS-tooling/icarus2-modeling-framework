@@ -50,7 +50,9 @@ public interface AnnotationManifest extends MemberManifest {
 	 *
 	 * @return
 	 */
-	AnnotationLayerManifest getLayerManifest();
+	default AnnotationLayerManifest getLayerManifest() {
+		return getHost();
+	}
 
 	/**
 	 * Returns the <i>base-name</i> of the key this manifest
@@ -72,9 +74,7 @@ public interface AnnotationManifest extends MemberManifest {
 	 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
 	 */
 	@Override
-	default public ManifestFragment getHost() {
-		return getLayerManifest();
-	}
+	AnnotationLayerManifest getHost();
 
 	/**
 	 * Applies the given {@code action} to all aliases in this manifest,

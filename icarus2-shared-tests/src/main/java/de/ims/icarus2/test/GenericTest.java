@@ -22,7 +22,7 @@ package de.ims.icarus2.test;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.reflect.Constructor;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -71,5 +71,5 @@ public interface GenericTest<T extends Object> {
 		return (K[]) null;
 	}
 
-	public static final Consumer<Executable> NO_CHECK = e -> fail("Not meant to have legality check called");
+	public static final BiConsumer<Executable, Object> NO_CHECK = (e, val) -> fail("Not meant to have legality check called");
 }

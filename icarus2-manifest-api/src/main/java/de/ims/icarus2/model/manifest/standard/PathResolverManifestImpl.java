@@ -49,8 +49,12 @@ public class PathResolverManifestImpl extends AbstractForeignImplementationManif
 		this(locationManifest.getManifestLocation(), locationManifest.getRegistry(), locationManifest);
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
+	 */
 	@Override
-	public LocationManifest getLocationManifest() {
+	public LocationManifest getHost() {
+		// TODO Auto-generated method stub
 		return locationManifest;
 	}
 

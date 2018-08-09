@@ -84,10 +84,10 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.DriverManifest#getContextManifest()
+	 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
 	 */
 	@Override
-	public ContextManifest getContextManifest() {
+	public ContextManifest getHost() {
 		return contextManifest;
 	}
 
@@ -657,10 +657,10 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest#getDriverManifest()
+		 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
 		 */
 		@Override
-		public DriverManifest getDriverManifest() {
+		public DriverManifest getHost() {
 			return driverManifest;
 		}
 

@@ -35,9 +35,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
 public interface DriverManifest extends ForeignImplementationManifest {
 
 	@Override
-	default public ManifestFragment getHost() {
-		return getContextManifest();
-	};
+	ContextManifest getHost();
 
 	@AccessRestriction(AccessMode.READ)
 	void forEachMappingManifest(Consumer<? super MappingManifest> action);
@@ -94,7 +92,9 @@ public interface DriverManifest extends ForeignImplementationManifest {
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	ContextManifest getContextManifest();
+	default ContextManifest getContextManifest() {
+		return getHost();
+	}
 
 	/**
 	 * Applies the given {@code action} to each {@code ModuleManifest} accessible via
@@ -290,12 +290,12 @@ public interface DriverManifest extends ForeignImplementationManifest {
 	public interface ModuleManifest extends ForeignImplementationManifest {
 
 		@AccessRestriction(AccessMode.READ)
-		DriverManifest getDriverManifest();
+		default DriverManifest getDriverManifest() {
+			return getHost();
+		}
 
 		@Override
-		default public ManifestFragment getHost() {
-			return getDriverManifest();
-		};
+		DriverManifest getHost();
 
 		/**
 		 * @see de.ims.icarus2.model.manifest.api.TypedManifest#getManifestType()

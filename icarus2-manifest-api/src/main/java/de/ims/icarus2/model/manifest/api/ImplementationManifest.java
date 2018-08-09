@@ -49,12 +49,12 @@ public interface ImplementationManifest extends MemberManifest {
 	 * Returns the surrounding 'host' manifest.
 	 * @return
 	 */
-	MemberManifest getHostManifest();
+	default MemberManifest getHostManifest() {
+		return getHost();
+	}
 
 	@Override
-	default public ManifestFragment getHost() {
-		return getHostManifest();
-	};
+	MemberManifest getHost();
 
 	/**
 	 * Returns the type of this implementation's source, defining

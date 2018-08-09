@@ -26,10 +26,10 @@ import de.ims.icarus2.util.access.AccessPolicy;
 @AccessControl(AccessPolicy.DENY)
 public interface RasterizerManifest extends ForeignImplementationManifest {
 
-	FragmentLayerManifest getLayerManifest();
+	default FragmentLayerManifest getLayerManifest() {
+		return getHost();
+	}
 
 	@Override
-	default public ManifestFragment getHost() {
-		return getLayerManifest();
-	};
+	FragmentLayerManifest getHost();
 }

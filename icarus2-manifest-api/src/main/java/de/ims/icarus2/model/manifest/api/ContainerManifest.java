@@ -42,12 +42,12 @@ public interface ContainerManifest extends MemberManifest {
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	ItemLayerManifest getLayerManifest();
+	default ItemLayerManifest getLayerManifest() {
+		return getHost();
+	}
 
 	@Override
-	default ManifestFragment getHost() {
-		return getLayerManifest();
-	}
+	ItemLayerManifest getHost();
 
 	/**
 	 * Returns the type of this container. This provides

@@ -56,10 +56,11 @@ public class RasterizerManifestImpl extends AbstractForeignImplementationManifes
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.RasterizerManifest#getLayerManifest()
+	 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
 	 */
 	@Override
-	public FragmentLayerManifest getLayerManifest() {
+	public FragmentLayerManifest getHost() {
+		// TODO Auto-generated method stub
 		return layerManifest;
 	}
 

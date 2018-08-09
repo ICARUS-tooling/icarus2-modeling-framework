@@ -81,10 +81,10 @@ public class ContainerManifestImpl extends AbstractMemberManifest<ContainerManif
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.ContainerManifest#getLayerManifest()
+	 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
 	 */
 	@Override
-	public ItemLayerManifest getLayerManifest() {
+	public ItemLayerManifest getHost() {
 		return layerManifest;
 	}
 

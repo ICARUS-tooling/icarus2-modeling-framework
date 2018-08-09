@@ -53,7 +53,7 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	}
 
 	@Override
-	public MemberManifest getHostManifest() {
+	public MemberManifest getHost() {
 		return hostManifest;
 	}
 

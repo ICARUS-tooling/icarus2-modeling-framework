@@ -67,7 +67,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 
 		for(ManifestType manifestType : getAllowedHostTypes()) {
 
-			TypedManifest host = mockTypedManifest(manifestType);
+			TypedManifest host = mockTypedManifest(manifestType, true);
 			ManifestLocation location = getOrMockManifestLocation(host, false);
 			ManifestRegistry registry = getOrMockManifestRegistry(host);
 
@@ -111,7 +111,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 
 		for(ManifestType manifestType : getAllowedHostTypes()) {
 
-			TypedManifest host = mockTypedManifest(manifestType);
+			TypedManifest host = mockTypedManifest(manifestType, true);
 
 			M manifest = create(
 					new Class<?>[]{manifestType.getBaseClass()}, host);
@@ -182,7 +182,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 		TypedManifest host = null;
 		Set<ManifestType> hostTypes = getAllowedHostTypes();
 		if(!location.isTemplate() && !hostTypes.isEmpty()) {
-			host = mockTypedManifest(hostTypes.iterator().next());
+			host = mockTypedManifest(hostTypes.iterator().next(), true);
 		}
 
 		return createHosted(location, registry, host);
@@ -275,7 +275,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 
 			if(illegalValue!=null) {
 				ManifestTestUtils.assertIllegalValue(() -> manifest.addProperty(
-						nameM, valueType, false, illegalValue));
+						nameM, valueType, false, illegalValue), illegalValue);
 			}
 
 			TestUtils.assertNPE(() -> manifest.addProperty(null, valueType, false, value));
@@ -338,7 +338,8 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 			manifest.addProperty(property);
 
 			ManifestTestUtils.assertManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
-					() -> manifest.addProperty(property));
+					() -> manifest.addProperty(property),
+					"Teating duplicate property id");
 
 			manifest.lock();
 			LockableTest.assertLocked(() -> manifest.addProperty(property));
@@ -355,7 +356,8 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 
 		TestUtils.assertNPE(() -> manifest.getProperty(null));
 		ManifestTestUtils.assertManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
-				() -> manifest.getProperty(name));
+				() -> manifest.getProperty(name),
+				"Testing retrieval of unknown property id");
 
 		Property property = mockProperty(name, ValueType.STRING, false, "test");
 		manifest.addProperty(property);
@@ -374,7 +376,8 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 			derived.addProperty(property2);
 
 			ManifestTestUtils.assertManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
-					() -> template.getProperty(name2));
+					() -> template.getProperty(name2),
+					"Testing retrieval of unknown property id on template");
 
 			assertSame(property2, derived.getProperty(name2));
 		}
@@ -546,12 +549,13 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 
 			TestUtils.assertNPE(() -> manifest.setPropertyValue(null, value));
 			ManifestTestUtils.assertManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
-					() -> manifest.setPropertyValue(name, value2));
+					() -> manifest.setPropertyValue(name, value2),
+					"Test modification attempt on unknown property id");
 
 			manifest.addProperty(name, valueType, false, value);
 
 			if(illegalValue!=null) {
-				ManifestTestUtils.assertIllegalValue(() -> manifest.setPropertyValue(name, illegalValue));
+				ManifestTestUtils.assertIllegalValue(() -> manifest.setPropertyValue(name, illegalValue), illegalValue);
 			}
 
 			manifest.lock();

@@ -177,10 +177,10 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.ContextManifest#getCorpusManifest()
+	 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
 	 */
 	@Override
-	public CorpusManifest getCorpusManifest() {
+	public CorpusManifest getHost() {
 		return corpusManifest;
 	}
 

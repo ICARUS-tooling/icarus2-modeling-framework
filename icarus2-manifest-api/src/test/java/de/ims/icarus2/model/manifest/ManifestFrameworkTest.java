@@ -3,7 +3,7 @@
  */
 package de.ims.icarus2.model.manifest;
 
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import org.junit.jupiter.api.function.Executable;
 
@@ -15,5 +15,5 @@ import de.ims.icarus2.test.GenericTest;
  */
 public interface ManifestFrameworkTest<T extends Object> extends GenericTest<T> {
 
-	public static final Consumer<Executable> TYPE_CAST_CHECK = ManifestTestUtils::assertIllegalValue;
+	public static final BiConsumer<Executable, Object> TYPE_CAST_CHECK = ManifestTestUtils::assertIllegalValue;
 }

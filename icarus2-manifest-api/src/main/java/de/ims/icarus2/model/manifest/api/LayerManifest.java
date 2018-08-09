@@ -53,13 +53,13 @@ public interface LayerManifest extends MemberManifest {
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	LayerGroupManifest getGroupManifest();
+	default LayerGroupManifest getGroupManifest() {
+		return getHost();
+	}
 
 
 	@Override
-	default ManifestFragment getHost() {
-		return getGroupManifest();
-	}
+	LayerGroupManifest getHost();
 
 	/**
 	 * Returns the optional layer type that acts as another abstraction mechanism
@@ -133,12 +133,12 @@ public interface LayerManifest extends MemberManifest {
 		 *
 		 * @return
 		 */
-		LayerManifest getLayerManifest();
+		default LayerManifest getLayerManifest() {
+			return getHost();
+		}
 
 		@Override
-		default public ManifestFragment getHost() {
-			return getLayerManifest();
-		};
+		LayerManifest getHost();
 
 		/**
 		 * When the target layer resides in a foreign context and was resolved using

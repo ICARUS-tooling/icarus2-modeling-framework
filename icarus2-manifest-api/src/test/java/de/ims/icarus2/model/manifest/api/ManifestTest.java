@@ -56,7 +56,7 @@ import de.ims.icarus2.util.function.ObjBoolConsumer;
 public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<M> {
 
 
-	public static final Consumer<Executable> ILLEGAL_ID_CHECK = ManifestTestUtils::assertIllegalId;
+	public static final BiConsumer<Executable, Object> ILLEGAL_ID_CHECK = ManifestTestUtils::assertIllegalId;
 
 	M createUnlocked(ManifestLocation location, ManifestRegistry registry);
 
@@ -435,7 +435,8 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 		Manifest liveContextManifest = createUnlocked();
 
 		ManifestTestUtils.assertManifestException(ManifestErrorCode.MANIFEST_ERROR,
-				() -> liveContextManifest.setIsTemplate(true));
+				() -> liveContextManifest.setIsTemplate(true),
+				"Testing setIsTemplate(String) on embedded manifest");
 	}
 
 	/**
@@ -504,7 +505,8 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 		M manifest = createUnlocked();
 		manifest.setVersionManifest(mock(VersionManifest.class));
 		assertManifestException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
-				() -> manifest.setVersionManifest(mock(VersionManifest.class)));
+				() -> manifest.setVersionManifest(mock(VersionManifest.class)),
+				"Testing repeated attempt to set version manifest");
 	}
 
 }

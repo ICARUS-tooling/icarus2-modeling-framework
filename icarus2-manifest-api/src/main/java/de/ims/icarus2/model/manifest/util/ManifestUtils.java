@@ -37,7 +37,7 @@ import de.ims.icarus2.model.manifest.api.TypedManifest;
 public class ManifestUtils {
 
 	private static final Pattern idPattern = Pattern.compile(
-			"^\\p{Alpha}([:.\\-\\w]*[\\w])?$"); //$NON-NLS-1$
+			"^\\p{Alpha}[._\\-\\w]*[\\w]$"); //$NON-NLS-1$
 
 	private static Matcher idMatcher;
 

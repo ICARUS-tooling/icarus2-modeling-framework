@@ -74,8 +74,11 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		this(memberManifest.getManifestLocation(), memberManifest.getRegistry(), memberManifest);
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.OptionsManifest#getHost()
+	 */
 	@Override
-	public MemberManifest getMemberManifest() {
+	public MemberManifest getHost() {
 		return memberManifest;
 	}
 
