@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
@@ -135,13 +136,14 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 	/**
 	 * Verifies that this layer is properly hosted within an enclosing
 	 * {@link LayerGroupManifest} and {@link ContextManifest}.
-	 * If the check fails an exception is thrown.
+	 * If the check fails an exception is thrown, unless the layer is
+	 * declared to be a {@link #isTemplate() template}.
 	 *
 	 * @throws ManifestException of type {@link ManifestErrorCode#MANIFEST_MISSING_ENVIRONMENT}
 	 * if the host check fails.
 	 */
 	protected void checkAllowsTargetLayer() {
-		if(getGroupManifest()==null || getGroupManifest().getContextManifest()==null)
+		if(!isTemplate() && (getGroupManifest()==null || getGroupManifest().getContextManifest()==null))
 			throw new ManifestException(ManifestErrorCode.MANIFEST_MISSING_ENVIRONMENT,
 					"Cannot make links to other layers without enclosing layer group or context: "+getId()); //$NON-NLS-1$
 	}
@@ -158,7 +160,12 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 
 		checkAllowsTargetLayer();
 		TargetLayerManifest targetLayerManifest = createTargetLayerManifest(baseLayerId);
+
+		if(baseLayerManifests.contains(targetLayerManifest))
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Duplicate base layer id: "+baseLayerId);
+
 		baseLayerManifests.add(targetLayerManifest);
+
 		return targetLayerManifest;
 	}
 

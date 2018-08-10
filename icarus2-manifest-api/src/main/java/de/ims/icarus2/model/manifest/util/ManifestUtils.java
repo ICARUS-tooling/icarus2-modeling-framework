@@ -43,6 +43,8 @@ public class ManifestUtils {
 
 	public static final char ID_SEPARATOR = '@';
 
+	public static final int MIN_ID_LENGTH = 3;
+
 	/**
 	 * Verifies the validity of the given {@code id} string.
 	 * <p>
@@ -59,6 +61,10 @@ public class ManifestUtils {
 	 * result in them being rejected by the registry.
 	 */
 	public static boolean isValidId(String id) {
+		if(id==null || id.length()<MIN_ID_LENGTH) {
+			return false;
+		}
+
 		synchronized (idPattern) {
 			if(idMatcher==null) {
 				idMatcher = idPattern.matcher(id);
@@ -152,5 +158,31 @@ public class ManifestUtils {
 	public static String extractElementId(String id) {
 		int idx = id.indexOf(ID_SEPARATOR);
 		return idx==-1 ? id : id.substring(idx+1);
+	}
+
+	/**
+	 * Checks whether the given {@code manifest} is part of a template declaration
+	 * or a {@link Manifest#isTemplate() template} itself.
+	 *
+	 * @param manifest
+	 * @return
+	 *
+	 * @see Manifest#hasTemplateContext()
+	 * @see Manifest#isValidTemplate()
+	 * @see Embedded#getHost()
+	 */
+	public static boolean hasTemplateContext(TypedManifest manifest) {
+
+		while(manifest!=null) {
+			if(manifest instanceof Manifest
+					&& ((Manifest)manifest).isValidTemplate()){
+				return true;
+			}
+
+			manifest = (manifest instanceof Embedded) ?
+					((Embedded)manifest).getHost() : null;
+		}
+
+		return false;
 	}
 }

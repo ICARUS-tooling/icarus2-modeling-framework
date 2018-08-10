@@ -23,6 +23,7 @@ import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertManifestExce
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertSetter;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestLocation;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestRegistry;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubTemplateContext;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -366,6 +367,29 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	@Test
 	default void testGetUID() {
 		assertTrue(createUnlocked().getUID()>0);
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.Manifest#hasTemplateContext()}.
+	 */
+	@Test
+	default void testHasTemplateContext() {
+		// Takes care of embedding depth of 0
+		assertFalse(createUnlocked().hasTemplateContext());
+		assertTrue(createTemplate().hasTemplateContext());
+
+		// Complex hierarchy
+		int embeddingDepth = 1;
+		while(true) {
+			M manifest = createUnlocked(mockManifestLocation(true), mockManifestRegistry());
+			if(!stubTemplateContext(manifest, embeddingDepth)) {
+				break;
+			}
+
+			assertTrue(manifest.hasTemplateContext(), "Expecting template context for embedding depths "+embeddingDepth);
+
+			embeddingDepth++;
+		}
 	}
 
 	/**

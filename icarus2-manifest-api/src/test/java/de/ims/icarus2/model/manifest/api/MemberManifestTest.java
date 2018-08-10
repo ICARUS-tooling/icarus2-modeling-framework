@@ -182,10 +182,14 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 		TypedManifest host = null;
 		Set<ManifestType> hostTypes = getAllowedHostTypes();
 		if(!location.isTemplate() && !hostTypes.isEmpty()) {
-			host = mockTypedManifest(hostTypes.iterator().next(), true);
+			host = createMockedHost(location, registry, hostTypes.iterator().next());
 		}
 
 		return createHosted(location, registry, host);
+	}
+
+	default TypedManifest createMockedHost(ManifestLocation location, ManifestRegistry registry, ManifestType preferredType) {
+		return mockTypedManifest(preferredType, true);
 	}
 
 	/**

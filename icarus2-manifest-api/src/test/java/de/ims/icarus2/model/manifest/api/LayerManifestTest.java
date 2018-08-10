@@ -60,6 +60,22 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	}
 
 	/**
+	 *
+	 * @see de.ims.icarus2.model.manifest.api.MemberManifestTest#createMockedHost(de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.ManifestType)
+	 */
+	@Override
+	default TypedManifest createMockedHost(ManifestLocation location, ManifestRegistry registry, ManifestType preferredType) {
+		assertEquals(ManifestType.LAYER_GROUP_MANIFEST, preferredType);
+
+		LayerGroupManifest manifest = mockTypedManifest(preferredType, true);
+
+		// Additional handling: ensure the proxy methods around getHost() return valid data
+		when(manifest.getContextManifest()).thenCallRealMethod();
+
+		return manifest;
+	}
+
+	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.LayerManifest#getContextManifest()}.
 	 */
 	@Test

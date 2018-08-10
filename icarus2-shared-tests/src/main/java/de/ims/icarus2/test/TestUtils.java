@@ -76,6 +76,7 @@ public class TestUtils {
 	public static final String EMOJI = "👍"; // thumbs-up emoji
 
 	public static <T extends Object> T assertMock(T mock) {
+		assertNotNull(mock, "Mock is null");
 		MockingDetails mockingDetails = Mockito.mockingDetails(mock);
 		assertTrue(mockingDetails.isMock(), "Given object is not a mock: "+mock);
 		return mock;

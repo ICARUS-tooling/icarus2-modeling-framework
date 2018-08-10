@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.manifest.api;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -71,6 +72,17 @@ public interface Manifest extends ManifestFragment {
 	 */
 	default boolean isValidTemplate() {
 		return isTemplate() && getRegistry().hasTemplate(getId());
+	}
+
+	/**
+	 * @return {@code true} iff the {@link Embedded#getHost() host} chain of this
+	 * manifest contains a {@link Manifest#isValidTemplate() valid template} or if this
+	 * manifest is a {@link #isValidTemplate() template itself}.
+	 *
+	 * @see ManifestUtils#hasTemplateContext(TypedManifest)
+	 */
+	default boolean hasTemplateContext() {
+		return ManifestUtils.hasTemplateContext(this);
 	}
 
 	/**

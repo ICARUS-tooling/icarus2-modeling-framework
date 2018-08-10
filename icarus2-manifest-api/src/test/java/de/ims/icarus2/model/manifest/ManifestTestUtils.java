@@ -16,13 +16,17 @@
  */
 package de.ims.icarus2.model.manifest;
 
+import static de.ims.icarus2.test.TestUtils.assertMock;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -41,7 +45,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import org.junit.jupiter.api.function.Executable;
-import org.mockito.Mockito;
 
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.GlobalErrorCode;
@@ -275,6 +278,36 @@ public class ManifestTestUtils {
 		}
 	}
 
+	/**
+	 * Attempts to set the host manifest at the given embedding depth to
+	 * be a {@link Manifest#setIsTemplate(boolean) template}.
+	 *
+	 * @param manifest
+	 * @param embeddingDepth
+	 * @return
+	 */
+	public static <M extends Manifest> boolean stubTemplateContext(M manifest, int embeddingDepth) {
+		assertNotNull(manifest);
+		assertTrue(embeddingDepth>0, "Cannot mock the live stage");
+
+		// No mock assertion here as there first instance is allowed to be live
+		TypedManifest host = manifest;
+
+		while(embeddingDepth>0 && host!=null) {
+			if(host instanceof Embedded) {
+				host = ((Embedded)manifest).getHost();
+			}
+		}
+
+		if(host!=null && host instanceof Manifest) {
+			Manifest m = (Manifest) assertMock(host);
+			when(m.isTemplate()).thenReturn(Boolean.TRUE);
+			return true;
+		}
+
+		return false;
+	}
+
 	public static ManifestLocation mockManifestLocation(boolean template) {
 		ManifestLocation location = mock(ManifestLocation.class);
 		when(location.isTemplate()).thenReturn(template);
@@ -329,12 +362,12 @@ public class ManifestTestUtils {
 
 	public static <M extends TypedManifest> M mockTypedManifest(Class<? extends TypedManifest> clazz) {
 		@SuppressWarnings("unchecked")
-		M manifest = (M) mock(clazz);
+		M manifest = (M) mock(clazz, withSettings().defaultAnswer(CALLS_REAL_METHODS));
 
 		if(Manifest.class.isAssignableFrom(clazz)) {
 			Manifest fullManifest = (Manifest) manifest;
-			ManifestRegistry registry = Mockito.mock(ManifestRegistry.class);
-			ManifestLocation location = Mockito.mock(ManifestLocation.class);
+			ManifestRegistry registry = mock(ManifestRegistry.class);
+			ManifestLocation location = mock(ManifestLocation.class);
 
 			when(fullManifest.getManifestLocation()).thenReturn(location);
 			when(fullManifest.getRegistry()).thenReturn(registry);
@@ -353,8 +386,28 @@ public class ManifestTestUtils {
 			ManifestType hostType = envTypes[0];
 			TypedManifest host = mockTypedManifest(hostType);
 
-			Embedded embedded = (Embedded)current;
-			when(embedded.getHost()).thenReturn(host);
+			when(((Embedded)current).getHost()).thenReturn(host);
+
+//			switch (currentType) {
+//			case ANNOTATION_MANIFEST:
+//				when(((AnnotationManifest)current).getLayerManifest()).thenCallRealMethod();
+//				break;
+//
+//			case ANNOTATION_LAYER_MANIFEST:
+//			case STRUCTURE_LAYER_MANIFEST:
+//			case ITEM_LAYER_MANIFEST:
+//			case FRAGMENT_LAYER_MANIFEST:
+//			case HIGHLIGHT_LAYER_MANIFEST:
+//				when(((LayerManifest)current).getGroupManifest()).thenCallRealMethod();
+//				break;
+//
+//			case LAYER_GROUP_MANIFEST:
+//				when(((LayerGroupManifest)current).).thenCallRealMethod();
+//				break;
+//
+//			default:
+//				break;
+//			}
 
 			current = host;
 			currentType = hostType;

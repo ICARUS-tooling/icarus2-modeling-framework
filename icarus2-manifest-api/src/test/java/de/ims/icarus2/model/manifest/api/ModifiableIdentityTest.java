@@ -56,9 +56,9 @@ public interface ModifiableIdentityTest {
 		}
 
 		Icon icon = mock(Icon.class);
-		ModifiableIdentity fromIdentity = createFromIdentity("id", "name", "description", icon);
+		ModifiableIdentity fromIdentity = createFromIdentity("myId", "name", "description", icon);
 		if(fromIdentity!=null) {
-			assertEquals("id", fromIdentity.getId());
+			assertEquals("myId", fromIdentity.getId());
 		}
 	}
 
@@ -73,7 +73,7 @@ public interface ModifiableIdentityTest {
 		}
 
 		Icon icon = mock(Icon.class);
-		ModifiableIdentity fromIdentity = createFromIdentity("id", "name", "description", icon);
+		ModifiableIdentity fromIdentity = createFromIdentity("myId", "name", "description", icon);
 		if(fromIdentity!=null) {
 			assertEquals("name", fromIdentity.getName());
 		}
@@ -90,7 +90,7 @@ public interface ModifiableIdentityTest {
 		}
 
 		Icon icon = mock(Icon.class);
-		ModifiableIdentity fromIdentity = createFromIdentity("id", "name", "description", icon);
+		ModifiableIdentity fromIdentity = createFromIdentity("myId", "name", "description", icon);
 		if(fromIdentity!=null) {
 			assertEquals("description", fromIdentity.getDescription());
 		}
@@ -107,7 +107,7 @@ public interface ModifiableIdentityTest {
 		}
 
 		Icon icon = mock(Icon.class);
-		ModifiableIdentity fromIdentity = createFromIdentity("id", "name", "description", icon);
+		ModifiableIdentity fromIdentity = createFromIdentity("myId", "name", "description", icon);
 		if(fromIdentity!=null) {
 			assertSame(icon, fromIdentity.getIcon());
 		}
@@ -120,15 +120,15 @@ public interface ModifiableIdentityTest {
 	default void testSetId() {
 		ModifiableIdentity empty = createEmpty();
 		if(empty!=null) {
-			empty.setId("id");
-			assertEquals("id", empty.getId());
+			empty.setId("myId");
+			assertEquals("myId", empty.getId());
 		}
 
 		Icon icon = mock(Icon.class);
-		ModifiableIdentity fromIdentity = createFromIdentity("id", "name", "description", icon);
+		ModifiableIdentity fromIdentity = createFromIdentity("myId", "name", "description", icon);
 		if(fromIdentity!=null) {
-			fromIdentity.setId("id");
-			assertEquals("id", fromIdentity.getId());
+			fromIdentity.setId("myId");
+			assertEquals("myId", fromIdentity.getId());
 		}
 	}
 
@@ -144,7 +144,7 @@ public interface ModifiableIdentityTest {
 		}
 
 		Icon icon = mock(Icon.class);
-		ModifiableIdentity fromIdentity = createFromIdentity("id", "name", "description", icon);
+		ModifiableIdentity fromIdentity = createFromIdentity("myId", "name", "description", icon);
 		if(fromIdentity!=null) {
 			fromIdentity.setName("name");
 			assertEquals("name", fromIdentity.getName());
@@ -163,7 +163,7 @@ public interface ModifiableIdentityTest {
 		}
 
 		Icon icon = mock(Icon.class);
-		ModifiableIdentity fromIdentity = createFromIdentity("id", "name", "description", icon);
+		ModifiableIdentity fromIdentity = createFromIdentity("myId", "name", "description", icon);
 		if(fromIdentity!=null) {
 			fromIdentity.setDescription("description");
 			assertEquals("description", fromIdentity.getDescription());
@@ -184,7 +184,7 @@ public interface ModifiableIdentityTest {
 		}
 
 		Icon icon2 = mock(Icon.class);
-		ModifiableIdentity fromIdentity = createFromIdentity("id", "name", "description", icon);
+		ModifiableIdentity fromIdentity = createFromIdentity("myId", "name", "description", icon);
 		if(fromIdentity!=null) {
 			fromIdentity.setIcon(icon2);
 			assertEquals(icon2, fromIdentity.getIcon());
