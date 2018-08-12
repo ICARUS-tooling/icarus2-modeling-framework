@@ -24,6 +24,7 @@ import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertSetter;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestLocation;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestRegistry;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubTemplateContext;
+import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -44,10 +45,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.ManifestTestFeature;
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.test.GenericTest;
+import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.util.function.ObjBoolConsumer;
 
 /**
@@ -57,9 +61,75 @@ import de.ims.icarus2.util.function.ObjBoolConsumer;
 public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<M> {
 
 
-	public static final BiConsumer<Executable, Object> ILLEGAL_ID_CHECK = ManifestTestUtils::assertIllegalId;
+	public static final BiConsumer<Executable, String> ILLEGAL_ID_CHECK = ManifestTestUtils::assertIllegalId;
 
-	M createUnlocked(ManifestLocation location, ManifestRegistry registry);
+	@Provider
+	M createTestInstance(TestSettings settings, ManifestLocation location, ManifestRegistry registry);
+
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
+	 */
+	@Provider
+	@Override
+	default M createTestInstance(TestSettings settings) {
+		ManifestLocation location = mockManifestLocation(settings.hasFeature(ManifestTestFeature.TEMPLATE));
+		ManifestRegistry registry = mockManifestRegistry();
+		return createTestInstance(settings, location, registry);
+	}
+
+	/**
+	 * Creates a manifest instance for testing that is registered as a template
+	 * with {@link Manifest#getId() id} {@code templateId} with the underlying
+	 * registry.
+	 *
+	 * @return
+	 */
+	@Provider
+	@SuppressWarnings("boxing")
+	default M createTemplate(TestSettings settings) {
+		ManifestRegistry registry = mock(ManifestRegistry.class);
+
+		String id = "templateId";
+		M template = createTestInstance(settings.clone()
+				.withFeatures(
+					ManifestTestFeature.UNLOCKED,
+					ManifestTestFeature.TEMPLATE),
+				ManifestTestUtils.mockManifestLocation(true),
+				registry);
+		template.setIsTemplate(true);
+		template.setId(id);
+
+		when(registry.getTemplate(id)).thenReturn(template);
+		when(registry.hasTemplate(id)).thenReturn(true);
+
+		return template;
+	}
+
+	/**
+	 * Create a manifest that is derived from the given template.
+	 *
+	 * @return
+	 */
+	@Provider
+	default M createDerived(TestSettings settings, M template) {
+		// Sanity check for 'template' actually being a template manifest
+		assertNotNull(template.getId());
+		assertTrue(template.isTemplate());
+
+		// Sanity checks for proper template resolution
+		assertTrue(template.getRegistry().hasTemplate(template.getId()));
+		assertSame(template, template.getRegistry().getTemplate(template.getId()));
+
+		M derived = createTestInstance(settings.clone().withFeatures(
+				ManifestTestFeature.UNLOCKED,
+				ManifestTestFeature.DERIVED),
+				ManifestTestUtils.mockManifestLocation(false), template.getRegistry());
+		derived.setTemplateId(template.getId());
+
+		assertSame(template, derived.getTemplate());
+
+		return derived;
+	}
 
 	/**
 	 * Attempts to call a dual argument constructor with the following signature: <br>
@@ -91,7 +161,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 		assertConstructorManifestLocationManifestRegistry();
 	}
 
-	public static <K extends Object> Function<K, K> identity(){
+	public static <K extends Object> Function<K, K> IDENTITY(){
 		return k -> k;
 	}
 
@@ -108,7 +178,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 * <li>Check if {@code #getExpectedType() manifest type} supports {@link ManifestType#isSupportTemplating() templating}
 	 *  and exists if it doesn't</li>
 	 * <li>Create {@link #createTemplate() template} instance for testing</li>
-	 * <li>Assign mocked property via {@code getter}</li>
+	 * <li>Assign mocked property via {@code getter} to template</li>
 	 * <li>Create {@link #createDerived(Manifest) derived} manifest from template</li>
 	 * <li>Assert that {@code getter} on derived manifest returns value from {@code template}</li>
 	 * <li>Set another mocked value via {@code getter} on derived manifest</li>
@@ -116,6 +186,8 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 * <li>Assert that template {@code getter} result is unaffected by changes to derived manifest</li>
 	 * </ol>
 	 *
+	 * @param settings environmental settings that are passed to {@link #createTemplate(TestSettings)} and
+	 * {@link #createDerived(TestSettings, Manifest)}
 	 * @param value1 value to be used for {@code getter} on the main test instance and template
 	 * @param value2 value to be used for {@code getter} on the derived manifest
 	 * @param defaultValue internal default value for the tested property if available
@@ -124,14 +196,14 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 *
 	 */
 	default <K extends Object> void assertDerivativeGetter(
-			K value1, K value2, K defaultValue, Function<M,K> getter, BiConsumer<M, K> setter) {
+			TestSettings settings, K value1, K value2, K defaultValue, Function<M,K> getter, BiConsumer<M, K> setter) {
 
-		ManifestTestUtils.assertGetter(createUnlocked(), value1, value2, defaultValue, getter, setter);
+		ManifestTestUtils.assertGetter(createUnlocked(settings), value1, value2, defaultValue, getter, setter);
 
 		if(getExpectedType().isSupportTemplating()) {
-			M template = createTemplate();
+			M template = createTemplate(settings);
 			setter.accept(template, value1);
-			M derived = createDerived(template);
+			M derived = createDerived(settings, template);
 
 			assertEquals(value1, getter.apply(derived));
 
@@ -143,14 +215,14 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 
 	@SuppressWarnings("unchecked")
 	default <K extends Object> void assertDerivativeAccumulativeGetter(
-			K value1, K value2, Function<M, ? extends Collection<K>> getter, BiConsumer<M, K> adder) {
+			TestSettings settings, K value1, K value2, Function<M, ? extends Collection<K>> getter, BiConsumer<M, K> adder) {
 
-		ManifestTestUtils.assertAccumulativeGetter(createUnlocked(), value1, value2, getter, adder);
+		ManifestTestUtils.assertAccumulativeGetter(createUnlocked(settings), value1, value2, getter, adder);
 
 		if(getExpectedType().isSupportTemplating()) {
-			M template = createTemplate();
+			M template = createTemplate(settings);
 			adder.accept(template, value1);
-			M derived = createDerived(template);
+			M derived = createDerived(settings, template);
 
 			TestUtils.assertCollectionEquals(getter.apply(derived), value1);
 
@@ -162,14 +234,14 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 
 	@SuppressWarnings("unchecked")
 	default <K extends Object> void assertDerivativeAccumulativeLocalGetter(
-			K value1, K value2, Function<M,? extends Collection<K>> getter, BiConsumer<M, K> adder) {
+			TestSettings settings, K value1, K value2, Function<M,? extends Collection<K>> getter, BiConsumer<M, K> adder) {
 
-		ManifestTestUtils.assertAccumulativeLocalGetter(createUnlocked(), value1, value2, getter, adder);
+		ManifestTestUtils.assertAccumulativeLocalGetter(createUnlocked(settings), value1, value2, getter, adder);
 
 		if(getExpectedType().isSupportTemplating()) {
-			M template = createTemplate();
+			M template = createTemplate(settings);
 			adder.accept(template, value1);
-			M derived = createDerived(template);
+			M derived = createDerived(settings, template);
 
 			assertTrue(getter.apply(derived).isEmpty());
 
@@ -181,14 +253,14 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 
 	@SuppressWarnings("unchecked")
 	default <K extends Object, A extends Consumer<? super K>> void assertDerivativeForEach(
-			K value1, K value2, Function<M,Consumer<A>> forEachGen, BiConsumer<M, K> adder) {
+			TestSettings settings, K value1, K value2, Function<M,Consumer<A>> forEachGen, BiConsumer<M, K> adder) {
 
-		ManifestTestUtils.assertForEach(createUnlocked(), value1, value2, forEachGen, adder);
+		ManifestTestUtils.assertForEach(createUnlocked(settings), value1, value2, forEachGen, adder);
 
 		if(getExpectedType().isSupportTemplating()) {
-			M template = createTemplate();
+			M template = createTemplate(settings);
 			adder.accept(template, value1);
-			M derived = createDerived(template);
+			M derived = createDerived(settings, template);
 
 			TestUtils.assertForEachUnsorted(forEachGen.apply(derived), value1);
 
@@ -201,14 +273,14 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 
 	@SuppressWarnings("unchecked")
 	default <K extends Object, A extends Consumer<? super K>> void assertDerivativeForEachLocal(
-			K value1, K value2, Function<M,Consumer<A>> forEachLocalGen, BiConsumer<M, K> adder) {
+			TestSettings settings, K value1, K value2, Function<M,Consumer<A>> forEachLocalGen, BiConsumer<M, K> adder) {
 
-		ManifestTestUtils.assertForEachLocal(createUnlocked(), value1, value2, forEachLocalGen, adder);
+		ManifestTestUtils.assertForEachLocal(createUnlocked(settings), value1, value2, forEachLocalGen, adder);
 
 		if(getExpectedType().isSupportTemplating()) {
-			M template = createTemplate();
+			M template = createTemplate(settings);
 			adder.accept(template, value1);
-			M derived = createDerived(template);
+			M derived = createDerived(settings, template);
 
 			TestUtils.assertForEachEmpty(forEachLocalGen.apply(derived));
 
@@ -223,14 +295,14 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 * @see #assertDerivativeGetter(Class, Object, Object, Object, Function, BiConsumer)
 	 */
 	default <K extends Object> void assertDerivativeIsLocal(
-			K value1, K value2, Predicate<M> isLocalCheck, BiConsumer<M, K> setter) {
+			TestSettings settings, K value1, K value2, Predicate<M> isLocalCheck, BiConsumer<M, K> setter) {
 
-		ManifestTestUtils.assertIsLocal(createUnlocked(), value1, value2, isLocalCheck, setter);
+		ManifestTestUtils.assertIsLocal(createUnlocked(settings), value1, value2, isLocalCheck, setter);
 
 		if(getExpectedType().isSupportTemplating()) {
-			M template = createTemplate();
+			M template = createTemplate(settings);
 			setter.accept(template, value1);
-			M derived = createDerived(template);
+			M derived = createDerived(settings, template);
 
 			assertFalse(isLocalCheck.test(derived));
 
@@ -240,14 +312,14 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	}
 
 	default <K extends Object> void assertDerivativeAccumulativeIsLocal(
-			K value1, K value2, BiPredicate<M, K> isLocalCheck, BiConsumer<M, K> adder) {
+			TestSettings settings, K value1, K value2, BiPredicate<M, K> isLocalCheck, BiConsumer<M, K> adder) {
 
-		ManifestTestUtils.assertAccumulativeIsLocal(createUnlocked(), value1, value2, isLocalCheck, adder);
+		ManifestTestUtils.assertAccumulativeIsLocal(createUnlocked(settings), value1, value2, isLocalCheck, adder);
 
 		if(getExpectedType().isSupportTemplating()) {
-			M template = createTemplate();
+			M template = createTemplate(settings);
 			adder.accept(template, value1);
-			M derived = createDerived(template);
+			M derived = createDerived(settings, template);
 
 			assertFalse(isLocalCheck.test(derived, value1));
 
@@ -256,13 +328,14 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 		}
 	}
 
-	default void assertDerivativeFlagGetter(Boolean defaultValue, Predicate<M> getter, ObjBoolConsumer<M> setter) {
+	default void assertDerivativeFlagGetter(TestSettings settings, Boolean defaultValue,
+			Predicate<M> getter, ObjBoolConsumer<M> setter) {
 
-		ManifestTestUtils.assertFlagGetter(createUnlocked(), defaultValue, getter, setter);
+		ManifestTestUtils.assertFlagGetter(createUnlocked(settings), defaultValue, getter, setter);
 
 		if(getExpectedType().isSupportTemplating()) {
-			M template = createTemplate();
-			M derived = createDerived(template);
+			M template = createTemplate(settings);
+			M derived = createDerived(settings, template);
 
 			setter.accept(template, true);
 			assertTrue(getter.test(derived));
@@ -277,13 +350,14 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 		}
 	}
 
-	default void assertDerivativeLocalFlagGetter(Boolean defaultValue, Predicate<M> getter, ObjBoolConsumer<M> setter) {
+	default void assertDerivativeLocalFlagGetter(TestSettings settings, Boolean defaultValue,
+			Predicate<M> getter, ObjBoolConsumer<M> setter) {
 
-		ManifestTestUtils.assertFlagGetter(createUnlocked(), defaultValue, getter, setter);
+		ManifestTestUtils.assertFlagGetter(createUnlocked(settings), defaultValue, getter, setter);
 
 		if(getExpectedType().isSupportTemplating()) {
-			M template = createTemplate();
-			M derived = createDerived(template);
+			M template = createTemplate(settings);
+			M derived = createDerived(settings, template);
 
 			setter.accept(template, true);
 			if(defaultValue!=null) {
@@ -304,61 +378,6 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 			setter.accept(derived, false);
 			assertFalse(getter.test(derived));
 		}
-	}
-
-	/**
-	 * Create an empty and unlocked manifest for testing.
-	 * The used {@link ManifestLocation} will report to not host templates.
-	 *
-	 * @see de.ims.icarus2.model.manifest.api.ManifestFragmentTest#createUnlocked()
-	 */
-	@Override
-	default M createUnlocked() {
-		return createUnlocked(ManifestTestUtils.mockManifestLocation(false), ManifestTestUtils.mockManifestRegistry());
-	}
-
-	/**
-	 * Creates a manifest instance for testing that is registered as a template
-	 * with {@link Manifest#getId() id} {@code templateId} with the underlying
-	 * registry.
-	 *
-	 * @return
-	 */
-	@SuppressWarnings("boxing")
-	default M createTemplate() {
-		ManifestRegistry registry = mock(ManifestRegistry.class);
-
-		String id = "templateId";
-		M template = createUnlocked(ManifestTestUtils.mockManifestLocation(true), registry);
-		template.setIsTemplate(true);
-		template.setId(id);
-
-		when(registry.getTemplate(id)).thenReturn(template);
-		when(registry.hasTemplate(id)).thenReturn(true);
-
-		return template;
-	}
-
-	/**
-	 * Create a manifest that is derived from the given template.
-	 *
-	 * @return
-	 */
-	default M createDerived(M template) {
-		// Sanity check for 'template' actually being a template manifest
-		assertNotNull(template.getId());
-		assertTrue(template.isTemplate());
-
-		// Sanity checks for proper template resolution
-		assertTrue(template.getRegistry().hasTemplate(template.getId()));
-		assertSame(template, template.getRegistry().getTemplate(template.getId()));
-
-		M derived = createUnlocked(ManifestTestUtils.mockManifestLocation(false), template.getRegistry());
-		derived.setTemplateId(template.getId());
-
-		assertSame(template, derived.getTemplate());
-
-		return derived;
 	}
 
 	/**
@@ -376,12 +395,13 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	default void testHasTemplateContext() {
 		// Takes care of embedding depth of 0
 		assertFalse(createUnlocked().hasTemplateContext());
-		assertTrue(createTemplate().hasTemplateContext());
+		assertTrue(createTemplate(settings()).hasTemplateContext());
 
 		// Complex hierarchy
 		int embeddingDepth = 1;
 		while(true) {
-			M manifest = createUnlocked(mockManifestLocation(true), mockManifestRegistry());
+			M manifest = createTestInstance(settings().withFeatures(ManifestTestFeature.EMBEDDED),
+					mockManifestLocation(true), mockManifestRegistry());
 			if(!stubTemplateContext(manifest, embeddingDepth)) {
 				break;
 			}
@@ -448,7 +468,8 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 */
 	@Test
 	default void testSetIsTemplate() {
-		M manifest = createUnlocked(ManifestTestUtils.mockManifestLocation(true), mock(ManifestRegistry.class));
+		M manifest = createTestInstance(settings().withFeatures(ManifestTestFeature.TEMPLATE),
+				ManifestTestUtils.mockManifestLocation(true), mock(ManifestRegistry.class));
 
 		manifest.setIsTemplate(true);
 		assertTrue(manifest.isTemplate());
@@ -472,7 +493,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 
 		String id = "test123";
 
-		M template = createTemplate();
+		M template = createTemplate(settings());
 
 		ManifestRegistry registry = manifest.getRegistry();
 		when(registry.getTemplate(id)).thenReturn(template);

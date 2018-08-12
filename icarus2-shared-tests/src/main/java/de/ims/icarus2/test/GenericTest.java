@@ -19,8 +19,6 @@
  */
 package de.ims.icarus2.test;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
 import java.lang.reflect.Constructor;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -35,6 +33,8 @@ import org.junit.jupiter.api.function.Executable;
 public interface GenericTest<T extends Object> {
 
 	Class<? extends T> getTestTargetClass();
+
+	T createTestInstance(TestSettings settings);
 
 	default T createNoArgs() throws Exception {
 		return getTestTargetClass().newInstance();
@@ -72,7 +72,7 @@ public interface GenericTest<T extends Object> {
 		return (K[]) null;
 	}
 
-	public static final BiConsumer<Executable, Object> NO_CHECK = (e, val) -> fail("Not meant to have legality check called");
+	public static final BiConsumer<Executable, String> NO_CHECK = TestUtils.NO_CHECK;
 
 
 	public static final Consumer<Executable> NPE_CHECK = TestUtils::assertNPE;

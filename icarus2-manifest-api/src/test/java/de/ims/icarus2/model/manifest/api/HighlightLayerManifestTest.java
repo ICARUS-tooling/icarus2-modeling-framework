@@ -20,12 +20,15 @@
 package de.ims.icarus2.model.manifest.api;
 
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_genericSetter;
+import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_setLayerId;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.mockItemLayerManifest;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.transform_layerManifestId;
 import static de.ims.icarus2.test.GenericTest.NO_DEFAULT;
+import static de.ims.icarus2.test.TestUtils.settings;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.ManifestTestFeature;
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.test.TestUtils;
 
@@ -41,10 +44,11 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	@Test
 	default void testGetPrimaryLayerManifest() {
 		assertDerivativeGetter(
+				settings().withFeatures(ManifestTestFeature.EMBED_TEMPLATE), // Needs embedded template to resolve layer from id
 				mockItemLayerManifest("layer1"),
 				mockItemLayerManifest("layer2"), NO_DEFAULT(),
 				HighlightLayerManifest::getPrimaryLayerManifest,
-				inject_genericSetter(HighlightLayerManifest::setPrimaryLayerId, transform_layerManifestId()));
+				inject_setLayerId(HighlightLayerManifest::setPrimaryLayerId));
 	}
 
 	/**
@@ -53,6 +57,7 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	@Test
 	default void testIsLocalPrimaryLayerManifest() {
 		assertDerivativeIsLocal(
+				settings(),
 				mockItemLayerManifest("layer1"),
 				mockItemLayerManifest("layer2"),
 				HighlightLayerManifest::isLocalPrimaryLayerManifest,
@@ -65,7 +70,9 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	@Test
 	default void testIsHighlightFlagSet() {
 		for(HighlightFlag flag : HighlightFlag.values()) {
-			assertDerivativeFlagGetter(Boolean.FALSE,
+			assertDerivativeFlagGetter(
+					settings(),
+					Boolean.FALSE,
 					m -> m.isHighlightFlagSet(flag),
 					(m, active) -> m.setHighlightFlag(flag, active));
 		}
@@ -77,7 +84,9 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	@Test
 	default void testIsLocalHighlightFlagSet() {
 		for(HighlightFlag flag : HighlightFlag.values()) {
-			assertDerivativeLocalFlagGetter(Boolean.FALSE,
+			assertDerivativeLocalFlagGetter(
+					settings(),
+					Boolean.FALSE,
 					m -> m.isLocalHighlightFlagSet(flag),
 					(m, active) -> m.setHighlightFlag(flag, active));
 		}
@@ -89,7 +98,9 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	@Test
 	default void testForEachActiveHighlightFlag() {
 		for(HighlightFlag flag : HighlightFlag.values()) {
-			assertDerivativeForEach(flag, TestUtils.other(flag),
+			assertDerivativeForEach(
+					settings(),
+					flag, TestUtils.other(flag),
 					m -> m::forEachActiveHighlightFlag,
 					(m,f) -> m.setHighlightFlag(f, true));
 		}
@@ -101,7 +112,9 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	@Test
 	default void testForEachActiveLocalHighlightFlag() {
 		for(HighlightFlag flag : HighlightFlag.values()) {
-			assertDerivativeForEachLocal(flag, TestUtils.other(flag),
+			assertDerivativeForEachLocal(
+					settings(),
+					flag, TestUtils.other(flag),
 					m -> m::forEachActiveLocalHighlightFlag,
 					(m,f) -> m.setHighlightFlag(f, true));
 		}
@@ -113,7 +126,9 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	@Test
 	default void testGetActiveHighlightFlags() {
 		for(HighlightFlag flag : HighlightFlag.values()) {
-			assertDerivativeAccumulativeGetter(flag, TestUtils.other(flag),
+			assertDerivativeAccumulativeGetter(
+					settings(),
+					flag, TestUtils.other(flag),
 					HighlightLayerManifest::getActiveHighlightFlags,
 					(m,f) -> m.setHighlightFlag(f, true));
 		}
@@ -125,7 +140,9 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	@Test
 	default void testGetActiveLocalHighlightFlags() {
 		for(HighlightFlag flag : HighlightFlag.values()) {
-			assertDerivativeAccumulativeLocalGetter(flag, TestUtils.other(flag),
+			assertDerivativeAccumulativeLocalGetter(
+					settings(),
+					flag, TestUtils.other(flag),
 					HighlightLayerManifest::getActiveLocalHighlightFlags,
 					(m,f) -> m.setHighlightFlag(f, true));
 		}
@@ -147,7 +164,9 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	@Test
 	default void testSetHighlightFlag() {
 		for(HighlightFlag flag : HighlightFlag.values()) {
-			assertDerivativeAccumulativeGetter(flag, TestUtils.other(flag),
+			assertDerivativeAccumulativeGetter(
+					settings(),
+					flag, TestUtils.other(flag),
 					HighlightLayerManifest::getActiveHighlightFlags,
 					(m,f) -> m.setHighlightFlag(f, true));
 		}

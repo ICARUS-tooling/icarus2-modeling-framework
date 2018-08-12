@@ -21,6 +21,8 @@ package de.ims.icarus2.model.manifest.api;
 
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.test.GenericTest.NO_DEFAULT;
+import static de.ims.icarus2.test.TestUtils.assertMock;
+import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -43,6 +45,7 @@ import org.mockito.Mockito;
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.util.collections.LazyCollection;
 
 /**
@@ -63,6 +66,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	 *
 	 * @see de.ims.icarus2.model.manifest.api.MemberManifestTest#createMockedHost(de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.ManifestType)
 	 */
+	@Provider
 	@Override
 	default TypedManifest createMockedHost(ManifestLocation location, ManifestRegistry registry, ManifestType preferredType) {
 		assertEquals(ManifestType.LAYER_GROUP_MANIFEST, preferredType);
@@ -81,7 +85,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	@Test
 	default void testGetContextManifest() {
 		assertNotNull(createUnlocked().getContextManifest());
-		assertNull(createTemplate().getContextManifest());
+		assertNull(createTemplate(settings()).getContextManifest());
 	}
 
 	/**
@@ -90,7 +94,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	@Test
 	default void testGetGroupManifest() {
 		assertNotNull(createUnlocked().getGroupManifest());
-		assertNull(createTemplate().getGroupManifest());
+		assertNull(createTemplate(settings()).getGroupManifest());
 	}
 
 	public static LayerType mockLayerType(String id) {
@@ -154,7 +158,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	 */
 	@Test
 	default void testGetLayerType() {
-		assertDerivativeGetter(mockLayerType("type1"), mockLayerType("type2"), NO_DEFAULT(),
+		assertDerivativeGetter(settings(), mockLayerType("type1"), mockLayerType("type2"), NO_DEFAULT(),
 				LayerManifest::getLayerType, inject_setLayerTypeId());
 	}
 
@@ -163,7 +167,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	 */
 	@Test
 	default void testIsLocalLayerType() {
-		assertDerivativeIsLocal(mockLayerType("type1"), mockLayerType("type2"),
+		assertDerivativeIsLocal(settings(), mockLayerType("type1"), mockLayerType("type2"),
 				LayerManifest::isLocalLayerType, inject_setLayerTypeId());
 	}
 
@@ -197,10 +201,10 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	public static <M extends LayerManifest> BiConsumer<M, String> inject_createTargetLayerManifest(
 			BiFunction<M, String, TargetLayerManifest> creator) {
 		return (m, id) -> {
-			LayerManifest target = mock(LayerManifest.class);
-			ContextManifest contextManifest = TestUtils.assertMock(m.getContextManifest());
+//			LayerManifest target = mock(LayerManifest.class);
+//			ContextManifest contextManifest = TestUtils.assertMock(m.getContextManifest());
 
-			when(contextManifest.getLayerManifest(id)).thenReturn(target);
+//			when(contextManifest.getLayerManifest(id)).thenReturn(target);
 
 			TargetLayerManifest targetLayerManifest = creator.apply(m, id);
 			assertNotNull(targetLayerManifest);
@@ -208,7 +212,20 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 			assertSame(m, targetLayerManifest.getLayerManifest());
 			assertSame(m, targetLayerManifest.getHost());
 
-			assertSame(target, targetLayerManifest.getResolvedLayerManifest());
+//			assertSame(target, targetLayerManifest.getResolvedLayerManifest());
+		};
+	}
+
+	public static <M extends LayerManifest, L extends LayerManifest> BiConsumer<M, L> inject_setLayerId(
+			BiConsumer<M, String> setter) {
+		return (m, layerManifest) -> {
+
+			String id = layerManifest.getId();
+
+			ContextManifest contextManifest = assertMock(m.getContextManifest());
+			when(contextManifest.getLayerManifest(id)).thenReturn(layerManifest);
+
+			setter.accept(m, id);
 		};
 	}
 
@@ -224,7 +241,8 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	 */
 	@Test
 	default void testForEachBaseLayerManifest() {
-		assertDerivativeForEach("layer1", "layer2",
+		assertDerivativeForEach(settings(),
+				"layer1", "layer2",
 				inject_forEachTargetLayerManifest(m -> m::forEachBaseLayerManifest),
 				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
 	}
@@ -234,7 +252,8 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	 */
 	@Test
 	default void testForEachLocalBaseLayerManifest() {
-		assertDerivativeForEachLocal("layer1", "layer2",
+		assertDerivativeForEachLocal(settings(),
+				"layer1", "layer2",
 				inject_forEachTargetLayerManifest(m -> m::forEachLocalBaseLayerManifest),
 				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
 	}
@@ -284,7 +303,8 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	 */
 	@Test
 	default void testGetBaseLayerManifests() {
-		assertDerivativeAccumulativeGetter("layer1", "layer2",
+		assertDerivativeAccumulativeGetter(settings(),
+				"layer1", "layer2",
 				transform_genericCollectionGetter(LayerManifest::getBaseLayerManifests, transform_targetLayerId()),
 				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
 	}
@@ -294,7 +314,8 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	 */
 	@Test
 	default void testGetLocalBaseLayerManifests() {
-		assertDerivativeAccumulativeGetter("layer1", "layer2",
+		assertDerivativeAccumulativeLocalGetter(settings(),
+				"layer1", "layer2",
 				transform_genericCollectionGetter(LayerManifest::getLocalBaseLayerManifests, transform_targetLayerId()),
 				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
 	}
@@ -316,7 +337,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 		assertLockableAccumulativeAdd(
 				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId),
 				ManifestTestUtils.getIllegalIdValues(), ILLEGAL_ID_CHECK,
-				true, true, ManifestTestUtils.getLegalIdValues());
+				true, INVALID_INPUT_CHECK, ManifestTestUtils.getLegalIdValues());
 	}
 
 	/**
@@ -326,7 +347,8 @@ public interface LayerManifestTest<M extends LayerManifest> extends MemberManife
 	default void testRemoveBaseLayerId() {
 		assertLockableAccumulativeRemove(LayerManifest::addBaseLayerId,
 				LayerManifest::removeBaseLayerId,
-				transform_genericCollectionGetter(LayerManifest::getBaseLayerManifests, transform_targetLayerId()), true, true,
+				transform_genericCollectionGetter(LayerManifest::getBaseLayerManifests, transform_targetLayerId()),
+				true, UNKNOWN_ID_CHECK,
 				"layer1", "layer2", "layer3");
 	}
 

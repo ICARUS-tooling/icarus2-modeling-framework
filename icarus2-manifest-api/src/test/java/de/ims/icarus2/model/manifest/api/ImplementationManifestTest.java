@@ -20,6 +20,7 @@
 package de.ims.icarus2.model.manifest.api;
 
 import static de.ims.icarus2.test.GenericTest.NO_DEFAULT;
+import static de.ims.icarus2.test.TestUtils.settings;
 
 import org.junit.jupiter.api.Test;
 
@@ -51,7 +52,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	default void testGetSourceType() {
 
 		for(SourceType sourceType : SourceType.values()) {
-			assertDerivativeGetter(sourceType, TestUtils.other(sourceType),
+			assertDerivativeGetter(settings(), sourceType, TestUtils.other(sourceType),
 					ImplementationManifest.DEFAULT_SOURCE_TYPE,
 					ImplementationManifest::getSourceType, ImplementationManifest::setSourceType);
 		}
@@ -62,7 +63,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	 */
 	@Test
 	default void testGetSource() {
-		assertDerivativeGetter("source", "source2", NO_DEFAULT(),
+		assertDerivativeGetter(settings(), "source", "source2", NO_DEFAULT(),
 				ImplementationManifest::getSource, ImplementationManifest::setSource);
 	}
 
@@ -71,7 +72,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	 */
 	@Test
 	default void testGetClassname() {
-		assertDerivativeGetter("classname", "classname2", NO_DEFAULT(),
+		assertDerivativeGetter(settings(), "classname", "classname2", NO_DEFAULT(),
 				ImplementationManifest::getClassname, ImplementationManifest::setClassname);
 	}
 
@@ -81,7 +82,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	@SuppressWarnings("boxing")
 	@Test
 	default void testIsUseFactory() {
-		assertDerivativeGetter(Boolean.TRUE, Boolean.FALSE,
+		assertDerivativeGetter(settings(), Boolean.TRUE, Boolean.FALSE,
 				ImplementationManifest.DEFAULT_USE_FACTORY_VALUE,
 				ImplementationManifest::isUseFactory, ImplementationManifest::setUseFactory);
 	}

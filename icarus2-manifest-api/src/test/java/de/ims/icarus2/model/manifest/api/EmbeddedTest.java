@@ -27,6 +27,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
+import de.ims.icarus2.test.annotations.Provider;
 
 /**
  * @author Markus Gärtner
@@ -47,6 +48,7 @@ public interface EmbeddedTest<E extends Embedded> {
 	 * @return
 	 * @throws Exception
 	 */
+	@Provider
 	E createEmbedded(TypedManifest host) throws Exception;
 
 	/**

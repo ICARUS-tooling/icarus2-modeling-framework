@@ -24,6 +24,8 @@ import static de.ims.icarus2.model.manifest.ManifestTestUtils.getOrMockManifestR
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestLocation;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestRegistry;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubTemplateContext;
+import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -39,10 +41,13 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.ManifestTestFeature;
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.MemberManifest.Property;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.util.Options;
 
 /**
@@ -52,8 +57,63 @@ import de.ims.icarus2.util.Options;
 public interface MemberManifestTest<M extends MemberManifest> extends ModifiableIdentityTest,
 	CategorizableTest<M>, DocumentableTest<M>, ManifestTest<M>, EmbeddedTest<M> {
 
+	@Provider
+	M createHosted(TestSettings settings, ManifestLocation manifestLocation, ManifestRegistry registry, TypedManifest host);
 
-	M createHosted(ManifestLocation manifestLocation, ManifestRegistry registry, TypedManifest host);
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#createEmbedded(de.ims.icarus2.model.manifest.api.TypedManifest)
+	 */
+	@Provider
+	@Override
+	default M createEmbedded(TypedManifest host) {
+		return createHosted(settings().withFeatures(ManifestTestFeature.EMBEDDED),
+				mockManifestLocation(false), mockManifestRegistry(), host);
+	}
+
+	/**
+	 * Ensures that an appropriate host manifest is created and used for
+	 * {@link #createHosted(TestSettings, ManifestLocation, ManifestRegistry, TypedManifest)}
+	 * in case the given {@link ManifestLocation} is declared to hold
+	 * {@link ManifestLocation#isTemplate() templates}.
+	 *
+	 * @see de.ims.icarus2.model.manifest.api.ManifestTest#createTestInstance(TestSettings, de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry)
+	 */
+	@Provider
+	@Override
+	default M createTestInstance(TestSettings settings, ManifestLocation location, ManifestRegistry registry) {
+		TypedManifest host = null;
+		Set<ManifestType> hostTypes = getAllowedHostTypes();
+
+		boolean hostRequested = settings.hasFeature(ManifestTestFeature.EMBEDDED);
+		boolean templateContextRequested = settings.hasFeatures(ManifestTestFeature.TEMPLATE, ManifestTestFeature.EMBED_TEMPLATE);
+
+		if(!hostTypes.isEmpty() &&
+				(!location.isTemplate() || hostRequested || templateContextRequested)) {
+
+			host = createMockedHost(location, registry, hostTypes.iterator().next());
+		}
+
+		M manifest = createHosted(settings.withFeatures(ManifestTestFeature.EMBEDDED), location, registry, host);
+
+		if(templateContextRequested) {
+			assertTrue(stubTemplateContext(manifest), "Host chain cannot be stubbed as template");
+		}
+
+		return manifest;
+	}
+
+	@Provider
+	default TypedManifest createMockedHost(ManifestLocation location, ManifestRegistry registry, ManifestType preferredType) {
+		return mockTypedManifest(preferredType, true);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#createEmpty()
+	 */
+	@Override
+	default ModifiableIdentity createEmpty() {
+		return createUnlocked();
+	}
 
 	/**
 	 * Attempts to call a triple argument constructor with mocks of all
@@ -156,51 +216,6 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#createEmbedded(de.ims.icarus2.model.manifest.api.TypedManifest)
-	 */
-	@Override
-	default M createEmbedded(TypedManifest host) {
-		return createHosted(mockManifestLocation(false), mockManifestRegistry(), host);
-	}
-
-	@Override
-	default M createUnlocked() {
-		// Need explicit declaration due to unifying methods from ManifestTet and CategorizableTest
-		return ManifestTest.super.createUnlocked();
-	}
-
-	/**
-	 * Ensures that an appropriate host manifest is created and used for
-	 * {@link #createHosted(ManifestLocation, ManifestRegistry, TypedManifest)}
-	 * in case the given {@link ManifestLocation} is declared to hold
-	 * {@link ManifestLocation#isTemplate() templates}.
-	 *
-	 * @see de.ims.icarus2.model.manifest.api.ManifestTest#createUnlocked(de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry)
-	 */
-	@Override
-	default M createUnlocked(ManifestLocation location, ManifestRegistry registry) {
-		TypedManifest host = null;
-		Set<ManifestType> hostTypes = getAllowedHostTypes();
-		if(!location.isTemplate() && !hostTypes.isEmpty()) {
-			host = createMockedHost(location, registry, hostTypes.iterator().next());
-		}
-
-		return createHosted(location, registry, host);
-	}
-
-	default TypedManifest createMockedHost(ManifestLocation location, ManifestRegistry registry, ManifestType preferredType) {
-		return mockTypedManifest(preferredType, true);
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#createEmpty()
-	 */
-	@Override
-	default ModifiableIdentity createEmpty() {
-		return createUnlocked();
-	}
-
-	/**
 	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#testGetId()
 	 */
 	@Override
@@ -248,9 +263,9 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 			assertEquals(value, manifest.getPropertyValue(name));
 
 			if(getExpectedType().isSupportTemplating()) {
-				M template = createTemplate();
+				M template = createTemplate(settings());
 				template.addProperty(property);
-				M derived = createDerived(template);
+				M derived = createDerived(settings(), template);
 
 				assertEquals(value, derived.getPropertyValue(name));
 
@@ -369,9 +384,9 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 		assertSame(property, manifest.getProperty(name));
 
 		if(getExpectedType().isSupportTemplating()) {
-			M template = createTemplate();
+			M template = createTemplate(settings());
 			template.addProperty(property);
-			M derived = createDerived(template);
+			M derived = createDerived(settings(), template);
 
 			assertSame(property, derived.getProperty(name));
 
@@ -404,9 +419,9 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 		assertTrue(manifest.hasProperty(name));
 
 		if(getExpectedType().isSupportTemplating()) {
-			M template = createTemplate();
+			M template = createTemplate(settings());
 			template.addProperty(property);
-			M derived = createDerived(template);
+			M derived = createDerived(settings(), template);
 
 			assertTrue(derived.hasProperty(name));
 
@@ -435,9 +450,9 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 		assertTrue(manifest.getPropertyNames().contains(name));
 
 		if(getExpectedType().isSupportTemplating()) {
-			M template = createTemplate();
+			M template = createTemplate(settings());
 			template.addProperty(property);
-			M derived = createDerived(template);
+			M derived = createDerived(settings(), template);
 
 			assertTrue(derived.getPropertyNames().contains(name));
 
@@ -455,7 +470,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testForEachProperty() {
-		assertDerivativeForEach(mockProperty("property1"), mockProperty("property2"),
+		assertDerivativeForEach(settings(), mockProperty("property1"), mockProperty("property2"),
 				m -> m::forEachProperty, MemberManifest::addProperty);
 	}
 
@@ -464,7 +479,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testForEachLocalProperty() {
-		assertDerivativeForEachLocal(mockProperty("property1"), mockProperty("property2"),
+		assertDerivativeForEachLocal(settings(), mockProperty("property1"), mockProperty("property2"),
 				m -> m::forEachLocalProperty, MemberManifest::addProperty);
 	}
 
@@ -473,7 +488,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testIsLocalProperty() {
-		assertDerivativeAccumulativeIsLocal(mockProperty("property1"), mockProperty("property2"),
+		assertDerivativeAccumulativeIsLocal(settings(), mockProperty("property1"), mockProperty("property2"),
 				(m, p) -> m.isLocalProperty(p.getName()), MemberManifest::addProperty);
 	}
 
@@ -482,7 +497,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testGetProperties() {
-		assertDerivativeAccumulativeGetter(mockProperty("property1"), mockProperty("property2"),
+		assertDerivativeAccumulativeGetter(settings(), mockProperty("property1"), mockProperty("property2"),
 				MemberManifest::getProperties, MemberManifest::addProperty);
 	}
 
@@ -491,7 +506,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testGetLocalProperties() {
-		assertDerivativeAccumulativeLocalGetter(mockProperty("property1"), mockProperty("property2"),
+		assertDerivativeAccumulativeLocalGetter(settings(), mockProperty("property1"), mockProperty("property2"),
 				MemberManifest::getLocalProperties, MemberManifest::addProperty);
 	}
 
@@ -520,9 +535,9 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 		assertPropertiesAsOptions(manifest.getPropertiesAsOptions(), property);
 
 		if(getExpectedType().isSupportTemplating()) {
-			M template = createTemplate();
+			M template = createTemplate(settings());
 			template.addProperty(property);
-			M derived = createDerived(template);
+			M derived = createDerived(settings(), template);
 
 			assertPropertiesAsOptions(derived.getPropertiesAsOptions(), property);
 
@@ -566,9 +581,9 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 			LockableTest.assertLocked(() -> manifest.setPropertyValue(name, value2));
 
 			if(getExpectedType().isSupportTemplating()) {
-				M template = createTemplate();
+				M template = createTemplate(settings());
 				template.addProperty(name, valueType, false, value);
-				M derived = createDerived(template);
+				M derived = createDerived(settings(), template);
 
 				derived.setPropertyValue(name, value2);
 

@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.api.DocumentationTest;
+import de.ims.icarus2.test.TestSettings;
 
 /**
  * @author Markus Gärtner
@@ -54,10 +55,10 @@ class DocumentationImplTest implements DocumentationTest<DocumentationImpl> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.DocumentationTest#createUnlocked()
+	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
 	@Override
-	public DocumentationImpl createUnlocked() {
+	public DocumentationImpl createTestInstance(TestSettings settings) {
 		return new DocumentationImpl();
 	}
 

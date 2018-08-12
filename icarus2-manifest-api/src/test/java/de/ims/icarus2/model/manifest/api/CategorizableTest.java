@@ -47,7 +47,7 @@ public interface CategorizableTest<C extends Categorizable> extends LockableTest
 	 */
 	@Test
 	default void testAddCategory() {
-		assertLockableAccumulativeAdd(Categorizable::addCategory, NO_ILLEGAL(), NO_CHECK, true, false,
+		assertLockableAccumulativeAdd(Categorizable::addCategory, NO_ILLEGAL(), NO_CHECK, true, NO_CHECK,
 				mockCategory("cat1"), mockCategory("cat2"), mockCategory("cat3"));
 	}
 
@@ -57,7 +57,7 @@ public interface CategorizableTest<C extends Categorizable> extends LockableTest
 	@Test
 	default void testRemoveCategory() {
 		assertLockableAccumulativeRemove(Categorizable::addCategory, Categorizable::removeCategory,
-				Categorizable::getCategories, true, false,
+				Categorizable::getCategories, true, NO_CHECK,
 				mockCategory("cat1"), mockCategory("cat2"), mockCategory("cat3"));
 	}
 

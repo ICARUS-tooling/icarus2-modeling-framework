@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -38,7 +39,7 @@ public interface ContainerManifestTest<M extends ContainerManifest> extends Memb
 	@Test
 	default void testGetLayerManifest() {
 		assertNotNull(createUnlocked().getLayerManifest());
-		assertNull(createTemplate().getLayerManifest());
+		assertNull(createTemplate(settings()).getLayerManifest());
 	}
 
 	/**
@@ -47,7 +48,7 @@ public interface ContainerManifestTest<M extends ContainerManifest> extends Memb
 	@Test
 	default void testGetContainerType() {
 		for(ContainerType containerType : ContainerType.values()) {
-			assertDerivativeGetter(containerType, TestUtils.other(containerType),
+			assertDerivativeGetter(settings(), containerType, TestUtils.other(containerType),
 					ContainerManifest.DEFAULT_CONTAINER_TYPE,
 					ContainerManifest::getContainerType, ContainerManifest::setContainerType);
 		}
@@ -59,7 +60,7 @@ public interface ContainerManifestTest<M extends ContainerManifest> extends Memb
 	@Test
 	default void testIsLocalContainerType() {
 		for(ContainerType containerType : ContainerType.values()) {
-			assertDerivativeIsLocal(containerType, TestUtils.other(containerType),
+			assertDerivativeIsLocal(settings(), containerType, TestUtils.other(containerType),
 					ContainerManifest::isLocalContainerType, ContainerManifest::setContainerType);
 		}
 	}
@@ -70,7 +71,7 @@ public interface ContainerManifestTest<M extends ContainerManifest> extends Memb
 	@Test
 	default void testIsContainerFlagSet() {
 		for(ContainerFlag flag : ContainerFlag.values()) {
-			assertDerivativeFlagGetter(Boolean.FALSE,
+			assertDerivativeFlagGetter(settings(), Boolean.FALSE,
 					m -> m.isContainerFlagSet(flag),
 					(m, active) -> m.setContainerFlag(flag, active));
 		}
@@ -82,7 +83,7 @@ public interface ContainerManifestTest<M extends ContainerManifest> extends Memb
 	@Test
 	default void testForEachActiveContainerFlag() {
 		for(ContainerFlag flag : ContainerFlag.values()) {
-			assertDerivativeForEach(flag, TestUtils.other(flag),
+			assertDerivativeForEach(settings(), flag, TestUtils.other(flag),
 					m -> m::forEachActiveContainerFlag,
 					(m,f) -> m.setContainerFlag(f, true));
 		}
@@ -94,7 +95,7 @@ public interface ContainerManifestTest<M extends ContainerManifest> extends Memb
 	@Test
 	default void testForEachActiveLocalContainerFlag() {
 		for(ContainerFlag flag : ContainerFlag.values()) {
-			assertDerivativeForEachLocal(flag, TestUtils.other(flag),
+			assertDerivativeForEachLocal(settings(), flag, TestUtils.other(flag),
 					m -> m::forEachActiveLocalContainerFlag,
 					(m,f) -> m.setContainerFlag(f, true));
 		}
@@ -106,7 +107,7 @@ public interface ContainerManifestTest<M extends ContainerManifest> extends Memb
 	@Test
 	default void testGetActiveContainerFlags() {
 		for(ContainerFlag flag : ContainerFlag.values()) {
-			assertDerivativeAccumulativeGetter(flag, TestUtils.other(flag),
+			assertDerivativeAccumulativeGetter(settings(), flag, TestUtils.other(flag),
 					ContainerManifest::getActiveContainerFlags,
 					(m,f) -> m.setContainerFlag(f, true));
 		}
@@ -118,7 +119,7 @@ public interface ContainerManifestTest<M extends ContainerManifest> extends Memb
 	@Test
 	default void testGetActiveLocalContainerFlags() {
 		for(ContainerFlag flag : ContainerFlag.values()) {
-			assertDerivativeAccumulativeLocalGetter(flag, TestUtils.other(flag),
+			assertDerivativeAccumulativeLocalGetter(settings(), flag, TestUtils.other(flag),
 					ContainerManifest::getActiveLocalContainerFlags,
 					(m,f) -> m.setContainerFlag(f, true));
 		}

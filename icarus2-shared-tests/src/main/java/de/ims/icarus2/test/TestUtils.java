@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import org.junit.jupiter.api.function.Executable;
@@ -48,6 +49,8 @@ import de.ims.icarus2.test.DiffUtils.Trace;
  *
  */
 public class TestUtils {
+
+	public static final BiConsumer<Executable, String> NO_CHECK = (e, val) -> fail("Not meant to have legality check called");
 
 	public static final String LOREM_IPSUM_ASCII =
 			"0f73n 51m1l4r c0mm4ndz @R j00, 4r3 Wh0 4cc355 k0n"
@@ -74,6 +77,10 @@ public class TestUtils {
 		    		+ "策中。";
 
 	public static final String EMOJI = "👍"; // thumbs-up emoji
+
+	public static TestSettings settings() {
+		return new TestSettings();
+	}
 
 	public static <T extends Object> T assertMock(T mock) {
 		assertNotNull(mock, "Mock is null");

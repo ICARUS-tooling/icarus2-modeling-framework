@@ -28,6 +28,7 @@ import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
+import de.ims.icarus2.test.TestSettings;
 
 /**
  * @author Markus Gärtner
@@ -44,11 +45,11 @@ class AnnotationManifestImplTest implements AnnotationManifestTest<AnnotationMan
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.MemberManifestTest#createHosted(de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.TypedManifest)
+	 * @see de.ims.icarus2.model.manifest.api.MemberManifestTest#createHosted(TestSettings, de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.TypedManifest)
 	 */
 	@Override
-	public AnnotationManifestImpl createHosted(ManifestLocation manifestLocation, ManifestRegistry registry,
-			TypedManifest host) {
+	public AnnotationManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
+			ManifestRegistry registry, TypedManifest host) {
 		return new AnnotationManifestImpl(manifestLocation, registry, (AnnotationLayerManifest) host);
 	}
 

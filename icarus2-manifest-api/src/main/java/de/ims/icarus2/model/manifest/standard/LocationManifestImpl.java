@@ -299,13 +299,8 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 		private final String value;
 
 		public PathEntryImpl(PathType type, String value) {
-			if (type == null)
-				throw new NullPointerException("Invalid type"); //$NON-NLS-1$
-			if (value == null)
-				throw new NullPointerException("Invalid value"); //$NON-NLS-1$
-
-			this.type = type;
-			this.value = value;
+			this.type = requireNonNull(type);
+			this.value = requireNonNull(value);
 		}
 
 		/**

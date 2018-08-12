@@ -145,7 +145,11 @@ public interface Manifest extends ManifestFragment {
 	/**
 	 * Marks a manifest to be a template. Note that templates must be hosted within
 	 * a {@link ManifestLocation} that supports templating and only top-level manifests
-	 * can be marked as templates!
+	 * or those embedded in other manifests can be marked as templates!
+	 * <p>
+	 * Marking a manifest as template doesn't automatically make it available for
+	 * templating. It has to be registered with its {@link ManifestRegistry} for
+	 * proper retrieval!
 	 *
 	 * @param isTemplate
 	 */

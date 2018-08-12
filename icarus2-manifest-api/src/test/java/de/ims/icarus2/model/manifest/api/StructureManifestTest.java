@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.TestUtils.settings;
+
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.test.TestUtils;
@@ -35,7 +37,7 @@ public interface StructureManifestTest<M extends StructureManifest> extends Cont
 	@Test
 	default void testGetStructureType() {
 		for(StructureType structureType : StructureType.values()) {
-			assertDerivativeGetter(structureType, TestUtils.other(structureType),
+			assertDerivativeGetter(settings(), structureType, TestUtils.other(structureType),
 					StructureManifest.DEFAULT_STRUCTURE_TYPE,
 					StructureManifest::getStructureType, StructureManifest::setStructureType);
 		}
@@ -47,7 +49,7 @@ public interface StructureManifestTest<M extends StructureManifest> extends Cont
 	@Test
 	default void testIsLocalStructureType() {
 		for(StructureType structureType : StructureType.values()) {
-			assertDerivativeIsLocal(structureType, TestUtils.other(structureType),
+			assertDerivativeIsLocal(settings(), structureType, TestUtils.other(structureType),
 					StructureManifest::isLocalStructureType, StructureManifest::setStructureType);
 		}
 	}
@@ -58,7 +60,7 @@ public interface StructureManifestTest<M extends StructureManifest> extends Cont
 	@Test
 	default void testIsStructureFlagSet() {
 		for(StructureFlag flag : StructureFlag.values()) {
-			assertDerivativeFlagGetter(Boolean.FALSE,
+			assertDerivativeFlagGetter(settings(), Boolean.FALSE,
 					m -> m.isStructureFlagSet(flag),
 					(m, active) -> m.setStructureFlag(flag, active));
 		}
@@ -70,7 +72,7 @@ public interface StructureManifestTest<M extends StructureManifest> extends Cont
 	@Test
 	default void testForEachActiveStructureFlag() {
 		for(StructureFlag flag : StructureFlag.values()) {
-			assertDerivativeForEach(flag, TestUtils.other(flag),
+			assertDerivativeForEach(settings(), flag, TestUtils.other(flag),
 					m -> m::forEachActiveStructureFlag,
 					(m,f) -> m.setStructureFlag(f, true));
 		}
@@ -82,7 +84,7 @@ public interface StructureManifestTest<M extends StructureManifest> extends Cont
 	@Test
 	default void testForEachActiveLocalStructureFlag() {
 		for(StructureFlag flag : StructureFlag.values()) {
-			assertDerivativeForEachLocal(flag, TestUtils.other(flag),
+			assertDerivativeForEachLocal(settings(), flag, TestUtils.other(flag),
 					m -> m::forEachActiveLocalStructureFlag,
 					(m,f) -> m.setStructureFlag(f, true));
 		}
@@ -94,7 +96,7 @@ public interface StructureManifestTest<M extends StructureManifest> extends Cont
 	@Test
 	default void testGetActiveStructureFlags() {
 		for(StructureFlag flag : StructureFlag.values()) {
-			assertDerivativeAccumulativeGetter(flag, TestUtils.other(flag),
+			assertDerivativeAccumulativeGetter(settings(), flag, TestUtils.other(flag),
 					StructureManifest::getActiveStructureFlags,
 					(m,f) -> m.setStructureFlag(f, true));
 		}
@@ -106,7 +108,7 @@ public interface StructureManifestTest<M extends StructureManifest> extends Cont
 	@Test
 	default void testGetActiveLocalStructureFlags() {
 		for(StructureFlag flag : StructureFlag.values()) {
-			assertDerivativeAccumulativeLocalGetter(flag, TestUtils.other(flag),
+			assertDerivativeAccumulativeLocalGetter(settings(), flag, TestUtils.other(flag),
 					StructureManifest::getActiveLocalStructureFlags,
 					(m,f) -> m.setStructureFlag(f, true));
 		}

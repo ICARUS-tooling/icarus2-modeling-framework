@@ -23,6 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.Provider;
+
 /**
  * @author Markus Gärtner
  *
@@ -31,11 +34,12 @@ public interface TypedManifestTest<M extends TypedManifest> {
 
 	ManifestType getExpectedType();
 
-	M createUnlocked();
+	@Provider
+	M createTypedManifest(TestSettings settings);
 
 	@Test
 	default void testGetManifestType() {
-		M manifest = createUnlocked();
+		M manifest = createTypedManifest(null);
 		if(manifest!=null) {
 			assertEquals(getExpectedType(), manifest.getManifestType());
 		}

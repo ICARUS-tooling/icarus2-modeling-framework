@@ -19,14 +19,11 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertGetter;
+import static de.ims.icarus2.test.GenericTest.NO_DEFAULT;
 import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Test;
-
-import de.ims.icarus2.test.TestUtils;
 
 /**
  * @author Markus Gärtner
@@ -35,20 +32,14 @@ import de.ims.icarus2.test.TestUtils;
 public interface DocumentableTest<D extends Documentable> extends LockableTest<D> {
 
 	/**
-	 * Create an unlocked instance of {@link Documentable} for testing
-	 * @return
-	 */
-	@Override
-	D createUnlocked();
-
-	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.Documentable#getDocumentation()}.
 	 */
 	@Test
 	default void testGetDocumentation() {
-		D documentable = createUnlocked();
-
-		assertNull(documentable.getDocumentation());
+		assertGetter(createUnlocked(),
+				mock(Documentation.class), mock(Documentation.class),
+				NO_DEFAULT(),
+				Documentable::getDocumentation, Documentable::setDocumentation);
 	}
 
 	/**
@@ -56,20 +47,8 @@ public interface DocumentableTest<D extends Documentable> extends LockableTest<D
 	 */
 	@Test
 	default void testSetDocumentation() {
-		D documentable = createUnlocked();
-
-		// Test with null
-		TestUtils.assertNPE(() -> documentable.setDocumentation(null));
-
-		// Test with real value
-		Documentation documentation = mock(Documentation.class);
-		documentable.setDocumentation(documentation);
-		assertSame(documentation, documentable.getDocumentation());
-
-		// Test locking
-		assertFalse(documentable.isLocked());
-		documentable.lock();
-		LockableTest.assertLocked(() -> documentable.setDocumentation(null));
+		assertLockableSetter(Documentable::setDocumentation,
+				mock(Documentation.class), true, NO_CHECK);
 	}
 
 }

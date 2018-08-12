@@ -23,11 +23,23 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.Provider;
+
 /**
  * @author Markus Gärtner
  *
  */
 public interface ManifestFragmentTest<M extends ManifestFragment> extends TypedManifestTest<M>, LockableTest<M> {
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#createTypedManifest(TestSettings)
+	 */
+	@Provider
+	@Override
+	default M createTypedManifest(TestSettings settings) {
+		return createUnlocked();
+	}
 
 	@Test
 	default void testGetId() {

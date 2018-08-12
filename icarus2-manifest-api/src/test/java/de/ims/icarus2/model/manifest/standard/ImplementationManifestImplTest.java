@@ -27,6 +27,7 @@ import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
+import de.ims.icarus2.test.TestSettings;
 
 /**
  * @author Markus Gärtner
@@ -43,11 +44,11 @@ class ImplementationManifestImplTest implements ImplementationManifestTest<Imple
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.MemberManifestTest#createHosted(de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.TypedManifest)
+	 * @see de.ims.icarus2.model.manifest.api.MemberManifestTest#createHosted(TestSettings, de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.TypedManifest)
 	 */
 	@Override
-	public ImplementationManifestImpl createHosted(ManifestLocation manifestLocation, ManifestRegistry registry,
-			TypedManifest host) {
+	public ImplementationManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
+			ManifestRegistry registry, TypedManifest host) {
 		return new ImplementationManifestImpl(manifestLocation, registry, (MemberManifest) host);
 	}
 

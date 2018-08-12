@@ -104,8 +104,6 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 
 	protected void setDocumentation0(Documentation documentation) {
 		requireNonNull(documentation);
-		if(this.documentation!=null)
-			throw new ManifestException(GlobalErrorCode.ILLEGAL_STATE, "Documentation already set for manifest: "+this);
 
 		this.documentation = documentation;
 	}

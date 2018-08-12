@@ -24,6 +24,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.Provider;
 
 /**
  * @author Markus Gärtner
@@ -31,7 +33,17 @@ import de.ims.icarus2.model.manifest.types.ValueType;
  */
 public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, TypedManifestTest<V> {
 
-	V createWithType(ValueType valueType);
+	@Provider
+	V createWithType(TestSettings settings, ValueType valueType);
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#createTypedManifest(TestSettings)
+	 */
+	@Provider
+	@Override
+	default V createTypedManifest(TestSettings settings) {
+		return createUnlocked();
+	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#getValues()}.

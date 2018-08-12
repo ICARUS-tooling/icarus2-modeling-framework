@@ -28,6 +28,8 @@ import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.Provider;
 
 /**
  * @author Markus Gärtner
@@ -35,7 +37,25 @@ import de.ims.icarus2.model.manifest.types.ValueType;
  */
 public interface ValueManifestTest<M extends ValueManifest> extends DocumentableTest<M>, ModifiableIdentityTest, TypedManifestTest<M> {
 
+	@Provider
 	M createWithType(ValueType valueType);
+
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
+	 */
+	@Override
+	default M createTestInstance(TestSettings settings) {
+		return createUnlocked();
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#createTypedManifest(TestSettings)
+	 */
+	@Provider
+	@Override
+	default M createTypedManifest(TestSettings settings) {
+		return createUnlocked();
+	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#createEmpty()

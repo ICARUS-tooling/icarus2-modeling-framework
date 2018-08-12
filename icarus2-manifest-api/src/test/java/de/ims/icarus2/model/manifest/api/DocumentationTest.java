@@ -99,7 +99,7 @@ public interface DocumentationTest<D extends Documentation> extends LockableTest
 	@Test
 	default void testAddResource() {
 		assertLockableAccumulativeAdd(Documentation::addResource,
-				NO_ILLEGAL(), NO_CHECK, true, true,
+				NO_ILLEGAL(), NO_CHECK, true, INVALID_INPUT_CHECK,
 				mock(Resource.class), mock(Resource.class));
 	}
 
@@ -110,7 +110,7 @@ public interface DocumentationTest<D extends Documentation> extends LockableTest
 	default void testRemoveResource() {
 		assertLockableAccumulativeRemove(Documentation::addResource,
 				Documentation::removeResource, Documentation::getResources,
-				true, true, mock(Resource.class), mock(Resource.class));
+				true, INVALID_INPUT_CHECK, mock(Resource.class), mock(Resource.class));
 	}
 
 }

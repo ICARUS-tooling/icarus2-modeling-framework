@@ -47,7 +47,6 @@ import java.util.function.Predicate;
 import org.junit.jupiter.api.function.Executable;
 
 import de.ims.icarus2.ErrorCode;
-import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.api.Embedded;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
@@ -63,6 +62,7 @@ import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.util.function.ObjBoolConsumer;
 import de.ims.icarus2.util.icon.IconWrapper;
+import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.nio.ByteArrayChannel;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
@@ -278,6 +278,10 @@ public class ManifestTestUtils {
 		}
 	}
 
+	private static String forValue(String msg, Object value) {
+		return msg + " - " + String.valueOf(value);
+	}
+
 	/**
 	 * Attempts to set the host manifest at the given embedding depth to
 	 * be a {@link Manifest#setIsTemplate(boolean) template}.
@@ -293,19 +297,62 @@ public class ManifestTestUtils {
 		// No mock assertion here as there first instance is allowed to be live
 		TypedManifest host = manifest;
 
-		while(embeddingDepth>0 && host!=null) {
-			if(host instanceof Embedded) {
-				host = ((Embedded)manifest).getHost();
-			}
+		while(embeddingDepth-->0 && host!=null) {
+			host = (host instanceof Embedded) ?
+				((Embedded)host).getHost() : null;
 		}
 
 		if(host!=null && host instanceof Manifest) {
-			Manifest m = (Manifest) assertMock(host);
-			when(m.isTemplate()).thenReturn(Boolean.TRUE);
+			stubIsTemplate((Manifest) assertMock(host));
+
 			return true;
 		}
 
 		return false;
+	}
+
+
+	public static <M extends Manifest> boolean stubTemplateContext(M manifest) {
+		assertNotNull(manifest);
+
+		// No mock assertion here as there first instance is allowed to be live
+		TypedManifest host = manifest;
+
+		boolean stubbed = false;
+
+		Manifest root = null;
+
+		while(host!=null) {
+			host = (host instanceof Embedded) ?
+				((Embedded)host).getHost() : null;
+
+			if(host!=null && host instanceof Manifest) {
+				Manifest m = (Manifest) assertMock(host);
+				stubIsTemplate(m);
+				stubbed = true;
+				root = m;
+			}
+		}
+
+		if(root!=null) {
+			stubHasManifest(root);
+		}
+
+		return stubbed;
+	}
+
+	private static <M extends Manifest> void stubHasManifest(M manifest) {
+		String id = manifest.getId();
+		assertNotNull(id);
+
+		ManifestRegistry registry = assertMock(manifest.getRegistry());
+
+		when(registry.hasTemplate(id)).thenReturn(Boolean.TRUE);
+	}
+
+	private static <M extends Manifest> void stubIsTemplate(M manifest) {
+		when(manifest.isTemplate()).thenReturn(Boolean.TRUE);
+		when(manifest.isValidTemplate()).thenReturn(Boolean.TRUE);
 	}
 
 	public static ManifestLocation mockManifestLocation(boolean template) {
@@ -343,11 +390,7 @@ public class ManifestTestUtils {
 	}
 
 	public static <M extends TypedManifest> M mockTypedManifest(ManifestType type) {
-		Class<? extends TypedManifest> clazz = type.getBaseClass();
-		if(clazz==null)
-			throw new InternalError("Cannot create mock for manifest type: "+type);
-
-		return mockTypedManifest(clazz);
+		return mockTypedManifestRaw(type, false);
 	}
 
 	public static <M extends TypedManifest> M mockTypedManifest(ManifestType type, boolean mockHierarchy) {
@@ -360,7 +403,19 @@ public class ManifestTestUtils {
 		return manifest;
 	}
 
+	private static <M extends TypedManifest> M mockTypedManifestRaw(ManifestType type, boolean mockId) {
+		Class<? extends TypedManifest> clazz = type.getBaseClass();
+		if(clazz==null)
+			throw new InternalError("Cannot create mock for manifest type: "+type);
+
+		return mockTypedManifest(clazz, mockId);
+	}
+
 	public static <M extends TypedManifest> M mockTypedManifest(Class<? extends TypedManifest> clazz) {
+		return mockTypedManifest(clazz, false);
+	}
+
+	private static <M extends TypedManifest> M mockTypedManifest(Class<? extends TypedManifest> clazz, boolean mockId) {
 		@SuppressWarnings("unchecked")
 		M manifest = (M) mock(clazz, withSettings().defaultAnswer(CALLS_REAL_METHODS));
 
@@ -373,7 +428,17 @@ public class ManifestTestUtils {
 			when(fullManifest.getRegistry()).thenReturn(registry);
 		}
 
+		if(mockId && Identity.class.isAssignableFrom(clazz)) {
+			String id = createId(clazz);
+			Identity identity = (Identity) manifest;
+			when(identity.getId()).thenReturn(id);
+		}
+
 		return manifest;
+	}
+
+	private static String createId(Class<? extends TypedManifest> clazz) {
+		return clazz.getSimpleName();
 	}
 
 	private static <M extends TypedManifest> void mockHierarchy(ManifestType type, M manifest) {
@@ -384,30 +449,9 @@ public class ManifestTestUtils {
 		while(Embedded.class.isAssignableFrom(currentType.getBaseClass())
 				&& (envTypes = currentType.getRequiredEnvironment()) != null) {
 			ManifestType hostType = envTypes[0];
-			TypedManifest host = mockTypedManifest(hostType);
+			TypedManifest host = mockTypedManifestRaw(hostType, true);
 
 			when(((Embedded)current).getHost()).thenReturn(host);
-
-//			switch (currentType) {
-//			case ANNOTATION_MANIFEST:
-//				when(((AnnotationManifest)current).getLayerManifest()).thenCallRealMethod();
-//				break;
-//
-//			case ANNOTATION_LAYER_MANIFEST:
-//			case STRUCTURE_LAYER_MANIFEST:
-//			case ITEM_LAYER_MANIFEST:
-//			case FRAGMENT_LAYER_MANIFEST:
-//			case HIGHLIGHT_LAYER_MANIFEST:
-//				when(((LayerManifest)current).getGroupManifest()).thenCallRealMethod();
-//				break;
-//
-//			case LAYER_GROUP_MANIFEST:
-//				when(((LayerGroupManifest)current).).thenCallRealMethod();
-//				break;
-//
-//			default:
-//				break;
-//			}
 
 			current = host;
 			currentType = hostType;
@@ -431,24 +475,25 @@ public class ManifestTestUtils {
 	 * @param executable
 	 */
 	public static void assertIllegalValue(Executable executable, Object value) {
-		assertManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST, executable, "Testing illegal value - "+String.valueOf(value));
+		assertManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST, executable,
+				forValue("Testing illegal value", value));
 	}
 
-	public static void assertIllegalValue(BiConsumer<Executable, Object> legalityCheck, Executable executable, Object value) {
+	public static void assertIllegalValue(BiConsumer<Executable, String> legalityCheck, Executable executable, String msg) {
 
 		if(legalityCheck==null) {
 			legalityCheck = ManifestTestUtils::assertIllegalValue;
 		}
 
-		legalityCheck.accept(executable, value);
+		legalityCheck.accept(executable, msg);
 	}
 
 	/**
 	 * {@link #assertManifestException(ManifestErrorCode, Executable) Assert} {@link ManifestErrorCode#MANIFEST_TYPE_CAST}
 	 * @param executable
 	 */
-	public static void assertIllegalId(Executable executable, Object id) {
-		assertManifestException(ManifestErrorCode.MANIFEST_INVALID_ID, executable, "Testing illegal id - "+String.valueOf(id));
+	public static void assertIllegalId(Executable executable, String msg) {
+		assertManifestException(ManifestErrorCode.MANIFEST_INVALID_ID, executable, msg);
 	}
 
 	public static void assertManifestException(ErrorCode errorCode, Executable executable, String msg) {
@@ -459,7 +504,7 @@ public class ManifestTestUtils {
 	// ASSERTIONS FOR METHOD PATTERNS
 
 	public static <T extends Object, K extends Object> void assertSetter(T instance, BiConsumer<T, K> setter, K value,
-			boolean checkNPE, BiConsumer<Executable, Object> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
+			boolean checkNPE, BiConsumer<Executable, String> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
 		if(checkNPE) {
 			TestUtils.assertNPE(() -> setter.accept(instance, null));
 		} else {
@@ -469,12 +514,13 @@ public class ManifestTestUtils {
 		setter.accept(instance, value);
 
 		for(K illegalValue : illegalValues) {
-			assertIllegalValue(legalityCheck, () -> setter.accept(instance, illegalValue), illegalValue);
+			assertIllegalValue(legalityCheck, () -> setter.accept(instance, illegalValue),
+					forValue("Testing illegal value", illegalValue));
 		}
 	}
 
 	public static <T extends Object, K extends Object> void assertSetter(T instance, BiConsumer<T, K> setter, K[] values,
-			boolean checkNPE, BiConsumer<Executable, Object> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
+			boolean checkNPE, BiConsumer<Executable, String> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
 		if(checkNPE) {
 			TestUtils.assertNPE(() -> setter.accept(instance, null));
 		} else {
@@ -486,7 +532,8 @@ public class ManifestTestUtils {
 		}
 
 		for(K illegalValue : illegalValues) {
-			assertIllegalValue(legalityCheck, () -> setter.accept(instance, illegalValue), illegalValue);
+			assertIllegalValue(legalityCheck, () -> setter.accept(instance, illegalValue),
+					forValue("Testing illegal value", illegalValue));
 		}
 	}
 
@@ -497,7 +544,8 @@ public class ManifestTestUtils {
 
 	public static <T extends Object, K extends Object> void assertAccumulativeAdd(
 			T instance, BiConsumer<T, K> adder,
-			K[] illegalValues, BiConsumer<Executable, Object> legalityCheck, boolean checkNPE, boolean checkDuplicate, @SuppressWarnings("unchecked") K...values) {
+			K[] illegalValues, BiConsumer<Executable, String> legalityCheck, boolean checkNPE,
+			BiConsumer<Executable, String> duplicateCheck, @SuppressWarnings("unchecked") K...values) {
 
 		if(checkNPE) {
 			TestUtils.assertNPE(() -> adder.accept(instance, null));
@@ -507,23 +555,23 @@ public class ManifestTestUtils {
 			adder.accept(instance, values[i]);
 		}
 
-		if(checkDuplicate) {
-			assertManifestException(GlobalErrorCode.INVALID_INPUT,
-					() -> adder.accept(instance, values[0]),
-					"Testing duplicate value - "+String.valueOf(values[0]));
+		if(duplicateCheck!=TestUtils.NO_CHECK) {
+			duplicateCheck.accept(() -> adder.accept(instance, values[0]),
+					forValue("Testing duplicate value", values[0]));
 		}
 
 		if(illegalValues!=null) {
 			for(K illegalValue : illegalValues) {
-				assertIllegalValue(legalityCheck, () -> adder.accept(instance, illegalValue), illegalValue);
+				assertIllegalValue(legalityCheck, () -> adder.accept(instance, illegalValue),
+						forValue("Testing illegal value", illegalValue));
 			}
 		}
 	}
 
 	public static <T extends Object, K extends Object, C extends Collection<K>> void assertAccumulativeRemove(
 			T instance, BiConsumer<T, K> adder, BiConsumer<T, K> remover,
-			Function<T, C> getter, boolean checkNPE, boolean checkInvalidRemove,
-					@SuppressWarnings("unchecked") K...values) {
+			Function<T, C> getter, boolean checkNPE,
+			BiConsumer<Executable, String> invalidRemoveCheck, @SuppressWarnings("unchecked") K...values) {
 
 		for(K value : values) {
 			adder.accept(instance, value);
@@ -537,10 +585,9 @@ public class ManifestTestUtils {
 
 		TestUtils.assertCollectionEquals(getter.apply(instance), Arrays.copyOfRange(values, 1, values.length));
 
-		if(checkInvalidRemove) {
-			assertManifestException(GlobalErrorCode.INVALID_INPUT,
-					() -> remover.accept(instance, values[0]),
-					"Testing invalid remove value - "+String.valueOf(values[0]));
+		if(invalidRemoveCheck!=TestUtils.NO_CHECK) {
+			invalidRemoveCheck.accept(() -> remover.accept(instance, values[0]),
+					forValue("Testing invalid remove value", values[0]));
 		}
 
 		for(int i=1; i<values.length; i++) {

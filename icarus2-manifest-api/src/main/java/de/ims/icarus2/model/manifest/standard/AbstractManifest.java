@@ -19,7 +19,6 @@ package de.ims.icarus2.model.manifest.standard;
 import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
-import de.ims.icarus2.model.manifest.api.LayerType;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
@@ -268,9 +267,9 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 			throw new ManifestException(ManifestErrorCode.MANIFEST_ERROR,
 					"Manifest location does not allow templates: "+ManifestUtils.getName(this));
 
-		if(!isTopLevel())
+		if(isTemplate && !isTopLevel() && !hasTemplateContext())
 			throw new ManifestException(ManifestErrorCode.MANIFEST_ERROR,
-					"Manifest  is not top-level - cannot use as template: "+ManifestUtils.getName(this));
+					"Manifest is not top-level or hosted inside a template - cannot use as template: "+ManifestUtils.getName(this));
 
 		this.isTemplate = isTemplate;
 	}
@@ -293,26 +292,7 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 		@SuppressWarnings("unchecked")
 		@Override
 		protected D resolve() {
-			return (D) registry.getTemplate(getId());
-		}
-
-	}
-
-	protected class LayerTypeLink extends Link<LayerType> {
-
-		/**
-		 * @param id
-		 */
-		public LayerTypeLink(String id) {
-			super(id);
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#resolve()
-		 */
-		@Override
-		protected LayerType resolve() {
-			return registry.getLayerType(getId());
+			return (D) getRegistry().getTemplate(getId());
 		}
 
 	}

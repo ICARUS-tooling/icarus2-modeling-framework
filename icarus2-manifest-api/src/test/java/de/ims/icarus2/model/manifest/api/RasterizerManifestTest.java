@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -35,7 +36,7 @@ public interface RasterizerManifestTest<M extends RasterizerManifest> extends Fo
 	 */
 	@Test
 	default void testGetLayerManifest() {
-		assertNull(createTemplate().getLayerManifest());
+		assertNull(createTemplate(settings()).getLayerManifest());
 		assertNotNull(createUnlocked().getLayerManifest());
 	}
 

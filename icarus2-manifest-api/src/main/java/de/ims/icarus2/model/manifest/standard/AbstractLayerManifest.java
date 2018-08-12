@@ -203,6 +203,25 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 		return new TargetLayerManifestImpl(id);
 	}
 
+	protected class LayerTypeLink extends Link<LayerType> {
+
+		/**
+		 * @param id
+		 */
+		public LayerTypeLink(String id) {
+			super(id);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#resolve()
+		 */
+		@Override
+		protected LayerType resolve() {
+			return getRegistry().getLayerType(getId());
+		}
+
+	}
+
 	protected class GlobalLayerLink extends Link<LayerManifest> {
 
 		/**
