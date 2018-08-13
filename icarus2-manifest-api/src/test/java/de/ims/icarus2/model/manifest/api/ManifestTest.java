@@ -419,6 +419,29 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 		}
 	}
 
+	default <K extends Object, I extends Object> void assertDerivativeAccumulativeLookupContains(
+			K value1, K value2, BiPredicate<M, I> check,
+			boolean checkNPE, BiConsumer<M, K> adder, Function<K, I> keyGen) {
+
+		ManifestTestUtils.assertAccumulativeLookupContains(createUnlocked(), value1, value2,
+				check, checkNPE, adder, keyGen);
+
+
+		if(getExpectedType().isSupportTemplating()) {
+			M template = createTemplate(settings());
+			adder.accept(template, value1);
+
+			M derived = createDerived(settings(), template);
+
+			assertTrue(check.test(derived, keyGen.apply(value1)));
+			assertFalse(check.test(derived, keyGen.apply(value2)));
+
+			adder.accept(derived, value2);
+			assertTrue(check.test(derived, keyGen.apply(value2)));
+			assertFalse(check.test(template, keyGen.apply(value2)));
+		}
+	}
+
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.Manifest#getUID()}.
 	 */

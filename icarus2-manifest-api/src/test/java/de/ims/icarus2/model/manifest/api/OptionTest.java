@@ -23,42 +23,27 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
+import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.Provider;
+
 /**
  * @author Markus Gärtner
  *
  */
-public interface OptionTest {
+public interface OptionTest<O extends Option> extends ModifiableIdentityTest, LockableTest<O>, TypedManifestTest<O> {
+
+	@Provider
+	O createWithType(TestSettings settings, ValueType valueType);
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getManifestType()}.
+	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#createEmpty()
 	 */
-	@Test
-	default void testGetManifestType() {
-		fail("Not yet implemented");
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getId()}.
-	 */
-	@Test
-	default void testGetId() {
-		fail("Not yet implemented");
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getName()}.
-	 */
-	@Test
-	default void testGetName() {
-		fail("Not yet implemented");
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getDescription()}.
-	 */
-	@Test
-	default void testGetDescription() {
-		fail("Not yet implemented");
+	@Override
+	@Provider
+	default ModifiableIdentity createEmpty() {
+		return createUnlocked();
 	}
 
 	/**

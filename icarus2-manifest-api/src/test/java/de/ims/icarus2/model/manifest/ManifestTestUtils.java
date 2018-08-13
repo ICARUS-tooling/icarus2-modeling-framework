@@ -685,6 +685,24 @@ public class ManifestTestUtils {
 		assertSame(value2, lookup.apply(instance, keyGen.apply(value2)));
 	}
 
+	public static <T extends Object, K extends Object, I extends Object> void assertAccumulativeLookupContains(
+			T instance, K value1, K value2, BiPredicate<T, I> check,
+			boolean checkNPE, BiConsumer<T, K> adder, Function<K, I> keyGen) {
+
+		if(checkNPE) {
+			TestUtils.assertNPE(() -> check.test(instance, null));
+		} else {
+			check.test(instance, null);
+		}
+
+		adder.accept(instance, value1);
+		assertTrue(check.test(instance, keyGen.apply(value1)));
+		assertFalse(check.test(instance, keyGen.apply(value2)));
+
+		adder.accept(instance, value2);
+		assertTrue(check.test(instance, keyGen.apply(value2)));
+	}
+
 	@SuppressWarnings("unchecked")
 	public static <T extends Object, K extends Object, A extends Consumer<? super K>> void assertForEach(
 			T instance, K value1, K value2, Function<T,Consumer<A>> forEachGen, BiConsumer<T, K> adder) {

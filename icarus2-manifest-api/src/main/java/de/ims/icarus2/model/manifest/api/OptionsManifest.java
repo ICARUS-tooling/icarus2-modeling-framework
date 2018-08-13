@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -189,6 +190,12 @@ public interface OptionsManifest extends Manifest, Embedded {
 		public static final boolean DEFAULT_MULTIVALUE_VALUE = false;
 		public static final boolean DEFAULT_ALLOW_NULL = false;
 
+		public static final Set<ValueType> SUPPORTED_VALUE_TYPES =
+					Collections.unmodifiableSet(ValueType.filterWithout(
+				ValueType.UNKNOWN,
+				ValueType.CUSTOM,
+				ValueType.IMAGE_RESOURCE,
+				ValueType.URL_RESOURCE));
 		/**
 		 * @see de.ims.icarus2.model.manifest.api.TypedManifest#getManifestType()
 		 */

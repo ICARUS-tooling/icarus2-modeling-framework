@@ -26,7 +26,6 @@ import static de.ims.icarus2.test.GenericTest.NO_ILLEGAL;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -206,7 +205,11 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 	 */
 	@Test
 	default void testHasOption() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeLookupContains(
+				mockOption("id1"), mockOption("ids2"),
+				OptionsManifest::hasOption, true,
+				OptionsManifest::addOption,
+				transform_id());
 	}
 
 	/**

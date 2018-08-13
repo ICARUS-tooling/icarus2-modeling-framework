@@ -122,6 +122,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 
 	@Override
 	public boolean hasOption(String id) {
+		requireNonNull(id);
 		return options.containsKey(id) || (hasTemplate() && getTemplate().hasOption(id));
 	}
 
@@ -279,16 +280,6 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		private boolean multivalue = DEFAULT_MULTIVALUE_VALUE;
 		private boolean allowNull = DEFAULT_ALLOW_NULL;
 
-		private static final Set<ValueType> supportedValueTypes = ValueType.filterWithout(
-				ValueType.UNKNOWN,
-				ValueType.CUSTOM,
-				ValueType.IMAGE_RESOURCE,
-				ValueType.URL_RESOURCE);
-
-		public static boolean isSupportedValueType(ValueType valueType) {
-			return supportedValueTypes.contains(valueType);
-		}
-
 		public OptionImpl() {
 			// for parsing
 		}
@@ -424,7 +415,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		protected OptionImpl setValueType0(ValueType valueType) {
 			requireNonNull(valueType);
 
-			if(!supportedValueTypes.contains(valueType))
+			if(!Option.SUPPORTED_VALUE_TYPES.contains(valueType))
 				throw new UnsupportedValueTypeException(valueType);
 
 			this.valueType = valueType;
