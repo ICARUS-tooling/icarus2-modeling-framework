@@ -19,12 +19,10 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static de.ims.icarus2.test.TestUtils.settings;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
-
-import de.ims.icarus2.test.TestSettings;
-import de.ims.icarus2.test.annotations.Provider;
 
 /**
  * @author Markus Gärtner
@@ -32,28 +30,13 @@ import de.ims.icarus2.test.annotations.Provider;
  */
 public interface ManifestFragmentTest<M extends ManifestFragment> extends TypedManifestTest<M>, LockableTest<M> {
 
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#createTypedManifest(TestSettings)
-	 */
-	@Provider
-	@Override
-	default M createTypedManifest(TestSettings settings) {
-		return createUnlocked();
-	}
-
 	@Test
 	default void testGetId() {
-		M manifest = createUnlocked();
-		if(manifest!=null) {
-			assertNotNull(manifest.getId());
-		}
+		assertNull(createTestInstance(settings()).getId());
 	}
 
 	@Test
 	default void testGetUniqueId() {
-		M manifest = createUnlocked();
-		if(manifest!=null) {
-			assertNotNull(manifest.getUniqueId());
-		}
+		assertNull(createTestInstance(settings()).getUniqueId());
 	}
 }

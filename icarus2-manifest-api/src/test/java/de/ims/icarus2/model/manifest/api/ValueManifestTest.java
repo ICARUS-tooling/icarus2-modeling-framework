@@ -21,12 +21,15 @@ package de.ims.icarus2.model.manifest.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import javax.swing.Icon;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
+import de.ims.icarus2.model.manifest.types.UnsupportedValueTypeException;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
@@ -44,23 +47,16 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
 	@Override
-	default M createTestInstance(TestSettings settings) {
-		return createUnlocked();
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#createTypedManifest(TestSettings)
-	 */
 	@Provider
-	@Override
-	default M createTypedManifest(TestSettings settings) {
-		return createUnlocked();
+	default M createTestInstance(TestSettings settings) {
+		return createWithType(ValueType.STRING);
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#createEmpty()
 	 */
 	@Override
+	@Provider
 	default ModifiableIdentity createEmpty() {
 		return createWithType(ValueType.STRING);
 	}
@@ -69,6 +65,7 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#createFromIdentity(java.lang.String, java.lang.String, java.lang.String, javax.swing.Icon)
 	 */
 	@Override
+	@Provider
 	default ModifiableIdentity createFromIdentity(String id, String name, String description, Icon icon) {
 		ModifiableIdentity modifiableIdentity = createWithType(ValueType.STRING);
 		modifiableIdentity.setId(id);
@@ -76,14 +73,6 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 		modifiableIdentity.setDescription(description);
 		modifiableIdentity.setIcon(icon);
 		return modifiableIdentity;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.DocumentableTest#createUnlocked()
-	 */
-	@Override
-	default M createUnlocked() {
-		return createWithType(ValueType.STRING);
 	}
 
 	/**
@@ -135,4 +124,16 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 		}
 	}
 
+	@Test
+	default void testUnsupportedValueTypes() {
+		for(ValueType valueType : ValueType.valueTypes()) {
+			if(!ValueManifest.SUPPORTED_VALUE_TYPES.contains(valueType)) {
+				UnsupportedValueTypeException exception = assertThrows(UnsupportedValueTypeException.class,
+						() -> createWithType(valueType));
+
+				assertEquals(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE, exception.getErrorCode());
+				assertEquals(valueType, exception.getValueType());
+			}
+		}
+	}
 }

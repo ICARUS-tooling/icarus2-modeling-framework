@@ -19,7 +19,6 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_genericSetter;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_setLayerId;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.mockItemLayerManifest;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.transform_layerManifestId;
@@ -61,7 +60,7 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 				mockItemLayerManifest("layer1"),
 				mockItemLayerManifest("layer2"),
 				HighlightLayerManifest::isLocalPrimaryLayerManifest,
-				inject_genericSetter(HighlightLayerManifest::setPrimaryLayerId, transform_layerManifestId()));
+				ManifestTestUtils.inject_genericSetter(HighlightLayerManifest::setPrimaryLayerId, transform_layerManifestId()));
 	}
 
 	/**
@@ -164,11 +163,7 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	@Test
 	default void testSetHighlightFlag() {
 		for(HighlightFlag flag : HighlightFlag.values()) {
-			assertDerivativeAccumulativeGetter(
-					settings(),
-					flag, TestUtils.other(flag),
-					HighlightLayerManifest::getActiveHighlightFlags,
-					(m,f) -> m.setHighlightFlag(f, true));
+			assertLockableSetter((m, active) -> m.setHighlightFlag(flag, active));
 		}
 	}
 

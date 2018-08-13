@@ -21,6 +21,7 @@ package de.ims.icarus2.model.manifest;
 
 import de.ims.icarus2.model.manifest.api.Lockable;
 import de.ims.icarus2.model.manifest.api.Manifest;
+import de.ims.icarus2.model.manifest.api.ManifestFragment;
 import de.ims.icarus2.test.TestFeature;
 
 /**
@@ -59,5 +60,13 @@ public enum ManifestTestFeature implements TestFeature {
 	 * Forces templates to also feature a host environment.
 	 */
 	EMBED_TEMPLATE,
+
+	/**
+	 * Hint that the created test instance should be valid fully for live use,
+	 * i.e. with a valid {@link ManifestFragment#getId() id} and other implementation
+	 * specific features.
+	 */
+	LIVE,
+
 	;
 }

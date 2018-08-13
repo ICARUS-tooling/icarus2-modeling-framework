@@ -132,6 +132,9 @@ public interface AnnotationLayerManifest extends LayerManifest {
 	boolean isAnnotationFlagSet(AnnotationFlag flag);
 
 	@AccessRestriction(AccessMode.READ)
+	boolean isLocalAnnotationFlagSet(AnnotationFlag flag);
+
+	@AccessRestriction(AccessMode.READ)
 	void forEachActiveAnnotationFlag(Consumer<? super AnnotationFlag> action);
 
 	@AccessRestriction(AccessMode.READ)

@@ -31,7 +31,7 @@ import de.ims.icarus2.test.TestUtils;
  * @author Markus Gärtner
  *
  */
-public interface ContainerManifestTest<M extends ContainerManifest> extends MemberManifestTest<M> {
+public interface ContainerManifestTest<M extends ContainerManifest> extends EmbeddedMemberManifestTest<M> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifest#getLayerManifest()}.

@@ -131,7 +131,8 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 		}
 
 		if(manifest==null)
-			throw new IllegalArgumentException("Unknown annotation key: "+key); //$NON-NLS-1$
+			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
+					"Unknown annotation key: "+key); //$NON-NLS-1$
 
 		return manifest;
 	}
@@ -149,7 +150,8 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 		String key = manifest.getKey();
 
 		if(annotationManifests.containsKey(key))
-			throw new IllegalArgumentException("Duplicate manifest for annotation key: "+key); //$NON-NLS-1$
+			throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
+					"Duplicate manifest for annotation key: "+key); //$NON-NLS-1$
 
 		annotationManifests.put(key, manifest);
 	}
@@ -167,7 +169,7 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 		String key = manifest.getKey();
 
 		if(annotationManifests==null || annotationManifests.remove(key)==null)
-			throw new IllegalArgumentException("Unknown annotation manifest: "+key); //$NON-NLS-1$
+			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "Unknown annotation manifest: "+key); //$NON-NLS-1$
 	}
 
 	/**
@@ -218,6 +220,11 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 
 		checkAllowsTargetLayer();
 		TargetLayerManifest targetLayerManifest = createTargetLayerManifest(referenceLayerId);
+
+		if(referenceLayerManifests.contains(targetLayerManifest))
+			throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
+					"Duplicate reference layer id: "+referenceLayerId);
+
 		referenceLayerManifests.add(targetLayerManifest);
 		return targetLayerManifest;
 	}
@@ -247,6 +254,14 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	@Override
 	public boolean isAnnotationFlagSet(AnnotationFlag flag) {
 		return annotationFlags.contains(flag) || (hasTemplate() && getTemplate().isAnnotationFlagSet(flag));
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.AnnotationLayerManifest#isLocalAnnotationFlagSet(de.ims.icarus2.model.manifest.api.AnnotationFlag)
+	 */
+	@Override
+	public boolean isLocalAnnotationFlagSet(AnnotationFlag flag) {
+		return annotationFlags.contains(flag);
 	}
 
 	@Override

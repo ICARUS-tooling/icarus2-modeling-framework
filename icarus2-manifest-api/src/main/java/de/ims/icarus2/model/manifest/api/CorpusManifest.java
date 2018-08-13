@@ -36,7 +36,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface CorpusManifest extends MemberManifest {
+public interface CorpusManifest extends MemberManifest, Embedded {
 
 	public static final boolean DEFAULT_EDITABLE_VALUE = false;
 	public static final boolean DEFAULT_PARALLEL_VALUE = false;

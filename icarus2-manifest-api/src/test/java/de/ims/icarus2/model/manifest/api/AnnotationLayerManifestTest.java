@@ -19,22 +19,53 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.inject_genericSetter;
+import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_createTargetLayerManifest;
+import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_forEachTargetLayerManifest;
+import static de.ims.icarus2.model.manifest.api.LayerManifestTest.transform_targetLayerId;
+import static de.ims.icarus2.test.GenericTest.NO_ILLEGAL;
+import static de.ims.icarus2.test.TestUtils.settings;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
+import de.ims.icarus2.test.TestUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface AnnotationLayerManifestTest {
+public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> extends LayerManifestTest<M> {
+
+	public static AnnotationManifest mockAnnotationManifest(String key) {
+		assertNotNull(key);
+		AnnotationManifest manifest = mock(AnnotationManifest.class);
+		when(manifest.getKey()).thenReturn(key);
+		return manifest;
+	}
+
+	/**
+	 * Helper function to be used for consistency.
+	 * Transforms a {@link AnnotationManifest} into a {@link String} by using
+	 * its {@link AnnotationManifest#getKey() key}.
+	 */
+	public static <I extends AnnotationManifest> Function<I, String> transform_key(){
+		return i -> i.getKey();
+	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationLayerManifest#forEachAnnotationManifest(java.util.function.Consumer)}.
 	 */
 	@Test
 	default void testForEachAnnotationManifest() {
-		fail("Not yet implemented");
+		assertDerivativeForEach(settings(),
+				mockAnnotationManifest("key1"), mockAnnotationManifest("key2"),
+				m -> m::forEachAnnotationManifest, AnnotationLayerManifest::addAnnotationManifest);
 	}
 
 	/**
@@ -42,7 +73,9 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testForEachLocalAnnotationManifest() {
-		fail("Not yet implemented");
+		assertDerivativeForEachLocal(settings(),
+				mockAnnotationManifest("key1"), mockAnnotationManifest("key2"),
+				m -> m::forEachLocalAnnotationManifest, AnnotationLayerManifest::addAnnotationManifest);
 	}
 
 	/**
@@ -50,7 +83,11 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testGetAvailableKeys() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeGetter(settings(),
+				"key1", "key2",
+				AnnotationLayerManifest::getAvailableKeys,
+				inject_genericSetter(AnnotationLayerManifest::addAnnotationManifest,
+						AnnotationLayerManifestTest::mockAnnotationManifest));
 	}
 
 	/**
@@ -58,7 +95,11 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testGetLocalAvailableKeys() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeLocalGetter(settings(),
+				"key1", "key2",
+				AnnotationLayerManifest::getLocalAvailableKeys,
+				inject_genericSetter(AnnotationLayerManifest::addAnnotationManifest,
+						AnnotationLayerManifestTest::mockAnnotationManifest));
 	}
 
 	/**
@@ -66,7 +107,13 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testGetAnnotationManifest() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeLookup(
+				mockAnnotationManifest("key1"), mockAnnotationManifest("key2"),
+				AnnotationLayerManifest::getAnnotationManifest,
+				true, UNKNOWN_ID_CHECK,
+				AnnotationLayerManifest::addAnnotationManifest,
+				transform_key(),
+				"unknownkey1");
 	}
 
 	/**
@@ -74,7 +121,10 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testGetAnnotationManifests() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeGetter(settings(),
+				mockAnnotationManifest("key1"), mockAnnotationManifest("key2"),
+				AnnotationLayerManifest::getAnnotationManifests,
+				AnnotationLayerManifest::addAnnotationManifest);
 	}
 
 	/**
@@ -82,7 +132,10 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testGetLocalAnnotationManifests() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeLocalGetter(settings(),
+				mockAnnotationManifest("key1"), mockAnnotationManifest("key2"),
+				AnnotationLayerManifest::getLocalAnnotationManifests,
+				AnnotationLayerManifest::addAnnotationManifest);
 	}
 
 	/**
@@ -90,7 +143,9 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testGetDefaultKey() {
-		fail("Not yet implemented");
+		assertDerivativeGetter(settings(), "key1", "key2", null,
+				AnnotationLayerManifest::getDefaultKey,
+				AnnotationLayerManifest::setDefaultKey);
 	}
 
 	/**
@@ -98,7 +153,9 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testIsLocalDefaultKey() {
-		fail("Not yet implemented");
+		assertDerivativeIsLocal(settings(), "key1", "key2",
+				AnnotationLayerManifest::isLocalDefaultKey,
+				AnnotationLayerManifest::setDefaultKey);
 	}
 
 	/**
@@ -106,7 +163,27 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testIsAnnotationFlagSet() {
-		fail("Not yet implemented");
+		for(AnnotationFlag flag : AnnotationFlag.values()) {
+			assertDerivativeFlagGetter(
+					settings(),
+					Boolean.FALSE,
+					m -> m.isAnnotationFlagSet(flag),
+					(m, active) -> m.setAnnotationFlag(flag, active));
+		}
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationLayerManifest#isLocalAnnotationFlagSet(de.ims.icarus2.model.manifest.api.AnnotationFlag)}.
+	 */
+	@Test
+	default void testIsLocalAnnotationFlagSet() {
+		for(AnnotationFlag flag : AnnotationFlag.values()) {
+			assertDerivativeLocalFlagGetter(
+					settings(),
+					Boolean.FALSE,
+					m -> m.isLocalAnnotationFlagSet(flag),
+					(m, active) -> m.setAnnotationFlag(flag, active));
+		}
 	}
 
 	/**
@@ -114,7 +191,13 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testForEachActiveAnnotationFlag() {
-		fail("Not yet implemented");
+		for(AnnotationFlag flag : AnnotationFlag.values()) {
+			assertDerivativeForEach(
+					settings(),
+					flag, TestUtils.other(flag),
+					m -> m::forEachActiveAnnotationFlag,
+					(m,f) -> m.setAnnotationFlag(f, true));
+		}
 	}
 
 	/**
@@ -122,7 +205,13 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testForEachActiveLocalAnnotationFlag() {
-		fail("Not yet implemented");
+		for(AnnotationFlag flag : AnnotationFlag.values()) {
+			assertDerivativeForEachLocal(
+					settings(),
+					flag, TestUtils.other(flag),
+					m -> m::forEachActiveLocalAnnotationFlag,
+					(m,f) -> m.setAnnotationFlag(f, true));
+		}
 	}
 
 	/**
@@ -130,7 +219,13 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testGetActiveAnnotationFlags() {
-		fail("Not yet implemented");
+		for(AnnotationFlag flag : AnnotationFlag.values()) {
+			assertDerivativeAccumulativeGetter(
+					settings(),
+					flag, TestUtils.other(flag),
+					AnnotationLayerManifest::getActiveAnnotationFlags,
+					(m,f) -> m.setAnnotationFlag(f, true));
+		}
 	}
 
 	/**
@@ -138,7 +233,13 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testGetLocalActiveAnnotationFlags() {
-		fail("Not yet implemented");
+		for(AnnotationFlag flag : AnnotationFlag.values()) {
+			assertDerivativeAccumulativeLocalGetter(
+					settings(),
+					flag, TestUtils.other(flag),
+					AnnotationLayerManifest::getLocalActiveAnnotationFlags,
+					(m,f) -> m.setAnnotationFlag(f, true));
+		}
 	}
 
 	/**
@@ -146,7 +247,10 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testForEachReferenceLayerManifest() {
-		fail("Not yet implemented");
+		assertDerivativeForEach(settings(),
+				"layer1", "layer2",
+				inject_forEachTargetLayerManifest(m -> m::forEachReferenceLayerManifest),
+				inject_createTargetLayerManifest(AnnotationLayerManifest::addReferenceLayerId));
 	}
 
 	/**
@@ -154,7 +258,10 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testForEachLocalReferenceLayerManifest() {
-		fail("Not yet implemented");
+		assertDerivativeForEachLocal(settings(),
+				"layer1", "layer2",
+				inject_forEachTargetLayerManifest(m -> m::forEachLocalReferenceLayerManifest),
+				inject_createTargetLayerManifest(AnnotationLayerManifest::addReferenceLayerId));
 	}
 
 	/**
@@ -162,7 +269,10 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testGetReferenceLayerManifests() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeGetter(settings(),
+				"layer1", "layer2",
+				ManifestTestUtils.transform_genericCollectionGetter(AnnotationLayerManifest::getReferenceLayerManifests, transform_targetLayerId()),
+				inject_createTargetLayerManifest(AnnotationLayerManifest::addReferenceLayerId));
 	}
 
 	/**
@@ -170,7 +280,13 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testGetLocalReferenceLayerManifests() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeLocalGetter(settings(),
+				"layer1", "layer2",
+				ManifestTestUtils.transform_genericCollectionGetter(
+						AnnotationLayerManifest::getLocalReferenceLayerManifests,
+						transform_targetLayerId()),
+				inject_createTargetLayerManifest(
+						AnnotationLayerManifest::addReferenceLayerId));
 	}
 
 	/**
@@ -178,7 +294,7 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testSetDefaultKey() {
-		fail("Not yet implemented");
+		assertLockableSetter(AnnotationLayerManifest::setDefaultKey, "key1", true, NO_CHECK);
 	}
 
 	/**
@@ -186,7 +302,10 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testAddAnnotationManifest() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeAdd(
+				AnnotationLayerManifest::addAnnotationManifest, NO_ILLEGAL(),
+				NO_CHECK, true, DUPLICATE_ID_CHECK,
+				mockAnnotationManifest("key1"), mockAnnotationManifest("key2"), mockAnnotationManifest("key3"));
 	}
 
 	/**
@@ -194,7 +313,11 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testRemoveAnnotationManifest() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeRemove(AnnotationLayerManifest::addAnnotationManifest,
+				AnnotationLayerManifest::removeAnnotationManifest,
+				AnnotationLayerManifest::getAnnotationManifests,
+				true, UNKNOWN_ID_CHECK,
+				mockAnnotationManifest("key1"), mockAnnotationManifest("key2"), mockAnnotationManifest("key3"));
 	}
 
 	/**
@@ -202,7 +325,9 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testSetAnnotationFlag() {
-		fail("Not yet implemented");
+		for(AnnotationFlag flag : AnnotationFlag.values()) {
+			assertLockableSetter((m, active) -> m.setAnnotationFlag(flag, active));
+		}
 	}
 
 	/**
@@ -210,7 +335,10 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testAddReferenceLayerId() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeAdd(
+				inject_createTargetLayerManifest(AnnotationLayerManifest::addReferenceLayerId),
+				ManifestTestUtils.getIllegalIdValues(), ILLEGAL_ID_CHECK,
+				true, DUPLICATE_ID_CHECK, ManifestTestUtils.getLegalIdValues());
 	}
 
 	/**
@@ -218,7 +346,11 @@ public interface AnnotationLayerManifestTest {
 	 */
 	@Test
 	default void testRemoveReferenceLayerId() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeRemove(AnnotationLayerManifest::addReferenceLayerId,
+				AnnotationLayerManifest::removeReferenceLayerId,
+				ManifestTestUtils.transform_genericCollectionGetter(AnnotationLayerManifest::getReferenceLayerManifests, transform_targetLayerId()),
+				true, UNKNOWN_ID_CHECK,
+				"layer1", "layer2", "layer3");
 	}
 
 }

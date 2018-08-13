@@ -16,11 +16,13 @@
  */
 package de.ims.icarus2.model.manifest;
 
+import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.assertMock;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
@@ -35,10 +37,12 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -60,6 +64,7 @@ import de.ims.icarus2.model.manifest.types.DefaultUrlResource;
 import de.ims.icarus2.model.manifest.types.Url;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.function.ObjBoolConsumer;
 import de.ims.icarus2.util.icon.IconWrapper;
 import de.ims.icarus2.util.id.Identity;
@@ -655,6 +660,31 @@ public class ManifestTestUtils {
 		TestUtils.assertCollectionEquals(getter.apply(instance), value1);
 	}
 
+	public static <T extends Object, K extends Object, I extends Object> void assertAccumulativeLookup(
+			T instance, K value1, K value2, BiFunction<T, I, K> lookup,
+			boolean checkNPE, BiConsumer<Executable, String> invalidLookupCheck,
+			BiConsumer<T, K> adder, Function<K, I> keyGen, @SuppressWarnings("unchecked") I...invalidLookups) {
+
+		if(checkNPE) {
+			TestUtils.assertNPE(() -> lookup.apply(instance, null));
+		} else {
+			lookup.apply(instance, null);
+		}
+
+		if(invalidLookupCheck!=NO_CHECK && invalidLookups.length>0) {
+			for(I invalidLookup : invalidLookups) {
+				invalidLookupCheck.accept(() -> lookup.apply(instance, invalidLookup),
+						forValue("Testing invalid lookup value", invalidLookup));
+			}
+		}
+
+		adder.accept(instance, value1);
+		assertSame(value1, lookup.apply(instance, keyGen.apply(value1)));
+
+		adder.accept(instance, value2);
+		assertSame(value2, lookup.apply(instance, keyGen.apply(value2)));
+	}
+
 	@SuppressWarnings("unchecked")
 	public static <T extends Object, K extends Object, A extends Consumer<? super K>> void assertForEach(
 			T instance, K value1, K value2, Function<T,Consumer<A>> forEachGen, BiConsumer<T, K> adder) {
@@ -727,5 +757,43 @@ public class ManifestTestUtils {
 		assertTrue(getter.test(instance));
 		setter.accept(instance, false);
 		assertFalse(getter.test(instance));
+	}
+
+	public static <M extends Object, K extends Object, T extends Object> BiConsumer<M, K> inject_genericSetter(
+			BiConsumer<M, T> setter, Function<K, T> transform) {
+		return (m, val) -> {
+			setter.accept(m, transform.apply(val));
+		};
+	}
+
+	/**
+	 * Creates a wrapper around a generic getter method that returns a collection
+	 * and transforms the result based on the specified {@code transform} function.
+	 *
+	 * @return
+	 */
+	public static <M extends Object, T extends Object, K extends Object> Function<M, List<K>> transform_genericCollectionGetter(
+			Function<M, ? extends Collection<T>> getter, Function<T, K> transform) {
+		return m -> {
+			return LazyCollection.<K>lazyList()
+					.addAll(getter.apply(m), transform)
+					.getAsList();
+		};
+	}
+
+	public static <M extends Object, T extends Object, K extends Object> Function<M, K> transform_genericValue(
+			Function<M, T> getter, Function<T, K> transform) {
+		return m -> {
+			return transform.apply(getter.apply(m));
+		};
+	}
+
+	/**
+	 * Helper function to be used for consistency.
+	 * Transforms a {@link Identity} into a {@link String} by using
+	 * its {@link Identity#getId() id}.
+	 */
+	public static <I extends Identity> Function<I, String> transform_id(){
+		return i -> i.getId();
 	}
 }

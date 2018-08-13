@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.Documentation.Resource;
+import de.ims.icarus2.test.annotations.Provider;
 
 /**
  * @author Markus Gärtner
@@ -44,6 +45,7 @@ public interface DocumentationTest<D extends Documentation> extends LockableTest
 	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#createEmpty()
 	 */
 	@Override
+	@Provider
 	default ModifiableIdentity createEmpty() {
 		return createUnlocked();
 	}

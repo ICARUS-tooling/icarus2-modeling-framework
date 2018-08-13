@@ -16,15 +16,15 @@
  */
 package de.ims.icarus2.model.manifest.types;
 
-import de.ims.icarus2.IcarusException;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 
 
 /**
  * @author Markus Gärtner
  *
  */
-public class UnsupportedValueTypeException extends IcarusException {
+public class UnsupportedValueTypeException extends ManifestException {
 
 	private static final long serialVersionUID = 3427046321201797935L;
 

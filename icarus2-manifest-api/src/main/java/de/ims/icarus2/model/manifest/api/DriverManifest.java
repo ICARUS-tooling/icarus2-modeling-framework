@@ -32,7 +32,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface DriverManifest extends ForeignImplementationManifest {
+public interface DriverManifest extends ForeignImplementationManifest, Embedded {
 
 	@Override
 	ContextManifest getHost();
@@ -287,7 +287,7 @@ public interface DriverManifest extends ForeignImplementationManifest {
 	 *
 	 */
 	@AccessControl(AccessPolicy.DENY)
-	public interface ModuleManifest extends ForeignImplementationManifest {
+	public interface ModuleManifest extends ForeignImplementationManifest, Embedded {
 
 		@AccessRestriction(AccessMode.READ)
 		default DriverManifest getDriverManifest() {

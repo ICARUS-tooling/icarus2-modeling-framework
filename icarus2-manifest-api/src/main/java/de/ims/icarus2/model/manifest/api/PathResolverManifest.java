@@ -24,7 +24,7 @@ import de.ims.icarus2.util.access.AccessPolicy;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface PathResolverManifest extends ForeignImplementationManifest {
+public interface PathResolverManifest extends ForeignImplementationManifest, Embedded {
 
 	default LocationManifest getLocationManifest() {
 		return getHost();

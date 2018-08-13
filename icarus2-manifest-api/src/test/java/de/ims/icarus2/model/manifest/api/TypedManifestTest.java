@@ -19,29 +19,23 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-import de.ims.icarus2.test.TestSettings;
-import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.GenericTest;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface TypedManifestTest<M extends TypedManifest> {
+public interface TypedManifestTest<M extends TypedManifest> extends GenericTest<M> {
 
 	ManifestType getExpectedType();
 
-	@Provider
-	M createTypedManifest(TestSettings settings);
-
 	@Test
 	default void testGetManifestType() {
-		M manifest = createTypedManifest(null);
-		if(manifest!=null) {
-			assertEquals(getExpectedType(), manifest.getManifestType());
-		}
+		assertEquals(getExpectedType(), createTestInstance(settings()).getManifestType());
 	}
 }

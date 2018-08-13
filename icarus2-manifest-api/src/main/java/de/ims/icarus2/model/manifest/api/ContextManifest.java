@@ -36,7 +36,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface ContextManifest extends MemberManifest, Bindable {
+public interface ContextManifest extends MemberManifest, Bindable, Embedded {
 
 	public static final boolean DEFAULT_INDEPENDENT_VALUE = false;
 	public static final boolean DEFAULT_EDITABLE_VALUE = false;

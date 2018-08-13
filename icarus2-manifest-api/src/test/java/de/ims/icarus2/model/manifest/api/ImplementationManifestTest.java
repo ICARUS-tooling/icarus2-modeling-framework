@@ -32,14 +32,15 @@ import de.ims.icarus2.test.annotations.OverrideTest;
  * @author Markus Gärtner
  *
  */
-public interface ImplementationManifestTest<M extends ImplementationManifest> extends MemberManifestTest<M> {
+public interface ImplementationManifestTest<M extends ImplementationManifest> extends EmbeddedMemberManifestTest<M> {
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.MemberManifestTest#testMandatoryConstructors()
 	 */
 	@SuppressWarnings("unchecked")
-	@Override
 	@OverrideTest
+	@Override
+	@Test
 	default void testMandatoryConstructors() throws Exception {
 		assertConstructorHost(MemberManifest.class);
 		assertConstructorManifestLocationManifestRegistryHost(MemberManifest.class);

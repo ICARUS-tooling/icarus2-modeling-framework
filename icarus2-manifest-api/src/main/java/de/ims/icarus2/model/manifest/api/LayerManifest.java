@@ -42,7 +42,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface LayerManifest extends MemberManifest {
+public interface LayerManifest extends MemberManifest, Embedded {
 
 	@AccessRestriction(AccessMode.READ)
 	ContextManifest getContextManifest();

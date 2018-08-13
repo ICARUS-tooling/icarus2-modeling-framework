@@ -19,30 +19,51 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.inject_genericSetter;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.transform_id;
+import static de.ims.icarus2.test.GenericTest.NO_ILLEGAL;
+import static de.ims.icarus2.test.TestUtils.settings;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
+import de.ims.icarus2.util.id.Identity;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface OptionsManifestTest {
+public interface OptionsManifestTest<M extends OptionsManifest> extends ManifestTest<M>, EmbeddedTest<M> {
 
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest#getMemberManifest()}.
-	 */
-	@Test
-	default void testGetMemberManifest() {
-		fail("Not yet implemented");
+	public static Option mockOption(String id) {
+		Option option = mock(Option.class);
+		when(option.getId()).thenReturn(id);
+		return option;
+	}
+
+	public static Identity mockIdentity(String id) {
+		Identity identity = mock(Identity.class);
+		when(identity.getId()).thenReturn(id);
+		return identity;
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest#getHost()}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest#getMemberManifest()}.
+	 * @throws Exception
 	 */
 	@Test
-	default void testGetHost() {
-		fail("Not yet implemented");
+	default void testGetMemberManifest() throws Exception {
+		assertNull(createUnlocked().getMemberManifest());
+		assertNull(createTemplate(settings()).getMemberManifest());
+
+		MemberManifest host = mockTypedManifest(MemberManifest.class);
+		assertEquals(host, createEmbedded(host).getMemberManifest());
 	}
 
 	/**
@@ -50,7 +71,10 @@ public interface OptionsManifestTest {
 	 */
 	@Test
 	default void testGetOptionIds() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeGetter(settings(),
+				"id1", "id2",
+				OptionsManifest::getOptionIds,
+				inject_genericSetter(OptionsManifest::addOption, OptionsManifestTest::mockOption));
 	}
 
 	/**
@@ -58,7 +82,10 @@ public interface OptionsManifestTest {
 	 */
 	@Test
 	default void testIsLocalGroupIdentifier() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeIsLocal(settings(),
+				mockIdentity("group1"), mockIdentity("group2"),
+				OptionsManifest::isLocalGroupIdentifier,
+				OptionsManifest::addGroupIdentifier);
 	}
 
 	/**
@@ -66,7 +93,10 @@ public interface OptionsManifestTest {
 	 */
 	@Test
 	default void testForEachGroupIdentifier() {
-		fail("Not yet implemented");
+		assertDerivativeForEach(settings(),
+				mockIdentity("group1"), mockIdentity("group2"),
+				m -> m::forEachGroupIdentifier,
+				OptionsManifest::addGroupIdentifier);
 	}
 
 	/**
@@ -74,7 +104,10 @@ public interface OptionsManifestTest {
 	 */
 	@Test
 	default void testForEachLocalGroupIdentifier() {
-		fail("Not yet implemented");
+		assertDerivativeForEachLocal(settings(),
+				mockIdentity("group1"), mockIdentity("group2"),
+				m -> m::forEachLocalGroupIdentifier,
+				OptionsManifest::addGroupIdentifier);
 	}
 
 	/**
@@ -82,7 +115,10 @@ public interface OptionsManifestTest {
 	 */
 	@Test
 	default void testHasLocalGroupIdentifiers() {
-		fail("Not yet implemented");
+		assertDerivativeIsLocal(settings(),
+				mockIdentity("group1"), mockIdentity("group2"),
+				OptionsManifest::hasLocalGroupIdentifiers,
+				OptionsManifest::addGroupIdentifier);
 	}
 
 	/**
@@ -90,7 +126,10 @@ public interface OptionsManifestTest {
 	 */
 	@Test
 	default void testGetGroupIdentifiers() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeGetter(settings(),
+				mockIdentity("group1"), mockIdentity("group2"),
+				OptionsManifest::getGroupIdentifiers,
+				OptionsManifest::addGroupIdentifier);
 	}
 
 	/**
@@ -98,7 +137,10 @@ public interface OptionsManifestTest {
 	 */
 	@Test
 	default void testGetLocalGroupIdentifiers() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeLocalGetter(settings(),
+				mockIdentity("group1"), mockIdentity("group2"),
+				OptionsManifest::getLocalGroupIdentifiers,
+				OptionsManifest::addGroupIdentifier);
 	}
 
 	/**
@@ -106,7 +148,13 @@ public interface OptionsManifestTest {
 	 */
 	@Test
 	default void testGetOption() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeLookup(
+				mockOption("id1"), mockOption("id2"),
+				OptionsManifest::getOption,
+				true, UNKNOWN_ID_CHECK,
+				OptionsManifest::addOption,
+				transform_id(),
+				"unknown1");
 	}
 
 	/**
@@ -114,7 +162,10 @@ public interface OptionsManifestTest {
 	 */
 	@Test
 	default void testForEachOption() {
-		fail("Not yet implemented");
+		assertDerivativeForEach(settings(),
+				mockOption("id1"), mockOption("ids2"),
+				m -> m::forEachOption,
+				OptionsManifest::addOption);
 	}
 
 	/**
@@ -122,7 +173,10 @@ public interface OptionsManifestTest {
 	 */
 	@Test
 	default void testForEachLocalOption() {
-		fail("Not yet implemented");
+		assertDerivativeForEachLocal(settings(),
+				mockOption("id1"), mockOption("ids2"),
+				m -> m::forEachLocalOption,
+				OptionsManifest::addOption);
 	}
 
 	/**
@@ -130,7 +184,10 @@ public interface OptionsManifestTest {
 	 */
 	@Test
 	default void testGetOptions() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeGetter(settings(),
+				mockOption("id1"), mockOption("ids2"),
+				OptionsManifest::getOptions,
+				OptionsManifest::addOption);
 	}
 
 	/**
@@ -138,7 +195,10 @@ public interface OptionsManifestTest {
 	 */
 	@Test
 	default void testGetLocalOptions() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeLocalGetter(settings(),
+				mockOption("id1"), mockOption("ids2"),
+				OptionsManifest::getLocalOptions,
+				OptionsManifest::addOption);
 	}
 
 	/**
@@ -154,7 +214,10 @@ public interface OptionsManifestTest {
 	 */
 	@Test
 	default void testIsLocalOption() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeIsLocal(settings(),
+				"id1", "id2",
+				OptionsManifest::isLocalOption,
+				inject_genericSetter(OptionsManifest::addOption, OptionsManifestTest::mockOption));
 	}
 
 	/**
@@ -162,7 +225,10 @@ public interface OptionsManifestTest {
 	 */
 	@Test
 	default void testHasLocalOptions() {
-		fail("Not yet implemented");
+		assertDerivativeIsLocal(settings(),
+				mockOption("id1"), mockOption("ids2"),
+				OptionsManifest::hasLocalOptions,
+				OptionsManifest::addOption);
 	}
 
 	/**
@@ -170,7 +236,10 @@ public interface OptionsManifestTest {
 	 */
 	@Test
 	default void testAddOption() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeAdd(
+				OptionsManifest::addOption, NO_ILLEGAL(),
+				NO_CHECK, true, DUPLICATE_ID_CHECK,
+				mockOption("id1"), mockOption("ids2"), mockOption("id3"));
 	}
 
 	/**
@@ -178,7 +247,11 @@ public interface OptionsManifestTest {
 	 */
 	@Test
 	default void testRemoveOption() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeRemove(
+				OptionsManifest::addOption, OptionsManifest::removeOption,
+				OptionsManifest::getOptions,
+				true, UNKNOWN_ID_CHECK,
+				mockOption("id1"), mockOption("ids2"), mockOption("id3"));
 	}
 
 	/**
@@ -186,7 +259,10 @@ public interface OptionsManifestTest {
 	 */
 	@Test
 	default void testAddGroupIdentifier() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeAdd(
+				OptionsManifest::addGroupIdentifier, NO_ILLEGAL(),
+				NO_CHECK, true, DUPLICATE_ID_CHECK,
+				mockIdentity("id1"), mockIdentity("ids2"), mockIdentity("id3"));
 	}
 
 	/**
@@ -194,7 +270,11 @@ public interface OptionsManifestTest {
 	 */
 	@Test
 	default void testRemoveGroupIdentifier() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeRemove(
+				OptionsManifest::addGroupIdentifier, OptionsManifest::removeGroupIdentifier,
+				OptionsManifest::getGroupIdentifiers,
+				true, UNKNOWN_ID_CHECK,
+				mockIdentity("id1"), mockIdentity("ids2"), mockIdentity("id3"));
 	}
 
 }

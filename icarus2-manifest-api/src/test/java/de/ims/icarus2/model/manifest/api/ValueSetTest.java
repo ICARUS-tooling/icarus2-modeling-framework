@@ -37,12 +37,11 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 	V createWithType(TestSettings settings, ValueType valueType);
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#createTypedManifest(TestSettings)
+	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
-	@Provider
 	@Override
-	default V createTypedManifest(TestSettings settings) {
-		return createUnlocked();
+	default V createTestInstance(TestSettings settings) {
+		return createWithType(settings, ValueType.STRING);
 	}
 
 	/**

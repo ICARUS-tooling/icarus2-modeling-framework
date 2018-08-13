@@ -37,7 +37,6 @@ import de.ims.icarus2.model.manifest.types.UnsupportedValueTypeException;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.id.Identity;
-import de.ims.icarus2.util.id.UnknownIdentifierException;
 
 /**
  * @author Markus Gärtner
@@ -128,8 +127,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 
 	@Override
 	public Option getOption(String id) {
-		if (id == null)
-			throw new NullPointerException("Invalid id"); //$NON-NLS-1$
+		requireNonNull(id);
 
 		Option option = options.get(id);
 
@@ -138,7 +136,8 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		}
 
 		if(option==null)
-			throw new UnknownIdentifierException("No such option: "+id); //$NON-NLS-1$
+			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
+					"No such option: "+id); //$NON-NLS-1$
 
 		return option;
 	}
@@ -156,10 +155,12 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		String id = option.getId();
 
 		if(id==null)
-			throw new IllegalArgumentException("Option does not declare a valid id"); //$NON-NLS-1$
+			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
+					"Option does not declare a valid id"); //$NON-NLS-1$
 
 		if(options.containsKey(id))
-			throw new IllegalArgumentException("Duplicate option id: "+id); //$NON-NLS-1$
+			throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
+					"Duplicate option id: "+id); //$NON-NLS-1$
 
 		options.put(id, option);
 	}
@@ -177,10 +178,16 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		String id = option.getId();
 
 		if(id==null)
-			throw new IllegalArgumentException("Option does not declare a valid id"); //$NON-NLS-1$
+			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
+					"Option does not declare a valid id"); //$NON-NLS-1$
+
+		if(!options.containsKey(id))
+			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
+					"Unknown option id: "+id);
 
 		if(!options.remove(id, option))
-			throw new ManifestException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Provided option is not mapped to its id: "+id);
+			throw new ManifestException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
+					"Provided option is not mapped to its id: "+id);
 	}
 
 	@Override
@@ -202,12 +209,14 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		requireNonNull(identity);
 
 		if(identity.getId()==null)
-			throw new IllegalArgumentException("Supplied identity declares null id"); //$NON-NLS-1$
+			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
+					"Supplied identity declares null id"); //$NON-NLS-1$
 
 		ManifestUtils.checkId(identity.getId());
 
 		if(groupIdentifiers.contains(identity))
-			throw new IllegalArgumentException("Duplicate group identifier: "+identity); //$NON-NLS-1$
+			throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
+					"Duplicate group identifier: "+identity); //$NON-NLS-1$
 
 		groupIdentifiers.add(identity);
 	}
@@ -223,11 +232,13 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		requireNonNull(identity);
 
 		if(!groupIdentifiers.remove(identity))
-			throw new ManifestException(ManifestErrorCode.MANIFEST_ERROR, "No such group identifier: "+identity);
+			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
+					"No such group identifier: "+identity);
 	}
 
 	@Override
 	public boolean isLocalGroupIdentifier(Identity id) {
+		requireNonNull(id);
 		return groupIdentifiers.contains(id);
 	}
 
@@ -248,6 +259,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 
 	@Override
 	public boolean isLocalOption(String id) {
+		requireNonNull(id);
 		return options.containsKey(id);
 	}
 

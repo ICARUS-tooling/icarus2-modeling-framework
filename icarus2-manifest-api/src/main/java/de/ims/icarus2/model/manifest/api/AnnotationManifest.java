@@ -40,7 +40,7 @@ import de.ims.icarus2.util.data.ContentType;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface AnnotationManifest extends MemberManifest {
+public interface AnnotationManifest extends MemberManifest, Embedded {
 
 	public static final boolean DEFAULT_ALLOW_UNKNOWN_VALUES = false;
 

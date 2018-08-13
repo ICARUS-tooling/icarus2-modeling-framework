@@ -112,12 +112,16 @@ public class ManifestUtils {
 	//TODO methods for checking other types so we can use them as method references in lambdas
 
 	public static String getUniqueId(ManifestFragment manifest) {
-		if(manifest instanceof Embedded) {
+		String id = manifest.getId();
+
+		if(id==null) {
+			return null;
+		} else if(manifest instanceof Embedded) {
 			StringBuilder sb = new StringBuilder();
 			buildUniqueId(sb, manifest);
 			return sb.toString();
 		} else {
-			return manifest.getId();
+			return id;
 		}
 	}
 

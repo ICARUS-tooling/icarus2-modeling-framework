@@ -19,6 +19,15 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertAccumulativeGetter;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertAccumulativeIsLocal;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertAccumulativeLocalGetter;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertAccumulativeLookup;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertFlagGetter;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertForEach;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertForEachLocal;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertGetter;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertIsLocal;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertManifestException;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertSetter;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestLocation;
@@ -36,6 +45,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.Collection;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -51,6 +61,7 @@ import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.test.GenericTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.annotations.OverrideTest;
 import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.util.function.ObjBoolConsumer;
 
@@ -155,7 +166,9 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 *
 	 * @see de.ims.icarus2.test.GenericTest#testMandatoryConstructors()
 	 */
+	@OverrideTest
 	@Override
+	@Test
 	default void testMandatoryConstructors() throws Exception {
 		ManifestFragmentTest.super.testMandatoryConstructors();
 		assertConstructorManifestLocationManifestRegistry();
@@ -198,7 +211,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	default <K extends Object> void assertDerivativeGetter(
 			TestSettings settings, K value1, K value2, K defaultValue, Function<M,K> getter, BiConsumer<M, K> setter) {
 
-		ManifestTestUtils.assertGetter(createUnlocked(settings), value1, value2, defaultValue, getter, setter);
+		assertGetter(createUnlocked(settings), value1, value2, defaultValue, getter, setter);
 
 		if(getExpectedType().isSupportTemplating()) {
 			M template = createTemplate(settings);
@@ -217,7 +230,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	default <K extends Object> void assertDerivativeAccumulativeGetter(
 			TestSettings settings, K value1, K value2, Function<M, ? extends Collection<K>> getter, BiConsumer<M, K> adder) {
 
-		ManifestTestUtils.assertAccumulativeGetter(createUnlocked(settings), value1, value2, getter, adder);
+		assertAccumulativeGetter(createUnlocked(settings), value1, value2, getter, adder);
 
 		if(getExpectedType().isSupportTemplating()) {
 			M template = createTemplate(settings);
@@ -236,7 +249,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	default <K extends Object> void assertDerivativeAccumulativeLocalGetter(
 			TestSettings settings, K value1, K value2, Function<M,? extends Collection<K>> getter, BiConsumer<M, K> adder) {
 
-		ManifestTestUtils.assertAccumulativeLocalGetter(createUnlocked(settings), value1, value2, getter, adder);
+		assertAccumulativeLocalGetter(createUnlocked(settings), value1, value2, getter, adder);
 
 		if(getExpectedType().isSupportTemplating()) {
 			M template = createTemplate(settings);
@@ -255,7 +268,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	default <K extends Object, A extends Consumer<? super K>> void assertDerivativeForEach(
 			TestSettings settings, K value1, K value2, Function<M,Consumer<A>> forEachGen, BiConsumer<M, K> adder) {
 
-		ManifestTestUtils.assertForEach(createUnlocked(settings), value1, value2, forEachGen, adder);
+		assertForEach(createUnlocked(settings), value1, value2, forEachGen, adder);
 
 		if(getExpectedType().isSupportTemplating()) {
 			M template = createTemplate(settings);
@@ -275,7 +288,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	default <K extends Object, A extends Consumer<? super K>> void assertDerivativeForEachLocal(
 			TestSettings settings, K value1, K value2, Function<M,Consumer<A>> forEachLocalGen, BiConsumer<M, K> adder) {
 
-		ManifestTestUtils.assertForEachLocal(createUnlocked(settings), value1, value2, forEachLocalGen, adder);
+		assertForEachLocal(createUnlocked(settings), value1, value2, forEachLocalGen, adder);
 
 		if(getExpectedType().isSupportTemplating()) {
 			M template = createTemplate(settings);
@@ -297,7 +310,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	default <K extends Object> void assertDerivativeIsLocal(
 			TestSettings settings, K value1, K value2, Predicate<M> isLocalCheck, BiConsumer<M, K> setter) {
 
-		ManifestTestUtils.assertIsLocal(createUnlocked(settings), value1, value2, isLocalCheck, setter);
+		assertIsLocal(createUnlocked(settings), value1, value2, isLocalCheck, setter);
 
 		if(getExpectedType().isSupportTemplating()) {
 			M template = createTemplate(settings);
@@ -314,7 +327,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	default <K extends Object> void assertDerivativeAccumulativeIsLocal(
 			TestSettings settings, K value1, K value2, BiPredicate<M, K> isLocalCheck, BiConsumer<M, K> adder) {
 
-		ManifestTestUtils.assertAccumulativeIsLocal(createUnlocked(settings), value1, value2, isLocalCheck, adder);
+		assertAccumulativeIsLocal(createUnlocked(settings), value1, value2, isLocalCheck, adder);
 
 		if(getExpectedType().isSupportTemplating()) {
 			M template = createTemplate(settings);
@@ -331,7 +344,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	default void assertDerivativeFlagGetter(TestSettings settings, Boolean defaultValue,
 			Predicate<M> getter, ObjBoolConsumer<M> setter) {
 
-		ManifestTestUtils.assertFlagGetter(createUnlocked(settings), defaultValue, getter, setter);
+		assertFlagGetter(createUnlocked(settings), defaultValue, getter, setter);
 
 		if(getExpectedType().isSupportTemplating()) {
 			M template = createTemplate(settings);
@@ -353,7 +366,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	default void assertDerivativeLocalFlagGetter(TestSettings settings, Boolean defaultValue,
 			Predicate<M> getter, ObjBoolConsumer<M> setter) {
 
-		ManifestTestUtils.assertFlagGetter(createUnlocked(settings), defaultValue, getter, setter);
+		assertFlagGetter(createUnlocked(settings), defaultValue, getter, setter);
 
 		if(getExpectedType().isSupportTemplating()) {
 			M template = createTemplate(settings);
@@ -377,6 +390,32 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 
 			setter.accept(derived, false);
 			assertFalse(getter.test(derived));
+		}
+	}
+
+
+	default <K extends Object, I extends Object> void assertDerivativeAccumulativeLookup(
+			K value1, K value2, BiFunction<M, I, K> lookup,
+			boolean checkNPE, BiConsumer<Executable, String> invalidLookupCheck,
+			BiConsumer<M, K> adder, Function<K, I> keyGen, @SuppressWarnings("unchecked") I...invalidLookups) {
+
+		assertAccumulativeLookup(createUnlocked(), value1, value2, lookup, checkNPE,
+				invalidLookupCheck, adder, keyGen, invalidLookups);
+
+		if(getExpectedType().isSupportTemplating()) {
+			M template = createTemplate(settings());
+			adder.accept(template, value1);
+
+			M derived = createDerived(settings(), template);
+
+			assertSame(value1, lookup.apply(derived, keyGen.apply(value1)));
+			invalidLookupCheck.accept(() -> lookup.apply(derived, keyGen.apply(value2)),
+					"Test unknown lookup for derived manifest");
+
+			adder.accept(derived, value2);
+			assertSame(value2, lookup.apply(derived, keyGen.apply(value2)));
+			invalidLookupCheck.accept(() -> lookup.apply(template, keyGen.apply(value2)),
+					"Test unknown lookup for template manifest");
 		}
 	}
 

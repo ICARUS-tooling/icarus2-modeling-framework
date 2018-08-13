@@ -477,11 +477,11 @@ public class ValueType implements StringResource, NamedObject {
 	/**
 	 * Returns a collection view on all the available value types
 	 */
-	public static Collection<ValueType> values() {
+	public static Collection<ValueType> valueTypes() {
 		return CollectionUtils.getCollectionProxy(xmlLookup.values());
 	}
 
-	public static Set<ValueType> basicValues() {
+	public static Set<ValueType> basicValueTypes() {
 		return filterIncluding(ValueType::isBasicType);
 	}
 
@@ -539,7 +539,7 @@ public class ValueType implements StringResource, NamedObject {
 		LazyCollection<ValueType> filter = LazyCollection.lazySet();
 
 		if(p!=null) {
-			for(ValueType type : values()) {
+			for(ValueType type : valueTypes()) {
 				if(p.test(type)) {
 					filter.add(type);
 				}

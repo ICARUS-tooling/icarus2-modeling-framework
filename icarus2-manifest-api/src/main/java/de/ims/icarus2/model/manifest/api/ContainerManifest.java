@@ -32,7 +32,7 @@ import de.ims.icarus2.util.access.AccessRestriction;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface ContainerManifest extends MemberManifest {
+public interface ContainerManifest extends MemberManifest, Embedded {
 
 	public static final ContainerType DEFAULT_CONTAINER_TYPE = ContainerType.LIST;
 

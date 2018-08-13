@@ -30,6 +30,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.Category;
 import de.ims.icarus2.model.manifest.api.Documentation;
+import de.ims.icarus2.model.manifest.api.Embedded;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
@@ -49,7 +50,8 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet;
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractMemberManifest<M extends MemberManifest> extends AbstractManifest<M> implements MemberManifest {
+//FIXME currently implementing Embedded on this level is a simplification
+public abstract class AbstractMemberManifest<M extends MemberManifest> extends AbstractManifest<M> implements MemberManifest, Embedded {
 
 	private String name;
 	private String description;
