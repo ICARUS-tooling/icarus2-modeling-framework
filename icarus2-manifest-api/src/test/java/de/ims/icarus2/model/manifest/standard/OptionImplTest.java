@@ -4,6 +4,7 @@
 package de.ims.icarus2.model.manifest.standard;
 
 import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.model.manifest.api.ModifiableIdentity;
 import de.ims.icarus2.model.manifest.api.OptionTest;
 import de.ims.icarus2.model.manifest.standard.OptionsManifestImpl.OptionImpl;
 import de.ims.icarus2.model.manifest.types.ValueType;
@@ -24,14 +25,6 @@ class OptionImplTest implements OptionTest<OptionImpl> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
-	 */
-	@Override
-	public OptionImpl createTestInstance(TestSettings settings) {
-		return new OptionImpl();
-	}
-
-	/**
 	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
 	 */
 	@Override
@@ -47,4 +40,11 @@ class OptionImplTest implements OptionTest<OptionImpl> {
 		return new OptionImpl("optionX", valueType);
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#createEmpty()
+	 */
+	@Override
+	public ModifiableIdentity createEmpty() {
+		return new OptionImpl();
+	}
 }

@@ -153,8 +153,9 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	@Test
 	default void testSetPrimaryLayerId() {
 		assertLockableSetter(
+				settings(),
 				HighlightLayerManifest::setPrimaryLayerId,
-				"layer1", true, ILLEGAL_ID_CHECK, ManifestTestUtils.getIllegalIdValues());
+				"layer1", true, INVALID_ID_CHECK, ManifestTestUtils.getIllegalIdValues());
 	}
 
 	/**
@@ -163,7 +164,8 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	@Test
 	default void testSetHighlightFlag() {
 		for(HighlightFlag flag : HighlightFlag.values()) {
-			assertLockableSetter((m, active) -> m.setHighlightFlag(flag, active));
+			assertLockableSetter(settings(),
+					(m, active) -> m.setHighlightFlag(flag, active));
 		}
 	}
 

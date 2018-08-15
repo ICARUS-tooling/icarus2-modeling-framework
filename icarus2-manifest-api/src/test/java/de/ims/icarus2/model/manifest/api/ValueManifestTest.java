@@ -19,9 +19,13 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.Collections;
+import java.util.Set;
 
 import javax.swing.Icon;
 
@@ -39,6 +43,10 @@ import de.ims.icarus2.test.annotations.Provider;
  *
  */
 public interface ValueManifestTest<M extends ValueManifest> extends DocumentableTest<M>, ModifiableIdentityTest, TypedManifestTest<M> {
+
+	public static final Set<ValueType> LEGAL_VALUE_TYPES = ValueManifest.SUPPORTED_VALUE_TYPES;
+	public static final Set<ValueType> ILLEGAL_VALUE_TYPES = Collections.unmodifiableSet(
+			ValueType.filterWithout(LEGAL_VALUE_TYPES::contains));
 
 	@Provider
 	M createWithType(ValueType valueType);
@@ -88,7 +96,7 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 	 */
 	@Test
 	default void testGetValue() {
-		for(ValueType valueType : ValueManifest.SUPPORTED_VALUE_TYPES) {
+		for(ValueType valueType : LEGAL_VALUE_TYPES) {
 
 			M empty = createWithType(valueType);
 			assertNull(empty.getValue());
@@ -100,7 +108,7 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 	 */
 	@Test
 	default void testGetValueType() {
-		for(ValueType valueType : ValueManifest.SUPPORTED_VALUE_TYPES) {
+		for(ValueType valueType : LEGAL_VALUE_TYPES) {
 
 			M empty = createWithType(valueType);
 			assertEquals(valueType, empty.getValueType());
@@ -112,28 +120,27 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 	 */
 	@Test
 	default void testSetValue() {
-		for(ValueType valueType : ValueManifest.SUPPORTED_VALUE_TYPES) {
+		for(ValueType valueType : LEGAL_VALUE_TYPES) {
 
 			M manifest = createWithType(valueType);
 
 			Object testValue = ManifestTestUtils.getTestValue(valueType);
 			Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
 
-			LockableTest.assertLockableSetter(manifest,
+			LockableTest.assertLockableSetter(
+					settings(), manifest,
 					ValueManifest::setValue, testValue, true, TYPE_CAST_CHECK, illegalValue);
 		}
 	}
 
 	@Test
 	default void testUnsupportedValueTypes() {
-		for(ValueType valueType : ValueType.valueTypes()) {
-			if(!ValueManifest.SUPPORTED_VALUE_TYPES.contains(valueType)) {
-				UnsupportedValueTypeException exception = assertThrows(UnsupportedValueTypeException.class,
-						() -> createWithType(valueType));
+		for(ValueType valueType : ILLEGAL_VALUE_TYPES) {
+			UnsupportedValueTypeException exception = assertThrows(UnsupportedValueTypeException.class,
+					() -> createWithType(valueType));
 
-				assertEquals(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE, exception.getErrorCode());
-				assertEquals(valueType, exception.getValueType());
-			}
+			assertEquals(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE, exception.getErrorCode());
+			assertEquals(valueType, exception.getValueType());
 		}
 	}
 }

@@ -240,6 +240,7 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 	@Test
 	default void testAddOption() {
 		assertLockableAccumulativeAdd(
+				settings(),
 				OptionsManifest::addOption, NO_ILLEGAL(),
 				NO_CHECK, true, DUPLICATE_ID_CHECK,
 				mockOption("id1"), mockOption("ids2"), mockOption("id3"));
@@ -251,6 +252,7 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 	@Test
 	default void testRemoveOption() {
 		assertLockableAccumulativeRemove(
+				settings(),
 				OptionsManifest::addOption, OptionsManifest::removeOption,
 				OptionsManifest::getOptions,
 				true, UNKNOWN_ID_CHECK,
@@ -263,6 +265,7 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 	@Test
 	default void testAddGroupIdentifier() {
 		assertLockableAccumulativeAdd(
+				settings(),
 				OptionsManifest::addGroupIdentifier, NO_ILLEGAL(),
 				NO_CHECK, true, DUPLICATE_ID_CHECK,
 				mockIdentity("id1"), mockIdentity("ids2"), mockIdentity("id3"));
@@ -274,6 +277,7 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 	@Test
 	default void testRemoveGroupIdentifier() {
 		assertLockableAccumulativeRemove(
+				settings(),
 				OptionsManifest::addGroupIdentifier, OptionsManifest::removeGroupIdentifier,
 				OptionsManifest::getGroupIdentifiers,
 				true, UNKNOWN_ID_CHECK,

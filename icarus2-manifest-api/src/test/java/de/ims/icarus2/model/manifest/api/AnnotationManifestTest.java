@@ -237,7 +237,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testSetKey() {
-		assertLockableSetter(AnnotationManifest::setKey, "key", true, TYPE_CAST_CHECK);
+		assertLockableSetter(settings(),AnnotationManifest::setKey, "key", true, TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -245,7 +245,8 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testAddAlias() {
-		assertLockableAccumulativeAdd(AnnotationManifest::addAlias, NO_ILLEGAL(),
+		assertLockableAccumulativeAdd(settings(),
+				AnnotationManifest::addAlias, NO_ILLEGAL(),
 				TYPE_CAST_CHECK, true, INVALID_INPUT_CHECK,
 				"alias1", "alias2", "alias3");
 	}
@@ -255,7 +256,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testRemoveAlias() {
-		assertLockableAccumulativeRemove(
+		assertLockableAccumulativeRemove(settings(),
 				AnnotationManifest::addAlias, AnnotationManifest::removeAlias,
 				AnnotationManifest::getAliases,
 				true, INVALID_INPUT_CHECK, "alias1", "alias2", "alias3");
@@ -266,7 +267,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testSetValueRange() {
-		assertLockableSetter(AnnotationManifest::setValueRange, mock(ValueRange.class), false, TYPE_CAST_CHECK);
+		assertLockableSetter(settings(),AnnotationManifest::setValueRange, mock(ValueRange.class), false, TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -274,7 +275,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testSetValueSet() {
-		assertLockableSetter(AnnotationManifest::setValueSet, mock(ValueSet.class), false, TYPE_CAST_CHECK);
+		assertLockableSetter(settings(),AnnotationManifest::setValueSet, mock(ValueSet.class), false, TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -282,7 +283,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testSetValueType() {
-		assertLockableSetter(AnnotationManifest::setValueType, mock(ValueType.class), true, TYPE_CAST_CHECK);
+		assertLockableSetter(settings(),AnnotationManifest::setValueType, mock(ValueType.class), true, TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -290,7 +291,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testSetContentType() {
-		assertLockableSetter(AnnotationManifest::setContentType, mock(ContentType.class), false, TYPE_CAST_CHECK);
+		assertLockableSetter(settings(),AnnotationManifest::setContentType, mock(ContentType.class), false, TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -302,7 +303,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 			Object value = ManifestTestUtils.getTestValue(valueType);
 			//TODO verify if we need value check for noEntryValue field
 //			Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
-			assertLockableSetter(AnnotationManifest::setNoEntryValue, value, false, TYPE_CAST_CHECK/*, illegalValue*/);
+			assertLockableSetter(settings(),AnnotationManifest::setNoEntryValue, value, false, TYPE_CAST_CHECK/*, illegalValue*/);
 		}
 	}
 
@@ -311,7 +312,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testSetAllowUnknownValues() {
-		assertLockableSetter(AnnotationManifest::setAllowUnknownValues);
+		assertLockableSetter(settings(),AnnotationManifest::setAllowUnknownValues);
 	}
 
 }

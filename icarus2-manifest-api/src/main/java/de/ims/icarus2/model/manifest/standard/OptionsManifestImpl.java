@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
@@ -434,6 +435,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		}
 
 		protected OptionImpl setOptionGroup0(String group) {
+			requireNonNull(group);
 
 			ManifestUtils.checkId(group);
 
@@ -455,7 +457,8 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		protected OptionImpl setSupportedValues0(ValueSet values) {
 
 			if(values!=null && !valueType.equals(values.getValueType()))
-				throw new IllegalArgumentException("Incompatible value type defined for value set: expected "+valueType+" - got "+values.getValueType()); //$NON-NLS-1$ //$NON-NLS-2$
+				throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
+						"Incompatible value type defined for value set: expected "+valueType+" - got "+values.getValueType()); //$NON-NLS-1$ //$NON-NLS-2$
 
 			this.values = values;
 
@@ -475,7 +478,8 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		protected OptionImpl setSupportedRange0(ValueRange range) {
 
 			if(range!=null && !valueType.equals(range.getValueType()))
-				throw new IllegalArgumentException("Incompatible value type defined for range: expected "+valueType+" - got "+range.getValueType()); //$NON-NLS-1$ //$NON-NLS-2$
+				throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
+						"Incompatible value type defined for range: expected "+valueType+" - got "+range.getValueType()); //$NON-NLS-1$ //$NON-NLS-2$
 
 			this.range = range;
 
@@ -493,9 +497,9 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		}
 
 		protected OptionImpl setExtensionPointUid0(String extensionPointUid) {
-			if(extensionPointUid!=null && !valueType.equals(ValueType.EXTENSION))
-				throw new IllegalArgumentException("Cannot define extension point for value type other than " //$NON-NLS-1$
-						+ValueType.EXTENSION.getStringValue()+": "+valueType.getStringValue()); //$NON-NLS-1$
+//			if(extensionPointUid!=null && !valueType.equals(ValueType.EXTENSION))
+//				throw new IllegalArgumentException("Cannot define extension point for value type other than " //$NON-NLS-1$
+//						+ValueType.EXTENSION.getStringValue()+": "+valueType.getStringValue()); //$NON-NLS-1$
 
 			this.extensionPointUid = extensionPointUid;
 

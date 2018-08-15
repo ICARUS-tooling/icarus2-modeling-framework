@@ -21,6 +21,7 @@ package de.ims.icarus2.model.manifest.api;
 
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertGetter;
 import static de.ims.icarus2.test.GenericTest.NO_DEFAULT;
+import static de.ims.icarus2.test.TestUtils.settings;
 import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Test;
@@ -47,7 +48,8 @@ public interface DocumentableTest<D extends Documentable> extends LockableTest<D
 	 */
 	@Test
 	default void testSetDocumentation() {
-		assertLockableSetter(Documentable::setDocumentation,
+		assertLockableSetter(settings(),
+				Documentable::setDocumentation,
 				mock(Documentation.class), true, NO_CHECK);
 	}
 

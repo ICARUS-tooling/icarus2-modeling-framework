@@ -120,7 +120,8 @@ public interface StructureManifestTest<M extends StructureManifest> extends Cont
 	@Test
 	default void testSetStructureType() {
 		for(StructureType structureType : StructureType.values()) {
-			assertLockableSetter(StructureManifest::setStructureType, structureType, true, TYPE_CAST_CHECK);
+			assertLockableSetter(settings(), StructureManifest::setStructureType,
+					structureType, true, TYPE_CAST_CHECK);
 		}
 	}
 
@@ -130,7 +131,8 @@ public interface StructureManifestTest<M extends StructureManifest> extends Cont
 	@Test
 	default void testSetStructureFlag() {
 		for(StructureFlag flag : StructureFlag.values()) {
-			assertLockableSetter((m, active) -> m.setStructureFlag(flag, active));
+			assertLockableSetter(settings(),
+					(m, active) -> m.setStructureFlag(flag, active));
 		}
 	}
 

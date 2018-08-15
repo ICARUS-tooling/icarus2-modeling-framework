@@ -147,7 +147,8 @@ public interface ContainerManifestTest<M extends ContainerManifest> extends Embe
 	@Test
 	default void testSetContainerType() {
 		for(ContainerType containerType : ContainerType.values()) {
-			assertLockableSetter(ContainerManifest::setContainerType, containerType, true, TYPE_CAST_CHECK);
+			assertLockableSetter(settings(), ContainerManifest::setContainerType,
+					containerType, true, TYPE_CAST_CHECK);
 		}
 	}
 
@@ -157,7 +158,8 @@ public interface ContainerManifestTest<M extends ContainerManifest> extends Embe
 	@Test
 	default void testSetContainerFlag() {
 		for(ContainerFlag flag : ContainerFlag.values()) {
-			assertLockableSetter((m, active) -> m.setContainerFlag(flag, active));
+			assertLockableSetter(settings(),
+					(m, active) -> m.setContainerFlag(flag, active));
 		}
 	}
 

@@ -195,7 +195,8 @@ public interface OptionsManifest extends Manifest, Embedded {
 				ValueType.UNKNOWN,
 				ValueType.CUSTOM,
 				ValueType.IMAGE_RESOURCE,
-				ValueType.URL_RESOURCE));
+				ValueType.URL_RESOURCE,
+				ValueType.REF));
 		/**
 		 * @see de.ims.icarus2.model.manifest.api.TypedManifest#getManifestType()
 		 */

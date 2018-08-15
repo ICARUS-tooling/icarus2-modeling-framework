@@ -68,5 +68,11 @@ public enum ManifestTestFeature implements TestFeature {
 	 */
 	LIVE,
 
+	/**
+	 * Directive to force batch tests to be run with a new instance of the class
+	 * under test for every value in the batch.
+	 */
+	FORK,
+
 	;
 }

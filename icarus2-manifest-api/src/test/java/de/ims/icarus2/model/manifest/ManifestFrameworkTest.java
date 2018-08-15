@@ -34,6 +34,8 @@ public interface ManifestFrameworkTest<T extends Object> extends GenericTest<T> 
 
 	public static final BiConsumer<Executable, String> TYPE_CAST_CHECK = ManifestTestUtils::assertIllegalValue;
 
+	public static final BiConsumer<Executable, String> INVALID_ID_CHECK = (executable, msg) ->
+		ManifestTestUtils.assertManifestException(ManifestErrorCode.MANIFEST_INVALID_ID, executable, msg);
 
 	public static final BiConsumer<Executable, String> INVALID_INPUT_CHECK = (executable, msg) ->
 		ManifestTestUtils.assertManifestException(GlobalErrorCode.INVALID_INPUT, executable, msg);

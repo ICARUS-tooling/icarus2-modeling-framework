@@ -19,11 +19,27 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertFlagGetter;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertGetter;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.getIllegalValue;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.getTestValue;
+import static de.ims.icarus2.test.TestUtils.settings;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.Collections;
+import java.util.Set;
+import java.util.function.BiConsumer;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
+import de.ims.icarus2.model.manifest.types.UnsupportedValueTypeException;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
@@ -34,160 +50,240 @@ import de.ims.icarus2.test.annotations.Provider;
  */
 public interface OptionTest<O extends Option> extends ModifiableIdentityTest, LockableTest<O>, TypedManifestTest<O> {
 
+	public static final BiConsumer<Executable, String> UNSUPPORTED_TYPE_CHECK = (ex, msg) -> {
+		UnsupportedValueTypeException exception = assertThrows(UnsupportedValueTypeException.class, ex, msg);
+		assertEquals(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE, exception.getErrorCode());
+	};
+
+	public static final Set<ValueType> LEGAL_VALUE_TYPES = Option.SUPPORTED_VALUE_TYPES;
+	public static final Set<ValueType> ILLEGAL_VALUE_TYPES = Collections
+			.unmodifiableSet(ValueType.filterWithout(LEGAL_VALUE_TYPES::contains));
+
+	public static ValueSet mockValueSet(ValueType valueType) {
+		ValueSet valueSet = mock(ValueSet.class);
+		when(valueSet.getValueType()).thenReturn(valueType);
+		return valueSet;
+	}
+
+	public static ValueRange mockValueRange(ValueType valueType) {
+		ValueRange valueSet = mock(ValueRange.class);
+		when(valueSet.getValueType()).thenReturn(valueType);
+		return valueSet;
+	}
+
 	@Provider
 	O createWithType(TestSettings settings, ValueType valueType);
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#createEmpty()
+	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
 	@Override
 	@Provider
-	default ModifiableIdentity createEmpty() {
-		return createUnlocked();
+	default O createTestInstance(TestSettings settings) {
+		return createWithType(settings, ValueType.STRING);
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getDefaultValue()}.
+	 * Test method for
+	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getDefaultValue()}.
 	 */
 	@Test
 	default void testGetDefaultValue() {
-		fail("Not yet implemented");
+		for (ValueType valueType : LEGAL_VALUE_TYPES) {
+			Object[] values = ManifestTestUtils.getTestValues(valueType);
+			assertGetter(createWithType(settings(), valueType), values[0], values[1], null, Option::getDefaultValue,
+					Option::setDefaultValue);
+		}
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getValueType()}.
+	 * Test method for
+	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getValueType()}.
 	 */
 	@Test
 	default void testGetValueType() {
-		fail("Not yet implemented");
+		for (ValueType valueType : LEGAL_VALUE_TYPES) {
+			assertGetter(createWithType(settings(), valueType), valueType, valueType, valueType, Option::getValueType,
+					Option::setValueType);
+		}
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getSupportedValues()}.
+	 * Test method for
+	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getSupportedValues()}.
 	 */
 	@Test
 	default void testGetSupportedValues() {
-		fail("Not yet implemented");
+		for (ValueType valueType : LEGAL_VALUE_TYPES) {
+			assertGetter(createWithType(settings(), valueType), mockValueSet(valueType), mockValueSet(valueType), null,
+					Option::getSupportedValues, Option::setSupportedValues);
+		}
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getSupportedRange()}.
+	 * Test method for
+	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getSupportedRange()}.
 	 */
 	@Test
 	default void testGetSupportedRange() {
-		fail("Not yet implemented");
+		for (ValueType valueType : LEGAL_VALUE_TYPES) {
+			assertGetter(createWithType(settings(), valueType), mockValueRange(valueType), mockValueRange(valueType),
+					null, Option::getSupportedRange, Option::setSupportedRange);
+		}
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getExtensionPointUid()}.
+	 * Test method for
+	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getExtensionPointUid()}.
 	 */
 	@Test
 	default void testGetExtensionPointUid() {
-		fail("Not yet implemented");
+		assertGetter(createWithType(settings(), ValueType.EXTENSION), "uid1", "uid2", null,
+				Option::getExtensionPointUid, Option::setExtensionPointUid);
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getOptionGroupId()}.
+	 * Test method for
+	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getOptionGroupId()}.
 	 */
 	@Test
 	default void testGetOptionGroupId() {
-		fail("Not yet implemented");
+		assertGetter(createUnlocked(), "group1", "group2", null, Option::getOptionGroupId, Option::setOptionGroup);
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#isPublished()}.
+	 * Test method for
+	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#isPublished()}.
 	 */
+	@SuppressWarnings("boxing")
 	@Test
 	default void testIsPublished() {
-		fail("Not yet implemented");
+		assertFlagGetter(createUnlocked(), Option.DEFAULT_PUBLISHED_VALUE, Option::isPublished, Option::setPublished);
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#isMultiValue()}.
+	 * Test method for
+	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#isMultiValue()}.
 	 */
+	@SuppressWarnings("boxing")
 	@Test
 	default void testIsMultiValue() {
-		fail("Not yet implemented");
+		assertFlagGetter(createUnlocked(), Option.DEFAULT_MULTIVALUE_VALUE, Option::isMultiValue,
+				Option::setMultiValue);
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#isAllowNull()}.
+	 * Test method for
+	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#isAllowNull()}.
 	 */
+	@SuppressWarnings("boxing")
 	@Test
 	default void testIsAllowNull() {
-		fail("Not yet implemented");
+		assertFlagGetter(createUnlocked(), Option.DEFAULT_ALLOW_NULL, Option::isAllowNull, Option::setAllowNull);
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#setAllowNull(boolean)}.
+	 * Test method for
+	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#setAllowNull(boolean)}.
 	 */
 	@Test
 	default void testSetAllowNull() {
-		fail("Not yet implemented");
+		assertLockableSetter(settings(), Option::setAllowNull);
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#setMultiValue(boolean)}.
+	 * Test method for
+	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#setMultiValue(boolean)}.
 	 */
 	@Test
 	default void testSetMultiValue() {
-		fail("Not yet implemented");
+		assertLockableSetter(settings(), Option::setMultiValue);
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#setPublished(boolean)}.
+	 * Test method for
+	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#setPublished(boolean)}.
 	 */
 	@Test
 	default void testSetPublished() {
-		fail("Not yet implemented");
+		assertLockableSetter(settings(), Option::setPublished);
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#setExtensionPointUid(java.lang.String)}.
+	 * Test method for
+	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#setExtensionPointUid(java.lang.String)}.
 	 */
 	@Test
 	default void testSetExtensionPointUid() {
-		fail("Not yet implemented");
+		assertLockableSetter(settings(), Option::setExtensionPointUid, "uid1", false, NO_CHECK);
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#setSupportedRange(de.ims.icarus2.model.manifest.api.ValueRange)}.
+	 * Test method for
+	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#setSupportedRange(de.ims.icarus2.model.manifest.api.ValueRange)}.
 	 */
 	@Test
 	default void testSetSupportedRange() {
-		fail("Not yet implemented");
+		assertLockableSetter(settings(), Option::setSupportedRange,
+				mockValueRange(ValueType.STRING), false, NO_CHECK);
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#setSupportedValues(de.ims.icarus2.model.manifest.api.ValueSet)}.
+	 * Test method for
+	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#setSupportedValues(de.ims.icarus2.model.manifest.api.ValueSet)}.
 	 */
 	@Test
 	default void testSetSupportedValues() {
-		fail("Not yet implemented");
+		assertLockableSetter(settings(), Option::setSupportedValues,
+				mockValueSet(ValueType.STRING), false, NO_CHECK);
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#setOptionGroup(java.lang.String)}.
+	 * Test method for
+	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#setOptionGroup(java.lang.String)}.
 	 */
 	@Test
 	default void testSetOptionGroup() {
-		fail("Not yet implemented");
+		assertLockableSetterBatch(settings(), Option::setOptionGroup,
+				ManifestTestUtils.getLegalIdValues(), true, INVALID_ID_CHECK,
+				ManifestTestUtils.getIllegalIdValues());
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#setValueType(de.ims.icarus2.model.manifest.types.ValueType)}.
+	 * Test method for
+	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#setValueType(de.ims.icarus2.model.manifest.types.ValueType)}.
 	 */
 	@Test
 	default void testSetValueType() {
-		fail("Not yet implemented");
+		ValueType[] legalValues = LEGAL_VALUE_TYPES.toArray(new ValueType[0]);
+		ValueType[] illegalValues = ILLEGAL_VALUE_TYPES.toArray(new ValueType[0]);
+
+		assertLockableSetterBatch(settings(), Option::setValueType,
+				legalValues, true, UNSUPPORTED_TYPE_CHECK, illegalValues);
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#setDefaultValue(java.lang.Object)}.
+	 * Test method for
+	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#setDefaultValue(java.lang.Object)}.
 	 */
 	@Test
 	default void testSetDefaultValue() {
-		fail("Not yet implemented");
+		for (ValueType valueType : LEGAL_VALUE_TYPES) {
+			LockableTest.assertLockableSetter(settings(), createWithType(settings(), valueType),
+					Option::setDefaultValue, getTestValue(valueType),
+					false, TYPE_CAST_CHECK, getIllegalValue(valueType));
+		}
+	}
+
+	@Test
+	default void testUnsupportedValueTypes() {
+		for (ValueType valueType : ILLEGAL_VALUE_TYPES) {
+			UnsupportedValueTypeException exception = assertThrows(UnsupportedValueTypeException.class,
+					() -> createWithType(settings(), valueType));
+
+			assertEquals(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE, exception.getErrorCode());
+			assertEquals(valueType, exception.getValueType());
+		}
 	}
 
 }

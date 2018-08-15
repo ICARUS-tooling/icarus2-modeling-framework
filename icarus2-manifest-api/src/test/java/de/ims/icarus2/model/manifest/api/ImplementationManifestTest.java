@@ -95,7 +95,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	default void testSetSourceType() {
 
 		for(SourceType sourceType : SourceType.values()) {
-			assertLockableSetter(ImplementationManifest::setSourceType, sourceType, true, TYPE_CAST_CHECK);
+			assertLockableSetter(settings(),ImplementationManifest::setSourceType, sourceType, true, TYPE_CAST_CHECK);
 		}
 	}
 
@@ -105,7 +105,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	@Test
 	default void testSetSource() {
 
-		assertLockableSetter(ImplementationManifest::setSource, "source", true, TYPE_CAST_CHECK);
+		assertLockableSetter(settings(),ImplementationManifest::setSource, "source", true, TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -113,7 +113,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	 */
 	@Test
 	default void testSetClassname() {
-		assertLockableSetter(ImplementationManifest::setClassname, "classname", true, TYPE_CAST_CHECK);
+		assertLockableSetter(settings(),ImplementationManifest::setClassname, "classname", true, TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -121,7 +121,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	 */
 	@Test
 	default void testSetUseFactory() {
-		assertLockableSetter(ImplementationManifest::setUseFactory);
+		assertLockableSetter(settings(),ImplementationManifest::setUseFactory);
 	}
 
 }

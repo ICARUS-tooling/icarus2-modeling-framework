@@ -61,6 +61,7 @@ import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.types.DefaultIconLink;
 import de.ims.icarus2.model.manifest.types.DefaultLink;
 import de.ims.icarus2.model.manifest.types.DefaultUrlResource;
+import de.ims.icarus2.model.manifest.types.Ref;
 import de.ims.icarus2.model.manifest.types.Url;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestUtils;
@@ -182,6 +183,8 @@ public class ManifestTestUtils {
 				Paths.get("anotherFile"),
 				Paths.get("some","path","with","a","file.txt"));
 
+		addTestValues(ValueType.REF, null, Ref.emptyRef(), Ref.emptyRef(), Ref.emptyRef());
+
 		//FIXME add some test values for the other more complex types!
 	}
 
@@ -192,7 +195,7 @@ public class ManifestTestUtils {
 	public static Object[] getTestValues(ValueType type) {
 		TestInfo info = testValues.get(type);
 		if(info==null)
-			throw new IllegalArgumentException("No test values for type: "+type);
+			throw new InternalError("No test values for type: "+type);
 
 		return info.legalValues;
 	}
@@ -200,7 +203,7 @@ public class ManifestTestUtils {
 	public static Object getTestValue(ValueType type) {
 		TestInfo info = testValues.get(type);
 		if(info==null)
-			throw new IllegalArgumentException("No test values for type: "+type);
+			throw new InternalError("No test values for type: "+type);
 
 		return info.legalValues[0];
 	}
@@ -208,7 +211,7 @@ public class ManifestTestUtils {
 	public static Object getIllegalValue(ValueType type) {
 		TestInfo info = testValues.get(type);
 		if(info==null)
-			throw new IllegalArgumentException("No test values for type: "+type);
+			throw new InternalError("No test values for type: "+type);
 
 		return info.illegalValue;
 	}
@@ -464,16 +467,6 @@ public class ManifestTestUtils {
 	}
 
 	// ASSERTIONS FOR CONTENT
-
-	public static void assertMalformedId(Manifest manifest, String id) {
-		ManifestException exception = assertThrows(ManifestException.class, () -> manifest.setId(id));
-		assertEquals(ManifestErrorCode.MANIFEST_INVALID_ID, exception.getErrorCode());
-	}
-
-	public static void assertValidId(Manifest manifest, String id) {
-		manifest.setId(id);
-		assertEquals(id, manifest.getId());
-	}
 
 	/**
 	 * {@link #assertManifestException(ManifestErrorCode, Executable) Assert} {@link ManifestErrorCode#MANIFEST_TYPE_CAST}

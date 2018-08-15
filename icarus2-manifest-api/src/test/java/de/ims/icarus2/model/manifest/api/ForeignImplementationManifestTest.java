@@ -56,7 +56,8 @@ public interface ForeignImplementationManifestTest<M extends ForeignImplementati
 	 */
 	@Test
 	default void testSetImplementationManifest() {
-		assertLockableSetter(ForeignImplementationManifest::setImplementationManifest,
+		assertLockableSetter(settings(),
+				ForeignImplementationManifest::setImplementationManifest,
 				mock(ImplementationManifest.class), true, TYPE_CAST_CHECK);
 	}
 

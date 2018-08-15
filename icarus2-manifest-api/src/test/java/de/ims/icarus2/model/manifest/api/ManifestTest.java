@@ -71,9 +71,6 @@ import de.ims.icarus2.util.function.ObjBoolConsumer;
  */
 public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<M> {
 
-
-	public static final BiConsumer<Executable, String> ILLEGAL_ID_CHECK = ManifestTestUtils::assertIllegalId;
-
 	@Provider
 	M createTestInstance(TestSettings settings, ManifestLocation location, ManifestRegistry registry);
 
@@ -522,7 +519,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	@Test
 	default void testSetId() {
 		assertSetter(createUnlocked(), Manifest::setId, ManifestTestUtils.getLegalIdValues(),
-				true, ILLEGAL_ID_CHECK, ManifestTestUtils.getIllegalIdValues());
+				true, INVALID_ID_CHECK, ManifestTestUtils.getIllegalIdValues());
 	}
 
 	/**
@@ -603,7 +600,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 */
 	@Test
 	default void testSetVersionManifest() {
-		assertLockableSetter(Manifest::setVersionManifest, mock(VersionManifest.class), true, TYPE_CAST_CHECK);
+		assertLockableSetter(settings(),Manifest::setVersionManifest, mock(VersionManifest.class), true, TYPE_CAST_CHECK);
 
 		/*
 		 *  Additional test, since contract requires that any attempt

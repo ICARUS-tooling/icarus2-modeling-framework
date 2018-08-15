@@ -294,7 +294,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	 */
 	@Test
 	default void testSetDefaultKey() {
-		assertLockableSetter(AnnotationLayerManifest::setDefaultKey, "key1", true, NO_CHECK);
+		assertLockableSetter(settings(),AnnotationLayerManifest::setDefaultKey, "key1", true, NO_CHECK);
 	}
 
 	/**
@@ -302,7 +302,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	 */
 	@Test
 	default void testAddAnnotationManifest() {
-		assertLockableAccumulativeAdd(
+		assertLockableAccumulativeAdd(settings(),
 				AnnotationLayerManifest::addAnnotationManifest, NO_ILLEGAL(),
 				NO_CHECK, true, DUPLICATE_ID_CHECK,
 				mockAnnotationManifest("key1"), mockAnnotationManifest("key2"), mockAnnotationManifest("key3"));
@@ -313,7 +313,8 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	 */
 	@Test
 	default void testRemoveAnnotationManifest() {
-		assertLockableAccumulativeRemove(AnnotationLayerManifest::addAnnotationManifest,
+		assertLockableAccumulativeRemove(settings(),
+				AnnotationLayerManifest::addAnnotationManifest,
 				AnnotationLayerManifest::removeAnnotationManifest,
 				AnnotationLayerManifest::getAnnotationManifests,
 				true, UNKNOWN_ID_CHECK,
@@ -326,7 +327,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	@Test
 	default void testSetAnnotationFlag() {
 		for(AnnotationFlag flag : AnnotationFlag.values()) {
-			assertLockableSetter((m, active) -> m.setAnnotationFlag(flag, active));
+			assertLockableSetter(settings(),(m, active) -> m.setAnnotationFlag(flag, active));
 		}
 	}
 
@@ -335,9 +336,9 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	 */
 	@Test
 	default void testAddReferenceLayerId() {
-		assertLockableAccumulativeAdd(
+		assertLockableAccumulativeAdd(settings(),
 				inject_createTargetLayerManifest(AnnotationLayerManifest::addReferenceLayerId),
-				ManifestTestUtils.getIllegalIdValues(), ILLEGAL_ID_CHECK,
+				ManifestTestUtils.getIllegalIdValues(), INVALID_ID_CHECK,
 				true, DUPLICATE_ID_CHECK, ManifestTestUtils.getLegalIdValues());
 	}
 
@@ -346,7 +347,8 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	 */
 	@Test
 	default void testRemoveReferenceLayerId() {
-		assertLockableAccumulativeRemove(AnnotationLayerManifest::addReferenceLayerId,
+		assertLockableAccumulativeRemove(settings(),
+				AnnotationLayerManifest::addReferenceLayerId,
 				AnnotationLayerManifest::removeReferenceLayerId,
 				ManifestTestUtils.transform_genericCollectionGetter(AnnotationLayerManifest::getReferenceLayerManifests, transform_targetLayerId()),
 				true, UNKNOWN_ID_CHECK,

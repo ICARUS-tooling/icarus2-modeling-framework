@@ -23,6 +23,7 @@ import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertAccumulative
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertGetter;
 import static de.ims.icarus2.test.GenericTest.NO_DEFAULT;
 import static de.ims.icarus2.test.GenericTest.NO_ILLEGAL;
+import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
@@ -92,7 +93,7 @@ public interface DocumentationTest<D extends Documentation> extends LockableTest
 	 */
 	@Test
 	default void testSetContent() {
-		assertLockableSetter(Documentation::setContent, "content", false, TYPE_CAST_CHECK);
+		assertLockableSetter(settings(),Documentation::setContent, "content", false, TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -100,7 +101,8 @@ public interface DocumentationTest<D extends Documentation> extends LockableTest
 	 */
 	@Test
 	default void testAddResource() {
-		assertLockableAccumulativeAdd(Documentation::addResource,
+		assertLockableAccumulativeAdd(
+				settings(),Documentation::addResource,
 				NO_ILLEGAL(), NO_CHECK, true, INVALID_INPUT_CHECK,
 				mock(Resource.class), mock(Resource.class));
 	}
@@ -110,7 +112,8 @@ public interface DocumentationTest<D extends Documentation> extends LockableTest
 	 */
 	@Test
 	default void testRemoveResource() {
-		assertLockableAccumulativeRemove(Documentation::addResource,
+		assertLockableAccumulativeRemove(
+				settings(),Documentation::addResource,
 				Documentation::removeResource, Documentation::getResources,
 				true, INVALID_INPUT_CHECK, mock(Resource.class), mock(Resource.class));
 	}

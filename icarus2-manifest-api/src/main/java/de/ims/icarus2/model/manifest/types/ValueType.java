@@ -517,6 +517,20 @@ public class ValueType implements StringResource, NamedObject {
 		return filterWithout(false, exclusions);
 	}
 
+	public static Set<ValueType> filterWithout(Predicate<? super ValueType> p) {
+		LazyCollection<ValueType> filter = LazyCollection.lazySet();
+
+		if(p!=null) {
+			for(ValueType type : valueTypes()) {
+				if(!p.test(type)) {
+					filter.add(type);
+				}
+			}
+		}
+
+		return filter.getAsSet();
+	}
+
 	/**
 	 * Creates a set view that contains only value types specified
 	 * in the {@code exclusions} varargs parameter.
