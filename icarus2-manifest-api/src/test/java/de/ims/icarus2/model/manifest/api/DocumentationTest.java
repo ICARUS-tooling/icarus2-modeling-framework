@@ -19,10 +19,6 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertAccumulativeGetter;
-import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertGetter;
-import static de.ims.icarus2.test.GenericTest.NO_DEFAULT;
-import static de.ims.icarus2.test.GenericTest.NO_ILLEGAL;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -32,24 +28,14 @@ import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 
-import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.Documentation.Resource;
-import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.TestUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface DocumentationTest<D extends Documentation> extends LockableTest<D>, ModifiableIdentityTest {
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#createEmpty()
-	 */
-	@Override
-	@Provider
-	default ModifiableIdentity createEmpty() {
-		return createUnlocked();
-	}
+public interface DocumentationTest<D extends Documentation> extends LockableTest<D>, ModifiableIdentityTest<D> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.Documentation#getManifestType()}.
@@ -64,7 +50,7 @@ public interface DocumentationTest<D extends Documentation> extends LockableTest
 	 */
 	@Test
 	default void testGetContent() {
-		assertGetter(createUnlocked(), "content1", "content2", NO_DEFAULT(),
+		TestUtils.assertGetter(createUnlocked(), "content1", "content2", TestUtils.NO_DEFAULT(),
 				Documentation::getContent, Documentation::setContent);
 	}
 
@@ -73,7 +59,7 @@ public interface DocumentationTest<D extends Documentation> extends LockableTest
 	 */
 	@Test
 	default void testGetResources() {
-		assertAccumulativeGetter(createUnlocked(),
+		TestUtils.assertAccumulativeGetter(createUnlocked(),
 				mock(Resource.class), mock(Resource.class),
 				Documentation::getResources, Documentation::addResource);
 	}
@@ -83,7 +69,7 @@ public interface DocumentationTest<D extends Documentation> extends LockableTest
 	 */
 	@Test
 	default void testForEachResource() {
-		ManifestTestUtils.assertForEach(createUnlocked(),
+		TestUtils.assertForEach(createUnlocked(),
 				mock(Resource.class), mock(Resource.class),
 				(Function<D, Consumer<Consumer<? super Resource>>>)d -> d::forEachResource, Documentation::addResource);
 	}
@@ -103,7 +89,7 @@ public interface DocumentationTest<D extends Documentation> extends LockableTest
 	default void testAddResource() {
 		assertLockableAccumulativeAdd(
 				settings(),Documentation::addResource,
-				NO_ILLEGAL(), NO_CHECK, true, INVALID_INPUT_CHECK,
+				TestUtils.NO_ILLEGAL(), TestUtils.NO_CHECK, true, INVALID_INPUT_CHECK,
 				mock(Resource.class), mock(Resource.class));
 	}
 

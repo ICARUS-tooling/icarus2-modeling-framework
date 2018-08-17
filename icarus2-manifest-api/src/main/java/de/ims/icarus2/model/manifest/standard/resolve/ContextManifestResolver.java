@@ -31,6 +31,7 @@ import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.Documentable;
 import de.ims.icarus2.model.manifest.api.Documentation;
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
+import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
@@ -249,6 +250,22 @@ public class ContextManifestResolver {
 		if(foundationLayerManifest!=null) {
 			target.setFoundationLayerId(foundationLayerManifest.getLayerId());
 		}
+
+		// Containers
+		Hierarchy<ContainerManifest> containerHierarchy = source.getContainerHierarchy();
+		if(containerHierarchy!=null) {
+			for(ContainerManifest containerManifest : containerHierarchy) {
+				ContainerManifest clonedManifest;
+				if(containerManifest.getManifestType()==ManifestType.STRUCTURE_MANIFEST) {
+					clonedManifest = cloneStructureManifest((StructureManifest) containerManifest,
+							(StructureLayerManifest) target);
+				} else {
+					clonedManifest = cloneContainerManifest(containerManifest, target);
+				}
+
+				ItemLayerManifest.getOrCreateLocalContainerhierarchy(target).add(clonedManifest);
+			}
+		}
 	}
 
 	protected void copyFragmentLayerFields(FragmentLayerManifest source, FragmentLayerManifest target) {
@@ -450,11 +467,6 @@ public class ContextManifestResolver {
 		// Generic item layer fields
 		copyItemLayerFields(source, target);
 
-		// Containers
-		for(int level = 0 ; level <source.getContainerDepth(); level++) {
-			target.addContainerManifest(cloneContainerManifest(source.getContainerManifest(level), target));
-		}
-
 		return target;
 	}
 
@@ -470,17 +482,6 @@ public class ContextManifestResolver {
 		StructureLayerManifest target = manifestFactory.create(ManifestType.STRUCTURE_LAYER_MANIFEST, layerGroupManifest, null);
 
 		copyItemLayerFields(source, target);
-
-		// Containers AND structures
-		for(int level = 0 ; level <source.getContainerDepth(); level++) {
-			ContainerManifest containerManifest = source.getContainerManifest(level);
-
-			if(containerManifest.getManifestType()==ManifestType.STRUCTURE_MANIFEST) {
-				target.addStructureManifest(cloneStructureManifest((StructureManifest) containerManifest, target));
-			} else {
-				target.addContainerManifest(cloneContainerManifest(containerManifest, target));
-			}
-		}
 
 		return target;
 	}

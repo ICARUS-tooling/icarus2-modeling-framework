@@ -22,7 +22,6 @@ package de.ims.icarus2.model.manifest.api;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_setLayerId;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.mockItemLayerManifest;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.transform_layerManifestId;
-import static de.ims.icarus2.test.GenericTest.NO_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.settings;
 
 import org.junit.jupiter.api.Test;
@@ -45,9 +44,10 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 		assertDerivativeGetter(
 				settings().withFeatures(ManifestTestFeature.EMBED_TEMPLATE), // Needs embedded template to resolve layer from id
 				mockItemLayerManifest("layer1"),
-				mockItemLayerManifest("layer2"), NO_DEFAULT(),
+				mockItemLayerManifest("layer2"), TestUtils.NO_DEFAULT(),
 				HighlightLayerManifest::getPrimaryLayerManifest,
-				inject_setLayerId(HighlightLayerManifest::setPrimaryLayerId));
+				inject_setLayerId(HighlightLayerManifest::setPrimaryLayerId,
+						HighlightLayerManifest::getContextManifest));
 	}
 
 	/**
@@ -60,7 +60,7 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 				mockItemLayerManifest("layer1"),
 				mockItemLayerManifest("layer2"),
 				HighlightLayerManifest::isLocalPrimaryLayerManifest,
-				ManifestTestUtils.inject_genericSetter(HighlightLayerManifest::setPrimaryLayerId, transform_layerManifestId()));
+				TestUtils.inject_genericSetter(HighlightLayerManifest::setPrimaryLayerId, transform_layerManifestId()));
 	}
 
 	/**

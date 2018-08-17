@@ -23,18 +23,24 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.Provider;
+
 /**
  * @author Markus Gärtner
  *
  */
-public interface DriverManifestTest {
+public interface DriverManifestTest<M extends DriverManifest> extends ForeignImplementationManifestTest<M>, EmbeddedTest<M> {
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.DriverManifest#getHost()}.
+	 * @see de.ims.icarus2.model.manifest.api.ManifestTest#createTestInstance(de.ims.icarus2.test.TestSettings)
+	 *
+	 * @see MemberManifestTest#createTestInstance(TestSettings)
 	 */
-	@Test
-	default void testGetHost() {
-		fail("Not yet implemented");
+	@Provider
+	@Override
+	default M createTestInstance(TestSettings settings) {
+		return ForeignImplementationManifestTest.super.createTestInstance(settings);
 	}
 
 	/**

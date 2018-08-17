@@ -21,7 +21,6 @@ import org.xml.sax.SAXException;
 
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ValueRange;
-import de.ims.icarus2.model.manifest.standard.ExpressionXmlHandler;
 import de.ims.icarus2.model.manifest.standard.ValueRangeImpl;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;

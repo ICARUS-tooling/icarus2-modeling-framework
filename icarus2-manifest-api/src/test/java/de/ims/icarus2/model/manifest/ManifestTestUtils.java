@@ -16,13 +16,10 @@
  */
 package de.ims.icarus2.model.manifest;
 
-import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.assertMock;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
@@ -34,19 +31,12 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
-import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import org.junit.jupiter.api.function.Executable;
 
@@ -54,6 +44,7 @@ import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.model.manifest.api.Embedded;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.model.manifest.api.ManifestFragment;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
@@ -65,8 +56,6 @@ import de.ims.icarus2.model.manifest.types.Ref;
 import de.ims.icarus2.model.manifest.types.Url;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestUtils;
-import de.ims.icarus2.util.collections.LazyCollection;
-import de.ims.icarus2.util.function.ObjBoolConsumer;
 import de.ims.icarus2.util.icon.IconWrapper;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.nio.ByteArrayChannel;
@@ -286,10 +275,6 @@ public class ManifestTestUtils {
 		}
 	}
 
-	private static String forValue(String msg, Object value) {
-		return msg + " - " + String.valueOf(value);
-	}
-
 	/**
 	 * Attempts to set the host manifest at the given embedding depth to
 	 * be a {@link Manifest#setIsTemplate(boolean) template}.
@@ -349,18 +334,36 @@ public class ManifestTestUtils {
 		return stubbed;
 	}
 
-	private static <M extends Manifest> void stubHasManifest(M manifest) {
+	public static <M extends Manifest> M stubHasManifest(M manifest) {
 		String id = manifest.getId();
 		assertNotNull(id);
 
 		ManifestRegistry registry = assertMock(manifest.getRegistry());
 
 		when(registry.hasTemplate(id)).thenReturn(Boolean.TRUE);
+
+		return manifest;
 	}
 
-	private static <M extends Manifest> void stubIsTemplate(M manifest) {
+	public static <M extends Manifest> M stubIsTemplate(M manifest) {
+		assertMock(manifest);
 		when(manifest.isTemplate()).thenReturn(Boolean.TRUE);
 		when(manifest.isValidTemplate()).thenReturn(Boolean.TRUE);
+		return manifest;
+	}
+
+	public static <M extends ManifestFragment> M stubId(M manifest, String id) {
+		requireNonNull(id);
+		assertMock(manifest);
+		when(manifest.getId()).thenReturn(id);
+		return manifest;
+	}
+
+	public static <I extends Identity> I stubId(I identity, String id) {
+		requireNonNull(id);
+		assertMock(identity);
+		when(identity.getId()).thenReturn(id);
+		return identity;
 	}
 
 	public static ManifestLocation mockManifestLocation(boolean template) {
@@ -398,11 +401,23 @@ public class ManifestTestUtils {
 	}
 
 	public static <M extends TypedManifest> M mockTypedManifest(ManifestType type) {
-		return mockTypedManifestRaw(type, false);
+		return mockTypedManifestRaw(type, false, false);
+	}
+
+	public static <M extends TypedManifest> M mockTypedManifestWithId(ManifestType type) {
+		return mockTypedManifestRaw(type, false, true);
 	}
 
 	public static <M extends TypedManifest> M mockTypedManifest(ManifestType type, boolean mockHierarchy) {
-		M manifest = mockTypedManifest(type);
+		return mockTypedManifestRaw(type, mockHierarchy, false);
+	}
+
+	private static <M extends TypedManifest> M mockTypedManifestRaw(ManifestType type, boolean mockHierarchy, boolean mockId) {
+		Class<? extends TypedManifest> clazz = type.getBaseClass();
+		if(clazz==null)
+			throw new InternalError("Cannot create mock for manifest type: "+type);
+
+		M manifest = mockTypedManifest(clazz, mockId);
 
 		if(mockHierarchy) {
 			mockHierarchy(type, manifest);
@@ -411,15 +426,7 @@ public class ManifestTestUtils {
 		return manifest;
 	}
 
-	private static <M extends TypedManifest> M mockTypedManifestRaw(ManifestType type, boolean mockId) {
-		Class<? extends TypedManifest> clazz = type.getBaseClass();
-		if(clazz==null)
-			throw new InternalError("Cannot create mock for manifest type: "+type);
-
-		return mockTypedManifest(clazz, mockId);
-	}
-
-	public static <M extends TypedManifest> M mockTypedManifest(Class<? extends TypedManifest> clazz) {
+	public static <M extends TypedManifest> M mockTypedManifest(Class<M> clazz) {
 		return mockTypedManifest(clazz, false);
 	}
 
@@ -436,10 +443,12 @@ public class ManifestTestUtils {
 			when(fullManifest.getRegistry()).thenReturn(registry);
 		}
 
-		if(mockId && Identity.class.isAssignableFrom(clazz)) {
-			String id = createId(clazz);
-			Identity identity = (Identity) manifest;
-			when(identity.getId()).thenReturn(id);
+		if(mockId) {
+			if(Identity.class.isAssignableFrom(clazz)) {
+				stubId((Identity)manifest, createId(clazz));
+			} else if(ManifestFragment.class.isAssignableFrom(clazz)) {
+				stubId((ManifestFragment)manifest, createId(clazz));
+			}
 		}
 
 		return manifest;
@@ -457,7 +466,7 @@ public class ManifestTestUtils {
 		while(Embedded.class.isAssignableFrom(currentType.getBaseClass())
 				&& (envTypes = currentType.getRequiredEnvironment()) != null) {
 			ManifestType hostType = envTypes[0];
-			TypedManifest host = mockTypedManifestRaw(hostType, true);
+			TypedManifest host = mockTypedManifestRaw(hostType, false, true);
 
 			when(((Embedded)current).getHost()).thenReturn(host);
 
@@ -474,7 +483,7 @@ public class ManifestTestUtils {
 	 */
 	public static void assertIllegalValue(Executable executable, Object value) {
 		assertManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST, executable,
-				forValue("Testing illegal value", value));
+				TestUtils.forValue("Testing illegal value", value));
 	}
 
 	public static void assertIllegalValue(BiConsumer<Executable, String> legalityCheck, Executable executable, String msg) {
@@ -500,304 +509,6 @@ public class ManifestTestUtils {
 	}
 
 	// ASSERTIONS FOR METHOD PATTERNS
-
-	public static <T extends Object, K extends Object> void assertSetter(T instance, BiConsumer<T, K> setter, K value,
-			boolean checkNPE, BiConsumer<Executable, String> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
-		if(checkNPE) {
-			TestUtils.assertNPE(() -> setter.accept(instance, null));
-		} else {
-			setter.accept(instance, null);
-		}
-
-		setter.accept(instance, value);
-
-		for(K illegalValue : illegalValues) {
-			assertIllegalValue(legalityCheck, () -> setter.accept(instance, illegalValue),
-					forValue("Testing illegal value", illegalValue));
-		}
-	}
-
-	public static <T extends Object, K extends Object> void assertSetter(T instance, BiConsumer<T, K> setter, K[] values,
-			boolean checkNPE, BiConsumer<Executable, String> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
-		if(checkNPE) {
-			TestUtils.assertNPE(() -> setter.accept(instance, null));
-		} else {
-			setter.accept(instance, null);
-		}
-
-		for(K value : values) {
-			setter.accept(instance, value);
-		}
-
-		for(K illegalValue : illegalValues) {
-			assertIllegalValue(legalityCheck, () -> setter.accept(instance, illegalValue),
-					forValue("Testing illegal value", illegalValue));
-		}
-	}
-
-	public static <T extends Object> void assertSetter(T instance, ObjBoolConsumer<T> setter) {
-		setter.accept(instance, true);
-		setter.accept(instance, false);
-	}
-
-	public static <T extends Object, K extends Object> void assertAccumulativeAdd(
-			T instance, BiConsumer<T, K> adder,
-			K[] illegalValues, BiConsumer<Executable, String> legalityCheck, boolean checkNPE,
-			BiConsumer<Executable, String> duplicateCheck, @SuppressWarnings("unchecked") K...values) {
-
-		if(checkNPE) {
-			TestUtils.assertNPE(() -> adder.accept(instance, null));
-		}
-
-		for(int i=0; i<values.length; i++) {
-			adder.accept(instance, values[i]);
-		}
-
-		if(duplicateCheck!=TestUtils.NO_CHECK) {
-			duplicateCheck.accept(() -> adder.accept(instance, values[0]),
-					forValue("Testing duplicate value", values[0]));
-		}
-
-		if(illegalValues!=null) {
-			for(K illegalValue : illegalValues) {
-				assertIllegalValue(legalityCheck, () -> adder.accept(instance, illegalValue),
-						forValue("Testing illegal value", illegalValue));
-			}
-		}
-	}
-
-	public static <T extends Object, K extends Object, C extends Collection<K>> void assertAccumulativeRemove(
-			T instance, BiConsumer<T, K> adder, BiConsumer<T, K> remover,
-			Function<T, C> getter, boolean checkNPE,
-			BiConsumer<Executable, String> invalidRemoveCheck, @SuppressWarnings("unchecked") K...values) {
-
-		for(K value : values) {
-			adder.accept(instance, value);
-		}
-
-		TestUtils.assertNPE(() -> remover.accept(instance, null));
-
-		TestUtils.assertCollectionEquals(getter.apply(instance), values);
-
-		remover.accept(instance, values[0]);
-
-		TestUtils.assertCollectionEquals(getter.apply(instance), Arrays.copyOfRange(values, 1, values.length));
-
-		if(invalidRemoveCheck!=TestUtils.NO_CHECK) {
-			invalidRemoveCheck.accept(() -> remover.accept(instance, values[0]),
-					forValue("Testing invalid remove value", values[0]));
-		}
-
-		for(int i=1; i<values.length; i++) {
-			remover.accept(instance, values[i]);
-		}
-
-		assertTrue(getter.apply(instance).isEmpty());
-
-
-		adder.accept(instance, values[0]);
-	}
-
-	public static <T extends Object, K extends Object> void assertGetter(
-			T instance, K value1, K value2, K defaultValue, Function<T,K> getter, BiConsumer<T, K> setter) {
-		if(defaultValue==null) {
-			assertNull(getter.apply(instance));
-		} else {
-			assertEquals(defaultValue, getter.apply(instance));
-		}
-
-		setter.accept(instance, value1);
-		assertEquals(value1, getter.apply(instance));
-
-		setter.accept(instance, value2);
-		assertEquals(value2, getter.apply(instance));
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <T extends Object, K extends Object> void assertAccumulativeGetter(
-			T instance, K value1, K value2, Function<T,? extends Collection<K>> getter, BiConsumer<T, K> adder) {
-		assertTrue(getter.apply(instance).isEmpty());
-
-		adder.accept(instance, value1);
-		TestUtils.assertCollectionEquals(getter.apply(instance), value1);
-
-		adder.accept(instance, value2);
-		TestUtils.assertCollectionEquals(getter.apply(instance), value1, value2);
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <T extends Object, K extends Object> void assertAccumulativeFlagGetter(
-			T instance, BiPredicate<T,K> getter, BiConsumer<T, K> adder, BiConsumer<T, K> remover, K...values) {
-
-		for(K value : values) {
-			assertFalse(getter.test(instance, value));
-
-			adder.accept(instance, value);
-			assertTrue(getter.test(instance, value));
-		}
-
-		for(K value : values) {
-			assertTrue(getter.test(instance, value));
-
-			remover.accept(instance, value);
-			assertFalse(getter.test(instance, value));
-		}
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <T extends Object, K extends Object> void assertAccumulativeLocalGetter(
-			T instance, K value1, K value2, Function<T,? extends Collection<K>> getter, BiConsumer<T, K> adder) {
-		assertTrue(getter.apply(instance).isEmpty());
-
-		adder.accept(instance, value1);
-		TestUtils.assertCollectionEquals(getter.apply(instance), value1);
-	}
-
-	public static <T extends Object, K extends Object, I extends Object> void assertAccumulativeLookup(
-			T instance, K value1, K value2, BiFunction<T, I, K> lookup,
-			boolean checkNPE, BiConsumer<Executable, String> invalidLookupCheck,
-			BiConsumer<T, K> adder, Function<K, I> keyGen, @SuppressWarnings("unchecked") I...invalidLookups) {
-
-		if(checkNPE) {
-			TestUtils.assertNPE(() -> lookup.apply(instance, null));
-		} else {
-			lookup.apply(instance, null);
-		}
-
-		if(invalidLookupCheck!=NO_CHECK && invalidLookups.length>0) {
-			for(I invalidLookup : invalidLookups) {
-				invalidLookupCheck.accept(() -> lookup.apply(instance, invalidLookup),
-						forValue("Testing invalid lookup value", invalidLookup));
-			}
-		}
-
-		adder.accept(instance, value1);
-		assertSame(value1, lookup.apply(instance, keyGen.apply(value1)));
-
-		adder.accept(instance, value2);
-		assertSame(value2, lookup.apply(instance, keyGen.apply(value2)));
-	}
-
-	public static <T extends Object, K extends Object, I extends Object> void assertAccumulativeLookupContains(
-			T instance, K value1, K value2, BiPredicate<T, I> check,
-			boolean checkNPE, BiConsumer<T, K> adder, Function<K, I> keyGen) {
-
-		if(checkNPE) {
-			TestUtils.assertNPE(() -> check.test(instance, null));
-		} else {
-			check.test(instance, null);
-		}
-
-		adder.accept(instance, value1);
-		assertTrue(check.test(instance, keyGen.apply(value1)));
-		assertFalse(check.test(instance, keyGen.apply(value2)));
-
-		adder.accept(instance, value2);
-		assertTrue(check.test(instance, keyGen.apply(value2)));
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <T extends Object, K extends Object, A extends Consumer<? super K>> void assertForEach(
-			T instance, K value1, K value2, Function<T,Consumer<A>> forEachGen, BiConsumer<T, K> adder) {
-
-		TestUtils.assertForEachNPE(forEachGen.apply(instance));
-
-		TestUtils.assertForEachEmpty(forEachGen.apply(instance));
-
-		adder.accept(instance, value1);
-		TestUtils.assertForEachUnsorted(forEachGen.apply(instance), value1);
-
-		adder.accept(instance, value2);
-		TestUtils.assertForEachUnsorted(forEachGen.apply(instance), value1, value2);
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <T extends Object, K extends Object, A extends Consumer<? super K>> void assertForEachLocal(
-			T instance, K value1, K value2, Function<T,Consumer<A>> forEachLocalGen, BiConsumer<T, K> adder) {
-
-		TestUtils.assertForEachNPE(forEachLocalGen.apply(instance));
-
-		TestUtils.assertForEachEmpty(forEachLocalGen.apply(instance));
-
-		adder.accept(instance, value1);
-		TestUtils.assertForEachUnsorted(forEachLocalGen.apply(instance), value1);
-
-		adder.accept(instance, value2);
-		TestUtils.assertForEachUnsorted(forEachLocalGen.apply(instance), value1, value2);
-	}
-
-	/**
-	 * @see #assertGetter(Class, Object, Object, Object, Function, BiConsumer)
-	 *
-	 * @param argType
-	 * @param value1
-	 * @param value2
-	 * @param defaultValue
-	 * @param getter
-	 * @param setter
-	 */
-	public static <T extends Object, K extends Object> void assertIsLocal(
-			T instance, K value1, K value2, Predicate<T> isLocalCheck, BiConsumer<T, K> setter) {
-		assertFalse(isLocalCheck.test(instance));
-
-		setter.accept(instance, value1);
-		assertTrue(isLocalCheck.test(instance));
-	}
-
-	public static <T extends Object, K extends Object> void assertAccumulativeIsLocal(
-			T instance, K value1, K value2, BiPredicate<T, K> isLocalCheck, BiConsumer<T, K> adder) {
-
-		TestUtils.assertNPE(() -> isLocalCheck.test(instance, null));
-
-		assertFalse(isLocalCheck.test(instance, value1));
-
-		adder.accept(instance, value1);
-		assertTrue(isLocalCheck.test(instance, value1));
-
-		adder.accept(instance, value2);
-		assertTrue(isLocalCheck.test(instance, value2));
-	}
-
-	public static <T extends Object> void assertFlagGetter(
-			T instance, Boolean defaultValue, Predicate<T> getter, ObjBoolConsumer<T> setter) {
-		if(defaultValue!=null) {
-			assertEquals(defaultValue.booleanValue(), getter.test(instance));
-		}
-
-		setter.accept(instance, true);
-		assertTrue(getter.test(instance));
-		setter.accept(instance, false);
-		assertFalse(getter.test(instance));
-	}
-
-	public static <M extends Object, K extends Object, T extends Object> BiConsumer<M, K> inject_genericSetter(
-			BiConsumer<M, T> setter, Function<K, T> transform) {
-		return (m, val) -> {
-			setter.accept(m, transform.apply(val));
-		};
-	}
-
-	/**
-	 * Creates a wrapper around a generic getter method that returns a collection
-	 * and transforms the result based on the specified {@code transform} function.
-	 *
-	 * @return
-	 */
-	public static <M extends Object, T extends Object, K extends Object> Function<M, List<K>> transform_genericCollectionGetter(
-			Function<M, ? extends Collection<T>> getter, Function<T, K> transform) {
-		return m -> {
-			return LazyCollection.<K>lazyList()
-					.addAll(getter.apply(m), transform)
-					.getAsList();
-		};
-	}
-
-	public static <M extends Object, T extends Object, K extends Object> Function<M, K> transform_genericValue(
-			Function<M, T> getter, Function<T, K> transform) {
-		return m -> {
-			return transform.apply(getter.apply(m));
-		};
-	}
 
 	/**
 	 * Helper function to be used for consistency.

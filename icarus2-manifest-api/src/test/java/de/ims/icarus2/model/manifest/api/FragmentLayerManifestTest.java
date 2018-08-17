@@ -19,7 +19,15 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.getIllegalIdValues;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.getLegalIdValues;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
+import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_createTargetLayerManifest;
+import static de.ims.icarus2.model.manifest.api.LayerManifestTest.transform_targetLayerId;
+import static de.ims.icarus2.test.TestUtils.NO_CHECK;
+import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
+import static de.ims.icarus2.test.TestUtils.settings;
+import static de.ims.icarus2.test.TestUtils.transform_genericValue;
 
 import org.junit.jupiter.api.Test;
 
@@ -27,14 +35,19 @@ import org.junit.jupiter.api.Test;
  * @author Markus Gärtner
  *
  */
-public interface FragmentLayerManifestTest {
+public interface FragmentLayerManifestTest<M extends FragmentLayerManifest> extends LayerManifestTest<M> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.FragmentLayerManifest#getValueLayerManifest()}.
 	 */
 	@Test
 	default void testGetValueLayerManifest() {
-		fail("Not yet implemented");
+		assertDerivativeGetter(settings(),
+				"layer1",
+				"layer2",
+				NO_DEFAULT(),
+				transform_genericValue(FragmentLayerManifest::getValueLayerManifest, transform_targetLayerId()),
+				inject_createTargetLayerManifest(FragmentLayerManifest::setValueLayerId));
 	}
 
 	/**
@@ -42,7 +55,11 @@ public interface FragmentLayerManifestTest {
 	 */
 	@Test
 	default void testIsLocalValueLayerManifest() {
-		fail("Not yet implemented");
+		assertDerivativeIsLocal(settings(),
+				"layer1",
+				"layer2",
+				FragmentLayerManifest::isLocalValueLayerManifest,
+				FragmentLayerManifest::setValueLayerId);
 	}
 
 	/**
@@ -50,7 +67,12 @@ public interface FragmentLayerManifestTest {
 	 */
 	@Test
 	default void testGetAnnotationKey() {
-		fail("Not yet implemented");
+		assertDerivativeGetter(settings(),
+				"key1",
+				"key2",
+				NO_DEFAULT(),
+				FragmentLayerManifest::getAnnotationKey,
+				FragmentLayerManifest::setAnnotationKey);
 	}
 
 	/**
@@ -58,7 +80,11 @@ public interface FragmentLayerManifestTest {
 	 */
 	@Test
 	default void testIsLocalAnnotationKey() {
-		fail("Not yet implemented");
+		assertDerivativeIsLocal(settings(),
+				"key1",
+				"key2",
+				FragmentLayerManifest::isLocalAnnotationKey,
+				FragmentLayerManifest::setAnnotationKey);
 	}
 
 	/**
@@ -66,7 +92,12 @@ public interface FragmentLayerManifestTest {
 	 */
 	@Test
 	default void testGetRasterizerManifest() {
-		fail("Not yet implemented");
+		assertDerivativeGetter(settings(),
+				mockTypedManifest(ManifestType.RASTERIZER_MANIFEST),
+				mockTypedManifest(ManifestType.RASTERIZER_MANIFEST),
+				NO_DEFAULT(),
+				FragmentLayerManifest::getRasterizerManifest,
+				FragmentLayerManifest::setRasterizerManifest);
 	}
 
 	/**
@@ -74,7 +105,11 @@ public interface FragmentLayerManifestTest {
 	 */
 	@Test
 	default void testIsLocalRasterizerManifest() {
-		fail("Not yet implemented");
+		assertDerivativeIsLocal(settings(),
+				mockTypedManifest(ManifestType.RASTERIZER_MANIFEST),
+				mockTypedManifest(ManifestType.RASTERIZER_MANIFEST),
+				FragmentLayerManifest::isLocalRasterizerManifest,
+				FragmentLayerManifest::setRasterizerManifest);
 	}
 
 	/**
@@ -82,7 +117,10 @@ public interface FragmentLayerManifestTest {
 	 */
 	@Test
 	default void testSetValueLayerId() {
-		fail("Not yet implemented");
+		assertLockableSetterBatch(settings(),
+				FragmentLayerManifest::setValueLayerId,
+				getLegalIdValues(), true,
+				INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**
@@ -90,7 +128,9 @@ public interface FragmentLayerManifestTest {
 	 */
 	@Test
 	default void testSetAnnotationKey() {
-		fail("Not yet implemented");
+		assertLockableSetter(settings(),
+				FragmentLayerManifest::setAnnotationKey,
+				"key1", true, INVALID_INPUT_CHECK, "");
 	}
 
 	/**
@@ -98,7 +138,10 @@ public interface FragmentLayerManifestTest {
 	 */
 	@Test
 	default void testSetRasterizerManifest() {
-		fail("Not yet implemented");
+		assertLockableSetter(settings(),
+				FragmentLayerManifest::setRasterizerManifest,
+				mockTypedManifest(ManifestType.RASTERIZER_MANIFEST),
+				true, NO_CHECK);
 	}
 
 }

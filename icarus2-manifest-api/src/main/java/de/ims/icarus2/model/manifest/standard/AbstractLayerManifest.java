@@ -23,7 +23,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
 
-import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
@@ -162,7 +161,8 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 		TargetLayerManifest targetLayerManifest = createTargetLayerManifest(baseLayerId);
 
 		if(baseLayerManifests.contains(targetLayerManifest))
-			throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Duplicate base layer id: "+baseLayerId);
+			throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
+					"Duplicate base layer id: "+baseLayerId);
 
 		baseLayerManifests.add(targetLayerManifest);
 

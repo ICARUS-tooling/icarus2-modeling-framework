@@ -42,7 +42,8 @@ import de.ims.icarus2.test.annotations.Provider;
  * @author Markus Gärtner
  *
  */
-public interface ValueManifestTest<M extends ValueManifest> extends DocumentableTest<M>, ModifiableIdentityTest, TypedManifestTest<M> {
+public interface ValueManifestTest<M extends ValueManifest> extends DocumentableTest<M>,
+		ModifiableIdentityTest<M>, TypedManifestTest<M> {
 
 	public static final Set<ValueType> LEGAL_VALUE_TYPES = ValueManifest.SUPPORTED_VALUE_TYPES;
 	public static final Set<ValueType> ILLEGAL_VALUE_TYPES = Collections.unmodifiableSet(
@@ -61,26 +62,17 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#createEmpty()
-	 */
-	@Override
-	@Provider
-	default ModifiableIdentity createEmpty() {
-		return createWithType(ValueType.STRING);
-	}
-
-	/**
 	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#createFromIdentity(java.lang.String, java.lang.String, java.lang.String, javax.swing.Icon)
 	 */
 	@Override
 	@Provider
-	default ModifiableIdentity createFromIdentity(String id, String name, String description, Icon icon) {
-		ModifiableIdentity modifiableIdentity = createWithType(ValueType.STRING);
-		modifiableIdentity.setId(id);
-		modifiableIdentity.setName(name);
-		modifiableIdentity.setDescription(description);
-		modifiableIdentity.setIcon(icon);
-		return modifiableIdentity;
+	default M createFromIdentity(String id, String name, String description, Icon icon) {
+		M manifest = createWithType(ValueType.STRING);
+		manifest.setId(id);
+		manifest.setName(name);
+		manifest.setDescription(description);
+		manifest.setIcon(icon);
+		return manifest;
 	}
 
 	/**

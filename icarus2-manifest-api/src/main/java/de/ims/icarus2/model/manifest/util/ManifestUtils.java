@@ -76,6 +76,13 @@ public class ManifestUtils {
 		}
 	}
 
+	/**
+	 * Calls {@link #isValidId(String)} with the given {@code id} and throws
+	 * a {@link ManifestException} with error code {@link ManifestErrorCode#MANIFEST_INVALID_ID}
+	 * if the id has been found invalid.
+	 *
+	 * @param id
+	 */
 	public static void checkId(String id) {
 		if(!isValidId(id))
 			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,

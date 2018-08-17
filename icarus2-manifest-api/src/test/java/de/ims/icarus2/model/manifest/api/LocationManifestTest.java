@@ -23,11 +23,17 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.api.LocationManifest.PathEntry;
+
 /**
  * @author Markus Gärtner
  *
  */
 public interface LocationManifestTest {
+
+	public static PathEntry mockEntry() {
+
+	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.LocationManifest#isInline()}.

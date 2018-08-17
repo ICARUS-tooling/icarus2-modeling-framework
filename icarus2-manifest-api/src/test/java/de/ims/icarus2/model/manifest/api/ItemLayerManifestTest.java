@@ -19,70 +19,45 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.getIllegalIdValues;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.getLegalIdValues;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubId;
+import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_createTargetLayerManifest;
+import static de.ims.icarus2.model.manifest.api.LayerManifestTest.transform_targetLayerId;
+import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
+import static de.ims.icarus2.test.TestUtils.assertMock;
+import static de.ims.icarus2.test.TestUtils.settings;
+import static de.ims.icarus2.test.TestUtils.transform_genericValue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.model.manifest.ManifestTestFeature;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface ItemLayerManifestTest {
+public interface ItemLayerManifestTest<M extends ItemLayerManifest> extends LayerManifestTest<M> {
 
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#getContainerDepth()}.
-	 */
-	@Test
-	default void testGetContainerDepth() {
-		fail("Not yet implemented");
+	public static ContainerManifest mockContainerManifest(String id) {
+		ContainerManifest containerManifest = mockTypedManifest(ManifestType.CONTAINER_MANIFEST);
+		return (ContainerManifest) stubId((ManifestFragment)containerManifest, id);
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#hasLocalContainers()}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#hasLocalContainerHierarchy()}.
 	 */
 	@Test
-	default void testHasLocalContainers() {
-		fail("Not yet implemented");
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#getRootContainerManifest()}.
-	 */
-	@Test
-	default void testGetRootContainerManifest() {
-		fail("Not yet implemented");
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#getContainerManifest(int)}.
-	 */
-	@Test
-	default void testGetContainerManifest() {
-		fail("Not yet implemented");
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#forEachContainerManifest(java.util.function.Consumer)}.
-	 */
-	@Test
-	default void testForEachContainerManifest() {
-		fail("Not yet implemented");
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#getContainerManifests()}.
-	 */
-	@Test
-	default void testGetContainerManifests() {
-		fail("Not yet implemented");
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#indexOfContainerManifest(de.ims.icarus2.model.manifest.api.ContainerManifest)}.
-	 */
-	@Test
-	default void testIndexOfContainerManifest() {
-		fail("Not yet implemented");
+	default void testIsLocalContainerHierarchy() {
+		assertDerivativeIsLocal(settings(),
+				mock(Hierarchy.class), mock(Hierarchy.class),
+				ItemLayerManifest::hasLocalContainerHierarchy,
+				ItemLayerManifest::setContainerHierarchy);
 	}
 
 	/**
@@ -90,7 +65,12 @@ public interface ItemLayerManifestTest {
 	 */
 	@Test
 	default void testGetBoundaryLayerManifest() {
-		fail("Not yet implemented");
+		assertDerivativeGetter(settings(),
+				"layer1",
+				"layer2",
+				NO_DEFAULT(),
+				transform_genericValue(ItemLayerManifest::getBoundaryLayerManifest, transform_targetLayerId()),
+				inject_createTargetLayerManifest(ItemLayerManifest::setBoundaryLayerId));
 	}
 
 	/**
@@ -98,7 +78,11 @@ public interface ItemLayerManifestTest {
 	 */
 	@Test
 	default void testIsLocalBoundaryLayerManifest() {
-		fail("Not yet implemented");
+		assertDerivativeIsLocal(settings(),
+				"layer1",
+				"layer2",
+				ItemLayerManifest::isLocalBoundaryLayerManifest,
+				inject_createTargetLayerManifest(ItemLayerManifest::setBoundaryLayerId));
 	}
 
 	/**
@@ -106,7 +90,12 @@ public interface ItemLayerManifestTest {
 	 */
 	@Test
 	default void testGetFoundationLayerManifest() {
-		fail("Not yet implemented");
+		assertDerivativeGetter(settings(),
+				"layer1",
+				"layer2",
+				NO_DEFAULT(),
+				transform_genericValue(ItemLayerManifest::getFoundationLayerManifest, transform_targetLayerId()),
+				inject_createTargetLayerManifest(ItemLayerManifest::setFoundationLayerId));
 	}
 
 	/**
@@ -114,7 +103,11 @@ public interface ItemLayerManifestTest {
 	 */
 	@Test
 	default void testIsLocalFoundationLayerManifest() {
-		fail("Not yet implemented");
+		assertDerivativeIsLocal(settings(),
+				"layer1",
+				"layer2",
+				ItemLayerManifest::isLocalFoundationLayerManifest,
+				inject_createTargetLayerManifest(ItemLayerManifest::setFoundationLayerId));
 	}
 
 	/**
@@ -122,7 +115,13 @@ public interface ItemLayerManifestTest {
 	 */
 	@Test
 	default void testIsPrimaryLayerManifest() {
-		fail("Not yet implemented");
+		assertFalse(createUnlocked().isPrimaryLayerManifest());
+
+		M manifest = createTestInstance(settings(ManifestTestFeature.EMBEDDED));
+		LayerGroupManifest groupManifest = assertMock(manifest.getGroupManifest());
+		when(groupManifest.getPrimaryLayerManifest()).thenReturn(manifest);
+
+		assertTrue(manifest.isPrimaryLayerManifest());
 	}
 
 	/**
@@ -130,7 +129,10 @@ public interface ItemLayerManifestTest {
 	 */
 	@Test
 	default void testSetBoundaryLayerId() {
-		fail("Not yet implemented");
+		assertLockableSetterBatch(settings(),
+				ItemLayerManifest::setBoundaryLayerId,
+				getLegalIdValues(), true,
+				INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**
@@ -138,31 +140,10 @@ public interface ItemLayerManifestTest {
 	 */
 	@Test
 	default void testSetFoundationLayerId() {
-		fail("Not yet implemented");
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#removeContainerManifest(de.ims.icarus2.model.manifest.api.ContainerManifest)}.
-	 */
-	@Test
-	default void testRemoveContainerManifest() {
-		fail("Not yet implemented");
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#addContainerManifest(de.ims.icarus2.model.manifest.api.ContainerManifest, int)}.
-	 */
-	@Test
-	default void testAddContainerManifestContainerManifestInt() {
-		fail("Not yet implemented");
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#addContainerManifest(de.ims.icarus2.model.manifest.api.ContainerManifest)}.
-	 */
-	@Test
-	default void testAddContainerManifestContainerManifest() {
-		fail("Not yet implemented");
+		assertLockableSetterBatch(settings(),
+				ItemLayerManifest::setFoundationLayerId,
+				getLegalIdValues(), true,
+				INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 }

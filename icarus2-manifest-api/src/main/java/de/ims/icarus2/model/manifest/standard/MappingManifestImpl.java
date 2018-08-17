@@ -18,9 +18,12 @@ package de.ims.icarus2.model.manifest.standard;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Objects;
+
 import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.standard.Links.MemoryLink;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.lang.ClassUtils;
 
 /**
@@ -53,25 +56,7 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	 */
 	@Override
 	public int hashCode() {
-		int hash = 1;
-
-		if(coverage!=null) {
-			hash *= coverage.hashCode();
-		}
-
-		if(relation!=null) {
-			hash *= relation.hashCode();
-		}
-
-		if(sourceLayerId!=null) {
-			hash *= sourceLayerId.hashCode();
-		}
-
-		if(targetLayerId!=null) {
-			hash *= targetLayerId.hashCode();
-		}
-
-		return hash;
+		return Objects.hash(coverage, relation, sourceLayerId, targetLayerId);
 	}
 
 
@@ -218,6 +203,8 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	protected void setSourceLayerId0(String sourceLayerId) {
 		requireNonNull(sourceLayerId);
 
+		ManifestUtils.checkId(sourceLayerId);
+
 		this.sourceLayerId = sourceLayerId;
 	}
 
@@ -234,6 +221,8 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 
 	protected void setTargetLayerId0(String targetLayerId) {
 		requireNonNull(targetLayerId);
+
+		ManifestUtils.checkId(targetLayerId);
 
 		this.targetLayerId = targetLayerId;
 	}

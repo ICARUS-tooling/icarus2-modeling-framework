@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collection;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -35,10 +36,10 @@ import org.junit.jupiter.api.function.Executable;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.ManifestFrameworkTest;
 import de.ims.icarus2.model.manifest.ManifestTestFeature;
-import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.annotations.Provider;
-import de.ims.icarus2.util.function.ObjBoolConsumer;
+import de.ims.icarus2.test.func.TriConsumer;
 
 /**
  * @author Markus Gärtner
@@ -125,23 +126,23 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 	public static <L extends Lockable, K extends Object> void assertLockableSetterBatch(
 			TestSettings settings, L lockable, BiConsumer<L, K> setter, K[] values,
 			boolean checkNPE, BiConsumer<Executable, String> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
-		ManifestTestUtils.assertSetter(lockable, setter, values, checkNPE, legalityCheck, illegalValues);
+		TestUtils.assertSetter(lockable, setter, values, checkNPE, legalityCheck, illegalValues);
 
 		lockable.lock();
 
 		LockableTest.assertLocked(() -> setter.accept(lockable, values[0]));
 	}
 
-	default void assertLockableSetter(TestSettings settings, ObjBoolConsumer<L> setter) {
+	default void assertLockableSetter(TestSettings settings, BiConsumer<L, Boolean> setter) {
 		assertLockableSetter(settings, createUnlocked(settings), setter);
 	}
 
-	public static <L extends Lockable> void assertLockableSetter(TestSettings settings, L lockable, ObjBoolConsumer<L> setter) {
-		ManifestTestUtils.assertSetter(lockable, setter);
+	public static <L extends Lockable> void assertLockableSetter(TestSettings settings, L lockable, BiConsumer<L, Boolean> setter) {
+		TestUtils.assertSetter(lockable, setter);
 
 		lockable.lock();
 
-		LockableTest.assertLocked(() -> setter.accept(lockable, true));
+		LockableTest.assertLocked(() -> setter.accept(lockable, Boolean.TRUE));
 	}
 
 	default <K extends Object> void assertLockableAccumulativeAdd(
@@ -153,7 +154,7 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 	public static <L extends Lockable, K extends Object> void assertLockableAccumulativeAdd(
 			TestSettings settings, L lockable, BiConsumer<L, K> adder,
 			K[] illegalValues, BiConsumer<Executable, String> legalityCheck, boolean checkNPE, BiConsumer<Executable, String> duplicateCheck, @SuppressWarnings("unchecked") K...values) {
-		ManifestTestUtils.assertAccumulativeAdd(lockable, adder, illegalValues, legalityCheck, checkNPE, duplicateCheck, values);
+		TestUtils.assertAccumulativeAdd(lockable, adder, illegalValues, legalityCheck, checkNPE, duplicateCheck, values);
 
 		lockable.lock();
 
@@ -171,10 +172,27 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 			TestSettings settings, L lockable, BiConsumer<L, K> adder, BiConsumer<L, K> remover,
 			Function<L, C> getter, boolean checkNPE,
 			BiConsumer<Executable, String> invalidRemoveCheck, @SuppressWarnings("unchecked") K...values) {
-		ManifestTestUtils.assertAccumulativeRemove(lockable, adder, remover, getter, checkNPE, invalidRemoveCheck, values);
+		TestUtils.assertAccumulativeRemove(lockable, adder, remover, getter, checkNPE, invalidRemoveCheck, values);
 
 		lockable.lock();
 
 		LockableTest.assertLocked(() -> remover.accept(lockable, values[0]));
+	}
+
+	default <K extends Object> void assertLockableListInsertAt(
+			TestSettings settings, TriConsumer<L, K, Integer> inserter,
+			BiFunction<L, Integer, K> atIndex, @SuppressWarnings("unchecked") K...values) {
+		assertLockableListInsertAt(settings, createUnlocked(settings), inserter, atIndex, values);
+	}
+
+	@SuppressWarnings("boxing")
+	public static <L extends Lockable, K extends Object> void assertLockableListInsertAt(
+			TestSettings settings, L lockable, TriConsumer<L, K, Integer> inserter,
+			BiFunction<L, Integer, K> atIndex, @SuppressWarnings("unchecked") K...values) {
+		TestUtils.assertListInsertAt(lockable, inserter, atIndex, values);
+
+		lockable.lock();
+
+		LockableTest.assertLocked(() -> inserter.accept(lockable, values[0], 0));
 	}
 }

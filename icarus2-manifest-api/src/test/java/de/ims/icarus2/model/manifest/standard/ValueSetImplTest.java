@@ -27,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
-import de.ims.icarus2.model.manifest.standard.ValueSetImpl;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.xml.delegates.ValueSetXmlDelegate;
 

@@ -25,7 +25,7 @@ import de.ims.icarus2.model.manifest.util.ManifestUtils;
 
 
 /**
- * Collection implementations for lazy linking of foreign objects.
+ * Collection of implementations for lazy linking of foreign objects.
  *
  * @author Markus Gärtner
  *

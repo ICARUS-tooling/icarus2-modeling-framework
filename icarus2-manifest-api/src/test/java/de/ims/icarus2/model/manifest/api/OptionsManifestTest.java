@@ -19,10 +19,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static de.ims.icarus2.model.manifest.ManifestTestUtils.inject_genericSetter;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.transform_id;
-import static de.ims.icarus2.test.GenericTest.NO_ILLEGAL;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -32,6 +30,9 @@ import static org.mockito.Mockito.when;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
+import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.util.id.Identity;
 
 /**
@@ -39,6 +40,17 @@ import de.ims.icarus2.util.id.Identity;
  *
  */
 public interface OptionsManifestTest<M extends OptionsManifest> extends ManifestTest<M>, EmbeddedTest<M> {
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.ManifestTest#createTestInstance(de.ims.icarus2.test.TestSettings)
+	 *
+	 * @see MemberManifestTest#createTestInstance(TestSettings)
+	 */
+	@Provider
+	@Override
+	default M createTestInstance(TestSettings settings) {
+		return ManifestTest.super.createTestInstance(settings);
+	}
 
 	public static Option mockOption(String id) {
 		Option option = mock(Option.class);
@@ -62,7 +74,7 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 		assertNull(createTemplate(settings()).getMemberManifest());
 
 		MemberManifest host = mockTypedManifest(MemberManifest.class);
-		assertEquals(host, createEmbedded(host).getMemberManifest());
+		assertEquals(host, createEmbedded(settings(), host).getMemberManifest());
 	}
 
 	/**
@@ -73,7 +85,7 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 		assertDerivativeAccumulativeGetter(settings(),
 				"id1", "id2",
 				OptionsManifest::getOptionIds,
-				inject_genericSetter(OptionsManifest::addOption, OptionsManifestTest::mockOption));
+				TestUtils.inject_genericSetter(OptionsManifest::addOption, OptionsManifestTest::mockOption));
 	}
 
 	/**
@@ -220,7 +232,7 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 		assertDerivativeAccumulativeIsLocal(settings(),
 				"id1", "id2",
 				OptionsManifest::isLocalOption,
-				inject_genericSetter(OptionsManifest::addOption, OptionsManifestTest::mockOption));
+				TestUtils.inject_genericSetter(OptionsManifest::addOption, OptionsManifestTest::mockOption));
 	}
 
 	/**
@@ -241,8 +253,8 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 	default void testAddOption() {
 		assertLockableAccumulativeAdd(
 				settings(),
-				OptionsManifest::addOption, NO_ILLEGAL(),
-				NO_CHECK, true, DUPLICATE_ID_CHECK,
+				OptionsManifest::addOption, TestUtils.NO_ILLEGAL(),
+				TestUtils.NO_CHECK, true, DUPLICATE_ID_CHECK,
 				mockOption("id1"), mockOption("ids2"), mockOption("id3"));
 	}
 
@@ -266,8 +278,8 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 	default void testAddGroupIdentifier() {
 		assertLockableAccumulativeAdd(
 				settings(),
-				OptionsManifest::addGroupIdentifier, NO_ILLEGAL(),
-				NO_CHECK, true, DUPLICATE_ID_CHECK,
+				OptionsManifest::addGroupIdentifier, TestUtils.NO_ILLEGAL(),
+				TestUtils.NO_CHECK, true, DUPLICATE_ID_CHECK,
 				mockIdentity("id1"), mockIdentity("ids2"), mockIdentity("id3"));
 	}
 

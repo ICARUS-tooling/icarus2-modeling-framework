@@ -18,8 +18,10 @@ package de.ims.icarus2.model.manifest.standard;
 
 import static java.util.Objects.requireNonNull;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
@@ -172,6 +174,10 @@ public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements 
 
 	protected void setAnnotationKey0(String key) {
 		requireNonNull(key);
+
+		if(key.isEmpty())
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
+					"Annotation key must not be empty");
 
 		annotationKey = key;
 	}

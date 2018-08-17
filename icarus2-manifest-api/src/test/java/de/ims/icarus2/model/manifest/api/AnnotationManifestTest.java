@@ -19,8 +19,6 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static de.ims.icarus2.test.GenericTest.NO_DEFAULT;
-import static de.ims.icarus2.test.GenericTest.NO_ILLEGAL;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -31,6 +29,7 @@ import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.util.data.ContentType;
 
 /**
@@ -53,7 +52,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testGetKey() {
-		assertDerivativeGetter(settings(), "key1", "key2", NO_DEFAULT(), AnnotationManifest::getKey, AnnotationManifest::setKey);
+		assertDerivativeGetter(settings(), "key1", "key2", TestUtils.NO_DEFAULT(), AnnotationManifest::getKey, AnnotationManifest::setKey);
 	}
 
 	/**
@@ -141,7 +140,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testGetValueSet() {
-		assertDerivativeGetter(settings(), mock(ValueSet.class), mock(ValueSet.class), NO_DEFAULT(),
+		assertDerivativeGetter(settings(), mock(ValueSet.class), mock(ValueSet.class), TestUtils.NO_DEFAULT(),
 				AnnotationManifest::getValueSet, AnnotationManifest::setValueSet);
 	}
 
@@ -192,7 +191,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 			Object value1 = values[0];
 			Object value2 = values[1];
 
-			assertDerivativeGetter(settings(), value1, value2, NO_DEFAULT(),
+			assertDerivativeGetter(settings(), value1, value2, TestUtils.NO_DEFAULT(),
 					AnnotationManifest::getNoEntryValue, AnnotationManifest::setNoEntryValue);
 		}
 	}
@@ -219,7 +218,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testGetContentType() {
-		assertDerivativeGetter(settings(), mock(ContentType.class), mock(ContentType.class), NO_DEFAULT(),
+		assertDerivativeGetter(settings(), mock(ContentType.class), mock(ContentType.class), TestUtils.NO_DEFAULT(),
 				AnnotationManifest::getContentType, AnnotationManifest::setContentType);
 	}
 
@@ -246,7 +245,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	@Test
 	default void testAddAlias() {
 		assertLockableAccumulativeAdd(settings(),
-				AnnotationManifest::addAlias, NO_ILLEGAL(),
+				AnnotationManifest::addAlias, TestUtils.NO_ILLEGAL(),
 				TYPE_CAST_CHECK, true, INVALID_INPUT_CHECK,
 				"alias1", "alias2", "alias3");
 	}

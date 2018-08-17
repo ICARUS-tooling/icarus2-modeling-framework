@@ -19,7 +19,9 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static de.ims.icarus2.test.TestUtils.settings;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
 
@@ -27,22 +29,16 @@ import org.junit.jupiter.api.Test;
  * @author Markus Gärtner
  *
  */
-public interface PathResolverManifestTest {
+public interface PathResolverManifestTest<M extends PathResolverManifest>
+		extends ForeignImplementationManifestTest<M>, EmbeddedMemberManifestTest<M> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.PathResolverManifest#getLocationManifest()}.
 	 */
 	@Test
 	default void testGetLocationManifest() {
-		fail("Not yet implemented");
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.PathResolverManifest#getHost()}.
-	 */
-	@Test
-	default void testGetHost() {
-		fail("Not yet implemented");
+		assertNotNull(createUnlocked().getLocationManifest());
+		assertNull(createTemplate(settings()).getLocationManifest());
 	}
 
 }

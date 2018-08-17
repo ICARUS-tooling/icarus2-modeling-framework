@@ -19,12 +19,12 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertGetter;
-import static de.ims.icarus2.test.GenericTest.NO_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.test.TestUtils;
 
 /**
  * @author Markus Gärtner
@@ -37,9 +37,9 @@ public interface DocumentableTest<D extends Documentable> extends LockableTest<D
 	 */
 	@Test
 	default void testGetDocumentation() {
-		assertGetter(createUnlocked(),
+		TestUtils.assertGetter(createUnlocked(),
 				mock(Documentation.class), mock(Documentation.class),
-				NO_DEFAULT(),
+				TestUtils.NO_DEFAULT(),
 				Documentable::getDocumentation, Documentable::setDocumentation);
 	}
 
@@ -50,7 +50,7 @@ public interface DocumentableTest<D extends Documentable> extends LockableTest<D
 	default void testSetDocumentation() {
 		assertLockableSetter(settings(),
 				Documentable::setDocumentation,
-				mock(Documentation.class), true, NO_CHECK);
+				mock(Documentation.class), true, TestUtils.NO_CHECK);
 	}
 
 }

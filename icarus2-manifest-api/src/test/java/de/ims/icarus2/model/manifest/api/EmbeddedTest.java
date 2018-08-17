@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.TestUtils.settings;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
@@ -27,13 +29,34 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
+import de.ims.icarus2.test.GenericTest;
+import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface EmbeddedTest<E extends Embedded> {
+public interface EmbeddedTest<E extends Embedded> extends GenericTest<E> {
+
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
+	 */
+	@Override
+	@Provider
+	default E createTestInstance(TestSettings settings) {
+		Set<ManifestType> allowedHosts = getAllowedHostTypes();
+		assertFalse(allowedHosts.isEmpty());
+
+		ManifestType type = allowedHosts.iterator().next();
+		TypedManifest host = createMockedHost(type);
+
+		return createEmbedded(settings, host);
+	}
+
+	default TypedManifest createMockedHost(ManifestType type) {
+		return ManifestTestUtils.mockTypedManifest(type);
+	}
 
 	/**
 	 * Return all the allowed host types or an empty set in case there
@@ -44,12 +67,13 @@ public interface EmbeddedTest<E extends Embedded> {
 
 	/**
 	 * Create the {@link Embedded} instance under test with the specified host.
+	 * @param settings TODO
 	 *
 	 * @return
 	 * @throws Exception
 	 */
 	@Provider
-	E createEmbedded(TypedManifest host) throws Exception;
+	E createEmbedded(TestSettings settings, TypedManifest host);
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.Embedded#getHost()}.
@@ -61,7 +85,7 @@ public interface EmbeddedTest<E extends Embedded> {
 
 		for(ManifestType hostType : allowedHostTypes) {
 			TypedManifest host = ManifestTestUtils.mockTypedManifest(hostType);
-			E embedded = createEmbedded(host);
+			E embedded = createEmbedded(settings(), host);
 			assertNotNull(embedded.getHost());
 			assertSame(host, embedded.getHost());
 		}

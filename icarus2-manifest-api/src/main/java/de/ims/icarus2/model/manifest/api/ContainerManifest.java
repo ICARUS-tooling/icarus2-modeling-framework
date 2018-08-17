@@ -97,12 +97,13 @@ public interface ContainerManifest extends MemberManifest, Embedded {
 	@AccessRestriction(AccessMode.READ)
 	default ContainerManifest getParentManifest() {
 		ItemLayerManifest hostManifest = getLayerManifest();
-		int index = hostManifest==null ? -1 : hostManifest.indexOfContainerManifest(this);
+		Hierarchy<ContainerManifest> hierarchy = hostManifest==null ? null : hostManifest.getContainerHierarchy();
+		int index = hierarchy==null ? -1 : hierarchy.levelOf(this);
 
 		if(index<=0) {
 			return null;
 		} else {
-			return hostManifest.getContainerManifest(index-1);
+			return hierarchy.atLevel(index-1);
 		}
 	}
 
@@ -112,13 +113,17 @@ public interface ContainerManifest extends MemberManifest, Embedded {
 		if(hostManifest==null) {
 			return null;
 		}
+		Hierarchy<ContainerManifest> hierarchy = hostManifest.getContainerHierarchy();
+		if(hierarchy==null) {
+			return null;
+		}
 
-		int index = hostManifest.indexOfContainerManifest(this);
+		int index = hierarchy.levelOf(this);
 
-		if(index>=hostManifest.getContainerDepth()-1) {
+		if(index>=hierarchy.getDepth()-1) {
 			return null;
 		} else {
-			return hostManifest.getContainerManifest(index+1);
+			return hierarchy.atLevel(index+1);
 		}
 	}
 

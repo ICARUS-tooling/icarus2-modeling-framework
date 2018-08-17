@@ -19,7 +19,6 @@ package de.ims.icarus2.model.manifest.xml.delegates;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
-import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
@@ -124,21 +123,9 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 	protected void writeElements(XmlSerializer serializer) throws Exception {
 		super.writeElements(serializer);
 
+		ItemLayerManifestXmlDelegate.defaultWriteElements(this, getContainerManifestXmlDelegate(), serializer);
+
 		FragmentLayerManifest manifest = getInstance();
-
-		if(manifest.isLocalBoundaryLayerManifest()) {
-			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, ManifestXmlTags.BOUNDARY_LAYER, manifest.getBoundaryLayerManifest());
-		}
-
-		if(manifest.isLocalFoundationLayerManifest()) {
-			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, ManifestXmlTags.FOUNDATION_LAYER, manifest.getFoundationLayerManifest());
-		}
-
-		if(manifest.hasLocalContainers()) {
-			for(ContainerManifest containerManifest : manifest.getContainerManifests()) {
-				getContainerManifestXmlDelegate().reset(containerManifest).writeXml(serializer);
-			}
-		}
 
 		if(manifest.isLocalValueLayerManifest()) {
 			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, ManifestXmlTags.VALUE_LAYER, manifest.getValueLayerManifest());
@@ -226,7 +213,8 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 		switch (localName) {
 
 		case ManifestXmlTags.CONTAINER: {
-			getInstance().addContainerManifest(((ContainerManifestXmlDelegate) handler).getInstance(), -1);
+			ItemLayerManifestXmlDelegate.defaultAddContainerManifest(this,
+					((ContainerManifestXmlDelegate)handler).getInstance());
 		} break;
 
 		case ManifestXmlTags.RASTERIZER: {

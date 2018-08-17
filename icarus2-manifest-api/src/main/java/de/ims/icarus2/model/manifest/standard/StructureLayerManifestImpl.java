@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
+import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
@@ -70,24 +72,8 @@ public class StructureLayerManifestImpl extends ItemLayerManifestImpl implements
 	 */
 	@Override
 	public StructureManifest getRootStructureManifest() {
-		return (StructureManifest) getContainerManifest(1);
-	}
-
-	@Override
-	public void addStructureManifest(StructureManifest manifest, int level) {
-		checkNotLocked();
-
-		addStructureManifest0(manifest, level);
-	}
-
-	protected void addStructureManifest0(StructureManifest manifest, int level) {
-		if(level==0 || (level==-1 && getContainerDepth()==0))
-			throw new IllegalStateException("Cannot add structure manifest as root container manifest"); //$NON-NLS-1$
-		addContainerManifest0(manifest, level);
-	}
-
-	@Override
-	public void removeStructureManifest(StructureManifest manifest) {
-		removeContainerManifest(manifest);
+		Hierarchy<ContainerManifest> hierarchy = getContainerHierarchy();
+		//TODO add sanity check to make sure we have a manifest at level 1 and produce a proper error message otherwise
+		return hierarchy==null ? null : (StructureManifest)hierarchy.atLevel(1);
 	}
 }

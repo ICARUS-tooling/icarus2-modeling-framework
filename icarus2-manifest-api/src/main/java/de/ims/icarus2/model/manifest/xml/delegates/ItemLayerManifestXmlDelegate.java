@@ -77,15 +77,11 @@ public class ItemLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelega
 		}
 	}
 
+	public static<L extends ItemLayerManifest> void defaultWriteElements(
+			AbstractLayerManifestXmlDelegate<L> delegate,
+			ContainerManifestXmlDelegate containerDelegate, XmlSerializer serializer) throws Exception {
 
-	/**
-	 * @see de.ims.icarus2.model.manifest.standard.AbstractLayerManifest#writeElements(de.ims.icarus2.util.xml.XmlSerializer)
-	 */
-	@Override
-	protected void writeElements(XmlSerializer serializer) throws Exception {
-		super.writeElements(serializer);
-
-		ItemLayerManifest manifest = getInstance();
+		ItemLayerManifest manifest = delegate.getInstance();
 
 		if(manifest.isLocalBoundaryLayerManifest()) {
 			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, ManifestXmlTags.BOUNDARY_LAYER, manifest.getBoundaryLayerManifest());
@@ -95,11 +91,22 @@ public class ItemLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelega
 			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, ManifestXmlTags.FOUNDATION_LAYER, manifest.getFoundationLayerManifest());
 		}
 
-		if(manifest.hasLocalContainers()) {
-			for(ContainerManifest containerManifest : manifest.getContainerManifests()) {
-				getContainerManifestXmlDelegate().reset(containerManifest).writeXml(serializer);
+		if(manifest.hasLocalContainerHierarchy()) {
+			for(ContainerManifest containerManifest : manifest.getContainerHierarchy()) {
+				containerDelegate.reset(containerManifest).writeXml(serializer);
 			}
 		}
+	}
+
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.standard.AbstractLayerManifest#writeElements(de.ims.icarus2.util.xml.XmlSerializer)
+	 */
+	@Override
+	protected void writeElements(XmlSerializer serializer) throws Exception {
+		super.writeElements(serializer);
+
+		defaultWriteElements(this, getContainerManifestXmlDelegate(), serializer);
 	}
 
 	@Override
@@ -166,13 +173,20 @@ public class ItemLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelega
 		switch (localName) {
 
 		case ManifestXmlTags.CONTAINER: {
-			getInstance().addContainerManifest(((ContainerManifestXmlDelegate) handler).getInstance(), -1);
+			defaultAddContainerManifest(this, ((ContainerManifestXmlDelegate)handler).getInstance());
 		} break;
 
 		default:
 			super.endNestedHandler(manifestLocation, uri, localName, qName, handler);
 			break;
 		}
+	}
+
+	public static <L extends ItemLayerManifest> void defaultAddContainerManifest(
+			AbstractLayerManifestXmlDelegate<L> delegate, ContainerManifest containerManifest) {
+		ItemLayerManifest layerManifest = delegate.getInstance();
+
+		ItemLayerManifest.getOrCreateLocalContainerhierarchy(layerManifest).add(containerManifest);
 	}
 
 	/**

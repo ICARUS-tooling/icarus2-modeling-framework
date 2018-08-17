@@ -19,8 +19,6 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertFlagGetter;
-import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertGetter;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.getIllegalValue;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.getTestValue;
 import static de.ims.icarus2.test.TestUtils.settings;
@@ -42,13 +40,14 @@ import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
 import de.ims.icarus2.model.manifest.types.UnsupportedValueTypeException;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.annotations.Provider;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface OptionTest<O extends Option> extends ModifiableIdentityTest, LockableTest<O>, TypedManifestTest<O> {
+public interface OptionTest<O extends Option> extends ModifiableIdentityTest<O>, LockableTest<O>, TypedManifestTest<O> {
 
 	public static final BiConsumer<Executable, String> UNSUPPORTED_TYPE_CHECK = (ex, msg) -> {
 		UnsupportedValueTypeException exception = assertThrows(UnsupportedValueTypeException.class, ex, msg);
@@ -91,7 +90,7 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest, Lo
 	default void testGetDefaultValue() {
 		for (ValueType valueType : LEGAL_VALUE_TYPES) {
 			Object[] values = ManifestTestUtils.getTestValues(valueType);
-			assertGetter(createWithType(settings(), valueType), values[0], values[1], null, Option::getDefaultValue,
+			TestUtils.assertGetter(createWithType(settings(), valueType), values[0], values[1], null, Option::getDefaultValue,
 					Option::setDefaultValue);
 		}
 	}
@@ -103,7 +102,7 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest, Lo
 	@Test
 	default void testGetValueType() {
 		for (ValueType valueType : LEGAL_VALUE_TYPES) {
-			assertGetter(createWithType(settings(), valueType), valueType, valueType, valueType, Option::getValueType,
+			TestUtils.assertGetter(createWithType(settings(), valueType), valueType, valueType, valueType, Option::getValueType,
 					Option::setValueType);
 		}
 	}
@@ -115,7 +114,7 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest, Lo
 	@Test
 	default void testGetSupportedValues() {
 		for (ValueType valueType : LEGAL_VALUE_TYPES) {
-			assertGetter(createWithType(settings(), valueType), mockValueSet(valueType), mockValueSet(valueType), null,
+			TestUtils.assertGetter(createWithType(settings(), valueType), mockValueSet(valueType), mockValueSet(valueType), null,
 					Option::getSupportedValues, Option::setSupportedValues);
 		}
 	}
@@ -127,7 +126,7 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest, Lo
 	@Test
 	default void testGetSupportedRange() {
 		for (ValueType valueType : LEGAL_VALUE_TYPES) {
-			assertGetter(createWithType(settings(), valueType), mockValueRange(valueType), mockValueRange(valueType),
+			TestUtils.assertGetter(createWithType(settings(), valueType), mockValueRange(valueType), mockValueRange(valueType),
 					null, Option::getSupportedRange, Option::setSupportedRange);
 		}
 	}
@@ -138,7 +137,7 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest, Lo
 	 */
 	@Test
 	default void testGetExtensionPointUid() {
-		assertGetter(createWithType(settings(), ValueType.EXTENSION), "uid1", "uid2", null,
+		TestUtils.assertGetter(createWithType(settings(), ValueType.EXTENSION), "uid1", "uid2", null,
 				Option::getExtensionPointUid, Option::setExtensionPointUid);
 	}
 
@@ -148,7 +147,7 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest, Lo
 	 */
 	@Test
 	default void testGetOptionGroupId() {
-		assertGetter(createUnlocked(), "group1", "group2", null, Option::getOptionGroupId, Option::setOptionGroup);
+		TestUtils.assertGetter(createUnlocked(), "group1", "group2", null, Option::getOptionGroupId, Option::setOptionGroup);
 	}
 
 	/**
@@ -158,7 +157,7 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest, Lo
 	@SuppressWarnings("boxing")
 	@Test
 	default void testIsPublished() {
-		assertFlagGetter(createUnlocked(), Option.DEFAULT_PUBLISHED_VALUE, Option::isPublished, Option::setPublished);
+		TestUtils.assertFlagGetter(createUnlocked(), Option.DEFAULT_PUBLISHED_VALUE, Option::isPublished, Option::setPublished);
 	}
 
 	/**
@@ -168,7 +167,7 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest, Lo
 	@SuppressWarnings("boxing")
 	@Test
 	default void testIsMultiValue() {
-		assertFlagGetter(createUnlocked(), Option.DEFAULT_MULTIVALUE_VALUE, Option::isMultiValue,
+		TestUtils.assertFlagGetter(createUnlocked(), Option.DEFAULT_MULTIVALUE_VALUE, Option::isMultiValue,
 				Option::setMultiValue);
 	}
 
@@ -179,7 +178,7 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest, Lo
 	@SuppressWarnings("boxing")
 	@Test
 	default void testIsAllowNull() {
-		assertFlagGetter(createUnlocked(), Option.DEFAULT_ALLOW_NULL, Option::isAllowNull, Option::setAllowNull);
+		TestUtils.assertFlagGetter(createUnlocked(), Option.DEFAULT_ALLOW_NULL, Option::isAllowNull, Option::setAllowNull);
 	}
 
 	/**
@@ -215,7 +214,7 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest, Lo
 	 */
 	@Test
 	default void testSetExtensionPointUid() {
-		assertLockableSetter(settings(), Option::setExtensionPointUid, "uid1", false, NO_CHECK);
+		assertLockableSetter(settings(), Option::setExtensionPointUid, "uid1", false, TestUtils.NO_CHECK);
 	}
 
 	/**
@@ -225,7 +224,7 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest, Lo
 	@Test
 	default void testSetSupportedRange() {
 		assertLockableSetter(settings(), Option::setSupportedRange,
-				mockValueRange(ValueType.STRING), false, NO_CHECK);
+				mockValueRange(ValueType.STRING), false, TestUtils.NO_CHECK);
 	}
 
 	/**
@@ -235,7 +234,7 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest, Lo
 	@Test
 	default void testSetSupportedValues() {
 		assertLockableSetter(settings(), Option::setSupportedValues,
-				mockValueSet(ValueType.STRING), false, NO_CHECK);
+				mockValueSet(ValueType.STRING), false, TestUtils.NO_CHECK);
 	}
 
 	/**

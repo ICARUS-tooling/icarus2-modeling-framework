@@ -19,22 +19,39 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static de.ims.icarus2.test.TestUtils.assertNPE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.model.manifest.api.LocationManifest.PathEntry;
+import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
+import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.annotations.Provider;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface PathEntryTest {
+public interface PathEntryTest<P extends PathEntry> {
+
+	@Provider
+	P createInstance(PathType type, String value);
+
+	@Test
+	default void testCreation() {
+		assertNPE(() -> createInstance(null, "value"));
+		assertNPE(() -> createInstance(PathType.FILE, null));
+	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.LocationManifest.PathEntry#getType()}.
 	 */
 	@Test
 	default void testGetType() {
-		fail("Not yet implemented");
+		for(PathType pathType : PathType.values()) {
+			assertEquals(pathType, createInstance(pathType, "value").getType());
+		}
 	}
 
 	/**
@@ -42,7 +59,11 @@ public interface PathEntryTest {
 	 */
 	@Test
 	default void testGetValue() {
-		fail("Not yet implemented");
+		String[] values = {"", "value", TestUtils.LOREM_IPSUM_CHINESE, TestUtils.EMOJI};
+
+		for(String value : values) {
+			assertEquals(value, createInstance(PathType.CUSTOM, value).getValue());
+		}
 	}
 
 }

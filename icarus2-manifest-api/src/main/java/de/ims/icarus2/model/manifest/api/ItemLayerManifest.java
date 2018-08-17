@@ -16,14 +16,11 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import java.util.List;
-import java.util.function.Consumer;
-
+import de.ims.icarus2.model.manifest.standard.HierarchyImpl;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
 import de.ims.icarus2.util.access.AccessRestriction;
-import de.ims.icarus2.util.collections.LazyCollection;
 
 
 
@@ -35,64 +32,45 @@ import de.ims.icarus2.util.collections.LazyCollection;
 @AccessControl(AccessPolicy.DENY)
 public interface ItemLayerManifest extends LayerManifest {
 
+	@AccessRestriction(AccessMode.READ)
+	Hierarchy<ContainerManifest> getContainerHierarchy();
+
+	@AccessRestriction(AccessMode.READ)
+	boolean hasLocalContainerHierarchy();
+
 	/**
-	 * Returns the number of nested containers and/or structures within this
-	 * layer.
+	 * Returns the local container hierarchy of an {@link ItemLayerManifest}.
+	 * This method will create and {@link ItemLayerManifest#setContainerHierarchy(Hierarchy) set}
+	 * a new {@link Hierarchy} instance if no local container hierarchy has been
+	 * applied so far.
+	 *
+	 * @param layerManifest
 	 * @return
 	 */
-	@AccessRestriction(AccessMode.READ)
-	int getContainerDepth();
-
-	boolean hasLocalContainers();
+	public static Hierarchy<ContainerManifest> getOrCreateLocalContainerhierarchy(
+			ItemLayerManifest layerManifest) {
+		if(layerManifest.hasLocalContainerHierarchy()) {
+			return layerManifest.getContainerHierarchy();
+		} else {
+			Hierarchy<ContainerManifest> hierarchy = new HierarchyImpl<>();
+			layerManifest.setContainerHierarchy(hierarchy);
+			return hierarchy;
+		}
+	}
 
 	/**
-	 * Returns the manifest for the top-level container in this layer.
+	 * Returns the manifest for the top-level container in this layer
+	 * or {@code null} if no container manifests have been added so far.
 	 * Note that usually this will always be a manifest describing a list
 	 * type container.
+	 * <p>
+	 * This is a shorthand method for accessing the {@link Hierarchy#getRoot() root}
+	 * of the {@link #getContainerHierarchy() container hierarchy}.
 	 *
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
 	ContainerManifest getRootContainerManifest();
-
-	/**
-	 * Returns the manifest for the container at depth {@code level}.
-	 * For a {@code level} value of {@code 0} the result is equal to
-	 * {@link #getRootContainerManifest()}.
-	 *
-	 * @param level the depth for which the manifest should be returned
-	 * @return the manifest for the container at the given depth
-     * @throws IndexOutOfBoundsException if the level is out of range
-     *         (<tt>level &lt; 0 || level &gt;= getContainerDepth()</tt>)
-	 */
-	@AccessRestriction(AccessMode.READ)
-	ContainerManifest getContainerManifest(int level);
-
-	default void forEachContainerManifest(Consumer<? super ContainerManifest> action) {
-		for(int i=0; i<getContainerDepth(); i++) {
-			action.accept(getContainerManifest(i));
-		}
-	}
-
-	default List<ContainerManifest> getContainerManifests() {
-		LazyCollection<ContainerManifest> result = LazyCollection.lazyList();
-
-		for(int i=0; i<getContainerDepth(); i++) {
-			result.add(getContainerManifest(i));
-		}
-
-		return result.getAsList();
-	}
-
-	/**
-	 * Looks up the level at which the given {@link ContainerManifest} is placed within
-	 * this layer.
-	 *
-	 * @param containerManifest
-	 * @return
-	 */
-	@AccessRestriction(AccessMode.READ)
-	int indexOfContainerManifest(ContainerManifest containerManifest);
 
 	/**
 	 * Returns the {@code ItemLayerManifest} that describes the layer hosting
@@ -129,23 +107,9 @@ public interface ItemLayerManifest extends LayerManifest {
 
 	// Modification methods
 
+	void setContainerHierarchy(Hierarchy<ContainerManifest> hierarchy);
+
 	TargetLayerManifest setBoundaryLayerId(String boundaryLayerId);
 
 	TargetLayerManifest setFoundationLayerId(String foundationLayerId);
-
-	void removeContainerManifest(ContainerManifest containerManifest);
-
-	/**
-	 * Adds a new container manfiest for the specified level.
-	 * If the level value is {@code -1} then the container manifest will be
-	 * appended to the list of container manifests.
-	 *
-	 * @param containerManifest
-	 * @param level
-	 */
-	void addContainerManifest(ContainerManifest containerManifest, int level);
-
-	default void addContainerManifest(ContainerManifest containerManifest) {
-		addContainerManifest(containerManifest, -1);
-	}
 }

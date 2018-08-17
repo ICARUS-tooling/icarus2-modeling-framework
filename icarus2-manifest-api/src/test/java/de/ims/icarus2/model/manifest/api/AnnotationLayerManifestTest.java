@@ -19,11 +19,9 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static de.ims.icarus2.model.manifest.ManifestTestUtils.inject_genericSetter;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_createTargetLayerManifest;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_forEachTargetLayerManifest;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.transform_targetLayerId;
-import static de.ims.icarus2.test.GenericTest.NO_ILLEGAL;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
@@ -86,7 +84,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 		assertDerivativeAccumulativeGetter(settings(),
 				"key1", "key2",
 				AnnotationLayerManifest::getAvailableKeys,
-				inject_genericSetter(AnnotationLayerManifest::addAnnotationManifest,
+				TestUtils.inject_genericSetter(AnnotationLayerManifest::addAnnotationManifest,
 						AnnotationLayerManifestTest::mockAnnotationManifest));
 	}
 
@@ -98,7 +96,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 		assertDerivativeAccumulativeLocalGetter(settings(),
 				"key1", "key2",
 				AnnotationLayerManifest::getLocalAvailableKeys,
-				inject_genericSetter(AnnotationLayerManifest::addAnnotationManifest,
+				TestUtils.inject_genericSetter(AnnotationLayerManifest::addAnnotationManifest,
 						AnnotationLayerManifestTest::mockAnnotationManifest));
 	}
 
@@ -271,7 +269,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	default void testGetReferenceLayerManifests() {
 		assertDerivativeAccumulativeGetter(settings(),
 				"layer1", "layer2",
-				ManifestTestUtils.transform_genericCollectionGetter(AnnotationLayerManifest::getReferenceLayerManifests, transform_targetLayerId()),
+				TestUtils.transform_genericCollectionGetter(AnnotationLayerManifest::getReferenceLayerManifests, transform_targetLayerId()),
 				inject_createTargetLayerManifest(AnnotationLayerManifest::addReferenceLayerId));
 	}
 
@@ -282,7 +280,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	default void testGetLocalReferenceLayerManifests() {
 		assertDerivativeAccumulativeLocalGetter(settings(),
 				"layer1", "layer2",
-				ManifestTestUtils.transform_genericCollectionGetter(
+				TestUtils.transform_genericCollectionGetter(
 						AnnotationLayerManifest::getLocalReferenceLayerManifests,
 						transform_targetLayerId()),
 				inject_createTargetLayerManifest(
@@ -294,7 +292,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	 */
 	@Test
 	default void testSetDefaultKey() {
-		assertLockableSetter(settings(),AnnotationLayerManifest::setDefaultKey, "key1", true, NO_CHECK);
+		assertLockableSetter(settings(),AnnotationLayerManifest::setDefaultKey, "key1", true, TestUtils.NO_CHECK);
 	}
 
 	/**
@@ -303,8 +301,8 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	@Test
 	default void testAddAnnotationManifest() {
 		assertLockableAccumulativeAdd(settings(),
-				AnnotationLayerManifest::addAnnotationManifest, NO_ILLEGAL(),
-				NO_CHECK, true, DUPLICATE_ID_CHECK,
+				AnnotationLayerManifest::addAnnotationManifest, TestUtils.NO_ILLEGAL(),
+				TestUtils.NO_CHECK, true, DUPLICATE_ID_CHECK,
 				mockAnnotationManifest("key1"), mockAnnotationManifest("key2"), mockAnnotationManifest("key3"));
 	}
 
@@ -350,7 +348,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 		assertLockableAccumulativeRemove(settings(),
 				AnnotationLayerManifest::addReferenceLayerId,
 				AnnotationLayerManifest::removeReferenceLayerId,
-				ManifestTestUtils.transform_genericCollectionGetter(AnnotationLayerManifest::getReferenceLayerManifests, transform_targetLayerId()),
+				TestUtils.transform_genericCollectionGetter(AnnotationLayerManifest::getReferenceLayerManifests, transform_targetLayerId()),
 				true, UNKNOWN_ID_CHECK,
 				"layer1", "layer2", "layer3");
 	}

@@ -34,8 +34,9 @@ public interface StructureLayerManifest extends ItemLayerManifest {
 	/**
 	 * Returns the manifest for the members (structures) of the top-level
 	 * container in this layer. This is effectively the same as calling
-	 * {@link #getContainerManifest(int)} with a {@code level} value
-	 * of {@code 1} and casting the result to {@code StructureManifest}.
+	 * {@link Hierarchy#atLevel(int)} with a {@code level} value
+	 * of {@code 1} on the underlying {@link #getContainerHierarchy() container hierarchy}
+	 * and casting the result to {@code StructureManifest}.
 	 * Note that a structure layer always contains a regular container
 	 * as root of its container hierarchy. Only on the subsequent levels
 	 * the structures themselves are hosted!
@@ -46,12 +47,4 @@ public interface StructureLayerManifest extends ItemLayerManifest {
 	 */
 	@AccessRestriction(AccessMode.READ)
 	StructureManifest getRootStructureManifest();
-
-	void addStructureManifest(StructureManifest manifest, int level);
-
-	default void addStructureManifest(StructureManifest manifest) {
-		addStructureManifest(manifest, -1);
-	}
-
-	void removeStructureManifest(StructureManifest manifest);
 }

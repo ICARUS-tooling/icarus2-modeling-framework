@@ -21,6 +21,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
@@ -308,15 +309,7 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 		 */
 		@Override
 		public int hashCode() {
-			int hash = 1;
-			if(type!=null) {
-				hash *= type.hashCode();
-			}
-			if(value!=null) {
-				hash *= value.hashCode();
-			}
-
-			return hash;
+			return Objects.hash(type, value);
 		}
 
 		/**
@@ -328,8 +321,8 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 				return true;
 			} if(obj instanceof PathEntry) {
 				PathEntry other = (PathEntry) obj;
-				return ClassUtils.equals(type, other.getType())
-						&& ClassUtils.equals(value, other.getValue());
+				return Objects.equals(type, other.getType())
+						&& Objects.equals(value, other.getValue());
 			}
 			return false;
 		}

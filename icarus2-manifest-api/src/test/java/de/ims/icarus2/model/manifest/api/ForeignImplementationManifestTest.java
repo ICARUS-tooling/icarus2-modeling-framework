@@ -19,11 +19,12 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static de.ims.icarus2.test.GenericTest.NO_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.test.TestUtils;
 
 /**
  * @author Markus Gärtner
@@ -36,7 +37,7 @@ public interface ForeignImplementationManifestTest<M extends ForeignImplementati
 	 */
 	@Test
 	default void testGetImplementationManifest() {
-		assertDerivativeGetter(settings(), mock(ImplementationManifest.class), mock(ImplementationManifest.class), NO_DEFAULT(),
+		assertDerivativeGetter(settings(), mock(ImplementationManifest.class), mock(ImplementationManifest.class), TestUtils.NO_DEFAULT(),
 				ForeignImplementationManifest::getImplementationManifest,
 				ForeignImplementationManifest::setImplementationManifest);
 	}

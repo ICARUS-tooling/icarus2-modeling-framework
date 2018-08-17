@@ -20,7 +20,7 @@
 package de.ims.icarus2.model.manifest.api;
 
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
-import static de.ims.icarus2.test.GenericTest.NO_DEFAULT;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubId;
 import static de.ims.icarus2.test.TestUtils.assertMock;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -101,10 +101,14 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 		return type;
 	}
 
+	@SuppressWarnings("unchecked")
 	public static <M extends LayerManifest> M mockLayerManifest(Class<M> clazz, String id) {
-		M manifest = mockTypedManifest(clazz);
-		when(manifest.getId()).thenReturn(id);
-		return manifest;
+		return (M) stubId((Manifest)mockTypedManifest(clazz), id);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <M extends LayerManifest> M mockLayerManifest(String id) {
+		return (M) mockLayerManifest(LayerManifest.class, id);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -156,7 +160,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	 */
 	@Test
 	default void testGetLayerType() {
-		assertDerivativeGetter(settings(), mockLayerType("type1"), mockLayerType("type2"), NO_DEFAULT(),
+		assertDerivativeGetter(settings(), mockLayerType("type1"), mockLayerType("type2"), TestUtils.NO_DEFAULT(),
 				LayerManifest::getLayerType, inject_setLayerTypeId());
 	}
 
@@ -214,16 +218,31 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 		};
 	}
 
-	public static <M extends LayerManifest, L extends LayerManifest> BiConsumer<M, L> inject_setLayerId(
-			BiConsumer<M, String> setter) {
+	public static <M extends Object, L extends LayerManifest> BiConsumer<M, L> inject_setLayerId(
+			BiConsumer<M, String> setter, Function<M, ContextManifest> contextGetter) {
 		return (m, layerManifest) -> {
 
 			String id = layerManifest.getId();
+			assertNotNull(id);
 
-			ContextManifest contextManifest = assertMock(m.getContextManifest());
+			ContextManifest contextManifest = assertMock(contextGetter.apply(m));
 			when(contextManifest.getLayerManifest(id)).thenReturn(layerManifest);
 
 			setter.accept(m, id);
+		};
+	}
+
+	public static <M extends Object, L extends LayerManifest> BiConsumer<M, L> inject_layerLookup(
+			BiConsumer<M, L> setter, Function<M, ContextManifest> contextGetter) {
+		return (m, layerManifest) -> {
+
+			String id = layerManifest.getId();
+			assertNotNull(id);
+
+			ContextManifest contextManifest = assertMock(contextGetter.apply(m));
+			when(contextManifest.getLayerManifest(id)).thenReturn(layerManifest);
+
+			setter.accept(m, layerManifest);
 		};
 	}
 
@@ -249,13 +268,18 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
 	}
 
+	@SuppressWarnings("unchecked")
+	public static <T extends TargetLayerManifest, M extends LayerManifest> Function<T, M> transform_targetLayer() {
+		return t -> t==null ? null : (M)t.getResolvedLayerManifest();
+	}
+
 	/**
 	 * Helper function to be used for consistency.
 	 * Transforms a {@link TargetLayerManifest} into a {@link String} by using
 	 * the manifest's {@link TargetLayerManifest#getLayerId() layer id}.
 	 */
 	public static Function<TargetLayerManifest, String> transform_targetLayerId() {
-		return t -> t.getLayerId();
+		return t -> t==null ? null : t.getLayerId();
 	}
 
 	/**
@@ -264,7 +288,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	 * the manifest's {@link LayerManifest#getId() id}.
 	 */
 	public static <M extends LayerManifest> Function<M, String> transform_layerManifestId(){
-		return m -> m.getId();
+		return m -> m==null ? null : m.getId();
 	}
 
 	/**
@@ -274,7 +298,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	default void testGetBaseLayerManifests() {
 		assertDerivativeAccumulativeGetter(settings(),
 				"layer1", "layer2",
-				ManifestTestUtils.transform_genericCollectionGetter(LayerManifest::getBaseLayerManifests, transform_targetLayerId()),
+				TestUtils.transform_genericCollectionGetter(LayerManifest::getBaseLayerManifests, transform_targetLayerId()),
 				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
 	}
 
@@ -285,7 +309,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	default void testGetLocalBaseLayerManifests() {
 		assertDerivativeAccumulativeLocalGetter(settings(),
 				"layer1", "layer2",
-				ManifestTestUtils.transform_genericCollectionGetter(LayerManifest::getLocalBaseLayerManifests, transform_targetLayerId()),
+				TestUtils.transform_genericCollectionGetter(LayerManifest::getLocalBaseLayerManifests, transform_targetLayerId()),
 				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
 	}
 
@@ -307,7 +331,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 		assertLockableAccumulativeAdd(settings(),
 				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId),
 				ManifestTestUtils.getIllegalIdValues(), INVALID_ID_CHECK,
-				true, INVALID_INPUT_CHECK, ManifestTestUtils.getLegalIdValues());
+				true, DUPLICATE_ID_CHECK, ManifestTestUtils.getLegalIdValues());
 	}
 
 	/**
@@ -318,7 +342,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 		assertLockableAccumulativeRemove(
 				settings(),LayerManifest::addBaseLayerId,
 				LayerManifest::removeBaseLayerId,
-				ManifestTestUtils.transform_genericCollectionGetter(LayerManifest::getBaseLayerManifests, transform_targetLayerId()),
+				TestUtils.transform_genericCollectionGetter(LayerManifest::getBaseLayerManifests, transform_targetLayerId()),
 				true, UNKNOWN_ID_CHECK,
 				"layer1", "layer2", "layer3");
 	}

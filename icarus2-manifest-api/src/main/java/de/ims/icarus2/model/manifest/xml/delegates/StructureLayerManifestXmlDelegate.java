@@ -111,8 +111,8 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, ManifestXmlTags.FOUNDATION_LAYER, manifest.getFoundationLayerManifest());
 		}
 
-		if(manifest.hasLocalContainers()) {
-			for(ContainerManifest containerManifest : manifest.getContainerManifests()) {
+		if(manifest.hasLocalContainerHierarchy()) {
+			for(ContainerManifest containerManifest : manifest.getContainerHierarchy()) {
 				if(containerManifest.getManifestType()==ManifestType.STRUCTURE_MANIFEST) {
 					getStructureManifestXmlDelegate().reset((StructureManifest)containerManifest).writeXml(serializer);
 				} else {
@@ -190,11 +190,13 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 		switch (localName) {
 
 		case ManifestXmlTags.CONTAINER: {
-			getInstance().addContainerManifest(((ContainerManifestXmlDelegate) handler).getInstance(), -1);
+			ItemLayerManifestXmlDelegate.defaultAddContainerManifest(this,
+					((ContainerManifestXmlDelegate)handler).getInstance());
 		} break;
 
 		case ManifestXmlTags.STRUCTURE: {
-			getInstance().addStructureManifest(((StructureManifestXmlDelegate) handler).getInstance(), -1);
+			ItemLayerManifestXmlDelegate.defaultAddContainerManifest(this, (
+					(StructureManifestXmlDelegate)handler).getInstance());
 		} break;
 
 		default:

@@ -39,24 +39,14 @@ import de.ims.icarus2.model.manifest.api.MemberManifest.Property;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.annotations.OverrideTest;
-import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.util.Options;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface MemberManifestTest<M extends MemberManifest> extends ModifiableIdentityTest,
+public interface MemberManifestTest<M extends MemberManifest> extends ModifiableIdentityTest<M>,
 	CategorizableTest<M>, DocumentableTest<M>, ManifestTest<M> {
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#createEmpty()
-	 */
-	@Override
-	@Provider
-	default ModifiableIdentity createEmpty() {
-		return createUnlocked();
-	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#testGetId()

@@ -19,7 +19,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
 
@@ -27,24 +28,24 @@ import org.junit.jupiter.api.Test;
  * @author Markus Gärtner
  *
  */
-public interface CategoryTest {
+public interface CategoryTest<C extends Category> extends IdentityTest<C> {
 
-	Category createCategory();
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.Category#getId()}.
-	 */
-	@Test
-	default void testGetId() {
-		assertNotNull(createCategory().getId());
-	}
+	C createWithNamespace(String namespace);
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.Category#getNamespace()}.
 	 */
 	@Test
 	default void testGetNamespace() {
-		assertNotNull(createCategory().getNamespace());
+		C empty = createEmpty();
+		if(empty!=null) {
+			assertNull(empty.getNamespace());
+		}
+
+		C withNamespace = createWithNamespace("namespace");
+		if(withNamespace!=null) {
+			assertEquals("namespace", withNamespace.getNamespace());
+		}
 	}
 
 }

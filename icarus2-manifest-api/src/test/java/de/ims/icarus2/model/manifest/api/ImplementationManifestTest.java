@@ -19,7 +19,6 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static de.ims.icarus2.test.GenericTest.NO_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.settings;
 
 import org.junit.jupiter.api.Test;
@@ -64,7 +63,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	 */
 	@Test
 	default void testGetSource() {
-		assertDerivativeGetter(settings(), "source", "source2", NO_DEFAULT(),
+		assertDerivativeGetter(settings(), "source", "source2", TestUtils.NO_DEFAULT(),
 				ImplementationManifest::getSource, ImplementationManifest::setSource);
 	}
 
@@ -73,7 +72,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	 */
 	@Test
 	default void testGetClassname() {
-		assertDerivativeGetter(settings(), "classname", "classname2", NO_DEFAULT(),
+		assertDerivativeGetter(settings(), "classname", "classname2", TestUtils.NO_DEFAULT(),
 				ImplementationManifest::getClassname, ImplementationManifest::setClassname);
 	}
 

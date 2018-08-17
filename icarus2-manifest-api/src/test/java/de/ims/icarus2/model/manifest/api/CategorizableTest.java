@@ -19,7 +19,6 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static de.ims.icarus2.test.GenericTest.NO_ILLEGAL;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -29,7 +28,7 @@ import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 
-import de.ims.icarus2.model.manifest.ManifestTestUtils;
+import de.ims.icarus2.test.TestUtils;
 
 /**
  * @author Markus Gärtner
@@ -49,7 +48,7 @@ public interface CategorizableTest<C extends Categorizable> extends LockableTest
 	@Test
 	default void testAddCategory() {
 		assertLockableAccumulativeAdd(settings(),
-				Categorizable::addCategory, NO_ILLEGAL(), NO_CHECK, true, NO_CHECK,
+				Categorizable::addCategory, TestUtils.NO_ILLEGAL(), TestUtils.NO_CHECK, true, TestUtils.NO_CHECK,
 				mockCategory("cat1"), mockCategory("cat2"), mockCategory("cat3"));
 	}
 
@@ -60,7 +59,7 @@ public interface CategorizableTest<C extends Categorizable> extends LockableTest
 	default void testRemoveCategory() {
 		assertLockableAccumulativeRemove(settings(),
 				Categorizable::addCategory, Categorizable::removeCategory,
-				Categorizable::getCategories, true, NO_CHECK,
+				Categorizable::getCategories, true, TestUtils.NO_CHECK,
 				mockCategory("cat1"), mockCategory("cat2"), mockCategory("cat3"));
 	}
 
@@ -69,7 +68,7 @@ public interface CategorizableTest<C extends Categorizable> extends LockableTest
 	 */
 	@Test
 	default void testForEachCategory() {
-		ManifestTestUtils.assertForEach(createUnlocked(),
+		TestUtils.assertForEach(createUnlocked(),
 				mockCategory("cat1"), mockCategory("cat2"),
 				(Function<C, Consumer<Consumer<? super Category>>>)m -> m::forEachCategory, Categorizable::addCategory);
 	}
@@ -79,7 +78,7 @@ public interface CategorizableTest<C extends Categorizable> extends LockableTest
 	 */
 	@Test
 	default void testGetCategories() {
-		ManifestTestUtils.assertAccumulativeGetter(createUnlocked(),
+		TestUtils.assertAccumulativeGetter(createUnlocked(),
 				mockCategory("cat1"), mockCategory("cat2"),
 				Categorizable::getCategories, Categorizable::addCategory);
 	}
@@ -89,7 +88,7 @@ public interface CategorizableTest<C extends Categorizable> extends LockableTest
 	 */
 	@Test
 	default void testHasCategory() {
-		ManifestTestUtils.assertAccumulativeFlagGetter(createUnlocked(),
+		TestUtils.assertAccumulativeFlagGetter(createUnlocked(),
 				Categorizable::hasCategory,
 				Categorizable::addCategory, Categorizable::removeCategory,
 				mockCategory("cat1"), mockCategory("cat2"));

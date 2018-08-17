@@ -19,30 +19,30 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.getIllegalIdValues;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.getLegalIdValues;
+import static de.ims.icarus2.test.TestUtils.NO_CHECK;
+import static de.ims.icarus2.test.TestUtils.settings;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
+import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface MappingManifestTest {
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.MappingManifest#getManifestType()}.
-	 */
-	@Test
-	default void testGetManifestType() {
-		fail("Not yet implemented");
-	}
+public interface MappingManifestTest<M extends MappingManifest> extends TypedManifestTest<M>, LockableTest<M> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.MappingManifest#getDriverManifest()}.
 	 */
 	@Test
 	default void testGetDriverManifest() {
-		fail("Not yet implemented");
+		assertNotNull(createUnlocked().getDriverManifest());
 	}
 
 	/**
@@ -90,7 +90,7 @@ public interface MappingManifestTest {
 	 */
 	@Test
 	default void testGetInverse() {
-		fail("Not yet implemented");
+		assertg
 	}
 
 	/**
@@ -98,7 +98,10 @@ public interface MappingManifestTest {
 	 */
 	@Test
 	default void testSetSourceLayerId() {
-		fail("Not yet implemented");
+		assertLockableSetterBatch(settings(),
+				MappingManifest::setSourceLayerId,
+				getLegalIdValues(),
+				true, INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**
@@ -106,7 +109,10 @@ public interface MappingManifestTest {
 	 */
 	@Test
 	default void testSetTargetLayerId() {
-		fail("Not yet implemented");
+		assertLockableSetterBatch(settings(),
+				MappingManifest::setTargetLayerId,
+				getLegalIdValues(),
+				true, INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**
@@ -114,7 +120,9 @@ public interface MappingManifestTest {
 	 */
 	@Test
 	default void testSetRelation() {
-		fail("Not yet implemented");
+		assertLockableSetterBatch(settings(),
+				MappingManifest::setRelation,
+				Relation.values(), true, NO_CHECK);
 	}
 
 	/**
@@ -122,7 +130,9 @@ public interface MappingManifestTest {
 	 */
 	@Test
 	default void testSetCoverage() {
-		fail("Not yet implemented");
+		assertLockableSetterBatch(settings(),
+				MappingManifest::setCoverage,
+				Coverage.values(), true, NO_CHECK);
 	}
 
 	/**
@@ -130,7 +140,10 @@ public interface MappingManifestTest {
 	 */
 	@Test
 	default void testSetInverseId() {
-		fail("Not yet implemented");
+		assertLockableSetterBatch(settings(),
+				MappingManifest::setInverseId,
+				getLegalIdValues(),
+				true, INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**
@@ -138,7 +151,10 @@ public interface MappingManifestTest {
 	 */
 	@Test
 	default void testSetId() {
-		fail("Not yet implemented");
+		assertLockableSetterBatch(settings(),
+				MappingManifest::setId,
+				getLegalIdValues(),
+				true, INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 }

@@ -22,10 +22,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.standard.Links.Link;
 import de.ims.icarus2.util.collections.CollectionUtils;
@@ -40,7 +42,7 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	private final ContextManifest contextManifest;
 
 	private final List<LayerManifest> layerManifests = new ArrayList<>();
-	private LayerLink primaryLayer;
+	private Link<ItemLayerManifest> primaryLayer;
 	private Boolean independent;
 
 	public LayerGroupManifestImpl(ContextManifest contextManifest) {
@@ -49,17 +51,17 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 		this.contextManifest = contextManifest;
 	}
 
+	public LayerGroupManifestImpl(ContextManifest contextManifest, String name) {
+		this(contextManifest);
+
+		requireNonNull(name);
+
+		setName(name);
+	}
+
 	@Override
 	public ManifestType getManifestType() {
 		return ManifestType.LAYER_GROUP_MANIFEST;
-	}
-
-	public LayerGroupManifestImpl(ContextManifest contextManifest, String name) {
-		requireNonNull(contextManifest);
-		requireNonNull(name);
-
-		this.contextManifest = contextManifest;
-		setName(name);
 	}
 
 	/**
@@ -97,7 +99,7 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	 */
 	@Override
 	public ItemLayerManifest getPrimaryLayerManifest() {
-		return primaryLayer.get();
+		return primaryLayer==null ? null : primaryLayer.get();
 	}
 
 	/**
@@ -133,7 +135,8 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 		requireNonNull(layerManifest);
 
 		if(layerManifests.contains(layerManifest))
-			throw new IllegalArgumentException("Layer manifest already present in group: "+layerManifest.getId()); //$NON-NLS-1$
+			throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
+					"Layer manifest already present in group: "+layerManifest.getId()); //$NON-NLS-1$
 
 		layerManifests.add(layerManifest);
 	}
@@ -149,7 +152,8 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 		requireNonNull(layerManifest);
 
 		if(!layerManifests.remove(layerManifest))
-			throw new IllegalArgumentException("Layer manifest not present in group: "+layerManifest.getId()); //$NON-NLS-1$
+			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
+					"Layer manifest not present in group: "+layerManifest.getId()); //$NON-NLS-1$
 	}
 
 	/**

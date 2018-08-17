@@ -19,30 +19,68 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.getIllegalIdValues;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.getLegalIdValues;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.transform_id;
+import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
+import static de.ims.icarus2.test.TestUtils.NO_ILLEGAL;
+import static de.ims.icarus2.test.TestUtils.settings;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.annotations.OverrideTest;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface LayerGroupManifestTest {
+public interface LayerGroupManifestTest<M extends LayerGroupManifest>
+		extends ModifiableIdentityTest<M>, ManifestFragmentTest<M>, EmbeddedTest<M> {
+
+	public static LayerManifest mockLayerManifest(String id) {
+		return LayerManifestTest.mockLayerManifest(id);
+	}
+
+	public static <M extends LayerGroupManifest, L extends LayerManifest> BiConsumer<M, L> inject_addLayer(
+			BiConsumer<M, L> setter) {
+		return (m, layerManifest) -> {
+
+			m.addLayerManifest(layerManifest);
+
+			setter.accept(m, layerManifest);
+		};
+	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.LayerGroupManifest#setName(java.lang.String)}.
+	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#testGetId()
 	 */
+	@Override
+	@OverrideTest
 	@Test
-	default void testSetName() {
-		fail("Not yet implemented");
+	default void testGetId() {
+		ModifiableIdentityTest.super.testGetId();
+		ManifestFragmentTest.super.testGetId();
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.LayerGroupManifest#getContextManifest()}.
+	 * @throws Exception
 	 */
 	@Test
-	default void testGetContextManifest() {
-		fail("Not yet implemented");
+	default void testGetContextManifest() throws Exception {
+		// Layer group can never exist without an enclosing context manifest!
+		assertNotNull(createEmpty().getContextManifest());
+
+		ContextManifest host = mockTypedManifest(ManifestType.CONTEXT_MANIFEST);
+		assertEquals(host, createEmbedded(settings(), host).getContextManifest());
 	}
 
 	/**
@@ -50,7 +88,12 @@ public interface LayerGroupManifestTest {
 	 */
 	@Test
 	default void testLayerCount() {
-		fail("Not yet implemented");
+		TestUtils.assertAccumulativeCount(createUnlocked(),
+				LayerGroupManifest::addLayerManifest,
+				LayerGroupManifest::removeLayerManifest,
+				LayerGroupManifest::layerCount,
+				mockLayerManifest("layer1"),
+				mockLayerManifest("layer2"));
 	}
 
 	/**
@@ -58,7 +101,11 @@ public interface LayerGroupManifestTest {
 	 */
 	@Test
 	default void testForEachLayerManifest() {
-		fail("Not yet implemented");
+		TestUtils.assertForEach(createUnlocked(),
+				mockLayerManifest("layer1"),
+				mockLayerManifest("layer2"),
+				(Function<M, Consumer<Consumer<? super LayerManifest>>>)m -> m::forEachLayerManifest,
+				LayerGroupManifest::addLayerManifest);
 	}
 
 	/**
@@ -66,7 +113,11 @@ public interface LayerGroupManifestTest {
 	 */
 	@Test
 	default void testGetLayerManifests() {
-		fail("Not yet implemented");
+		TestUtils.assertAccumulativeGetter(createUnlocked(),
+				mockLayerManifest("layer1"),
+				mockLayerManifest("layer2"),
+				LayerGroupManifest::getLayerManifests,
+				LayerGroupManifest::addLayerManifest);
 	}
 
 	/**
@@ -74,7 +125,13 @@ public interface LayerGroupManifestTest {
 	 */
 	@Test
 	default void testGetPrimaryLayerManifest() {
-		fail("Not yet implemented");
+		TestUtils.assertGetter(createUnlocked(),
+				LayerManifestTest.mockItemLayerManifest("layer1"),
+				LayerManifestTest.mockItemLayerManifest("layer2"),
+				NO_DEFAULT(),
+				LayerGroupManifest::getPrimaryLayerManifest,
+				inject_addLayer(TestUtils.inject_genericSetter(
+						LayerGroupManifest::setPrimaryLayerId, transform_id())));
 	}
 
 	/**
@@ -82,7 +139,7 @@ public interface LayerGroupManifestTest {
 	 */
 	@Test
 	default void testIsIndependent() {
-		fail("Not yet implemented");
+		assertLockableSetter(settings(), LayerGroupManifest::setIndependent);
 	}
 
 	/**
@@ -90,15 +147,13 @@ public interface LayerGroupManifestTest {
 	 */
 	@Test
 	default void testGetLayerManifest() {
-		fail("Not yet implemented");
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.LayerGroupManifest#equals(java.lang.Object)}.
-	 */
-	@Test
-	default void testEquals() {
-		fail("Not yet implemented");
+		TestUtils.assertAccumulativeLookup(createUnlocked(),
+				mockLayerManifest("layer1"),
+				mockLayerManifest("layer2"),
+				LayerGroupManifest::getLayerManifest,
+				true, TestUtils.NO_CHECK,
+				LayerGroupManifest::addLayerManifest,
+				transform_id());
 	}
 
 	/**
@@ -106,7 +161,14 @@ public interface LayerGroupManifestTest {
 	 */
 	@Test
 	default void testAddLayerManifest() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeAdd(settings(),
+				LayerManifestTest.inject_layerLookup(
+						LayerGroupManifest::addLayerManifest,
+						LayerGroupManifest::getContextManifest),
+				NO_ILLEGAL(), TestUtils.NO_CHECK, true,
+				DUPLICATE_ID_CHECK,
+				LayerManifestTest.mockItemLayerManifest("layer1"),
+				LayerManifestTest.mockItemLayerManifest("layer2"));
 	}
 
 	/**
@@ -114,7 +176,15 @@ public interface LayerGroupManifestTest {
 	 */
 	@Test
 	default void testRemoveLayerManifest() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeRemove(settings(),
+				LayerManifestTest.inject_layerLookup(
+						LayerGroupManifest::addLayerManifest,
+						LayerGroupManifest::getContextManifest),
+				LayerGroupManifest::removeLayerManifest,
+				LayerGroupManifest::getLayerManifests,
+				true, UNKNOWN_ID_CHECK,
+				LayerManifestTest.mockItemLayerManifest("layer1"),
+				LayerManifestTest.mockItemLayerManifest("layer2"));
 	}
 
 	/**
@@ -122,7 +192,10 @@ public interface LayerGroupManifestTest {
 	 */
 	@Test
 	default void testSetPrimaryLayerId() {
-		fail("Not yet implemented");
+		assertLockableSetterBatch(settings(),
+				LayerGroupManifest::setPrimaryLayerId,
+				getLegalIdValues(), true,
+				INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**
@@ -130,7 +203,7 @@ public interface LayerGroupManifestTest {
 	 */
 	@Test
 	default void testSetIndependent() {
-		fail("Not yet implemented");
+		assertLockableSetter(settings(), LayerGroupManifest::setIndependent);
 	}
 
 }

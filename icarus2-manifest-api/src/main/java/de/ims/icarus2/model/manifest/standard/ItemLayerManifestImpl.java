@@ -18,18 +18,13 @@ package de.ims.icarus2.model.manifest.standard;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
-import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
-import de.ims.icarus2.model.manifest.util.ManifestUtils;
 
 /**
  * @author Markus Gärtner
@@ -37,7 +32,7 @@ import de.ims.icarus2.model.manifest.util.ManifestUtils;
  */
 public class ItemLayerManifestImpl extends AbstractLayerManifest<ItemLayerManifest> implements ItemLayerManifest {
 
-	private final List<ContainerManifest> containerManifests = new ArrayList<>();
+	private Hierarchy<ContainerManifest> containerHierarchy;
 
 	private TargetLayerManifest boundaryLayerManifest;
 	private TargetLayerManifest foundationLayerManifest;
@@ -67,7 +62,7 @@ public class ItemLayerManifestImpl extends AbstractLayerManifest<ItemLayerManife
 	 */
 	@Override
 	public boolean isEmpty() {
-		return super.isEmpty() && boundaryLayerManifest==null && containerManifests.isEmpty();
+		return super.isEmpty() && boundaryLayerManifest==null && containerHierarchy==null;
 	}
 
 	/**
@@ -79,15 +74,39 @@ public class ItemLayerManifestImpl extends AbstractLayerManifest<ItemLayerManife
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.ItemLayerManifest#getContainerDepth()
+	 * @see de.ims.icarus2.model.manifest.api.ItemLayerManifest#getContainerHierarchy()
 	 */
 	@Override
-	public int getContainerDepth() {
-		int depth = containerManifests.size();
-		if(depth==0 && hasTemplate()) {
-			depth = getTemplate().getContainerDepth();
+	public Hierarchy<ContainerManifest> getContainerHierarchy() {
+		Hierarchy<ContainerManifest> result = containerHierarchy;
+		if(result==null && hasTemplate()) {
+			result = getTemplate().getContainerHierarchy();
 		}
-		return depth;
+		return result;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.ItemLayerManifest#setContainerHierarchy(de.ims.icarus2.model.manifest.api.Hierarchy)
+	 */
+	@Override
+	public void setContainerHierarchy(Hierarchy<ContainerManifest> hierarchy) {
+		checkNotLocked();
+
+		setContainerHierarchy0(hierarchy);
+	}
+
+	protected void setContainerHierarchy0(Hierarchy<ContainerManifest> hierarchy) {
+		requireNonNull(hierarchy);
+
+		this.containerHierarchy = hierarchy;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.ItemLayerManifest#hasLocalContainerHierarchy()
+	 */
+	@Override
+	public boolean hasLocalContainerHierarchy() {
+		return containerHierarchy!=null;
 	}
 
 	/**
@@ -95,82 +114,8 @@ public class ItemLayerManifestImpl extends AbstractLayerManifest<ItemLayerManife
 	 */
 	@Override
 	public ContainerManifest getRootContainerManifest() {
-		return getContainerManifest(0);
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.ItemLayerManifest#hasLocalContainers()
-	 */
-	@Override
-	public boolean hasLocalContainers() {
-		return !containerManifests.isEmpty();
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.ItemLayerManifest#getContainerManifest(int)
-	 */
-	@Override
-	public ContainerManifest getContainerManifest(int level) {
-		ContainerManifest result = null;
-
-		if(!containerManifests.isEmpty()) {
-			result = containerManifests.get(level);
-		} else if(hasTemplate()) {
-			result = getTemplate().getContainerManifest(level);
-		}
-
-		if(result==null)
-			throw new IndexOutOfBoundsException("No container manifest available for level: "+level); //$NON-NLS-1$
-
-		return result;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.ItemLayerManifest#indexOfContainerManifest(de.ims.icarus2.model.manifest.api.ContainerManifest)
-	 */
-	@Override
-	public int indexOfContainerManifest(ContainerManifest containerManifest) {
-		requireNonNull(containerManifest);
-
-		int index = containerManifests.indexOf(containerManifest);
-
-		if(index==-1 && containerManifests.isEmpty() && hasTemplate()) {
-			index = getTemplate().indexOfContainerManifest(containerManifest);
-		}
-
-		return index;
-	}
-
-	@Override
-	public void addContainerManifest(ContainerManifest containerManifest, int level) {
-		checkNotLocked();
-
-		addContainerManifest0(containerManifest, level);
-	}
-
-	protected void addContainerManifest0(ContainerManifest containerManifest, int level) {
-		requireNonNull(containerManifest);
-
-		if(level==-1) {
-			level = containerManifests.size();
-		}
-
-		containerManifests.add(level, containerManifest);
-	}
-
-	@Override
-	public void removeContainerManifest(ContainerManifest containerManifest) {
-		checkNotLocked();
-
-		removeContainerManifest0(containerManifest);
-	}
-
-	protected void removeContainerManifest0(ContainerManifest containerManifest) {
-		requireNonNull(containerManifest);
-
-		if(!containerManifests.remove(containerManifest))
-			throw new ManifestException(ManifestErrorCode.MANIFEST_ERROR,
-					"Unknown container manifest: "+ManifestUtils.getName(containerManifest));
+		Hierarchy<ContainerManifest> hierarchy = getContainerHierarchy();
+		return hierarchy==null ? null : hierarchy.getRoot();
 	}
 
 	/**
@@ -262,8 +207,6 @@ public class ItemLayerManifestImpl extends AbstractLayerManifest<ItemLayerManife
 	public void lock() {
 		super.lock();
 
-		for(ContainerManifest containerManifest : containerManifests) {
-			containerManifest.lock();
-		}
+		lockNested(containerHierarchy);
 	}
 }

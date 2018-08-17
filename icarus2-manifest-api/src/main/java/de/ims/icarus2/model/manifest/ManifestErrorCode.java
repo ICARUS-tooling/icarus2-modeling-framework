@@ -20,8 +20,14 @@ import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.ErrorCodeScope;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
+import de.ims.icarus2.model.manifest.api.CorpusManifest;
+import de.ims.icarus2.model.manifest.api.ImplementationManifest;
+import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
+import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
+import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.types.ValueType;
 
 /**
