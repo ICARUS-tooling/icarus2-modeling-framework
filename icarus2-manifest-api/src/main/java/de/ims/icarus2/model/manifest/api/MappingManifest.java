@@ -40,7 +40,10 @@ import de.ims.icarus2.util.strings.StringResource;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface MappingManifest extends Lockable, TypedManifest {
+public interface MappingManifest extends Lockable, TypedManifest, Embedded {
+
+	@Override
+	DriverManifest getHost();
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.TypedManifest#getManifestType()
@@ -55,7 +58,9 @@ public interface MappingManifest extends Lockable, TypedManifest {
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	DriverManifest getDriverManifest();
+	default DriverManifest getDriverManifest() {
+		return getHost();
+	}
 
 	@AccessRestriction(AccessMode.READ)
 	String getId();

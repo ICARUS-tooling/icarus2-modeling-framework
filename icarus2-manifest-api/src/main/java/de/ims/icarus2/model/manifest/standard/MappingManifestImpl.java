@@ -95,10 +95,10 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.MappingManifest#getDriverManifest()
+	 * @see de.ims.icarus2.model.manifest.api.MappingManifest#getHost()
 	 */
 	@Override
-	public DriverManifest getDriverManifest() {
+	public DriverManifest getHost() {
 		return driverManifest;
 	}
 
@@ -241,6 +241,9 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 
 	protected void setId0(String id) {
 		requireNonNull(id);
+
+		ManifestUtils.checkId(id);
+
 		this.id = id;
 	}
 

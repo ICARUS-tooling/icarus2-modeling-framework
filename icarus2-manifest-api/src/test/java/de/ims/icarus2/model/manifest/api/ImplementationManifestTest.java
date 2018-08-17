@@ -21,6 +21,8 @@ package de.ims.icarus2.model.manifest.api;
 
 import static de.ims.icarus2.test.TestUtils.settings;
 
+import java.util.Set;
+
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.api.ImplementationManifest.SourceType;
@@ -32,6 +34,22 @@ import de.ims.icarus2.test.annotations.OverrideTest;
  *
  */
 public interface ImplementationManifestTest<M extends ImplementationManifest> extends EmbeddedMemberManifestTest<M> {
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.IMPLEMENTATION_MANIFEST;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
+	 */
+	@Override
+	default Set<ManifestType> getAllowedHostTypes() {
+		return ManifestType.getMemberTypes();
+	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.MemberManifestTest#testMandatoryConstructors()

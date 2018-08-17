@@ -29,6 +29,8 @@ import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.util.Collections;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -57,6 +59,22 @@ public interface LayerGroupManifestTest<M extends LayerGroupManifest>
 
 			setter.accept(m, layerManifest);
 		};
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.LAYER_GROUP_MANIFEST;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
+	 */
+	@Override
+	default Set<ManifestType> getAllowedHostTypes() {
+		return Collections.singleton(ManifestType.CONTEXT_MANIFEST);
 	}
 
 	/**

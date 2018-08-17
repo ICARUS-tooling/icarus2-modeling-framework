@@ -19,15 +19,10 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.collections.CollectionUtils.set;
-
-import java.util.Set;
-
 import de.ims.icarus2.model.manifest.api.ContainerManifestTest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.test.TestSettings;
 
@@ -52,22 +47,6 @@ class ContainerManifestImplTest implements ContainerManifestTest<ContainerManife
 	public ContainerManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
 		return new ContainerManifestImpl(manifestLocation, registry, (ItemLayerManifest)host);
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
-	 */
-	@Override
-	public ManifestType getExpectedType() {
-		return ManifestType.CONTAINER_MANIFEST;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
-	 */
-	@Override
-	public Set<ManifestType> getAllowedHostTypes() {
-		return set(ManifestType.ITEM_LAYER_MANIFEST);
 	}
 
 }

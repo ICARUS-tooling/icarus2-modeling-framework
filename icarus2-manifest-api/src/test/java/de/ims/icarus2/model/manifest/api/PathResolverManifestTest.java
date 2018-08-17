@@ -23,6 +23,9 @@ import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import java.util.Collections;
+import java.util.Set;
+
 import org.junit.jupiter.api.Test;
 
 /**
@@ -41,4 +44,20 @@ public interface PathResolverManifestTest<M extends PathResolverManifest>
 		assertNull(createTemplate(settings()).getLocationManifest());
 	}
 
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.PATH_RESOLVER_MANIFEST;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
+	 */
+	@Override
+	default Set<ManifestType> getAllowedHostTypes() {
+		return Collections.singleton(ManifestType.LOCATION_MANIFEST);
+	}
 }

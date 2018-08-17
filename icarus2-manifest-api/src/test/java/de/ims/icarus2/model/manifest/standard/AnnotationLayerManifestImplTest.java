@@ -23,7 +23,6 @@ import de.ims.icarus2.model.manifest.api.AnnotationLayerManifestTest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.test.TestSettings;
 
@@ -48,14 +47,6 @@ class AnnotationLayerManifestImplTest implements AnnotationLayerManifestTest<Ann
 	@Override
 	public Class<? extends AnnotationLayerManifestImpl> getTestTargetClass() {
 		return AnnotationLayerManifestImpl.class;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
-	 */
-	@Override
-	public ManifestType getExpectedType() {
-		return ManifestType.ANNOTATION_LAYER_MANIFEST;
 	}
 
 }

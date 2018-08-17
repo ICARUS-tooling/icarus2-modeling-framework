@@ -22,6 +22,9 @@ package de.ims.icarus2.model.manifest.api;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import java.util.Collections;
+import java.util.Set;
+
 import org.junit.jupiter.api.Test;
 
 /**
@@ -40,4 +43,20 @@ public interface RasterizerManifestTest<M extends RasterizerManifest>
 		assertNull(createTemplate(settings()).getLayerManifest());
 	}
 
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.RASTERIZER_MANIFEST;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
+	 */
+	@Override
+	default Set<ManifestType> getAllowedHostTypes() {
+		return Collections.singleton(ManifestType.FRAGMENT_LAYER_MANIFEST);
+	}
 }

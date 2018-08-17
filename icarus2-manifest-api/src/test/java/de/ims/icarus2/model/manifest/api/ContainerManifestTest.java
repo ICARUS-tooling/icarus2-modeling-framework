@@ -20,8 +20,11 @@
 package de.ims.icarus2.model.manifest.api;
 
 import static de.ims.icarus2.test.TestUtils.settings;
+import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -32,6 +35,22 @@ import de.ims.icarus2.test.TestUtils;
  *
  */
 public interface ContainerManifestTest<M extends ContainerManifest> extends EmbeddedMemberManifestTest<M> {
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.CONTAINER_MANIFEST;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
+	 */
+	@Override
+	default Set<ManifestType> getAllowedHostTypes() {
+		return set(ManifestType.ITEM_LAYER_MANIFEST);
+	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifest#getLayerManifest()}.

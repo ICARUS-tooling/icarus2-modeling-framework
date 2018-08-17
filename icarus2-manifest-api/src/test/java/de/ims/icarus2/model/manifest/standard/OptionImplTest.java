@@ -19,7 +19,6 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.OptionTest;
 import de.ims.icarus2.model.manifest.standard.OptionsManifestImpl.OptionImpl;
 import de.ims.icarus2.model.manifest.types.ValueType;
@@ -37,14 +36,6 @@ class OptionImplTest implements OptionTest<OptionImpl> {
 	@Override
 	public Class<? extends OptionImpl> getTestTargetClass() {
 		return OptionImpl.class;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
-	 */
-	@Override
-	public ManifestType getExpectedType() {
-		return ManifestType.OPTION;
 	}
 
 	/**

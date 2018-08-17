@@ -25,6 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import java.util.Collections;
+import java.util.Set;
+
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
@@ -37,6 +40,22 @@ import de.ims.icarus2.util.data.ContentType;
  *
  */
 public interface AnnotationManifestTest<M extends AnnotationManifest> extends EmbeddedMemberManifestTest<M> {
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.ANNOTATION_MANIFEST;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
+	 */
+	@Override
+	default Set<ManifestType> getAllowedHostTypes() {
+		return Collections.singleton(ManifestType.ANNOTATION_LAYER_MANIFEST);
+	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationManifest#getLayerManifest()}.

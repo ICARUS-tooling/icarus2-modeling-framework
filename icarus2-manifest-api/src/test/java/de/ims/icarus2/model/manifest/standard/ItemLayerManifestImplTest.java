@@ -23,7 +23,6 @@ import de.ims.icarus2.model.manifest.api.ItemLayerManifestTest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.test.TestSettings;
 
@@ -48,14 +47,6 @@ class ItemLayerManifestImplTest implements ItemLayerManifestTest<ItemLayerManife
 	@Override
 	public Class<? extends ItemLayerManifestImpl> getTestTargetClass() {
 		return ItemLayerManifestImpl.class;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
-	 */
-	@Override
-	public ManifestType getExpectedType() {
-		return ManifestType.ITEM_LAYER_MANIFEST;
 	}
 
 }

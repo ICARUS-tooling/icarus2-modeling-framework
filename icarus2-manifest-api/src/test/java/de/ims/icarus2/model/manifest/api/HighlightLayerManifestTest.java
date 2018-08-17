@@ -37,6 +37,14 @@ import de.ims.icarus2.test.TestUtils;
 public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> extends LayerManifestTest<M> {
 
 	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.HIGHLIGHT_LAYER_MANIFEST;
+	}
+
+	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.HighlightLayerManifest#getPrimaryLayerManifest()}.
 	 */
 	@Test

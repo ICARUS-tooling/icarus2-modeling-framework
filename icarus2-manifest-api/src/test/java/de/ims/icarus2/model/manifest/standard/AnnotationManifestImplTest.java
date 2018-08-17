@@ -19,14 +19,10 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import java.util.Collections;
-import java.util.Set;
-
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifestTest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.test.TestSettings;
 
@@ -51,22 +47,6 @@ class AnnotationManifestImplTest implements AnnotationManifestTest<AnnotationMan
 	public AnnotationManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
 		return new AnnotationManifestImpl(manifestLocation, registry, (AnnotationLayerManifest) host);
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
-	 */
-	@Override
-	public ManifestType getExpectedType() {
-		return ManifestType.ANNOTATION_MANIFEST;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
-	 */
-	@Override
-	public Set<ManifestType> getAllowedHostTypes() {
-		return Collections.singleton(ManifestType.ANNOTATION_LAYER_MANIFEST);
 	}
 
 }

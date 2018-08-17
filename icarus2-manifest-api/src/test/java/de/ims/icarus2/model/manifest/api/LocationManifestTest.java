@@ -29,7 +29,7 @@ import de.ims.icarus2.model.manifest.api.LocationManifest.PathEntry;
  * @author Markus Gärtner
  *
  */
-public interface LocationManifestTest {
+public interface LocationManifestTest<M extends LocationManifest> {
 
 	public static PathEntry mockEntry() {
 

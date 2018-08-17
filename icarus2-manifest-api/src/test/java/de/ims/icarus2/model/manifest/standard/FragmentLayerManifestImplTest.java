@@ -23,7 +23,6 @@ import de.ims.icarus2.model.manifest.api.FragmentLayerManifestTest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.test.TestSettings;
 
@@ -48,14 +47,6 @@ class FragmentLayerManifestImplTest implements FragmentLayerManifestTest<Fragmen
 	@Override
 	public Class<? extends FragmentLayerManifestImpl> getTestTargetClass() {
 		return FragmentLayerManifestImpl.class;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
-	 */
-	@Override
-	public ManifestType getExpectedType() {
-		return ManifestType.FRAGMENT_LAYER_MANIFEST;
 	}
 
 }

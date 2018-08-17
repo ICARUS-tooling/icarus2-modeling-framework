@@ -15,23 +15,38 @@
  * limitations under the License.
  */
 /**
- * 
+ *
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
-import org.junit.jupiter.api.Test;
+import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
+import de.ims.icarus2.model.manifest.api.ManifestLocation;
+import de.ims.icarus2.model.manifest.api.ManifestRegistry;
+import de.ims.icarus2.model.manifest.api.StructureLayerManifestTest;
+import de.ims.icarus2.model.manifest.api.TypedManifest;
+import de.ims.icarus2.test.TestSettings;
 
 /**
  * @author Markus Gärtner
  *
  */
-class StructureLayerManifestImplTest {
+class StructureLayerManifestImplTest implements StructureLayerManifestTest<StructureLayerManifestImpl> {
 
-	@Test
-	void test() {
-		fail("Not yet implemented");
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedMemberManifestTest#createHosted(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.TypedManifest)
+	 */
+	@Override
+	public StructureLayerManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
+			ManifestRegistry registry, TypedManifest host) {
+		return new StructureLayerManifestImpl(manifestLocation, registry, (LayerGroupManifest) host);
+	}
+
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
+	 */
+	@Override
+	public Class<? extends StructureLayerManifestImpl> getTestTargetClass() {
+		return StructureLayerManifestImpl.class;
 	}
 
 }

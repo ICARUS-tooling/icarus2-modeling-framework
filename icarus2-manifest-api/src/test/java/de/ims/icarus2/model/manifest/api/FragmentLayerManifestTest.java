@@ -38,6 +38,14 @@ import org.junit.jupiter.api.Test;
 public interface FragmentLayerManifestTest<M extends FragmentLayerManifest> extends LayerManifestTest<M> {
 
 	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.FRAGMENT_LAYER_MANIFEST;
+	}
+
+	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.FragmentLayerManifest#getValueLayerManifest()}.
 	 */
 	@Test

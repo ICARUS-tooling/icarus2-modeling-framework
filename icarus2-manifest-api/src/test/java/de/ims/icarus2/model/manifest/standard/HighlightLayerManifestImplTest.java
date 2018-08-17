@@ -23,7 +23,6 @@ import de.ims.icarus2.model.manifest.api.HighlightLayerManifestTest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.test.TestSettings;
 
@@ -40,14 +39,6 @@ class HighlightLayerManifestImplTest implements HighlightLayerManifestTest<Highl
 	public HighlightLayerManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
 		return new HighlightLayerManifestImpl(manifestLocation, registry, (LayerGroupManifest) host);
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
-	 */
-	@Override
-	public ManifestType getExpectedType() {
-		return ManifestType.HIGHLIGHT_LAYER_MANIFEST;
 	}
 
 	/**

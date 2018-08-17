@@ -57,6 +57,14 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	}
 
 	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.ANNOTATION_LAYER_MANIFEST;
+	}
+
+	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationLayerManifest#forEachAnnotationManifest(java.util.function.Consumer)}.
 	 */
 	@Test
@@ -159,6 +167,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationLayerManifest#isAnnotationFlagSet(de.ims.icarus2.model.manifest.api.AnnotationFlag)}.
 	 */
+	@SuppressWarnings("boxing")
 	@Test
 	default void testIsAnnotationFlagSet() {
 		for(AnnotationFlag flag : AnnotationFlag.values()) {
@@ -173,6 +182,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationLayerManifest#isLocalAnnotationFlagSet(de.ims.icarus2.model.manifest.api.AnnotationFlag)}.
 	 */
+	@SuppressWarnings("boxing")
 	@Test
 	default void testIsLocalAnnotationFlagSet() {
 		for(AnnotationFlag flag : AnnotationFlag.values()) {
@@ -322,6 +332,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationLayerManifest#setAnnotationFlag(de.ims.icarus2.model.manifest.api.AnnotationFlag, boolean)}.
 	 */
+	@SuppressWarnings("boxing")
 	@Test
 	default void testSetAnnotationFlag() {
 		for(AnnotationFlag flag : AnnotationFlag.values()) {

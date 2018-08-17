@@ -19,12 +19,9 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import java.util.Set;
-
 import de.ims.icarus2.model.manifest.api.ImplementationManifestTest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.test.TestSettings;
@@ -50,22 +47,6 @@ class ImplementationManifestImplTest implements ImplementationManifestTest<Imple
 	public ImplementationManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
 		return new ImplementationManifestImpl(manifestLocation, registry, (MemberManifest) host);
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
-	 */
-	@Override
-	public ManifestType getExpectedType() {
-		return ManifestType.IMPLEMENTATION_MANIFEST;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
-	 */
-	@Override
-	public Set<ManifestType> getAllowedHostTypes() {
-		return ManifestType.getMemberTypes();
 	}
 
 }

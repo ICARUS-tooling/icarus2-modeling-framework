@@ -19,12 +19,8 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import java.util.Collections;
-import java.util.Set;
-
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifestTest;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.test.TestSettings;
 
@@ -35,27 +31,11 @@ import de.ims.icarus2.test.TestSettings;
 class LayerGroupManifestImplTest implements LayerGroupManifestTest<LayerGroupManifestImpl>{
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
-	 */
-	@Override
-	public ManifestType getExpectedType() {
-		return ManifestType.LAYER_GROUP_MANIFEST;
-	}
-
-	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
 	public Class<? extends LayerGroupManifestImpl> getTestTargetClass() {
 		return LayerGroupManifestImpl.class;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
-	 */
-	@Override
-	public Set<ManifestType> getAllowedHostTypes() {
-		return Collections.singleton(ManifestType.CONTEXT_MANIFEST);
 	}
 
 	/**

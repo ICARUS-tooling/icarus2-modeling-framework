@@ -83,6 +83,14 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest<O>,
 	}
 
 	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.OPTION;
+	}
+
+	/**
 	 * Test method for
 	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getDefaultValue()}.
 	 */

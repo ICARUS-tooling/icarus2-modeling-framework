@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /**
- * 
+ *
  */
 package de.ims.icarus2.model.manifest.standard;
 
@@ -23,11 +23,13 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.api.LocationManifestTest;
+
 /**
  * @author Markus Gärtner
  *
  */
-class LocationManifestImplTest {
+class LocationManifestImplTest implements LocationManifestTest<LocationManifestImpl>{
 
 	@Test
 	void test() {

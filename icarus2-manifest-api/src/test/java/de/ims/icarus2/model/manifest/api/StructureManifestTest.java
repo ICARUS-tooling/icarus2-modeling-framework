@@ -21,6 +21,9 @@ package de.ims.icarus2.model.manifest.api;
 
 import static de.ims.icarus2.test.TestUtils.settings;
 
+import java.util.Collections;
+import java.util.Set;
+
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.test.TestUtils;
@@ -30,6 +33,22 @@ import de.ims.icarus2.test.TestUtils;
  *
  */
 public interface StructureManifestTest<M extends StructureManifest> extends ContainerManifestTest<M> {
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.STRUCTURE_MANIFEST;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
+	 */
+	@Override
+	default Set<ManifestType> getAllowedHostTypes() {
+		return Collections.singleton(ManifestType.STRUCTURE_LAYER_MANIFEST);
+	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.StructureManifest#getStructureType()}.

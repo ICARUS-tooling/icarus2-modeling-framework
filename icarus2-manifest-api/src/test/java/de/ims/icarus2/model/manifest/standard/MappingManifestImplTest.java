@@ -15,23 +15,35 @@
  * limitations under the License.
  */
 /**
- * 
+ *
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
-import org.junit.jupiter.api.Test;
+import de.ims.icarus2.model.manifest.api.DriverManifest;
+import de.ims.icarus2.model.manifest.api.MappingManifestTest;
+import de.ims.icarus2.model.manifest.api.TypedManifest;
+import de.ims.icarus2.test.TestSettings;
 
 /**
  * @author Markus Gärtner
  *
  */
-class MappingManifestImplTest {
+class MappingManifestImplTest implements MappingManifestTest<MappingManifestImpl> {
 
-	@Test
-	void test() {
-		fail("Not yet implemented");
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
+	 */
+	@Override
+	public Class<? extends MappingManifestImpl> getTestTargetClass() {
+		return MappingManifestImpl.class;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#createEmbedded(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.api.TypedManifest)
+	 */
+	@Override
+	public MappingManifestImpl createEmbedded(TestSettings settings, TypedManifest host) {
+		return new MappingManifestImpl((DriverManifest) host);
 	}
 
 }

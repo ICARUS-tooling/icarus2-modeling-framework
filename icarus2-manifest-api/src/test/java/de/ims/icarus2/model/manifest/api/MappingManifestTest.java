@@ -21,10 +21,20 @@ package de.ims.icarus2.model.manifest.api;
 
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.getIllegalIdValues;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.getLegalIdValues;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.test.TestUtils.NO_CHECK;
+import static de.ims.icarus2.test.TestUtils.assertGetter;
+import static de.ims.icarus2.test.TestUtils.assertMock;
+import static de.ims.icarus2.test.TestUtils.inject_genericSetter;
+import static de.ims.icarus2.test.TestUtils.other;
 import static de.ims.icarus2.test.TestUtils.settings;
+import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.when;
+
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +45,30 @@ import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
  * @author Markus Gärtner
  *
  */
-public interface MappingManifestTest<M extends MappingManifest> extends TypedManifestTest<M>, LockableTest<M> {
+public interface MappingManifestTest<M extends MappingManifest>
+	extends TypedManifestTest<M>, LockableTest<M>, EmbeddedTest<M> {
+
+	public static MappingManifest mockMappingManifest(String id) {
+		MappingManifest manifest = mockTypedManifest(ManifestType.MAPPING_MANIFEST);
+		when(manifest.getId()).thenReturn(id);
+		return manifest;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.MAPPING_MANIFEST;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
+	 */
+	@Override
+	default Set<ManifestType> getAllowedHostTypes() {
+		return set(ManifestType.DRIVER_MANIFEST);
+	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.MappingManifest#getDriverManifest()}.
@@ -50,7 +83,10 @@ public interface MappingManifestTest<M extends MappingManifest> extends TypedMan
 	 */
 	@Test
 	default void testGetId() {
-		fail("Not yet implemented");
+		assertGetter(createUnlocked(),
+				"id1", "id2", null,
+				MappingManifest::getId,
+				MappingManifest::setId);
 	}
 
 	/**
@@ -58,7 +94,10 @@ public interface MappingManifestTest<M extends MappingManifest> extends TypedMan
 	 */
 	@Test
 	default void testGetSourceLayerId() {
-		fail("Not yet implemented");
+		assertGetter(createUnlocked(),
+				"layer1", "layer2", null,
+				MappingManifest::getSourceLayerId,
+				MappingManifest::setSourceLayerId);
 	}
 
 	/**
@@ -66,7 +105,10 @@ public interface MappingManifestTest<M extends MappingManifest> extends TypedMan
 	 */
 	@Test
 	default void testGetTargetLayerId() {
-		fail("Not yet implemented");
+		assertGetter(createUnlocked(),
+				"layer1", "layer2", null,
+				MappingManifest::getTargetLayerId,
+				MappingManifest::setTargetLayerId);
 	}
 
 	/**
@@ -74,7 +116,11 @@ public interface MappingManifestTest<M extends MappingManifest> extends TypedMan
 	 */
 	@Test
 	default void testGetRelation() {
-		fail("Not yet implemented");
+		for(Relation relation : Relation.values()) {
+			assertGetter(createUnlocked(),
+					relation, other(relation), null,
+					MappingManifest::getRelation, MappingManifest::setRelation);
+		}
 	}
 
 	/**
@@ -82,7 +128,34 @@ public interface MappingManifestTest<M extends MappingManifest> extends TypedMan
 	 */
 	@Test
 	default void testGetCoverage() {
-		fail("Not yet implemented");
+		for(Coverage coverage : Coverage.values()) {
+			assertGetter(createUnlocked(),
+					coverage, other(coverage), null,
+					MappingManifest::getCoverage, MappingManifest::setCoverage);
+		}
+	}
+
+	public static <M extends MappingManifest, L extends MappingManifest> BiConsumer<M, L> inject_mappingLookup(
+			BiConsumer<M, L> setter) {
+		return (m, mappingManifest) -> {
+
+			String id = mappingManifest.getId();
+			assertNotNull(id);
+
+			DriverManifest driverManifest = assertMock(m.getDriverManifest());
+			when(driverManifest.getMappingManifest(id)).thenReturn(mappingManifest);
+
+			setter.accept(m, mappingManifest);
+		};
+	}
+
+	/**
+	 * Helper function to be used for consistency.
+	 * Transforms a {@link MappingManifest} into a {@link String} by using
+	 * its {@link MappingManifest#getId() id}.
+	 */
+	public static <I extends MappingManifest> Function<I, String> transform_id(){
+		return i -> i.getId();
 	}
 
 	/**
@@ -90,7 +163,13 @@ public interface MappingManifestTest<M extends MappingManifest> extends TypedMan
 	 */
 	@Test
 	default void testGetInverse() {
-		assertg
+		assertGetter(createUnlocked(),
+				mockMappingManifest("mapping1"),
+				mockMappingManifest("mapping2"),
+				null,
+				MappingManifest::getInverse,
+				inject_mappingLookup(inject_genericSetter(
+						MappingManifest::setInverseId, transform_id())));
 	}
 
 	/**

@@ -19,13 +19,9 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import java.util.Collections;
-import java.util.Set;
-
 import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.PathResolverManifestTest;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.test.TestSettings;
@@ -42,22 +38,6 @@ class PathResolverManifestImplTest implements PathResolverManifestTest<PathResol
 	@Override
 	public Class<? extends PathResolverManifestImpl> getTestTargetClass() {
 		return PathResolverManifestImpl.class;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
-	 */
-	@Override
-	public ManifestType getExpectedType() {
-		return ManifestType.PATH_RESOLVER_MANIFEST;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
-	 */
-	@Override
-	public Set<ManifestType> getAllowedHostTypes() {
-		return Collections.singleton(ManifestType.LOCATION_MANIFEST);
 	}
 
 	/**

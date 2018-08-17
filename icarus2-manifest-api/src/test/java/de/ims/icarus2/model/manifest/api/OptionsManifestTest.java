@@ -27,6 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Set;
+
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
@@ -62,6 +64,22 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 		Identity identity = mock(Identity.class);
 		when(identity.getId()).thenReturn(id);
 		return identity;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.OPTIONS_MANIFEST;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
+	 */
+	@Override
+	default Set<ManifestType> getAllowedHostTypes() {
+		return ManifestType.getMemberTypes();
 	}
 
 	/**

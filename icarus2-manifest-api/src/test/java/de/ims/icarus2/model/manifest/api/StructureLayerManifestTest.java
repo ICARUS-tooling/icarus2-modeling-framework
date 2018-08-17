@@ -19,7 +19,13 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubId;
+import static de.ims.icarus2.model.manifest.api.ItemLayerManifestTest.mockContainerManifest;
+import static de.ims.icarus2.test.TestUtils.assertPredicate;
+
+import java.util.function.BiFunction;
+import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
 
@@ -27,38 +33,54 @@ import org.junit.jupiter.api.Test;
  * @author Markus Gärtner
  *
  */
-public interface StructureLayerManifestTest {
+public interface StructureLayerManifestTest<M extends StructureLayerManifest> extends ItemLayerManifestTest<M> {
+
+	public static StructureManifest mockStructureManifest(String id) {
+		StructureManifest structureManifest = mockTypedManifest(ManifestType.STRUCTURE_MANIFEST);
+		return (StructureManifest) stubId((ManifestFragment)structureManifest, id);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.ItemLayerManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.STRUCTURE_LAYER_MANIFEST;
+	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.StructureLayerManifest#getRootStructureManifest()}.
 	 */
+	@SuppressWarnings("boxing")
 	@Test
 	default void testGetRootStructureManifest() {
-		fail("Not yet implemented");
-	}
+		ContainerManifest root = mockContainerManifest("root");
+		StructureManifest structure = mockStructureManifest("structrue1");
+		ContainerManifest container1 = mockContainerManifest("container1");
+		ContainerManifest container2 = mockContainerManifest("container2");
 
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.StructureLayerManifest#addStructureManifest(de.ims.icarus2.model.manifest.api.StructureManifest, int)}.
-	 */
-	@Test
-	default void testAddStructureManifestStructureManifestInt() {
-		fail("Not yet implemented");
-	}
+		Predicate<M> rootCheck = m -> {
+			StructureManifest manifest = m.getRootStructureManifest();
+			return manifest==structure;
+		};
 
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.StructureLayerManifest#addStructureManifest(de.ims.icarus2.model.manifest.api.StructureManifest)}.
-	 */
-	@Test
-	default void testAddStructureManifestStructureManifest() {
-		fail("Not yet implemented");
-	}
+		BiFunction<M, ContainerManifest, Boolean> staticModifier = (m, cont) -> {
+			Hierarchy<ContainerManifest> hierarchy = ItemLayerManifest.getOrCreateLocalContainerhierarchy(m);
+			hierarchy.add(cont);
+			return hierarchy.getDepth()>1;
+		};
 
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.StructureLayerManifest#removeStructureManifest(de.ims.icarus2.model.manifest.api.StructureManifest)}.
-	 */
-	@Test
-	default void testRemoveStructureManifest() {
-		fail("Not yet implemented");
-	}
+		// Test with simply adding more containers after initial root
+		assertPredicate(createUnlocked(), staticModifier, rootCheck,
+				root, structure, container1, container2);
 
+		BiFunction<M, ContainerManifest, Boolean> mixedModifier = (m, cont) -> {
+			ItemLayerManifest.getOrCreateLocalContainerhierarchy(m).insert(cont, 0);
+			return cont==root;
+		};
+
+		// Test with shifting the root manifest
+		assertPredicate(createUnlocked(), mixedModifier, rootCheck,
+				structure, root, container1, container2);
+	}
 }
