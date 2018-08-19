@@ -16,14 +16,17 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
+import de.ims.icarus2.util.strings.StringUtil;
 
 /**
  * @author Markus Gärtner
@@ -73,7 +76,21 @@ public class StructureLayerManifestImpl extends ItemLayerManifestImpl implements
 	@Override
 	public StructureManifest getRootStructureManifest() {
 		Hierarchy<ContainerManifest> hierarchy = getContainerHierarchy();
-		//TODO add sanity check to make sure we have a manifest at level 1 and produce a proper error message otherwise
-		return hierarchy==null ? null : (StructureManifest)hierarchy.atLevel(1);
+
+		// Bail early if there's not enough data to even host a structure manifest
+		if(hierarchy.getDepth()<2) {
+			return null;
+		}
+
+		// Find and return first structure manifest
+		for(int level=1; level<hierarchy.getDepth(); level++) {
+			ContainerManifest manifest = hierarchy.atLevel(level);
+			if(manifest.getManifestType()==ManifestType.STRUCTURE_MANIFEST) {
+				return (StructureManifest) manifest;
+			}
+		}
+
+		throw new ManifestException(ManifestErrorCode.MANIFEST_MISSING_MEMBER,
+				"No root structure manifest defined for "+StringUtil.getName(this));
 	}
 }

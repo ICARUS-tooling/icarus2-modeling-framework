@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -32,16 +33,17 @@ import de.ims.icarus2.util.access.AccessRestriction;
 public interface StructureLayerManifest extends ItemLayerManifest {
 
 	/**
-	 * Returns the manifest for the members (structures) of the top-level
-	 * container in this layer. This is effectively the same as calling
-	 * {@link Hierarchy#atLevel(int)} with a {@code level} value
-	 * of {@code 1} on the underlying {@link #getContainerHierarchy() container hierarchy}
-	 * and casting the result to {@code StructureManifest}.
+	 * Returns the first manifest within the {@link #getContainerHierarchy() container hierarchy}
+	 * that is of type {@link ManifestType#STRUCTURE_MANIFEST}.
 	 * Note that a structure layer always contains a regular container
 	 * as root of its container hierarchy. Only on the subsequent levels
-	 * the structures themselves are hosted!
+	 * the structures themselves can be hosted!
 	 *
 	 * @return
+	 * @throws ManifestException of type {@link ManifestErrorCode#MANIFEST_MISSING_MEMBER} if there
+	 * are 2 or more elements in the container hierarchy and none of them were of type
+	 * {@link ManifestType#STRUCTURE_MANIFEST}.
+	 *
 	 * @see #getRootContainerManifest()
 	 * @see #getContextManifest()
 	 */

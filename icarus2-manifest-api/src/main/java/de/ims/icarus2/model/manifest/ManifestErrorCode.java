@@ -28,6 +28,8 @@ import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
+import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
+import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 
 /**
@@ -166,17 +168,23 @@ public enum ManifestErrorCode implements ErrorCode {
 	 * A manifest that requires value type information for its content (like annotations) is missing
 	 * that declaration.
 	 */
-	MANIFEST_MISSING_TYPE(607),
+	MANIFEST_MISSING_TYPE(610),
 
 	/**
 	 * A manifest that relies on external resources is missing the location declaration for those resources.
 	 */
-	MANIFEST_MISSING_LOCATION(608),
+	MANIFEST_MISSING_LOCATION(611),
 
 	/**
 	 * A requested mapping between 2 layers could not be found
 	 */
-	MANIFEST_MISSING_MAPPING(609),
+	MANIFEST_MISSING_MAPPING(612),
+
+	/**
+	 * Generic error for missing embedded manifests, such as a {@link StructureManifest}
+	 * when trying to retrieve the root structure manifest inside a {@link StructureLayerManifest}.
+	 */
+	MANIFEST_MISSING_MEMBER(613),
 
 	/**
 	 * Some value (annotation, property, option, ...) declared in a manifest is incompatible

@@ -19,15 +19,22 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertManifestException;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubId;
 import static de.ims.icarus2.model.manifest.api.ItemLayerManifestTest.mockContainerManifest;
 import static de.ims.icarus2.test.TestUtils.assertPredicate;
+import static de.ims.icarus2.test.TestUtils.settings;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
+import de.ims.icarus2.test.TestSettings;
 
 /**
  * @author Markus Gärtner
@@ -49,6 +56,34 @@ public interface StructureLayerManifestTest<M extends StructureLayerManifest> ex
 	}
 
 	/**
+	 * Adds all of the supplied {@link ContainerManifest} instances to the {@link StructureLayerManifest}
+	 * and then expects the {@link StructureLayerManifest#getRootStructureManifest()} method to fail or
+	 * return {@code null} depending on the {@code expectNull} parameter.
+	 *
+	 * @param settings
+	 * @param manifest
+	 * @param containerManifests
+	 */
+	default <C extends ContainerManifest> void assertInvalidContainerHierarchy(
+			boolean expectNull, @SuppressWarnings("unchecked") C...containerManifests) {
+		M manifest = createUnlocked();
+
+		Hierarchy<ContainerManifest> hierarchy = ItemLayerManifest.getOrCreateLocalContainerhierarchy(manifest);
+		assertTrue(hierarchy.isEmpty());
+
+		for(C containerManifest : containerManifests) {
+			hierarchy.add(containerManifest);
+		}
+
+		if(expectNull) {
+			assertNull(manifest.getRootStructureManifest());
+		} else {
+			assertManifestException(ManifestErrorCode.MANIFEST_MISSING_MEMBER,
+					() -> manifest.getRootStructureManifest(), null);
+		}
+	}
+
+	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.StructureLayerManifest#getRootStructureManifest()}.
 	 */
 	@SuppressWarnings("boxing")
@@ -58,6 +93,9 @@ public interface StructureLayerManifestTest<M extends StructureLayerManifest> ex
 		StructureManifest structure = mockStructureManifest("structrue1");
 		ContainerManifest container1 = mockContainerManifest("container1");
 		ContainerManifest container2 = mockContainerManifest("container2");
+
+		//TODO
+		assertInvalidContainerHierarchy(true, .);
 
 		Predicate<M> rootCheck = m -> {
 			StructureManifest manifest = m.getRootStructureManifest();
