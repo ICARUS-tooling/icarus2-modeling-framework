@@ -366,6 +366,12 @@ public class ManifestTestUtils {
 		return identity;
 	}
 
+	public static <M extends TypedManifest> M stubType(M manifets, ManifestType type) {
+		requireNonNull(type);
+		when(manifets.getManifestType()).thenReturn(type);
+		return manifets;
+	}
+
 	public static ManifestLocation mockManifestLocation(boolean template) {
 		ManifestLocation location = mock(ManifestLocation.class);
 		when(location.isTemplate()).thenReturn(template);

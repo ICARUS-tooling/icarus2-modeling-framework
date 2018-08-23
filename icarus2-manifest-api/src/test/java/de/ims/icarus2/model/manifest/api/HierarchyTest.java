@@ -61,7 +61,7 @@ public interface HierarchyTest<E extends Object, H extends Hierarchy<E>> extends
 		};
 
 		// Test with simply adding more containers after initial root
-		assertPredicate(createUnlocked(), staticModifier, rootCheck,
+		assertPredicate(createUnlocked(), staticModifier, rootCheck, Object::toString,
 				root, item1, item2);
 
 		BiFunction<H, E, Boolean> mixedModifier = (h, item) -> {
@@ -70,7 +70,7 @@ public interface HierarchyTest<E extends Object, H extends Hierarchy<E>> extends
 		};
 
 		// Test with shifting the root manifest
-		assertPredicate(createUnlocked(), mixedModifier, rootCheck,
+		assertPredicate(createUnlocked(), mixedModifier, rootCheck, Object::toString,
 				root, item1, item2);
 	}
 

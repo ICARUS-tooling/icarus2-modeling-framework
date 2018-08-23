@@ -759,13 +759,15 @@ public class TestUtils {
 		}
 	}
 
+	@SuppressWarnings("boxing")
 	public static <T extends Object, K extends Object> void assertPredicate(
 			T instance, BiFunction<T, K, Boolean> modifier,
-			Predicate<T> predicate, @SuppressWarnings("unchecked") K... values) {
+			Predicate<T> predicate, Function<? super K, String> msgGen, @SuppressWarnings("unchecked") K... values) {
 
 		for(K value : values) {
 			boolean expected = modifier.apply(instance, value).booleanValue();
-			assertTrue(expected == predicate.test(instance));
+			assertEquals(expected, predicate.test(instance),
+					() -> {return "predicate failed for value "+msgGen.apply(value);});
 		}
 	}
 

@@ -26,7 +26,7 @@ import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
-import de.ims.icarus2.util.strings.StringUtil;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 
 /**
  * @author Markus Gärtner
@@ -79,6 +79,7 @@ public class StructureLayerManifestImpl extends ItemLayerManifestImpl implements
 
 		// Bail early if there's not enough data to even host a structure manifest
 		if(hierarchy.getDepth()<2) {
+			//TODO this also returns null when a structure was illegally set on root position in the hierarchy
 			return null;
 		}
 
@@ -91,6 +92,6 @@ public class StructureLayerManifestImpl extends ItemLayerManifestImpl implements
 		}
 
 		throw new ManifestException(ManifestErrorCode.MANIFEST_MISSING_MEMBER,
-				"No root structure manifest defined for "+StringUtil.getName(this));
+				"No root structure manifest defined for "+ManifestUtils.getName(this));
 	}
 }
