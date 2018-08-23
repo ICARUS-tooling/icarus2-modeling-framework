@@ -55,21 +55,25 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.raster.Metric;
 import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.api.raster.Rasterizer;
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
+import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.HighlightLayerManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LocationType;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.manifest.util.Messages;
 
 /**
@@ -311,7 +315,12 @@ public final class ModelUtils {
 		 */
 		ItemLayerManifest manifest = container.getManifest().getLayerManifest();
 
-		return manifest.getContainerManifest(level);
+		Hierarchy<ContainerManifest> hierarchy = manifest.getContainerHierarchy();
+		if(hierarchy==null)
+			throw new ManifestException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
+					"Host manifest has no container hierarchy: "+ManifestUtils.getName(manifest));
+
+		return hierarchy.atLevel(level);
 	}
 
 	public static Layer getLayer(Corpus corpus, LayerManifest manifest) {

@@ -36,6 +36,7 @@ import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
+import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.standard.members.container.DefaultContainer;
 import de.ims.icarus2.model.standard.members.container.ListItemStorageInt;
@@ -67,8 +68,11 @@ public class ContainerTest {
 		when(containerManifest.getLayerManifest()).thenReturn(layerManifest);
 		when(containerManifest.getContainerType()).thenReturn(containerType);
 
-		when(layerManifest.getContainerManifest(0)).thenReturn(rootManifest);
-		when(layerManifest.getContainerManifest(1)).thenReturn(containerManifest);
+		Hierarchy<ContainerManifest> hierarchy = mock(Hierarchy.class);
+		when(hierarchy.atLevel(0)).thenReturn(rootManifest);
+		when(hierarchy.atLevel(1)).thenReturn(containerManifest);
+
+		when(layerManifest.getContainerHierarchy()).thenReturn(hierarchy);
 
 		DefaultItemLayer layer = new DefaultItemLayer(layerManifest);
 		layer.setIdManager(new IdManager.IdentityIdManager(layerManifest));

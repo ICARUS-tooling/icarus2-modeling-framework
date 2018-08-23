@@ -20,10 +20,13 @@
 package de.ims.icarus2.model.manifest.api;
 
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathEntry;
+import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
 
 /**
  * @author Markus Gärtner
@@ -31,8 +34,11 @@ import de.ims.icarus2.model.manifest.api.LocationManifest.PathEntry;
  */
 public interface LocationManifestTest<M extends LocationManifest> {
 
-	public static PathEntry mockEntry() {
-
+	public static PathEntry mockEntry(PathType type, String value) {
+		PathEntry entry = mock(PathEntry.class);
+		when(entry.getType()).thenReturn(type);
+		when(entry.getValue()).thenReturn(value);
+		return entry;
 	}
 
 	/**

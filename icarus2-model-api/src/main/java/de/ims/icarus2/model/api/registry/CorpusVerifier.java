@@ -34,6 +34,7 @@ import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
+import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
@@ -256,17 +257,24 @@ public class CorpusVerifier {
 			chechContainer(rootContainerManifest, manifest);
 		}
 
-		ContainerManifest parent = rootContainerManifest;
-		for(int i=0; i<manifest.getContainerDepth(); i++) {
-			ContainerManifest containerManifest = manifest.getContainerManifest(i);
+		Hierarchy<ContainerManifest> hierarchy = manifest.getContainerHierarchy();
+		if(hierarchy==null) {
+			error(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Missing container hierarchy");
+		} else {
+			ContainerManifest parent = rootContainerManifest;
+			for(int i=0; i<hierarchy.getDepth(); i++) {
+				ContainerManifest containerManifest = hierarchy.atLevel(i);
 
-			if(containerManifest.getParentManifest()!=parent) {
-				error(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Corrupted hierarchy - foreign parent container at level "+i); //$NON-NLS-1$
+				//TODO incinsistency: we start at level 0 and expect a parent?
+
+				if(containerManifest.getParentManifest()!=parent) {
+					error(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Corrupted hierarchy - foreign parent container at level "+i); //$NON-NLS-1$
+				}
+
+				chechContainer(containerManifest, manifest);
+
+				parent = containerManifest;
 			}
-
-			chechContainer(containerManifest, manifest);
-
-			parent = containerManifest;
 		}
 	}
 
