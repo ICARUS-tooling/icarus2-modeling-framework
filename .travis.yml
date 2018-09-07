@@ -6,4 +6,8 @@ jdk:
 before_install:
   - chmod a+x gradlew
 
-sccript: ./gradlew check
+sccript: 
+  - ./gradlew check
+  - ./gradlew codeCoverageReport
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
