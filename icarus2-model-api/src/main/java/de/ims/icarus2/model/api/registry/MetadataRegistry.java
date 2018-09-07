@@ -128,7 +128,7 @@ public interface MetadataRegistry extends AutoCloseable {
 		}
 	}
 
-	default void changeShortValue(String key, short value, byte noEntryValue) {
+	default void changeShortValue(String key, short value, short noEntryValue) {
 		if(value==noEntryValue) {
 			setValue(key, null);
 		} else {
