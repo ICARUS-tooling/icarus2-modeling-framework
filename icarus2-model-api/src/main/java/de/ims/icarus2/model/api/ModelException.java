@@ -16,8 +16,11 @@
  */
 package de.ims.icarus2.model.api;
 
+import static java.util.Objects.requireNonNull;
+
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.util.function.Supplier;
 
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.GlobalErrorCode;
@@ -35,6 +38,10 @@ import de.ims.icarus2.model.api.corpus.Corpus;
  *
  */
 public class ModelException extends IcarusException {
+
+	public static Supplier<ModelException> create(ErrorCode errorCode, String message) {
+		return () -> new ModelException(errorCode, message);
+	}
 
 	/**
 	 * Extracts and returns the {@link Throwable#getCause() cause} of the given {@code Throwable}
@@ -77,8 +84,7 @@ public class ModelException extends IcarusException {
 	public ModelException(Corpus corpus, ErrorCode errorCode, String message, Throwable cause) {
 		super(errorCode, message, cause);
 
-		if (corpus == null)
-			throw new NullPointerException("Invalid corpus"); //$NON-NLS-1$
+		requireNonNull(corpus);
 
 		this.source = new WeakReference<>(corpus);
 		this.corpusSet = true;

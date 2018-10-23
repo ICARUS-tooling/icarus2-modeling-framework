@@ -16,7 +16,6 @@
  */
 package de.ims.icarus2.model.api.registry;
 
-import static de.ims.icarus2.util.strings.StringUtil.getName;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
@@ -46,6 +45,7 @@ import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
 import de.ims.icarus2.model.manifest.api.PathResolverManifest;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 
 /**
  * @author Markus Gärtner
@@ -155,7 +155,8 @@ public class CorpusVerifier {
 					error(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "List of locations contains null manifest"); //$NON-NLS-1$
 				} else {
 					if(locationManifest.getRootPath()==null) {
-						error(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Missing location path declaration: "+getName(locationManifest)); //$NON-NLS-1$
+						error(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
+								"Missing location path declaration: "+ManifestUtils.getName(locationManifest)); //$NON-NLS-1$
 					}
 
 					PathResolverManifest pathResolverManifest = locationManifest.getPathResolverManifest();

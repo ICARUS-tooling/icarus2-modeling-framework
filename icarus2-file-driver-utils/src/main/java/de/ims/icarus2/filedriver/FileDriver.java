@@ -202,7 +202,7 @@ public class FileDriver extends AbstractDriver {
 	protected Converter createConverter() {
 
 		// Fetch the (hopefully) single module manifest describing our converter to be used
-		List<ModuleManifest> converterManifests = getManifest().getModuleManifests("converter");
+		Set<ModuleManifest> converterManifests = getManifest().getModuleManifests("converter");
 
 		if(converterManifests.isEmpty())
 			throw new ModelException(ModelErrorCode.DRIVER_ERROR,
@@ -211,7 +211,7 @@ public class FileDriver extends AbstractDriver {
 			throw new ModelException(ModelErrorCode.DRIVER_ERROR,
 					"Too many converter modules declared in driver manifest: "+getName(getManifest()));
 
-		ModuleManifest manifest = converterManifests.get(0);
+		ModuleManifest manifest = converterManifests.iterator().next();
 
 		final CorpusMemberFactory factory = getCorpus().getManager().newFactory();
 

@@ -40,31 +40,33 @@ public class ValueSetImpl extends AbstractLockable implements ValueSet {
 		this.valueType = requireNonNull(valueType);
 	}
 
-	public ValueSetImpl(ValueType valueType, Collection<?> items) {
-		this(valueType);
-
+	public ValueSetImpl addAll(Collection<?> items) {
 		requireNonNull(items);
 
+		valueType.checkValues(items);
 		values.addAll(items);
+
+		return this;
 	}
 
-	public ValueSetImpl(ValueType valueType, Object...items) {
-		this(valueType);
-
+	public ValueSetImpl addAll(Object...items) {
 		requireNonNull(items);
 
+		valueType.checkValues(items);
 		CollectionUtils.feedItems(values, items);
+
+		return this;
 	}
 
-	public ValueSetImpl(ValueType valueType, Class<?> enumClass) {
-		this(valueType);
-
+	public ValueSetImpl addAll(Class<?> enumClass) {
 		requireNonNull(enumClass);
 
 		if(!ValueType.ENUM.equals(valueType))
 			throw new IllegalArgumentException("Cannot use the enum based constructor for other value types than "+ValueType.ENUM); //$NON-NLS-1$
 
 		CollectionUtils.feedItems(values, (Object[]) enumClass.getEnumConstants());
+
+		return this;
 	}
 
 

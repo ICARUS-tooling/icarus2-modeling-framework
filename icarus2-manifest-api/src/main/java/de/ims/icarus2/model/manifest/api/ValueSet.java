@@ -16,12 +16,14 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.IdentityHashMap;
 import java.util.Set;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.eval.Expression;
+import it.unimi.dsi.fastutil.objects.ReferenceSet;
 
 /**
  * A discrete collection of values.
@@ -46,8 +48,23 @@ public interface ValueSet extends Lockable, TypedManifest {
 
 	void forEachValue(Consumer<? super Object> action);
 
+	/**
+	 * Returns the elements in this {@link ValueSet} as a regular {@link Set}.
+	 * <p>
+	 * Note: As we cannot predict the nature of objects stored in a {@code ValueSet},
+	 * we have to take defensive measures in case the elements aren't suitable to be
+	 * stored in a hash-based collection (if for example they don't obey the general
+	 * contracts for {@link Object#equals(Object)} and {@link Object#hashCode()}).
+	 * Therefore the returned {@code Set} is behaving like an implementation that
+	 * uses object identity instead of the basic equality checks.
+	 *
+	 * @see IdentityHashMap
+	 * @see ReferenceSet
+	 *
+	 * @return
+	 */
 	default Set<Object> getValues() {
-		return LazyCollection.lazySet(valueCount())
+		return LazyCollection.lazyIdentitySet(valueCount())
 				.addFromForEach(this::forEachValue)
 				.getAsSet();
 	}

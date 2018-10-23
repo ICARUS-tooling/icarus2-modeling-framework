@@ -19,7 +19,7 @@ package de.ims.icarus2.model.manifest.standard.resolve;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
-import javax.swing.Icon;
+import java.util.Optional;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
@@ -29,15 +29,12 @@ import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.Documentable;
-import de.ims.icarus2.model.manifest.api.Documentation;
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
-import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
-import de.ims.icarus2.model.manifest.api.LayerType;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestFactory;
@@ -50,11 +47,7 @@ import de.ims.icarus2.model.manifest.api.RasterizerManifest;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.ValueManifest;
-import de.ims.icarus2.model.manifest.api.ValueRange;
-import de.ims.icarus2.model.manifest.api.ValueSet;
-import de.ims.icarus2.model.manifest.api.VersionManifest;
-import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.util.data.ContentType;
+import de.ims.icarus2.model.manifest.standard.ItemLayerManifestImpl;
 import de.ims.icarus2.util.id.Identifiable;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.id.MutableIdentifiable;
@@ -107,10 +100,7 @@ public class ContextManifestResolver {
 			return;
 		}
 
-		VersionManifest versionManifest = source.getVersionManifest();
-		if(versionManifest!=null) {
-			target.setVersionManifest(versionManifest);
-		}
+		source.getVersionManifest().ifPresent(target::setVersionManifest);
 	}
 
 	protected void copyIdentityFields(Identity source, ModifiableIdentity target) {
@@ -118,25 +108,10 @@ public class ContextManifestResolver {
 			return;
 		}
 
-		Icon icon = source.getIcon();
-		if(icon!=null) {
-			target.setIcon(icon);
-		}
-
-		String id = source.getId();
-		if(id!=null) {
-			target.setId(id);
-		}
-
-		String name = source.getName();
-		if(name!=null) {
-			target.setName(name);
-		}
-
-		String description = source.getDescription();
-		if(description!=null) {
-			target.setDescription(description);
-		}
+		source.getIcon().ifPresent(target::setIcon);
+		source.getId().ifPresent(target::setId);
+		source.getName().ifPresent(target::setName);
+		source.getDescription().ifPresent(target::setDescription);
 	}
 
 	protected void copyIdentity(Identifiable source, MutableIdentifiable target) {
@@ -155,10 +130,7 @@ public class ContextManifestResolver {
 			return;
 		}
 
-		Documentation documentation = source.getDocumentation();
-		if(documentation!=null) {
-			target.setDocumentation(documentation);
-		}
+		source.getDocumentation().ifPresent(target::setDocumentation);
 	}
 
 	/**
@@ -179,10 +151,7 @@ public class ContextManifestResolver {
 		copyIdentityFields(source, target);
 		copyDocumentableFields(source, target);
 
-		OptionsManifest optionsManifest = source.getOptionsManifest();
-		if(optionsManifest!=null) {
-			target.setOptionsManifest(optionsManifest);
-		}
+		source.getOptionsManifest().ifPresent(target::setOptionsManifest);
 
 		for(Property property : source.getProperties()) {
 			// Actually the only place in the copy routines that uses regular cloning, but only since
@@ -199,9 +168,9 @@ public class ContextManifestResolver {
 		copyMemberFields(source, target);
 
 		target.setSourceType(source.getSourceType());
-		target.setSource(source.getSource());
-		target.setClassname(source.getClassname());
 		target.setUseFactory(source.isUseFactory());
+		source.getClassname().ifPresent(target::setClassname);
+		source.getSource().ifPresent(target::setSource);
 	}
 
 	protected void copyLayerGroupFields(LayerGroupManifest source, LayerGroupManifest target) {
@@ -213,10 +182,9 @@ public class ContextManifestResolver {
 
 		target.setIndependent(source.isIndependent());
 
-		ItemLayerManifest primaryLayerManifest = source.getPrimaryLayerManifest();
-		if(primaryLayerManifest!=null) {
-			target.setPrimaryLayerId(primaryLayerManifest.getId());
-		}
+		source.getPrimaryLayerManifest().ifPresent(m -> target.setPrimaryLayerId(
+				m.getId().orElseThrow(Manifest.invalidId(
+				"Primary layer does not declare valid identifier"))));
 	}
 
 	protected void copyLayerFields(LayerManifest source, LayerManifest target) {
@@ -226,10 +194,8 @@ public class ContextManifestResolver {
 
 		copyMemberFields(source, target);
 
-		LayerType layerType = source.getLayerType();
-		if(layerType!=null) {
-			target.setLayerTypeId(layerType.getId());
-		}
+		source.getLayerType().ifPresent(t -> target.setLayerTypeId(t.getId().orElseThrow(Manifest.invalidId(
+				"Layer type does not declare valid identifier"))));
 
 		source.forEachBaseLayerManifest(b -> target.addBaseLayerId(b.getLayerId()));
 	}
@@ -241,15 +207,8 @@ public class ContextManifestResolver {
 
 		copyLayerFields(source, target);
 
-		TargetLayerManifest boundaryLayerManifest = source.getBoundaryLayerManifest();
-		if(boundaryLayerManifest!=null) {
-			target.setBoundaryLayerId(boundaryLayerManifest.getLayerId());
-		}
-
-		TargetLayerManifest foundationLayerManifest = source.getFoundationLayerManifest();
-		if(foundationLayerManifest!=null) {
-			target.setFoundationLayerId(foundationLayerManifest.getLayerId());
-		}
+		source.getBoundaryLayerManifest().ifPresent(m -> target.setBoundaryLayerId(m.getLayerId()));
+		source.getFoundationLayerManifest().ifPresent(m -> target.setFoundationLayerId(m.getLayerId()));
 
 		// Containers
 		Hierarchy<ContainerManifest> containerHierarchy = source.getContainerHierarchy();
@@ -263,7 +222,7 @@ public class ContextManifestResolver {
 					clonedManifest = cloneContainerManifest(containerManifest, target);
 				}
 
-				ItemLayerManifest.getOrCreateLocalContainerhierarchy(target).add(clonedManifest);
+				ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(target).add(clonedManifest);
 			}
 		}
 	}
@@ -275,15 +234,8 @@ public class ContextManifestResolver {
 
 		copyItemLayerFields(source, target);
 
-		TargetLayerManifest valueManifest = source.getValueLayerManifest();
-		if(valueManifest!=null) {
-			target.setValueLayerId(valueManifest.getLayerId());
-		}
-
-		String annotationKey = source.getAnnotationKey();
-		if(annotationKey!=null) {
-			target.setAnnotationKey(annotationKey);
-		}
+		source.getValueLayerManifest().ifPresent(m -> target.setValueLayerId(m.getLayerId()));
+		source.getAnnotationKey().ifPresent(target::setAnnotationKey);
 	}
 
 	protected void copyContainerFields(ContainerManifest source, ContainerManifest target) {
@@ -317,34 +269,16 @@ public class ContextManifestResolver {
 
 		copyMemberFields(source, target);
 
-		target.setKey(source.getKey());
+		source.getKey().ifPresent(target::setKey);
 
 		source.forEachAlias(target::addAlias);
 
-		ValueType valueType = source.getValueType();
-		if(valueType!=null) {
-			target.setValueType(valueType);
-		}
+		Optional.ofNullable(source.getValueType()).ifPresent(target::setValueType);
 
-		Object noEntryValue = source.getNoEntryValue();
-		if(noEntryValue!=null) {
-			target.setNoEntryValue(noEntryValue);
-		}
-
-		ContentType contentType = source.getContentType();
-		if(contentType!=null) {
-			target.setContentType(contentType);
-		}
-
-		ValueRange valueRange = source.getValueRange();
-		if(valueRange!=null) {
-			target.setValueRange(valueRange);
-		}
-
-		ValueSet valueSet = source.getValueSet();
-		if(valueSet!=null) {
-			target.setValueSet(valueSet);
-		}
+		source.getNoEntryValue().ifPresent(target::setNoEntryValue);
+		source.getContentType().ifPresent(target::setContentType);
+		source.getValueRange().ifPresent(target::setValueRange);
+		source.getValueSet().ifPresent(target::setValueSet);
 	}
 
 	protected void copyAnnotationLayerFields(AnnotationLayerManifest source, AnnotationLayerManifest target) {
@@ -359,10 +293,7 @@ public class ContextManifestResolver {
 		source.forEachActiveAnnotationFlag(f -> target.setAnnotationFlag(f, true));
 
 		// Default key
-		String defaultKey = source.getDefaultKey();
-		if(defaultKey!=null) {
-			target.setDefaultKey(defaultKey);
-		}
+		source.getDefaultKey().ifPresent(target::setDefaultKey);
 	}
 
 	protected void copyRasterizerFields(RasterizerManifest source, RasterizerManifest target) {
@@ -386,25 +317,10 @@ public class ContextManifestResolver {
 			return;
 		}
 
-		String contextId = source.getContextId();
-		if(contextId!=null) {
-			target.setContextId(contextId);
-		}
-
-		String description = source.getDescription();
-		if(description!=null) {
-			target.setDescription(description);
-		}
-
-		String layerId = source.getLayerId();
-		if(layerId!=null) {
-			target.setLayerId(layerId);
-		}
-
-		String typeId = source.getTypeId();
-		if(typeId!=null) {
-			target.setTypeId(typeId);
-		}
+		source.getContextId().ifPresent(target::setContextId);
+		source.getDescription().ifPresent(target::setDescription);
+		source.getLayerId().ifPresent(target::setLayerId);
+		source.getTypeId().ifPresent(target::setTypeId);
 	}
 
 	public ImplementationManifest cloneImplementationManifest(ImplementationManifest source, MemberManifest host) {
@@ -499,10 +415,8 @@ public class ContextManifestResolver {
 
 		copyFragmentLayerFields(source, target);
 
-		RasterizerManifest rasterizerManifest = source.getRasterizerManifest();
-		if(rasterizerManifest!=null) {
-			target.setRasterizerManifest(cloneRasterizerManifest(rasterizerManifest, target));
-		}
+		source.getRasterizerManifest().ifPresent(
+				m -> target.setRasterizerManifest(cloneRasterizerManifest(m, target)));
 
 		return target;
 	}
@@ -512,10 +426,7 @@ public class ContextManifestResolver {
 
 		copyRasterizerFields(source, target);
 
-		ImplementationManifest implementationManifest = source.getImplementationManifest();
-		if(implementationManifest!=null) {
-			target.setImplementationManifest(implementationManifest);
-		}
+		source.getImplementationManifest().ifPresent(target::setImplementationManifest);
 
 		return target;
 	}

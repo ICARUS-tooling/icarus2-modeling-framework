@@ -38,7 +38,7 @@ class ItemLayerManifestImplTest implements ItemLayerManifestTest<ItemLayerManife
 	@Override
 	public ItemLayerManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
-		return new ItemLayerManifestImpl(manifestLocation, registry, (LayerGroupManifest) host);
+		return settings.process(new ItemLayerManifestImpl(manifestLocation, registry, (LayerGroupManifest) host));
 	}
 
 	/**

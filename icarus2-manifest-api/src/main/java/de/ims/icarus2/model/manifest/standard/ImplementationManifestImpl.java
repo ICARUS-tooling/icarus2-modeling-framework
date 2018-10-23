@@ -18,6 +18,8 @@ package de.ims.icarus2.model.manifest.standard;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Optional;
+
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
@@ -28,14 +30,13 @@ import de.ims.icarus2.model.manifest.api.MemberManifest;
  * @author Markus Gärtner
  *
  */
-public class ImplementationManifestImpl extends AbstractMemberManifest<ImplementationManifest> implements ImplementationManifest {
+public class ImplementationManifestImpl extends AbstractMemberManifest<ImplementationManifest, MemberManifest>
+		implements ImplementationManifest {
 
 	private SourceType sourceType;
-	private String source;
-	private String classname;
+	private Optional<String> source = Optional.empty();
+	private Optional<String> classname = Optional.empty();
 	private Boolean useFactory;
-
-	private final MemberManifest hostManifest;
 
 	/**
 	 * @param manifestLocation
@@ -43,18 +44,11 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	 */
 	public ImplementationManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry, MemberManifest hostManifest) {
-		super(manifestLocation, registry);
-
-		this.hostManifest = hostManifest;
+		super(manifestLocation, registry, hostManifest, MemberManifest.class);
 	}
 
 	public ImplementationManifestImpl(MemberManifest hostManifest) {
-		this(hostManifest.getManifestLocation(), hostManifest.getRegistry(), hostManifest);
-	}
-
-	@Override
-	public MemberManifest getHost() {
-		return hostManifest;
+		super(hostManifest, hostIdentity(), MemberManifest.class);
 	}
 
 	/**
@@ -85,24 +79,16 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	 * @see de.ims.icarus2.model.manifest.api.ImplementationManifest#getSource()
 	 */
 	@Override
-	public String getSource() {
-		String result = source;
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getSource();
-		}
-		return result;
+	public Optional<String> getSource() {
+		return getDerivable(source, ImplementationManifest::getSource);
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ImplementationManifest#getClassname()
 	 */
 	@Override
-	public String getClassname() {
-		String result = classname;
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getClassname();
-		}
-		return result;
+	public Optional<String> getClassname() {
+		return getDerivable(classname, ImplementationManifest::getClassname);
 	}
 
 	/**
@@ -144,9 +130,7 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	}
 
 	protected void setSource0(String source) {
-		requireNonNull(source);
-
-		this.source = source;
+		this.source = Optional.of(source);
 	}
 
 	/**
@@ -160,9 +144,7 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	}
 
 	protected void setClassname0(String classname) {
-		requireNonNull(classname);
-
-		this.classname = classname;
+		this.classname = Optional.of(classname);
 	}
 
 	/**

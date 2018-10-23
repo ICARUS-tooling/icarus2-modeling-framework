@@ -15,23 +15,37 @@
  * limitations under the License.
  */
 /**
- * 
+ *
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
-import org.junit.jupiter.api.Test;
+import de.ims.icarus2.model.manifest.api.ContextManifest;
+import de.ims.icarus2.model.manifest.api.DriverManifestTest;
+import de.ims.icarus2.model.manifest.api.ManifestLocation;
+import de.ims.icarus2.model.manifest.api.ManifestRegistry;
+import de.ims.icarus2.model.manifest.api.TypedManifest;
+import de.ims.icarus2.test.TestSettings;
 
 /**
  * @author Markus Gärtner
  *
  */
-class DriverManifestImplTest {
+class DriverManifestImplTest implements DriverManifestTest<DriverManifestImpl> {
 
-	@Test
-	void test() {
-		fail("Not yet implemented");
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
+	 */
+	@Override
+	public Class<? extends DriverManifestImpl> getTestTargetClass() {
+		return DriverManifestImpl.class;
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedMemberManifestTest#createHosted(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.TypedManifest)
+	 */
+	@Override
+	public DriverManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
+			ManifestRegistry registry, TypedManifest host) {
+		return settings.process(new DriverManifestImpl(manifestLocation, registry, (ContextManifest) host));
+	}
 }

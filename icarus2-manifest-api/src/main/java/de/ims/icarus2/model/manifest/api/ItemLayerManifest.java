@@ -16,7 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import de.ims.icarus2.model.manifest.standard.HierarchyImpl;
+import java.util.Optional;
+
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -33,34 +34,14 @@ import de.ims.icarus2.util.access.AccessRestriction;
 public interface ItemLayerManifest extends LayerManifest {
 
 	@AccessRestriction(AccessMode.READ)
-	Hierarchy<ContainerManifest> getContainerHierarchy();
+	Optional<Hierarchy<ContainerManifest>> getContainerHierarchy();
 
 	@AccessRestriction(AccessMode.READ)
 	boolean hasLocalContainerHierarchy();
 
 	/**
-	 * Returns the local container hierarchy of an {@link ItemLayerManifest}.
-	 * This method will create and {@link ItemLayerManifest#setContainerHierarchy(Hierarchy) set}
-	 * a new {@link Hierarchy} instance if no local container hierarchy has been
-	 * applied so far.
-	 *
-	 * @param layerManifest
-	 * @return
-	 */
-	public static Hierarchy<ContainerManifest> getOrCreateLocalContainerhierarchy(
-			ItemLayerManifest layerManifest) {
-		if(layerManifest.hasLocalContainerHierarchy()) {
-			return layerManifest.getContainerHierarchy();
-		} else {
-			Hierarchy<ContainerManifest> hierarchy = new HierarchyImpl<>();
-			layerManifest.setContainerHierarchy(hierarchy);
-			return hierarchy;
-		}
-	}
-
-	/**
 	 * Returns the manifest for the top-level container in this layer
-	 * or {@code null} if no container manifests have been added so far.
+	 * or an empty {@link Optional} if no container manifests have been added so far.
 	 * Note that usually this will always be a manifest describing a list
 	 * type container.
 	 * <p>
@@ -70,13 +51,13 @@ public interface ItemLayerManifest extends LayerManifest {
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	ContainerManifest getRootContainerManifest();
+	Optional<ContainerManifest> getRootContainerManifest();
 
 	/**
-	 * Returns the {@code ItemLayerManifest} that describes the layer hosting
+	 * Returns the {@link ItemLayerManifest} that describes the layer hosting
 	 * <i>boundary containers</i> for the items in this manifests'
 	 * {@code ItemLayer}. If the items are not restricted by <i>boundary containers</i>
-	 * this method should return {@code null}.
+	 * this method should return an empty {@link Optional}.
 	 * <p>
 	 * Being restricted by a <i>boundary container</i> means that all non-virtual members of a
 	 * container (or structure) must reside within the same range of indices defined by the boundary.
@@ -86,23 +67,25 @@ public interface ItemLayerManifest extends LayerManifest {
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	TargetLayerManifest getBoundaryLayerManifest();
+	Optional<TargetLayerManifest> getBoundaryLayerManifest();
 
 	boolean isLocalBoundaryLayerManifest();
 
 	/**
-	 * Returns the
+	 * Returns the {@link ItemLayerManifest} that specifies the granularity of atomic elements
+	 * this layer builds upon.
 	 *
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	TargetLayerManifest getFoundationLayerManifest();
+	Optional<TargetLayerManifest> getFoundationLayerManifest();
 
 	boolean isLocalFoundationLayerManifest();
 
 	default boolean isPrimaryLayerManifest() {
-		LayerGroupManifest groupManifest = getGroupManifest();
-		return groupManifest!=null && groupManifest.getPrimaryLayerManifest()==this;
+		return getGroupManifest()
+				.flatMap(LayerGroupManifest::getPrimaryLayerManifest)
+				.orElse(null)==this;
 	}
 
 	// Modification methods

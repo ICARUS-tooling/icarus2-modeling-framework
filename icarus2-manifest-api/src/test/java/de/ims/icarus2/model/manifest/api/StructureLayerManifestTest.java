@@ -25,8 +25,8 @@ import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubId;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubType;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.transform_id;
 import static de.ims.icarus2.model.manifest.api.ItemLayerManifestTest.mockContainerManifest;
+import static de.ims.icarus2.test.TestUtils.assertNotPresent;
 import static de.ims.icarus2.test.TestUtils.assertPredicate;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.function.BiFunction;
@@ -35,6 +35,7 @@ import java.util.function.Predicate;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.standard.ItemLayerManifestImpl;
 
 /**
  * @author Markus Gärtner
@@ -45,8 +46,7 @@ public interface StructureLayerManifestTest<M extends StructureLayerManifest> ex
 	public static StructureManifest mockStructureManifest(String id) {
 		StructureManifest structureManifest = mockTypedManifest(ManifestType.STRUCTURE_MANIFEST);
 
-		return stubType((StructureManifest) stubId((ManifestFragment)structureManifest, id),
-				ManifestType.STRUCTURE_MANIFEST);
+		return stubType(stubId(structureManifest, id), ManifestType.STRUCTURE_MANIFEST);
 	}
 
 	/**
@@ -67,18 +67,18 @@ public interface StructureLayerManifestTest<M extends StructureLayerManifest> ex
 	 * @param containerManifests
 	 */
 	default <C extends ContainerManifest> void assertInvalidRootStructure(
-			boolean expectNull, @SuppressWarnings("unchecked") C...containerManifests) {
+			boolean expectEmpty, @SuppressWarnings("unchecked") C...containerManifests) {
 		M manifest = createUnlocked();
 
-		Hierarchy<ContainerManifest> hierarchy = ItemLayerManifest.getOrCreateLocalContainerhierarchy(manifest);
+		Hierarchy<ContainerManifest> hierarchy = ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(manifest);
 		assertTrue(hierarchy.isEmpty());
 
 		for(C containerManifest : containerManifests) {
 			hierarchy.add(containerManifest);
 		}
 
-		if(expectNull) {
-			assertNull(manifest.getRootStructureManifest());
+		if(expectEmpty) {
+			assertNotPresent(manifest.getRootStructureManifest());
 		} else {
 			assertManifestException(ManifestErrorCode.MANIFEST_MISSING_MEMBER,
 					() -> manifest.getRootStructureManifest(), null);
@@ -104,11 +104,11 @@ public interface StructureLayerManifestTest<M extends StructureLayerManifest> ex
 		assertInvalidRootStructure(false, structure, container1);
 
 		Predicate<M> rootCheck = m -> {
-			return m.getRootStructureManifest()==structure;
+			return m.getRootStructureManifest().orElse(null)==structure;
 		};
 
 		BiFunction<M, ContainerManifest, Boolean> staticModifier = (m, cont) -> {
-			Hierarchy<ContainerManifest> hierarchy = ItemLayerManifest.getOrCreateLocalContainerhierarchy(m);
+			Hierarchy<ContainerManifest> hierarchy = ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(m);
 			hierarchy.add(cont);
 			return hierarchy.getDepth()>1 && hierarchy.levelOf(structure)>0;
 		};
@@ -118,7 +118,7 @@ public interface StructureLayerManifestTest<M extends StructureLayerManifest> ex
 				root, structure, container1, container2);
 
 		BiFunction<M, ContainerManifest, Boolean> mixedModifier = (m, cont) -> {
-			Hierarchy<ContainerManifest> hierarchy = ItemLayerManifest.getOrCreateLocalContainerhierarchy(m);
+			Hierarchy<ContainerManifest> hierarchy = ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(m);
 			hierarchy.insert(cont, 0);
 			return hierarchy.getDepth()>1 && hierarchy.levelOf(structure)>0;
 		};

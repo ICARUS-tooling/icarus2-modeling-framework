@@ -36,7 +36,7 @@ public class CharacterAxis implements RasterAxis {
 	 * @see de.ims.icarus2.util.id.Identity#getName()
 	 */
 	@Override
-	public String getName() {
+	public Optional<String> getName() {
 		return "Character Offset Axis";
 	}
 

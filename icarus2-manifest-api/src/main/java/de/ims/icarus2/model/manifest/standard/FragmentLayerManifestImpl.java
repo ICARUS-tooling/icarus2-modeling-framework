@@ -18,6 +18,8 @@ package de.ims.icarus2.model.manifest.standard;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Optional;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
@@ -34,8 +36,8 @@ import de.ims.icarus2.model.manifest.api.RasterizerManifest;
 public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements FragmentLayerManifest {
 
 	private TargetLayerManifest valueManifest;
-	private String annotationKey;
-	private RasterizerManifest rasterizerManifest;
+	private Optional<String> annotationKey = Optional.empty();
+	private Optional<RasterizerManifest> rasterizerManifest = Optional.empty();
 
 	/**
 	 * @param manifestLocation
@@ -49,12 +51,11 @@ public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements 
 
 	public FragmentLayerManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry) {
-		this(manifestLocation, registry, null);
+		super(manifestLocation, registry, null);
 	}
 
 	public FragmentLayerManifestImpl(LayerGroupManifest layerGroupManifest) {
-		this(layerGroupManifest.getContextManifest().getManifestLocation(),
-				layerGroupManifest.getContextManifest().getRegistry(), layerGroupManifest);
+		super(layerGroupManifest);
 	}
 
 	/**
@@ -62,7 +63,7 @@ public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements 
 	 */
 	@Override
 	public boolean isEmpty() {
-		return super.isEmpty() && rasterizerManifest==null && valueManifest==null;
+		return super.isEmpty() && !rasterizerManifest.isPresent() && valueManifest==null;
 	}
 
 	/**
@@ -85,14 +86,10 @@ public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements 
 	 * @see de.ims.icarus2.model.manifest.api.FragmentLayerManifest#getValueLayerManifest()
 	 */
 	@Override
-	public TargetLayerManifest getValueLayerManifest() {
-		TargetLayerManifest result = valueManifest;
-
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getValueLayerManifest();
-		}
-
-		return result;
+	public Optional<TargetLayerManifest> getValueLayerManifest() {
+		return getDerivable(
+				Optional.ofNullable(valueManifest),
+				FragmentLayerManifest::getValueLayerManifest);
 	}
 
 	/**
@@ -107,12 +104,8 @@ public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements 
 	 * @see de.ims.icarus2.model.manifest.api.FragmentLayerManifest#getAnnotationKey()
 	 */
 	@Override
-	public String getAnnotationKey() {
-		String result = annotationKey;
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getAnnotationKey();
-		}
-		return result;
+	public Optional<String> getAnnotationKey() {
+		return getDerivable(annotationKey, FragmentLayerManifest::getAnnotationKey);
 	}
 
 	/**
@@ -120,19 +113,15 @@ public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements 
 	 */
 	@Override
 	public boolean isLocalAnnotationKey() {
-		return annotationKey!=null;
+		return annotationKey.isPresent();
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.FragmentLayerManifest#getRasterizerManifest()
 	 */
 	@Override
-	public RasterizerManifest getRasterizerManifest() {
-		RasterizerManifest result = rasterizerManifest;
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getRasterizerManifest();
-		}
-		return result;
+	public Optional<RasterizerManifest> getRasterizerManifest() {
+		return getDerivable(rasterizerManifest, FragmentLayerManifest::getRasterizerManifest);
 	}
 
 	/**
@@ -140,7 +129,7 @@ public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements 
 	 */
 	@Override
 	public boolean isLocalRasterizerManifest() {
-		return rasterizerManifest!=null;
+		return rasterizerManifest.isPresent();
 	}
 
 	/**
@@ -157,7 +146,7 @@ public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements 
 		requireNonNull(valueLayerId);
 
 		checkAllowsTargetLayer();
-		TargetLayerManifest manifest = createTargetLayerManifest(valueLayerId);
+		TargetLayerManifest manifest = createTargetLayerManifest(valueLayerId, "value layer");
 		valueManifest = manifest;
 		return manifest;
 	}
@@ -179,7 +168,7 @@ public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements 
 			throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
 					"Annotation key must not be empty");
 
-		annotationKey = key;
+		annotationKey = Optional.of(key);
 	}
 
 	/**
@@ -193,21 +182,17 @@ public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements 
 	}
 
 	protected void setRasterizerManifest0(RasterizerManifest rasterizerManifest) {
-		requireNonNull(rasterizerManifest);
-
-		this.rasterizerManifest = rasterizerManifest;
+		this.rasterizerManifest = Optional.of(rasterizerManifest);
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractMemberManifest#lock()
 	 */
 	@Override
-	public void lock() {
-		super.lock();
+	protected void lockNested() {
+		super.lockNested();
 
-		if(rasterizerManifest!=null) {
-			rasterizerManifest.lock();
-		}
+		lockNested(rasterizerManifest);
 	}
 
 }

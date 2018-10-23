@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.Optional;
+
 /**
  * Models a basic unidirectional hierarchical relation between an embedded
  * manifest component and its host.
@@ -31,5 +33,12 @@ package de.ims.icarus2.model.manifest.api;
  */
 public interface Embedded {
 
-	TypedManifest getHost();
+	/**
+	 * Returns the manifest hosting this element. Note that as a rule of
+	 * consistency all other more type specific methods that return the same
+	 * object under another signature must delegate to this method!
+	 *
+	 * @return
+	 */
+	<T extends TypedManifest> Optional<T> getHost();
 }

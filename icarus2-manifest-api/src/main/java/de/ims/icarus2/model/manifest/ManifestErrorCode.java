@@ -144,6 +144,7 @@ public enum ManifestErrorCode implements ErrorCode {
 	 * An attempt was made to declare an unsupported manifest template state.
 	 * In certain situations a manifest will be expected to
 	 */
+	//TODO finish doc
 	MANIFEST_ILLEGAL_TEMPLATE_STATE(603),
 
 	/**

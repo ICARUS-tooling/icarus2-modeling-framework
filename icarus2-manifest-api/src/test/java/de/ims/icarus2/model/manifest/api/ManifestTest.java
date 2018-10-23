@@ -23,27 +23,32 @@ import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertManifestExce
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestLocation;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestRegistry;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubTemplateContext;
+import static de.ims.icarus2.test.TestUtils.NO_CHECK;
+import static de.ims.icarus2.test.TestUtils.assertNotPresent;
+import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Collection;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.ManifestTestFeature;
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
@@ -88,7 +93,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 
 		String id = "templateId";
 		M template = createTestInstance(settings.clone()
-				.withFeatures(
+				.features(
 					ManifestTestFeature.UNLOCKED,
 					ManifestTestFeature.TEMPLATE),
 				ManifestTestUtils.mockManifestLocation(true),
@@ -96,7 +101,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 		template.setIsTemplate(true);
 		template.setId(id);
 
-		when(registry.getTemplate(id)).thenReturn(template);
+		when(registry.getTemplate(id)).thenReturn(Optional.of(template));
 		when(registry.hasTemplate(id)).thenReturn(true);
 
 		return template;
@@ -113,15 +118,17 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 		assertNotNull(template.getId());
 		assertTrue(template.isTemplate());
 
-		// Sanity checks for proper template resolution
-		assertTrue(template.getRegistry().hasTemplate(template.getId()));
-		assertSame(template, template.getRegistry().getTemplate(template.getId()));
+		String id = template.getId().orElseThrow(AssertionError::new);
 
-		M derived = createTestInstance(settings.clone().withFeatures(
+		// Sanity checks for proper template resolution
+		assertTrue(template.getRegistry().hasTemplate(id));
+		assertOptionalEquals(template, template.getRegistry().getTemplate(id));
+
+		M derived = createTestInstance(settings.clone().features(
 				ManifestTestFeature.UNLOCKED,
 				ManifestTestFeature.DERIVED),
 				ManifestTestUtils.mockManifestLocation(false), template.getRegistry());
-		derived.setTemplateId(template.getId());
+		derived.setTemplateId(id);
 
 		assertSame(template, derived.getTemplate());
 
@@ -195,7 +202,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 *
 	 */
 	default <K extends Object> void assertDerivativeGetter(
-			TestSettings settings, K value1, K value2, K defaultValue, Function<M,K> getter, BiConsumer<M, K> setter) {
+			TestSettings settings, K value1, K value2, Supplier<? extends K> defaultValue, Function<M,K> getter, BiConsumer<M, K> setter) {
 
 		TestUtils.assertGetter(createUnlocked(settings), value1, value2, defaultValue, getter, setter);
 
@@ -209,6 +216,25 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 			setter.accept(derived, value2);
 			assertEquals(value2, getter.apply(derived));
 			assertEquals(value1, getter.apply(template));
+		}
+	}
+
+	default <K extends Object> void assertDerivativeOptGetter(
+			TestSettings settings, K value1, K value2, Supplier<? extends K> defaultValue,
+			Function<M,Optional<K>> getter, BiConsumer<M, K> setter) {
+
+		TestUtils.assertOptGetter(createUnlocked(settings), value1, value2, defaultValue, getter, setter);
+
+		if(getExpectedType().isSupportTemplating()) {
+			M template = createTemplate(settings);
+			setter.accept(template, value1);
+			M derived = createDerived(settings, template);
+
+			assertOptionalEquals(value1, getter.apply(derived));
+
+			setter.accept(derived, value2);
+			assertOptionalEquals(value2, getter.apply(derived));
+			assertOptionalEquals(value1, getter.apply(template));
 		}
 	}
 
@@ -395,45 +421,73 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 		}
 	}
 
-
 	default <K extends Object, I extends Object> void assertDerivativeAccumulativeLookup(
-			K value1, K value2, BiFunction<M, I, K> lookup,
+			TestSettings settings, K value1, K value2, BiFunction<M, I, K> lookup,
 			boolean checkNPE, BiConsumer<Executable, String> invalidLookupCheck,
 			BiConsumer<M, K> adder, Function<K, I> keyGen, @SuppressWarnings("unchecked") I...invalidLookups) {
 
-		TestUtils.assertAccumulativeLookup(createUnlocked(), value1, value2, lookup, checkNPE,
+		TestUtils.assertAccumulativeLookup(createUnlocked(settings), value1, value2, lookup, checkNPE,
 				invalidLookupCheck, adder, keyGen, invalidLookups);
 
 		if(getExpectedType().isSupportTemplating()) {
-			M template = createTemplate(settings());
+			M template = createTemplate(settings);
 			adder.accept(template, value1);
 
-			M derived = createDerived(settings(), template);
+			M derived = createDerived(settings, template);
 
-			assertSame(value1, lookup.apply(derived, keyGen.apply(value1)));
-			invalidLookupCheck.accept(() -> lookup.apply(derived, keyGen.apply(value2)),
+			assertEquals(value1, lookup.apply(derived, keyGen.apply(value1)));
+			if(invalidLookupCheck!=NO_CHECK) {
+				invalidLookupCheck.accept(() -> lookup.apply(derived, keyGen.apply(value2)),
+						"Test unknown lookup for derived manifest");
+			}
+
+			adder.accept(derived, value2);
+			assertEquals(value2, lookup.apply(derived, keyGen.apply(value2)));
+			if(invalidLookupCheck!=NO_CHECK) {
+				invalidLookupCheck.accept(() -> lookup.apply(template, keyGen.apply(value2)),
+						"Test unknown lookup for template manifest");
+			}
+		}
+	}
+
+	default <K extends Object, I extends Object> void assertDerivativeAccumulativeOptLookup(
+			TestSettings settings, K value1, K value2, BiFunction<M, I, Optional<K>> lookup,
+			boolean checkNPE,
+			BiConsumer<M, K> adder, Function<K, I> keyGen, @SuppressWarnings("unchecked") I...invalidLookups) {
+
+		TestUtils.assertAccumulativeOptLookup(createUnlocked(settings), value1, value2, lookup, checkNPE,
+				adder, keyGen, invalidLookups);
+
+		if(getExpectedType().isSupportTemplating()) {
+			M template = createTemplate(settings);
+			adder.accept(template, value1);
+
+			M derived = createDerived(settings, template);
+
+			assertOptionalEquals(value1, lookup.apply(derived, keyGen.apply(value1)));
+			assertNotPresent(lookup.apply(derived, keyGen.apply(value2)),
 					"Test unknown lookup for derived manifest");
 
 			adder.accept(derived, value2);
-			assertSame(value2, lookup.apply(derived, keyGen.apply(value2)));
-			invalidLookupCheck.accept(() -> lookup.apply(template, keyGen.apply(value2)),
+			assertOptionalEquals(value2, lookup.apply(derived, keyGen.apply(value2)));
+			assertNotPresent(lookup.apply(template, keyGen.apply(value2)),
 					"Test unknown lookup for template manifest");
 		}
 	}
 
 	default <K extends Object, I extends Object> void assertDerivativeAccumulativeLookupContains(
-			K value1, K value2, BiPredicate<M, I> check,
+			TestSettings settings, K value1, K value2, BiPredicate<M, I> check,
 			boolean checkNPE, BiConsumer<M, K> adder, Function<K, I> keyGen) {
 
-		TestUtils.assertAccumulativeLookupContains(createUnlocked(), value1, value2,
+		TestUtils.assertAccumulativeLookupContains(createUnlocked(settings), value1, value2,
 				check, checkNPE, adder, keyGen);
 
 
 		if(getExpectedType().isSupportTemplating()) {
-			M template = createTemplate(settings());
+			M template = createTemplate(settings);
 			adder.accept(template, value1);
 
-			M derived = createDerived(settings(), template);
+			M derived = createDerived(settings, template);
 
 			assertTrue(check.test(derived, keyGen.apply(value1)));
 			assertFalse(check.test(derived, keyGen.apply(value2)));
@@ -459,18 +513,21 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	default void testHasTemplateContext() {
 		// Takes care of embedding depth of 0
 		assertFalse(createUnlocked().hasTemplateContext());
-		assertTrue(createTemplate(settings()).hasTemplateContext());
+
+		if(getExpectedType().isSupportTemplating()) {
+			assertTrue(createTemplate(settings()).hasTemplateContext());
+		}
 
 		// Complex hierarchy
 		int embeddingDepth = 1;
 		while(true) {
-			M manifest = createTestInstance(settings().withFeatures(ManifestTestFeature.EMBEDDED),
+			M manifest = createTestInstance(settings().features(ManifestTestFeature.EMBEDDED),
 					mockManifestLocation(true), mockManifestRegistry());
 			if(!stubTemplateContext(manifest, embeddingDepth)) {
 				break;
 			}
 
-			assertTrue(manifest.hasTemplateContext(), "Expecting template context for embedding depths "+embeddingDepth);
+			assertTrue(manifest.hasTemplateContext(), "Expecting template context for embedding depth of "+embeddingDepth);
 
 			embeddingDepth++;
 		}
@@ -505,7 +562,10 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 */
 	@Test
 	default void testGetTemplate() {
-		assertNull(createUnlocked().getTemplate());
+		M manifest = createUnlocked();
+		assertManifestException(GlobalErrorCode.ILLEGAL_STATE, () -> manifest.getTemplate(),
+				"Manifest not supposed to resolve template without id");
+		assertNotPresent(manifest.tryGetTemplate());
 	}
 
 	/**
@@ -523,7 +583,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 */
 	@Test
 	default void testSetId() {
-		TestUtils.assertSetter(createUnlocked(), Manifest::setId, ManifestTestUtils.getLegalIdValues(),
+		TestUtils.assertSetterBatch(createUnlocked(), Manifest::setId, ManifestTestUtils.getLegalIdValues(),
 				true, INVALID_ID_CHECK, ManifestTestUtils.getIllegalIdValues());
 	}
 
@@ -532,8 +592,17 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 */
 	@Test
 	default void testSetIsTemplate() {
-		M manifest = createTestInstance(settings().withFeatures(ManifestTestFeature.TEMPLATE),
+		M manifest = createTestInstance(settings().features(ManifestTestFeature.TEMPLATE),
 				ManifestTestUtils.mockManifestLocation(true), mock(ManifestRegistry.class));
+
+		// If the expected type under test does not support templating, we can exit early
+		if(!getExpectedType().isSupportTemplating()) {
+			assertManifestException(
+					ManifestErrorCode.MANIFEST_ILLEGAL_TEMPLATE_STATE,
+					() -> manifest.setIsTemplate(true),
+					"Manifest expected not to support templating");
+			return;
+		}
 
 		manifest.setIsTemplate(true);
 		assertTrue(manifest.isTemplate());
@@ -541,11 +610,11 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 		manifest.lock();
 		LockableTest.assertLocked(() -> manifest.setIsTemplate(true));
 
-		Manifest liveContextManifest = createUnlocked();
-
 		ManifestTestUtils.assertManifestException(ManifestErrorCode.MANIFEST_ERROR,
-				() -> liveContextManifest.setIsTemplate(true),
+				() -> createUnlocked().setIsTemplate(true),
 				"Testing setIsTemplate(String) on embedded manifest");
+
+		//TODO
 	}
 
 	/**
@@ -555,18 +624,27 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	default void testSetTemplateId() {
 		M manifest = createUnlocked();
 
+		if(!getExpectedType().isSupportTemplating()) {
+			assertManifestException(
+					ManifestErrorCode.MANIFEST_ILLEGAL_TEMPLATE_STATE,
+					() -> manifest.setTemplateId("someId"),
+					"Manifest expected not to support templating");
+			return;
+		}
+
 		String id = "test123";
 
 		M template = createTemplate(settings());
 
 		ManifestRegistry registry = manifest.getRegistry();
-		when(registry.getTemplate(id)).thenReturn(template);
+		when(registry.getTemplate(id)).thenReturn(Optional.of(template));
 
 		manifest.setTemplateId(id);
 		assertSame(template, manifest.getTemplate());
 
 		manifest.setTemplateId(null);
-		assertNull(manifest.getTemplate());
+		assertManifestException(GlobalErrorCode.ILLEGAL_STATE, () -> manifest.getTemplate(),
+				"Manifest not supposed to resolve template without template id");
 
 		manifest.lock();
 		LockableTest.assertLocked(() -> manifest.setTemplateId(id));
@@ -597,7 +675,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 */
 	@Test
 	default void testGetVersionManifest() {
-		assertNull(createUnlocked().getVersionManifest());
+		assertNotPresent(createUnlocked().getVersionManifest());
 	}
 
 	/**

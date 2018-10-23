@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.util.xml;
 
+import java.util.Optional;
+
 import de.ims.icarus2.util.strings.StringResource;
 
 /**
@@ -59,6 +61,13 @@ public interface XmlSerializer {
 	 * does nothing.
 	 */
 	void writeAttribute(String name, String value) throws Exception;
+
+	default void writeAttribute(String name, Optional<String> opt) throws Exception {
+		// Need to use this pattern as the basic writeAttribute method is allowed to throw an exception
+		if(opt.isPresent() && XmlUtils.isLegalAttribute(opt)) {
+			writeAttribute(name, opt.get());
+		}
+	}
 
 	default void writeAttribute(String name, StringResource value) throws Exception {
 		if(value!=null) {

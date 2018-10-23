@@ -21,17 +21,20 @@ import static java.util.Objects.requireNonNull;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.OptionsManifest;
+import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.api.ValueRange;
 import de.ims.icarus2.model.manifest.api.ValueSet;
 import de.ims.icarus2.model.manifest.types.UnsupportedValueTypeException;
@@ -48,7 +51,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 	private final Set<Identity> groupIdentifiers = new HashSet<>();
 	private final Map<String, Option> options = new HashMap<>();
 
-	private final MemberManifest memberManifest;
+	private final Optional<MemberManifest> memberManifest;
 
 	/**
 	 * @param manifestLocation
@@ -58,16 +61,16 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 			ManifestRegistry registry) {
 		super(manifestLocation, registry);
 
-		memberManifest = null;
+		memberManifest = Optional.empty();
 	}
 
 	public OptionsManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry, MemberManifest memberManifest) {
 		super(manifestLocation, registry);
 
-		verifyEnvironment(manifestLocation, memberManifest, MemberManifest.class);
+		Manifest.verifyEnvironment(manifestLocation, memberManifest, MemberManifest.class);
 
-		this.memberManifest = memberManifest;
+		this.memberManifest = Optional.ofNullable(memberManifest);
 	}
 
 	public OptionsManifestImpl(MemberManifest memberManifest) {
@@ -77,22 +80,23 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.OptionsManifest#getHost()
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
-	public MemberManifest getHost() {
-		return memberManifest;
+	public <T extends TypedManifest> Optional<T> getHost() {
+		return (Optional<T>) memberManifest;
 	}
 
 	@Override
 	protected boolean isTopLevel() {
-		return getHost()==null;
+		return !getHost().isPresent();
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractLockable#lock()
 	 */
 	@Override
-	public void lock() {
-		super.lock();
+	protected void lockNested() {
+		super.lockNested();
 
 		options.values().forEach(Option::lock);
 	}
@@ -128,20 +132,10 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 	}
 
 	@Override
-	public Option getOption(String id) {
+	public Optional<Option> getOption(String id) {
 		requireNonNull(id);
 
-		Option option = options.get(id);
-
-		if(option==null && hasTemplate()) {
-			option = getTemplate().getOption(id);
-		}
-
-		if(option==null)
-			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
-					"No such option: "+id); //$NON-NLS-1$
-
-		return option;
+		return getDerivable(Optional.ofNullable(options.get(id)), t -> t.getOption(id));
 	}
 
 	@Override
@@ -151,14 +145,15 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		addOption0(option);
 	}
 
+	private String getOptionId(Option option) {
+		return option.getId().orElseThrow(Manifest.invalidId(
+				"Option does not declare valid identifier"));
+	}
+
 	protected void addOption0(Option option) {
 		requireNonNull(option);
 
-		String id = option.getId();
-
-		if(id==null)
-			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
-					"Option does not declare a valid id"); //$NON-NLS-1$
+		String id = getOptionId(option);
 
 		if(options.containsKey(id))
 			throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
@@ -177,11 +172,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 	protected void removeOption0(Option option) {
 		requireNonNull(option);
 
-		String id = option.getId();
-
-		if(id==null)
-			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
-					"Option does not declare a valid id"); //$NON-NLS-1$
+		String id = getOptionId(option);
 
 		if(!options.containsKey(id))
 			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
@@ -210,11 +201,10 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 	protected void addGroupIdentifier0(Identity identity) {
 		requireNonNull(identity);
 
-		if(identity.getId()==null)
-			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
-					"Supplied identity declares null id"); //$NON-NLS-1$
+		String id = identity.getId().orElseThrow(Manifest.invalidId(
+				"Supplied identity declares null id"));
 
-		ManifestUtils.checkId(identity.getId());
+		ManifestUtils.checkId(id);
 
 		if(groupIdentifiers.contains(identity))
 			throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
@@ -271,12 +261,12 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 	}
 
 	public static class OptionImpl extends DefaultModifiableIdentity implements Option {
-		private Object defaultValue;
+		private Optional<Object> defaultValue = Optional.empty();
 		private ValueType valueType;
-		private String group;
-		private ValueSet values;
-		private ValueRange range;
-		private String extensionPointUid;
+		private Optional<String> group = Optional.empty();
+		private Optional<ValueSet> values = Optional.empty();
+		private Optional<ValueRange> range = Optional.empty();
+		private Optional<String> extensionPointUid = Optional.empty();
 		private boolean published = DEFAULT_PUBLISHED_VALUE;
 		private boolean multivalue = DEFAULT_MULTIVALUE_VALUE;
 		private boolean allowNull = DEFAULT_ALLOW_NULL;
@@ -323,7 +313,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		 * @see de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getDefaultValue()
 		 */
 		@Override
-		public Object getDefaultValue() {
+		public Optional<Object> getDefaultValue() {
 			return defaultValue;
 		}
 		/**
@@ -337,21 +327,21 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		 * @see de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getSupportedValues()
 		 */
 		@Override
-		public ValueSet getSupportedValues() {
+		public Optional<ValueSet> getSupportedValues() {
 			return values;
 		}
 		/**
 		 * @see de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getSupportedRange()
 		 */
 		@Override
-		public ValueRange getSupportedRange() {
+		public Optional<ValueRange> getSupportedRange() {
 			return range;
 		}
 		/**
 		 * @see de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getExtensionPointUid()
 		 */
 		@Override
-		public String getExtensionPointUid() {
+		public Optional<String> getExtensionPointUid() {
 			return extensionPointUid;
 		}
 
@@ -359,7 +349,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		 * @see de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getOptionGroupId()
 		 */
 		@Override
-		public String getOptionGroupId() {
+		public Optional<String> getOptionGroupId() {
 			return group;
 		}
 		/**
@@ -398,7 +388,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 				valueType.checkValue(defaultValue);
 			}
 
-			this.defaultValue = defaultValue;
+			this.defaultValue = Optional.ofNullable(defaultValue);
 
 			return this;
 		}
@@ -439,7 +429,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 
 			ManifestUtils.checkId(group);
 
-			this.group = group;
+			this.group = Optional.of(group);
 
 			return this;
 		}
@@ -460,7 +450,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 				throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
 						"Incompatible value type defined for value set: expected "+valueType+" - got "+values.getValueType()); //$NON-NLS-1$ //$NON-NLS-2$
 
-			this.values = values;
+			this.values = Optional.ofNullable(values);
 
 			return this;
 		}
@@ -481,7 +471,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 				throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
 						"Incompatible value type defined for range: expected "+valueType+" - got "+range.getValueType()); //$NON-NLS-1$ //$NON-NLS-2$
 
-			this.range = range;
+			this.range = Optional.ofNullable(range);
 
 			return this;
 		}
@@ -501,7 +491,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 //				throw new IllegalArgumentException("Cannot define extension point for value type other than " //$NON-NLS-1$
 //						+ValueType.EXTENSION.getStringValue()+": "+valueType.getStringValue()); //$NON-NLS-1$
 
-			this.extensionPointUid = extensionPointUid;
+			this.extensionPointUid = Optional.ofNullable(extensionPointUid);
 
 			return this;
 		}

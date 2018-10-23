@@ -46,7 +46,7 @@ class ImplementationManifestImplTest implements ImplementationManifestTest<Imple
 	@Override
 	public ImplementationManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
-		return new ImplementationManifestImpl(manifestLocation, registry, (MemberManifest) host);
+		return settings.process(new ImplementationManifestImpl(manifestLocation, registry, (MemberManifest) host));
 	}
 
 }

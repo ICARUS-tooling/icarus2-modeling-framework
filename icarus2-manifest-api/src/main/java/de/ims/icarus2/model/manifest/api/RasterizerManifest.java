@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.Optional;
+
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessPolicy;
 
@@ -26,10 +28,7 @@ import de.ims.icarus2.util.access.AccessPolicy;
 @AccessControl(AccessPolicy.DENY)
 public interface RasterizerManifest extends ForeignImplementationManifest, Embedded {
 
-	default FragmentLayerManifest getLayerManifest() {
+	default <M extends FragmentLayerManifest> Optional<M> getLayerManifest() {
 		return getHost();
 	}
-
-	@Override
-	FragmentLayerManifest getHost();
 }

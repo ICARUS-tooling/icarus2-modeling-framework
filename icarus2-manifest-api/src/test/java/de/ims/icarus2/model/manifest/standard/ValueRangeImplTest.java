@@ -15,23 +15,33 @@
  * limitations under the License.
  */
 /**
- * 
+ *
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
-import org.junit.jupiter.api.Test;
+import de.ims.icarus2.model.manifest.api.ValueRangeTest;
+import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.test.TestSettings;
 
 /**
  * @author Markus Gärtner
  *
  */
-class ValueRangeImplTest {
+class ValueRangeImplTest implements ValueRangeTest<ValueRangeImpl> {
 
-	@Test
-	void test() {
-		fail("Not yet implemented");
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
+	 */
+	@Override
+	public Class<? extends ValueRangeImpl> getTestTargetClass() {
+		return ValueRangeImpl.class;
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.ValueRangeTest#createWithType(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.types.ValueType)
+	 */
+	@Override
+	public ValueRangeImpl createWithType(TestSettings settings, ValueType valueType) {
+		return settings.process(new ValueRangeImpl(valueType));
+	}
 }

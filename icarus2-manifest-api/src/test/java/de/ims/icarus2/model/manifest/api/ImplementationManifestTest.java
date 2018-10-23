@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.TestUtils.DEFAULT;
 import static de.ims.icarus2.test.TestUtils.settings;
 
 import java.util.Set;
@@ -71,7 +72,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 
 		for(SourceType sourceType : SourceType.values()) {
 			assertDerivativeGetter(settings(), sourceType, TestUtils.other(sourceType),
-					ImplementationManifest.DEFAULT_SOURCE_TYPE,
+					DEFAULT(ImplementationManifest.DEFAULT_SOURCE_TYPE),
 					ImplementationManifest::getSourceType, ImplementationManifest::setSourceType);
 		}
 	}
@@ -81,7 +82,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	 */
 	@Test
 	default void testGetSource() {
-		assertDerivativeGetter(settings(), "source", "source2", TestUtils.NO_DEFAULT(),
+		assertDerivativeOptGetter(settings(), "source", "source2", TestUtils.NO_DEFAULT(),
 				ImplementationManifest::getSource, ImplementationManifest::setSource);
 	}
 
@@ -90,7 +91,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	 */
 	@Test
 	default void testGetClassname() {
-		assertDerivativeGetter(settings(), "classname", "classname2", TestUtils.NO_DEFAULT(),
+		assertDerivativeOptGetter(settings(), "classname", "classname2", TestUtils.NO_DEFAULT(),
 				ImplementationManifest::getClassname, ImplementationManifest::setClassname);
 	}
 
@@ -101,7 +102,7 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	@Test
 	default void testIsUseFactory() {
 		assertDerivativeGetter(settings(), Boolean.TRUE, Boolean.FALSE,
-				ImplementationManifest.DEFAULT_USE_FACTORY_VALUE,
+				DEFAULT(ImplementationManifest.DEFAULT_USE_FACTORY_VALUE),
 				ImplementationManifest::isUseFactory, ImplementationManifest::setUseFactory);
 	}
 

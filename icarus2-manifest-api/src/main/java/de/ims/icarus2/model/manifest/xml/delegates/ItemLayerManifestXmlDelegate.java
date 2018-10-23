@@ -186,7 +186,7 @@ public class ItemLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelega
 			AbstractLayerManifestXmlDelegate<L> delegate, ContainerManifest containerManifest) {
 		ItemLayerManifest layerManifest = delegate.getInstance();
 
-		ItemLayerManifest.getOrCreateLocalContainerhierarchy(layerManifest).add(containerManifest);
+		ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(layerManifest).add(containerManifest);
 	}
 
 	/**

@@ -18,6 +18,11 @@ package de.ims.icarus2.model.manifest.standard;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
+
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
@@ -26,11 +31,15 @@ import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.VersionManifest;
 import de.ims.icarus2.model.manifest.standard.Links.Link;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.lang.ClassUtils;
 
 
 
 /**
+ * Implementation note: This class obtains {@link #getUID() uids} lazily when client
+ * code actually requests them. See the documentation for {@link #getUID()} for details.
+ *
  * @author Markus Gärtner
  *
  */
@@ -38,35 +47,41 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 
 	private TemplateLink<T> template;
 
-	private transient int uid;
+	private transient volatile int uid = IcarusUtils.UNSET_INT;
 
-	private String id;
+	private Optional<String> id = Optional.empty();
 	private boolean isTemplate;
-	private VersionManifest versionManifest;
+	private Optional<VersionManifest> versionManifest = Optional.empty();
 
 	private transient final ManifestLocation manifestLocation;
 	private transient final ManifestRegistry registry;
 
-	public static void verifyEnvironment(ManifestLocation manifestLocation, Object environment, Class<?> expected) {
-		if(!manifestLocation.isTemplate() && !expected.isInstance(environment))
-			throw new ManifestException(ManifestErrorCode.MANIFEST_MISSING_ENVIRONMENT,
-					"Missing environment of type "+expected.getName()); //$NON-NLS-1$
-	}
-
 	protected AbstractManifest(ManifestLocation manifestLocation, ManifestRegistry registry) {
-		this(manifestLocation, registry, true);
-	}
-
-	protected AbstractManifest(ManifestLocation manifestLocation, ManifestRegistry registry, boolean isAllowedTemplate) {
 		requireNonNull(manifestLocation);
 		requireNonNull(registry);
 
-//		if(!isAllowedTemplate && manifestLocation.isTemplate())
-//			throw new ModelException(ModelError.MANIFEST_INVALID_LOCATION, "Template environment not supported by manifest: "+xmlTag());
-
 		this.manifestLocation = manifestLocation;
 		this.registry = registry;
-		uid = registry.createUID();
+	}
+
+	@SuppressWarnings("unchecked")
+	protected final <V extends Object, I extends T> Optional<V> getDerivable(
+			Optional<V> localValue, Function<I, Optional<V>> getter) {
+		Optional<V> result = localValue;
+		if(!result.isPresent() && hasTemplate()) {
+			result = getter.apply((I)getTemplate());
+		}
+		return result;
+	}
+
+	@SuppressWarnings("unchecked")
+	protected final <V extends Object, I extends T> Optional<V> getWrappedDerivable(
+			Optional<V> localValue, Function<I, V> getter) {
+		Optional<V> result = localValue;
+		if(!result.isPresent() && hasTemplate()) {
+			result = Optional.of(getter.apply((I)getTemplate()));
+		}
+		return result;
 	}
 
 	/**
@@ -75,22 +90,42 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 	 * @return
 	 */
 	@Override
-	public boolean isLocked() {
-		return super.isLocked() || getRegistry().isLocked(this);
+	protected boolean isNestedLocked() {
+		return super.isNestedLocked() || getRegistry().isLocked(this);
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractLockable#lock()
 	 */
 	@Override
-	public void lock() {
-		super.lock();
+	protected void lockNested() {
+		super.lockNested();
 
 		lockNested(versionManifest);
 	}
 
+	/**
+	 * Lazily creates this manifest's uid in case it hasn't been
+	 * initialized yet. This behavior allows long running registry instances
+	 * to keep their uid creation conflict free for a longer time. Manifests
+	 * that are only created temporarily without ever actually being added to
+	 * their registry run the risk of wasting uid space. Since the contract for
+	 * {@link ManifestRegistry#resetUIDs()} states that only registered manifests
+	 * should be considered when resetting the uid generation process, lazy creation
+	 * of uids allows for a slower growth in used up uid space.
+	 *
+	 * @see de.ims.icarus2.model.manifest.api.Manifest#getUID()
+	 */
 	@Override
 	public int getUID() {
+		int uid;
+		if((uid = this.uid)==IcarusUtils.UNSET_INT) {
+			synchronized (registry) {
+				if((uid = this.uid)==IcarusUtils.UNSET_INT) {
+					uid = this.uid = registry.createUID();
+				}
+			}
+		}
 		return uid;
 	}
 
@@ -99,13 +134,7 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 	 */
 	@Override
 	public int hashCode() {
-		int hash = getManifestType().hashCode()*registry.hashCode();
-
-		if(getId()!=null) {
-			hash *= getId().hashCode();
-		}
-
-		return hash;
+		return Objects.hash(getManifestLocation(), getRegistry(), getId());
 	}
 
 	/**
@@ -157,11 +186,8 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 		return registry;
 	}
 
-	/**
-	 * @return the id
-	 */
 	@Override
-	public final String getId() {
+	public final Optional<String> getId() {
 		return id;
 	}
 
@@ -178,7 +204,7 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 	 * @return the versionManifest
 	 */
 	@Override
-	public VersionManifest getVersionManifest() {
+	public Optional<VersionManifest> getVersionManifest() {
 		return versionManifest;
 	}
 
@@ -194,10 +220,11 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 
 	protected void setVersionManifest0(VersionManifest versionManifest) {
 		requireNonNull(versionManifest);
-		if(this.versionManifest!=null)
-			throw new ManifestException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Version already set on manifest: "+this);
+		if(this.versionManifest.isPresent())
+			throw new ManifestException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
+					"Version already set on manifest: "+this);
 
-		this.versionManifest = versionManifest;
+		this.versionManifest = Optional.of(versionManifest);
 	}
 
 	/**
@@ -214,7 +241,7 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 		requireNonNull(id);
 		ManifestUtils.checkId(id);
 
-		this.id = id;
+		this.id = Optional.of(id);
 	}
 
 	/**
@@ -235,7 +262,10 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 
 	@Override
 	public T getTemplate() {
-		return template==null ? null : template.get();
+		if(!hasTemplate())
+			throw new ManifestException(GlobalErrorCode.ILLEGAL_STATE,
+					"Manifest not assigned a template link - cannot fetch template: "+ManifestUtils.getName(this));
+		return (T) template.get();
 	}
 
 	@Override
@@ -287,12 +317,20 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 		}
 
 		/**
+		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#getMissingLinkDescription()
+		 */
+		@Override
+		protected String getMissingLinkDescription() {
+			return "Missing template for id: "+getId();
+		}
+
+		/**
 		 * @see de.ims.icarus2.model.manifest.standard.AbstractManifest.Link#resolve()
 		 */
 		@SuppressWarnings("unchecked")
 		@Override
-		protected D resolve() {
-			return (D) getRegistry().getTemplate(getId());
+		protected Optional<D> resolve() {
+			return (Optional<D>) getRegistry().getTemplate(getId());
 		}
 
 	}

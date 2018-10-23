@@ -19,9 +19,10 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.TestUtils.DEFAULT;
+import static de.ims.icarus2.test.TestUtils.assertNotPresent;
+import static de.ims.icarus2.test.TestUtils.assertPresent;
 import static de.ims.icarus2.test.TestUtils.settings;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -62,8 +63,8 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testGetLayerManifest() {
-		assertNotNull(createUnlocked().getLayerManifest());
-		assertNull(createTemplate(settings()).getLayerManifest());
+		assertPresent(createUnlocked().getLayerManifest());
+		assertNotPresent(createTemplate(settings()).getLayerManifest());
 	}
 
 	/**
@@ -71,7 +72,10 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testGetKey() {
-		assertDerivativeGetter(settings(), "key1", "key2", TestUtils.NO_DEFAULT(), AnnotationManifest::getKey, AnnotationManifest::setKey);
+		assertDerivativeOptGetter(settings(),
+				"key1", "key2", TestUtils.NO_DEFAULT(),
+				AnnotationManifest::getKey,
+				AnnotationManifest::setKey);
 	}
 
 	/**
@@ -79,7 +83,10 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testIsLocalKey() {
-		assertDerivativeIsLocal(settings(), "key1", "key2", AnnotationManifest::isLocalKey, AnnotationManifest::setKey);
+		assertDerivativeIsLocal(settings(),
+				"key1", "key2",
+				AnnotationManifest::isLocalKey,
+				AnnotationManifest::setKey);
 	}
 
 
@@ -88,7 +95,10 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testForEachAlias() {
-		assertDerivativeForEach(settings(), "alias1", "alias2", m -> m::forEachAlias, AnnotationManifest::addAlias);
+		assertDerivativeForEach(settings(),
+				"alias1", "alias2",
+				m -> m::forEachAlias,
+				AnnotationManifest::addAlias);
 	}
 
 	/**
@@ -105,7 +115,10 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testForEachLocalAlias() {
-		assertDerivativeForEachLocal(settings(), "alias1", "alias2", m -> m::forEachLocalAlias, AnnotationManifest::addAlias);
+		assertDerivativeForEachLocal(settings(),
+				"alias1", "alias2",
+				m -> m::forEachLocalAlias,
+				AnnotationManifest::addAlias);
 	}
 
 	/**
@@ -113,8 +126,10 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testGetAliases() {
-		assertDerivativeAccumulativeGetter(settings(), "alias1", "alias2",
-				AnnotationManifest::getAliases, AnnotationManifest::addAlias);
+		assertDerivativeAccumulativeGetter(settings(),
+				"alias1", "alias2",
+				AnnotationManifest::getAliases,
+				AnnotationManifest::addAlias);
 	}
 
 	/**
@@ -122,8 +137,10 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testGetLocalAliases() {
-		assertDerivativeAccumulativeLocalGetter(settings(), "alias1", "alias2",
-				AnnotationManifest::getLocalAliases, AnnotationManifest::addAlias);
+		assertDerivativeAccumulativeLocalGetter(settings(),
+				"alias1", "alias2",
+				AnnotationManifest::getLocalAliases,
+				AnnotationManifest::addAlias);
 	}
 
 	/**
@@ -132,8 +149,10 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	@SuppressWarnings("boxing")
 	@Test
 	default void testIsAllowUnknownValues() {
-		assertDerivativeFlagGetter(settings(), AnnotationManifest.DEFAULT_ALLOW_UNKNOWN_VALUES,
-				AnnotationManifest::isAllowUnknownValues, AnnotationManifest::setAllowUnknownValues);
+		assertDerivativeFlagGetter(settings(),
+				AnnotationManifest.DEFAULT_ALLOW_UNKNOWN_VALUES,
+				AnnotationManifest::isAllowUnknownValues,
+				AnnotationManifest::setAllowUnknownValues);
 	}
 
 	/**
@@ -141,8 +160,10 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testGetValueRange() {
-		assertDerivativeGetter(settings(), mock(ValueRange.class), mock(ValueRange.class), null,
-				AnnotationManifest::getValueRange, AnnotationManifest::setValueRange);
+		assertDerivativeOptGetter(settings(),
+				mock(ValueRange.class), mock(ValueRange.class), null,
+				AnnotationManifest::getValueRange,
+				AnnotationManifest::setValueRange);
 	}
 
 	/**
@@ -150,8 +171,10 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testIsLocalValueRange() {
-		assertDerivativeIsLocal(settings(), mock(ValueRange.class), mock(ValueRange.class),
-				AnnotationManifest::isLocalValueRange, AnnotationManifest::setValueRange);
+		assertDerivativeIsLocal(settings(),
+				mock(ValueRange.class), mock(ValueRange.class),
+				AnnotationManifest::isLocalValueRange,
+				AnnotationManifest::setValueRange);
 	}
 
 	/**
@@ -159,8 +182,11 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testGetValueSet() {
-		assertDerivativeGetter(settings(), mock(ValueSet.class), mock(ValueSet.class), TestUtils.NO_DEFAULT(),
-				AnnotationManifest::getValueSet, AnnotationManifest::setValueSet);
+		assertDerivativeOptGetter(settings(),
+				mock(ValueSet.class), mock(ValueSet.class),
+				TestUtils.NO_DEFAULT(),
+				AnnotationManifest::getValueSet,
+				AnnotationManifest::setValueSet);
 	}
 
 	/**
@@ -180,8 +206,10 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 		ValueType dummyType = mock(ValueType.class);
 
 		for(ValueType valueType : ManifestTestUtils.getAvailableTestTypes()) {
-			assertDerivativeGetter(settings(), valueType, dummyType, ValueType.STRING,
-					AnnotationManifest::getValueType, AnnotationManifest::setValueType);
+			assertDerivativeGetter(settings(),
+					valueType, dummyType, DEFAULT(ValueType.STRING),
+					AnnotationManifest::getValueType,
+					AnnotationManifest::setValueType);
 		}
 	}
 
@@ -193,8 +221,10 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 		ValueType dummyType = mock(ValueType.class);
 
 		for(ValueType valueType : ManifestTestUtils.getAvailableTestTypes()) {
-			assertDerivativeIsLocal(settings(), valueType, dummyType,
-					AnnotationManifest::isLocalValueType, AnnotationManifest::setValueType);
+			assertDerivativeIsLocal(settings(),
+					valueType, dummyType,
+					AnnotationManifest::isLocalValueType,
+					AnnotationManifest::setValueType);
 		}
 	}
 
@@ -210,7 +240,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 			Object value1 = values[0];
 			Object value2 = values[1];
 
-			assertDerivativeGetter(settings(), value1, value2, TestUtils.NO_DEFAULT(),
+			assertDerivativeOptGetter(settings(), value1, value2, TestUtils.NO_DEFAULT(),
 					AnnotationManifest::getNoEntryValue, AnnotationManifest::setNoEntryValue);
 		}
 	}
@@ -237,8 +267,11 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testGetContentType() {
-		assertDerivativeGetter(settings(), mock(ContentType.class), mock(ContentType.class), TestUtils.NO_DEFAULT(),
-				AnnotationManifest::getContentType, AnnotationManifest::setContentType);
+		assertDerivativeOptGetter(settings(),
+				mock(ContentType.class), mock(ContentType.class),
+				TestUtils.NO_DEFAULT(),
+				AnnotationManifest::getContentType,
+				AnnotationManifest::setContentType);
 	}
 
 	/**
@@ -246,8 +279,10 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testIsLocalContentType() {
-		assertDerivativeIsLocal(settings(), mock(ContentType.class), mock(ContentType.class),
-				AnnotationManifest::isLocalContentType, AnnotationManifest::setContentType);
+		assertDerivativeIsLocal(settings(),
+				mock(ContentType.class), mock(ContentType.class),
+				AnnotationManifest::isLocalContentType,
+				AnnotationManifest::setContentType);
 	}
 
 	/**
@@ -285,7 +320,9 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testSetValueRange() {
-		assertLockableSetter(settings(),AnnotationManifest::setValueRange, mock(ValueRange.class), false, TYPE_CAST_CHECK);
+		assertLockableSetter(settings(),
+				AnnotationManifest::setValueRange,
+				mock(ValueRange.class), false, TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -293,7 +330,9 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testSetValueSet() {
-		assertLockableSetter(settings(),AnnotationManifest::setValueSet, mock(ValueSet.class), false, TYPE_CAST_CHECK);
+		assertLockableSetter(settings(),
+				AnnotationManifest::setValueSet,
+				mock(ValueSet.class), false, TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -301,7 +340,9 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testSetValueType() {
-		assertLockableSetter(settings(),AnnotationManifest::setValueType, mock(ValueType.class), true, TYPE_CAST_CHECK);
+		assertLockableSetter(settings(),
+				AnnotationManifest::setValueType,
+				mock(ValueType.class), true, TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -309,7 +350,9 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testSetContentType() {
-		assertLockableSetter(settings(),AnnotationManifest::setContentType, mock(ContentType.class), false, TYPE_CAST_CHECK);
+		assertLockableSetter(settings(),
+				AnnotationManifest::setContentType,
+				mock(ContentType.class), false, TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -321,7 +364,9 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 			Object value = ManifestTestUtils.getTestValue(valueType);
 			//TODO verify if we need value check for noEntryValue field
 //			Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
-			assertLockableSetter(settings(),AnnotationManifest::setNoEntryValue, value, false, TYPE_CAST_CHECK/*, illegalValue*/);
+			assertLockableSetter(settings(),
+					AnnotationManifest::setNoEntryValue,
+					value, false, TYPE_CAST_CHECK/*, illegalValue*/);
 		}
 	}
 

@@ -21,7 +21,9 @@ import static java.util.Objects.requireNonNull;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
@@ -29,6 +31,7 @@ import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerType;
+import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
@@ -39,23 +42,22 @@ import de.ims.icarus2.model.manifest.standard.Links.MemoryLink;
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractLayerManifest<L extends LayerManifest> extends AbstractMemberManifest<L> implements LayerManifest {
+public abstract class AbstractLayerManifest<L extends LayerManifest>
+		extends AbstractMemberManifest<L, LayerGroupManifest> implements LayerManifest {
 
-	private final LayerGroupManifest layerGroupManifest;
 	private final List<TargetLayerManifest> baseLayerManifests = new ArrayList<>(3);
 	private LayerTypeLink layerType;
 
-	/**
-	 * @param manifestLocation
-	 * @param registry
-	 */
+	private static final Function<LayerGroupManifest, Manifest> group2Context =
+			group -> group.getContextManifest().orElse(null);
+
 	protected AbstractLayerManifest(ManifestLocation manifestLocation,
 			ManifestRegistry registry, LayerGroupManifest layerGroupManifest) {
-		super(manifestLocation, registry);
+		super(manifestLocation, registry, layerGroupManifest, LayerGroupManifest.class);
+	}
 
-		verifyEnvironment(manifestLocation, layerGroupManifest, LayerGroupManifest.class);
-
-		this.layerGroupManifest = layerGroupManifest;
+	protected AbstractLayerManifest(LayerGroupManifest layerGroupManifest) {
+		super(layerGroupManifest, group2Context, LayerGroupManifest.class);
 	}
 
 	/**
@@ -70,17 +72,8 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 	 * @see de.ims.icarus2.model.manifest.api.LayerManifest#getContextManifest()
 	 */
 	@Override
-	public ContextManifest getContextManifest() {
-		return getGroupManifest()==null ? null : getGroupManifest().getContextManifest();
-	}
-
-	/**
-	 *
-	 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
-	 */
-	@Override
-	public LayerGroupManifest getHost() {
-		return layerGroupManifest;
+	public Optional<ContextManifest> getContextManifest() {
+		return getGroupManifest().flatMap(LayerGroupManifest::getContextManifest);
 	}
 
 	/**
@@ -111,9 +104,9 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 	 * @see de.ims.icarus2.model.manifest.api.LayerManifest#getLayerType()
 	 */
 	@Override
-	public LayerType getLayerType() {
-		LayerType result = layerType==null ? null : layerType.get();
-		if(result==null && hasTemplate()) {
+	public Optional<LayerType> getLayerType() {
+		Optional<LayerType> result = Optional.ofNullable(layerType==null ? null : layerType.get());
+		if(!result.isPresent() && hasTemplate()) {
 			result = getTemplate().getLayerType();
 		}
 		return result;
@@ -142,7 +135,7 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 	 * if the host check fails.
 	 */
 	protected void checkAllowsTargetLayer() {
-		if(!isTemplate() && (getGroupManifest()==null || getGroupManifest().getContextManifest()==null))
+		if(!isTemplate() && (!getGroupManifest().flatMap(LayerGroupManifest::getContextManifest).isPresent()))
 			throw new ManifestException(ManifestErrorCode.MANIFEST_MISSING_ENVIRONMENT,
 					"Cannot make links to other layers without enclosing layer group or context: "+getId()); //$NON-NLS-1$
 	}
@@ -158,7 +151,7 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 		requireNonNull(baseLayerId);
 
 		checkAllowsTargetLayer();
-		TargetLayerManifest targetLayerManifest = createTargetLayerManifest(baseLayerId);
+		TargetLayerManifest targetLayerManifest = createTargetLayerManifest(baseLayerId, "base layer");
 
 		if(baseLayerManifests.contains(targetLayerManifest))
 			throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
@@ -191,16 +184,16 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 		throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "No base layer manifest defined for id: "+baseLayerId);
 	}
 
-	protected Link<LayerManifest> createLayerLink(String id) {
-		return new GlobalLayerLink(id);
+	protected Link<LayerManifest> createLayerLink(String id, String linkType) {
+		return new GlobalLayerLink(id, linkType);
 	}
 
 	protected Link<PrerequisiteManifest> createPrerequisiteLink(String id) {
 		return new PrerequisiteLink(id);
 	}
 
-	protected TargetLayerManifest createTargetLayerManifest(String id) {
-		return new TargetLayerManifestImpl(id);
+	protected TargetLayerManifest createTargetLayerManifest(String id, String linkType) {
+		return new TargetLayerManifestImpl(id, linkType);
 	}
 
 	protected class LayerTypeLink extends Link<LayerType> {
@@ -209,14 +202,22 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 		 * @param id
 		 */
 		public LayerTypeLink(String id) {
-			super(id);
+			super(id, true);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#getMissingLinkDescription()
+		 */
+		@Override
+		protected String getMissingLinkDescription() {
+			return "No layer type for id: "+getId();
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#resolve()
 		 */
 		@Override
-		protected LayerType resolve() {
+		protected Optional<LayerType> resolve() {
 			return getRegistry().getLayerType(getId());
 		}
 
@@ -224,20 +225,33 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 
 	protected class GlobalLayerLink extends Link<LayerManifest> {
 
+		private final String linkType;
+
 		/**
 		 * @param id
 		 */
-		public GlobalLayerLink(String id) {
-			super(id);
+		public GlobalLayerLink(String id, String linkType) {
+			super(id, true);
+
+			this.linkType = requireNonNull(linkType);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#getMissingLinkDescription()
+		 */
+		@Override
+		protected String getMissingLinkDescription() {
+			return "No layer of type '"+linkType+"' for id: "+getId();
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#resolve()
 		 */
 		@Override
-		protected LayerManifest resolve() {
+		protected Optional<LayerManifest> resolve() {
 			// This takes care of layer id resolution in terms of prerequisite aliases
-			return getContextManifest().getLayerManifest(getId());
+			return getContextManifest()
+					.flatMap(c -> c.getLayerManifest(getId()));
 		}
 
 	}
@@ -248,15 +262,24 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 		 * @param id
 		 */
 		public PrerequisiteLink(String id) {
-			super(id);
+			super(id, true);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#getMissingLinkDescription()
+		 */
+		@Override
+		protected String getMissingLinkDescription() {
+			return "No prerequisite for id: "+getId();
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#resolve()
 		 */
 		@Override
-		protected PrerequisiteManifest resolve() {
-			return getContextManifest().getPrerequisite(getId());
+		protected Optional<PrerequisiteManifest> resolve() {
+			return getContextManifest()
+					.flatMap(c -> c.getPrerequisite(getId()));
 		}
 
 	}
@@ -266,9 +289,17 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 		private Link<LayerManifest> resolvedLayer;
 		private Link<PrerequisiteManifest> prerequisite;
 
-		public TargetLayerManifestImpl(String targetId) {
-			resolvedLayer = createLayerLink(targetId);
+		public TargetLayerManifestImpl(String targetId, String linkType) {
+			resolvedLayer = createLayerLink(targetId, linkType);
 			prerequisite = createPrerequisiteLink(targetId);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest#getLayerManifest()
+		 */
+		@Override
+		public LayerManifest getLayerManifest() {
+			return AbstractLayerManifest.this;
 		}
 
 		/**
@@ -310,27 +341,19 @@ public abstract class AbstractLayerManifest<L extends LayerManifest> extends Abs
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest#getHost()
-		 */
-		@Override
-		public LayerManifest getHost() {
-			return AbstractLayerManifest.this;
-		}
-
-		/**
 		 * @see de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest#getPrerequisite()
 		 */
 		@Override
-		public PrerequisiteManifest getPrerequisite() {
-			return prerequisite.get();
+		public Optional<PrerequisiteManifest> getPrerequisite() {
+			return Optional.ofNullable(prerequisite.get());
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest#getResolvedLayerManifest()
 		 */
 		@Override
-		public LayerManifest getResolvedLayerManifest() {
-			return resolvedLayer.get();
+		public Optional<LayerManifest> getResolvedLayerManifest() {
+			return Optional.ofNullable(resolvedLayer.get());
 		}
 	}
 }

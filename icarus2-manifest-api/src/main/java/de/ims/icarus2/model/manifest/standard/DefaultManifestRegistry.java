@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -62,6 +63,8 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 
 	private final TemplateManifestLock templateManifestLock = new TemplateManifestLock();
 
+	private final Object lock = new Object();
+
 	public DefaultManifestRegistry() {
 		// no-op
 	}
@@ -79,9 +82,33 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 		return uid;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 *
+	 * This method scans the current registry content for the largest uid amongst
+	 * all registered templates and live corpora and then adds {@code +1} to this
+	 * value as the new smallest uid to be returned for future {@link #createUID()}
+	 * calls.
+	 *
+	 * @see de.ims.icarus2.model.manifest.api.ManifestRegistry#resetUIDs()
+	 */
 	@Override
 	public void resetUIDs() {
-		uidGenerator.set(0);
+		int minUid = -1;
+		synchronized (lock) {
+			minUid = templates.values()
+					.parallelStream()
+					.mapToInt(Manifest::getUID)
+					.max()
+					.orElse(minUid);
+
+			minUid = corpora.values()
+					.parallelStream()
+					.mapToInt(CorpusManifest::getUID)
+					.max()
+					.orElse(minUid);
+		}
+		uidGenerator.set(minUid+1);
 	}
 
 	@Override
@@ -93,7 +120,7 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 	public Set<ManifestLocation> getTemplateSources() {
 		Set<ManifestLocation> result = new HashSet<>(templates.size());
 
-		synchronized (templates) {
+		synchronized (lock) {
 			templates.forEach((s, m) -> result.add(m.getManifestLocation()));
 		}
 
@@ -104,7 +131,7 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 	public Set<ManifestLocation> getCorpusSources() {
 		Set<ManifestLocation> result = new HashSet<>(corpora.size());
 
-		synchronized (corpora) {
+		synchronized (lock) {
 			corpora.values().forEach(m -> result.add(m.getManifestLocation()));
 		}
 
@@ -112,17 +139,11 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 	}
 
 	@Override
-	public LayerType getLayerType(String name) {
+	public Optional<LayerType> getLayerType(String name) {
 		requireNonNull(name);
 
-		synchronized (layerTypes) {
-			LayerType layerType = layerTypes.get(name);
-
-			if(layerType==null)
-				throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
-						"No such layer-type: "+name); //$NON-NLS-1$
-
-			return layerType;
+		synchronized (lock) {
+			return Optional.ofNullable(layerTypes.get(name));
 		}
 	}
 
@@ -130,16 +151,13 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 	public void addLayerType(LayerType layerType) {
 		requireNonNull(layerType);
 
-		String id = layerType.getId();
-		if(id==null)
-			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
-					"Missing id on layer type"); //$NON-NLS-1$
+		String id = layerType.getId().orElseThrow(Manifest.invalidId("Missing id on layer type"));
 
 		ManifestUtils.checkId(id);
 
 		fireEvent(new EventObject(ManifestEvents.ADD_LAYER_TYPE, "layerType", layerType)); //$NON-NLS-1$
 
-		synchronized (layerTypes) {
+		synchronized (lock) {
 			LayerType currentType = layerTypes.get(id);
 			if(currentType!=null && currentType!=layerType)
 				throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
@@ -155,21 +173,18 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 	public void removeLayerType(LayerType layerType) {
 		requireNonNull(layerType);
 
-		String id = layerType.getId();
-		if(id==null)
-			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
-					"Missing id on layer type"); //$NON-NLS-1$
+		String id = layerType.getId().orElseThrow(Manifest.invalidId("Missing id on layer type"));
 
 		ManifestUtils.checkId(id);
 
 		fireEvent(new EventObject(ManifestEvents.REMOVE_LAYER_TYPE, "layerType", layerType)); //$NON-NLS-1$
 
-		LayerManifest manifest = layerType.getSharedManifest();
-		if(manifest!=null && isLocked(manifest))
+		Optional<LayerManifest> manifest = layerType.getSharedManifest();
+		if(manifest.isPresent() && isLocked(manifest.get()))
 			throw new ManifestException(ManifestErrorCode.MANIFEST_LOCKED,
 					"Cannot remove layer type while underlying manifest is locked");
 
-		synchronized (layerTypes) {
+		synchronized (lock) {
 			if(!layerTypes.containsKey(id))
 				throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
 						"Unknown layer type id: "+id); //$NON-NLS-1$
@@ -184,7 +199,7 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 
 	@Override
 	public void forEachLayerType(Consumer<? super LayerType> action) {
-		synchronized (layerTypes) {
+		synchronized (lock) {
 			layerTypes.values().forEach(action);
 		}
 	}
@@ -193,16 +208,13 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 	public void addCorpusManifest(CorpusManifest manifest) {
 		requireNonNull(manifest);
 
-		String id = manifest.getId();
-		if(id==null)
-			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
-					"Missing corpus id"); //$NON-NLS-1$
+		String id = manifest.getId().orElseThrow(Manifest.invalidId("Missing corpus id"));
 
 		ManifestUtils.checkId(id);
 
 		fireEvent(new EventObject(ManifestEvents.ADD_CORPUS, "corpus", manifest)); //$NON-NLS-1$
 
-		synchronized (corpora) {
+		synchronized (lock) {
 			if(corpora.containsKey(id))
 				throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
 						"Corpus id already in use: "+id); //$NON-NLS-1$
@@ -219,15 +231,12 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 	public void removeCorpusManifest(CorpusManifest manifest) {
 		requireNonNull(manifest);
 
-		String id = manifest.getId();
-		if(id==null)
-			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
-					"Missing corpus id"); //$NON-NLS-1$
+		String id = manifest.getId().orElseThrow(Manifest.invalidId("Missing corpus id"));
 
 		fireEvent(new EventObject(ManifestEvents.REMOVE_CORPUS, "corpus", manifest)); //$NON-NLS-1$
 
-		synchronized (corpora) {
-			if(corpora.containsKey(id))
+		synchronized (lock) {
+			if(!corpora.containsKey(id))
 				throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
 						"Unknown corpus id: "+id); //$NON-NLS-1$
 
@@ -242,23 +251,17 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 	}
 
 	@Override
-	public CorpusManifest getCorpusManifest(String id) {
+	public Optional<CorpusManifest> getCorpusManifest(String id) {
 		requireNonNull(id);
 
-		CorpusManifest manifest = null;
-		synchronized (corpora) {
-			manifest = corpora.get(id);
+		synchronized (lock) {
+			return Optional.ofNullable(corpora.get(id));
 		}
-		if(manifest==null)
-			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
-					"No such corpus: "+id); //$NON-NLS-1$
-
-		return manifest;
 	}
 
 	@Override
 	public void forEachCorpus(Consumer<? super CorpusManifest> action) {
-		synchronized (corpora) {
+		synchronized (lock) {
 			corpora.values().forEach(action);
 		}
 	}
@@ -267,75 +270,37 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 	public boolean hasTemplate(String id) {
 		requireNonNull(id);
 
-		synchronized (templates) {
+		synchronized (lock) {
 			return templates.containsKey(id);
 		}
 	}
 
 	@Override
 	public void forEachTemplate(Consumer<? super Manifest> action) {
-		synchronized (templates) {
+		synchronized (lock) {
 			templates.values().forEach(action);
 		}
 	}
 
 	@Override
-	public Manifest getTemplate(String id) {
+	public Optional<Manifest> getTemplate(String id) {
 		requireNonNull(id);
 
-		Manifest template = null;
-		synchronized (templates) {
-			template = templates.get(id);
+		Optional<Manifest> template;
+		synchronized (lock) {
+			template = Optional.ofNullable(templates.get(id));
 		}
 
-		if(template==null)
-			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
-					"No template registered for id: "+id); //$NON-NLS-1$
-		if(!id.equals(template.getId()))
-			throw new ManifestException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
-					"Illegal modification of template id detected. Expected "+id+" - got "+template.getId()); //$NON-NLS-1$ //$NON-NLS-2$
+		// Sanity check against external modifications of the template manifest
+		if(template.isPresent()) {
+			String templateId = template.flatMap(Manifest::getId).orElseThrow(Manifest.invalidId("Missing template id"));
+
+			if(!id.equals(templateId))
+				throw new ManifestException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
+						"Illegal modification of template id detected. Expected "+id+" - got "+templateId); //$NON-NLS-1$ //$NON-NLS-2$
+		}
 
 		return template;
-	}
-
-	@Override
-	public void addContextManifest(CorpusManifest corpus, ContextManifest context) {
-		requireNonNull(corpus);
-		requireNonNull(context);
-
-		if(context.isTemplate())
-			throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
-					"Cannot add a context template to a live corpus: "+context); //$NON-NLS-1$
-
-		fireEvent(new EventObject(ManifestEvents.ADD_CONTEXT,
-				"corpus", corpus, "context", context)); //$NON-NLS-1$ //$NON-NLS-2$
-
-		corpus.addCustomContextManifest(context);
-
-		templateManifestLock.lockTemplates(context);
-
-		fireEvent(new EventObject(ManifestEvents.ADDED_CONTEXT,
-				"corpus", corpus, "context", context)); //$NON-NLS-1$ //$NON-NLS-2$
-	}
-
-	@Override
-	public void removeContextManifest(CorpusManifest corpus, ContextManifest context) {
-		requireNonNull(corpus);
-		requireNonNull(context);
-
-		if(context.isTemplate())
-			throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
-					"Attempting to remove a context template: "+context); //$NON-NLS-1$
-
-		fireEvent(new EventObject(ManifestEvents.REMOVE_CONTEXT,
-				"corpus", corpus, "context", context)); //$NON-NLS-1$ //$NON-NLS-2$
-
-		corpus.removeCustomContextManifest(context);
-
-		templateManifestLock.unlockTemplates(context);
-
-		fireEvent(new EventObject(ManifestEvents.REMOVED_CONTEXT,
-				"corpus", corpus, "context", context)); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 
 	@Override
@@ -351,27 +316,27 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 		requireNonNull(context);
 
 		fireEvent(new EventObject(ManifestEvents.CHANGED_CONTEXT,
-				"corpus", context.getCorpusManifest(), //$NON-NLS-1$
+				"corpus", context.getCorpusManifest().orElse(null), //$NON-NLS-1$
 				"context", context)); //$NON-NLS-1$
 	}
 
 	/**
 	 * Must be called under 'templates' lock!
+	 *
+	 * Verifies that given {@link Manifest} is a template and has a valid id
+	 * and
 	 */
 	private void checkTemplate(Manifest template) {
 		if(!template.isTemplate())
 			throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
 					"Provided derivable object is not a proper template"); //$NON-NLS-1$
 
-		String id = template.getId();
-		if(id==null)
-			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
-					"Template does not declare valid identifier"); //$NON-NLS-1$
+		String id = template.getId().orElseThrow(Manifest.invalidId("Template does not declare valid identifier"));
 
 		ManifestUtils.checkId(id);
 
 		Manifest current = templates.get(id);
-		if(current!=null && current!=template)
+		if(current!=null /*&& current!=template*/)
 			throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
 					"Template id already in use: "+id); //$NON-NLS-1$
 	}
@@ -382,9 +347,10 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 
 		fireEvent(new EventObject(ManifestEvents.ADD_TEMPLATE, "template", template)); //$NON-NLS-1$
 
-		synchronized (templates) {
+		synchronized (lock) {
 			checkTemplate(template);
-			templates.put(template.getId(), template);
+			// Above check makes sure that the template has a proper id
+			templates.put(template.getId().get(), template);
 
 			templateManifestLock.lockTemplates(template);
 		}
@@ -400,21 +366,19 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 
 		fireEvent(new EventObject(ManifestEvents.ADD_TEMPLATES, "templates", templatesArray)); //$NON-NLS-1$
 
-		synchronized (this.templates) {
+		synchronized (lock) {
 
 			// First pass: check templates
 			for(Manifest template : templates) {
 				checkTemplate(template);
 			}
 
-			// Second pass: add templates
+			// Second pass: add templates (valid ids are ensured by above chek)
 			for(Manifest template : templates) {
-				this.templates.put(template.getId(), template);
+				this.templates.put(template.getId().get(), template);
 			}
 
 			// Third pass: update locks
-
-			// Second pass: add templates
 			for(Manifest template : templates) {
 				templateManifestLock.lockTemplates(template);
 			}
@@ -425,17 +389,13 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 
 	@Override
 	public void removeTemplate(Manifest template) {
-		if (template == null)
-			throw new NullPointerException("Invalid template"); //$NON-NLS-1$
+		requireNonNull(template);
 
 		if(!template.isTemplate())
 			throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
 					"Provided derivable object is not a proper template"); //$NON-NLS-1$
 
-		String id = template.getId();
-		if(id==null)
-			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
-					"Template does not declare valid identifier"); //$NON-NLS-1$
+		String id = template.getId().orElseThrow(Manifest.invalidId("Template does not declare valid identifier"));
 
 		ManifestUtils.checkId(id);
 
@@ -445,8 +405,8 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 
 		fireEvent(new EventObject(ManifestEvents.REMOVE_TEMPLATE, "template", template)); //$NON-NLS-1$
 
-		synchronized (templates) {
-			if(templates.containsKey(id))
+		synchronized (lock) {
+			if(!templates.containsKey(id))
 				throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
 						"Unknown template id: "+id); //$NON-NLS-1$
 
@@ -463,11 +423,11 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 	/**
 	 * @param eventName
 	 * @param listener
-	 * @see de.ims.icarus2.util.events.EventSource#addListener(java.lang.String, de.ims.icarus2.util.events.SimpleEventListener)
+	 * @see de.ims.icarus2.util.events.EventSource#addListener(de.ims.icarus2.util.events.SimpleEventListener, java.lang.String)
 	 */
 	@Override
-	public void addListener(String eventName, SimpleEventListener listener) {
-		eventSource.addListener(eventName, listener);
+	public void addListener(SimpleEventListener listener, String eventName) {
+		eventSource.addListener(listener, eventName);
 	}
 
 	/**
@@ -491,12 +451,17 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 
 	@Override
 	public LayerType getOverlayLayerType() {
-		return getLayerType(DefaultLayerTypeIds.ITEM_LAYER_OVERLAY);
+		return getLayerType(DefaultLayerTypeIds.ITEM_LAYER_OVERLAY)
+				.orElseThrow(ManifestException.create(GlobalErrorCode.ILLEGAL_STATE,
+						"No shared overlay layer type registered"));
 	}
 
 	public static class TemplateManifestLock {
 
 		private final Counter<Manifest> manifestRefCounter = new Counter<>();
+
+		private static final int UNLOCK = -1;
+		private static final int LOCK = +1;
 
 		public boolean isLocked(Manifest manifest) {
 			requireNonNull(manifest);
@@ -504,29 +469,32 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 		}
 
 		public void lockTemplates(Manifest manifest) {
-			requireNonNull(manifest);
-			walkTemplate(manifest, false, 1);
+			walkTemplate(Optional.of(manifest), false, LOCK);
 		}
 
 		public void unlockTemplates(Manifest manifest) {
-			requireNonNull(manifest);
-			walkTemplate(manifest, false, -1);
+			walkTemplate(Optional.of(manifest), false, UNLOCK);
 		}
 
-		private void walkTemplate(Manifest manifest, boolean checkOwn, int delta) {
-			if(manifest==null) {
+		private <M extends Manifest> void walkTemplate(final Optional<M> optManifest,
+				final boolean checkOwn, final int delta) {
+			if(!optManifest.isPresent()) {
 				return;
 			}
 
+			M manifest = optManifest.get();
+
 			// Traverse template hierarchy
-			Manifest template = manifest.getTemplate();
-			if(template!=null) {
-				if(!template.isTemplate())
+			Optional<Manifest> template = manifest.tryGetTemplate();
+			if(template.isPresent()) {
+				if(!template.get().isTemplate())
 					throw new ManifestException(ManifestErrorCode.MANIFEST_ERROR,
 							"Non-template manifest assigned as template: "+ManifestUtils.getName(template));
 
 				walkTemplate(template, true, delta);
 			}
+
+			// Handle some meta types (instanceof check instead of ManifestType switch)
 
 			// Traverse options manifest
 			if(manifest instanceof MemberManifest) {
@@ -537,9 +505,9 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 			// For layer manifests lock the underlying shared manifest
 			if(manifest instanceof LayerManifest) {
 				LayerManifest layerManifest = (LayerManifest) manifest;
-				LayerType layerType = layerManifest.getLayerType();
-				if(layerType!=null) {
-					walkTemplate(layerType.getSharedManifest(), true, delta);
+				Optional<LayerType> layerType = layerManifest.getLayerType();
+				if(layerType.isPresent()) {
+					walkTemplate(layerType.get().getSharedManifest(), true, delta);
 				}
 			}
 
@@ -548,12 +516,12 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 
 			case CORPUS_MANIFEST: {
 				CorpusManifest corpusManifest = (CorpusManifest) manifest;
-				corpusManifest.forEachContextManifest(c -> walkTemplate(c, true, delta));
+				corpusManifest.forEachContextManifest(c -> walkTemplate(Optional.of(c), true, delta));
 			} break;
 
 			case CONTEXT_MANIFEST: {
 				ContextManifest contextManifest = (ContextManifest) manifest;
-				contextManifest.forEachLayerManifest(l -> walkTemplate(l, true, delta));
+				contextManifest.forEachLayerManifest(l -> walkTemplate(Optional.of(l), true, delta));
 				walkTemplate(contextManifest.getDriverManifest(), true, delta);
 			} break;
 

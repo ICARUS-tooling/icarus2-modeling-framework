@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.util;
 
+import java.util.Optional;
+
 import javax.swing.Icon;
 
 import de.ims.icarus2.util.id.Identity;
@@ -69,26 +71,26 @@ public enum EditOperation implements Identity {
 	 */
 	LINK("Link", "Link two nodes in a structure storage by a new edge "); //$NON-NLS-1$
 
-	private final String name, description;
+	private final Optional<String> name, description;
 
 	private EditOperation(String name, String description) {
-		this.name = name;
-		this.description = description;
+		this.name = Optional.of(name);
+		this.description = Optional.of(description);
 	}
 
 	/**
 	 * @see de.ims.icarus2.util.id.Identity#getId()
 	 */
 	@Override
-	public String getId() {
-		return name();
+	public Optional<String> getId() {
+		return Optional.of(name());
 	}
 
 	/**
 	 * @see de.ims.icarus2.util.id.Identity#getName()
 	 */
 	@Override
-	public String getName() {
+	public Optional<String> getName() {
 		return name;
 	}
 
@@ -96,7 +98,7 @@ public enum EditOperation implements Identity {
 	 * @see de.ims.icarus2.util.id.Identity#getDescription()
 	 */
 	@Override
-	public String getDescription() {
+	public Optional<String> getDescription() {
 		return description;
 	}
 
@@ -104,7 +106,7 @@ public enum EditOperation implements Identity {
 	 * @see de.ims.icarus2.util.id.Identity#getIcon()
 	 */
 	@Override
-	public Icon getIcon() {
-		return null;
+	public Optional<Icon> getIcon() {
+		return Optional.empty();
 	}
 }

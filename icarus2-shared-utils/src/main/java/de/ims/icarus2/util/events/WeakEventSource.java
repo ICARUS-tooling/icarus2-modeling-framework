@@ -50,12 +50,12 @@ public class WeakEventSource extends EventSource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.events.EventSource#addListener(java.lang.String, de.ims.icarus2.util.events.SimpleEventListener)
+	 * @see de.ims.icarus2.util.events.EventSource#addListener(de.ims.icarus2.util.events.SimpleEventListener, java.lang.String)
 	 */
 	@Override
-	public void addListener(String eventName, SimpleEventListener listener) {
+	public void addListener(SimpleEventListener listener, String eventName) {
 		SimpleEventListener proxy = ListenerProxies.getProxy(SimpleEventListener.class, listener);
-		super.addListener(eventName, proxy);
+		super.addListener(proxy, eventName);
 	}
 
 	/**

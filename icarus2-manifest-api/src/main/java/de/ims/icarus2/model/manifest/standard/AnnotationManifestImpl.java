@@ -20,6 +20,8 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.GlobalErrorCode;
@@ -41,17 +43,16 @@ import de.ims.icarus2.util.lang.ClassUtils;
  * @author Markus Gärtner
  *
  */
-public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationManifest> implements AnnotationManifest {
+public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationManifest, AnnotationLayerManifest>
+		implements AnnotationManifest {
 
-	private final AnnotationLayerManifest layerManifest;
-
-	private String key;
+	private Optional<String> key = Optional.empty();
 	private final List<String> aliases = new ArrayList<>(3);
 	private ValueType valueType;
-	private ValueSet values;
-	private ValueRange valueRange;
-	private ContentType contentType;
-	private Object noEntryValue = null;
+	private Optional<ValueSet> values = Optional.empty();
+	private Optional<ValueRange> valueRange = Optional.empty();
+	private Optional<ContentType> contentType = Optional.empty();
+	private Optional<Object> noEntryValue = Optional.empty();
 	private Boolean allowUnknownValues;
 
 	/**
@@ -60,30 +61,16 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 */
 	public AnnotationManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry, AnnotationLayerManifest layerManifest) {
-		super(manifestLocation, registry);
-
-		verifyEnvironment(manifestLocation, layerManifest, AnnotationLayerManifest.class);
-
-		this.layerManifest = layerManifest;
+		super(manifestLocation, registry, layerManifest, AnnotationLayerManifest.class);
 	}
 
 	public AnnotationManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry) {
 		super(manifestLocation, registry);
-
-		this.layerManifest = null;
 	}
 
 	public AnnotationManifestImpl(AnnotationLayerManifest layerManifest) {
-		this(layerManifest.getManifestLocation(), layerManifest.getRegistry(), layerManifest);
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
-	 */
-	@Override
-	public AnnotationLayerManifest getHost() {
-		return layerManifest;
+		super(layerManifest, hostIdentity(), AnnotationLayerManifest.class);
 	}
 
 	/**
@@ -91,7 +78,9 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 */
 	@Override
 	public boolean isEmpty() {
-		return super.isEmpty() && aliases.isEmpty() && values==null && valueRange==null && noEntryValue==null;
+		return super.isEmpty() && aliases.isEmpty()
+				&& !values.isPresent() && !valueRange.isPresent()
+				&& !noEntryValue.isPresent();
 	}
 
 	/**
@@ -107,15 +96,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 */
 	@Override
 	public int hashCode() {
-		int hash = 1;
-		if(getId()!=null) {
-			hash *= getId().hashCode();
-		}
-		if(key!=null) {
-			hash *= key.hashCode();
-		}
-
-		return hash;
+		return Objects.hash(getId(), getKey());
 	}
 
 	/**
@@ -139,12 +120,8 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 * @return the key
 	 */
 	@Override
-	public String getKey() {
-		String result = key;
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getKey();
-		}
-		return result;
+	public Optional<String> getKey() {
+		return getDerivable(key, AnnotationManifest::getKey);
 	}
 
 	/**
@@ -152,7 +129,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 */
 	@Override
 	public boolean isLocalKey() {
-		return key!=null;
+		return key.isPresent();
 	}
 
 	/**
@@ -166,9 +143,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	}
 
 	private void setKey0(String key) {
-		requireNonNull(key);
-
-		this.key = key;
+		this.key = Optional.of(key);
 	}
 
 	/**
@@ -264,12 +239,8 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 * @see de.ims.icarus2.model.manifest.api.AnnotationManifest#getValueRange()
 	 */
 	@Override
-	public ValueRange getValueRange() {
-		ValueRange result = valueRange;
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getValueRange();
-		}
-		return result;
+	public Optional<ValueRange> getValueRange() {
+		return getDerivable(valueRange, AnnotationManifest::getValueRange);
 	}
 
 	/**
@@ -277,19 +248,15 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 */
 	@Override
 	public boolean isLocalValueRange() {
-		return valueRange!=null;
+		return valueRange.isPresent();
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.AnnotationManifest#getValueSet()
 	 */
 	@Override
-	public ValueSet getValueSet() {
-		ValueSet result = values;
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getValueSet();
-		}
-		return result;
+	public Optional<ValueSet> getValueSet() {
+		return getDerivable(values, AnnotationManifest::getValueSet);
 	}
 
 	/**
@@ -297,7 +264,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 */
 	@Override
 	public boolean isLocalValueSet() {
-		return values!=null;
+		return values.isPresent();
 	}
 
 	/**
@@ -329,12 +296,8 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 * @return the contentType
 	 */
 	@Override
-	public ContentType getContentType() {
-		ContentType result = contentType;
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getContentType();
-		}
-		return result;
+	public Optional<ContentType> getContentType() {
+		return getDerivable(contentType, AnnotationManifest::getContentType);
 	}
 
 	/**
@@ -342,16 +305,12 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 */
 	@Override
 	public boolean isLocalContentType() {
-		return contentType!=null;
+		return contentType.isPresent();
 	}
 
 	@Override
-	public Object getNoEntryValue() {
-		Object result = noEntryValue;
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getNoEntryValue();
-		}
-		return result;
+	public Optional<Object> getNoEntryValue() {
+		return getDerivable(noEntryValue, AnnotationManifest::getNoEntryValue);
 	}
 
 	/**
@@ -359,7 +318,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 */
 	@Override
 	public boolean isLocalNoEntryValue() {
-		return noEntryValue!=null;
+		return noEntryValue.isPresent();
 	}
 
 	@Override
@@ -370,7 +329,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	}
 
 	private void setNoEntryValue0(Object noEntryValue) {
-		this.noEntryValue = noEntryValue;
+		this.noEntryValue = Optional.ofNullable(noEntryValue);
 	}
 
 	/**
@@ -384,7 +343,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	}
 
 	private void setContentType0(ContentType contentType) {
-		this.contentType = contentType;
+		this.contentType = Optional.ofNullable(contentType);
 	}
 
 	/**
@@ -411,7 +370,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	}
 
 	private void setValueSet0(ValueSet values) {
-		this.values = values;
+		this.values = Optional.ofNullable(values);
 	}
 
 	/**
@@ -425,6 +384,6 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	}
 
 	private void setValueRange0(ValueRange valueRange) {
-		this.valueRange = valueRange;
+		this.valueRange = Optional.ofNullable(valueRange);
 	}
 }

@@ -62,7 +62,7 @@ class DefaultCategoryTest implements CategoryTest<DefaultCategory>, LockableTest
 	 */
 	@Override
 	public DefaultCategory createTestInstance(TestSettings settings) {
-		return new DefaultCategory();
+		return settings.process(new DefaultCategory());
 	}
 
 	/**

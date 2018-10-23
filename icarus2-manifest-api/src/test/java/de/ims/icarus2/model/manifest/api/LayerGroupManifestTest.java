@@ -25,8 +25,8 @@ import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.transform_id;
 import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.NO_ILLEGAL;
+import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
 import static de.ims.icarus2.test.TestUtils.settings;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.Collections;
@@ -98,7 +98,7 @@ public interface LayerGroupManifestTest<M extends LayerGroupManifest>
 		assertNotNull(createEmpty().getContextManifest());
 
 		ContextManifest host = mockTypedManifest(ManifestType.CONTEXT_MANIFEST);
-		assertEquals(host, createEmbedded(settings(), host).getContextManifest());
+		assertOptionalEquals(host, createEmbedded(settings(), host).getContextManifest());
 	}
 
 	/**
@@ -143,7 +143,7 @@ public interface LayerGroupManifestTest<M extends LayerGroupManifest>
 	 */
 	@Test
 	default void testGetPrimaryLayerManifest() {
-		TestUtils.assertGetter(createUnlocked(),
+		TestUtils.assertOptGetter(createUnlocked(),
 				LayerManifestTest.mockItemLayerManifest("layer1"),
 				LayerManifestTest.mockItemLayerManifest("layer2"),
 				NO_DEFAULT(),
@@ -165,11 +165,11 @@ public interface LayerGroupManifestTest<M extends LayerGroupManifest>
 	 */
 	@Test
 	default void testGetLayerManifest() {
-		TestUtils.assertAccumulativeLookup(createUnlocked(),
+		TestUtils.assertAccumulativeOptLookup(createUnlocked(),
 				mockLayerManifest("layer1"),
 				mockLayerManifest("layer2"),
-				LayerGroupManifest::getLayerManifest,
-				true, TestUtils.NO_CHECK,
+				(m, id) -> m.getLayerManifest(id),
+				true,
 				LayerGroupManifest::addLayerManifest,
 				transform_id());
 	}

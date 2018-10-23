@@ -17,7 +17,6 @@
 package de.ims.icarus2.model.manifest.standard;
 
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
-import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
@@ -27,9 +26,8 @@ import de.ims.icarus2.model.manifest.api.RasterizerManifest;
  * @author Markus Gärtner
  *
  */
-public class RasterizerManifestImpl extends AbstractForeignImplementationManifest<RasterizerManifest> implements RasterizerManifest {
-
-	private final FragmentLayerManifest layerManifest;
+public class RasterizerManifestImpl extends AbstractForeignImplementationManifest<RasterizerManifest, FragmentLayerManifest>
+		implements RasterizerManifest {
 
 	/**
 	 * @param manifestLocation
@@ -38,43 +36,15 @@ public class RasterizerManifestImpl extends AbstractForeignImplementationManifes
 	public RasterizerManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry) {
 		super(manifestLocation, registry);
-
-		layerManifest = null;
 	}
 
 	public RasterizerManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry, FragmentLayerManifest layerManifest) {
-		super(manifestLocation, registry);
-
-		verifyEnvironment(manifestLocation, layerManifest, FragmentLayerManifest.class);
-
-		this.layerManifest = layerManifest;
+		super(manifestLocation, registry, layerManifest, FragmentLayerManifest.class);
 	}
 
 	public RasterizerManifestImpl(FragmentLayerManifest layerManifest) {
 		this(layerManifest.getManifestLocation(), layerManifest.getRegistry(), layerManifest);
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
-	 */
-	@Override
-	public FragmentLayerManifest getHost() {
-		// TODO Auto-generated method stub
-		return layerManifest;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.standard.AbstractForeignImplementationManifest#getImplementationManifest()
-	 */
-	@Override
-	public ImplementationManifest getImplementationManifest() {
-		ImplementationManifest result = super.getImplementationManifest();
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getImplementationManifest();
-		}
-
-		return result;
 	}
 
 	/**

@@ -19,10 +19,14 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.TestUtils.NO_CHECK;
+import static de.ims.icarus2.test.TestUtils.NO_ILLEGAL;
+import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -38,7 +42,7 @@ public interface CategorizableTest<C extends Categorizable> extends LockableTest
 
 	public static Category mockCategory(String id) {
 		Category category = mock(Category.class);
-		when(category.getId()).thenReturn(id);
+		when(category.getId()).thenReturn(Optional.of(id));
 		return category;
 	}
 
@@ -48,7 +52,8 @@ public interface CategorizableTest<C extends Categorizable> extends LockableTest
 	@Test
 	default void testAddCategory() {
 		assertLockableAccumulativeAdd(settings(),
-				Categorizable::addCategory, TestUtils.NO_ILLEGAL(), TestUtils.NO_CHECK, true, TestUtils.NO_CHECK,
+				Categorizable::addCategory,
+				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, NO_CHECK,
 				mockCategory("cat1"), mockCategory("cat2"), mockCategory("cat3"));
 	}
 

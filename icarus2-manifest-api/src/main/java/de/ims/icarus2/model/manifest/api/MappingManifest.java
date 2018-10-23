@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.Optional;
+
 import de.ims.icarus2.util.LazyNameStore;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
@@ -42,9 +44,6 @@ import de.ims.icarus2.util.strings.StringResource;
 @AccessControl(AccessPolicy.DENY)
 public interface MappingManifest extends Lockable, TypedManifest, Embedded {
 
-	@Override
-	DriverManifest getHost();
-
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.TypedManifest#getManifestType()
 	 */
@@ -58,31 +57,31 @@ public interface MappingManifest extends Lockable, TypedManifest, Embedded {
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	default DriverManifest getDriverManifest() {
+	default <M extends DriverManifest> Optional<M> getDriverManifest() {
 		return getHost();
 	}
 
 	@AccessRestriction(AccessMode.READ)
-	String getId();
+	Optional<String> getId();
 
 	/**
 	 * Returns the {@code id} of the source layer for this mapping.
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	String getSourceLayerId();
+	Optional<String> getSourceLayerId();
 
 	@AccessRestriction(AccessMode.READ)
-	String getTargetLayerId();
+	Optional<String> getTargetLayerId();
 
 	@AccessRestriction(AccessMode.READ)
-	Relation getRelation();
+	Optional<Relation> getRelation();
 
 	@AccessRestriction(AccessMode.READ)
-	Coverage getCoverage();
+	Optional<Coverage> getCoverage();
 
 	@AccessRestriction(AccessMode.READ)
-	MappingManifest getInverse();
+	Optional<MappingManifest> getInverse();
 
 	// Modification methods
 

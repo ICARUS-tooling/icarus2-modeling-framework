@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.GlobalErrorCode;
@@ -31,6 +32,7 @@ import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
+import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
@@ -44,7 +46,7 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  * @author Markus Gärtner
  *
  */
-public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest> implements ContextManifest {
+public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest, CorpusManifest> implements ContextManifest {
 
 	// Lookup structures
 //	private final List<LayerManifest> layerManifests = new ArrayList<>();
@@ -61,8 +63,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	private Boolean independent;
 	private Boolean editable;
 
-	private final CorpusManifest corpusManifest;
-	private DriverManifest driverManifest;
+	private Optional<DriverManifest> driverManifest = Optional.empty();
 
 	/**
 	 * @param manifestLocation
@@ -71,21 +72,15 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	public ContextManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry) {
 		super(manifestLocation, registry);
-
-		corpusManifest = null;
 	}
 
 	public ContextManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry, CorpusManifest corpusManifest) {
-		super(manifestLocation, registry);
-
-		verifyEnvironment(manifestLocation, corpusManifest, CorpusManifest.class);
-
-		this.corpusManifest = corpusManifest;
+		super(manifestLocation, registry, corpusManifest, CorpusManifest.class);
 	}
 
 	public ContextManifestImpl(CorpusManifest corpusManifest) {
-		this(corpusManifest.getManifestLocation(), corpusManifest.getRegistry(), corpusManifest);
+		super(corpusManifest, hostIdentity(), CorpusManifest.class);
 	}
 
 	/**
@@ -94,37 +89,37 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	@Override
 	public boolean isEmpty() {
 		return super.isEmpty() && prerequisiteManifests.isEmpty()
-				&& groupManifests.isEmpty() && driverManifest==null && locationManifests.isEmpty();
+				&& groupManifests.isEmpty() && !driverManifest.isPresent() && locationManifests.isEmpty();
 	}
 
-	@Override
-	public void forEachLayerManifest(Consumer<? super LayerManifest> action) {
-		forEachGroupManifest(g -> g.forEachLayerManifest(action));
-	}
+	private <L extends LayerManifest> Optional<L> lookupLayerManifest(String id) {
+		requireNonNull(id);
 
-	private LayerManifest lookupLayerManifest(String id) {
-
-		LayerManifest result = null;
+		Optional<L> result = Optional.empty();
 
 		List<LayerGroupManifest> groupManifests = getGroupManifests();
 
 		for(int i=0; i<groupManifests.size(); i++) {
 			result = groupManifests.get(i).getLayerManifest(id);
-			if(result!=null) {
+			if(result.isPresent()) {
 				break;
 			}
 		}
 
 		/// TODO maybe throw exception when no corpus manifest is set here?
-		if(result==null && corpusManifest!=null) {
+		if(!result.isPresent() && getCorpusManifest().isPresent()) {
 			List<PrerequisiteManifest> prerequisiteManifests = getPrerequisites();
 
 			for(int i=0; i<prerequisiteManifests.size(); i++) {
 				PrerequisiteManifest prerequisiteManifest = prerequisiteManifests.get(i);
 				if(id.equals(prerequisiteManifest.getAlias())) {
-					CorpusManifest corpusManifest = getCorpusManifest();
-					ContextManifest targetContext = corpusManifest.getContextManifest(prerequisiteManifest.getContextId());
-					result = targetContext.getLayerManifest(prerequisiteManifest.getLayerId());
+					result = getCorpusManifest().flatMap(
+							corpus -> corpus.getContextManifest(prerequisiteManifest.getContextId()
+									.orElseThrow(Manifest.invalidId("Prerequisite does not declare a proper context id: "
+												+ ManifestUtils.getName(prerequisiteManifest))))
+							.flatMap(ccontext -> ccontext.getLayerManifest(prerequisiteManifest.getLayerId()
+									.orElseThrow(Manifest.invalidId("Prerequisite does not declare a proper layer id: "
+												+ ManifestUtils.getName(prerequisiteManifest))))));
 					break;
 				}
 			}
@@ -137,51 +132,27 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	 * @see de.ims.icarus2.model.manifest.api.ContextManifest#getLayerManifest(java.lang.String)
 	 */
 	@Override
-	public LayerManifest getLayerManifest(String id) {
-		requireNonNull(id);
-
-//		ensureLookup();
-
-//		LayerManifest result = layerManifestLookup.get(id);
-
-		LayerManifest result = lookupLayerManifest(id);
-
-		if(result==null)
-			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
-					"No layer available for id "+id+" in context "+getId()); //$NON-NLS-1$ //$NON-NLS-2$
-
-		return result;
+	public <L extends LayerManifest> Optional<L> getLayerManifest(String id) {
+		return lookupLayerManifest(id);
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ContextManifest#getPrerequisite(java.lang.String)
 	 */
 	@Override
-	public PrerequisiteManifest getPrerequisite(String alias) {
+	public Optional<PrerequisiteManifest> getPrerequisite(String alias) {
 		requireNonNull(alias);
 
-		PrerequisiteManifest result = null;
+		Optional<PrerequisiteManifest> result = Optional.empty();
 
 		for(PrerequisiteManifest prerequisiteManifest : prerequisiteManifests) {
 			if(alias.equals(prerequisiteManifest.getAlias())) {
-				result = prerequisiteManifest;
+				result = Optional.of(prerequisiteManifest);
 				break;
 			}
 		}
 
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getPrerequisite(alias);
-		}
-
-		return result;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
-	 */
-	@Override
-	public CorpusManifest getHost() {
-		return corpusManifest;
+		return getDerivable(result, t -> t.getPrerequisite(alias));
 	}
 
 	/**
@@ -204,7 +175,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 //		checkNotTemplate();
 
 		if(locationManifests.contains(manifest))
-			throw new IllegalArgumentException("Location already present: "+manifest); //$NON-NLS-1$
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Location already present: "+manifest); //$NON-NLS-1$
 
 		locationManifests.add(manifest);
 	}
@@ -221,7 +192,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 //		checkNotTemplate();
 
 		if(!locationManifests.remove(manifest))
-			throw new IllegalArgumentException("Location unknown: "+manifest); //$NON-NLS-1$
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Location unknown: "+manifest); //$NON-NLS-1$
 	}
 
 	/**
@@ -298,7 +269,8 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	 */
 	@Override
 	public boolean isRootContext() {
-		return corpusManifest!=null && corpusManifest.isRootContext(this);
+		Optional<CorpusManifest> host = getCorpusManifest();
+		return host.isPresent() && host.get().isRootContext(this);
 	}
 
 	/**
@@ -313,12 +285,8 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	 * @see de.ims.icarus2.model.manifest.api.ContextManifest#getDriverManifest()
 	 */
 	@Override
-	public DriverManifest getDriverManifest() {
-		DriverManifest result = driverManifest;
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getDriverManifest();
-		}
-		return result;
+	public Optional<DriverManifest> getDriverManifest() {
+		return getDerivable(driverManifest, ContextManifest::getDriverManifest);
 	}
 
 	/**
@@ -326,7 +294,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	 */
 	@Override
 	public boolean isLocalDriverManifest() {
-		return driverManifest!=null;
+		return driverManifest.isPresent();
 	}
 
 	@Override
@@ -367,16 +335,11 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	 * @see de.ims.icarus2.model.manifest.api.ContextManifest#getPrimaryLayerManifest()
 	 */
 	@Override
-	public ItemLayerManifest getPrimaryLayerManifest() {
-		if(primaryLayer!=null) {
-			return primaryLayer.get();
-		}
-
-		if(hasTemplate()) {
-			return getTemplate().getPrimaryLayerManifest();
-		}
-
-		throw new IllegalStateException("No primary layer defined for context: "+this); //$NON-NLS-1$
+	public <L extends ItemLayerManifest> Optional<L> getPrimaryLayerManifest() {
+		@SuppressWarnings("unchecked")
+		Optional<L> result = Optional.ofNullable(
+				primaryLayer==null ? null : (L)primaryLayer.get());
+		return getDerivable(result, ContextManifest::getPrimaryLayerManifest);
 	}
 
 	/**
@@ -408,16 +371,11 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	 * @return the foundationLayerManifest
 	 */
 	@Override
-	public ItemLayerManifest getFoundationLayerManifest() {
-		if(foundationLayer!=null) {
-			return foundationLayer.get();
-		}
-
-		if(hasTemplate()) {
-			return getTemplate().getFoundationLayerManifest();
-		}
-
-		return null;
+	public <L extends ItemLayerManifest> Optional<L> getFoundationLayerManifest() {
+		@SuppressWarnings("unchecked")
+		Optional<L> result = Optional.ofNullable(
+				foundationLayer==null ? null : (L)foundationLayer.get());
+		return getDerivable(result, ContextManifest::getFoundationLayerManifest);
 	}
 
 	/**
@@ -456,10 +414,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	}
 
 	protected void setDriverManifest0(DriverManifest driverManifest) {
-		requireNonNull(driverManifest);
-//		checkNotLive();
-
-		this.driverManifest = driverManifest;
+		this.driverManifest = Optional.of(driverManifest);
 	}
 
 	@Override
@@ -475,10 +430,11 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 
 		for(int i=0; i<prerequisiteManifests.size(); i++) {
 			if(alias.equals(prerequisiteManifests.get(i).getAlias()))
-				throw new IllegalArgumentException("Duplicate prerequisite alias: "+alias); //$NON-NLS-1$
+				throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
+						"Duplicate prerequisite alias: "+alias);
 		}
 
-		PrerequisiteManifestImpl result = new PrerequisiteManifestImpl(alias);
+		PrerequisiteManifestImpl result = new PrerequisiteManifestImpl(this, alias);
 		prerequisiteManifests.add(result);
 
 		return result;
@@ -511,11 +467,14 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 		requireNonNull(groupManifest);
 //		checkNotLive();
 
-		if(groupManifest.getContextManifest()!=this)
-			throw new IllegalArgumentException("Layer group already hosted in foreign context: "+groupManifest); //$NON-NLS-1$
+		ContextManifest declaredHost = groupManifest.getContextManifest().orElse(null);
+		if(declaredHost!=null && declaredHost!=this)
+			throw new ManifestException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
+					"Layer group already hosted in foreign context: "+groupManifest);
 
 		if(groupManifests.contains(groupManifest))
-			throw new IllegalArgumentException("Layer group already present: "+groupManifest); //$NON-NLS-1$
+			throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
+					"Layer group already present: "+groupManifest);
 
 		groupManifests.add(groupManifest);
 
@@ -534,14 +493,15 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 //		checkNotLive();
 
 		if(!groupManifests.remove(groupManifest))
-			throw new IllegalArgumentException("Layer group not present: "+groupManifest); //$NON-NLS-1$
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
+					"Layer group not present: "+groupManifest);
 
 //		resetLookup();
 	}
 
 	@Override
-	public void lock() {
-		super.lock();
+	protected void lockNested() {
+		super.lockNested();
 
 		for(PrerequisiteManifest prerequisiteManifest : prerequisiteManifests) {
 			prerequisiteManifest.lock();
@@ -565,8 +525,8 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#resolve()
 		 */
 		@Override
-		protected ItemLayerManifest resolve() {
-			return (ItemLayerManifest) getLayerManifest(getId());
+		protected Optional<ItemLayerManifest> resolve() {
+			return getLayerManifest(getId());
 		}
 
 	}
@@ -578,22 +538,26 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	 * @author Markus Gärtner
 	 *
 	 */
-	protected class PrerequisiteLink extends MemoryLink<PrerequisiteManifest> {
+	protected static class PrerequisiteLink extends MemoryLink<PrerequisiteManifest> {
+
+		private final ContextManifest contextManifest;
 
 		/**
 		 * @param id
 		 */
-		public PrerequisiteLink(String id) {
+		public PrerequisiteLink(ContextManifest contextManifest, String id) {
 			super(id);
+
+			this.contextManifest = requireNonNull(contextManifest);
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#resolve()
 		 */
 		@Override
-		protected PrerequisiteManifest resolve() {
-			ContextManifest contextManifest = ContextManifestImpl.this.getTemplate();
-			return contextManifest==null ? null : contextManifest.getPrerequisite(getId());
+		protected Optional<PrerequisiteManifest> resolve() {
+			return contextManifest.tryGetTemplate()
+					.flatMap(c -> ((ContextManifest)c).getPrerequisite(getId()));
 		}
 
 	}
@@ -603,30 +567,34 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class PrerequisiteManifestImpl extends AbstractLockable implements PrerequisiteManifest {
+	public static class PrerequisiteManifestImpl extends AbstractLockable implements PrerequisiteManifest {
+
+		private final ContextManifest contextManifest;
 
 		private final String alias;
 		private final PrerequisiteLink unresolvedForm;
 
-		private String layerId;
-		private String typeId;
-		private String contextId;
-		private String description;
+		private Optional<String> layerId = Optional.empty();
+		private Optional<String> typeId = Optional.empty();
+		private Optional<String> contextId = Optional.empty();
+		private Optional<String> description = Optional.empty();
 
-		PrerequisiteManifestImpl(String alias) {
+		public PrerequisiteManifestImpl(ContextManifest contextManifest, String alias) {
+			requireNonNull(contextManifest);
 			requireNonNull(alias);
 
 			ManifestUtils.checkId(alias);
 
+			this.contextManifest = contextManifest;
 			this.alias = alias;
-			this.unresolvedForm = new PrerequisiteLink(alias);
+			this.unresolvedForm = new PrerequisiteLink(contextManifest, alias);
 		}
 
 		/**
 		 * @return the description
 		 */
 		@Override
-		public String getDescription() {
+		public Optional<String> getDescription() {
 			return description;
 		}
 
@@ -638,7 +606,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 			checkNotLocked();
 //			getContextManifest().checkNotLive();
 
-			this.description = description;
+			this.description = Optional.ofNullable(description);
 		}
 
 		/**
@@ -646,14 +614,14 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 		 */
 		@Override
 		public ContextManifest getContextManifest() {
-			return ContextManifestImpl.this;
+			return contextManifest;
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest#getLayerId()
 		 */
 		@Override
-		public String getLayerId() {
+		public Optional<String> getLayerId() {
 			return layerId;
 		}
 
@@ -661,7 +629,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 		 * @see de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest#getContextId()
 		 */
 		@Override
-		public String getContextId() {
+		public Optional<String> getContextId() {
 			return contextId;
 		}
 
@@ -669,7 +637,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 		 * @see de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest#getTypeId()
 		 */
 		@Override
-		public String getTypeId() {
+		public Optional<String> getTypeId() {
 			return typeId;
 		}
 
@@ -685,8 +653,8 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 		 * @return the unresolvedForm
 		 */
 		@Override
-		public PrerequisiteManifest getUnresolvedForm() {
-			return unresolvedForm.get();
+		public Optional<PrerequisiteManifest> getUnresolvedForm() {
+			return unresolvedForm.getOptional();
 		}
 
 		/**
@@ -697,7 +665,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 			checkNotLocked();
 //			getContextManifest().checkNotLive();
 
-			this.layerId = layerId;
+			this.layerId = Optional.ofNullable(layerId);
 		}
 
 		/**
@@ -708,7 +676,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 			checkNotLocked();
 //			getContextManifest().checkNotLive();
 
-			this.typeId = typeId;
+			this.typeId = Optional.ofNullable(typeId);
 		}
 
 		/**
@@ -719,7 +687,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest>
 			checkNotLocked();
 //			getContextManifest().checkNotLive();
 
-			this.contextId = contextId;
+			this.contextId = Optional.ofNullable(contextId);
 		}
 
 		/**

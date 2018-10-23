@@ -38,7 +38,7 @@ class AnnotationLayerManifestImplTest implements AnnotationLayerManifestTest<Ann
 	@Override
 	public AnnotationLayerManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
-		return new AnnotationLayerManifestImpl(manifestLocation, registry, (LayerGroupManifest) host);
+		return settings.process(new AnnotationLayerManifestImpl(manifestLocation, registry, (LayerGroupManifest) host));
 	}
 
 	/**

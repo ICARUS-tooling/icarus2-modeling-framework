@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.api.binding;
 
+import java.util.Optional;
+
 import de.ims.icarus2.util.Multiplicity;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessRestriction;
@@ -31,33 +33,33 @@ import de.ims.icarus2.util.lang.ClassUtils;
 public interface LayerPrerequisite {
 
 	/**
-	 * Returns the id of the target layer or {@code null} if an exact id match
+	 * Returns the id of the target layer or an empty {@link Optional} if an exact id match
 	 * is not required or the prerequisite has not yet been fully resolved.
 	 *
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	String getLayerId();
+	Optional<String> getLayerId();
 
 	/**
 	 * Returns the id of the context which should be used to resolve the required
-	 * layer (specified by the {@link #getLayerId() method}) or {@code null} if no
+	 * layer (specified by the {@link #getLayerId() method}) or an empty {@link Optional} if no
 	 * exact match is required or the prerequisite has not yet been fully resolved.
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	String getContextId();
+	Optional<String> getContextId();
 
 	/**
 	 * If this layer only requires <i>some</i> layer of a certain type to be present
 	 * this method provides the mechanics to tell this. When the returned value is
-	 * {@code non-null} it is considered to be the exact name of a previously
+	 * {@link Optional#isPresent() present} it is considered to be the exact name of a previously
 	 * defined layer type.
 	 *
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	String getTypeId();
+	Optional<String> getTypeId();
 
 	/**
 	 * Returns the id the required layer should be assigned once resolved. This links
@@ -79,7 +81,7 @@ public interface LayerPrerequisite {
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	String getDescription();
+	Optional<String> getDescription();
 
 	/**
 	 * Returns the number of allowed bindings assigned to this prerequisite.
@@ -94,7 +96,8 @@ public interface LayerPrerequisite {
 				&& ClassUtils.equals(p1.getContextId(), p2.getContextId())
 				&& ClassUtils.equals(p1.getLayerId(), p2.getLayerId())
 				&& ClassUtils.equals(p1.getTypeId(), p2.getTypeId())
-				&& ClassUtils.equals(p1.getDescription(), p2.getDescription());
+				&& ClassUtils.equals(p1.getDescription(), p2.getDescription())
+				&& ClassUtils.equals(p1.getMultiplicity(), p2.getMultiplicity());
 
 	}
 }

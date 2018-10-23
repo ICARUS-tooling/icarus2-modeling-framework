@@ -19,6 +19,7 @@ package de.ims.icarus2.model.manifest.standard;
 import static java.util.Objects.requireNonNull;
 
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.model.manifest.api.HighlightFlag;
@@ -54,12 +55,11 @@ public class HighlightLayerManifestImpl extends AbstractLayerManifest<HighlightL
 
 	public HighlightLayerManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry) {
-		this(manifestLocation, registry, null);
+		super(manifestLocation, registry, null);
 	}
 
 	public HighlightLayerManifestImpl(LayerGroupManifest layerGroupManifest) {
-		this(layerGroupManifest.getContextManifest().getManifestLocation(),
-				layerGroupManifest.getContextManifest().getRegistry(), layerGroupManifest);
+		super(layerGroupManifest);
 	}
 
 	@Override
@@ -112,18 +112,11 @@ public class HighlightLayerManifestImpl extends AbstractLayerManifest<HighlightL
 	}
 
 	@Override
-	public ItemLayerManifest getPrimaryLayerManifest() {
-		LayerManifest result = null;
-
-		if(primaryLayer!=null) {
-			result = primaryLayer.get();
-		}
-
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getPrimaryLayerManifest();
-		}
-
-		return (ItemLayerManifest) result;
+	public Optional<ItemLayerManifest> getPrimaryLayerManifest() {
+		return getDerivable(
+				Optional.ofNullable(primaryLayer).map(
+						link -> (ItemLayerManifest) link.get()),
+				HighlightLayerManifest::getPrimaryLayerManifest);
 	}
 
 	@Override
@@ -142,6 +135,6 @@ public class HighlightLayerManifestImpl extends AbstractLayerManifest<HighlightL
 		checkAllowsTargetLayer();
 		requireNonNull(primaryLayerId);
 
-		primaryLayer = createLayerLink(primaryLayerId);
+		primaryLayer = createLayerLink(primaryLayerId, "primary layer");
 	}
 }

@@ -52,7 +52,7 @@ class DefaultModifiableIdentityTest implements ModifiableIdentityTest<DefaultMod
 	 */
 	@Override
 	public DefaultModifiableIdentity createTestInstance(TestSettings settings) {
-		return new DefaultModifiableIdentity();
+		return settings.process(new DefaultModifiableIdentity());
 	}
 
 	//TODO test other constructors?

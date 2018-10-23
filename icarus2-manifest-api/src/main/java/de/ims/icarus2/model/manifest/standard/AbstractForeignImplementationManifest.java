@@ -16,25 +16,28 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static java.util.Objects.requireNonNull;
+import java.util.Optional;
+import java.util.function.Function;
 
 import de.ims.icarus2.model.manifest.api.ForeignImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
+import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
+import de.ims.icarus2.model.manifest.api.TypedManifest;
 
 /**
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractForeignImplementationManifest<M extends MemberManifest> extends AbstractMemberManifest<M> implements ForeignImplementationManifest {
+public abstract class AbstractForeignImplementationManifest<M extends MemberManifest & ForeignImplementationManifest, H extends TypedManifest>
+	extends AbstractMemberManifest<M, H> implements ForeignImplementationManifest {
 
-	private ImplementationManifest implementationManifest;
+	private Optional<ImplementationManifest> implementationManifest = Optional.empty();
 
 	/**
-	 * @param manifestLocation
-	 * @param registry
+	 * {@inheritDoc}
 	 */
 	protected AbstractForeignImplementationManifest(
 			ManifestLocation manifestLocation, ManifestRegistry registry) {
@@ -42,11 +45,28 @@ public abstract class AbstractForeignImplementationManifest<M extends MemberMani
 	}
 
 	/**
+	 * {@inheritDoc}
+	 */
+	protected AbstractForeignImplementationManifest(ManifestLocation manifestLocation, ManifestRegistry registry,
+			H host, Class<? extends H> expectedHostClass) {
+		super(manifestLocation, registry, host, expectedHostClass);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	protected AbstractForeignImplementationManifest(H host,
+			Function<H, Manifest> properRegistrySource,
+			Class<? extends H> expectedHostClass) {
+		super(host, properRegistrySource, expectedHostClass);
+	}
+
+	/**
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractManifest#isEmpty()
 	 */
 	@Override
 	public boolean isEmpty() {
-		return super.isEmpty() && implementationManifest==null;
+		return super.isEmpty() && !implementationManifest.isPresent();
 	}
 
 	/**
@@ -54,15 +74,15 @@ public abstract class AbstractForeignImplementationManifest<M extends MemberMani
 	 */
 	@Override
 	public boolean isLocalImplementation() {
-		return implementationManifest!=null;
+		return implementationManifest.isPresent();
 	}
 
 	/**
 	 * @return the implementationManifest
 	 */
 	@Override
-	public ImplementationManifest getImplementationManifest() {
-		return implementationManifest;
+	public Optional<ImplementationManifest> getImplementationManifest() {
+		return getDerivable(implementationManifest, t -> t.getImplementationManifest());
 	}
 
 	/**
@@ -78,21 +98,17 @@ public abstract class AbstractForeignImplementationManifest<M extends MemberMani
 
 	protected void setImplementationManifest0(
 			ImplementationManifest implementationManifest) {
-		requireNonNull(implementationManifest);
-
-		this.implementationManifest = implementationManifest;
+		this.implementationManifest = Optional.of(implementationManifest);
 	}
 
 	public void clearImplementationManifest() {
-		implementationManifest = null;
+		implementationManifest = Optional.empty();
 	}
 
 	@Override
-	public void lock() {
-		super.lock();
+	protected void lockNested() {
+		super.lockNested();
 
-		if(implementationManifest!=null) {
-			implementationManifest.lock();
-		}
+		lockNested(implementationManifest);
 	}
 }

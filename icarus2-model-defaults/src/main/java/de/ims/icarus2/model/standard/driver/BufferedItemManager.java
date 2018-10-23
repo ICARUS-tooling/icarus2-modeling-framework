@@ -18,7 +18,6 @@ package de.ims.icarus2.model.standard.driver;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
-import static de.ims.icarus2.util.strings.StringUtil.getName;
 import static java.util.Objects.requireNonNull;
 
 import java.lang.ref.WeakReference;
@@ -37,6 +36,7 @@ import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.Item.ManagedItem;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.standard.driver.cache.TrackedMember;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractBuilder;
@@ -596,7 +596,7 @@ public class BufferedItemManager {
 
 			if(layerBuffers.containsKey(key))
 				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-						"Layer buffer already defiend for layer: "+getName(itemLayerManifest));
+						"Layer buffer already defiend for layer: "+ManifestUtils.getName(itemLayerManifest));
 
 			if(capacity<0) {
 				capacity = 100_000;

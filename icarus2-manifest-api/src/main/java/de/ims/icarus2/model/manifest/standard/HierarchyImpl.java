@@ -29,7 +29,7 @@ public class HierarchyImpl<E extends Object> extends AbstractLockable implements
 	 */
 	@Override
 	public E getRoot() {
-		return items.isEmpty() ? null : items.get(0);
+		return items.isEmpty() ? null : items.get(ROOT);
 	}
 
 	/**

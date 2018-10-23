@@ -100,8 +100,7 @@ public class InMemoryJavaFileManager extends ForwardingJavaFileManager {
 	 * byte code created by the compiler and stored in the JavaClassObject, and
 	 * returns the Class for it
 	 */
-	@Override
-	public ClassLoader getClassLoader(Location location) {
+	public ClassLoader getSharedClassLoader() {
 		return sharedClassLoader;
 	}
 

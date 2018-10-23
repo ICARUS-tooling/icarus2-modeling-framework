@@ -46,7 +46,7 @@ class PathResolverManifestImplTest implements PathResolverManifestTest<PathResol
 	@Override
 	public PathResolverManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
-		return new PathResolverManifestImpl(manifestLocation, registry, (LocationManifest) host);
+		return settings.process(new PathResolverManifestImpl(manifestLocation, registry, (LocationManifest) host));
 	}
 
 }

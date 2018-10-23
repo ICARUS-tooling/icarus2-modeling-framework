@@ -15,23 +15,33 @@
  * limitations under the License.
  */
 /**
- * 
+ *
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
-import org.junit.jupiter.api.Test;
+import de.ims.icarus2.model.manifest.api.ManifestRegistryTest;
+import de.ims.icarus2.test.TestSettings;
 
 /**
  * @author Markus Gärtner
  *
  */
-class DefaultManifestRegistryTest {
+class DefaultManifestRegistryTest implements ManifestRegistryTest<DefaultManifestRegistry> {
 
-	@Test
-	void test() {
-		fail("Not yet implemented");
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
+	 */
+	@Override
+	public Class<? extends DefaultManifestRegistry> getTestTargetClass() {
+		return DefaultManifestRegistry.class;
+	}
+
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
+	 */
+	@Override
+	public DefaultManifestRegistry createTestInstance(TestSettings settings) {
+		return settings.process(new DefaultManifestRegistry());
 	}
 
 }

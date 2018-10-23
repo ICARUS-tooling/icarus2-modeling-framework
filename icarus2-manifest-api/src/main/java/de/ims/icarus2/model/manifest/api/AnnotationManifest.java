@@ -17,8 +17,10 @@
 package de.ims.icarus2.model.manifest.api;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
@@ -45,12 +47,12 @@ public interface AnnotationManifest extends MemberManifest, Embedded {
 	public static final boolean DEFAULT_ALLOW_UNKNOWN_VALUES = false;
 
 	/**
-	 * Returns the hosting layer manifest or {@code null} if this manifest
+	 * Returns the hosting layer manifest or an empty {@link Optional} if this manifest
 	 * is a template.
 	 *
 	 * @return
 	 */
-	default AnnotationLayerManifest getLayerManifest() {
+	default <M extends AnnotationLayerManifest> Optional<M> getLayerManifest() {
 		return getHost();
 	}
 
@@ -60,21 +62,15 @@ public interface AnnotationManifest extends MemberManifest, Embedded {
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	String getKey();
+	Optional<String> getKey();
 
 	/**
-	 * Returns {@code true} iff the orimary key used for this annotation has
+	 * Returns {@code true} iff the primary key used for this annotation has
 	 * been declared locally.
 	 *
 	 * @return
 	 */
 	boolean isLocalKey();
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
-	 */
-	@Override
-	AnnotationLayerManifest getHost();
 
 	/**
 	 * Applies the given {@code action} to all aliases in this manifest,
@@ -166,7 +162,7 @@ public interface AnnotationManifest extends MemberManifest, Embedded {
 
 	/**
 	 * Returns an object that describes the set of available values for this annotation
-	 * by means of a lower and upper bound or {@code null} if this annotation is either
+	 * by means of a lower and upper bound or an empty {@link Optional} if this annotation is either
 	 * unbounded or the values are wrapped into an iterator obtainable via the
 	 * {@link #getValueSet()} method. Note that as a convention the {@code ValueRange}
 	 * class should only wrap bound objects that implement the {@link Comparable} interface
@@ -178,13 +174,13 @@ public interface AnnotationManifest extends MemberManifest, Embedded {
 	 * @see Comparable
 	 */
 	@AccessRestriction(AccessMode.READ)
-	ValueRange getValueRange();
+	Optional<ValueRange> getValueRange();
 
 	boolean isLocalValueRange();
 
 	/**
 	 * Returns a new iterator to traverse possible values of this annotation or
-	 * {@code null} if the set of possible annotations is unbounded. Note that
+	 * an empty {@link Optional} if the set of possible annotations is unbounded. Note that
 	 * for very large sets of values (especially numerical), it is far cheaper to
 	 * use the {@link #getValueRange()} method and return a {@code ValueRange}
 	 * object that describes the collection of supported values by means of an
@@ -193,12 +189,15 @@ public interface AnnotationManifest extends MemberManifest, Embedded {
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	ValueSet getValueSet();
+	Optional<ValueSet> getValueSet();
 
 	boolean isLocalValueSet();
 
 	/**
 	 * Returns the type of this annotation.
+	 *
+	 * @throws ManifestException of type {@link GlobalErrorCode#ILLEGAL_STATE}
+	 * if the value type is not set.
 	 */
 	@AccessRestriction(AccessMode.READ)
 	ValueType getValueType();
@@ -208,24 +207,25 @@ public interface AnnotationManifest extends MemberManifest, Embedded {
 	/**
 	 * For primitive annotation types ({@code int}, {@code float}, etc...) this method
 	 * returns the wrapped primitive value that is to be treated as a hint for missing
-	 * annotation values. For non-primitive annotations it typically returns {@code null}.
+	 * annotation values. For non-primitive annotations it typically returns
+	 * an empty {@link Optional}.
 	 *
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	Object getNoEntryValue();
+	Optional<Object> getNoEntryValue();
 
 	boolean isLocalNoEntryValue();
 
 	/**
 	 * For annotations of type {@value ValueType#CUSTOM} this method returns the
 	 * required {@code ContentType}. For all other value types, the returned value
-	 * is {@code null}.
+	 * is an empty {@link Optional}.
 	 *
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	ContentType getContentType();
+	Optional<ContentType> getContentType();
 
 	boolean isLocalContentType();
 

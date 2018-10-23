@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.Optional;
+
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -49,12 +51,9 @@ public interface ImplementationManifest extends MemberManifest, Embedded {
 	 * Returns the surrounding 'host' manifest.
 	 * @return
 	 */
-	default MemberManifest getHostManifest() {
+	default <M extends MemberManifest> Optional<M> getHostManifest() {
 		return getHost();
 	}
-
-	@Override
-	MemberManifest getHost();
 
 	/**
 	 * Returns the type of this implementation's source, defining
@@ -77,7 +76,7 @@ public interface ImplementationManifest extends MemberManifest, Embedded {
 	 * @see SourceType
 	 */
 	@AccessRestriction(AccessMode.READ)
-	String getSource();
+	Optional<String> getSource();
 
 	/**
 	 * Returns a string describing the actual class name of the implementation.
@@ -88,7 +87,7 @@ public interface ImplementationManifest extends MemberManifest, Embedded {
 	 * @see SourceType
 	 */
 	@AccessRestriction(AccessMode.READ)
-	String getClassname();
+	Optional<String> getClassname();
 
 	/**
 	 * Returns whether or not the targeted class is considered to be

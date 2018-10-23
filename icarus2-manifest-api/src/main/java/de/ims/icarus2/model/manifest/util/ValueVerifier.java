@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.model.manifest.util;
 
+import java.util.Optional;
 import java.util.Set;
 
 import de.ims.icarus2.GlobalErrorCode;
@@ -24,15 +25,6 @@ import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ValueRange;
 import de.ims.icarus2.model.manifest.api.ValueSet;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import it.unimi.dsi.fastutil.doubles.DoubleOpenHashSet;
-import it.unimi.dsi.fastutil.doubles.DoubleSet;
-import it.unimi.dsi.fastutil.floats.FloatOpenHashSet;
-import it.unimi.dsi.fastutil.floats.FloatSet;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
-import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
  * @author Markus Gärtner
@@ -45,20 +37,17 @@ public abstract class ValueVerifier {
 			return null;
 		}
 
-		ValueRange valueRange = annotationManifest.getValueRange();
-		ValueSet valueSet = annotationManifest.getValueSet();
-
 		ValueType valueType = annotationManifest.getValueType();
 
 		switch (valueType.getName()) {
 		case ValueType.BOOLEAN_TYPE_LABEL: return null; // no point in checking boolean results ?
-		case ValueType.INTEGER_TYPE_LABEL: return new IntVerifier(valueRange, valueSet);
-		case ValueType.LONG_TYPE_LABEL: return new LongVerifier(valueRange, valueSet);
-		case ValueType.FLOAT_TYPE_LABEL: return new FloatVerifier(valueRange, valueSet);
-		case ValueType.DOUBLE_TYPE_LABEL: return new DoubleVerifier(valueRange, valueSet);
+		case ValueType.INTEGER_TYPE_LABEL: return IntVerifier.forAnnotation(annotationManifest);
+		case ValueType.LONG_TYPE_LABEL: return LongVerifier.forAnnotation(annotationManifest);
+		case ValueType.FLOAT_TYPE_LABEL: return FloatVerifier.forAnnotation(annotationManifest);
+		case ValueType.DOUBLE_TYPE_LABEL: return DoubleVerifier.forAnnotation(annotationManifest);
 
 		default:
-			return new ObjectVerifier(valueRange, valueSet);
+			return ObjectVerifier.forAnnotation(annotationManifest);
 		}
 	}
 
@@ -109,7 +98,7 @@ public abstract class ValueVerifier {
 		},
 
 		/**
-		 * THe value is missing in the
+		 * The value is missing in the
 		 */
 		VALUE_NOT_IN_SET(true) {
 			@Override
@@ -138,8 +127,8 @@ public abstract class ValueVerifier {
 		public abstract void throwException(String value);
 	}
 
-	protected final ValueRange valueRange;
-	protected final ValueSet valueSet;
+	protected final Optional<ValueRange> valueRange;
+	protected final Optional<ValueSet> valueSet;
 
 	protected final int lowerCompRequired, upperCompRequired;
 
@@ -147,12 +136,14 @@ public abstract class ValueVerifier {
 	 * @param valueRange
 	 * @param valueSet
 	 */
-	public ValueVerifier(ValueRange valueRange, ValueSet valueSet) {
-		this.valueRange = valueRange;
-		this.valueSet = valueSet;
+	public ValueVerifier(AnnotationManifest manifest) {
+		valueRange = manifest.getValueRange();
+		valueSet = manifest.getValueSet();
 
-		lowerCompRequired = (valueRange!=null && valueRange.isLowerBoundInclusive()) ? 0 : -1;
-		upperCompRequired = (valueRange!=null && valueRange.isUpperBoundInclusive()) ? 0 : 1;
+		lowerCompRequired = valueRange.map(ValueRange::isLowerBoundInclusive)
+				.orElse(Boolean.FALSE).booleanValue() ? 0 : -1;
+		upperCompRequired = valueRange.map(ValueRange::isUpperBoundInclusive)
+				.orElse(Boolean.FALSE).booleanValue() ? 0 : 1;
 	}
 
 	public abstract VerificationResult verify(Object value);
@@ -165,57 +156,58 @@ public abstract class ValueVerifier {
 				return null;
 			}
 
-			return new ObjectVerifier(annotationManifest.getValueRange(), annotationManifest.getValueSet());
+			return new ObjectVerifier(annotationManifest);
 		}
 
 		@SuppressWarnings("rawtypes")
-		private final Comparable lower, upper;
-		private final Set<Object> allowedValues;
+		private final Optional<Comparable> lower, upper;
+		private final Optional<Set<Object>> allowedValues;
 
 		/**
 		 * @param valueRange
 		 * @param valueSet
 		 */
-		@SuppressWarnings("rawtypes")
-		public ObjectVerifier(ValueRange valueRange, ValueSet valueSet) {
-			super(valueRange, valueSet);
+		private ObjectVerifier(AnnotationManifest annotationManifest) {
+			super(annotationManifest);
 
-			lower = valueRange==null ? null : (Comparable)valueRange.getLowerBound();
-			upper = valueRange==null ? null : (Comparable)valueRange.getUpperBound();
+			lower = valueRange.flatMap(r -> r.getLowerBound());
+			upper = valueRange.flatMap(r -> r.getUpperBound());
 
-			if(valueSet!=null) {
-				allowedValues = new ReferenceOpenHashSet<>(valueSet.valueCount());
-				valueSet.forEachValue(allowedValues::add);
-			} else {
-				allowedValues = null;
-			}
+			allowedValues = valueSet.map(ValueSet::getValues);
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.manifest.util.ValueVerifier#verify(java.lang.Object)
 		 */
-		@SuppressWarnings({ "rawtypes", "unchecked" })
 		@Override
 		public VerificationResult verify(Object value) {
-			if(allowedValues!=null && !allowedValues.contains(value)) {
-				return VerificationResult.VALUE_NOT_IN_SET;
+			return tryVerify(value).orElseGet(() -> verifyStepSize(value));
+		}
+
+		protected Optional<VerificationResult> tryVerify(Object value) {
+			if(allowedValues.isPresent() && !allowedValues.get().contains(value)) {
+				return Optional.of(VerificationResult.VALUE_NOT_IN_SET);
 			}
 
-			if(lower!=null && lower.compareTo((Comparable)value)>lowerCompRequired) {
-				return VerificationResult.LOWER_BOUNDARY_VIOLATION;
+			if(lower.isPresent() && lower.get().compareTo((Comparable<?>)value)>lowerCompRequired) {
+				return Optional.of(VerificationResult.LOWER_BOUNDARY_VIOLATION);
 			}
 
-			if(upper!=null && upper.compareTo((Comparable)value)<upperCompRequired) {
-				return VerificationResult.UPPER_BOUNDARY_VIOLATION;
+			if(upper.isPresent() && upper.get().compareTo((Comparable<?>)value)<upperCompRequired) {
+				return Optional.of(VerificationResult.UPPER_BOUNDARY_VIOLATION);
 			}
 
 			// No check about step length here since general Comparable objects don't have any inherent "precision"
 
+			return Optional.empty();
+		}
+
+		protected VerificationResult verifyStepSize(Object value) {
 			return VerificationResult.VALID;
 		}
 	}
 
-	public static class IntVerifier extends ValueVerifier {
+	public static class IntVerifier extends ObjectVerifier {
 
 		public static IntVerifier forAnnotation(AnnotationManifest annotationManifest) {
 			if(annotationManifest.getValueType()!=ValueType.INTEGER)
@@ -226,62 +218,34 @@ public abstract class ValueVerifier {
 				return null;
 			}
 
-			return new IntVerifier(annotationManifest.getValueRange(), annotationManifest.getValueSet());
+			return new IntVerifier(annotationManifest);
 		}
 
-		private final Number lower, upper, step;
-		private final IntSet allowedValues;
+		private final Optional<Number> step;
 
 		/**
 		 * @param valueRange
 		 * @param valueSet
 		 */
-		public IntVerifier(ValueRange valueRange, ValueSet valueSet) {
-			super(valueRange, valueSet);
+		private IntVerifier(AnnotationManifest annotationManifest) {
+			super(annotationManifest);
 
-			lower = valueRange==null || valueRange.getLowerBound()==null ? null : (Number)valueRange.getLowerBound();
-			upper = valueRange==null || valueRange.getUpperBound()==null ? null : (Number)valueRange.getUpperBound();
-			step = valueRange==null || valueRange.getStepSize()==null ? null : (Number)valueRange.getStepSize();
-
-			if(valueSet!=null) {
-				allowedValues = new IntOpenHashSet(valueSet.valueCount());
-				valueSet.forEachValue(v -> allowedValues.add(((Number)v).intValue()));
-			} else {
-				allowedValues = null;
-			}
+			// Takes care of casting the step size to proper Number
+			step = valueRange.flatMap(ValueRange::getStepSize)
+					.map(c -> (Number)c);
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.manifest.util.ValueVerifier#verify(java.lang.Object)
+		 * @see de.ims.icarus2.model.manifest.util.ValueVerifier.ObjectVerifier#verifyStepSize(java.lang.Object)
 		 */
 		@Override
-		public VerificationResult verify(Object value) {
-			return verifyInt(((Number)value).intValue());
-		}
-
-		public VerificationResult verifyInt(int value) {
-
-			if(allowedValues!=null && !allowedValues.contains(value)) {
-				return VerificationResult.VALUE_NOT_IN_SET;
-			}
-
-			if(lower!=null && Integer.compare(lower.intValue(), value)>lowerCompRequired) {
-				return VerificationResult.LOWER_BOUNDARY_VIOLATION;
-			}
-
-			if(upper!=null && Integer.compare(upper.intValue(), value)<upperCompRequired) {
-				return VerificationResult.UPPER_BOUNDARY_VIOLATION;
-			}
-
-			if(step!=null && value%((Number)step).intValue()!=0) {
-				return VerificationResult.PRECISION_MISMATCH;
-			}
-
-			return VerificationResult.VALID;
+		protected VerificationResult verifyStepSize(Object value) {
+			return step.map(s -> ((Number)value).intValue()%s.intValue()!=0 ?
+					VerificationResult.PRECISION_MISMATCH : null).orElse(VerificationResult.VALID);
 		}
 	}
 
-	public static class LongVerifier extends ValueVerifier {
+	public static class LongVerifier extends ObjectVerifier {
 
 		public static LongVerifier forAnnotation(AnnotationManifest annotationManifest) {
 			if(annotationManifest.getValueType()!=ValueType.LONG)
@@ -292,62 +256,34 @@ public abstract class ValueVerifier {
 				return null;
 			}
 
-			return new LongVerifier(annotationManifest.getValueRange(), annotationManifest.getValueSet());
+			return new LongVerifier(annotationManifest);
 		}
 
-		private final Number lower, upper, step;
-		private final LongSet allowedValues;
+		private final Optional<Number>step;
 
 		/**
 		 * @param valueRange
 		 * @param valueSet
 		 */
-		public LongVerifier(ValueRange valueRange, ValueSet valueSet) {
-			super(valueRange, valueSet);
+		public LongVerifier(AnnotationManifest annotationManifest) {
+			super(annotationManifest);
 
-			lower = valueRange==null || valueRange.getLowerBound()==null ? null : (Number)valueRange.getLowerBound();
-			upper = valueRange==null || valueRange.getUpperBound()==null ? null : (Number)valueRange.getUpperBound();
-			step = valueRange==null || valueRange.getStepSize()==null ? null : (Number)valueRange.getStepSize();
-
-			if(valueSet!=null) {
-				allowedValues = new LongOpenHashSet(valueSet.valueCount());
-				valueSet.forEachValue(v -> allowedValues.add(((Number)v).longValue()));
-			} else {
-				allowedValues = null;
-			}
+			// Takes care of casting the step size to proper Number
+			step = valueRange.flatMap(ValueRange::getStepSize)
+					.map(c -> (Number)c);
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.manifest.util.ValueVerifier#verify(java.lang.Object)
+		 * @see de.ims.icarus2.model.manifest.util.ValueVerifier.ObjectVerifier#verifyStepSize(java.lang.Object)
 		 */
 		@Override
-		public VerificationResult verify(Object value) {
-			return verifyLong(((Number)value).longValue());
-		}
-
-		public VerificationResult verifyLong(long value) {
-
-			if(allowedValues!=null && !allowedValues.contains(value)) {
-				return VerificationResult.VALUE_NOT_IN_SET;
-			}
-
-			if(lower!=null && Long.compare(lower.longValue(), value)>lowerCompRequired) {
-				return VerificationResult.LOWER_BOUNDARY_VIOLATION;
-			}
-
-			if(upper!=null && Long.compare(upper.longValue(), value)<upperCompRequired) {
-				return VerificationResult.UPPER_BOUNDARY_VIOLATION;
-			}
-
-			if(step!=null && value%((Number)step).longValue()!=0) {
-				return VerificationResult.PRECISION_MISMATCH;
-			}
-
-			return VerificationResult.VALID;
+		protected VerificationResult verifyStepSize(Object value) {
+			return step.map(s -> ((Number)value).longValue()%s.longValue()!=0 ?
+					VerificationResult.PRECISION_MISMATCH : null).orElse(VerificationResult.VALID);
 		}
 	}
 
-	public static class FloatVerifier extends ValueVerifier {
+	public static class FloatVerifier extends ObjectVerifier {
 
 		public static FloatVerifier forAnnotation(AnnotationManifest annotationManifest) {
 			if(annotationManifest.getValueType()!=ValueType.FLOAT)
@@ -358,11 +294,10 @@ public abstract class ValueVerifier {
 				return null;
 			}
 
-			return new FloatVerifier(annotationManifest.getValueRange(), annotationManifest.getValueSet());
+			return new FloatVerifier(annotationManifest);
 		}
 
-		private final Number lower, upper, step;
-		private final FloatSet allowedValues;
+		private final Optional<Number>step;
 
 		private final float stepInvert, accuracy;
 
@@ -370,48 +305,25 @@ public abstract class ValueVerifier {
 		 * @param valueRange
 		 * @param valueSet
 		 */
-		public FloatVerifier(ValueRange valueRange, ValueSet valueSet) {
-			super(valueRange, valueSet);
+		private FloatVerifier(AnnotationManifest annotationManifest) {
+			super(annotationManifest);
 
-			lower = valueRange==null || valueRange.getLowerBound()==null ? null : (Number)valueRange.getLowerBound();
-			upper = valueRange==null || valueRange.getUpperBound()==null ? null : (Number)valueRange.getUpperBound();
-			step = valueRange==null || valueRange.getStepSize()==null ? null : (Number)valueRange.getStepSize();
-			accuracy = step==null ? 0F : step.floatValue() * 0.001F;
-			stepInvert = step==null ? 0F : 1 / step.floatValue();
+			// Takes care of casting the step size to proper Number
+			step = valueRange.flatMap(ValueRange::getStepSize)
+					.map(c -> (Number)c);
 
-			if(valueSet!=null) {
-				allowedValues = new FloatOpenHashSet(valueSet.valueCount());
-				valueSet.forEachValue(v -> allowedValues.add(((Number)v).floatValue()));
-			} else {
-				allowedValues = null;
-			}
+			accuracy = step.isPresent() ? step.get().floatValue() * 0.001F : 0F;
+			stepInvert = step.isPresent() ?1 / step.get().floatValue() : 0F;
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.manifest.util.ValueVerifier#verify(java.lang.Object)
+		 * @see de.ims.icarus2.model.manifest.util.ValueVerifier.ObjectVerifier#verifyStepSize(java.lang.Object)
 		 */
 		@Override
-		public VerificationResult verify(Object value) {
-			return verifyFloat(((Number)value).floatValue());
-		}
-
-		public VerificationResult verifyFloat(float value) {
-
-			if(allowedValues!=null && !allowedValues.contains(value)) {
-				return VerificationResult.VALUE_NOT_IN_SET;
-			}
-
-			if(lower!=null && Float.compare(lower.floatValue(), value)>lowerCompRequired) {
-				return VerificationResult.LOWER_BOUNDARY_VIOLATION;
-			}
-
-			if(upper!=null && Float.compare(upper.floatValue(), value)<upperCompRequired) {
-				return VerificationResult.UPPER_BOUNDARY_VIOLATION;
-			}
-
-			if(step!=null) {
+		protected VerificationResult verifyStepSize(Object value) {
+			if(step.isPresent()) {
 				// Calculate the step and delta
-				float steps = value * stepInvert;
+				float steps = ((Number)value).floatValue() * stepInvert;
 				if((steps-Math.floor(steps))>accuracy) {
 					// Precision mismatch is the case if delta exceeds accuracy
 					return VerificationResult.PRECISION_MISMATCH;
@@ -422,7 +334,7 @@ public abstract class ValueVerifier {
 		}
 	}
 
-	public static class DoubleVerifier extends ValueVerifier {
+	public static class DoubleVerifier extends ObjectVerifier {
 
 		public static DoubleVerifier forAnnotation(AnnotationManifest annotationManifest) {
 			if(annotationManifest.getValueType()!=ValueType.DOUBLE)
@@ -433,11 +345,10 @@ public abstract class ValueVerifier {
 				return null;
 			}
 
-			return new DoubleVerifier(annotationManifest.getValueRange(), annotationManifest.getValueSet());
+			return new DoubleVerifier(annotationManifest);
 		}
 
-		private final Number lower, upper, step;
-		private final DoubleSet allowedValues;
+		private final Optional<Number> step;
 
 		private final double stepInvert, accuracy;
 
@@ -445,48 +356,25 @@ public abstract class ValueVerifier {
 		 * @param valueRange
 		 * @param valueSet
 		 */
-		public DoubleVerifier(ValueRange valueRange, ValueSet valueSet) {
-			super(valueRange, valueSet);
+		private DoubleVerifier(AnnotationManifest annotationManifest) {
+			super(annotationManifest);
 
-			lower = valueRange==null || valueRange.getLowerBound()==null ? null : (Number)valueRange.getLowerBound();
-			upper = valueRange==null || valueRange.getUpperBound()==null ? null : (Number)valueRange.getUpperBound();
-			step = valueRange==null || valueRange.getStepSize()==null ? null : (Number)valueRange.getStepSize();
-			accuracy = step==null ? 0D : step.doubleValue() * 0.000001;
-			stepInvert = step==null ? 0D : 1 / step.doubleValue();
+			// Takes care of casting the step size to proper Number
+			step = valueRange.flatMap(ValueRange::getStepSize)
+					.map(c -> (Number)c);
 
-			if(valueSet!=null) {
-				allowedValues = new DoubleOpenHashSet(valueSet.valueCount());
-				valueSet.forEachValue(v -> allowedValues.add(((Number)v).doubleValue()));
-			} else {
-				allowedValues = null;
-			}
+			accuracy = step.isPresent() ? step.get().floatValue() * 0.000001 : 0D;
+			stepInvert = step.isPresent() ?1 / step.get().floatValue() : 0D;
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.manifest.util.ValueVerifier#verify(java.lang.Object)
+		 * @see de.ims.icarus2.model.manifest.util.ValueVerifier.ObjectVerifier#verifyStepSize(java.lang.Object)
 		 */
 		@Override
-		public VerificationResult verify(Object value) {
-			return verifyDouble(((Number)value).doubleValue());
-		}
-
-		public VerificationResult verifyDouble(double value) {
-
-			if(allowedValues!=null && !allowedValues.contains(value)) {
-				return VerificationResult.VALUE_NOT_IN_SET;
-			}
-
-			if(lower!=null && Double.compare(lower.doubleValue(), value)>lowerCompRequired) {
-				return VerificationResult.LOWER_BOUNDARY_VIOLATION;
-			}
-
-			if(upper!=null && Double.compare(upper.doubleValue(), value)<upperCompRequired) {
-				return VerificationResult.UPPER_BOUNDARY_VIOLATION;
-			}
-
-			if(step!=null) {
+		protected VerificationResult verifyStepSize(Object value) {
+			if(step.isPresent()) {
 				// Calculate the step and delta
-				double steps = value * stepInvert;
+				double steps = ((Number)value).doubleValue() * stepInvert;
 				if((steps-Math.floor(steps))>accuracy) {
 					// Precision mismatch is the case if delta exceeds accuracy
 					return VerificationResult.PRECISION_MISMATCH;

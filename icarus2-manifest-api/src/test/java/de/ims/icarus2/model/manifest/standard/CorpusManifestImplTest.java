@@ -15,23 +15,37 @@
  * limitations under the License.
  */
 /**
- * 
+ *
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
-import org.junit.jupiter.api.Test;
+import de.ims.icarus2.model.manifest.api.CorpusManifestTest;
+import de.ims.icarus2.model.manifest.api.ManifestLocation;
+import de.ims.icarus2.model.manifest.api.ManifestRegistry;
+import de.ims.icarus2.test.TestSettings;
 
 /**
  * @author Markus Gärtner
  *
  */
-class CorpusManifestImplTest {
+class CorpusManifestImplTest implements CorpusManifestTest<CorpusManifestImpl> {
 
-	@Test
-	void test() {
-		fail("Not yet implemented");
+
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
+	 */
+	@Override
+	public Class<? extends CorpusManifestImpl> getTestTargetClass() {
+		return CorpusManifestImpl.class;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.ManifestTest#createTestInstance(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry)
+	 */
+	@Override
+	public CorpusManifestImpl createTestInstance(TestSettings settings, ManifestLocation location,
+			ManifestRegistry registry) {
+		return settings.process(new CorpusManifestImpl(location, registry));
 	}
 
 }

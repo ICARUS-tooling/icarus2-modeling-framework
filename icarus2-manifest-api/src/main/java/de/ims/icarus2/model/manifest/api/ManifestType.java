@@ -40,7 +40,7 @@ public enum ManifestType {
 	LOCATION_MANIFEST(LocationManifest.class, false),
 	OPTIONS_MANIFEST(OptionsManifest.class, true),
 	CONTEXT_MANIFEST(ContextManifest.class, true),
-	CORPUS_MANIFEST(CorpusManifest.class, true),
+	CORPUS_MANIFEST(CorpusManifest.class, false),
 	PATH_RESOLVER_MANIFEST(PathResolverManifest.class, true),
 	RASTERIZER_MANIFEST(RasterizerManifest.class, true),
 	DRIVER_MANIFEST(DriverManifest.class, true),

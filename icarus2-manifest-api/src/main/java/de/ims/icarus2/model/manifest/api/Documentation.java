@@ -18,6 +18,7 @@ package de.ims.icarus2.model.manifest.api;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.util.access.AccessControl;
@@ -34,7 +35,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
 public interface Documentation extends ModifiableIdentity, Lockable, TypedManifest {
 
 	@AccessRestriction(AccessMode.READ)
-	String getContent();
+	Optional<String> getContent();
 
 	@AccessRestriction(AccessMode.READ)
 	default List<Resource> getResources() {

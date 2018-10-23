@@ -16,11 +16,12 @@
  */
 package de.ims.icarus2.test;
 
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -32,6 +33,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -42,6 +44,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.MockingDetails;
 import org.mockito.Mockito;
@@ -89,12 +92,23 @@ public class TestUtils {
 		return new Random(1L);
 	}
 
+	public static <T extends Object> Supplier<T> randomizer(Collection<? extends T> source) {
+		requireNonNull(source);
+		if(source.size()==1) {
+			final T singleton = source.iterator().next();
+			return () -> singleton;
+		} else {
+			Randomizer<T> randomizer = new Randomizer<>(source);
+			return randomizer::randomize;
+		}
+	}
+
 	public static TestSettings settings() {
 		return new TestSettings();
 	}
 
 	public static TestSettings settings(TestFeature...features) {
-		return new TestSettings().withFeatures(features);
+		return settings().features(features);
 	}
 
 	public static <T extends Object> T assertMock(T mock) {
@@ -104,8 +118,78 @@ public class TestUtils {
 		return mock;
 	}
 
+	public static <T extends Object> T assertMock(Optional<T> mock) {
+		return assertMock(mock.orElse(null));
+	}
+
 	public static void assertNPE(Executable executable) {
 		assertThrows(NullPointerException.class, executable);
+	}
+
+	public static <T extends Object> void assertPairwiseNotEquals(
+			@SuppressWarnings("unchecked") T...items) {
+		assertNotNull(items);
+		assertTrue(items.length>1);
+
+		for(int i=0; i<items.length-1; i++) {
+			for(int j=i+1;j<items.length; j++) {
+				assertNotEquals(items[i], items[j]);
+			}
+		}
+	}
+
+	public static <T extends Object> void assertPairwiseNotEquals(
+			BiPredicate<? super T, ? super T> equals, @SuppressWarnings("unchecked") T...items) {
+		assertNotNull(equals);
+		assertNotNull(items);
+		assertTrue(items.length>1);
+
+		for(int i=0; i<items.length-1; i++) {
+			for(int j=i+1;j<items.length; j++) {
+				assertFalse(equals.test(items[i], items[j]));
+			}
+		}
+	}
+
+	public static <V extends Object> void assertPresent(Optional<V> value) {
+		assertNotNull(value);
+		assertTrue(value.isPresent());
+	}
+
+	public static <V extends Object> void assertPresent(Optional<V> value, String msg) {
+		assertNotNull(value, msg);
+		assertTrue(value.isPresent(), msg);
+	}
+
+	public static <V extends Object> void assertNotPresent(Optional<V> value) {
+		assertNotNull(value);
+		assertFalse(value.isPresent());
+	}
+
+	public static <V extends Object> void assertNotPresent(Optional<V> value, String msg) {
+		assertNotNull(value, msg);
+		assertFalse(value.isPresent(), msg);
+	}
+
+	public static <V extends Object> void assertOptionalEquals(V expected, Optional<V> actual) {
+		assertNotNull(actual);
+		assertEquals(expected, actual.orElse(null));
+	}
+
+	public static <V extends Object> void assertOptionalEquals(V expected, Optional<V> actual, String msg) {
+		assertNotNull(actual, msg);
+		assertEquals(expected, actual.orElse(null), msg);
+	}
+
+	public static <T extends Object, V extends Object> Function<T, V> unwrapGetter(Function<T, Optional<V>> getter) {
+		return obj -> getter.apply(obj)
+				.orElse(null);
+	}
+
+	public static <T extends Object, K extends Object, V extends Object>
+			BiFunction<T, K, V> unwrapLookup(BiFunction<T, K, Optional<V>> lookup) {
+		return (obj, key) -> lookup.apply(obj, key)
+				.orElse(null);
 	}
 
 	/**
@@ -190,6 +274,16 @@ public class TestUtils {
 		for(E element : expected) {
 			assertTrue(actual.contains(element), "Missing element: "+element);
 		}
+	}
+
+	public static <E extends Object> void assertCollectionEmpty(Collection<? extends E> col) {
+		assertNotNull(col);
+		assertTrue(col.isEmpty());
+	}
+
+	public static <E extends Object> void assertCollectionNotEmpty(Collection<? extends E> col) {
+		assertNotNull(col);
+		assertFalse(col.isEmpty());
 	}
 
 	public static <E extends Object> void assertListEquals(
@@ -338,25 +432,78 @@ public class TestUtils {
 		}
 	}
 
-	public static final BiConsumer<Executable, String> NO_CHECK = (e, val) -> fail("Not meant to have legality check called");
+	/**
+	 * Helper method usable as legality checker for test routines.
+	 * All the {@code assertXXX} methods in this class which take
+	 * callbacks for legality checks will use this constant to
+	 * decide whether a given non-null checker should actually be
+	 * used.
+	 * <p>
+	 * Note that this checker will {@link Assertions#fail(String) fail}
+	 * a test when actually called!
+	 */
+	public static final BiConsumer<Executable, String> NO_CHECK = (e, msg) -> fail("Not meant to have legality check called");
 
-	public static final Consumer<Executable> NPE_CHECK = TestUtils::assertNPE;
+	public static final BiConsumer<Executable, String> ILLEGAL_ARGUMENT_CHECK = (e, msg) -> {
+		assertThrows(IllegalArgumentException.class, e, msg);
+	};
 
-	public static <K extends Object> K NO_DEFAULT() {
-		return (K) null;
+	public static final BiConsumer<Executable, String> ILLEGAL_STATE_CHECK = (e, msg) -> {
+		assertThrows(IllegalStateException.class, e, msg);
+	};
+
+	/**
+	 * Constant to indicate that the test routine should perform
+	 * a setter check using a {@code null} value and expect a
+	 * {@link NullPointerException} to be thrown.
+	 */
+	public static final boolean NPE_CHECK = true;
+
+	/**
+	 * Inverse of {@link #NPE_CHECK}
+	 */
+	public static final boolean NO_NPE_CHECK = false;
+
+	private static final Supplier<?> NO_DEFAULT = () -> null;
+
+	@SuppressWarnings("unchecked")
+	public static <K extends Object> Supplier<? extends K> NO_DEFAULT() {
+		return (Supplier<? extends K>) NO_DEFAULT;
+	}
+
+	private static final Supplier<?> IGNORE_DEFAULT = () -> fail("Not supposed to request a default value!");
+
+	@SuppressWarnings("unchecked")
+	public static <K extends Object> Supplier<? extends K> IGNORE_DEFAULT() {
+		return (Supplier<? extends K>) IGNORE_DEFAULT;
+	}
+
+	public static <K extends Object> Supplier<? extends K> DEFAULT(K value) {
+		return () -> value;
 	}
 
 	public static <K extends Object> K[] NO_ILLEGAL() {
 		return (K[]) null;
 	}
 
+	public static <K extends Object> Function<K, K> IDENTITY() {
+		return k -> k;
+	}
+
+	private static Object null_obj = null;
+
+	@SuppressWarnings("unchecked")
+	public static <T extends Object> T NO_VALUE() {
+		return (T) null_obj;
+	}
+
 	public static String forValue(String msg, Object value) {
 		return msg + " - " + String.valueOf(value);
 	}
 
-	//-------------------------
-	//  ASSERTIONS
-	//-------------------------
+	//-------------------------------------------
+	// SETTER ASSERTIONS
+	//-------------------------------------------
 
 	public static <T extends Object, K extends Object> void assertSetter(T instance, BiConsumer<T, K> setter, K value,
 			boolean checkNPE, BiConsumer<Executable, String> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
@@ -374,7 +521,39 @@ public class TestUtils {
 		}
 	}
 
-	public static <T extends Object, K extends Object> void assertSetter(T instance, BiConsumer<T, K> setter, K[] values,
+	/**
+	 * Asserts a getter method in a way very similar to {@link #assertGetter(Object, Object, Object, Supplier, Function, BiConsumer)},
+	 * but with the restriction that after one call to the {@code setter} method an exception is
+	 * expected, asserted by the given {@code restrictionCheck} handler.
+	 *
+	 * @param instance
+	 * @param setter
+	 * @param value
+	 * @param checkNPE
+	 * @param legalityCheck
+	 * @param illegalValues
+	 *
+	 * @see #assertGetter(Object, Object, Object, Supplier, Function, BiConsumer)
+	 * @see #ILLEGAL_STATE_CHECK
+	 */
+	public static <T extends Object, K extends Object> void assertRestrictedSetter(
+			T instance, BiConsumer<T, K> setter,
+			K value1, K value2,
+			boolean checkNPE,
+			BiConsumer<Executable, String> restrictionCheck) {
+		if(checkNPE) {
+			assertNPE(() -> setter.accept(instance, null));
+		} else {
+			setter.accept(instance, null);
+		}
+
+		setter.accept(instance, value1);
+
+		restrictionCheck.accept(() -> setter.accept(instance, value2),
+					forValue("Testing restricted setter call", value2));
+	}
+
+	public static <T extends Object, K extends Object> void assertSetterBatch(T instance, BiConsumer<T, K> setter, K[] values,
 			boolean checkNPE, BiConsumer<Executable, String> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
 		if(checkNPE) {
 			assertNPE(() -> setter.accept(instance, null));
@@ -432,7 +611,9 @@ public class TestUtils {
 			adder.accept(instance, value);
 		}
 
-		assertNPE(() -> remover.accept(instance, null));
+		if(checkNPE) {
+			assertNPE(() -> remover.accept(instance, null));
+		}
 
 		assertCollectionEquals(getter.apply(instance), values);
 
@@ -455,24 +636,49 @@ public class TestUtils {
 		adder.accept(instance, values[0]);
 	}
 
+	//-------------------------------------------
+	// GETTER ASSERTIONS
+	//-------------------------------------------
+
 	public static <T extends Object, K extends Object> void assertGetter(
-			T instance, K value1, K value2, K defaultValue, Function<T,K> getter, BiConsumer<T, K> setter) {
-		if(defaultValue==null) {
+			T instance, K value1, K value2, Supplier<? extends K> defaultValue,
+			Function<T,K> getter, BiConsumer<T, K> setter) {
+		if(defaultValue==null || defaultValue==NO_DEFAULT()) {
 			assertNull(getter.apply(instance));
-		} else {
-			assertEquals(defaultValue, getter.apply(instance));
+		} else if(defaultValue!=IGNORE_DEFAULT()) {
+			assertEquals(defaultValue.get(), getter.apply(instance));
 		}
 
 		setter.accept(instance, value1);
 		assertEquals(value1, getter.apply(instance));
 
-		setter.accept(instance, value2);
-		assertEquals(value2, getter.apply(instance));
+		if(value2!=null) {
+			setter.accept(instance, value2);
+			assertEquals(value2, getter.apply(instance));
+		}
+	}
+
+	public static <T extends Object, K extends Object> void assertOptGetter(
+			T instance, K value1, K value2, Supplier<? extends K> defaultValue,
+			Function<T,Optional<K>> getter, BiConsumer<T, K> setter) {
+		if(defaultValue==null || defaultValue==NO_DEFAULT()) {
+			assertNotPresent(getter.apply(instance));
+		} else if(defaultValue!=IGNORE_DEFAULT()) {
+			assertOptionalEquals(defaultValue.get(), getter.apply(instance));
+		}
+
+		setter.accept(instance, value1);
+		assertOptionalEquals(value1, getter.apply(instance));
+
+		if(value2!=null) {
+			setter.accept(instance, value2);
+			assertOptionalEquals(value2, getter.apply(instance));
+		}
 	}
 
 	@SuppressWarnings("unchecked")
 	public static <T extends Object, K extends Object> void assertAccumulativeGetter(
-			T instance, K value1, K value2, Function<T,? extends Collection<K>> getter, BiConsumer<T, K> adder) {
+			T instance, K value1, K value2, Function<T,? extends Collection<? extends K>> getter, BiConsumer<T, K> adder) {
 		assertTrue(getter.apply(instance).isEmpty());
 
 		adder.accept(instance, value1);
@@ -529,10 +735,35 @@ public class TestUtils {
 		}
 
 		adder.accept(instance, value1);
-		assertSame(value1, lookup.apply(instance, keyGen.apply(value1)));
+		assertEquals(value1, lookup.apply(instance, keyGen.apply(value1)));
 
 		adder.accept(instance, value2);
-		assertSame(value2, lookup.apply(instance, keyGen.apply(value2)));
+		assertEquals(value2, lookup.apply(instance, keyGen.apply(value2)));
+	}
+
+	public static <T extends Object, K extends Object, I extends Object> void assertAccumulativeOptLookup(
+			T instance, K value1, K value2, BiFunction<T, I, Optional<K>> lookup,
+			boolean checkNPE,
+			BiConsumer<T, K> adder, Function<K, I> keyGen, @SuppressWarnings("unchecked") I...invalidLookups) {
+
+		if(checkNPE) {
+			assertNPE(() -> lookup.apply(instance, null));
+		} else {
+			assertNotPresent(lookup.apply(instance, null));
+		}
+
+		if(invalidLookups.length>0) {
+			for(I invalidLookup : invalidLookups) {
+				assertNotPresent(lookup.apply(instance, invalidLookup),
+						forValue("Testing invalid lookup value", invalidLookup));
+			}
+		}
+
+		adder.accept(instance, value1);
+		assertOptionalEquals(value1, lookup.apply(instance, keyGen.apply(value1)));
+
+		adder.accept(instance, value2);
+		assertOptionalEquals(value2, lookup.apply(instance, keyGen.apply(value2)));
 	}
 
 	public static <T extends Object, K extends Object, I extends Object> void assertAccumulativeLookupContains(
@@ -579,6 +810,29 @@ public class TestUtils {
 		}
 	}
 
+	public static <T extends Object, K extends Object> void assertAccumulativeFilter(
+			T instance,
+			BiConsumer<T, K> adder, BiFunction<T, Predicate<? super K>,? extends Collection<K>> getter,
+			Predicate<? super K> filter,
+			@SuppressWarnings("unchecked") K...values) {
+
+		assertTrue(values.length>1, "Needs at least 2 test values for add/remove");
+
+		List<K> expectedValues = new ArrayList<>();
+
+		// Incremental add
+		for(K value : values) {
+			adder.accept(instance, value);
+			if(filter.test(value)) {
+				expectedValues.add(value);
+			}
+		}
+
+		Collection<K> filtered = getter.apply(instance, filter);
+
+		assertCollectionEquals(expectedValues, filtered);
+	}
+
 	@SuppressWarnings("unchecked")
 	public static <T extends Object, K extends Object, A extends Consumer<? super K>> void assertForEach(
 			T instance, K value1, K value2, Function<T,Consumer<A>> forEachGen, BiConsumer<T, K> adder) {
@@ -612,12 +866,6 @@ public class TestUtils {
 	/**
 	 * @see #assertGetter(Class, Object, Object, Object, Function, BiConsumer)
 	 *
-	 * @param argType
-	 * @param value1
-	 * @param value2
-	 * @param defaultValue
-	 * @param getter
-	 * @param setter
 	 */
 	public static <T extends Object, K extends Object> void assertIsLocal(
 			T instance, K value1, K value2, Predicate<T> isLocalCheck, BiConsumer<T, K> setter) {
@@ -814,6 +1062,22 @@ public class TestUtils {
 			Function<M, T> getter, Function<T, K> transform) {
 		return m -> {
 			return transform.apply(getter.apply(m));
+		};
+	}
+
+	public static <M extends Object, T extends Object, K extends Object> Function<M, Optional<K>> transform_genericOptValue(
+			Function<M, Optional<T>> getter, Function<T, K> transform) {
+		return m -> {
+			return getter.apply(m).map(transform);
+		};
+	}
+
+	public static <T extends Object, K extends Object>
+			BiConsumer<T, Collection<K>> wrap_batchConsumer(BiConsumer<T, K> action) {
+		return (m, items) -> {
+			for(K item : items) {
+				action.accept(m, item);
+			}
 		};
 	}
 

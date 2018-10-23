@@ -18,6 +18,8 @@ package de.ims.icarus2.model.manifest.standard;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Optional;
+
 import javax.swing.Icon;
 
 import de.ims.icarus2.model.manifest.api.ModifiableIdentity;
@@ -30,10 +32,10 @@ import de.ims.icarus2.util.id.Identity;
  */
 public class DefaultModifiableIdentity extends AbstractLockable implements ModifiableIdentity {
 
-	private String id;
-	private String name;
-	private String description;
-	private Icon icon;
+	private Optional<String> id = Optional.empty();
+	private Optional<String> name = Optional.empty();
+	private Optional<String> description = Optional.empty();
+	private Optional<Icon> icon = Optional.empty();
 
 	public DefaultModifiableIdentity() {
 		// default constructor
@@ -58,7 +60,7 @@ public class DefaultModifiableIdentity extends AbstractLockable implements Modif
 	 * @return the id
 	 */
 	@Override
-	public String getId() {
+	public Optional<String> getId() {
 		return id;
 	}
 
@@ -66,7 +68,7 @@ public class DefaultModifiableIdentity extends AbstractLockable implements Modif
 	 * @return the name
 	 */
 	@Override
-	public String getName() {
+	public Optional<String> getName() {
 		return name;
 	}
 
@@ -74,7 +76,7 @@ public class DefaultModifiableIdentity extends AbstractLockable implements Modif
 	 * @return the description
 	 */
 	@Override
-	public String getDescription() {
+	public Optional<String> getDescription() {
 		return description;
 	}
 
@@ -82,7 +84,7 @@ public class DefaultModifiableIdentity extends AbstractLockable implements Modif
 	 * @return the icon
 	 */
 	@Override
-	public Icon getIcon() {
+	public Optional<Icon> getIcon() {
 		return icon;
 	}
 
@@ -101,7 +103,7 @@ public class DefaultModifiableIdentity extends AbstractLockable implements Modif
 
 		ManifestUtils.checkId(id);
 
-		this.id = id;
+		this.id = Optional.of(id);
 	}
 
 	/**
@@ -115,7 +117,7 @@ public class DefaultModifiableIdentity extends AbstractLockable implements Modif
 	}
 
 	protected void setName0(String name) {
-		this.name = name;
+		this.name = Optional.ofNullable(name);
 	}
 
 	/**
@@ -129,7 +131,7 @@ public class DefaultModifiableIdentity extends AbstractLockable implements Modif
 	}
 
 	protected void setDescription0(String description) {
-		this.description = description;
+		this.description = Optional.ofNullable(description);
 	}
 
 	/**
@@ -143,7 +145,7 @@ public class DefaultModifiableIdentity extends AbstractLockable implements Modif
 	}
 
 	protected void setIcon0(Icon icon) {
-		this.icon = icon;
+		this.icon = Optional.ofNullable(icon);
 	}
 
 	/**

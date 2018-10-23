@@ -4,4 +4,6 @@ description = 'Shared test classes'
 configurations {
 	// external dependencies managed by root build.gradle	
 	api.extendsFrom(junit, mockito, fastutil)
+	
+	implementation.extendsFrom(javapoet)
 }

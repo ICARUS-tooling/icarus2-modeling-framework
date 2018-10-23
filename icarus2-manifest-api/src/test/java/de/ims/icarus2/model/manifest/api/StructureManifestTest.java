@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.TestUtils.DEFAULT;
 import static de.ims.icarus2.test.TestUtils.settings;
 
 import java.util.Collections;
@@ -57,7 +58,7 @@ public interface StructureManifestTest<M extends StructureManifest> extends Cont
 	default void testGetStructureType() {
 		for(StructureType structureType : StructureType.values()) {
 			assertDerivativeGetter(settings(), structureType, TestUtils.other(structureType),
-					StructureManifest.DEFAULT_STRUCTURE_TYPE,
+					DEFAULT(StructureManifest.DEFAULT_STRUCTURE_TYPE),
 					StructureManifest::getStructureType, StructureManifest::setStructureType);
 		}
 	}
@@ -81,7 +82,7 @@ public interface StructureManifestTest<M extends StructureManifest> extends Cont
 		for(StructureFlag flag : StructureFlag.values()) {
 			assertDerivativeFlagGetter(settings(), Boolean.FALSE,
 					m -> m.isStructureFlagSet(flag),
-					(m, active) -> m.setStructureFlag(flag, active));
+					(m, active) -> m.setStructureFlag(flag, active.booleanValue()));
 		}
 	}
 
@@ -151,7 +152,7 @@ public interface StructureManifestTest<M extends StructureManifest> extends Cont
 	default void testSetStructureFlag() {
 		for(StructureFlag flag : StructureFlag.values()) {
 			assertLockableSetter(settings(),
-					(m, active) -> m.setStructureFlag(flag, active));
+					(m, active) -> m.setStructureFlag(flag, active.booleanValue()));
 		}
 	}
 

@@ -19,12 +19,13 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 
@@ -75,19 +76,22 @@ public interface EmbeddedTest<E extends Embedded> extends GenericTest<E> {
 	@Provider
 	E createEmbedded(TestSettings settings, TypedManifest host);
 
+	default <T extends TypedManifest> void assertHostGetter(Function<E, Optional<T>> hostGetter) {
+		Set<ManifestType> allowedHostTypes = getAllowedHostTypes();
+
+		for(ManifestType hostType : allowedHostTypes) {
+			T host = ManifestTestUtils.mockTypedManifest(hostType);
+			E embedded = createEmbedded(settings(), host);
+			assertOptionalEquals(host, hostGetter.apply(embedded));
+		}
+	}
+
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.Embedded#getHost()}.
 	 * @throws Exception
 	 */
 	@Test
 	default void testGetHost() throws Exception {
-		Set<ManifestType> allowedHostTypes = getAllowedHostTypes();
-
-		for(ManifestType hostType : allowedHostTypes) {
-			TypedManifest host = ManifestTestUtils.mockTypedManifest(hostType);
-			E embedded = createEmbedded(settings(), host);
-			assertNotNull(embedded.getHost());
-			assertSame(host, embedded.getHost());
-		}
+		assertHostGetter(Embedded::getHost);
 	}
 }

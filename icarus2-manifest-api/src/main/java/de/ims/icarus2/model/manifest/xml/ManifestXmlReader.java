@@ -310,9 +310,9 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 				Object item = stack.get(i);
 
 				if(item instanceof Manifest) {
-					id = ((Manifest)item).getId();
+					id = ((Manifest)item).getId().orElse(null);
 				} else if(item instanceof Identity) {
-					id = ((Identity)item).getId();
+					id = ((Identity)item).getId().orElse(null);
 				}
 
 				if(id==null) {

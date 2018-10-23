@@ -18,6 +18,8 @@ package de.ims.icarus2.model.manifest.standard;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Optional;
+
 import de.ims.icarus2.model.manifest.api.Documentation;
 import de.ims.icarus2.model.manifest.api.ValueManifest;
 import de.ims.icarus2.model.manifest.types.UnsupportedValueTypeException;
@@ -29,8 +31,8 @@ import de.ims.icarus2.model.manifest.types.ValueType;
  */
 public class ValueManifestImpl extends DefaultModifiableIdentity implements ValueManifest {
 
-	private Object value;
-	private Documentation documentation;
+	private Optional<Object> value = Optional.empty();
+	private Optional<Documentation> documentation = Optional.empty();
 	private final ValueType valueType;
 
 	public ValueManifestImpl(ValueType valueType) {
@@ -54,7 +56,7 @@ public class ValueManifestImpl extends DefaultModifiableIdentity implements Valu
 	 * @see de.ims.icarus2.model.manifest.api.ValueManifest#getValue()
 	 */
 	@Override
-	public Object getValue() {
+	public Optional<Object> getValue() {
 		return value;
 	}
 
@@ -62,7 +64,7 @@ public class ValueManifestImpl extends DefaultModifiableIdentity implements Valu
 	 * @return the documentation
 	 */
 	@Override
-	public Documentation getDocumentation() {
+	public Optional<Documentation> getDocumentation() {
 		return documentation;
 	}
 
@@ -77,7 +79,7 @@ public class ValueManifestImpl extends DefaultModifiableIdentity implements Valu
 	}
 
 	protected void setDocumentation0(Documentation documentation) {
-		this.documentation = requireNonNull(documentation);
+		this.documentation = Optional.of(documentation);
 	}
 
 	/**
@@ -95,7 +97,7 @@ public class ValueManifestImpl extends DefaultModifiableIdentity implements Valu
 
 		valueType.checkValue(value);
 
-		this.value = value;
+		this.value = Optional.of(value);
 	}
 
 }

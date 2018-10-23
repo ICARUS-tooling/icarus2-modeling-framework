@@ -43,7 +43,7 @@ class LayerGroupManifestImplTest implements LayerGroupManifestTest<LayerGroupMan
 	 */
 	@Override
 	public LayerGroupManifestImpl createEmbedded(TestSettings settings, TypedManifest host) {
-		return new LayerGroupManifestImpl((ContextManifest) host);
+		return settings.process(new LayerGroupManifestImpl((ContextManifest) host));
 	}
 
 }

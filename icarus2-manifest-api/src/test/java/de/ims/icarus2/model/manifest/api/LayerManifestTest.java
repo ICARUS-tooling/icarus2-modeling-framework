@@ -22,15 +22,18 @@ package de.ims.icarus2.model.manifest.api;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubId;
 import static de.ims.icarus2.test.TestUtils.assertMock;
+import static de.ims.icarus2.test.TestUtils.assertNotPresent;
+import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
+import static de.ims.icarus2.test.TestUtils.assertPresent;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -82,8 +85,8 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	 */
 	@Test
 	default void testGetContextManifest() {
-		assertNotNull(createUnlocked().getContextManifest());
-		assertNull(createTemplate(settings()).getContextManifest());
+		assertPresent(createUnlocked().getContextManifest());
+		assertNotPresent(createTemplate(settings()).getContextManifest());
 	}
 
 	/**
@@ -91,19 +94,18 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	 */
 	@Test
 	default void testGetGroupManifest() {
-		assertNotNull(createUnlocked().getGroupManifest());
-		assertNull(createTemplate(settings()).getGroupManifest());
+		assertPresent(createUnlocked().getGroupManifest());
+		assertNotPresent(createTemplate(settings()).getGroupManifest());
 	}
 
 	public static LayerType mockLayerType(String id) {
 		LayerType type = mock(LayerType.class);
-		when(type.getId()).thenReturn(id);
+		when(type.getId()).thenReturn(Optional.of(id));
 		return type;
 	}
 
-	@SuppressWarnings("unchecked")
 	public static <M extends LayerManifest> M mockLayerManifest(Class<M> clazz, String id) {
-		return (M) stubId((Manifest)mockTypedManifest(clazz), id);
+		return stubId(mockTypedManifest(clazz), id);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -148,8 +150,8 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 		// Ensure our mocked LayerType is available from the registry
 		return (m, type) -> {
 			ManifestRegistry mockedRegistry = TestUtils.assertMock(m.getRegistry());
-			String id = type.getId();
-			when(mockedRegistry.getLayerType(id)).thenReturn(type);
+			String id = type.getId().get();
+			when(mockedRegistry.getLayerType(id)).thenReturn(Optional.of(type));
 
 			m.setLayerTypeId(id);
 		};
@@ -160,7 +162,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	 */
 	@Test
 	default void testGetLayerType() {
-		assertDerivativeGetter(settings(), mockLayerType("type1"), mockLayerType("type2"), TestUtils.NO_DEFAULT(),
+		assertDerivativeOptGetter(settings(), mockLayerType("type1"), mockLayerType("type2"), TestUtils.NO_DEFAULT(),
 				LayerManifest::getLayerType, inject_setLayerTypeId());
 	}
 
@@ -212,35 +214,35 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 			assertNotNull(targetLayerManifest);
 			assertEquals(id, targetLayerManifest.getLayerId());
 			assertSame(m, targetLayerManifest.getLayerManifest());
-			assertSame(m, targetLayerManifest.getHost());
+			assertOptionalEquals(m, targetLayerManifest.getHost());
 
 //			assertSame(target, targetLayerManifest.getResolvedLayerManifest());
 		};
 	}
 
 	public static <M extends Object, L extends LayerManifest> BiConsumer<M, L> inject_setLayerId(
-			BiConsumer<M, String> setter, Function<M, ContextManifest> contextGetter) {
+			BiConsumer<M, String> setter, Function<M, Optional<ContextManifest>> contextGetter) {
 		return (m, layerManifest) -> {
 
-			String id = layerManifest.getId();
+			String id = layerManifest.getId().get();
 			assertNotNull(id);
 
 			ContextManifest contextManifest = assertMock(contextGetter.apply(m));
-			when(contextManifest.getLayerManifest(id)).thenReturn(layerManifest);
+			when(contextManifest.getLayerManifest(id)).thenReturn(Optional.of(layerManifest));
 
 			setter.accept(m, id);
 		};
 	}
 
 	public static <M extends Object, L extends LayerManifest> BiConsumer<M, L> inject_layerLookup(
-			BiConsumer<M, L> setter, Function<M, ContextManifest> contextGetter) {
+			BiConsumer<M, L> setter, Function<M, Optional<ContextManifest>> contextGetter) {
 		return (m, layerManifest) -> {
 
-			String id = layerManifest.getId();
+			String id = layerManifest.getId().get();
 			assertNotNull(id);
 
 			ContextManifest contextManifest = assertMock(contextGetter.apply(m));
-			when(contextManifest.getLayerManifest(id)).thenReturn(layerManifest);
+			when(contextManifest.getLayerManifest(id)).thenReturn(Optional.of(layerManifest));
 
 			setter.accept(m, layerManifest);
 		};
@@ -268,11 +270,6 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
 	}
 
-	@SuppressWarnings("unchecked")
-	public static <T extends TargetLayerManifest, M extends LayerManifest> Function<T, M> transform_targetLayer() {
-		return t -> t==null ? null : (M)t.getResolvedLayerManifest();
-	}
-
 	/**
 	 * Helper function to be used for consistency.
 	 * Transforms a {@link TargetLayerManifest} into a {@link String} by using
@@ -288,7 +285,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	 * the manifest's {@link LayerManifest#getId() id}.
 	 */
 	public static <M extends LayerManifest> Function<M, String> transform_layerManifestId(){
-		return m -> m==null ? null : m.getId();
+		return m -> m==null ? null : m.getId().get();
 	}
 
 	/**

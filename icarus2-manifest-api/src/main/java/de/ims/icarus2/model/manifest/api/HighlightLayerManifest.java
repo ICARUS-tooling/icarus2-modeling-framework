@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.manifest.api;
 
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -35,7 +36,7 @@ public interface HighlightLayerManifest extends LayerManifest {
 
 	//FIXME finish specification
 
-	ItemLayerManifest getPrimaryLayerManifest();
+	Optional<ItemLayerManifest> getPrimaryLayerManifest();
 
 	boolean isLocalPrimaryLayerManifest();
 

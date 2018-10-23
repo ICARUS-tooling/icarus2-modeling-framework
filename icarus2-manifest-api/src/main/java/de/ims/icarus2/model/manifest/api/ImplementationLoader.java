@@ -88,20 +88,6 @@ public abstract class ImplementationLoader<L extends ImplementationLoader<L>> ex
 		return thisAsCast();
 	}
 
-//	/**
-//	 *
-//	 * @param environment the manifest surrounding the implementation manifest
-//	 * @return
-//	 */
-//	public L environment(MemberManifest environment) {
-//		checkNotNull(environment);
-//		checkState(this.environment==null);
-//
-//		this.environment = environment;
-//
-//		return thisAsCast();
-//	}
-
 	/**
 	 *
 	 * @param environment the directly surrounding "thing" (typically a {@link CorpusMember}) that initiated

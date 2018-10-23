@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
@@ -29,6 +30,7 @@ import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.standard.Links.Link;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.lang.ClassUtils;
@@ -69,8 +71,8 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	 * @see de.ims.icarus2.model.manifest.api.LayerGroupManifest#getHost()
 	 */
 	@Override
-	public ContextManifest getHost() {
-		return contextManifest;
+	public Optional<TypedManifest> getHost() {
+		return Optional.of(contextManifest);
 	}
 
 	/**
@@ -97,9 +99,10 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.LayerGroupManifest#getPrimaryLayerManifest()
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
-	public ItemLayerManifest getPrimaryLayerManifest() {
-		return primaryLayer==null ? null : primaryLayer.get();
+	public <L extends ItemLayerManifest> Optional<L> getPrimaryLayerManifest() {
+		return Optional.ofNullable(primaryLayer==null ? null : (L)primaryLayer.get());
 	}
 
 	/**
@@ -201,7 +204,7 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 			return true;
 		} if(obj instanceof LayerGroupManifest) {
 			LayerGroupManifest other = (LayerGroupManifest) obj;
-			return contextManifest.equals(other.getContextManifest())
+			return contextManifest.equals(other.getContextManifest().orElse(null))
 					&& layerManifests.size()==other.layerCount()
 					&& ClassUtils.equals(getId(), other.getId());
 		}
@@ -210,7 +213,7 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 
 	private LayerManifest lookupLayer(final String id) {
 		for(LayerManifest layerManifest : layerManifests) {
-			if(id.equals(layerManifest.getId())) {
+			if(id.equals(layerManifest.getId().orElse(null))) {
 				return layerManifest;
 			}
 		}
@@ -221,11 +224,12 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.LayerGroupManifest#getLayerManifest(java.lang.String)
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
-	public LayerManifest getLayerManifest(String id) {
+	public <L extends LayerManifest> Optional<L> getLayerManifest(String id) {
 		requireNonNull(id);
 
-		return lookupLayer(id);
+		return Optional.ofNullable((L)lookupLayer(id));
 	}
 
 	protected class LayerLink extends Link<ItemLayerManifest> {
@@ -235,15 +239,23 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 		 * @param id
 		 */
 		public LayerLink(String id) {
-			super(id);
+			super(id, true);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#getMissingLinkDescription()
+		 */
+		@Override
+		protected String getMissingLinkDescription() {
+			return "Missing primary layer: "+getId();
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#resolve()
 		 */
 		@Override
-		protected ItemLayerManifest resolve() {
-			return (ItemLayerManifest) lookupLayer(getId());
+		protected Optional<ItemLayerManifest> resolve() {
+			return Optional.ofNullable((ItemLayerManifest) lookupLayer(getId()));
 		}
 
 	}

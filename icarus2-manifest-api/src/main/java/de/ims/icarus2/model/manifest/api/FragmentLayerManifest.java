@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.Optional;
+
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -36,7 +38,7 @@ public interface FragmentLayerManifest extends ItemLayerManifest {
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	TargetLayerManifest getValueLayerManifest();
+	Optional<TargetLayerManifest> getValueLayerManifest();
 
 	boolean isLocalValueLayerManifest();
 
@@ -45,12 +47,12 @@ public interface FragmentLayerManifest extends ItemLayerManifest {
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	String getAnnotationKey();
+	Optional<String> getAnnotationKey();
 
 	boolean isLocalAnnotationKey();
 
 	@AccessRestriction(AccessMode.READ)
-	RasterizerManifest getRasterizerManifest();
+	Optional<RasterizerManifest> getRasterizerManifest();
 
 	boolean isLocalRasterizerManifest();
 

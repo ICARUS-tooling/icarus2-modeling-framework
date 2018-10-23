@@ -33,6 +33,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
@@ -212,9 +213,11 @@ public class ManifestTestUtils {
 			"abc-def",
 			"abc_def",
 			"abc.def",
+			"abc:def",
 			"abc-def123",
 			"abc_def123",
-			"abc.def123"
+			"abc.def123",
+			"abc:def123",
 	};
 
 	private static final String[] illegalIdValues = {
@@ -224,7 +227,6 @@ public class ManifestTestUtils {
 			"123",
 			"123abc",
 			"%$§!()",
-			"abc:def",
 			"abc/def",
 			"abc@def",
 			"abc+def",
@@ -292,7 +294,7 @@ public class ManifestTestUtils {
 
 		while(embeddingDepth-->0 && host!=null) {
 			host = (host instanceof Embedded) ?
-				((Embedded)host).getHost() : null;
+				((Embedded)host).getHost().orElse(null) : null;
 		}
 
 		if(host!=null && host instanceof Manifest) {
@@ -317,7 +319,7 @@ public class ManifestTestUtils {
 
 		while(host!=null) {
 			host = (host instanceof Embedded) ?
-				((Embedded)host).getHost() : null;
+				((Embedded)host).getHost().orElse(null) : null;
 
 			if(host!=null && host instanceof Manifest) {
 				Manifest m = (Manifest) assertMock(host);
@@ -335,7 +337,7 @@ public class ManifestTestUtils {
 	}
 
 	public static <M extends Manifest> M stubHasManifest(M manifest) {
-		String id = manifest.getId();
+		String id = manifest.getId().get();
 		assertNotNull(id);
 
 		ManifestRegistry registry = assertMock(manifest.getRegistry());
@@ -355,14 +357,14 @@ public class ManifestTestUtils {
 	public static <M extends ManifestFragment> M stubId(M manifest, String id) {
 		requireNonNull(id);
 		assertMock(manifest);
-		when(manifest.getId()).thenReturn(id);
+		when(manifest.getId()).thenReturn(Optional.of(id));
 		return manifest;
 	}
 
-	public static <I extends Identity> I stubId(I identity, String id) {
+	public static <I extends Identity> I stubIdentity(I identity, String id) {
 		requireNonNull(id);
 		assertMock(identity);
-		when(identity.getId()).thenReturn(id);
+		when(identity.getId()).thenReturn(Optional.of(id));
 		return identity;
 	}
 
@@ -410,6 +412,10 @@ public class ManifestTestUtils {
 		return mockTypedManifestRaw(type, false, false);
 	}
 
+	public static <M extends Manifest> M mockTypedManifest(ManifestType type, String id) {
+		return stubId(mockTypedManifestRaw(type, false, false), id);
+	}
+
 	public static <M extends TypedManifest> M mockTypedManifestWithId(ManifestType type) {
 		return mockTypedManifestRaw(type, false, true);
 	}
@@ -425,6 +431,8 @@ public class ManifestTestUtils {
 
 		M manifest = mockTypedManifest(clazz, mockId);
 
+		when(manifest.getManifestType()).thenReturn(type);
+
 		if(mockHierarchy) {
 			mockHierarchy(type, manifest);
 		}
@@ -436,7 +444,7 @@ public class ManifestTestUtils {
 		return mockTypedManifest(clazz, false);
 	}
 
-	private static <M extends TypedManifest> M mockTypedManifest(Class<? extends TypedManifest> clazz, boolean mockId) {
+	public static <M extends TypedManifest> M mockTypedManifest(Class<? extends TypedManifest> clazz, boolean mockId) {
 		@SuppressWarnings("unchecked")
 		M manifest = (M) mock(clazz, withSettings().defaultAnswer(CALLS_REAL_METHODS));
 
@@ -451,7 +459,7 @@ public class ManifestTestUtils {
 
 		if(mockId) {
 			if(Identity.class.isAssignableFrom(clazz)) {
-				stubId((Identity)manifest, createId(clazz));
+				stubIdentity((Identity)manifest, createId(clazz));
 			} else if(ManifestFragment.class.isAssignableFrom(clazz)) {
 				stubId((ManifestFragment)manifest, createId(clazz));
 			}
@@ -474,7 +482,7 @@ public class ManifestTestUtils {
 			ManifestType hostType = envTypes[0];
 			TypedManifest host = mockTypedManifestRaw(hostType, false, true);
 
-			when(((Embedded)current).getHost()).thenReturn(host);
+			when(((Embedded)current).getHost()).thenReturn(Optional.of(host));
 
 			current = host;
 			currentType = hostType;
@@ -522,6 +530,7 @@ public class ManifestTestUtils {
 	 * its {@link Identity#getId() id}.
 	 */
 	public static <I extends Identity> Function<I, String> transform_id(){
-		return i -> i.getId();
+		return i -> i.getId().orElseThrow(Manifest.invalidId(
+				"Identity declares null id"));
 	}
 }

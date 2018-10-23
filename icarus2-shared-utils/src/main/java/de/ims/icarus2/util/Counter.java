@@ -16,10 +16,15 @@
  */
 package de.ims.icarus2.util;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Set;
+import java.util.function.Consumer;
 
 import de.ims.icarus2.util.collections.CollectionUtils;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectSet;
 
 /**
  * @author Markus Gärtner
@@ -27,72 +32,126 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  */
 public class Counter<T extends Object> {
 
-	private final Object2IntOpenHashMap<T> counts = new Object2IntOpenHashMap<>();
+	private final Object2IntMap<T> counts = new Object2IntOpenHashMap<>();
 
 	public Counter() {
 		// no-op
 	}
 
-	public void copyFrom(Counter<? extends T> source) {
+	/**
+	 * Overwrites in this counter all mappings defined by the given
+	 * {@code source} counter.
+	 * <p>
+	 * If you want to <b>add</b> counts for objects contained in both
+	 * counters, then use the {@link #addAll(Counter)} method instead!
+	 *
+	 * @param source
+	 * @return this counter instance
+	 *
+	 * @see #addAll(Counter)
+	 */
+	public Counter<T> copyFrom(Counter<? extends T> source) {
+		requireNonNull(source);
 		counts.putAll(source.counts);
+		return this;
 	}
 
-	public int increment(T data) {
-		return counts.addTo(data, 1) + 1;
+	/**
+	 * For each mapping in the given {@code source} counter this method
+	 * effectively calls the internal equivalent of {@link #add(Object, int)} to aggregate.
+	 *
+	 * @param source
+	 * @return
+	 */
+	public Counter<T> addAll(Counter<? extends T> source) {
+		requireNonNull(source);
+
+		Consumer<? super Object2IntMap.Entry<T>> action =
+				entry -> add0(entry.getKey(), entry.getIntValue());
+
+		@SuppressWarnings("unchecked")
+		Object2IntMap<T> other = (Object2IntMap<T>) source.counts;
+
+		ObjectSet<Object2IntMap.Entry<T>> set = other.object2IntEntrySet();
+
+		// Optimize for cheap traversal if we have a fast entry set
+		if(set instanceof Object2IntMap.FastEntrySet) {
+			((Object2IntMap.FastEntrySet<T>)set).fastForEach(action);
+		} else {
+			set.forEach(action);
+		}
+
+		return this;
 	}
 
-	public int add(T data, int delta) {
+	private int add0(T data, int delta) {
 		int c = counts.getInt(data);
 		if(c==counts.defaultReturnValue()) {
 			c = 0;
 		}
 
-		if(delta>0 && Integer.MAX_VALUE-delta<c)
-			throw new IllegalStateException("Positive overflow");
+		if(delta!=0) {
 
-		c += delta;
+			if(delta>0 && Integer.MAX_VALUE-delta<c)
+				throw new IllegalStateException("Positive overflow for data: "+data);
 
-		if(c<0)
-			throw new IllegalStateException("Counter cannot get negative");
+			c += delta;
 
-		counts.put(data, c);
+			if(c<0)
+				throw new IllegalStateException("Counter cannot get negative for data: "+data);
 
-//		System.out.printf("%s: %d size=%d\n",data,c,counts.size());
-
-		return c;
-	}
-
-	public int decrement(T data) {
-		int c = counts.getInt(data);
-		if(c<1)
-			throw new IllegalStateException("Cannot decrement count for data: "+data); //$NON-NLS-1$
-
-		c--;
-		if(c==0) {
-			counts.removeInt(data);
-		} else {
-			counts.put(data, c);
+			if(c==0) {
+				counts.removeInt(data);
+			} else {
+				counts.put(data, c);
+			}
 		}
 
 		return c;
 	}
 
-	public void clear() {
+	public int add(T data, int delta) {
+		requireNonNull(data);
+
+		return add0(data, delta);
+	}
+
+	public int increment(T data) {
+		requireNonNull(data);
+
+		return add0(data, +1);
+	}
+
+	public int decrement(T data) {
+		requireNonNull(data);
+
+		return add0(data, -1);
+	}
+
+	public Counter<T> clear() {
 		counts.clear();
+
+		return this;
 	}
 
 	public int getCount(T data) {
+		requireNonNull(data);
+
 		int c = counts.getInt(data);
 		return c==counts.defaultReturnValue() ? 0 : c;
 	}
 
-	public void setCount(T data, int count) {
+	public Counter<T> setCount(T data, int count) {
+		requireNonNull(data);
+
 		counts.put(data, count);
+
+		return this;
 	}
 
 	/**
-	 * Returns {@code true} iff the count for the giveb {@code data} is greater
-	 * that {@code 0}.
+	 * Returns {@code true} iff the count for the given {@code data} object is greater
+	 * than {@code 0}.
 	 *
 	 * @param data
 	 * @return

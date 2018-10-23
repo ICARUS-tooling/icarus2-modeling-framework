@@ -97,7 +97,7 @@ public class TableConverterTest {
 				getClass().getClassLoader(), true, false));
 		manifestXmlReader.readAndRegisterAll();
 
-		CorpusManifest corpusManifest = corpusManager.getManifestRegistry().getCorpusManifest("testCorpus");
+		CorpusManifest corpusManifest = corpusManager.getManifestRegistry().getCorpusManifest("testCorpus").get();
 
 		Corpus corpus = corpusManager.connect(corpusManifest);
 		PagedCorpusView view = corpus.createFullView(AccessMode.READ, null);

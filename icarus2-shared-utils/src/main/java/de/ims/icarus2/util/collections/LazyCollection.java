@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
  * Not thread-safe!
@@ -61,6 +62,10 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 
 	public static <E extends Object> LazyCollection<E> lazySet(final int capacity) {
 		return new LazyCollection<>(() -> new ObjectOpenHashSet<>(capacity));
+	}
+
+	public static <E extends Object> LazyCollection<E> lazyIdentitySet(final int capacity) {
+		return new LazyCollection<>(() -> new ReferenceOpenHashSet<>(capacity));
 	}
 
 	public static <E extends Object> LazyCollection<E> lazyLinkedSet(final int capacity) {

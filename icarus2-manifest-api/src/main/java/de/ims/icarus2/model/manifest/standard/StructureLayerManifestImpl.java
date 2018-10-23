@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
+import java.util.Optional;
+
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.Hierarchy;
@@ -46,12 +48,11 @@ public class StructureLayerManifestImpl extends ItemLayerManifestImpl implements
 
 	public StructureLayerManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry) {
-		this(manifestLocation, registry, null);
+		super(manifestLocation, registry, null);
 	}
 
 	public StructureLayerManifestImpl(LayerGroupManifest layerGroupManifest) {
-		this(layerGroupManifest.getContextManifest().getManifestLocation(),
-				layerGroupManifest.getContextManifest().getRegistry(), layerGroupManifest);
+		super(layerGroupManifest);
 	}
 
 	/**
@@ -74,20 +75,20 @@ public class StructureLayerManifestImpl extends ItemLayerManifestImpl implements
 	 * @see de.ims.icarus2.model.manifest.api.StructureLayerManifest#getRootStructureManifest()
 	 */
 	@Override
-	public StructureManifest getRootStructureManifest() {
-		Hierarchy<ContainerManifest> hierarchy = getContainerHierarchy();
+	public Optional<StructureManifest> getRootStructureManifest() {
+		Hierarchy<ContainerManifest> hierarchy = getContainerHierarchy().orElse(null);
 
 		// Bail early if there's not enough data to even host a structure manifest
-		if(hierarchy.getDepth()<2) {
+		if(hierarchy==null || hierarchy.getDepth()<2) {
 			//TODO this also returns null when a structure was illegally set on root position in the hierarchy
-			return null;
+			return Optional.empty();
 		}
 
 		// Find and return first structure manifest
 		for(int level=1; level<hierarchy.getDepth(); level++) {
 			ContainerManifest manifest = hierarchy.atLevel(level);
 			if(manifest.getManifestType()==ManifestType.STRUCTURE_MANIFEST) {
-				return (StructureManifest) manifest;
+				return Optional.of((StructureManifest) manifest);
 			}
 		}
 

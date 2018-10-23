@@ -29,6 +29,8 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -173,7 +175,9 @@ public final class LayerBinding implements Bindable, Serializable {
 				reportBuilder.source(source);
 			}
 
-			CorpusManifest corpusManifest = registry.getCorpusManifest(corpusId);
+			CorpusManifest corpusManifest = registry.getCorpusManifest(corpusId)
+					.orElseThrow(ManifestException.create(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
+							"No corpus for id: "+corpusId));
 
 			mappings.forEach((alias, entry) -> resolveEntry(alias, entry, corpusManifest, registry, reportBuilder));
 
@@ -186,10 +190,11 @@ public final class LayerBinding implements Bindable, Serializable {
 
 			return report;
 		} else
-			throw new IllegalStateException("Mapping content already resolved");
+			throw new ManifestException(GlobalErrorCode.ILLEGAL_STATE, "Mapping content already resolved");
 	}
 
-	private void resolveEntry(String alias, Entry entry, CorpusManifest corpusManifest, ManifestRegistry registry, ReportBuilder<ReportItem> reportBuilder) {
+	private void resolveEntry(String alias, Entry entry, CorpusManifest corpusManifest,
+			ManifestRegistry registry, ReportBuilder<ReportItem> reportBuilder) {
 		// Resolve layer manifests if required
 		if(entry.layers==null && entry.targets!=null) {
 			Set<LayerManifest> layers = new ReferenceOpenHashSet<>();
@@ -197,24 +202,26 @@ public final class LayerBinding implements Bindable, Serializable {
 			for(LayerPointer layerPointer : entry.targets) {
 
 				// Level-1 check
-				ContextManifest contextManifest = corpusManifest.getContextManifest(layerPointer.getContextId());
-				if(contextManifest==null) {
+				Optional<ContextManifest> contextManifest = corpusManifest.getContextManifest(layerPointer.getContextId());
+				if(!contextManifest.isPresent()) {
 					failedPointers++;
-					reportBuilder.addError(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "Alias '%s' - Missing context '%s' in target corpus '%s'",
+					reportBuilder.addError(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
+							"Alias '%s' - Missing context '%s' in target corpus '%s'",
 							alias, layerPointer.getContextId(), corpusManifest.getId());
 					continue;
 				}
 
 				// Level-2 check
-				LayerManifest layer = contextManifest.getLayerManifest(layerPointer.getLayerId());
-				if(layer==null) {
+				Optional<LayerManifest> layer = contextManifest.get().getLayerManifest(layerPointer.getLayerId());
+				if(!layer.isPresent()) {
 					failedPointers++;
-					reportBuilder.addError(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "Alias '%s' - Missing layer '%s' in target context '%s' in corpus '%s'",
-							alias, layerPointer.getLayerId(), contextManifest.getId(), corpusManifest.getId());
+					reportBuilder.addError(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
+							"Alias '%s' - Missing layer '%s' in target context '%s' in corpus '%s'",
+							alias, layerPointer.getLayerId(), contextManifest.get().getId(), corpusManifest.getId());
 					continue;
 				}
 
-				layers.add(layer);
+				layers.add(layer.get());
 			}
 
 			// Delay actual assignment of resolved layers till we know that ALL pointers for the entry succeeded
@@ -228,13 +235,14 @@ public final class LayerBinding implements Bindable, Serializable {
 
 		// Resolve layer type if required
 		if(entry.layerType==null && entry.prerequisite!=null && entry.prerequisite.getTypeId()!=null) {
-			LayerType layerType = registry.getLayerType(entry.prerequisite.getTypeId());
+			Optional<LayerType> layerType = entry.prerequisite.getTypeId()
+					.flatMap(id -> registry.getLayerType(id));
 
-			if(layerType==null) {
+			if(layerType.isPresent()) {
+				entry.layerType = layerType.get();
+			} else {
 				reportBuilder.addError(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "Alias '%s' - Unknown layer type id '%s'",
 						alias, entry.prerequisite.getTypeId());
-			} else {
-				entry.layerType = layerType;
 			}
 		}
 	}
@@ -377,7 +385,7 @@ public final class LayerBinding implements Bindable, Serializable {
 		 */
 		@Override
 		public int hashCode() {
-			return (1+layerId.hashCode()) * (1+contextId.hashCode());
+			return Objects.hash(layerId, contextId);
 		}
 
 		/**
@@ -404,7 +412,8 @@ public final class LayerBinding implements Bindable, Serializable {
 	 */
 	public static class LayerPrerequisiteImpl implements LayerPrerequisite {
 
-		private final String layerId, contextId, typeId, alias, description;
+		private final Optional<String> layerId, contextId, typeId, description;
+		private final String alias;
 		private final Multiplicity multiplicity;
 
 		/**
@@ -414,12 +423,12 @@ public final class LayerBinding implements Bindable, Serializable {
 		LayerPrerequisiteImpl(String layerId, String contextId,
 				String typeId, String alias, String description,
 				Multiplicity multiplicity) {
-			this.layerId = layerId;
-			this.contextId = contextId;
-			this.typeId = typeId;
-			this.alias = alias;
-			this.description = description;
-			this.multiplicity = multiplicity;
+			this.layerId = Optional.ofNullable(layerId);
+			this.contextId = Optional.ofNullable(contextId);
+			this.typeId = Optional.ofNullable(typeId);
+			this.alias = requireNonNull(alias);
+			this.description = Optional.ofNullable(description);
+			this.multiplicity = requireNonNull(multiplicity);
 		}
 
 		/**
@@ -434,12 +443,12 @@ public final class LayerBinding implements Bindable, Serializable {
 		public LayerPrerequisiteImpl(String contextId, String layerId,
 				String alias, Multiplicity multiplicity, String description) {
 
-			this.contextId = contextId;
-			this.layerId = layerId;
-			this.typeId = null;
-			this.alias = alias;
-			this.multiplicity = multiplicity;
-			this.description = description;
+			this.contextId = Optional.ofNullable(contextId);
+			this.layerId = Optional.ofNullable(layerId);
+			this.typeId = Optional.empty();
+			this.alias = requireNonNull(alias);
+			this.multiplicity = requireNonNull(multiplicity);
+			this.description = Optional.ofNullable(description);
 		}
 
 		/**
@@ -453,26 +462,26 @@ public final class LayerBinding implements Bindable, Serializable {
 		public LayerPrerequisiteImpl(String typeId, String alias,
 				Multiplicity multiplicity, String description) {
 
-			this.contextId = null;
-			this.layerId = null;
-			this.typeId = typeId;
-			this.alias = alias;
+			this.contextId = Optional.empty();
+			this.layerId = Optional.empty();
+			this.typeId = Optional.ofNullable(typeId);
+			this.alias = requireNonNull(alias);
 			this.multiplicity = multiplicity;
-			this.description = description;
+			this.description = Optional.ofNullable(description);
 		}
 
 		@Override
-		public String getLayerId() {
+		public Optional<String> getLayerId() {
 			return layerId;
 		}
 
 		@Override
-		public String getContextId() {
+		public Optional<String> getContextId() {
 			return contextId;
 		}
 
 		@Override
-		public String getTypeId() {
+		public Optional<String> getTypeId() {
 			return typeId;
 		}
 
@@ -482,7 +491,7 @@ public final class LayerBinding implements Bindable, Serializable {
 		}
 
 		@Override
-		public String getDescription() {
+		public Optional<String> getDescription() {
 			return description;
 		}
 
@@ -506,6 +515,7 @@ public final class LayerBinding implements Bindable, Serializable {
 			.append(" layerId=").append(layerId)
 			.append(" typeId=").append(typeId)
 			.append(" description=").append(description)
+			.append(" multiplicity=").append(multiplicity)
 			.append("]")
 			.toString();
 		}
@@ -515,25 +525,7 @@ public final class LayerBinding implements Bindable, Serializable {
 		 */
 		@Override
 		public int hashCode() {
-			int h = alias.hashCode();
-
-			if(contextId!=null) {
-				h *= contextId.hashCode();
-			}
-
-			if(layerId!=null) {
-				h *= layerId.hashCode();
-			}
-
-			if(typeId!=null) {
-				h *= typeId.hashCode();
-			}
-
-			if(description!=null) {
-				h *= description.hashCode();
-			}
-
-			return h;
+			return Objects.hash(alias, contextId, layerId, typeId, description, multiplicity);
 		}
 
 		/**
@@ -728,7 +720,7 @@ public final class LayerBinding implements Bindable, Serializable {
 		}
 
 		protected void checkInternals() {
-			checkState("No mappings defined", !mappings.isEmpty());
+//			checkState("No mappings defined", !mappings.isEmpty());
 
 			checkState("Missing corpus-id - must have a valid corpus-id defined when using layer pointers!",
 					!requiresCorpusId || corpusId!=null);

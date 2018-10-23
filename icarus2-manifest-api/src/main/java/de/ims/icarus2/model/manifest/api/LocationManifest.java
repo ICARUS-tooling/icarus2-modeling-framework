@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.manifest.api;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.util.LazyNameStore;
@@ -55,10 +56,8 @@ public interface LocationManifest extends Manifest {
 	 * exception.
 	 *
 	 * @return
-	 * @throws ManifestException if this manifest is not declared to host
-	 * {@link #isInline() inline} data.
 	 */
-	CharSequence getInlineData();
+	Optional<CharSequence> getInlineData();
 
 	/**
 	 * Returns the "root" path to the location described by this manifest.
@@ -66,26 +65,26 @@ public interface LocationManifest extends Manifest {
 	 * may vary. It can denote a single corpus file, an entire folder or the
 	 * identifier of a database, for example.
 	 * <p>
-	 * Returns {@code null} if this manifest is declared to host {@link #isInline() inline}
+	 * Returns an empty {@link Optional} if this manifest is declared to host {@link #isInline() inline}
 	 * data.
 	 *
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	String getRootPath();
+	Optional<String> getRootPath();
 
 	@AccessRestriction(AccessMode.READ)
-	PathType getRootPathType();
+	Optional<PathType> getRootPathType();
 
 	/**
 	 * If the data source is distributed then this method returns the manifest
 	 * that describes the resolver to use when accessing different chunks of data.
-	 * If the data is not of distributed nature this method returns {@code null}.
+	 * If the data is not of distributed nature this method returns an empty {@link Optional}.
 	 *
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	PathResolverManifest getPathResolverManifest();
+	Optional<PathResolverManifest> getPathResolverManifest();
 
 	@AccessRestriction(AccessMode.READ)
 	void forEachPathEntry(Consumer<? super PathEntry> action);

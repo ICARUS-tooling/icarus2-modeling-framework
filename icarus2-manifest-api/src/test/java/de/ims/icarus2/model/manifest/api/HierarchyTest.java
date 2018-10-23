@@ -24,6 +24,7 @@ import java.util.function.Predicate;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.annotations.Provider;
 
 /**
  * @author Markus Gärtner
@@ -31,6 +32,7 @@ import de.ims.icarus2.test.TestUtils;
  */
 public interface HierarchyTest<E extends Object, H extends Hierarchy<E>> extends LockableTest<H> {
 
+	@Provider
 	E mockItem();
 
 	/**

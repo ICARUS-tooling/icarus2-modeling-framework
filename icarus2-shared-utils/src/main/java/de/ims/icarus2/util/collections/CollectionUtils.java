@@ -430,6 +430,10 @@ public final class CollectionUtils {
 		return set;
 	}
 
+	public static <E extends Object> Set<E> singleton(E item) {
+		return Collections.singleton(item);
+	}
+
 	public static String toString(Collection<?> collection) {
 		return toString(collection, ',', true);
 	}

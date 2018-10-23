@@ -16,7 +16,6 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
@@ -27,48 +26,21 @@ import de.ims.icarus2.model.manifest.api.PathResolverManifest;
  * @author Markus Gärtner
  *
  */
-public class PathResolverManifestImpl extends AbstractForeignImplementationManifest<PathResolverManifest> implements PathResolverManifest {
-
-	private final LocationManifest locationManifest;
+public class PathResolverManifestImpl extends AbstractForeignImplementationManifest<PathResolverManifest, LocationManifest>
+		implements PathResolverManifest {
 
 	public PathResolverManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry) {
-		this(manifestLocation, registry, null);
+		super(manifestLocation, registry);
 	}
 
 	public PathResolverManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry, LocationManifest locationManifest) {
-		super(manifestLocation, registry);
-
-		verifyEnvironment(manifestLocation, locationManifest, LocationManifest.class);
-
-		this.locationManifest = locationManifest;
+		super(manifestLocation, registry, locationManifest, LocationManifest.class);
 	}
 
 	public PathResolverManifestImpl(LocationManifest locationManifest) {
-		this(locationManifest.getManifestLocation(), locationManifest.getRegistry(), locationManifest);
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
-	 */
-	@Override
-	public LocationManifest getHost() {
-		// TODO Auto-generated method stub
-		return locationManifest;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.standard.AbstractForeignImplementationManifest#getImplementationManifest()
-	 */
-	@Override
-	public ImplementationManifest getImplementationManifest() {
-		ImplementationManifest result = super.getImplementationManifest();
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getImplementationManifest();
-		}
-
-		return result;
+		super(locationManifest, hostIdentity(), LocationManifest.class);
 	}
 
 	/**

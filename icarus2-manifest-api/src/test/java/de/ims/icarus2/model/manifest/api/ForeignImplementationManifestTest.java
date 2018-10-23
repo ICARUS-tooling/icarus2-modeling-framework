@@ -37,7 +37,8 @@ public interface ForeignImplementationManifestTest<M extends ForeignImplementati
 	 */
 	@Test
 	default void testGetImplementationManifest() {
-		assertDerivativeGetter(settings(), mock(ImplementationManifest.class), mock(ImplementationManifest.class), TestUtils.NO_DEFAULT(),
+		assertDerivativeOptGetter(settings(),
+				mock(ImplementationManifest.class), mock(ImplementationManifest.class), TestUtils.NO_DEFAULT(),
 				ForeignImplementationManifest::getImplementationManifest,
 				ForeignImplementationManifest::setImplementationManifest);
 	}

@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
@@ -35,6 +36,7 @@ import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 
 /**
  * @author Markus Gärtner
@@ -43,9 +45,9 @@ import de.ims.icarus2.model.manifest.api.ManifestType;
 public class AnnotationLayerManifestImpl extends AbstractLayerManifest<AnnotationLayerManifest> implements AnnotationLayerManifest {
 
 	private final Map<String, AnnotationManifest> annotationManifests = new LinkedHashMap<>();
-	private String defaultKey;
+	private Optional<String> defaultKey = Optional.empty();
 
-	private EnumSet<de.ims.icarus2.model.manifest.api.AnnotationFlag> annotationFlags;
+	private final EnumSet<AnnotationFlag> annotationFlags = EnumSet.noneOf(AnnotationFlag.class);
 
 	private final List<TargetLayerManifest> referenceLayerManifests = new ArrayList<>(3);
 
@@ -57,18 +59,15 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	public AnnotationLayerManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry, LayerGroupManifest layerGroupManifest) {
 		super(manifestLocation, registry, layerGroupManifest);
-
-		annotationFlags = EnumSet.noneOf(AnnotationFlag.class);
 	}
 
 	public AnnotationLayerManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry) {
-		this(manifestLocation, registry, null);
+		super(manifestLocation, registry, null);
 	}
 
 	public AnnotationLayerManifestImpl(LayerGroupManifest layerGroupManifest) {
-		this(layerGroupManifest.getContextManifest().getManifestLocation(),
-				layerGroupManifest.getContextManifest().getRegistry(), layerGroupManifest);
+		super(layerGroupManifest);
 	}
 
 	/**
@@ -121,20 +120,11 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	 * @see de.ims.icarus2.model.manifest.api.AnnotationLayerManifest#getAnnotationManifest(java.lang.String)
 	 */
 	@Override
-	public AnnotationManifest getAnnotationManifest(String key) {
+	public Optional<AnnotationManifest> getAnnotationManifest(String key) {
 		requireNonNull(key);
 
-		AnnotationManifest manifest = annotationManifests.get(key);
-
-		if(manifest==null && hasTemplate()) {
-			manifest = getTemplate().getAnnotationManifest(key);
-		}
-
-		if(manifest==null)
-			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
-					"Unknown annotation key: "+key); //$NON-NLS-1$
-
-		return manifest;
+		return getDerivable(Optional.ofNullable(annotationManifests.get(key)),
+				t -> t.getAnnotationManifest(key));
 	}
 
 	@Override
@@ -144,10 +134,16 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 		addAnnotationManifest0(manifest);
 	}
 
+	private static String keyForManifest(AnnotationManifest manifest) {
+		return manifest.getKey().orElseThrow(ManifestException.create(
+				ManifestErrorCode.MANIFEST_ERROR,
+				"Specified annotation manifest does not provide a proper key: "+ManifestUtils.getName(manifest)));
+	}
+
 	protected void addAnnotationManifest0(AnnotationManifest manifest) {
 		requireNonNull(manifest);
 
-		String key = manifest.getKey();
+		String key = keyForManifest(manifest);
 
 		if(annotationManifests.containsKey(key))
 			throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
@@ -166,7 +162,7 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	protected void removeAnnotationManifest0(AnnotationManifest manifest) {
 		requireNonNull(manifest);
 
-		String key = manifest.getKey();
+		String key = keyForManifest(manifest);
 
 		if(annotationManifests==null || annotationManifests.remove(key)==null)
 			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "Unknown annotation manifest: "+key); //$NON-NLS-1$
@@ -176,12 +172,8 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	 * @see de.ims.icarus2.model.manifest.api.AnnotationLayerManifest#getDefaultKey()
 	 */
 	@Override
-	public String getDefaultKey() {
-		String result = defaultKey;
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getDefaultKey();
-		}
-		return result;
+	public Optional<String> getDefaultKey() {
+		return getDerivable(defaultKey, AnnotationLayerManifest::getDefaultKey);
 	}
 
 	/**
@@ -189,7 +181,7 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	 */
 	@Override
 	public boolean isLocalDefaultKey() {
-		return defaultKey!=null;
+		return defaultKey.isPresent();
 	}
 
 	/**
@@ -203,9 +195,7 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	}
 
 	protected void setDefaultKey0(String defaultKey) {
-		requireNonNull(defaultKey);
-
-		this.defaultKey = defaultKey;
+		this.defaultKey = Optional.of(defaultKey);
 	}
 
 	@Override
@@ -219,7 +209,7 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 		requireNonNull(referenceLayerId);
 
 		checkAllowsTargetLayer();
-		TargetLayerManifest targetLayerManifest = createTargetLayerManifest(referenceLayerId);
+		TargetLayerManifest targetLayerManifest = createTargetLayerManifest(referenceLayerId, "reference layer");
 
 		if(referenceLayerManifests.contains(targetLayerManifest))
 			throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
@@ -296,8 +286,8 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	}
 
 	@Override
-	public void lock() {
-		super.lock();
+	protected void lockNested() {
+		super.lockNested();
 
 		lockNested(annotationManifests.values());
 	}

@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.Optional;
+
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
@@ -48,5 +50,5 @@ public interface StructureLayerManifest extends ItemLayerManifest {
 	 * @see #getContextManifest()
 	 */
 	@AccessRestriction(AccessMode.READ)
-	StructureManifest getRootStructureManifest();
+	Optional<StructureManifest> getRootStructureManifest();
 }

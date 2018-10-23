@@ -27,7 +27,7 @@ import static de.ims.icarus2.model.manifest.api.LayerManifestTest.transform_targ
 import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.settings;
-import static de.ims.icarus2.test.TestUtils.transform_genericValue;
+import static de.ims.icarus2.test.TestUtils.transform_genericOptValue;
 
 import org.junit.jupiter.api.Test;
 
@@ -50,11 +50,11 @@ public interface FragmentLayerManifestTest<M extends FragmentLayerManifest> exte
 	 */
 	@Test
 	default void testGetValueLayerManifest() {
-		assertDerivativeGetter(settings(),
+		assertDerivativeOptGetter(settings(),
 				"layer1",
 				"layer2",
 				NO_DEFAULT(),
-				transform_genericValue(FragmentLayerManifest::getValueLayerManifest, transform_targetLayerId()),
+				transform_genericOptValue(FragmentLayerManifest::getValueLayerManifest, transform_targetLayerId()),
 				inject_createTargetLayerManifest(FragmentLayerManifest::setValueLayerId));
 	}
 
@@ -75,7 +75,7 @@ public interface FragmentLayerManifestTest<M extends FragmentLayerManifest> exte
 	 */
 	@Test
 	default void testGetAnnotationKey() {
-		assertDerivativeGetter(settings(),
+		assertDerivativeOptGetter(settings(),
 				"key1",
 				"key2",
 				NO_DEFAULT(),
@@ -100,7 +100,7 @@ public interface FragmentLayerManifestTest<M extends FragmentLayerManifest> exte
 	 */
 	@Test
 	default void testGetRasterizerManifest() {
-		assertDerivativeGetter(settings(),
+		assertDerivativeOptGetter(settings(),
 				mockTypedManifest(ManifestType.RASTERIZER_MANIFEST),
 				mockTypedManifest(ManifestType.RASTERIZER_MANIFEST),
 				NO_DEFAULT(),

@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.util.events;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
@@ -34,6 +35,10 @@ public class EventSource implements EventManager, Serializable {
 
 	private static final long serialVersionUID = -562707311400281776L;
 
+	public static final boolean DEFAULT_EVENTS_ENABLED = true;
+
+	public static final int DEFAULT_DEAD_LISTENER_THRESHOLD = 5;
+
 	/**
 	 * Storage for registered listeners and the events they
 	 * are listening to in the format
@@ -50,12 +55,12 @@ public class EventSource implements EventManager, Serializable {
 
 	protected AtomicInteger deadListenerCount = new AtomicInteger(0);
 
-	protected int deadListenerTreshold = 5;
+	protected int deadListenerTreshold = DEFAULT_DEAD_LISTENER_THRESHOLD;
 
 	/**
 	 * Flag to enable or disable firing of events.
 	 */
-	protected boolean eventsEnabled = true;
+	protected boolean eventsEnabled = DEFAULT_EVENTS_ENABLED;
 
 	/**
 	 * Constructs a new event source using this as the source object.
@@ -101,6 +106,7 @@ public class EventSource implements EventManager, Serializable {
 	}
 
 	public void setDeadListenerTreshold(int deadListenerTreshold) {
+		checkArgument("Threshold must be positive", deadListenerTreshold>0);
 		this.deadListenerTreshold = deadListenerTreshold;
 	}
 
@@ -108,12 +114,13 @@ public class EventSource implements EventManager, Serializable {
 	 * Registers the given {@code listener} for events of the
 	 * specified {@code eventName} or as a listener for all
 	 * events in the case the {@code eventName} parameter is {@code null}
+	 * @param listener the {@code SimpleEventListener} to be registered
 	 * @param eventName name of events to listen for or {@code null} if
 	 * the listener is meant to receive all fired events
-	 * @param listener the {@code SimpleEventListener} to be registered
 	 */
 	@Override
-	public void addListener(String eventName, SimpleEventListener listener) {
+	public void addListener(SimpleEventListener listener, String eventName) {
+		checkArgument("Event name cannot be empty", !"".equals(eventName));
 		requireNonNull(listener);
 
 		if (eventListeners == null) {
@@ -122,16 +129,6 @@ public class EventSource implements EventManager, Serializable {
 
 		eventListeners.add(eventName);
 		eventListeners.add(listener);
-	}
-
-	/**
-	 * Removes the given {@code SimpleEventListener} from all events
-	 * it was previously registered for.
-	 * @param listener the {@code SimpleEventListener} to be removed
-	 */
-	@Override
-	public void removeListener(SimpleEventListener listener) {
-		removeListener(listener, null);
 	}
 
 	/**
@@ -145,6 +142,9 @@ public class EventSource implements EventManager, Serializable {
 	 */
 	@Override
 	public void removeListener(SimpleEventListener listener, String eventName) {
+		requireNonNull(listener);
+		checkArgument("Event name cannot be empty", !"".equals(eventName));
+
 		if (eventListeners != null) {
 			for (int i = eventListeners.size() - 2; i > -1; i -= 2) {
 				if (eventListeners.get(i + 1) == listener

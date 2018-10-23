@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.Optional;
+
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessRestriction;
 
@@ -31,7 +33,7 @@ public interface ForeignImplementationManifest extends MemberManifest {
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	ImplementationManifest getImplementationManifest();
+	Optional<ImplementationManifest> getImplementationManifest();
 
 	/**
 	 * Returns {@code true} if the present implementation manifest

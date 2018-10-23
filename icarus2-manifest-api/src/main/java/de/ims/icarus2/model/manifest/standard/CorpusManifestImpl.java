@@ -24,23 +24,26 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
+import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> implements CorpusManifest {
+public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest, TypedManifest> implements CorpusManifest {
 
 	private final List<ContextManifest> rootContextManifests = new ArrayList<>(3);
 	private final List<ContextManifest> customContextManifests = new ArrayList<>(5);
@@ -59,11 +62,21 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	}
 
 	/**
+	 * @see de.ims.icarus2.model.manifest.standard.AbstractMemberManifest#getHost()
+	 */
+	@Override
+	//TODO remove Embedded from the hierarchy of this class so we can get rid of this emthod and its side effects
+	final public <T extends TypedManifest> Optional<T> getHost() {
+		return Optional.empty();
+	}
+
+	/**
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractManifest#isEmpty()
 	 */
 	@Override
 	public boolean isEmpty() {
-		return super.isEmpty() && rootContextManifests.isEmpty() && customContextManifests.isEmpty() && notes.isEmpty();
+		return super.isEmpty() && rootContextManifests.isEmpty()
+				&& customContextManifests.isEmpty() && notes.isEmpty();
 	}
 
 	/**
@@ -73,9 +86,18 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	public void setIsTemplate(boolean isTemplate) {
 		if(isTemplate)
 			throw new ManifestException(ManifestErrorCode.MANIFEST_ILLEGAL_TEMPLATE_STATE,
-					"Cannot declare corpus manifest as template"); //$NON-NLS-1$
+					"Cannot declare corpus manifest as template");
 
 		super.setIsTemplate(isTemplate);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.standard.AbstractManifest#setTemplateId(java.lang.String)
+	 */
+	@Override
+	public void setTemplateId(String templateId) {
+		throw new ManifestException(ManifestErrorCode.MANIFEST_ILLEGAL_TEMPLATE_STATE,
+				"Corpus manifest does not support templating");
 	}
 
 	/**
@@ -103,8 +125,12 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 		requireNonNull(manifest);
 //		manifest.checkNotTemplate();
 
-		if(contextManifestLookup.containsKey(manifest.getId()))
-			throw new IllegalArgumentException("Duplicate context manifest: "+manifest); //$NON-NLS-1$
+		String contextId = manifest.getId().orElseThrow(Manifest.invalidId(
+				"Context does not declare a valid identifier"));
+
+		if(contextManifestLookup.containsKey(contextId))
+			throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
+					"Duplicate context manifest: "+manifest);
 
 		Collection<ContextManifest> storage = isRoot ? rootContextManifests : customContextManifests;
 
@@ -117,15 +143,18 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 			throw new ManifestException(GlobalErrorCode.ILLEGAL_STATE,
 					"Cannot add more than one context as root to non-parallel corpus: "+ManifestUtils.getName(manifest));
 
-		contextManifestLookup.put(manifest.getId(), manifest);
+		contextManifestLookup.put(contextId, manifest);
 		storage.add(manifest);
 	}
 
 	protected void removeContextManifest0(ContextManifest manifest, boolean isRoot) {
 		requireNonNull(manifest);
 
-		if(!customContextManifests.remove(manifest))
-			throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Unknown context manifest: "+manifest); //$NON-NLS-1$
+		String id = manifest.getId().orElseThrow(Manifest.invalidId(
+				"Missing id on manifest: "+ManifestUtils.getName(manifest)));
+		if(contextManifestLookup.remove(id)!=manifest)
+			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
+					"Unknown context manifest: "+manifest);
 
 
 		Collection<ContextManifest> storage = isRoot ? rootContextManifests : customContextManifests;
@@ -138,6 +167,8 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	 */
 	@Override
 	public void addRootContextManifest(ContextManifest manifest) {
+		checkNotLocked();
+
 		addContextManifest0(manifest, true);
 	}
 
@@ -146,6 +177,8 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	 */
 	@Override
 	public void removeRootContextManifest(ContextManifest manifest) {
+		checkNotLocked();
+
 		removeContextManifest0(manifest, true);
 	}
 
@@ -154,7 +187,17 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	 */
 	@Override
 	public boolean isRootContext(ContextManifest manifest) {
+		requireNonNull(manifest);
+
 		return rootContextManifests.contains(manifest);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.CorpusManifest#getRootContextManifest()
+	 */
+	@Override
+	public Optional<ContextManifest> getRootContextManifest() {
+		return rootContextManifests.size()==1 ? Optional.of(rootContextManifests.get(0)) : Optional.empty();
 	}
 
 	/**
@@ -163,6 +206,8 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	 */
 	@Override
 	public void addCustomContextManifest(ContextManifest manifest) {
+		checkNotLocked();
+
 		addContextManifest0(manifest, false);
 	}
 
@@ -171,6 +216,8 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	 */
 	@Override
 	public void removeCustomContextManifest(ContextManifest manifest) {
+		checkNotLocked();
+
 		removeContextManifest0(manifest, false);
 	}
 
@@ -179,6 +226,8 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	 */
 	@Override
 	public boolean isCustomContext(ContextManifest manifest) {
+		requireNonNull(manifest);
+
 		return customContextManifests.contains(manifest);
 	}
 
@@ -186,15 +235,10 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	 * @see de.ims.icarus2.model.manifest.api.CorpusManifest#getContextManifest(java.lang.String)
 	 */
 	@Override
-	public ContextManifest getContextManifest(String id) {
+	public Optional<ContextManifest> getContextManifest(String id) {
 		requireNonNull(id);
 
-		ContextManifest contextManifest = contextManifestLookup.get(id);
-		//FIXME reevaluate decision to remove exception in case of unknown id to stay consistent with layer group and context level lookups
-//		if(contextManifest==null)
-//			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "No such context: "+id); //$NON-NLS-1$
-
-		return contextManifest;
+		return Optional.ofNullable(contextManifestLookup.get(id));
 	}
 
 	/**
@@ -210,6 +254,12 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	 */
 	@Override
 	public void setEditable(boolean value) {
+		checkNotLocked();
+
+		setEditable0(value);
+	}
+
+	protected void setEditable0(boolean value) {
 
 		this.editable = (value==DEFAULT_EDITABLE_VALUE) ? null : Boolean.valueOf(value);
 	}
@@ -235,6 +285,12 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	 */
 	@Override
 	public void setParallel(boolean value) {
+		checkNotLocked();
+
+		setParallel0(value);
+	}
+
+	protected void setParallel0(boolean value) {
 		if(rootContextManifests.size()>1)
 			throw new ManifestException(GlobalErrorCode.ILLEGAL_STATE,
 					"Cannot change 'parallel' property of corpus once more than one root context is present");
@@ -247,9 +303,18 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	 */
 	@Override
 	public void addNote(Note note) {
-		if(!notes.contains(note)) {
-			notes.add(note);
-		}
+		checkNotLocked();
+
+		addNote0(note);
+	}
+
+	protected void addNote0(Note note) {
+		requireNonNull(note);
+
+		if(notes.contains(note))
+			throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID, "Duplicate note: "+note);
+
+		notes.add(note);
 	}
 
 	/**
@@ -257,6 +322,17 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	 */
 	@Override
 	public void removeNote(Note note) {
+		checkNotLocked();
+
+		removeNote0(note);
+	}
+
+	protected void removeNote0(Note note) {
+		requireNonNull(note);
+
+		if(!notes.contains(note))
+			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "Unknown note: "+note);
+
 		notes.remove(note);
 	}
 
@@ -264,39 +340,17 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractMemberManifest#lock()
 	 */
 	@Override
-	public void lock() {
-		super.lock();
+	protected void lockNested() {
+		super.lockNested();
 
-		for(ContextManifest contextManifest : customContextManifests) {
-			contextManifest.lock();
-		}
+		lockNested(customContextManifests);
 	}
-
-	//FIXME removed due to explicit storage of added contexts instead of links
-//	protected class ContextLink extends Link<ContextManifest> {
-//
-//		/**
-//		 * @param id
-//		 */
-//		public ContextLink(String id) {
-//			super(id);
-//		}
-//
-//		/**
-//		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#resolve()
-//		 */
-//		@Override
-//		protected ContextManifest resolve() {
-//			return getContextManifest(getId());
-//		}
-//
-//	}
 
 	public static class NoteImpl implements Note {
 
-		private LocalDateTime modificationDate;
 		private final String name;
-		private String content;
+		private Optional<LocalDateTime> modificationDate = Optional.empty();
+		private Optional<String> content = Optional.empty();
 
 		public NoteImpl(String name) {
 			requireNonNull(name);
@@ -330,7 +384,7 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 		 * @see de.ims.icarus2.model.manifest.api.CorpusManifest.Note#getModificationDate()
 		 */
 		@Override
-		public LocalDateTime getModificationDate() {
+		public Optional<LocalDateTime> getModificationDate() {
 			return modificationDate;
 		}
 
@@ -346,7 +400,7 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 		 * @see de.ims.icarus2.model.manifest.api.CorpusManifest.Note#getContent()
 		 */
 		@Override
-		public String getContent() {
+		public Optional<String> getContent() {
 			return content;
 		}
 
@@ -354,10 +408,7 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 		 * @param modificationDate the modificationDate to set
 		 */
 		public void setModificationDate(LocalDateTime modificationDate) {
-			if (modificationDate == null)
-				throw new NullPointerException("Invalid modificationDate"); //$NON-NLS-1$
-
-			this.modificationDate = modificationDate;
+			this.modificationDate = Optional.of(modificationDate);
 		}
 
 		/**
@@ -366,7 +417,7 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 		@Override
 		public void setContent(String content) {
 			changeContent(content);
-			modificationDate = LocalDateTime.now();
+			setModificationDate(LocalDateTime.now());
 		}
 
 		/**
@@ -375,10 +426,7 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest> i
 		 * @param content
 		 */
 		public void changeContent(String content) {
-			if (content == null)
-				throw new NullPointerException("Invalid content"); //$NON-NLS-1$
-
-			this.content = content;
+			this.content = Optional.ofNullable(content);
 		}
 
 	}

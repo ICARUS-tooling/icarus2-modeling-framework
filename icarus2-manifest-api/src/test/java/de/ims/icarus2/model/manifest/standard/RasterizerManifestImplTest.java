@@ -46,7 +46,7 @@ class RasterizerManifestImplTest implements RasterizerManifestTest<RasterizerMan
 	@Override
 	public RasterizerManifestImpl createTestInstance(TestSettings settings, ManifestLocation location,
 			ManifestRegistry registry) {
-		return new RasterizerManifestImpl(location, registry);
+		return settings.process(new RasterizerManifestImpl(location, registry));
 	}
 
 	/**
@@ -55,7 +55,7 @@ class RasterizerManifestImplTest implements RasterizerManifestTest<RasterizerMan
 	@Override
 	public RasterizerManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
-		return new RasterizerManifestImpl(manifestLocation, registry, (FragmentLayerManifest) host);
+		return settings.process(new RasterizerManifestImpl(manifestLocation, registry, (FragmentLayerManifest) host));
 	}
 
 }

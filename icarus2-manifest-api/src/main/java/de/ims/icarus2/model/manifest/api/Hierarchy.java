@@ -6,6 +6,7 @@ package de.ims.icarus2.model.manifest.api;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.util.collections.LazyCollection;
@@ -16,11 +17,29 @@ import de.ims.icarus2.util.collections.LazyCollection;
  */
 public interface Hierarchy<E extends Object> extends Lockable, Iterable<E> {
 
+	public static final int ROOT = 0;
+
 	E getRoot();
 
 	int getDepth();
 
 	E atLevel(int level);
+
+	default Optional<E> tryLevel(int level) {
+		return Optional.ofNullable(level<getDepth() ? atLevel(level) : null);
+	}
+
+	default Optional<E> adjacent(E item, Direction direction) {
+		int level = levelOf(item);
+		if(level != -1) {
+			level += direction==Direction.BELOW ? 1 : -1;
+			if(level>=0 && level <getDepth()) {
+				return Optional.of(atLevel(level));
+			}
+		}
+
+		return Optional.empty();
+	}
 
 	void add(E item);
 
@@ -28,6 +47,13 @@ public interface Hierarchy<E extends Object> extends Lockable, Iterable<E> {
 
 	void insert(E item, int index);
 
+	/**
+	 * Returns the level of specified {@code item} or {@code -1}
+	 * if the item is not contained in this heirarchy.
+	 *
+	 * @param item
+	 * @return
+	 */
 	int levelOf(E item);
 
 	default boolean isEmpty() {
@@ -45,5 +71,11 @@ public interface Hierarchy<E extends Object> extends Lockable, Iterable<E> {
 		return LazyCollection.<E>lazyList()
 				.addFromForEach(this::forEachItem)
 				.getAsList();
+	}
+
+	public enum Direction {
+		ABOVE,
+		BELOW,
+		;
 	}
 }

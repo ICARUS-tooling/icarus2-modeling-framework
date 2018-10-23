@@ -19,8 +19,14 @@
  */
 package de.ims.icarus2.test;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
@@ -30,6 +36,14 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 public class TestSettings implements Cloneable {
 
 	private Set<String> _features;
+
+	private List<BiConsumer<TestSettings,?>> _processors;
+
+	private String message;
+
+	private Map<String, Object> _properties;
+
+	//TODO add locking mechanism to block modifications during process() calls
 
 	TestSettings() {
 		// no-op
@@ -53,7 +67,7 @@ public class TestSettings implements Cloneable {
 		return true;
 	}
 
-	public TestSettings withFeatures(TestFeature...features) {
+	public TestSettings features(TestFeature...features) {
 		if(_features==null) {
 			_features = new ObjectOpenHashSet<>();
 		}
@@ -75,6 +89,98 @@ public class TestSettings implements Cloneable {
 		return this;
 	}
 
+	public TestSettings message(String message) {
+		this.message = message;
+
+		return this;
+	}
+
+	public String getMessage() {
+		return getMessage((String)null);
+	}
+
+	public String getMessage(String fallback) {
+		return getMessage(() -> fallback);
+	}
+
+	public String getMessage(Supplier<? extends String> message) {
+
+		String msg = this.message;
+		if(msg == null && message!=null) {
+			msg = message.get();
+		}
+
+		return msg;
+	}
+
+	public TestSettings property(String key, Object value) {
+		if(_properties==null) {
+			_properties = new Object2ObjectOpenHashMap<>();
+		}
+
+		_properties.put(key, value);
+
+		return this;
+	}
+
+	@SuppressWarnings("unchecked")
+	public <T extends Object> T getProperty(String key) {
+		return (T) (_properties==null ? null : _properties.get(key));
+	}
+
+	public <T extends Object> T getProperty(String key, T defaultValue) {
+		return getProperty(key, () -> defaultValue);
+	}
+
+	@SuppressWarnings("unchecked")
+	public <T extends Object> T getProperty(String key, Supplier<? extends T> defaultValue) {
+		T result = null;
+		if(_properties!=null) {
+			result = (T) _properties.get(key);
+		}
+
+		if(result==null && defaultValue!=null) {
+			result = defaultValue.get();
+		}
+
+		return result;
+	}
+
+	/**
+	 * Adds a processor to this settings object that will be used to configure
+	 * test instances.
+	 * Note that the supplied processor should <b>not</b> modify the {@link TestSettings}
+	 * instance supplied to its {@link BiConsumer#accept(Object, Object)} method!
+	 * <p>
+	 * Processors will be applied in the order they have been registered with
+	 * a {@link TestSettings} instance.
+	 *
+	 * @param clazz
+	 * @param processor
+	 * @return
+	 */
+	public <T extends Object> TestSettings processor(BiConsumer<TestSettings, ? super T> processor) {
+		if(_processors==null) {
+			_processors = new ArrayList<>();
+		}
+
+		_processors.add(processor);
+
+		return this;
+	}
+
+	@SuppressWarnings("unchecked")
+	public <T extends Object> T process(T target) {
+
+		if(_processors!=null) {
+			for(BiConsumer<TestSettings,?> processor : _processors) {
+				((BiConsumer<TestSettings,? super T>)processor).accept(this, target);
+			}
+		}
+
+		return target;
+	}
+
 	/**
 	 * @see java.lang.Object#clone()
 	 */
@@ -84,7 +190,15 @@ public class TestSettings implements Cloneable {
 			TestSettings clone = (TestSettings) super.clone();
 
 			if(_features!=null) {
-				_features = new ObjectOpenHashSet<>(_features);
+				clone._features = new ObjectOpenHashSet<>(_features);
+			}
+
+			if(_properties!=null) {
+				clone._properties = new Object2ObjectOpenHashMap<>(_properties);
+			}
+
+			if(_processors!=null) {
+				clone._processors = new ArrayList<>(_processors);
 			}
 
 			return clone;
@@ -92,4 +206,25 @@ public class TestSettings implements Cloneable {
 			throw new InternalError("Unexpected cloning issue", e);
 		}
 	}
+
+//	private static class Pair<K extends Object, V extends Object> {
+//		private final K first;
+//		private final V second;
+//		/**
+//		 * @param first
+//		 * @param second
+//		 */
+//		public Pair(K first, V second) {
+//			this.first = requireNonNull(first);
+//			this.second = requireNonNull(second);
+//		}
+//
+//		public K getFirst() {
+//			return first;
+//		}
+//
+//		public V getSecond() {
+//			return second;
+//		}
+//	}
 }

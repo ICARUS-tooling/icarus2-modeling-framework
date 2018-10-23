@@ -17,7 +17,6 @@
 package de.ims.icarus2.filedriver.analysis;
 
 import static de.ims.icarus2.util.lang.Primitives._int;
-import static de.ims.icarus2.util.strings.StringUtil.getName;
 import static java.util.Objects.requireNonNull;
 
 import java.util.function.LongConsumer;
@@ -33,6 +32,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.LongCounter;
@@ -114,7 +114,7 @@ public class DefaultItemLayerAnalyzer extends AbstractFileDriverAnalyzer impleme
 				if(previousEndIndex==IcarusUtils.UNSET_LONG)
 					throw new ManifestException(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 							String.format("Missing information of end index for layer %s in file %d",
-									getName(layerManifest), _int(fileIndex)));
+									ManifestUtils.getName(layerManifest), _int(fileIndex)));
 
 				beginIndex = previousEndIndex+1;
 			}

@@ -43,7 +43,7 @@ class OptionImplTest implements OptionTest<OptionImpl> {
 	 */
 	@Override
 	public OptionImpl createWithType(TestSettings settings, ValueType valueType) {
-		return new OptionImpl("optionX", valueType);
+		return settings.process(new OptionImpl("optionX", valueType));
 	}
 
 	/**

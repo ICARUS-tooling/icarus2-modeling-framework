@@ -23,8 +23,8 @@ import static de.ims.icarus2.model.manifest.ManifestTestUtils.getIllegalIdValues
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.getLegalIdValues;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.test.TestUtils.NO_CHECK;
-import static de.ims.icarus2.test.TestUtils.assertGetter;
 import static de.ims.icarus2.test.TestUtils.assertMock;
+import static de.ims.icarus2.test.TestUtils.assertOptGetter;
 import static de.ims.icarus2.test.TestUtils.inject_genericSetter;
 import static de.ims.icarus2.test.TestUtils.other;
 import static de.ims.icarus2.test.TestUtils.settings;
@@ -32,6 +32,7 @@ import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -50,7 +51,7 @@ public interface MappingManifestTest<M extends MappingManifest>
 
 	public static MappingManifest mockMappingManifest(String id) {
 		MappingManifest manifest = mockTypedManifest(ManifestType.MAPPING_MANIFEST);
-		when(manifest.getId()).thenReturn(id);
+		when(manifest.getId()).thenReturn(Optional.of(id));
 		return manifest;
 	}
 
@@ -83,7 +84,7 @@ public interface MappingManifestTest<M extends MappingManifest>
 	 */
 	@Test
 	default void testGetId() {
-		assertGetter(createUnlocked(),
+		assertOptGetter(createUnlocked(),
 				"id1", "id2", null,
 				MappingManifest::getId,
 				MappingManifest::setId);
@@ -94,7 +95,7 @@ public interface MappingManifestTest<M extends MappingManifest>
 	 */
 	@Test
 	default void testGetSourceLayerId() {
-		assertGetter(createUnlocked(),
+		assertOptGetter(createUnlocked(),
 				"layer1", "layer2", null,
 				MappingManifest::getSourceLayerId,
 				MappingManifest::setSourceLayerId);
@@ -105,7 +106,7 @@ public interface MappingManifestTest<M extends MappingManifest>
 	 */
 	@Test
 	default void testGetTargetLayerId() {
-		assertGetter(createUnlocked(),
+		assertOptGetter(createUnlocked(),
 				"layer1", "layer2", null,
 				MappingManifest::getTargetLayerId,
 				MappingManifest::setTargetLayerId);
@@ -117,7 +118,7 @@ public interface MappingManifestTest<M extends MappingManifest>
 	@Test
 	default void testGetRelation() {
 		for(Relation relation : Relation.values()) {
-			assertGetter(createUnlocked(),
+			assertOptGetter(createUnlocked(),
 					relation, other(relation), null,
 					MappingManifest::getRelation, MappingManifest::setRelation);
 		}
@@ -129,7 +130,7 @@ public interface MappingManifestTest<M extends MappingManifest>
 	@Test
 	default void testGetCoverage() {
 		for(Coverage coverage : Coverage.values()) {
-			assertGetter(createUnlocked(),
+			assertOptGetter(createUnlocked(),
 					coverage, other(coverage), null,
 					MappingManifest::getCoverage, MappingManifest::setCoverage);
 		}
@@ -139,11 +140,10 @@ public interface MappingManifestTest<M extends MappingManifest>
 			BiConsumer<M, L> setter) {
 		return (m, mappingManifest) -> {
 
-			String id = mappingManifest.getId();
-			assertNotNull(id);
+			String id = mappingManifest.getId().orElseThrow(AssertionError::new);
 
 			DriverManifest driverManifest = assertMock(m.getDriverManifest());
-			when(driverManifest.getMappingManifest(id)).thenReturn(mappingManifest);
+			when(driverManifest.getMappingManifest(id)).thenReturn(Optional.of(mappingManifest));
 
 			setter.accept(m, mappingManifest);
 		};
@@ -155,7 +155,7 @@ public interface MappingManifestTest<M extends MappingManifest>
 	 * its {@link MappingManifest#getId() id}.
 	 */
 	public static <I extends MappingManifest> Function<I, String> transform_id(){
-		return i -> i.getId();
+		return i -> i.getId().orElseThrow(AssertionError::new);
 	}
 
 	/**
@@ -163,7 +163,7 @@ public interface MappingManifestTest<M extends MappingManifest>
 	 */
 	@Test
 	default void testGetInverse() {
-		assertGetter(createUnlocked(),
+		assertOptGetter(createUnlocked(),
 				mockMappingManifest("mapping1"),
 				mockMappingManifest("mapping2"),
 				null,

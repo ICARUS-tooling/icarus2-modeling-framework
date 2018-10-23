@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.manifest.api;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.access.AccessMode;
@@ -37,11 +38,11 @@ import it.unimi.dsi.fastutil.Hash.Strategy;
 public interface ManifestFragment extends Lockable, TypedManifest {
 
 	/**
-	 * Returns the namespace wide unique id of this manifest. Must not return {@code null}.
+	 * Returns the namespace wide unique id of this manifest.
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	String getId();
+	Optional<String> getId();
 
 	/**
 	 * Returns a globally unique identifier that is comprised of the locally unique {@link #getId() id} and

@@ -35,19 +35,10 @@ public interface StructureManifest extends ContainerManifest {
 	public static final StructureType DEFAULT_STRUCTURE_TYPE = StructureType.SET;
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.ContainerManifest#getLayerManifest()
-	 */
-	@Override
-	default StructureLayerManifest getLayerManifest() {
-		return (StructureLayerManifest) ContainerManifest.super.getLayerManifest();
-	}
-
-	@Override
-	StructureLayerManifest getHost();
-
-	/**
 	 * Returns the type of this structure
 	 * @return
+	 *
+	 * @see #DEFAULT_STRUCTURE_TYPE
 	 */
 	@AccessRestriction(AccessMode.READ)
 	StructureType getStructureType();

@@ -19,9 +19,9 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.TestUtils.assertNotPresent;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collections;
@@ -50,7 +50,7 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 			ValueType.filterWithout(LEGAL_VALUE_TYPES::contains));
 
 	@Provider
-	M createWithType(ValueType valueType);
+	M createWithType(TestSettings settings, ValueType valueType);
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
@@ -58,7 +58,7 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 	@Override
 	@Provider
 	default M createTestInstance(TestSettings settings) {
-		return createWithType(ValueType.STRING);
+		return createWithType(settings, ValueType.STRING);
 	}
 
 	/**
@@ -67,7 +67,7 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 	@Override
 	@Provider
 	default M createFromIdentity(String id, String name, String description, Icon icon) {
-		M manifest = createWithType(ValueType.STRING);
+		M manifest = createWithType(settings(), ValueType.STRING);
 		manifest.setId(id);
 		manifest.setName(name);
 		manifest.setDescription(description);
@@ -90,8 +90,8 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 	default void testGetValue() {
 		for(ValueType valueType : LEGAL_VALUE_TYPES) {
 
-			M empty = createWithType(valueType);
-			assertNull(empty.getValue());
+			M empty = createWithType(settings(), valueType);
+			assertNotPresent(empty.getValue());
 		}
 	}
 
@@ -102,7 +102,7 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 	default void testGetValueType() {
 		for(ValueType valueType : LEGAL_VALUE_TYPES) {
 
-			M empty = createWithType(valueType);
+			M empty = createWithType(settings(), valueType);
 			assertEquals(valueType, empty.getValueType());
 		}
 	}
@@ -114,7 +114,7 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 	default void testSetValue() {
 		for(ValueType valueType : LEGAL_VALUE_TYPES) {
 
-			M manifest = createWithType(valueType);
+			M manifest = createWithType(settings(), valueType);
 
 			Object testValue = ManifestTestUtils.getTestValue(valueType);
 			Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
@@ -129,7 +129,7 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 	default void testUnsupportedValueTypes() {
 		for(ValueType valueType : ILLEGAL_VALUE_TYPES) {
 			UnsupportedValueTypeException exception = assertThrows(UnsupportedValueTypeException.class,
-					() -> createWithType(valueType));
+					() -> createWithType(settings(), valueType));
 
 			assertEquals(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE, exception.getErrorCode());
 			assertEquals(valueType, exception.getValueType());

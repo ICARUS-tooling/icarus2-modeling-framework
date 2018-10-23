@@ -19,9 +19,9 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.TestUtils.assertNotPresent;
+import static de.ims.icarus2.test.TestUtils.assertPresent;
 import static de.ims.icarus2.test.TestUtils.settings;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.Collections;
 import java.util.Set;
@@ -40,8 +40,8 @@ public interface PathResolverManifestTest<M extends PathResolverManifest>
 	 */
 	@Test
 	default void testGetLocationManifest() {
-		assertNotNull(createUnlocked().getLocationManifest());
-		assertNull(createTemplate(settings()).getLocationManifest());
+		assertPresent(createUnlocked().getLocationManifest());
+		assertNotPresent(createTemplate(settings()).getLocationManifest());
 	}
 
 

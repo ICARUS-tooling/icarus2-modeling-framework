@@ -19,11 +19,11 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
-import org.junit.jupiter.api.Test;
-
 import de.ims.icarus2.model.manifest.api.LocationManifestTest;
+import de.ims.icarus2.model.manifest.api.ManifestLocation;
+import de.ims.icarus2.model.manifest.api.ManifestRegistry;
+import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.test.TestSettings;
 
 /**
  * @author Markus Gärtner
@@ -31,9 +31,29 @@ import de.ims.icarus2.model.manifest.api.LocationManifestTest;
  */
 class LocationManifestImplTest implements LocationManifestTest<LocationManifestImpl>{
 
-	@Test
-	void test() {
-		fail("Not yet implemented");
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.ManifestTest#createTestInstance(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry)
+	 */
+	@Override
+	public LocationManifestImpl createTestInstance(TestSettings settings, ManifestLocation location,
+			ManifestRegistry registry) {
+		return settings.process(new LocationManifestImpl(location, registry));
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	public ManifestType getExpectedType() {
+		return ManifestType.LOCATION_MANIFEST;
+	}
+
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
+	 */
+	@Override
+	public Class<? extends LocationManifestImpl> getTestTargetClass() {
+		return LocationManifestImpl.class;
 	}
 
 }

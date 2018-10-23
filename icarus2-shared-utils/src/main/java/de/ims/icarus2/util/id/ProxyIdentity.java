@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.util.id;
 
+import java.util.Optional;
+
 import javax.swing.Icon;
 
 /**
@@ -45,7 +47,7 @@ public class ProxyIdentity implements Identity {
 	 * @see de.ims.icarus2.util.id.Identity#getId()
 	 */
 	@Override
-	public String getId() {
+	public Optional<String> getId() {
 		return identity.getId();
 	}
 
@@ -54,7 +56,7 @@ public class ProxyIdentity implements Identity {
 	 * @see de.ims.icarus2.util.id.Identity#getName()
 	 */
 	@Override
-	public String getName() {
+	public Optional<String> getName() {
 		return identity.getName();
 	}
 
@@ -63,7 +65,7 @@ public class ProxyIdentity implements Identity {
 	 * @see de.ims.icarus2.util.id.Identity#getDescription()
 	 */
 	@Override
-	public String getDescription() {
+	public Optional<String> getDescription() {
 		return identity.getDescription();
 	}
 
@@ -72,7 +74,7 @@ public class ProxyIdentity implements Identity {
 	 * @see de.ims.icarus2.util.id.Identity#getIcon()
 	 */
 	@Override
-	public Icon getIcon() {
+	public Optional<Icon> getIcon() {
 		return identity.getIcon();
 	}
 }

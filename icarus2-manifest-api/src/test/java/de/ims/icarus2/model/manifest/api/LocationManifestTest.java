@@ -19,20 +19,37 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertManifestException;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
+import static de.ims.icarus2.test.TestUtils.DEFAULT;
+import static de.ims.icarus2.test.TestUtils.NO_CHECK;
+import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
+import static de.ims.icarus2.test.TestUtils.NO_ILLEGAL;
+import static de.ims.icarus2.test.TestUtils.NO_NPE_CHECK;
+import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
+import static de.ims.icarus2.test.TestUtils.assertAccumulativeGetter;
+import static de.ims.icarus2.test.TestUtils.assertForEach;
+import static de.ims.icarus2.test.TestUtils.assertGetter;
+import static de.ims.icarus2.test.TestUtils.assertOptGetter;
+import static de.ims.icarus2.test.TestUtils.settings;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathEntry;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
+import de.ims.icarus2.test.TestUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface LocationManifestTest<M extends LocationManifest> {
+public interface LocationManifestTest<M extends LocationManifest> extends ManifestTest<M> {
 
 	public static PathEntry mockEntry(PathType type, String value) {
 		PathEntry entry = mock(PathEntry.class);
@@ -44,9 +61,14 @@ public interface LocationManifestTest<M extends LocationManifest> {
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.LocationManifest#isInline()}.
 	 */
+	@SuppressWarnings("boxing")
 	@Test
 	default void testIsInline() {
-		fail("Not yet implemented");
+		assertGetter(createUnlocked(),
+				Boolean.FALSE, Boolean.TRUE,
+				DEFAULT(LocationManifest.DEFAULT_IS_INLINE),
+				LocationManifest::isInline,
+				LocationManifest::setIsInline);
 	}
 
 	/**
@@ -54,7 +76,14 @@ public interface LocationManifestTest<M extends LocationManifest> {
 	 */
 	@Test
 	default void testGetInlineData() {
-		fail("Not yet implemented");
+		M instance = createUnlocked();
+		instance.setIsInline(true);
+
+		assertOptGetter(instance,
+				"data1", "data2",
+				NO_DEFAULT(),
+				LocationManifest::getInlineData,
+				LocationManifest::setInlineData);
 	}
 
 	/**
@@ -62,7 +91,10 @@ public interface LocationManifestTest<M extends LocationManifest> {
 	 */
 	@Test
 	default void testGetRootPath() {
-		fail("Not yet implemented");
+		assertOptGetter(createUnlocked(),
+				"path1", "path2", NO_DEFAULT(),
+				LocationManifest::getRootPath,
+				LocationManifest::setRootPath);
 	}
 
 	/**
@@ -70,7 +102,13 @@ public interface LocationManifestTest<M extends LocationManifest> {
 	 */
 	@Test
 	default void testGetRootPathType() {
-		fail("Not yet implemented");
+		for(PathType pathType : PathType.values()) {
+			assertOptGetter(createUnlocked(),
+					pathType, TestUtils.other(pathType),
+					DEFAULT(LocationManifest.DEFAULT_ROOT_PATH_TYPE),
+					LocationManifest::getRootPathType,
+					LocationManifest::setRootPathType);
+		}
 	}
 
 	/**
@@ -78,7 +116,12 @@ public interface LocationManifestTest<M extends LocationManifest> {
 	 */
 	@Test
 	default void testGetPathResolverManifest() {
-		fail("Not yet implemented");
+		assertOptGetter(createUnlocked(),
+				mockTypedManifest(ManifestType.PATH_RESOLVER_MANIFEST),
+				mockTypedManifest(ManifestType.PATH_RESOLVER_MANIFEST),
+				NO_DEFAULT(),
+				LocationManifest::getPathResolverManifest,
+				LocationManifest::setPathResolverManifest);
 	}
 
 	/**
@@ -86,7 +129,11 @@ public interface LocationManifestTest<M extends LocationManifest> {
 	 */
 	@Test
 	default void testForEachPathEntry() {
-		fail("Not yet implemented");
+		assertForEach(createUnlocked(),
+				mockEntry(PathType.FILE, "file1"),
+				mockEntry(PathType.FILE, "file2"),
+				(Function<M, Consumer<Consumer<? super PathEntry>>>)m -> m::forEachPathEntry,
+				LocationManifest::addPathEntry);
 	}
 
 	/**
@@ -94,7 +141,11 @@ public interface LocationManifestTest<M extends LocationManifest> {
 	 */
 	@Test
 	default void testGetPathEntries() {
-		fail("Not yet implemented");
+		assertAccumulativeGetter(createUnlocked(),
+				mockEntry(PathType.FILE, "file1"),
+				mockEntry(PathType.FILE, "file2"),
+				LocationManifest::getPathEntries,
+				LocationManifest::addPathEntry);
 	}
 
 	/**
@@ -102,7 +153,7 @@ public interface LocationManifestTest<M extends LocationManifest> {
 	 */
 	@Test
 	default void testSetIsInline() {
-		fail("Not yet implemented");
+		assertLockableSetter(settings(), LocationManifest::setIsInline);
 	}
 
 	/**
@@ -110,7 +161,15 @@ public interface LocationManifestTest<M extends LocationManifest> {
 	 */
 	@Test
 	default void testSetInlineData() {
-		fail("Not yet implemented");
+		M instance = createUnlocked();
+		assertManifestException(ManifestErrorCode.MANIFEST_ERROR,
+				() -> instance.setInlineData("data"),
+				"Expecting manifest error when setting inline data without setting inline flag");
+
+		assertLockableSetter(
+				settings().<LocationManifest>processor((s,m) -> m.setIsInline(true)),
+				LocationManifest::setInlineData,
+				"data", NPE_CHECK, NO_CHECK);
 	}
 
 	/**
@@ -118,7 +177,16 @@ public interface LocationManifestTest<M extends LocationManifest> {
 	 */
 	@Test
 	default void testSetRootPath() {
-		fail("Not yet implemented");
+		M instance = createUnlocked();
+		instance.setIsInline(true);
+		assertManifestException(ManifestErrorCode.MANIFEST_ERROR,
+				() -> instance.setRootPath("path"),
+				"Expecting manifest error when setting root path with active inline flag");
+
+		assertLockableSetter(
+				settings(),
+				LocationManifest::setRootPath,
+				"path", NPE_CHECK, INVALID_INPUT_CHECK, "");
 	}
 
 	/**
@@ -126,7 +194,18 @@ public interface LocationManifestTest<M extends LocationManifest> {
 	 */
 	@Test
 	default void testSetRootPathType() {
-		fail("Not yet implemented");
+		M instance = createUnlocked();
+		instance.setIsInline(true);
+		assertManifestException(ManifestErrorCode.MANIFEST_ERROR,
+				() -> instance.setRootPathType(PathType.FILE),
+				"Expecting manifest error when setting root path type with active inline flag");
+
+		for(PathType pathType : PathType.values()) {
+			assertLockableSetter(
+					settings(),
+					LocationManifest::setRootPathType,
+					pathType, NPE_CHECK, NO_CHECK);
+		}
 	}
 
 	/**
@@ -134,7 +213,17 @@ public interface LocationManifestTest<M extends LocationManifest> {
 	 */
 	@Test
 	default void testSetPathResolverManifest() {
-		fail("Not yet implemented");
+		M instance = createUnlocked();
+		instance.setIsInline(true);
+		assertManifestException(ManifestErrorCode.MANIFEST_ERROR,
+				() -> instance.setPathResolverManifest(mockTypedManifest(ManifestType.PATH_RESOLVER_MANIFEST)),
+				"Expecting manifest error when setting path resolver manifest with active inline flag");
+
+		assertLockableSetter(
+				settings(),
+				LocationManifest::setPathResolverManifest,
+				mockTypedManifest(ManifestType.PATH_RESOLVER_MANIFEST),
+				NO_NPE_CHECK, NO_CHECK);
 	}
 
 	/**
@@ -142,7 +231,17 @@ public interface LocationManifestTest<M extends LocationManifest> {
 	 */
 	@Test
 	default void testAddPathEntry() {
-		fail("Not yet implemented");
+		M instance = createUnlocked();
+		instance.setIsInline(true);
+		assertManifestException(ManifestErrorCode.MANIFEST_ERROR,
+				() -> instance.addPathEntry(mockEntry(PathType.FILE, "path")),
+				"Expecting manifest error when adding path entry with active inline flag");
+
+		assertLockableAccumulativeAdd(settings(),
+				LocationManifest::addPathEntry,
+				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, INVALID_INPUT_CHECK,
+				mockEntry(PathType.FILE, "path1"),
+				mockEntry(PathType.FILE, "path2"));
 	}
 
 	/**
@@ -150,7 +249,19 @@ public interface LocationManifestTest<M extends LocationManifest> {
 	 */
 	@Test
 	default void testRemovePathEntry() {
-		fail("Not yet implemented");
+		M instance = createUnlocked();
+		instance.setIsInline(true);
+		assertManifestException(ManifestErrorCode.MANIFEST_ERROR,
+				() -> instance.removePathEntry(mockEntry(PathType.FILE, "path")),
+				"Expecting manifest error when removing path entry with active inline flag");
+
+		assertLockableAccumulativeRemove(settings(),
+				LocationManifest::addPathEntry,
+				LocationManifest::removePathEntry,
+				LocationManifest::getPathEntries,
+				NPE_CHECK, INVALID_INPUT_CHECK,
+				mockEntry(PathType.FILE, "path1"),
+				mockEntry(PathType.FILE, "path2"));
 	}
 
 }

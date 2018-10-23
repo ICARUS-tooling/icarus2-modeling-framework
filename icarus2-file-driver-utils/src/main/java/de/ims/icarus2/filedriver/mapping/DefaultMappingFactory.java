@@ -123,10 +123,9 @@ public class DefaultMappingFactory implements MappingFactory {
 	}
 
 	protected Mapping lookupInverse(MappingManifest manifest) {
-		MappingManifest inverseManifest = manifest.getInverse();
-		if(inverseManifest==null)
-			throw new ModelException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
-					"Provided manifest does not declare an inverse mapping: "+getName(manifest));
+		MappingManifest inverseManifest = manifest.getInverse().orElseThrow(ModelException.create(
+				ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
+				"Provided manifest does not declare an inverse mapping: "+getName(manifest)));
 
 		Mapping mapping = instanceLookup.get(inverseManifest);
 		if(mapping==null)

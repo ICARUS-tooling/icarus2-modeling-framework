@@ -38,7 +38,7 @@ class HighlightLayerManifestImplTest implements HighlightLayerManifestTest<Highl
 	@Override
 	public HighlightLayerManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
-		return new HighlightLayerManifestImpl(manifestLocation, registry, (LayerGroupManifest) host);
+		return settings.process(new HighlightLayerManifestImpl(manifestLocation, registry, (LayerGroupManifest) host));
 	}
 
 	/**

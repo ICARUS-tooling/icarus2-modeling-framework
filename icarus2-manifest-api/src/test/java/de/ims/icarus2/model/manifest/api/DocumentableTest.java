@@ -37,7 +37,7 @@ public interface DocumentableTest<D extends Documentable> extends LockableTest<D
 	 */
 	@Test
 	default void testGetDocumentation() {
-		TestUtils.assertGetter(createUnlocked(),
+		TestUtils.assertOptGetter(createUnlocked(),
 				mock(Documentation.class), mock(Documentation.class),
 				TestUtils.NO_DEFAULT(),
 				Documentable::getDocumentation, Documentable::setDocumentation);

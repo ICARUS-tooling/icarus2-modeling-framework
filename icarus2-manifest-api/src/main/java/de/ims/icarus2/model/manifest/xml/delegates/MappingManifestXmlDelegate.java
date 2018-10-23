@@ -58,11 +58,12 @@ public class MappingManifestXmlDelegate extends AbstractXmlDelegate<MappingManif
 		serializer.writeAttribute(ManifestXmlAttributes.ID, manifest.getId());
 		serializer.writeAttribute(ManifestXmlAttributes.SOURCE_LAYER, manifest.getSourceLayerId());
 		serializer.writeAttribute(ManifestXmlAttributes.TARGET_LAYER, manifest.getTargetLayerId());
-		serializer.writeAttribute(ManifestXmlAttributes.RELATION, manifest.getRelation().getStringValue());
-		serializer.writeAttribute(ManifestXmlAttributes.COVERAGE, manifest.getCoverage().getStringValue());
-		if(manifest.getInverse()!=null) {
-			serializer.writeAttribute(ManifestXmlAttributes.INVERSE_MAPPING, manifest.getInverse().getId());
-		}
+		serializer.writeAttribute(ManifestXmlAttributes.RELATION,
+				manifest.getRelation().map(Relation::getStringValue));
+		serializer.writeAttribute(ManifestXmlAttributes.COVERAGE,
+				manifest.getCoverage().map(Coverage::getStringValue));
+		serializer.writeAttribute(ManifestXmlAttributes.INVERSE_MAPPING,
+				manifest.getInverse().flatMap(MappingManifest::getId));
 
 		serializer.endElement(ManifestXmlTags.MAPPING);
 	}

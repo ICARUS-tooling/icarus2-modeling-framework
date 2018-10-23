@@ -19,8 +19,8 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static de.ims.icarus2.test.TestUtils.assertNotPresent;
+import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -40,7 +40,7 @@ class DocumentationImplTest implements DocumentationTest<DocumentationImpl> {
 	@Test
 	void testDocumentationImpl() {
 		DocumentationImpl impl = new DocumentationImpl();
-		assertNull(impl.getContent());
+		assertNotPresent(impl.getContent());
 		assertTrue(impl.getResources().isEmpty());
 	}
 
@@ -50,7 +50,7 @@ class DocumentationImplTest implements DocumentationTest<DocumentationImpl> {
 	@Test
 	void testDocumentationImplString() {
 		DocumentationImpl impl = new DocumentationImpl("content");
-		assertEquals("content", impl.getContent());
+		assertOptionalEquals("content", impl.getContent());
 		assertTrue(impl.getResources().isEmpty());
 	}
 
@@ -59,7 +59,7 @@ class DocumentationImplTest implements DocumentationTest<DocumentationImpl> {
 	 */
 	@Override
 	public DocumentationImpl createTestInstance(TestSettings settings) {
-		return new DocumentationImpl();
+		return settings.process(new DocumentationImpl());
 	}
 
 	/**

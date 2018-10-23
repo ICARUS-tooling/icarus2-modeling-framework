@@ -18,9 +18,12 @@ package de.ims.icarus2.model.manifest.api;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -71,7 +74,10 @@ public interface AnnotationLayerManifest extends LayerManifest {
 	default Set<String> getAvailableKeys() {
 		LazyCollection<String> result = LazyCollection.lazySet();
 
-		forEachAnnotationManifest(m -> result.add(m.getKey()));
+		forEachAnnotationManifest(
+				m -> result.add(m.getKey().orElseThrow(
+						ManifestException.create(GlobalErrorCode.ILLEGAL_STATE,
+								"Missing key for annotation layer "+ManifestUtils.getName(m)))));
 
 		return result.getAsSet();
 	}
@@ -80,7 +86,10 @@ public interface AnnotationLayerManifest extends LayerManifest {
 	default Set<String> getLocalAvailableKeys() {
 		LazyCollection<String> result = LazyCollection.lazySet();
 
-		forEachLocalAnnotationManifest(m -> result.add(m.getKey()));
+		forEachLocalAnnotationManifest(
+				m -> result.add(m.getKey().orElseThrow(
+						ManifestException.create(GlobalErrorCode.ILLEGAL_STATE,
+								"Missing key for annotation layer "+ManifestUtils.getName(m)))));
 
 		return result.getAsSet();
 	}
@@ -91,11 +100,9 @@ public interface AnnotationLayerManifest extends LayerManifest {
 	 * @param key
 	 * @return
 	 * @throws NullPointerException if the {@code key} argument is {@code null}
-	 * @throws IllegalArgumentException if the given {@code key} is unknown to
-	 * this manifest
 	 */
 	@AccessRestriction(AccessMode.READ)
-	AnnotationManifest getAnnotationManifest(String key);
+	Optional<AnnotationManifest> getAnnotationManifest(String key);
 
 	@AccessRestriction(AccessMode.READ)
 	default Set<AnnotationManifest> getAnnotationManifests() {
@@ -119,12 +126,12 @@ public interface AnnotationLayerManifest extends LayerManifest {
 	 * Returns the (optional) default key for this annotation layer. This is only
 	 * important for user interfaces as a hint for selecting the key which is to
 	 * be presented first to the user. If no dedicated default key is defined for
-	 * this layer, the method should return {@code null}.
+	 * this layer, the method should return an empty {@link Optional}.
 	 *
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	String getDefaultKey();
+	Optional<String> getDefaultKey();
 
 	boolean isLocalDefaultKey();
 

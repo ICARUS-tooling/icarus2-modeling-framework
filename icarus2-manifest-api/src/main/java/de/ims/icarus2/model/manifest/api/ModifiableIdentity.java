@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.Optional;
+
 import javax.swing.Icon;
 
 import de.ims.icarus2.util.access.AccessControl;
@@ -33,22 +35,28 @@ public interface ModifiableIdentity extends Identity {
 
 	@Override
 	@AccessRestriction(AccessMode.READ)
-	String getId();
+	Optional<String> getId();
 
 	@Override
 	@AccessRestriction(AccessMode.READ)
-	String getName();
+	Optional<String> getName();
 
 	@Override
 	@AccessRestriction(AccessMode.READ)
-	String getDescription();
+	Optional<String> getDescription();
 
 	@Override
 	@AccessRestriction(AccessMode.READ)
-	Icon getIcon();
+	Optional<Icon> getIcon();
 
 	// Modification methods
 
+	/**
+	 *
+	 * @param id
+	 *
+	 * @throws NullPointerException if the given {@code id} is {@code null}
+	 */
 	void setId(String id);
 
 	void setName(String name);

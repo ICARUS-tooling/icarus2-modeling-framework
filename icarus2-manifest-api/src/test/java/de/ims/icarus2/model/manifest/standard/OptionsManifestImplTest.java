@@ -46,7 +46,7 @@ class OptionsManifestImplTest implements OptionsManifestTest<OptionsManifestImpl
 	 */
 	@Override
 	public OptionsManifestImpl createEmbedded(TestSettings settings, TypedManifest host) {
-		return new OptionsManifestImpl((MemberManifest) host);
+		return settings.process(new OptionsManifestImpl((MemberManifest) host));
 	}
 
 	/**
@@ -55,7 +55,7 @@ class OptionsManifestImplTest implements OptionsManifestTest<OptionsManifestImpl
 	@Override
 	public OptionsManifestImpl createTestInstance(TestSettings settings, ManifestLocation location,
 			ManifestRegistry registry) {
-		return new OptionsManifestImpl(location, registry);
+		return settings.process(new OptionsManifestImpl(location, registry));
 	}
 
 }

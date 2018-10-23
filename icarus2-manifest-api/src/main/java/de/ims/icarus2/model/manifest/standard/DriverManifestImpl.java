@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -32,13 +33,14 @@ import de.ims.icarus2.model.manifest.api.Category;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.Documentation;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
-import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.LocationType;
+import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
+import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.standard.Links.Link;
 import de.ims.icarus2.util.Multiplicity;
 import de.ims.icarus2.util.collections.LazyCollection;
@@ -49,30 +51,26 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet;
  * @author Markus Gärtner
  *
  */
-public class DriverManifestImpl extends AbstractForeignImplementationManifest<DriverManifest> implements DriverManifest {
+public class DriverManifestImpl extends AbstractForeignImplementationManifest<DriverManifest, ContextManifest>
+		implements DriverManifest {
 
-	private LocationType locationType;
+	private Optional<LocationType> locationType = Optional.empty();
 	private final List<MappingManifest> mappingManifests = new ArrayList<>();
 	private final List<ModuleSpec> moduleSpecs = new ArrayList<>();
 	private final Map<String,Collection<ModuleManifest>> moduleManifests = new LinkedHashMap<>();
-	private final ContextManifest contextManifest;
 
 	public DriverManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry, ContextManifest contextManifest) {
-		super(manifestLocation, registry);
-
-		verifyEnvironment(manifestLocation, contextManifest, ContextManifest.class);
-
-		this.contextManifest = contextManifest;
+		super(manifestLocation, registry, contextManifest, ContextManifest.class);
 	}
 
 	public DriverManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry) {
-		this(manifestLocation, registry, null);
+		super(manifestLocation, registry);
 	}
 
 	public DriverManifestImpl(ContextManifest contextManifest) {
-		this(contextManifest.getManifestLocation(), contextManifest.getRegistry(), contextManifest);
+		super(contextManifest, hostIdentity(), ContextManifest.class);
 	}
 
 	/**
@@ -80,15 +78,8 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	 */
 	@Override
 	public boolean isEmpty() {
-		return super.isEmpty() && mappingManifests.isEmpty() && moduleSpecs.isEmpty() && moduleManifests.isEmpty();
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
-	 */
-	@Override
-	public ContextManifest getHost() {
-		return contextManifest;
+		return super.isEmpty() && mappingManifests.isEmpty()
+				&& moduleSpecs.isEmpty() && moduleManifests.isEmpty();
 	}
 
 	/**
@@ -97,19 +88,6 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	@Override
 	public ManifestType getManifestType() {
 		return ManifestType.DRIVER_MANIFEST;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.DriverManifest#getImplementationManifest()
-	 */
-	@Override
-	public ImplementationManifest getImplementationManifest() {
-		ImplementationManifest result = super.getImplementationManifest();
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getImplementationManifest();
-		}
-
-		return result;
 	}
 
 	@Override
@@ -134,17 +112,8 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	 * @see de.ims.icarus2.model.manifest.api.DriverManifest#getLocationType()
 	 */
 	@Override
-	public LocationType getLocationType() {
-		LocationType result = locationType;
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getLocationType();
-		}
-
-		if(result==null)
-			throw new ManifestException(ManifestErrorCode.MANIFEST_MISSING_LOCATION,
-					"No location type available for driver manifest: "+getId()); //$NON-NLS-1$
-
-		return result;
+	public Optional<LocationType> getLocationType() {
+		return getDerivable(locationType, DriverManifest::getLocationType);
 	}
 
 	/**
@@ -152,11 +121,12 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	 */
 	@Override
 	public boolean isLocalLocationType() {
-		return locationType!=null;
+		return locationType.isPresent();
 	}
 
 	@Override
 	public void forEachModuleManifest(Consumer<? super ModuleManifest> action) {
+		requireNonNull(action);
 
 		if(hasTemplate()) {
 			getTemplate().forEachModuleManifest(action);
@@ -173,6 +143,8 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	@Override
 	public void forEachLocalModuleManifest(
 			Consumer<? super ModuleManifest> action) {
+		requireNonNull(action);
+
 		for(Collection<ModuleManifest> manifests : moduleManifests.values()) {
 			manifests.forEach(action);
 		}
@@ -180,6 +152,7 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 
 	@Override
 	public void forEachModuleSpec(Consumer<? super ModuleSpec> action) {
+		requireNonNull(action);
 
 		if(hasTemplate()) {
 			getTemplate().forEachModuleSpec(action);
@@ -193,6 +166,8 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	 */
 	@Override
 	public void forEachLocalModuleSpec(Consumer<? super ModuleSpec> action) {
+		requireNonNull(action);
+
 		moduleSpecs.forEach(action);
 	}
 
@@ -200,48 +175,25 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	 * @see de.ims.icarus2.model.manifest.api.DriverManifest#getModuleSpec(java.lang.String)
 	 */
 	@Override
-	public ModuleSpec getModuleSpec(final String specId) {
-		if (specId == null)
-			throw new NullPointerException("Invalid specId"); //$NON-NLS-1$
+	public Optional<ModuleSpec> getModuleSpec(final String specId) {
+		requireNonNull(specId);
 
 		ModuleSpec result = null;
 
 		for(ModuleSpec spec : moduleSpecs) {
-			if(specId.equals(spec.getId())) {
+			if(specId.equals(spec.getId().orElse(null))) {
 				result = spec;
 				break;
 			}
 		}
 
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getModuleSpec(specId);
-		}
-
-		return result;
+		return getDerivable(Optional.ofNullable(result),
+				t -> t.getModuleSpec(specId));
 	}
 
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.DriverManifest#getModuleManifests(java.lang.String)
-	 */
-	@Override
-	public List<ModuleManifest> getModuleManifests(String moduleId) {
-		if (moduleId == null)
-			throw new NullPointerException("Invalid specId"); //$NON-NLS-1$
-
-		LazyCollection<ModuleManifest> result = LazyCollection.lazyList();
-
-		result.addAll(moduleManifests.get(moduleId));
-
-		if(hasTemplate()) {
-			result.addAll(getTemplate().getModuleManifests(moduleId));
-		}
-
-		return result.getAsList();
-	}
-
+	//TODO why do we keep this one?
 	public Collection<ModuleManifest> getLocalModuleManifests(String moduleId) {
-		if (moduleId == null)
-			throw new NullPointerException("Invalid specId"); //$NON-NLS-1$
+		requireNonNull(moduleId);
 
 		LazyCollection<ModuleManifest> result = LazyCollection.lazyLinkedSet();
 
@@ -251,17 +203,20 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	}
 
 	@Override
-	public MappingManifest getMappingManifest(String id) {
+	public Optional<MappingManifest> getMappingManifest(String id) {
 		requireNonNull(id);
 
+		MappingManifest result = null;
+
 		for(MappingManifest manifest : mappingManifests) {
-			if(id.equals(manifest.getId())) {
-				return manifest;
+			if(id.equals(manifest.getId().orElse(null))) {
+				result = manifest;
+				break;
 			}
 		}
 
-		throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
-				"No mapping available for given id: "+id);
+		return getDerivable(Optional.ofNullable(result),
+				t -> t.getMappingManifest(id));
 	}
 
 	/**
@@ -279,7 +234,8 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 //		checkNotLive();
 
 		if(mappingManifests.contains(mappingManifest))
-			throw new IllegalArgumentException("Duplicate mapping manifest: "+mappingManifest); //$NON-NLS-1$
+			throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
+					"Duplicate mapping manifest: "+mappingManifest);
 
 		mappingManifests.add(mappingManifest);
 	}
@@ -299,7 +255,8 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 //		checkNotLive();
 
 		if(!mappingManifests.remove(mappingManifest))
-			throw new IllegalArgumentException("Unknown mapping manifest: "+mappingManifest); //$NON-NLS-1$
+			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
+					"Unknown mapping manifest: "+mappingManifest);
 	}
 
 	/**
@@ -316,7 +273,8 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		requireNonNull(moduleManifest);
 //		checkNotLive();
 
-		String moduleId = moduleManifest.getId();
+		String moduleId = moduleManifest.getId().orElseThrow(Manifest.invalidId(
+				"Module manifest does not declare valid identifier"));
 
 		Collection<ModuleManifest> manifests = moduleManifests.get(moduleId);
 
@@ -326,7 +284,8 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		}
 
 		if(manifests.contains(moduleManifest))
-			throw new IllegalArgumentException("Duplicate module manifest: "+moduleManifest); //$NON-NLS-1$
+			throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
+					"Duplicate module manifest: "+moduleManifest);
 
 		manifests.add(moduleManifest);
 	}
@@ -345,12 +304,14 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		requireNonNull(moduleManifest);
 //		checkNotLive();
 
-		String moduleId = moduleManifest.getId();
+		String moduleId = moduleManifest.getId().orElseThrow(Manifest.invalidId(
+				"Module manifest does not declare valid identifier"));
 
 		Collection<ModuleManifest> manifests = moduleManifests.get(moduleId);
 
 		if(manifests==null || !manifests.remove(moduleManifest))
-			throw new IllegalArgumentException("Unknown module manifest: "+moduleManifest); //$NON-NLS-1$
+			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
+					"Unknown module manifest: "+moduleManifest);
 	}
 
 	/**
@@ -368,7 +329,8 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 //		checkNotLive();
 
 		if(moduleSpecs.contains(moduleSpec))
-			throw new IllegalArgumentException("Duplicate module spec: "+moduleSpec); //$NON-NLS-1$
+			throw new ManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
+					"Duplicate module spec: "+moduleSpec);
 
 		moduleSpecs.add(moduleSpec);
 	}
@@ -388,7 +350,8 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 //		checkNotLive();
 
 		if(!moduleSpecs.remove(moduleSpec))
-			throw new IllegalArgumentException("Unknown module spec: "+moduleSpec); //$NON-NLS-1$
+			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
+					"Unknown module spec: "+moduleSpec);
 	}
 
 	/**
@@ -402,18 +365,15 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	}
 
 	protected void setLocationType0(LocationType locationType) {
-		requireNonNull(locationType);
-//		checkNotLive();
-
-		this.locationType = locationType;
+		this.locationType = Optional.of(locationType);
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractForeignImplementationManifest#lock()
 	 */
 	@Override
-	public void lock() {
-		super.lock();
+	protected void lockNested() {
+		super.lockNested();
 
 		lockNested(moduleSpecs);
 		lockNested(mappingManifests);
@@ -424,16 +384,23 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 
 		private final DriverManifest driverManifest;
 		private boolean customizable = DEFAULT_IS_CUSTOMIZABLE;
-		private Multiplicity multiplicity;
-		private String extensionPointUid;
-		private Documentation documentation;
+		private Optional<Multiplicity> multiplicity = Optional.empty();
+		private Optional<String> extensionPointUid = Optional.empty();
+		private Optional<Documentation> documentation = Optional.empty();
 
 		private final Set<Category> categories = new ObjectOpenCustomHashSet<>(Category.HASH_STRATEGY);
 
 		public ModuleSpecImpl(DriverManifest driverManifest) {
-			requireNonNull(driverManifest);
+			this.driverManifest = requireNonNull(driverManifest);
+		}
 
-			this.driverManifest = driverManifest;
+		/**
+		 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
+		 */
+		@SuppressWarnings("unchecked")
+		@Override
+		public <T extends TypedManifest> Optional<T> getHost() {
+			return (Optional<T>) Optional.of(driverManifest);
 		}
 
 		/**
@@ -471,14 +438,6 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec#getDriverManifest()
-		 */
-		@Override
-		public DriverManifest getDriverManifest() {
-			return driverManifest;
-		}
-
-		/**
 		 * @see de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec#isCustomizable()
 		 */
 		@Override
@@ -490,20 +449,20 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		 * @see de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec#getExtensionPointUid()
 		 */
 		@Override
-		public String getExtensionPointUid() {
+		public Optional<String> getExtensionPointUid() {
 			return extensionPointUid;
 		}
 
 		@Override
 		public Multiplicity getMultiplicity() {
-			return multiplicity==null ? DEFAULT_MULTIPLICITY : multiplicity;
+			return multiplicity.orElse(DEFAULT_MULTIPLICITY);
 		}
 
 		/**
 		 * @return the documentation
 		 */
 		@Override
-		public Documentation getDocumentation() {
+		public Optional<Documentation> getDocumentation() {
 			return documentation;
 		}
 
@@ -518,7 +477,7 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		}
 
 		protected void setDocumentation0(Documentation documentation) {
-			this.documentation = documentation;
+			this.documentation = Optional.ofNullable(documentation);
 		}
 
 		@Override
@@ -529,9 +488,7 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		}
 
 		protected void setMultiplicity0(Multiplicity multiplicity) {
-			requireNonNull(multiplicity);
-
-			this.multiplicity = multiplicity;
+			this.multiplicity = Optional.of(multiplicity);
 		}
 
 		/**
@@ -559,7 +516,7 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		}
 
 		protected void setExtensionPointUid0(String extensionPointUid) {
-			this.extensionPointUid = extensionPointUid;
+			this.extensionPointUid = Optional.ofNullable(extensionPointUid);
 		}
 
 		/**
@@ -612,27 +569,23 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 
 	}
 
-	public static class ModuleManifestImpl extends AbstractForeignImplementationManifest<ModuleManifestImpl> implements ModuleManifest {
+	public static class ModuleManifestImpl extends AbstractForeignImplementationManifest<ModuleManifest, DriverManifest>
+			implements ModuleManifest {
 
-		private final DriverManifest driverManifest;
 		private ModuleSpecLink moduleSpec;
 
 		public ModuleManifestImpl(ManifestLocation manifestLocation,
 				ManifestRegistry registry, DriverManifest driverManifest) {
-			super(manifestLocation, registry);
-
-			verifyEnvironment(manifestLocation, driverManifest, DriverManifest.class);
-
-			this.driverManifest = driverManifest;
+			super(manifestLocation, registry, driverManifest, DriverManifest.class);
 		}
 
 		public ModuleManifestImpl(ManifestLocation manifestLocation,
 				ManifestRegistry registry) {
-			this(manifestLocation, registry, null);
+			super(manifestLocation, registry);
 		}
 
 		public ModuleManifestImpl(DriverManifest driverManifest) {
-			this(driverManifest.getManifestLocation(), driverManifest.getRegistry(), driverManifest);
+			super(driverManifest, hostIdentity(), DriverManifest.class);
 		}
 
 		/**
@@ -644,32 +597,11 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.manifest.standard.AbstractForeignImplementationManifest#getImplementationManifest()
-		 */
-		@Override
-		public ImplementationManifest getImplementationManifest() {
-			ImplementationManifest result = super.getImplementationManifest();
-			if(result==null && hasTemplate()) {
-				result = getTemplate().getImplementationManifest();
-			}
-
-			return result;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
-		 */
-		@Override
-		public DriverManifest getHost() {
-			return driverManifest;
-		}
-
-		/**
 		 * @see de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest#getModuleSpecId()
 		 */
 		@Override
-		public ModuleSpec getModuleSpec() {
-			return moduleSpec==null ? null : moduleSpec.get();
+		public Optional<ModuleSpec> getModuleSpec() {
+			return moduleSpec==null ? Optional.empty() : moduleSpec.getOptional();
 		}
 
 		/**
@@ -701,8 +633,8 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 			 * @see de.ims.icarus2.model.manifest.standard.Links.Link#resolve()
 			 */
 			@Override
-			protected ModuleSpec resolve() {
-				return getDriverManifest().getModuleSpec(getId());
+			protected Optional<ModuleSpec> resolve() {
+				return getDriverManifest().flatMap(d -> d.getModuleSpec(getId()));
 			}
 
 		}

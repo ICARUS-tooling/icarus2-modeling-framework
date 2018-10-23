@@ -38,7 +38,7 @@ class FragmentLayerManifestImplTest implements FragmentLayerManifestTest<Fragmen
 	@Override
 	public FragmentLayerManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
-		return new FragmentLayerManifestImpl(manifestLocation, registry, (LayerGroupManifest) host);
+		return settings.process(new FragmentLayerManifestImpl(manifestLocation, registry, (LayerGroupManifest) host));
 	}
 
 	/**

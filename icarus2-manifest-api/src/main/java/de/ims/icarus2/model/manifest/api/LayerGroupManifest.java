@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.manifest.api;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.util.access.AccessControl;
@@ -39,12 +40,9 @@ public interface LayerGroupManifest extends ModifiableIdentity, ManifestFragment
 	public static final boolean DEFAULT_INDEPENDENT_VALUE = false;
 
 	@AccessRestriction(AccessMode.READ)
-	default ContextManifest getContextManifest() {
+	default <M extends ContextManifest> Optional<M> getContextManifest() {
 		return getHost();
 	}
-
-	@Override
-	ContextManifest getHost();
 
 	@AccessRestriction(AccessMode.READ)
 	int layerCount();
@@ -67,7 +65,7 @@ public interface LayerGroupManifest extends ModifiableIdentity, ManifestFragment
 	}
 
 	@AccessRestriction(AccessMode.READ)
-	ItemLayerManifest getPrimaryLayerManifest();
+	<L extends ItemLayerManifest> Optional<L> getPrimaryLayerManifest();
 
 	/**
 	 * Signals that the layers in this group do not depend on external data hosted in other
@@ -88,10 +86,10 @@ public interface LayerGroupManifest extends ModifiableIdentity, ManifestFragment
 	 * resolve layer ids on the context level!
 	 *
 	 * @param id
-	 * @return
+	 * @return the layer mapped to {@code id} if one could be found or an empty {@link Optional} otherwise
 	 */
 	@AccessRestriction(AccessMode.READ)
-	LayerManifest getLayerManifest(String id);
+	<L extends LayerManifest> Optional<L> getLayerManifest(String id);
 
 	/**
 	 * Tests whether this {@code LayerGroupManifest} equals the given {@code Object} {@code o}.

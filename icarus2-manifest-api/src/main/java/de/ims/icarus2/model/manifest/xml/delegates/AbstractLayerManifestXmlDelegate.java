@@ -21,6 +21,7 @@ import org.xml.sax.SAXException;
 
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
+import de.ims.icarus2.model.manifest.api.LayerType;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
@@ -46,7 +47,8 @@ public abstract class AbstractLayerManifestXmlDelegate<L extends LayerManifest> 
 
 		// Write layer type
 		if(manifest.isLocalLayerType()) {
-			serializer.writeAttribute(ManifestXmlAttributes.LAYER_TYPE, manifest.getLayerType().getId());
+			serializer.writeAttribute(ManifestXmlAttributes.LAYER_TYPE,
+					manifest.getLayerType().map(LayerType::getId));
 		}
 	}
 

@@ -22,9 +22,21 @@ package de.ims.icarus2.util.events;
  */
 public interface EventManager {
 
-	void addListener(String eventName, SimpleEventListener listener);
+	default void addListener(SimpleEventListener listener) {
+		addListener(listener, null);
+	}
 
-	void removeListener(SimpleEventListener listener);
+	void addListener(SimpleEventListener listener, String eventName);
+
+
+	/**
+	 * Removes the given {@code SimpleEventListener} from all events
+	 * it was previously registered for.
+	 * @param listener the {@code SimpleEventListener} to be removed
+	 */
+	default void removeListener(SimpleEventListener listener) {
+		removeListener(listener, null);
+	}
 
 	void removeListener(SimpleEventListener listener, String eventName);
 }

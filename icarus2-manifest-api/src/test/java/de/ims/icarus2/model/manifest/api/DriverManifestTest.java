@@ -19,28 +19,67 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubId;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubIdentity;
+import static de.ims.icarus2.test.TestUtils.IGNORE_DEFAULT;
+import static de.ims.icarus2.test.TestUtils.NO_CHECK;
+import static de.ims.icarus2.test.TestUtils.NO_ILLEGAL;
+import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
+import static de.ims.icarus2.test.TestUtils.other;
+import static de.ims.icarus2.test.TestUtils.settings;
+import static de.ims.icarus2.test.TestUtils.unwrapGetter;
+import static de.ims.icarus2.test.TestUtils.wrap_batchConsumer;
+import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 
-import de.ims.icarus2.test.TestSettings;
-import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface DriverManifestTest<M extends DriverManifest> extends ForeignImplementationManifestTest<M>, EmbeddedTest<M> {
+public interface DriverManifestTest<M extends DriverManifest>
+		extends ForeignImplementationManifestTest<M>, EmbeddedMemberManifestTest<M> {
+
+	public static ModuleManifest mockModuleManifest(String id) {
+		return (ModuleManifest)stubId(mockTypedManifest(ManifestType.MODULE_MANIFEST), id);
+	}
+
+	public static ModuleSpec mockModuleSpec(String id) {
+		return stubIdentity(mockTypedManifest(ManifestType.MODULE_SPEC), id);
+	}
+
+	public static MappingManifest mockMappingManifest(String id) {
+		MappingManifest manifest = mockTypedManifest(ManifestType.MAPPING_MANIFEST);
+		when(manifest.getId()).thenReturn(Optional.of(id));
+		return manifest;
+	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.ManifestTest#createTestInstance(de.ims.icarus2.test.TestSettings)
-	 *
-	 * @see MemberManifestTest#createTestInstance(TestSettings)
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
 	 */
-	@Provider
 	@Override
-	default M createTestInstance(TestSettings settings) {
-		return ForeignImplementationManifestTest.super.createTestInstance(settings);
+	default ManifestType getExpectedType() {
+		return ManifestType.DRIVER_MANIFEST;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
+	 */
+	@Override
+	default Set<ManifestType> getAllowedHostTypes() {
+		return singleton(ManifestType.CONTEXT_MANIFEST);
 	}
 
 	/**
@@ -48,7 +87,11 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testForEachMappingManifest() {
-		fail("Not yet implemented");
+		assertDerivativeForEach(settings(),
+				mockMappingManifest("mapping1"),
+				mockMappingManifest("mapping2"),
+				m -> m::forEachMappingManifest,
+				DriverManifest::addMappingManifest);
 	}
 
 	/**
@@ -56,7 +99,11 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testForEachLocalMappingManifest() {
-		fail("Not yet implemented");
+		assertDerivativeForEachLocal(settings(),
+				mockMappingManifest("mapping1"),
+				mockMappingManifest("mapping2"),
+				m -> m::forEachLocalMappingManifest,
+				DriverManifest::addMappingManifest);
 	}
 
 	/**
@@ -64,7 +111,11 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testGetMappingManifests() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeGetter(settings(),
+				mockMappingManifest("mapping1"),
+				mockMappingManifest("mapping2"),
+				DriverManifest::getMappingManifests,
+				DriverManifest::addMappingManifest);
 	}
 
 	/**
@@ -72,7 +123,11 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testGetLocalMappingManifests() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeLocalGetter(settings(),
+				mockMappingManifest("mapping1"),
+				mockMappingManifest("mapping2"),
+				DriverManifest::getLocalMappingManifests,
+				DriverManifest::addMappingManifest);
 	}
 
 	/**
@@ -80,7 +135,14 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testGetMappingManifest() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeOptLookup(settings(),
+				mockMappingManifest("mapping1"),
+				mockMappingManifest("mapping2"),
+				DriverManifest::getMappingManifest,
+				NPE_CHECK,
+				DriverManifest::addMappingManifest,
+				unwrapGetter(MappingManifest::getId),
+				"mapping3");
 	}
 
 	/**
@@ -88,7 +150,13 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testGetLocationType() {
-		fail("Not yet implemented");
+		for(LocationType locationType : LocationType.values()) {
+			assertDerivativeOptGetter(settings(),
+					locationType, other(locationType),
+					IGNORE_DEFAULT(),
+					DriverManifest::getLocationType,
+					DriverManifest::setLocationType);
+		}
 	}
 
 	/**
@@ -96,7 +164,12 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testIsLocalLocationType() {
-		fail("Not yet implemented");
+		for(LocationType locationType : LocationType.values()) {
+			assertDerivativeIsLocal(settings(),
+					locationType, other(locationType),
+					DriverManifest::isLocalLocationType,
+					DriverManifest::setLocationType);
+		}
 	}
 
 	/**
@@ -104,7 +177,7 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testGetContextManifest() {
-		fail("Not yet implemented");
+		assertHostGetter(DriverManifest::getContextManifest);
 	}
 
 	/**
@@ -112,7 +185,11 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testForEachModuleManifest() {
-		fail("Not yet implemented");
+		assertDerivativeForEach(settings(),
+				mockModuleManifest("module1"),
+				mockModuleManifest("module2"),
+				m -> m::forEachModuleManifest,
+				DriverManifest::addModuleManifest);
 	}
 
 	/**
@@ -120,7 +197,11 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testForEachLocalModuleManifest() {
-		fail("Not yet implemented");
+		assertDerivativeForEachLocal(settings(),
+				mockModuleManifest("module1"),
+				mockModuleManifest("module2"),
+				m -> m::forEachLocalModuleManifest,
+				DriverManifest::addModuleManifest);
 	}
 
 	/**
@@ -128,7 +209,11 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testGetModuleManifests() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeGetter(settings(),
+				mockModuleManifest("module1"),
+				mockModuleManifest("module2"),
+				DriverManifest::getModuleManifests,
+				DriverManifest::addModuleManifest);
 	}
 
 	/**
@@ -136,7 +221,11 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testGetLocalModuleManifests() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeLocalGetter(settings(),
+				mockModuleManifest("module1"),
+				mockModuleManifest("module2"),
+				DriverManifest::getLocalModuleManifests,
+				DriverManifest::addModuleManifest);
 	}
 
 	/**
@@ -144,7 +233,11 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testForEachModuleSpec() {
-		fail("Not yet implemented");
+		assertDerivativeForEach(settings(),
+				mockModuleSpec("spec1"),
+				mockModuleSpec("spec2"),
+				m -> m::forEachModuleSpec,
+				DriverManifest::addModuleSpec);
 	}
 
 	/**
@@ -152,7 +245,11 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testForEachLocalModuleSpec() {
-		fail("Not yet implemented");
+		assertDerivativeForEachLocal(settings(),
+				mockModuleSpec("spec1"),
+				mockModuleSpec("spec2"),
+				m -> m::forEachLocalModuleSpec,
+				DriverManifest::addModuleSpec);
 	}
 
 	/**
@@ -160,7 +257,11 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testGetModuleSpecs() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeGetter(settings(),
+				mockModuleSpec("spec1"),
+				mockModuleSpec("spec2"),
+				DriverManifest::getModuleSpecs,
+				DriverManifest::addModuleSpec);
 	}
 
 	/**
@@ -168,7 +269,11 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testGetLocalModuleSpecs() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeLocalGetter(settings(),
+				mockModuleSpec("spec1"),
+				mockModuleSpec("spec2"),
+				DriverManifest::getLocalModuleSpecs,
+				DriverManifest::addModuleSpec);
 	}
 
 	/**
@@ -176,7 +281,26 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testGetModuleSpec() {
-		fail("Not yet implemented");
+		assertDerivativeAccumulativeOptLookup(settings(),
+				mockModuleSpec("spec1"),
+				mockModuleSpec("spec2"),
+				DriverManifest::getModuleSpec,
+				NPE_CHECK,
+				DriverManifest::addModuleSpec,
+				unwrapGetter(ModuleSpec::getId),
+				"spec3");
+	}
+
+	public static Collection<ModuleManifest> mockModuleManifests(String id, int count) {
+		assertTrue(count>1);
+
+		Set<ModuleManifest> result = new HashSet<>();
+		while(count-->0) {
+			ModuleManifest module = mockModuleManifest(id);
+			result.add(module);
+		}
+
+		return result;
 	}
 
 	/**
@@ -184,7 +308,30 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testGetModuleManifestsString() {
-		fail("Not yet implemented");
+
+		Function<Collection<ModuleManifest>, String> keyGen =
+				items -> items.iterator().next().getId().get();
+
+		assertDerivativeAccumulativeLookup(settings(),
+				mockModuleManifests("group1", 3),
+				mockModuleManifests("group2", 4),
+				DriverManifest::getModuleManifests,
+				NPE_CHECK, NO_CHECK,
+				wrap_batchConsumer(DriverManifest::addModuleManifest),
+				keyGen);
+	}
+
+	public static Collection<ModuleManifest> mockModuleManifests(ModuleSpec spec, int count) {
+		assertTrue(count>1);
+
+		Collection<ModuleManifest> result = new HashSet<>();
+		while(count-->0) {
+			ModuleManifest module = mockModuleManifest(spec.getId()+"_module"+count);
+			when(module.getModuleSpec()).thenReturn(Optional.of(spec));
+			result.add(module);
+		}
+
+		return result;
 	}
 
 	/**
@@ -192,7 +339,19 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testGetModuleManifestsModuleSpec() {
-		fail("Not yet implemented");
+		ModuleSpec spec1 = mockModuleSpec("spec1");
+		ModuleSpec spec2 = mockModuleSpec("spec2");
+
+		Function<Collection<ModuleManifest>, ModuleSpec> keyGen =
+				items -> items.iterator().next().getModuleSpec().orElseThrow(AssertionError::new);
+
+		assertDerivativeAccumulativeLookup(settings(),
+				mockModuleManifests(spec1, 3),
+				mockModuleManifests(spec2, 4),
+				DriverManifest::getModuleManifests,
+				NPE_CHECK, NO_CHECK,
+				wrap_batchConsumer(DriverManifest::addModuleManifest),
+				keyGen);
 	}
 
 	/**
@@ -200,7 +359,11 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testAddMappingManifest() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeAdd(settings(),
+				DriverManifest::addMappingManifest,
+				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, DUPLICATE_ID_CHECK,
+				mockMappingManifest("mapping1"),
+				mockMappingManifest("mapping2"));
 	}
 
 	/**
@@ -208,7 +371,13 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testRemoveMappingManifest() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeRemove(settings(),
+				DriverManifest::addMappingManifest,
+				DriverManifest::removeMappingManifest,
+				DriverManifest::getMappingManifests,
+				NPE_CHECK, UNKNOWN_ID_CHECK,
+				mockMappingManifest("mapping1"),
+				mockMappingManifest("mapping2"));
 	}
 
 	/**
@@ -216,7 +385,13 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testAddModuleManifest() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeAdd(settings(),
+				DriverManifest::addModuleManifest,
+				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, DUPLICATE_ID_CHECK,
+				mockModuleManifest("module1"),
+				mockModuleManifest("module1"),
+				mockModuleManifest("module2"),
+				mockModuleManifest("module3"));
 	}
 
 	/**
@@ -224,7 +399,13 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testRemoveModuleManifest() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeRemove(settings(),
+				DriverManifest::addModuleManifest,
+				DriverManifest::removeModuleManifest,
+				DriverManifest::getModuleManifests,
+				NPE_CHECK, UNKNOWN_ID_CHECK,
+				mockModuleManifest("module1"),
+				mockModuleManifest("module2"));
 	}
 
 	/**
@@ -232,7 +413,11 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testAddModuleSpec() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeAdd(settings(),
+				DriverManifest::addModuleSpec,
+				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, DUPLICATE_ID_CHECK,
+				mockModuleSpec("spec1"),
+				mockModuleSpec("spec2"));
 	}
 
 	/**
@@ -240,7 +425,13 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testRemoveModuleSpec() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeRemove(settings(),
+				DriverManifest::addModuleSpec,
+				DriverManifest::removeModuleSpec,
+				DriverManifest::getModuleSpecs,
+				NPE_CHECK, UNKNOWN_ID_CHECK,
+				mockModuleSpec("spec1"),
+				mockModuleSpec("spec2"));
 	}
 
 	/**
@@ -248,7 +439,11 @@ public interface DriverManifestTest<M extends DriverManifest> extends ForeignImp
 	 */
 	@Test
 	default void testSetLocationType() {
-		fail("Not yet implemented");
+		for(LocationType locationType : LocationType.values()) {
+			assertLockableSetter(settings(),
+					DriverManifest::setLocationType,
+					locationType, NPE_CHECK, NO_CHECK);
+		}
 	}
 
 }

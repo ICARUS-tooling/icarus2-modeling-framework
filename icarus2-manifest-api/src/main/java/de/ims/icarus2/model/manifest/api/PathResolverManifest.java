@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.Optional;
+
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessPolicy;
 
@@ -26,10 +28,7 @@ import de.ims.icarus2.util.access.AccessPolicy;
 @AccessControl(AccessPolicy.DENY)
 public interface PathResolverManifest extends ForeignImplementationManifest, Embedded {
 
-	default LocationManifest getLocationManifest() {
+	default <M extends LocationManifest> Optional<M> getLocationManifest() {
 		return getHost();
 	}
-
-	@Override
-	LocationManifest getHost();
 }

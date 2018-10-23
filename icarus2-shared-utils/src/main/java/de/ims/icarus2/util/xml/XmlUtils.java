@@ -22,6 +22,7 @@ package de.ims.icarus2.util.xml;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 
 import java.net.URL;
+import java.util.Optional;
 
 import javax.xml.XMLConstants;
 import javax.xml.stream.XMLStreamException;
@@ -113,6 +114,10 @@ public class XmlUtils {
 			default:
 				return false;
 		}
+	}
+
+	public static <S extends CharSequence> boolean isLegalAttribute(Optional<S> opt) {
+		return opt.isPresent() && !hasIllegalAttributeSymbols(opt.get());
 	}
 
 	public static boolean hasIllegalAttributeSymbols(CharSequence s) {

@@ -16,14 +16,15 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
@@ -39,23 +40,23 @@ import de.ims.icarus2.util.lang.ClassUtils;
  *
  */
 public class LocationManifestImpl extends AbstractManifest<LocationManifest> implements LocationManifest {
-	private String rootPath;
-	private PathType rootPathType;
-	private PathResolverManifest pathResolverManifest;
+	private Optional<String> rootPath = Optional.empty();
+	private Optional<PathType> rootPathType = Optional.empty();
+	private Optional<PathResolverManifest> pathResolverManifest = Optional.empty();
 
-	private CharSequence inlineData;
+	private Optional<CharSequence> inlineData = Optional.empty();
 	private Boolean inline;
 
 	private final List<PathEntry> pathEntries = new ArrayList<>();
 
 	public LocationManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry) {
-		super(manifestLocation, registry, false);
+		super(manifestLocation, registry);
 	}
 
 	public LocationManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry, String path) {
-		super(manifestLocation, registry, false);
+		this(manifestLocation, registry);
 		setRootPath(path);
 	}
 
@@ -120,14 +121,15 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	 */
 	@Override
 	public boolean isEmpty() {
-		return rootPath==null && pathResolverManifest==null && pathEntries.isEmpty() && inlineData==null;
+		return !rootPath.isPresent() && !pathResolverManifest.isPresent()
+				&& pathEntries.isEmpty() && !inlineData.isPresent();
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.LocationManifest#getInlineData()
 	 */
 	@Override
-	public CharSequence getInlineData() {
+	public Optional<CharSequence> getInlineData() {
 		checkInline();
 
 		return inlineData;
@@ -142,7 +144,7 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	 * @see de.ims.icarus2.model.manifest.api.LocationManifest#getRootPath()
 	 */
 	@Override
-	public String getRootPath() {
+	public Optional<String> getRootPath() {
 		checkNotInline();
 
 		return rootPath;
@@ -152,7 +154,7 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	 * @see de.ims.icarus2.model.manifest.api.LocationManifest#getPathResolverManifest()
 	 */
 	@Override
-	public PathResolverManifest getPathResolverManifest() {
+	public Optional<PathResolverManifest> getPathResolverManifest() {
 		checkNotInline();
 
 		return pathResolverManifest;
@@ -184,11 +186,9 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	}
 
 	protected void setInlineData0(CharSequence data) {
-		requireNonNull(data);
-		checkArgument(data.length()>0);
 		checkInline();
 
-		inlineData = data;
+		inlineData = Optional.of(data);
 	}
 
 	/**
@@ -203,17 +203,18 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 
 	protected void setRootPath0(String rootPath) {
 		requireNonNull(rootPath);
-		checkArgument(!rootPath.isEmpty());
+		if(rootPath.isEmpty())
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Root path must not be empty");
 		checkNotInline();
 
-		this.rootPath = rootPath;
+		this.rootPath = Optional.of(rootPath);
 	}
 
 	@Override
-	public PathType getRootPathType() {
+	public Optional<PathType> getRootPathType() {
 		checkNotInline();
 
-		return rootPathType==null ? DEFAULT_ROOT_PATH_TYPE : rootPathType;
+		return Optional.of(rootPathType.orElse(DEFAULT_ROOT_PATH_TYPE));
 	}
 
 	@Override
@@ -227,11 +228,7 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 		requireNonNull(type);
 		checkNotInline();
 
-		if(type==DEFAULT_ROOT_PATH_TYPE) {
-			type = null;
-		}
-
-		rootPathType = type;
+		rootPathType = Optional.of(type);
 	}
 
 	@Override
@@ -248,7 +245,7 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 //			throw new NullPointerException("Invalid pathResolverManifest"); //$NON-NLS-1$
 		checkNotInline();
 
-		this.pathResolverManifest = pathResolverManifest;
+		this.pathResolverManifest = Optional.ofNullable(pathResolverManifest);
 	}
 
 	@Override
@@ -268,6 +265,10 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 		requireNonNull(entry);
 		checkNotInline();
 
+		if(pathEntries.contains(entry))
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
+					"Path entry already present: "+entry);
+
 		pathEntries.add(entry);
 	}
 
@@ -282,6 +283,10 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 		requireNonNull(entry);
 		checkNotInline();
 
+		if(!pathEntries.contains(entry))
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
+					"Unknown path entry: "+entry);
+
 		pathEntries.remove(entry);
 	}
 
@@ -291,7 +296,16 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	@Override
 	public void setIsTemplate(boolean isTemplate) {
 		throw new ManifestException(ManifestErrorCode.MANIFEST_ILLEGAL_TEMPLATE_STATE,
-				"Location manifest cannot be a template");
+				"Location manifest does not support templates");
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.standard.AbstractManifest#setTemplateId(java.lang.String)
+	 */
+	@Override
+	public void setTemplateId(String templateId) {
+		throw new ManifestException(ManifestErrorCode.MANIFEST_ILLEGAL_TEMPLATE_STATE,
+				"Location manifest does not support templates");
 	}
 
 	public static class PathEntryImpl implements PathEntry {

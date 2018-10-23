@@ -19,10 +19,11 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.TestUtils.DEFAULT;
+import static de.ims.icarus2.test.TestUtils.assertNotPresent;
+import static de.ims.icarus2.test.TestUtils.assertPresent;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.Set;
 
@@ -57,8 +58,8 @@ public interface ContainerManifestTest<M extends ContainerManifest> extends Embe
 	 */
 	@Test
 	default void testGetLayerManifest() {
-		assertNotNull(createUnlocked().getLayerManifest());
-		assertNull(createTemplate(settings()).getLayerManifest());
+		assertPresent(createUnlocked().getLayerManifest());
+		assertNotPresent(createTemplate(settings()).getLayerManifest());
 	}
 
 	/**
@@ -68,7 +69,7 @@ public interface ContainerManifestTest<M extends ContainerManifest> extends Embe
 	default void testGetContainerType() {
 		for(ContainerType containerType : ContainerType.values()) {
 			assertDerivativeGetter(settings(), containerType, TestUtils.other(containerType),
-					ContainerManifest.DEFAULT_CONTAINER_TYPE,
+					DEFAULT(ContainerManifest.DEFAULT_CONTAINER_TYPE),
 					ContainerManifest::getContainerType, ContainerManifest::setContainerType);
 		}
 	}
@@ -92,7 +93,7 @@ public interface ContainerManifestTest<M extends ContainerManifest> extends Embe
 		for(ContainerFlag flag : ContainerFlag.values()) {
 			assertDerivativeFlagGetter(settings(), Boolean.FALSE,
 					m -> m.isContainerFlagSet(flag),
-					(m, active) -> m.setContainerFlag(flag, active));
+					(m, active) -> m.setContainerFlag(flag, active.booleanValue()));
 		}
 	}
 
@@ -149,7 +150,7 @@ public interface ContainerManifestTest<M extends ContainerManifest> extends Embe
 	 */
 	@Test
 	default void testGetParentManifest() {
-		assertNull(createUnlocked().getParentManifest());
+		assertNotPresent(createUnlocked().getParentManifest());
 	}
 
 	/**
@@ -157,7 +158,7 @@ public interface ContainerManifestTest<M extends ContainerManifest> extends Embe
 	 */
 	@Test
 	default void testGetElementManifest() {
-		assertNull(createUnlocked().getElementManifest());
+		assertNotPresent(createUnlocked().getElementManifest());
 	}
 
 	/**
@@ -178,7 +179,7 @@ public interface ContainerManifestTest<M extends ContainerManifest> extends Embe
 	default void testSetContainerFlag() {
 		for(ContainerFlag flag : ContainerFlag.values()) {
 			assertLockableSetter(settings(),
-					(m, active) -> m.setContainerFlag(flag, active));
+					(m, active) -> m.setContainerFlag(flag, active.booleanValue()));
 		}
 	}
 

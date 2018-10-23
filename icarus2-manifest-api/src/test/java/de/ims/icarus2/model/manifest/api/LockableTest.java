@@ -60,7 +60,7 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 
 	@Provider
 	default L createUnlocked(TestSettings settings) {
-		return createTestInstance(settings.clone().withFeatures(ManifestTestFeature.UNLOCKED));
+		return createTestInstance(settings.clone().features(ManifestTestFeature.UNLOCKED));
 	}
 
 	@Provider
@@ -119,14 +119,16 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 
 	default <K extends Object> void assertLockableSetterBatch(
 			TestSettings settings, BiConsumer<L, K> setter, K[] values,
-			boolean checkNPE, BiConsumer<Executable, String> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
+			boolean checkNPE, BiConsumer<Executable, String> legalityCheck,
+			@SuppressWarnings("unchecked") K...illegalValues) {
 		assertLockableSetterBatch(settings, createUnlocked(settings), setter, values, checkNPE, legalityCheck, illegalValues);
 	}
 
 	public static <L extends Lockable, K extends Object> void assertLockableSetterBatch(
 			TestSettings settings, L lockable, BiConsumer<L, K> setter, K[] values,
-			boolean checkNPE, BiConsumer<Executable, String> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
-		TestUtils.assertSetter(lockable, setter, values, checkNPE, legalityCheck, illegalValues);
+			boolean checkNPE, BiConsumer<Executable, String> legalityCheck,
+			@SuppressWarnings("unchecked") K...illegalValues) {
+		TestUtils.assertSetterBatch(lockable, setter, values, checkNPE, legalityCheck, illegalValues);
 
 		lockable.lock();
 
@@ -147,13 +149,17 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 
 	default <K extends Object> void assertLockableAccumulativeAdd(
 			TestSettings settings, BiConsumer<L, K> adder,
-			K[] illegalValues, BiConsumer<Executable, String> legalityCheck, boolean checkNPE, BiConsumer<Executable, String> duplicateCheck, @SuppressWarnings("unchecked") K...values) {
+			K[] illegalValues, BiConsumer<Executable, String> legalityCheck,
+			boolean checkNPE, BiConsumer<Executable, String> duplicateCheck,
+			@SuppressWarnings("unchecked") K...values) {
 		assertLockableAccumulativeAdd(settings, createUnlocked(settings), adder, illegalValues, legalityCheck, checkNPE, duplicateCheck, values);
 	}
 
 	public static <L extends Lockable, K extends Object> void assertLockableAccumulativeAdd(
 			TestSettings settings, L lockable, BiConsumer<L, K> adder,
-			K[] illegalValues, BiConsumer<Executable, String> legalityCheck, boolean checkNPE, BiConsumer<Executable, String> duplicateCheck, @SuppressWarnings("unchecked") K...values) {
+			K[] illegalValues, BiConsumer<Executable, String> legalityCheck,
+			boolean checkNPE, BiConsumer<Executable, String> duplicateCheck,
+			@SuppressWarnings("unchecked") K...values) {
 		TestUtils.assertAccumulativeAdd(lockable, adder, illegalValues, legalityCheck, checkNPE, duplicateCheck, values);
 
 		lockable.lock();

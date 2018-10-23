@@ -19,6 +19,7 @@ package de.ims.icarus2.model.manifest.standard;
 import static java.util.Objects.requireNonNull;
 
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
@@ -35,7 +36,7 @@ import de.ims.icarus2.model.manifest.api.StructureType;
  */
 public class StructureManifestImpl extends ContainerManifestImpl implements StructureManifest {
 
-	private StructureType structureType;
+	private Optional<StructureType> structureType = Optional.empty();
 
 	private EnumSet<StructureFlag> structureFlags;
 
@@ -48,24 +49,16 @@ public class StructureManifestImpl extends ContainerManifestImpl implements Stru
 
 	public StructureManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry) {
-		this(manifestLocation, registry, null);
+		super(manifestLocation, registry);
 	}
 
 	public StructureManifestImpl(StructureLayerManifest layerManifest) {
-		this(layerManifest.getManifestLocation(), layerManifest.getRegistry(), layerManifest);
+		super(layerManifest);
 	}
 
 	@Override
 	public boolean isEmpty() {
 		return super.isEmpty() && structureFlags.isEmpty();
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.standard.manifest.AbstractManifest#getTemplate()
-	 */
-	@Override
-	public synchronized StructureManifest getTemplate() {
-		return (StructureManifest) super.getTemplate();
 	}
 
 	/**
@@ -81,16 +74,8 @@ public class StructureManifestImpl extends ContainerManifestImpl implements Stru
 	 */
 	@Override
 	public StructureType getStructureType() {
-		StructureType result = structureType;
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getStructureType();
-		}
-
-		if(result==null) {
-			result = DEFAULT_STRUCTURE_TYPE;
-		}
-
-		return result;
+		return getWrappedDerivable(structureType, StructureManifest::getStructureType)
+				.orElse(DEFAULT_STRUCTURE_TYPE);
 	}
 
 	/**
@@ -98,15 +83,7 @@ public class StructureManifestImpl extends ContainerManifestImpl implements Stru
 	 */
 	@Override
 	public boolean isLocalStructureType() {
-		return structureType!=null;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.standard.ContainerManifestImpl#getHost()
-	 */
-	@Override
-	public StructureLayerManifest getHost() {
-		return (StructureLayerManifest) super.getHost();
+		return structureType.isPresent();
 	}
 
 	@Override
@@ -117,9 +94,15 @@ public class StructureManifestImpl extends ContainerManifestImpl implements Stru
 	}
 
 	protected void setStructureType0(StructureType structureType) {
-		requireNonNull(structureType);
+		this.structureType = Optional.of(structureType);
+	}
 
-		this.structureType = structureType;
+	/**
+	 * @see de.ims.icarus2.model.manifest.standard.AbstractManifest#getTemplate()
+	 */
+	@Override
+	public StructureManifest getTemplate() {
+		return (StructureManifest) super.getTemplate();
 	}
 
 	@Override

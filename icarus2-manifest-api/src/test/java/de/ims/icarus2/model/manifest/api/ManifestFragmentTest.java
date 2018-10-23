@@ -19,8 +19,9 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.TestUtils.assertNotPresent;
 import static de.ims.icarus2.test.TestUtils.settings;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.Test;
 
@@ -32,11 +33,11 @@ public interface ManifestFragmentTest<M extends ManifestFragment> extends TypedM
 
 	@Test
 	default void testGetId() {
-		assertNull(createTestInstance(settings()).getId());
+		assertNotPresent(createTestInstance(settings()).getId());
 	}
 
 	@Test
 	default void testGetUniqueId() {
-		assertNull(createTestInstance(settings()).getUniqueId());
+		assertNotNull(createTestInstance(settings()).getUniqueId());
 	}
 }

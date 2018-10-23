@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.swing.Icon;
 
@@ -330,7 +331,7 @@ public final class ContentTypeRegistry {
 	}
 
 	public void addListener(String eventName, SimpleEventListener listener) {
-		eventSource.addListener(eventName, listener);
+		eventSource.addListener(listener, eventName);
 	}
 
 	public void removeListener(SimpleEventListener listener, String eventName) {
@@ -410,24 +411,24 @@ public final class ContentTypeRegistry {
 		 * @see de.ims.icarus2.util.id.Identity#getName()
 		 */
 		@Override
-		public String getName() {
-			return contentClass.getSimpleName();
+		public Optional<String> getName() {
+			return Optional.of(contentClass.getSimpleName());
 		}
 
 		/**
 		 * @see de.ims.icarus2.util.id.Identity#getDescription()
 		 */
 		@Override
-		public String getDescription() {
-			return contentClass.getName();
+		public Optional<String> getDescription() {
+			return Optional.of(contentClass.getName());
 		}
 
 		/**
 		 * @see de.ims.icarus2.util.id.Identity#getIcon()
 		 */
 		@Override
-		public Icon getIcon() {
-			return null;
+		public Optional<Icon> getIcon() {
+			return Optional.empty();
 		}
 
 		/**

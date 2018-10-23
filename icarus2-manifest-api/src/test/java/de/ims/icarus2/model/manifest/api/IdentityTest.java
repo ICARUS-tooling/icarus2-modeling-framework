@@ -3,10 +3,9 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.TestUtils.assertNotPresent;
+import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
 import static de.ims.icarus2.test.TestUtils.settings;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
 
 import javax.swing.Icon;
@@ -37,13 +36,13 @@ public interface IdentityTest<I extends Identity> extends GenericTest<I> {
 	default void testGetId() {
 		I empty = createEmpty();
 		if(empty!=null) {
-			assertNull(empty.getId());
+			assertNotPresent(empty.getId());
 		}
 
 		Icon icon = mock(Icon.class);
 		I fromIdentity = createFromIdentity("myId", "name", "description", icon);
 		if(fromIdentity!=null) {
-			assertEquals("myId", fromIdentity.getId());
+			assertOptionalEquals("myId", fromIdentity.getId());
 		}
 	}
 
@@ -54,13 +53,13 @@ public interface IdentityTest<I extends Identity> extends GenericTest<I> {
 	default void testGetName() {
 		I empty = createEmpty();
 		if(empty!=null) {
-			assertNull(empty.getName());
+			assertNotPresent(empty.getName());
 		}
 
 		Icon icon = mock(Icon.class);
 		I fromIdentity = createFromIdentity("myId", "name", "description", icon);
 		if(fromIdentity!=null) {
-			assertEquals("name", fromIdentity.getName());
+			assertOptionalEquals("name", fromIdentity.getName());
 		}
 	}
 
@@ -71,13 +70,13 @@ public interface IdentityTest<I extends Identity> extends GenericTest<I> {
 	default void testGetDescription() {
 		I empty = createEmpty();
 		if(empty!=null) {
-			assertNull(empty.getDescription());
+			assertNotPresent(empty.getDescription());
 		}
 
 		Icon icon = mock(Icon.class);
 		I fromIdentity = createFromIdentity("myId", "name", "description", icon);
 		if(fromIdentity!=null) {
-			assertEquals("description", fromIdentity.getDescription());
+			assertOptionalEquals("description", fromIdentity.getDescription());
 		}
 	}
 
@@ -88,13 +87,13 @@ public interface IdentityTest<I extends Identity> extends GenericTest<I> {
 	default void testGetIcon() {
 		I empty = createEmpty();
 		if(empty!=null) {
-			assertNull(empty.getIcon());
+			assertNotPresent(empty.getIcon());
 		}
 
 		Icon icon = mock(Icon.class);
 		I fromIdentity = createFromIdentity("myId", "name", "description", icon);
 		if(fromIdentity!=null) {
-			assertSame(icon, fromIdentity.getIcon());
+			assertOptionalEquals(icon, fromIdentity.getIcon());
 		}
 	}
 

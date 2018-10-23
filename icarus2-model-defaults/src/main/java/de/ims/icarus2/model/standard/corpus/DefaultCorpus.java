@@ -205,7 +205,7 @@ public class DefaultCorpus implements Corpus {
 					"No root context declared for corpus: "+getName(manifest));
 
 		manifestTracker = new ManifestTracker();
-		manifest.getRegistry().addListener(Events.ADDED, manifestTracker);
+		manifest.getRegistry().addListener(manifestTracker, Events.ADDED);
 
 		if(manifest.isEditable()) {
 			generationControl = DefaultGenerationControl.newBuilder()

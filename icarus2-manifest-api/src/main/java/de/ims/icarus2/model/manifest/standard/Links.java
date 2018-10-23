@@ -20,7 +20,10 @@ import static java.util.Objects.requireNonNull;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.util.Optional;
 
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 
 
@@ -46,14 +49,30 @@ public class Links {
 
 		private final String id;
 
+		private final boolean reportFailedResolution;
+
+		public static final boolean DEFAULT_REPORT_FAILED_RESOLUTION = false;
+
 		transient Reference<O> target;
 
-		public Link(String id) {
+		protected Link(String id) {
+			this(id, DEFAULT_REPORT_FAILED_RESOLUTION);
+		}
+
+		protected Link(String id, boolean reportFailedResolution) {
 			requireNonNull(id);
 
 			ManifestUtils.checkId(id);
 
 			this.id = id;
+			this.reportFailedResolution = reportFailedResolution;
+		}
+
+		/**
+		 * @return the reportFailedResolution
+		 */
+		public boolean isReportFailedResolution() {
+			return reportFailedResolution;
 		}
 
 		/**
@@ -63,14 +82,25 @@ public class Links {
 		 *
 		 * @return
 		 */
-		protected abstract O resolve();
+		protected abstract Optional<O> resolve();
 
 		public String getId() {
 			return id;
 		}
 
-		protected Reference<O> wrap(O target) {
-			return new WeakReference<>(target);
+		protected String getMissingLinkDescription() {
+			return "Missing target for id: "+getId();
+		}
+
+		protected Reference<O> wrap(Optional<O> target) {
+			if(target.isPresent()) {
+				return new WeakReference<>(target.get());
+			} else if(reportFailedResolution) {
+				throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
+						getMissingLinkDescription());
+			} else {
+				return null;
+			}
 		}
 
 		public O get() {
@@ -79,6 +109,10 @@ public class Links {
 			}
 
 			return target.get();
+		}
+
+		public Optional<O> getOptional() {
+			return Optional.ofNullable(get());
 		}
 	}
 
@@ -95,8 +129,12 @@ public class Links {
 
 		private volatile transient boolean resolved = false;
 
-		public MemoryLink(String id) {
+		protected MemoryLink(String id) {
 			super(id);
+		}
+
+		protected MemoryLink(String id, boolean reportFailedResolution) {
+			super(id, reportFailedResolution);
 		}
 
 		@Override

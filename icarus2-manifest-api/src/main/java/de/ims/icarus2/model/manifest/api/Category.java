@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.manifest.api;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import de.ims.icarus2.util.id.Identity;
 import it.unimi.dsi.fastutil.Hash.Strategy;
@@ -39,7 +40,7 @@ public interface Category extends Identity {
 	 *
 	 * @return
 	 */
-	String getNamespace();
+	Optional<String> getNamespace();
 
 	/**
 	 * Returns the unique identifier of this category within
@@ -49,7 +50,7 @@ public interface Category extends Identity {
 	 * vocabulary of the designated {@link #getNamespace() namespace}!
 	 */
 	@Override
-	String getId();
+	Optional<String> getId();
 
 	public static final Strategy<Category> HASH_STRATEGY = new Strategy<Category>() {
 

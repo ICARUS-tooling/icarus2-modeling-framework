@@ -50,7 +50,8 @@ public interface DocumentationTest<D extends Documentation> extends LockableTest
 	 */
 	@Test
 	default void testGetContent() {
-		TestUtils.assertGetter(createUnlocked(), "content1", "content2", TestUtils.NO_DEFAULT(),
+		TestUtils.assertOptGetter(createUnlocked(),
+				"content1", "content2", TestUtils.NO_DEFAULT(),
 				Documentation::getContent, Documentation::setContent);
 	}
 

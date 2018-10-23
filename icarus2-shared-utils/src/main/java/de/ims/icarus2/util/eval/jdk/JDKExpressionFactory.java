@@ -113,7 +113,7 @@ public class JDKExpressionFactory extends ExpressionFactory {
 			success = compiler.compile(diagnostics);
 
 			if(success) {
-				newClazz = compiler.getFileManager().getClassLoader(null).loadClass(PACKAGE_NAME+"."+className);
+				newClazz = compiler.getFileManager().getSharedClassLoader().loadClass(PACKAGE_NAME+"."+className);
 			}
 		} finally {
 			compiler.unlock();

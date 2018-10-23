@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.manifest.api;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 
 /**
  * A one-way lock mechanism.
@@ -51,7 +52,7 @@ public interface Lockable {
 	default void checkNotLocked() {
 		if(isLocked())
 			throw new ManifestException(ManifestErrorCode.MANIFEST_LOCKED,
-					"Manifest is locked: "+this);
+					"Manifest is locked: "+ManifestUtils.getName(this));
 	}
 
 }

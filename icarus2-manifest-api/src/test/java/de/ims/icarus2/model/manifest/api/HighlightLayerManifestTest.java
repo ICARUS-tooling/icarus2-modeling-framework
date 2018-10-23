@@ -49,8 +49,8 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	 */
 	@Test
 	default void testGetPrimaryLayerManifest() {
-		assertDerivativeGetter(
-				settings().withFeatures(ManifestTestFeature.EMBED_TEMPLATE), // Needs embedded template to resolve layer from id
+		assertDerivativeOptGetter(
+				settings().features(ManifestTestFeature.EMBED_TEMPLATE), // Needs embedded template to resolve layer from id
 				mockItemLayerManifest("layer1"),
 				mockItemLayerManifest("layer2"), TestUtils.NO_DEFAULT(),
 				HighlightLayerManifest::getPrimaryLayerManifest,
@@ -81,7 +81,7 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 					settings(),
 					Boolean.FALSE,
 					m -> m.isHighlightFlagSet(flag),
-					(m, active) -> m.setHighlightFlag(flag, active));
+					(m, active) -> m.setHighlightFlag(flag, active.booleanValue()));
 		}
 	}
 
@@ -95,7 +95,7 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 					settings(),
 					Boolean.FALSE,
 					m -> m.isLocalHighlightFlagSet(flag),
-					(m, active) -> m.setHighlightFlag(flag, active));
+					(m, active) -> m.setHighlightFlag(flag, active.booleanValue()));
 		}
 	}
 
@@ -173,7 +173,7 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	default void testSetHighlightFlag() {
 		for(HighlightFlag flag : HighlightFlag.values()) {
 			assertLockableSetter(settings(),
-					(m, active) -> m.setHighlightFlag(flag, active));
+					(m, active) -> m.setHighlightFlag(flag, active.booleanValue()));
 		}
 	}
 

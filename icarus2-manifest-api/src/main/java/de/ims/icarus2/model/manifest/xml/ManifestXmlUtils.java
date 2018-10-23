@@ -18,6 +18,8 @@ package de.ims.icarus2.model.manifest.xml;
 
 import static de.ims.icarus2.util.lang.Primitives._boolean;
 
+import java.util.Optional;
+
 import javax.swing.Icon;
 
 import org.xml.sax.Attributes;
@@ -28,6 +30,7 @@ import de.ims.icarus2.model.manifest.api.Category;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest.Note;
 import de.ims.icarus2.model.manifest.api.Documentation.Resource;
+import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.api.ModifiableIdentity;
 import de.ims.icarus2.model.manifest.standard.DefaultCategory;
@@ -115,26 +118,18 @@ public final class ManifestXmlUtils {
 		serializer.writeAttribute(ManifestXmlAttributes.NAMESPACE, category.getNamespace());
 	}
 
-	public static void writeIdentityAttributes(XmlSerializer serializer, String id, String name, String description, Icon icon) throws Exception {
+	public static void writeIdentityAttributes(XmlSerializer serializer, String id,
+			Optional<String> name, Optional<String> description, Optional<Icon> icon) throws Exception {
 		serializer.writeAttribute(ManifestXmlAttributes.ID, id);
-
-		if(name!=null && !XmlUtils.hasIllegalAttributeSymbols(name)) {
-			serializer.writeAttribute(ManifestXmlAttributes.NAME, name);
-		}
-		if(description!=null && !XmlUtils.hasIllegalAttributeSymbols(description)) {
-			serializer.writeAttribute(ManifestXmlAttributes.DESCRIPTION, description);
-		}
-
-		String iconString = serialize(icon);
-		if(iconString!=null && !XmlUtils.hasIllegalAttributeSymbols(iconString)) {
-			serializer.writeAttribute(ManifestXmlAttributes.ICON, iconString);
-		}
+		serializer.writeAttribute(ManifestXmlAttributes.NAME, name);
+		serializer.writeAttribute(ManifestXmlAttributes.DESCRIPTION, description);
+		serializer.writeAttribute(ManifestXmlAttributes.ICON, serialize(icon));
 	}
 
-	public static String getSerializedForm(TargetLayerManifest manifest) {
-		return manifest.getPrerequisite()!=null ?
-				manifest.getPrerequisite().getAlias()
-				: manifest.getResolvedLayerManifest().getId();
+	public static Optional<String> getSerializedForm(TargetLayerManifest manifest) {
+		Optional<PrerequisiteManifest> optPrereq = manifest.getPrerequisite();
+		return optPrereq.isPresent() ? optPrereq.map(PrerequisiteManifest::getAlias)
+				: manifest.getResolvedLayerManifest().map(LayerManifest::getId);
 	}
 
 	/**
@@ -166,8 +161,16 @@ public final class ManifestXmlUtils {
 		serializer.endElement(name);
 	}
 
+	public static void writeElement(XmlSerializer serializer, String name, Optional<String> content) throws Exception {
+		if(content.isPresent()) {
+			serializer.startEmptyElement(name);
+			serializer.writeTextOrCData(content.get());
+			serializer.endElement(name);
+		}
+	}
+
 	public static void writeIdentityFieldElements(XmlSerializer serializer, Identity identity) throws Exception {
-		writeIdentityFieldElements(serializer, identity.getName(), identity.getDescription(), identity.getIcon());
+		writeIdentityFieldElements(serializer, identity.getName().orElse(null), identity.getDescription(), identity.getIcon());
 	}
 
 	public static void writeIdentityFieldElements(XmlSerializer serializer, String name, String description, Icon icon) throws Exception {
@@ -183,7 +186,7 @@ public final class ManifestXmlUtils {
 		}
 
 		if(icon!=null) {
-			String iconString = ManifestXmlUtils.serialize(icon);
+			String iconString = ManifestXmlUtils.serialize(icon).orElse(null);
 			if(iconString==null || XmlUtils.hasIllegalAttributeSymbols(iconString)) {
 				iconString = ImageSerializer.icon2String(icon);
 				writeElement(serializer, ManifestXmlTags.ICON, iconString);
@@ -431,16 +434,16 @@ public final class ManifestXmlUtils {
 		return (value==null || value.isEmpty()) ? null : value;
 	}
 
-	public static String serialize(Object value) {
+	public static Optional<String> serialize(Object value) {
 		if(value == null) {
-			return null;
+			return Optional.empty();
 		} else if(value instanceof StringResource) {
-			return ((StringResource) value).getStringValue();
+			return Optional.of(((StringResource) value).getStringValue());
 		} else if(value instanceof NamedObject) {
-			return ((NamedObject) value).getName();
+			return Optional.ofNullable(((NamedObject) value).getName());
 		}
 
 		// If we couldn't find any way to perform simple serialization, default to null
-		return null;
+		return Optional.empty();
 	}
 }

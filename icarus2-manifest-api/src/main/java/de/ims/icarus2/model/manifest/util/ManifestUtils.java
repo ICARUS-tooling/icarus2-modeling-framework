@@ -16,9 +16,11 @@
  */
 package de.ims.icarus2.model.manifest.util;
 
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.Embedded;
@@ -27,7 +29,6 @@ import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestFragment;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
 import de.ims.icarus2.model.manifest.api.ManifestType;
-import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 
 /**
@@ -37,11 +38,11 @@ import de.ims.icarus2.model.manifest.api.TypedManifest;
 public class ManifestUtils {
 
 	private static final Pattern idPattern = Pattern.compile(
-			"^\\p{Alpha}[._\\-\\w]*[\\w]$"); //$NON-NLS-1$
+			"^\\p{Alpha}[.:_\\-\\w]*[\\w]$"); //$NON-NLS-1$
 
 	private static Matcher idMatcher;
 
-	public static final char ID_SEPARATOR = '@';
+	public static final String ID_SEPARATOR = "::";
 
 	public static final int MIN_ID_LENGTH = 3;
 
@@ -54,7 +55,7 @@ public class ManifestUtils {
 	 * <li>they start with an alphabetic character (lower and upper case are allowed)</li>
 	 * <li>subsequent characters may be alphabetic or digits</li>
 	 * <li>no whitespaces, control characters or code points with 2 or more bytes are allowed</li>
-	 * <li>no special characters are allowed besides the following 3: _-. (underscore, hyphen, dot)</li>
+	 * <li>no special characters are allowed besides the following 4: _-.: (underscore, hyphen, dot, colon)</li>
 	 * </ul>
 	 *
 	 * Attempting to use any other string as an identifier for arbitrary members of a corpus will
@@ -86,30 +87,48 @@ public class ManifestUtils {
 	public static void checkId(String id) {
 		if(!isValidId(id))
 			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ID,
-					"Id format not supported: "+id);
+					"Id format not supported: "+String.valueOf(id));
+	}
 
+	public static String checkIdNotNull(String id) {
+		if(id==null)
+			throw new ManifestException(GlobalErrorCode.ILLEGAL_STATE,
+					"Id is null");
+		return id;
 	}
 
 	public static String getName(Object obj) {
 		// IMPORTANT: should NEVER call Manifest.getName() to prevent loops!
 
+		// Unwrap optionals
+		if(obj instanceof Optional) {
+			obj = ((Optional<?>)obj).orElse(null);
+		}
+
+		String result = null;
+
 		if(obj instanceof PrerequisiteManifest) {
 			PrerequisiteManifest prerequisite = (PrerequisiteManifest)obj;
-			String id = prerequisite.getLayerId();
-			if(id!=null)
-				return "Required layer-id: "+id; //$NON-NLS-1$
+			Optional<String> id = prerequisite.getLayerId();
+			if(id.isPresent())
+				return "Required layer-id: "+id.get();
 
-			String typeName = prerequisite.getTypeId();
-			if(typeName!=null && !typeName.isEmpty())
-				return "Required type-id: "+typeName; //$NON-NLS-1$
+			Optional<String> typeName = prerequisite.getTypeId();
+			if(typeName.isPresent() && !typeName.get().isEmpty())
+				return "Required type-id: "+typeName.get();
 
-			return prerequisite.toString();
+			result = prerequisite.toString();
 		} else if (obj instanceof ManifestOwner) {
-			MemberManifest manifest = ((ManifestOwner<?>)obj).getManifest();
-			return manifest.getName();
-		} else {
-			return obj.toString();
+			result = ((ManifestOwner<?>)obj).getManifest()
+					.getName()
+					.orElse(null);
 		}
+
+		if(result==null) {
+			result = obj.toString();
+		}
+
+		return result;
 	}
 
 	public static boolean isItemLayerManifest(Manifest manifest) {
@@ -119,28 +138,28 @@ public class ManifestUtils {
 	//TODO methods for checking other types so we can use them as method references in lambdas
 
 	public static String getUniqueId(ManifestFragment manifest) {
-		String id = manifest.getId();
-
-		if(id==null) {
-			return null;
-		} else if(manifest instanceof Embedded) {
+		if(manifest instanceof Embedded) {
 			StringBuilder sb = new StringBuilder();
 			buildUniqueId(sb, manifest);
 			return sb.toString();
 		} else {
-			return id;
+			return manifest.getId().orElseGet(() -> defaultCreateUnnamedId(manifest));
 		}
+	}
+
+	private static String defaultCreateUnnamedId(ManifestFragment fragment) {
+		return "unnamed@"+fragment.getClass().getName();
 	}
 
 	private static void buildUniqueId(StringBuilder sb, ManifestFragment manifest) {
 		if(manifest instanceof Embedded) {
-			TypedManifest host = ((Embedded)manifest).getHost();
-			if(host!=null && host instanceof ManifestFragment) {
-				buildUniqueId(sb, (ManifestFragment)host);
+			Optional<TypedManifest> optHost = ((Embedded)manifest).getHost();
+			if(optHost.isPresent() && optHost.get() instanceof ManifestFragment) {
+				buildUniqueId(sb, (ManifestFragment)optHost.get());
 				sb.append(ID_SEPARATOR);
 			}
 		}
-		sb.append(manifest.getId());
+		sb.append(manifest.getId().orElseGet(() -> defaultCreateUnnamedId(manifest)));
 	}
 
 	/**
@@ -184,14 +203,16 @@ public class ManifestUtils {
 	 */
 	public static boolean hasTemplateContext(TypedManifest manifest) {
 
-		while(manifest!=null) {
-			if(manifest instanceof Manifest
-					&& ((Manifest)manifest).isValidTemplate()){
+		Optional<TypedManifest> opt = Optional.ofNullable(manifest);
+
+		while(opt.isPresent()) {
+			if(opt.get() instanceof Manifest
+					&& ((Manifest)opt.get()).isValidTemplate()){
 				return true;
 			}
 
-			manifest = (manifest instanceof Embedded) ?
-					((Embedded)manifest).getHost() : null;
+			opt = (opt.get() instanceof Embedded) ?
+					((Embedded)opt.get()).getHost() : Optional.empty();
 		}
 
 		return false;

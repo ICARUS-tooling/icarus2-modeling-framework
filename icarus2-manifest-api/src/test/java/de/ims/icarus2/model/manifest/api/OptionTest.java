@@ -21,6 +21,8 @@ package de.ims.icarus2.model.manifest.api;
 
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.getIllegalValue;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.getTestValue;
+import static de.ims.icarus2.test.TestUtils.DEFAULT;
+import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -98,7 +100,9 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest<O>,
 	default void testGetDefaultValue() {
 		for (ValueType valueType : LEGAL_VALUE_TYPES) {
 			Object[] values = ManifestTestUtils.getTestValues(valueType);
-			TestUtils.assertGetter(createWithType(settings(), valueType), values[0], values[1], null, Option::getDefaultValue,
+			TestUtils.assertOptGetter(createWithType(settings(), valueType),
+					values[0], values[1], NO_DEFAULT(),
+					Option::getDefaultValue,
 					Option::setDefaultValue);
 		}
 	}
@@ -110,7 +114,10 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest<O>,
 	@Test
 	default void testGetValueType() {
 		for (ValueType valueType : LEGAL_VALUE_TYPES) {
-			TestUtils.assertGetter(createWithType(settings(), valueType), valueType, valueType, valueType, Option::getValueType,
+			TestUtils.assertGetter(createWithType(settings(), valueType),
+					valueType, valueType,
+					DEFAULT(valueType),
+					Option::getValueType,
 					Option::setValueType);
 		}
 	}
@@ -122,7 +129,8 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest<O>,
 	@Test
 	default void testGetSupportedValues() {
 		for (ValueType valueType : LEGAL_VALUE_TYPES) {
-			TestUtils.assertGetter(createWithType(settings(), valueType), mockValueSet(valueType), mockValueSet(valueType), null,
+			TestUtils.assertOptGetter(createWithType(settings(), valueType),
+					mockValueSet(valueType), mockValueSet(valueType), NO_DEFAULT(),
 					Option::getSupportedValues, Option::setSupportedValues);
 		}
 	}
@@ -134,8 +142,10 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest<O>,
 	@Test
 	default void testGetSupportedRange() {
 		for (ValueType valueType : LEGAL_VALUE_TYPES) {
-			TestUtils.assertGetter(createWithType(settings(), valueType), mockValueRange(valueType), mockValueRange(valueType),
-					null, Option::getSupportedRange, Option::setSupportedRange);
+			TestUtils.assertOptGetter(createWithType(settings(), valueType),
+					mockValueRange(valueType), mockValueRange(valueType),
+					NO_DEFAULT(),
+					Option::getSupportedRange, Option::setSupportedRange);
 		}
 	}
 
@@ -145,7 +155,8 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest<O>,
 	 */
 	@Test
 	default void testGetExtensionPointUid() {
-		TestUtils.assertGetter(createWithType(settings(), ValueType.EXTENSION), "uid1", "uid2", null,
+		TestUtils.assertOptGetter(createWithType(settings(), ValueType.EXTENSION),
+				"uid1", "uid2", NO_DEFAULT(),
 				Option::getExtensionPointUid, Option::setExtensionPointUid);
 	}
 
@@ -155,7 +166,9 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest<O>,
 	 */
 	@Test
 	default void testGetOptionGroupId() {
-		TestUtils.assertGetter(createUnlocked(), "group1", "group2", null, Option::getOptionGroupId, Option::setOptionGroup);
+		TestUtils.assertOptGetter(createUnlocked(),
+				"group1", "group2", NO_DEFAULT(),
+				Option::getOptionGroupId, Option::setOptionGroup);
 	}
 
 	/**
@@ -165,7 +178,8 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest<O>,
 	@SuppressWarnings("boxing")
 	@Test
 	default void testIsPublished() {
-		TestUtils.assertFlagGetter(createUnlocked(), Option.DEFAULT_PUBLISHED_VALUE, Option::isPublished, Option::setPublished);
+		TestUtils.assertFlagGetter(createUnlocked(),
+				Option.DEFAULT_PUBLISHED_VALUE, Option::isPublished, Option::setPublished);
 	}
 
 	/**
@@ -175,7 +189,8 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest<O>,
 	@SuppressWarnings("boxing")
 	@Test
 	default void testIsMultiValue() {
-		TestUtils.assertFlagGetter(createUnlocked(), Option.DEFAULT_MULTIVALUE_VALUE, Option::isMultiValue,
+		TestUtils.assertFlagGetter(createUnlocked(),
+				Option.DEFAULT_MULTIVALUE_VALUE, Option::isMultiValue,
 				Option::setMultiValue);
 	}
 

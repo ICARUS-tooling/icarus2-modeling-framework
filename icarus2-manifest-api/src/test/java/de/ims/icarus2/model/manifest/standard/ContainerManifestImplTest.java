@@ -46,7 +46,7 @@ class ContainerManifestImplTest implements ContainerManifestTest<ContainerManife
 	@Override
 	public ContainerManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
-		return new ContainerManifestImpl(manifestLocation, registry, (ItemLayerManifest)host);
+		return settings.process(new ContainerManifestImpl(manifestLocation, registry, (ItemLayerManifest)host));
 	}
 
 }

@@ -5,7 +5,7 @@ description = 'Default implementations for the core model API'
 dependencies {
 	api(project(':icarus2-model-api'))
   
-	testImplementation(project(path: ':icarus2-shared-utils', configuration: 'tests'))
+	testImplementation(project(':icarus2-shared-tests'))
 }
 
 configurations {

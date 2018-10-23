@@ -16,11 +16,13 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static java.util.Objects.requireNonNull;
+
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
-import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.access.AccessControl;
@@ -36,7 +38,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface CorpusManifest extends MemberManifest, Embedded {
+public interface CorpusManifest extends MemberManifest {
 
 	public static final boolean DEFAULT_EDITABLE_VALUE = false;
 	public static final boolean DEFAULT_PARALLEL_VALUE = false;
@@ -54,12 +56,10 @@ public interface CorpusManifest extends MemberManifest, Embedded {
 	}
 
 	@AccessRestriction(AccessMode.READ)
-	default ContextManifest getRootContextManifest() {
+	default Optional<ContextManifest> getRootContextManifest() {
 		List<ContextManifest> contexts = getRootContextManifests();
-		if(contexts.size()>1)
-			throw new ManifestException(GlobalErrorCode.ILLEGAL_STATE, "More than 1 root context defined");
 
-		return contexts.get(0);
+		return Optional.ofNullable(contexts.size()==1 ? contexts.get(0) : null);
 	}
 
 	/**
@@ -125,6 +125,8 @@ public interface CorpusManifest extends MemberManifest, Embedded {
 	 * @return
 	 */
 	default boolean isCustomContext(ContextManifest manifest) {
+		requireNonNull(manifest);
+
 		MutableBoolean result = new MutableBoolean(false);
 
 		forEachCustomContextManifest(m -> {
@@ -136,11 +138,6 @@ public interface CorpusManifest extends MemberManifest, Embedded {
 		return result.booleanValue();
 	}
 
-	@Override
-	default public ManifestFragment getHost() {
-		return null;
-	};
-
 	/**
 	 * Performs a lookup and returns the context that matches the given unique id.
 	 *
@@ -148,25 +145,23 @@ public interface CorpusManifest extends MemberManifest, Embedded {
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	ContextManifest getContextManifest(String id);
+	Optional<ContextManifest> getContextManifest(String id);
 
+	/**
+	 *
+	 * @param qualifiedLayerId
+	 * @return
+	 *
+	 * @see #getContextManifest(String)
+	 * @see ContextManifest#getLayerManifest(String)
+	 */
 	@SuppressWarnings("unchecked")
-	default <M extends LayerManifest> M getLayerManifest(String qualifiedLayerId) {
-		String layerId = ManifestUtils.extractElementId(qualifiedLayerId);
-		ContextManifest contextManifest = null;
-
-		String contextId = ManifestUtils.extractHostId(qualifiedLayerId);
-		if(contextId!=null) {
-			contextManifest = getContextManifest(contextId);
-		}
-
-		if(contextManifest==null) {
-			contextManifest = getRootContextManifest();
-		}
-
-		LayerManifest layerManifest = contextManifest.getLayerManifest(layerId);
-
-		return (M) layerManifest;
+	default <M extends LayerManifest> Optional<M> getLayerManifest(String qualifiedLayerId) {
+		return (Optional<M>) Optional.ofNullable(ManifestUtils.extractHostId(qualifiedLayerId))
+				.flatMap(id -> getContextManifest(id))
+				.map(Optional::of)
+				.orElseGet(this::getRootContextManifest)
+				.flatMap(c -> c.getLayerManifest(ManifestUtils.extractElementId(qualifiedLayerId)));
 	}
 
 	/**
@@ -273,7 +268,7 @@ public interface CorpusManifest extends MemberManifest, Embedded {
 		 * the note was created, this method will return the date of the note's creation.
 		 * @return
 		 */
-		LocalDateTime getModificationDate();
+		Optional<LocalDateTime> getModificationDate();
 
 		/**
 		 * Returns the title of this note. The returned {@code String} is always non-null and never empty.
@@ -285,7 +280,7 @@ public interface CorpusManifest extends MemberManifest, Embedded {
 		 * Returns the (potentially) empty content of this note.
 		 * @return
 		 */
-		String getContent();
+		Optional<String> getContent();
 
 		// Modification methods
 

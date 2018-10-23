@@ -28,25 +28,27 @@ import static de.ims.icarus2.model.manifest.ManifestTestUtils.transform_id;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_createTargetLayerManifest;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.transform_targetLayerId;
 import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
-import static de.ims.icarus2.test.TestUtils.assertGetter;
 import static de.ims.icarus2.test.TestUtils.assertMock;
+import static de.ims.icarus2.test.TestUtils.assertOptGetter;
 import static de.ims.icarus2.test.TestUtils.assertPredicate;
+import static de.ims.icarus2.test.TestUtils.assertPresent;
 import static de.ims.icarus2.test.TestUtils.constant;
 import static de.ims.icarus2.test.TestUtils.inject_genericInserter;
 import static de.ims.icarus2.test.TestUtils.settings;
-import static de.ims.icarus2.test.TestUtils.transform_genericValue;
+import static de.ims.icarus2.test.TestUtils.transform_genericOptValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.ManifestTestFeature;
+import de.ims.icarus2.model.manifest.standard.ItemLayerManifestImpl;
 import de.ims.icarus2.test.func.TriConsumer;
 
 /**
@@ -57,7 +59,7 @@ public interface ItemLayerManifestTest<M extends ItemLayerManifest> extends Laye
 
 	public static ContainerManifest mockContainerManifest(String id) {
 		ContainerManifest containerManifest = mockTypedManifest(ManifestType.CONTAINER_MANIFEST);
-		return stubType((ContainerManifest) stubId((ManifestFragment)containerManifest, id),
+		return stubType(stubId(containerManifest, id),
 				ManifestType.CONTEXT_MANIFEST);
 	}
 
@@ -73,7 +75,7 @@ public interface ItemLayerManifestTest<M extends ItemLayerManifest> extends Laye
 	public static <M extends ItemLayerManifest, V extends ContainerManifest> TriConsumer<M, V, Integer>
 			inject_insert() {
 		return (m, cont, index) -> {
-			ItemLayerManifest.getOrCreateLocalContainerhierarchy(m)
+			ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(m)
 				.insert(cont, index);
 		};
 	}
@@ -89,19 +91,19 @@ public interface ItemLayerManifestTest<M extends ItemLayerManifest> extends Laye
 		ContainerManifest container2 = mockContainerManifest("container2");
 
 		// Test basic behavior when constantly changing the root manifest itself
-		assertGetter(createUnlocked(),
+		assertOptGetter(createUnlocked(),
 				container1, container2, null,
 				ItemLayerManifest::getRootContainerManifest,
 				inject_genericInserter(inject_insert(), constant(0)));
 
 		Predicate<M> rootCheck = m -> {
-			ContainerManifest manifest = m.getRootContainerManifest();
-			assertNotNull(manifest);
-			return manifest==root;
+			Optional<ContainerManifest> manifest = m.getRootContainerManifest();
+			assertPresent(manifest);
+			return manifest.get()==root;
 		};
 
 		BiFunction<M, ContainerManifest, Boolean> staticModifier = (m, cont) -> {
-			ItemLayerManifest.getOrCreateLocalContainerhierarchy(m).add(cont);
+			ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(m).add(cont);
 			return true;
 		};
 
@@ -110,7 +112,7 @@ public interface ItemLayerManifestTest<M extends ItemLayerManifest> extends Laye
 				root, container1, container2);
 
 		BiFunction<M, ContainerManifest, Boolean> mixedModifier = (m, cont) -> {
-			ItemLayerManifest.getOrCreateLocalContainerhierarchy(m).insert(cont, 0);
+			ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(m).insert(cont, 0);
 			return cont==root;
 		};
 
@@ -135,11 +137,11 @@ public interface ItemLayerManifestTest<M extends ItemLayerManifest> extends Laye
 	 */
 	@Test
 	default void testGetBoundaryLayerManifest() {
-		assertDerivativeGetter(settings(),
+		assertDerivativeOptGetter(settings(),
 				"layer1",
 				"layer2",
 				NO_DEFAULT(),
-				transform_genericValue(ItemLayerManifest::getBoundaryLayerManifest, transform_targetLayerId()),
+				transform_genericOptValue(ItemLayerManifest::getBoundaryLayerManifest, transform_targetLayerId()),
 				inject_createTargetLayerManifest(ItemLayerManifest::setBoundaryLayerId));
 	}
 
@@ -160,11 +162,11 @@ public interface ItemLayerManifestTest<M extends ItemLayerManifest> extends Laye
 	 */
 	@Test
 	default void testGetFoundationLayerManifest() {
-		assertDerivativeGetter(settings(),
+		assertDerivativeOptGetter(settings(),
 				"layer1",
 				"layer2",
 				NO_DEFAULT(),
-				transform_genericValue(ItemLayerManifest::getFoundationLayerManifest, transform_targetLayerId()),
+				transform_genericOptValue(ItemLayerManifest::getFoundationLayerManifest, transform_targetLayerId()),
 				inject_createTargetLayerManifest(ItemLayerManifest::setFoundationLayerId));
 	}
 
@@ -189,7 +191,7 @@ public interface ItemLayerManifestTest<M extends ItemLayerManifest> extends Laye
 
 		M manifest = createTestInstance(settings(ManifestTestFeature.EMBEDDED));
 		LayerGroupManifest groupManifest = assertMock(manifest.getGroupManifest());
-		when(groupManifest.getPrimaryLayerManifest()).thenReturn(manifest);
+		when(groupManifest.getPrimaryLayerManifest()).thenReturn(Optional.of(manifest));
 
 		assertTrue(manifest.isPrimaryLayerManifest());
 	}

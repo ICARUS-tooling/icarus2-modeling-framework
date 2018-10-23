@@ -26,7 +26,7 @@ class HierarchyImplTest implements HierarchyTest<Object, HierarchyImpl<Object>> 
 	 */
 	@Override
 	public HierarchyImpl<Object> createTestInstance(TestSettings settings) {
-		return new HierarchyImpl<>();
+		return settings.process(new HierarchyImpl<>());
 	}
 
 	/**

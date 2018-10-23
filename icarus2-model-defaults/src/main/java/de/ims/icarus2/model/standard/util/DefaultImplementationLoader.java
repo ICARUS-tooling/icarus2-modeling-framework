@@ -87,6 +87,19 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 
 	// Instantiation and Loading
 
+	private String prepareMessage() {
+
+		String message = getMessage();
+
+		if(message == null) {
+			message = "";
+		} else if(!message.endsWith(" ")) {
+			message += " ";
+		}
+
+		return message;
+	}
+
 	/**
 	 *
 	 * @param resultClass expected (super) class of the instantiated object
@@ -102,7 +115,7 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 		checkState("Cannot use no-args constructor when constructor signature was defined", signature==null);
 
 		final ImplementationManifest manifest = getManifest();
-		final String message = getMessage();
+		final String message = prepareMessage();
 		final boolean isFactory = manifest.isUseFactory();
 
 		final Class<?> clazz = loadClass();
@@ -112,10 +125,10 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 		try {
 			instance = clazz.newInstance();
 		} catch (InstantiationException e) {
-			throw new ModelException(corpus, ManifestErrorCode.IMPLEMENTATION_ERROR,
+			throw new ModelException(getCorpus(), ManifestErrorCode.IMPLEMENTATION_ERROR,
 					message+"Unable to instantiate custom implementation: "+getName(getEnvironment()), e);
 		} catch (IllegalAccessException e) {
-			throw new ModelException(corpus, ManifestErrorCode.IMPLEMENTATION_NOT_ACCESSIBLE,
+			throw new ModelException(getCorpus(), ManifestErrorCode.IMPLEMENTATION_NOT_ACCESSIBLE,
 					message+"Cannot access custom implementation: "+getName(getEnvironment()), e);
 		}
 
@@ -124,7 +137,7 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 
 			try {
 				instance = factory.create(resultClass, manifest, this);
-			} catch (Exception e) {
+			} catch (Exception e) { // Usually it's bad to catch all exceptions, but we gonna wrap it anyway
 				throw new ModelException(getCorpus(), ManifestErrorCode.IMPLEMENTATION_FACTORY,
 						message+"Delegated instatiation via factory failed: "+getName(getEnvironment()), e);
 			}
@@ -152,9 +165,10 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 		checkArgument("Must provide 1 or more constructor arguments", params.length>0);
 
 		checkState("No constructor signature defined", signature!=null);
-		checkState("Cannot use custom constructor signature with factory", manifest.isUseFactory());
+		checkState("Cannot use custom constructor signature with factory", !manifest.isUseFactory());
 
 		final Class<?> clazz = loadClass();
+		final String message = prepareMessage();
 		Constructor<?> constructor;
 
 		try {
@@ -211,20 +225,12 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 
 		checkState("Implementation manifest missing", manifest!=null);
 
-		if(message == null) {
-			message = "";
-		} else if(!message.endsWith(" ")) {
-			message += " ";
-		}
-
-//		if(!(owner instanceof String)) {
-//			owner = notNull(owner==null ? manifest.getId() :getName(owner), "<undefined>");
-//		}
+		final String message = prepareMessage();
 
 		final SourceType sourceType = manifest.getSourceType();
 		final String source = manifest.getSource();
 
-		ClassLoader classLoader = manifest.getManifestLocation().getClassLoader();
+		ClassLoader classLoader = getCorpusManager().getImplementationClassLoader(manifest);
 		String classname = manifest.getClassname();
 
 		Class<?> clazz = null;
@@ -233,19 +239,17 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 		case EXTENSION: {
 			try {
 				clazz = getCorpusManager().resolveExtension(source);
-			} catch(Exception e) {
-				throw new ModelException(corpus, ManifestErrorCode.IMPLEMENTATION_NOT_FOUND,
-						message+"Unable to resolve extension uid: "+source, e); //$NON-NLS-1$
+			} catch(ClassNotFoundException e) {
+				throw new ModelException(getCorpus(), ManifestErrorCode.IMPLEMENTATION_NOT_FOUND,
+						message+"Unable to resolve extension uid: "+source, e);
 			}
 		} break;
 
 		case PLUGIN: {
-			try {
-				classLoader = getCorpusManager().getPluginClassLoader(source);
-			} catch(Exception e) {
-				throw new ModelException(corpus, ManifestErrorCode.IMPLEMENTATION_NOT_FOUND,
-						message+"Unknown plugin uid: "+source, e); //$NON-NLS-1$
-			}
+			classLoader = getCorpusManager().getPluginClassLoader(source);
+			if(classLoader==null)
+				throw new ModelException(getCorpus(), ManifestErrorCode.IMPLEMENTATION_NOT_FOUND,
+						message+"Unknown plugin uid: "+source);
 		} break;
 
 		case EXTERN: {
@@ -266,8 +270,8 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 			try {
 				clazz = classLoader.loadClass(classname);
 			} catch (ClassNotFoundException e) {
-				throw new ModelException(corpus, ManifestErrorCode.IMPLEMENTATION_NOT_FOUND,
-						message+"Failed to find custom implementation: "+getName(environment), e); //$NON-NLS-1$
+				throw new ModelException(getCorpus(), ManifestErrorCode.IMPLEMENTATION_NOT_FOUND,
+						message+"Failed to find custom implementation: "+classname, e);
 			}
 		}
 

@@ -21,12 +21,13 @@ package de.ims.icarus2.model.manifest.api;
 
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.transform_id;
+import static de.ims.icarus2.test.TestUtils.assertNotPresent;
+import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
 import static de.ims.icarus2.test.TestUtils.settings;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -56,13 +57,13 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 
 	public static Option mockOption(String id) {
 		Option option = mock(Option.class);
-		when(option.getId()).thenReturn(id);
+		when(option.getId()).thenReturn(Optional.of(id));
 		return option;
 	}
 
 	public static Identity mockIdentity(String id) {
 		Identity identity = mock(Identity.class);
-		when(identity.getId()).thenReturn(id);
+		when(identity.getId()).thenReturn(Optional.of(id));
 		return identity;
 	}
 
@@ -88,11 +89,11 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 	 */
 	@Test
 	default void testGetMemberManifest() throws Exception {
-		assertNull(createUnlocked().getMemberManifest());
-		assertNull(createTemplate(settings()).getMemberManifest());
+		assertNotPresent(createUnlocked().getMemberManifest());
+		assertNotPresent(createTemplate(settings()).getMemberManifest());
 
 		MemberManifest host = mockTypedManifest(MemberManifest.class);
-		assertEquals(host, createEmbedded(settings(), host).getMemberManifest());
+		assertOptionalEquals(host, createEmbedded(settings(), host).getMemberManifest());
 	}
 
 	/**
@@ -177,10 +178,11 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 	 */
 	@Test
 	default void testGetOption() {
-		assertDerivativeAccumulativeLookup(
+		assertDerivativeAccumulativeOptLookup(
+				settings(),
 				mockOption("id1"), mockOption("id2"),
 				OptionsManifest::getOption,
-				true, UNKNOWN_ID_CHECK,
+				true,
 				OptionsManifest::addOption,
 				transform_id(),
 				"unknown1");
@@ -236,6 +238,7 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 	@Test
 	default void testHasOption() {
 		assertDerivativeAccumulativeLookupContains(
+				settings(),
 				mockOption("id1"), mockOption("ids2"),
 				OptionsManifest::hasOption, true,
 				OptionsManifest::addOption,

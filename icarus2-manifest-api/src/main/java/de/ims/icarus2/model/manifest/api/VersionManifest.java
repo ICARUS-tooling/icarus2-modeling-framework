@@ -29,6 +29,8 @@ public interface VersionManifest extends Lockable, TypedManifest {
 	/**
 	 * Returns the format id that serves as a URI for a certain type
 	 * of version format.
+	 *
+	 * @see #DEFAULT_VERSION_FORMAT_ID
 	 */
 	String getFormatId();
 

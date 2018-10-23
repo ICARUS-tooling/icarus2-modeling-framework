@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static java.util.Objects.requireNonNull;
+import java.util.Optional;
 
 import de.ims.icarus2.model.manifest.api.Category;
 
@@ -26,13 +26,13 @@ import de.ims.icarus2.model.manifest.api.Category;
  */
 public class DefaultCategory extends DefaultModifiableIdentity implements Category {
 
-	private String namespace;
+	private Optional<String> namespace = Optional.empty();
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.Category#getNamespace()
 	 */
 	@Override
-	public String getNamespace() {
+	public Optional<String> getNamespace() {
 		return namespace;
 	}
 
@@ -43,8 +43,7 @@ public class DefaultCategory extends DefaultModifiableIdentity implements Catego
 	}
 
 	protected void setNamespace0(String namespace) {
-		requireNonNull(namespace);
-		this.namespace = namespace;
+		this.namespace = Optional.of(namespace);
 	}
 
 }

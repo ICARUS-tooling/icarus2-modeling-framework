@@ -18,10 +18,12 @@ package de.ims.icarus2.model.manifest.api;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
@@ -29,7 +31,6 @@ import de.ims.icarus2.util.access.AccessPolicy;
 import de.ims.icarus2.util.access.AccessRestriction;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.id.Identity;
-import de.ims.icarus2.util.id.UnknownIdentifierException;
 
 /**
  * Helper manifest (not describing a corpus member/entity of its own)
@@ -41,12 +42,9 @@ import de.ims.icarus2.util.id.UnknownIdentifierException;
 @AccessControl(AccessPolicy.DENY)
 public interface OptionsManifest extends Manifest, Embedded {
 
-	default MemberManifest getMemberManifest() {
+	default <M extends MemberManifest> Optional<M> getMemberManifest() {
 		return getHost();
 	}
-
-	@Override
-	MemberManifest getHost();
 
 	/**
 	 * Returns the names of all available options for the target
@@ -59,7 +57,8 @@ public interface OptionsManifest extends Manifest, Embedded {
 	default Set<String> getOptionIds() {
 		LazyCollection<String> result = LazyCollection.lazySet();
 
-		forEachOption(m -> result.add(m.getId()));
+		forEachOption(m -> result.add(m.getId().orElseThrow(Manifest.invalidId(
+				"Optiona does not declare a valid id: "+ManifestUtils.getName(m)))));
 
 		return result.getAsSet();
 	}
@@ -118,11 +117,9 @@ public interface OptionsManifest extends Manifest, Embedded {
 	 *
 	 * @param id
 	 * @return
-	 *
-	 * @throws UnknownIdentifierException if no option can be found for the given id
 	 */
 	@AccessRestriction(AccessMode.READ)
-	Option getOption(String id);
+	Optional<Option> getOption(String id);
 
 	@AccessRestriction(AccessMode.READ)
 	void forEachOption(Consumer<? super Option> action);
@@ -130,7 +127,8 @@ public interface OptionsManifest extends Manifest, Embedded {
 	@AccessRestriction(AccessMode.READ)
 	default void forEachLocalOption(Consumer<? super Option> action) {
 		forEachOption(o -> {
-			if(isLocalOption(o.getId())) {
+			if(isLocalOption(o.getId().orElseThrow(Manifest.invalidId(
+					"Option does not provide a proper id: "+ManifestUtils.getName(o))))) {
 				action.accept(o);
 			}
 		});
@@ -205,10 +203,6 @@ public interface OptionsManifest extends Manifest, Embedded {
 			return ManifestType.OPTION;
 		}
 
-		@Override
-		@AccessRestriction(AccessMode.READ)
-		String getId();
-
 		/**
 		 * Returns the default value for the property specified for this option
 		 *
@@ -216,7 +210,7 @@ public interface OptionsManifest extends Manifest, Embedded {
 		 * if the property has no default value assigned to it
 		 */
 		@AccessRestriction(AccessMode.READ)
-		Object getDefaultValue();
+		Optional<Object> getDefaultValue();
 
 		/**
 		 * Returns the type of this property. This method never
@@ -235,7 +229,7 @@ public interface OptionsManifest extends Manifest, Embedded {
 		 */
 		@Override
 		@AccessRestriction(AccessMode.READ)
-		String getName();
+		Optional<String> getName();
 
 		/**
 		 * Returns a localized description string of this property, that
@@ -248,7 +242,7 @@ public interface OptionsManifest extends Manifest, Embedded {
 		 */
 		@Override
 		@AccessRestriction(AccessMode.READ)
-		String getDescription();
+		Optional<String> getDescription();
 
 		/**
 		 *
@@ -256,7 +250,7 @@ public interface OptionsManifest extends Manifest, Embedded {
 		 * @return
 		 */
 		@AccessRestriction(AccessMode.READ)
-		ValueSet getSupportedValues();
+		Optional<ValueSet> getSupportedValues();
 
 		/**
 		 *
@@ -264,7 +258,7 @@ public interface OptionsManifest extends Manifest, Embedded {
 		 * @return
 		 */
 		@AccessRestriction(AccessMode.READ)
-		ValueRange getSupportedRange();
+		Optional<ValueRange> getSupportedRange();
 
 		/**
 		 * If the type of this option is {@link ValueType#EXTENSION} then this method
@@ -276,7 +270,7 @@ public interface OptionsManifest extends Manifest, Embedded {
 		 * @return
 		 */
 		@AccessRestriction(AccessMode.READ)
-		String getExtensionPointUid();
+		Optional<String> getExtensionPointUid();
 
 		/**
 		 * To support graphical visualizations in their job of presenting configuration
@@ -295,7 +289,7 @@ public interface OptionsManifest extends Manifest, Embedded {
 		 * @see #getOptionIds()
 		 */
 		@AccessRestriction(AccessMode.READ)
-		String getOptionGroupId();
+		Optional<String> getOptionGroupId();
 
 		/**
 		 * Returns whether or not the option in question should be published

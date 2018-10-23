@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.manifest.api;
 
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 
 import de.ims.icarus2.model.manifest.types.ValueType;
@@ -47,7 +48,7 @@ public interface ValueManifest extends Documentable, ModifiableIdentity, TypedMa
 	 *
 	 * @return
 	 */
-	Object getValue();
+	Optional<Object> getValue();
 
 	ValueType getValueType();
 

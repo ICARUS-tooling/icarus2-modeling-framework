@@ -19,22 +19,89 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestLocation;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestRegistry;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubId;
+import static de.ims.icarus2.test.TestUtils.DEFAULT;
+import static de.ims.icarus2.test.TestUtils.IDENTITY;
+import static de.ims.icarus2.test.TestUtils.NO_CHECK;
+import static de.ims.icarus2.test.TestUtils.NO_ILLEGAL;
+import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
+import static de.ims.icarus2.test.TestUtils.assertAccumulativeGetter;
+import static de.ims.icarus2.test.TestUtils.assertAccumulativeLookupContains;
+import static de.ims.icarus2.test.TestUtils.assertAccumulativeOptLookup;
+import static de.ims.icarus2.test.TestUtils.assertForEach;
+import static de.ims.icarus2.test.TestUtils.assertGetter;
+import static de.ims.icarus2.test.TestUtils.assertNotPresent;
+import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
+import static de.ims.icarus2.test.TestUtils.settings;
+import static de.ims.icarus2.test.TestUtils.unwrapGetter;
+import static java.util.Objects.requireNonNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.model.manifest.ManifestTestFeature;
+import de.ims.icarus2.model.manifest.api.CorpusManifest.Note;
+import de.ims.icarus2.test.TestSettings;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface CorpusManifestTest {
+public interface CorpusManifestTest<M extends CorpusManifest> extends MemberManifestTest<M> {
+
+	public static ContextManifest mockContextManifest(String id) {
+		return stubId(mockTypedManifest(ContextManifest.class), id);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.CORPUS_MANIFEST;
+	}
+
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
+	 */
+	@Override
+	default M createTestInstance(TestSettings settings) {
+		return createTestInstance(settings,
+				mockManifestLocation(settings.hasFeature(ManifestTestFeature.TEMPLATE)),
+				mockManifestRegistry());
+	}
+
+	public static <M extends CorpusManifest> BiConsumer<TestSettings, M> processor_makeParallel() {
+		return (settings, corpus) -> {
+			corpus.setParallel(true);
+		};
+	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.CorpusManifest#forEachRootContextManifest(java.util.function.Consumer)}.
 	 */
 	@Test
 	default void testForEachRootContextManifest() {
-		fail("Not yet implemented");
+		assertForEach(
+				createUnlocked(settings().processor(processor_makeParallel())),
+				mockContextManifest("context1"),
+				mockContextManifest("context2"),
+				(Function<M, Consumer<Consumer<? super ContextManifest>>>)m -> m::forEachRootContextManifest,
+				CorpusManifest::addRootContextManifest);
 	}
 
 	/**
@@ -42,7 +109,12 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testGetRootContextManifests() {
-		fail("Not yet implemented");
+		assertAccumulativeGetter(
+				createUnlocked(settings().processor(processor_makeParallel())),
+				mockContextManifest("context1"),
+				mockContextManifest("context2"),
+				CorpusManifest::getRootContextManifests,
+				CorpusManifest::addRootContextManifest);
 	}
 
 	/**
@@ -50,7 +122,27 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testGetRootContextManifest() {
-		fail("Not yet implemented");
+
+		ContextManifest context1 = mockContextManifest("context1");
+
+		ContextManifest root1 = mockContextManifest("root1");
+		ContextManifest root2 = mockContextManifest("root2");
+
+		M instance = createUnlocked();
+
+		assertNotPresent(instance.getRootContextManifest());
+
+		instance.addRootContextManifest(root1);
+		assertOptionalEquals(root1, instance.getRootContextManifest());
+
+		instance.addCustomContextManifest(context1);
+		assertOptionalEquals(root1, instance.getRootContextManifest());
+
+		instance.setParallel(true);
+
+		instance.addRootContextManifest(root2);
+
+		assertNotPresent(instance.getRootContextManifest());
 	}
 
 	/**
@@ -58,7 +150,29 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testIsRootContext() {
-		fail("Not yet implemented");
+
+		ContextManifest context1 = mockContextManifest("context1");
+
+		ContextManifest root1 = mockContextManifest("root1");
+		ContextManifest root2 = mockContextManifest("root2");
+
+		M instance = createUnlocked();
+
+		assertFalse(instance.isRootContext(root1));
+		assertFalse(instance.isRootContext(root2));
+		assertFalse(instance.isRootContext(context1));
+
+		instance.addRootContextManifest(root1);
+		assertTrue(instance.isRootContext(root1));
+
+		instance.addCustomContextManifest(context1);
+		assertTrue(instance.isRootContext(root1));
+
+		instance.setParallel(true);
+
+		instance.addRootContextManifest(root2);
+		assertTrue(instance.isRootContext(root2));
+		assertTrue(instance.isRootContext(root1));
 	}
 
 	/**
@@ -66,7 +180,12 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testForEachCustomContextManifest() {
-		fail("Not yet implemented");
+		assertForEach(
+				createUnlocked(settings()),
+				mockContextManifest("context1"),
+				mockContextManifest("context2"),
+				(Function<M, Consumer<Consumer<? super ContextManifest>>>)m -> m::forEachCustomContextManifest,
+				CorpusManifest::addCustomContextManifest);
 	}
 
 	/**
@@ -74,7 +193,12 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testGetCustomContextManifests() {
-		fail("Not yet implemented");
+		assertAccumulativeGetter(
+				createUnlocked(settings()),
+				mockContextManifest("context1"),
+				mockContextManifest("context2"),
+				CorpusManifest::getCustomContextManifests,
+				CorpusManifest::addCustomContextManifest);
 	}
 
 	/**
@@ -82,7 +206,22 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testForEachContextManifest() {
-		fail("Not yet implemented");
+		ContextManifest root = mockContextManifest("root");
+
+		BiConsumer<M, ContextManifest> adder = (corpus, context) -> {
+			if(context==root) {
+				corpus.addRootContextManifest(context);
+			} else {
+				corpus.addCustomContextManifest(context);
+			}
+		};
+
+		assertForEach(
+				createUnlocked(settings()),
+				root,
+				mockContextManifest("context2"),
+				(Function<M, Consumer<Consumer<? super ContextManifest>>>)m -> m::forEachContextManifest,
+				adder);
 	}
 
 	/**
@@ -90,15 +229,13 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testIsCustomContext() {
-		fail("Not yet implemented");
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.CorpusManifest#getHost()}.
-	 */
-	@Test
-	default void testGetHost() {
-		fail("Not yet implemented");
+		assertAccumulativeLookupContains(createUnlocked(),
+				mockContextManifest("context1"),
+				mockContextManifest("context2"),
+				CorpusManifest::isCustomContext,
+				NPE_CHECK,
+				CorpusManifest::addCustomContextManifest,
+				IDENTITY());
 	}
 
 	/**
@@ -106,7 +243,15 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testGetContextManifest() {
-		fail("Not yet implemented");
+		assertAccumulativeOptLookup(
+				createUnlocked(),
+				mockContextManifest("context1"),
+				mockContextManifest("context2"),
+				CorpusManifest::getContextManifest,
+				NPE_CHECK,
+				CorpusManifest::addCustomContextManifest,
+				unwrapGetter(ContextManifest::getId),
+				"layer3", "layer4");
 	}
 
 	/**
@@ -114,7 +259,40 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testGetLayerManifest() {
-		fail("Not yet implemented");
+
+		final Map<String, LayerManifest> layers = new HashMap<>();
+
+		ContextManifest context = mockContextManifest("context");
+
+		when(context.getLayerManifest(anyString())).thenAnswer(invocation -> {
+			String id = invocation.getArgument(0);
+
+			requireNonNull(id);
+
+			LayerManifest layer = layers.get(id);
+
+//			if(layer==null)
+//				throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "TEST EXCEPTION !!!");
+
+			return Optional.ofNullable(layer);
+		});
+
+		BiConsumer<M, LayerManifest> adder = (corpus, layer) -> {
+			layers.put(layer.getId().get(), layer);
+		};
+
+		M instance = createUnlocked();
+		instance.addRootContextManifest(context);
+
+		assertAccumulativeOptLookup(
+				instance,
+				LayerManifestTest.mockLayerManifest("layer1"),
+				LayerManifestTest.mockLayerManifest("layer2"),
+				CorpusManifest::getLayerManifest,
+				NPE_CHECK,
+				adder,
+				unwrapGetter(LayerManifest::getId),
+				"layer3", "layer4");
 	}
 
 	/**
@@ -122,7 +300,12 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testIsEditable() {
-		fail("Not yet implemented");
+		assertGetter(createUnlocked(),
+				Boolean.TRUE,
+				Boolean.FALSE,
+				DEFAULT(Boolean.valueOf(CorpusManifest.DEFAULT_EDITABLE_VALUE)),
+				CorpusManifest::isEditable,
+				CorpusManifest::setEditable);
 	}
 
 	/**
@@ -130,7 +313,12 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testIsParallel() {
-		fail("Not yet implemented");
+		assertGetter(createUnlocked(),
+				Boolean.TRUE,
+				Boolean.FALSE,
+				DEFAULT(Boolean.valueOf(CorpusManifest.DEFAULT_PARALLEL_VALUE)),
+				CorpusManifest::isParallel,
+				CorpusManifest::setParallel);
 	}
 
 	/**
@@ -138,7 +326,12 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testForEachNote() {
-		fail("Not yet implemented");
+		assertForEach(
+				createUnlocked(),
+				mock(Note.class),
+				mock(Note.class),
+				(Function<M, Consumer<Consumer<? super Note>>>)m -> m::forEachNote,
+				CorpusManifest::addNote);
 	}
 
 	/**
@@ -146,7 +339,12 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testGetNotes() {
-		fail("Not yet implemented");
+		assertAccumulativeGetter(
+				createUnlocked(),
+				mock(Note.class),
+				mock(Note.class),
+				CorpusManifest::getNotes,
+				CorpusManifest::addNote);
 	}
 
 	/**
@@ -154,7 +352,12 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testAddRootContextManifest() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeAdd(
+				settings().processor(processor_makeParallel()),
+				CorpusManifest::addRootContextManifest,
+				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, DUPLICATE_ID_CHECK,
+				mockContextManifest("context1"),
+				mockContextManifest("context2"));
 	}
 
 	/**
@@ -162,7 +365,14 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testRemoveRootContextManifest() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeRemove(
+				settings().processor(processor_makeParallel()),
+				CorpusManifest::addRootContextManifest,
+				CorpusManifest::removeRootContextManifest,
+				CorpusManifest::getRootContextManifests,
+				NPE_CHECK, UNKNOWN_ID_CHECK,
+				mockContextManifest("context1"),
+				mockContextManifest("context2"));
 	}
 
 	/**
@@ -170,7 +380,12 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testAddCustomContextManifest() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeAdd(
+				settings(),
+				CorpusManifest::addCustomContextManifest,
+				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, DUPLICATE_ID_CHECK,
+				mockContextManifest("context1"),
+				mockContextManifest("context2"));
 	}
 
 	/**
@@ -178,7 +393,14 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testRemoveCustomContextManifest() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeRemove(
+				settings(),
+				CorpusManifest::addCustomContextManifest,
+				CorpusManifest::removeCustomContextManifest,
+				CorpusManifest::getCustomContextManifests,
+				NPE_CHECK, UNKNOWN_ID_CHECK,
+				mockContextManifest("context1"),
+				mockContextManifest("context2"));
 	}
 
 	/**
@@ -186,7 +408,12 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testAddNote() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeAdd(
+				settings(),
+				CorpusManifest::addNote,
+				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, DUPLICATE_ID_CHECK,
+				mock(Note.class),
+				mock(Note.class));
 	}
 
 	/**
@@ -194,7 +421,14 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testRemoveNote() {
-		fail("Not yet implemented");
+		assertLockableAccumulativeRemove(
+				settings(),
+				CorpusManifest::addNote,
+				CorpusManifest::removeNote,
+				CorpusManifest::getNotes,
+				NPE_CHECK, UNKNOWN_ID_CHECK,
+				mock(Note.class),
+				mock(Note.class));
 	}
 
 	/**
@@ -202,7 +436,7 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testSetEditable() {
-		fail("Not yet implemented");
+		assertLockableSetter(settings(), CorpusManifest::setEditable);
 	}
 
 	/**
@@ -210,7 +444,7 @@ public interface CorpusManifestTest {
 	 */
 	@Test
 	default void testSetParallel() {
-		fail("Not yet implemented");
+		assertLockableSetter(settings(), CorpusManifest::setParallel);
 	}
 
 }

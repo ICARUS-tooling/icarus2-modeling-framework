@@ -28,6 +28,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
+
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -298,7 +300,7 @@ class StringUtilTest {
 		String s = "test123";
 
 		Identity identity = mock(Identity.class);
-		when(identity.getName()).thenReturn(s);
+		when(identity.getName()).thenReturn(Optional.of(s));
 
 		Identifiable identifiable = mock(Identifiable.class);
 		when(identifiable.getIdentity()).thenReturn(identity);

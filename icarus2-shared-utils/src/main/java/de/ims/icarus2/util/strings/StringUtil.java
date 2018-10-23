@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -556,10 +557,12 @@ public final class StringUtil {
 		if(obj instanceof Identifiable) {
 			obj = ((Identifiable)obj).getIdentity();
 		}
-		if(obj instanceof Identity)
-			return ((Identity)obj).getName();
 
-		return obj.toString();
+		Optional<String> opt = Optional.empty();
+		if(obj instanceof Identity)
+			opt = ((Identity)obj).getName();
+
+		return opt.orElseGet(obj::toString);
 	}
 
 	/**

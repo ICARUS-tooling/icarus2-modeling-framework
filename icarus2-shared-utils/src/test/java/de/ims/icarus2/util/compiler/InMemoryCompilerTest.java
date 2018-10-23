@@ -47,7 +47,7 @@ public class InMemoryCompilerTest {
 
 		assertTrue(compiler.compile(collector), "Compilation failed");
 
-		ClassLoader classLoader = compiler.getFileManager().getClassLoader(null);
+		ClassLoader classLoader = compiler.getFileManager().getSharedClassLoader();
 
 		System.out.println(classLoader.loadClass(className).newInstance());
 	}

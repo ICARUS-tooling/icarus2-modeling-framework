@@ -16,12 +16,16 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Collection;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import de.ims.icarus2.model.manifest.api.events.ManifestEvents;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.events.EventManager;
 import de.ims.icarus2.util.events.Events;
@@ -40,7 +44,7 @@ import de.ims.icarus2.util.events.Events;
  * registry or until {@link #resetUIDs() reset} manually.
  * <p>
  * Clients that wish to be notified about changes to the registry can subscribe by
- * {@link #addListener(String, de.ims.icarus2.util.events.SimpleEventListener) adding a listener}.
+ * {@link #addListener(de.ims.icarus2.util.events.SimpleEventListener, String) adding a listener}.
  * The registry will fire {@link Events#ADD add}, {@link Events#REMOVE remove} and {@link Events#CHANGE change} events
  * <b>before</b> the respective changes are made, giving subscribed listeners the chance to interrupt illegal changes
  * (typically a {@link CorpusManager manager} responsible for a registry will subscribe and intercept changes so that
@@ -66,11 +70,9 @@ public interface ManifestRegistry extends EventManager {
 
 	/**
 	 * Resets whatever mechanism this registry is using to create {@code unique ids}
-	 * and allows for the creation of fresh ids even if they have been used prior to
-	 * the reset. Note that this method should be used very carefully and only when
-	 * there are absolutely no live corpora instantiated and active! Ignoring this
-	 * constraint might result in unstable behavior when multiple members of the
-	 * framework happen to be assigned the same {@code uid}.
+	 * and allows for the creation of fresh ids without conflicting with currently
+	 * registered live corpora or templates.
+	 *
 	 */
 	void resetUIDs();
 
@@ -87,6 +89,7 @@ public interface ManifestRegistry extends EventManager {
 	}
 
 	default Collection<LayerType> getLayerTypes(Predicate<? super LayerType> p) {
+		requireNonNull(p);
 		LazyCollection<LayerType> result = LazyCollection.lazyList();
 
 		forEachLayerType(m -> {if(p.test(m)) result.add(m);});
@@ -94,7 +97,7 @@ public interface ManifestRegistry extends EventManager {
 		return result.getAsList();
 	}
 
-	LayerType getLayerType(String name);
+	Optional<LayerType> getLayerType(String name);
 
 	void addLayerType(LayerType layerType);
 
@@ -114,7 +117,7 @@ public interface ManifestRegistry extends EventManager {
 
 	Set<ManifestLocation> getCorpusSources();
 
-	CorpusManifest getCorpusManifest(String id);
+	Optional<CorpusManifest> getCorpusManifest(String id);
 
 	/**
 	 * Returns {@code true} in case there are other manifests referencing the given one.
@@ -122,6 +125,18 @@ public interface ManifestRegistry extends EventManager {
 	 * the manifest to be removed is still required by others. This is to prevent inconsistencies
 	 * in the registry. In addition many 'setter' methods of various manifest type will also
 	 * check if a modification is actually legit by calling this method.
+	 * <p>
+	 * A manifest is supposed to be locked if at least one of the following conditions holds:
+	 * <ul>
+	 * <li>It is a {@link Manifest#isTemplate() template} and another manifest (template or live instance) is
+	 * {@link Manifest#getTemplate() referencing it as a template}.</li>
+	 * <li>It is an {@link OptionsManifest} and another {@link MemberManifest} is using it.</li>
+	 * <li>It is a {@link LayerManifest} and referenced by a live {@link LayerType} as its
+	 * {@link LayerType#getSharedManifest() shared manifest}.</li>
+	 * <li>It is a {@link ContextManifest} actively used in a {@link CorpusManifest}.</li>
+	 * <li>It is a {@link LayerManifest} and actively used in a {@link ContextManifest}.</li>
+	 * <li>It is a {@link DriverManifest} and actively used in a {@link ContextManifest}.</li>
+	 * </ul>
 	 *
 	 * @param manifest
 	 * @return
@@ -133,7 +148,8 @@ public interface ManifestRegistry extends EventManager {
 	default Set<String> getCorpusIds() {
 		LazyCollection<String> result = LazyCollection.lazySet();
 
-		forEachCorpus(m -> result.add(m.getId()));
+		forEachCorpus(m -> result.add(m.getId().orElseThrow(Manifest.invalidId(
+				"Corpus does not declare a valid id: "+ManifestUtils.getName(m)))));
 
 		return result.getAsSet();
 	}
@@ -147,6 +163,7 @@ public interface ManifestRegistry extends EventManager {
 	}
 
 	default Collection<CorpusManifest> getCorpusManifests(Predicate<? super CorpusManifest> p) {
+		requireNonNull(p);
 		LazyCollection<CorpusManifest> result = LazyCollection.lazyList();
 
 		forEachCorpus(m -> {if(p.test(m)) result.add(m);});
@@ -155,17 +172,18 @@ public interface ManifestRegistry extends EventManager {
 	}
 
 	default Collection<CorpusManifest> getCorpusManifestsForSource(ManifestLocation manifestLocation) {
+		requireNonNull(manifestLocation);
 		return getCorpusManifests(m -> manifestLocation.equals(m.getManifestLocation()));
 	}
 
 	boolean hasTemplate(String id);
 
-	Manifest getTemplate(String id);
+	Optional<Manifest> getTemplate(String id);
 
 
-	void addContextManifest(CorpusManifest corpus, ContextManifest context);
+//	void addContextManifest(CorpusManifest corpus, ContextManifest context);
 
-	void removeContextManifest(CorpusManifest corpus, ContextManifest context);
+//	void removeContextManifest(CorpusManifest corpus, ContextManifest context);
 
 	// Notification methods
 
@@ -192,6 +210,7 @@ public interface ManifestRegistry extends EventManager {
 	 */
 	@SuppressWarnings("unchecked")
 	default <M extends Manifest> Collection<M> getTemplates(Predicate<? super M> p) {
+		requireNonNull(p);
 		LazyCollection<M> result = LazyCollection.lazyList();
 
 		forEachTemplate(m -> {if(p.test((M) m)) result.add((M) m);});
@@ -221,6 +240,7 @@ public interface ManifestRegistry extends EventManager {
 	 * @see #getTemplatesOfClass(Class)
 	 */
 	default Collection<Manifest> getTemplatesOfType(ManifestType type) {
+		requireNonNull(type);
 		return getTemplates(m -> m.getManifestType()==type);
 	}
 
@@ -230,10 +250,12 @@ public interface ManifestRegistry extends EventManager {
 	 * @throws NullPointerException if the {@code clazz} argument is {@code null}
 	 */
 	default <M extends Manifest> Collection<M> getTemplatesOfClass(Class<M> clazz) {
+		requireNonNull(clazz);
 		return getTemplates(m -> clazz.isInstance(m));
 	}
 
 	default Collection<Manifest> getTemplatesForSource(ManifestLocation manifestLocation) {
+		requireNonNull(manifestLocation);
 		return getTemplates(m -> manifestLocation.equals(m.getManifestLocation()));
 	}
 

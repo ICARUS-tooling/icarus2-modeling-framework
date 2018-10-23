@@ -25,6 +25,7 @@ import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestLocati
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestRegistry;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubTemplateContext;
+import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -98,7 +99,7 @@ public interface EmbeddedMemberManifestTest<M extends MemberManifest & Embedded>
 			host = createMockedHost(location, registry, hostTypes.iterator().next());
 		}
 
-		M manifest = createHosted(settings.withFeatures(ManifestTestFeature.EMBEDDED), location, registry, host);
+		M manifest = createHosted(settings.features(ManifestTestFeature.EMBEDDED), location, registry, host);
 
 		if(templateContextRequested) {
 			assertTrue(stubTemplateContext(manifest), "Host chain cannot be stubbed as template");
@@ -129,7 +130,7 @@ public interface EmbeddedMemberManifestTest<M extends MemberManifest & Embedded>
 
 			assertSame(location, manifest.getManifestLocation());
 			assertSame(registry, manifest.getRegistry());
-			assertSame(host, manifest.getHost());
+			assertOptionalEquals(host, manifest.getHost());
 		}
 	}
 
@@ -149,7 +150,7 @@ public interface EmbeddedMemberManifestTest<M extends MemberManifest & Embedded>
 
 			assertSame(location, manifest.getManifestLocation());
 			assertSame(registry, manifest.getRegistry());
-			assertSame(host, manifest.getHost());
+			assertOptionalEquals(host, manifest.getHost());
 		}
 	}
 
@@ -168,7 +169,7 @@ public interface EmbeddedMemberManifestTest<M extends MemberManifest & Embedded>
 			M manifest = create(
 					new Class<?>[]{manifestType.getBaseClass()}, host);
 
-			assertSame(host, manifest.getHost());
+			assertOptionalEquals(host, manifest.getHost());
 			assertNotNull(manifest.getRegistry());
 			assertNotNull(manifest.getManifestLocation());
 		}
@@ -184,7 +185,7 @@ public interface EmbeddedMemberManifestTest<M extends MemberManifest & Embedded>
 			M manifest = create(
 					new Class<?>[]{hostClass}, host);
 
-			assertSame(host, manifest.getHost());
+			assertOptionalEquals(host, manifest.getHost());
 			assertNotNull(manifest.getRegistry());
 			assertNotNull(manifest.getManifestLocation());
 		}

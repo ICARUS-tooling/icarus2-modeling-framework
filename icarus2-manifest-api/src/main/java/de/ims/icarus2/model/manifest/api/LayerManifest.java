@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.manifest.api;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.util.access.AccessControl;
@@ -45,7 +46,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
 public interface LayerManifest extends MemberManifest, Embedded {
 
 	@AccessRestriction(AccessMode.READ)
-	ContextManifest getContextManifest();
+	Optional<ContextManifest> getContextManifest();
 
 	/**
 	 * Returns the group manifest this layer is a part of.
@@ -53,13 +54,9 @@ public interface LayerManifest extends MemberManifest, Embedded {
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	default LayerGroupManifest getGroupManifest() {
+	default <M extends LayerGroupManifest> Optional<M> getGroupManifest() {
 		return getHost();
 	}
-
-
-	@Override
-	LayerGroupManifest getHost();
 
 	/**
 	 * Returns the optional layer type that acts as another abstraction mechanism
@@ -71,7 +68,7 @@ public interface LayerManifest extends MemberManifest, Embedded {
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	LayerType getLayerType();
+	Optional<LayerType> getLayerType();
 
 	boolean isLocalLayerType();
 
@@ -133,12 +130,16 @@ public interface LayerManifest extends MemberManifest, Embedded {
 		 *
 		 * @return
 		 */
-		default LayerManifest getLayerManifest() {
-			return getHost();
-		}
+		LayerManifest getLayerManifest();
 
+		/**
+		 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
+		 */
+		@SuppressWarnings("unchecked")
 		@Override
-		LayerManifest getHost();
+		default <M extends TypedManifest> Optional<M> getHost() {
+			return (Optional<M>) Optional.of(getLayerManifest());
+		}
 
 		/**
 		 * When the target layer resides in a foreign context and was resolved using
@@ -146,7 +147,7 @@ public interface LayerManifest extends MemberManifest, Embedded {
 		 * case of a local layer being targeted, the return value is {@code null}.
 		 * @return
 		 */
-		ContextManifest.PrerequisiteManifest getPrerequisite();
+		Optional<ContextManifest.PrerequisiteManifest> getPrerequisite();
 
 		/**
 		 * Returns the actual target layer manifest this manifest refers to. Note that the
@@ -159,6 +160,6 @@ public interface LayerManifest extends MemberManifest, Embedded {
 		 *
 		 * @return
 		 */
-		LayerManifest getResolvedLayerManifest();
+		Optional<LayerManifest> getResolvedLayerManifest();
 	}
 }

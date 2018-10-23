@@ -20,7 +20,6 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
-import static de.ims.icarus2.util.strings.StringUtil.getName;
 import static java.util.Objects.requireNonNull;
 
 import java.io.Closeable;
@@ -96,6 +95,7 @@ import de.ims.icarus2.model.api.members.item.Item.ManagedItem;
 import de.ims.icarus2.model.api.registry.LayerMemberFactory;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
 import de.ims.icarus2.model.standard.driver.ChunkConsumer;
@@ -591,7 +591,9 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		if(itemLayer!=blockHandler.getItemLayer())
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					Messages.mismatchMessage("Unexpected layer", getName(itemLayer), getName(blockHandler.getItemLayer())));
+					Messages.mismatchMessage("Unexpected layer",
+							ManifestUtils.getName(itemLayer),
+							ManifestUtils.getName(blockHandler.getItemLayer())));
 
 		// Collect basic caches
 		Map<ItemLayer, InputCache> caches = createCaches(itemLayer.getLayerGroup(), null);

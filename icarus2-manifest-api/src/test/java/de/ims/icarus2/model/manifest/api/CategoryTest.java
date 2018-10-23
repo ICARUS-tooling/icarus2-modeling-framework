@@ -19,8 +19,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static de.ims.icarus2.test.TestUtils.assertNotPresent;
+import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
 
 import org.junit.jupiter.api.Test;
 
@@ -39,12 +39,12 @@ public interface CategoryTest<C extends Category> extends IdentityTest<C> {
 	default void testGetNamespace() {
 		C empty = createEmpty();
 		if(empty!=null) {
-			assertNull(empty.getNamespace());
+			assertNotPresent(empty.getNamespace());
 		}
 
 		C withNamespace = createWithNamespace("namespace");
 		if(withNamespace!=null) {
-			assertEquals("namespace", withNamespace.getNamespace());
+			assertOptionalEquals("namespace", withNamespace.getNamespace());
 		}
 	}
 

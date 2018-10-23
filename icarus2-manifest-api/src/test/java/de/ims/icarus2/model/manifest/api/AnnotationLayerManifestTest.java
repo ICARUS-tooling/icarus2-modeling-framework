@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -43,7 +44,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	public static AnnotationManifest mockAnnotationManifest(String key) {
 		assertNotNull(key);
 		AnnotationManifest manifest = mock(AnnotationManifest.class);
-		when(manifest.getKey()).thenReturn(key);
+		when(manifest.getKey()).thenReturn(Optional.of(key));
 		return manifest;
 	}
 
@@ -53,7 +54,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	 * its {@link AnnotationManifest#getKey() key}.
 	 */
 	public static <I extends AnnotationManifest> Function<I, String> transform_key(){
-		return i -> i.getKey();
+		return i -> i.getKey().orElseThrow(AssertionError::new);
 	}
 
 	/**
@@ -113,10 +114,11 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	 */
 	@Test
 	default void testGetAnnotationManifest() {
-		assertDerivativeAccumulativeLookup(
+		assertDerivativeAccumulativeOptLookup(
+				settings(),
 				mockAnnotationManifest("key1"), mockAnnotationManifest("key2"),
 				AnnotationLayerManifest::getAnnotationManifest,
-				true, UNKNOWN_ID_CHECK,
+				true,
 				AnnotationLayerManifest::addAnnotationManifest,
 				transform_key(),
 				"unknownkey1");
@@ -149,7 +151,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	 */
 	@Test
 	default void testGetDefaultKey() {
-		assertDerivativeGetter(settings(), "key1", "key2", null,
+		assertDerivativeOptGetter(settings(), "key1", "key2", null,
 				AnnotationLayerManifest::getDefaultKey,
 				AnnotationLayerManifest::setDefaultKey);
 	}

@@ -21,25 +21,34 @@ import static java.util.Objects.requireNonNull;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
+import javax.annotation.Nullable;
 import javax.swing.Icon;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.Category;
+import de.ims.icarus2.model.manifest.api.Documentable;
 import de.ims.icarus2.model.manifest.api.Documentation;
 import de.ims.icarus2.model.manifest.api.Embedded;
+import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.OptionsManifest;
 import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
+import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.collections.CollectionUtils;
+import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.lang.ClassUtils;
 import it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet;
 
@@ -51,47 +60,133 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet;
  *
  */
 //FIXME currently implementing Embedded on this level is a simplification
-public abstract class AbstractMemberManifest<M extends MemberManifest> extends AbstractManifest<M> implements MemberManifest, Embedded {
+public abstract class AbstractMemberManifest<M extends MemberManifest, H extends TypedManifest>
+		extends AbstractManifest<M> implements MemberManifest, Embedded {
 
-	private String name;
-	private String description;
-	private Icon icon;
+	private Optional<String> name = Optional.empty();
+	private Optional<String> description = Optional.empty();
+	private Optional<Icon> icon = Optional.empty();
+	private final Optional<H> host;
 
 	private final Set<Category> categories = new ObjectOpenCustomHashSet<>(Category.HASH_STRATEGY);
 
 	private final Map<String, Property> properties = new HashMap<>();
-	private OptionsManifest optionsManifest;
-	private Documentation documentation;
+	private Optional<OptionsManifest> optionsManifest = Optional.empty();
+	private Optional<Documentation> documentation = Optional.empty();
 
 	/**
-	 * @param manifestLocation
-	 * @param registry
+	 * Fetch the {@link Manifest} to be used instead of the {@code host} environment
+	 * and throw expection if not present.
+	 *
+	 * @param host
+	 * @param properSource
+	 * @return
+	 */
+	private static <H extends TypedManifest> Manifest properSource(H host,
+			Function<H, ? extends Manifest> properSource) {
+		requireNonNull(host);
+		requireNonNull(properSource);
+
+		Manifest source = properSource.apply(host);
+		if(source==null)
+			throw new ManifestException(ManifestErrorCode.MANIFEST_INVALID_ENVIRONMENT,
+					"Failed to obtain proper source for manifest location and registry from host: "+ManifestUtils.getName(host));
+
+		return source;
+	}
+
+	private static <H extends TypedManifest> ManifestRegistry registryFromSource(H host,
+			Function<H, ? extends Manifest> properRegistrySource) {
+		return properSource(host, properRegistrySource).getRegistry();
+	}
+
+	private static <H extends TypedManifest> ManifestLocation locationFromSource(H host,
+			Function<H, ? extends Manifest> properRegistrySource) {
+		return properSource(host, properRegistrySource).getManifestLocation();
+	}
+
+	protected static final <H extends Manifest> Function<H, Manifest> hostIdentity() {
+		return host -> host;
+	}
+
+	/**
+	 * Constructor for stand-alone manifests without a host environment.
+	 *
+	 * @param manifestLocation obligatory {@link ManifestLocation} for this manifest
+	 * @param registry obligatory {@link ManifestRegistry} for this manifest
 	 */
 	protected AbstractMemberManifest(ManifestLocation manifestLocation,
 			ManifestRegistry registry) {
 		super(manifestLocation, registry);
+
+		this.host = Optional.empty();
+	}
+
+	/**
+	 * Constructor for situations where the host environment is optional.
+	 *
+	 * @param manifestLocation obligatory {@link ManifestLocation} for this manifest
+	 * @param registry obligatory {@link ManifestRegistry} for this manifest
+	 * @param host optional host environment
+	 */
+	protected AbstractMemberManifest(ManifestLocation manifestLocation,
+			ManifestRegistry registry, H host,
+			Class<? extends H> expectedHostClass) {
+		super(manifestLocation, registry);
+
+		Manifest.verifyEnvironment(manifestLocation, host, expectedHostClass);
+
+		this.host = Optional.ofNullable(host);
+	}
+
+	/**
+	 * Constructor solely relying on the presence of a properly initialized
+	 * host environment. Due to the fact that not every {@link TypedManifest}
+	 * necessarily provides direct access to a valid {@link ManifestRegistry}
+	 * and {@link ManifestLocation}, this constructor additionally expects
+	 * a function that retrieves the closest {@link Manifest} in the existing
+	 * hierarchy to obtain instances of those two.
+	 *
+	 * @param host  the obligatory host environment
+	 * @param properRegistrySource the means of obtaining the closest proper
+	 * {@link Manifest} instance in the existing hierarchy
+	 */
+	protected AbstractMemberManifest(H host, Function<H, Manifest> properRegistrySource,
+			Class<? extends H> expectedHostClass) {
+		super(locationFromSource(host, properRegistrySource),
+				registryFromSource(host, properRegistrySource));
+
+		Manifest.verifyEnvironment(locationFromSource(host, properRegistrySource),
+				host, expectedHostClass);
+
+		this.host = Optional.of(host);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
+	 */
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T extends TypedManifest> Optional<T> getHost() {
+		return (Optional<T>) host;
 	}
 
 	@Override
 	protected boolean isTopLevel() {
-		return getHost()==null;
+		return !getHost().isPresent();
 	}
 
 	@Override
 	public boolean isEmpty() {
-		return properties.isEmpty() && optionsManifest==null && documentation==null;
+		return properties.isEmpty() && !optionsManifest.isPresent() && !documentation.isPresent();
 	}
 
 	/**
 	 * @return the documentation
 	 */
 	@Override
-	public Documentation getDocumentation() {
-		Documentation documentation = this.documentation;
-		if(documentation==null && hasTemplate()) {
-			documentation = getTemplate().getDocumentation();
-		}
-		return documentation;
+	public Optional<Documentation> getDocumentation() {
+		return getDerivable(documentation, Documentable::getDocumentation);
 	}
 
 	/**
@@ -105,37 +200,31 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	}
 
 	protected void setDocumentation0(Documentation documentation) {
-		requireNonNull(documentation);
-
-		this.documentation = documentation;
+		this.documentation = Optional.of(documentation);
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ModifiableManifest#getOptionsManifest()
 	 */
 	@Override
-	public OptionsManifest getOptionsManifest() {
-		OptionsManifest result = this.optionsManifest;
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getOptionsManifest();
-		}
-		return result;
+	public Optional<OptionsManifest> getOptionsManifest() {
+		return getDerivable(optionsManifest, MemberManifest::getOptionsManifest);
 	}
 
 	/**
 	 * @param optionsManifest the optionsManifest to set
 	 */
 	@Override
-	public void setOptionsManifest(OptionsManifest optionsManifest) {
+	public void setOptionsManifest(@Nullable OptionsManifest optionsManifest) {
 		checkNotLocked();
 
 		setOptionsManifest0(optionsManifest);
 	}
 
-	protected void setOptionsManifest0(OptionsManifest optionsManifest) {
+	protected void setOptionsManifest0(@Nullable OptionsManifest optionsManifest) {
 		// Former contract contained a null check
 
-		this.optionsManifest = optionsManifest;
+		this.optionsManifest = Optional.ofNullable(optionsManifest);
 	}
 
 	@Override
@@ -182,19 +271,10 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	 * @see de.ims.icarus2.model.manifest.api.MemberManifest#getProperty(java.lang.String)
 	 */
 	@Override
-	public Property getProperty(String name) {
+	public Optional<Property> getProperty(String name) {
 		requireNonNull(name);
 
-		Property property = properties.get(name);
-
-		if(property==null && hasTemplate()) {
-			property = getTemplate().getProperty(name);
-		}
-
-		if(property==null)
-			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "No such property: "+name);
-
-		return property;
+		return getDerivable(Optional.ofNullable(properties.get(name)), t -> t.getProperty(name));
 	}
 
 	@Override
@@ -216,16 +296,18 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 
 		PropertyImpl property = new PropertyImpl(name, valueType);
 
-		if(optionsManifest!=null && optionsManifest.hasOption(name)) {
-			Option option = optionsManifest.getOption(name);
+		optionsManifest.ifPresent(m -> {
+			if(m.hasOption(name)) {
+				Option option = m.getOption(name).get();
 
-			if(valueType!=option.getValueType())
-				throw new ManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
-						Messages.mismatchMessage("Value type not compatible with declared option manifest",
-								option.getValueType(), valueType));
+				if(valueType!=option.getValueType())
+					throw new ManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
+							Messages.mismatchMessage("Value type not compatible with declared option manifest",
+									option.getValueType(), valueType));
 
-			property.setOption(option);
-		}
+				property.setOption(option);
+			}
+		});
 
 		property.setValueType(valueType);
 		property.setMultiValue(multiValue);
@@ -263,7 +345,8 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 
 	protected void setPropertyValue0(String name, Object value) {
 
-		Property property = getProperty(name);
+		Property property = getProperty(name)
+				.orElseThrow(Manifest.unknownId("No such property: "+name));
 
 		/* Make sure that we only ever modify local properties!
 		 * Side effect of this strategy is that after modifying
@@ -279,16 +362,9 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 		property.setValue(value);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	public <V extends Object> V getPropertyValue(String name) {
-		if(!hasProperty(name)) {
-			return null;
-		}
-
-		Property property = getProperty(name);
-
-		return (V) property.getValue();
+	public <V extends Object> Optional<V> getPropertyValue(String name) {
+		return getProperty(name).flatMap(Property::getValue);
 	}
 
 	/**
@@ -340,12 +416,8 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	}
 
 	@Override
-	public String getName() {
-		String name = this.name;
-		if(name==null && hasTemplate()) {
-			name = getTemplate().getName();
-		}
-		return name;
+	public Optional<String> getName() {
+		return getDerivable(name, Identity::getName);
 	}
 
 	@Override
@@ -356,16 +428,12 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	}
 
 	protected void setName0(String name) {
-		this.name = requireNonNull(name);
+		this.name = Optional.ofNullable(name);
 	}
 
 	@Override
-	public String getDescription() {
-		String description = this.description;
-		if(description==null && hasTemplate()) {
-			description = getTemplate().getDescription();
-		}
-		return description;
+	public Optional<String> getDescription() {
+		return getDerivable(description, Identity::getDescription);
 	}
 
 	@Override
@@ -376,16 +444,12 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	}
 
 	protected void setDescription0(String description) {
-		this.description = requireNonNull(description);
+		this.description = Optional.ofNullable(description);
 	}
 
 	@Override
-	public Icon getIcon() {
-		Icon icon = this.icon;
-		if(icon==null && hasTemplate()) {
-			icon = getTemplate().getIcon();
-		}
-		return icon;
+	public Optional<Icon> getIcon() {
+		return getDerivable(icon, Identity::getIcon);
 	}
 
 	@Override
@@ -396,12 +460,12 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	}
 
 	protected void setIcon0(Icon icon) {
-		this.icon = requireNonNull(icon);
+		this.icon = Optional.of(icon);
 	}
 
 	@Override
-	public void lock() {
-		super.lock();
+	protected void lockNested() {
+		super.lockNested();
 
 		lockNested(optionsManifest, documentation);
 
@@ -416,9 +480,9 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 	public static class PropertyImpl extends AbstractLockable implements Property {
 
 		private String name;
-		private Object value;
+		private Optional<Object> value = Optional.empty();
 		private ValueType valueType;
-		private Option option;
+		private Optional<Option> option = Optional.empty();
 		private boolean multiValue;
 
 		public PropertyImpl(String name, ValueType valueType) {
@@ -430,9 +494,9 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 			requireNonNull(source);
 
 			setValueType(source.getValueType());
-			setOption(source.getOption());
+			this.option = source.getOption();
 			setName(source.getName());
-			setValue(source.getValue());
+			this.value = source.getValue();
 			setMultiValue(source.isMultiValue());
 		}
 
@@ -442,7 +506,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 				Property result = (Property) super.clone();
 
 				if(value!=null) {
-					result.setValue(ClassUtils.tryClone(value));
+					result.setValue(value.map(ClassUtils::tryClone).orElse(null));
 				}
 
 				return result;
@@ -463,14 +527,15 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 		/**
 		 * @see de.ims.icarus2.model.manifest.api.MemberManifest.Property#getValue()
 		 */
+		@SuppressWarnings("unchecked")
 		@Override
-		public Object getValue() {
-			Object result = value;
-			if(result==null && option!=null) {
-				result = option.getDefaultValue();
+		public <V extends Object> Optional<V> getValue() {
+			Optional<Object> result = value;
+			if(!result.isPresent()) {
+				result = option.flatMap(Option::getDefaultValue);
 			}
 
-			return result;
+			return (Optional<V>) result;
 		}
 
 		/**
@@ -492,8 +557,8 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 			}
 
 			ValueType valueType = this.valueType;
-			if(valueType==null && option!=null) {
-				valueType = option.getValueType();
+			if(valueType==null) {
+				valueType = option.map(Option::getValueType).orElse(null);
 			}
 
 			if(valueType!=null) {
@@ -511,24 +576,24 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 		 * @see de.ims.icarus2.model.manifest.api.MemberManifest.Property#setValue(java.lang.Object)
 		 */
 		@Override
-		public void setValue(Object value) {
+		public void setValue(@Nullable Object value) {
 			checkValue(value);
 
-			this.value = value;
+			this.value = Optional.ofNullable(value);
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.manifest.api.MemberManifest.Property#getOption()
 		 */
 		@Override
-		public Option getOption() {
+		public Optional<Option> getOption() {
 			return option;
 		}
 
-		public void setOption(Option option) {
-			this.option = option;
+		public void setOption(@Nullable Option option) {
+			this.option = Optional.ofNullable(option);
 
-			checkValue(value);
+			checkValue(value.orElse(null));
 		}
 
 		public void setName(String name) {
@@ -536,10 +601,10 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 			this.name = name;
 		}
 
-		public void setValueType(ValueType valueType) {
+		public void setValueType(@Nullable ValueType valueType) {
 			this.valueType = valueType;
 
-			checkValue(value);
+			checkValue(value.orElse(null));
 		}
 
 		@Override
@@ -549,17 +614,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest> extends A
 
 		@Override
 		public int hashCode() {
-			int hash = name.hashCode();
-
-			if(value!=null) {
-				hash *= value.hashCode();
-			}
-
-			if(valueType!=null) {
-				hash *= valueType.hashCode();
-			}
-
-			return hash;
+			return Objects.hash(name, value, valueType);
 		}
 
 		@Override

@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.manifest.standard;
 
 import java.util.Collection;
+import java.util.Optional;
 
 import de.ims.icarus2.model.manifest.api.Lockable;
 
@@ -26,25 +27,35 @@ import de.ims.icarus2.model.manifest.api.Lockable;
  */
 public abstract class AbstractLockable implements Lockable {
 
-	private boolean locked = false;
+	private transient boolean locked = false;
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ManifestFragment#lock()
 	 */
 	@Override
-	public void lock() {
+	public final void lock() {
 		locked = true;
+
+		lockNested();
+	}
+
+	protected void lockNested() {
+		// no-op
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ManifestFragment#isLocked()
 	 */
 	@Override
-	public boolean isLocked() {
-		return locked;
+	public final boolean isLocked() {
+		return locked || isNestedLocked();
 	}
 
-	protected void lockNested(Lockable...items) {
+	protected boolean isNestedLocked() {
+		return false;
+	}
+
+	protected final void lockNested(Lockable...items) {
 		for(Lockable item : items) {
 			if(item!=null) {
 				item.lock();
@@ -52,7 +63,16 @@ public abstract class AbstractLockable implements Lockable {
 		}
 	}
 
-	protected void lockNested(Collection<? extends Lockable> items) {
+	@SafeVarargs
+	protected final void lockNested(Optional<? extends Lockable>...items) {
+		for(Optional<? extends Lockable> item : items) {
+			if(item.isPresent()) {
+				item.get().lock();
+			}
+		}
+	}
+
+	protected final void lockNested(Collection<? extends Lockable> items) {
 		for(Lockable item : items) {
 			if(item!=null) {
 				item.lock();

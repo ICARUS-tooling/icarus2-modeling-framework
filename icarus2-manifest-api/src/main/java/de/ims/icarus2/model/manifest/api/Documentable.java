@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.Optional;
+
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -31,7 +33,7 @@ import de.ims.icarus2.util.access.AccessRestriction;
 public interface Documentable extends Lockable {
 
 	@AccessRestriction(AccessMode.READ)
-	Documentation getDocumentation();
+	Optional<Documentation> getDocumentation();
 
 	@AccessRestriction(AccessMode.WRITE)
 	void setDocumentation(Documentation documentation);

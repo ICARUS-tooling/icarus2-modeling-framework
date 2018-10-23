@@ -19,6 +19,7 @@ package de.ims.icarus2.util.id;
 import java.util.Comparator;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 
 import javax.swing.Icon;
 
@@ -41,10 +42,16 @@ public interface Identity {
 	 * This value does not necessarily have to be human
 	 * readable.
 	 * <p>
-	 * Note that at the very least every identity <b>must</b>
+	 * Note that at the very least every identity <b>should</b>
 	 * always provide a valid id!
+	 * This was previously enforced by requiring implementations to throw
+	 * an exception instead of the {@link Optional} return value.
 	 */
-	String getId();
+	Optional<String> getId();
+
+	public static String defaultCreateUnnamedId(Identity identity) {
+		return "unnamed@"+identity.getClass().getName();
+	}
 
 	/**
 	 * Returns the human readable identifier for this identity.
@@ -53,7 +60,7 @@ public interface Identity {
 	 * {@link Locale} settings.
 	 * @return
 	 */
-	String getName();
+	Optional<String> getName();
 
 	/**
 	 * Returns a more verbose description for this
@@ -61,14 +68,14 @@ public interface Identity {
 	 *
 	 * @return
 	 */
-	String getDescription();
+	Optional<String> getDescription();
 
 	/**
 	 * Returns the optional graphical representation of this
 	 * identity
 	 * @return
 	 */
-	Icon getIcon();
+	Optional<Icon> getIcon();
 
 	/**
 	 * Prioritizing comparator that uses names if available for bot identities
@@ -78,12 +85,12 @@ public interface Identity {
 
 		@Override
 		public int compare(Identity i1, Identity i2) {
-			String name1 = i1.getName();
-			String name2 = i2.getName();
-			if(name1==null || name2==null) {
-				return ID_COMPARATOR.compare(i1, i2);
+			Optional<String> name1 = i1.getName();
+			Optional<String> name2 = i2.getName();
+			if(name1.isPresent() && name2.isPresent()) {
+				return name1.get().compareTo(name2.get());
 			} else {
-				return name1.compareTo(name2);
+				return ID_COMPARATOR.compare(i1, i2);
 			}
 		}
 
@@ -96,17 +103,17 @@ public interface Identity {
 
 		@Override
 		public int compare(Identity i1, Identity i2) {
-			String name1 = i1.getName();
-			String name2 = i2.getName();
+			Optional<String> name1 = i1.getName();
+			Optional<String> name2 = i2.getName();
 
 			if(Objects.equals(name1, name2)) {
 				return 0;
-			} if(name1==null) {
+			} if(!name1.isPresent()) {
 				return -1;
-			} else if(name2==null) {
+			} else if(!name2.isPresent()) {
 				return 1;
 			} else {
-				return name1.compareTo(name2);
+				return name1.get().compareTo(name2.get());
 			}
 		}
 
@@ -119,17 +126,17 @@ public interface Identity {
 
 		@Override
 		public int compare(Identity i1, Identity i2) {
-			String id1 = i1.getId();
-			String id2 = i2.getId();
+			Optional<String> id1 = i1.getId();
+			Optional<String> id2 = i2.getId();
 
 			if(Objects.equals(id1, id2)) {
 				return 0;
-			} else if(id1==null) {
+			} else if(!id1.isPresent()) {
 				return -1;
-			} else if(id2==null) {
+			} else if(!id2.isPresent()) {
 				return 1;
 			} else {
-				return id1.compareTo(id2);
+				return id1.get().compareTo(id2.get());
 			}
 		}
 

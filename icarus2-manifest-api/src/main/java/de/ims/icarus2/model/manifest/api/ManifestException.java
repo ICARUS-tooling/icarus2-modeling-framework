@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.function.Supplier;
+
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.IcarusException;
 
@@ -24,6 +26,10 @@ import de.ims.icarus2.IcarusException;
  *
  */
 public class ManifestException extends IcarusException {
+
+	public static Supplier<ManifestException> create(ErrorCode errorCode, String message) {
+		return () -> new ManifestException(errorCode, message);
+	}
 
 	private static final long serialVersionUID = 7579478541873972798L;
 

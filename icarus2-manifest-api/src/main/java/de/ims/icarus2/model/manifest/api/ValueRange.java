@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.Collections;
+import java.util.Optional;
+import java.util.Set;
+
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.util.eval.Expression;
 
@@ -31,6 +35,10 @@ import de.ims.icarus2.util.eval.Expression;
  */
 public interface ValueRange extends Lockable, TypedManifest {
 
+	public static final Set<ValueType> SUPPORTED_VALUE_TYPES =
+			Collections.unmodifiableSet(ValueType.filterIncluding(
+					type -> Comparable.class.isAssignableFrom(type.getBaseClass())));
+
 	public static final boolean DEFAULT_LOWER_INCLUSIVE_VALUE = true;
 	public static final boolean DEFAULT_UPPER_INCLUSIVE_VALUE = true;
 
@@ -41,7 +49,7 @@ public interface ValueRange extends Lockable, TypedManifest {
 	 *
 	 * @return
 	 */
-	Object getLowerBound();
+	<V extends Comparable<?>> Optional<V> getLowerBound();
 
 	/**
 	 * Returns the upper bound of this range. The returned value must either
@@ -50,14 +58,14 @@ public interface ValueRange extends Lockable, TypedManifest {
 	 *
 	 * @return
 	 */
-	Object getUpperBound();
+	<V extends Comparable<?>> Optional<V> getUpperBound();
 
 	/**
 	 * Returns the interval size used when stepping through this range.
 	 *
 	 * @return
 	 */
-	Object getStepSize();
+	<V extends Comparable<?>> Optional<V> getStepSize();
 
 	boolean isLowerBoundInclusive();
 

@@ -18,6 +18,10 @@ package de.ims.icarus2.model.manifest.standard;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Objects;
+
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.VersionManifest;
 
 /**
@@ -58,6 +62,12 @@ public class VersionManifestImpl extends AbstractLockable implements VersionMani
 	protected void setFormatId0(String formatId) {
 		requireNonNull(formatId);
 
+		formatId = formatId.trim();
+
+		if(formatId.isEmpty())
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
+					"Format ID must not be empty");
+
 		this.formatId = formatId;
 	}
 
@@ -74,18 +84,18 @@ public class VersionManifestImpl extends AbstractLockable implements VersionMani
 	protected void setVersionString0(String versionString) {
 		requireNonNull(versionString);
 
+		versionString = versionString.trim();
+
+		if(versionString.isEmpty())
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
+					"Version string must not be empty");
+
 		this.versionString = versionString;
 	}
 
 	@Override
 	public int hashCode() {
-		int hash = versionString.hashCode();
-
-		if(formatId!=null) {
-			hash *= formatId.hashCode();
-		}
-
-		return hash;
+		return Objects.hash(formatId, versionString);
 	}
 
 	@Override
@@ -106,7 +116,7 @@ public class VersionManifestImpl extends AbstractLockable implements VersionMani
 		String result = versionString;
 
 		if(formatId!=null) {
-			versionString += " ("+formatId+")"; //$NON-NLS-1$ //$NON-NLS-2$
+			result += " ("+formatId+")"; //$NON-NLS-1$ //$NON-NLS-2$
 		}
 
 		return result;

@@ -19,6 +19,7 @@ package de.ims.icarus2.model.manifest.standard;
 import static java.util.Objects.requireNonNull;
 
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.model.manifest.api.ContainerFlag;
@@ -33,15 +34,12 @@ import de.ims.icarus2.model.manifest.api.ManifestType;
  * @author Markus Gärtner
  *
  */
-public class ContainerManifestImpl extends AbstractMemberManifest<ContainerManifest> implements ContainerManifest {
+public class ContainerManifestImpl extends AbstractMemberManifest<ContainerManifest, ItemLayerManifest>
+		implements ContainerManifest {
 
-//	private ContainerManifest parentManifest;
-	private final ItemLayerManifest layerManifest;
+	private Optional<ContainerType> containerType = Optional.empty();
 
-//	private ContainerManifest elementManifest;
-	private ContainerType containerType;
-
-	private EnumSet<ContainerFlag> containerFlags;
+	private EnumSet<ContainerFlag> containerFlags = EnumSet.noneOf(ContainerFlag.class);
 
 	/**
 	 * @param manifestLocation
@@ -49,22 +47,16 @@ public class ContainerManifestImpl extends AbstractMemberManifest<ContainerManif
 	 */
 	public ContainerManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry, ItemLayerManifest layerManifest) {
-		super(manifestLocation, registry);
-
-		verifyEnvironment(manifestLocation, layerManifest, ItemLayerManifest.class);
-
-		this.layerManifest = layerManifest;
-
-		containerFlags = EnumSet.noneOf(ContainerFlag.class);
+		super(manifestLocation, registry, layerManifest, ItemLayerManifest.class);
 	}
 
 	public ContainerManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry) {
-		this(manifestLocation, registry, null);
+		super(manifestLocation, registry);
 	}
 
 	public ContainerManifestImpl(ItemLayerManifest layerManifest) {
-		this(layerManifest.getManifestLocation(), layerManifest.getRegistry(), layerManifest);
+		super(layerManifest, hostIdentity(), ItemLayerManifest.class);
 	}
 
 	@Override
@@ -81,28 +73,12 @@ public class ContainerManifestImpl extends AbstractMemberManifest<ContainerManif
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
-	 */
-	@Override
-	public ItemLayerManifest getHost() {
-		return layerManifest;
-	}
-
-	/**
 	 * @see de.ims.icarus2.model.manifest.api.ContainerManifest#getContainerType()
 	 */
 	@Override
 	public ContainerType getContainerType() {
-		ContainerType result = containerType;
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getContainerType();
-		}
-
-		if(result==null) {
-			result = DEFAULT_CONTAINER_TYPE;
-		}
-
-		return result;
+		return getWrappedDerivable(containerType, ContainerManifest::getContainerType)
+				.orElse(DEFAULT_CONTAINER_TYPE);
 	}
 
 	/**
@@ -110,7 +86,7 @@ public class ContainerManifestImpl extends AbstractMemberManifest<ContainerManif
 	 */
 	@Override
 	public boolean isLocalContainerType() {
-		return containerType!=null;
+		return containerType.isPresent();
 	}
 
 	@Override
@@ -121,9 +97,7 @@ public class ContainerManifestImpl extends AbstractMemberManifest<ContainerManif
 	}
 
 	protected void setContainerType0(ContainerType containerType) {
-		requireNonNull(containerType);
-
-		this.containerType = containerType;
+		this.containerType = Optional.of(containerType);
 	}
 
 	@Override

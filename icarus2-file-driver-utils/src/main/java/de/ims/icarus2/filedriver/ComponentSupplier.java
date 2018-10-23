@@ -58,7 +58,7 @@ public interface ComponentSupplier extends AutoCloseable {
 	/**
 	 * Returns the layer that {@code sourceIndex} parameters passed
 	 * to {@link #reset(long)} refer to. If this supplier provides
-	 * {@link Item#isTopLevel() top-level} items than this method
+	 * {@link Item#isTopLevel() top-level} items then this method
 	 * returns {@code null}.
 	 *
 	 * @return
@@ -478,7 +478,8 @@ public interface ComponentSupplier extends AutoCloseable {
 
 			MappingManifest mappingManifest = mapping.getManifest();
 			checkArgument("Mapping relation no supported: "+mappingManifest.getRelation(),
-					mappingManifest.getRelation()==Relation.ONE_TO_ONE || mappingManifest.getRelation()==Relation.ONE_TO_MANY);
+					mappingManifest.getRelation()==Relation.ONE_TO_ONE
+					|| mappingManifest.getRelation()==Relation.ONE_TO_MANY);
 
 			/*
 			 * Important optimization step is to determine whether we can use a span-based

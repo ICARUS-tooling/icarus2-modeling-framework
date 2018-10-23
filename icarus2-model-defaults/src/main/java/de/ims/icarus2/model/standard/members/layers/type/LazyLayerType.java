@@ -88,7 +88,7 @@ public class LazyLayerType implements LayerType {
 	 * @see de.ims.icarus2.util.id.Identity#getName()
 	 */
 	@Override
-	public String getName() {
+	public Optional<String> getName() {
 		return name;
 	}
 

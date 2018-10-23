@@ -43,7 +43,7 @@ class MappingManifestImplTest implements MappingManifestTest<MappingManifestImpl
 	 */
 	@Override
 	public MappingManifestImpl createEmbedded(TestSettings settings, TypedManifest host) {
-		return new MappingManifestImpl((DriverManifest) host);
+		return settings.process(new MappingManifestImpl((DriverManifest) host));
 	}
 
 }

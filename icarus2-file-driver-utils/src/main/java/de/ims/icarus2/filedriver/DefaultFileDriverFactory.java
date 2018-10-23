@@ -17,7 +17,6 @@
 package de.ims.icarus2.filedriver;
 
 import static de.ims.icarus2.util.Conditions.checkState;
-import static de.ims.icarus2.util.strings.StringUtil.getName;
 import static java.util.Objects.requireNonNull;
 
 import java.nio.charset.StandardCharsets;
@@ -47,6 +46,7 @@ import de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
 import de.ims.icarus2.model.manifest.api.PathResolverManifest;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.standard.util.DefaultImplementationLoader;
 
 /**
@@ -213,7 +213,7 @@ public class DefaultFileDriverFactory implements Factory {
 			// If our location specifies a custom path resolver -> delegate instantiation
 			return corpus.getManager().newFactory().newImplementationLoader()
 					.manifest(pathResolverManifest.getImplementationManifest())
-					.message("Path resolver for location "+locationManifest+" in corpus "+getName(corpus))
+					.message("Path resolver for location "+locationManifest+" in corpus "+ManifestUtils.getName(corpus))
 					.environment(corpus)
 					.instantiate(PathResolver.class);
 		}

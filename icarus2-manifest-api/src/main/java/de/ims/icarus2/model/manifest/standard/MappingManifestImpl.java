@@ -19,9 +19,11 @@ package de.ims.icarus2.model.manifest.standard;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
+import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.standard.Links.MemoryLink;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.lang.ClassUtils;
@@ -32,15 +34,15 @@ import de.ims.icarus2.util.lang.ClassUtils;
  */
 public class MappingManifestImpl extends AbstractLockable implements MappingManifest {
 
-	private Coverage coverage;
-	private Relation relation;
+	private Optional<Coverage> coverage = Optional.empty();
+	private Optional<Relation> relation = Optional.empty();
 
 	private MappingLink inverse;
 
-	private String sourceLayerId;
-	private String targetLayerId;
+	private Optional<String> sourceLayerId = Optional.empty();
+	private Optional<String> targetLayerId = Optional.empty();
 
-	private String id;
+	private Optional<String> id = Optional.empty();
 
 	private final DriverManifest driverManifest;
 
@@ -98,8 +100,8 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	 * @see de.ims.icarus2.model.manifest.api.MappingManifest#getHost()
 	 */
 	@Override
-	public DriverManifest getHost() {
-		return driverManifest;
+	public Optional<TypedManifest> getHost() {
+		return Optional.of(driverManifest);
 	}
 
 
@@ -107,7 +109,7 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	 * @see de.ims.icarus2.model.manifest.api.MappingManifest#getSourceLayerId()
 	 */
 	@Override
-	public String getSourceLayerId() {
+	public Optional<String> getSourceLayerId() {
 		return sourceLayerId;
 	}
 
@@ -116,7 +118,7 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	 * @see de.ims.icarus2.model.manifest.api.MappingManifest#getTargetLayerId()
 	 */
 	@Override
-	public String getTargetLayerId() {
+	public Optional<String> getTargetLayerId() {
 		return targetLayerId;
 	}
 
@@ -125,7 +127,7 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	 * @see de.ims.icarus2.model.manifest.api.MappingManifest#getRelation()
 	 */
 	@Override
-	public Relation getRelation() {
+	public Optional<Relation> getRelation() {
 		return relation;
 	}
 
@@ -134,13 +136,13 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	 * @see de.ims.icarus2.model.manifest.api.MappingManifest#getCoverage()
 	 */
 	@Override
-	public Coverage getCoverage() {
+	public Optional<Coverage> getCoverage() {
 		return coverage;
 	}
 
 	@Override
-	public MappingManifest getInverse() {
-		return inverse==null ? null : inverse.get();
+	public Optional<MappingManifest> getInverse() {
+		return Optional.ofNullable(inverse==null ? null : inverse.get());
 	}
 
 	@Override
@@ -167,9 +169,7 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	}
 
 	protected void setCoverage0(Coverage coverage) {
-		requireNonNull(coverage);
-
-		this.coverage = coverage;
+		this.coverage = Optional.of(coverage);
 	}
 
 
@@ -184,9 +184,7 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	}
 
 	protected void setRelation0(Relation relation) {
-		requireNonNull(relation);
-
-		this.relation = relation;
+		this.relation = Optional.of(relation);
 	}
 
 
@@ -205,7 +203,7 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 
 		ManifestUtils.checkId(sourceLayerId);
 
-		this.sourceLayerId = sourceLayerId;
+		this.sourceLayerId = Optional.of(sourceLayerId);
 	}
 
 
@@ -224,11 +222,11 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 
 		ManifestUtils.checkId(targetLayerId);
 
-		this.targetLayerId = targetLayerId;
+		this.targetLayerId = Optional.of(targetLayerId);
 	}
 
 	@Override
-	public String getId() {
+	public Optional<String> getId() {
 		return id;
 	}
 
@@ -244,7 +242,7 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 
 		ManifestUtils.checkId(id);
 
-		this.id = id;
+		this.id = Optional.of(id);
 	}
 
 	private class MappingLink extends MemoryLink<MappingManifest> {
@@ -257,8 +255,9 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#resolve()
 		 */
 		@Override
-		protected MappingManifest resolve() {
-			return getDriverManifest().getMappingManifest(getId());
+		protected Optional<MappingManifest> resolve() {
+			return getDriverManifest()
+					.flatMap(d -> d.getMappingManifest(getId()));
 		}
 
 	}

@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.Optional;
+
 /**
  * Implements a shared type descriptor for {@code Layer} objects. It is used to
  * group layers according to an abstract description of their content. Besides
@@ -37,9 +39,9 @@ public interface LayerType extends Category {
 
 	/**
 	 * Returns the shared {@code LayerManifest} that further describes layers of
-	 * this type or {@code null} if this type only serves as a identifier without
+	 * this type or an empty {@link Optional} if this type only serves as a identifier without
 	 * additional content restrictions.
 	 * @return
 	 */
-	LayerManifest getSharedManifest();
+	Optional<LayerManifest> getSharedManifest();
 }

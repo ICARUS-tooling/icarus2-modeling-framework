@@ -19,17 +19,18 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.TestUtils.assertNotPresent;
+import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
@@ -75,7 +76,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testGetOptionsManifest() {
-		assertNull(createUnlocked().getOptionsManifest());
+		assertNotPresent(createUnlocked().getOptionsManifest());
 	}
 
 	/**
@@ -89,7 +90,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 		for(ValueType valueType : ManifestTestUtils.getAvailableTestTypes()) {
 			M manifest = createUnlocked();
 
-			assertNull(manifest.getPropertyValue("no-such-property"));
+			assertNotPresent(manifest.getPropertyValue("no-such-property"));
 			TestUtils.assertNPE(() -> manifest.getPropertyValue(null));
 
 			Object value = ManifestTestUtils.getTestValue(valueType);
@@ -97,20 +98,20 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 			Property property = mockProperty(name, ValueType.STRING, false, value);
 			manifest.addProperty(property);
 
-			assertEquals(value, manifest.getPropertyValue(name));
+			assertOptionalEquals(value, manifest.getPropertyValue(name));
 
 			if(getExpectedType().isSupportTemplating()) {
 				M template = createTemplate(settings());
 				template.addProperty(property);
 				M derived = createDerived(settings(), template);
 
-				assertEquals(value, derived.getPropertyValue(name));
+				assertOptionalEquals(value, derived.getPropertyValue(name));
 
 				Property property2 = mockProperty(name2, ValueType.STRING, false, value);
 				derived.addProperty(property2);
 
-				assertNull(template.getPropertyValue(name2));
-				assertEquals(value, derived.getPropertyValue(name2));
+				assertNotPresent(template.getPropertyValue(name2));
+				assertOptionalEquals(value, derived.getPropertyValue(name2));
 			}
 		}
 	}
@@ -141,15 +142,15 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 			Property property = manifest.addProperty(name, valueType, false, value);
 			assertNotNull(property);
 			assertEquals(valueType, property.getValueType());
-			assertNull(property.getOption());
-			assertEquals(value, property.getValue());
+			assertNotPresent(property.getOption());
+			assertOptionalEquals(value, property.getValue());
 
 			Object valueM = Collections.singleton(value);
 			Property propertyM = manifest.addProperty(nameM, valueType, true, valueM);
 			assertNotNull(propertyM);
 			assertEquals(valueType, propertyM.getValueType());
-			assertNull(propertyM.getOption());
-			assertEquals(valueM, propertyM.getValue());
+			assertNotPresent(propertyM.getOption());
+			assertOptionalEquals(valueM, propertyM.getValue());
 
 			manifest.lock();
 			LockableTest.assertLocked(() -> manifest.addProperty(name+"_1", valueType, false, value));
@@ -169,7 +170,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 
 		Property property = mockProperty(name);
 		when(property.getValueType()).thenReturn(valueType);
-		when(property.getValue()).thenReturn(value);
+		when(property.getValue()).thenReturn(Optional.ofNullable(value));
 		when(property.isMultiValue()) .thenReturn(multiValue);
 
 		return property;
@@ -211,31 +212,26 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 		String name = "property123";
 
 		TestUtils.assertNPE(() -> manifest.getProperty(null));
-		ManifestTestUtils.assertManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
-				() -> manifest.getProperty(name),
-				"Testing retrieval of unknown property id");
+		assertNotPresent(manifest.getProperty(name));
 
 		Property property = mockProperty(name, ValueType.STRING, false, "test");
 		manifest.addProperty(property);
 
-		assertSame(property, manifest.getProperty(name));
+		assertOptionalEquals(property, manifest.getProperty(name));
 
 		if(getExpectedType().isSupportTemplating()) {
 			M template = createTemplate(settings());
 			template.addProperty(property);
 			M derived = createDerived(settings(), template);
 
-			assertSame(property, derived.getProperty(name));
+			assertOptionalEquals(property, derived.getProperty(name));
 
 			String name2 = "property123_1";
 			Property property2 = mockProperty(name2, ValueType.STRING, false, "test");
 			derived.addProperty(property2);
 
-			ManifestTestUtils.assertManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
-					() -> template.getProperty(name2),
-					"Testing retrieval of unknown property id on template");
-
-			assertSame(property2, derived.getProperty(name2));
+			assertNotPresent(template.getProperty(name2));
+			assertOptionalEquals(property2, derived.getProperty(name2));
 		}
 	}
 
@@ -307,8 +303,10 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testForEachProperty() {
-		assertDerivativeForEach(settings(), mockProperty("property1"), mockProperty("property2"),
-				m -> m::forEachProperty, MemberManifest::addProperty);
+		assertDerivativeForEach(settings(),
+				mockProperty("property1"), mockProperty("property2"),
+				m -> m::forEachProperty,
+				MemberManifest::addProperty);
 	}
 
 	/**
@@ -316,8 +314,10 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testForEachLocalProperty() {
-		assertDerivativeForEachLocal(settings(), mockProperty("property1"), mockProperty("property2"),
-				m -> m::forEachLocalProperty, MemberManifest::addProperty);
+		assertDerivativeForEachLocal(settings(),
+				mockProperty("property1"), mockProperty("property2"),
+				m -> m::forEachLocalProperty,
+				MemberManifest::addProperty);
 	}
 
 	/**
@@ -325,8 +325,10 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testIsLocalProperty() {
-		assertDerivativeAccumulativeIsLocal(settings(), mockProperty("property1"), mockProperty("property2"),
-				(m, p) -> m.isLocalProperty(p.getName()), MemberManifest::addProperty);
+		assertDerivativeAccumulativeIsLocal(settings(),
+				mockProperty("property1"), mockProperty("property2"),
+				(m, p) -> m.isLocalProperty(p.getName()),
+				MemberManifest::addProperty);
 	}
 
 	/**
@@ -334,8 +336,10 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testGetProperties() {
-		assertDerivativeAccumulativeGetter(settings(), mockProperty("property1"), mockProperty("property2"),
-				MemberManifest::getProperties, MemberManifest::addProperty);
+		assertDerivativeAccumulativeGetter(settings(),
+				mockProperty("property1"), mockProperty("property2"),
+				MemberManifest::getProperties,
+				MemberManifest::addProperty);
 	}
 
 	/**
@@ -343,8 +347,10 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testGetLocalProperties() {
-		assertDerivativeAccumulativeLocalGetter(settings(), mockProperty("property1"), mockProperty("property2"),
-				MemberManifest::getLocalProperties, MemberManifest::addProperty);
+		assertDerivativeAccumulativeLocalGetter(settings(),
+				mockProperty("property1"), mockProperty("property2"),
+				MemberManifest::getLocalProperties,
+				MemberManifest::addProperty);
 	}
 
 	public static void assertPropertiesAsOptions(Options options, Property...properties) {
@@ -424,8 +430,8 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 
 				derived.setPropertyValue(name, value2);
 
-				assertEquals(value, template.getPropertyValue(name));
-				assertEquals(value2, derived.getPropertyValue(name));
+				assertOptionalEquals(value, template.getPropertyValue(name));
+				assertOptionalEquals(value2, derived.getPropertyValue(name));
 			}
 		}
 	}

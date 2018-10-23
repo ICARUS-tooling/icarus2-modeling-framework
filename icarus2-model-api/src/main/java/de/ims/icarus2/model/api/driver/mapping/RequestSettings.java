@@ -55,6 +55,10 @@ public class RequestSettings extends Options {
 		}
 	};
 
+	public static RequestSettings none() {
+		return emptySettings;
+	}
+
 	public void setHint(RequestHint hint) {
 		if(hints==null) {
 			hints = EnumSet.noneOf(RequestHint.class);

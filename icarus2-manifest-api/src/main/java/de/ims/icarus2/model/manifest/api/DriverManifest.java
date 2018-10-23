@@ -16,7 +16,10 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -33,9 +36,6 @@ import de.ims.icarus2.util.collections.LazyCollection;
  */
 @AccessControl(AccessPolicy.DENY)
 public interface DriverManifest extends ForeignImplementationManifest, Embedded {
-
-	@Override
-	ContextManifest getHost();
 
 	@AccessRestriction(AccessMode.READ)
 	void forEachMappingManifest(Consumer<? super MappingManifest> action);
@@ -73,7 +73,7 @@ public interface DriverManifest extends ForeignImplementationManifest, Embedded 
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	MappingManifest getMappingManifest(String id);
+	Optional<MappingManifest> getMappingManifest(String id);
 
 	/**
 	 * Returns a hint on which type of resources the driver is depending to access
@@ -82,17 +82,17 @@ public interface DriverManifest extends ForeignImplementationManifest, Embedded 
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	LocationType getLocationType();
+	Optional<LocationType> getLocationType();
 
 	boolean isLocalLocationType();
 
 	/**
 	 *  For live driver manifests this method returns the manifest describing the
-	 *  surrounding {@code Context}. For templates the return value is {@code null}.
+	 *  surrounding {@code Context}. For templates the return value is always empty.
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	default ContextManifest getContextManifest() {
+	default <M extends ContextManifest> Optional<M> getContextManifest() {
 		return getHost();
 	}
 
@@ -166,28 +166,32 @@ public interface DriverManifest extends ForeignImplementationManifest, Embedded 
 	 * @param specId
 	 * @return
 	 */
-	ModuleSpec getModuleSpec(String specId);
+	Optional<ModuleSpec> getModuleSpec(String specId);
 
-	default List<ModuleManifest> getModuleManifests(String moduleId) {
-		LazyCollection<ModuleManifest> result = LazyCollection.lazyList();
+	default Set<ModuleManifest> getModuleManifests(String moduleId) {
+		requireNonNull(moduleId);
+
+		LazyCollection<ModuleManifest> result = LazyCollection.lazySet();
 
 		forEachModuleManifest(m -> {
-			if(moduleId.equals(m.getId()))
+			if(moduleId.equals(m.getId().orElse(null)))
 				result.add(m);
 		});
 
-		return result.getAsList();
+		return result.getAsSet();
 	}
 
-	default List<ModuleManifest> getModuleManifests(ModuleSpec moduleSpec) {
-		LazyCollection<ModuleManifest> result = LazyCollection.lazyList();
+	default Set<ModuleManifest> getModuleManifests(ModuleSpec moduleSpec) {
+		requireNonNull(moduleSpec);
+
+		LazyCollection<ModuleManifest> result = LazyCollection.lazySet();
 
 		forEachModuleManifest(m -> {
-			if(m.getModuleSpec()==moduleSpec)
+			if(m.getModuleSpec().orElse(null)==moduleSpec)
 				result.add(m);
 		});
 
-		return result.getAsList();
+		return result.getAsSet();
 	}
 
 	// Modification methods
@@ -217,13 +221,17 @@ public interface DriverManifest extends ForeignImplementationManifest, Embedded 
 	 *
 	 */
 	@AccessControl(AccessPolicy.DENY)
-	public interface ModuleSpec extends ModifiableIdentity, Categorizable, Lockable, Documentable, TypedManifest {
+	public interface ModuleSpec extends ModifiableIdentity, Categorizable,
+			Lockable, Documentable, TypedManifest, Embedded {
 
 		public static final boolean DEFAULT_IS_CUSTOMIZABLE = false;
 		public static final Multiplicity DEFAULT_MULTIPLICITY = Multiplicity.ONE;
 
 		@AccessRestriction(AccessMode.READ)
-		DriverManifest getDriverManifest();
+		default <M extends DriverManifest> Optional<M> getDriverManifest() {
+			return getHost();
+		}
+
 
 		/**
 		 * @see de.ims.icarus2.model.manifest.api.TypedManifest#getManifestType()
@@ -272,7 +280,7 @@ public interface DriverManifest extends ForeignImplementationManifest, Embedded 
 		 * @return
 		 */
 		@AccessRestriction(AccessMode.READ)
-		String getExtensionPointUid();
+		Optional<String> getExtensionPointUid();
 
 		// Modification methods
 
@@ -290,12 +298,9 @@ public interface DriverManifest extends ForeignImplementationManifest, Embedded 
 	public interface ModuleManifest extends ForeignImplementationManifest, Embedded {
 
 		@AccessRestriction(AccessMode.READ)
-		default DriverManifest getDriverManifest() {
+		default <M extends DriverManifest> Optional<M> getDriverManifest() {
 			return getHost();
 		}
-
-		@Override
-		DriverManifest getHost();
 
 		/**
 		 * @see de.ims.icarus2.model.manifest.api.TypedManifest#getManifestType()
@@ -310,7 +315,7 @@ public interface DriverManifest extends ForeignImplementationManifest, Embedded 
 		 * @return
 		 */
 		@AccessRestriction(AccessMode.READ)
-		ModuleSpec getModuleSpec();
+		Optional<ModuleSpec> getModuleSpec();
 
 		void setModuleSpecId(String moduleSpecId);
 	}

@@ -580,6 +580,18 @@ public class ValueType implements StringResource, NamedObject {
 		return type;
 	}
 
+	public void checkValues(Collection<?> values) {
+		for(Object value : values) {
+			checkValue(value);
+		}
+	}
+
+	public void checkValues(Object[] values) {
+		for(Object value : values) {
+			checkValue(value);
+		}
+	}
+
 	/**
 	 * @see java.lang.Object#hashCode()
 	 */

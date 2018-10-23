@@ -16,11 +16,13 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-
-import com.google.common.base.Predicate;
+import java.util.function.Predicate;
 
 import de.ims.icarus2.model.manifest.api.binding.Bindable;
 import de.ims.icarus2.model.manifest.api.binding.LayerPrerequisite;
@@ -42,12 +44,12 @@ public interface ContextManifest extends MemberManifest, Bindable, Embedded {
 	public static final boolean DEFAULT_EDITABLE_VALUE = false;
 
 	@AccessRestriction(AccessMode.READ)
-	default CorpusManifest getCorpusManifest() {
+	default <M extends CorpusManifest> Optional<M> getCorpusManifest() {
 		return getHost();
 	}
 
 	@AccessRestriction(AccessMode.READ)
-	DriverManifest getDriverManifest();
+	Optional<DriverManifest> getDriverManifest();
 
 	boolean isLocalDriverManifest();
 
@@ -62,9 +64,6 @@ public interface ContextManifest extends MemberManifest, Bindable, Embedded {
 			}
 		});
 	}
-
-	@Override
-	CorpusManifest getHost();
 
 	/**
 	 * Returns a list of prerequisites describing other layers a corpus
@@ -96,10 +95,10 @@ public interface ContextManifest extends MemberManifest, Bindable, Embedded {
 	 *
 	 * @param alias
 	 * @return the {@link PrerequisiteManifest} mapped to the specified {@code alias}
-	 * or {@code null} if no such manifest exists.
+	 * or an empty {@link Optional} if no such manifest exists.
 	 */
 	@AccessRestriction(AccessMode.READ)
-	PrerequisiteManifest getPrerequisite(String alias);
+	Optional<PrerequisiteManifest> getPrerequisite(String alias);
 
 	/**
 	 * Default implementation just collects all {@link PrerequisiteManifest} in this
@@ -117,15 +116,15 @@ public interface ContextManifest extends MemberManifest, Bindable, Embedded {
 	}
 
 	@AccessRestriction(AccessMode.READ)
-	void forEachLayerManifest(Consumer<? super LayerManifest> action);
+	default void forEachLayerManifest(Consumer<? super LayerManifest> action) {
+		requireNonNull(action);
+		forEachGroupManifest(g -> g.forEachLayerManifest(action));
+	}
 
 	@AccessRestriction(AccessMode.READ)
 	default void forEachLocalLayerManifest(Consumer<? super LayerManifest> action) {
-		forEachLayerManifest(l -> {
-			if(l.getContextManifest()==this) {
-				action.accept(l);
-			}
-		});
+		requireNonNull(action);
+		forEachLocalGroupManifest(g -> g.forEachLayerManifest(action));
 	}
 
 	/**
@@ -157,7 +156,7 @@ public interface ContextManifest extends MemberManifest, Bindable, Embedded {
 		LazyCollection<L> result = LazyCollection.lazyList();
 
 		forEachLayerManifest(m -> {
-			if(p.apply(m)) {
+			if(p.test(m)) {
 				result.add((L) m);
 			}
 		});
@@ -171,7 +170,7 @@ public interface ContextManifest extends MemberManifest, Bindable, Embedded {
 	@AccessRestriction(AccessMode.READ)
 	default void forEachLocalGroupManifest(Consumer<? super LayerGroupManifest> action) {
 		forEachGroupManifest(g -> {
-			if(g.getContextManifest()==this) {
+			if(g.getContextManifest().orElse(null)==this) {
 				action.accept(g);
 			}
 		});
@@ -201,23 +200,21 @@ public interface ContextManifest extends MemberManifest, Bindable, Embedded {
 
 	/**
 	 * Returns the layer on the top of this context's layer hierarchy.
-	 *
-	 * @throws IllegalStateException iff this context is missing a primary layer declaration
 	 */
 	@AccessRestriction(AccessMode.READ)
-	ItemLayerManifest getPrimaryLayerManifest();
+	<L extends ItemLayerManifest> Optional<L> getPrimaryLayerManifest();
 
 	boolean isLocalPrimaryLayerManifest();
 
 	/**
 	 * Returns the layer manifest that describes this context's atomic units
-	 * or {@code null} if that layer resides outside of this context. Note that
+	 * or an empty {@link Optional} if that layer resides outside of this context. Note that
 	 * the layer that serves as a foundation layer of a context is not allowed
 	 * to declare another foundation layer in turn (i.e. his {@link ItemLayerManifest#getFoundationLayerManifest()}
-	 * method must return {@code null}!
+	 * method must return an empty {@link Optional}!
 	 */
 	@AccessRestriction(AccessMode.READ)
-	ItemLayerManifest getFoundationLayerManifest();
+	<L extends ItemLayerManifest> Optional<L> getFoundationLayerManifest();
 
 	boolean isLocalFoundationLayerManifest();
 
@@ -228,9 +225,11 @@ public interface ContextManifest extends MemberManifest, Bindable, Embedded {
 	 * will only be resolved when this context manifest is actually hosted within
 	 * a corpus manifest, since otherwise it is impossible for the context to access
 	 * foreign resources.
+	 *
+	 * @throws NullPointerException iff {@code id} is {@code null}
 	 */
 	@AccessRestriction(AccessMode.READ)
-	LayerManifest getLayerManifest(String id);
+	<L extends LayerManifest> Optional<L> getLayerManifest(String id);
 
 	/**
 	 * Returns the manifests that describes where the data for this context's
@@ -326,7 +325,7 @@ public interface ContextManifest extends MemberManifest, Bindable, Embedded {
 	 *
 	 */
 	@AccessControl(AccessPolicy.DENY)
-	public interface PrerequisiteManifest extends Lockable, LayerPrerequisite {
+	public interface PrerequisiteManifest extends Lockable, LayerPrerequisite, Embedded {
 
 		/**
 		 * Per default a {@link PrerequisiteManifest} is meant to provide a docking point
@@ -357,17 +356,25 @@ public interface ContextManifest extends MemberManifest, Bindable, Embedded {
 		ContextManifest getContextManifest();
 
 		/**
+		 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
+		 */
+		@Override
+		default Optional<? extends TypedManifest> getHost() {
+			return Optional.of(getContextManifest());
+		}
+
+		/**
 		 * If this prerequisite is in resolved state, it was created based on some unresolved
 		 * prerequisite in a context template. In that case this method returns the original
-		 * prerequisite manifest in unresolved form, or {@code null} otherwise.
+		 * prerequisite manifest in unresolved form, or an empty {@link Optional} otherwise.
 		 * <p>
 		 * Note that in case the prerequisite was declared using "hard binding" then this method
-		 * will return also {@code null}!
+		 * will return also an empty {@link Optional}!
 		 *
 		 * @return
 		 */
 		@AccessRestriction(AccessMode.READ)
-		PrerequisiteManifest getUnresolvedForm();
+		Optional<PrerequisiteManifest> getUnresolvedForm();
 
 		// Modification methods
 

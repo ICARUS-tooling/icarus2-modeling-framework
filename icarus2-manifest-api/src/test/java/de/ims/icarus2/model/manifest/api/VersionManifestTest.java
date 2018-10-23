@@ -19,30 +19,33 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static de.ims.icarus2.test.TestUtils.DEFAULT;
+import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
+import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
+import static de.ims.icarus2.test.TestUtils.assertGetter;
+import static de.ims.icarus2.test.TestUtils.settings;
 
 import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.asserter.Equals;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface VersionManifestTest {
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.VersionManifest#getManifestType()}.
-	 */
-	@Test
-	default void testGetManifestType() {
-		fail("Not yet implemented");
-	}
+public interface VersionManifestTest<M extends VersionManifest> extends LockableTest<M>, TypedManifestTest<M> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.VersionManifest#getFormatId()}.
 	 */
 	@Test
 	default void testGetFormatId() {
-		fail("Not yet implemented");
+		assertGetter(createUnlocked(),
+				"format1", "format2",
+				DEFAULT(VersionManifest.DEFAULT_VERSION_FORMAT_ID),
+				VersionManifest::getFormatId,
+				VersionManifest::setFormatId);
 	}
 
 	/**
@@ -50,7 +53,19 @@ public interface VersionManifestTest {
 	 */
 	@Test
 	default void testGetVersionString() {
-		fail("Not yet implemented");
+		assertGetter(createUnlocked(),
+				"version1", "version2", NO_DEFAULT(),
+				VersionManifest::getVersionString,
+				VersionManifest::setVersionString);
+	}
+
+	@Provider
+	default M createVersionManifest(String formatId, String versionString) {
+		M manifest = createUnlocked();
+		manifest.setFormatId(formatId);
+		manifest.setVersionString(versionString);
+		manifest.lock();
+		return manifest;
 	}
 
 	/**
@@ -58,7 +73,18 @@ public interface VersionManifestTest {
 	 */
 	@Test
 	default void testEquals() {
-		fail("Not yet implemented");
+		String format1 = "format1";
+		String format2 = "format2";
+		String version1 = "version1";
+		String version2 = "version2";
+
+		Equals.create(createVersionManifest(format1, version1))
+			.addEqual(createVersionManifest(format1, version1))
+			.addUnequal(new Object())
+			.addUnequal(createVersionManifest(format2, version1),
+					createVersionManifest(format1, version2),
+					createVersionManifest(format2, version2))
+			.test();
 	}
 
 	/**
@@ -66,7 +92,10 @@ public interface VersionManifestTest {
 	 */
 	@Test
 	default void testSetFormatId() {
-		fail("Not yet implemented");
+		assertLockableSetter(settings(),
+				VersionManifest::setFormatId,
+				"format", NPE_CHECK,
+				INVALID_INPUT_CHECK, "");
 	}
 
 	/**
@@ -74,7 +103,10 @@ public interface VersionManifestTest {
 	 */
 	@Test
 	default void testSetVersionString() {
-		fail("Not yet implemented");
+		assertLockableSetter(settings(),
+				VersionManifest::setVersionString,
+				"version", NPE_CHECK,
+				INVALID_INPUT_CHECK, "");
 	}
 
 }

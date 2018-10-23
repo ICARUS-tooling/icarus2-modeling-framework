@@ -21,6 +21,7 @@ import static java.util.Objects.requireNonNull;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.GlobalErrorCode;
@@ -34,7 +35,7 @@ import de.ims.icarus2.util.lang.ClassUtils;
  */
 public class DocumentationImpl extends DefaultModifiableIdentity implements Documentation {
 
-	private String content;
+	private Optional<String> content = Optional.empty();
 
 	private final List<Resource> resources = new ArrayList<>();
 
@@ -94,7 +95,7 @@ public class DocumentationImpl extends DefaultModifiableIdentity implements Docu
 	 * @see de.ims.icarus2.model.manifest.api.Documentation#getContent()
 	 */
 	@Override
-	public String getContent() {
+	public Optional<String> getContent() {
 		return content;
 	}
 
@@ -117,7 +118,7 @@ public class DocumentationImpl extends DefaultModifiableIdentity implements Docu
 	}
 
 	protected void setContent0(String content) {
-		this.content = content;
+		this.content = Optional.ofNullable(content);
 	}
 
 	@Override
@@ -156,8 +157,8 @@ public class DocumentationImpl extends DefaultModifiableIdentity implements Docu
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractLockable#lock()
 	 */
 	@Override
-	public void lock() {
-		super.lock();
+	protected void lockNested() {
+		super.lockNested();
 
 		for(Resource resource : resources) {
 			resource.lock();

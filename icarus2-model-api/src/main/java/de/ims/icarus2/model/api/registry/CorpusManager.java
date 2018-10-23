@@ -32,6 +32,7 @@ import de.ims.icarus2.model.api.view.paged.CorpusModel;
 import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
+import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.util.annotations.OptionalMethod;
 import de.ims.icarus2.util.id.Identity;
@@ -371,6 +372,10 @@ public interface CorpusManager {
 	Class<?> resolveExtension(String extensionUid) throws ClassNotFoundException;
 
 	ClassLoader getPluginClassLoader(String pluginUid);
+
+	default ClassLoader getImplementationClassLoader(ImplementationManifest manifest) {
+		return manifest.getManifestLocation().getClassLoader();
+	}
 
 	Identity getExtensionIdentity(String extensionuid);
 

@@ -15,23 +15,42 @@
  * limitations under the License.
  */
 /**
- * 
+ *
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
-import org.junit.jupiter.api.Test;
+import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.model.manifest.api.VersionManifestTest;
+import de.ims.icarus2.test.TestSettings;
 
 /**
  * @author Markus Gärtner
  *
  */
-class VersionManifestImplTest {
+class VersionManifestImplTest implements VersionManifestTest<VersionManifestImpl> {
 
-	@Test
-	void test() {
-		fail("Not yet implemented");
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
+	 */
+	@Override
+	public Class<? extends VersionManifestImpl> getTestTargetClass() {
+		return VersionManifestImpl.class;
+	}
+
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
+	 */
+	@Override
+	public VersionManifestImpl createTestInstance(TestSettings settings) {
+		return settings.process(new VersionManifestImpl());
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	public ManifestType getExpectedType() {
+		return ManifestType.VERSION;
 	}
 
 }

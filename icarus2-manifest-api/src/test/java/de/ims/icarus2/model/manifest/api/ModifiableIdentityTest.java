@@ -19,7 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
 import static org.mockito.Mockito.mock;
 
 import javax.swing.Icon;
@@ -53,14 +53,14 @@ public interface ModifiableIdentityTest<M extends ModifiableIdentity> extends Id
 		M empty = createEmpty();
 		if(empty!=null) {
 			empty.setId("myId");
-			assertEquals("myId", empty.getId());
+			assertOptionalEquals("myId", empty.getId());
 		}
 
 		Icon icon = mock(Icon.class);
 		M fromIdentity = createFromIdentity("myId", "name", "description", icon);
 		if(fromIdentity!=null) {
 			fromIdentity.setId("myId");
-			assertEquals("myId", fromIdentity.getId());
+			assertOptionalEquals("myId", fromIdentity.getId());
 		}
 	}
 
@@ -72,14 +72,14 @@ public interface ModifiableIdentityTest<M extends ModifiableIdentity> extends Id
 		M empty = createEmpty();
 		if(empty!=null) {
 			empty.setName("name");
-			assertEquals("name", empty.getName());
+			assertOptionalEquals("name", empty.getName());
 		}
 
 		Icon icon = mock(Icon.class);
 		M fromIdentity = createFromIdentity("myId", "name", "description", icon);
 		if(fromIdentity!=null) {
 			fromIdentity.setName("name");
-			assertEquals("name", fromIdentity.getName());
+			assertOptionalEquals("name", fromIdentity.getName());
 		}
 	}
 
@@ -91,14 +91,14 @@ public interface ModifiableIdentityTest<M extends ModifiableIdentity> extends Id
 		M empty = createEmpty();
 		if(empty!=null) {
 			empty.setDescription("description");
-			assertEquals("description", empty.getDescription());
+			assertOptionalEquals("description", empty.getDescription());
 		}
 
 		Icon icon = mock(Icon.class);
 		M fromIdentity = createFromIdentity("myId", "name", "description", icon);
 		if(fromIdentity!=null) {
 			fromIdentity.setDescription("description");
-			assertEquals("description", fromIdentity.getDescription());
+			assertOptionalEquals("description", fromIdentity.getDescription());
 		}
 	}
 
@@ -112,14 +112,14 @@ public interface ModifiableIdentityTest<M extends ModifiableIdentity> extends Id
 		M empty = createEmpty();
 		if(empty!=null) {
 			empty.setIcon(icon);
-			assertEquals(icon, empty.getIcon());
+			assertOptionalEquals(icon, empty.getIcon());
 		}
 
 		Icon icon2 = mock(Icon.class);
 		M fromIdentity = createFromIdentity("myId", "name", "description", icon);
 		if(fromIdentity!=null) {
 			fromIdentity.setIcon(icon2);
-			assertEquals(icon2, fromIdentity.getIcon());
+			assertOptionalEquals(icon2, fromIdentity.getIcon());
 		}
 	}
 

@@ -18,7 +18,7 @@ package de.ims.icarus2.model.manifest.standard;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.Set;
+import java.util.Optional;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestException;
@@ -30,17 +30,17 @@ import de.ims.icarus2.util.lang.ClassUtils;
 public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 
 	private final ValueType valueType;
-	private Object lower, upper, stepSize;
+	private Optional<Object> lower = Optional.empty();
+	private Optional<Object> upper = Optional.empty();
+	private Optional<Object> stepSize = Optional.empty();
 	private boolean lowerIncluded = DEFAULT_LOWER_INCLUSIVE_VALUE;
 	private boolean upperIncluded = DEFAULT_UPPER_INCLUSIVE_VALUE;
 
-	private static final Set<ValueType> supportedValueTypes = ValueType.filterIncluding(
-			v -> (v==ValueType.STRING || Comparable.class.isAssignableFrom(v.getBaseClass())));
 
 	public ValueRangeImpl(ValueType valueType) {
 		requireNonNull(valueType);
 
-		if(!supportedValueTypes.contains(valueType))
+		if(!SUPPORTED_VALUE_TYPES.contains(valueType))
 			throw new UnsupportedValueTypeException(valueType);
 
 		this.valueType = valueType;
@@ -149,25 +149,28 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ValueRange#getLowerBound()
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
-	public Object getLowerBound() {
-		return lower;
+	public <V extends Comparable<?>> Optional<V> getLowerBound() {
+		return (Optional<V>) lower;
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ValueRange#getUpperBound()
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
-	public Object getUpperBound() {
-		return upper;
+	public <V extends Comparable<?>> Optional<V> getUpperBound() {
+		return (Optional<V>) upper;
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ValueRange#getStepSize()
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
-	public Object getStepSize() {
-		return stepSize;
+	public <V extends Comparable<?>> Optional<V> getStepSize() {
+		return (Optional<V>) stepSize;
 	}
 
 	/**
@@ -209,7 +212,7 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 
 		checkValue(lower);
 
-		this.lower = lower;
+		this.lower = Optional.of(lower);
 	}
 
 	/**
@@ -227,7 +230,7 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 
 		checkValue(upper);
 
-		this.upper = upper;
+		this.upper = Optional.of(upper);
 	}
 
 	/**
@@ -245,7 +248,7 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 
 		checkValue(stepSize);
 
-		this.stepSize = stepSize;
+		this.stepSize = Optional.of(stepSize);
 	}
 
 	/**

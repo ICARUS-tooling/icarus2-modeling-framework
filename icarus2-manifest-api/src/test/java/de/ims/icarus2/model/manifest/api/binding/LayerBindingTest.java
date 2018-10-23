@@ -17,10 +17,13 @@
 package de.ims.icarus2.model.manifest.api.binding;
 
 import static de.ims.icarus2.test.TestUtils.assertHashContract;
+import static de.ims.icarus2.test.TestUtils.assertNotPresent;
 import static de.ims.icarus2.test.TestUtils.assertObjectContract;
+import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
+import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -32,13 +35,16 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.api.binding.LayerBinding.Builder;
+import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.OldTests;
 import de.ims.icarus2.util.Multiplicity;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class LayerBindingTest {
+@OldTests
+public class LayerBindingTest implements BindableTest<LayerBinding> {
 
 	private static final String LAYER_ID_1 = "layerId1";
 	private static final String LAYER_ID_2 = "layerId2";
@@ -62,6 +68,42 @@ public class LayerBindingTest {
 
 	private static final String CORPUS_ID = "corpusId";
 
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
+	 */
+	@Override
+	public LayerBinding createTestInstance(TestSettings settings) {
+		return settings.process(LayerBinding.newBuilder().build());
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.binding.BindableTest#createWithBindingEndpoints(de.ims.icarus2.test.TestSettings, java.util.Set)
+	 */
+	@Override
+	public LayerBinding createWithBindingEndpoints(TestSettings settings, Set<LayerPrerequisite> bindingEndpoints) {
+		LayerBinding.Builder builder = LayerBinding.newBuilder(CORPUS_ID);
+		for(LayerPrerequisite binding : bindingEndpoints) {
+			builder.addPrerequisite(binding);
+		}
+		return settings.process(builder.build());
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.binding.BindableTest#getSupportedBindingMultiplicities()
+	 */
+	@Override
+	public Set<Multiplicity> getSupportedBindingMultiplicities() {
+		return set(Multiplicity.values());
+	}
+
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
+	 */
+	@Override
+	public Class<? extends LayerBinding> getTestTargetClass() {
+		return LayerBinding.class;
+	}
+
 	@Test
 	public void testMissingCorpusId() throws Exception {
 		assertThrows(IllegalStateException.class, () -> {
@@ -75,11 +117,7 @@ public class LayerBindingTest {
 
 	@Test
 	public void testEmptyBuilder() throws Exception {
-		assertThrows(IllegalStateException.class, () -> {
-			LayerBinding.Builder builder = LayerBinding.newBuilder();
-
-			builder.build();
-		});
+		assertNotNull(LayerBinding.newBuilder().build());
 	}
 
 	@Test
@@ -135,10 +173,10 @@ public class LayerBindingTest {
 		assertHashContract(prerequisite1, prerequisite2); // not equal
 		assertHashContract(prerequisite1, prerequisite5); // equal
 
-		assertNull(prerequisite1.getContextId());
-		assertNull(prerequisite1.getLayerId());
+		assertNotPresent(prerequisite1.getContextId());
+		assertNotPresent(prerequisite1.getLayerId());
 
-		assertNull(prerequisite3.getTypeId());
+		assertNotPresent(prerequisite3.getTypeId());
 	}
 
 	/**
@@ -177,12 +215,12 @@ public class LayerBindingTest {
 		LayerPrerequisite prerequisite = binding.getLayerPrerequisite(ALIAS_1);
 
 		assertEquals(ALIAS_1, prerequisite.getAlias());
-		assertEquals(LAYER_TYPE_ID_1, prerequisite.getTypeId());
-		assertEquals(DESCRIPTION_1, prerequisite.getDescription());
+		assertOptionalEquals(LAYER_TYPE_ID_1, prerequisite.getTypeId());
+		assertOptionalEquals(DESCRIPTION_1, prerequisite.getDescription());
 		assertEquals(Multiplicity.ONE, prerequisite.getMultiplicity());
 
-		assertNull(prerequisite.getLayerId());
-		assertNull(prerequisite.getContextId());
+		assertNotPresent(prerequisite.getLayerId());
+		assertNotPresent(prerequisite.getContextId());
 	}
 
 	/**
@@ -203,12 +241,12 @@ public class LayerBindingTest {
 		LayerPrerequisite prerequisite = binding.getLayerPrerequisite(ALIAS_1);
 
 		assertEquals(ALIAS_1, prerequisite.getAlias());
-		assertEquals(LAYER_TYPE_ID_1, prerequisite.getTypeId());
-		assertEquals(DESCRIPTION_1, prerequisite.getDescription());
+		assertOptionalEquals(LAYER_TYPE_ID_1, prerequisite.getTypeId());
+		assertOptionalEquals(DESCRIPTION_1, prerequisite.getDescription());
 		assertEquals(multiplicity, prerequisite.getMultiplicity());
 
-		assertNull(prerequisite.getLayerId());
-		assertNull(prerequisite.getContextId());
+		assertNotPresent(prerequisite.getLayerId());
+		assertNotPresent(prerequisite.getContextId());
 	}
 
 	/**
@@ -227,12 +265,12 @@ public class LayerBindingTest {
 		LayerPrerequisite prerequisite = binding.getLayerPrerequisite(ALIAS_1);
 
 		assertEquals(ALIAS_1, prerequisite.getAlias());
-		assertEquals(LAYER_ID_1, prerequisite.getLayerId());
-		assertEquals(CONTEX_ID_1, prerequisite.getContextId());
-		assertEquals(DESCRIPTION_1, prerequisite.getDescription());
+		assertOptionalEquals(LAYER_ID_1, prerequisite.getLayerId());
+		assertOptionalEquals(CONTEX_ID_1, prerequisite.getContextId());
+		assertOptionalEquals(DESCRIPTION_1, prerequisite.getDescription());
 		assertEquals(Multiplicity.ONE, prerequisite.getMultiplicity());
 
-		assertNull(prerequisite.getTypeId());
+		assertNotPresent(prerequisite.getTypeId());
 	}
 
 	/**
@@ -253,12 +291,12 @@ public class LayerBindingTest {
 		LayerPrerequisite prerequisite = binding.getLayerPrerequisite(ALIAS_1);
 
 		assertEquals(ALIAS_1, prerequisite.getAlias());
-		assertEquals(LAYER_ID_1, prerequisite.getLayerId());
-		assertEquals(CONTEX_ID_1, prerequisite.getContextId());
-		assertEquals(DESCRIPTION_1, prerequisite.getDescription());
+		assertOptionalEquals(LAYER_ID_1, prerequisite.getLayerId());
+		assertOptionalEquals(CONTEX_ID_1, prerequisite.getContextId());
+		assertOptionalEquals(DESCRIPTION_1, prerequisite.getDescription());
 		assertEquals(multiplicity, prerequisite.getMultiplicity());
 
-		assertNull(prerequisite.getTypeId());
+		assertNotPresent(prerequisite.getTypeId());
 	}
 
 	/**

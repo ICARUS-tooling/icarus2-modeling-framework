@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.Optional;
+import java.util.function.Supplier;
+
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.access.AccessControl;
@@ -34,6 +38,14 @@ import de.ims.icarus2.util.access.AccessRestriction;
  */
 @AccessControl(AccessPolicy.DENY)
 public interface Manifest extends ManifestFragment {
+
+	public static Supplier<ManifestException> invalidId(String message) {
+		return ManifestException.create(ManifestErrorCode.MANIFEST_INVALID_ID, message);
+	}
+
+	public static Supplier<ManifestException> unknownId(String message) {
+		return ManifestException.create(ManifestErrorCode.MANIFEST_UNKNOWN_ID, message);
+	}
 
 	/**
 	 * Returns a special integer id created by the framework that is
@@ -70,8 +82,9 @@ public interface Manifest extends ManifestFragment {
 	 * with the {@link #getRegistry() registry} that manages it.
 	 * @return
 	 */
+	@SuppressWarnings("boxing")
 	default boolean isValidTemplate() {
-		return isTemplate() && getRegistry().hasTemplate(getId());
+		return isTemplate() && getId().map(id -> getRegistry().hasTemplate(id)).orElse(Boolean.FALSE);
 	}
 
 	/**
@@ -117,12 +130,27 @@ public interface Manifest extends ManifestFragment {
 
 	/**
 	 * If derived from another template, this method returns the object used for
-	 * templating or {@code null} otherwise.
+	 * templating. Otherwise an exception is thrown.
 	 *
 	 * @return
+	 * @throws ManifestException of type {@link GlobalErrorCode#ILLEGAL_STATE} iff
+	 * this manifest is not declared to {@link #hasTemplate() have been assigned a template}
+	 *
+	 * @see #hasTemplate()
 	 */
 	@AccessRestriction(AccessMode.READ)
 	Manifest getTemplate();
+
+	/**
+	 * Similar to {@link #getTemplate()} but returns an {@link Optional}. Does not throw
+	 * an exception in case there is no template definition.
+	 *
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	default <M extends Manifest> Optional<M> tryGetTemplate() {
+		return Optional.ofNullable(hasTemplate() ? (M)getTemplate() : null);
+	}
 
 	/**
 	 * Returns {@code true} if and only if this manifest does not contain
@@ -182,11 +210,11 @@ public interface Manifest extends ManifestFragment {
 	 * Returns the optional version (in form of a manifest) that has been assigned to
 	 * this manifest.
 	 * <p>
-	 * If no version manifest has been set, this method returns {@code null}
+	 * If no version manifest has been set, this method returns an empty {@link Optional}
 	 *
 	 * @return
 	 */
-	VersionManifest getVersionManifest();
+	Optional<VersionManifest> getVersionManifest();
 
 	/**
 	 * Sets the version of this manifest. The general contract is that once
@@ -197,4 +225,10 @@ public interface Manifest extends ManifestFragment {
 	 * @param versionManifest
 	 */
 	void setVersionManifest(VersionManifest versionManifest);
+
+	public static void verifyEnvironment(ManifestLocation manifestLocation, Object environment, Class<?> expected) {
+		if(!manifestLocation.isTemplate() && !expected.isInstance(environment))
+			throw new ManifestException(ManifestErrorCode.MANIFEST_MISSING_ENVIRONMENT,
+					"Missing environment of type "+expected.getName());
+	}
 }

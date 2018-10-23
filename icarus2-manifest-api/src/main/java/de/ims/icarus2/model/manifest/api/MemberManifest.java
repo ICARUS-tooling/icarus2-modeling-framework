@@ -16,8 +16,11 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+
+import javax.annotation.Nullable;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
@@ -52,29 +55,29 @@ public interface MemberManifest extends ModifiableIdentity, Categorizable, Docum
 	 * Returns the manifest that describes possible options the
 	 * user can assign to this manifest. If the manifest does not
 	 * support additional properties assignable by the user, this
-	 * method returns {@code null}.
+	 * method returns an empty {@link Optional}.
 	 *
 	 * @return the manifest describing options for this manifest
-	 * or {@code null}
+	 * or an empty {@link Optional}
 	 */
 	@AccessRestriction(AccessMode.READ)
-	OptionsManifest getOptionsManifest();
+	Optional<OptionsManifest> getOptionsManifest();
 
 	/**
 	 * Returns the property assigned to this manifest for the given
 	 * name. If there is no property with the given name available
-	 * this method should return {@code null}. Note that multi-value
+	 * this method should return an empty {@link Optional}. Note that multi-value
 	 * properties will typically return a collection of values.
 	 *
 	 * @param <V> type of the returned value.
 	 * @param name The name of the property in question
-	 * @return The value of the property with the given name or {@code null}
+	 * @return The value of the property with the given name or an empty {@link Optional}
 	 * if no such property exists.
 	 * @throws ClassCastException in case the actual property value is not
 	 * assignment compatible with the type parameter {@code V}
 	 */
 	@AccessRestriction(AccessMode.READ)
-	<V extends Object> V getPropertyValue(String name);
+	<V extends Object> Optional<V> getPropertyValue(String name);
 
 	/**
 	 *
@@ -91,7 +94,12 @@ public interface MemberManifest extends ModifiableIdentity, Categorizable, Docum
 
 	void addProperty(Property property);
 
-	Property getProperty(String name);
+	/**
+	 *
+	 * @param name identifier of the property to be retrieved
+	 * @return the property mapped to {@code name} or an empty {@link Optional}
+	 */
+	Optional<Property> getProperty(String name);
 
 	boolean hasProperty(String name);
 
@@ -173,14 +181,14 @@ public interface MemberManifest extends ModifiableIdentity, Categorizable, Docum
 	 * @throws UnsupportedOperationException if the manifest does not declare
 	 * any properties the user can modify.
 	 */
-	void setPropertyValue(String name, Object value);
+	void setPropertyValue(String name, @Nullable Object value);
 
 	/**
 	 * Attaches a new {@link OptionsManifest} to this manifest or
 	 * removes the current one when supplying a {@code null} parameter.
 	 * @param optionsManifest
 	 */
-	void setOptionsManifest(OptionsManifest optionsManifest);
+	void setOptionsManifest(@Nullable OptionsManifest optionsManifest);
 
 	// Modification methods
 
@@ -196,11 +204,11 @@ public interface MemberManifest extends ModifiableIdentity, Categorizable, Docum
 		 *
 		 * @return
 		 */
-		Object getValue();
+		<V extends Object> Optional<V> getValue();
 
 		String getName();
 
-		Option getOption();
+		Optional<Option> getOption();
 
 		boolean isMultiValue();
 
@@ -216,7 +224,7 @@ public interface MemberManifest extends ModifiableIdentity, Categorizable, Docum
 		 *
 		 * @param value
 		 */
-		void setValue(Object value);
+		void setValue(@Nullable Object value);
 
 		// Cloning
 

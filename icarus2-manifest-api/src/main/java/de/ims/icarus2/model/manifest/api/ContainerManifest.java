@@ -17,9 +17,11 @@
 package de.ims.icarus2.model.manifest.api;
 
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -42,12 +44,9 @@ public interface ContainerManifest extends MemberManifest, Embedded {
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	default ItemLayerManifest getLayerManifest() {
+	default <M extends ItemLayerManifest> Optional<M> getLayerManifest() {
 		return getHost();
 	}
-
-	@Override
-	ItemLayerManifest getHost();
 
 	/**
 	 * Returns the type of this container. This provides
@@ -57,6 +56,8 @@ public interface ContainerManifest extends MemberManifest, Embedded {
 	 * this method is optional when this container is a structure.
 	 *
 	 * @return The {@code ContainerType} of this {@code Container}
+	 * @throws ManifestException of type {@link GlobalErrorCode#ILLEGAL_STATE} if
+	 * the container type is not set.
 	 * @see ContainerType
 	 */
 	@AccessRestriction(AccessMode.READ)
@@ -95,36 +96,17 @@ public interface ContainerManifest extends MemberManifest, Embedded {
 	}
 
 	@AccessRestriction(AccessMode.READ)
-	default ContainerManifest getParentManifest() {
-		ItemLayerManifest hostManifest = getLayerManifest();
-		Hierarchy<ContainerManifest> hierarchy = hostManifest==null ? null : hostManifest.getContainerHierarchy();
-		int index = hierarchy==null ? -1 : hierarchy.levelOf(this);
-
-		if(index<=0) {
-			return null;
-		} else {
-			return hierarchy.atLevel(index-1);
-		}
+	default Optional<ContainerManifest> getParentManifest() {
+		return getLayerManifest()
+				.flatMap(ItemLayerManifest::getContainerHierarchy)
+				.flatMap(h -> h.adjacent(this, Hierarchy.Direction.ABOVE));
 	}
 
 	@AccessRestriction(AccessMode.READ)
-	default ContainerManifest getElementManifest() {
-		ItemLayerManifest hostManifest = getLayerManifest();
-		if(hostManifest==null) {
-			return null;
-		}
-		Hierarchy<ContainerManifest> hierarchy = hostManifest.getContainerHierarchy();
-		if(hierarchy==null) {
-			return null;
-		}
-
-		int index = hierarchy.levelOf(this);
-
-		if(index>=hierarchy.getDepth()-1) {
-			return null;
-		} else {
-			return hierarchy.atLevel(index+1);
-		}
+	default Optional<ContainerManifest> getElementManifest() {
+		return getLayerManifest()
+				.flatMap(ItemLayerManifest::getContainerHierarchy)
+				.flatMap(h -> h.adjacent(this, Hierarchy.Direction.BELOW));
 	}
 
 	// Modification methods

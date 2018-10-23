@@ -38,7 +38,7 @@ class StructureManifestImplTest implements StructureManifestTest<StructureManife
 	@Override
 	public StructureManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
-		return new StructureManifestImpl(manifestLocation, registry, (StructureLayerManifest)host);
+		return settings.process(new StructureManifestImpl(manifestLocation, registry, (StructureLayerManifest)host));
 	}
 
 	/**

@@ -18,6 +18,8 @@ package de.ims.icarus2.util;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 
@@ -107,4 +109,27 @@ public class IcarusUtils {
 	 * Value representing an unset float variable (-1F).
 	 */
 	public static final float UNSET_FLOAT = -1F;
+
+	@SafeVarargs
+	public static <V extends Object> Optional<V> filter(Optional<V>...optionals) {
+		for(Optional<V> optional : optionals) {
+			if(optional.isPresent()) {
+				return optional;
+			}
+		}
+
+		return Optional.empty();
+	}
+
+	@SafeVarargs
+	public static <V extends Object> Optional<V> filter(Supplier<? extends Optional<V>>...suppliers) {
+		for(Supplier<? extends Optional<V>> supplier : suppliers) {
+			Optional<V> optional = supplier.get();
+			if(optional.isPresent()) {
+				return optional;
+			}
+		}
+
+		return Optional.empty();
+	}
 }
