@@ -42,7 +42,7 @@ import de.ims.icarus2.util.strings.StringResource;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface MappingManifest extends Lockable, TypedManifest, Embedded {
+public interface MappingManifest extends ManifestFragment, Embedded {
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.TypedManifest#getManifestType()
@@ -60,9 +60,6 @@ public interface MappingManifest extends Lockable, TypedManifest, Embedded {
 	default <M extends DriverManifest> Optional<M> getDriverManifest() {
 		return getHost();
 	}
-
-	@AccessRestriction(AccessMode.READ)
-	Optional<String> getId();
 
 	/**
 	 * Returns the {@code id} of the source layer for this mapping.

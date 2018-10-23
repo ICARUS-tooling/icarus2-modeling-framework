@@ -47,7 +47,7 @@ import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
  *
  */
 public interface MappingManifestTest<M extends MappingManifest>
-	extends TypedManifestTest<M>, LockableTest<M>, EmbeddedTest<M> {
+	extends ManifestFragmentTest<M>, EmbeddedTest<M> {
 
 	public static MappingManifest mockMappingManifest(String id) {
 		MappingManifest manifest = mockTypedManifest(ManifestType.MAPPING_MANIFEST);
@@ -82,6 +82,7 @@ public interface MappingManifestTest<M extends MappingManifest>
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.MappingManifest#getId()}.
 	 */
+	@Override
 	@Test
 	default void testGetId() {
 		assertOptGetter(createUnlocked(),
