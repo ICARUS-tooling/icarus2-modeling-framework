@@ -1,6 +1,6 @@
 /*
  * ICARUS2 Corpus Modeling Framework
- * Copyright (C) 2014-2018 Markus Gärtner <markus.gaertner@uni-stuttgart.de>
+ * Copyright (C) 2014-2018 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.util.ModelUtils;
 
 /**
@@ -95,13 +96,12 @@ public class DefaultContext implements Context {
 	 */
 	protected Layer lookupForeignLayer(String id) {
 		ContextManifest contextManifest = getManifest();
-		PrerequisiteManifest prerequisiteManifest = contextManifest.getPrerequisite(id);
+		PrerequisiteManifest prerequisiteManifest = contextManifest.getPrerequisite(id)
+				.orElseThrow(() -> new ModelException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
+						"No prerequisite manifest for id: "+id));
 
-		if(prerequisiteManifest==null)
-			throw new ModelException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
-					"No prerequisite manifest for id: "+id);
-
-		String contextId = prerequisiteManifest.getContextId();
+		String contextId = prerequisiteManifest.getContextId()
+				.orElseThrow(ManifestException.missing(prerequisiteManifest, "contextId"));
 		String layerId = prerequisiteManifest.getLayerId();
 
 		if(contextManifest.getId().equals(contextId))

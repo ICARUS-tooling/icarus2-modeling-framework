@@ -148,7 +148,7 @@ subprojects {
 	license {
 		ext.year = '2014-'+Calendar.getInstance().get(Calendar.YEAR)
 		ext.name = 'Markus Gärtner'
-		ext.email = 'markus.gaertner@uni-stuttgart.de'
+		ext.email = 'markus.gaertner@ims.uni-stuttgart.de'
 		
 		header = rootProject.file('LICENSE_HEADER')
 		

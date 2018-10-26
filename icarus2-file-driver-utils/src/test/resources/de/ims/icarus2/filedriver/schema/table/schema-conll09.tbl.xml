@@ -2,7 +2,7 @@
 <!--
 
     ICARUS2 Corpus Modeling Framework
-    Copyright (C) 2014-2018 Markus Gärtner <markus.gaertner@uni-stuttgart.de>
+    Copyright (C) 2014-2018 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
     limitations under the License.
 
 -->
-
 <schema id="conll09.tbl" name="CoNLL-2009 ST Format" type="de.ims.icarus2.filedriver.schema.table" group-id="sentences">
 	<separator>WHITESPACES</separator>
 	
