@@ -37,7 +37,7 @@ public class ContentTypeAdapter extends XmlAdapter<String, ContentType> {
 	 */
 	@Override
 	public String marshal(ContentType v) throws Exception {
-		return v.getId();
+		return v.getId().orElseThrow(IllegalStateException::new);
 	}
 
 }

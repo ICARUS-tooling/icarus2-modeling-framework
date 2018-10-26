@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.util.data;
 
+import static java.util.Objects.requireNonNull;
+
 import java.awt.datatransfer.DataFlavor;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -343,15 +345,14 @@ public final class ContentTypeRegistry {
 	}
 
 	private void addType0(ContentType type) {
-		contentTypes.put(type.getId(), type);
+		contentTypes.put(type.getId().orElseThrow(IllegalArgumentException::new), type);
 		classMap.put(type.getContentClassName(), type);
 	}
 
 	public void addType(ContentType type) {
-		if(type==null)
-			throw new NullPointerException("Invalid type"); //$NON-NLS-1$
-		if(contentTypes.containsKey(type.getId()))
-			throw new DuplicateIdentifierException("Content type id already in use: "+type.getId()); //$NON-NLS-1$
+		String id = requireNonNull(type).getId().orElseThrow(IllegalArgumentException::new);
+		if(contentTypes.containsKey(id))
+			throw new DuplicateIdentifierException("Content type id already in use: "+id); //$NON-NLS-1$
 
 		String className = type.getContentClassName();
 		if(classMap.containsKey(className))
@@ -403,8 +404,8 @@ public final class ContentTypeRegistry {
 		 * @see de.ims.icarus2.util.id.Identity#getId()
 		 */
 		@Override
-		public String getId() {
-			return contentClass.getSimpleName()+"ContentType"; //$NON-NLS-1$
+		public Optional<String> getId() {
+			return Optional.of(contentClass.getSimpleName()+"ContentType");
 		}
 
 		/**

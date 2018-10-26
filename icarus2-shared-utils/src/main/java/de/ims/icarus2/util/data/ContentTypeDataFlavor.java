@@ -49,7 +49,7 @@ public class ContentTypeDataFlavor extends DataFlavor {
 	public synchronized void writeExternal(ObjectOutput os) throws IOException {
 		super.writeExternal(os);
 
-		os.writeUTF(contentType.getId());
+		os.writeUTF(contentType.getId().orElseThrow(IllegalStateException::new));
 	}
 
 	@Override
