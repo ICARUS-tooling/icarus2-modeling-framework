@@ -19,19 +19,23 @@ package de.ims.icarus2.model.manifest.xml.delegates;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import de.ims.icarus2.model.manifest.api.Category;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.MemberManifest.Property;
 import de.ims.icarus2.model.manifest.api.OptionsManifest;
-import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
 import de.ims.icarus2.model.manifest.standard.AbstractMemberManifest.PropertyImpl;
 import de.ims.icarus2.model.manifest.standard.DocumentationImpl;
+import de.ims.icarus2.model.manifest.standard.OptionsManifestImpl;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
@@ -92,13 +96,15 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 	 * @see de.ims.icarus2.model.manifest.xml.delegates.AbstractManifestXmlDelegate#writeAttributes(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	protected void writeAttributes(XmlSerializer serializer) throws Exception {
+	protected void writeAttributes(XmlSerializer serializer) throws XMLStreamException {
 		super.writeAttributes(serializer);
 
 		MemberManifest manifest = getInstance();
+
 		// IMPORTANT: we must not write the ID field again, since super implementation took care of that!
-		ManifestXmlUtils.writeIdentityAttributes(serializer,
-				null, manifest.getName(), manifest.getDescription(), manifest.getIcon());
+		serializer.writeAttribute(ManifestXmlAttributes.NAME, manifest.getName());
+		serializer.writeAttribute(ManifestXmlAttributes.DESCRIPTION, manifest.getDescription());
+		serializer.writeAttribute(ManifestXmlAttributes.ICON, ManifestXmlUtils.serialize(manifest.getIcon()));
 	}
 
 	/**
@@ -112,7 +118,7 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 	}
 
 	@Override
-	protected void writeElements(XmlSerializer serializer) throws Exception {
+	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
 		super.writeElements(serializer);
 
 		MemberManifest manifest = getInstance();
@@ -120,13 +126,13 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 		ManifestXmlUtils.writeIdentityFieldElements(serializer, manifest);
 
 		// Write documentation
-		if(manifest.getDocumentation()!=null) {
-			getDocumentationXmlDelegate().reset(manifest.getDocumentation()).writeXml(serializer);
+		if(manifest.getDocumentation().isPresent()) {
+			getDocumentationXmlDelegate().reset(manifest.getDocumentation().get()).writeXml(serializer);
 		}
 
 		// Write options manifest
-		if(manifest.getOptionsManifest()!=null) {
-			getOptionsManifestXmlDelegate().reset(manifest.getOptionsManifest()).writeXml(serializer);
+		if(manifest.getOptionsManifest().isPresent()) {
+			getOptionsManifestXmlDelegate().reset(manifest.getOptionsManifest().get()).writeXml(serializer);
 		}
 
 		Set<Property> localProperties = manifest.getLocalProperties();
@@ -150,14 +156,18 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 				serializer.writeAttribute(ManifestXmlAttributes.NAME, propertyName);
 				serializer.writeAttribute(ManifestXmlAttributes.VALUE_TYPE, ManifestXmlUtils.getSerializedForm(type));
 
+				Optional<Object> value = property.getValue();
+
+				if(!value.isPresent()) {
+					continue;
+				}
+
 				if(property.isMultiValue()) {
-					for(Object item : (Collection<?>) property.getValue()) {
+					for(Object item : (Collection<?>) value.get()) {
 						ManifestXmlUtils.writeValueElement(serializer, ManifestXmlTags.VALUE, item, type);
 					}
 				} else {
-					Object value = property.getValue();
-
-					serializer.writeTextOrCData(type.toChars(value));
+					serializer.writeTextOrCData(type.toChars(value.get()));
 				}
 
 				serializer.endElement(ManifestXmlTags.PROPERTY);
@@ -169,118 +179,125 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 
 	private void maybeLinkProperties() {
 		if(hasLocalOptions && localPropertyCount>0) {
-			OptionsManifest optionsManifest = getInstance().getOptionsManifest();
+			OptionsManifest optionsManifest = getInstance().getOptionsManifest()
+					.orElseThrow(ManifestException.error("Missing options manifest"));
 			for(String name : optionsManifest.getOptionIds()) {
-				Option option = optionsManifest.getOption(name);
-				Property property = getInstance().getProperty(name);
+				optionsManifest.getOption(name);
 
 				// Gets only called by the parsing routines and therefore we
 				// can safely cast to the implementation we use there.
-				if(property!=null) {
-					((PropertyImpl)property).setOption(option);
-				}
+				getInstance().getProperty(name)
+					.filter(p -> p instanceof PropertyImpl)
+					.ifPresent(p -> optionsManifest
+							.getOption(name)
+							.ifPresent(o -> ((PropertyImpl)p).setOption(o)));
 			}
 		}
 	}
 
-	/**
-	 * @see de.ims.icarus2.model.manifest.standard.AbstractManifest#startElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
-	 */
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
+		ManifestXmlHandler handler = null;
+
 		switch (localName) {
 
 		case ManifestXmlTags.NAME:
 		case ManifestXmlTags.DESCRIPTION:
 		case ManifestXmlTags.ICON: {
-			return this;
-		}
+			handler = this;
+		} break;
 
 		case ManifestXmlTags.OPTIONS: {
 			hasLocalOptions = true;
-			return getOptionsManifestXmlDelegate().reset(getInstance().getOptionsManifest());
-		}
+			handler = getOptionsManifestXmlDelegate().reset(new OptionsManifestImpl(getInstance()));
+		} break;
 
 		case ManifestXmlTags.DOCUMENTATION: {
-			return getDocumentationXmlDelegate().reset(new DocumentationImpl());
-		}
+			handler = getDocumentationXmlDelegate().reset(new DocumentationImpl());
+		} break;
 
 		case ManifestXmlTags.CATEGORIES: {
-			return this;
-		}
+			handler = this;
+		} break;
 
 		case ManifestXmlTags.CATEGORY: {
 			Category category = ManifestXmlUtils.readCategory(attributes);
 			getInstance().addCategory(category);
-			return this;
-		}
+			handler = this;
+		} break;
 
 		case ManifestXmlTags.PROPERTIES: {
-			return this;
-		}
+			handler = this;
+		} break;
 
 		case ManifestXmlTags.PROPERTY: {
 			localPropertyCount++;
-			String name = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.NAME);
-			ValueType valueType = ManifestXmlUtils.typeValue(attributes);
+			String name = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.NAME)
+					.orElseThrow(ManifestXmlHandler.error("Property name is missing"));
+			ValueType valueType = ManifestXmlUtils.typeValue(attributes)
+					.orElseThrow(ManifestXmlHandler.error("Property value type is missing"));
 			property = new PropertyImpl(name, valueType);
 
-			return this;
-		}
+			handler = this;
+		} break;
 
 		case ManifestXmlTags.VALUE: {
 			checkEmptyOrMultiValue();
 			property.setMultiValue(true);
-			return this;
-		}
+			handler = this;
+		} break;
 
 		default:
 			return super.startElement(manifestLocation, uri, localName, qName, attributes);
 		}
+
+		return Optional.ofNullable(handler);
 	}
 
 	private void checkEmptyOrMultiValue() {
-		Object value = property.getValue();
-		if(value!=null && !(value instanceof Collection))
+		Optional<Object> value = property.getValue();
+		if(value.isPresent() && !(value.get() instanceof Collection))
 			throw new IllegalStateException("Non-collection value already set");
 	}
 
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 			throws SAXException {
+
+		ManifestXmlHandler handler = null;
 
 		switch (localName) {
 
 		case ManifestXmlTags.NAME: {
 			getInstance().setName(text);
-			return this;
-		}
+			handler = this;
+		} break;
 
 		case ManifestXmlTags.DESCRIPTION: {
 			getInstance().setDescription(text);
-			return this;
-		}
+			handler = this;
+		} break;
 
 		case ManifestXmlTags.ICON: {
-			getInstance().setIcon(ManifestXmlUtils.iconValue(text, true));
-			return this;
-		}
+			ManifestXmlUtils.iconValue(text, true).ifPresent(getInstance()::setIcon);
+			handler = this;
+		} break;
 
 		case ManifestXmlTags.CATEGORIES: {
-			return this;
-		}
+			handler = this;
+		} break;
 
 		case ManifestXmlTags.CATEGORY: {
-			return this;
-		}
+			handler = this;
+		} break;
 
 		case ManifestXmlTags.PROPERTIES: {
 			maybeLinkProperties();
-			return this;
-		}
+			handler = this;
+		} break;
 
 		case ManifestXmlTags.PROPERTY: {
 
@@ -290,18 +307,20 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 
 			getInstance().addProperty(property);
 
-			return this;
-		}
+			handler = this;
+		} break;
 
 		case ManifestXmlTags.VALUE: {
 			Object value = property.getValueType().parse(text, manifestLocation.getClassLoader());
 			addValue(value);
-			return this;
-		}
+			handler = this;
+		} break;
 
 		default:
 			return super.endElement(manifestLocation, uri, localName, qName, text);
 		}
+
+		return Optional.ofNullable(handler);
 	}
 
 	private void addValue(Object value) {

@@ -74,7 +74,7 @@ public abstract class AbstractSingleKeyStorage extends AbstractAnnotationStorage
 	protected void checkKey(String key) {
 		if(key!=null && !annotationKey.equals(key))
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					Messages.mismatchMessage("Unknown key", annotationKey, key));
+					Messages.mismatch("Unknown key", annotationKey, key));
 	}
 
 	@Override

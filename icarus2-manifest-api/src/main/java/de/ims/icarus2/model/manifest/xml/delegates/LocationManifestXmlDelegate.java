@@ -18,6 +18,10 @@ package de.ims.icarus2.model.manifest.xml.delegates;
 
 import static de.ims.icarus2.model.manifest.xml.ManifestXmlUtils.normalize;
 
+import java.util.Optional;
+
+import javax.xml.stream.XMLStreamException;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -80,30 +84,29 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 	protected void readAttributes(Attributes attributes) {
 		super.readAttributes(attributes);
 
-		String inline = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.INLINE);
-		if(inline!=null) {
-			getInstance().setIsInline(Boolean.parseBoolean(inline));
-		}
+		ManifestXmlUtils.booleanValue(attributes, ManifestXmlAttributes.INLINE)
+			.ifPresent(getInstance()::setIsInline);
 	}
 
 	@Override
-	protected void writeElements(XmlSerializer serializer) throws Exception {
+	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
 		super.writeElements(serializer);
 
 		LocationManifest manifest = getInstance();
 
 		if(manifest.isInline()) {
 			serializer.startElement(ManifestXmlTags.CONTENT);
-			serializer.writeCData(manifest.getInlineData());
+			serializer.writeCData(manifest.getInlineData().get());
 			serializer.endElement(ManifestXmlTags.CONTENT);
 		} else {
 
 			if(manifest.getRootPath()!=null) {
 				serializer.startElement(ManifestXmlTags.PATH);
 				if(manifest.getRootPathType()!=null) {
-					serializer.writeAttribute(ManifestXmlAttributes.TYPE, manifest.getRootPathType().getStringValue());
+					serializer.writeAttribute(ManifestXmlAttributes.TYPE,
+							manifest.getRootPathType().map(PathType::getStringValue));
 				}
-				serializer.writeCData(manifest.getRootPath());
+				serializer.writeCData(manifest.getRootPath().get());
 				serializer.endElement(ManifestXmlTags.PATH);
 			}
 
@@ -124,36 +127,38 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 
 			// Write rootPath resolver
 			if(manifest.getPathResolverManifest()!=null) {
-				getPathResolverManifestXmlDelegate().reset(manifest.getPathResolverManifest()).writeXml(serializer);
+				getPathResolverManifestXmlDelegate().reset(manifest.getPathResolverManifest().get()).writeXml(serializer);
 			}
 		}
 
 	}
 
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 		case ManifestXmlTags.LOCATION: {
 			readAttributes(attributes);
 		} break;
 
 		case ManifestXmlTags.PATH: {
-			String type = normalize(attributes, ManifestXmlAttributes.TYPE);
-			if(type!=null) {
-				getInstance().setRootPathType(PathType.parsePathType(type));
-			}
+			normalize(attributes, ManifestXmlAttributes.TYPE)
+				.map(PathType::parsePathType)
+				.ifPresent(getInstance()::setRootPathType);
 		} break;
 
 		case ManifestXmlTags.PATH_ENTRY : {
-			String typeId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.TYPE);
+			String typeId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.TYPE)
+					.orElseThrow(ManifestXmlHandler.error("Missing path entry type"));
 			pathType = PathType.parsePathType(typeId);
 		} break;
 
 		case ManifestXmlTags.PATH_RESOLVER: {
-			return getPathResolverManifestXmlDelegate().reset(getInstance());
-		}
+			handler = getPathResolverManifestXmlDelegate().reset(getInstance());
+		} break;
 
 		case ManifestXmlTags.CONTENT:
 			break;
@@ -162,17 +167,19 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 			return super.startElement(manifestLocation, uri, localName, qName, attributes);
 		}
 
-		return this;
+		return Optional.ofNullable(handler);
 	}
 
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 		case ManifestXmlTags.LOCATION: {
-			return null;
-		}
+			handler = null;
+		} break;
 
 		case ManifestXmlTags.PATH: {
 			getInstance().setRootPath(text);
@@ -191,7 +198,7 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 			return super.endElement(manifestLocation, uri, localName, qName, text);
 		}
 
-		return this;
+		return Optional.ofNullable(handler);
 	}
 
 	/**

@@ -176,7 +176,7 @@ public final class LayerBinding implements Bindable, Serializable {
 			}
 
 			CorpusManifest corpusManifest = registry.getCorpusManifest(corpusId)
-					.orElseThrow(ManifestException.create(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
+					.orElseThrow(ManifestException.error(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
 							"No corpus for id: "+corpusId));
 
 			mappings.forEach((alias, entry) -> resolveEntry(alias, entry, corpusManifest, registry, reportBuilder));

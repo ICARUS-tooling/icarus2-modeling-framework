@@ -72,74 +72,74 @@ public abstract class BytePackConverter {
 
 	public boolean getBoolean(PackageHandle handle, Cursor cursor) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.BOOLEAN_TYPE_LABEL));
+				Messages.mismatch("Cannot convert", getValueType(), ValueType.BOOLEAN_TYPE_LABEL));
 	}
 
 	public int getInteger(PackageHandle handle, Cursor cursor) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.INTEGER_TYPE_LABEL));
+				Messages.mismatch("Cannot convert", getValueType(), ValueType.INTEGER_TYPE_LABEL));
 	}
 
 	public long getLong(PackageHandle handle, Cursor cursor) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.LONG_TYPE_LABEL));
+				Messages.mismatch("Cannot convert", getValueType(), ValueType.LONG_TYPE_LABEL));
 	}
 
 	public float getFloat(PackageHandle handle, Cursor cursor) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.FLOAT_TYPE_LABEL));
+				Messages.mismatch("Cannot convert", getValueType(), ValueType.FLOAT_TYPE_LABEL));
 	}
 
 	public double getDouble(PackageHandle handle, Cursor cursor) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.DOUBLE_TYPE_LABEL));
+				Messages.mismatch("Cannot convert", getValueType(), ValueType.DOUBLE_TYPE_LABEL));
 	}
 
 	public Object getValue(PackageHandle handle, Cursor cursor) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.CUSTOM_TYPE_LABEL));
+				Messages.mismatch("Cannot convert", getValueType(), ValueType.CUSTOM_TYPE_LABEL));
 	}
 
 	public String getString(PackageHandle handle, Cursor cursor) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.STRING_TYPE_LABEL));
+				Messages.mismatch("Cannot convert", getValueType(), ValueType.STRING_TYPE_LABEL));
 	}
 
 	// Write methods
 
 	public void setBoolean(PackageHandle handle, Cursor cursor, boolean value) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.BOOLEAN_TYPE_LABEL));
+				Messages.mismatch("Cannot convert", getValueType(), ValueType.BOOLEAN_TYPE_LABEL));
 	}
 
 	public void setInteger(PackageHandle handle, Cursor cursor, int value) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.INTEGER_TYPE_LABEL));
+				Messages.mismatch("Cannot convert", getValueType(), ValueType.INTEGER_TYPE_LABEL));
 	}
 
 	public void setLong(PackageHandle handle, Cursor cursor, long value) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.LONG_TYPE_LABEL));
+				Messages.mismatch("Cannot convert", getValueType(), ValueType.LONG_TYPE_LABEL));
 	}
 
 	public void setFloat(PackageHandle handle, Cursor cursor, float value) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.FLOAT_TYPE_LABEL));
+				Messages.mismatch("Cannot convert", getValueType(), ValueType.FLOAT_TYPE_LABEL));
 	}
 
 	public void setDouble(PackageHandle handle, Cursor cursor, double value) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.DOUBLE_TYPE_LABEL));
+				Messages.mismatch("Cannot convert", getValueType(), ValueType.DOUBLE_TYPE_LABEL));
 	}
 
 	public void setValue(PackageHandle handle, Cursor cursor, Object value) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.CUSTOM_TYPE_LABEL));
+				Messages.mismatch("Cannot convert", getValueType(), ValueType.CUSTOM_TYPE_LABEL));
 	}
 
 	public void setString(PackageHandle handle, Cursor cursor, String value) {
 		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatchMessage("Cannot convert", getValueType(), ValueType.STRING_TYPE_LABEL));
+				Messages.mismatch("Cannot convert", getValueType(), ValueType.STRING_TYPE_LABEL));
 	}
 
 	// Utility

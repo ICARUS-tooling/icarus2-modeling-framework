@@ -16,10 +16,15 @@
  */
 package de.ims.icarus2.model.manifest.xml.delegates;
 
+import java.util.Optional;
+
+import javax.xml.stream.XMLStreamException;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
@@ -98,21 +103,24 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractLayerManifest#writeElements(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	protected void writeElements(XmlSerializer serializer) throws Exception {
+	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
 		super.writeElements(serializer);
 
 		ItemLayerManifest manifest = getInstance();
 
 		if(manifest.isLocalBoundaryLayerManifest()) {
-			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, ManifestXmlTags.BOUNDARY_LAYER, manifest.getBoundaryLayerManifest());
+			ManifestXmlUtils.writeTargetLayerManifestElement(serializer,
+					ManifestXmlTags.BOUNDARY_LAYER, manifest.getBoundaryLayerManifest().get());
 		}
 
 		if(manifest.isLocalFoundationLayerManifest()) {
-			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, ManifestXmlTags.FOUNDATION_LAYER, manifest.getFoundationLayerManifest());
+			ManifestXmlUtils.writeTargetLayerManifestElement(serializer,
+					ManifestXmlTags.FOUNDATION_LAYER, manifest.getFoundationLayerManifest().get());
 		}
 
 		if(manifest.hasLocalContainerHierarchy()) {
-			for(ContainerManifest containerManifest : manifest.getContainerHierarchy()) {
+			for(ContainerManifest containerManifest : manifest.getContainerHierarchy()
+					.orElse(Hierarchy.empty())) {
 				if(containerManifest.getManifestType()==ManifestType.STRUCTURE_MANIFEST) {
 					getStructureManifestXmlDelegate().reset((StructureManifest)containerManifest).writeXml(serializer);
 				} else {
@@ -123,47 +131,51 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 	}
 
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 		case ManifestXmlTags.STRUCTURE_LAYER: {
 			readAttributes(attributes);
 		} break;
 
 		case ManifestXmlTags.BOUNDARY_LAYER: {
-			String boundaryLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID);
-			getInstance().setBoundaryLayerId(boundaryLayerId);
+			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID)
+				.ifPresent(getInstance()::setBoundaryLayerId);
 		} break;
 
 		case ManifestXmlTags.FOUNDATION_LAYER: {
-			String foundationLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID);
-			getInstance().setFoundationLayerId(foundationLayerId);
+			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID)
+				.ifPresent(getInstance()::setFoundationLayerId);
 		} break;
 
 		case ManifestXmlTags.CONTAINER: {
-			return getContainerManifestXmlDelegate().reset(getInstance());
-		}
+			handler = getContainerManifestXmlDelegate().reset(getInstance());
+		} break;
 
 		case ManifestXmlTags.STRUCTURE: {
-			return getStructureManifestXmlDelegate().reset(getInstance());
-		}
+			handler = getStructureManifestXmlDelegate().reset(getInstance());
+		} break;
 
 		default:
 			return super.startElement(manifestLocation, uri, localName, qName, attributes);
 		}
 
-		return this;
+		return Optional.ofNullable(handler);
 	}
 
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 		case ManifestXmlTags.STRUCTURE_LAYER: {
-			return null;
-		}
+			handler = null;
+		} break;
 
 		case ManifestXmlTags.BOUNDARY_LAYER: {
 			// no-op
@@ -177,7 +189,7 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 			return super.endElement(manifestLocation, uri, localName, qName, text);
 		}
 
-		return this;
+		return Optional.ofNullable(handler);
 	}
 
 	/**

@@ -5,6 +5,9 @@ package de.ims.icarus2.model.manifest.api;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -78,4 +81,65 @@ public interface Hierarchy<E extends Object> extends Lockable, Iterable<E> {
 		BELOW,
 		;
 	}
+
+	@SuppressWarnings("unchecked")
+	public static <E extends Object> Hierarchy<E> empty() {
+		return (Hierarchy<E>) EMPTY;
+	}
+
+	public static final Hierarchy<Object> EMPTY = new Hierarchy<Object>() {
+
+		private final Collection<Object> buffer = Collections.emptyList();
+
+		@Override
+		public void lock() {
+			// no-op
+		}
+
+		@Override
+		public boolean isLocked() {
+			return true;
+		}
+
+		@Override
+		public Iterator<Object> iterator() {
+			return buffer.iterator();
+		}
+
+		@Override
+		public Object getRoot() {
+			return null;
+		}
+
+		@Override
+		public int getDepth() {
+			return 0;
+		}
+
+		@Override
+		public Object atLevel(int level) {
+			throw new IndexOutOfBoundsException();
+		}
+
+		@Override
+		public void add(Object item) {
+			// no-op
+		}
+
+		@Override
+		public void remove(Object item) {
+			// no-op
+		}
+
+		@Override
+		public void insert(Object item, int index) {
+			// no-op
+		}
+
+		@Override
+		public int levelOf(Object item) {
+			return -1;
+		}
+
+	};
 }

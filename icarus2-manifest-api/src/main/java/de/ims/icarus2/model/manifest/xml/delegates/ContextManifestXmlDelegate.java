@@ -21,6 +21,9 @@ import static de.ims.icarus2.model.manifest.xml.ManifestXmlUtils.writeFlag;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -36,6 +39,7 @@ import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
+import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
 /**
@@ -122,27 +126,31 @@ public class ContextManifestXmlDelegate extends AbstractMemberManifestXmlDelegat
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractMemberManifest#writeAttributes(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	protected void writeAttributes(XmlSerializer serializer) throws Exception {
+	protected void writeAttributes(XmlSerializer serializer) throws XMLStreamException {
 		super.writeAttributes(serializer);
 
 		ContextManifest manifest = getInstance();
 
 		// Write primary layer
 		if(manifest.isLocalPrimaryLayerManifest()) {
-			serializer.writeAttribute(ManifestXmlAttributes.PRIMARY_LAYER, manifest.getPrimaryLayerManifest().getId());
+			serializer.writeAttribute(ManifestXmlAttributes.PRIMARY_LAYER,
+					manifest.getPrimaryLayerManifest().map(Identity::getId).get());
 		}
 
 		// Write foundation layer
 		if(manifest.isLocalFoundationLayerManifest()) {
-			serializer.writeAttribute(ManifestXmlAttributes.FOUNDATION_LAYER, manifest.getFoundationLayerManifest().getId());
+			serializer.writeAttribute(ManifestXmlAttributes.FOUNDATION_LAYER,
+					manifest.getFoundationLayerManifest().map(Identity::getId).get());
 		}
 
 		// Write flags
 		if(manifest.isLocalIndependentContext()) {
-			writeFlag(serializer, ManifestXmlAttributes.INDEPENDENT, manifest.isIndependentContext(), ContextManifest.DEFAULT_INDEPENDENT_VALUE);
+			writeFlag(serializer, ManifestXmlAttributes.INDEPENDENT,
+					manifest.isIndependentContext(), ContextManifest.DEFAULT_INDEPENDENT_VALUE);
 		}
 		if(manifest.isLocalEditable()) {
-			writeFlag(serializer, ManifestXmlAttributes.EDITABLE, manifest.isEditable(), ContextManifest.DEFAULT_EDITABLE_VALUE);
+			writeFlag(serializer, ManifestXmlAttributes.EDITABLE,
+					manifest.isEditable(), ContextManifest.DEFAULT_EDITABLE_VALUE);
 		}
 	}
 
@@ -150,7 +158,7 @@ public class ContextManifestXmlDelegate extends AbstractMemberManifestXmlDelegat
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractModifiableManifest#writeElements(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	protected void writeElements(XmlSerializer serializer) throws Exception {
+	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
 		super.writeElements(serializer);
 
 		ContextManifest manifest = getInstance();
@@ -191,7 +199,7 @@ public class ContextManifestXmlDelegate extends AbstractMemberManifestXmlDelegat
 
 		// Write driver
 		if(manifest.isLocalDriverManifest()) {
-			getDriverManifestXmlDelegate().reset(manifest.getDriverManifest()).writeXml(serializer);
+			getDriverManifestXmlDelegate().reset(manifest.getDriverManifest().get()).writeXml(serializer);
 		}
 	}
 
@@ -205,54 +213,37 @@ public class ContextManifestXmlDelegate extends AbstractMemberManifestXmlDelegat
 		ContextManifest manifest = getInstance();
 
 		// Read primary layer id
-		String primaryLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.PRIMARY_LAYER);
-		if(primaryLayerId!=null) {
-			manifest.setPrimaryLayerId(primaryLayerId);
-		}
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.PRIMARY_LAYER)
+			.ifPresent(manifest::setPrimaryLayerId);
 
 		// Read foundation layer id
-		String foundationLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.FOUNDATION_LAYER);
-		if(foundationLayerId!=null) {
-			manifest.setFoundationLayerId(foundationLayerId);
-		}
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.FOUNDATION_LAYER)
+			.ifPresent(manifest::setFoundationLayerId);
 
-		Boolean independent = readFlag(attributes, ManifestXmlAttributes.INDEPENDENT, ContextManifest.DEFAULT_INDEPENDENT_VALUE);
-		if(independent!=null) {
-			manifest.setIndependentContext(independent.booleanValue());
-		}
+		readFlag(attributes, ManifestXmlAttributes.INDEPENDENT, ContextManifest.DEFAULT_INDEPENDENT_VALUE)
+			.ifPresent(manifest::setIndependentContext);
 
-		Boolean editable = readFlag(attributes, ManifestXmlAttributes.EDITABLE, ContextManifest.DEFAULT_EDITABLE_VALUE);
-		if(editable!=null) {
-			manifest.setEditable(editable.booleanValue());
-		}
+		readFlag(attributes, ManifestXmlAttributes.EDITABLE, ContextManifest.DEFAULT_EDITABLE_VALUE)
+			.ifPresent(manifest::setEditable);
 	}
 
 	protected void readPrereqAttributes(PrerequisiteManifest manifest, Attributes attributes) {
-		String layerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID);
-		if(layerId!=null) {
-			manifest.setLayerId(layerId);
-		}
-
-		String typeId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.TYPE_ID);
-		if(typeId!=null) {
-			manifest.setTypeId(typeId);
-		}
-
-		String contextId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CONTEXT_ID);
-		if(contextId!=null) {
-			manifest.setContextId(contextId);
-		}
-
-		String description = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.DESCRIPTION);
-		if(description!=null) {
-			manifest.setDescription(description);
-		}
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID)
+			.ifPresent(manifest::setLayerId);
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.TYPE_ID)
+			.ifPresent(manifest::setTypeId);
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CONTEXT_ID)
+			.ifPresent(manifest::setContextId);
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.DESCRIPTION)
+			.ifPresent(manifest::setDescription);
 	}
 
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
+		ManifestXmlHandler handler = null;
+
 		switch (localName) {
 
 		case ManifestXmlTags.ROOT_CONTEXT:
@@ -260,51 +251,55 @@ public class ContextManifestXmlDelegate extends AbstractMemberManifestXmlDelegat
 			//$FALL-THROUGH$
 		case ManifestXmlTags.CONTEXT: {
 			readAttributes(attributes);
+
+			handler = this;
 		} break;
 
 		case ManifestXmlTags.LOCATION: {
-			return getLocationManifestXmlDelegate().reset(getInstance());
-		}
+			handler = getLocationManifestXmlDelegate().reset(getInstance());
+		} break;
 
 		case ManifestXmlTags.PREREQUISITES: {
-			// no-op
+			handler = this;
 		} break;
 
 		case ManifestXmlTags.LOCATIONS: {
-			// no-op
+			handler = this;
 		} break;
 
 		case ManifestXmlTags.PREREQUISITE: {
-			String alias = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.ALIAS);
-			PrerequisiteManifest prerequisite = getInstance().addPrerequisite(alias);
-			readPrereqAttributes(prerequisite, attributes);
+			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.ALIAS)
+				.map(getInstance()::addPrerequisite)
+				.ifPresent(prereq -> readPrereqAttributes(prereq, attributes));
 		} break;
 
 		case ManifestXmlTags.LAYER_GROUP: {
-			return getLayerGroupManifestXmlHandler().reset(getInstance());
-		}
+			handler = getLayerGroupManifestXmlHandler().reset(getInstance());
+		} break;
 
 		case ManifestXmlTags.DRIVER: {
-			return getDriverManifestXmlDelegate().reset(getInstance());
-		}
+			handler = getDriverManifestXmlDelegate().reset(getInstance());
+		} break;
 
 		default:
 			return super.startElement(manifestLocation, uri, localName, qName, attributes);
 		}
 
-		return this;
+		return Optional.ofNullable(handler);
 	}
 
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 
 		case ManifestXmlTags.ROOT_CONTEXT:
 		case ManifestXmlTags.CONTEXT: {
-			return null;
-		}
+			handler = null;
+		} break;
 
 		case ManifestXmlTags.PREREQUISITES: {
 			// no-op
@@ -326,7 +321,7 @@ public class ContextManifestXmlDelegate extends AbstractMemberManifestXmlDelegat
 			return super.endElement(manifestLocation, uri, localName, qName, text);
 		}
 
-		return this;
+		return Optional.ofNullable(handler);
 	}
 
 	/**

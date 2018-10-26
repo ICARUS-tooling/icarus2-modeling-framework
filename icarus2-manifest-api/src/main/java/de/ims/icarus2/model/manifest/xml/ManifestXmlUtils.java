@@ -16,11 +16,11 @@
  */
 package de.ims.icarus2.model.manifest.xml;
 
-import static de.ims.icarus2.util.lang.Primitives._boolean;
-
 import java.util.Optional;
 
+import javax.annotation.Nullable;
 import javax.swing.Icon;
+import javax.xml.stream.XMLStreamException;
 
 import org.xml.sax.Attributes;
 
@@ -70,73 +70,69 @@ public final class ManifestXmlUtils {
 	 * Check whether a flag is set and differs from a given default value. Only if both conditions are met
 	 * will the flag be written to the provided serializer, using the specified name as identifier.
 	 */
-	public static void writeFlag(XmlSerializer serializer, String name, Boolean flag, boolean defaultValue) throws Exception {
+	public static void writeFlag(XmlSerializer serializer, String name,
+			@Nullable Boolean flag, boolean defaultValue) throws XMLStreamException {
 		if(flag!=null && flag.booleanValue()!=defaultValue) {
 			serializer.writeAttribute(name, flag.booleanValue());
 		}
 	}
-	public static void writeFlag(XmlSerializer serializer, String name, boolean flag, boolean defaultValue) throws Exception {
+	public static void writeFlag(XmlSerializer serializer, String name,
+			boolean flag, boolean defaultValue) throws XMLStreamException {
 		if(flag!=defaultValue) {
 			serializer.writeAttribute(name, flag);
 		}
 	}
 
-	public static Boolean readFlag(Attributes attributes, String name, boolean defaultValue) {
-		String value = normalize(attributes, name);
-		Boolean result = (value==null) ? null : Boolean.valueOf(value);
-		if(result!=null && result.booleanValue()==defaultValue) {
-			result = null;
-		}
-		return result;
+	public static Optional<Boolean> readFlag(Attributes attributes, String name, boolean defaultValue) {
+		return normalize(attributes, name)
+				.map(Boolean::valueOf)
+				.filter(b -> b.booleanValue()!=defaultValue);
 	}
 
 	//*******************************************
 	//               WRITE METHODS
 	//*******************************************
 
-	public static String getSerializedForm(ValueType type) {
+	public static Optional<String> getSerializedForm(@Nullable ValueType type) {
 //		return type==ValueType.STRING ? null : type.getXmlValue();
 
-		return type==null ? null : type.getStringValue();
+		return Optional.ofNullable(type==null ? null : type.getStringValue());
 	}
 
-	public static void writeIdentityAttributes(XmlSerializer serializer, Identity identity) throws Exception {
+	public static void writeIdentityAttributes(XmlSerializer serializer,
+			@Nullable Identity identity) throws XMLStreamException {
 		if(identity==null) {
 			return;
 		}
 
-		writeIdentityAttributes(serializer, identity.getId(), identity.getName(), identity.getDescription(), identity.getIcon());
+		serializer.writeAttribute(ManifestXmlAttributes.ID, identity.getId());
+		serializer.writeAttribute(ManifestXmlAttributes.NAME, identity.getName());
+		serializer.writeAttribute(ManifestXmlAttributes.DESCRIPTION, identity.getDescription());
+		serializer.writeAttribute(ManifestXmlAttributes.ICON, serialize(identity.getIcon()));
 	}
 
-	public static void writeCategoryAttributes(XmlSerializer serializer, Category category) throws Exception {
+	public static void writeCategoryAttributes(XmlSerializer serializer, Category category) throws XMLStreamException {
 		if(category==null) {
 			return;
 		}
 
-		writeIdentityAttributes(serializer, category.getId(), category.getName(), category.getDescription(), category.getIcon());
+		writeIdentityAttributes(serializer, category);
 
 		serializer.writeAttribute(ManifestXmlAttributes.NAMESPACE, category.getNamespace());
-	}
-
-	public static void writeIdentityAttributes(XmlSerializer serializer, String id,
-			Optional<String> name, Optional<String> description, Optional<Icon> icon) throws Exception {
-		serializer.writeAttribute(ManifestXmlAttributes.ID, id);
-		serializer.writeAttribute(ManifestXmlAttributes.NAME, name);
-		serializer.writeAttribute(ManifestXmlAttributes.DESCRIPTION, description);
-		serializer.writeAttribute(ManifestXmlAttributes.ICON, serialize(icon));
 	}
 
 	public static Optional<String> getSerializedForm(TargetLayerManifest manifest) {
 		Optional<PrerequisiteManifest> optPrereq = manifest.getPrerequisite();
 		return optPrereq.isPresent() ? optPrereq.map(PrerequisiteManifest::getAlias)
-				: manifest.getResolvedLayerManifest().map(LayerManifest::getId);
+				: manifest.getResolvedLayerManifest().flatMap(LayerManifest::getId);
 	}
 
 	/**
 	 * Writes the given target layer. Uses as layer id the alias of the prerequisite of the
 	 * link if present, or the resolved layer's id otherwise.
 	 */
-	public static void writeTargetLayerManifestElement(XmlSerializer serializer, String name, TargetLayerManifest manifest) throws Exception {
+	public static void writeTargetLayerManifestElement(XmlSerializer serializer, String name,
+			@Nullable TargetLayerManifest manifest) throws XMLStreamException {
 		if(manifest==null) {
 			return;
 		}
@@ -149,31 +145,33 @@ public final class ManifestXmlUtils {
 		serializer.endElement(name);
 	}
 
-	public static void writeAliasElement(XmlSerializer serializer, String alias) throws Exception {
+	public static void writeAliasElement(XmlSerializer serializer, String alias) throws XMLStreamException {
 		serializer.startEmptyElement(ManifestXmlTags.ALIAS);
 		serializer.writeAttribute(ManifestXmlAttributes.NAME, alias);
 		serializer.endElement(ManifestXmlTags.ALIAS);
 	}
 
-	public static void writeElement(XmlSerializer serializer, String name, String content) throws Exception {
+	public static void writeElement(XmlSerializer serializer, String name, @Nullable String content) throws XMLStreamException {
 		serializer.startEmptyElement(name);
 		serializer.writeTextOrCData(content);
 		serializer.endElement(name);
 	}
 
-	public static void writeElement(XmlSerializer serializer, String name, Optional<String> content) throws Exception {
-		if(content.isPresent()) {
+	private static void maybeWriteElement(XmlSerializer serializer, String name, Optional<String> content) throws XMLStreamException {
+		if(content.isPresent() && XmlUtils.hasIllegalAttributeSymbols(content.get())) {
 			serializer.startEmptyElement(name);
 			serializer.writeTextOrCData(content.get());
 			serializer.endElement(name);
 		}
 	}
 
-	public static void writeIdentityFieldElements(XmlSerializer serializer, Identity identity) throws Exception {
-		writeIdentityFieldElements(serializer, identity.getName().orElse(null), identity.getDescription(), identity.getIcon());
+	public static void writeIdentityFieldElements(XmlSerializer serializer, Identity identity) throws XMLStreamException {
+		maybeWriteElement(serializer, ManifestXmlTags.NAME, identity.getName());
+		maybeWriteElement(serializer, ManifestXmlTags.DESCRIPTION, identity.getDescription());
+		maybeWriteElement(serializer, ManifestXmlTags.ICON, serializeIcon(identity.getIcon().orElse(null)));
 	}
 
-	public static void writeIdentityFieldElements(XmlSerializer serializer, String name, String description, Icon icon) throws Exception {
+	public static void writeIdentityFieldElements(XmlSerializer serializer, String name, String description, Icon icon) throws XMLStreamException {
 
 
 		// Nest identity information if needed
@@ -194,7 +192,12 @@ public final class ManifestXmlUtils {
 		}
 	}
 
-	public static void writeValueElement(XmlSerializer serializer, String name, Object value, ValueType type) throws Exception {
+	public static void writeValueElement(XmlSerializer serializer, String name,
+			@Nullable Object value, ValueType type) throws XMLStreamException {
+		if(value instanceof Optional) {
+			value = ((Optional<?>) value).orElse(null);
+		}
+
 		if(value==null) {
 			return;
 		}
@@ -213,7 +216,12 @@ public final class ManifestXmlUtils {
 		serializer.endElement(name);
 	}
 
-	private static void writeValue(XmlSerializer serializer, Object value, ValueType type) throws Exception {
+	private static void writeValue(XmlSerializer serializer,
+			@Nullable Object value, ValueType type) throws XMLStreamException {
+		if(value instanceof Optional) {
+			value = ((Optional<?>) value).orElse(null);
+		}
+
 		if(value instanceof Expression) {
 			writeEvalElement(serializer, (Expression)value);
 		} else {
@@ -221,7 +229,7 @@ public final class ManifestXmlUtils {
 		}
 	}
 
-	public static void writeEvalElement(XmlSerializer serializer, Expression expression) throws Exception {
+	public static void writeEvalElement(XmlSerializer serializer, Expression expression) throws XMLStreamException {
 		serializer.startElement(ManifestXmlTags.EVAL);
 
 		if(expression.hasVariables()) {
@@ -249,7 +257,7 @@ public final class ManifestXmlUtils {
 		serializer.endElement(ManifestXmlTags.EVAL);
 	}
 
-	public static void writeResourceElement(XmlSerializer serializer, Resource resource) throws Exception {
+	public static void writeResourceElement(XmlSerializer serializer, Resource resource) throws XMLStreamException {
 		if(resource.getUri()==null)
 			throw new IllegalStateException("Resource is missing url"); //$NON-NLS-1$
 
@@ -259,7 +267,7 @@ public final class ManifestXmlUtils {
 		serializer.endElement(ManifestXmlTags.RESOURCE);
 	}
 
-	public static void writePrerequisiteElement(XmlSerializer serializer, PrerequisiteManifest manifest) throws Exception {
+	public static void writePrerequisiteElement(XmlSerializer serializer, PrerequisiteManifest manifest) throws XMLStreamException {
 
 		serializer.startEmptyElement(ManifestXmlTags.PREREQUISITE);
 
@@ -279,7 +287,7 @@ public final class ManifestXmlUtils {
 		serializer.endElement(ManifestXmlTags.PREREQUISITE);
 	}
 
-	public static void writeNoteElement(XmlSerializer serializer, Note note) throws Exception {
+	public static void writeNoteElement(XmlSerializer serializer, @Nullable Note note) throws XMLStreamException {
 		if(note==null) {
 			return;
 		}
@@ -289,7 +297,8 @@ public final class ManifestXmlUtils {
 		// Attributes
 
 		serializer.writeAttribute(ManifestXmlAttributes.NAME, note.getName());
-		serializer.writeAttribute(ManifestXmlAttributes.DATE, DateUtils.formatDate(note.getModificationDate()));
+		serializer.writeAttribute(ManifestXmlAttributes.DATE,
+				note.getModificationDate().flatMap(DateUtils::formatDate));
 
 		// Content
 
@@ -303,35 +312,17 @@ public final class ManifestXmlUtils {
 	//*******************************************
 
 	public static void readIdentityAttributes(Attributes attr, ModifiableIdentity identity) {
-		String id = normalize(attr, ManifestXmlAttributes.ID);
-		if(id!=null) {
-			identity.setId(id);
-		}
-
-		String name = normalize(attr, ManifestXmlAttributes.NAME);
-		if(name!=null) {
-			identity.setName(name);
-		}
-
-		String description = normalize(attr, ManifestXmlAttributes.DESCRIPTION);
-		if(description!=null) {
-			identity.setDescription(description);
-		}
-
-		String icon = normalize(attr, ManifestXmlAttributes.ICON);
-		if(icon!=null) {
-			identity.setIcon(iconValue(icon));
-		}
+		normalize(attr, ManifestXmlAttributes.ID).ifPresent(identity::setId);
+		normalize(attr, ManifestXmlAttributes.NAME).ifPresent(identity::setName);
+		normalize(attr, ManifestXmlAttributes.DESCRIPTION).ifPresent(identity::setDescription);
+		normalize(attr, ManifestXmlAttributes.ICON).flatMap(ManifestXmlUtils::iconValue).ifPresent(identity::setIcon);
 	}
 
 	public static Category readCategory(Attributes attr) {
 
 		DefaultCategory category = new DefaultCategory();
 
-		String namespace = normalize(attr, ManifestXmlAttributes.NAMESPACE);
-		if(namespace!=null) {
-			category.setNamespace(namespace);
-		}
+		normalize(attr, ManifestXmlAttributes.NAMESPACE).ifPresent(category::setNamespace);
 
 		readIdentityAttributes(attr, category);
 
@@ -341,27 +332,30 @@ public final class ManifestXmlUtils {
 		return category;
 	}
 
-	public static Icon iconValue(String text, boolean allowSerializedForm) {
+	public static Optional<Icon> iconValue(@Nullable String text, boolean allowSerializedForm) {
+		if(text==null) {
+			return Optional.empty();
+		}
+
 		IconRegistry iconRegistry = IconRegistry.getGlobalRegistry();
 		// Try icon name first (can occur if it contains illegal attribute symbols)
 		if(!allowSerializedForm || iconRegistry.hasIconInfo(text)) {
-			return new IconWrapper(text);
+			return Optional.of(new IconWrapper(text));
 		} else {
 			// Otherwise assume we have a serialized image here
-			return ImageSerializer.string2Icon(text);
+			return Optional.of(ImageSerializer.string2Icon(text));
 		}
 	}
 
-	public static Icon iconValue(String iconName) {
+	public static Optional<Icon> iconValue(@Nullable String iconName) {
 		return iconValue(iconName, false);
 	}
 
-	public static Icon iconValue(Attributes attr, String key) {
-		String icon = normalize(attr, key);
-		return icon==null ? null : iconValue(icon);
+	public static Optional<Icon> iconValue(Attributes attr, String key) {
+		return normalize(attr, key).flatMap(ManifestXmlUtils::iconValue);
 	}
 
-	public static String stringValue(Attributes attr, String key) {
+	public static Optional<String> stringValue(Attributes attr, String key) {
 		return normalize(attr, key);
 	}
 
@@ -369,72 +363,96 @@ public final class ManifestXmlUtils {
 		return Long.parseLong(s);
 	}
 
-	public static long longValue(Attributes attr, String key) {
-		return longValue(normalize(attr, key));
+	public static long longValue(Attributes attr, String key, long defaultValue) {
+		return normalize(attr, key)
+				.map(ManifestXmlUtils::longValue)
+				.orElse(Long.valueOf(defaultValue))
+				.longValue();
 	}
 
 	public static double doubleValue(String s) {
 		return Double.parseDouble(s);
 	}
 
-	public static double doubleValue(Attributes attr, String key) {
-		return doubleValue(normalize(attr, key));
+	public static double doubleValue(Attributes attr, String key, double defaultValue) {
+		return normalize(attr, key)
+				.map(ManifestXmlUtils::doubleValue)
+				.orElse(Double.valueOf(defaultValue))
+				.doubleValue();
 	}
 
 	public static float floatValue(String s) {
 		return Float.parseFloat(s);
 	}
 
-	public static float floatValue(Attributes attr, String key) {
-		return floatValue(normalize(attr, key));
+	public static float floatValue(Attributes attr, String key, float defaultValue) {
+		return normalize(attr, key)
+				.map(ManifestXmlUtils::floatValue)
+				.orElse(Float.valueOf(defaultValue))
+				.floatValue();
 	}
 
 	public static int intValue(String s) {
 		return Integer.parseInt(s);
 	}
 
-	public static int intValue(Attributes attr, String key) {
-		return intValue(normalize(attr, key));
+	public static int intValue(Attributes attr, String key, int defaultValue) {
+		return normalize(attr, key)
+				.map(ManifestXmlUtils::intValue)
+				.orElse(Integer.valueOf(defaultValue))
+				.intValue();
 	}
 
 	public static boolean booleanValue(String s) {
 		return s!=null && ("true".equalsIgnoreCase(s) || "yes".equalsIgnoreCase(s)); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 
-	public static boolean booleanValue(Attributes attr, String key) {
-		return booleanValue(normalize(attr, key));
+	public static Optional<Boolean> booleanValue(Attributes attr, String key) {
+		return normalize(attr, key)
+				.map(ManifestXmlUtils::booleanValue);
 	}
 
-	public static boolean booleanValue(Attributes attr, String key, boolean defaultValue) {
-		String s = normalize(attr, key);
-		return s==null ? defaultValue : booleanValue(s);
+	public static Optional<Boolean> booleanValue(Attributes attr, String key, boolean defaultValue) {
+		return booleanValue(attr, key).filter(b -> b.booleanValue()!=defaultValue);
 	}
 
-	public static ValueType typeValue(Attributes attr) {
-		String s = normalize(attr, ManifestXmlAttributes.VALUE_TYPE);
-		return typeValue(s);
+	public static Optional<ValueType> typeValue(Attributes attr) {
+		return normalize(attr, ManifestXmlAttributes.VALUE_TYPE)
+				.map(ManifestXmlUtils::typeValue);
 	}
 
 	public static ValueType typeValue(String s) {
 		return s==null ? ValueType.STRING : ValueType.parseValueType(s);
 	}
 
-	public static Boolean boolValue(Attributes attr, String key) {
-		String s = normalize(attr, key);
-		return s==null ? null : _boolean(booleanValue(s));
-	}
-
-	public static String normalize(Attributes attr, String name) {
+	public static Optional<String> normalize(Attributes attr, String name) {
 		String value = attr.getValue(name);
 
 		return normalize(value);
 	}
 
-	public static String normalize(String value) {
-		return (value==null || value.isEmpty()) ? null : value;
+	public static Optional<String> normalize(String value) {
+		return Optional.ofNullable((value==null || value.isEmpty()) ? null : value);
+	}
+
+	private static Optional<String> serializeIcon(Icon icon) {
+		if(icon==null) {
+			return Optional.empty();
+		}
+
+		String iconString = serialize(icon).orElse(null);
+		if(iconString==null || XmlUtils.hasIllegalAttributeSymbols(iconString)) {
+			iconString = ImageSerializer.icon2String(icon);
+		}
+
+		return Optional.of(iconString);
 	}
 
 	public static Optional<String> serialize(Object value) {
+		if(value instanceof Optional) {
+			value = ((Optional<?>)value).orElse(null);
+		}
+
 		if(value == null) {
 			return Optional.empty();
 		} else if(value instanceof StringResource) {

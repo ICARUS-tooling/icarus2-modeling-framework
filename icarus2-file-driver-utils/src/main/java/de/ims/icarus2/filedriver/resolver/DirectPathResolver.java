@@ -80,8 +80,8 @@ public class DirectPathResolver implements PathResolver {
 	public static DirectPathResolver forManifest(LocationManifest manifest, ResourceProvider resourceProvider) {
 		requireNonNull(manifest);
 
-		String rootPath = manifest.getRootPath();
-		PathType rootPathType = manifest.getRootPathType();
+		String rootPath = manifest.getRootPath().orElse(null);
+		PathType rootPathType = manifest.getRootPathType().orElse(LocationManifest.DEFAULT_ROOT_PATH_TYPE);
 
 		checkArgument("Can only handle file, resource or folder locations",
 				rootPathType==PathType.FILE || rootPathType==PathType.FOLDER || rootPathType==PathType.RESOURCE);
@@ -153,7 +153,7 @@ public class DirectPathResolver implements PathResolver {
 					} break;
 
 					case RESOURCE: {
-
+						//TODO
 					} break;
 
 					default:

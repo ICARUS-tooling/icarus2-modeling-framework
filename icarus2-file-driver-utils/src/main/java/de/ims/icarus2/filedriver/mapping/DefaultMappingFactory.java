@@ -38,9 +38,11 @@ import de.ims.icarus2.model.api.io.resources.VirtualIOResource;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.lang.ClassUtils;
@@ -91,7 +93,7 @@ public class DefaultMappingFactory implements MappingFactory {
 		Mapping mapping = createFunctionMapping(manifest, options);
 
 		if(mapping==null) {
-			switch (manifest.getRelation()) {
+			switch (ManifestUtils.require(manifest.getRelation(), manifest, "relation")) {
 			case ONE_TO_ONE:
 				mapping = createOneToOneMapping(manifest, options);
 				break;
@@ -176,7 +178,7 @@ public class DefaultMappingFactory implements MappingFactory {
 	}
 
 	protected Mapping createOneToOneMapping(MappingManifest manifest, Options options) {
-		Coverage coverage = manifest.getCoverage();
+		Coverage coverage = manifest.getCoverage().orElseThrow(ManifestException.missing(manifest, "coverage"));
 		if(coverage.isTotal() && coverage.isMonotonic()) {
 			return createIdentityMapping(manifest, options);
 		} else {
@@ -194,10 +196,15 @@ public class DefaultMappingFactory implements MappingFactory {
 	}
 
 	protected MappingImplIdentity createIdentityMapping(MappingManifest manifest, Options options) {
-		ContextManifest contextManifest = driver.getManifest().getContextManifest();
+		ContextManifest contextManifest = ManifestUtils.require(
+				driver.getManifest().getContextManifest(), driver.getManifest(), "contextManifest");
 
-		ItemLayerManifest sourceLayer = (ItemLayerManifest) contextManifest.getLayerManifest(manifest.getSourceLayerId());
-		ItemLayerManifest targetLayer = (ItemLayerManifest) contextManifest.getLayerManifest(manifest.getTargetLayerId());
+		ItemLayerManifest sourceLayer = (ItemLayerManifest) manifest.getSourceLayerId()
+				.flatMap(contextManifest::getLayerManifest)
+				.orElseThrow(ManifestException.error("Failed to obtain source layer"));
+		ItemLayerManifest targetLayer = (ItemLayerManifest) manifest.getTargetLayerId()
+				.flatMap(contextManifest::getLayerManifest)
+				.orElseThrow(ManifestException.error("Failed to obtain target layer"));
 
 		return new MappingImplIdentity(driver, manifest, sourceLayer, targetLayer);
 	}
@@ -206,10 +213,16 @@ public class DefaultMappingFactory implements MappingFactory {
 		builder.driver(driver);
 		builder.manifest(manifest);
 
-		ContextManifest contextManifest = driver.getManifest().getContextManifest();
+		ContextManifest contextManifest = driver.getManifest()
+				.getContextManifest()
+				.orElseThrow(ManifestException.error("Failed to obtain context manifest for lookup"));
 
-		ItemLayerManifest sourceLayer = (ItemLayerManifest) contextManifest.getLayerManifest(manifest.getSourceLayerId());
-		ItemLayerManifest targetLayer = (ItemLayerManifest) contextManifest.getLayerManifest(manifest.getTargetLayerId());
+		ItemLayerManifest sourceLayer = (ItemLayerManifest) manifest.getSourceLayerId()
+				.flatMap(contextManifest::getLayerManifest)
+				.orElseThrow(ManifestException.error("Failed to obtain source layer"));
+		ItemLayerManifest targetLayer = (ItemLayerManifest) manifest.getTargetLayerId()
+				.flatMap(contextManifest::getLayerManifest)
+				.orElseThrow(ManifestException.error("Failed to obtain target layer"));
 
 		builder.sourceLayer(sourceLayer);
 		builder.targetLayer(targetLayer);
@@ -287,10 +300,12 @@ public class DefaultMappingFactory implements MappingFactory {
 
 		Mapping inverseMapping = lookupInverse(manifest);
 
-		Relation inverseRelation = inverseMapping.getManifest().getRelation();
+		Relation inverseRelation = inverseMapping.getManifest()
+				.getRelation()
+				.orElseThrow(ManifestException.missing(inverseMapping.getManifest(), "relation"));
 		if(inverseRelation!=Relation.ONE_TO_MANY)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					Messages.mismatchMessage("Invalid relation type for inverse mapping", Relation.ONE_TO_MANY, inverseRelation));
+					Messages.mismatch("Invalid relation type for inverse mapping", Relation.ONE_TO_MANY, inverseRelation));
 
 		MappingImplSpanManyToOne.Builder builder = new MappingImplSpanManyToOne.Builder();
 

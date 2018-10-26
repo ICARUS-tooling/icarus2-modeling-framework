@@ -119,7 +119,7 @@ public class MemberUtils {
 	public static void checkHostStructure(Edge edge, Structure expectedHost) {
 		if(edge.getStructure()!=expectedHost)
 			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
-					Messages.mismatchMessage("Foreign hosting structure for edge "+getName(edge),
+					Messages.mismatch("Foreign hosting structure for edge "+getName(edge),
 							getName(expectedHost), getName(edge.getStructure())));
 	}
 

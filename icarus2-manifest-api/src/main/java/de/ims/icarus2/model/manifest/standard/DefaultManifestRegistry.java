@@ -452,7 +452,7 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 	@Override
 	public LayerType getOverlayLayerType() {
 		return getLayerType(DefaultLayerTypeIds.ITEM_LAYER_OVERLAY)
-				.orElseThrow(ManifestException.create(GlobalErrorCode.ILLEGAL_STATE,
+				.orElseThrow(ManifestException.error(GlobalErrorCode.ILLEGAL_STATE,
 						"No shared overlay layer type registered"));
 	}
 

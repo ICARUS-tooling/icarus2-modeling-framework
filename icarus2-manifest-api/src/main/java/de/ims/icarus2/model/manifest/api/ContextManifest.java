@@ -358,6 +358,7 @@ public interface ContextManifest extends MemberManifest, Bindable, Embedded {
 		/**
 		 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
 		 */
+		@SuppressWarnings("unchecked")
 		@Override
 		default Optional<? extends TypedManifest> getHost() {
 			return Optional.of(getContextManifest());

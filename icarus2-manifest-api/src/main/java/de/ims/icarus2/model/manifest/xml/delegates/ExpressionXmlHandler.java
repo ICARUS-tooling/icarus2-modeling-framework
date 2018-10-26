@@ -18,6 +18,8 @@ package de.ims.icarus2.model.manifest.xml.delegates;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Optional;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -51,7 +53,7 @@ public class ExpressionXmlHandler implements ManifestXmlHandler {
 	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlHandler#startElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
 	 */
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
 		switch (qName) {
@@ -64,9 +66,12 @@ public class ExpressionXmlHandler implements ManifestXmlHandler {
 		} break;
 
 		case ManifestXmlTags.VARIABLE: {
-			String name = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.NAME);
-			String classname = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CLASS);
-			String pluginId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.PLUGIN_ID);
+			String name = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.NAME)
+					.orElseThrow(ManifestXmlHandler.error("Missing variable name"));
+			String classname = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CLASS)
+					.orElseThrow(ManifestXmlHandler.error("Missing variable class name"));
+			String pluginId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.PLUGIN_ID)
+					.orElse(null);
 
 			ClassLoader classLoader = getClass().getClassLoader();
 
@@ -90,14 +95,14 @@ public class ExpressionXmlHandler implements ManifestXmlHandler {
 			throw new UnexpectedTagException(qName, true, ManifestXmlTags.EVAL);
 		}
 
-		return this;
+		return Optional.of(this);
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlHandler#endElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 			throws SAXException {
 		switch (qName) {
@@ -117,7 +122,7 @@ public class ExpressionXmlHandler implements ManifestXmlHandler {
 			throw new UnexpectedTagException(qName, false, ManifestXmlTags.EVAL);
 		}
 
-		return this;
+		return Optional.of(this);
 	}
 
 	/**

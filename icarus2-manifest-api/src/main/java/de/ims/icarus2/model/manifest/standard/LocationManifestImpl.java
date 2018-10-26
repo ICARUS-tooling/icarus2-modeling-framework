@@ -214,7 +214,7 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	public Optional<PathType> getRootPathType() {
 		checkNotInline();
 
-		return Optional.of(rootPathType.orElse(DEFAULT_ROOT_PATH_TYPE));
+		return rootPathType;
 	}
 
 	@Override

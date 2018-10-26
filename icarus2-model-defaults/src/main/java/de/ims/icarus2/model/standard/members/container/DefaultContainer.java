@@ -246,7 +246,7 @@ public class DefaultContainer extends DefaultItem implements Container, Recyclab
 
 		if(!requiredType.isCompatibleWith(givenType))
 			throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-					Messages.mismatchMessage("Incompatible container types", requiredType, givenType));
+					Messages.mismatch("Incompatible container types", requiredType, givenType));
 	}
 
 	public void setItemStorage(ItemStorage itemStorage) {

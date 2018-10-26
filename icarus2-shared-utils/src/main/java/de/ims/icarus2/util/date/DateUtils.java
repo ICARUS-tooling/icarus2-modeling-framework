@@ -21,6 +21,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
+import java.util.Optional;
+
+import javax.annotation.Nullable;
 
 import de.ims.icarus2.util.strings.StringUtil;
 
@@ -41,27 +44,27 @@ public class DateUtils {
 	private static DateTimeFormatter dateOutFormat = createFormat();
 	private static DateTimeFormatter localDateFormat = DateTimeFormatter.ofPattern(DATE_PATTERN);
 
-	public static String formatDate(TemporalAccessor temporal) {
+	public static Optional<String> formatDate(@Nullable TemporalAccessor temporal) {
 		if(temporal==null) {
-			return null;
+			return Optional.empty();
 		}
 		synchronized (dateOutFormat) {
-			return dateOutFormat.format(temporal);
+			return Optional.of(dateOutFormat.format(temporal));
 		}
 	}
 
-	public static String formatLocalDate(TemporalAccessor temporal) {
+	public static Optional<String> formatLocalDate(@Nullable TemporalAccessor temporal) {
 		if(temporal==null) {
-			return null;
+			return Optional.empty();
 		}
 		synchronized (localDateFormat) {
-			return localDateFormat.format(temporal);
+			return Optional.of(localDateFormat.format(temporal));
 		}
 	}
 
-	public static String formatDuration(long time) {
+	public static Optional<String> formatDuration(long time) {
 		if(time<=0)
-			return null;
+			return Optional.empty();
 
 		long s = time/1000;
 		long m = s/60;
@@ -88,7 +91,7 @@ public class DateUtils {
 
 		StringUtil.trim(sb);
 
-		return sb.length()==0 ? "<1S" : sb.toString();
+		return Optional.of(sb.length()==0 ? "<1S" : sb.toString());
 	}
 
 	public static LocalDateTime parseDate(String s) throws ParseException {

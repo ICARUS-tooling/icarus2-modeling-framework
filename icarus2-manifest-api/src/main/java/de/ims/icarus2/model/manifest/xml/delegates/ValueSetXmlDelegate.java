@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.manifest.xml.delegates;
 
+import java.util.Optional;
+
+import javax.xml.stream.XMLStreamException;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -82,7 +86,7 @@ public class ValueSetXmlDelegate extends AbstractXmlDelegate<ValueSet> {
 	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlElement#writeXml(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	public void writeXml(XmlSerializer serializer) throws Exception {
+	public void writeXml(XmlSerializer serializer) throws XMLStreamException {
 		serializer.startElement(ManifestXmlTags.VALUE_SET);
 
 		ValueType type = getInstance().getValueType();
@@ -101,9 +105,11 @@ public class ValueSetXmlDelegate extends AbstractXmlDelegate<ValueSet> {
 	}
 
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 		case ManifestXmlTags.VALUE_SET: {
 			// no-op
@@ -111,7 +117,7 @@ public class ValueSetXmlDelegate extends AbstractXmlDelegate<ValueSet> {
 
 		case ManifestXmlTags.VALUE : {
 			if(attributes.getLength()>0) {
-				return new ValueManifestXmlDelegate(getInstance().getValueType());
+				handler = new ValueManifestXmlDelegate(getInstance().getValueType());
 			}
 		} break;
 
@@ -119,17 +125,19 @@ public class ValueSetXmlDelegate extends AbstractXmlDelegate<ValueSet> {
 			throw new UnexpectedTagException(qName, true, ManifestXmlTags.VALUE_SET);
 		}
 
-		return this;
+		return Optional.of(handler);
 	}
 
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 		case ManifestXmlTags.VALUE_SET: {
-			return null;
-		}
+			handler = null;
+		} break;
 
 		case ManifestXmlTags.VALUE : {
 			Object value = getInstance().getValueType().parse(text, manifestLocation.getClassLoader());
@@ -141,7 +149,7 @@ public class ValueSetXmlDelegate extends AbstractXmlDelegate<ValueSet> {
 			throw new UnexpectedTagException(qName, false, ManifestXmlTags.VALUE_SET);
 		}
 
-		return this;
+		return Optional.ofNullable(handler);
 	}
 
 	/**

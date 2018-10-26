@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.manifest.xml.delegates;
 
+import java.util.Optional;
+
+import javax.xml.stream.XMLStreamException;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -40,7 +44,7 @@ public abstract class AbstractLayerManifestXmlDelegate<L extends LayerManifest> 
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractMemberManifest#writeAttributes(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	protected void writeAttributes(XmlSerializer serializer) throws Exception {
+	protected void writeAttributes(XmlSerializer serializer) throws XMLStreamException {
 		super.writeAttributes(serializer);
 
 		LayerManifest manifest = getInstance();
@@ -48,7 +52,7 @@ public abstract class AbstractLayerManifestXmlDelegate<L extends LayerManifest> 
 		// Write layer type
 		if(manifest.isLocalLayerType()) {
 			serializer.writeAttribute(ManifestXmlAttributes.LAYER_TYPE,
-					manifest.getLayerType().map(LayerType::getId));
+					manifest.getLayerType().flatMap(LayerType::getId));
 		}
 	}
 
@@ -56,7 +60,7 @@ public abstract class AbstractLayerManifestXmlDelegate<L extends LayerManifest> 
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractModifiableManifest#writeElements(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	protected void writeElements(XmlSerializer serializer) throws Exception {
+	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
 		super.writeElements(serializer);
 
 		// Write base layers
@@ -72,37 +76,35 @@ public abstract class AbstractLayerManifestXmlDelegate<L extends LayerManifest> 
 	protected void readAttributes(Attributes attributes) {
 		super.readAttributes(attributes);
 
-		String layerTypeId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_TYPE);
-		if(layerTypeId!=null) {
-			getInstance().setLayerTypeId(layerTypeId);
-		}
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_TYPE)
+			.ifPresent(getInstance()::setLayerTypeId);
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractManifest#startElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
 	 */
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
 		switch (localName) {
 		case ManifestXmlTags.BASE_LAYER: {
-			String baseLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID);
-			getInstance().addBaseLayerId(baseLayerId);
+			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID)
+				.ifPresent(getInstance()::addBaseLayerId);
 		} break;
 
 		default:
 			return super.startElement(manifestLocation, uri, localName, qName, attributes);
 		}
 
-		return this;
+		return Optional.of(this);
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractManifest#endElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 			throws SAXException {
 		switch (localName) {
@@ -114,6 +116,6 @@ public abstract class AbstractLayerManifestXmlDelegate<L extends LayerManifest> 
 			return super.endElement(manifestLocation, uri, localName, qName, text);
 		}
 
-		return this;
+		return Optional.of(this);
 	}
 }

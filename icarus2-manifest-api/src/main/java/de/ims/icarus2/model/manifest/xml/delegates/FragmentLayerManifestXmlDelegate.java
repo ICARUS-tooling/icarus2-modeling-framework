@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.manifest.xml.delegates;
 
+import java.util.Optional;
+
+import javax.xml.stream.XMLStreamException;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -96,17 +100,15 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 	protected void readAttributes(Attributes attributes) {
 		super.readAttributes(attributes);
 
-		String annotationKey = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.ANNOTATION_KEY);
-		if(annotationKey!=null) {
-			getInstance().setAnnotationKey(annotationKey);
-		}
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.ANNOTATION_KEY)
+			.ifPresent(getInstance()::setAnnotationKey);
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractLayerManifest#writeAttributes(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	protected void writeAttributes(XmlSerializer serializer) throws Exception {
+	protected void writeAttributes(XmlSerializer serializer) throws XMLStreamException {
 		super.writeAttributes(serializer);
 
 		FragmentLayerManifest manifest = getInstance();
@@ -120,7 +122,7 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractLayerManifest#writeElements(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	protected void writeElements(XmlSerializer serializer) throws Exception {
+	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
 		super.writeElements(serializer);
 
 		ItemLayerManifestXmlDelegate.defaultWriteElements(this, getContainerManifestXmlDelegate(), serializer);
@@ -128,61 +130,66 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 		FragmentLayerManifest manifest = getInstance();
 
 		if(manifest.isLocalValueLayerManifest()) {
-			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, ManifestXmlTags.VALUE_LAYER, manifest.getValueLayerManifest());
+			ManifestXmlUtils.writeTargetLayerManifestElement(serializer,
+					ManifestXmlTags.VALUE_LAYER, manifest.getValueLayerManifest().get());
 		}
 
 		if(manifest.isLocalRasterizerManifest()) {
-			getRasterizerManifestXmLDelegate().reset(manifest.getRasterizerManifest()).writeXml(serializer);
+			getRasterizerManifestXmLDelegate().reset(manifest.getRasterizerManifest().get()).writeXml(serializer);
 		}
 	}
 
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 		case ManifestXmlTags.FRAGMENT_LAYER: {
 			readAttributes(attributes);
 		} break;
 
 		case ManifestXmlTags.BOUNDARY_LAYER: {
-			String boundaryLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID);
-			getInstance().setBoundaryLayerId(boundaryLayerId);
+			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID)
+				.ifPresent(getInstance()::setBoundaryLayerId);
 		} break;
 
 		case ManifestXmlTags.FOUNDATION_LAYER: {
-			String foundationLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID);
-			getInstance().setFoundationLayerId(foundationLayerId);
+			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID)
+				.ifPresent(getInstance()::setFoundationLayerId);
 		} break;
 
 		case ManifestXmlTags.CONTAINER: {
-			return getContainerManifestXmlDelegate().reset(getInstance());
-		}
+			handler = getContainerManifestXmlDelegate().reset(getInstance());
+		} break;
 
 		case ManifestXmlTags.VALUE_LAYER: {
-			String valueLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID);
-			getInstance().setValueLayerId(valueLayerId);
+			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID)
+				.ifPresent(getInstance()::setValueLayerId);
 		} break;
 
 		case ManifestXmlTags.RASTERIZER: {
-			return getRasterizerManifestXmLDelegate().reset(getInstance());
-		}
+			handler = getRasterizerManifestXmLDelegate().reset(getInstance());
+		} break;
 
 		default:
 			return super.startElement(manifestLocation, uri, localName, qName, attributes);
 		}
 
-		return this;
+		return Optional.ofNullable(handler);
 	}
 
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 		case ManifestXmlTags.FRAGMENT_LAYER: {
-			return null;
-		}
+			handler = null;
+		} break;
 
 		case ManifestXmlTags.BOUNDARY_LAYER: {
 			// no-op
@@ -200,7 +207,7 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 			return super.endElement(manifestLocation, uri, localName, qName, text);
 		}
 
-		return this;
+		return Optional.ofNullable(handler);
 	}
 
 	/**

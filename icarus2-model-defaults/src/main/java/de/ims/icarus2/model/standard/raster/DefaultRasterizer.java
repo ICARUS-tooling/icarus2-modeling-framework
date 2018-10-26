@@ -66,7 +66,7 @@ public class DefaultRasterizer implements Rasterizer {
 	@Override
 	public Position createPosition(long... values) {
 		if(values.length!=axes.length)
-			throw new IllegalArgumentException(Messages.mismatchMessage(
+			throw new IllegalArgumentException(Messages.mismatch(
 					"Provided number of vector elements does not equal axes count",
 					_int(axes.length), _int(values.length)));
 

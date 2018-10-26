@@ -40,11 +40,11 @@ import de.ims.icarus2.util.access.AccessRestriction;
 public interface Manifest extends ManifestFragment {
 
 	public static Supplier<ManifestException> invalidId(String message) {
-		return ManifestException.create(ManifestErrorCode.MANIFEST_INVALID_ID, message);
+		return ManifestException.error(ManifestErrorCode.MANIFEST_INVALID_ID, message);
 	}
 
 	public static Supplier<ManifestException> unknownId(String message) {
-		return ManifestException.create(ManifestErrorCode.MANIFEST_UNKNOWN_ID, message);
+		return ManifestException.error(ManifestErrorCode.MANIFEST_UNKNOWN_ID, message);
 	}
 
 	/**

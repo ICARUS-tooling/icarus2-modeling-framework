@@ -302,7 +302,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest, H extends
 
 				if(valueType!=option.getValueType())
 					throw new ManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
-							Messages.mismatchMessage("Value type not compatible with declared option manifest",
+							Messages.mismatch("Value type not compatible with declared option manifest",
 									option.getValueType(), valueType));
 
 				property.setOption(option);

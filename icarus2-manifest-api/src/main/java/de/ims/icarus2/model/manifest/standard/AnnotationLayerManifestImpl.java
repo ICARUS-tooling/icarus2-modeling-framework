@@ -135,7 +135,7 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	}
 
 	private static String keyForManifest(AnnotationManifest manifest) {
-		return manifest.getKey().orElseThrow(ManifestException.create(
+		return manifest.getKey().orElseThrow(ManifestException.error(
 				ManifestErrorCode.MANIFEST_ERROR,
 				"Specified annotation manifest does not provide a proper key: "+ManifestUtils.getName(manifest)));
 	}

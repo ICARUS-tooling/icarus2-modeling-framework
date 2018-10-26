@@ -207,7 +207,7 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 
 		if(!resultClass.isInstance(instance))
 			throw new ModelException(corpus, ManifestErrorCode.IMPLEMENTATION_INCOMPATIBLE,
-					message+Messages.mismatchMessage("Incompatible types", resultClass, instance.getClass()));
+					message+Messages.mismatch("Incompatible types", resultClass, instance.getClass()));
 
 		return resultClass.cast(instance);
 	}

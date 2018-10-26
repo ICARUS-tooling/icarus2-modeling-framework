@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.model.manifest.xml;
 
+import java.util.Optional;
 import java.util.Stack;
 
 import org.xml.sax.Attributes;
@@ -67,13 +68,14 @@ public class DelegatingHandler extends DefaultHandler {
 
 		ManifestXmlHandler current = handlers.peek();
 
-		ManifestXmlHandler future = current.startElement(manifestLocation, uri, localName, qName, attributes);
+		// Delegate initial element handling to next builder if needed
+		ManifestXmlHandler next =
+				current.startElement(manifestLocation, uri, localName, qName, attributes)
+				.filter(h -> h!=current).orElse(null);
+		if(next!=null) {
+			push(next);
 
-		// Delegate initial element handling to next builder
-		if(future!=null && future!=current) {
-			push(future);
-
-			future.startElement(manifestLocation, uri, localName, qName, attributes);
+			next.startElement(manifestLocation, uri, localName, qName, attributes);
 		}
 	}
 
@@ -85,10 +87,10 @@ public class DelegatingHandler extends DefaultHandler {
 		String text = getText();
 
 		ManifestXmlHandler current = handlers.peek();
-		ManifestXmlHandler future = current.endElement(manifestLocation, uri, localName, qName, text);
+		Optional<ManifestXmlHandler> future = current.endElement(manifestLocation, uri, localName, qName, text);
 
 		// Discard current builder and switch to ancestor
-		if(future==null) {
+		if(!future.isPresent()) {
 			handlers.pop();
 
 			if(!handlers.isEmpty()) {

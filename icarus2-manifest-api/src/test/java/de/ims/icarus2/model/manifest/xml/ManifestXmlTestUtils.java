@@ -174,9 +174,9 @@ public class ManifestXmlTestUtils {
 		String id = null;
 
 		if(manifest instanceof Manifest) {
-			id = ((Manifest)manifest).getId();
+			id = ((Manifest)manifest).getId().orElse(null);
 		} else if(manifest instanceof Identity) {
-			id = ((Identity)manifest).getId();
+			id = ((Identity)manifest).getId().orElse(null);
 		}
 
 		if(id==null) {

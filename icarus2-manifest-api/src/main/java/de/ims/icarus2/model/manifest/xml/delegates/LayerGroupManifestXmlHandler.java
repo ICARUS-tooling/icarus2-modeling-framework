@@ -21,7 +21,10 @@ import static de.ims.icarus2.model.manifest.xml.ManifestXmlUtils.writeFlag;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -36,6 +39,7 @@ import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
+import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.xml.UnexpectedTagException;
 import de.ims.icarus2.util.xml.UnsupportedNestingException;
 import de.ims.icarus2.util.xml.XmlSerializer;
@@ -98,7 +102,7 @@ public class LayerGroupManifestXmlHandler extends AbstractXmlDelegate<LayerGroup
 	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlElement#writeXml(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	public void writeXml(XmlSerializer serializer) throws Exception {
+	public void writeXml(XmlSerializer serializer) throws XMLStreamException {
 		serializer.startElement(ManifestXmlTags.LAYER_GROUP);
 
 		LayerGroupManifest manifest = getInstance();
@@ -108,7 +112,8 @@ public class LayerGroupManifestXmlHandler extends AbstractXmlDelegate<LayerGroup
 		writeFlag(serializer, ManifestXmlAttributes.INDEPENDENT, manifest.isIndependent(), LayerGroupManifest.DEFAULT_INDEPENDENT_VALUE);
 
 		if(manifest.getPrimaryLayerManifest()!=null) {
-			serializer.writeAttribute(ManifestXmlAttributes.PRIMARY_LAYER, manifest.getPrimaryLayerManifest().getId());
+			serializer.writeAttribute(ManifestXmlAttributes.PRIMARY_LAYER,
+					manifest.getPrimaryLayerManifest().flatMap(Identity::getId));
 		}
 
 		for(Iterator<LayerManifest> it = manifest.getLayerManifests().iterator(); it.hasNext();) {
@@ -127,67 +132,70 @@ public class LayerGroupManifestXmlHandler extends AbstractXmlDelegate<LayerGroup
 	}
 
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 		case ManifestXmlTags.LAYER_GROUP: {
 			LayerGroupManifest manifest = getInstance();
 
 			ManifestXmlUtils.readIdentityAttributes(attributes, manifest);
 
-			manifest.setIndependent(readFlag(attributes, ManifestXmlAttributes.INDEPENDENT, LayerGroupManifest.DEFAULT_INDEPENDENT_VALUE));
+			readFlag(attributes, ManifestXmlAttributes.INDEPENDENT, LayerGroupManifest.DEFAULT_INDEPENDENT_VALUE)
+				.ifPresent(manifest::setIndependent);;
 
-			String primaryLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.PRIMARY_LAYER);
-			if(primaryLayerId==null)
-				throw new IllegalArgumentException("Missing primary layer id"); //$NON-NLS-1$
-			manifest.setPrimaryLayerId(primaryLayerId);
+			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.PRIMARY_LAYER)
+				.ifPresent(manifest::setPrimaryLayerId);
 		} break;
 
 		case ManifestXmlTags.ITEM_LAYER : {
 			ItemLayerManifestXmlDelegate delegate = getLayerDelegate(ManifestType.ITEM_LAYER_MANIFEST);
-			return delegate.reset(getInstance());
-		}
+			handler = delegate.reset(getInstance());
+		} break;
 
 		case ManifestXmlTags.STRUCTURE_LAYER : {
 			StructureLayerManifestXmlDelegate delegate = getLayerDelegate(ManifestType.STRUCTURE_LAYER_MANIFEST);
-			return delegate.reset(getInstance());
-		}
+			handler = delegate.reset(getInstance());
+		} break;
 
 		case ManifestXmlTags.ANNOTATION_LAYER : {
 			AnnotationLayerManifestXmlDelegate delegate = getLayerDelegate(ManifestType.ANNOTATION_LAYER_MANIFEST);
-			return delegate.reset(getInstance());
-		}
+			handler = delegate.reset(getInstance());
+		} break;
 
 		case ManifestXmlTags.FRAGMENT_LAYER : {
 			FragmentLayerManifestXmlDelegate delegate = getLayerDelegate(ManifestType.FRAGMENT_LAYER_MANIFEST);
-			return delegate.reset(getInstance());
-		}
+			handler = delegate.reset(getInstance());
+		} break;
 
 		case ManifestXmlTags.HIGHLIGHT_LAYER : {
 			HighlightLayerManifestXmlDelegate delegate = getLayerDelegate(ManifestType.HIGHLIGHT_LAYER_MANIFEST);
-			return delegate.reset(getInstance());
-		}
+			handler = delegate.reset(getInstance());
+		} break;
 
 		default:
 			throw new UnexpectedTagException(qName, true, ManifestXmlTags.LAYER_GROUP);
 		}
 
-		return this;
+		return Optional.of(handler);
 	}
 
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
 		switch (localName) {
 		case ManifestXmlTags.LAYER_GROUP: {
-			return null;
-		}
+			// no-op
+		} break;
 
 		default:
 			throw new UnexpectedTagException(qName, false, ManifestXmlTags.LAYER_GROUP);
 		}
+
+		return Optional.empty();
 	}
 
 	/**

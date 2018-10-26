@@ -18,6 +18,8 @@ package de.ims.icarus2.model.manifest.xml.delegates;
 
 import static de.ims.icarus2.model.manifest.xml.ManifestXmlUtils.writeFlag;
 
+import javax.xml.stream.XMLStreamException;
+
 import org.xml.sax.Attributes;
 
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
@@ -38,7 +40,7 @@ public class ImplementationManifestXmlDelegate extends AbstractMemberManifestXml
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractManifest#writeAttributes(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	protected void writeAttributes(XmlSerializer serializer) throws Exception {
+	protected void writeAttributes(XmlSerializer serializer) throws XMLStreamException {
 		super.writeAttributes(serializer);
 
 		ImplementationManifest manifest = getInstance();
@@ -68,25 +70,15 @@ public class ImplementationManifestXmlDelegate extends AbstractMemberManifestXml
 
 		ImplementationManifest manifest = getInstance();
 
-		String source = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.SOURCE);
-		if(source!=null) {
-			manifest.setSource(source);
-		}
-
-		String classname = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CLASSNAME);
-		if(classname!=null) {
-			manifest.setClassname(classname);
-		}
-
-		String type = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.SOURCE_TYPE);
-		if(type!=null) {
-			manifest.setSourceType(SourceType.parseSourceType(type));
-		}
-
-		String useFactory = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.FACTORY);
-		if(useFactory!=null) {
-			manifest.setUseFactory(Boolean.parseBoolean(useFactory));
-		}
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.SOURCE)
+			.ifPresent(manifest::setSource);
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CLASSNAME)
+			.ifPresent(manifest::setClassname);
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.SOURCE_TYPE)
+			.map(SourceType::parseSourceType)
+			.ifPresent(manifest::setSourceType);
+		ManifestXmlUtils.booleanValue(attributes, ManifestXmlAttributes.FACTORY)
+			.ifPresent(manifest::setUseFactory);
 	}
 
 	/**

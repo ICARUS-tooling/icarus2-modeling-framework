@@ -19,6 +19,9 @@ package de.ims.icarus2.model.manifest.xml.delegates;
 import java.text.ParseException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -69,7 +72,7 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractMemberManifest#writeAttributes(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	protected void writeAttributes(XmlSerializer serializer) throws Exception {
+	protected void writeAttributes(XmlSerializer serializer) throws XMLStreamException {
 		super.writeAttributes(serializer);
 
 		CorpusManifest manifest = getInstance();
@@ -89,7 +92,7 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractModifiableManifest#writeElements(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	protected void writeElements(XmlSerializer serializer) throws Exception {
+	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
 		super.writeElements(serializer);
 
 		CorpusManifest manifest = getInstance();
@@ -137,42 +140,41 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 
 		CorpusManifest manifest = getInstance();
 
-		String editable = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.EDITABLE);
-		if(editable!=null) {
-			manifest.setEditable(Boolean.parseBoolean(editable));
-		}
-
-		String parallel = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.PARALLEL);
-		if(parallel!=null) {
-			manifest.setParallel(Boolean.parseBoolean(parallel));
-		}
+		ManifestXmlUtils.booleanValue(attributes, ManifestXmlAttributes.EDITABLE)
+			.ifPresent(manifest::setEditable);
+		ManifestXmlUtils.booleanValue(attributes, ManifestXmlAttributes.PARALLEL)
+			.ifPresent(manifest::setParallel);
 	}
 
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 		case ManifestXmlTags.CORPUS: {
 			readAttributes(attributes);
 		} break;
 
 		case ManifestXmlTags.ROOT_CONTEXT: {
-			return getContextManifestXmlDelegate().reset(getInstance()).root(true);
-		}
+			handler = getContextManifestXmlDelegate().reset(getInstance()).root(true);
+		} break;
 
 		case ManifestXmlTags.CONTEXT: {
-			return getContextManifestXmlDelegate().reset(getInstance()).root(false);
-		}
+			handler = getContextManifestXmlDelegate().reset(getInstance()).root(false);
+		} break;
 
 		case ManifestXmlTags.NOTES: {
 			// no-op
 		} break;
 
 		case ManifestXmlTags.NOTE: {
-			String name = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.NAME);
+			String name = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.NAME)
+					.orElseThrow(ManifestXmlHandler.error("Missing name for note"));
 			note = new NoteImpl(name);
-			String date = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.DATE);
+			String date = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.DATE)
+					.orElseThrow(ManifestXmlHandler.error("Missing date for note"));
 			try {
 				note.setModificationDate(DateUtils.parseDate(date));
 			} catch (ParseException e) {
@@ -184,30 +186,33 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 			return super.startElement(manifestLocation, uri, localName, qName, attributes);
 		}
 
-		return this;
+		return Optional.ofNullable(handler);
 	}
 
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 		case ManifestXmlTags.CORPUS: {
-			return null;
-		}
+			handler = null;
+		} break;
 
 		case ManifestXmlTags.NOTES: {
-			return this;
-		}
+			// no-op
+		} break;
+
 		case ManifestXmlTags.NOTE: {
 			note.changeContent(text);
-
-			return this;
-		}
+		} break;
 
 		default:
 			return super.endElement(manifestLocation, uri, localName, qName, text);
 		}
+
+		return Optional.ofNullable(handler);
 	}
 
 	/**

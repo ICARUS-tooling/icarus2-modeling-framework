@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -388,10 +389,13 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 
 			ManifestXmlHandler current = handlers.peek();
 
-			ManifestXmlHandler future = current.startElement(manifestLocation, uri, localName, qName, attributes);
+			ManifestXmlHandler future =
+					current.startElement(manifestLocation, uri, localName, qName, attributes)
+					.filter(h -> h!=current)
+					.orElse(null);
 
 			// Delegate initial element handling to next builder
-			if(future!=null && future!=current) {
+			if(future!=null) {
 				push(future);
 
 				future.startElement(manifestLocation, uri, localName, qName, attributes);
@@ -406,10 +410,10 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 			String text = getText();
 
 			ManifestXmlHandler current = handlers.peek();
-			ManifestXmlHandler future = current.endElement(manifestLocation, uri, localName, qName, text);
+			Optional<ManifestXmlHandler> future = current.endElement(manifestLocation, uri, localName, qName, text);
 
 			// Discard current builder and switch to ancestor
-			if(future==null) {
+			if(!future.isPresent()) {
 				pop();
 
 				// Root level means we just add the manifests from the collector
@@ -532,60 +536,69 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 		 */
 		@SuppressWarnings("unchecked")
 		@Override
-		public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+		public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 				String uri, String localName, String qName,
 				Attributes attributes) throws SAXException {
+
+			ManifestXmlHandler handler = null;
 
 			switch (localName) {
 
 			case ManifestXmlTags.MANIFEST: {
-				return this;
-			}
+				handler = this;
+			} break;
 
 			case ManifestXmlTags.CORPORA: {
 				if(manifestLocation.isTemplate())
-					throw new SAXException("Illegal "+ManifestXmlTags.CORPORA+" tag in template manifest source"); //$NON-NLS-1$ //$NON-NLS-2$
-				return this;
-			}
+					throw new SAXException("Illegal "+ManifestXmlTags.CORPORA+" tag in template manifest source");
+				handler = this;
+			} break;
 
 			case ManifestXmlTags.TEMPLATES: {
 				if(!manifestLocation.isTemplate())
-					throw new SAXException("Illegal "+ManifestXmlTags.TEMPLATES+" tag in live corpus manifest source"); //$NON-NLS-1$ //$NON-NLS-2$
-				return this;
-			}
+					throw new SAXException("Illegal "+ManifestXmlTags.TEMPLATES+" tag in live corpus manifest source");
+				handler = this;
+			} break;
 
 			default:
 				// no-op
 				break;
 			}
 
-			Manifest manifest = newInstance(localName, manifestLocation);
-			@SuppressWarnings("rawtypes")
-			ManifestXmlDelegate delegate = getDelegate(manifest);
+			if(handler==null) {
+				Manifest manifest = newInstance(localName, manifestLocation);
+				@SuppressWarnings("rawtypes")
+				ManifestXmlDelegate delegate = getDelegate(manifest);
 
-			return delegate.reset(manifest);
+				handler = delegate.reset(manifest);
+			}
+
+			return Optional.ofNullable(handler);
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlHandler#endElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
 		 */
 		@Override
-		public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+		public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 				String uri, String localName, String qName, String text)
 				throws SAXException {
+
+			ManifestXmlHandler handler = null;
 
 			switch (localName) {
 
 			case ManifestXmlTags.CORPORA:
-			case ManifestXmlTags.TEMPLATES:
-				return this;
+			case ManifestXmlTags.TEMPLATES: {
+				handler = this;
+			} break;
 
 			default:
 				// no-op
 				break;
 			}
 
-			return null;
+			return Optional.ofNullable(handler);
 		}
 
 		/**

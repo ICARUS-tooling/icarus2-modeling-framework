@@ -18,6 +18,9 @@ package de.ims.icarus2.model.manifest.xml.delegates;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -33,6 +36,7 @@ import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
+import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
 /**
@@ -86,7 +90,7 @@ public class AnnotationLayerManifestXmlDelegate extends AbstractLayerManifestXml
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractLayerManifest#writeAttributes(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	protected void writeAttributes(XmlSerializer serializer) throws Exception {
+	protected void writeAttributes(XmlSerializer serializer) throws XMLStreamException {
 		super.writeAttributes(serializer);
 
 		AnnotationLayerManifest manifest = getInstance();
@@ -107,17 +111,15 @@ public class AnnotationLayerManifestXmlDelegate extends AbstractLayerManifestXml
 		AnnotationLayerManifest manifest = getInstance();
 
 		// Read default key
-		String defaultKey = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.DEFAULT_KEY);
-		if(defaultKey!=null) {
-			manifest.setDefaultKey(defaultKey);
-		}
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.DEFAULT_KEY)
+			.ifPresent(manifest::setDefaultKey);
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractLayerManifest#writeElements(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	protected void writeElements(XmlSerializer serializer) throws Exception {
+	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
 		super.writeElements(serializer);
 
 		AnnotationLayerManifest manifest = getInstance();
@@ -129,7 +131,7 @@ public class AnnotationLayerManifestXmlDelegate extends AbstractLayerManifestXml
 
 		// Write annotation manifests
 		List<AnnotationManifest> sortedAnnotationManifests = new ArrayList<>(manifest.getLocalAnnotationManifests());
-		sortedAnnotationManifests.sort((a1, a2) -> a1.getId().compareTo(a2.getId()));
+		sortedAnnotationManifests.sort(Identity.ID_COMPARATOR);
 
 		for(AnnotationManifest annotationManifest : sortedAnnotationManifests) {
 			getAnnotationManifestXmlDelegate().reset(annotationManifest).writeXml(serializer);
@@ -146,22 +148,25 @@ public class AnnotationLayerManifestXmlDelegate extends AbstractLayerManifestXml
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractLayerManifest#startElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
 	 */
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
+
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 		case ManifestXmlTags.ANNOTATION_LAYER: {
 			readAttributes(attributes);
 		} break;
 
 		case ManifestXmlTags.REFERENCE_LAYER: {
-			String referenceLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID);
-			getInstance().addReferenceLayerId(referenceLayerId);
+			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID)
+				.ifPresent(getInstance()::addReferenceLayerId);
 		} break;
 
 		case ManifestXmlTags.ANNOTATION: {
-			return getAnnotationManifestXmlDelegate().reset(getInstance());
-		}
+			handler = getAnnotationManifestXmlDelegate().reset(getInstance());
+		} break;
 
 		case ManifestXmlTags.ANNOTATION_FLAG: {
 			// no-op;
@@ -171,33 +176,38 @@ public class AnnotationLayerManifestXmlDelegate extends AbstractLayerManifestXml
 			return super.startElement(manifestLocation, uri, localName, qName, attributes);
 		}
 
-		return this;
+		return Optional.ofNullable(handler);
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractLayerManifest#endElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 			throws SAXException {
+
+		ManifestXmlHandler handler = null;
+
 		switch (localName) {
 		case ManifestXmlTags.ANNOTATION_LAYER: {
-			return null;
-		}
+			// no-op
+		} break;
 
 		case ManifestXmlTags.REFERENCE_LAYER: {
-			return this;
-		}
+			handler = this;
+		} break;
 
 		case ManifestXmlTags.ANNOTATION_FLAG: {
 			getInstance().setAnnotationFlag(AnnotationFlag.parseAnnotationFlag(text), true);
-			return this;
-		}
+			handler = this;
+		} break;
 
 		default:
 			return super.endElement(manifestLocation, uri, localName, qName, text);
 		}
+
+		return Optional.ofNullable(handler);
 	}
 
 	/**

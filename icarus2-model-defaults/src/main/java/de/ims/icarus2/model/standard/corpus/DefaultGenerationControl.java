@@ -154,7 +154,7 @@ public class DefaultGenerationControl implements GenerationControl, SimpleEventL
 
 		if(next.compareTo(now)<1)
 			throw new ModelException(getCorpus(), ModelErrorCode.MODEL_CORRUPTED_STATE,
-					Messages.mismatchMessage("Nonmonotonic stage detected", now, next));
+					Messages.mismatch("Nonmonotonic stage detected", now, next));
 	}
 
 	/**

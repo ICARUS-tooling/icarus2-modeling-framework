@@ -18,6 +18,9 @@ package de.ims.icarus2.model.manifest.xml.delegates;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Optional;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -63,9 +66,10 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlHandler#startElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
 	 */
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
+
 		switch (localName) {
 		case ManifestXmlTags.DOCUMENTATION: {
 			ManifestXmlUtils.readIdentityAttributes(attributes, getInstance());
@@ -84,20 +88,22 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 			throw new UnexpectedTagException(qName, true, ManifestXmlTags.DOCUMENTATION);
 		}
 
-		return this;
+		return Optional.of(this);
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlHandler#endElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 			throws SAXException {
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 		case ManifestXmlTags.DOCUMENTATION: {
-			return null;
-		}
+			handler = null;
+		} break;
 
 		case ManifestXmlTags.CONTENT: {
 			getInstance().setContent(text);
@@ -121,7 +127,7 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 			throw new UnexpectedTagException(qName, false, ManifestXmlTags.DOCUMENTATION);
 		}
 
-		return this;
+		return Optional.ofNullable(handler);
 	}
 
 	/**
@@ -138,7 +144,7 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlDelegate#writeXml(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	public void writeXml(XmlSerializer serializer) throws Exception {
+	public void writeXml(XmlSerializer serializer) throws XMLStreamException {
 		Documentation documentation = getInstance();
 
 		serializer.startElement(ManifestXmlTags.DOCUMENTATION);
@@ -146,7 +152,7 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 
 		if(documentation.getContent()!=null) {
 			serializer.startElement(ManifestXmlTags.CONTENT);
-			serializer.writeCData(documentation.getContent());
+			serializer.writeCData(documentation.getContent().orElse(null));
 			serializer.endElement(ManifestXmlTags.CONTENT);
 		}
 

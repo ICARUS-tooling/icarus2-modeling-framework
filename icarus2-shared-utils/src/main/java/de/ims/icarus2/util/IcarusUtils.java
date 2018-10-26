@@ -18,6 +18,7 @@ package de.ims.icarus2.util;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -131,5 +132,13 @@ public class IcarusUtils {
 		}
 
 		return Optional.empty();
+	}
+
+	public static boolean allPresent(Optional<?>...optionals) {
+		return Arrays.asList(optionals).stream().allMatch(Optional::isPresent);
+	}
+
+	public static boolean nonePresent(Optional<?>...optionals) {
+		return Arrays.asList(optionals).stream().noneMatch(Optional::isPresent);
 	}
 }

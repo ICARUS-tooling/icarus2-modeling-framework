@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.manifest.xml.delegates;
 
+import java.util.Optional;
+
+import javax.xml.stream.XMLStreamException;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -28,6 +32,7 @@ import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
+import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
 /**
@@ -59,14 +64,15 @@ public class HighlightLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractLayerManifest#writeAttributes(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	protected void writeAttributes(XmlSerializer serializer) throws Exception {
+	protected void writeAttributes(XmlSerializer serializer) throws XMLStreamException {
 		super.writeAttributes(serializer);
 
 		HighlightLayerManifest manifest = getInstance();
 
 		// Write default key
 		if(manifest.isLocalPrimaryLayerManifest()) {
-			serializer.writeAttribute(ManifestXmlAttributes.PRIMARY_LAYER, manifest.getPrimaryLayerManifest().getId());
+			serializer.writeAttribute(ManifestXmlAttributes.PRIMARY_LAYER,
+					manifest.getPrimaryLayerManifest().flatMap(Identity::getId));
 		}
 	}
 
@@ -77,20 +83,16 @@ public class HighlightLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 	protected void readAttributes(Attributes attributes) {
 		super.readAttributes(attributes);
 
-		HighlightLayerManifest manifest = getInstance();
-
 		// Read primary layer id
-		String primaryLayerId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.PRIMARY_LAYER);
-		if(primaryLayerId!=null) {
-			manifest.setPrimaryLayerId(primaryLayerId);
-		}
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.PRIMARY_LAYER)
+			.ifPresent(getInstance()::setPrimaryLayerId);
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractLayerManifest#writeElements(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	protected void writeElements(XmlSerializer serializer) throws Exception {
+	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
 		super.writeElements(serializer);
 
 		HighlightLayerManifest manifest = getInstance();
@@ -106,7 +108,7 @@ public class HighlightLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractLayerManifest#startElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
 	 */
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
 		switch (localName) {
@@ -122,29 +124,32 @@ public class HighlightLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 			return super.startElement(manifestLocation, uri, localName, qName, attributes);
 		}
 
-		return this;
+		return Optional.of(this);
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractLayerManifest#endElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 			throws SAXException {
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 		case ManifestXmlTags.HIGHLIGHT_LAYER: {
-			return null;
-		}
+			handler = null;
+		} break;
 
 		case ManifestXmlTags.HIGHLIGHT_FLAG: {
 			getInstance().setHighlightFlag(HighlightFlag.parseHighlightFlag(text), true);
-			return this;
-		}
+		} break;
 
 		default:
 			return super.endElement(manifestLocation, uri, localName, qName, text);
 		}
+
+		return Optional.ofNullable(handler);
 	}
 
 	/**

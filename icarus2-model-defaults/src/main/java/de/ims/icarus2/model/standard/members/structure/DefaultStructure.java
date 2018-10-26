@@ -75,7 +75,7 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 
 		if(!requiredType.isCompatibleWith(givenType))
 			throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-					Messages.mismatchMessage("Incompatible structure types", requiredType, givenType));
+					Messages.mismatch("Incompatible structure types", requiredType, givenType));
 	}
 
 	public void setEdgeStorage(EdgeStorage edgeStorage) {

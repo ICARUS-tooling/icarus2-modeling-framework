@@ -61,7 +61,7 @@ public class SerializableAtomicModelChange {
 	protected static <E extends Item> void checkExpectedMember(String msg, E item, E expected) {
 		if(item!=expected)
 			throw new ModelException(ModelErrorCode.MODEL_CORRUPTED_EDIT,
-					Messages.mismatchMessage(msg, ModelUtils.getName(expected), ModelUtils.getName(item)));
+					Messages.mismatch(msg, ModelUtils.getName(expected), ModelUtils.getName(item)));
 	}
 
 	/**

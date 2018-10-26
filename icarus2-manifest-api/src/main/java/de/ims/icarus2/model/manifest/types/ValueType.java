@@ -828,7 +828,7 @@ public class ValueType implements StringResource, NamedObject {
 
 			if(elementIndex!=size)
 				throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
-						Messages.mismatchMessage("Insufficient elements declared in input string", _int(size), _int(elementIndex)));
+						Messages.mismatch("Insufficient elements declared in input string", _int(size), _int(elementIndex)));
 
 			return array;
 		}

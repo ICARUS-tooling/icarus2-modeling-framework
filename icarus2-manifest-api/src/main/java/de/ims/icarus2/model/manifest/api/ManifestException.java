@@ -20,6 +20,8 @@ import java.util.function.Supplier;
 
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 
 /**
  * @author Markus Gärtner
@@ -27,8 +29,22 @@ import de.ims.icarus2.IcarusException;
  */
 public class ManifestException extends IcarusException {
 
-	public static Supplier<ManifestException> create(ErrorCode errorCode, String message) {
+	public static Supplier<ManifestException> error(ErrorCode errorCode, String message) {
 		return () -> new ManifestException(errorCode, message);
+	}
+
+	/**
+	 * Calls {@link #error(ErrorCode, String)} with {@link ManifestErrorCode#MANIFEST_ERROR}
+	 * @param message
+	 * @return
+	 */
+	public static Supplier<ManifestException> error(String message) {
+		return error(ManifestErrorCode.MANIFEST_ERROR, message);
+	}
+
+	public static Supplier<ManifestException> missing(ManifestFragment fragment, String property) {
+		return () -> new ManifestException(ManifestErrorCode.MANIFEST_ERROR,
+				"Missing property '"+property+"' in manifest "+ManifestUtils.getName(fragment));
 	}
 
 	private static final long serialVersionUID = 7579478541873972798L;

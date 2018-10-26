@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.manifest.xml.delegates;
 
+import java.util.Optional;
+
+import javax.xml.stream.XMLStreamException;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -102,13 +106,14 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractMemberManifest#writeAttributes(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	protected void writeAttributes(XmlSerializer serializer) throws Exception {
+	protected void writeAttributes(XmlSerializer serializer) throws XMLStreamException {
 		super.writeAttributes(serializer);
 
 		DriverManifest manifest = getInstance();
 
 		if(manifest.isLocalLocationType()) {
-			serializer.writeAttribute(ManifestXmlAttributes.LOCATION_TYPE, manifest.getLocationType().getStringValue());
+			serializer.writeAttribute(ManifestXmlAttributes.LOCATION_TYPE,
+					manifest.getLocationType().map(LocationType::getStringValue));
 		}
 	}
 
@@ -116,7 +121,7 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractModifiableManifest#writeElements(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	protected void writeElements(XmlSerializer serializer) throws Exception {
+	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
 		super.writeElements(serializer);
 
 		DriverManifest manifest = getInstance();
@@ -144,48 +149,51 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 	protected void readAttributes(Attributes attributes) {
 		super.readAttributes(attributes);
 
-		String locationType = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LOCATION_TYPE);
-		if(locationType!=null) {
-			getInstance().setLocationType(LocationType.parseLocationType(locationType));
-		}
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LOCATION_TYPE)
+			.map(LocationType::parseLocationType)
+			.ifPresent(getInstance()::setLocationType);
 	}
 
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 		case ManifestXmlTags.DRIVER: {
 			readAttributes(attributes);
 		} break;
 
 		case ManifestXmlTags.MAPPING: {
-			return getMappingManifestXmlDelegate().reset(getInstance());
-		}
+			handler = getMappingManifestXmlDelegate().reset(getInstance());
+		} break;
 
 		case ManifestXmlTags.MODULE_SPEC: {
-			return getModuleSpecXmlDelegate().reset(getInstance());
-		}
+			handler = getModuleSpecXmlDelegate().reset(getInstance());
+		} break;
 
 		case ManifestXmlTags.MODULE: {
-			return getModuleManifestXmlDelegate().reset(getInstance());
-		}
+			handler = getModuleManifestXmlDelegate().reset(getInstance());
+		} break;
 
 		default:
 			return super.startElement(manifestLocation, uri, localName, qName, attributes);
 		}
 
-		return this;
+		return Optional.ofNullable(handler);
 	}
 
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 		case ManifestXmlTags.DRIVER: {
-			return null;
-		}
+			handler = null;
+		} break;
 
 		case ManifestXmlTags.MODULE_SPEC: {
 			// no-op
@@ -199,7 +207,7 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 			return super.endElement(manifestLocation, uri, localName, qName, text);
 		}
 
-		return this;
+		return Optional.ofNullable(handler);
 	}
 
 	/**
@@ -271,13 +279,13 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 		 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlElement#writeXml(de.ims.icarus2.util.xml.XmlSerializer)
 		 */
 		@Override
-		public void writeXml(XmlSerializer serializer) throws Exception {
+		public void writeXml(XmlSerializer serializer) throws XMLStreamException {
 
 			ModuleSpec spec = getInstance();
 
-			String extensionPointUid = spec.getExtensionPointUid();
+			Optional<String> extensionPointUid = spec.getExtensionPointUid();
 
-			if(extensionPointUid==null) {
+			if(!extensionPointUid.isPresent()) {
 				serializer.startEmptyElement(ManifestXmlTags.MODULE_SPEC);
 			} else {
 				serializer.startElement(ManifestXmlTags.MODULE_SPEC);
@@ -297,7 +305,7 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 
 			// ELEMENTS
 
-			if(extensionPointUid!=null) {
+			if(extensionPointUid.isPresent()) {
 				serializer.startElement(ManifestXmlTags.EXTENSION_POINT);
 				serializer.writeTextOrCData(extensionPointUid);
 				serializer.endElement(ManifestXmlTags.EXTENSION_POINT);
@@ -315,24 +323,22 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 
 			ManifestXmlUtils.readIdentityAttributes(attributes, spec);
 
-			String customizable = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CUSTOMIZABLE);
-			if(customizable!=null) {
-				spec.setCustomizable(Boolean.parseBoolean(customizable));
-			}
-
-			String multiplicity = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.MULTIPLICITY);
-			if(multiplicity!=null) {
-				spec.setMultiplicity(Multiplicity.parseMultiplicity(multiplicity));
-			}
+			ManifestXmlUtils.booleanValue(attributes, ManifestXmlAttributes.CUSTOMIZABLE)
+				.ifPresent(spec::setCustomizable);
+			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.MULTIPLICITY)
+				.map(Multiplicity::parseMultiplicity)
+				.ifPresent(spec::setMultiplicity);
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlHandler#startElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
 		 */
 		@Override
-		public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+		public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 				String uri, String localName, String qName,
 				Attributes attributes) throws SAXException {
+			ManifestXmlHandler handler = this;
+
 			switch (localName) {
 			case ManifestXmlTags.MODULE_SPEC: {
 				readAttributes(attributes);
@@ -344,8 +350,8 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 				break;
 
 			case ManifestXmlTags.DOCUMENTATION: {
-				return getDocumentationXmlDelegate().reset(new DocumentationImpl());
-			}
+				handler = getDocumentationXmlDelegate().reset(new DocumentationImpl());
+			} break;
 
 			case ManifestXmlTags.EXTENSION_POINT: {
 				// no-op
@@ -364,20 +370,22 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 				throw new UnexpectedTagException(qName, true, ManifestXmlTags.MODULE_SPEC);
 			}
 
-			return this;
+			return Optional.ofNullable(handler);
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlHandler#endElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
 		 */
 		@Override
-		public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+		public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 				String uri, String localName, String qName, String text)
 				throws SAXException {
+			ManifestXmlHandler handler = this;
+
 			switch (localName) {
 			case ManifestXmlTags.MODULE_SPEC: {
-				return null;
-			}
+				handler = null;
+			} break;
 
 			case ManifestXmlTags.EXTENSION_POINT: {
 				getInstance().setExtensionPointUid(text);
@@ -396,14 +404,14 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 			} break;
 
 			case ManifestXmlTags.ICON: {
-				getInstance().setIcon(ManifestXmlUtils.iconValue(text, true));
+				getInstance().setIcon(ManifestXmlUtils.iconValue(text, true).get());
 			} break;
 
 			default:
 				throw new UnexpectedTagException(qName, false, ManifestXmlTags.MODULE_SPEC);
 			}
 
-			return this;
+			return Optional.ofNullable(handler);
 		}
 
 		/**
@@ -441,10 +449,8 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 		protected void readAttributes(Attributes attributes) {
 			super.readAttributes(attributes);
 
-			String moduleSpecId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.MODULE_SPEC_ID);
-			if(moduleSpecId!=null) {
-				getInstance().setModuleSpecId(moduleSpecId);
-			}
+			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.MODULE_SPEC_ID)
+				.ifPresent(getInstance()::setModuleSpecId);
 		}
 
 		/**
@@ -452,13 +458,14 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 		 */
 		@Override
 		protected void writeAttributes(XmlSerializer serializer)
-				throws Exception {
+				throws XMLStreamException {
 			super.writeAttributes(serializer);
 
 			ModuleManifest manifest = getInstance();
 
 			if(manifest.getModuleSpec()!=null) {
-				serializer.writeAttribute(ManifestXmlAttributes.MODULE_SPEC_ID, manifest.getModuleSpec().getId());
+				serializer.writeAttribute(ManifestXmlAttributes.MODULE_SPEC_ID,
+						manifest.getModuleSpec().flatMap(ModuleSpec::getId));
 			}
 		}
 

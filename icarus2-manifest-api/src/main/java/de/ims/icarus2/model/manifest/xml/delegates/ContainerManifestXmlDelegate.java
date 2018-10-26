@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.manifest.xml.delegates;
 
+import java.util.Optional;
+
+import javax.xml.stream.XMLStreamException;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -57,7 +61,7 @@ public class ContainerManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 	}
 
 	@Override
-	protected void writeAttributes(XmlSerializer serializer) throws Exception {
+	protected void writeAttributes(XmlSerializer serializer) throws XMLStreamException {
 		super.writeAttributes(serializer);
 
 		ContainerManifest manifest = getInstance();
@@ -69,7 +73,7 @@ public class ContainerManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 	}
 
 	@Override
-	protected void writeElements(XmlSerializer serializer) throws Exception {
+	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
 		super.writeElements(serializer);
 
 		for(ContainerFlag flag : getInstance().getActiveLocalContainerFlags()) {
@@ -84,14 +88,13 @@ public class ContainerManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 		super.readAttributes(attributes);
 
 		// Read container type
-		String containerType = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CONTAINER_TYPE);
-		if(containerType!=null) {
-			getInstance().setContainerType(ContainerType.parseContainerType(containerType));
-		}
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CONTAINER_TYPE)
+			.map(ContainerType::parseContainerType)
+			.ifPresent(getInstance()::setContainerType);
 	}
 
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
 		switch (localName) {
@@ -107,26 +110,30 @@ public class ContainerManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 			return super.startElement(manifestLocation, uri, localName, qName, attributes);
 		}
 
-		return this;
+		return Optional.of(this);
 	}
 
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
+		ManifestXmlHandler handler = null;
+
 		switch (localName) {
 		case ManifestXmlTags.CONTAINER: {
-			return null;
-		}
+			// no-op;
+		} break;
 
 		case ManifestXmlTags.CONTAINER_FLAG: {
 			getInstance().setContainerFlag(ContainerFlag.parseContainerFlag(text), true);
-			return this;
-		}
+			handler = this;
+		} break;
 
 		default:
 			return super.endElement(manifestLocation, uri, localName, qName, text);
 		}
+
+		return Optional.ofNullable(handler);
 	}
 
 	@Override

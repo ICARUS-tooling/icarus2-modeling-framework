@@ -16,6 +16,9 @@
  */
 package de.ims.icarus2.model.manifest.xml;
 
+import java.util.Optional;
+import java.util.function.Supplier;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -27,10 +30,43 @@ import de.ims.icarus2.model.manifest.api.ManifestLocation;
  */
 public interface ManifestXmlHandler {
 
-	ManifestXmlHandler startElement(ManifestLocation manifestLocation, String uri, String localName, String qName,
+	public static Supplier<SAXException> error(String message) {
+		return () -> new SAXException(message);
+	}
+
+//	Supplier<XMLStreamException> error(String message);
+
+	/**
+	 * Handle the occurrence of a {@code start} tag with the given properties and return the
+	 * {@link ManifestXmlHandler} responsible for it.
+	 *
+	 *
+	 * @param manifestLocation
+	 * @param uri
+	 * @param localName
+	 * @param qName
+	 * @param attributes
+	 * @return
+	 * @throws SAXException
+	 */
+	Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation, String uri, String localName, String qName,
 			Attributes attributes) throws SAXException;
 
-	ManifestXmlHandler endElement(ManifestLocation manifestLocation, String uri, String localName, String qName, String text)
+	/**
+	 * Handle the occurrence of a {@code end} tag with the given properties and return the
+	 * {@link ManifestXmlHandler} responsible for further processing. If the returned
+	 * {@link Optional} is {@link Optional#empty()} then the handling will be delegated to
+	 * the parent handler, i.e. the one that delegated to this handler previously.
+	 *
+	 * @param manifestLocation
+	 * @param uri
+	 * @param localName
+	 * @param qName
+	 * @param text
+	 * @return
+	 * @throws SAXException
+	 */
+	Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation, String uri, String localName, String qName, String text)
 			throws SAXException;
 
 	void endNestedHandler(ManifestLocation manifestLocation, String uri, String localName, String qName,

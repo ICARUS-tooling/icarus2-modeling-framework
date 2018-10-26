@@ -19,6 +19,9 @@ package de.ims.icarus2.model.manifest.xml.delegates;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -35,6 +38,7 @@ import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.xml.XmlSerializer;
@@ -94,7 +98,7 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractManifest#writeElements(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	protected void writeElements(XmlSerializer serializer) throws Exception {
+	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
 		super.writeElements(serializer);
 
 		OptionsManifest manifest = getInstance();
@@ -102,18 +106,18 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 		// Write options in alphabetic order
 		if(manifest.hasLocalOptions()) {
 			List<Option> sortedOptions = new ArrayList<>(manifest.getLocalOptions());
-			sortedOptions.sort((o1, o2) -> o1.getId().compareTo(o2.getId()));
+			sortedOptions.sort(Identity.ID_COMPARATOR);
 
 			for(Option option : sortedOptions) {
 
 				ValueType type = option.getValueType();
 
-				Object defaultValue = option.getDefaultValue();
-				ValueSet valueSet = option.getSupportedValues();
-				ValueRange valueRange = option.getSupportedRange();
-				String extensionPointUid = option.getExtensionPointUid();
+				Optional<Object> defaultValue = option.getDefaultValue();
+				Optional<ValueSet> valueSet = option.getSupportedValues();
+				Optional<ValueRange> valueRange = option.getSupportedRange();
+				Optional<String> extensionPointUid = option.getExtensionPointUid();
 
-				if(defaultValue==null && valueSet==null && valueRange==null && extensionPointUid==null) {
+				if(IcarusUtils.nonePresent(defaultValue, valueSet, valueRange, extensionPointUid)) {
 					serializer.startEmptyElement(ManifestXmlTags.OPTION);
 				} else {
 					serializer.startElement(ManifestXmlTags.OPTION);
@@ -136,22 +140,22 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 
 				// Elements
 
-				if(extensionPointUid!=null) {
+				if(extensionPointUid.isPresent()) {
 					serializer.startElement(ManifestXmlTags.EXTENSION_POINT);
 					serializer.writeTextOrCData(extensionPointUid);
 					serializer.endElement(ManifestXmlTags.EXTENSION_POINT);
 				}
 
-				if(defaultValue!=null) {
-					ManifestXmlUtils.writeValueElement(serializer, ManifestXmlTags.DEFAULT_VALUE, defaultValue, type);
+				if(defaultValue.isPresent()) {
+					ManifestXmlUtils.writeValueElement(serializer, ManifestXmlTags.DEFAULT_VALUE, defaultValue.get(), type);
 				}
 
-				if(valueSet!=null) {
-					getValueSetXmlDelegate().reset(valueSet).writeXml(serializer);
+				if(valueSet.isPresent()) {
+					getValueSetXmlDelegate().reset(valueSet.get()).writeXml(serializer);
 				}
 
-				if(valueRange!=null) {
-					getValueRangeXmlDelegate().reset(valueRange).writeXml(serializer);
+				if(valueRange.isPresent()) {
+					getValueRangeXmlDelegate().reset(valueRange.get()).writeXml(serializer);
 				}
 
 				serializer.endElement(ManifestXmlTags.OPTION);
@@ -173,9 +177,12 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 	}
 
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
+
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 		case ManifestXmlTags.OPTIONS: {
 			readAttributes(attributes);
@@ -194,12 +201,12 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 		} break;
 
 		case ManifestXmlTags.VALUE_RANGE : {
-			return getValueRangeXmlDelegate().reset(option.getValueType());
-		}
+			handler = getValueRangeXmlDelegate().reset(option.getValueType());
+		} break;
 
 		case ManifestXmlTags.VALUE_SET : {
-			return getValueSetXmlDelegate().reset(option.getValueType());
-		}
+			handler = getValueSetXmlDelegate().reset(option.getValueType());
+		} break;
 
 		case ManifestXmlTags.DEFAULT_VALUE : {
 			// only handled when closing element
@@ -213,17 +220,19 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 			return super.startElement(manifestLocation, uri, localName, qName, attributes);
 		}
 
-		return this;
+		return Optional.ofNullable(handler);
 	}
 
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 		case ManifestXmlTags.OPTIONS: {
-			return null;
-		}
+			handler = null;
+		} break;
 
 		case ManifestXmlTags.GROUP: {
 			// no-op
@@ -246,7 +255,7 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 			return super.endElement(manifestLocation, uri, localName, qName, text);
 		}
 
-		return this;
+		return Optional.ofNullable(handler);
 	}
 
 	protected void addDefaultValue(Object value) {
@@ -292,31 +301,21 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 	 * @param attributes
 	 */
 	protected void readOptionAttributes(Attributes attributes) {
-		option.setValueType(ManifestXmlUtils.typeValue(attributes));
+		ManifestXmlUtils.typeValue(attributes)
+			.ifPresent(option::setValueType);
 		ManifestXmlUtils.readIdentityAttributes(attributes, option);
 
-		String published = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.PUBLISHED);
-		if(published!=null) {
-			option.setPublished(Boolean.parseBoolean(published));
-		} else {
-			option.setPublished(Option.DEFAULT_PUBLISHED_VALUE);
-		}
+		ManifestXmlUtils.booleanValue(attributes, ManifestXmlAttributes.PUBLISHED)
+			.ifPresent(option::setPublished);
 
-		String multivalue = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.MULTI_VALUE);
-		if(multivalue!=null) {
-			option.setMultiValue(Boolean.parseBoolean(multivalue));
-		} else {
-			option.setMultiValue(Option.DEFAULT_MULTIVALUE_VALUE);
-		}
+		ManifestXmlUtils.booleanValue(attributes, ManifestXmlAttributes.MULTI_VALUE)
+			.ifPresent(option::setMultiValue);
 
-		String allowNull = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.ALLOW_NULL);
-		if(allowNull!=null) {
-			option.setAllowNull(Boolean.parseBoolean(allowNull));
-		} else {
-			option.setAllowNull(Option.DEFAULT_ALLOW_NULL);
-		}
+		ManifestXmlUtils.booleanValue(attributes, ManifestXmlAttributes.ALLOW_NULL)
+			.ifPresent(option::setAllowNull);
 
-		option.setOptionGroup(ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.GROUP));
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.GROUP)
+			.ifPresent(option::setOptionGroup);
 	}
 
 	/**

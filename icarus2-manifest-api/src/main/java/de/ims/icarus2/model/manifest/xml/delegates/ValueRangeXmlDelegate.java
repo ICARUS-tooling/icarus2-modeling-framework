@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.manifest.xml.delegates;
 
+import java.util.Optional;
+
+import javax.xml.stream.XMLStreamException;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -69,7 +73,7 @@ public class ValueRangeXmlDelegate extends AbstractXmlDelegate<ValueRange> {
 	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlElement#writeXml(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	public void writeXml(XmlSerializer serializer) throws Exception {
+	public void writeXml(XmlSerializer serializer) throws XMLStreamException {
 
 		ValueRange range = getInstance();
 		ValueType type = range.getValueType();
@@ -96,20 +100,18 @@ public class ValueRangeXmlDelegate extends AbstractXmlDelegate<ValueRange> {
 	 * @param attributes
 	 */
 	protected void readAttributes(Attributes attributes) {
-		String lowerIncluded = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.INCLUDE_MIN);
-		if(lowerIncluded!=null) {
-			getInstance().setLowerBoundInclusive(Boolean.parseBoolean(lowerIncluded));
-		}
-		String upperIncluded = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.INCLUDE_MAX);
-		if(upperIncluded!=null) {
-			getInstance().setUpperBoundInclusive(Boolean.parseBoolean(upperIncluded));
-		}
+		ManifestXmlUtils.booleanValue(attributes, ManifestXmlAttributes.INCLUDE_MIN)
+			.ifPresent(getInstance()::setLowerBoundInclusive);
+		ManifestXmlUtils.booleanValue(attributes, ManifestXmlAttributes.INCLUDE_MAX)
+			.ifPresent(getInstance()::setUpperBoundInclusive);
 	}
 
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 		case ManifestXmlTags.VALUE_RANGE: {
 			readAttributes(attributes);
@@ -128,10 +130,8 @@ public class ValueRangeXmlDelegate extends AbstractXmlDelegate<ValueRange> {
 		} break;
 
 		case ManifestXmlTags.EVAL : {
-			String type = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.TYPE);
-			if(type==null) {
-				type = ExpressionFactoryProvider.GENERIC_JAVA_TYPE;
-			}
+			String type = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.TYPE)
+					.orElse(ExpressionFactoryProvider.GENERIC_JAVA_TYPE);
 
 			// Instantiate fresh factory, this might throw an unchecked exception
 			ExpressionFactory factory = ExpressionFactoryProvider.newFactory(type);
@@ -140,27 +140,29 @@ public class ValueRangeXmlDelegate extends AbstractXmlDelegate<ValueRange> {
 			ValueRange range = getInstance();
 			factory.setReturnType(range.getValueType().getBaseClass());
 
-			return new ExpressionXmlHandler(factory);
-		}
+			handler = new ExpressionXmlHandler(factory);
+		} break;
 
 		default:
 			throw new UnexpectedTagException(qName, true, ManifestXmlTags.VALUE_RANGE);
 		}
 
-		return this;
+		return Optional.of(handler);
 	}
 
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
+		ManifestXmlHandler handler = this;
+
 		ValueRange range = getInstance();
 		ValueType valueType = range.getValueType();
 
 		switch (localName) {
 		case ManifestXmlTags.VALUE_RANGE: {
-			return null;
-		}
+			handler = null;
+		} break;
 
 		case ManifestXmlTags.MIN : {
 			if(text!=null && range.getLowerBound()==null) {
@@ -184,7 +186,7 @@ public class ValueRangeXmlDelegate extends AbstractXmlDelegate<ValueRange> {
 			throw new UnexpectedTagException(qName, false, ManifestXmlTags.VALUE_RANGE);
 		}
 
-		return this;
+		return Optional.ofNullable(handler);
 	}
 
 	/**

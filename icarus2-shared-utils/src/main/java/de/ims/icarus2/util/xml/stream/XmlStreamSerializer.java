@@ -25,9 +25,7 @@ import java.util.Stack;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
-import de.ims.icarus2.util.strings.StringResource;
 import de.ims.icarus2.util.xml.XmlSerializer;
-import de.ims.icarus2.util.xml.XmlUtils;
 
 /**
  * @author Markus Gärtner
@@ -136,66 +134,6 @@ public class XmlStreamSerializer implements XmlSerializer {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.xml.XmlSerializer#writeAttribute(java.lang.String, de.ims.icarus2.util.strings.StringResource)
-	 */
-	@Override
-	public void writeAttribute(String name, StringResource value) throws XMLStreamException {
-		if(value!=null) {
-			writeAttribute(name, value.getStringValue());
-		}
-	}
-
-	/**
-	 *
-	 * @see de.ims.icarus2.util.xml.XmlSerializer#writeAttribute(java.lang.String, int)
-	 */
-	@Override
-	public void writeAttribute(String name, int value) throws XMLStreamException {
-//		pushAttribute(name, String.valueOf(value));
-		writer.writeAttribute(name, String.valueOf(value));
-	}
-
-	/**
-	 *
-	 * @see de.ims.icarus2.util.xml.XmlSerializer#writeAttribute(java.lang.String, long)
-	 */
-	@Override
-	public void writeAttribute(String name, long value) throws XMLStreamException {
-//		pushAttribute(name, String.valueOf(value));
-		writer.writeAttribute(name, String.valueOf(value));
-	}
-
-	/**
-	 *
-	 * @see de.ims.icarus2.util.xml.XmlSerializer#writeAttribute(java.lang.String, double)
-	 */
-	@Override
-	public void writeAttribute(String name, double value) throws XMLStreamException {
-//		pushAttribute(name, String.valueOf(value));
-		writer.writeAttribute(name, String.valueOf(value));
-	}
-
-	/**
-	 *
-	 * @see de.ims.icarus2.util.xml.XmlSerializer#writeAttribute(java.lang.String, float)
-	 */
-	@Override
-	public void writeAttribute(String name, float value) throws XMLStreamException {
-//		pushAttribute(name, String.valueOf(value));
-		writer.writeAttribute(name, String.valueOf(value));
-	}
-
-	/**
-	 *
-	 * @see de.ims.icarus2.util.xml.XmlSerializer#writeAttribute(java.lang.String, boolean)
-	 */
-	@Override
-	public void writeAttribute(String name, boolean value) throws XMLStreamException {
-//		pushAttribute(name, String.valueOf(value));
-		writer.writeAttribute(name, String.valueOf(value));
-	}
-
-	/**
 	 *
 	 * @see de.ims.icarus2.util.xml.XmlSerializer#endElement(java.lang.String)
 	 */
@@ -242,15 +180,6 @@ public class XmlStreamSerializer implements XmlSerializer {
 		nested = true;
 	}
 
-	@Override
-	public void writeTextOrCData(CharSequence text) throws XMLStreamException {
-		if(XmlUtils.hasReservedXMLSymbols(text)) {
-			writeCData(text);
-		} else {
-			writeText(text);
-		}
-	}
-
 	/**
 	 * {@inheritDoc}
 	 *
@@ -287,7 +216,7 @@ public class XmlStreamSerializer implements XmlSerializer {
 	 * @see de.ims.icarus2.util.xml.XmlSerializer#close()
 	 */
 	@Override
-	public void close() throws Exception {
+	public void close() throws XMLStreamException {
 		writer.flush();
 		writer.close();
 	}

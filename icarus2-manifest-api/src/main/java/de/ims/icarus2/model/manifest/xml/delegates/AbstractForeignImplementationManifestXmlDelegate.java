@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.manifest.xml.delegates;
 
+import java.util.Optional;
+
+import javax.xml.stream.XMLStreamException;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -47,13 +51,13 @@ public abstract class AbstractForeignImplementationManifestXmlDelegate<M extends
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractModifiableManifest#writeElements(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	protected void writeElements(XmlSerializer serializer) throws Exception {
+	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
 		super.writeElements(serializer);
 
 		ForeignImplementationManifest manifest = getInstance();
 
 		if(manifest.isLocalImplementation()) {
-			getImplementationManifestXmlDelegate().reset(manifest.getImplementationManifest()).writeXml(serializer);
+			getImplementationManifestXmlDelegate().reset(manifest.getImplementationManifest().get()).writeXml(serializer);
 		}
 	}
 
@@ -61,17 +65,21 @@ public abstract class AbstractForeignImplementationManifestXmlDelegate<M extends
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractModifiableManifest#startElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
 	 */
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
+		ManifestXmlHandler handler = null;
+
 		switch (localName) {
 		case ManifestXmlTags.IMPLEMENTATION: {
-			return getImplementationManifestXmlDelegate().reset(new ImplementationManifestImpl(getInstance()));
-		}
+			handler = getImplementationManifestXmlDelegate().reset(new ImplementationManifestImpl(getInstance()));
+		} break;
 
 		default:
 			return super.startElement(manifestLocation, uri, localName, qName, attributes);
 		}
+
+		return Optional.ofNullable(handler);
 	}
 
 	/**

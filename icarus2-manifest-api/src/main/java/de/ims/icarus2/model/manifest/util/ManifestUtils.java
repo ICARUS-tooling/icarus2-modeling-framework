@@ -16,7 +16,10 @@
  */
 package de.ims.icarus2.model.manifest.util;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -216,5 +219,22 @@ public class ManifestUtils {
 		}
 
 		return false;
+	}
+
+	public static <M extends ManifestFragment, T extends Object>
+			T require(Optional<T> value, M fragment, String property) {
+		requireNonNull(value);
+
+		return value.orElseThrow(ManifestException.missing(fragment, property));
+	}
+
+	public static <M extends ManifestFragment, T extends Object, U extends Object>
+			U require(Optional<T> value, Function<T, Optional<U>> func, M fragment,
+					String property1, String property2) {
+		requireNonNull(value);
+
+		T tmp = value.orElseThrow(ManifestException.missing(fragment, property1));
+
+		return func.apply(tmp).orElseThrow(ManifestException.missing(fragment, property2));
 	}
 }

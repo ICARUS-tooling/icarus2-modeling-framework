@@ -234,7 +234,7 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 
 		if(currentStage.compareTo(newGenerationStage)!=0)
 			throw new ModelException(getCorpus(), ModelErrorCode.EDIT_GENERATION_OUT_OF_SYNC,
-					Messages.mismatchMessage("Cannot execute operation, corpus generation stage out of sync", expectedStage, currentStage));
+					Messages.mismatch("Cannot execute operation, corpus generation stage out of sync", expectedStage, currentStage));
 	}
 
 	/**

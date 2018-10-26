@@ -211,9 +211,9 @@ public class ContextManifestResolver {
 		source.getFoundationLayerManifest().ifPresent(m -> target.setFoundationLayerId(m.getLayerId()));
 
 		// Containers
-		Hierarchy<ContainerManifest> containerHierarchy = source.getContainerHierarchy();
-		if(containerHierarchy!=null) {
-			for(ContainerManifest containerManifest : containerHierarchy) {
+		Optional<Hierarchy<ContainerManifest>> containerHierarchy = source.getContainerHierarchy();
+		if(containerHierarchy.isPresent()) {
+			for(ContainerManifest containerManifest : containerHierarchy.get()) {
 				ContainerManifest clonedManifest;
 				if(containerManifest.getManifestType()==ManifestType.STRUCTURE_MANIFEST) {
 					clonedManifest = cloneStructureManifest((StructureManifest) containerManifest,

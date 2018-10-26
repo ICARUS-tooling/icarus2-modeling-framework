@@ -591,7 +591,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		if(itemLayer!=blockHandler.getItemLayer())
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					Messages.mismatchMessage("Unexpected layer",
+					Messages.mismatch("Unexpected layer",
 							ManifestUtils.getName(itemLayer),
 							ManifestUtils.getName(blockHandler.getItemLayer())));
 
@@ -1537,7 +1537,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 							"Missing new item");
 				if(newItem.getMemberType()!=requiredType)
 					throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-							Messages.mismatchMessage("Invalid member-type of new item", requiredType, newItem.getMemberType()));
+							Messages.mismatch("Invalid member-type of new item", requiredType, newItem.getMemberType()));
 
 				context.mapItem(name, newItem);
 			} finally {
@@ -1582,7 +1582,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 							"Missing new item");
 				if(newItem.getMemberType()!=requiredType)
 					throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-							Messages.mismatchMessage("Invalid member-type of new item", requiredType, newItem.getMemberType()));
+							Messages.mismatch("Invalid member-type of new item", requiredType, newItem.getMemberType()));
 
 				context.replaceCurrentItem(newItem);
 			} finally {
@@ -1625,7 +1625,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			// Item can't be null due to contract of getItem(String)
 			if(item.getMemberType()!=requiredType)
 				throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-						Messages.mismatchMessage("Invalid member-type of stored item", requiredType, item.getMemberType()));
+						Messages.mismatch("Invalid member-type of stored item", requiredType, item.getMemberType()));
 
 			return item;
 		}
@@ -2982,7 +2982,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				final int columnCount = splitColumns(rawContent);
 				if(requiredColumnCount>columnCount)
 					throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT,
-							Messages.mismatchMessage("Insufficient columns", _int(requiredColumnCount), _int(columnCount)));
+							Messages.mismatch("Insufficient columns", _int(requiredColumnCount), _int(columnCount)));
 
 				// Re-link so the context uses our smaller cursor
 				characterCursor.setSource(rawContent);

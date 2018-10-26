@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.xml;
 
+import javax.xml.stream.XMLStreamException;
+
 import de.ims.icarus2.util.xml.XmlSerializer;
 
 
@@ -24,6 +26,8 @@ import de.ims.icarus2.util.xml.XmlSerializer;
  *
  */
 public interface ManifestXmlDelegate<M extends Object> extends ManifestXmlHandler {
+
+	//TODO factory method for creating exceptions (SAXException ??)
 
 	/**
 	 * Intended for use in constructors, this method should check
@@ -52,5 +56,5 @@ public interface ManifestXmlDelegate<M extends Object> extends ManifestXmlHandle
 		return this;
 	}
 
-	void writeXml(XmlSerializer serializer) throws Exception;
+	void writeXml(XmlSerializer serializer) throws XMLStreamException;
 }

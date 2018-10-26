@@ -556,7 +556,7 @@ public class IndexUtils {
 		int sizeB = setB.size();
 		if(sizeA!=sizeB)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					Messages.mismatchMessage("Mismatching index set sizes", _int(sizeA), _int(sizeB)));
+					Messages.mismatch("Mismatching index set sizes", _int(sizeA), _int(sizeB)));
 
 		long result = 0L;
 
@@ -576,7 +576,7 @@ public class IndexUtils {
 		long indicesBCount = count(indicesB);
 		if(indicesACount!=indicesBCount)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					Messages.mismatchMessage("Mismatching index value counts", _long(indicesACount), _long(indicesBCount)));
+					Messages.mismatch("Mismatching index value counts", _long(indicesACount), _long(indicesBCount)));
 
 		long result = 0L;
 

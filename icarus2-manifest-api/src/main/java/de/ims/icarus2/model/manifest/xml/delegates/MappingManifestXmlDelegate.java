@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.manifest.xml.delegates;
 
+import java.util.Optional;
+
+import javax.xml.stream.XMLStreamException;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -50,7 +54,7 @@ public class MappingManifestXmlDelegate extends AbstractXmlDelegate<MappingManif
 	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlElement#writeXml(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	public void writeXml(XmlSerializer serializer) throws Exception {
+	public void writeXml(XmlSerializer serializer) throws XMLStreamException {
 		MappingManifest manifest = getInstance();
 
 		serializer.startEmptyElement(ManifestXmlTags.MAPPING);
@@ -74,22 +78,25 @@ public class MappingManifestXmlDelegate extends AbstractXmlDelegate<MappingManif
 	protected void readAttributes(Attributes attributes) {
 		MappingManifest manifest = getInstance();
 
-		manifest.setCoverage(Coverage.parseCoverage(ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.COVERAGE)));
-		manifest.setRelation(Relation.parseRelation(ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.RELATION)));
-		manifest.setId(ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.ID));
-
-		String inverseId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.INVERSE_MAPPING);
-		if(inverseId!=null) {
-			manifest.setInverseId(inverseId);
-		}
-
-		manifest.setSourceLayerId(ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.SOURCE_LAYER));
-		manifest.setTargetLayerId(ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.TARGET_LAYER));
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.COVERAGE)
+			.map(Coverage::parseCoverage)
+			.ifPresent(manifest::setCoverage);
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.RELATION)
+			.map(Relation::parseRelation)
+			.ifPresent(manifest::setRelation);
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.ID)
+			.ifPresent(manifest::setId);
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.INVERSE_MAPPING)
+			.ifPresent(manifest::setInverseId);
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.SOURCE_LAYER)
+			.ifPresent(manifest::setSourceLayerId);
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.TARGET_LAYER)
+			.ifPresent(manifest::setTargetLayerId);
 	}
 
 
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
 		switch (localName) {
@@ -101,21 +108,23 @@ public class MappingManifestXmlDelegate extends AbstractXmlDelegate<MappingManif
 			throw new UnexpectedTagException(qName, true, ManifestXmlTags.MAPPING);
 		}
 
-		return this;
+		return Optional.of(this);
 	}
 
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
 		switch (localName) {
 		case ManifestXmlTags.MAPPING: {
-			return null;
-		}
+			// no-op
+		} break;
 
 		default:
 			throw new UnexpectedTagException(qName, false, ManifestXmlTags.MAPPING);
 		}
+
+		return Optional.empty();
 	}
 
 	/**

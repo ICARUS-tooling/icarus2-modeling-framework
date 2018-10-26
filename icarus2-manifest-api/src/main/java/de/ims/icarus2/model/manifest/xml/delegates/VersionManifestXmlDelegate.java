@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.manifest.xml.delegates;
 
+import java.util.Optional;
+
+import javax.xml.stream.XMLStreamException;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -47,16 +51,14 @@ public class VersionManifestXmlDelegate extends AbstractXmlDelegate<VersionManif
 	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlHandler#startElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
 	 */
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
 		if(qName.equals(ManifestXmlTags.VERSION)) {
-			String formatId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.VERSION_FORMAT);
-			if(formatId!=null) {
-				getInstance().setFormatId(formatId);
-			}
+			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.VERSION_FORMAT)
+				.ifPresent(getInstance()::setFormatId);
 
-			return this;
+			return Optional.of(this);
 		} else
 			throw new UnexpectedTagException(qName, true, ManifestXmlTags.VERSION);
 	}
@@ -65,13 +67,13 @@ public class VersionManifestXmlDelegate extends AbstractXmlDelegate<VersionManif
 	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlHandler#endElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 			throws SAXException {
 		if(qName.equals(ManifestXmlTags.VERSION)) {
 			getInstance().setVersionString(text);
 
-			return null;
+			return Optional.empty();
 		} else
 			throw new UnexpectedTagException(qName, false, ManifestXmlTags.VERSION);
 	}
@@ -90,7 +92,7 @@ public class VersionManifestXmlDelegate extends AbstractXmlDelegate<VersionManif
 	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlElement#writeXml(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	public void writeXml(XmlSerializer serializer) throws Exception {
+	public void writeXml(XmlSerializer serializer) throws XMLStreamException {
 		if(getInstance().getVersionString()==null)
 			throw new IllegalArgumentException("Invalid version string in manifest"); //$NON-NLS-1$
 

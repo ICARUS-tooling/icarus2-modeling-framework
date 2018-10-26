@@ -65,8 +65,8 @@ public interface LocationManifest extends Manifest {
 	 * may vary. It can denote a single corpus file, an entire folder or the
 	 * identifier of a database, for example.
 	 * <p>
-	 * Returns an empty {@link Optional} if this manifest is declared to host {@link #isInline() inline}
-	 * data.
+	 * Returns an empty {@link Optional} if this manifest is declared to host
+	 * {@link #isInline() inline} data.
 	 *
 	 * @return
 	 */

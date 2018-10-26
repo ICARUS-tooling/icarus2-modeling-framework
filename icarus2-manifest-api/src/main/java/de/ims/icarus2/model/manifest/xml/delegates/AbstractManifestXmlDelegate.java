@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.manifest.xml.delegates;
 
+import java.util.Optional;
+
+import javax.xml.stream.XMLStreamException;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -40,14 +44,14 @@ public abstract class AbstractManifestXmlDelegate<M extends Manifest> extends Ab
 
 	protected abstract String xmlTag();
 
-	protected void writeElements(XmlSerializer serializer) throws Exception {
-		VersionManifest versionManifest = getInstance().getVersionManifest();
-		if(versionManifest!=null) {
-			new VersionManifestXmlDelegate(versionManifest).writeXml(serializer);
+	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
+		Optional<VersionManifest> versionManifest = getInstance().getVersionManifest();
+		if(versionManifest.isPresent()) {
+			new VersionManifestXmlDelegate(versionManifest.get()).writeXml(serializer);
 		}
 	}
 
-	protected void writeAttributes(XmlSerializer serializer) throws Exception {
+	protected void writeAttributes(XmlSerializer serializer) throws XMLStreamException {
 //		if(id==null && isTemplate())
 //			throw new ModelException(ModelError.MANIFEST_INVALID_ID, "Id of "+createDummyId()+" is null");
 
@@ -62,7 +66,7 @@ public abstract class AbstractManifestXmlDelegate<M extends Manifest> extends Ab
 	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlElement#writeXml(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	public void writeXml(XmlSerializer serializer) throws Exception {
+	public void writeXml(XmlSerializer serializer) throws XMLStreamException {
 		if(getInstance().isEmpty()) {
 			serializer.startEmptyElement(xmlTag());
 		} else {
@@ -75,30 +79,25 @@ public abstract class AbstractManifestXmlDelegate<M extends Manifest> extends Ab
 
 
 	protected void readAttributes(Attributes attributes) {
-		String id = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.ID);
-		if(id!=null) {
-			getInstance().setId(id);
-		}
-
-		String templateId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.TEMPLATE_ID);
-		if(templateId!=null) {
-			getInstance().setTemplateId(templateId);
-		}
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.ID)
+			.ifPresent(getInstance()::setId);
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.TEMPLATE_ID)
+			.ifPresent(getInstance()::setTemplateId);
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlHandler#startElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
 	 */
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
 
 		if(localName.equals(xmlTag())) {
 			readAttributes(attributes);
-			return this;
+			return Optional.of(this);
 		} else if(localName.equals(ManifestXmlTags.VERSION)) {
-			return new VersionManifestXmlDelegate(new VersionManifestImpl());
+			return Optional.of(new VersionManifestXmlDelegate(new VersionManifestImpl()));
 		} else
 			throw new UnexpectedTagException(qName, true, xmlTag());
 	}
@@ -107,12 +106,12 @@ public abstract class AbstractManifestXmlDelegate<M extends Manifest> extends Ab
 	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlHandler#endElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 			throws SAXException {
 
 		if(localName.equals(xmlTag())) {
-			return null;
+			return Optional.empty();
 		} else
 			throw new UnexpectedTagException(qName, false, xmlTag());
 	}

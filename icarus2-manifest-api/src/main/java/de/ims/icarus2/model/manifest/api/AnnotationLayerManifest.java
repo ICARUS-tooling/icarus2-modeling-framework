@@ -76,7 +76,7 @@ public interface AnnotationLayerManifest extends LayerManifest {
 
 		forEachAnnotationManifest(
 				m -> result.add(m.getKey().orElseThrow(
-						ManifestException.create(GlobalErrorCode.ILLEGAL_STATE,
+						ManifestException.error(GlobalErrorCode.ILLEGAL_STATE,
 								"Missing key for annotation layer "+ManifestUtils.getName(m)))));
 
 		return result.getAsSet();
@@ -88,7 +88,7 @@ public interface AnnotationLayerManifest extends LayerManifest {
 
 		forEachLocalAnnotationManifest(
 				m -> result.add(m.getKey().orElseThrow(
-						ManifestException.create(GlobalErrorCode.ILLEGAL_STATE,
+						ManifestException.error(GlobalErrorCode.ILLEGAL_STATE,
 								"Missing key for annotation layer "+ManifestUtils.getName(m)))));
 
 		return result.getAsSet();

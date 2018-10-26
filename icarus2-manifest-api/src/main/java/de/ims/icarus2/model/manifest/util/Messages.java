@@ -64,7 +64,9 @@ public class Messages {
 		return msg;
 	}
 
-	public static String mismatchMessage(String msg, Object expected, Object provided) {
+	//TODO rename methods to shorten them and remove the "message" suffix
+
+	public static String mismatch(String msg, Object expected, Object provided) {
 		return String.format("%s: expected %s - got %s", ensureMsg(msg), expected, provided); //$NON-NLS-1$
 	}
 

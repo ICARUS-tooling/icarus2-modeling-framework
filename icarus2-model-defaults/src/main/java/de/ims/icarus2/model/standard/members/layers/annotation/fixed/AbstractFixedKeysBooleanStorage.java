@@ -64,7 +64,7 @@ public abstract class AbstractFixedKeysBooleanStorage extends AbstractAnnotation
 
 		if(index==-1) {
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					Messages.mismatchMessage("Unknown key", indexLookup.getAvailableKeysString(), key));
+					Messages.mismatch("Unknown key", indexLookup.getAvailableKeysString(), key));
 		}
 
 		return index;

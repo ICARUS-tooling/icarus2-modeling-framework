@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.manifest.xml.delegates;
 
+import java.util.Optional;
+
+import javax.xml.stream.XMLStreamException;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -56,7 +60,7 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlElement#writeXml(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
-	public void writeXml(XmlSerializer serializer) throws Exception {
+	public void writeXml(XmlSerializer serializer) throws XMLStreamException {
 
 		ValueManifest manifest = getInstance();
 		Object value = manifest.getValue();
@@ -80,11 +84,11 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 
 		// CONTENT
 
-		Documentation documentation = manifest.getDocumentation();
+		Optional<Documentation> documentation = manifest.getDocumentation();
 
-		if(documentation!=null) {
+		if(documentation.isPresent()) {
 			DocumentationXmlDelegate delegate = new DocumentationXmlDelegate();
-			delegate.setInstance(documentation);
+			delegate.setInstance(documentation.get());
 			delegate.writeXml(serializer);
 		}
 
@@ -108,19 +112,21 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 
 		ManifestXmlUtils.readIdentityAttributes(attributes, manifest);
 
-		String content = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CONTENT);
-		if(content!=null) {
-			if(!manifest.getValueType().isSimpleType())
-				throw new ManifestException(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE,
-						"Attribute location not supported by non-simple type: "+manifest.getValueType());
-			manifest.setValue(manifest.getValueType().parse(content, manifestLocation.getClassLoader()));
-		}
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CONTENT)
+			.ifPresent(content -> {
+				if(!manifest.getValueType().isSimpleType())
+					throw new ManifestException(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE,
+							"Attribute location not supported by non-simple type: "+manifest.getValueType());
+				manifest.setValue(manifest.getValueType().parse(content, manifestLocation.getClassLoader()));
+			});
 	}
 
 	@Override
-	public ManifestXmlHandler startElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
+		ManifestXmlHandler handler = this;
+
 		switch (localName) {
 
 		case ManifestXmlTags.NAME:
@@ -133,26 +139,26 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 		} break;
 
 		case ManifestXmlTags.DOCUMENTATION: {
-			return new DocumentationXmlDelegate();
-		}
+			handler = new DocumentationXmlDelegate();
+		} break;
 
 		case ManifestXmlTags.CONTENT: {
 			if(getInstance().getValue()!=null)
 				throw new UnexpectedTagException(qName, true, ManifestXmlTags.VALUE);
-			return this;
-		}
+		} break;
 
 		default:
 			throw new UnexpectedTagException(qName, true, ManifestXmlTags.VALUE);
 		}
 
-		return this;
+		return Optional.ofNullable(handler);
 	}
 
 	@Override
-	public ManifestXmlHandler endElement(ManifestLocation manifestLocation,
+	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
+		ManifestXmlHandler handler = this;
 
 		ValueManifest manifest = getInstance();
 
@@ -160,38 +166,36 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 
 		case ManifestXmlTags.NAME: {
 			getInstance().setName(text);
-			return this;
-		}
+		} break;
 
 		case ManifestXmlTags.DESCRIPTION: {
 			getInstance().setDescription(text);
-			return this;
-		}
+		} break;
 
 		case ManifestXmlTags.ICON: {
-			getInstance().setIcon(ManifestXmlUtils.iconValue(text, true));
-			return this;
-		}
+			ManifestXmlUtils.iconValue(text, true).ifPresent(getInstance()::setIcon);
+		} break;
 
 		case ManifestXmlTags.VALUE: {
 			if(manifest.getDocumentation()==null && text!=null && !text.isEmpty()) {
 				manifest.setValue(manifest.getValueType().parse(text, manifestLocation.getClassLoader()));
 			}
 
-			return null;
-		}
+			handler = null;
+		} break;
 
 		case ManifestXmlTags.CONTENT: {
 			if(manifest.getValue()!=null)
 				throw new UnexpectedTagException(qName, false, ManifestXmlTags.VALUE);
 
 			manifest.setValue(manifest.getValueType().parse(text, manifestLocation.getClassLoader()));
-			return this;
-		}
+		} break;
 
 		default:
 			throw new UnexpectedTagException(qName, false, ManifestXmlTags.VALUE);
 		}
+
+		return Optional.ofNullable(handler);
 	}
 
 	/**
