@@ -59,6 +59,7 @@ import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.standard.DefaultManifestRegistry;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.standard.corpus.DefaultCorpus;
 import de.ims.icarus2.model.standard.io.DefaultFileManager;
 import de.ims.icarus2.model.standard.registry.metadata.VirtualMetadataRegistry;
@@ -455,7 +456,7 @@ public class DefaultCorpusManager implements CorpusManager {
 		return DefaultCorpus.newBuilder()
 			.manager(this)
 			.manifest(manifest)
-			.metadataRegistry(new SubRegistry(metadataRegistry, manifest.getId()))
+			.metadataRegistry(new SubRegistry(metadataRegistry, ManifestUtils.requireId(manifest)))
 			.build();
 	}
 

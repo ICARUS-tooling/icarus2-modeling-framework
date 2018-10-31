@@ -42,8 +42,9 @@ import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
-import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
@@ -100,11 +101,10 @@ public class DefaultContext implements Context {
 				.orElseThrow(() -> new ModelException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
 						"No prerequisite manifest for id: "+id));
 
-		String contextId = prerequisiteManifest.getContextId()
-				.orElseThrow(ManifestException.missing(prerequisiteManifest, "contextId"));
-		String layerId = prerequisiteManifest.getLayerId();
+		String contextId = prerequisiteManifest.getContextId().get();
+		String layerId = prerequisiteManifest.getLayerId().get();
 
-		if(contextManifest.getId().equals(contextId))
+		if(IcarusUtils.equals(contextManifest.getId(), contextId))
 			throw new ModelException(ManifestErrorCode.MANIFEST_ERROR,
 					"Foreign layer id points to this context: "+contextId);
 
@@ -336,7 +336,7 @@ public class DefaultContext implements Context {
 			throw new ModelException(ManifestErrorCode.MANIFEST_INVALID_ENVIRONMENT,
 					"Foreign layer: "+ModelUtils.getName(layer)); //$NON-NLS-1$
 
-		String id = layer.getManifest().getId();
+		String id = ManifestUtils.requireId(layer.getManifest());
 
 		if(layerLookup.containsKey(id))
 			throw new ModelException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
@@ -355,7 +355,7 @@ public class DefaultContext implements Context {
 			throw new ModelException(ManifestErrorCode.MANIFEST_INVALID_ENVIRONMENT,
 					"Foreign layer: "+ModelUtils.getName(layer)); //$NON-NLS-1$
 
-		String id = layer.getManifest().getId();
+		String id = ManifestUtils.requireId(layer.getManifest());
 
 		if(!layers.remove(layer))
 			throw new ModelException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,

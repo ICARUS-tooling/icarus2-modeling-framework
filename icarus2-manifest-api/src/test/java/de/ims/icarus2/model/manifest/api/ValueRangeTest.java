@@ -154,37 +154,37 @@ public interface ValueRangeTest<R extends ValueRange>
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueRange#setLowerBound(java.lang.Object)}.
 	 */
+	@SuppressWarnings("unchecked")
 	@Test
 	default void testSetLowerBound() {
 		assertLockableSetter(settings(),
 				ValueRange::setLowerBound,
-				ManifestTestUtils.getTestValue(DEFAULT_VALUE_TYPE),
-				NPE_CHECK, TYPE_CAST_CHECK,
-				ManifestTestUtils.getIllegalValue(DEFAULT_VALUE_TYPE));
+				(Comparable<?>)ManifestTestUtils.getTestValue(DEFAULT_VALUE_TYPE),
+				NPE_CHECK, TYPE_CAST_CHECK);
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueRange#setUpperBound(java.lang.Object)}.
 	 */
+	@SuppressWarnings("unchecked")
 	@Test
 	default void testSetUpperBound() {
 		assertLockableSetter(settings(),
 				ValueRange::setUpperBound,
-				ManifestTestUtils.getTestValue(DEFAULT_VALUE_TYPE),
-				NPE_CHECK, TYPE_CAST_CHECK,
-				ManifestTestUtils.getIllegalValue(DEFAULT_VALUE_TYPE));
+				(Comparable<?>)ManifestTestUtils.getTestValue(DEFAULT_VALUE_TYPE),
+				NPE_CHECK, TYPE_CAST_CHECK);
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueRange#setStepSize(java.lang.Object)}.
 	 */
+	@SuppressWarnings("unchecked")
 	@Test
 	default void testSetStepSize() {
 		assertLockableSetter(settings(),
 				ValueRange::setStepSize,
-				ManifestTestUtils.getTestValue(DEFAULT_VALUE_TYPE),
-				NPE_CHECK, TYPE_CAST_CHECK,
-				ManifestTestUtils.getIllegalValue(DEFAULT_VALUE_TYPE));
+				(Comparable<?>)ManifestTestUtils.getTestValue(DEFAULT_VALUE_TYPE),
+				NPE_CHECK, TYPE_CAST_CHECK);
 	}
 
 	/**

@@ -53,14 +53,13 @@ public class FixedKeysFloatStorage extends AbstractFixedKeysStorage<float[]> {
 		float[] noEntryValues = new float[indexLookup.keyCount()];
 		for(int i=0; i<indexLookup.keyCount(); i++) {
 			String key = indexLookup.keyAt(i);
-			AnnotationManifest annotationManifest = layerManifest.getAnnotationManifest(key);
+			AnnotationManifest annotationManifest = requireAnnotationsManifest(layerManifest, key);
 
-			Object noEntryValue = annotationManifest.getNoEntryValue();
-			if(noEntryValue==null) {
-				noEntryValue = _float(IcarusUtils.UNSET_FLOAT);
-			}
 
-			noEntryValues[i] = ((Number) noEntryValue).floatValue();
+			noEntryValues[i] = annotationManifest.getNoEntryValue()
+					.map(Float.class::cast)
+					.orElse(_float(IcarusUtils.UNSET_FLOAT))
+					.floatValue();
 		}
 
 		return noEntryValues;

@@ -19,29 +19,78 @@ package de.ims.icarus2.model.manifest.api;
 import java.util.EnumSet;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.util.Options;
 
 /**
+ * Factory for instantiating {@link ManifestFragment manifests} based on provided
+ * {@link ManifestType} information.
+ *
  * @author Markus Gärtner
  *
  */
 public interface ManifestFactory {
 
+	/**
+	 * Returns all the {@link ManifestType types} this factory can instantiate.
+	 * Note that this set must never be empty.
+	 * <p>
+	 * The default implementation simply returns all possible types in a set.
+	 *
+	 * @return
+	 */
 	default Set<ManifestType> getSupportedTypes() {
 		return EnumSet.allOf(ManifestType.class);
 	}
 
+	/**
+	 * @see #create(ManifestType, TypedManifest, Options)
+	 *
+	 * @param type
+	 * @return
+	 */
 	default <M extends ManifestFragment> M create(ManifestType type) {
 		return create(type, null, null);
 	}
 
-	default <M extends ManifestFragment> M create(ManifestType type, Object host) {
+	/**
+	 * @see #create(ManifestType, TypedManifest, Options)
+	 *
+	 * @param type
+	 * @param host
+	 * @return
+	 */
+	default <M extends ManifestFragment> M create(ManifestType type, TypedManifest host) {
 		return create(type, host, null);
 	}
 
-	<M extends ManifestFragment> M create(ManifestType type, Object host, Options options);
+	/**
+	 * Instantiate a manifest object for the specified {@code type}. If the {@code host} argument is
+	 * not {@code null}, it will be used as environment for the manifest.
+	 * <p>
+	 * Note that the {@code options} parameter is currently unused.
+	 *
+	 * @param type
+	 * @param host
+	 * @param options
+	 * @return
+	 */
+	<M extends ManifestFragment> M create(ManifestType type, @Nullable TypedManifest host, @Nullable Options options);
 
+	/**
+	 * Returns the {@link ManifestLocation location} that manifest objects instantiated
+	 * by this factory will be assigned.
+	 *
+	 * @return
+	 */
 	ManifestLocation getManifestLocation();
 
+	/**
+	 * Returns the {@link ManifestRegistry registry} that manifest objects instantiated
+	 * by this factory will be assigned.
+	 *
+	 * @return
+	 */
 	ManifestRegistry getRegistry();
 }

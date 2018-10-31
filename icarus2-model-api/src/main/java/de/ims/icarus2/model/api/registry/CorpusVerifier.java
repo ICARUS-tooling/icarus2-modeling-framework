@@ -46,6 +46,7 @@ import de.ims.icarus2.model.manifest.api.PathResolverManifest;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
@@ -100,7 +101,7 @@ public class CorpusVerifier {
 		}
 
 		// Verify options/properties
-		OptionsManifest optionsManifest = manifest.getOptionsManifest();
+		OptionsManifest optionsManifest = manifest.getOptionsManifest().orElse(null);
 		Set<String> properties = manifest.getPropertyNames();
 		Set<String> options = optionsManifest==null ? null : optionsManifest.getOptionIds();
 		for(String property : properties) {
@@ -112,9 +113,9 @@ public class CorpusVerifier {
 				error(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Missing options declaration in manifest for property:"+property); //$NON-NLS-1$
 			} else {
 				// Check for correct value type
-				Option option = optionsManifest.getOption(property);
 				Object value = manifest.getProperty(property);
-				ValueType valueType = option.getValueType();
+				ValueType valueType = optionsManifest.getOption(property)
+						.map(Option::getValueType).orElse(null);
 
 				if(valueType==null) {
 					error(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Missing value type declaration in options manifest for property: "+property); //$NON-NLS-1$
@@ -140,7 +141,7 @@ public class CorpusVerifier {
 		checkType(manifest, ManifestType.CONTEXT_MANIFEST);
 		checkManifest0(manifest);
 
-		if(manifest.getCorpusManifest()!=corpusManifest) {
+		if(!IcarusUtils.equals(manifest.getCorpusManifest(), corpusManifest)) {
 			error(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Corrupted hierarchy - foreign corpus manifest ancestor"); //$NON-NLS-1$
 		}
 
@@ -159,10 +160,8 @@ public class CorpusVerifier {
 								"Missing location path declaration: "+ManifestUtils.getName(locationManifest)); //$NON-NLS-1$
 					}
 
-					PathResolverManifest pathResolverManifest = locationManifest.getPathResolverManifest();
-					if(pathResolverManifest!=null) {
-						checkPathResolver(pathResolverManifest);
-					}
+					locationManifest.getPathResolverManifest()
+						.ifPresent(this::checkPathResolver);
 				}
 			}
 		}
@@ -181,13 +180,13 @@ public class CorpusVerifier {
 		checkManifest0(manifest);
 
 		// Check integrity
-		if(manifest.getContextManifest()!=contextManifest) {
+		if(IcarusUtils.equals(manifest.getContextManifest(), contextManifest)) {
 			error(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Corrupted hierarchy - foreign context manifest ancestor"); //$NON-NLS-1$
 		}
 
 		//TODO this part needs some fixing to bring it in line with the layer linking contract
 		for(TargetLayerManifest baseLayer : manifest.getBaseLayerManifests()) {
-			ItemLayerManifest baseLayerManifest = (ItemLayerManifest) baseLayer.getResolvedLayerManifest();
+			ItemLayerManifest baseLayerManifest = (ItemLayerManifest) baseLayer.getResolvedLayerManifest().orElse(null);
 			if(baseLayerManifest!=null) {
 				CorpusManifest root = getRoot(baseLayerManifest);
 				if(root!=corpusManifest) {
@@ -218,14 +217,15 @@ public class CorpusVerifier {
 
 	private void checkAnnotationLayer(AnnotationLayerManifest manifest) {
 		Set<String> keys = manifest.getAvailableKeys();
-		String defaultKey = manifest.getDefaultKey();
+		String defaultKey = manifest.getDefaultKey().orElse(null);
 
 		if(keys.isEmpty() && defaultKey==null && !manifest.isAnnotationFlagSet(AnnotationFlag.UNKNOWN_KEYS)) {
 			error(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "No annotation manifests defined for bounded annotation layer. "
 					+ "Need at least a default annotation when no foreign keys are allowed");
 		}
 
-		AnnotationManifest defaultAnnotationManifest = defaultKey==null ? null : manifest.getAnnotationManifest(defaultKey);
+		AnnotationManifest defaultAnnotationManifest = defaultKey==null ?
+				null : manifest.getAnnotationManifest(defaultKey).orElse(null);
 
 		if(defaultAnnotationManifest!=null) {
 			checkAnnotation(defaultAnnotationManifest);
@@ -237,7 +237,7 @@ public class CorpusVerifier {
 			if(key.equals(defaultKey)) {
 				continue;
 			}
-			checkAnnotation(manifest.getAnnotationManifest(key));
+			manifest.getAnnotationManifest(key).ifPresent(this::checkAnnotation);
 		}
 	}
 
@@ -251,14 +251,14 @@ public class CorpusVerifier {
 	}
 
 	private void checkItemLayer(ItemLayerManifest manifest) {
-		ContainerManifest rootContainerManifest = manifest.getRootContainerManifest();
+		ContainerManifest rootContainerManifest = manifest.getRootContainerManifest().orElse(null);
 		if(rootContainerManifest==null) {
 			error(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Missing root container manifest");
 		} else {
 			chechContainer(rootContainerManifest, manifest);
 		}
 
-		Hierarchy<ContainerManifest> hierarchy = manifest.getContainerHierarchy();
+		Hierarchy<ContainerManifest> hierarchy = manifest.getContainerHierarchy().orElse(null);
 		if(hierarchy==null) {
 			error(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Missing container hierarchy");
 		} else {
@@ -266,9 +266,9 @@ public class CorpusVerifier {
 			for(int i=0; i<hierarchy.getDepth(); i++) {
 				ContainerManifest containerManifest = hierarchy.atLevel(i);
 
-				//TODO incinsistency: we start at level 0 and expect a parent?
+				//TODO inconsistency: we start at level 0 and expect a parent?
 
-				if(containerManifest.getParentManifest()!=parent) {
+				if(IcarusUtils.equals(containerManifest.getParentManifest(), parent)) {
 					error(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Corrupted hierarchy - foreign parent container at level "+i); //$NON-NLS-1$
 				}
 
@@ -280,11 +280,11 @@ public class CorpusVerifier {
 	}
 
 	private void chechContainer(ContainerManifest manifest, ItemLayerManifest itemLayerManifest) {
-
+		//TODO
 	}
 
 	private void checkStructureLayer(StructureLayerManifest manifest) {
-
+		//TODO
 	}
 
 	private void checkType(MemberManifest manifest, ManifestType type) {
@@ -297,11 +297,7 @@ public class CorpusVerifier {
 	}
 
 	private CorpusManifest getRoot(LayerManifest manifest) {
-		return manifest.getContextManifest().getCorpusManifest();
-	}
-
-	private CorpusManifest getRoot(ContainerManifest manifest) {
-		return getRoot(manifest.getLayerManifest());
+		return ManifestUtils.requireGrandHost(manifest);
 	}
 
 	private String trace(String msg) {
@@ -312,10 +308,7 @@ public class CorpusVerifier {
 		StringBuilder sb = new StringBuilder();
 
 		for(int i=stack.size()-1; i>-1; i++) {
-			String id = stack.get(i).getId();
-			if(id==null) {
-				id = "<unknown>"; //$NON-NLS-1$
-			}
+			String id = stack.get(i).getId().orElse("<unknown>");
 
 			if(i>0) {
 				sb.append('.');

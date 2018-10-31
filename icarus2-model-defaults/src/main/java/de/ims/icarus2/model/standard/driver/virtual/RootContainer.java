@@ -184,7 +184,7 @@ public class RootContainer extends AbstractImmutableContainer {
 	 */
 	@Override
 	public ContainerManifest getManifest() {
-		return getLayer().getManifest().getRootContainerManifest();
+		return getLayer().getManifest().getRootContainerManifest().get();
 	}
 
 	/**

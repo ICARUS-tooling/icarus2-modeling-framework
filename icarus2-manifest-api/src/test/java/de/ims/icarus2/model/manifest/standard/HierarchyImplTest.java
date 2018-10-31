@@ -26,15 +26,15 @@ import de.ims.icarus2.test.TestSettings;
  * @author Markus Gärtner
  *
  */
-class HierarchyImplTest implements HierarchyTest<Object, HierarchyImpl<Object>> {
+@SuppressWarnings("rawtypes")
+class HierarchyImplTest implements HierarchyTest<Object, HierarchyImpl> {
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
-	@SuppressWarnings("unchecked")
 	@Override
-	public Class<? extends HierarchyImpl<Object>> getTestTargetClass() {
-		return (Class<? extends HierarchyImpl<Object>>) HierarchyImpl.class;
+	public Class<HierarchyImpl> getTestTargetClass() {
+		return HierarchyImpl.class;
 	}
 
 	/**

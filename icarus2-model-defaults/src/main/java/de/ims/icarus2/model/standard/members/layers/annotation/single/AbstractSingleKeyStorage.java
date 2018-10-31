@@ -23,6 +23,7 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.layers.annotation.AbstractAnnotationStorage;
 
@@ -40,20 +41,17 @@ public abstract class AbstractSingleKeyStorage extends AbstractAnnotationStorage
 		super(weakKeys, initialCapacity);
 	}
 
+	protected static String requireDefaultKey(AnnotationLayerManifest manifest) {
+		return manifest.getDefaultKey().orElseThrow(ManifestException.missing(manifest, "default key"));
+	}
+
 	private String annotationKey;
 
 	@Override
 	public void addNotify(AnnotationLayer layer) {
 		super.addNotify(layer);
 
-		AnnotationLayerManifest manifest = layer.getManifest();
-
-		String annotationKey = manifest.getDefaultKey();
-
-		if (annotationKey == null)
-			throw new NullPointerException("Invalid annotationKey");
-
-		this.annotationKey = annotationKey;
+		this.annotationKey = requireDefaultKey(layer.getManifest());
 	}
 
 	@Override

@@ -228,10 +228,10 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 		final String message = prepareMessage();
 
 		final SourceType sourceType = manifest.getSourceType();
-		final String source = manifest.getSource();
+		final String source = manifest.getSource().orElse(null);
 
 		ClassLoader classLoader = getCorpusManager().getImplementationClassLoader(manifest);
-		String classname = manifest.getClassname();
+		String classname = manifest.getClassname().orElse(null);
 
 		Class<?> clazz = null;
 

@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.single;
 
+import static de.ims.icarus2.util.lang.Primitives._boolean;
+import static de.ims.icarus2.util.lang.Primitives.cast;
+
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -61,17 +65,19 @@ public class SingleKeyBooleanStorage extends AbstractSingleKeyStorage {
 		}
 	}
 
+	@SuppressWarnings("boxing")
 	@Override
 	public void addNotify(AnnotationLayer layer) {
 		super.addNotify(layer);
 
 		AnnotationLayerManifest manifest = layer.getManifest();
-		AnnotationManifest annotationManifest = manifest.getAnnotationManifest(manifest.getDefaultKey());
+		String key = requireDefaultKey(manifest);
+		AnnotationManifest annotationManifest = requireAnnotationsManifest(manifest, key);
 
-		Object declaredNoEntryValue = annotationManifest.getNoEntryValue();
+		Optional<Object> declaredNoEntryValue = annotationManifest.getNoEntryValue();
 
-		noEntryValueSet = declaredNoEntryValue!=null;
-		noEntryValue = declaredNoEntryValue==null ? DEFAULT_NO_ENTRY_VALUE : (boolean) declaredNoEntryValue;
+		noEntryValueSet = declaredNoEntryValue.isPresent();
+		noEntryValue = declaredNoEntryValue.map(Boolean.class::cast).orElse(DEFAULT_NO_ENTRY_VALUE).booleanValue();
 
 		if(noEntryValueSet && noEntryValue)
 			throw new ModelException(ManifestErrorCode.IMPLEMENTATION_ERROR,
@@ -94,7 +100,7 @@ public class SingleKeyBooleanStorage extends AbstractSingleKeyStorage {
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
-		return getBooleanValue(item, key);
+		return _boolean(getBooleanValue(item, key));
 	}
 
 	/**
@@ -102,7 +108,7 @@ public class SingleKeyBooleanStorage extends AbstractSingleKeyStorage {
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		setBooleanValue(item, key, (boolean) value);
+		setBooleanValue(item, key, cast((Boolean)value));
 	}
 
 	@Override

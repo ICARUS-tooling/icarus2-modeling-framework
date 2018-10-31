@@ -53,14 +53,13 @@ public class FixedKeysIntStorage extends AbstractFixedKeysStorage<int[]> {
 		int[] noEntryValues = new int[indexLookup.keyCount()];
 		for(int i=0; i<indexLookup.keyCount(); i++) {
 			String key = indexLookup.keyAt(i);
-			AnnotationManifest annotationManifest = layerManifest.getAnnotationManifest(key);
+			AnnotationManifest annotationManifest = requireAnnotationsManifest(layerManifest, key);
 
-			Object noEntryValue = annotationManifest.getNoEntryValue();
-			if(noEntryValue==null) {
-				noEntryValue = _int(IcarusUtils.UNSET_INT);
-			}
 
-			noEntryValues[i] = ((Number) noEntryValue).intValue();
+			noEntryValues[i] = annotationManifest.getNoEntryValue()
+					.map(Integer.class::cast)
+					.orElse(_int(IcarusUtils.UNSET_INT))
+					.intValue();
 		}
 
 		return noEntryValues;

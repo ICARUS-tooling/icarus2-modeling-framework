@@ -95,7 +95,7 @@ public class PackedAnnotationStorage implements ManagedAnnotationStorage {
 			PackageHandle handle = lookup.get(manifest);
 			if(handle==null)
 				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Missing handle for annotation: "+ModelUtils.getName(manifest));
-			handles.put(manifest.getKey(), handle);
+			handles.put(manifest.getKey().get(), handle);
 		}
 	}
 
@@ -119,7 +119,7 @@ public class PackedAnnotationStorage implements ManagedAnnotationStorage {
 	public boolean collectKeys(Item item, Consumer<String> action) {
 		// Just forwards the request with a customized action that translates handles into annotation keys
 		return dataManager().collectHandles(item, handles.values(),
-				handle -> action.accept(handle.getManifest().getKey()));
+				handle -> action.accept(handle.getManifest().getKey().get()));
 	}
 
 	/**

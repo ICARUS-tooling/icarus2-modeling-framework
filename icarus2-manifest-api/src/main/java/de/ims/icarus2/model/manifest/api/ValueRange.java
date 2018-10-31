@@ -83,11 +83,11 @@ public interface ValueRange extends Lockable, TypedManifest {
 
 	// Modification method
 
-	void setLowerBound(Object lowerBound);
+	void setLowerBound(Comparable<?> lowerBound);
 
-	void setUpperBound(Object upperBound);
+	void setUpperBound(Comparable<?> upperBound);
 
-	void setStepSize(Object stepSize);
+	void setStepSize(Comparable<?> stepSize);
 
 	void setLowerBoundInclusive(boolean lowerBoundInclusive);
 

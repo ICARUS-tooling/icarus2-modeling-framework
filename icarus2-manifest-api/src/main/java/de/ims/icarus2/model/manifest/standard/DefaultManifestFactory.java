@@ -42,6 +42,7 @@ import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
+import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.standard.DriverManifestImpl.ModuleManifestImpl;
 import de.ims.icarus2.util.Options;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -163,12 +164,13 @@ public class DefaultManifestFactory implements ManifestFactory {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.ManifestFactory#create(de.ims.icarus2.model.manifest.api.ManifestType, java.lang.Object, de.ims.icarus2.util.Options)
+	 * @see de.ims.icarus2.model.manifest.api.ManifestFactory#create(de.ims.icarus2.model.manifest.api.ManifestType, TypedManifest, de.ims.icarus2.util.Options)
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
 	public <M extends ManifestFragment> M create(ManifestType type,
-			Object host, Options options) {
+			TypedManifest host, Options options) {
+		requireNonNull(type);
 
 		ManifestFragmentInfo info = getInfo(type);
 

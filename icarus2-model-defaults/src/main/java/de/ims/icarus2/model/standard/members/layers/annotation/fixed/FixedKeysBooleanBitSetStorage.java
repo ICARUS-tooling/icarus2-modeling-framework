@@ -51,7 +51,7 @@ public class FixedKeysBooleanBitSetStorage extends AbstractFixedKeysStorage<BitS
 		BitSet noEntryValues = new BitSet(indexLookup.keyCount());
 		for(int i=0; i<indexLookup.keyCount(); i++) {
 			String key = indexLookup.keyAt(i);
-			AnnotationManifest annotationManifest = layerManifest.getAnnotationManifest(key);
+			AnnotationManifest annotationManifest = requireAnnotationsManifest(layerManifest, key);
 
 			Object noEntryValue = annotationManifest.getNoEntryValue();
 			if(noEntryValue==null) {

@@ -53,14 +53,12 @@ public class FixedKeysLongStorage extends AbstractFixedKeysStorage<long[]> {
 		long[] noEntryValues = new long[indexLookup.keyCount()];
 		for(int i=0; i<indexLookup.keyCount(); i++) {
 			String key = indexLookup.keyAt(i);
-			AnnotationManifest annotationManifest = layerManifest.getAnnotationManifest(key);
+			AnnotationManifest annotationManifest = requireAnnotationsManifest(layerManifest, key);
 
-			Object noEntryValue = annotationManifest.getNoEntryValue();
-			if(noEntryValue==null) {
-				noEntryValue = _long(IcarusUtils.UNSET_LONG);
-			}
-
-			noEntryValues[i] = ((Number) noEntryValue).longValue();
+			noEntryValues[i] = annotationManifest.getNoEntryValue()
+					.map(Long.class::cast)
+					.orElse(_long(IcarusUtils.UNSET_LONG))
+					.longValue();
 		}
 
 		return noEntryValues;

@@ -19,11 +19,26 @@
  */
 package de.ims.icarus2.model.manifest.api.binding;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static de.ims.icarus2.test.TestUtils.assertNotPresent;
+import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
+import static de.ims.icarus2.test.TestUtils.assertPairwiseNotEquals;
+import static de.ims.icarus2.test.TestUtils.settings;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.Optional;
+
+import javax.annotation.Nullable;
 
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.test.GenericTest;
+import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.util.Multiplicity;
 
 /**
  * @author Markus Gärtner
@@ -31,28 +46,23 @@ import de.ims.icarus2.test.GenericTest;
  */
 public interface LayerPrerequisiteTest<P extends LayerPrerequisite> extends GenericTest<P> {
 
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.binding.LayerPrerequisite#getLayerId()}.
-	 */
-	@Test
-	default void testGetLayerId() {
-		fail("Not yet implemented"); // TODO
-	}
+	@Provider
+	P createTestInstance(TestSettings settings,
+			String alias, @Nullable String layerId,
+			@Nullable String contextId, @Nullable String typeId,
+			@Nullable String description, Multiplicity multiplicity);
 
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.binding.LayerPrerequisite#getContextId()}.
-	 */
-	@Test
-	default void testGetContextId() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.binding.LayerPrerequisite#getTypeId()}.
-	 */
-	@Test
-	default void testGetTypeId() {
-		fail("Not yet implemented"); // TODO
+	public static LayerPrerequisite mockLayerPrerequisite(
+			String alias, String layerId, String contextId,
+			String typeId, String description, Multiplicity multiplicity) {
+		LayerPrerequisite p = mock(LayerPrerequisite.class);
+		when(p.getAlias()).thenReturn(alias);
+		when(p.getLayerId()).thenReturn(Optional.ofNullable(layerId));
+		when(p.getContextId()).thenReturn(Optional.ofNullable(contextId));
+		when(p.getTypeId()).thenReturn(Optional.ofNullable(typeId));
+		when(p.getDescription()).thenReturn(Optional.ofNullable(description));
+		when(p.getMultiplicity()).thenReturn(multiplicity);
+		return p;
 	}
 
 	/**
@@ -60,7 +70,47 @@ public interface LayerPrerequisiteTest<P extends LayerPrerequisite> extends Gene
 	 */
 	@Test
 	default void testGetAlias() {
-		fail("Not yet implemented"); // TODO
+		assertNotNull(create().getAlias());
+
+		String alias = "alias1";
+		assertEquals(alias, createTestInstance(settings(), alias,
+				null, null, null, null, Multiplicity.ONE).getAlias());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.binding.LayerPrerequisite#getLayerId()}.
+	 */
+	@Test
+	default void testGetLayerId() {
+		assertNotPresent(create().getLayerId());
+
+		String id = "layer1";
+		assertOptionalEquals(id, createTestInstance(settings(), "alias",
+				id, null, null, null, Multiplicity.ONE).getLayerId());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.binding.LayerPrerequisite#getContextId()}.
+	 */
+	@Test
+	default void testGetContextId() {
+		assertNotPresent(create().getContextId());
+
+		String id = "context1";
+		assertOptionalEquals(id, createTestInstance(settings(), "alias",
+				null, id, null, null, Multiplicity.ONE).getContextId());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.binding.LayerPrerequisite#getTypeId()}.
+	 */
+	@Test
+	default void testGetTypeId() {
+		assertNotPresent(create().getTypeId());
+
+		String id = "type1";
+		assertOptionalEquals(id, createTestInstance(settings(), "alias",
+				null, null, id, null, Multiplicity.ONE).getTypeId());
 	}
 
 	/**
@@ -68,7 +118,11 @@ public interface LayerPrerequisiteTest<P extends LayerPrerequisite> extends Gene
 	 */
 	@Test
 	default void testGetDescription() {
-		fail("Not yet implemented"); // TODO
+		assertNotPresent(create().getDescription());
+
+		String desc = "some description";
+		assertOptionalEquals(desc, createTestInstance(settings(), "alias",
+				null, null, null, desc, Multiplicity.ONE).getDescription());
 	}
 
 	/**
@@ -76,7 +130,10 @@ public interface LayerPrerequisiteTest<P extends LayerPrerequisite> extends Gene
 	 */
 	@Test
 	default void testGetMultiplicity() {
-		fail("Not yet implemented"); // TODO
+		for(Multiplicity multiplicity : Multiplicity.values()) {
+			assertEquals(multiplicity, createTestInstance(settings(), "alias",
+					null, null, null, null, multiplicity).getMultiplicity());
+		}
 	}
 
 	/**
@@ -84,7 +141,26 @@ public interface LayerPrerequisiteTest<P extends LayerPrerequisite> extends Gene
 	 */
 	@Test
 	default void testDefaultEquals() {
-		fail("Not yet implemented"); // TODO
+		LayerPrerequisite p1 = mockLayerPrerequisite("alias1", "layer1", "context1", "type1", "desc1", Multiplicity.ONE);
+		LayerPrerequisite p2 = mockLayerPrerequisite("alias1", null, null, null, null, Multiplicity.ONE);
+		LayerPrerequisite p3 = mockLayerPrerequisite("alias1", "layer1", null, null, null, Multiplicity.ONE);
+		LayerPrerequisite p4 = mockLayerPrerequisite("alias1", null, "context1", null, null, Multiplicity.ONE);
+		LayerPrerequisite p5 = mockLayerPrerequisite("alias1", null, null, "type1", null, Multiplicity.ONE);
+		LayerPrerequisite p6 = mockLayerPrerequisite("alias1", null, null, null, "desc1", Multiplicity.ONE);
+
+		LayerPrerequisite p1_2 = mockLayerPrerequisite("alias1", "layer1", "context1", "type1", "desc1", Multiplicity.ONE);
+
+		assertTrue(LayerPrerequisite.defaultEquals(p1, p1));
+		assertTrue(LayerPrerequisite.defaultEquals(p2, p2));
+		assertTrue(LayerPrerequisite.defaultEquals(p3, p3));
+		assertTrue(LayerPrerequisite.defaultEquals(p4, p4));
+		assertTrue(LayerPrerequisite.defaultEquals(p5, p5));
+		assertTrue(LayerPrerequisite.defaultEquals(p6, p6));
+
+		assertTrue(LayerPrerequisite.defaultEquals(p1, p1_2));
+
+		assertPairwiseNotEquals(LayerPrerequisite::defaultEquals,
+				p1, p2, p3, p4, p5, p6);
 	}
 
 }

@@ -18,6 +18,9 @@ package de.ims.icarus2.model.standard.members.layers.type;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Optional;
+
+import javax.annotation.Nullable;
 import javax.swing.Icon;
 
 import de.ims.icarus2.model.manifest.api.Category;
@@ -31,22 +34,20 @@ import de.ims.icarus2.model.manifest.api.ManifestRegistry;
  */
 public class LazyLayerType implements LayerType {
 
-	private final String id;
-	private String name;
-	private String namespace;
-	private String description;
-	private Icon icon;
+	private final Optional<String> id;
+	private Optional<String> name = Optional.empty();
+	private Optional<String> namespace = Optional.empty();
+	private Optional<String> description = Optional.empty();
+	private Optional<Icon> icon = Optional.empty();
 
-	private String layerId;
-	private LayerManifest sharedManifest;
+	private Optional<String> layerId = Optional.empty();
+	private Optional<LayerManifest> sharedManifest = Optional.empty();
 
 	private final ManifestRegistry registry;
 
 	public LazyLayerType(String id) {
-		requireNonNull(id);
-
 		this.registry = null;
-		this.id = id;
+		this.id = Optional.of(id);
 	}
 
 	public LazyLayerType(ManifestRegistry registry, Category category, String layerId) {
@@ -54,7 +55,7 @@ public class LazyLayerType implements LayerType {
 		requireNonNull(category);
 		requireNonNull(layerId);
 
-		if(category.getId()==null)
+		if(!category.getId().isPresent())
 			throw new IllegalArgumentException("Missing 'id' calue from identity"); //$NON-NLS-1$
 
 		this.registry = registry;
@@ -65,14 +66,14 @@ public class LazyLayerType implements LayerType {
 		description = category.getDescription();
 		icon = category.getIcon();
 
-		this.layerId = layerId;
+		this.layerId = Optional.of(layerId);
 	}
 
 	/**
 	 * @see de.ims.icarus2.util.id.Identity#getId()
 	 */
 	@Override
-	public String getId() {
+	public Optional<String> getId() {
 		return id;
 	}
 
@@ -80,7 +81,7 @@ public class LazyLayerType implements LayerType {
 	 * @see de.ims.icarus2.model.manifest.api.Category#getNamespace()
 	 */
 	@Override
-	public String getNamespace() {
+	public Optional<String> getNamespace() {
 		return namespace;
 	}
 
@@ -96,7 +97,7 @@ public class LazyLayerType implements LayerType {
 	 * @see de.ims.icarus2.util.id.Identity#getDescription()
 	 */
 	@Override
-	public String getDescription() {
+	public Optional<String> getDescription() {
 		return description;
 	}
 
@@ -104,7 +105,7 @@ public class LazyLayerType implements LayerType {
 	 * @see de.ims.icarus2.util.id.Identity#getIcon()
 	 */
 	@Override
-	public Icon getIcon() {
+	public Optional<Icon> getIcon() {
 		return icon;
 	}
 
@@ -112,9 +113,9 @@ public class LazyLayerType implements LayerType {
 	 * @see de.ims.icarus2.model.manifest.api.LayerType#getSharedManifest()
 	 */
 	@Override
-	public LayerManifest getSharedManifest() {
-		if(sharedManifest==null && layerId!=null) {
-			sharedManifest = (LayerManifest) registry.getTemplate(layerId);
+	public Optional<LayerManifest> getSharedManifest() {
+		if(!sharedManifest.isPresent() && layerId.isPresent()) {
+			sharedManifest = registry.getTemplate(layerId.get());
 		}
 
 		return sharedManifest;
@@ -124,45 +125,35 @@ public class LazyLayerType implements LayerType {
 	 * @param name the name to set
 	 */
 	public void setName(String name) {
-		requireNonNull(name);
-
-		this.name = name;
+		this.name = Optional.of(name);
 	}
 
 	/**
 	 * @param namespace the namespace to set
 	 */
 	public void setNamespace(String namespace) {
-		requireNonNull(namespace);
-
-		this.namespace = namespace;
+		this.namespace = Optional.of(namespace);
 	}
 
 	/**
 	 * @param description the description to set
 	 */
-	public void setDescription(String description) {
-		requireNonNull(description);
-
-		this.description = description;
+	public void setDescription(@Nullable String description) {
+		this.description = Optional.ofNullable(description);
 	}
 
 	/**
 	 * @param icon the icon to set
 	 */
-	public void setIcon(Icon icon) {
-		requireNonNull(icon);
-
-		this.icon = icon;
+	public void setIcon(@Nullable Icon icon) {
+		this.icon = Optional.ofNullable(icon);
 	}
 
 	/**
 	 * @param layerId the layerId to set
 	 */
 	public void setLayerId(String layerId) {
-		requireNonNull(layerId);
-
-		this.layerId = layerId;
+		this.layerId = Optional.of(layerId);
 	}
 
 }

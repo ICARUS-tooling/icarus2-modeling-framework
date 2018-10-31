@@ -33,8 +33,12 @@ import de.ims.icarus2.IcarusException;
  */
 public class IcarusUtils {
 
+	public static final Runnable NO_OP = () -> {/* no-op */};
+
 	/**
 	 * Maximum value for use in arrays.
+	 * Some VMs reserve a couple bytes as array headers and as such
+	 * {@link Integer#MAX_VALUE} would result in an exception.
 	 */
 	public static final long MAX_INTEGER_INDEX = Integer.MAX_VALUE-8;
 
@@ -112,7 +116,7 @@ public class IcarusUtils {
 	public static final float UNSET_FLOAT = -1F;
 
 	@SafeVarargs
-	public static <V extends Object> Optional<V> filter(Optional<V>...optionals) {
+	public static <V extends Object> Optional<V> or(Optional<V>...optionals) {
 		for(Optional<V> optional : optionals) {
 			if(optional.isPresent()) {
 				return optional;
@@ -140,5 +144,9 @@ public class IcarusUtils {
 
 	public static boolean nonePresent(Optional<?>...optionals) {
 		return Arrays.asList(optionals).stream().noneMatch(Optional::isPresent);
+	}
+
+	public static <V extends Object> boolean equals(Optional<V> opt, V value) {
+		return opt.isPresent() && value.equals(opt.get());
 	}
 }

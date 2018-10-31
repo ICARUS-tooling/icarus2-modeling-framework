@@ -90,7 +90,7 @@ public class AbstractLayer<M extends LayerManifest> extends AbstractPart<LayerGr
 	 */
 	@Override
 	public String getName() {
-		return getManifest().getId();
+		return getManifest().getUniqueId();
 	}
 
 	/**

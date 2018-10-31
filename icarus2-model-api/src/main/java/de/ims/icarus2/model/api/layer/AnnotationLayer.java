@@ -110,7 +110,7 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 	 */
 	@SuppressWarnings("unchecked")
 	default <T extends Object> T getValue(Item item) {
-		return (T) getAnnotationStorage().getValue(item, getManifest().getDefaultKey());
+		return (T) getAnnotationStorage().getValue(item, getManifest().getDefaultKey().get());
 	}
 
 	default void setValue(Item item, String key, Object value) {
@@ -118,8 +118,9 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 	}
 
 	default void clearValue(Item item, String key) {
-		AnnotationManifest manifest = getManifest().getAnnotationManifest(key);
-		getAnnotationStorage().setValue(item, key, manifest.getNoEntryValue());
+		getManifest().getAnnotationManifest(key)
+			.flatMap(AnnotationManifest::getNoEntryValue)
+			.ifPresent(v -> getAnnotationStorage().setValue(item, key, v));
 	}
 
 	/**

@@ -91,7 +91,8 @@ public class PropertyListResolver implements Resolver {
 			fixedPropertyResolvers = new Object2ObjectOpenHashMap<>(availableKeys.size());
 
 			for(String annotationKey : availableKeys) {
-				BasicAnnotationResolver<?> nestedResolver = BasicAnnotationResolver.forAnnotation(annotationLayer, annotationKey);
+				BasicAnnotationResolver<?> nestedResolver =
+						BasicAnnotationResolver.forAnnotation(annotationLayer, annotationKey);
 				if(nestedResolver!=null) {
 					fixedPropertyResolvers.put(annotationKey, nestedResolver);
 				}

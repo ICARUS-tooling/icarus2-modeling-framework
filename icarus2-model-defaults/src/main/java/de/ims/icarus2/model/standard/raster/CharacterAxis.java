@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.standard.raster;
 
+import java.util.Optional;
+
 import javax.swing.Icon;
 
 import de.ims.icarus2.model.api.layer.FragmentLayer;
@@ -24,12 +26,16 @@ import de.ims.icarus2.model.api.raster.RasterAxis;
 
 public class CharacterAxis implements RasterAxis {
 
+	private static final String id = "characterAxis";
+	private static final String name = "Character Offset Axis";
+	private static final String description = "Orders characters according to their appearance in the hosting character sequence.";
+
 	/**
 	 * @see de.ims.icarus2.util.id.Identity#getId()
 	 */
 	@Override
-	public String getId() {
-		return "characterAxis"; //$NON-NLS-1$
+	public Optional<String> getId() {
+		return Optional.of(id);
 	}
 
 	/**
@@ -37,23 +43,23 @@ public class CharacterAxis implements RasterAxis {
 	 */
 	@Override
 	public Optional<String> getName() {
-		return "Character Offset Axis";
+		return Optional.of(name);
 	}
 
 	/**
 	 * @see de.ims.icarus2.util.id.Identity#getDescription()
 	 */
 	@Override
-	public String getDescription() {
-		return "Orders characters according to their appearance in the hosting character sequence.";
+	public Optional<String> getDescription() {
+		return Optional.of(description);
 	}
 
 	/**
 	 * @see de.ims.icarus2.util.id.Identity#getIcon()
 	 */
 	@Override
-	public Icon getIcon() {
-		return null;
+	public Optional<Icon> getIcon() {
+		return Optional.empty();
 	}
 
 	/**
@@ -77,7 +83,7 @@ public class CharacterAxis implements RasterAxis {
 	 */
 	@Override
 	public String toString() {
-		return getName();
+		return name;
 	}
 
 	/**

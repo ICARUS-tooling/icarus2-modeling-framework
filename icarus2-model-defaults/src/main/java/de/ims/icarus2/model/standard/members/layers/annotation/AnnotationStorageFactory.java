@@ -23,6 +23,7 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
 import de.ims.icarus2.model.manifest.api.AnnotationFlag;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysBoolean15BitStorage;
 import de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysBoolean31BitStorage;
@@ -74,13 +75,15 @@ public class AnnotationStorageFactory {
 		AnnotationStorage storage = null;
 
 		final Set<String> keySet = layerManifest.getAvailableKeys();
-		final String defaultKey = layerManifest.getDefaultKey();
+		final String defaultKey = layerManifest.getDefaultKey().orElseThrow(
+				ManifestException.missing(layerManifest, "default key"));
 
 		if(layerManifest.isAnnotationFlagSet(AnnotationFlag.UNKNOWN_KEYS)) {
 			storage = buildUnboundStorage(layerManifest);
 		} else {
 			if(keySet.size()==1) {
-				storage = buildSingleKeyStorage(layerManifest.getAnnotationManifest(defaultKey));
+				storage = buildSingleKeyStorage(layerManifest.getAnnotationManifest(defaultKey).orElseThrow(
+						ManifestException.missing(layerManifest, "annotation manifest for key: "+defaultKey)));
 			} else {
 				storage = buildFixedKeyStorage(keySet, layerManifest);
 			}
@@ -112,7 +115,7 @@ public class AnnotationStorageFactory {
 
 		// Collect value types to see if we can optimize storage
 		for(String key : keySet) {
-			AnnotationManifest annotationManifest = layerManifest.getAnnotationManifest(key);
+			AnnotationManifest annotationManifest = layerManifest.getAnnotationManifest(key).get();
 			valueTypes.add(annotationManifest.getValueType());
 		}
 

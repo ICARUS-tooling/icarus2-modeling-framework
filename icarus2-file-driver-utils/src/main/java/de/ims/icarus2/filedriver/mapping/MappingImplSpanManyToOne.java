@@ -37,7 +37,9 @@ import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
 import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
+import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.IcarusUtils;
 
 /**
@@ -174,7 +176,8 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 		// Used for the final step in lookup resolution
 		// Represents one-to-many mapping (of spans)
 		private final MappingReader inverseReader = inverseMapping.newReader();
-		private final Coverage inverseCoverage = inverseMapping.getManifest().getCoverage();
+		private final Coverage inverseCoverage = ManifestUtils.require(
+				inverseMapping.getManifest(), MappingManifest::getCoverage, "coverage");
 
 		/**
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getIndicesCount(long, de.ims.icarus2.model.api.driver.mapping.RequestSettings)

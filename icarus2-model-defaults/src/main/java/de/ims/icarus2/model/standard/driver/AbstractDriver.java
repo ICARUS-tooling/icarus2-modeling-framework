@@ -55,6 +55,7 @@ import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.Manifest;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.standard.members.DefaultLayerMemberFactory;
 import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.model.standard.members.structure.DefaultEdge;
@@ -296,7 +297,7 @@ public abstract class AbstractDriver implements Driver {
 	protected Context createContext() {
 
 		CorpusMemberFactory factory = corpus.getManager().newFactory();
-		ContextManifest contextManifest = manifest.getContextManifest();
+		ContextManifest contextManifest = ManifestUtils.requireHost(manifest);
 
 		// Allow custom layer implementations defined by the driver
 		Options options = createCustomLayers(contextManifest);
@@ -426,7 +427,9 @@ public abstract class AbstractDriver implements Driver {
 	}
 
 	protected void checkEditable() {
-		if(!manifest.getContextManifest().isEditable())
+		if(!manifest.getContextManifest()
+				.map(ContextManifest::isEditable)
+				.orElse(Boolean.FALSE).booleanValue())
 			throw new ModelException(ModelErrorCode.DRIVER_NOT_EDITABLE, "Driver not editable: "+manifest.getId());
 	}
 
@@ -561,7 +564,7 @@ public abstract class AbstractDriver implements Driver {
 		CorpusMemberFactory factory = corpus.getManager().newFactory();
 
 		return factory.newImplementationLoader()
-				.manifest(manifest.getImplementationManifest())
+				.manifest(manifest.getImplementationManifest().get())
 				.environment(this)
 				.message("Module manifest "+getName(manifest))
 				.instantiate(resultClass);

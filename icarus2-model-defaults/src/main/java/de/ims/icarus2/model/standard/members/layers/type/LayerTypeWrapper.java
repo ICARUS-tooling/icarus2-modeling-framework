@@ -18,6 +18,8 @@ package de.ims.icarus2.model.standard.members.layers.type;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Optional;
+
 import javax.swing.Icon;
 
 import org.slf4j.Logger;
@@ -80,15 +82,15 @@ public class LayerTypeWrapper implements LayerType {
 	 * @see de.ims.icarus2.util.id.Identity#getId()
 	 */
 	@Override
-	public String getId() {
-		return id;
+	public Optional<String> getId() {
+		return Optional.of(id);
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.Category#getNamespace()
 	 */
 	@Override
-	public String getNamespace() {
+	public Optional<String> getNamespace() {
 		return getProxy().getNamespace();
 	}
 
@@ -104,7 +106,7 @@ public class LayerTypeWrapper implements LayerType {
 	 * @see de.ims.icarus2.util.id.Identity#getDescription()
 	 */
 	@Override
-	public String getDescription() {
+	public Optional<String> getDescription() {
 		return getProxy().getDescription();
 	}
 
@@ -112,7 +114,7 @@ public class LayerTypeWrapper implements LayerType {
 	 * @see de.ims.icarus2.util.id.Identity#getIcon()
 	 */
 	@Override
-	public Icon getIcon() {
+	public Optional<Icon> getIcon() {
 		return getProxy().getIcon();
 	}
 
@@ -120,7 +122,7 @@ public class LayerTypeWrapper implements LayerType {
 	 * @see de.ims.icarus2.model.manifest.api.LayerType#getSharedManifest()
 	 */
 	@Override
-	public LayerManifest getSharedManifest() {
+	public Optional<LayerManifest> getSharedManifest() {
 		return getProxy().getSharedManifest();
 	}
 }

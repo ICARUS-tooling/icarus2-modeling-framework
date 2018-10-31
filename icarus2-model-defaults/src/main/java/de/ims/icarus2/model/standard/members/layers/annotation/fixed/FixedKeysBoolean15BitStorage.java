@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -85,15 +86,13 @@ public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorag
 		int noEntryValues = 0;
 
 		for(int i=0; i<indexLookup.keyCount(); i++) {
-			AnnotationManifest annotationManifest = manifest.getAnnotationManifest(indexLookup.keyAt(i));
+			AnnotationManifest annotationManifest = requireAnnotationsManifest(manifest, indexLookup.keyAt(i));
 
-			Object declaredNoEntryValue = annotationManifest.getNoEntryValue();
+			Optional<Object> declaredNoEntryValue = annotationManifest.getNoEntryValue();
 
-			if(declaredNoEntryValue==null || !((Boolean)declaredNoEntryValue).booleanValue()) {
-				continue;
+			if(!declaredNoEntryValue.isPresent() && ((Boolean)declaredNoEntryValue.get()).booleanValue()) {
+				noEntryValues |= (1<<i);
 			}
-
-			noEntryValues |= (1<<i);
 		}
 
 		this.noEntryValues = (short)noEntryValues;
@@ -176,7 +175,7 @@ public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorag
 	public void removeAllValues(Supplier<? extends Item> source) {
 		Item item;
 		while((item=source.get())!=null) {
-			annotations.remove(item);
+			annotations.removeShort(item);
 		}
 	}
 

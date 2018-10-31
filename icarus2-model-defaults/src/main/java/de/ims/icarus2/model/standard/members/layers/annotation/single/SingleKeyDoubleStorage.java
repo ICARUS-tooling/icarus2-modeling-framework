@@ -66,16 +66,18 @@ public class SingleKeyDoubleStorage extends AbstractSingleKeyStorage {
 		return result;
 	}
 
+	@SuppressWarnings("boxing")
 	@Override
 	public void addNotify(AnnotationLayer layer) {
 		super.addNotify(layer);
 
 		AnnotationLayerManifest manifest = layer.getManifest();
-		AnnotationManifest annotationManifest = manifest.getAnnotationManifest(manifest.getDefaultKey());
+		String key = requireDefaultKey(manifest);
+		AnnotationManifest annotationManifest = requireAnnotationsManifest(manifest, key);
 
-		Object declaredNoEntryValue = annotationManifest.getNoEntryValue();
-
-		noEntryValue = declaredNoEntryValue==null ? DEFAULT_NO_ENTRY_VALUE : ((Double) declaredNoEntryValue).doubleValue();
+		noEntryValue = annotationManifest.getNoEntryValue()
+				.map(Double.class::cast)
+				.orElse(DEFAULT_NO_ENTRY_VALUE);
 		annotations = buildBuffer(layer);
 	}
 
@@ -130,7 +132,7 @@ public class SingleKeyDoubleStorage extends AbstractSingleKeyStorage {
 		checkKey(key);
 
 		if(Double.compare(value, noEntryValue)==0) {
-			annotations.remove(item);
+			annotations.removeDouble(item);
 		} else {
 			annotations.put(item, value);
 		}
@@ -148,7 +150,7 @@ public class SingleKeyDoubleStorage extends AbstractSingleKeyStorage {
 	public void removeAllValues(Supplier<? extends Item> source) {
 		Item item;
 		while((item=source.get())!=null) {
-			annotations.remove(item);
+			annotations.removeDouble(item);
 		}
 	}
 

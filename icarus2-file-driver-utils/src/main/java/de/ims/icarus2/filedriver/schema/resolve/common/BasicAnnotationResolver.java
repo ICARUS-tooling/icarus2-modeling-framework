@@ -21,6 +21,7 @@ import static de.ims.icarus2.util.lang.Primitives._double;
 import static de.ims.icarus2.util.lang.Primitives._float;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
+import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.filedriver.schema.resolve.Resolver;
 import de.ims.icarus2.filedriver.schema.resolve.ResolverContext;
@@ -29,6 +30,7 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.ValueVerifier;
 import de.ims.icarus2.model.manifest.util.ValueVerifier.DoubleVerifier;
@@ -51,6 +53,11 @@ import de.ims.icarus2.util.strings.StringPrimitives;
  */
 public abstract class BasicAnnotationResolver<E extends Object> implements Resolver {
 
+	private static AnnotationManifest resolveKey(AnnotationLayerManifest manifest, String key) {
+		return manifest.getAnnotationManifest(key)
+				.orElseThrow(ManifestException.missing(manifest, "annotation manifest for key "+key));
+	}
+
 	/**
 	 * Creates a type-optimized instance of {@link BasicAnnotationResolver} that verifies
 	 * the data it reads based on the given layer's {@link AnnotationManifest manifest} and
@@ -61,24 +68,29 @@ public abstract class BasicAnnotationResolver<E extends Object> implements Resol
 	 * @return
 	 */
 	public static BasicAnnotationResolver<?> forAnnotation(AnnotationLayer layer, String annotationKey) {
+		requireNonNull(layer);
+		requireNonNull(annotationKey);
+
 		AnnotationLayerManifest layerManifest = layer.getManifest();
-		if(annotationKey==null) {
-			annotationKey = layerManifest.getDefaultKey();
-		}
-		AnnotationManifest annotationManifest = layerManifest.getAnnotationManifest(annotationKey);
+		AnnotationManifest annotationManifest = resolveKey(layerManifest, annotationKey);
 		AnnotationStorage annotationStorage = layer.getAnnotationStorage();
 
 		ValueType valueType = annotationManifest.getValueType();
 
 		switch (valueType.getName()) {
-		case ValueType.INTEGER_TYPE_LABEL: return new IntAnnotationResolver(annotationStorage::setIntegerValue, annotationManifest);
-		case ValueType.LONG_TYPE_LABEL: return new LongAnnotationResolver(annotationStorage::setLongValue, annotationManifest);
-		case ValueType.FLOAT_TYPE_LABEL: return new FloatAnnotationResolver(annotationStorage::setFloatValue, annotationManifest);
-		case ValueType.DOUBLE_TYPE_LABEL: return new DoubleAnnotationResolver(annotationStorage::setDoubleValue, annotationManifest);
-		case ValueType.BOOLEAN_TYPE_LABEL: return new BooleanAnnotationResolver(annotationStorage::setBooleanValue, annotationManifest);
+		case ValueType.INTEGER_TYPE_LABEL: return new IntAnnotationResolver(
+				annotationStorage::setIntegerValue, annotationManifest, annotationKey);
+		case ValueType.LONG_TYPE_LABEL: return new LongAnnotationResolver(
+				annotationStorage::setLongValue, annotationManifest, annotationKey);
+		case ValueType.FLOAT_TYPE_LABEL: return new FloatAnnotationResolver(
+				annotationStorage::setFloatValue, annotationManifest, annotationKey);
+		case ValueType.DOUBLE_TYPE_LABEL: return new DoubleAnnotationResolver(
+				annotationStorage::setDoubleValue, annotationManifest, annotationKey);
+		case ValueType.BOOLEAN_TYPE_LABEL: return new BooleanAnnotationResolver(
+				annotationStorage::setBooleanValue, annotationManifest, annotationKey);
 
 		default:
-			return new ObjectAnnotationResolver(annotationStorage::setValue, annotationManifest);
+			return new ObjectAnnotationResolver(annotationStorage::setValue, annotationManifest, annotationKey);
 		}
 	}
 
@@ -95,24 +107,29 @@ public abstract class BasicAnnotationResolver<E extends Object> implements Resol
 	@SuppressWarnings("unchecked")
 	public static <E extends Object> BasicAnnotationResolver<?> forAnnotationWithConsumer(AnnotationLayer layer,
 			String annotationKey, AnnotationConsumer<E> annotationConsumer) {
+		requireNonNull(layer);
+		requireNonNull(annotationKey);
+
 		AnnotationLayerManifest layerManifest = layer.getManifest();
-		if(annotationKey==null) {
-			annotationKey = layerManifest.getDefaultKey();
-		}
-		AnnotationManifest annotationManifest = layerManifest.getAnnotationManifest(annotationKey);
+		AnnotationManifest annotationManifest = resolveKey(layerManifest, annotationKey);
 		AnnotationStorage annotationStorage = layer.getAnnotationStorage();
 
 		ValueType valueType = annotationManifest.getValueType();
 
 		switch (valueType.getName()) {
-		case ValueType.INTEGER_TYPE_LABEL: return new IntAnnotationResolver((AnnotationConsumer<Integer>) annotationConsumer, annotationManifest);
-		case ValueType.LONG_TYPE_LABEL: return new LongAnnotationResolver((AnnotationConsumer<Long>) annotationConsumer, annotationManifest);
-		case ValueType.FLOAT_TYPE_LABEL: return new FloatAnnotationResolver((AnnotationConsumer<Float>) annotationConsumer, annotationManifest);
-		case ValueType.DOUBLE_TYPE_LABEL: return new DoubleAnnotationResolver((AnnotationConsumer<Double>) annotationConsumer, annotationManifest);
-		case ValueType.BOOLEAN_TYPE_LABEL: return new BooleanAnnotationResolver((AnnotationConsumer<Boolean>) annotationConsumer, annotationManifest);
+		case ValueType.INTEGER_TYPE_LABEL: return new IntAnnotationResolver(
+				(AnnotationConsumer<Integer>) annotationConsumer, annotationManifest, annotationKey);
+		case ValueType.LONG_TYPE_LABEL: return new LongAnnotationResolver(
+				(AnnotationConsumer<Long>) annotationConsumer, annotationManifest, annotationKey);
+		case ValueType.FLOAT_TYPE_LABEL: return new FloatAnnotationResolver(
+				(AnnotationConsumer<Float>) annotationConsumer, annotationManifest, annotationKey);
+		case ValueType.DOUBLE_TYPE_LABEL: return new DoubleAnnotationResolver(
+				(AnnotationConsumer<Double>) annotationConsumer, annotationManifest, annotationKey);
+		case ValueType.BOOLEAN_TYPE_LABEL: return new BooleanAnnotationResolver(
+				(AnnotationConsumer<Boolean>) annotationConsumer, annotationManifest, annotationKey);
 
 		default:
-			return new ObjectAnnotationResolver(annotationStorage::setValue, annotationManifest);
+			return new ObjectAnnotationResolver(annotationStorage::setValue, annotationManifest, annotationKey);
 		}
 	}
 
@@ -126,10 +143,10 @@ public abstract class BasicAnnotationResolver<E extends Object> implements Resol
 	 * @param valueType
 	 */
 	protected BasicAnnotationResolver(AnnotationConsumer<E> annotationConsumer,
-			AnnotationManifest annotationManifest) {
-		this.annotationConsumer = annotationConsumer;
-		this.annotationKey = annotationManifest.getKey();
-		this.valueType = annotationManifest.getValueType();
+			AnnotationManifest annotationManifest, String annotationKey) {
+		this.annotationConsumer = requireNonNull(annotationConsumer);
+		this.annotationKey = requireNonNull(annotationKey);
+		this.valueType = requireNonNull(annotationManifest).getValueType();
 	}
 
 	public static class ObjectAnnotationResolver extends BasicAnnotationResolver<Object> {
@@ -137,8 +154,8 @@ public abstract class BasicAnnotationResolver<E extends Object> implements Resol
 		private final ValueVerifier.ObjectVerifier verifier;
 
 		public ObjectAnnotationResolver(AnnotationConsumer<Object> annotationConsumer,
-				AnnotationManifest annotationManifest) {
-			super(annotationConsumer, annotationManifest);
+				AnnotationManifest annotationManifest, String annotationKey) {
+			super(annotationConsumer, annotationManifest, annotationKey);
 
 			verifier = ObjectVerifier.forAnnotation(annotationManifest);
 		}
@@ -172,8 +189,8 @@ public abstract class BasicAnnotationResolver<E extends Object> implements Resol
 		private final boolean isPrimitiveConsumer;
 
 		public IntAnnotationResolver(AnnotationConsumer<Integer> annotationConsumer,
-				AnnotationManifest annotationManifest) {
-			super(annotationConsumer, annotationManifest);
+				AnnotationManifest annotationManifest, String annotationKey) {
+			super(annotationConsumer, annotationManifest, annotationKey);
 
 			verifier = IntVerifier.forAnnotation(annotationManifest);
 			isPrimitiveConsumer = annotationConsumer instanceof IntAnnotationConsumer;
@@ -210,8 +227,8 @@ public abstract class BasicAnnotationResolver<E extends Object> implements Resol
 		private final boolean isPrimitiveConsumer;
 
 		public LongAnnotationResolver(AnnotationConsumer<Long> annotationConsumer,
-				AnnotationManifest annotationManifest) {
-			super(annotationConsumer, annotationManifest);
+				AnnotationManifest annotationManifest, String annotationKey) {
+			super(annotationConsumer, annotationManifest, annotationKey);
 
 			verifier = LongVerifier.forAnnotation(annotationManifest);
 			isPrimitiveConsumer = annotationConsumer instanceof LongAnnotationConsumer;
@@ -248,8 +265,8 @@ public abstract class BasicAnnotationResolver<E extends Object> implements Resol
 		private final boolean isPrimitiveConsumer;
 
 		public FloatAnnotationResolver(AnnotationConsumer<Float> annotationConsumer,
-				AnnotationManifest annotationManifest) {
-			super(annotationConsumer, annotationManifest);
+				AnnotationManifest annotationManifest, String annotationKey) {
+			super(annotationConsumer, annotationManifest, annotationKey);
 
 			verifier = FloatVerifier.forAnnotation(annotationManifest);
 			isPrimitiveConsumer = annotationConsumer instanceof FloatAnnotationConsumer;
@@ -286,8 +303,8 @@ public abstract class BasicAnnotationResolver<E extends Object> implements Resol
 		private final boolean isPrimitiveConsumer;
 
 		public DoubleAnnotationResolver(AnnotationConsumer<Double> annotationConsumer,
-				AnnotationManifest annotationManifest) {
-			super(annotationConsumer, annotationManifest);
+				AnnotationManifest annotationManifest, String annotationKey) {
+			super(annotationConsumer, annotationManifest, annotationKey);
 
 			verifier = DoubleVerifier.forAnnotation(annotationManifest);
 			isPrimitiveConsumer = annotationConsumer instanceof DoubleAnnotationConsumer;
@@ -323,8 +340,8 @@ public abstract class BasicAnnotationResolver<E extends Object> implements Resol
 		private final boolean isPrimitiveConsumer;
 
 		public BooleanAnnotationResolver(AnnotationConsumer<Boolean> annotationConsumer,
-				AnnotationManifest annotationManifest) {
-			super(annotationConsumer, annotationManifest);
+				AnnotationManifest annotationManifest, String annotationKey) {
+			super(annotationConsumer, annotationManifest, annotationKey);
 
 			isPrimitiveConsumer = annotationConsumer instanceof BooleanAnnotationConsumer;
 		}

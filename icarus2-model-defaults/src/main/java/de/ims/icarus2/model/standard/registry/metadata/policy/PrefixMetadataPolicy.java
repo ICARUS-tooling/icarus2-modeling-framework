@@ -23,6 +23,7 @@ import de.ims.icarus2.model.api.registry.SubRegistry;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.ManifestFragment;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 
 /**
  * Implements a metadata policy for targets describable by a {@link ManifestFragment}.
@@ -54,7 +55,7 @@ public class PrefixMetadataPolicy<M extends ManifestFragment> implements Metadat
 	 * @return
 	 */
 	protected String getRegistryPrefix(M target) {
-		return target.getId();
+		return ManifestUtils.requireId(target);
 	}
 
 	/**

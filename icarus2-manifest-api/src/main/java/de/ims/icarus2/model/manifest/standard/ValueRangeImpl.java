@@ -18,10 +18,9 @@ package de.ims.icarus2.model.manifest.standard;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Objects;
 import java.util.Optional;
 
-import de.ims.icarus2.model.manifest.ManifestErrorCode;
-import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ValueRange;
 import de.ims.icarus2.model.manifest.types.UnsupportedValueTypeException;
 import de.ims.icarus2.model.manifest.types.ValueType;
@@ -30,9 +29,9 @@ import de.ims.icarus2.util.lang.ClassUtils;
 public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 
 	private final ValueType valueType;
-	private Optional<Object> lower = Optional.empty();
-	private Optional<Object> upper = Optional.empty();
-	private Optional<Object> stepSize = Optional.empty();
+	private Optional<Comparable<?>> lower = Optional.empty();
+	private Optional<Comparable<?>> upper = Optional.empty();
+	private Optional<Comparable<?>> stepSize = Optional.empty();
 	private boolean lowerIncluded = DEFAULT_LOWER_INCLUSIVE_VALUE;
 	private boolean upperIncluded = DEFAULT_UPPER_INCLUSIVE_VALUE;
 
@@ -53,14 +52,14 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 		this.upperIncluded = upperIncluded;
 	}
 
-	public ValueRangeImpl(ValueType valueType, Object lower, Object upper, boolean lowerIncluded, boolean upperIncluded) {
+	public ValueRangeImpl(ValueType valueType, Comparable<?> lower, Comparable<?> upper, boolean lowerIncluded, boolean upperIncluded) {
 		this(valueType, lowerIncluded, upperIncluded);
 
 		setLowerBound(lower);
 		setUpperBound(upper);
 	}
 
-	public ValueRangeImpl(ValueType valueType, Object lower, Object upper) {
+	public ValueRangeImpl(ValueType valueType, Comparable<?> lower, Comparable<?> upper) {
 		this(valueType, lower, upper, true, true);
 	}
 
@@ -69,25 +68,7 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	 */
 	@Override
 	public int hashCode() {
-		int hash = valueType.hashCode();
-
-		if(lowerIncluded!=DEFAULT_LOWER_INCLUSIVE_VALUE) {
-			hash *= -1;
-		}
-
-		if(upperIncluded!=DEFAULT_UPPER_INCLUSIVE_VALUE) {
-			hash *= -2;
-		}
-
-		if(lower!=null) {
-			hash *= lower.hashCode();
-		}
-
-		if(upper!=null) {
-			hash *= upper.hashCode();
-		}
-
-		return hash;
+		return Objects.hash(valueType, lower, upper, stepSize);
 	}
 
 	/**
@@ -190,24 +171,20 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	}
 
 	protected void checkValue(Object value) {
-		Class<?> type = valueType.checkValue(value);
-
-		if(!Comparable.class.isAssignableFrom(type))
-			throw new ManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
-					"Provided value for value range does not implement java.lang.Comparable: "+type.getName()); //$NON-NLS-1$
+		valueType.checkValue(value);
 	}
 
 	/**
 	 * @param lower the lower to set
 	 */
 	@Override
-	public void setLowerBound(Object lower) {
+	public void setLowerBound(Comparable<?> lower) {
 		checkNotLocked();
 
 		setLowerBound0(lower);
 	}
 
-	protected void setLowerBound0(Object lower) {
+	protected void setLowerBound0(Comparable<?> lower) {
 		requireNonNull(lower);
 
 		checkValue(lower);
@@ -219,13 +196,13 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	 * @param upper the upper to set
 	 */
 	@Override
-	public void setUpperBound(Object upper)  {
+	public void setUpperBound(Comparable<?> upper)  {
 		checkNotLocked();
 
 		setUpperBound0(upper);
 	}
 
-	protected void setUpperBound0(Object upper) {
+	protected void setUpperBound0(Comparable<?> upper) {
 		requireNonNull(upper);
 
 		checkValue(upper);
@@ -237,13 +214,13 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	 * @param upper the upper to set
 	 */
 	@Override
-	public void setStepSize(Object stepSize) {
+	public void setStepSize(Comparable<?> stepSize) {
 		checkNotLocked();
 
 		setStepSize0(stepSize);
 	}
 
-	protected void setStepSize0(Object stepSize) {
+	protected void setStepSize0(Comparable<?> stepSize) {
 		requireNonNull(stepSize);
 
 		checkValue(stepSize);

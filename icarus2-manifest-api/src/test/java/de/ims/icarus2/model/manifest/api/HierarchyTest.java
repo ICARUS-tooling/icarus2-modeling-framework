@@ -46,7 +46,8 @@ import de.ims.icarus2.test.annotations.Provider;
  * @author Markus Gärtner
  *
  */
-public interface HierarchyTest<E extends Object, H extends Hierarchy<E>> extends LockableTest<H> {
+@SuppressWarnings("rawtypes")
+public interface HierarchyTest<E extends Object, H extends Hierarchy> extends LockableTest<H> {
 
 	@Provider
 	E mockItem();
@@ -68,7 +69,7 @@ public interface HierarchyTest<E extends Object, H extends Hierarchy<E>> extends
 				inject_genericInserter(Hierarchy::insert, constant(0)));
 
 		Predicate<H> rootCheck = h -> {
-			E item = h.getRoot();
+			E item = (E) h.getRoot();
 			assertNotNull(item);
 			return item==root;
 		};
@@ -172,18 +173,20 @@ public interface HierarchyTest<E extends Object, H extends Hierarchy<E>> extends
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.Hierarchy#forEachItem(java.util.function.Consumer)}.
 	 */
+	@SuppressWarnings("unchecked")
 	@Test
 	default void testForEachItem() {
 		TestUtils.assertForEach(createUnlocked(),
 				mockItem(),
 				mockItem(),
-				(Function<H, Consumer<Consumer<? super E>>>)m -> m::forEachItem,
+				(Function<H, Consumer<Consumer<Object>>>)m -> m::forEachItem,
 				Hierarchy::add);
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.Hierarchy#getItems()}.
 	 */
+	@SuppressWarnings("unchecked")
 	@Test
 	default void testGetItems() {
 		TestUtils.assertAccumulativeGetter(createUnlocked(),
@@ -196,6 +199,7 @@ public interface HierarchyTest<E extends Object, H extends Hierarchy<E>> extends
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.Hierarchy#isEmpty()}.
 	 */
+	@SuppressWarnings("unchecked")
 	@Test
 	default void testIsEmpty() {
 		H hierarchy = createUnlocked();

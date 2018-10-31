@@ -107,7 +107,7 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema>, TableSch
 		// ELEMENTS
 
 		// Description
-		writeElement(TAG_DESCRIPTION, schema.getDescription());
+		writeElement(TAG_DESCRIPTION, schema.getDescription().orElse(null));
 
 		// Separator
 		writeElement(TAG_SEPARATOR, schema.getSeparator());

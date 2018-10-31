@@ -37,6 +37,7 @@ import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
 import de.ims.icarus2.model.standard.members.structure.builder.StructureBuilder;
 import de.ims.icarus2.util.IcarusUtils;
@@ -102,7 +103,9 @@ public class DependencyStructureResolver implements BatchResolver {
 
 		ItemLayer sentenceLayer = dependencyLayer.getBoundaryLayer();
 
-		structureBuilder = StructureBuilder.newBuilder(dependencyLayer.getManifest().getRootStructureManifest());
+		structureBuilder = StructureBuilder.newBuilder(
+				dependencyLayer.getManifest().getRootStructureManifest().orElseThrow(
+						ManifestException.error("No root structure manifest available")));
 
 		FileDriver driver = converter.getDriver();
 

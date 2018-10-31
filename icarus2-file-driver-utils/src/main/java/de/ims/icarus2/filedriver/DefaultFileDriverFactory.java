@@ -39,12 +39,14 @@ import de.ims.icarus2.model.api.io.resources.ResourceProvider;
 import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.api.registry.SubRegistry;
+import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.PathResolverManifest;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.standard.util.DefaultImplementationLoader;
@@ -98,7 +100,7 @@ public class DefaultFileDriverFactory implements Factory {
 			ImplementationLoader<?> loader) throws ClassNotFoundException,
 			IllegalAccessException, InstantiationException, ClassCastException {
 
-		final DriverManifest driverManifest = (DriverManifest) manifest.getHostManifest();
+		final DriverManifest driverManifest = ManifestUtils.requireHost(manifest);
 		final Corpus corpus = getCorpus(loader);
 
 		// Early sanity checks
@@ -109,7 +111,8 @@ public class DefaultFileDriverFactory implements Factory {
 
 		final ResourceProvider resourceProvider = createResourceProvider(corpus, driverManifest);
 
-		final ResourceSet dataFiles = createResourceSet(corpus, resourceProvider, driverManifest.getContextManifest().getLocationManifests());
+		final ResourceSet dataFiles = createResourceSet(corpus, resourceProvider,
+				ManifestUtils.<ContextManifest,DriverManifest>requireHost(driverManifest).getLocationManifests());
 
 		// use Builder and add utility method for creation of required parts
 
@@ -155,7 +158,9 @@ public class DefaultFileDriverFactory implements Factory {
 	protected MetadataRegistry createMetadataRegistry(Corpus corpus, DriverManifest driverManifest) {
 		MetadataRegistry baseRegistry = corpus.getMetadataRegistry();
 
-		String prefix = driverManifest.getContextManifest().getId();
+		ContextManifest contextManifest = ManifestUtils.requireHost(driverManifest);
+		String prefix = contextManifest.getId().orElseThrow(ManifestException.missing(
+				contextManifest, "id"));
 
 		return new SubRegistry(baseRegistry, prefix);
 	}
@@ -188,7 +193,8 @@ public class DefaultFileDriverFactory implements Factory {
 			IOResource resource = new ReadOnlyStringResource(locationManifest.getInlineData().toString(), StandardCharsets.UTF_8); //TODO fetch correct encoding from manifest?
 			return new SingletonResourceSet(resource);
 		} else {
-			PathType rootPathType = locationManifest.getRootPathType();
+			PathType rootPathType = locationManifest.getRootPathType()
+					.orElseThrow(ManifestException.missing(locationManifest, "root path type"));
 
 			switch (rootPathType) {
 			case FILE:
@@ -208,11 +214,12 @@ public class DefaultFileDriverFactory implements Factory {
 	}
 
 	protected PathResolver getResolverForLocation(Corpus corpus, ResourceProvider resourceProvider, LocationManifest locationManifest) {
-		PathResolverManifest pathResolverManifest = locationManifest.getPathResolverManifest();
+		PathResolverManifest pathResolverManifest = locationManifest.getPathResolverManifest().orElse(null);
 		if(pathResolverManifest!=null) {
 			// If our location specifies a custom path resolver -> delegate instantiation
 			return corpus.getManager().newFactory().newImplementationLoader()
-					.manifest(pathResolverManifest.getImplementationManifest())
+					.manifest(pathResolverManifest.getImplementationManifest()
+							.orElseThrow(ManifestException.noElement(pathResolverManifest, "implementation")))
 					.message("Path resolver for location "+locationManifest+" in corpus "+ManifestUtils.getName(corpus))
 					.environment(corpus)
 					.instantiate(PathResolver.class);

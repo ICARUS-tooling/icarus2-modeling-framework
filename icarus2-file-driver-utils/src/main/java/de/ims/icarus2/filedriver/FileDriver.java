@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
@@ -90,6 +91,7 @@ import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
@@ -216,7 +218,7 @@ public class FileDriver extends AbstractDriver {
 		final CorpusMemberFactory factory = getCorpus().getManager().newFactory();
 
 		Converter converter = factory.newImplementationLoader()
-				.manifest(manifest.getImplementationManifest())
+				.manifest(manifest.getImplementationManifest().get())
 				.environment(this)
 				.message("Converter for driver "+getName(getManifest()))
 				.instantiate(Converter.class);
@@ -615,8 +617,7 @@ public class FileDriver extends AbstractDriver {
 	protected void afterConnect() {
 
 		// Check if we should directly load all the files
-
-		if(((Boolean)OptionKey.LOAD_ON_CONNECT.getValue(getManifest())).booleanValue()) {
+		if(OptionKey.LOAD_ON_CONNECT.<Boolean>getValue(getManifest()).orElse(Boolean.FALSE).booleanValue()) {
 			try {
 				loadAllFiles(null);
 			} catch(IOException e) {
@@ -870,7 +871,7 @@ public class FileDriver extends AbstractDriver {
 			return result;
 		}
 
-		ContextManifest contextManifest = getManifest().getContextManifest();
+		ContextManifest contextManifest = ManifestUtils.requireHost(getManifest());
 		ChunkIndexStorage.Builder builder = new ChunkIndexStorage.Builder();
 
 		// Traverse layer groups and create a chunk index for each group's primary layer
@@ -881,7 +882,8 @@ public class FileDriver extends AbstractDriver {
 
 			// Only skips a layer/group if explicitly set so
 			if(chunkIndex!=null) {
-				builder.add(manifest.getPrimaryLayerManifest(), chunkIndex);
+				builder.add(manifest.getPrimaryLayerManifest()
+						.orElseThrow(ManifestException.missing(getManifest(), "resolvable primary layer")), chunkIndex);
 			}
 		});
 
@@ -889,7 +891,8 @@ public class FileDriver extends AbstractDriver {
 	}
 
 	protected ChunkIndex createChunkIndex(LayerGroupManifest groupManifest) {
-		ItemLayerManifest layerManifest = groupManifest.getPrimaryLayerManifest();
+		ItemLayerManifest layerManifest = groupManifest.getPrimaryLayerManifest()
+				.orElseThrow(ManifestException.missing(getManifest(), "resolvable primary layer"));
 		MetadataRegistry metadataRegistry = getMetadataRegistry();
 
 		// First check if we should skip the specified group
@@ -926,9 +929,9 @@ public class FileDriver extends AbstractDriver {
 		if(savedPath==null) {
 
 			// Check driver settings first
-			Path folder = (Path) OptionKey.CHUNK_INDICES_FOLDER.getValue(getManifest());
+			Optional<Path> folder = OptionKey.CHUNK_INDICES_FOLDER.getValue(getManifest());
 
-			if(folder==null) {
+			if(!folder.isPresent()) {
 				// Try to find a suitable location for the chunk index
 				FileManager fileManager = getCorpus().getManager().getFileManager();
 
@@ -937,12 +940,12 @@ public class FileDriver extends AbstractDriver {
 					return null;
 				}
 
-				folder = fileManager.getCorpusFolder(getCorpus().getManifest());
+				folder = Optional.of(fileManager.getCorpusFolder(getCorpus().getManifest()));
 			}
 
 			// Use a file named after the layer itself inside whatever folder we should use
 			String filename = layerManifest.getId()+FileDriverUtils.CHUNK_INDEX_FILE_ENDING;
-			path = folder.resolve(filename);
+			path = folder.get().resolve(filename);
 			savedPath = path.toString();
 
 			// Make sure to persist the file file to metadata for future lookups
@@ -1087,7 +1090,7 @@ public class FileDriver extends AbstractDriver {
 		Converter converter = getConverter();
 		@SuppressWarnings("rawtypes")
 		Map lookup = (Map) converter.getPropertyValue(ConverterProperty.EXTIMATED_CHUNK_SIZES);
-		String key = groupManifest.getId();
+		String key = groupManifest.getId().orElseThrow(ManifestException.missing(groupManifest, "id"));
 		Integer value = (Integer) lookup.get(key);
 		int converterEstimation = value!=null ? value.intValue() : IcarusUtils.UNSET_INT;
 		if(converterEstimation!=IcarusUtils.UNSET_INT) {
@@ -1455,7 +1458,10 @@ public class FileDriver extends AbstractDriver {
 			 * Converter.loadFile() returns number of loaded elements in context's primary layer,
 			 * so we grab those values here and use it for consistency checking.
 			 */
-			long expectedItemCount = fileInfo.getItemCount(getManifest().getContextManifest().getPrimaryLayerManifest());
+			long expectedItemCount = fileInfo.getItemCount(
+					getManifest().getContextManifest()
+						.flatMap(ContextManifest::getPrimaryLayerManifest)
+						.orElseThrow(ManifestException.missing(getManifest(), "resolvable primary layer")));
 
 			// Now start actual loading process
 			int recommendedBufferSize = (int) Math.min(DEFAULT_CHUNK_INFO_SIZE, expectedItemCount);
@@ -1537,14 +1543,9 @@ public class FileDriver extends AbstractDriver {
 	 */
 	public Charset getEncoding() {
 
-		Charset charset = StandardCharsets.UTF_8;
-
-		String savedEncoding = (String) OptionKey.ENCODING.getValue(getManifest());
-		if(savedEncoding!=null) {
-			charset = Charset.forName(savedEncoding);
-		}
-
-		return charset;
+		return OptionKey.ENCODING.<String>getValue(getManifest())
+				.map(Charset::forName)
+				.orElse(StandardCharsets.UTF_8);
 	}
 
 	/**
@@ -1770,15 +1771,15 @@ public class FileDriver extends AbstractDriver {
 			return type;
 		}
 
-		public Object getValue(ModuleManifest manifest) {
-			return checkAndGetValue(manifest.getProperty(key));
+		public <V extends Object> Optional<V> getValue(ModuleManifest manifest) {
+			return manifest.getProperty(key).flatMap(this::checkAndGetValue);
 		}
 
-		public Object getValue(DriverManifest manifest) {
-			return checkAndGetValue(manifest.getProperty(key));
+		public <V extends Object> Optional<V> getValue(DriverManifest manifest) {
+			return manifest.getProperty(key).flatMap(this::checkAndGetValue);
 		}
 
-		private Object checkAndGetValue(MemberManifest.Property property) {
+		private <V extends Object> Optional<V> checkAndGetValue(MemberManifest.Property property) {
 			if(property.getValueType()!=type)
 				throw new ModelException(ModelErrorCode.DRIVER_ERROR,
 						Messages.mismatch(

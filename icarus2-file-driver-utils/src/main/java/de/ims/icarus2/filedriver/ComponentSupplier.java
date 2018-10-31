@@ -32,14 +32,16 @@ import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
 import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.api.layer.StructureLayer;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.registry.LayerMemberFactory;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
+import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.annotations.OptionalMethod;
@@ -273,11 +275,14 @@ public interface ComponentSupplier extends AutoCloseable {
 		 * @return
 		 */
 		protected Item newComponent(Container host, long id) {
+			ItemLayerManifest manifest = componentLayer.getManifest();
 			switch (componentType) {
 			case CONTAINER:
-				return memberFactory.newContainer(componentLayer.getManifest().getRootContainerManifest(), host, id);
+				return memberFactory.newContainer(manifest.getRootContainerManifest()
+						.orElseThrow(ManifestException.missing(manifest, "root container")), host, id);
 			case STRUCTURE:
-				return memberFactory.newStructure(((StructureLayer)componentLayer).getManifest().getRootStructureManifest(), host, id);
+				return memberFactory.newStructure(((StructureLayerManifest)manifest).getRootStructureManifest()
+						.orElseThrow(ManifestException.missing(manifest, "root structure")), host, id);
 			case ITEM:
 				return memberFactory.newItem(host, id);
 
@@ -477,9 +482,12 @@ public interface ComponentSupplier extends AutoCloseable {
 			mapping = builder.getMapping();
 
 			MappingManifest mappingManifest = mapping.getManifest();
-			checkArgument("Mapping relation no supported: "+mappingManifest.getRelation(),
-					mappingManifest.getRelation()==Relation.ONE_TO_ONE
-					|| mappingManifest.getRelation()==Relation.ONE_TO_MANY);
+			Relation relation = mappingManifest.getRelation().orElseThrow(
+					ManifestException.missing(mappingManifest, "relation"));
+			Coverage coverage = mappingManifest.getCoverage().orElseThrow(
+					ManifestException.missing(mappingManifest, "relation"));
+			checkArgument("Mapping relation no supported: "+relation,
+					relation==Relation.ONE_TO_ONE || relation==Relation.ONE_TO_MANY);
 
 			/*
 			 * Important optimization step is to determine whether we can use a span-based
@@ -489,8 +497,8 @@ public interface ComponentSupplier extends AutoCloseable {
 			MappingReader mappingReader = null;
 			IndexBuffer buffer = null;
 
-			useSpanMapping = (mappingManifest.getRelation()==Relation.ONE_TO_ONE
-					|| mappingManifest.getCoverage()==Coverage.TOTAL_MONOTONIC);
+			useSpanMapping = (relation==Relation.ONE_TO_ONE
+					|| coverage==Coverage.TOTAL_MONOTONIC);
 
 			if(!useSpanMapping) {
 				mappingReader = mapping.newReader();

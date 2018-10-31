@@ -26,10 +26,10 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Set;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
-import de.ims.icarus2.test.annotations.PostponedTest;
 
 /**
  * @author Markus Gärtner
@@ -70,7 +70,7 @@ public interface ManifestFactoryTest {
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ManifestFactory#create(de.ims.icarus2.model.manifest.api.ManifestType, java.lang.Object)}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ManifestFactory#create(de.ims.icarus2.model.manifest.api.ManifestType, TypedManifest)}.
 	 */
 	@Test
 	default void testCreateManifestTypeObject() {
@@ -94,10 +94,10 @@ public interface ManifestFactoryTest {
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ManifestFactory#create(de.ims.icarus2.model.manifest.api.ManifestType, java.lang.Object, de.ims.icarus2.util.Options)}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ManifestFactory#create(de.ims.icarus2.model.manifest.api.ManifestType, TypedManifest, de.ims.icarus2.util.Options)}.
 	 */
 	@Test
-	@PostponedTest("testing with options requires implementation specific logic")
+	@Disabled("currently the 'options' parameter is unused and as such the testCreateManifestTypeObject() method covers this case already")
 	default void testCreateManifestTypeObjectOptions() {
 		//TODO add test logic
 		fail("Not yet implemented");

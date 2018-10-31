@@ -37,7 +37,10 @@ import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.api.Manifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.IcarusUtils;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
@@ -75,7 +78,7 @@ public class CorpusGraph {
 	public void addContext(ContextManifest context) {
 		requireNonNull(context);
 		checkNotTemplate(context);
-		checkArgument(context.getCorpusManifest()==corpus);
+		checkArgument(IcarusUtils.equals(context.getCorpusManifest(), corpus));
 
 		lock.lock();
 		try {
@@ -163,12 +166,12 @@ public class CorpusGraph {
 
 					if(ModelUtils.isItemLayer(layer)) {
 						ItemLayerManifest itemLayer = (ItemLayerManifest) layer;
-						tryCreateEdge(itemLayer.getBoundaryLayerManifest(), DependencyType.BOUNDARY);
-						tryCreateEdge(itemLayer.getFoundationLayerManifest(), DependencyType.FOUNDATION);
+						tryCreateEdge(itemLayer.getBoundaryLayerManifest().orElse(null), DependencyType.BOUNDARY);
+						tryCreateEdge(itemLayer.getFoundationLayerManifest().orElse(null), DependencyType.FOUNDATION);
 
 						if(ModelUtils.isFragmentLayer(itemLayer)) {
 							FragmentLayerManifest fragmentLayer = (FragmentLayerManifest)itemLayer;
-							tryCreateEdge(fragmentLayer.getValueLayerManifest(), DependencyType.VALUE);
+							tryCreateEdge(fragmentLayer.getValueLayerManifest().orElse(null), DependencyType.VALUE);
 						}
 					}
 				} finally {
@@ -182,7 +185,9 @@ public class CorpusGraph {
 				return;
 			}
 
-			LayerManifest targetLayer = manifest.getResolvedLayerManifest();
+			LayerManifest targetLayer = manifest.getResolvedLayerManifest()
+					.orElseThrow(ManifestException.error(
+							"Unresolved target layer manifest: "+ManifestUtils.getName(manifest)));
 
 			Node targetNode = getNode(targetLayer);
 

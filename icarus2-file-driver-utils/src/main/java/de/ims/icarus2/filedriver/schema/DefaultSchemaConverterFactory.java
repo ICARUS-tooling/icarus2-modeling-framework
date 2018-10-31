@@ -40,6 +40,7 @@ import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.io.IOUtil;
 
 /**
@@ -98,9 +99,8 @@ public class DefaultSchemaConverterFactory implements Factory {
 
 		//TODO check that we can actually cast Converter to the given resultClass before instantiating stuff?
 
-		String schemaType = manifest.getPropertyValue(PROPERTY_SCHEMA_ID);
-		if(schemaType==null)
-			throw new ModelException(ManifestErrorCode.IMPLEMENTATION_ERROR, "Missing declaration of schema type: "+PROPERTY_SCHEMA_ID);
+		String schemaType = ManifestUtils.require(
+				manifest, m -> m.getPropertyValue(PROPERTY_SCHEMA_ID), "schema type");
 
 		Converter converter = null;
 
@@ -121,31 +121,26 @@ public class DefaultSchemaConverterFactory implements Factory {
 
 	private Charset getCharset(ImplementationManifest manifest) {
 
-		Charset charset = StandardCharsets.UTF_8;
-
-		String encoding = manifest.getPropertyValue(PROPERTY_SCHEMA_ENCODING);
-		if(encoding!=null) {
-			charset = Charset.forName(encoding);
-		}
-
-		return charset;
+		return manifest.<String>getPropertyValue(PROPERTY_SCHEMA_ENCODING)
+				.map(Charset::forName)
+				.orElse(StandardCharsets.UTF_8);
 	}
 
 	private Reader createSchemaReader(ImplementationManifest manifest) throws IOException {
 
-		String name = manifest.getPropertyValue(PROPERTY_SCHEMA_NAME);
+		String name = manifest.<String>getPropertyValue(PROPERTY_SCHEMA_NAME).orElse(null);
 		if(name!=null) {
 			//TODO
 			throw new UnsupportedOperationException();
 		}
 
 		// Direct inline declaration
-		String schema = manifest.getPropertyValue(PROPERTY_SCHEMA);
+		String schema = manifest.<String>getPropertyValue(PROPERTY_SCHEMA).orElse(null);
 		if(schema!=null) {
 			return new StringReader(schema);
 		}
 
-		String path = manifest.getPropertyValue(PROPERTY_SCHEMA_FILE);
+		String path = manifest.<String>getPropertyValue(PROPERTY_SCHEMA_FILE).orElse(null);
 		if(path!=null) {
 			Path file = Paths.get(path);
 
@@ -157,7 +152,7 @@ public class DefaultSchemaConverterFactory implements Factory {
 			return new InputStreamReader(in, getCharset(manifest));
 		}
 
-		String url = manifest.getPropertyValue(PROPERTY_SCHEMA_URL);
+		String url = manifest.<String>getPropertyValue(PROPERTY_SCHEMA_URL).orElse(null);
 		if(url!=null) {
 			//TODO support compression on this stream as well!
 			return new InputStreamReader(new URL(url).openStream(), getCharset(manifest));

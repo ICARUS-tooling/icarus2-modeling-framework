@@ -453,6 +453,13 @@ public class ValueType implements StringResource, NamedObject {
 		}
 	};
 
+	/**
+	 * As a fallback strategy and to reduce declarative workload for manifests
+	 * we assume {@link #STRING} to be the default value type in cases where no
+	 * explicit declaration is provided.
+	 */
+	public static ValueType DEFAULT_VALUE_TYPE = STRING;
+
 	protected static Class<?> extractClass(Object value) {
 		Class<?> type = value.getClass();
 		if(Expression.class.isAssignableFrom(type)) {

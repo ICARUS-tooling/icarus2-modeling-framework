@@ -47,10 +47,13 @@ import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.RasterizerManifest;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.standard.corpus.DefaultContext;
 import de.ims.icarus2.model.standard.members.layers.DefaultLayerGroup;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.collections.set.DataSets;
 
@@ -180,25 +183,19 @@ public class ContextFactory {
 			}
 
 			// Finally set primary layer (can only be a native layer!!!)
-			ItemLayerManifest primaryManifest = groupManifest.getPrimaryLayerManifest();
-			if(primaryManifest!=null) {
-				group.setPrimaryLayer((ItemLayer) context.getNativeLayer(primaryManifest.getId()));
-			}
+			groupManifest.getPrimaryLayerManifest().ifPresent(m -> group.setPrimaryLayer(
+					(ItemLayer) context.getNativeLayer(ManifestUtils.requireId(m))));
 		}
 
 		// Intermediate linking
 
 		// Set context wide primary layer (can only be a native layer!!!)
-		ItemLayerManifest primaryManifest = manifest.getPrimaryLayerManifest();
-		if(primaryManifest!=null) {
-			context.setPrimaryLayer((ItemLayer) context.getNativeLayer(primaryManifest.getId()));
-		}
+		manifest.getPrimaryLayerManifest().ifPresent(m -> context.setPrimaryLayer(
+				(ItemLayer) context.getNativeLayer(ManifestUtils.requireId(m))));
 
 		// Set context wide foundation layer (this one might be a foreign one)
-		ItemLayerManifest foundationManifest = manifest.getFoundationLayerManifest();
-		if(foundationManifest!=null) {
-			context.setFoundationLayer((ItemLayer) context.getLayer(foundationManifest.getId()));
-		}
+		manifest.getFoundationLayerManifest().ifPresent(m -> context.setFoundationLayer(
+				(ItemLayer) context.getLayer(ManifestUtils.requireId(m))));
 
 		// Second pass, link dependencies and attach groups
 		// This task is delegated to the linker implementations
@@ -215,7 +212,7 @@ public class ContextFactory {
 
 	protected LayerGroup newLayerGroup(LayerGroupManifest groupManifest, Producers producers, Options options) {
 		LayerGroup group = null;
-		Object declaredGroup = options.get(groupManifest.getId());
+		Object declaredGroup = options.get(ManifestUtils.requireId(groupManifest));
 		if(declaredGroup instanceof DefaultLayerGroup) {
 			group = (DefaultLayerGroup) declaredGroup;
 		} else if(producers.layerGroupProducer!=null) {
@@ -261,7 +258,7 @@ public class ContextFactory {
 	protected LayerLinker newAnnotationLayer(Corpus corpus, AnnotationLayerManifest manifest, Producers producers, Options options) {
 		AnnotationLayer layer = null;
 
-		Object declaredLayer = options.get(manifest.getId());
+		Object declaredLayer = options.get(ManifestUtils.requireId(manifest));
 
 		if(declaredLayer instanceof AnnotationLayer) {
 			layer = (AnnotationLayer) declaredLayer;
@@ -277,7 +274,7 @@ public class ContextFactory {
 	protected LayerLinker newItemLayer(Corpus corpus, ItemLayerManifest manifest, Producers producers, Options options) {
 		ItemLayer layer = null;
 
-		Object declaredLayer = options.get(manifest.getId());
+		Object declaredLayer = options.get(ManifestUtils.requireId(manifest));
 
 		if(declaredLayer instanceof ItemLayer) {
 			layer = (ItemLayer) declaredLayer;
@@ -293,7 +290,7 @@ public class ContextFactory {
 	protected LayerLinker newStructureLayer(Corpus corpus, StructureLayerManifest manifest, Producers producers, Options options) {
 		StructureLayer layer = null;
 
-		Object declaredLayer = options.get(manifest.getId());
+		Object declaredLayer = options.get(ManifestUtils.requireId(manifest));
 
 		if(declaredLayer instanceof StructureLayer) {
 			layer = (StructureLayer) declaredLayer;
@@ -309,7 +306,7 @@ public class ContextFactory {
 	protected LayerLinker newFragmentLayer(Corpus corpus, FragmentLayerManifest manifest, Producers producers, Options options) {
 		FragmentLayer layer = null;
 
-		Object declaredLayer = options.get(manifest.getId());
+		Object declaredLayer = options.get(ManifestUtils.requireId(manifest));
 
 		if(declaredLayer instanceof FragmentLayer) {
 			layer = (FragmentLayer) declaredLayer;
@@ -385,8 +382,9 @@ public class ContextFactory {
 
 		@SuppressWarnings("unchecked")
 		public <L extends Layer> L resolveTargetLayer(TargetLayerManifest target) {
-			LayerManifest targetManifest = target.getResolvedLayerManifest();
-			ContextManifest targetContextManifest = targetManifest.getContextManifest();
+			LayerManifest targetManifest = target.getResolvedLayerManifest().orElseThrow(
+					ManifestException.error("Unresolved target layer manifest: "+ManifestUtils.getName(target)));
+			ContextManifest targetContextManifest = ManifestUtils.requireGrandHost(targetManifest);
 
 			// IMPORTANT:
 			// We cannot use the layer lookup provided by the corpus interface, since
@@ -394,13 +392,13 @@ public class ContextFactory {
 			// Therefore we need to check for each target layer, whether it is hosted in the
 			// same context or accessible via a foreign one.
 			Context targetContext = layer.getContext();
-			if(targetContextManifest!=layer.getManifest().getContextManifest()) {
+			if(!IcarusUtils.equals(layer.getManifest().getContextManifest(), targetContextManifest)) {
 				// Foreign context, previously registered, so use corpus for lookup
-				targetContext = layer.getCorpus().getContext(targetContextManifest.getId());
+				targetContext = layer.getCorpus().getContext(ManifestUtils.requireId(targetContextManifest));
 			}
 
 			// Resolve layer instance
-			return (L) targetContext.getLayer(targetManifest.getId());
+			return (L) targetContext.getLayer(ManifestUtils.requireId(targetManifest));
 		}
 	}
 
@@ -429,32 +427,29 @@ public class ContextFactory {
 			ItemLayer layer = (ItemLayer) getLayer();
 			DefaultLayerGroup group = (DefaultLayerGroup) layer.getLayerGroup();
 
-			TargetLayerManifest boundaryManifest = layer.getManifest().getBoundaryLayerManifest();
-			if(boundaryManifest!=null) {
+			layer.getManifest().getBoundaryLayerManifest().ifPresent(m -> {
 				// Resolve layer instance
-				ItemLayer targetLayer = resolveTargetLayer(boundaryManifest);
+				ItemLayer targetLayer = resolveTargetLayer(m);
 				layer.setBoundaryLayer(targetLayer);
 
 				// If foreign layer, add inter-group dependency
 				if(targetLayer.getLayerGroup()!=group) {
 					group.addDependency(new Dependency<>(targetLayer.getLayerGroup(), DependencyType.BOUNDARY));
 				}
-			}
-
+			});
 
 			// For markable layers (and derived versions) we need to link the optional
 			// foundation layer in addition!
-			TargetLayerManifest foundationManifest = layer.getManifest().getFoundationLayerManifest();
-			if(foundationManifest!=null) {
+			layer.getManifest().getFoundationLayerManifest().ifPresent(m -> {
 				// Resolve layer instance
-				ItemLayer targetLayer = resolveTargetLayer(foundationManifest);
+				ItemLayer targetLayer = resolveTargetLayer(m);
 				layer.setFoundationLayer(targetLayer);
 
 				// If foreign layer, add inter-group dependency
 				if(targetLayer.getLayerGroup()!=group) {
 					group.addDependency(new Dependency<>(targetLayer.getLayerGroup(), DependencyType.FOUNDATION));
 				}
-			}
+			});
 		}
 
 	}
@@ -482,26 +477,23 @@ public class ContextFactory {
 
 			FragmentLayer layer = (FragmentLayer) getLayer();
 			DefaultLayerGroup group = (DefaultLayerGroup) layer.getLayerGroup();
-			TargetLayerManifest target = layer.getManifest().getValueLayerManifest();
-			if(target!=null) {
+			layer.getManifest().getValueLayerManifest().ifPresent(m -> {
 				// Resolve layer instance
-				AnnotationLayer targetLayer = resolveTargetLayer(target);
+				AnnotationLayer targetLayer = resolveTargetLayer(m);
 				layer.setValueLayer(targetLayer);
 
 				// If foreign layer, add inter-group dependency
 				if(targetLayer.getLayerGroup()!=group) {
 					group.addDependency(new Dependency<>(targetLayer.getLayerGroup(), DependencyType.VALUE));
 				}
-			}
+			});
 
 			// Finally instantiate the rasterizer for the fragment layer
-			RasterizerManifest rasterizerManifest = layer.getManifest().getRasterizerManifest();
-
-			// No default implementation available, therefore notify with exception
-			if(rasterizerManifest==null)
-				throw new ModelException(layer.getCorpus(), ManifestErrorCode.IMPLEMENTATION_MISSING,
-						"Missing rasterizer manifest for fragment layer: "+getName(layer)); //$NON-NLS-1$
-			if(rasterizerManifest.getImplementationManifest()==null)
+			RasterizerManifest rasterizerManifest = layer.getManifest()
+					.getRasterizerManifest().orElseThrow(
+							() -> new ModelException(layer.getCorpus(), ManifestErrorCode.IMPLEMENTATION_MISSING,
+						"Missing rasterizer manifest for fragment layer: "+getName(layer))); //$NON-NLS-1$
+			if(!rasterizerManifest.getImplementationManifest().isPresent())
 				throw new ModelException(layer.getCorpus(), ManifestErrorCode.IMPLEMENTATION_MISSING,
 						"Missing rasterizer implementation manifest for fragment layer: "+getName(layer)); //$NON-NLS-1$
 
@@ -515,7 +507,7 @@ public class ContextFactory {
 			}
 
 			Rasterizer rasterizer = loader
-					.manifest(rasterizerManifest.getImplementationManifest())
+					.manifest(rasterizerManifest.getImplementationManifest().get())
 					.environment(layer)
 					.message("Rasterizer for layer '"+getName(layer)+"'")
 					.instantiate(Rasterizer.class);

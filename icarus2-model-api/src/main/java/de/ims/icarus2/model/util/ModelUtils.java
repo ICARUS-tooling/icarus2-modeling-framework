@@ -56,13 +56,11 @@ import de.ims.icarus2.model.api.raster.Metric;
 import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.api.raster.Rasterizer;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
-import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.Hierarchy;
-import de.ims.icarus2.model.manifest.api.HighlightLayerManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LocationType;
@@ -70,8 +68,6 @@ import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
-import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
-import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.manifest.util.Messages;
@@ -103,7 +99,7 @@ public final class ModelUtils {
 		if(manifest==null) {
 			Corpus corpus = layer.getCorpus();
 
-			id = corpus.getManifest().getId()+separator+"layer-overlay";
+			id = corpus.getManifest().getId().orElse("unnamed-corpus")+separator+"layer-overlay";
 		} else {
 
 			LayerGroup layerGroup = layer.getLayerGroup();
@@ -154,24 +150,20 @@ public final class ModelUtils {
 
 		switch (manifest.getManifestType()) {
 		case ANNOTATION_LAYER_MANIFEST:
-			return ((AnnotationLayerManifest)manifest).getContextManifest();
 		case ITEM_LAYER_MANIFEST:
-			return ((ItemLayerManifest)manifest).getContextManifest();
 		case STRUCTURE_LAYER_MANIFEST:
-			return ((StructureLayerManifest)manifest).getContextManifest();
 		case HIGHLIGHT_LAYER_MANIFEST:
-			return ((HighlightLayerManifest)manifest).getContextManifest();
+			return ManifestUtils.requireHost((LayerManifest)manifest);
 
 		case CONTEXT_MANIFEST:
 			return (ContextManifest) manifest;
 
 		case CONTAINER_MANIFEST:
-			return ((ContainerManifest) manifest).getLayerManifest().getContextManifest();
 		case STRUCTURE_MANIFEST:
-			return ((StructureManifest) manifest).getLayerManifest().getContextManifest();
+			return ManifestUtils.requireGrandHost((ContainerManifest)manifest);
 
 		default:
-			throw new IllegalArgumentException("MemberManifest does not procide scope to a context: "+manifest); //$NON-NLS-1$
+			throw new IllegalArgumentException("MemberManifest does not provide scope to a context: "+manifest); //$NON-NLS-1$
 		}
 	}
 
@@ -295,7 +287,7 @@ public final class ModelUtils {
 		requireNonNull(container);
 
 		// Fetch the container level and ask the
-		// hosting markable layer manifest for the container
+		// hosting item layer manifest for the container
 		// manifest at the specific level
 		int level = 0;
 
@@ -313,20 +305,19 @@ public final class ModelUtils {
 		 * contexts as early as possible from live items/containers to
 		 * the respective manifest framework members.
 		 */
-		ItemLayerManifest manifest = container.getManifest().getLayerManifest();
+		ItemLayerManifest manifest = container.getLayer().getManifest();
 
-		Hierarchy<ContainerManifest> hierarchy = manifest.getContainerHierarchy();
-		if(hierarchy==null)
-			throw new ManifestException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
-					"Host manifest has no container hierarchy: "+ManifestUtils.getName(manifest));
+		Hierarchy<ContainerManifest> hierarchy = manifest.getContainerHierarchy()
+				.orElseThrow(() -> new ManifestException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
+					"Host manifest has no container hierarchy: "+ManifestUtils.getName(manifest)));
 
 		return hierarchy.atLevel(level);
 	}
 
 	public static Layer getLayer(Corpus corpus, LayerManifest manifest) {
-		ContextManifest contextManifest = manifest.getContextManifest();
-		Context context = corpus.getContext(contextManifest.getId());
-		return context.getLayer(manifest.getId());
+		ContextManifest contextManifest = ManifestUtils.requireHost(manifest);
+		return corpus.getContext(ManifestUtils.requireId(contextManifest))
+				.getLayer(ManifestUtils.requireId(manifest));
 	}
 
 	public static String getName(Object obj) {
@@ -334,20 +325,20 @@ public final class ModelUtils {
 
 		if(obj instanceof PrerequisiteManifest) {
 			PrerequisiteManifest prerequisite = (PrerequisiteManifest)obj;
-			String id = prerequisite.getLayerId();
+			String id = prerequisite.getLayerId().orElse(null);
 			if(id!=null) {
 				result = "Required layer-id: "+id; //$NON-NLS-1$
 			} else {
-				String typeName = prerequisite.getTypeId();
+				String typeName = prerequisite.getTypeId().orElse(null);
 				if(typeName!=null && !typeName.isEmpty())
 					result = "Required type-id: "+typeName; //$NON-NLS-1$
 				else
 					result = prerequisite.toString();
 			}
 		} else if (obj instanceof ManifestOwner) {
-			result = ((ManifestOwner<?>)obj).getManifest().getName();
+			result = ((ManifestOwner<?>)obj).getManifest().getName().orElse(null);
 		} else if (obj instanceof LayerGroup) {
-			result = ((LayerGroup)obj).getManifest().getName();
+			result = ((LayerGroup)obj).getManifest().getName().orElse(null);
 		} else if (obj instanceof NamedCorpusMember) {
 			result = ((NamedCorpusMember)obj).getName();
 		} else {

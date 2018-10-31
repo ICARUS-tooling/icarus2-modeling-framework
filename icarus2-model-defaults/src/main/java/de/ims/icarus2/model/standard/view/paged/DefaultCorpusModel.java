@@ -58,6 +58,7 @@ import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.api.view.paged.CorpusModel;
 import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
 import de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl;
+import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.StructureType;
@@ -851,7 +852,9 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	public Object setValue(AnnotationLayer layer, Item item, String key,
 			Object value) {
 		Object oldValue = layer.getAnnotationStorage().getValue(item, key);
-		ValueType valueType = layer.getManifest().getAnnotationManifest(key).getValueType();
+		ValueType valueType = layer.getManifest().getAnnotationManifest(key)
+				.map(AnnotationManifest::getValueType)
+				.get();
 
 		executeChange(new SerializableAtomicModelChange.ValueChange(layer, valueType, item, key, value, oldValue));
 
@@ -1200,7 +1203,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		 */
 		@Override
 		public ContainerManifest getManifest() {
-			return layer.getManifest().getRootContainerManifest();
+			return layer.getManifest().getRootContainerManifest().get();
 		}
 
 		/**

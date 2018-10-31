@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -62,17 +63,18 @@ public class ContainerTest {
 		ItemLayerManifest layerManifest = mock(ItemLayerManifest.class);
 
 		ContainerManifest rootManifest = mock(ContainerManifest.class);
-		when(rootManifest.getLayerManifest()).thenReturn(layerManifest);
+		when(rootManifest.getLayerManifest()).thenReturn(Optional.of(layerManifest));
 
 		ContainerManifest containerManifest = mock(ContainerManifest.class);
-		when(containerManifest.getLayerManifest()).thenReturn(layerManifest);
+		when(containerManifest.getLayerManifest()).thenReturn(Optional.of(layerManifest));
 		when(containerManifest.getContainerType()).thenReturn(containerType);
+		when(containerManifest.getParentManifest()).thenReturn(Optional.of(rootManifest));
 
 		Hierarchy<ContainerManifest> hierarchy = mock(Hierarchy.class);
 		when(hierarchy.atLevel(0)).thenReturn(rootManifest);
 		when(hierarchy.atLevel(1)).thenReturn(containerManifest);
 
-		when(layerManifest.getContainerHierarchy()).thenReturn(hierarchy);
+		when(layerManifest.getContainerHierarchy()).thenReturn(Optional.of(hierarchy));
 
 		DefaultItemLayer layer = new DefaultItemLayer(layerManifest);
 		layer.setIdManager(new IdManager.IdentityIdManager(layerManifest));

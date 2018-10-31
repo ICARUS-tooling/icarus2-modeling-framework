@@ -40,6 +40,7 @@ import de.ims.icarus2.filedriver.FileDriverMetadata.FileKey;
 import de.ims.icarus2.filedriver.FileDriverMetadata.ItemLayerKey;
 import de.ims.icarus2.filedriver.io.sets.ResourceSet;
 import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.model.api.driver.mods.EmptyModuleMonitor;
 import de.ims.icarus2.model.api.driver.mods.ModuleMonitor;
@@ -47,6 +48,7 @@ import de.ims.icarus2.model.api.io.resources.ResourceProvider;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
@@ -143,7 +145,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
 
 			ResourceSet dataFiles = driver.getDataFiles();
-			ContextManifest manifest = driver.getManifest().getContextManifest();
+			ContextManifest manifest = getContextManifest(driver);
 			ResourceProvider resourceProvider = driver.getResourceProvider();
 
 			int fileCount = dataFiles.getResourceCount();
@@ -341,7 +343,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			ResourceSet dataFiles = driver.getDataFiles();
-			ContextManifest manifest = driver.getManifest().getContextManifest();
+			ContextManifest manifest = getContextManifest(driver);
 			List<ItemLayerManifest> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
 
 			int fileCount = dataFiles.getResourceCount();
@@ -438,7 +440,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
-			ContextManifest manifest = driver.getManifest().getContextManifest();
+			ContextManifest manifest = getContextManifest(driver);
 			ResourceSet dataFiles = driver.getDataFiles();
 
 			int fileCount = dataFiles.getResourceCount();
@@ -504,7 +506,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			ResourceProvider resourceProvider = driver.getResourceProvider();
-			ContextManifest manifest = driver.getManifest().getContextManifest();
+			ContextManifest manifest = getContextManifest(driver);
 			List<ItemLayerManifest> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
 
 			int invalidLayers = 0;
@@ -628,7 +630,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 		@Override
 		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
 
-			ContextManifest manifest = driver.getManifest().getContextManifest();
+			ContextManifest manifest = getContextManifest(driver);
 			ResourceSet dataFiles = driver.getDataFiles();
 			List<ItemLayerManifest> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
 
@@ -665,4 +667,9 @@ public enum StandardPreparationSteps implements PreparationStep {
 	},
 
 	;
+
+	private static ContextManifest getContextManifest(Driver driver) {
+		return driver.getManifest().getContextManifest()
+				.orElseThrow(ManifestException.noHost(driver.getManifest()));
+	}
 }

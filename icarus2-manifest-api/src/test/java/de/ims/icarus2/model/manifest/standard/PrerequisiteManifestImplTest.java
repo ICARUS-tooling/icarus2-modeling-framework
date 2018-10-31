@@ -20,10 +20,14 @@
 package de.ims.icarus2.model.manifest.standard;
 
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
+import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
+
+import java.util.Set;
 
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.PrerequisiteManifestTest;
+import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.standard.ContextManifestImpl.PrerequisiteManifestImpl;
 import de.ims.icarus2.test.TestSettings;
 
@@ -42,11 +46,27 @@ class PrerequisiteManifestImplTest implements PrerequisiteManifestTest<Prerequis
 	}
 
 	/**
-	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
+	 * @see de.ims.icarus2.model.manifest.api.PrerequisiteManifestTest#createTestInstance(de.ims.icarus2.test.TestSettings, java.lang.String)
 	 */
 	@Override
-	public PrerequisiteManifestImpl createTestInstance(TestSettings settings) {
+	public PrerequisiteManifestImpl createTestInstance(TestSettings settings, String alias) {
 		ContextManifest contextManifest = mockTypedManifest(ManifestType.CONTEXT_MANIFEST);
-		return settings.process(new PrerequisiteManifestImpl(contextManifest, "prereq1"));
+		return settings.process(new PrerequisiteManifestImpl(contextManifest, alias));
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
+	 */
+	@Override
+	public Set<ManifestType> getAllowedHostTypes() {
+		return singleton(ManifestType.CONTEXT_MANIFEST);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.PrerequisiteManifestTest#createEmbedded(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.api.TypedManifest, java.lang.String)
+	 */
+	@Override
+	public PrerequisiteManifestImpl createEmbedded(TestSettings settings, TypedManifest host, String alias) {
+		return settings.process(new PrerequisiteManifestImpl((ContextManifest) host, alias));
 	}
 }

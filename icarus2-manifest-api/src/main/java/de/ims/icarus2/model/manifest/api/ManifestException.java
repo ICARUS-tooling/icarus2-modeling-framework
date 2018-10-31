@@ -47,6 +47,16 @@ public class ManifestException extends IcarusException {
 				"Missing property '"+property+"' in manifest "+ManifestUtils.getName(fragment));
 	}
 
+	public static Supplier<ManifestException> noHost(ManifestFragment fragment) {
+		return () -> new ManifestException(ManifestErrorCode.MANIFEST_ERROR,
+				"Manifest is required to have a host environment: "+ManifestUtils.getName(fragment));
+	}
+
+	public static Supplier<ManifestException> noElement(ManifestFragment fragment, String name) {
+		return () -> new ManifestException(ManifestErrorCode.MANIFEST_ERROR,
+				"Missing child element '"+name+"' in manifest "+ManifestUtils.getName(fragment));
+	}
+
 	private static final long serialVersionUID = 7579478541873972798L;
 
 	//FIXME add ManifestFragment field

@@ -105,7 +105,7 @@ public interface LocationManifestTest<M extends LocationManifest> extends Manife
 		for(PathType pathType : PathType.values()) {
 			assertOptGetter(createUnlocked(),
 					pathType, TestUtils.other(pathType),
-					DEFAULT(LocationManifest.DEFAULT_ROOT_PATH_TYPE),
+					NO_DEFAULT(),
 					LocationManifest::getRootPathType,
 					LocationManifest::setRootPathType);
 		}

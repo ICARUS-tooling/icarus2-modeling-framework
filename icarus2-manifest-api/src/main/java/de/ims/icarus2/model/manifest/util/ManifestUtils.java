@@ -32,6 +32,7 @@ import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestFragment;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
 import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 
 /**
@@ -228,6 +229,11 @@ public class ManifestUtils {
 		return value.orElseThrow(ManifestException.missing(fragment, property));
 	}
 
+	public static <M extends ManifestFragment, T extends Object>
+			T require(M fragment, Function<M, Optional<T>> func, String property) {
+		return func.apply(fragment).orElseThrow(ManifestException.missing(fragment, property));
+	}
+
 	public static <M extends ManifestFragment, T extends Object, U extends Object>
 			U require(Optional<T> value, Function<T, Optional<U>> func, M fragment,
 					String property1, String property2) {
@@ -236,5 +242,31 @@ public class ManifestUtils {
 		T tmp = value.orElseThrow(ManifestException.missing(fragment, property1));
 
 		return func.apply(tmp).orElseThrow(ManifestException.missing(fragment, property2));
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <M extends TypedManifest, E extends Embedded & ManifestFragment> M requireHost(E manifest) {
+		return (M) Optional.of(manifest)
+				.flatMap(Embedded::getHost)
+				.orElseThrow(ManifestException.noHost(manifest));
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <M extends TypedManifest, E extends Embedded & ManifestFragment> M requireGrandHost(E manifest) {
+		return (M) Optional.of(manifest)
+				.flatMap(Embedded::getHost)
+				.map(Embedded.class::cast)
+				.flatMap(Embedded::getHost)
+				.orElseThrow(ManifestException.noHost(manifest));
+	}
+
+	public static String requireId(ManifestFragment fragment) {
+		return fragment.getId()
+				.orElseThrow(ManifestException.missing(fragment, "id"));
+	}
+
+	public static String requireName(MemberManifest manifest) {
+		return manifest.getName()
+				.orElseThrow(ManifestException.missing(manifest, "name"));
 	}
 }

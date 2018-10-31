@@ -95,6 +95,7 @@ import de.ims.icarus2.model.api.members.item.Item.ManagedItem;
 import de.ims.icarus2.model.api.registry.LayerMemberFactory;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
@@ -168,7 +169,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		FileDriver driver = (FileDriver) owner;
 
-		ContextManifest contextManifest = driver.getManifest().getContextManifest();
+		ContextManifest contextManifest = driver.getManifest().getContextManifest()
+				.orElseThrow(ManifestException.noHost(driver.getManifest()));
 
 		//TODO fetch and process TableSchema from driver settings
 
@@ -179,7 +181,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * with the cost of resizing the buffer a few times.
 		 */
 		String layerId = tableSchema.getRootBlock().getLayerId();
-		ItemLayerManifest layerManifest = (ItemLayerManifest) contextManifest.getLayerManifest(layerId);
+		ItemLayerManifest layerManifest = (ItemLayerManifest) contextManifest.getLayerManifest(layerId)
+				.orElseThrow(ManifestException.error("No such layer: "+layerId));
 		// We use the recommended size for byte buffers here to be on the safe side for our character buffer
 		characterChunkSize = getRecommendedByteBufferSize(layerManifest);
 
@@ -2229,7 +2232,12 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			if(resolver==null) {
 				// No nested resolver declared -> use layerId and annotationKey info
 				AnnotationLayer layer = (AnnotationLayer) findLayer(columnSchema.getLayerId());
-				resolver = BasicAnnotationResolver.forAnnotation(layer, columnSchema.getAnnotationKey());
+				String key = columnSchema.getAnnotationKey();
+				if(key==null) {
+					key = layer.getManifest().getDefaultKey().orElseThrow(
+							ModelException.create(ModelErrorCode.DRIVER_ERROR, ""));
+				}
+				resolver = BasicAnnotationResolver.forAnnotation(layer, key);
 			}
 
 			this.resolver = resolver;

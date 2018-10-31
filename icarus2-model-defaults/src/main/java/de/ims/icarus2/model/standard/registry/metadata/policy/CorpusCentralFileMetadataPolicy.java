@@ -28,6 +28,7 @@ import de.ims.icarus2.model.api.registry.MetadataStoragePolicy;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.standard.io.DefaultFileStructure;
 import de.ims.icarus2.model.standard.registry.metadata.JAXBMetadataRegistry;
 import de.ims.icarus2.model.standard.registry.metadata.PlainMetadataRegistry;
@@ -158,7 +159,7 @@ public abstract class CorpusCentralFileMetadataPolicy<O extends Object> implemen
 		public MetadataRegistry registryFor(CorpusManager manager,
 				MetadataRegistry hostRegistry, ContextManifest manifest) {
 
-			Path corpusFolder = getCorpusFolder(manifest.getCorpusManifest());
+			Path corpusFolder = getCorpusFolder(ManifestUtils.requireHost(manifest));
 
 			Path metadataFile = corpusFolder.resolve(getMetadataFileName(manifest));
 

@@ -62,9 +62,10 @@ public class SingleKeyObjectStorage extends AbstractSingleKeyStorage {
 		super.addNotify(layer);
 
 		AnnotationLayerManifest manifest = layer.getManifest();
-		AnnotationManifest annotationManifest = manifest.getAnnotationManifest(manifest.getDefaultKey());
+		String key = requireDefaultKey(manifest);
+		AnnotationManifest annotationManifest = requireAnnotationsManifest(manifest, key);
 
-		noEntryValue = annotationManifest.getNoEntryValue();
+		noEntryValue = annotationManifest.getNoEntryValue().orElse(null);
 		annotations = buildBuffer(layer);
 	}
 

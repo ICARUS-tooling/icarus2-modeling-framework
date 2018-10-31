@@ -22,6 +22,9 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
+import de.ims.icarus2.model.manifest.api.AnnotationManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 
 /**
  * @author Markus Gärtner
@@ -39,6 +42,15 @@ public abstract class AbstractAnnotationStorage implements ManagedAnnotationStor
 
 	public boolean isWeakKeys() {
 		return weakKeys;
+	}
+
+	protected static AnnotationManifest requireAnnotationsManifest(AnnotationLayerManifest manifest, String key) {
+		return manifest.getAnnotationManifest(key).orElseThrow(ManifestException.missing(manifest,
+				"annotation manifest for key: "+key));
+	}
+
+	protected static String requireKey(AnnotationManifest manifest) {
+		return manifest.getKey().orElseThrow(ManifestException.missing(manifest, "key"));
 	}
 
 	/**

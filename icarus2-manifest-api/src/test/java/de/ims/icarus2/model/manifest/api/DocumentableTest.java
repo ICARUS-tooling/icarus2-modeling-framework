@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.mockito.Mockito.mock;
 
@@ -39,7 +40,7 @@ public interface DocumentableTest<D extends Documentable> extends LockableTest<D
 	default void testGetDocumentation() {
 		TestUtils.assertOptGetter(createUnlocked(),
 				mock(Documentation.class), mock(Documentation.class),
-				TestUtils.NO_DEFAULT(),
+				NO_DEFAULT(),
 				Documentable::getDocumentation, Documentable::setDocumentation);
 	}
 

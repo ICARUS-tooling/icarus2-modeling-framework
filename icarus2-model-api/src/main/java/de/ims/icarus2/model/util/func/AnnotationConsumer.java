@@ -29,6 +29,7 @@ public interface AnnotationConsumer<E extends Object> {
 
 	void apply(Item item, String key, E value);
 
+	@FunctionalInterface
 	public interface IntAnnotationConsumer extends AnnotationConsumer<Integer> {
 
 		@Override
@@ -39,6 +40,7 @@ public interface AnnotationConsumer<E extends Object> {
 		void applyInt(Item item, String key, int value);
 	}
 
+	@FunctionalInterface
 	public interface LongAnnotationConsumer extends AnnotationConsumer<Long> {
 
 		@Override
@@ -49,6 +51,7 @@ public interface AnnotationConsumer<E extends Object> {
 		void applyLong(Item item, String key, long value);
 	}
 
+	@FunctionalInterface
 	public interface FloatAnnotationConsumer extends AnnotationConsumer<Float> {
 
 		@Override
@@ -59,6 +62,7 @@ public interface AnnotationConsumer<E extends Object> {
 		void applyFloat(Item item, String key, float value);
 	}
 
+	@FunctionalInterface
 	public interface DoubleAnnotationConsumer extends AnnotationConsumer<Double> {
 
 		@Override
@@ -69,6 +73,7 @@ public interface AnnotationConsumer<E extends Object> {
 		void applyDouble(Item item, String key, double value);
 	}
 
+	@FunctionalInterface
 	public interface BooleanAnnotationConsumer extends AnnotationConsumer<Boolean> {
 
 		@Override

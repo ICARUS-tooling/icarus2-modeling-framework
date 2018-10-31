@@ -81,7 +81,7 @@ public class FileDataStates {
 		}
 
 		// Collect layers
-		ContextManifest contextManifest = driver.getManifest().getContextManifest();
+		ContextManifest contextManifest = ManifestUtils.requireHost(driver.getManifest());
 		for(LayerManifest layerManifest : contextManifest.getLayerManifests()) {
 
 			if(ManifestUtils.isItemLayerManifest(layerManifest)) {

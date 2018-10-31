@@ -73,6 +73,7 @@ import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
+import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
@@ -191,13 +192,13 @@ public class DefaultCorpus implements Corpus {
 		for(ContextManifest context : manifest.getCustomContextManifests()) {
 
 			ContextProxy proxy = new ContextProxy(context);
-			customContexts.put(context.getId(), proxy);
+			customContexts.put(ManifestUtils.requireId(context), proxy);
 		}
 
 		for(ContextManifest context : manifest.getRootContextManifests()) {
 
 			ContextProxy proxy = new ContextProxy(context);
-			rootContexts.put(context.getId(), proxy);
+			rootContexts.put(ManifestUtils.requireId(context), proxy);
 		}
 
 		if(rootContexts.isEmpty())
@@ -363,7 +364,7 @@ public class DefaultCorpus implements Corpus {
 		lock.lock();
 		try {
 			synchronized (customContexts) {
-				String id = context.getId();
+				String id = ManifestUtils.requireId(context);
 				if(customContexts.containsKey(id))
 					throw new ModelException(this, ManifestErrorCode.MANIFEST_DUPLICATE_ID,
 							"Duplicate context: "+id);
@@ -568,7 +569,7 @@ public class DefaultCorpus implements Corpus {
 		requireNonNull(context);
 
 		synchronized (virtualContexts) {
-			String id = context.getManifest().getId();
+			String id = ManifestUtils.requireId(context.getManifest());
 
 			if(virtualContexts.containsKey(id))
 				throw new ModelException(this, ManifestErrorCode.MANIFEST_DUPLICATE_ID,
@@ -585,7 +586,7 @@ public class DefaultCorpus implements Corpus {
 		requireNonNull(context);
 
 		synchronized (virtualContexts) {
-			String id = context.getManifest().getId();
+			String id = ManifestUtils.requireId(context.getManifest());
 
 			if(!virtualContexts.remove(id, context))
 				throw new ModelException(this, GlobalErrorCode.INVALID_INPUT,
@@ -638,7 +639,7 @@ public class DefaultCorpus implements Corpus {
 	}
 
 	private boolean isKnownContext(Context context) {
-		String id = context.getManifest().getId();
+		String id = ManifestUtils.requireId(context.getManifest());
 
 		synchronized (rootContexts) {
 			if(rootContexts.containsKey(id)) {
@@ -914,7 +915,7 @@ public class DefaultCorpus implements Corpus {
 		}
 
 		public String getId() {
-			return manifest.getId();
+			return ManifestUtils.requireId(manifest);
 		}
 
 		public ContextManifest getManifest() {
@@ -948,7 +949,9 @@ public class DefaultCorpus implements Corpus {
 					final CorpusMemberFactory factory = corpus.getManager().newFactory();
 
 					driver = factory.newImplementationLoader()
-							.manifest(manifest.getDriverManifest().getImplementationManifest())
+							.manifest(manifest.getDriverManifest()
+									.flatMap(DriverManifest::getImplementationManifest)
+									.get())
 							.environment(corpus)
 							.message("Driver for context '"+getName(manifest)+"'")
 							.instantiate(Driver.class);

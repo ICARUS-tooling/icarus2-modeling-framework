@@ -38,7 +38,9 @@ import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
 import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
 import de.ims.icarus2.model.manifest.api.ContainerType;
+import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.IcarusUtils;
 
 /**
@@ -150,7 +152,8 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			super(true);
 		}
 
-		private final Coverage coverage = getManifest().getCoverage();
+		private final Coverage coverage = ManifestUtils.require(
+				getManifest(), MappingManifest::getCoverage, "coverage");
 
 		/**
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getIndicesCount(long, de.ims.icarus2.model.api.driver.mapping.RequestSettings)

@@ -93,20 +93,15 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 		Object[] noEntryValues = new Object[indexLookup.keyCount()];
 		for(int i=0; i<noEntryValues.length; i++) {
 			String key = indexLookup.keyAt(i);
-			AnnotationManifest annotationManifest = layerManifest.getAnnotationManifest(key);
+			AnnotationManifest annotationManifest = requireAnnotationsManifest(layerManifest, key);
 
-			Object noEntryValue = annotationManifest.getNoEntryValue();
-			if(noEntryValue==null) {
-				//FIXME need to resolve default noEntryValue for primitive annotation types
-				continue;
-			}
+			final int index = i;
+			annotationManifest.getNoEntryValue().ifPresent(noEntryValue -> {
+				ValueType valueType = annotationManifest.getValueType();
 
-			ValueType valueType = annotationManifest.getValueType();
-
-			//TODO maybe ensure a kind of 'default' noEntryValue if manifest misses to declare one?
-			noEntryValue = wrapMutable(noEntryValue, valueType);
-
-			noEntryValues[i] = noEntryValue;
+				//TODO maybe ensure a kind of 'default' noEntryValue if manifest misses to declare one?
+				noEntryValues[index] = wrapMutable(noEntryValue, valueType);
+			});
 		}
 
 		return noEntryValues;

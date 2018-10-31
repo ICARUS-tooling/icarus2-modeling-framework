@@ -672,7 +672,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 				createTestInstance(settings()),
 				mockTemplate("template1"),
 				mockTemplate("template2"),
-				ManifestRegistry::getTemplate,
+				(registry, id) -> registry.getTemplate(id), // Flexible return value of getTemplate() makes it hard to infer types
 				NPE_CHECK,
 				ManifestRegistry::addTemplate,
 				unwrapGetter(Manifest::getId),

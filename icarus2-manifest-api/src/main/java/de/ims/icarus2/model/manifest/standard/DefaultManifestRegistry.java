@@ -282,13 +282,14 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public Optional<Manifest> getTemplate(String id) {
+	public <M extends Manifest> Optional<M> getTemplate(String id) {
 		requireNonNull(id);
 
-		Optional<Manifest> template;
+		Optional<M> template;
 		synchronized (lock) {
-			template = Optional.ofNullable(templates.get(id));
+			template = Optional.ofNullable((M)templates.get(id));
 		}
 
 		// Sanity check against external modifications of the template manifest

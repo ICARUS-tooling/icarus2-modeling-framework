@@ -236,8 +236,7 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 			localPropertyCount++;
 			String name = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.NAME)
 					.orElseThrow(ManifestXmlHandler.error("Property name is missing"));
-			ValueType valueType = ManifestXmlUtils.typeValue(attributes)
-					.orElseThrow(ManifestXmlHandler.error("Property value type is missing"));
+			ValueType valueType = ManifestXmlUtils.typeValue(attributes).orElse(ValueType.DEFAULT_VALUE_TYPE);
 			property = new PropertyImpl(name, valueType);
 
 			handler = this;

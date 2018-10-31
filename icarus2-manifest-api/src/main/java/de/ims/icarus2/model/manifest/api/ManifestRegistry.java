@@ -178,7 +178,7 @@ public interface ManifestRegistry extends EventManager {
 
 	boolean hasTemplate(String id);
 
-	Optional<Manifest> getTemplate(String id);
+	<M extends Manifest> Optional<M> getTemplate(String id);
 
 
 //	void addContextManifest(CorpusManifest corpus, ContextManifest context);

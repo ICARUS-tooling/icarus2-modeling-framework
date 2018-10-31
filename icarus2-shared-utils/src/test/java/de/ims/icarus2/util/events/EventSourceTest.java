@@ -24,15 +24,31 @@ import static de.ims.icarus2.test.TestUtils.ILLEGAL_ARGUMENT_CHECK;
 import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.NO_NPE_CHECK;
+import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.assertGetter;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
 import static de.ims.icarus2.test.TestUtils.settings;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.function.BiConsumer;
+
+import javax.swing.SwingUtilities;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.stubbing.Answer;
 
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
@@ -129,7 +145,50 @@ class EventSourceTest<E extends EventSource> implements EventManagerTest<E> {
 	void testSetDeadListenerTreshold() {
 		assertSetter(create(),
 				EventSource::setDeadListenerTreshold,
-				3, NO_NPE_CHECK, ILLEGAL_ARGUMENT_CHECK, -1);
+				3, NPE_CHECK, ILLEGAL_ARGUMENT_CHECK, -1);
+	}
+
+	private void testFireEvent(E instance, Object source, boolean expectEDT,
+			BiConsumer<E, EventObject> sender) {
+		Thread thread = Thread.currentThread();
+		assertFalse(SwingUtilities.isEventDispatchThread());
+
+		String eventName = "randomEvent";
+		EventObject eventObject = mock(EventObject.class);
+		when(eventObject.getName()).thenReturn(eventName);
+
+		Answer<Void> answer;
+		if(expectEDT) {
+			answer = inv -> {
+				assertTrue(SwingUtilities.isEventDispatchThread());
+				return null;
+			};
+		} else {
+			answer = inv -> {
+				assertSame(thread, Thread.currentThread());
+				return null;
+			};
+		}
+
+		SimpleEventListener listener1 = mock(SimpleEventListener.class);
+		doAnswer(answer).when(listener1).invoke(any(), any(EventObject.class));
+		instance.addListener(listener1);
+		sender.accept(instance, eventObject);
+
+		SimpleEventListener listener2 = mock(SimpleEventListener.class);
+		instance.addListener(listener2, "anotherEvent");
+		sender.accept(instance, eventObject);
+
+		if(expectEDT) {
+			try {
+				SwingUtilities.invokeAndWait(IcarusUtils.NO_OP);
+			} catch (InvocationTargetException | InterruptedException e) {
+				throw new AssertionError("should not happen", e);
+			}
+		}
+
+		verify(listener2, never()).invoke(source, eventObject);
+		verify(listener1, times(2)).invoke(source, eventObject);
 	}
 
 	/**
@@ -137,7 +196,9 @@ class EventSourceTest<E extends EventSource> implements EventManagerTest<E> {
 	 */
 	@Test
 	void testFireEventEventObject() {
-		fail("Not yet implemented"); // TODO
+		E instance = create();
+		testFireEvent(instance, instance, false,
+				EventSource::fireEvent);
 	}
 
 	/**
@@ -145,7 +206,9 @@ class EventSourceTest<E extends EventSource> implements EventManagerTest<E> {
 	 */
 	@Test
 	void testFireEventEDTEventObject() {
-		fail("Not yet implemented"); // TODO
+		E instance = create();
+		testFireEvent(instance, instance, true,
+				EventSource::fireEventEDT);
 	}
 
 	/**
@@ -153,7 +216,10 @@ class EventSourceTest<E extends EventSource> implements EventManagerTest<E> {
 	 */
 	@Test
 	void testFireEventEventObjectObject() {
-		fail("Not yet implemented"); // TODO
+		Object source = new Object();
+		E instance = withSource(settings(), source);
+		testFireEvent(instance, source, false,
+				(es, evt) -> es.fireEvent(evt, source));
 	}
 
 	/**
@@ -161,7 +227,10 @@ class EventSourceTest<E extends EventSource> implements EventManagerTest<E> {
 	 */
 	@Test
 	void testFireEventEDTEventObjectObject() {
-		fail("Not yet implemented"); // TODO
+		Object source = new Object();
+		E instance = withSource(settings(), source);
+		testFireEvent(instance, source, true,
+				(es, evt) -> es.fireEventEDT(evt, source));
 	}
 
 }

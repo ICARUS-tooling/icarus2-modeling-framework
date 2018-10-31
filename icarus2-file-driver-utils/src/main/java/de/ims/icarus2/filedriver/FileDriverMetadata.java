@@ -36,6 +36,8 @@ import de.ims.icarus2.model.api.registry.SubRegistry;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.Manifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
@@ -817,36 +819,40 @@ public class FileDriverMetadata {
 		}
 	}
 
+	private static String id(Manifest manifest) {
+		return manifest.getId().orElseThrow(ManifestException.missing(manifest, "id"));
+	}
+
 	private static String getFileKey(int fileIndex, String suffix) {
 		return FILE_PREFIX+String.valueOf(fileIndex)+_SEP_+suffix;
 	}
 
 	private static String getFileKey(int fileIndex, ItemLayerManifest layer, String suffix) {
-		return FILE_PREFIX+String.valueOf(fileIndex)+_SEP_+ID_PREFIX+layer.getId()+_SEP_+suffix;
+		return FILE_PREFIX+String.valueOf(fileIndex)+_SEP_+ID_PREFIX+id(layer)+_SEP_+suffix;
 	}
 
 	private static String getLayerKey(ItemLayerManifest layer, String suffix) {
-		return ID_PREFIX+layer.getId()+_SEP_+suffix;
+		return ID_PREFIX+id(layer)+_SEP_+suffix;
 	}
 
 	private static String getChunkIndexKey(ItemLayerManifest layer, String suffix) {
-		return ID_PREFIX+layer.getId()+_SEP_+CHUNK_INDEX_PREFIX+_SEP_+suffix;
+		return ID_PREFIX+id(layer)+_SEP_+CHUNK_INDEX_PREFIX+_SEP_+suffix;
 	}
 
 	private static String getContainerKey(ItemLayerManifest layer, int level, String suffix) {
-		return ID_PREFIX+layer.getId()+_SEP_+LEVEL_PREFIX+String.valueOf(level)+_SEP_+suffix;
+		return ID_PREFIX+id(layer)+_SEP_+LEVEL_PREFIX+String.valueOf(level)+_SEP_+suffix;
 	}
 
 	private static String getContainerTypeKey(ItemLayerManifest layer, int level, ContainerType type, String suffix) {
-		return ID_PREFIX+layer.getId()+_SEP_+LEVEL_PREFIX+String.valueOf(level)+_SEP_+type.name()+_SEP_+suffix;
+		return ID_PREFIX+id(layer)+_SEP_+LEVEL_PREFIX+String.valueOf(level)+_SEP_+type.name()+_SEP_+suffix;
 	}
 
 	private static String getStructureKey(StructureLayerManifest layer, int level, String suffix) {
-		return ID_PREFIX+layer.getId()+_SEP_+LEVEL_PREFIX+String.valueOf(level)+_SEP_+suffix;
+		return ID_PREFIX+id(layer)+_SEP_+LEVEL_PREFIX+String.valueOf(level)+_SEP_+suffix;
 	}
 
 	private static String getStructureTypeKey(StructureLayerManifest layer, int level, StructureType type, String suffix) {
-		return ID_PREFIX+layer.getId()+_SEP_+LEVEL_PREFIX+String.valueOf(level)+_SEP_+type.name()+_SEP_+suffix;
+		return ID_PREFIX+id(layer)+_SEP_+LEVEL_PREFIX+String.valueOf(level)+_SEP_+type.name()+_SEP_+suffix;
 	}
 
 	private static String getMappingKey(ItemLayerManifest source, ItemLayerManifest target, String suffix) {

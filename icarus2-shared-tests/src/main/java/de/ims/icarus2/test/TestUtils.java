@@ -467,18 +467,18 @@ public class TestUtils {
 	private static final Supplier<?> NO_DEFAULT = () -> null;
 
 	@SuppressWarnings("unchecked")
-	public static <K extends Object> Supplier<? extends K> NO_DEFAULT() {
-		return (Supplier<? extends K>) NO_DEFAULT;
+	public static <K extends Object> Supplier<K> NO_DEFAULT() {
+		return (Supplier<K>) NO_DEFAULT;
 	}
 
 	private static final Supplier<?> IGNORE_DEFAULT = () -> fail("Not supposed to request a default value!");
 
 	@SuppressWarnings("unchecked")
-	public static <K extends Object> Supplier<? extends K> IGNORE_DEFAULT() {
-		return (Supplier<? extends K>) IGNORE_DEFAULT;
+	public static <K extends Object> Supplier<K> IGNORE_DEFAULT() {
+		return (Supplier<K>) IGNORE_DEFAULT;
 	}
 
-	public static <K extends Object> Supplier<? extends K> DEFAULT(K value) {
+	public static <K extends Object> Supplier<K> DEFAULT(K value) {
 		return () -> value;
 	}
 

@@ -17,12 +17,14 @@
 package de.ims.icarus2.model.standard.members.layers.item;
 
 import static de.ims.icarus2.util.Conditions.checkNotSet;
+import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.FragmentLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.raster.Rasterizer;
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 
 /**
  * @author Markus Gärtner
@@ -74,8 +76,7 @@ public class DefaultFragmentLayer extends DefaultItemLayer implements FragmentLa
 	 */
 	@Override
 	public void setValueLayer(AnnotationLayer valueLayer) {
-		if (valueLayer == null)
-			throw new NullPointerException("Invalid valueLayer"); //$NON-NLS-1$
+		requireNonNull(valueLayer);
 
 		checkNotSet("Value layer", this.valueLayer, valueLayer);
 
@@ -88,7 +89,8 @@ public class DefaultFragmentLayer extends DefaultItemLayer implements FragmentLa
 	@Override
 	public long getRasterSize(Item item, int axis) {
 		// Fetch annotation key + value
-		String key = getManifest().getAnnotationKey();
+		String key = getManifest().getAnnotationKey().orElseThrow(
+				ManifestException.missing(getManifest(), "annotation key"));
 		Object value = valueLayer.getAnnotationStorage().getValue(item, key);
 
 		// Forward computation

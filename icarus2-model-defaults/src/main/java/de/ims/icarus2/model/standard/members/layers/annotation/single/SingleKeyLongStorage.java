@@ -66,16 +66,18 @@ public class SingleKeyLongStorage extends AbstractSingleKeyStorage {
 		return result;
 	}
 
+	@SuppressWarnings("boxing")
 	@Override
 	public void addNotify(AnnotationLayer layer) {
 		super.addNotify(layer);
 
 		AnnotationLayerManifest manifest = layer.getManifest();
-		AnnotationManifest annotationManifest = manifest.getAnnotationManifest(manifest.getDefaultKey());
+		String key = requireDefaultKey(manifest);
+		AnnotationManifest annotationManifest = requireAnnotationsManifest(manifest, key);
 
-		Object declaredNoEntryValue = annotationManifest.getNoEntryValue();
-
-		noEntryValue = declaredNoEntryValue==null ? DEFAULT_NO_ENTRY_VALUE : ((Long) declaredNoEntryValue).longValue();
+		noEntryValue = annotationManifest.getNoEntryValue()
+				.map(Long.class::cast)
+				.orElse(DEFAULT_NO_ENTRY_VALUE);
 		annotations = buildBuffer(layer);
 	}
 
@@ -135,7 +137,7 @@ public class SingleKeyLongStorage extends AbstractSingleKeyStorage {
 		checkKey(key);
 
 		if(value==noEntryValue) {
-			annotations.remove(item);
+			annotations.removeLong(item);
 		} else {
 			annotations.put(item, value);
 		}
@@ -153,7 +155,7 @@ public class SingleKeyLongStorage extends AbstractSingleKeyStorage {
 	public void removeAllValues(Supplier<? extends Item> source) {
 		Item item;
 		while((item=source.get())!=null) {
-			annotations.remove(item);
+			annotations.removeLong(item);
 		}
 	}
 

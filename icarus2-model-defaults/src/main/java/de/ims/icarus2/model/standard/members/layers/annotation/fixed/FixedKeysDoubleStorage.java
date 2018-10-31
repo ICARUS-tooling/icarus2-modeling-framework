@@ -53,14 +53,12 @@ public class FixedKeysDoubleStorage extends AbstractFixedKeysStorage<double[]> {
 		double[] noEntryValues = new double[indexLookup.keyCount()];
 		for(int i=0; i<indexLookup.keyCount(); i++) {
 			String key = indexLookup.keyAt(i);
-			AnnotationManifest annotationManifest = layerManifest.getAnnotationManifest(key);
+			AnnotationManifest annotationManifest = requireAnnotationsManifest(layerManifest, key);
 
-			Object noEntryValue = annotationManifest.getNoEntryValue();
-			if(noEntryValue==null) {
-				noEntryValue = _double(IcarusUtils.UNSET_DOUBLE);
-			}
-
-			noEntryValues[i] = ((Number) noEntryValue).doubleValue();
+			noEntryValues[i] = annotationManifest.getNoEntryValue()
+					.map(Double.class::cast)
+					.orElse(_double(IcarusUtils.UNSET_DOUBLE))
+					.doubleValue();
 		}
 
 		return noEntryValues;
