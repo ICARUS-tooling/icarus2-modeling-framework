@@ -19,7 +19,7 @@ package de.ims.icarus2.model.manifest.api;
 import javax.swing.text.Highlighter.Highlight;
 
 import de.ims.icarus2.util.Flag;
-import de.ims.icarus2.util.LazyNameStore;
+import de.ims.icarus2.util.LazyStore;
 import de.ims.icarus2.util.strings.StringResource;
 
 /**
@@ -67,7 +67,7 @@ public enum HighlightFlag implements StringResource, Flag {
 		return xmlForm;
 	}
 
-	private static LazyNameStore<HighlightFlag> store = new LazyNameStore<>(HighlightFlag.class);
+	private static LazyStore<HighlightFlag,String> store = LazyStore.forStringResource(HighlightFlag.class);
 
 	public static HighlightFlag parseHighlightFlag(String s) {
 		return store.lookup(s);

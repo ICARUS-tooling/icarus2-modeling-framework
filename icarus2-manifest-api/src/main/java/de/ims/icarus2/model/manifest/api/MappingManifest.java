@@ -18,7 +18,7 @@ package de.ims.icarus2.model.manifest.api;
 
 import java.util.Optional;
 
-import de.ims.icarus2.util.LazyNameStore;
+import de.ims.icarus2.util.LazyStore;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -200,7 +200,7 @@ public interface MappingManifest extends ManifestFragment, Embedded {
 			return xmlForm;
 		}
 
-		private static LazyNameStore<Relation> store = new LazyNameStore<>(Relation.class);
+		private static LazyStore<Relation, String> store = LazyStore.forStringResource(Relation.class);
 
 		public static Relation parseRelation(String s) {
 			return store.lookup(s);
@@ -301,7 +301,7 @@ public interface MappingManifest extends ManifestFragment, Embedded {
 			return xmlForm;
 		}
 
-		private static LazyNameStore<Coverage> store = new LazyNameStore<>(Coverage.class);
+		private static LazyStore<Coverage, String> store = LazyStore.forStringResource(Coverage.class);
 
 		public static Coverage parseCoverage(String s) {
 			return store.lookup(s);

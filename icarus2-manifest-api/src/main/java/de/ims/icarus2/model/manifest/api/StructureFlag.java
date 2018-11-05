@@ -17,7 +17,7 @@
 package de.ims.icarus2.model.manifest.api;
 
 import de.ims.icarus2.util.Flag;
-import de.ims.icarus2.util.LazyNameStore;
+import de.ims.icarus2.util.LazyStore;
 import de.ims.icarus2.util.strings.StringResource;
 
 /**
@@ -108,7 +108,7 @@ public enum StructureFlag implements StringResource, Flag {
 	}
 
 
-	private static LazyNameStore<StructureFlag> store = new LazyNameStore<>(StructureFlag.class);
+	private static LazyStore<StructureFlag, String> store = LazyStore.forStringResource(StructureFlag.class);
 
 	public static StructureFlag parseStructureFlag(String s) {
 		return store.lookup(s);

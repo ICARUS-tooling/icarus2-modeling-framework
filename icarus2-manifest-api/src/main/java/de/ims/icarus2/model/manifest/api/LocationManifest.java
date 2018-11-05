@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import de.ims.icarus2.util.LazyNameStore;
+import de.ims.icarus2.util.LazyStore;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -178,7 +178,7 @@ public interface LocationManifest extends Manifest {
 			return xmlForm;
 		}
 
-		private static LazyNameStore<PathType> store = new LazyNameStore<>(PathType.class);
+		private static LazyStore<PathType, String> store = LazyStore.forStringResource(PathType.class);
 
 		public static PathType parsePathType(String s) {
 			return store.lookup(s);

@@ -19,7 +19,7 @@ package de.ims.icarus2.model.manifest.api;
 import java.awt.Container;
 
 import de.ims.icarus2.util.Flag;
-import de.ims.icarus2.util.LazyNameStore;
+import de.ims.icarus2.util.LazyStore;
 import de.ims.icarus2.util.strings.StringResource;
 
 /**
@@ -122,7 +122,7 @@ public enum AnnotationFlag implements StringResource, Flag {
 		return xmlForm;
 	}
 
-	private static LazyNameStore<AnnotationFlag> store = new LazyNameStore<>(AnnotationFlag.class);
+	private static LazyStore<AnnotationFlag, String> store = LazyStore.forStringResource(AnnotationFlag.class);
 
 	public static AnnotationFlag parseAnnotationFlag(String s) {
 		return store.lookup(s);

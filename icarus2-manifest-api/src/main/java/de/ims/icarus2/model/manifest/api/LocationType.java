@@ -19,7 +19,7 @@ package de.ims.icarus2.model.manifest.api;
 import java.net.URL;
 
 import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec;
-import de.ims.icarus2.util.LazyNameStore;
+import de.ims.icarus2.util.LazyStore;
 import de.ims.icarus2.util.strings.StringResource;
 
 /**
@@ -63,7 +63,7 @@ public enum LocationType implements StringResource {
 		this.xmlForm = xmlForm;
 	}
 
-	private static final LazyNameStore<LocationType> store = new LazyNameStore<>(LocationType.class);
+	private static final LazyStore<LocationType, String> store = LazyStore.forStringResource(LocationType.class);
 
 	/**
 	 * @see de.ims.icarus2.model.util.StringResource.XmlResource#getStringValue()

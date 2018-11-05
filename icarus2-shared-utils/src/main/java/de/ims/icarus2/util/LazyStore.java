@@ -23,6 +23,7 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Map;
+import java.util.function.Function;
 
 import de.ims.icarus2.util.strings.StringResource;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -34,35 +35,42 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  * @author Markus Gärtner
  *
  */
-public class LazyNameStore<F extends StringResource> {
+public class LazyStore<F extends StringResource, K extends Object> {
 
-	private Map<String, F> lookup;
+	public static <S extends StringResource> LazyStore<S, String> forStringResource(Class<S> clazz) {
+		return new LazyStore<>(clazz, StringResource::getStringValue);
+	}
+
+	private Map<K, F> lookup;
 
 	private final Class<F> clazz;
+
+	private final Function<F, K> keyGen;
 
 	/**
 	 * @param clazz
 	 */
-	public LazyNameStore(Class<F> clazz) {
+	public LazyStore(Class<F> clazz, Function<F, K> keyGen) {
 		this.clazz = requireNonNull(clazz);
+		this.keyGen = requireNonNull(keyGen);
 		checkArgument(clazz.isEnum());
 	}
 
-	public synchronized F lookup(String name) {
-		requireNonNull(name);
+	public synchronized F lookup(K key) {
+		requireNonNull(key);
 
 		if(lookup==null) {
 			lookup = new Object2ObjectOpenHashMap<>();
 
-			F[] flags = clazz.getEnumConstants();
-			for(F flag : flags) {
-				lookup.put(flag.getStringValue(), flag);
+			F[] values = clazz.getEnumConstants();
+			for(F value : values) {
+				lookup.put(keyGen.apply(value), value);
 			}
 		}
 
-		F flag = lookup.get(name);
+		F flag = lookup.get(key);
 		if(flag==null)
-			throw new IllegalArgumentException("Unknown flag name: "+name);
+			throw new IllegalArgumentException("Unknown key: "+key);
 		return flag;
 	}
 }
