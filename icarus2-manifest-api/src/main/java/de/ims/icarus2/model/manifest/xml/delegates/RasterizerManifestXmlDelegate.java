@@ -25,21 +25,21 @@ import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
  * @author Markus Gärtner
  *
  */
-public class RasterizerManifestXmLDelegate extends AbstractForeignImplementationManifestXmlDelegate<RasterizerManifest> {
+public class RasterizerManifestXmlDelegate extends AbstractForeignImplementationManifestXmlDelegate<RasterizerManifest> {
 
-	public RasterizerManifestXmLDelegate() {
+	public RasterizerManifestXmlDelegate() {
 		// no-op
 	}
 
-	public RasterizerManifestXmLDelegate(RasterizerManifest manifest) {
+	public RasterizerManifestXmlDelegate(RasterizerManifest manifest) {
 		setInstance(manifest);
 	}
 
-	public RasterizerManifestXmLDelegate(FragmentLayerManifest fragmentLayerManifest) {
+	public RasterizerManifestXmlDelegate(FragmentLayerManifest fragmentLayerManifest) {
 		setInstance(new RasterizerManifestImpl(fragmentLayerManifest));
 	}
 
-	public RasterizerManifestXmLDelegate reset(FragmentLayerManifest fragmentLayerManifest) {
+	public RasterizerManifestXmlDelegate reset(FragmentLayerManifest fragmentLayerManifest) {
 		reset();
 		setInstance(new RasterizerManifestImpl(fragmentLayerManifest));
 

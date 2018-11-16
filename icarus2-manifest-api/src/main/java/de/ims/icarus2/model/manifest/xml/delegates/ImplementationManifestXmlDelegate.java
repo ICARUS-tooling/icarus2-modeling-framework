@@ -16,8 +16,6 @@
  */
 package de.ims.icarus2.model.manifest.xml.delegates;
 
-import static de.ims.icarus2.model.manifest.xml.ManifestXmlUtils.writeFlag;
-
 import javax.xml.stream.XMLStreamException;
 
 import org.xml.sax.Attributes;
@@ -46,19 +44,20 @@ public class ImplementationManifestXmlDelegate extends AbstractMemberManifestXml
 		ImplementationManifest manifest = getInstance();
 
 		// Write source
-		serializer.writeAttribute(ManifestXmlAttributes.SOURCE, manifest.getSource());
+		if(manifest.isLocalSource())
+			serializer.writeAttribute(ManifestXmlAttributes.SOURCE, manifest.getSource());
 
 		// Write classname
-		serializer.writeAttribute(ManifestXmlAttributes.CLASSNAME, manifest.getClassname());
+		if(manifest.isLocalClassname())
+			serializer.writeAttribute(ManifestXmlAttributes.CLASSNAME, manifest.getClassname());
 
 		// Write source type
-		SourceType sourceType = manifest.getSourceType();
-		if(sourceType!=null && sourceType!=SourceType.DEFAULT) {
-			serializer.writeAttribute(ManifestXmlAttributes.SOURCE_TYPE, sourceType.getStringValue());
-		}
+		if(manifest.isLocalSourceType())
+			serializer.writeAttribute(ManifestXmlAttributes.SOURCE_TYPE, manifest.getSourceType().getStringValue());
 
 		// Write flags
-		writeFlag(serializer, ManifestXmlAttributes.FACTORY, manifest.isUseFactory(), ImplementationManifest.DEFAULT_USE_FACTORY_VALUE);
+		if(manifest.isLocalUseFactory())
+			serializer.writeAttribute(ManifestXmlAttributes.FACTORY, manifest.isUseFactory());
 	}
 
 	/**

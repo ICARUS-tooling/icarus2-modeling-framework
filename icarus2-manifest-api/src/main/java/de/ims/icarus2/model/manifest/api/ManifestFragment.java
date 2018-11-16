@@ -38,7 +38,7 @@ import it.unimi.dsi.fastutil.Hash.Strategy;
 public interface ManifestFragment extends Lockable, TypedManifest {
 
 	/**
-	 * Returns the namespace wide unique id of this manifest.
+	 * Returns the namespace wide unique id of this manifest fragment.
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)

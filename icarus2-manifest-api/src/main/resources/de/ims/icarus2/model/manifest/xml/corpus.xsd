@@ -760,7 +760,7 @@
 					<xsd:documentation>Currently not used.</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
-			<xsd:element name="defaultValue" type="imf:textType">
+			<xsd:element ref="imf:defaultValueSubGroup">
 				<xsd:annotation>
 					<xsd:documentation>Value (or list of values) to be used when the user doesn't define or select a custom value.</xsd:documentation>
 				</xsd:annotation>
@@ -803,6 +803,25 @@
 			</xsd:annotation>
 		</xsd:attribute>
 	</xsd:complexType>
+	
+	<xsd:element name="defaultValueSubGroup" abstract="true" />
+	
+	<xsd:element name="defaultValue" substitutionGroup="imf:defaultValueSubGroup" type="imf:textType">
+		<xsd:annotation>
+			<xsd:documentation>A single default value</xsd:documentation>
+		</xsd:annotation>
+	</xsd:element>
+	
+	<xsd:element name="defaultValues" substitutionGroup="imf:defaultValueSubGroup">
+		<xsd:annotation>
+			<xsd:documentation>List of default values</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="value" type="imf:textType" />
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
 	
 	<xsd:complexType name="propertyType" mixed="true">
 		<xsd:annotation>

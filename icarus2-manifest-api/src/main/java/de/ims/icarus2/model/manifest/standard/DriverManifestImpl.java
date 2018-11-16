@@ -28,6 +28,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.Category;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
@@ -509,7 +511,7 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		 * @param extensionPointUid the extensionPointUid to set
 		 */
 		@Override
-		public void setExtensionPointUid(String extensionPointUid) {
+		public void setExtensionPointUid(@Nullable String extensionPointUid) {
 			checkNotLocked();
 
 			setExtensionPointUid0(extensionPointUid);
@@ -601,7 +603,8 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		 */
 		@Override
 		public Optional<ModuleSpec> getModuleSpec() {
-			return moduleSpec==null ? Optional.empty() : moduleSpec.getOptional();
+			return Optional.ofNullable(moduleSpec)
+					.flatMap(ModuleSpecLink::getOptional);
 		}
 
 		/**

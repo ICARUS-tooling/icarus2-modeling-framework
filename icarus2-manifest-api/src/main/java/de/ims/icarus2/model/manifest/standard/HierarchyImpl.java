@@ -30,6 +30,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**
  * @author Markus Gärtner
@@ -131,5 +132,36 @@ public class HierarchyImpl<E extends Object> extends AbstractLockable implements
 	@Override
 	public Iterator<E> iterator() {
 		return items.iterator();
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "Hierarchy@"+items.toString();
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return items.hashCode();
+	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if(obj==this) {
+			return true;
+		} else if(obj instanceof Hierarchy) {
+			Hierarchy<?> other = (Hierarchy<?>) obj;
+			return CollectionUtils.<Object>equals(items, other.getItems());
+		}
+
+		return false;
 	}
 }

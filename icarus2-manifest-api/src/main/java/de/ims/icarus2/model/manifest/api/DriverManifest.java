@@ -23,6 +23,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.util.Multiplicity;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
@@ -222,7 +224,7 @@ public interface DriverManifest extends ForeignImplementationManifest, Embedded 
 	 */
 	@AccessControl(AccessPolicy.DENY)
 	public interface ModuleSpec extends ModifiableIdentity, Categorizable,
-			Lockable, Documentable, TypedManifest, Embedded {
+			ManifestFragment, Documentable, Embedded {
 
 		public static final boolean DEFAULT_IS_CUSTOMIZABLE = false;
 		public static final Multiplicity DEFAULT_MULTIPLICITY = Multiplicity.ONE;
@@ -286,7 +288,7 @@ public interface DriverManifest extends ForeignImplementationManifest, Embedded 
 
 		void setMultiplicity(Multiplicity multiplicity);
 		void setCustomizable(boolean customizable);
-		void setExtensionPointUid(String extensionPointUid);
+		void setExtensionPointUid(@Nullable String extensionPointUid);
 	}
 
 	/**

@@ -62,12 +62,16 @@ public abstract class AbstractManifestXmlDelegate<M extends Manifest> extends Ab
 		}
 	}
 
+	protected boolean isEmpty(M instance) {
+		return instance.isEmpty();
+	}
+
 	/**
 	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlElement#writeXml(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
 	public void writeXml(XmlSerializer serializer) throws XMLStreamException {
-		if(getInstance().isEmpty()) {
+		if(isEmpty(getInstance())) {
 			serializer.startEmptyElement(xmlTag());
 		} else {
 			serializer.startElement(xmlTag());

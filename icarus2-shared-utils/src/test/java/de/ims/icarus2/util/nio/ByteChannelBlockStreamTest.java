@@ -51,7 +51,7 @@ public class ByteChannelBlockStreamTest {
 	@MethodSource("data")
 	public void testFull(int bufferSize, boolean allocateDirect) throws Exception {
 		byte[] data = new byte[SIZE];
-		NIOUtil.randomize(data);
+		NIOTestUtil.randomize(data);
 
 		try(ByteArrayChannel channel = new ByteArrayChannel(data);
 				ByteChannelBlockStream stream = new ByteChannelBlockStream(channel, bufferSize, allocateDirect)) {
@@ -81,7 +81,7 @@ public class ByteChannelBlockStreamTest {
 	@MethodSource("data")
 	public void testParts(int bufferSize, boolean allocateDirect) throws Exception {
 		byte[] data = new byte[SIZE];
-		NIOUtil.randomize(data);
+		NIOTestUtil.randomize(data);
 
 		try(ByteArrayChannel channel = new ByteArrayChannel(data);
 				ByteChannelBlockStream stream = new ByteChannelBlockStream(channel, bufferSize, allocateDirect)) {

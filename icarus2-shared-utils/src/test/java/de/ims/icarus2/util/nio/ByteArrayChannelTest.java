@@ -66,7 +66,7 @@ public class ByteArrayChannelTest {
 	@Test
 	public void testWrite() throws Exception {
 		byte[] chunk = new byte[20];
-		NIOUtil.randomize(chunk);
+		NIOTestUtil.randomize(chunk);
 		ByteBuffer bb = ByteBuffer.wrap(chunk);
 
 		int offset = 0;
@@ -76,7 +76,7 @@ public class ByteArrayChannelTest {
 			byte[] expected = Arrays.copyOfRange(data, offset, offset+bytesWritten);
 			assertContentEquals(expected, bb);
 
-			NIOUtil.randomize(chunk);
+			NIOTestUtil.randomize(chunk);
 			offset += bytesWritten;
 			bb.clear();
 		}
@@ -86,7 +86,7 @@ public class ByteArrayChannelTest {
 
 	@Test
 	public void testRead() throws Exception {
-		NIOUtil.randomize(data);
+		NIOTestUtil.randomize(data);
 
 		ByteBuffer bb = ByteBuffer.allocate(20);
 		int offset = 0;
@@ -107,5 +107,16 @@ public class ByteArrayChannelTest {
 		int pos = 25;
 		channel.position(pos);
 		assertEquals(pos, channel.position());
+	}
+
+	@Test
+	public void testFromChars() throws Exception {
+		String in = "abcdefghijklmonp";
+		ByteArrayChannel channel = ByteArrayChannel.fromChars(in);
+
+		assertEquals(in.length()*2, channel.size());
+
+		ByteChannelCharacterSequence sequence = new ByteChannelCharacterSequence(channel);
+		assertEquals(in, sequence.toString());
 	}
 }

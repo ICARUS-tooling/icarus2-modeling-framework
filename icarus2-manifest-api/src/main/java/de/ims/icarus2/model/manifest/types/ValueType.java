@@ -223,7 +223,7 @@ public class ValueType implements StringResource, NamedObject {
 	};
 
 	public static final String ENUM_TYPE_LABEL = "enum";
-	public static final ValueType ENUM = new ValueType(ENUM_TYPE_LABEL, Enum.class, false, true) {
+	public static final ValueType ENUM = new ValueType(ENUM_TYPE_LABEL, Enum.class, true, true) {
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
@@ -252,7 +252,7 @@ public class ValueType implements StringResource, NamedObject {
 
 	// "Primitive"
 	public static final String STRING_TYPE_LABEL = "string";
-	public static final ValueType STRING = new ValueType(STRING_TYPE_LABEL, CharSequence.class, false, true) {
+	public static final ValueType STRING = new ValueType(STRING_TYPE_LABEL, CharSequence.class, true, true) {
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
 			return s;
@@ -337,7 +337,7 @@ public class ValueType implements StringResource, NamedObject {
 
 	// Resource links
 	public static final String URL_TYPE_LABEL = "url";
-	public static final ValueType URL = new ValueType(URL_TYPE_LABEL, Url.class, false, true) {
+	public static final ValueType URL = new ValueType(URL_TYPE_LABEL, Url.class, true, true) {
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
 			try {
@@ -426,7 +426,7 @@ public class ValueType implements StringResource, NamedObject {
 		}
 	};
 
-	public static final String IMAGE_RESOURCE_TYPE_LABEL = "image-resourc";
+	public static final String IMAGE_RESOURCE_TYPE_LABEL = "image-resource";
 	public static final ValueType IMAGE_RESOURCE = new ValueType(IMAGE_RESOURCE_TYPE_LABEL, IconLink.class, false, true) {
 		/**
 		 *
@@ -439,7 +439,7 @@ public class ValueType implements StringResource, NamedObject {
 	};
 
 	public static final String BINARY_TYPE_LABEL = "binary";
-	public static final ValueType BINARY_STREAM = new ValueType(BINARY_TYPE_LABEL, SeekableByteChannel.class, false, true) {
+	public static final ValueType BINARY_STREAM = new ValueType(BINARY_TYPE_LABEL, SeekableByteChannel.class, true, true) {
 
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
@@ -490,6 +490,10 @@ public class ValueType implements StringResource, NamedObject {
 
 	public static Set<ValueType> basicValueTypes() {
 		return filterIncluding(ValueType::isBasicType);
+	}
+
+	public static Set<ValueType> simpleValueTypes() {
+		return filterIncluding(ValueType::isSimpleType);
 	}
 
 	/**

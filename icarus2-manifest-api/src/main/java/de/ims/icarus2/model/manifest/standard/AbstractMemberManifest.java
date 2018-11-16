@@ -577,6 +577,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest, H extends
 		 */
 		@Override
 		public void setValue(@Nullable Object value) {
+			checkNotLocked();
 			checkValue(value);
 
 			this.value = Optional.ofNullable(value);
@@ -591,17 +592,28 @@ public abstract class AbstractMemberManifest<M extends MemberManifest, H extends
 		}
 
 		public void setOption(@Nullable Option option) {
+			checkNotLocked();
 			this.option = Optional.ofNullable(option);
 
 			checkValue(value.orElse(null));
 		}
 
+		/**
+		 *
+		 * @param name
+		 *
+		 * @see ManifestUtils#checkId(String)
+		 */
 		public void setName(String name) {
+			checkNotLocked();
 			requireNonNull(name);
+			ManifestUtils.checkId(name);
 			this.name = name;
 		}
 
 		public void setValueType(@Nullable ValueType valueType) {
+			checkNotLocked();
+			requireNonNull(valueType);
 			this.valueType = valueType;
 
 			checkValue(value.orElse(null));
@@ -609,6 +621,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest, H extends
 
 		@Override
 		public void setMultiValue(boolean multiValue) {
+			checkNotLocked();
 			this.multiValue = multiValue;
 		}
 

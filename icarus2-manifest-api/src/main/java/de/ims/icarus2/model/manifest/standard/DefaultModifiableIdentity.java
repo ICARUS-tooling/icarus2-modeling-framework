@@ -176,6 +176,6 @@ public class DefaultModifiableIdentity extends AbstractLockable implements Modif
 	 */
 	@Override
 	public String toString() {
-		return "ModifiableIdentity@"+(id==null ? "<unnamed>" : id); //$NON-NLS-1$ //$NON-NLS-2$
+		return "ModifiableIdentity@"+(id.orElse("<unnamed>"));
 	}
 }

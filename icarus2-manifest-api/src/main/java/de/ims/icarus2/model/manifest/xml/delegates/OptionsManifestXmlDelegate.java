@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.xml.delegates;
 
+import static de.ims.icarus2.util.collections.CollectionUtils.list;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -27,6 +29,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
+import de.ims.icarus2.model.manifest.api.ModifiableIdentity;
 import de.ims.icarus2.model.manifest.api.OptionsManifest;
 import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
 import de.ims.icarus2.model.manifest.api.ValueRange;
@@ -53,6 +56,8 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 	private ValueRangeXmlDelegate valueRangeXmlDelegate;
 
 	private Option option;
+
+	private ModifiableIdentity group;
 
 	public OptionsManifestXmlDelegate() {
 		// no-op
@@ -92,6 +97,9 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 		if(valueRangeXmlDelegate!=null) {
 			valueRangeXmlDelegate.reset();
 		}
+
+		option = null;
+		group = null;
 	}
 
 	/**
@@ -147,7 +155,16 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 				}
 
 				if(defaultValue.isPresent()) {
-					ManifestXmlUtils.writeValueElement(serializer, ManifestXmlTags.DEFAULT_VALUE, defaultValue.get(), type);
+					if(option.isMultiValue()) {
+						serializer.startElement(ManifestXmlTags.DEFAULT_VALUES);
+						Collection<?> defaultValues = (Collection<?>) defaultValue.get();
+						for(Object value : defaultValues) {
+							ManifestXmlUtils.writeValueElement(serializer, ManifestXmlTags.VALUE, value, type);
+						}
+						serializer.endElement(ManifestXmlTags.DEFAULT_VALUES);
+					} else {
+						ManifestXmlUtils.writeValueElement(serializer, ManifestXmlTags.DEFAULT_VALUE, defaultValue.get(), type);
+					}
 				}
 
 				if(valueSet.isPresent()) {
@@ -167,11 +184,7 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 			List<Identity> identities = CollectionUtils.asSortedList(manifest.getLocalGroupIdentifiers(), Identity.COMPARATOR);
 
 			for(Identity group : identities) {
-				serializer.startEmptyElement(ManifestXmlTags.GROUP);
-
-				// ManifestXmlAttributes.ATTRIBUTES
-				ManifestXmlUtils.writeIdentityAttributes(serializer, group);
-				serializer.endElement(ManifestXmlTags.GROUP);
+				ManifestXmlUtils.writeIdentityElement(serializer, ManifestXmlTags.GROUP, group);
 			}
 		}
 	}
@@ -194,10 +207,16 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 		} break;
 
 		case ManifestXmlTags.GROUP: {
-			DefaultModifiableIdentity identity = new DefaultModifiableIdentity();
-			ManifestXmlUtils.readIdentityAttributes(attributes, identity);
+			group = new DefaultModifiableIdentity();
+			ManifestXmlUtils.readIdentityAttributes(attributes, group);
 
-			getInstance().addGroupIdentifier(identity);
+			getInstance().addGroupIdentifier(group);
+		} break;
+
+		case ManifestXmlTags.NAME:
+		case ManifestXmlTags.DESCRIPTION:
+		case ManifestXmlTags.ICON: {
+			// no-op
 		} break;
 
 		case ManifestXmlTags.VALUE_RANGE : {
@@ -210,6 +229,11 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 
 		case ManifestXmlTags.DEFAULT_VALUE : {
 			// only handled when closing element
+		} break;
+
+		case ManifestXmlTags.VALUE :
+		case ManifestXmlTags.DEFAULT_VALUES : {
+			// no-op
 		} break;
 
 		case ManifestXmlTags.EXTENSION_POINT : {
@@ -235,7 +259,19 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 		} break;
 
 		case ManifestXmlTags.GROUP: {
-			// no-op
+			group = null;
+		} break;
+
+		case ManifestXmlTags.NAME: {
+			group.setName(text);
+		} break;
+
+		case ManifestXmlTags.DESCRIPTION: {
+			group.setDescription(text);
+		} break;
+
+		case ManifestXmlTags.ICON: {
+			ManifestXmlUtils.iconValue(text, true).ifPresent(group::setIcon);
 		} break;
 
 		case ManifestXmlTags.OPTION: {
@@ -244,7 +280,15 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 		} break;
 
 		case ManifestXmlTags.DEFAULT_VALUE : {
-			addDefaultValue(option.getValueType().parse(text, manifestLocation.getClassLoader()));
+			option.setDefaultValue(option.getValueType().parseAndPersist(text, manifestLocation.getClassLoader()));
+		} break;
+
+		case ManifestXmlTags.DEFAULT_VALUES : {
+			// no-op
+		} break;
+
+		case ManifestXmlTags.VALUE : {
+			addDefaultValue(option.getValueType().parseAndPersist(text, manifestLocation.getClassLoader()));
 		} break;
 
 		case ManifestXmlTags.EXTENSION_POINT : {
@@ -259,18 +303,21 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 	}
 
 	protected void addDefaultValue(Object value) {
-		Object defaultValue = option.getDefaultValue();
+		Object defaultValue = option.getDefaultValue().orElse(null);
+
+		if(!option.isMultiValue())
+			throw new IllegalStateException("Cannot add more than one default value "
+					+ "to option that is not declared as multivalue");
+
 		if(defaultValue instanceof Collection) {
 			Collection.class.cast(defaultValue).add(value);
 		} else if(defaultValue!=null) {
-			if(!option.isMultiValue())
-				throw new IllegalStateException("Cannot add more than one default value to optin that is not declared as multivalue"); //$NON-NLS-1$
 
 			List<Object> list = new ArrayList<>(4);
 			CollectionUtils.feedItems(list, defaultValue, value);
 			option.setDefaultValue(list);
 		}  else {
-			option.setDefaultValue(value);
+			option.setDefaultValue(list(value));
 		}
 	}
 

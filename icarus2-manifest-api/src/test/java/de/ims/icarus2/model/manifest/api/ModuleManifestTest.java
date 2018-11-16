@@ -19,22 +19,58 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubId;
+import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
+import static de.ims.icarus2.test.TestUtils.assertNotPresent;
+import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
+import static de.ims.icarus2.test.TestUtils.settings;
+import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+
+import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec;
+import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.Provider;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface ModuleManifestTest {
+public interface ModuleManifestTest<M extends ModuleManifest> extends EmbeddedTest<M>,
+		ForeignImplementationManifestTest<M> {
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest#getManifestType()}.
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
-	@Test
-	default void testGetManifestType() {
-		fail("Not yet implemented");
+	@Override
+	@Provider
+	default M createTestInstance(TestSettings settings) {
+		return ForeignImplementationManifestTest.super.createTestInstance(settings);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
+	 */
+	@Override
+	default Set<ManifestType> getAllowedHostTypes() {
+		return singleton(ManifestType.DRIVER_MANIFEST);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.MODULE_MANIFEST;
 	}
 
 	/**
@@ -42,23 +78,31 @@ public interface ModuleManifestTest {
 	 */
 	@Test
 	default void testGetDriverManifest() {
-		fail("Not yet implemented");
+		assertHostGetter(ModuleManifest::getDriverManifest);
 	}
 
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest#getHost()}.
-	 */
-	@Test
-	default void testGetHost() {
-		fail("Not yet implemented");
-	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest#getModuleSpec()}.
 	 */
 	@Test
 	default void testGetModuleSpec() {
-		fail("Not yet implemented");
+
+		// Test unlinked module
+		assertNotPresent(create().getModuleSpec());
+
+		// Test linked module
+
+		String specId = "spec1";
+		ModuleSpec spec = stubId(mockTypedManifest(ManifestType.MODULE_SPEC), specId);
+		DriverManifest driverManifest = mockTypedManifest(ManifestType.DRIVER_MANIFEST);
+		when(driverManifest.getModuleSpec(any())).thenReturn(Optional.empty());
+		when(driverManifest.getModuleSpec(eq(specId))).thenReturn(Optional.of(spec));
+
+		M instance = createEmbedded(settings(), driverManifest);
+		assertNotPresent(instance.getModuleSpec());
+		instance.setModuleSpecId(specId);
+		assertOptionalEquals(spec, instance.getModuleSpec());
 	}
 
 	/**
@@ -66,7 +110,10 @@ public interface ModuleManifestTest {
 	 */
 	@Test
 	default void testSetModuleSpecId() {
-		fail("Not yet implemented");
+		assertLockableSetterBatch(settings(),
+				ModuleManifest::setModuleSpecId,
+				ManifestTestUtils.getLegalIdValues(),
+				NPE_CHECK, INVALID_ID_CHECK, ManifestTestUtils.getIllegalIdValues());
 	}
 
 }

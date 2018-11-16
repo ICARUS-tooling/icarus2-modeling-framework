@@ -48,7 +48,7 @@ import de.ims.icarus2.util.xml.XmlSerializer;
  */
 public class ContextManifestXmlDelegate extends AbstractMemberManifestXmlDelegate<ContextManifest> {
 
-	private LayerGroupManifestXmlHandler layerGroupManifestXmlHandler;
+	private LayerGroupManifestXmlDelegate layerGroupManifestXmlDelegate;
 	private DriverManifestXmlDelegate driverManifestXmlDelegate;
 	private LocationManifestXmlDelegate locationManifestXmlDelegate;
 
@@ -66,11 +66,11 @@ public class ContextManifestXmlDelegate extends AbstractMemberManifestXmlDelegat
 		setInstance(new ContextManifestImpl(corpusManifest));
 	}
 
-	private LayerGroupManifestXmlHandler getLayerGroupManifestXmlHandler() {
-		if(layerGroupManifestXmlHandler==null) {
-			layerGroupManifestXmlHandler = new LayerGroupManifestXmlHandler();
+	private LayerGroupManifestXmlDelegate getLayerGroupManifestXmlHandler() {
+		if(layerGroupManifestXmlDelegate==null) {
+			layerGroupManifestXmlDelegate = new LayerGroupManifestXmlDelegate();
 		}
-		return layerGroupManifestXmlHandler;
+		return layerGroupManifestXmlDelegate;
 	}
 
 	private DriverManifestXmlDelegate getDriverManifestXmlDelegate() {
@@ -94,8 +94,8 @@ public class ContextManifestXmlDelegate extends AbstractMemberManifestXmlDelegat
 	public void reset() {
 		super.reset();
 
-		if(layerGroupManifestXmlHandler!=null) {
-			layerGroupManifestXmlHandler.reset();
+		if(layerGroupManifestXmlDelegate!=null) {
+			layerGroupManifestXmlDelegate.reset();
 		}
 
 		if(driverManifestXmlDelegate!=null) {
@@ -338,7 +338,7 @@ public class ContextManifestXmlDelegate extends AbstractMemberManifestXmlDelegat
 		} break;
 
 		case ManifestXmlTags.LAYER_GROUP : {
-			getInstance().addLayerGroup(((LayerGroupManifestXmlHandler) handler).getInstance());
+			getInstance().addLayerGroup(((LayerGroupManifestXmlDelegate) handler).getInstance());
 		} break;
 
 		case ManifestXmlTags.DRIVER: {

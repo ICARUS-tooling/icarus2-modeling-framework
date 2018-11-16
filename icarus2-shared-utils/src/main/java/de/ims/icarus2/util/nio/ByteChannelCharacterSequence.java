@@ -26,6 +26,7 @@ import java.nio.channels.SeekableByteChannel;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusException;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.strings.StringUtil;
 
 /**
  * Implements a {@link CharSequence} that reads its content from an underlying
@@ -57,11 +58,24 @@ public class ByteChannelCharacterSequence implements CharSequence {
 		}
 	}
 
+	/**
+	 * Private constructor for sub-sequencing
+	 * @param channel
+	 * @param start
+	 * @param end
+	 */
 	private ByteChannelCharacterSequence(SeekableByteChannel channel, int start, int end) {
 
 		this.channel = channel;
 		this.start = start;
 		this.end = end;
+	}
+
+	/**
+	 * @return the channel
+	 */
+	public SeekableByteChannel getChannel() {
+		return channel;
 	}
 
 	/**
@@ -82,14 +96,28 @@ public class ByteChannelCharacterSequence implements CharSequence {
 
 		long idx = (start+(long)index)<<1;
 
+		long position = -1;
 		try {
+			position = channel.position();
+
 			channel.position(idx);
 			if(channel.read(buffer)!=2)
 				throw new IndexOutOfBoundsException();
 
+			buffer.flip();
+
 			return (char)((buffer.get(0) << 8) | (buffer.get(1) & 0xff));
 		} catch (IOException e) {
 			throw new IcarusException(GlobalErrorCode.IO_ERROR, "Failed to read channel", e);
+		} finally {
+			buffer.clear();
+			if(position!=-1) {
+				try {
+					channel.position(position);
+				} catch (IOException e) {
+					throw new IcarusException(GlobalErrorCode.IO_ERROR, "Failed to reset channel position", e);
+				}
+			}
 		}
 	}
 
@@ -99,9 +127,17 @@ public class ByteChannelCharacterSequence implements CharSequence {
 	@Override
 	public CharSequence subSequence(int start, int end) {
 		checkArgument(start<=end);
-		if(start<0 || end<0 || end>=length())
+		if(start<0 || end<0 || end>length())
 			throw new IndexOutOfBoundsException();
 
 		return new ByteChannelCharacterSequence(channel, this.start+start, this.start+end);
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return StringUtil.toString(this);
 	}
 }

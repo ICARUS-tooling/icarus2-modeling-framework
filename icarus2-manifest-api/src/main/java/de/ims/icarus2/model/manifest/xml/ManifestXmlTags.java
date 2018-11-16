@@ -82,6 +82,7 @@ public class ManifestXmlTags {
 	public static final String OPTION = "option";
 	public static final String EXTENSION_POINT = "extensionPoint";
 	public static final String DEFAULT_VALUE = "defaultValue";
+	public static final String DEFAULT_VALUES = "defaultValues";
 	public static final String IMPLEMENTATION = "implementation";
 	public static final String DOCUMENTATION = "documentation";
 	public static final String CONTENT = "content";

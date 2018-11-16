@@ -68,7 +68,8 @@ public class ContainerManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 
 		// Write container type
 		if(manifest.isLocalContainerType()) {
-			serializer.writeAttribute(ManifestXmlAttributes.CONTAINER_TYPE, manifest.getContainerType().getStringValue());
+			serializer.writeAttribute(ManifestXmlAttributes.CONTAINER_TYPE,
+					manifest.getContainerType().getStringValue());
 		}
 	}
 

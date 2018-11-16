@@ -161,13 +161,8 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 	 */
 	@Override
 	public String toString() {
-		String s = getManifestType().toString();
-
-		if(getId()!=null) {
-			s += "@"+getId(); //$NON-NLS-1$
-		}
-
-		return s;
+		return getManifestType().toString()
+				+"@"+ getId().orElse("<unnamed>");
 	}
 
 	/**

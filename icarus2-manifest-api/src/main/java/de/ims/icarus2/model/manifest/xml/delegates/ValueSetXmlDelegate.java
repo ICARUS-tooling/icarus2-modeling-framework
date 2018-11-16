@@ -28,6 +28,7 @@ import de.ims.icarus2.model.manifest.api.ValueManifest;
 import de.ims.icarus2.model.manifest.api.ValueSet;
 import de.ims.icarus2.model.manifest.standard.ValueSetImpl;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
@@ -87,9 +88,15 @@ public class ValueSetXmlDelegate extends AbstractXmlDelegate<ValueSet> {
 	 */
 	@Override
 	public void writeXml(XmlSerializer serializer) throws XMLStreamException {
-		serializer.startElement(ManifestXmlTags.VALUE_SET);
+		if(getInstance().valueCount()==0) {
+			serializer.startEmptyElement(ManifestXmlTags.VALUE_SET);
+		} else {
+			serializer.startElement(ManifestXmlTags.VALUE_SET);
+		}
 
 		ValueType type = getInstance().getValueType();
+
+		serializer.writeAttribute(ManifestXmlAttributes.VALUE_TYPE, type.getStringValue());
 
 		for(int i=0; i<getInstance().valueCount(); i++) {
 			Object value = getInstance().getValueAt(i);
@@ -112,6 +119,7 @@ public class ValueSetXmlDelegate extends AbstractXmlDelegate<ValueSet> {
 
 		switch (localName) {
 		case ManifestXmlTags.VALUE_SET: {
+			//TODO verify that if valueType attribute is present, it matches the one in our instance!
 			// no-op
 		} break;
 
@@ -140,7 +148,7 @@ public class ValueSetXmlDelegate extends AbstractXmlDelegate<ValueSet> {
 		} break;
 
 		case ManifestXmlTags.VALUE : {
-			Object value = getInstance().getValueType().parse(text, manifestLocation.getClassLoader());
+			Object value = getInstance().getValueType().parseAndPersist(text, manifestLocation.getClassLoader());
 
 			getInstance().addValue(value);
 		} break;

@@ -22,6 +22,7 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
+import java.util.Arrays;
 
 import de.ims.icarus2.util.IcarusUtils;
 
@@ -54,7 +55,7 @@ public class ByteArrayChannel implements SeekableByteChannel {
 			char c = s.charAt(i);
 
 			int idx = i<<1;
-			data[idx] = (byte) (c>>8);
+			data[idx] = (byte) ((c>>8) & MASK);
 			data[idx+1] = (byte) (c & MASK);
 		}
 
@@ -64,7 +65,7 @@ public class ByteArrayChannel implements SeekableByteChannel {
 	private final byte[] data;
 	private final boolean readOnly;
 
-	private int position;
+	private transient int position;
 	private int size;
 
 	public ByteArrayChannel(byte[] data) {
@@ -193,4 +194,35 @@ public class ByteArrayChannel implements SeekableByteChannel {
 		return this;
 	}
 
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if(obj==this) {
+			return true;
+		} else if(obj instanceof ByteArrayChannel) {
+			ByteArrayChannel other = (ByteArrayChannel) obj;
+			return size==other.size
+					&& readOnly==other.readOnly
+					&& position==other.position
+					&& Arrays.equals(data, other.data);
+		}
+		return false;
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return new StringBuilder(getClass().getName())
+				.append("[")
+				.append("size=").append(size).append(", ")
+				.append("position=").append(position).append(", ")
+				.append("readOnly=").append(readOnly).append(", ")
+				.append("dataHash=").append(Arrays.hashCode(data))
+				.append("]")
+				.toString();
+	}
 }

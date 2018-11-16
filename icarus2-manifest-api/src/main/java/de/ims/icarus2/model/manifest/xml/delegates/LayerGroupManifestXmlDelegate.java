@@ -49,7 +49,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  * @author Markus Gärtner
  *
  */
-public class LayerGroupManifestXmlHandler extends AbstractXmlDelegate<LayerGroupManifest> {
+public class LayerGroupManifestXmlDelegate extends AbstractXmlDelegate<LayerGroupManifest> {
 
 	@SuppressWarnings("rawtypes")
 	private static final Map<ManifestType, Supplier<? extends AbstractLayerManifestXmlDelegate>>
@@ -79,19 +79,19 @@ public class LayerGroupManifestXmlHandler extends AbstractXmlDelegate<LayerGroup
 		return (D) delegate;
 	}
 
-	public LayerGroupManifestXmlHandler() {
+	public LayerGroupManifestXmlDelegate() {
 		// no-op
 	}
 
-	public LayerGroupManifestXmlHandler(LayerGroupManifest groupManifest) {
+	public LayerGroupManifestXmlDelegate(LayerGroupManifest groupManifest) {
 		setInstance(groupManifest);
 	}
 
-	public LayerGroupManifestXmlHandler(ContextManifest contextManifest) {
+	public LayerGroupManifestXmlDelegate(ContextManifest contextManifest) {
 		setInstance(new LayerGroupManifestImpl(contextManifest));
 	}
 
-	public LayerGroupManifestXmlHandler reset(ContextManifest contextManifest) {
+	public LayerGroupManifestXmlDelegate reset(ContextManifest contextManifest) {
 		reset();
 		setInstance(new LayerGroupManifestImpl(contextManifest));
 
@@ -108,6 +108,8 @@ public class LayerGroupManifestXmlHandler extends AbstractXmlDelegate<LayerGroup
 		LayerGroupManifest manifest = getInstance();
 
 		ManifestXmlUtils.writeIdentityAttributes(serializer, manifest);
+
+		ManifestXmlUtils.writeIdentityFieldElements(serializer, manifest);
 
 		writeFlag(serializer, ManifestXmlAttributes.INDEPENDENT, manifest.isIndependent(), LayerGroupManifest.DEFAULT_INDEPENDENT_VALUE);
 
@@ -150,6 +152,12 @@ public class LayerGroupManifestXmlHandler extends AbstractXmlDelegate<LayerGroup
 				.ifPresent(manifest::setPrimaryLayerId);
 		} break;
 
+		case ManifestXmlTags.NAME:
+		case ManifestXmlTags.DESCRIPTION:
+		case ManifestXmlTags.ICON: {
+			handler = this;
+		} break;
+
 		case ManifestXmlTags.ITEM_LAYER : {
 			ItemLayerManifestXmlDelegate delegate = getLayerDelegate(ManifestType.ITEM_LAYER_MANIFEST);
 			handler = delegate.reset(getInstance());
@@ -186,16 +194,34 @@ public class LayerGroupManifestXmlHandler extends AbstractXmlDelegate<LayerGroup
 	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
+
+		ManifestXmlHandler handler = null;
+
 		switch (localName) {
 		case ManifestXmlTags.LAYER_GROUP: {
 			// no-op
+		} break;
+
+		case ManifestXmlTags.NAME: {
+			getInstance().setName(text);
+			handler = this;
+		} break;
+
+		case ManifestXmlTags.DESCRIPTION: {
+			getInstance().setDescription(text);
+			handler = this;
+		} break;
+
+		case ManifestXmlTags.ICON: {
+			ManifestXmlUtils.iconValue(text, true).ifPresent(getInstance()::setIcon);
+			handler = this;
 		} break;
 
 		default:
 			throw new UnexpectedTagException(qName, false, ManifestXmlTags.LAYER_GROUP);
 		}
 
-		return Optional.empty();
+		return Optional.ofNullable(handler);
 	}
 
 	/**

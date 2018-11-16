@@ -18,6 +18,7 @@ package de.ims.icarus2.model.manifest.standard;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -262,7 +263,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 
 	public static class OptionImpl extends DefaultModifiableIdentity implements Option {
 		private Optional<Object> defaultValue = Optional.empty();
-		private ValueType valueType;
+		private Optional<ValueType> valueType = Optional.empty();
 		private Optional<String> group = Optional.empty();
 		private Optional<ValueSet> values = Optional.empty();
 		private Optional<ValueRange> range = Optional.empty();
@@ -321,7 +322,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		 */
 		@Override
 		public ValueType getValueType() {
-			return valueType;
+			return valueType.orElse(ValueType.STRING);
 		}
 		/**
 		 * @see de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getSupportedValues()
@@ -385,7 +386,13 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		protected OptionImpl setDefaultValue0(Object defaultValue) {
 
 			if(defaultValue!=null) {
-				valueType.checkValue(defaultValue);
+				if(isMultiValue()) {
+					for(Object value : Collection.class.cast(defaultValue)) {
+						getValueType().checkValue(value);
+					}
+				} else {
+					getValueType().checkValue(defaultValue);
+				}
 			}
 
 			this.defaultValue = Optional.ofNullable(defaultValue);
@@ -409,7 +416,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 			if(!Option.SUPPORTED_VALUE_TYPES.contains(valueType))
 				throw new UnsupportedValueTypeException(valueType);
 
-			this.valueType = valueType;
+			this.valueType = Optional.of(valueType);
 
 			return this;
 		}
@@ -446,7 +453,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 
 		protected OptionImpl setSupportedValues0(ValueSet values) {
 
-			if(values!=null && !valueType.equals(values.getValueType()))
+			if(values!=null && !getValueType().equals(values.getValueType()))
 				throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
 						"Incompatible value type defined for value set: expected "+valueType+" - got "+values.getValueType()); //$NON-NLS-1$ //$NON-NLS-2$
 
@@ -467,7 +474,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 
 		protected OptionImpl setSupportedRange0(ValueRange range) {
 
-			if(range!=null && !valueType.equals(range.getValueType()))
+			if(range!=null && !getValueType().equals(range.getValueType()))
 				throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
 						"Incompatible value type defined for range: expected "+valueType+" - got "+range.getValueType()); //$NON-NLS-1$ //$NON-NLS-2$
 

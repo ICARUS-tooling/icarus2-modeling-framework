@@ -41,7 +41,7 @@ public class XmlStreamSerializer implements XmlSerializer {
 
 	private int indent = 0;
 	private boolean nested = false;
-	private boolean noNesting = false;
+	private boolean elementIsEmpty = false;
 
 	private Stack<String> trace = new Stack<>();
 
@@ -102,14 +102,14 @@ public class XmlStreamSerializer implements XmlSerializer {
 
 	@Override
 	public void startElement(String name, boolean empty) throws XMLStreamException {
-		checkState("Cannot nest elements until current one is closed", !noNesting);
+		checkState("Cannot nest elements until current one is closed", !elementIsEmpty);
 
 		writeLineBreak();
 		writeIndent();
 
 		if(empty) {
 			writer.writeEmptyElement(name);
-			noNesting = true;
+			elementIsEmpty = true;
 		} else {
 			writer.writeStartElement(name);
 		}
@@ -147,15 +147,17 @@ public class XmlStreamSerializer implements XmlSerializer {
 		if(nested) {
 			writeLineBreak();
 			writeIndent();
-			writer.writeEndElement();
 		} else {
-			if(flushCharacters()) {
-				writer.writeEndElement();
-			}
+			flushCharacters();
+		}
+
+		// XMLStreamWriter no longer writes the close tag explicitly
+		if(!elementIsEmpty) {
+			writer.writeEndElement();
 		}
 
 		nested = true;
-		noNesting = false;
+		elementIsEmpty = false;
 	}
 
 	/**

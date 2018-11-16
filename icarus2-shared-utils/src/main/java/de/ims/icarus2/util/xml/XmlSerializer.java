@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.util.xml;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Optional;
 
 import javax.xml.stream.XMLStreamException;
@@ -126,6 +128,8 @@ public interface XmlSerializer extends AutoCloseable {
 	void endElement(String name) throws XMLStreamException;
 
 	default void writeTextOrCData(CharSequence text) throws XMLStreamException {
+		requireNonNull(text);
+
 		if(XmlUtils.hasReservedXMLSymbols(text)) {
 			writeCData(text);
 		} else {

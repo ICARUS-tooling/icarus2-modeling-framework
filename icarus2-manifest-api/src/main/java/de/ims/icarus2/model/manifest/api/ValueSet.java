@@ -114,4 +114,6 @@ public interface ValueSet extends Lockable, TypedManifest {
 	void addValue(Object value, int index);
 
 	void removeValue(int index);
+
+	void removeAllValues();
 }

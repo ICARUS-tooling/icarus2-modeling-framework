@@ -74,7 +74,7 @@ public class SubChannelTest {
 
 		int size = 20;
 
-		ByteBuffer bb = NIOUtil.randomBuffer(size);
+		ByteBuffer bb = NIOTestUtil.randomBuffer(size);
 		int bytesWritten = subChannel.write(bb);
 
 		assertEquals(size, bytesWritten);
@@ -94,7 +94,7 @@ public class SubChannelTest {
 
 		subChannel.setOffsets(pos, size);
 
-		ByteBuffer bb = NIOUtil.randomBuffer(size);
+		ByteBuffer bb = NIOTestUtil.randomBuffer(size);
 		int bytesWritten = subChannel.write(bb);
 
 		assertEquals(size, bytesWritten);
@@ -111,7 +111,7 @@ public class SubChannelTest {
 		subChannel.setOffsets(20, 0);
 		assertEquals(0, subChannel.size());
 
-		ByteBuffer bb = NIOUtil.randomBuffer(10);
+		ByteBuffer bb = NIOTestUtil.randomBuffer(10);
 		int bytesWritten = subChannel.write(bb);
 		assertTrue(bytesWritten<=0);
 

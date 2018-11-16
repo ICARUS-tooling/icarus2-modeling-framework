@@ -20,15 +20,12 @@
 package de.ims.icarus2.util.nio;
 
 import java.nio.ByteBuffer;
-import java.util.Random;
 
 /**
  * @author Markus Gärtner
  *
  */
 public class NIOUtil {
-
-	private static final Random RANDOM = new Random(System.currentTimeMillis()^NIOUtil.class.hashCode());
 
 	private static final byte[] EMPTY_BYTES = {};
 
@@ -57,16 +54,4 @@ public class NIOUtil {
 	public static ByteBuffer emptyBuffer() {
 		return EMPTY_BUFFER;
 	}
-
-	public static ByteBuffer randomBuffer(int size) {
-		byte[] data = new byte[size];
-		randomize(data);
-		return ByteBuffer.wrap(data);
-	}
-
-	public static void randomize(byte[] data) {
-		RANDOM.nextBytes(data);
-	}
-
-	//TODO add methods for filling channels etc...
 }

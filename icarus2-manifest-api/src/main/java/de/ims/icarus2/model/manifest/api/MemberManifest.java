@@ -190,9 +190,29 @@ public interface MemberManifest extends ModifiableIdentity, Categorizable, Docum
 	 */
 	void setOptionsManifest(@Nullable OptionsManifest optionsManifest);
 
+	// Extension of Categorizable
+
+//	boolean isLocalCategory(Category category);
+//
+//	default void forEachLocalCategory(Consumer<? super Category> action) {
+//		forEachCategory(c -> {
+//			if(isLocalCategory(c)) {
+//				action.accept(c);
+//			}
+//		});
+//	}
+//
+//	default Set<Category> getLocalCategories() {
+//		return LazyCollection.<Category>lazySet()
+//				.addFromForEach(this::forEachLocalCategory)
+//				.getAsSet();
+//	}
+
 	// Modification methods
 
 	public interface Property extends Cloneable, Lockable {
+
+		public static final boolean DEFAULT_MULTI_VALUE = false;
 
 		ValueType getValueType();
 

@@ -30,7 +30,6 @@ import de.ims.icarus2.model.manifest.api.Category;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest.Note;
 import de.ims.icarus2.model.manifest.api.Documentation.Resource;
-import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.api.ModifiableIdentity;
 import de.ims.icarus2.model.manifest.standard.DefaultCategory;
@@ -122,9 +121,10 @@ public final class ManifestXmlUtils {
 	}
 
 	public static Optional<String> getSerializedForm(TargetLayerManifest manifest) {
-		Optional<PrerequisiteManifest> optPrereq = manifest.getPrerequisite();
-		return optPrereq.isPresent() ? optPrereq.map(PrerequisiteManifest::getAlias)
-				: manifest.getResolvedLayerManifest().flatMap(LayerManifest::getId);
+//		Optional<PrerequisiteManifest> optPrereq = manifest.getPrerequisite();
+//		return optPrereq.isPresent() ? optPrereq.map(PrerequisiteManifest::getAlias)
+//				: manifest.getResolvedLayerManifest().flatMap(LayerManifest::getId);
+		return Optional.of(manifest.getLayerId());
 	}
 
 	/**
@@ -157,18 +157,36 @@ public final class ManifestXmlUtils {
 		serializer.endElement(name);
 	}
 
-	private static void maybeWriteElement(XmlSerializer serializer, String name, Optional<String> content) throws XMLStreamException {
+	private static boolean maybeWriteElement(XmlSerializer serializer, String name, Optional<String> content) throws XMLStreamException {
 		if(content.isPresent() && XmlUtils.hasIllegalAttributeSymbols(content.get())) {
-			serializer.startEmptyElement(name);
+			serializer.startElement(name);
 			serializer.writeTextOrCData(content.get());
 			serializer.endElement(name);
+			return true;
 		}
+
+		return false;
 	}
 
-	public static void writeIdentityFieldElements(XmlSerializer serializer, Identity identity) throws XMLStreamException {
-		maybeWriteElement(serializer, ManifestXmlTags.NAME, identity.getName());
-		maybeWriteElement(serializer, ManifestXmlTags.DESCRIPTION, identity.getDescription());
-		maybeWriteElement(serializer, ManifestXmlTags.ICON, serializeIcon(identity.getIcon().orElse(null)));
+	public static void writeIdentityElement(XmlSerializer serializer,
+			String name, Identity identity) throws XMLStreamException {
+		String iconString = identity.getIcon().flatMap(ManifestXmlUtils::serialize).orElse(null);
+		boolean empty = XmlUtils.isLegalAttribute(identity.getName())
+				&& XmlUtils.isLegalAttribute(identity.getDescription())
+				&& (iconString==null || !XmlUtils.hasIllegalAttributeSymbols(iconString));
+
+		serializer.startElement(name, empty);
+		writeIdentityAttributes(serializer, identity);
+		writeIdentityFieldElements(serializer, identity);
+		serializer.endElement(name);
+	}
+
+	public static boolean writeIdentityFieldElements(XmlSerializer serializer, Identity identity) throws XMLStreamException {
+		boolean elementsWritten = false;
+		elementsWritten |= maybeWriteElement(serializer, ManifestXmlTags.NAME, identity.getName());
+		elementsWritten |= maybeWriteElement(serializer, ManifestXmlTags.DESCRIPTION, identity.getDescription());
+		elementsWritten |= maybeWriteElement(serializer, ManifestXmlTags.ICON, serializeIcon(identity.getIcon().orElse(null)));
+		return elementsWritten;
 	}
 
 	public static void writeIdentityFieldElements(XmlSerializer serializer, String name, String description, Icon icon) throws XMLStreamException {
@@ -251,7 +269,7 @@ public final class ManifestXmlUtils {
 		}
 
 		serializer.startElement(ManifestXmlTags.CODE);
-		serializer.writeCData(expression.getCode());
+		serializer.writeTextOrCData(expression.getCode());
 		serializer.endElement(ManifestXmlTags.CODE);
 
 		serializer.endElement(ManifestXmlTags.EVAL);
@@ -435,7 +453,7 @@ public final class ManifestXmlUtils {
 		return Optional.ofNullable((value==null || value.isEmpty()) ? null : value);
 	}
 
-	private static Optional<String> serializeIcon(Icon icon) {
+	public static Optional<String> serializeIcon(Icon icon) {
 		if(icon==null) {
 			return Optional.empty();
 		}
@@ -448,6 +466,11 @@ public final class ManifestXmlUtils {
 		return Optional.of(iconString);
 	}
 
+	/**
+	 * Tries to serialize values. Unpacks {@link Optional} arguments first.
+	 * @param value
+	 * @return
+	 */
 	public static Optional<String> serialize(Object value) {
 		if(value instanceof Optional) {
 			value = ((Optional<?>)value).orElse(null);

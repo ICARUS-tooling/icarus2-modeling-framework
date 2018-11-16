@@ -21,6 +21,7 @@ import java.util.Set;
 
 import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec;
+import de.ims.icarus2.util.LazyStore;
 
 /**
  * @author Markus Gärtner
@@ -110,13 +111,22 @@ public enum ManifestType {
 
 		MODULE_SPEC.require(DRIVER_MANIFEST);
 
-		OPTION.require(memberTypes);
+		MAPPING_MANIFEST.require(DRIVER_MANIFEST);
+
+		OPTIONS_MANIFEST.require(memberTypes);
 
 		IMPLEMENTATION_MANIFEST.require(memberTypes);
 
 		PATH_RESOLVER_MANIFEST.require(LOCATION_MANIFEST);
 
 		RASTERIZER_MANIFEST.require(FRAGMENT_LAYER_MANIFEST);
+	}
+
+	private static final LazyStore<ManifestType, Class<? extends TypedManifest>> store
+		= new LazyStore<>(ManifestType.class, ManifestType::getBaseClass);
+
+	public static ManifestType forClass(Class<? extends TypedManifest> clazz) {
+		return store.lookup(clazz);
 	}
 
 	private final boolean supportTemplating;

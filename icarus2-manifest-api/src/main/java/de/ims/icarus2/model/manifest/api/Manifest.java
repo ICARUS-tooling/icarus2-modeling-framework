@@ -156,6 +156,9 @@ public interface Manifest extends ManifestFragment {
 	 * Returns {@code true} if and only if this manifest does not contain
 	 * any complex sub-elements of its own but instead derives them from
 	 * potentially defined templates.
+	 * <p>
+	 * This method is a remnant of when the model part of the manifest
+	 * framework was still been tied to the default serialization facilities.
 	 *
 	 * @return
 	 */

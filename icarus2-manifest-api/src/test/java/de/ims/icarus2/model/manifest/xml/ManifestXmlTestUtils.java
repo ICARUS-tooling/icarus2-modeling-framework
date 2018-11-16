@@ -59,7 +59,7 @@ public class ManifestXmlTestUtils {
 	 * <p>
 	 * The original manifest and the result of the aforementioned processing chain are then
 	 * compared in depth via the {@link ClassUtils#deepDiff(Object, Object)} method. In case
-	 * the resulting {@link Trace  object contains any message entries that indicate differences
+	 * the resulting {@link Trace}  object contains any message entries that indicate differences
 	 * between the two objects, an {@code AssertionError} is thrown.
 	 *
 	 * @param manifest
@@ -105,17 +105,21 @@ public class ManifestXmlTestUtils {
 		}
 	}
 
-	public static <M extends Object> void assertSerializationEquals(String msg, M instance, M newInstance, ManifestXmlDelegate<? super M> delegate) throws Exception {
+	public static <M extends Object> void assertSerializationEquals(
+			String msg, M instance, M newInstance,
+			ManifestXmlDelegate<? super M> delegate, boolean allowValidation) throws Exception {
 
 		ClassLoader classLoader = instance.getClass().getClassLoader();
 		boolean isTemplate = false;
 
 		VirtualManifestOutputLocation outputLocation = new VirtualManifestOutputLocation(classLoader, isTemplate);
-		XmlSerializer serializer = ManifestXmlWriter.defaultCreateSerializer(outputLocation.getOutput());
+		try(XmlSerializer serializer = ManifestXmlWriter.defaultCreateSerializer(outputLocation.getOutput())) {
+			delegate.reset(instance);
 
-		delegate.reset(instance);
-
-		delegate.writeXml(serializer);
+			serializer.startDocument();
+			delegate.writeXml(serializer);
+			serializer.endDocument();
+		}
 
 		String xml = outputLocation.getContent();
 
@@ -138,7 +142,7 @@ public class ManifestXmlTestUtils {
 		 *  allows templating (i.e. top-level standalone mode), then we might
 		 *  as well use validating parser mode here.
 		 */
-		if(instance instanceof TypedManifest) {
+		if(allowValidation && instance instanceof TypedManifest) {
 			ManifestType type = ((TypedManifest) instance).getManifestType();
 			validate = type.isSupportTemplating();
 		}

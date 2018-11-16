@@ -19,13 +19,20 @@ package de.ims.icarus2.model.manifest.xml.delegates;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
+import java.util.Optional;
+import java.util.function.Supplier;
+
+import javax.xml.stream.XMLStreamException;
+
+import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlDelegate;
+import de.ims.icarus2.util.xml.XmlSerializer;
 
 /**
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractXmlDelegate<M extends Object> implements ManifestXmlDelegate<M> {
+public abstract class AbstractXmlDelegate<M extends TypedManifest> implements ManifestXmlDelegate<M> {
 
 	private M instance;
 
@@ -60,5 +67,19 @@ public abstract class AbstractXmlDelegate<M extends Object> implements ManifestX
 	@Override
 	public void reset() {
 		instance = null;
+	}
+
+	protected <M_sub extends TypedManifest> void serializeElement(M_sub element,
+			Supplier<ManifestXmlDelegate<M_sub>> delegateFunc, XmlSerializer serializer) throws XMLStreamException {
+		if(element!=null) {
+			delegateFunc.get().reset(element).writeXml(serializer);
+		}
+	}
+
+	protected <M_sub extends TypedManifest> void serializeElement(Optional<M_sub> element,
+			Supplier<ManifestXmlDelegate<M_sub>> delegateFunc, XmlSerializer serializer) throws XMLStreamException {
+		if(element.isPresent()) {
+			delegateFunc.get().reset(element.get()).writeXml(serializer);
+		}
 	}
 }

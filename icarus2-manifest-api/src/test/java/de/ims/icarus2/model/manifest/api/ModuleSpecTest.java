@@ -19,22 +19,55 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static de.ims.icarus2.test.TestUtils.DEFAULT;
+import static de.ims.icarus2.test.TestUtils.NO_CHECK;
+import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
+import static de.ims.icarus2.test.TestUtils.NO_NPE_CHECK;
+import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
+import static de.ims.icarus2.test.TestUtils.assertGetter;
+import static de.ims.icarus2.test.TestUtils.assertOptGetter;
+import static de.ims.icarus2.test.TestUtils.other;
+import static de.ims.icarus2.test.TestUtils.settings;
+import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
+
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec;
+import de.ims.icarus2.util.Multiplicity;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface ModuleSpecTest {
+public interface ModuleSpecTest<M extends ModuleSpec> extends ManifestFragmentTest<M>,
+		ModifiableIdentityTest<M>, DocumentableTest<M>, CategorizableTest<M>, EmbeddedTest<M> {
+
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec#getManifestType()}.
+	 * @see de.ims.icarus2.model.manifest.api.ManifestFragmentTest#testGetId()
 	 */
-	@Test
-	default void testGetManifestType() {
-		fail("Not yet implemented");
+	@Override
+	default void testGetId() {
+		ModifiableIdentityTest.super.testGetId();
+		ManifestFragmentTest.super.testGetId();
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
+	 */
+	@Override
+	default Set<ManifestType> getAllowedHostTypes() {
+		return singleton(ManifestType.DRIVER_MANIFEST);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.MODULE_SPEC;
 	}
 
 	/**
@@ -42,7 +75,7 @@ public interface ModuleSpecTest {
 	 */
 	@Test
 	default void testGetDriverManifest() {
-		fail("Not yet implemented");
+		assertHostGetter(ModuleSpec::getDriverManifest);
 	}
 
 	/**
@@ -50,7 +83,11 @@ public interface ModuleSpecTest {
 	 */
 	@Test
 	default void testIsCustomizable() {
-		fail("Not yet implemented");
+		assertGetter(create(),
+				Boolean.TRUE, Boolean.FALSE,
+				DEFAULT(Boolean.valueOf(ModuleSpec.DEFAULT_IS_CUSTOMIZABLE)),
+				ModuleSpec::isCustomizable,
+				ModuleSpec::setCustomizable);
 	}
 
 	/**
@@ -58,7 +95,13 @@ public interface ModuleSpecTest {
 	 */
 	@Test
 	default void testGetMultiplicity() {
-		fail("Not yet implemented");
+		for(Multiplicity multiplicity : Multiplicity.values()) {
+			assertGetter(create(),
+					multiplicity, other(multiplicity),
+					DEFAULT(ModuleSpec.DEFAULT_MULTIPLICITY),
+					ModuleSpec::getMultiplicity,
+					ModuleSpec::setMultiplicity);
+		}
 	}
 
 	/**
@@ -66,7 +109,11 @@ public interface ModuleSpecTest {
 	 */
 	@Test
 	default void testGetExtensionPointUid() {
-		fail("Not yet implemented");
+		assertOptGetter(create(),
+				"uid1", "uid2",
+				NO_DEFAULT(),
+				ModuleSpec::getExtensionPointUid,
+				ModuleSpec::setExtensionPointUid);
 	}
 
 	/**
@@ -74,7 +121,10 @@ public interface ModuleSpecTest {
 	 */
 	@Test
 	default void testSetMultiplicity() {
-		fail("Not yet implemented");
+		assertLockableSetterBatch(settings(),
+				ModuleSpec::setMultiplicity,
+				Multiplicity.values(),
+				NPE_CHECK, NO_CHECK);
 	}
 
 	/**
@@ -82,7 +132,7 @@ public interface ModuleSpecTest {
 	 */
 	@Test
 	default void testSetCustomizable() {
-		fail("Not yet implemented");
+		assertLockableSetter(settings(), ModuleSpec::setCustomizable);
 	}
 
 	/**
@@ -90,7 +140,10 @@ public interface ModuleSpecTest {
 	 */
 	@Test
 	default void testSetExtensionPointUid() {
-		fail("Not yet implemented");
+		assertLockableSetter(settings(),
+				ModuleSpec::setExtensionPointUid,
+				"uid1",
+				NO_NPE_CHECK, NO_CHECK);
 	}
 
 }

@@ -35,7 +35,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  * @author Markus Gärtner
  *
  */
-public class LazyStore<F extends StringResource, K extends Object> {
+public class LazyStore<F extends Object, K extends Object> {
 
 	public static <S extends StringResource> LazyStore<S, String> forStringResource(Class<S> clazz) {
 		return new LazyStore<>(clazz, StringResource::getStringValue);
@@ -48,7 +48,9 @@ public class LazyStore<F extends StringResource, K extends Object> {
 	private final Function<F, K> keyGen;
 
 	/**
-	 * @param clazz
+	 * @param clazz enum class from which to obtain instances
+	 * @param keyGen function to generate lookup keys. a {@code null} key indicates that an
+	 * instance should be ignored.
 	 */
 	public LazyStore(Class<F> clazz, Function<F, K> keyGen) {
 		this.clazz = requireNonNull(clazz);
@@ -64,7 +66,10 @@ public class LazyStore<F extends StringResource, K extends Object> {
 
 			F[] values = clazz.getEnumConstants();
 			for(F value : values) {
-				lookup.put(keyGen.apply(value), value);
+				K generatedKey = keyGen.apply(value);
+				if(generatedKey!=null) {
+					lookup.put(generatedKey, value);
+				}
 			}
 		}
 

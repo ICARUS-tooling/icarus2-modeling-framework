@@ -34,8 +34,8 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 		implements ImplementationManifest {
 
 	private SourceType sourceType;
-	private Optional<String> source = Optional.empty();
-	private Optional<String> classname = Optional.empty();
+	private String source;
+	private String classname;
 	private Boolean useFactory;
 
 	/**
@@ -80,7 +80,7 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	 */
 	@Override
 	public Optional<String> getSource() {
-		return getDerivable(source, ImplementationManifest::getSource);
+		return getDerivable(Optional.ofNullable(source), ImplementationManifest::getSource);
 	}
 
 	/**
@@ -88,7 +88,7 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	 */
 	@Override
 	public Optional<String> getClassname() {
-		return getDerivable(classname, ImplementationManifest::getClassname);
+		return getDerivable(Optional.ofNullable(classname), ImplementationManifest::getClassname);
 	}
 
 	/**
@@ -130,7 +130,7 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	}
 
 	protected void setSource0(String source) {
-		this.source = Optional.of(source);
+		this.source = source;
 	}
 
 	/**
@@ -144,7 +144,7 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	}
 
 	protected void setClassname0(String classname) {
-		this.classname = Optional.of(classname);
+		this.classname = classname;
 	}
 
 	/**
@@ -159,5 +159,25 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 
 	protected void setUseFactory0(boolean useFactory) {
 		this.useFactory = (useFactory==DEFAULT_USE_FACTORY_VALUE && !hasTemplate()) ? null : Boolean.valueOf(useFactory);
+	}
+
+	@Override
+	public boolean isLocalSourceType() {
+		return sourceType!=null;
+	}
+
+	@Override
+	public boolean isLocalSource() {
+		return source!=null;
+	}
+
+	@Override
+	public boolean isLocalClassname() {
+		return classname!=null;
+	}
+
+	@Override
+	public boolean isLocalUseFactory() {
+		return useFactory!=null;
 	}
 }

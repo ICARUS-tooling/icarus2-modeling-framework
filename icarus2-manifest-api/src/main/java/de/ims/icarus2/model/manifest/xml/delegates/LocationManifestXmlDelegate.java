@@ -88,6 +88,18 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 			.ifPresent(getInstance()::setIsInline);
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.xml.delegates.AbstractManifestXmlDelegate#writeAttributes(de.ims.icarus2.util.xml.XmlSerializer)
+	 */
+	@Override
+	protected void writeAttributes(XmlSerializer serializer) throws XMLStreamException {
+		super.writeAttributes(serializer);
+
+		if(getInstance().isInline()!=LocationManifest.DEFAULT_IS_INLINE) {
+			serializer.writeAttribute(ManifestXmlAttributes.INLINE, getInstance().isInline());
+		}
+	}
+
 	@Override
 	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
 		super.writeElements(serializer);
@@ -96,13 +108,13 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 
 		if(manifest.isInline()) {
 			serializer.startElement(ManifestXmlTags.CONTENT);
-			serializer.writeCData(manifest.getInlineData().get());
+			serializer.writeTextOrCData(manifest.getInlineData().get());
 			serializer.endElement(ManifestXmlTags.CONTENT);
 		} else {
 
-			if(manifest.getRootPath()!=null) {
+			if(manifest.getRootPath().isPresent()) {
 				serializer.startElement(ManifestXmlTags.PATH);
-				if(manifest.getRootPathType()!=null) {
+				if(manifest.getRootPathType().isPresent()) {
 					serializer.writeAttribute(ManifestXmlAttributes.TYPE,
 							manifest.getRootPathType().map(PathType::getStringValue));
 				}
@@ -112,7 +124,7 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 
 			// ELEMENTS
 
-			// Write rootPath entries
+			// Write path entries
 			for(PathEntry pathEntry : manifest.getPathEntries()) {
 				if(pathEntry.getType()==null)
 					throw new IllegalStateException("Path entry is missing type"); //$NON-NLS-1$
@@ -126,7 +138,7 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 			}
 
 			// Write rootPath resolver
-			if(manifest.getPathResolverManifest()!=null) {
+			if(manifest.getPathResolverManifest().isPresent()) {
 				getPathResolverManifestXmlDelegate().reset(manifest.getPathResolverManifest().get()).writeXml(serializer);
 			}
 		}

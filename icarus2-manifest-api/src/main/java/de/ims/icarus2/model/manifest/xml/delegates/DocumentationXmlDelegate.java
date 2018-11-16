@@ -25,9 +25,11 @@ import javax.xml.stream.XMLStreamException;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
+import de.ims.icarus2.model.manifest.api.Documentable;
 import de.ims.icarus2.model.manifest.api.Documentation;
 import de.ims.icarus2.model.manifest.api.Documentation.Resource;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
+import de.ims.icarus2.model.manifest.standard.DocumentationImpl;
 import de.ims.icarus2.model.manifest.standard.DocumentationImpl.ResourceImpl;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
@@ -50,6 +52,10 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 
 	public DocumentationXmlDelegate(Documentation documentation) {
 		setInstance(documentation);
+	}
+
+	public DocumentationXmlDelegate(Documentable documentable) {
+		setInstance(new DocumentationImpl());
 	}
 
 	/**
@@ -150,9 +156,9 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 		serializer.startElement(ManifestXmlTags.DOCUMENTATION);
 		ManifestXmlUtils.writeIdentityAttributes(serializer, documentation);
 
-		if(documentation.getContent()!=null) {
+		if(documentation.getContent().isPresent()) {
 			serializer.startElement(ManifestXmlTags.CONTENT);
-			serializer.writeCData(documentation.getContent().orElse(null));
+			serializer.writeTextOrCData(documentation.getContent().get());
 			serializer.endElement(ManifestXmlTags.CONTENT);
 		}
 

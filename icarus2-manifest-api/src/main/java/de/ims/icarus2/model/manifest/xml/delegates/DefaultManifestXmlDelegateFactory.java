@@ -55,11 +55,11 @@ public class DefaultManifestXmlDelegateFactory implements ManifestXmlDelegateFac
 		case HIGHLIGHT_LAYER_MANIFEST: result = HighlightLayerManifestXmlDelegate.class; break;
 		case IMPLEMENTATION_MANIFEST: result = ImplementationManifestXmlDelegate.class; break;
 		case ITEM_LAYER_MANIFEST: result = ItemLayerManifestXmlDelegate.class; break;
-		case LAYER_GROUP_MANIFEST: result = LayerGroupManifestXmlHandler.class; break;
+		case LAYER_GROUP_MANIFEST: result = LayerGroupManifestXmlDelegate.class; break;
 		case LOCATION_MANIFEST: result = LocationManifestXmlDelegate.class; break;
 		case OPTIONS_MANIFEST: result = OptionsManifestXmlDelegate.class; break;
 		case PATH_RESOLVER_MANIFEST: result = PathResolverManifestXmlDelegate.class; break;
-		case RASTERIZER_MANIFEST: result = RasterizerManifestXmLDelegate.class; break;
+		case RASTERIZER_MANIFEST: result = RasterizerManifestXmlDelegate.class; break;
 		case STRUCTURE_LAYER_MANIFEST: result = StructureLayerManifestXmlDelegate.class; break;
 		case STRUCTURE_MANIFEST: result = StructureManifestXmlDelegate.class; break;
 

@@ -42,12 +42,14 @@ import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.xml.XmlSerializer;
+import de.ims.icarus2.util.xml.XmlUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest> extends AbstractManifestXmlDelegate<M> {
+public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest>
+		extends AbstractManifestXmlDelegate<M> {
 
 	private int localPropertyCount = 0;
 	private boolean hasLocalOptions;
@@ -74,6 +76,17 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 		if(optionsManifestXmlDelegate!=null) {
 			optionsManifestXmlDelegate.reset();
 		}
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.xml.delegates.AbstractManifestXmlDelegate#isEmpty(de.ims.icarus2.model.manifest.api.Manifest)
+	 */
+	@Override
+	protected boolean isEmpty(M instance) {
+		return super.isEmpty(instance)
+				&& XmlUtils.isLegalAttribute(instance.getName())
+				&& XmlUtils.isLegalAttribute(instance.getDescription())
+				&& XmlUtils.isLegalAttribute(ManifestXmlUtils.serializeIcon(instance.getIcon().orElse(null)));
 	}
 
 	private DocumentationXmlDelegate getDocumentationXmlDelegate() {
@@ -104,7 +117,8 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 		// IMPORTANT: we must not write the ID field again, since super implementation took care of that!
 		serializer.writeAttribute(ManifestXmlAttributes.NAME, manifest.getName());
 		serializer.writeAttribute(ManifestXmlAttributes.DESCRIPTION, manifest.getDescription());
-		serializer.writeAttribute(ManifestXmlAttributes.ICON, ManifestXmlUtils.serialize(manifest.getIcon()));
+		serializer.writeAttribute(ManifestXmlAttributes.ICON,
+				ManifestXmlUtils.serializeIcon(manifest.getIcon().orElse(null)));
 	}
 
 	/**
@@ -174,6 +188,18 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 			}
 
 			serializer.endElement(ManifestXmlTags.PROPERTIES);
+		}
+
+		//TODO Assuming we do decide to make categories inheritable, the following needs to change!
+		Set<Category> categories = manifest.getCategories();
+		if(!categories.isEmpty()) {
+			serializer.startElement(ManifestXmlTags.CATEGORIES);
+			for(Category category : categories) {
+				serializer.startEmptyElement(ManifestXmlTags.CATEGORY);
+				ManifestXmlUtils.writeCategoryAttributes(serializer, category);
+				serializer.endElement(ManifestXmlTags.CATEGORY);
+			}
+			serializer.endElement(ManifestXmlTags.CATEGORIES);
 		}
 	}
 
@@ -301,7 +327,7 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 		case ManifestXmlTags.PROPERTY: {
 
 			if(!property.isMultiValue()) {
-				property.setValue(property.getValueType().parse(text, manifestLocation.getClassLoader()));
+				property.setValue(property.getValueType().parseAndPersist(text, manifestLocation.getClassLoader()));
 			}
 
 			getInstance().addProperty(property);

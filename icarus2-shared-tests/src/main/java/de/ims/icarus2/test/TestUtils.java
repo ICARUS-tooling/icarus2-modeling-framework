@@ -46,7 +46,6 @@ import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.function.Executable;
-import org.mockito.MockingDetails;
 import org.mockito.Mockito;
 
 import de.ims.icarus2.test.DiffUtils.Trace;
@@ -111,10 +110,13 @@ public class TestUtils {
 		return settings().features(features);
 	}
 
+	public static boolean isMock(Object obj) {
+		return obj!=null && Mockito.mockingDetails(obj).isMock();
+	}
+
 	public static <T extends Object> T assertMock(T mock) {
 		assertNotNull(mock, "Mock is null");
-		MockingDetails mockingDetails = Mockito.mockingDetails(mock);
-		assertTrue(mockingDetails.isMock(), "Given object is not a mock: "+mock);
+		assertTrue(isMock(mock), "Given object is not a mock: "+mock);
 		return mock;
 	}
 
@@ -501,6 +503,12 @@ public class TestUtils {
 		return msg + " - " + String.valueOf(value);
 	}
 
+	public static <T extends Object> Consumer<T> DO_NOTHING() {
+		return obj -> {
+			// no-op
+		};
+	}
+
 	//-------------------------------------------
 	// SETTER ASSERTIONS
 	//-------------------------------------------
@@ -656,6 +664,18 @@ public class TestUtils {
 			setter.accept(instance, value2);
 			assertEquals(value2, getter.apply(instance));
 		}
+	}
+
+	public static <T extends Object, K extends Object> void assertRestrictedGetter(
+			T instance, K value1,
+			BiConsumer<Executable, String> restrictionCheck,
+			Function<T,K> getter, BiConsumer<T, K> setter) {
+
+		restrictionCheck.accept(() -> getter.apply(instance),
+					"Testing restricted getter call on empty instance");
+
+		setter.accept(instance, value1);
+		assertEquals(value1, getter.apply(instance));
 	}
 
 	public static <T extends Object, K extends Object> void assertOptGetter(

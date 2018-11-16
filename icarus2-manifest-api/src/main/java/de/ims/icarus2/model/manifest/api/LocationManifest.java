@@ -73,6 +73,11 @@ public interface LocationManifest extends Manifest {
 	@AccessRestriction(AccessMode.READ)
 	Optional<String> getRootPath();
 
+	/**
+	 * Returns information on how to interpret the {@link #getRootPath() root path}
+	 * of this location.
+	 * @return
+	 */
 	@AccessRestriction(AccessMode.READ)
 	Optional<PathType> getRootPathType();
 
@@ -91,11 +96,9 @@ public interface LocationManifest extends Manifest {
 
 	@AccessRestriction(AccessMode.READ)
 	default List<PathEntry> getPathEntries() {
-		LazyCollection<PathEntry> result = LazyCollection.lazyList();
-
-		forEachPathEntry(result);
-
-		return result.getAsList();
+		return LazyCollection.<PathEntry>lazyList()
+				.addFromForEach(this::forEachPathEntry)
+				.getAsList();
 	}
 
 	// Modification methods

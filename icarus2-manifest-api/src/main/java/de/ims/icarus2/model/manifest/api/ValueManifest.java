@@ -37,7 +37,7 @@ public interface ValueManifest extends Documentable, ModifiableIdentity, TypedMa
 
 	public static final Set<ValueType> SUPPORTED_VALUE_TYPES =
 				Collections.unmodifiableSet(ValueType.filterWithout(
-			true,
+			true, // basic types only
 			ValueType.UNKNOWN,
 			ValueType.CUSTOM,
 			ValueType.IMAGE_RESOURCE,

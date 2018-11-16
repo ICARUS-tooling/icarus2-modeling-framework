@@ -111,7 +111,4 @@ public interface LayerGroupManifest extends ModifiableIdentity, ManifestFragment
 	void setPrimaryLayerId(String primaryLayerId);
 
 	void setIndependent(boolean isIndependent);
-
-	@Override
-	void setName(String name);
 }

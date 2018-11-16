@@ -105,7 +105,7 @@ public class VersionManifestXmlDelegate extends AbstractXmlDelegate<VersionManif
 		}
 
 		// CONTENT
-		serializer.writeCData(getInstance().getVersionString());
+		serializer.writeTextOrCData(getInstance().getVersionString());
 
 		serializer.endElement(ManifestXmlTags.VERSION);
 	}

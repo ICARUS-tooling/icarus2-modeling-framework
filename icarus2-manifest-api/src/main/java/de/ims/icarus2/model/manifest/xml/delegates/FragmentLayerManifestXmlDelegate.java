@@ -39,7 +39,7 @@ import de.ims.icarus2.util.xml.XmlSerializer;
  */
 public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelegate<FragmentLayerManifest> {
 
-	private RasterizerManifestXmLDelegate rasterizerManifestXmLDelegate;
+	private RasterizerManifestXmlDelegate rasterizerManifestXmlDelegate;
 	private ContainerManifestXmlDelegate containerManifestXmlDelegate;
 
 	public FragmentLayerManifestXmlDelegate() {
@@ -54,12 +54,12 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 		setInstance(new FragmentLayerManifestImpl(groupManifest));
 	}
 
-	private RasterizerManifestXmLDelegate getRasterizerManifestXmLDelegate() {
-		if(rasterizerManifestXmLDelegate==null) {
-			rasterizerManifestXmLDelegate = new RasterizerManifestXmLDelegate();
+	private RasterizerManifestXmlDelegate getRasterizerManifestXmLDelegate() {
+		if(rasterizerManifestXmlDelegate==null) {
+			rasterizerManifestXmlDelegate = new RasterizerManifestXmlDelegate();
 		}
 
-		return rasterizerManifestXmLDelegate;
+		return rasterizerManifestXmlDelegate;
 	}
 
 	private ContainerManifestXmlDelegate getContainerManifestXmlDelegate() {
@@ -84,8 +84,8 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 	public void reset() {
 		super.reset();
 
-		if(rasterizerManifestXmLDelegate!=null) {
-			rasterizerManifestXmLDelegate.reset();
+		if(rasterizerManifestXmlDelegate!=null) {
+			rasterizerManifestXmlDelegate.reset();
 		}
 
 		if(containerManifestXmlDelegate!=null) {
@@ -225,7 +225,7 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 		} break;
 
 		case ManifestXmlTags.RASTERIZER: {
-			getInstance().setRasterizerManifest(((RasterizerManifestXmLDelegate) handler).getInstance());
+			getInstance().setRasterizerManifest(((RasterizerManifestXmlDelegate) handler).getInstance());
 		} break;
 
 		default:

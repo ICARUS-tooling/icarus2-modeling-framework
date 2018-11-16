@@ -170,6 +170,11 @@ public class AnnotationManifestXmlDelegate extends AbstractMemberManifestXmlDele
 		if(manifest.isLocalValueRange()) {
 			getValueRangeXmlDelegate().reset(manifest.getValueRange().get()).writeXml(serializer);
 		}
+
+		if(manifest.isLocalNoEntryValue()) {
+			ManifestXmlUtils.writeValueElement(serializer, ManifestXmlTags.NO_ENTRY_VALUE,
+					manifest.getNoEntryValue().orElse(null), manifest.getValueType());
+		}
 	}
 
 	@Override
@@ -223,7 +228,7 @@ public class AnnotationManifestXmlDelegate extends AbstractMemberManifestXmlDele
 		} break;
 
 		case ManifestXmlTags.NO_ENTRY_VALUE: {
-			getInstance().setNoEntryValue(getInstance().getValueType().parse(text, manifestLocation.getClassLoader()));
+			getInstance().setNoEntryValue(getInstance().getValueType().parseAndPersist(text, manifestLocation.getClassLoader()));
 		} break;
 
 		default:

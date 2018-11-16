@@ -421,7 +421,9 @@ public final class CollectionUtils {
 	}
 
 	public static <E extends Object> List<E> list(E...items) {
-		return Arrays.asList(items);
+		ArrayList<E> list = new ArrayList<>();
+		feedItems(list, items);
+		return list;
 	}
 
 	public static <E extends Object> Set<E> set(E...items) {
@@ -488,7 +490,7 @@ public final class CollectionUtils {
 		return hc;
 	}
 
-	public static <E extends Object> boolean equals(Collection<E> c1, Collection<E> c2) {
+	public static <E extends Object> boolean equals(Collection<? extends E> c1, Collection<? extends E> c2) {
 		if(c1==null || c2==null) {
 			return c1==c2;
 		}
@@ -497,8 +499,8 @@ public final class CollectionUtils {
 			return false;
 		}
 
-		Iterator<E> i1 = c1.iterator();
-		Iterator<E> i2 = c2.iterator();
+		Iterator<? extends E> i1 = c1.iterator();
+		Iterator<? extends E> i2 = c2.iterator();
 
 		while(i1.hasNext() && i2.hasNext()) {
 			if(!i1.next().equals(i2.next())) {

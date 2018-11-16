@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 import java.util.WeakHashMap;
@@ -270,7 +271,8 @@ public final class DiffUtils {
 					fieldHandlers.add(new ListFieldHandler(field));
 				} else if(Collection.class.isAssignableFrom(type)) {
 					fieldHandlers.add(new CollectionFieldHandler(field));
-				} else if(type.getName().startsWith(DEEP_HANDLING_PREFIX)) {
+				} else if(Optional.class.equals(type)
+						|| type.getName().startsWith(DEEP_HANDLING_PREFIX)) {
 					// NOTE
 					// Only use deep field comparison for our "own" classes!
 					fieldHandlers.add(new DeepObjectFieldHandler(field));

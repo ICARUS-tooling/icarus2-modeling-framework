@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
@@ -168,6 +169,19 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 	}
 
 	@SuppressWarnings("unchecked")
+	public <C extends Consumer<? super E>> LazyCollection<E> addFromForEach(Consumer<C> forEach,
+			Predicate<? super E> filter) {
+		ensureBuffer();
+		Consumer<E> action = item -> {
+			if(filter.test(item)) {
+				addExpectingBuffer(item);
+			}
+		};
+		forEach.accept((C)action);
+		return this;
+	}
+
+	@SuppressWarnings("unchecked")
 	public <K extends Object, C extends Consumer<? super K>> LazyCollection<E> addFromForEach(
 			Consumer<C> forEach, Function<K, E> transform) {
 		ensureBuffer();
@@ -176,30 +190,31 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 		return this;
 	}
 
-	public <C extends Collection<E>> C get() {
-		@SuppressWarnings("unchecked")
-		C result = (C) buffer;
-
-		return result;
-	}
-
-	@SuppressWarnings("unchecked")
-	public <L extends List<E>> L getAsList() {
-		L result = (L) buffer;
+	public Collection<E> get() {
+		Collection<E> result = (Collection<E>) buffer;
 
 		if(result==null) {
-			result = (L) Collections.emptyList();
+			result = Collections.emptyList();
 		}
 
 		return result;
 	}
 
-	@SuppressWarnings("unchecked")
-	public <L extends Set<E>> L getAsSet() {
-		L result = (L) buffer;
+	public List<E> getAsList() {
+		List<E> result = (List<E>) buffer;
 
 		if(result==null) {
-			result = (L) Collections.emptySet();
+			result = Collections.emptyList();
+		}
+
+		return result;
+	}
+
+	public Set<E> getAsSet() {
+		Set<E> result = (Set<E>) buffer;
+
+		if(result==null) {
+			result = Collections.emptySet();
 		}
 
 		return result;

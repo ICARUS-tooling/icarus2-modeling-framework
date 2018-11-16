@@ -207,6 +207,27 @@ public final class ClassUtils {
 
 	private static ThreadLocal<SerializationBuffer> _serBuf = ThreadLocal.withInitial(SerializationBuffer::new);
 
+	/**
+	 * Tries to create a clone of the provided {@code source} object.
+	 * This method uses the following strategy:
+	 * <ol>
+	 * <li>If {@code source} implements {@link Singleton} return it</li>
+	 * <li>If {@code source} extends {@link Number} return it</li>
+	 * <li>If {@code source} is of type {@link String} return it</li>
+	 * <li>If {@code source} implements {@link Cloneable}, use reflection
+	 * to access its public {@code clone()} method and call it</li>
+	 * <li>If {@code source} implements {@link Serializable}, use some helper
+	 * code to serialize it and then deserialize the binary form into a new
+	 * object of the same class.</li>
+	 * </ol>
+	 * Note that especially the last option is potentially very costly and as
+	 * such this method should be used rather carefully when performance is of
+	 * crucial role.
+	 *
+	 * @param source
+	 * @return
+	 * @throws CloneNotSupportedException if all listed attempts of creating a clone fail
+	 */
 	public static Object clone(Object source) throws CloneNotSupportedException {
 		requireNonNull(source);
 
@@ -240,6 +261,13 @@ public final class ClassUtils {
 		throw new CloneNotSupportedException("Cannot clone object: "+source);
 	}
 
+	/**
+	 * Weaker version of {@link #clone(Object)} that returns the original {@code source}
+	 * in case the cloning attempt fails.
+	 *
+	 * @param source
+	 * @return
+	 */
 	public static Object tryClone(Object source) {
 		try {
 			return clone(source);

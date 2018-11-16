@@ -20,6 +20,7 @@
 package de.ims.icarus2.model.manifest.api;
 
 import static de.ims.icarus2.test.TestUtils.DEFAULT;
+import static de.ims.icarus2.test.TestUtils.other;
 import static de.ims.icarus2.test.TestUtils.settings;
 
 import java.util.Set;
@@ -142,4 +143,49 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 		assertLockableSetter(settings(),ImplementationManifest::setUseFactory);
 	}
 
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.standard.ImplementationManifest#isLocalSourceType()}.
+	 */
+	@Test
+	default void testIsLocalSourceType() {
+		for(SourceType sourceType : SourceType.values()) {
+			assertDerivativeIsLocal(settings(),
+					sourceType, other(sourceType),
+					ImplementationManifest::isLocalSourceType,
+					ImplementationManifest::setSourceType);
+		}
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.standard.ImplementationManifest#isLocalSource()}.
+	 */
+	@Test
+	default void testIsLocalSource() {
+		assertDerivativeIsLocal(settings(),
+				"source1", "source2",
+				ImplementationManifest::isLocalSource,
+				ImplementationManifest::setSource);
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.standard.ImplementationManifest#isLocalClassname()}.
+	 */
+	@Test
+	default void testIsLocalClassname() {
+		assertDerivativeIsLocal(settings(),
+				"classname1", "classname2",
+				ImplementationManifest::isLocalClassname,
+				ImplementationManifest::setClassname);
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.standard.ImplementationManifest#isLocalUseFactory()}.
+	 */
+	@Test
+	default void testIsLocalUseFactory() {
+		assertDerivativeIsLocal(settings(),
+				Boolean.TRUE, Boolean.FALSE,
+				ImplementationManifest::isLocalUseFactory,
+				ImplementationManifest::setUseFactory);
+	}
 }

@@ -44,6 +44,7 @@ import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.standard.DriverManifestImpl.ModuleManifestImpl;
+import de.ims.icarus2.model.manifest.standard.DriverManifestImpl.ModuleSpecImpl;
 import de.ims.icarus2.util.Options;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
@@ -130,6 +131,7 @@ public class DefaultManifestFactory implements ManifestFactory {
 		registerInfo(ManifestType.LAYER_GROUP_MANIFEST, LayerGroupManifestImpl.class, ContextManifest.class, true);
 		registerInfo(ManifestType.LOCATION_MANIFEST, LocationManifestImpl.class, null);
 		registerInfo(ManifestType.MODULE_MANIFEST, ModuleManifestImpl.class, DriverManifest.class);
+		registerInfo(ManifestType.MODULE_SPEC, ModuleSpecImpl.class, DriverManifest.class, true);
 		registerInfo(ManifestType.OPTIONS_MANIFEST, OptionsManifestImpl.class, MemberManifest.class);
 		registerInfo(ManifestType.PATH_RESOLVER_MANIFEST, PathResolverManifestImpl.class, LocationManifest.class);
 		registerInfo(ManifestType.RASTERIZER_MANIFEST, RasterizerManifestImpl.class, FragmentLayerManifest.class);

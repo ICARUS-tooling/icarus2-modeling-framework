@@ -24,7 +24,6 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
-import de.ims.icarus2.model.manifest.api.Documentation;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ValueManifest;
@@ -63,7 +62,7 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 	public void writeXml(XmlSerializer serializer) throws XMLStreamException {
 
 		ValueManifest manifest = getInstance();
-		Object value = manifest.getValue();
+		Object value = manifest.getValue().orElseThrow(ManifestException.error("Missing value in ValueManifest"));
 		ValueType type = manifest.getValueType();
 
 		if(type==ValueType.UNKNOWN)
@@ -71,38 +70,20 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 		if(type==ValueType.CUSTOM)
 			throw new UnsupportedOperationException("Cannot serialize custom value: "+value); //$NON-NLS-1$
 
-		boolean isSimple = type.isSimpleType();
-
 		serializer.startElement(ManifestXmlTags.VALUE);
 
 		//ATTRIBUTES
 		ManifestXmlUtils.writeIdentityAttributes(serializer, manifest);
 
-		if(isSimple) {
-			serializer.writeAttribute(ManifestXmlAttributes.CONTENT, type.toChars(value).toString());
-		}
-
 		// CONTENT
 
-		Optional<Documentation> documentation = manifest.getDocumentation();
+		serializeElement(manifest.getDocumentation(), DocumentationXmlDelegate::new, serializer);
 
-		if(documentation.isPresent()) {
-			DocumentationXmlDelegate delegate = new DocumentationXmlDelegate();
-			delegate.setInstance(documentation.get());
-			delegate.writeXml(serializer);
-		}
+		ManifestXmlUtils.writeIdentityFieldElements(serializer, manifest);
 
-		if(!isSimple) {
-			if(documentation!=null) {
-				serializer.startElement(ManifestXmlTags.CONTENT);
-			}
-
-			serializer.writeTextOrCData(type.toChars(value));
-
-			if(documentation!=null) {
-				serializer.endElement(ManifestXmlTags.CONTENT);
-			}
-		}
+		serializer.startElement(ManifestXmlTags.CONTENT);
+		serializer.writeTextOrCData(type.toChars(value));
+		serializer.endElement(ManifestXmlTags.CONTENT);
 
 		serializer.endElement(ManifestXmlTags.VALUE);
 	}
@@ -117,7 +98,7 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 				if(!manifest.getValueType().isSimpleType())
 					throw new ManifestException(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE,
 							"Attribute location not supported by non-simple type: "+manifest.getValueType());
-				manifest.setValue(manifest.getValueType().parse(content, manifestLocation.getClassLoader()));
+				manifest.setValue(manifest.getValueType().parseAndPersist(content, manifestLocation.getClassLoader()));
 			});
 	}
 
@@ -139,11 +120,11 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 		} break;
 
 		case ManifestXmlTags.DOCUMENTATION: {
-			handler = new DocumentationXmlDelegate();
+			handler = new DocumentationXmlDelegate(getInstance());
 		} break;
 
 		case ManifestXmlTags.CONTENT: {
-			if(getInstance().getValue()!=null)
+			if(getInstance().getValue().isPresent())
 				throw new UnexpectedTagException(qName, true, ManifestXmlTags.VALUE);
 		} break;
 
@@ -177,15 +158,15 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 		} break;
 
 		case ManifestXmlTags.VALUE: {
-			if(manifest.getDocumentation()==null && text!=null && !text.isEmpty()) {
-				manifest.setValue(manifest.getValueType().parse(text, manifestLocation.getClassLoader()));
+			if(!manifest.getDocumentation().isPresent() && text!=null && !text.isEmpty()) {
+				manifest.setValue(manifest.getValueType().parseAndPersist(text, manifestLocation.getClassLoader()));
 			}
 
 			handler = null;
 		} break;
 
 		case ManifestXmlTags.CONTENT: {
-			if(manifest.getValue()!=null)
+			if(manifest.getValue().isPresent())
 				throw new UnexpectedTagException(qName, false, ManifestXmlTags.VALUE);
 
 			manifest.setValue(manifest.getValueType().parse(text, manifestLocation.getClassLoader()));

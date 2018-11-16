@@ -37,7 +37,8 @@ public interface ValueRange extends Lockable, TypedManifest {
 
 	public static final Set<ValueType> SUPPORTED_VALUE_TYPES =
 			Collections.unmodifiableSet(ValueType.filterIncluding(
-					type -> Comparable.class.isAssignableFrom(type.getBaseClass())));
+					type -> !Boolean.class.equals(type.getBaseClass())
+						&& Comparable.class.isAssignableFrom(type.getBaseClass())));
 
 	public static final boolean DEFAULT_LOWER_INCLUSIVE_VALUE = true;
 	public static final boolean DEFAULT_UPPER_INCLUSIVE_VALUE = true;

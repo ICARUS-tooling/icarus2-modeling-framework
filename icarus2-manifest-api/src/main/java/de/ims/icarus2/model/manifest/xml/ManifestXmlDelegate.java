@@ -18,6 +18,7 @@ package de.ims.icarus2.model.manifest.xml;
 
 import javax.xml.stream.XMLStreamException;
 
+import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
 
@@ -25,7 +26,7 @@ import de.ims.icarus2.util.xml.XmlSerializer;
  * @author Markus Gärtner
  *
  */
-public interface ManifestXmlDelegate<M extends Object> extends ManifestXmlHandler {
+public interface ManifestXmlDelegate<M extends TypedManifest> extends ManifestXmlHandler {
 
 	//TODO factory method for creating exceptions (SAXException ??)
 
@@ -40,6 +41,12 @@ public interface ManifestXmlDelegate<M extends Object> extends ManifestXmlHandle
 	 */
 	void setInstance(M instance);
 
+	/**
+	 * Returns the current member of the manifest framework assigned to this delegate
+	 * or throws an exception if no such member is set.
+	 *
+	 * @return
+	 */
 	M getInstance();
 
 	/**
@@ -49,6 +56,12 @@ public interface ManifestXmlDelegate<M extends Object> extends ManifestXmlHandle
 	 */
 	void reset();
 
+	/**
+	 * {@link #reset() Reset} this delegate and then {@link #setInstance(Object) change} the
+	 * currently used instance to the supplied {@code instance} parameter.
+	 * @param instance
+	 * @return this delegate
+	 */
 	default ManifestXmlDelegate<M> reset(M instance) {
 		reset();
 		setInstance(instance);
@@ -56,5 +69,13 @@ public interface ManifestXmlDelegate<M extends Object> extends ManifestXmlHandle
 		return this;
 	}
 
+	/**
+	 * Serialize the currently set member of the manifest framework using the provided
+	 * {@code serializer}. All checked exceptions encountered will be wrapped into
+	 * {@link XMLStreamException}.
+	 *
+	 * @param serializer
+	 * @throws XMLStreamException
+	 */
 	void writeXml(XmlSerializer serializer) throws XMLStreamException;
 }

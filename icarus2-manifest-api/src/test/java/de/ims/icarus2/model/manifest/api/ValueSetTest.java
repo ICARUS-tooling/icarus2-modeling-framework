@@ -116,4 +116,12 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 		fail("Not yet implemented");
 	}
 
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#removeAllValues()}.
+	 */
+	@Test
+	default void testRemoveAllValues() {
+		fail("Not yet implemented");
+	}
+
 }

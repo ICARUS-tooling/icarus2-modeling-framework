@@ -177,6 +177,18 @@ public class ValueSetImpl extends AbstractLockable implements ValueSet {
 
 	protected void removeValue0(int index) {
 		values.remove(index);
+	}/**
+	 * @see de.ims.icarus2.model.manifest.api.ValueSet#removeAllValues()
+	 */
+	@Override
+	public void removeAllValues() {
+		checkNotLocked();
+
+		removeAllValues0();
+	}
+
+	protected void removeAllValues0() {
+		values.clear();
 	}
 
 	@Override

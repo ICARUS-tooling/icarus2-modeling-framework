@@ -67,6 +67,8 @@ public interface ImplementationManifest extends MemberManifest, Embedded {
 	@AccessRestriction(AccessMode.READ)
 	SourceType getSourceType();
 
+	boolean isLocalSourceType();
+
 	/**
 	 * Returns a string describing the source of the implementation. The meaning
 	 * of this {@code source} parameter is depending on the {@link SourceType} of
@@ -78,6 +80,8 @@ public interface ImplementationManifest extends MemberManifest, Embedded {
 	@AccessRestriction(AccessMode.READ)
 	Optional<String> getSource();
 
+	boolean isLocalSource();
+
 	/**
 	 * Returns a string describing the actual class name of the implementation.
 	 * The meaning of this {@code classname} parameter is depending on the
@@ -88,6 +92,8 @@ public interface ImplementationManifest extends MemberManifest, Embedded {
 	 */
 	@AccessRestriction(AccessMode.READ)
 	Optional<String> getClassname();
+
+	boolean isLocalClassname();
 
 	/**
 	 * Returns whether or not the targeted class is considered to be
@@ -108,6 +114,8 @@ public interface ImplementationManifest extends MemberManifest, Embedded {
 	 */
 	@AccessRestriction(AccessMode.READ)
 	boolean isUseFactory();
+
+	boolean isLocalUseFactory();
 
 	// Modification methods
 

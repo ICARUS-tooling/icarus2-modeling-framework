@@ -116,8 +116,15 @@ public class XmlUtils {
 		}
 	}
 
+	/**
+	 * Checks for an attribute string to be either {@link Optional#isPresent() not set}
+	 * or not contain any {@link #isIllegalAttributeSymbol(char) illegal symbols}.
+	 *
+	 * @param opt
+	 * @return
+	 */
 	public static <S extends CharSequence> boolean isLegalAttribute(Optional<S> opt) {
-		return opt.isPresent() && !hasIllegalAttributeSymbols(opt.get());
+		return !opt.isPresent() || !hasIllegalAttributeSymbols(opt.get());
 	}
 
 	public static boolean hasIllegalAttributeSymbols(CharSequence s) {
