@@ -25,6 +25,7 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
@@ -71,7 +72,7 @@ public class DelegatingHandler extends DefaultHandler {
 		// Delegate initial element handling to next builder if needed
 		ManifestXmlHandler next =
 				current.startElement(manifestLocation, uri, localName, qName, attributes)
-				.filter(h -> h!=current).orElse(null);
+				.filter(IcarusUtils.notEq(current)).orElse(null);
 		if(next!=null) {
 			push(next);
 

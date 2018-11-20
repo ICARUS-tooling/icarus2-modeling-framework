@@ -35,4 +35,8 @@ public interface TypedManifest {
 	 */
 	@AccessRestriction(AccessMode.READ)
 	ManifestType getManifestType();
+
+	public static boolean defaultEquals(TypedManifest m1, TypedManifest m2) {
+		return m1.getManifestType().equals(m2.getManifestType());
+	}
 }

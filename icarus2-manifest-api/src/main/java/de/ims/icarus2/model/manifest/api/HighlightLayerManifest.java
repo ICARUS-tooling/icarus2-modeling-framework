@@ -36,7 +36,7 @@ public interface HighlightLayerManifest extends LayerManifest {
 
 	//FIXME finish specification
 
-	Optional<ItemLayerManifest> getPrimaryLayerManifest();
+	Optional<TargetLayerManifest> getPrimaryLayerManifest();
 
 	boolean isLocalPrimaryLayerManifest();
 
@@ -88,7 +88,7 @@ public interface HighlightLayerManifest extends LayerManifest {
 
 	// Modification methods
 
-	void setPrimaryLayerId(String primaryLayerId);
+	TargetLayerManifest setPrimaryLayerId(String primaryLayerId);
 
 	void setHighlightFlag(HighlightFlag flag, boolean active);
 }

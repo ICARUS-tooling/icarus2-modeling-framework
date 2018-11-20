@@ -54,7 +54,7 @@ public class VersionManifestXmlDelegate extends AbstractXmlDelegate<VersionManif
 	public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
-		if(qName.equals(ManifestXmlTags.VERSION)) {
+		if(localName.equals(ManifestXmlTags.VERSION)) {
 			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.VERSION_FORMAT)
 				.ifPresent(getInstance()::setFormatId);
 
@@ -70,7 +70,7 @@ public class VersionManifestXmlDelegate extends AbstractXmlDelegate<VersionManif
 	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 			throws SAXException {
-		if(qName.equals(ManifestXmlTags.VERSION)) {
+		if(localName.equals(ManifestXmlTags.VERSION)) {
 			getInstance().setVersionString(text);
 
 			return Optional.empty();

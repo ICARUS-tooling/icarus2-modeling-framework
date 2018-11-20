@@ -19,15 +19,18 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_setLayerId;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.getIllegalIdValues;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.getLegalIdValues;
+import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_createTargetLayerManifest;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.mockItemLayerManifest;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.transform_layerManifestId;
+import static de.ims.icarus2.model.manifest.api.LayerManifestTest.transform_targetLayerId;
+import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.settings;
+import static de.ims.icarus2.test.TestUtils.transform_genericOptValue;
 
 import org.junit.jupiter.api.Test;
 
-import de.ims.icarus2.model.manifest.ManifestTestFeature;
-import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.test.TestUtils;
 
 /**
@@ -49,13 +52,12 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	 */
 	@Test
 	default void testGetPrimaryLayerManifest() {
-		assertDerivativeOptGetter(
-				settings().features(ManifestTestFeature.EMBED_TEMPLATE), // Needs embedded template to resolve layer from id
-				mockItemLayerManifest("layer1"),
-				mockItemLayerManifest("layer2"), TestUtils.NO_DEFAULT(),
-				HighlightLayerManifest::getPrimaryLayerManifest,
-				inject_setLayerId(HighlightLayerManifest::setPrimaryLayerId,
-						HighlightLayerManifest::getContextManifest));
+		assertDerivativeOptGetter(settings(),
+				"layer1",
+				"layer2",
+				NO_DEFAULT(),
+				transform_genericOptValue(HighlightLayerManifest::getPrimaryLayerManifest, transform_targetLayerId()),
+				inject_createTargetLayerManifest(HighlightLayerManifest::setPrimaryLayerId));
 	}
 
 	/**
@@ -160,10 +162,10 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	 */
 	@Test
 	default void testSetPrimaryLayerId() {
-		assertLockableSetter(
-				settings(),
+		assertLockableSetterBatch(settings(),
 				HighlightLayerManifest::setPrimaryLayerId,
-				"layer1", true, INVALID_ID_CHECK, ManifestTestUtils.getIllegalIdValues());
+				getLegalIdValues(), true,
+				INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**

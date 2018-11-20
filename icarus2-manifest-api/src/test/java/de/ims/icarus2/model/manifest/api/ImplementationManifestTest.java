@@ -20,6 +20,7 @@
 package de.ims.icarus2.model.manifest.api;
 
 import static de.ims.icarus2.test.TestUtils.DEFAULT;
+import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.other;
 import static de.ims.icarus2.test.TestUtils.settings;
 
@@ -72,8 +73,8 @@ public interface ImplementationManifestTest<M extends ImplementationManifest> ex
 	default void testGetSourceType() {
 
 		for(SourceType sourceType : SourceType.values()) {
-			assertDerivativeGetter(settings(), sourceType, TestUtils.other(sourceType),
-					DEFAULT(ImplementationManifest.DEFAULT_SOURCE_TYPE),
+			assertDerivativeOptGetter(settings(), sourceType, TestUtils.other(sourceType),
+					NO_DEFAULT(),
 					ImplementationManifest::getSourceType, ImplementationManifest::setSourceType);
 		}
 	}

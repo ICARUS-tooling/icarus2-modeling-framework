@@ -50,7 +50,8 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema>, TableSch
 	@Override
 	public void init(Writer output, Options options) {
 		try {
-			serializer = new XmlStreamSerializer(XMLOutputFactory.newFactory().createXMLStreamWriter(output));
+			serializer = XmlStreamSerializer.withoutNamespace(
+					XMLOutputFactory.newFactory().createXMLStreamWriter(output));
 		} catch (XMLStreamException | FactoryConfigurationError e) {
 			throw new IcarusException(GlobalErrorCode.DELEGATION_FAILED, "Unable to create xml stream writer", e);
 		}

@@ -139,6 +139,10 @@ public class ManifestUtils {
 		return manifest.getManifestType()==ManifestType.ITEM_LAYER_MANIFEST;
 	}
 
+	public static boolean isAnnotationLayerManifest(Manifest manifest) {
+		return manifest.getManifestType()==ManifestType.ANNOTATION_LAYER_MANIFEST;
+	}
+
 	//TODO methods for checking other types so we can use them as method references in lambdas
 
 	public static String getUniqueId(ManifestFragment manifest) {

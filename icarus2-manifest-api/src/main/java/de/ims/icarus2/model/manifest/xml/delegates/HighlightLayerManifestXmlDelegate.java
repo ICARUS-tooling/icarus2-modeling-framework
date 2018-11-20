@@ -32,7 +32,6 @@ import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
-import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
 /**
@@ -61,34 +60,6 @@ public class HighlightLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.standard.AbstractLayerManifest#writeAttributes(de.ims.icarus2.util.xml.XmlSerializer)
-	 */
-	@Override
-	protected void writeAttributes(XmlSerializer serializer) throws XMLStreamException {
-		super.writeAttributes(serializer);
-
-		HighlightLayerManifest manifest = getInstance();
-
-		// Write default key
-		if(manifest.isLocalPrimaryLayerManifest()) {
-			serializer.writeAttribute(ManifestXmlAttributes.PRIMARY_LAYER,
-					manifest.getPrimaryLayerManifest().flatMap(Identity::getId));
-		}
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.standard.AbstractLayerManifest#readAttributes(org.xml.sax.Attributes)
-	 */
-	@Override
-	protected void readAttributes(Attributes attributes) {
-		super.readAttributes(attributes);
-
-		// Read primary layer id
-		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.PRIMARY_LAYER)
-			.ifPresent(getInstance()::setPrimaryLayerId);
-	}
-
-	/**
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractLayerManifest#writeElements(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
 	@Override
@@ -102,6 +73,12 @@ public class HighlightLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 			serializer.writeText(flag.getStringValue());
 			serializer.endElement(ManifestXmlTags.HIGHLIGHT_FLAG);
 		}
+
+		// Write primary layer
+		if(manifest.isLocalPrimaryLayerManifest()) {
+			ManifestXmlUtils.writeTargetLayerManifestElement(serializer,
+					ManifestXmlTags.PRIMARY_LAYER, manifest.getPrimaryLayerManifest().get());
+		}
 	}
 
 	/**
@@ -112,8 +89,10 @@ public class HighlightLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 			String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
 		switch (localName) {
-		case ManifestXmlTags.HIGHLIGHT_LAYER: {
-			readAttributes(attributes);
+
+		case ManifestXmlTags.PRIMARY_LAYER: {
+			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID)
+				.ifPresent(getInstance()::setPrimaryLayerId);
 		} break;
 
 		case ManifestXmlTags.HIGHLIGHT_FLAG: {
@@ -137,8 +116,9 @@ public class HighlightLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 		ManifestXmlHandler handler = this;
 
 		switch (localName) {
-		case ManifestXmlTags.HIGHLIGHT_LAYER: {
-			handler = null;
+
+		case ManifestXmlTags.PRIMARY_LAYER: {
+			// no-op
 		} break;
 
 		case ManifestXmlTags.HIGHLIGHT_FLAG: {
@@ -149,7 +129,7 @@ public class HighlightLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 			return super.endElement(manifestLocation, uri, localName, qName, text);
 		}
 
-		return Optional.ofNullable(handler);
+		return Optional.of(handler);
 	}
 
 	/**

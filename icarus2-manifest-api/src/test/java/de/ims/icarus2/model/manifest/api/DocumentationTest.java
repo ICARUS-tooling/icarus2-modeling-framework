@@ -35,7 +35,7 @@ import de.ims.icarus2.test.TestUtils;
  * @author Markus Gärtner
  *
  */
-public interface DocumentationTest<D extends Documentation> extends LockableTest<D>, ModifiableIdentityTest<D> {
+public interface DocumentationTest<D extends Documentation> extends LockableTest<D> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.Documentation#getManifestType()}.

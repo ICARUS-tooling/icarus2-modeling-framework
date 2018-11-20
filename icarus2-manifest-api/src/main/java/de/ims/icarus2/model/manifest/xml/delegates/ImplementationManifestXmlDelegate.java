@@ -53,7 +53,8 @@ public class ImplementationManifestXmlDelegate extends AbstractMemberManifestXml
 
 		// Write source type
 		if(manifest.isLocalSourceType())
-			serializer.writeAttribute(ManifestXmlAttributes.SOURCE_TYPE, manifest.getSourceType().getStringValue());
+			serializer.writeAttribute(ManifestXmlAttributes.SOURCE_TYPE,
+					manifest.getSourceType().map(SourceType::getStringValue));
 
 		// Write flags
 		if(manifest.isLocalUseFactory())

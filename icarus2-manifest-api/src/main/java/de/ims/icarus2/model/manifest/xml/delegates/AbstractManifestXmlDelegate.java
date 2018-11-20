@@ -127,7 +127,7 @@ public abstract class AbstractManifestXmlDelegate<M extends Manifest> extends Ab
 	public void endNestedHandler(ManifestLocation manifestLocation, String uri,
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
-		if(qName.equals(ManifestXmlTags.VERSION)) {
+		if(localName.equals(ManifestXmlTags.VERSION)) {
 			getInstance().setVersionManifest(((VersionManifestXmlDelegate) handler).getInstance());
 		} else
 			throw new UnsupportedNestingException(qName, xmlTag());

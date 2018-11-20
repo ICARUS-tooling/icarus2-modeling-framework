@@ -54,7 +54,7 @@
 					<imf:module id="converter">
 						<imf:implementation classname="de.ims.icarus2.filedriver.schema.DefaultSchemaConverterFactory" factory="true">
 							<imf:properties>
-								<imf:property name="schemaId">de.ims.icarus2.filedriver.schema.table</imf:property>
+								<imf:property name="schemaTypeId">de.ims.icarus2.filedriver.schema.table</imf:property>
 								<imf:property name="schema"><![CDATA[
 								<table id="test.tier1.tbl" name="Tier-1 Tabular Format"  group-id="main">
 									<block layerId="token">

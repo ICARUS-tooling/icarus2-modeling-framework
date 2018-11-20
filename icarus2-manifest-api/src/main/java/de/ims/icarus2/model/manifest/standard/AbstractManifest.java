@@ -26,13 +26,13 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.model.manifest.api.ManifestFragment;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.VersionManifest;
 import de.ims.icarus2.model.manifest.standard.Links.Link;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.IcarusUtils;
-import de.ims.icarus2.util.lang.ClassUtils;
 
 
 
@@ -148,10 +148,12 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 			Manifest other = (Manifest) obj;
 
 			//FIXME currently manifest location is excluded from equality check
-			return getManifestType().equals(other.getManifestType())
+//			return getManifestType().equals(other.getManifestType())
 //					&& manifestLocation.equals(other.getManifestLocation())
-					&& registry.equals(other.getRegistry())
-					&& ClassUtils.equals(getId(), other.getId());
+//					&& registry.equals(other.getRegistry())
+//					&& ClassUtils.equals(getId(), other.getId());
+
+			return ManifestFragment.defaultEquals(this, other);
 		}
 		return false;
 	}

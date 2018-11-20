@@ -114,11 +114,9 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 
 			if(manifest.getRootPath().isPresent()) {
 				serializer.startElement(ManifestXmlTags.PATH);
-				if(manifest.getRootPathType().isPresent()) {
-					serializer.writeAttribute(ManifestXmlAttributes.TYPE,
-							manifest.getRootPathType().map(PathType::getStringValue));
-				}
-				serializer.writeCData(manifest.getRootPath().get());
+				serializer.writeAttribute(ManifestXmlAttributes.TYPE,
+						manifest.getRootPathType().map(PathType::getStringValue));
+				serializer.writeTextOrCData(manifest.getRootPath().get());
 				serializer.endElement(ManifestXmlTags.PATH);
 			}
 
@@ -133,7 +131,7 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 
 				serializer.startElement(ManifestXmlTags.PATH_ENTRY);
 				serializer.writeAttribute(ManifestXmlAttributes.TYPE, pathEntry.getType().getStringValue());
-				serializer.writeCData(pathEntry.getValue());
+				serializer.writeTextOrCData(pathEntry.getValue());
 				serializer.endElement(ManifestXmlTags.PATH_ENTRY);
 			}
 
@@ -152,10 +150,6 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 		ManifestXmlHandler handler = this;
 
 		switch (localName) {
-		case ManifestXmlTags.LOCATION: {
-			readAttributes(attributes);
-		} break;
-
 		case ManifestXmlTags.PATH: {
 			normalize(attributes, ManifestXmlAttributes.TYPE)
 				.map(PathType::parsePathType)
@@ -189,10 +183,6 @@ public class LocationManifestXmlDelegate extends AbstractManifestXmlDelegate<Loc
 		ManifestXmlHandler handler = this;
 
 		switch (localName) {
-		case ManifestXmlTags.LOCATION: {
-			handler = null;
-		} break;
-
 		case ManifestXmlTags.PATH: {
 			getInstance().setRootPath(text);
 		} break;

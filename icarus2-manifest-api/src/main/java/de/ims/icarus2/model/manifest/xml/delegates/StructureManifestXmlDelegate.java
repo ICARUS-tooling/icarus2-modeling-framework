@@ -85,16 +85,16 @@ public class StructureManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 
 		StructureManifest manifest = getInstance();
 
+		for(ContainerFlag flag : manifest.getActiveLocalContainerFlags()) {
+			serializer.startElement(ManifestXmlTags.CONTAINER_FLAG);
+			serializer.writeText(flag.getStringValue());
+			serializer.endElement(ManifestXmlTags.CONTAINER_FLAG);
+		}
+
 		for(StructureFlag flag : manifest.getActiveLocalStructureFlags()) {
 			serializer.startElement(ManifestXmlTags.STRUCTURE_FLAG);
 			serializer.writeText(flag.getStringValue());
 			serializer.endElement(ManifestXmlTags.STRUCTURE_FLAG);
-		}
-
-		for(ContainerFlag flag : getInstance().getActiveLocalContainerFlags()) {
-			serializer.startElement(ManifestXmlTags.CONTAINER_FLAG);
-			serializer.writeText(flag.getStringValue());
-			serializer.endElement(ManifestXmlTags.CONTAINER_FLAG);
 		}
 	}
 

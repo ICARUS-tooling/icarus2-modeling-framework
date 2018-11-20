@@ -38,13 +38,11 @@ public class StructureManifestImpl extends ContainerManifestImpl implements Stru
 
 	private Optional<StructureType> structureType = Optional.empty();
 
-	private EnumSet<StructureFlag> structureFlags;
+	private final EnumSet<StructureFlag> structureFlags = EnumSet.noneOf(StructureFlag.class);
 
 	public StructureManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry, StructureLayerManifest layerManifest) {
 		super(manifestLocation, registry, layerManifest);
-
-		structureFlags = EnumSet.noneOf(StructureFlag.class);
 	}
 
 	public StructureManifestImpl(ManifestLocation manifestLocation,

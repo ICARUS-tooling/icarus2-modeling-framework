@@ -99,7 +99,7 @@ public class ManifestXmlWriter extends ManifestXmlProcessor {
 			serializer.startDocument();
 			serializer.startElement(rootTag);
 
-			writeXsiInfo(serializer);
+			ManifestXmlUtils.writeDefaultXsiInfo(serializer);
 
 			writeInline(serializer);
 
@@ -170,13 +170,7 @@ public class ManifestXmlWriter extends ManifestXmlProcessor {
 
 		XMLOutputFactory factory = XMLOutputFactory.newFactory();
 
-		return new XmlStreamSerializer(factory.createXMLStreamWriter(out));
-	}
-
-	protected void writeXsiInfo(XmlSerializer serializer) throws Exception {
-
-		//TODO verify what amount of xsi info we need to include on the top level node
-//		serializer.writeAttribute("xsi:noNamespaceSchemaLocation", "corpus.xsd");
-//		serializer.writeAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+		return XmlStreamSerializer.withNamespace(factory.createXMLStreamWriter(out),
+				ManifestXmlUtils.MANIFEST_NS_PREFIX, ManifestXmlUtils.MANIFEST_NAMESPACE_URI);
 	}
 }

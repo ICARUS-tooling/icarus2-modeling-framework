@@ -346,7 +346,8 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 		 */
 		@Override
 		public String toString() {
-			return "PathEntry["+(type==null ? "<no_type>" : type.getStringValue())+"]@"+(value==null ? "<no_value>" : value); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+			return "PathEntry["+(type==null ? "<no_type>" : type.getStringValue())+"]@"
+						+(value==null ? "<no_value>" : value);
 		}
 
 		/**

@@ -34,6 +34,8 @@ public class ManifestXmlTags {
 	public static final String TEMPLATES = "templates";
 	public static final String CORPORA = "corpora";
 
+	public static final String TEST = "test";
+
 	public static final String CORPUS = "corpus";
 	public static final String CONTEXT = "context";
 	public static final String ROOT_CONTEXT = "rootContext";
@@ -60,11 +62,14 @@ public class ManifestXmlTags {
 	public static final String CATEGORIES = "categories";
 	public static final String CATEGORY = "category";
 
+	public static final String HIERARCHY = "hierarchy";
+
 	public static final String BASE_LAYER = "baseLayer";
 	public static final String BOUNDARY_LAYER = "boundaryLayer";
 	public static final String FOUNDATION_LAYER = "foundationLayer";
 	public static final String VALUE_LAYER = "valueLayer";
 	public static final String REFERENCE_LAYER = "referenceLayer";
+	public static final String PRIMARY_LAYER = "primaryLayer";
 
 	public static final String CONTAINER = "container";
 	public static final String STRUCTURE = "structure";
@@ -82,7 +87,6 @@ public class ManifestXmlTags {
 	public static final String OPTION = "option";
 	public static final String EXTENSION_POINT = "extensionPoint";
 	public static final String DEFAULT_VALUE = "defaultValue";
-	public static final String DEFAULT_VALUES = "defaultValues";
 	public static final String IMPLEMENTATION = "implementation";
 	public static final String DOCUMENTATION = "documentation";
 	public static final String CONTENT = "content";

@@ -167,7 +167,7 @@ public class ContextManifestResolver {
 
 		copyMemberFields(source, target);
 
-		target.setSourceType(source.getSourceType());
+		source.getSourceType().ifPresent(target::setSourceType);
 		target.setUseFactory(source.isUseFactory());
 		source.getClassname().ifPresent(target::setClassname);
 		source.getSource().ifPresent(target::setSource);

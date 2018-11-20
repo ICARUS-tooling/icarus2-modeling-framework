@@ -16,7 +16,6 @@
  */
 package de.ims.icarus2.model.manifest.xml.delegates;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,6 +35,7 @@ import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
+import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
@@ -129,18 +129,20 @@ public class AnnotationLayerManifestXmlDelegate extends AbstractLayerManifestXml
 			ManifestXmlUtils.writeTargetLayerManifestElement(serializer, ManifestXmlTags.REFERENCE_LAYER, layerManifest);
 		}
 
-		// Write annotation manifests
-		List<AnnotationManifest> sortedAnnotationManifests = new ArrayList<>(manifest.getLocalAnnotationManifests());
-		sortedAnnotationManifests.sort(Identity.ID_COMPARATOR);
-
-		for(AnnotationManifest annotationManifest : sortedAnnotationManifests) {
-			getAnnotationManifestXmlDelegate().reset(annotationManifest).writeXml(serializer);
-		}
-
+		// Write annotation flags
 		for(AnnotationFlag flag : manifest.getLocalActiveAnnotationFlags()) {
 			serializer.startElement(ManifestXmlTags.ANNOTATION_FLAG);
 			serializer.writeText(flag.getStringValue());
 			serializer.endElement(ManifestXmlTags.ANNOTATION_FLAG);
+		}
+
+		// Write annotation manifests
+		List<AnnotationManifest> sortedAnnotationManifests = CollectionUtils.asSortedList(
+				manifest.getLocalAnnotationManifests(),
+				Identity.ID_COMPARATOR);
+
+		for(AnnotationManifest annotationManifest : sortedAnnotationManifests) {
+			getAnnotationManifestXmlDelegate().reset(annotationManifest).writeXml(serializer);
 		}
 	}
 

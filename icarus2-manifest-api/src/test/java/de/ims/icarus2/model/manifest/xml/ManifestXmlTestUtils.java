@@ -16,13 +16,20 @@
  */
 package de.ims.icarus2.model.manifest.xml;
 
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 
+import javax.xml.stream.XMLStreamException;
+
+import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 
 import de.ims.icarus2.model.manifest.api.Manifest;
@@ -35,8 +42,10 @@ import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlReader.RootHandlerProxy;
 import de.ims.icarus2.test.DiffUtils;
 import de.ims.icarus2.test.DiffUtils.Trace;
+import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.lang.ClassUtils;
+import de.ims.icarus2.util.xml.UnexpectedTagException;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
 
@@ -105,30 +114,12 @@ public class ManifestXmlTestUtils {
 		}
 	}
 
-	public static <M extends Object> void assertSerializationEquals(
+	public static <M extends TypedManifest> void assertSerializationEquals(
 			String msg, M instance, M newInstance,
-			ManifestXmlDelegate<? super M> delegate, boolean allowValidation) throws Exception {
+			ManifestXmlDelegate<M> delegate, boolean allowValidation, boolean dumpXml) throws Exception {
 
 		ClassLoader classLoader = instance.getClass().getClassLoader();
-		boolean isTemplate = false;
-
-		VirtualManifestOutputLocation outputLocation = new VirtualManifestOutputLocation(classLoader, isTemplate);
-		try(XmlSerializer serializer = ManifestXmlWriter.defaultCreateSerializer(outputLocation.getOutput())) {
-			delegate.reset(instance);
-
-			serializer.startDocument();
-			delegate.writeXml(serializer);
-			serializer.endDocument();
-		}
-
-		String xml = outputLocation.getContent();
-
-//		System.out.println(xml);
-
-		VirtualManifestInputLocation inputLocation = new VirtualManifestInputLocation(xml, classLoader, isTemplate);
-
-		// Reset delegate so we write into the correct target object
-		delegate.reset(newInstance);
+		boolean isTemplate = instance instanceof Manifest && ((Manifest)instance).isTemplate();
 
 		/*
 		 *  Assume we shouldn't use validation for most "low level" components,
@@ -147,8 +138,29 @@ public class ManifestXmlTestUtils {
 			validate = type.isSupportTemplating();
 		}
 
+		TopLevelProxy<M> wrapper = new TopLevelProxy<>(delegate);
+
+		VirtualManifestOutputLocation outputLocation = new VirtualManifestOutputLocation(classLoader, isTemplate);
+		try(XmlSerializer serializer = ManifestXmlWriter.defaultCreateSerializer(outputLocation.getOutput())) {
+			wrapper.writeXml(serializer, instance);
+		}
+
+		String xml = outputLocation.getContent();
+
+		if(dumpXml) {
+			TestUtils.println("========================"+msg+"========================");
+			TestUtils.println("==  validating:"+validate);
+			TestUtils.println(xml);
+			TestUtils.println("=======================================================");
+		}
+
+		VirtualManifestInputLocation inputLocation = new VirtualManifestInputLocation(xml, classLoader, isTemplate);
+
+		// Reset delegate so we write into the correct target object
+		delegate.reset(newInstance);
+
 		// BEGIN XML boilerplate stuff
-		RootHandlerProxy proxy = new RootHandlerProxy(inputLocation, delegate);
+		RootHandlerProxy proxy = new RootHandlerProxy(inputLocation, wrapper);
 		XMLReader reader = ManifestXmlReader.defaultCreateReader(validate);
 
 		InputSource inputSource = new InputSource();
@@ -163,11 +175,104 @@ public class ManifestXmlTestUtils {
 		reader.parse(inputSource);
 		// END XML boilerplate stuff
 
+		// Make sure delegate was operating on the correct instance
+		assertSame(newInstance, delegate.getInstance());
+
 		Trace trace = DiffUtils.deepDiff(instance, newInstance);
 
 		if(trace.hasMessages()) {
 			failForTrace(msg, trace, instance, xml);
 		}
+	}
+
+	private static class TopLevelProxy<M extends TypedManifest> implements ManifestXmlHandler {
+
+		private final ManifestXmlDelegate<M> delegate;
+
+		/**
+		 * @param delegate
+		 */
+		public TopLevelProxy(ManifestXmlDelegate<M> delegate) {
+			this.delegate = requireNonNull(delegate);
+		}
+
+		public void writeXml(XmlSerializer serializer, M instance) throws XMLStreamException {
+			delegate.reset(instance);
+
+			serializer.startDocument();
+			serializer.startElement(ManifestXmlTags.MANIFEST);
+			ManifestXmlUtils.writeDefaultXsiInfo(serializer);
+			serializer.startElement(ManifestXmlTags.TEST);
+			delegate.writeXml(serializer);
+			serializer.endElement(ManifestXmlTags.TEST);
+			serializer.endElement(ManifestXmlTags.MANIFEST);
+			serializer.endDocument();
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlHandler#startElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
+		 */
+		@Override
+		public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation, String uri,
+				String localName, String qName, Attributes attributes) throws SAXException {
+
+			ManifestXmlHandler handler = this;
+
+			switch (localName) {
+			case ManifestXmlTags.MANIFEST:
+				// no-op
+				break;
+
+			case ManifestXmlTags.TEST:
+				// no-op
+				break;
+
+			case ManifestXmlTags.TEMPLATES:
+			case ManifestXmlTags.CORPORA:
+				throw new UnexpectedTagException(qName, true, "root");
+
+			default:
+				handler = delegate;
+				break;
+			}
+
+			return Optional.of(handler);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlHandler#endElement(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
+		 */
+		@Override
+		public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation, String uri, String localName,
+				String qName, String text) throws SAXException {
+
+			ManifestXmlHandler handler = this;
+
+			switch (localName) {
+			case ManifestXmlTags.MANIFEST:
+				handler = null;
+				break;
+
+			case ManifestXmlTags.TEST:
+				// no-op
+				break;
+
+			default:
+				throw new UnexpectedTagException(qName, false, "root");
+			}
+
+			return Optional.ofNullable(handler);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlHandler#endNestedHandler(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, de.ims.icarus2.model.manifest.xml.ManifestXmlHandler)
+		 */
+		@Override
+		public void endNestedHandler(ManifestLocation manifestLocation, String uri, String localName, String qName,
+				ManifestXmlHandler handler) throws SAXException {
+			assertSame(delegate, handler);
+		}
+
 	}
 
 	public static void assertSerializationEquals(Manifest manifest) throws Exception {

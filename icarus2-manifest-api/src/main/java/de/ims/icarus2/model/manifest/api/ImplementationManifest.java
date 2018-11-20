@@ -65,7 +65,7 @@ public interface ImplementationManifest extends MemberManifest, Embedded {
 	 * @see #DEFAULT_SOURCE_TYPE
 	 */
 	@AccessRestriction(AccessMode.READ)
-	SourceType getSourceType();
+	Optional<SourceType> getSourceType();
 
 	boolean isLocalSourceType();
 

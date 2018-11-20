@@ -24,6 +24,7 @@ import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestRegist
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubId;
 import static de.ims.icarus2.test.TestUtils.isMock;
+import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -38,10 +39,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import de.ims.icarus2.model.manifest.api.AnnotationFlag;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
@@ -72,11 +75,15 @@ import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathEntry;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
+import de.ims.icarus2.model.manifest.api.LocationType;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestFactory;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
+import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
+import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
+import de.ims.icarus2.model.manifest.api.MemberManifest.Property;
 import de.ims.icarus2.model.manifest.api.ModifiableIdentity;
 import de.ims.icarus2.model.manifest.api.OptionsManifest;
 import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
@@ -85,11 +92,13 @@ import de.ims.icarus2.model.manifest.api.RasterizerManifest;
 import de.ims.icarus2.model.manifest.api.StructureFlag;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
+import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.api.ValueManifest;
 import de.ims.icarus2.model.manifest.api.ValueRange;
 import de.ims.icarus2.model.manifest.api.ValueSet;
 import de.ims.icarus2.model.manifest.api.VersionManifest;
+import de.ims.icarus2.model.manifest.standard.AbstractMemberManifest.PropertyImpl;
 import de.ims.icarus2.model.manifest.standard.DefaultCategory;
 import de.ims.icarus2.model.manifest.standard.DefaultManifestFactory;
 import de.ims.icarus2.model.manifest.standard.DefaultModifiableIdentity;
@@ -315,6 +324,10 @@ public class ManifestGenerator {
 		return base+index();
 	}
 
+	private Supplier<String> indexSupplier(String base) {
+		return () -> index(base);
+	}
+
 	/**
 	 * Wraps an entire (sub-)build into a single change by using its result as
 	 * the input for the specified {@code setter} method.
@@ -361,6 +374,13 @@ public class ManifestGenerator {
 		return identity;
 	}
 
+	private Property createProperty(ValueType valueType) {
+		int index = index();
+		PropertyImpl property = new PropertyImpl("property"+index, valueType);
+		property.setValue(ManifestTestUtils.getTestValue(valueType));
+		return property;
+	}
+
 	// Generic preparations
 
 	private void prepareManifest(Manifest manifest, IncrementalBuild<?> container, Config config) {
@@ -377,7 +397,11 @@ public class ManifestGenerator {
 
 	private void prepareIdentity(ModifiableIdentity identity,
 			IncrementalBuild<?> container, Config config) {
-		container.addStep(identity::setId, "id", index("myId"));
+
+		// Only mess with id if not already set!!
+		if(!identity.getId().isPresent())
+			container.addStep(identity::setId, "id", index("myId"));
+
 		container.addStep(identity::setDescription, "description", index("myDesc\nrandom stuff"));
 		container.addStep(identity::setName, "name", index("myName"));
 		//TODO add Icon
@@ -398,7 +422,10 @@ public class ManifestGenerator {
 		container.addStep("options", ManifestType.OPTIONS_MANIFEST,
 				manifest, config, manifest::setOptionsManifest);
 
-		//TODO add properties
+		for(ValueType valueType : ValueType.simpleValueTypes()) {
+			container.addStep(manifest::addProperty, "property"+valueType,
+					() -> createProperty(valueType));
+		}
 	}
 
 	private void prepareLayerManifest(LayerManifest manifest,
@@ -477,8 +504,21 @@ public class ManifestGenerator {
 
 	private void prepareContextManifest(ContextManifest manifest,
 			IncrementalBuild<?> container, Config config) {
+		prepareMemberManifest(manifest, container, config);
 
-		//TODO
+		for(int i=0; i<3; i++) {
+			container.addStep(manifest::addPrerequisite, "prerequisite", index("alias"));
+		}
+
+		for(int i=0; i<3; i++) {
+			container.addStep("layerGroup", ManifestType.LAYER_GROUP_MANIFEST,
+					manifest, config, manifest::addLayerGroup);
+		}
+
+		for(int i=0; i<3; i++) {
+			container.addStep("location", ManifestType.LOCATION_MANIFEST,
+					config, manifest::addLocationManifest);
+		}
 	}
 
 	private void prepareCorpusManifest(CorpusManifest manifest,
@@ -489,8 +529,6 @@ public class ManifestGenerator {
 
 	private void prepareDocumentation(Documentation documentation,
 			IncrementalBuild<?> container, Config config) {
-		prepareIdentity(documentation, container, config);
-
 		container.addStep(documentation::setContent, "content", TestUtils.LOREM_IPSUM_CHINESE);
 
 		for(int i=0; i<3; i++) {
@@ -500,8 +538,36 @@ public class ManifestGenerator {
 
 	private void prepareDriverManifest(DriverManifest manifest,
 			IncrementalBuild<?> container, Config config) {
+		prepareForeignImplementationManifest(manifest, container, config);
 
-		//TODO
+		for(LocationType locationType : LocationType.values()) {
+			container.addStep(manifest::setLocationType, "locationType", locationType);
+		}
+
+		Queue<String> specIds = new LinkedList<>();
+
+		for(int i=0; i<3; i++) {
+			Consumer<ModuleSpec> action = manifest::addModuleSpec;
+			action = action.andThen(spec -> specIds.add(ManifestUtils.requireId(spec)));
+			container.addStep("spec", ManifestType.MODULE_SPEC,
+					manifest, config, action);
+		}
+
+		for(int i=0; i<3; i++) {
+			container.addStep(manifest::addModuleManifest, "module",
+					() -> {
+						ModuleManifest mod = (ModuleManifest) generate0(
+								ManifestType.MODULE_MANIFEST, manifest, config)
+								.applyAllAndGet();
+						mod.setModuleSpecId(specIds.remove());
+						return mod;
+					});
+		}
+
+		for(int i=0; i<3; i++) {
+			container.addStep("mapping", ManifestType.MAPPING_MANIFEST,
+					manifest, config, manifest::addMappingManifest);
+		}
 	}
 
 	private void prepareFragmentLayerManifest(FragmentLayerManifest manifest,
@@ -514,11 +580,49 @@ public class ManifestGenerator {
 				config, manifest::setRasterizerManifest);
 	}
 
+	/**
+	 * Makes the given {@code layerManifest} accessible from the specified {@code groupManifest}.
+	 * Note that this accessibility only covers lookup operations, no bulk getters or
+	 * {@code for-each} traversals!
+	 *
+	 * @param groupManifest
+	 * @param layerManifest
+	 */
+	private void injectLayer(LayerGroupManifest groupManifest, LayerManifest layerManifest) {
+		if(!isMock(groupManifest)) {
+			groupManifest.addLayerManifest(layerManifest);
+		} else {
+			String id = ManifestUtils.requireId(layerManifest);
+
+			doReturn(Optional.of(layerManifest)).when(groupManifest).getLayerManifest(id);
+
+			ContextManifest contextManifest = groupManifest.getContextManifest().orElse(null);
+			if(isMock(contextManifest)) {
+				doReturn(Optional.of(layerManifest)).when(contextManifest).getLayerManifest(id);
+			}
+		}
+	}
+
 	private void prepareHighlightLayerManifest(HighlightLayerManifest manifest,
 			IncrementalBuild<?> container, Config config) {
 		prepareLayerManifest(manifest, container, config);
 
-		container.addStep(manifest::setPrimaryLayerId, "primaryLayer", index("layer"));
+		LayerManifest layerManifest = manifest.getContextManifest()
+				.map(c -> c.getLayerManifests(ManifestUtils::isItemLayerManifest))
+				.filter(l -> !l.isEmpty())
+				.map(l -> l.get(0))
+				.orElse(null);
+
+		if(layerManifest==null) {
+			LayerGroupManifest groupManifest = manifest.getGroupManifest().get();
+			layerManifest = instantiate(ManifestType.ITEM_LAYER_MANIFEST, groupManifest, config);
+			layerManifest.setId(index("layer"));
+			injectLayer(groupManifest, layerManifest);
+		}
+
+		String id = ManifestUtils.requireId(layerManifest);
+
+		container.addStep(manifest::setPrimaryLayerId, "primaryLayer", id);
 
 		for(HighlightFlag flag : HighlightFlag.values()) {
 			container.addStep(f -> manifest.setHighlightFlag(f, true), "highLightFlag", flag);
@@ -527,9 +631,10 @@ public class ManifestGenerator {
 
 	private void prepareImplementationManifest(ImplementationManifest manifest,
 			IncrementalBuild<?> container, Config config) {
+		manifest.setClassname(index("de.ims.test.FancyClass"));
+
 		prepareMemberManifest(manifest, container, config);
 
-		container.addStep(manifest::setClassname, "classname", index("classname"));
 		container.addStep(manifest::setSource, "source", index("source"));
 		container.addStep(manifest::setUseFactory, "factory",
 				Boolean.valueOf(!ImplementationManifest.DEFAULT_USE_FACTORY_VALUE));
@@ -537,16 +642,20 @@ public class ManifestGenerator {
 
 	private void prepareItemLayerManifest(ItemLayerManifest manifest,
 			IncrementalBuild<?> container, Config config) {
+
+		Hierarchy<ContainerManifest> hierarchy = new HierarchyImpl<>();
+		hierarchy.add((ContainerManifest)generate0(ManifestType.CONTAINER_MANIFEST, manifest, config).applyAllAndGet());
+		manifest.setContainerHierarchy(hierarchy);
+
 		prepareLayerManifest(manifest, container, config);
 
 		container.addStep(manifest::setFoundationLayerId, "foundationLayer", index("layer"));
 		container.addStep(manifest::setBoundaryLayerId, "boundaryLayer", index("layer"));
 
-		Hierarchy<ContainerManifest> hierarchy = new HierarchyImpl<>();
-		hierarchy.add((ContainerManifest)generate0(ManifestType.CONTAINER_MANIFEST, manifest, config).applyAllAndGet());
-		container.addStep(manifest::setContainerHierarchy, "containerHierarchy", hierarchy);
-
 		for(ContainerType containerType : ContainerType.values()) {
+			if(containerType==ContainerType.PROXY) {
+				continue;
+			}
 			container.addStep("container::"+containerType, ManifestType.CONTAINER_MANIFEST,
 					manifest, config.preprocessor(ManifestType.CONTAINER_MANIFEST,
 							c -> ((ContainerManifest)c).setContainerType(containerType))
@@ -561,7 +670,7 @@ public class ManifestGenerator {
 		}
 
 		return layerManifest -> {
-			doReturn(layerManifest).when(contextManifest).getLayerManifest(layerManifest.getId()
+			doReturn(Optional.of(layerManifest)).when(contextManifest).getLayerManifest(layerManifest.getId()
 					.orElseThrow(() -> new AssertionError("No layer id to mock lookup for")));
 		};
 	}
@@ -570,6 +679,12 @@ public class ManifestGenerator {
 			IncrementalBuild<?> container, Config config) {
 		prepareIdentity(manifest, container, config);
 
+		/*
+		 *  To be able to provide a "real" primary layer
+		 *  we need to intercept all layers that get added to
+		 *  this group during preparation phase and then pick
+		 *  an item layer amongst them to be used as primary layer
+		 */
 		Consumer<LayerManifest> action = createLayerLookup(manifest.getContextManifest().orElse(null));
 		List<LayerManifest> layers = new ArrayList<>();
 		action = action.andThen(layers::add);
@@ -582,8 +697,15 @@ public class ManifestGenerator {
 		container.addStep(manifest::setIndependent, "independent",
 				Boolean.valueOf(!LayerGroupManifest.DEFAULT_INDEPENDENT_VALUE));
 
+		/*
+		 *  We added instances for all possible layer types already,
+		 *  so we are guaranteed to have an item layer here!
+		 */
 		container.addStep(manifest::setPrimaryLayerId, "primaryLayer",
-				ManifestUtils.requireId(layers.get(0)));
+				() -> ManifestUtils.requireId(layers.stream()
+						.filter(ManifestUtils::isItemLayerManifest)
+						.findFirst()
+						.get()));
 	}
 
 	private void prepareLocationManifest(LocationManifest manifest,
@@ -611,6 +733,11 @@ public class ManifestGenerator {
 	private void prepareMappingManifest(MappingManifest manifest,
 			IncrementalBuild<?> container, Config config) {
 
+		if(!manifest.getCoverage().isPresent())
+			manifest.setCoverage(Coverage.TOTAL);
+		if(!manifest.getRelation().isPresent())
+			manifest.setRelation(Relation.ONE_TO_ONE);
+
 		container.addStep(manifest::setId, "id", index("id"));
 		container.addStep(manifest::setSourceLayerId, "sourceLayerId", index("sourceLayer"));
 		container.addStep(manifest::setTargetLayerId, "targetLayerId", index("targetLayer"));
@@ -636,6 +763,17 @@ public class ManifestGenerator {
 			doReturn(Optional.of(spec)).when(driverManifest).getModuleSpec(id);
 
 			container.addStep(manifest::setModuleSpecId, "moduleSpec", id);
+		} else if(driverManifest!=null) {
+			Set<ModuleSpec> specs = driverManifest.getModuleSpecs();
+			ModuleSpec spec;
+			if(specs.isEmpty()) {
+				spec = instantiate(ManifestType.MODULE_SPEC, driverManifest, config);
+				driverManifest.addModuleSpec(spec);
+			} else {
+				spec = random(specs);
+			}
+
+			container.addStep(manifest::setModuleSpecId, "specId", ManifestUtils.requireId(spec));
 		}
 	}
 
@@ -706,10 +844,35 @@ public class ManifestGenerator {
 
 	private void prepareStructureLayerManifest(StructureLayerManifest manifest,
 			IncrementalBuild<?> container, Config config) {
-		prepareItemLayerManifest(manifest, container, config);
 
-		container.addStep("structure", ManifestType.STRUCTURE_MANIFEST, manifest, config,
-				s -> manifest.getContainerHierarchy().get().add((StructureManifest)s));
+		Hierarchy<ContainerManifest> hierarchy = new HierarchyImpl<>();
+		hierarchy.add((ContainerManifest)generate0(ManifestType.CONTAINER_MANIFEST, manifest, config).applyAllAndGet());
+		hierarchy.add((StructureManifest)generate0(ManifestType.STRUCTURE_MANIFEST, manifest, config).applyAllAndGet());
+		manifest.setContainerHierarchy(hierarchy);
+
+		prepareLayerManifest(manifest, container, config);
+
+		container.addStep(manifest::setFoundationLayerId, "foundationLayer", index("layer"));
+		container.addStep(manifest::setBoundaryLayerId, "boundaryLayer", index("layer"));
+
+		for(StructureType structureType : StructureType.values()) {
+			container.addStep("structure::"+structureType, ManifestType.STRUCTURE_MANIFEST,
+					manifest, config.preprocessor(ManifestType.STRUCTURE_MANIFEST,
+							c -> ((StructureManifest)c).setStructureType(structureType))
+					.label(structureType.toString()),
+					cm -> manifest.getContainerHierarchy().get().add((StructureManifest)cm));
+		}
+
+		for(ContainerType containerType : ContainerType.values()) {
+			if(containerType==ContainerType.PROXY) {
+				continue;
+			}
+			container.addStep("container::"+containerType, ManifestType.CONTAINER_MANIFEST,
+					manifest, config.preprocessor(ManifestType.CONTAINER_MANIFEST,
+							c -> ((ContainerManifest)c).setContainerType(containerType))
+					.label(containerType.toString()),
+					cm -> manifest.getContainerHierarchy().get().add((ContainerManifest)cm));
+		}
 	}
 
 	private void prepareStructureManifest(StructureManifest manifest,
@@ -903,6 +1066,20 @@ public class ManifestGenerator {
 		void postprocess(TypedManifest manifest) {
 			process(postprocessors, manifest);
 		}
+
+		private void clear(Map<ManifestType, List<Consumer<? super TypedManifest>>> map,
+				ManifestType type) {
+			map.getOrDefault(type, Collections.emptyList()).clear();
+			map.remove(type);
+		}
+
+		void clearPreprocessors(ManifestType type) {
+			clear(preprocessors, type);
+		}
+
+		void clearPostprocessors(ManifestType type) {
+			clear(postprocessors, type);
+		}
 	}
 
 	/**
@@ -992,6 +1169,13 @@ public class ManifestGenerator {
 			requireNonNull(value);
 
 			addStep(with(field, value), () -> setter.accept(value));
+		}
+
+		<T extends Object> void addStep(Consumer<? super T> setter, String field, Supplier<? extends T> source) {
+			requireNonNull(setter);
+			requireNonNull(source);
+
+			addStep(with(field, "<delayed>"), () -> setter.accept(source.get()));
 		}
 
 		<T extends Enum<T>> void addStep(Consumer<? super T> setter, String field, T value) {

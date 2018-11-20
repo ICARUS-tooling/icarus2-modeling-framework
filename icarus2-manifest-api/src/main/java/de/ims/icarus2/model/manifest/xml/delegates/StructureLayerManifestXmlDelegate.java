@@ -25,12 +25,12 @@ import org.xml.sax.SAXException;
 
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.Hierarchy;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
+import de.ims.icarus2.model.manifest.standard.ItemLayerManifestImpl;
 import de.ims.icarus2.model.manifest.standard.StructureLayerManifestImpl;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
@@ -106,7 +106,7 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
 		super.writeElements(serializer);
 
-		ItemLayerManifest manifest = getInstance();
+		StructureLayerManifest manifest = getInstance();
 
 		if(manifest.isLocalBoundaryLayerManifest()) {
 			ManifestXmlUtils.writeTargetLayerManifestElement(serializer,
@@ -119,6 +119,7 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 		}
 
 		if(manifest.hasLocalContainerHierarchy()) {
+			serializer.startElement(ManifestXmlTags.HIERARCHY);
 			for(ContainerManifest containerManifest : manifest.getContainerHierarchy()
 					.orElse(Hierarchy.empty())) {
 				if(containerManifest.getManifestType()==ManifestType.STRUCTURE_MANIFEST) {
@@ -127,6 +128,7 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 					getContainerManifestXmlDelegate().reset(containerManifest).writeXml(serializer);
 				}
 			}
+			serializer.endElement(ManifestXmlTags.HIERARCHY);
 		}
 	}
 
@@ -149,6 +151,10 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 		case ManifestXmlTags.FOUNDATION_LAYER: {
 			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID)
 				.ifPresent(getInstance()::setFoundationLayerId);
+		} break;
+
+		case ManifestXmlTags.HIERARCHY: {
+			ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(getInstance());
 		} break;
 
 		case ManifestXmlTags.CONTAINER: {
@@ -182,6 +188,10 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 		} break;
 
 		case ManifestXmlTags.FOUNDATION_LAYER: {
+			// no-op
+		} break;
+
+		case ManifestXmlTags.HIERARCHY: {
 			// no-op
 		} break;
 

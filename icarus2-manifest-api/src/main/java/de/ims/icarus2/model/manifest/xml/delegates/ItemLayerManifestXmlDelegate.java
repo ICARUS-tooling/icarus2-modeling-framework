@@ -99,10 +99,12 @@ public class ItemLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelega
 		}
 
 		if(manifest.hasLocalContainerHierarchy()) {
+			serializer.startElement(ManifestXmlTags.HIERARCHY);
 			for(ContainerManifest containerManifest : manifest.getContainerHierarchy()
 					.orElse(Hierarchy.empty())) {
 				containerDelegate.reset(containerManifest).writeXml(serializer);
 			}
+			serializer.endElement(ManifestXmlTags.HIERARCHY);
 		}
 	}
 
@@ -138,6 +140,10 @@ public class ItemLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelega
 				.ifPresent(getInstance()::setFoundationLayerId);
 		} break;
 
+		case ManifestXmlTags.HIERARCHY: {
+			ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(getInstance());
+		} break;
+
 		case ManifestXmlTags.CONTAINER: {
 			handler = getContainerManifestXmlDelegate().reset(getInstance());
 		} break;
@@ -165,6 +171,10 @@ public class ItemLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelega
 		} break;
 
 		case ManifestXmlTags.FOUNDATION_LAYER: {
+			// no-op
+		} break;
+
+		case ManifestXmlTags.HIERARCHY: {
 			// no-op
 		} break;
 
@@ -196,9 +206,7 @@ public class ItemLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelega
 
 	public static <L extends ItemLayerManifest> void defaultAddContainerManifest(
 			AbstractLayerManifestXmlDelegate<L> delegate, ContainerManifest containerManifest) {
-		ItemLayerManifest layerManifest = delegate.getInstance();
-
-		ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(layerManifest).add(containerManifest);
+		delegate.getInstance().getContainerHierarchy().get().add(containerManifest);
 	}
 
 	/**

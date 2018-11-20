@@ -59,11 +59,19 @@ public final class ManifestXmlUtils {
 		throw new IcarusException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Instantiation not supported");
 	}
 
-	public static final String MANIFEST_LABEL = "Manifest";
+	public static final String MANIFEST_LABEL = "manifest";
 
 	public static final String MANIFEST_NAMESPACE_URI = XmlUtils.ICARUS_NS_URI+MANIFEST_LABEL;
 
 	public static final String MANIFEST_NS_PREFIX = XmlUtils.ICARUS_NS;
+
+	public static final String SCHEMA_NAME = "corpus.xsd";
+
+	public static void writeDefaultXsiInfo(XmlSerializer serializer) throws XMLStreamException {
+		serializer.writeAttribute("xmlns:xsi", XmlUtils.XSI_NS_URI);
+		serializer.writeSchemaInfo();
+		serializer.writeAttribute("xsi:schemaLocation", MANIFEST_NAMESPACE_URI+" "+SCHEMA_NAME);
+	}
 
 	/**
 	 * Check whether a flag is set and differs from a given default value. Only if both conditions are met
@@ -295,7 +303,7 @@ public final class ManifestXmlUtils {
 		serializer.writeAttribute(ManifestXmlAttributes.LAYER_ID, manifest.getLayerId());
 
 		// Only write the layer type attribute for unresolved prerequisites!
-		if(manifest.getUnresolvedForm()==null) {
+		if(!manifest.getUnresolvedForm().isPresent()) {
 			serializer.writeAttribute(ManifestXmlAttributes.TYPE_ID, manifest.getTypeId());
 		}
 

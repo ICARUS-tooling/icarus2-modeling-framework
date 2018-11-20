@@ -1,3 +1,19 @@
+/*
+ * ICARUS2 Corpus Modeling Framework
+ * Copyright (C) 2014-2018 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /**
  *
  */
@@ -36,6 +52,9 @@ import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
 
 /**
+ * Test facility for {@link ManifestXmlDelegate} implementations.
+ *
+ *
  * @author Markus Gärtner
  *
  */
@@ -118,6 +137,14 @@ public interface ManifestXmlDelegateTest<M extends TypedManifest, D extends Mani
 		assertSame(manifest2, delegate.getInstance());
 	}
 
+	/**
+	 * Produces {@link Config} instances that will each trigger a separate {@link DynamicTest}
+	 * being created by the {@link #testWriteXml()} method.
+	 * <p>
+	 * The returned list must contain at least {@code 1} entry!
+	 *
+	 * @return
+	 */
 	default List<Config> configurations() {
 		return list(ManifestGenerator.config().label("<basic>"));
 	}
@@ -172,7 +199,9 @@ public interface ManifestXmlDelegateTest<M extends TypedManifest, D extends Mani
 							build.currentLabel(), type, step++, build.getChangeCount()+1);
 
 					ManifestXmlTestUtils.assertSerializationEquals(
-							label, original, target, delegate, false); //TODO think about re-enabling validation
+							label, original, target, delegate,
+							true,
+							true); // dump intermediary xml representation
 				} while(build.applyNextChange());
 			}));
 		}

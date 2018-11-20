@@ -36,6 +36,8 @@ public enum ContainerType implements StringResource {
 	 * Special type of container that only exists as bridge between the top-level
 	 * members of a layer and the layer itself. Containers of this type will always
 	 * have a size of {@code 0} and will not support any {@link EditOperation} whatsoever.
+	 *
+	 * @deprecated
 	 */
 	@Deprecated
 	PROXY("proxy", 0, 0),

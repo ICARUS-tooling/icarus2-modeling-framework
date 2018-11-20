@@ -120,6 +120,10 @@ public class Links {
 	 * Implements a link that remembers having tried to resolve
 	 * the target and will never try to do it again after the
 	 * first attempt.
+	 * <p>
+	 * Note that this means a link that failed to properly resolve
+	 * its target on the first attempt will never be able to fix
+	 * that state!
 	 *
 	 * @author Markus Gärtner
 	 *
@@ -144,7 +148,7 @@ public class Links {
 				resolved = true;
 			}
 
-			return target.get();
+			return target==null ? null : target.get();
 		}
 	}
 }

@@ -38,7 +38,7 @@ import de.ims.icarus2.util.strings.StringResource;
  */
 public interface TableSchema extends Schema {
 
-	public static final String SCHEMA_ID = "de.ims.icarus2.filedriver.schema.table";
+	public static final String SCHEMA_TYPE_ID = "de.ims.icarus2.filedriver.schema.table";
 
 	public static final String SEPARATOR_TAB = "TAB";
 	public static final String SEPARATOR_SPACE = "SPACE";
@@ -50,7 +50,7 @@ public interface TableSchema extends Schema {
 	 */
 	@Override
 	default String getSchemaTypeName() {
-		return SCHEMA_ID;
+		return SCHEMA_TYPE_ID;
 	}
 
 	/**

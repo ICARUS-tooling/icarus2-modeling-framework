@@ -20,6 +20,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.slf4j.Logger;
@@ -114,6 +115,10 @@ public class IcarusUtils {
 	 * Value representing an unset float variable (-1F).
 	 */
 	public static final float UNSET_FLOAT = -1F;
+
+	public static <T extends Object> Predicate<? super T> notEq(T target) {
+		return item -> !item.equals(target);
+	}
 
 	@SafeVarargs
 	public static <V extends Object> Optional<V> or(Optional<V>...optionals) {

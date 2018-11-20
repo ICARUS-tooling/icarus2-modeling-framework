@@ -22,6 +22,7 @@ import java.util.Optional;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessRestriction;
+import de.ims.icarus2.util.lang.ClassUtils;
 import it.unimi.dsi.fastutil.Hash.Strategy;
 
 /**
@@ -54,6 +55,18 @@ public interface ManifestFragment extends Lockable, TypedManifest {
 	@AccessRestriction(AccessMode.READ)
 	default String getUniqueId() {
 		return ManifestUtils.getUniqueId(this);
+	}
+
+	/**
+	 * Equality based on {@link #getManifestType() type} and {@link #getId() id.
+	 *
+	 * @param m1
+	 * @param m2
+	 * @return
+	 */
+	public static boolean defaultEquals(ManifestFragment m1, ManifestFragment m2) {
+		return TypedManifest.defaultEquals(m1, m2)
+				&& ClassUtils.equals(m1.getId(), m2.getId());
 	}
 
 	public static final Strategy<ManifestFragment> HASH_STRATEGY = new Strategy<ManifestFragment>() {

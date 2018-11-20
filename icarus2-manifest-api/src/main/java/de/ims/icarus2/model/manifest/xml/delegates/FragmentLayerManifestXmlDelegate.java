@@ -27,6 +27,7 @@ import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.standard.FragmentLayerManifestImpl;
+import de.ims.icarus2.model.manifest.standard.ItemLayerManifestImpl;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
@@ -160,6 +161,10 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 				.ifPresent(getInstance()::setFoundationLayerId);
 		} break;
 
+		case ManifestXmlTags.HIERARCHY: {
+			ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(getInstance());
+		} break;
+
 		case ManifestXmlTags.CONTAINER: {
 			handler = getContainerManifestXmlDelegate().reset(getInstance());
 		} break;
@@ -196,6 +201,10 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 		} break;
 
 		case ManifestXmlTags.FOUNDATION_LAYER: {
+			// no-op
+		} break;
+
+		case ManifestXmlTags.HIERARCHY: {
 			// no-op
 		} break;
 

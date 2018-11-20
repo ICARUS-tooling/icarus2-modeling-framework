@@ -144,6 +144,19 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 			getDocumentationXmlDelegate().reset(manifest.getDocumentation().get()).writeXml(serializer);
 		}
 
+		//TODO Assuming we do decide to make categories inheritable, the following needs to change!
+		Set<Category> categories = manifest.getCategories();
+		if(!categories.isEmpty()) {
+			serializer.startElement(ManifestXmlTags.CATEGORIES);
+			for(Category category : categories) {
+				serializer.startEmptyElement(ManifestXmlTags.CATEGORY);
+				ManifestXmlUtils.writeCategoryAttributes(serializer, category);
+				ManifestXmlUtils.writeIdentityFieldElements(serializer, category);
+				serializer.endElement(ManifestXmlTags.CATEGORY);
+			}
+			serializer.endElement(ManifestXmlTags.CATEGORIES);
+		}
+
 		// Write options manifest
 		if(manifest.getOptionsManifest().isPresent()) {
 			getOptionsManifestXmlDelegate().reset(manifest.getOptionsManifest().get()).writeXml(serializer);
@@ -189,18 +202,6 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 
 			serializer.endElement(ManifestXmlTags.PROPERTIES);
 		}
-
-		//TODO Assuming we do decide to make categories inheritable, the following needs to change!
-		Set<Category> categories = manifest.getCategories();
-		if(!categories.isEmpty()) {
-			serializer.startElement(ManifestXmlTags.CATEGORIES);
-			for(Category category : categories) {
-				serializer.startEmptyElement(ManifestXmlTags.CATEGORY);
-				ManifestXmlUtils.writeCategoryAttributes(serializer, category);
-				serializer.endElement(ManifestXmlTags.CATEGORY);
-			}
-			serializer.endElement(ManifestXmlTags.CATEGORIES);
-		}
 	}
 
 	private void maybeLinkProperties() {
@@ -213,7 +214,7 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 				// Gets only called by the parsing routines and therefore we
 				// can safely cast to the implementation we use there.
 				getInstance().getProperty(name)
-					.filter(p -> p instanceof PropertyImpl)
+					.filter(PropertyImpl.class::isInstance)
 					.ifPresent(p -> optionsManifest
 							.getOption(name)
 							.ifPresent(o -> ((PropertyImpl)p).setOption(o)));

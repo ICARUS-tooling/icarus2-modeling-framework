@@ -109,14 +109,14 @@ public class LayerGroupManifestXmlDelegate extends AbstractXmlDelegate<LayerGrou
 
 		ManifestXmlUtils.writeIdentityAttributes(serializer, manifest);
 
-		ManifestXmlUtils.writeIdentityFieldElements(serializer, manifest);
-
 		writeFlag(serializer, ManifestXmlAttributes.INDEPENDENT, manifest.isIndependent(), LayerGroupManifest.DEFAULT_INDEPENDENT_VALUE);
 
 		if(manifest.getPrimaryLayerManifest()!=null) {
 			serializer.writeAttribute(ManifestXmlAttributes.PRIMARY_LAYER,
 					manifest.getPrimaryLayerManifest().flatMap(Identity::getId));
 		}
+
+		ManifestXmlUtils.writeIdentityFieldElements(serializer, manifest);
 
 		for(Iterator<LayerManifest> it = manifest.getLayerManifests().iterator(); it.hasNext();) {
 			LayerManifest layerManifest = it.next();

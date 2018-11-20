@@ -32,7 +32,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface Documentation extends ModifiableIdentity, Lockable, TypedManifest {
+public interface Documentation extends Lockable, TypedManifest {
 
 	@AccessRestriction(AccessMode.READ)
 	Optional<String> getContent();

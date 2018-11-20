@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.api.binding.Bindable;
 import de.ims.icarus2.model.manifest.api.binding.LayerPrerequisite;
 import de.ims.icarus2.util.Multiplicity;
@@ -199,7 +200,15 @@ public interface ContextManifest extends MemberManifest, Bindable, Embedded {
 	}
 
 	/**
-	 * Returns the layer on the top of this context's layer hierarchy.
+	 * Returns the primary layer of this context.
+	 * Note that unlike many other methods in this framework that link to
+	 * other layers (such as {@link ItemLayerManifest#getBaseLayerManifests()}
+	 * this one does <b>not</b> return an optional of {@link TargetLayerManifest}
+	 * since the returned layer <b>must</b> be a member of this context and as such
+	 * is not obtained by resolving a (potentially foreign) id or alias.
+	 * @return
+	 *
+	 * @see LayerGroupManifest#getPrimaryLayerManifest()
 	 */
 	@AccessRestriction(AccessMode.READ)
 	<L extends ItemLayerManifest> Optional<L> getPrimaryLayerManifest();

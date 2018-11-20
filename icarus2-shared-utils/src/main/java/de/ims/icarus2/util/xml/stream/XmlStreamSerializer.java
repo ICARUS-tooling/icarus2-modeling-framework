@@ -31,7 +31,48 @@ import de.ims.icarus2.util.xml.XmlSerializer;
  * @author Markus Gärtner
  *
  */
-public class XmlStreamSerializer implements XmlSerializer {
+public abstract class XmlStreamSerializer implements XmlSerializer {
+
+	public static XmlStreamSerializer withoutNamespace(XMLStreamWriter writer) {
+		return new XmlStreamSerializer(writer, null) {
+
+			@Override
+			public void writeSchemaInfo() throws XMLStreamException {
+				// no-op
+			}
+		};
+	}
+
+	public static XmlStreamSerializer withDefaultNamespace(XMLStreamWriter writer,
+			String namespace) throws XMLStreamException {
+		requireNonNull(namespace);
+
+		writer.setDefaultNamespace(namespace);
+
+		return new XmlStreamSerializer(writer, null) {
+
+			@Override
+			public void writeSchemaInfo() throws XMLStreamException {
+				writer.writeDefaultNamespace(namespace);
+			}
+		};
+	}
+
+	public static XmlStreamSerializer withNamespace(XMLStreamWriter writer,
+			String prefix, String namespace) throws XMLStreamException {
+		requireNonNull(prefix);
+		requireNonNull(namespace);
+
+		writer.setPrefix(prefix, namespace);
+
+		return new XmlStreamSerializer(writer, namespace) {
+
+			@Override
+			public void writeSchemaInfo() throws XMLStreamException {
+				writer.writeNamespace(prefix, namespace);
+			}
+		};
+	}
 
 	private final XMLStreamWriter writer;
 
@@ -45,7 +86,10 @@ public class XmlStreamSerializer implements XmlSerializer {
 
 	private Stack<String> trace = new Stack<>();
 
-	public XmlStreamSerializer(XMLStreamWriter writer) {
+	private final String namespace;
+
+	private XmlStreamSerializer(XMLStreamWriter writer, String namespace) {
+		this.namespace = namespace;
 		this.writer = requireNonNull(writer);
 
 		buildIndentBuffer(10);
@@ -82,24 +126,6 @@ public class XmlStreamSerializer implements XmlSerializer {
 		characters.append(text);
 	}
 
-	/**
-	 *
-	 * @see de.ims.icarus2.util.xml.XmlSerializer#startElement(java.lang.String)
-	 */
-	@Override
-	public void startElement(String name) throws XMLStreamException {
-		startElement(name, false);
-	}
-
-	/**
-	 *
-	 * @see de.ims.icarus2.util.xml.XmlSerializer#startEmptyElement(java.lang.String)
-	 */
-	@Override
-	public void startEmptyElement(String name) throws XMLStreamException {
-		startElement(name, true);
-	}
-
 	@Override
 	public void startElement(String name, boolean empty) throws XMLStreamException {
 		checkState("Cannot nest elements until current one is closed", !elementIsEmpty);
@@ -108,10 +134,18 @@ public class XmlStreamSerializer implements XmlSerializer {
 		writeIndent();
 
 		if(empty) {
-			writer.writeEmptyElement(name);
+			if(namespace==null) {
+				writer.writeEmptyElement(name);
+			} else {
+				writer.writeEmptyElement(namespace, name);
+			}
 			elementIsEmpty = true;
 		} else {
-			writer.writeStartElement(name);
+			if(namespace==null) {
+				writer.writeStartElement(name);
+			} else {
+				writer.writeStartElement(namespace, name);
+			}
 		}
 		indent++;
 		nested = false;
@@ -201,7 +235,7 @@ public class XmlStreamSerializer implements XmlSerializer {
 	 */
 	@Override
 	public void startDocument() throws XMLStreamException {
-		writer.writeStartDocument();
+		writer.writeStartDocument("utf-8", "1.0");
 	}
 
 	/**

@@ -60,9 +60,9 @@ public class DefaultSchemaConverterFactory implements Factory {
 	/**
 	 * Type declaration, specifying how to interprete the schema.
 	 *
-	 * @see TableSchema#SCHEMA_ID
+	 * @see TableSchema#SCHEMA_TYPE_ID
 	 */
-	public static final String PROPERTY_SCHEMA_ID = "schemaId";
+	public static final String PROPERTY_SCHEMA_ID = "schemaTypeId";
 
 	/**
 	 * Property denoting one of the available default schemas.
@@ -105,7 +105,7 @@ public class DefaultSchemaConverterFactory implements Factory {
 		Converter converter = null;
 
 		switch(schemaType) {
-			case TableSchema.SCHEMA_ID:
+			case TableSchema.SCHEMA_TYPE_ID:
 				converter = buildTableConverter(manifest);
 				break;
 

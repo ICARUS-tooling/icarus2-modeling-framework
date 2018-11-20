@@ -48,15 +48,15 @@ public class XmlUtils {
 	 */
 	public static final String ICARUS_NS = "imf";
 
-	public static final String ICARUS_NS_URI = "http://www.ikarus-systems.net/icarus/xml/";
+	public static final String ICARUS_NS_URI = "http://www.ims.uni-stuttgart.de/icarus/xml/";
 	public static final String XSI_NS_URI = XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI;
 
 	public static final String ICARUS_SCHEMA_LOC = ICARUS_NS_URI;
 
 	public static void writeSchemaAttributes(XMLStreamWriter writer, String namespaceSuffix, String schemaName) throws XMLStreamException {
-		writer.writeAttribute("xmlns:xsi", XSI_NS_URI+namespaceSuffix);
-		writer.writeAttribute("xmlns:rdh", ICARUS_NS_URI);
-		writer.writeAttribute("xsi:schemaLocation", ICARUS_SCHEMA_LOC+namespaceSuffix+" "+schemaName); // following rule for even number of URIs in schema lcoation
+		writer.writeAttribute("xmlns:xsi", XSI_NS_URI);
+		writer.writeAttribute("xmlns:"+ICARUS_NS, ICARUS_NS_URI+namespaceSuffix);
+		writer.writeAttribute("xsi:schemaLocation", ICARUS_SCHEMA_LOC+namespaceSuffix+" "+schemaName); // following rule for even number of URIs in schema location
 	}
 
 	private static Schema createSchema(URL location) {

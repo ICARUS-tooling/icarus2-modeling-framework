@@ -65,8 +65,10 @@ import de.ims.icarus2.model.manifest.standard.StructureLayerManifestImpl;
 import de.ims.icarus2.model.manifest.standard.StructureManifestImpl;
 import de.ims.icarus2.model.manifest.xml.delegates.DefaultManifestXmlDelegateFactory;
 import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.lang.Lazy;
+import de.ims.icarus2.util.xml.UnexpectedTagException;
 import de.ims.icarus2.util.xml.XmlHandler;
 import de.ims.icarus2.util.xml.XmlUtils;
 
@@ -129,8 +131,7 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 	}
 
 	public void addSource(ManifestLocation source) {
-		if (source == null)
-			throw new NullPointerException("Invalid source");  //$NON-NLS-1$
+		requireNonNull(source);
 
 		if(reading.get())
 			throw new IllegalStateException("Reading in progress, cannot add new sources"); //$NON-NLS-1$
@@ -391,7 +392,7 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 
 			ManifestXmlHandler future =
 					current.startElement(manifestLocation, uri, localName, qName, attributes)
-					.filter(h -> h!=current)
+					.filter(IcarusUtils.notEq(current))
 					.orElse(null);
 
 			// Delegate initial element handling to next builder
@@ -435,13 +436,12 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 		protected String toLogMsg(SAXParseException ex) {
 			StringBuilder sb = new StringBuilder();
 			sb.append(ex.getMessage()).append(":\n"); //$NON-NLS-1$
-//			sb.append("Message: ").append(ex.getMessage()).append('\n'); //$NON-NLS-1$
 			sb.append("Public ID: ").append(String.valueOf(ex.getPublicId())).append('\n'); //$NON-NLS-1$
 			sb.append("System ID: ").append(String.valueOf(ex.getSystemId())).append('\n'); //$NON-NLS-1$
 			sb.append("Line: ").append(ex.getLineNumber()).append('\n'); //$NON-NLS-1$
 			sb.append("Column: ").append(ex.getColumnNumber()); //$NON-NLS-1$
-//			if(ex.getException()!=null)
-//				sb.append("\nEmbedded: ").append(ex.getException()); //$NON-NLS-1$
+			if(ex.getException()!=null)
+				sb.append("\nEmbedded: ").append(ex.getException()); //$NON-NLS-1$
 
 //			report.log(level, sb.toString(), ex);
 
@@ -513,7 +513,7 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 					constructor = clazz.getConstructor(CONSTRUCTOR_TYPES);
 					//TODO maybe save resolved constructor to prevent future lookups?
 				} catch (NoSuchMethodException | SecurityException e) {
-					throw new SAXException("Failed to access manifest constructur", e); //$NON-NLS-1$
+					throw new SAXException("Failed to access manifest constructur", e);
 				}
 			}
 
@@ -521,7 +521,7 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 				return (Manifest) constructor.newInstance(manifestLocation, registry);
 			} catch (InstantiationException | IllegalAccessException
 					| IllegalArgumentException | InvocationTargetException e) {
-				throw new SAXException("Failed to invoke manifest constructur", e); //$NON-NLS-1$
+				throw new SAXException("Failed to invoke manifest constructur", e);
 			}
 		}
 	}
@@ -560,6 +560,9 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 				handler = this;
 			} break;
 
+			case ManifestXmlTags.TEST:
+				throw new UnexpectedTagException(qName, true, "root");
+
 			default:
 				// no-op
 				break;
@@ -592,6 +595,9 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 			case ManifestXmlTags.TEMPLATES: {
 				handler = this;
 			} break;
+
+			case ManifestXmlTags.TEST:
+				throw new UnexpectedTagException(qName, true, "root");
 
 			default:
 				// no-op

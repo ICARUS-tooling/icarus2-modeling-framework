@@ -27,13 +27,15 @@ import java.util.function.Consumer;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.api.Documentation;
 import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.util.collections.CollectionUtils;
+import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.lang.ClassUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class DocumentationImpl extends DefaultModifiableIdentity implements Documentation {
+public class DocumentationImpl extends AbstractLockable implements Documentation {
 
 	private Optional<String> content = Optional.empty();
 
@@ -48,48 +50,12 @@ public class DocumentationImpl extends DefaultModifiableIdentity implements Docu
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.standard.DefaultModifiableIdentity#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		int hash = 1;
-
-		if(getId()!=null) {
-			hash *= getId().hashCode();
-		}
-
-		return hash;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.standard.DefaultModifiableIdentity#equals(java.lang.Object)
-	 */
-	@Override
-	public boolean equals(Object obj) {
-		if(this==obj) {
-			return true;
-		} if(obj instanceof Documentation) {
-			Documentation other = (Documentation) obj;
-			return ClassUtils.equals(getId(), other.getId());
-		}
-		return false;
-	}
-
-	/**
 	 * @see de.ims.icarus2.model.manifest.standard.DefaultModifiableIdentity#toString()
 	 */
 	@Override
 	public String toString() {
-		return "Documentation@"+String.valueOf(getId()); //$NON-NLS-1$
+		return "Documentation";
 	}
-
-//	/**
-//	 * @param target the target to set
-//	 */
-//	@Override
-//	public void setTarget(Documentable target) {
-//		this.target = target;
-//	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.Documentation#getContent()
@@ -165,6 +131,23 @@ public class DocumentationImpl extends DefaultModifiableIdentity implements Docu
 		}
 	}
 
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if(obj==this) {
+			return true;
+		} else if(obj instanceof Documentation) {
+			Documentation other = (Documentation)obj;
+
+			return ClassUtils.equals(content, other.getContent())
+					&& CollectionUtils.equals(resources, other.getResources());
+		}
+
+		return false;
+	}
+
 	public static class ResourceImpl extends DefaultModifiableIdentity implements Resource {
 
 		private URI uri;
@@ -202,5 +185,20 @@ public class DocumentationImpl extends DefaultModifiableIdentity implements Docu
 			this.uri = uri;
 		}
 
+		/**
+		 * @see de.ims.icarus2.model.manifest.standard.DefaultModifiableIdentity#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof Resource) {
+				Resource other = (Resource) obj;
+				return Identity.defaultEquals(this, other)
+						&& ClassUtils.equals(uri, other.getUri());
+			}
+
+			return false;
+		}
 	}
 }

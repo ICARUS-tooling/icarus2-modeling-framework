@@ -111,10 +111,22 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 
 		OptionsManifest manifest = getInstance();
 
+		// Write groups in alphabetic order
+		if(manifest.hasLocalGroupIdentifiers()) {
+			List<Identity> identities = CollectionUtils.asSortedList(
+					manifest.getLocalGroupIdentifiers(),
+					Identity.COMPARATOR);
+
+			for(Identity group : identities) {
+				ManifestXmlUtils.writeIdentityElement(serializer, ManifestXmlTags.GROUP, group);
+			}
+		}
+
 		// Write options in alphabetic order
 		if(manifest.hasLocalOptions()) {
-			List<Option> sortedOptions = new ArrayList<>(manifest.getLocalOptions());
-			sortedOptions.sort(Identity.ID_COMPARATOR);
+			List<Option> sortedOptions = CollectionUtils.asSortedList(
+					manifest.getLocalOptions(),
+					Identity.ID_COMPARATOR);
 
 			for(Option option : sortedOptions) {
 
@@ -155,16 +167,16 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 				}
 
 				if(defaultValue.isPresent()) {
+					serializer.startElement(ManifestXmlTags.DEFAULT_VALUE);
 					if(option.isMultiValue()) {
-						serializer.startElement(ManifestXmlTags.DEFAULT_VALUES);
 						Collection<?> defaultValues = (Collection<?>) defaultValue.get();
 						for(Object value : defaultValues) {
 							ManifestXmlUtils.writeValueElement(serializer, ManifestXmlTags.VALUE, value, type);
 						}
-						serializer.endElement(ManifestXmlTags.DEFAULT_VALUES);
 					} else {
-						ManifestXmlUtils.writeValueElement(serializer, ManifestXmlTags.DEFAULT_VALUE, defaultValue.get(), type);
+						ManifestXmlUtils.writeValueElement(serializer, ManifestXmlTags.VALUE, defaultValue.get(), type);
 					}
+					serializer.endElement(ManifestXmlTags.DEFAULT_VALUE);
 				}
 
 				if(valueSet.isPresent()) {
@@ -176,15 +188,6 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 				}
 
 				serializer.endElement(ManifestXmlTags.OPTION);
-			}
-		}
-
-		// Write groups in alphabetic order
-		if(manifest.hasLocalGroupIdentifiers()) {
-			List<Identity> identities = CollectionUtils.asSortedList(manifest.getLocalGroupIdentifiers(), Identity.COMPARATOR);
-
-			for(Identity group : identities) {
-				ManifestXmlUtils.writeIdentityElement(serializer, ManifestXmlTags.GROUP, group);
 			}
 		}
 	}
@@ -231,8 +234,7 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 			// only handled when closing element
 		} break;
 
-		case ManifestXmlTags.VALUE :
-		case ManifestXmlTags.DEFAULT_VALUES : {
+		case ManifestXmlTags.VALUE : {
 			// no-op
 		} break;
 
@@ -280,15 +282,16 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 		} break;
 
 		case ManifestXmlTags.DEFAULT_VALUE : {
-			option.setDefaultValue(option.getValueType().parseAndPersist(text, manifestLocation.getClassLoader()));
-		} break;
-
-		case ManifestXmlTags.DEFAULT_VALUES : {
 			// no-op
 		} break;
 
 		case ManifestXmlTags.VALUE : {
-			addDefaultValue(option.getValueType().parseAndPersist(text, manifestLocation.getClassLoader()));
+			Object value = option.getValueType().parseAndPersist(text, manifestLocation.getClassLoader());
+			if(option.isMultiValue()) {
+				addDefaultValue(value);
+			} else {
+				option.setDefaultValue(value);
+			}
 		} break;
 
 		case ManifestXmlTags.EXTENSION_POINT : {

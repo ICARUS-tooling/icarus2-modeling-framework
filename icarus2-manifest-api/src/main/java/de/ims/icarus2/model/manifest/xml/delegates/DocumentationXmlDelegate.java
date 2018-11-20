@@ -18,6 +18,7 @@ package de.ims.icarus2.model.manifest.xml.delegates;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.Optional;
 
 import javax.xml.stream.XMLStreamException;
@@ -78,7 +79,13 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 
 		switch (localName) {
 		case ManifestXmlTags.DOCUMENTATION: {
-			ManifestXmlUtils.readIdentityAttributes(attributes, getInstance());
+			// no-op
+		} break;
+
+		case ManifestXmlTags.NAME:
+		case ManifestXmlTags.DESCRIPTION:
+		case ManifestXmlTags.ICON: {
+			// no-op
 		} break;
 
 		case ManifestXmlTags.RESOURCE: {
@@ -109,6 +116,18 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 		switch (localName) {
 		case ManifestXmlTags.DOCUMENTATION: {
 			handler = null;
+		} break;
+
+		case ManifestXmlTags.NAME: {
+			resource.setName(text);
+		} break;
+
+		case ManifestXmlTags.DESCRIPTION: {
+			resource.setDescription(text);
+		} break;
+
+		case ManifestXmlTags.ICON: {
+			ManifestXmlUtils.iconValue(text, true).ifPresent(resource::setIcon);
 		} break;
 
 		case ManifestXmlTags.CONTENT: {
@@ -154,7 +173,6 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 		Documentation documentation = getInstance();
 
 		serializer.startElement(ManifestXmlTags.DOCUMENTATION);
-		ManifestXmlUtils.writeIdentityAttributes(serializer, documentation);
 
 		if(documentation.getContent().isPresent()) {
 			serializer.startElement(ManifestXmlTags.CONTENT);
@@ -162,15 +180,20 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 			serializer.endElement(ManifestXmlTags.CONTENT);
 		}
 
-		for(Resource resource : documentation.getResources()) {
-			if(resource.getUri()==null)
-				throw new IllegalStateException("Resource is missing url"); //$NON-NLS-1$
+		List<Resource> resources = documentation.getResources();
+		if(!resources.isEmpty()) {
+			for(Resource resource : documentation.getResources()) {
+				if(resource.getUri()==null)
+					throw new IllegalStateException("Resource is missing url"); //$NON-NLS-1$
 
-			serializer.startElement(ManifestXmlTags.RESOURCE);
-			ManifestXmlUtils.writeIdentityAttributes(serializer, resource);
-			serializer.writeTextOrCData(resource.getUri().toString());
-			serializer.endElement(ManifestXmlTags.RESOURCE);
+				serializer.startElement(ManifestXmlTags.RESOURCE);
+				ManifestXmlUtils.writeIdentityAttributes(serializer, resource);
+				ManifestXmlUtils.writeIdentityFieldElements(serializer, resource);
+				serializer.writeTextOrCData(resource.getUri().toString());
+				serializer.endElement(ManifestXmlTags.RESOURCE);
+			}
 		}
+
 
 		serializer.endElement(ManifestXmlTags.DOCUMENTATION);
 	}

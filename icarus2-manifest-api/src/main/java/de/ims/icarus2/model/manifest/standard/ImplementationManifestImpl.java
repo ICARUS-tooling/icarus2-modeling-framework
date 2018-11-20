@@ -16,8 +16,6 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static java.util.Objects.requireNonNull;
-
 import java.util.Optional;
 
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
@@ -33,9 +31,9 @@ import de.ims.icarus2.model.manifest.api.MemberManifest;
 public class ImplementationManifestImpl extends AbstractMemberManifest<ImplementationManifest, MemberManifest>
 		implements ImplementationManifest {
 
-	private SourceType sourceType;
-	private String source;
-	private String classname;
+	private Optional<SourceType> sourceType = Optional.empty();
+	private Optional<String> source = Optional.empty();
+	private Optional<String> classname = Optional.empty();
 	private Boolean useFactory;
 
 	/**
@@ -64,15 +62,8 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	 * @see de.ims.icarus2.model.manifest.api.ImplementationManifest#getSourceType()
 	 */
 	@Override
-	public SourceType getSourceType() {
-		SourceType result = sourceType;
-		if(result==null && hasTemplate()) {
-			result = getTemplate().getSourceType();
-		}
-		if(result==null) {
-			result = DEFAULT_SOURCE_TYPE;
-		}
-		return result;
+	public Optional<SourceType> getSourceType() {
+		return getDerivable(sourceType, ImplementationManifest::getSourceType);
 	}
 
 	/**
@@ -80,7 +71,7 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	 */
 	@Override
 	public Optional<String> getSource() {
-		return getDerivable(Optional.ofNullable(source), ImplementationManifest::getSource);
+		return getDerivable(source, ImplementationManifest::getSource);
 	}
 
 	/**
@@ -88,7 +79,7 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	 */
 	@Override
 	public Optional<String> getClassname() {
-		return getDerivable(Optional.ofNullable(classname), ImplementationManifest::getClassname);
+		return getDerivable(classname, ImplementationManifest::getClassname);
 	}
 
 	/**
@@ -114,9 +105,7 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	}
 
 	protected void setSourceType0(SourceType sourceType) {
-		requireNonNull(sourceType);
-
-		this.sourceType = sourceType;
+		this.sourceType = Optional.of(sourceType);
 	}
 
 	/**
@@ -130,7 +119,7 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	}
 
 	protected void setSource0(String source) {
-		this.source = source;
+		this.source = Optional.of(source);
 	}
 
 	/**
@@ -144,7 +133,7 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	}
 
 	protected void setClassname0(String classname) {
-		this.classname = classname;
+		this.classname = Optional.of(classname);
 	}
 
 	/**
@@ -163,17 +152,17 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 
 	@Override
 	public boolean isLocalSourceType() {
-		return sourceType!=null;
+		return sourceType.isPresent();
 	}
 
 	@Override
 	public boolean isLocalSource() {
-		return source!=null;
+		return source.isPresent();
 	}
 
 	@Override
 	public boolean isLocalClassname() {
-		return classname!=null;
+		return classname.isPresent();
 	}
 
 	@Override

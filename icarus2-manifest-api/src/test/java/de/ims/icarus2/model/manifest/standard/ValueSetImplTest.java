@@ -70,7 +70,8 @@ class ValueSetImplTest {
 
 		ValueSetImpl newValueSet = new ValueSetImpl(valueType);
 
-		assertSerializationEquals("Value type: "+valueType, valueSet, newValueSet, new ValueSetXmlDelegate(), false);
+		assertSerializationEquals("Value type: "+valueType, valueSet, newValueSet,
+				new ValueSetXmlDelegate(), false, false);
 	}
 
 	@Test

@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -87,6 +88,23 @@ public class TestUtils {
 
 	public static final String EMOJI = "👍"; // thumbs-up emoji
 
+	private static final PrintStream out = null;
+
+	public static void print(String s) {
+		if(out!=null)
+			out.print(s);
+	}
+
+	public static void println() {
+		if(out!=null)
+			out.println();
+	}
+
+	public static void println(String s) {
+		if(out!=null)
+			out.println(s);
+	}
+
 	public static Random random() {
 		return new Random(1L);
 	}
@@ -100,6 +118,22 @@ public class TestUtils {
 			Randomizer<T> randomizer = new Randomizer<>(source);
 			return randomizer::randomize;
 		}
+	}
+
+	public static <T extends Object> T random(@SuppressWarnings("unchecked") T...source) {
+		requireNonNull(source);
+		return source[random().nextInt(source.length)];
+	}
+
+	public static <T extends Object> T random(List<? extends T> source) {
+		requireNonNull(source);
+		return source.get(random().nextInt(source.size()));
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T extends Object> T random(Collection<? extends T> source) {
+		requireNonNull(source);
+		return (T) random(source.toArray());
 	}
 
 	public static TestSettings settings() {

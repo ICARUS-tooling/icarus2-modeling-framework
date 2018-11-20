@@ -47,6 +47,7 @@ import java.util.function.Supplier;
 import com.google.common.collect.MapMaker;
 
 import de.ims.icarus2.util.Filter;
+import de.ims.icarus2.util.lang.ClassUtils;
 import it.unimi.dsi.fastutil.longs.LongCollection;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
@@ -490,6 +491,27 @@ public final class CollectionUtils {
 		return hc;
 	}
 
+	public static <E extends Object> boolean equals(List<? extends E> list1, List<? extends E> list2) {
+		if(list1==null || list2==null) {
+			return list1==list2;
+		}
+
+		int s1 = list1.size();
+		int s2 = list2.size();
+
+		if(s1!=s2) {
+			return false;
+		}
+
+		for(int i=0; i<s1; i++) {
+			if(!ClassUtils.equals(list1.get(i), list2.get(i))) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	public static <E extends Object> boolean equals(Collection<? extends E> c1, Collection<? extends E> c2) {
 		if(c1==null || c2==null) {
 			return c1==c2;
@@ -503,7 +525,7 @@ public final class CollectionUtils {
 		Iterator<? extends E> i2 = c2.iterator();
 
 		while(i1.hasNext() && i2.hasNext()) {
-			if(!i1.next().equals(i2.next())) {
+			if(!ClassUtils.equals(i1.next(), i2.next())) {
 				return false;
 			}
 		}
@@ -521,7 +543,7 @@ public final class CollectionUtils {
 		}
 
 		for(Map.Entry<K, V> e : m1.entrySet()) {
-			if(!e.getValue().equals(m2.get(e.getKey()))) {
+			if(!ClassUtils.equals(e.getValue(), m2.get(e.getKey()))) {
 				return false;
 			}
 		}

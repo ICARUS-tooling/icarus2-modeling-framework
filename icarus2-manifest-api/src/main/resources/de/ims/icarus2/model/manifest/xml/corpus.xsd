@@ -1,4 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    ICARUS2 Corpus Modeling Framework
+    Copyright (C) 2014-2018 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
 	targetNamespace="http://www.ims.uni-stuttgart.de/icarus/xml/manifest"
 	xmlns:imf="http://www.ims.uni-stuttgart.de/icarus/xml/manifest"
@@ -30,6 +48,12 @@
 						<xsd:documentation>Groups templates together. No live corpora allowed in this context.</xsd:documentation>
 					</xsd:annotation>
 				</xsd:element>
+				
+				<xsd:element name="test" type="imf:testType">
+					<xsd:annotation>
+						<xsd:documentation>Only valid for testing. Groups all types for which the manifest framework provides dedicated xml handlers.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
 			</xsd:choice>
 		</xsd:complexType>
 	</xsd:element>
@@ -50,6 +74,28 @@
 			<xsd:element name="module" type="imf:moduleManifestType" />
 			<xsd:element name="options" type="imf:optionsManifestType" />
 		</xsd:choice>
+	</xsd:complexType>
+	
+	<xsd:complexType name="testType">
+		<xsd:annotation>
+			<xsd:documentation>Provides a way to list low-level types of the manifest framework without embedding them in their natural environments</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="imf:templatesType">
+				<xsd:choice minOccurs="0" maxOccurs="unbounded">
+					<xsd:element name="corpus" type="imf:corpusManifestType" />
+					<xsd:element name="documentation" type="imf:documentationManifestType" />
+					<xsd:element name="eval" type="imf:evalType" />
+					<xsd:element name="implementation" type="imf:implementationManifestType" />
+					<xsd:element name="layerGroup" type="imf:layerGroupManifestType" />
+					<xsd:element name="mapping" type="imf:mappingManifestType" />
+					<xsd:element name="moduleSpec" type="imf:moduleSpecType" />
+					<xsd:element name="range" type="imf:valueRangeType" />
+					<xsd:element name="values" type="imf:valueSetType" />
+					<xsd:element name="version" type="imf:versionManifestType" /> 
+				</xsd:choice>
+			</xsd:extension>
+		</xsd:complexContent>
 	</xsd:complexType>
 	
 	<xsd:complexType name="corporaType">
@@ -323,12 +369,12 @@
 							<xsd:documentation>Flags indicating certain properties of this layer.</xsd:documentation>
 						</xsd:annotation>
 					</xsd:element>
+					<xsd:element name="primaryLayer" type="imf:targetLayerType" minOccurs="0" maxOccurs="1">
+						<xsd:annotation>
+							<xsd:documentation>The layer that defines the granularity of highlight cursors for this layer.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
 				</xsd:sequence>
-				<xsd:attribute name="primaryLayer" type="imf:identifierAttr" use="required">
-					<xsd:annotation>
-						<xsd:documentation>The layer that defines the granularity of highlight cursors for this layer.</xsd:documentation>
-					</xsd:annotation>
-				</xsd:attribute>
 			</xsd:extension>
 		</xsd:complexContent>
 	</xsd:complexType>
@@ -340,6 +386,11 @@
 		<xsd:complexContent>
 			<xsd:extension base="imf:layerManifestType">
 				<xsd:sequence>
+					<xsd:element name="referenceLayer" type="imf:targetLayerType" minOccurs="0" maxOccurs="unbounded">
+						<xsd:annotation>
+							<xsd:documentation>List of other layers this layer depends on.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
 					<xsd:element name="annotationFlag" type="imf:annotationFlagType" minOccurs="0" maxOccurs="unbounded">
 						<xsd:annotation>
 							<xsd:documentation>Flags indicating certain properties of this layer.</xsd:documentation>
@@ -423,12 +474,12 @@
 		<xsd:complexContent>
 			<xsd:extension base="imf:itemLayerManifestType">
 				<xsd:sequence>
-					<xsd:element name="valueLayer" type="imf:targetLayerType">
+					<xsd:element name="valueLayer" type="imf:targetLayerType" minOccurs="0">
 						<xsd:annotation>
 							<xsd:documentation>Layer that holds annotation values to be used for fragmentation by this layer.</xsd:documentation>
 						</xsd:annotation>
 					</xsd:element>
-					<xsd:element name="rasterizer" type="imf:rasterizerManifestType">
+					<xsd:element name="rasterizer" type="imf:rasterizerManifestType" minOccurs="0">
 						<xsd:annotation>
 							<xsd:documentation>Defines the method used for rastering.</xsd:documentation>
 						</xsd:annotation>
@@ -459,23 +510,30 @@
 		<xsd:complexContent>
 			<xsd:extension base="imf:basicItemLayerManifestType">
 				<xsd:sequence>
-					<xsd:element name="structure" type="imf:structureManifestType">
+					<xsd:element name="hierarchy" minOccurs="0">
 						<xsd:annotation>
-							<xsd:documentation></xsd:documentation>
+							<xsd:documentation>Optional locally defined hierarchy</xsd:documentation>
 						</xsd:annotation>
+						<xsd:complexType>
+							<xsd:sequence>
+								<xsd:element name="container" type="imf:containerManifestType" minOccurs="1" maxOccurs="unbounded">
+									<xsd:annotation>
+										<xsd:documentation>Hierarchy has to start with a container (and arbitrary number of nested containers)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="structure" type="imf:structureManifestType" minOccurs="1" maxOccurs="unbounded">
+									<xsd:annotation>
+										<xsd:documentation>For simplicity reasons we don't allow intermixing of containers between structures</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="container" type="imf:containerManifestType" minOccurs="0" maxOccurs="unbounded">
+									<xsd:annotation>
+										<xsd:documentation>The "nodes" can again be arbitrarily nested containers</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+						</xsd:complexType>
 					</xsd:element>
-					<xsd:choice minOccurs="0" maxOccurs="unbounded">
-						<xsd:element name="structure" type="imf:structureManifestType">
-							<xsd:annotation>
-								<xsd:documentation></xsd:documentation>
-							</xsd:annotation>
-						</xsd:element>
-						<xsd:element name="container" type="imf:containerManifestType">
-							<xsd:annotation>
-								<xsd:documentation></xsd:documentation>
-							</xsd:annotation>
-						</xsd:element>
-					</xsd:choice>
 				</xsd:sequence>
 			</xsd:extension>
 		</xsd:complexContent>
@@ -488,10 +546,19 @@
 		<xsd:complexContent>
 			<xsd:extension base="imf:basicItemLayerManifestType">
 				<xsd:sequence>
-					<xsd:element name="container" type="imf:containerManifestType" minOccurs="0" maxOccurs="unbounded">
+					<xsd:element name="hierarchy" minOccurs="0">
 						<xsd:annotation>
-							<xsd:documentation></xsd:documentation>
+							<xsd:documentation>Optional locally defined hierarchy</xsd:documentation>
 						</xsd:annotation>
+						<xsd:complexType>
+							<xsd:sequence>
+								<xsd:element name="container" type="imf:containerManifestType" minOccurs="1" maxOccurs="unbounded">
+									<xsd:annotation>
+										<xsd:documentation>Arbitrarily deep nesting of containers</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+						</xsd:complexType>
 					</xsd:element>
 				</xsd:sequence>
 			</xsd:extension>
@@ -505,12 +572,12 @@
 		<xsd:complexContent>
 			<xsd:extension base="imf:layerManifestType">
 				<xsd:sequence>
-					<xsd:element name="boundaryLayer" type="imf:targetLayerType" minOccurs="0">
+					<xsd:element name="boundaryLayer" type="imf:targetLayerType" minOccurs="0" maxOccurs="1">
 						<xsd:annotation>
 							<xsd:documentation>Defines natural boundaries for containers in this layer.</xsd:documentation>
 						</xsd:annotation>
 					</xsd:element>
-					<xsd:element name="foundationLayer" type="imf:targetLayerType" minOccurs="0">
+					<xsd:element name="foundationLayer" type="imf:targetLayerType" minOccurs="0" maxOccurs="1">
 						<xsd:annotation>
 							<xsd:documentation>Defines what layer to use to represent basic atomic units for this layer.</xsd:documentation>
 						</xsd:annotation>
@@ -678,7 +745,7 @@
 						<xsd:documentation>Fully qualified name of the Java class implementation referenced by this manifest.</xsd:documentation>
 					</xsd:annotation>
 				</xsd:attribute>
-				<xsd:attribute name="sourceType" type="imf:sourceTypeAttr" default="default">
+				<xsd:attribute name="sourceType" type="imf:sourceTypeAttr">
 					<xsd:annotation>
 						<xsd:documentation>Specifies how to interpret the "source" attribute and how to actually load the class defined by "classname".</xsd:documentation>
 					</xsd:annotation>
@@ -699,8 +766,8 @@
 		<xsd:complexContent>
 			<xsd:extension base="imf:basicManifestType">
 				<xsd:sequence>
-					<xsd:group ref="imf:documentationGroup" />
 					<xsd:group ref="imf:identityGroup" />
+					<xsd:group ref="imf:documentationGroup" />
 					<xsd:element name="categories" minOccurs="0">
 						<xsd:annotation>
 							<xsd:documentation>Collection of category definitions</xsd:documentation>
@@ -735,14 +802,14 @@
 		<xsd:complexContent>
 			<xsd:extension base="imf:basicManifestType">
 				<xsd:sequence>
-					<xsd:element name="option" type="imf:optionType" maxOccurs="unbounded">
-						<xsd:annotation>
-							<xsd:documentation>Collection of individual options. No specific order is enforced.</xsd:documentation>
-						</xsd:annotation>
-					</xsd:element>
-					<xsd:element name="group" type="imf:identityType">
+					<xsd:element name="group" type="imf:identityType" minOccurs="0" maxOccurs="unbounded">
 						<xsd:annotation>
 							<xsd:documentation>Predefined groups that options can be associated with. This is to be taken as a hint for graphical interfaces on how to present options to the user.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="option" type="imf:optionType" minOccurs="0" maxOccurs="unbounded">
+						<xsd:annotation>
+							<xsd:documentation>Collection of individual options. No specific order is enforced.</xsd:documentation>
 						</xsd:annotation>
 					</xsd:element>
 				</xsd:sequence>
@@ -755,22 +822,31 @@
 			<xsd:documentation>Specifies properties of an option for which the user can change values.</xsd:documentation>
 		</xsd:annotation>
 		<xsd:all>
-			<xsd:element name="extensionPoint" type="imf:identifierType">
+			<xsd:element name="extensionPoint" type="imf:identifierType" minOccurs="0">
 				<xsd:annotation>
 					<xsd:documentation>Currently not used.</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
-			<xsd:element ref="imf:defaultValueSubGroup">
+			<xsd:element name="defaultValue" minOccurs="0">
 				<xsd:annotation>
 					<xsd:documentation>Value (or list of values) to be used when the user doesn't define or select a custom value.</xsd:documentation>
 				</xsd:annotation>
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="value" type="imf:textType" maxOccurs="unbounded">
+							<xsd:annotation>
+								<xsd:documentation>If the option support multi-value data every list entry is wrapped into a single element</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
 			</xsd:element>
-			<xsd:element name="valueSet" type="imf:valueSetType">
+			<xsd:element name="valueSet" type="imf:valueSetType" minOccurs="0">
 				<xsd:annotation>
 					<xsd:documentation>Limitation of legal values via an enumeration of values.</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
-			<xsd:element name="valueRange" type="imf:valueRangeType">
+			<xsd:element name="valueRange" type="imf:valueRangeType" minOccurs="0">
 				<xsd:annotation>
 					<xsd:documentation>Limitation of legal values via a bounded range model.</xsd:documentation>
 				</xsd:annotation>
@@ -803,25 +879,6 @@
 			</xsd:annotation>
 		</xsd:attribute>
 	</xsd:complexType>
-	
-	<xsd:element name="defaultValueSubGroup" abstract="true" />
-	
-	<xsd:element name="defaultValue" substitutionGroup="imf:defaultValueSubGroup" type="imf:textType">
-		<xsd:annotation>
-			<xsd:documentation>A single default value</xsd:documentation>
-		</xsd:annotation>
-	</xsd:element>
-	
-	<xsd:element name="defaultValues" substitutionGroup="imf:defaultValueSubGroup">
-		<xsd:annotation>
-			<xsd:documentation>List of default values</xsd:documentation>
-		</xsd:annotation>
-		<xsd:complexType>
-			<xsd:sequence>
-				<xsd:element name="value" type="imf:textType" />
-			</xsd:sequence>
-		</xsd:complexType>
-	</xsd:element>
 	
 	<xsd:complexType name="propertyType" mixed="true">
 		<xsd:annotation>
@@ -875,7 +932,7 @@
 		</xsd:annotation>
 		<xsd:simpleContent>
 			<xsd:extension base="xsd:string">
-				<xsd:attribute name="type" type="imf:pathTypeAttr" use="required" />
+				<xsd:attribute name="type" type="imf:pathTypeAttr" use="optional" />
 			</xsd:extension>
 		</xsd:simpleContent>
 	</xsd:complexType>
@@ -940,6 +997,11 @@
 					<xsd:documentation>Largest legal element.</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
+			<xsd:element name="stepSize" type="imf:expressionValueType" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>For types that support actual steps this defines the legal size</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
 		</xsd:sequence>
 		<xsd:attribute name="includeMin" type="xsd:boolean" default="true" use="optional">
 			<xsd:annotation>
@@ -971,7 +1033,7 @@
 			<xsd:group ref="imf:documentationGroup" />
 			<xsd:element name="content" type="imf:textType" minOccurs="0" maxOccurs="1" />
 		</xsd:sequence>
-		<xsd:attributeGroup ref="imf:fullIdentity" />
+		<xsd:attributeGroup ref="imf:optionalIdentity" />
 	</xsd:complexType>
 
 	<xsd:complexType name="documentationManifestType">
@@ -1089,31 +1151,12 @@
 			<xsd:documentation>Type with category definition and optional identity fields.</xsd:documentation>
 		</xsd:annotation>
 		<xsd:sequence>
-			<xsd:element name="id" type="imf:identifierAttr">
-				<xsd:annotation>
-					<xsd:documentation>Machine readable identifier of the element</xsd:documentation>
-				</xsd:annotation>
-			</xsd:element>
-			<xsd:element name="namespace" type="xsd:string">
+			<xsd:element name="namespace" type="xsd:string" minOccurs="0">
 				<xsd:annotation>
 					<xsd:documentation>Namespace (typically a URI) to bind the id to. This is used to link to established categories, such as ISOCat/DatCatInfo</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
-			<xsd:element name="name" type="xsd:string" minOccurs="0">
-				<xsd:annotation>
-					<xsd:documentation>Human readable identifier of the element</xsd:documentation>
-				</xsd:annotation>
-			</xsd:element>
-			<xsd:element name="description" type="xsd:string" minOccurs="0">
-				<xsd:annotation>
-					<xsd:documentation>Simple free text documentation of the element.</xsd:documentation>
-				</xsd:annotation>
-			</xsd:element>
-			<xsd:element name="icon" type="xsd:base64Binary" minOccurs="0">
-				<xsd:annotation>
-					<xsd:documentation>Either a name of registered icon object or embedded base-64 binary text.</xsd:documentation>
-				</xsd:annotation>
-			</xsd:element>
+			<xsd:group ref="imf:identityGroup" />
 		</xsd:sequence>
 		<xsd:attributeGroup ref="imf:category" />
 	</xsd:complexType>
@@ -1437,7 +1480,7 @@
 					<xsd:documentation>The container holds an ordered and continuous list of items.</xsd:documentation>
 				</xsd:annotation>
 			</xsd:enumeration>
-			<xsd:enumeration value="set">
+			<xsd:enumeration value="list">
 				<xsd:annotation>
 					<xsd:documentation>The container holds a non-continuous but ordered collection of items.</xsd:documentation>
 				</xsd:annotation>
@@ -1561,6 +1604,11 @@
 					<xsd:documentation>Specifies whether or not a structure may have more than 1 edge assigned to its virtual root node (effectively meaning that it has in fact several "real" root nodes).</xsd:documentation>
 				</xsd:annotation>
 			</xsd:enumeration>
+			<xsd:enumeration value="projective" >
+				<xsd:annotation>
+					<xsd:documentation>TODO.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
 		</xsd:restriction>
 	</xsd:simpleType>
 	
@@ -1665,29 +1713,10 @@
     	<xsd:annotation>
     		<xsd:documentation>Identifiable entity that is associated with a namespace to bind the id field to.</xsd:documentation>
     	</xsd:annotation>
-		<xsd:attribute name="id" type="imf:identifierAttr" use="required">
-			<xsd:annotation>
-				<xsd:documentation>Machine readable identifier of the element</xsd:documentation>
-			</xsd:annotation>
-		</xsd:attribute>
-		<xsd:attribute name="namespace" type="xsd:string" use="required">
+    	<xsd:attributeGroup ref="imf:fullIdentity" />
+		<xsd:attribute name="namespace" type="xsd:string" use="optional">
 			<xsd:annotation>
 				<xsd:documentation>Namespace (typically a URI) to bind the id to. This is used to link to established categories, such as ISOCat/DatCatInfo</xsd:documentation>
-			</xsd:annotation>
-		</xsd:attribute>
-		<xsd:attribute name="name" type="imf:complexNameAttr" use="optional">
-			<xsd:annotation>
-				<xsd:documentation>Human readable identifier of the element</xsd:documentation>
-			</xsd:annotation>
-		</xsd:attribute>
-		<xsd:attribute name="description" type="xsd:string" use="optional">
-			<xsd:annotation>
-				<xsd:documentation>Simple free text documentation of the element.</xsd:documentation>
-			</xsd:annotation>
-		</xsd:attribute>
-		<xsd:attribute name="icon" type="xsd:string" use="optional">
-			<xsd:annotation>
-				<xsd:documentation>Either a name of registered icon object or embedded base-64 binary text.</xsd:documentation>
 			</xsd:annotation>
 		</xsd:attribute>
     </xsd:attributeGroup>

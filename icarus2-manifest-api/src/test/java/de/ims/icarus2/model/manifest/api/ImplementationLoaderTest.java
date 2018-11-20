@@ -92,7 +92,7 @@ public interface ImplementationLoaderTest<L extends ImplementationLoader<L>> ext
 		ImplementationManifest manifest = mock(ImplementationManifest.class);
 		when(manifest.getClassname()).thenReturn(Optional.of(classname));
 		when(manifest.getSource()).thenReturn(Optional.of(source));
-		when(manifest.getSourceType()).thenReturn(sourceType);
+		when(manifest.getSourceType()).thenReturn(Optional.of(sourceType));
 		when(manifest.isUseFactory()).thenReturn(factory);
 
 		MemberManifest host = mock(MemberManifest.class);

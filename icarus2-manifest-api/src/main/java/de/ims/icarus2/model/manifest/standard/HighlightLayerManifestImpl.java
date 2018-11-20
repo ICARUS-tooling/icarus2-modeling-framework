@@ -24,13 +24,10 @@ import java.util.function.Consumer;
 
 import de.ims.icarus2.model.manifest.api.HighlightFlag;
 import de.ims.icarus2.model.manifest.api.HighlightLayerManifest;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
-import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
-import de.ims.icarus2.model.manifest.standard.Links.Link;
 
 /**
  * @author Markus Gärtner
@@ -38,8 +35,8 @@ import de.ims.icarus2.model.manifest.standard.Links.Link;
  */
 public class HighlightLayerManifestImpl extends AbstractLayerManifest<HighlightLayerManifest> implements HighlightLayerManifest {
 
-	private EnumSet<HighlightFlag> highlightFlags;
-	private Link<LayerManifest> primaryLayer;
+	private final EnumSet<HighlightFlag> highlightFlags = EnumSet.noneOf(HighlightFlag.class);
+	private TargetLayerManifest primaryLayer;
 
 	/**
 	 * @param manifestLocation
@@ -49,8 +46,6 @@ public class HighlightLayerManifestImpl extends AbstractLayerManifest<HighlightL
 	public HighlightLayerManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry, LayerGroupManifest layerGroupManifest) {
 		super(manifestLocation, registry, layerGroupManifest);
-
-		highlightFlags = EnumSet.noneOf(HighlightFlag.class);
 	}
 
 	public HighlightLayerManifestImpl(ManifestLocation manifestLocation,
@@ -112,10 +107,9 @@ public class HighlightLayerManifestImpl extends AbstractLayerManifest<HighlightL
 	}
 
 	@Override
-	public Optional<ItemLayerManifest> getPrimaryLayerManifest() {
+	public Optional<TargetLayerManifest> getPrimaryLayerManifest() {
 		return getDerivable(
-				Optional.ofNullable(primaryLayer).map(
-						link -> (ItemLayerManifest) link.get()),
+				Optional.ofNullable(primaryLayer),
 				HighlightLayerManifest::getPrimaryLayerManifest);
 	}
 
@@ -125,16 +119,18 @@ public class HighlightLayerManifestImpl extends AbstractLayerManifest<HighlightL
 	}
 
 	@Override
-	public void setPrimaryLayerId(String primaryLayerId) {
+	public TargetLayerManifest setPrimaryLayerId(String primaryLayerId) {
 		checkNotLocked();
 
-		setPrimaryLayerId0(primaryLayerId);
+		return setPrimaryLayerId0(primaryLayerId);
 	}
 
-	protected void setPrimaryLayerId0(String primaryLayerId) {
+	protected TargetLayerManifest setPrimaryLayerId0(String primaryLayerId) {
 		checkAllowsTargetLayer();
 		requireNonNull(primaryLayerId);
 
-		primaryLayer = createLayerLink(primaryLayerId, "primary layer");
+		TargetLayerManifest manifest = createTargetLayerManifest(primaryLayerId, "primary layer");
+		primaryLayer = manifest;
+		return manifest;
 	}
 }

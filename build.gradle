@@ -152,7 +152,7 @@ subprojects {
 		
 		header = rootProject.file('LICENSE_HEADER')
 		
-		includes(["**/*.java", "**/*.properties", "**/*.ini", "**/*.xml"])
+		includes(["**/*.java", "**/*.properties", "**/*.ini", "**/*.xml", "**/*.xsd"])
 		
 		// pakage-info.java already has a documentation header, don't need conflicts here!
 		excludes(["**/package-info.java"])

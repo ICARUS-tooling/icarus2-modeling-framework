@@ -34,15 +34,11 @@ public interface XmlSerializer extends AutoCloseable {
 	 * Begins a document definition by writing meta data
 	 * like xml version and implementation specific info.
 	 */
-	void startDocument() throws Exception;
+	void startDocument() throws XMLStreamException;
 
-	default void startElement(String name, boolean empty) throws XMLStreamException {
-		if(empty) {
-			startEmptyElement(name);
-		} else {
-			startElement(name);
-		}
-	}
+	void writeSchemaInfo() throws XMLStreamException;
+
+	void startElement(String name, boolean empty) throws XMLStreamException;
 
 	/**
 	 * Starts a new element using the given {@code name} as tag.
@@ -50,7 +46,9 @@ public interface XmlSerializer extends AutoCloseable {
 	 * and that there be at least one child element!
 	 * @throws XMLStreamException TODO
 	 */
-	void startElement(String name) throws XMLStreamException;
+	default void startElement(String name) throws XMLStreamException {
+		startElement(name, false);
+	}
 
 	/**
 	 * Starts a new empty element using the given {@code name} as tag.
@@ -59,7 +57,9 @@ public interface XmlSerializer extends AutoCloseable {
 	 * {@link #endElement(String)} call!
 	 * @throws XMLStreamException TODO
 	 */
-	void startEmptyElement(String name) throws XMLStreamException;
+	default void startEmptyElement(String name) throws XMLStreamException {
+		startElement(name, true);
+	}
 
 	/**
 	 * Writes a new attribute, using the given {@code name} and

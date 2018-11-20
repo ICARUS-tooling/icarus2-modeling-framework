@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -120,6 +121,10 @@ public interface LayerManifest extends MemberManifest, Embedded {
 
 		/**
 		 * Returns the local {@code id} of the target layer.
+		 * This can either be the actual {@link LayerManifest#getId() id} of a local layer
+		 * or the {@link PrerequisiteManifest#getAlias() alias} of a {@link PrerequisiteManifest}
+		 * if this manifest references a foreign layer.
+		 *
 		 * @return
 		 */
 		String getLayerId();

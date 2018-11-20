@@ -39,7 +39,7 @@ public class ContainerManifestImpl extends AbstractMemberManifest<ContainerManif
 
 	private Optional<ContainerType> containerType = Optional.empty();
 
-	private EnumSet<ContainerFlag> containerFlags = EnumSet.noneOf(ContainerFlag.class);
+	private final EnumSet<ContainerFlag> containerFlags = EnumSet.noneOf(ContainerFlag.class);
 
 	/**
 	 * @param manifestLocation
