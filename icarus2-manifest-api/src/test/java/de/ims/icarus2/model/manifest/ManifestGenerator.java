@@ -31,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.doReturn;
 
 import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -56,6 +57,7 @@ import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
+import de.ims.icarus2.model.manifest.api.CorpusManifest.Note;
 import de.ims.icarus2.model.manifest.api.Documentable;
 import de.ims.icarus2.model.manifest.api.Documentation;
 import de.ims.icarus2.model.manifest.api.Documentation.Resource;
@@ -99,6 +101,7 @@ import de.ims.icarus2.model.manifest.api.ValueRange;
 import de.ims.icarus2.model.manifest.api.ValueSet;
 import de.ims.icarus2.model.manifest.api.VersionManifest;
 import de.ims.icarus2.model.manifest.standard.AbstractMemberManifest.PropertyImpl;
+import de.ims.icarus2.model.manifest.standard.CorpusManifestImpl.NoteImpl;
 import de.ims.icarus2.model.manifest.standard.DefaultCategory;
 import de.ims.icarus2.model.manifest.standard.DefaultManifestFactory;
 import de.ims.icarus2.model.manifest.standard.DefaultModifiableIdentity;
@@ -381,6 +384,13 @@ public class ManifestGenerator {
 		return property;
 	}
 
+	private Note createNote(int index) {
+		NoteImpl note = new NoteImpl("note"+index);
+		note.setModificationDate(LocalDateTime.now());
+		note.changeContent(TestUtils.LOREM_IPSUM_ASCII);
+		return note;
+	}
+
 	// Generic preparations
 
 	private void prepareManifest(Manifest manifest, IncrementalBuild<?> container, Config config) {
@@ -523,8 +533,30 @@ public class ManifestGenerator {
 
 	private void prepareCorpusManifest(CorpusManifest manifest,
 			IncrementalBuild<?> container, Config config) {
+		prepareMemberManifest(manifest, container, config);
 
-		//TODO
+		container.addNestedManifestChange("rootContext", ManifestType.CONTEXT_MANIFEST,
+				manifest, config, manifest::addRootContextManifest);
+
+		for(int i=0; i<3; i++) {
+			container.addNestedManifestChange("customContext", ManifestType.CONTEXT_MANIFEST,
+					manifest, config, manifest::addCustomContextManifest);
+		}
+
+		for(int i=0; i<3; i++) {
+			container.addFieldChange(manifest::addNote, "note", createNote(index()));
+		}
+
+		container.addFieldChange(manifest::setEditable, "editable",
+				Boolean.valueOf(!CorpusManifest.DEFAULT_EDITABLE_VALUE));
+
+		container.addFieldChange(manifest::setParallel, "parallel",
+				Boolean.valueOf(!CorpusManifest.DEFAULT_PARALLEL_VALUE));
+
+		for(int i=0; i<2; i++) {
+			container.addNestedManifestChange("rootContext", ManifestType.CONTEXT_MANIFEST,
+					manifest, config, manifest::addRootContextManifest);
+		}
 	}
 
 	private void prepareDocumentation(Documentation documentation,

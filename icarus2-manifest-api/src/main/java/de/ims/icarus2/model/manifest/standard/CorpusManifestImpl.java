@@ -353,9 +353,7 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest, T
 		private Optional<String> content = Optional.empty();
 
 		public NoteImpl(String name) {
-			requireNonNull(name);
-
-			this.name = name;
+			this.name = requireNonNull(name);
 		}
 
 		/**

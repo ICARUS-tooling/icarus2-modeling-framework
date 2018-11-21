@@ -84,7 +84,7 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 
 		// Write parallel flag
 		if(manifest.isParallel()!=CorpusManifest.DEFAULT_PARALLEL_VALUE) {
-			serializer.writeAttribute(ManifestXmlAttributes.EDITABLE, manifest.isParallel());
+			serializer.writeAttribute(ManifestXmlAttributes.PARALLEL, manifest.isParallel());
 		}
 	}
 
@@ -113,7 +113,8 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 		// Write contained root context manifests
 		for(Iterator<ContextManifest> it = manifest.getRootContextManifests().iterator(); it.hasNext();) {
 			ContextManifest contextManifest = it.next();
-			getContextManifestXmlDelegate().reset(contextManifest).writeXml(serializer);
+			getContextManifestXmlDelegate().reset(contextManifest);
+			getContextManifestXmlDelegate().root(true).writeXml(serializer);
 
 			if(it.hasNext()) {
 				serializer.writeLineBreak();
@@ -178,7 +179,7 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 			try {
 				note.setModificationDate(DateUtils.parseDate(date));
 			} catch (ParseException e) {
-				throw new SAXException("Invalid modification date string", e); //$NON-NLS-1$
+				throw new SAXException("Invalid modification date string: "+date, e); //$NON-NLS-1$
 			}
 		} break;
 
@@ -206,6 +207,7 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 
 		case ManifestXmlTags.NOTE: {
 			note.changeContent(text);
+			getInstance().addNote(note);
 		} break;
 
 		default:
