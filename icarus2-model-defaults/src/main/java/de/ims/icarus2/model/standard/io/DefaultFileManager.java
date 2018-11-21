@@ -87,7 +87,7 @@ public class DefaultFileManager implements FileManager {
 	 */
 	@Override
 	public Path getCorpusFolder(CorpusManifest manifest) {
-		String folderName = DefaultFileStructure.CORPUS_PREFIX+manifest.getId();
+		String folderName = DefaultFileStructure.CORPUS_PREFIX+manifest.getId(); //TODO clean folder name
 		Path metadataFolder = getSharedFolder(CommonFolders.METADATA.getId());
 
 		return metadataFolder.resolve(folderName);

@@ -72,6 +72,9 @@ public interface FileManager {
 	 * <p>
 	 * If the file manager implementation does not support corpus specific
 	 * folders, then this method should return {@code null}.
+	 * <p>
+	 * As a general rule implementations should not rely on too many details
+	 * of the supplied {@link CorpusManifest} besides its {@link CorpusManifest#getId() id}.
 	 *
 	 * @param manifest
 	 * @return
