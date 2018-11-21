@@ -37,7 +37,7 @@ public class DateUtils {
 	private static final String DATE_PATTERN = "yyyy-MM-dd HH:mm:ss"; //$NON-NLS-1$
 
 	private static DateTimeFormatter createFormat() {
-		return DateTimeFormatter.ofPattern(DATE_PATTERN).withZone(ZoneId.of("GMZ"));
+		return DateTimeFormatter.ofPattern(DATE_PATTERN).withZone(ZoneId.of("UTC"));
 	}
 
 	private static DateTimeFormatter dateInFormat = createFormat();
