@@ -16,6 +16,9 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -26,6 +29,7 @@ import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -33,6 +37,7 @@ import java.nio.file.StandardOpenOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.io.IOUtil;
 
 /**
@@ -231,10 +236,6 @@ public abstract class ManifestLocation {
 
 		private String content;
 
-		public VirtualManifestInputLocation(ClassLoader classLoader, boolean template) {
-			super(classLoader, true, template);
-		}
-
 		public VirtualManifestInputLocation(String content, ClassLoader classLoader, boolean template) {
 			super(classLoader, true, template);
 
@@ -246,10 +247,7 @@ public abstract class ManifestLocation {
 		}
 
 		public void setContent(String text) {
-			if (text == null)
-				throw new NullPointerException("Invalid text"); //$NON-NLS-1$
-
-			content = text;
+			content = requireNonNull(text);
 		}
 
 		/**
@@ -303,5 +301,174 @@ public abstract class ManifestLocation {
 			return buffer;
 		}
 
+	}
+
+	public static Builder newBuilder() {
+		return new Builder();
+	}
+
+	public static class Builder extends AbstractBuilder<Builder, ManifestLocation> {
+
+		private boolean template = false;
+		private boolean readOnly = false;
+		private ClassLoader classLoader;
+		private URL url;
+		private Path file;
+		private Charset charset;
+		private boolean virtual = false;
+		private boolean input = false;
+		private String content;
+
+		private Builder() {
+			// no-op
+		}
+
+		public Builder file(Path file) {
+			requireNonNull(file);
+			checkState("File already set", this.file==null);
+			checkState("URL already set", url==null);
+			checkState("Already virtual", !virtual);
+
+			this.file = file;
+
+			return thisAsCast();
+		}
+
+		public Builder url(URL url) {
+			requireNonNull(url);
+			checkState("URL already set", this.url==null);
+			checkState("File already set", file==null);
+			checkState("Already virtual", !virtual);
+
+			this.url = url;
+
+			return thisAsCast();
+		}
+
+		public Builder charset(Charset charset) {
+			requireNonNull(charset);
+			checkState("Charset already set", this.charset==null);
+			checkState("Already virtual", !virtual);
+
+			this.charset = charset;
+
+			return thisAsCast();
+		}
+
+		public Builder utf8() {
+			return charset(StandardCharsets.UTF_8);
+		}
+
+		public Builder template() {
+			checkState("Already template", !template);
+			checkState("Already virtual", !virtual);
+
+			template = true;
+
+			return thisAsCast();
+
+		}
+
+		public Builder content(String content) {
+			requireNonNull(content);
+			checkState("Content already set", this.content==null);
+			checkState("Not virtual", virtual);
+
+			this.content = content;
+
+			return thisAsCast();
+		}
+
+		public Builder readOnly() {
+			checkState("Already read-only", !readOnly);
+			checkState("Already virtual", !virtual);
+
+			readOnly = true;
+
+			return thisAsCast();
+		}
+
+		public Builder virtual() {
+			checkState("Already virtual", !virtual);
+			checkState("URL already set", url==null);
+			checkState("File already set", file==null);
+
+			virtual = true;
+
+			return thisAsCast();
+
+		}
+
+		public Builder input() {
+			checkState("Already input", !input);
+			checkState("Not virtual", virtual);
+
+			input = true;
+
+			return thisAsCast();
+
+		}
+
+		public Builder classLoader(ClassLoader classLoader) {
+			requireNonNull(classLoader);
+			checkState("Classloader already set", this.classLoader==null);
+
+			this.classLoader = classLoader;
+
+			return thisAsCast();
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.AbstractBuilder#validate()
+		 */
+		@Override
+		protected void validate() {
+			super.validate();
+
+			checkState("Must define one of the following: virtual, url or file",
+					virtual || url!=null || file!=null);
+
+			if(virtual && input) {
+				checkState("Must define content if declaring as virtual input", content!=null);
+			}
+
+			if(input) {
+				checkState("Can't define content if declaring as input", content==null);
+			}
+		}
+
+		private ClassLoader getClassLoader() {
+			return classLoader==null ? getClass().getClassLoader() : classLoader;
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.AbstractBuilder#create()
+		 */
+		@Override
+		protected ManifestLocation create() {
+			validate();
+
+			ClassLoader classLoader = getClassLoader();
+
+			if(virtual) {
+				if(input) {
+					return new VirtualManifestInputLocation(content, classLoader, template);
+				} else {
+					return new VirtualManifestOutputLocation(classLoader, template);
+				}
+			} else if(file!=null) {
+				if(charset!=null) {
+					return new FileManifestLocation(file, charset, classLoader, readOnly, template);
+				} else {
+					return new FileManifestLocation(file, classLoader, readOnly, template);
+				}
+			} else {
+				if(charset!=null) {
+					return new URLManifestLocation(url, charset, classLoader, readOnly, template);
+				} else {
+					return new URLManifestLocation(url, classLoader, readOnly, template);
+				}
+			}
+		}
 	}
 }
