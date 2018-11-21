@@ -34,6 +34,8 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  *
  * @author Markus Gärtner
  *
+ * @param <F> type of the elements stored
+ * @param <K> key type used for lookup
  */
 public class LazyStore<F extends Object, K extends Object> {
 
@@ -55,7 +57,7 @@ public class LazyStore<F extends Object, K extends Object> {
 	public LazyStore(Class<F> clazz, Function<F, K> keyGen) {
 		this.clazz = requireNonNull(clazz);
 		this.keyGen = requireNonNull(keyGen);
-		checkArgument(clazz.isEnum());
+		checkArgument("Class must be an enum type", clazz.isEnum());
 	}
 
 	public synchronized F lookup(K key) {

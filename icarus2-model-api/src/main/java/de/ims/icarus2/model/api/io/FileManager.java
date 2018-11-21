@@ -22,6 +22,7 @@ import java.nio.file.Path;
 
 import de.ims.icarus2.model.api.io.resources.ResourceProvider;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
+import de.ims.icarus2.util.LazyStore;
 
 /**
  * Models access to resources associated to corpora or the
@@ -108,6 +109,13 @@ public interface FileManager {
 
 		public String getId() {
 			return folderName;
+		}
+
+		private static final LazyStore<CommonFolders, String> store =
+				new LazyStore<>(CommonFolders.class, CommonFolders::getId);
+
+		public static CommonFolders parseCommonFolder(String s) {
+			return store.lookup(s);
 		}
 	}
 }
