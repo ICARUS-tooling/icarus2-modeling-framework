@@ -391,7 +391,7 @@ public class ManifestGenerator {
 
 	private <D extends Documentable & TypedManifest> void prepareDocumentable(
 			D documentable, IncrementalBuild<?> container, Config config) {
-		container.<Documentation>addStep("documentation", ManifestType.DOCUMENTATION,
+		container.<Documentation>addManifestChange("documentation", ManifestType.DOCUMENTATION,
 				config, documentable::setDocumentation);
 	}
 
@@ -400,16 +400,16 @@ public class ManifestGenerator {
 
 		// Only mess with id if not already set!!
 		if(!identity.getId().isPresent())
-			container.addStep(identity::setId, "id", index("myId"));
+			container.addFieldChange(identity::setId, "id", index("myId"));
 
-		container.addStep(identity::setDescription, "description", index("myDesc\nrandom stuff"));
-		container.addStep(identity::setName, "name", index("myName"));
+		container.addFieldChange(identity::setDescription, "description", index("myDesc\nrandom stuff"));
+		container.addFieldChange(identity::setName, "name", index("myName"));
 		//TODO add Icon
 	}
 
 	private void prepareCategorizable(Categorizable categorizable,
 			IncrementalBuild<?> container, Config config) {
-		container.addStep(categorizable::addCategory, "category", createCategory(0));
+		container.addFieldChange(categorizable::addCategory, "category", createCategory(0));
 	}
 
 	private void prepareMemberManifest(MemberManifest manifest,
@@ -419,11 +419,11 @@ public class ManifestGenerator {
 		prepareCategorizable(manifest, container, config);
 		prepareDocumentable(manifest, container, config);
 
-		container.addStep("options", ManifestType.OPTIONS_MANIFEST,
+		container.addNestedManifestChange("options", ManifestType.OPTIONS_MANIFEST,
 				manifest, config, manifest::setOptionsManifest);
 
 		for(ValueType valueType : ValueType.simpleValueTypes()) {
-			container.addStep(manifest::addProperty, "property"+valueType,
+			container.addLazyFieldChange(manifest::addProperty, "property"+valueType,
 					() -> createProperty(valueType));
 		}
 	}
@@ -433,14 +433,14 @@ public class ManifestGenerator {
 		prepareMemberManifest(manifest, container, config);
 
 		for(int i=0; i<3; i++)
-			container.addStep(manifest::addBaseLayerId, "baseLayer", index("layer"));
+			container.addFieldChange(manifest::addBaseLayerId, "baseLayer", index("layer"));
 	}
 
 	private void prepareForeignImplementationManifest(ForeignImplementationManifest manifest,
 			IncrementalBuild<?> container, Config config) {
 		prepareMemberManifest(manifest, container, config);
 
-		container.addStep("implementation", ManifestType.IMPLEMENTATION_MANIFEST, manifest,
+		container.addNestedManifestChange("implementation", ManifestType.IMPLEMENTATION_MANIFEST, manifest,
 				config, manifest::setImplementationManifest);
 	}
 
@@ -450,19 +450,19 @@ public class ManifestGenerator {
 			IncrementalBuild<?> container, Config config) {
 		prepareLayerManifest(manifest, container, config);
 
-		container.addStep(manifest::setDefaultKey, "defaultKey", index("defaultKey"));
+		container.addFieldChange(manifest::setDefaultKey, "defaultKey", index("defaultKey"));
 
 		for(ValueType valueType : ValueType.simpleValueTypes()) {
-			container.addStep("annotationManifest"+valueType,
+			container.addManifestChange("annotationManifest"+valueType,
 					ManifestType.ANNOTATION_MANIFEST, config.valueType(valueType), manifest::addAnnotationManifest);
 		}
 
 		for(int i=0; i<3; i++) {
-			container.addStep(manifest::addReferenceLayerId, "referenceLayer", index("layer"));
+			container.addFieldChange(manifest::addReferenceLayerId, "referenceLayer", index("layer"));
 		}
 
 		for(AnnotationFlag flag : AnnotationFlag.values()) {
-			container.addStep(f -> manifest.setAnnotationFlag(f, true), "annotationFlag", flag);
+			container.addFieldChange(f -> manifest.setAnnotationFlag(f, true), "annotationFlag", flag);
 		}
 	}
 
@@ -474,22 +474,22 @@ public class ManifestGenerator {
 
 		manifest.setValueType(valueType);
 
-		container.addStep(manifest::setAllowUnknownValues, "allowUnknownValues",
+		container.addFieldChange(manifest::setAllowUnknownValues, "allowUnknownValues",
 				Boolean.valueOf(!AnnotationManifest.DEFAULT_ALLOW_UNKNOWN_VALUES));
-		container.addStep(manifest::setKey, "key", index("key"));
-		container.addStep(manifest::setNoEntryValue, "noEntryValue",
+		container.addFieldChange(manifest::setKey, "key", index("key"));
+		container.addFieldChange(manifest::setNoEntryValue, "noEntryValue",
 				ManifestTestUtils.getTestValue(valueType));
-		container.addStep(manifest::setContentType, "contentType",
+		container.addFieldChange(manifest::setContentType, "contentType",
 				ContentTypeRegistry.getInstance().getType("IntegerContentType"));
 
 		for(int i=0; i<3; i++) {
-			container.addStep(manifest::addAlias, "alias", index("alias"));
+			container.addFieldChange(manifest::addAlias, "alias", index("alias"));
 		}
 
-		container.addStep("valueSet", ManifestType.VALUE_SET, config, manifest::setValueSet);
+		container.addManifestChange("valueSet", ManifestType.VALUE_SET, config, manifest::setValueSet);
 
 		if(ValueRange.SUPPORTED_VALUE_TYPES.contains(valueType)) {
-			container.addStep("valueRange", ManifestType.VALUE_RANGE, config, manifest::setValueRange);
+			container.addManifestChange("valueRange", ManifestType.VALUE_RANGE, config, manifest::setValueRange);
 		}
 	}
 
@@ -498,7 +498,7 @@ public class ManifestGenerator {
 		prepareMemberManifest(manifest, container, config);
 
 		for(ContainerFlag flag : ContainerFlag.values()) {
-			container.addStep(f -> manifest.setContainerFlag(f, true), "containerFlag", flag);
+			container.addFieldChange(f -> manifest.setContainerFlag(f, true), "containerFlag", flag);
 		}
 	}
 
@@ -507,16 +507,16 @@ public class ManifestGenerator {
 		prepareMemberManifest(manifest, container, config);
 
 		for(int i=0; i<3; i++) {
-			container.addStep(manifest::addPrerequisite, "prerequisite", index("alias"));
+			container.addFieldChange(manifest::addPrerequisite, "prerequisite", index("alias"));
 		}
 
 		for(int i=0; i<3; i++) {
-			container.addStep("layerGroup", ManifestType.LAYER_GROUP_MANIFEST,
+			container.addNestedManifestChange("layerGroup", ManifestType.LAYER_GROUP_MANIFEST,
 					manifest, config, manifest::addLayerGroup);
 		}
 
 		for(int i=0; i<3; i++) {
-			container.addStep("location", ManifestType.LOCATION_MANIFEST,
+			container.addManifestChange("location", ManifestType.LOCATION_MANIFEST,
 					config, manifest::addLocationManifest);
 		}
 	}
@@ -529,10 +529,10 @@ public class ManifestGenerator {
 
 	private void prepareDocumentation(Documentation documentation,
 			IncrementalBuild<?> container, Config config) {
-		container.addStep(documentation::setContent, "content", TestUtils.LOREM_IPSUM_CHINESE);
+		container.addFieldChange(documentation::setContent, "content", TestUtils.LOREM_IPSUM_CHINESE);
 
 		for(int i=0; i<3; i++) {
-			container.addStep(documentation::addResource, "resource", createResource(index()));
+			container.addFieldChange(documentation::addResource, "resource", createResource(index()));
 		}
 	}
 
@@ -541,7 +541,7 @@ public class ManifestGenerator {
 		prepareForeignImplementationManifest(manifest, container, config);
 
 		for(LocationType locationType : LocationType.values()) {
-			container.addStep(manifest::setLocationType, "locationType", locationType);
+			container.addFieldChange(manifest::setLocationType, "locationType", locationType);
 		}
 
 		Queue<String> specIds = new LinkedList<>();
@@ -549,12 +549,12 @@ public class ManifestGenerator {
 		for(int i=0; i<3; i++) {
 			Consumer<ModuleSpec> action = manifest::addModuleSpec;
 			action = action.andThen(spec -> specIds.add(ManifestUtils.requireId(spec)));
-			container.addStep("spec", ManifestType.MODULE_SPEC,
+			container.addNestedManifestChange("spec", ManifestType.MODULE_SPEC,
 					manifest, config, action);
 		}
 
 		for(int i=0; i<3; i++) {
-			container.addStep(manifest::addModuleManifest, "module",
+			container.addLazyFieldChange(manifest::addModuleManifest, "module",
 					() -> {
 						ModuleManifest mod = (ModuleManifest) generate0(
 								ManifestType.MODULE_MANIFEST, manifest, config)
@@ -565,7 +565,7 @@ public class ManifestGenerator {
 		}
 
 		for(int i=0; i<3; i++) {
-			container.addStep("mapping", ManifestType.MAPPING_MANIFEST,
+			container.addNestedManifestChange("mapping", ManifestType.MAPPING_MANIFEST,
 					manifest, config, manifest::addMappingManifest);
 		}
 	}
@@ -574,9 +574,9 @@ public class ManifestGenerator {
 			IncrementalBuild<?> container, Config config) {
 		prepareItemLayerManifest(manifest, container, config);
 
-		container.addStep(manifest::setAnnotationKey, "annotationKey", index("key"));
-		container.addStep(manifest::setValueLayerId, "valueLayer", index("valueLayer"));
-		container.addStep("rasterizer", ManifestType.RASTERIZER_MANIFEST, manifest,
+		container.addFieldChange(manifest::setAnnotationKey, "annotationKey", index("key"));
+		container.addFieldChange(manifest::setValueLayerId, "valueLayer", index("valueLayer"));
+		container.addNestedManifestChange("rasterizer", ManifestType.RASTERIZER_MANIFEST, manifest,
 				config, manifest::setRasterizerManifest);
 	}
 
@@ -622,10 +622,10 @@ public class ManifestGenerator {
 
 		String id = ManifestUtils.requireId(layerManifest);
 
-		container.addStep(manifest::setPrimaryLayerId, "primaryLayer", id);
+		container.addFieldChange(manifest::setPrimaryLayerId, "primaryLayer", id);
 
 		for(HighlightFlag flag : HighlightFlag.values()) {
-			container.addStep(f -> manifest.setHighlightFlag(f, true), "highLightFlag", flag);
+			container.addFieldChange(f -> manifest.setHighlightFlag(f, true), "highLightFlag", flag);
 		}
 	}
 
@@ -635,8 +635,8 @@ public class ManifestGenerator {
 
 		prepareMemberManifest(manifest, container, config);
 
-		container.addStep(manifest::setSource, "source", index("source"));
-		container.addStep(manifest::setUseFactory, "factory",
+		container.addFieldChange(manifest::setSource, "source", index("source"));
+		container.addFieldChange(manifest::setUseFactory, "factory",
 				Boolean.valueOf(!ImplementationManifest.DEFAULT_USE_FACTORY_VALUE));
 	}
 
@@ -649,14 +649,14 @@ public class ManifestGenerator {
 
 		prepareLayerManifest(manifest, container, config);
 
-		container.addStep(manifest::setFoundationLayerId, "foundationLayer", index("layer"));
-		container.addStep(manifest::setBoundaryLayerId, "boundaryLayer", index("layer"));
+		container.addFieldChange(manifest::setFoundationLayerId, "foundationLayer", index("layer"));
+		container.addFieldChange(manifest::setBoundaryLayerId, "boundaryLayer", index("layer"));
 
 		for(ContainerType containerType : ContainerType.values()) {
 			if(containerType==ContainerType.PROXY) {
 				continue;
 			}
-			container.addStep("container::"+containerType, ManifestType.CONTAINER_MANIFEST,
+			container.addNestedManifestChange("container::"+containerType, ManifestType.CONTAINER_MANIFEST,
 					manifest, config.preprocessor(ManifestType.CONTAINER_MANIFEST,
 							c -> ((ContainerManifest)c).setContainerType(containerType))
 					.label(containerType.toString()),
@@ -691,17 +691,17 @@ public class ManifestGenerator {
 		action = action.andThen(manifest::addLayerManifest);
 
 		for(ManifestType type : ManifestType.getLayerTypes()) {
-			container.addStep("layer::"+type, type, manifest, config, action);
+			container.addNestedManifestChange("layer::"+type, type, manifest, config, action);
 		}
 
-		container.addStep(manifest::setIndependent, "independent",
+		container.addFieldChange(manifest::setIndependent, "independent",
 				Boolean.valueOf(!LayerGroupManifest.DEFAULT_INDEPENDENT_VALUE));
 
 		/*
 		 *  We added instances for all possible layer types already,
 		 *  so we are guaranteed to have an item layer here!
 		 */
-		container.addStep(manifest::setPrimaryLayerId, "primaryLayer",
+		container.addLazyFieldChange(manifest::setPrimaryLayerId, "primaryLayer",
 				() -> ManifestUtils.requireId(layers.stream()
 						.filter(ManifestUtils::isItemLayerManifest)
 						.findFirst()
@@ -715,17 +715,17 @@ public class ManifestGenerator {
 
 		if(manifest.isInline()) {
 			manifest.setInlineData(TestUtils.LOREM_IPSUM_ASCII);
-			container.addStep("with unicode content", manifest::setInlineData,
+			container.addValueChange("with unicode content", manifest::setInlineData,
 					TestUtils.LOREM_IPSUM_ISO);
 		} else {
 			manifest.setRootPath("some/path/to/whatever/file");
 
 			for(PathType pathType : PathType.values()) {
 				PathEntry entry = createPathEntry(pathType);
-				container.addStep(manifest::addPathEntry, "pathEntry for "+pathType, entry);
+				container.addFieldChange(manifest::addPathEntry, "pathEntry for "+pathType, entry);
 			}
 
-			container.addStep("pathResolver", ManifestType.PATH_RESOLVER_MANIFEST,
+			container.addManifestChange("pathResolver", ManifestType.PATH_RESOLVER_MANIFEST,
 					config, manifest::setPathResolverManifest);
 		}
 	}
@@ -738,9 +738,9 @@ public class ManifestGenerator {
 		if(!manifest.getRelation().isPresent())
 			manifest.setRelation(Relation.ONE_TO_ONE);
 
-		container.addStep(manifest::setId, "id", index("id"));
-		container.addStep(manifest::setSourceLayerId, "sourceLayerId", index("sourceLayer"));
-		container.addStep(manifest::setTargetLayerId, "targetLayerId", index("targetLayer"));
+		container.addFieldChange(manifest::setId, "id", index("id"));
+		container.addFieldChange(manifest::setSourceLayerId, "sourceLayerId", index("sourceLayer"));
+		container.addFieldChange(manifest::setTargetLayerId, "targetLayerId", index("targetLayer"));
 
 		DriverManifest driverManifest = manifest.getDriverManifest().orElse(null);
 		if(isMock(driverManifest)) {
@@ -748,7 +748,7 @@ public class ManifestGenerator {
 			MappingManifest inverse = stubId(mockTypedManifest(ManifestType.MAPPING_MANIFEST), id);
 			doReturn(Optional.of(inverse)).when(driverManifest).getMappingManifest(id);
 
-			container.addStep(manifest::setInverseId, "inverse", id);
+			container.addFieldChange(manifest::setInverseId, "inverse", id);
 		}
 	}
 
@@ -762,7 +762,7 @@ public class ManifestGenerator {
 			ModuleSpec spec = stubId(mockTypedManifest(ManifestType.MODULE_SPEC), id);
 			doReturn(Optional.of(spec)).when(driverManifest).getModuleSpec(id);
 
-			container.addStep(manifest::setModuleSpecId, "moduleSpec", id);
+			container.addFieldChange(manifest::setModuleSpecId, "moduleSpec", id);
 		} else if(driverManifest!=null) {
 			Set<ModuleSpec> specs = driverManifest.getModuleSpecs();
 			ModuleSpec spec;
@@ -773,7 +773,7 @@ public class ManifestGenerator {
 				spec = random(specs);
 			}
 
-			container.addStep(manifest::setModuleSpecId, "specId", ManifestUtils.requireId(spec));
+			container.addFieldChange(manifest::setModuleSpecId, "specId", ManifestUtils.requireId(spec));
 		}
 	}
 
@@ -784,12 +784,12 @@ public class ManifestGenerator {
 		prepareCategorizable(spec, container, config);
 
 		for(Multiplicity multiplicity : Multiplicity.values()) {
-			container.addStep(spec::setMultiplicity, "multicplicity", multiplicity);
+			container.addFieldChange(spec::setMultiplicity, "multicplicity", multiplicity);
 		}
 
-		container.addStep(spec::setCustomizable, "customizable",
+		container.addFieldChange(spec::setCustomizable, "customizable",
 				Boolean.valueOf(!ModuleSpec.DEFAULT_IS_CUSTOMIZABLE));
-		container.addStep(spec::setExtensionPointUid, "extensionPointUid", index("extension"));
+		container.addFieldChange(spec::setExtensionPointUid, "extensionPointUid", index("extension"));
 	}
 
 	private void prepareOption(Option option,
@@ -802,21 +802,21 @@ public class ManifestGenerator {
 		prepareIdentity(option, container, config);
 
 		if(option.isMultiValue()) {
-			container.addStep(option::setDefaultValue, "defaultValue",
+			container.addFieldChange(option::setDefaultValue, "defaultValue",
 					Arrays.asList(ManifestTestUtils.getTestValues(valueType)));
 		} else {
-			container.addStep(option::setDefaultValue, "defaultValue", ManifestTestUtils.getTestValue(valueType));
+			container.addFieldChange(option::setDefaultValue, "defaultValue", ManifestTestUtils.getTestValue(valueType));
 		}
 
-		container.addStep(option::setAllowNull, "allowNull", Boolean.valueOf(!Option.DEFAULT_ALLOW_NULL));
-		container.addStep(option::setExtensionPointUid, "extensionPointUid", index("extension"));
-		container.addStep(option::setOptionGroup, "groupId", index("group"));
-		container.addStep(option::setPublished, "published", Boolean.valueOf(!Option.DEFAULT_PUBLISHED_VALUE));
+		container.addFieldChange(option::setAllowNull, "allowNull", Boolean.valueOf(!Option.DEFAULT_ALLOW_NULL));
+		container.addFieldChange(option::setExtensionPointUid, "extensionPointUid", index("extension"));
+		container.addFieldChange(option::setOptionGroup, "groupId", index("group"));
+		container.addFieldChange(option::setPublished, "published", Boolean.valueOf(!Option.DEFAULT_PUBLISHED_VALUE));
 
-		container.addStep("valueSet", ManifestType.VALUE_SET, config, option::setSupportedValues);
+		container.addManifestChange("valueSet", ManifestType.VALUE_SET, config, option::setSupportedValues);
 
 		if(ValueRange.SUPPORTED_VALUE_TYPES.contains(valueType)) {
-			container.addStep("valueRange", ManifestType.VALUE_RANGE, config, option::setSupportedRange);
+			container.addManifestChange("valueRange", ManifestType.VALUE_RANGE, config, option::setSupportedRange);
 		}
 	}
 
@@ -824,11 +824,11 @@ public class ManifestGenerator {
 			IncrementalBuild<?> container, Config config) {
 
 		for(ValueType valueType : ValueType.simpleValueTypes()) {
-			container.addStep("option"+valueType, ManifestType.OPTION, config.valueType(valueType), manifest::addOption);
+			container.addManifestChange("option"+valueType, ManifestType.OPTION, config.valueType(valueType), manifest::addOption);
 		}
 
 		for(int i=0; i<3; i++) {
-			container.addStep(manifest::addGroupIdentifier, "groupIdentifer", createIdentity(index()));
+			container.addFieldChange(manifest::addGroupIdentifier, "groupIdentifer", createIdentity(index()));
 		}
 	}
 
@@ -852,11 +852,11 @@ public class ManifestGenerator {
 
 		prepareLayerManifest(manifest, container, config);
 
-		container.addStep(manifest::setFoundationLayerId, "foundationLayer", index("layer"));
-		container.addStep(manifest::setBoundaryLayerId, "boundaryLayer", index("layer"));
+		container.addFieldChange(manifest::setFoundationLayerId, "foundationLayer", index("layer"));
+		container.addFieldChange(manifest::setBoundaryLayerId, "boundaryLayer", index("layer"));
 
 		for(StructureType structureType : StructureType.values()) {
-			container.addStep("structure::"+structureType, ManifestType.STRUCTURE_MANIFEST,
+			container.addNestedManifestChange("structure::"+structureType, ManifestType.STRUCTURE_MANIFEST,
 					manifest, config.preprocessor(ManifestType.STRUCTURE_MANIFEST,
 							c -> ((StructureManifest)c).setStructureType(structureType))
 					.label(structureType.toString()),
@@ -867,7 +867,7 @@ public class ManifestGenerator {
 			if(containerType==ContainerType.PROXY) {
 				continue;
 			}
-			container.addStep("container::"+containerType, ManifestType.CONTAINER_MANIFEST,
+			container.addNestedManifestChange("container::"+containerType, ManifestType.CONTAINER_MANIFEST,
 					manifest, config.preprocessor(ManifestType.CONTAINER_MANIFEST,
 							c -> ((ContainerManifest)c).setContainerType(containerType))
 					.label(containerType.toString()),
@@ -881,7 +881,7 @@ public class ManifestGenerator {
 		prepareContainerManifest(manifest, container, config);
 
 		for(StructureFlag flag : StructureFlag.values()) {
-			container.addStep(f -> manifest.setStructureFlag(f, true), "structureFlag", flag);
+			container.addFieldChange(f -> manifest.setStructureFlag(f, true), "structureFlag", flag);
 		}
 	}
 
@@ -900,10 +900,10 @@ public class ManifestGenerator {
 
 		valueRange.setLowerBound((Comparable<?>) values[0]);
 
-		container.addStep(valueRange::setUpperBound, "upperBound", (Comparable<?>) values[1]);
-		container.addStep(valueRange::setStepSize, "stepSize", (Comparable<?>) values[2]);
-		container.addStep(valueRange::setLowerBoundInclusive, "lowerBoundInclusive", Boolean.TRUE);
-		container.addStep(valueRange::setUpperBoundInclusive, "upperBoundInclusive", Boolean.TRUE);
+		container.addFieldChange(valueRange::setUpperBound, "upperBound", (Comparable<?>) values[1]);
+		container.addFieldChange(valueRange::setStepSize, "stepSize", (Comparable<?>) values[2]);
+		container.addFieldChange(valueRange::setLowerBoundInclusive, "lowerBoundInclusive", Boolean.TRUE);
+		container.addFieldChange(valueRange::setUpperBoundInclusive, "upperBoundInclusive", Boolean.TRUE);
 	}
 
 	private void prepareValueSet(ValueSet valueSet,
@@ -1152,37 +1152,37 @@ public class ManifestGenerator {
 			return getInstance();
 		}
 
-		void addStep(String label, Change change) {
+		void addChange(String label, Change change) {
 			steps.add(new Step(label, change));
 			changeCount++;
 		}
 
-		<T extends Object> void addStep(String label, Consumer<? super T> setter, T value) {
+		<T extends Object> void addValueChange(String label, Consumer<? super T> setter, T value) {
 			requireNonNull(setter);
 			requireNonNull(value);
 
-			addStep(label, () -> setter.accept(value));
+			addChange(label, () -> setter.accept(value));
 		}
 
-		<T extends Object> void addStep(Consumer<? super T> setter, String field, T value) {
+		<T extends Object> void addFieldChange(Consumer<? super T> setter, String field, T value) {
 			requireNonNull(setter);
 			requireNonNull(value);
 
-			addStep(with(field, value), () -> setter.accept(value));
+			addChange(with(field, value), () -> setter.accept(value));
 		}
 
-		<T extends Object> void addStep(Consumer<? super T> setter, String field, Supplier<? extends T> source) {
+		<T extends Object> void addLazyFieldChange(Consumer<? super T> setter, String field, Supplier<? extends T> source) {
 			requireNonNull(setter);
 			requireNonNull(source);
 
-			addStep(with(field, "<delayed>"), () -> setter.accept(source.get()));
+			addChange(with(field, "<delayed>"), () -> setter.accept(source.get()));
 		}
 
-		<T extends Enum<T>> void addStep(Consumer<? super T> setter, String field, T value) {
+		<T extends Enum<T>> void addEnumFieldChange(Consumer<? super T> setter, String field, T value) {
 			requireNonNull(setter);
 			requireNonNull(value);
 
-			addStep(name(field, value), () -> setter.accept(value));
+			addChange(name(field, value), () -> setter.accept(value));
 		}
 
 		/**
@@ -1195,14 +1195,14 @@ public class ManifestGenerator {
 		 * @param config
 		 * @param setter
 		 */
-		<M_sub extends TypedManifest> void addStep(String field, ManifestType type, TypedManifest host,
+		<M_sub extends TypedManifest> void addNestedManifestChange(String field, ManifestType type, TypedManifest host,
 				Config config, Consumer<M_sub> setter) {
-			addStep(name(field, type), wrap(generate0(type, host, config), setter));
+			addChange(name(field, type), wrap(generate0(type, host, config), setter));
 		}
 
-		<M_sub extends TypedManifest> void addStep(String field, ManifestType type,
+		<M_sub extends TypedManifest> void addManifestChange(String field, ManifestType type,
 				Config config, Consumer<M_sub> setter) {
-			addStep(name(field, type), wrap(generate0(type, config), setter));
+			addChange(name(field, type), wrap(generate0(type, config), setter));
 		}
 
 		public int getChangeCount() {

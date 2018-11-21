@@ -227,7 +227,7 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 
 		final String message = prepareMessage();
 
-		final SourceType sourceType = manifest.getSourceType();
+		final SourceType sourceType = manifest.getSourceType().orElse(ImplementationManifest.DEFAULT_SOURCE_TYPE);
 		final String source = manifest.getSource().orElse(null);
 
 		ClassLoader classLoader = getCorpusManager().getImplementationClassLoader(manifest);

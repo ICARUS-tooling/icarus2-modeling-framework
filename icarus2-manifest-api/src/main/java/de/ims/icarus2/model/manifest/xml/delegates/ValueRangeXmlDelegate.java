@@ -31,8 +31,6 @@ import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
-import de.ims.icarus2.util.eval.ExpressionFactory;
-import de.ims.icarus2.util.eval.spi.ExpressionFactoryProvider;
 import de.ims.icarus2.util.xml.UnexpectedTagException;
 import de.ims.icarus2.util.xml.UnsupportedNestingException;
 import de.ims.icarus2.util.xml.XmlSerializer;
@@ -130,17 +128,15 @@ public class ValueRangeXmlDelegate extends AbstractXmlDelegate<ValueRange> {
 		} break;
 
 		case ManifestXmlTags.EVAL : {
-			String type = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.TYPE)
-					.orElse(ExpressionFactoryProvider.GENERIC_JAVA_TYPE);
-
-			// Instantiate fresh factory, this might throw an unchecked exception
-			ExpressionFactory factory = ExpressionFactoryProvider.newFactory(type);
-
-			// Assign correct return type based on the outer value type
-			ValueRange range = getInstance();
-			factory.setReturnType(range.getValueType().getBaseClass());
-
-			handler = new ExpressionXmlHandler(factory);
+			/*
+			 *  implementation note:
+			 *
+			 *  Previously we read in the attributes and instantiated the required
+			 *  ExpressionFactory here. To decouple this responsibility from outside
+			 *  code it was moved into the ExpressionXmlHandler itself. This way
+			 *  consistency checks and errors are also concentrated at the correct location.
+			 */
+			handler = new ExpressionXmlHandler(getInstance().getValueType().getBaseClass());
 		} break;
 
 		default:

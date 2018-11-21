@@ -15,13 +15,16 @@
  * limitations under the License.
  */
 /**
- * 
+ *
  */
 package de.ims.icarus2.model.manifest.xml.delegates;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.TestFactory;
+
+import de.ims.icarus2.util.eval.ExpressionFactory;
 
 /**
  * @author Markus Gärtner
@@ -29,9 +32,14 @@ import org.junit.jupiter.api.Test;
  */
 class ExpressionXmlHandlerTest {
 
-	@Test
-	void test() {
-		fail("Not yet implemented"); // TODO
+	private void assertParse(String xml, ExpressionFactory factory) {
+		//TODO currently no good strategy for actually testing textual expression?
 	}
 
+	@TestFactory
+	Stream<DynamicTest> testParse() {
+		//TODO add actual tests!!!
+
+		return Stream.of();
+	}
 }

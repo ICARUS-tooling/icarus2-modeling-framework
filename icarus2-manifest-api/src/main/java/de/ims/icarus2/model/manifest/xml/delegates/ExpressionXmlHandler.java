@@ -32,6 +32,7 @@ import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.eval.Expression;
 import de.ims.icarus2.util.eval.ExpressionFactory;
+import de.ims.icarus2.util.eval.spi.ExpressionFactoryProvider;
 import de.ims.icarus2.util.xml.UnexpectedTagException;
 import de.ims.icarus2.util.xml.UnsupportedNestingException;
 
@@ -41,12 +42,12 @@ import de.ims.icarus2.util.xml.UnsupportedNestingException;
  */
 public class ExpressionXmlHandler implements ManifestXmlHandler {
 
-	private final ExpressionFactory factory;
+	private final Class<?> returnType;
 
-	public ExpressionXmlHandler(ExpressionFactory factory) {
-		requireNonNull(factory);
+	private ExpressionFactory factory;
 
-		this.factory = factory;
+	public ExpressionXmlHandler(Class<?> returnType) {
+		this.returnType = requireNonNull(returnType);
 	}
 
 	/**
@@ -58,7 +59,18 @@ public class ExpressionXmlHandler implements ManifestXmlHandler {
 			throws SAXException {
 		switch (qName) {
 		case ManifestXmlTags.EVAL: {
-			// no-op
+			String type = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.TYPE)
+					.orElse(ExpressionFactoryProvider.GENERIC_JAVA_TYPE);
+
+			// Instantiate fresh factory, this might throw an unchecked exception
+			try {
+				factory = ExpressionFactoryProvider.newFactory(type);
+			} catch (IllegalArgumentException e) {
+				//TODO is it really a good idea to catch unchecked exception here?
+				throw new SAXException("Not a valid expression type: "+type, e);
+			}
+
+			factory.setReturnType(returnType);
 		} break;
 
 		case ManifestXmlTags.CODE: {
@@ -145,7 +157,8 @@ public class ExpressionXmlHandler implements ManifestXmlHandler {
 			 */
 			return factory.compile();
 		} catch (Exception e) {
-			throw new ManifestException(ManifestErrorCode.IMPLEMENTATION_ERROR, "Failed to compile custom expression", e);
+			throw new ManifestException(ManifestErrorCode.IMPLEMENTATION_ERROR,
+					"Failed to compile custom expression", e);
 		}
 	}
 }
