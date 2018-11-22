@@ -13,6 +13,7 @@ include 'icarus2-file-driver-utils'
 include 'icarus2-model-compression'
 include 'icarus2-common-formats'
 include 'icarus2-experiments'
+include 'icarus2-examples'
 
 
 project(':icarus2-shared-utils').projectDir = "$rootDir/icarus2-shared-utils" as File
@@ -24,3 +25,4 @@ project(':icarus2-file-driver-utils').projectDir = "$rootDir/icarus2-file-driver
 project(':icarus2-model-compression').projectDir = "$rootDir/icarus2-model-compression" as File
 project(':icarus2-common-formats').projectDir = "$rootDir/icarus2-common-formats" as File
 project(':icarus2-experiments').projectDir = "$rootDir/icarus2-experiments" as File
+project(':icarus2-examples').projectDir = "$rootDir/icarus2-examples" as File
