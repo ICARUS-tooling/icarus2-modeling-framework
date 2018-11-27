@@ -17,6 +17,7 @@
 package de.ims.icarus2.test;
 
 import static java.util.Objects.requireNonNull;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -340,6 +341,16 @@ public class TestUtils {
 			assertEquals(expected[i], actual.get(i),
 					"Mismatch at index "+i+": expected "+expected[i]+" - got "+actual.get(i));
 		}
+	}
+
+	public static <E extends Object> void assertArrayEmpty(E[] array) {
+		assertNotNull(array);
+		assertTrue(array.length==0);
+	}
+
+	public static <E extends Object> void assertArrayNotEmpty(E[] array) {
+		assertNotNull(array);
+		assertTrue(array.length>0);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -754,6 +765,18 @@ public class TestUtils {
 
 		adder.accept(instance, value2);
 		assertCollectionEquals(getter.apply(instance), value1, value2);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T extends Object, K extends Object> void assertAccumulativeArrayGetter(
+			T instance, K value1, K value2, Function<T, K[]> getter, BiConsumer<T, K> adder) {
+		assertArrayEmpty(getter.apply(instance));
+
+		adder.accept(instance, value1);
+		assertArrayEquals(new Object[] {value1}, getter.apply(instance));
+
+		adder.accept(instance, value2);
+		assertArrayEquals(new Object[] {value1, value2}, getter.apply(instance));
 	}
 
 	@SuppressWarnings("unchecked")

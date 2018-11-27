@@ -22,6 +22,7 @@ package de.ims.icarus2.model.manifest.api;
 import static de.ims.icarus2.test.TestUtils.INDEX_OUT_OF_BOUNDS_CHECK;
 import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
+import static de.ims.icarus2.test.TestUtils.assertAccumulativeArrayGetter;
 import static de.ims.icarus2.test.TestUtils.assertAccumulativeCount;
 import static de.ims.icarus2.test.TestUtils.assertAccumulativeGetter;
 import static de.ims.icarus2.test.TestUtils.assertAccumulativeLookup;
@@ -64,15 +65,15 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#getValues()}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#getValuesAsSet()}.
 	 */
 	@TestFactory
-	default Stream<DynamicTest> testGetValues() {
+	default Stream<DynamicTest> testGetValuesAsSet() {
 		return ManifestTestUtils.getAvailableTestTypes()
 			.stream()
 			.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 					Object[] values = ManifestTestUtils.getTestValues(valueType);
-					assertAccumulativeGetter(createWithType(settings(), valueType),
+					assertAccumulativeArrayGetter(createWithType(settings(), valueType),
 							values[0], values[1],
 							ValueSet::getValues,
 							ValueSet::addValue);
@@ -91,7 +92,7 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 						V instance = createWithType(settings(), valueType);
 						assertAccumulativeGetter(instance,
 								values[0], values[1],
-								ValueSet::getValues,
+								ValueSet::getValuesAsList,
 								ValueSet::addValue);
 
 						assertListEquals(instance.getValuesAsList(), values[0], values[1]);
@@ -246,7 +247,7 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 								settings, createWithType(settings, valueType),
 								ValueSet::addValue,
 								ValueSet::removeValue,
-								ValueSet::getValues,
+								ValueSet::getValuesAsSet,
 								NPE_CHECK, INVALID_INPUT_CHECK,
 								Arrays.copyOf(ManifestTestUtils.getTestValues(valueType), 2)); // for boolean type
 					}));

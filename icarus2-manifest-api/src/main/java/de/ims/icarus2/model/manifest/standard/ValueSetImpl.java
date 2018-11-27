@@ -131,6 +131,14 @@ public class ValueSetImpl extends AbstractLockable implements ValueSet {
 	}
 
 	/**
+	 * @see de.ims.icarus2.model.manifest.api.ValueSet#getValues()
+	 */
+	@Override
+	public Object[] getValues() {
+		return values.toArray();
+	}
+
+	/**
 	 * @see de.ims.icarus2.model.manifest.api.ValueSet#valueCount()
 	 */
 	@Override

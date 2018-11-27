@@ -65,7 +65,7 @@ public interface ValueSet extends Lockable, TypedManifest {
 	 *
 	 * @return
 	 */
-	default Set<Object> getValues() {
+	default Set<Object> getValuesAsSet() {
 		return LazyCollection.lazyIdentitySet(valueCount())
 				.addFromForEach(this::forEachValue)
 				.getAsSet();
@@ -76,6 +76,8 @@ public interface ValueSet extends Lockable, TypedManifest {
 				.addFromForEach(this::forEachValue)
 				.getAsList();
 	}
+
+	Object[] getValues();
 
 	/**
 	 * Returns the type of this set
