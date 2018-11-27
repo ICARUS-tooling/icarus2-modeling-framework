@@ -204,31 +204,31 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationManifest#getValueType()}.
 	 */
-	@Test
-	default void testGetValueType() {
+	@TestFactory
+	default Stream<DynamicTest> testGetValueType() {
 		ValueType dummyType = mock(ValueType.class);
-
-		for(ValueType valueType : ManifestTestUtils.getAvailableTestTypes()) {
-			assertDerivativeGetter(settings(),
-					valueType, dummyType, DEFAULT(ValueType.STRING),
-					AnnotationManifest::getValueType,
-					AnnotationManifest::setValueType);
-		}
+		return ManifestTestUtils.getAvailableTestTypes().stream()
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
+					assertDerivativeGetter(settings(),
+							valueType, dummyType, DEFAULT(ValueType.STRING),
+							AnnotationManifest::getValueType,
+							AnnotationManifest::setValueType);
+					}));
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationManifest#isLocalValueType()}.
 	 */
-	@Test
-	default void testIsLocalValueType() {
+	@TestFactory
+	default Stream<DynamicTest> testIsLocalValueType() {
 		ValueType dummyType = mock(ValueType.class);
-
-		for(ValueType valueType : ManifestTestUtils.getAvailableTestTypes()) {
-			assertDerivativeIsLocal(settings(),
-					valueType, dummyType,
-					AnnotationManifest::isLocalValueType,
-					AnnotationManifest::setValueType);
-		}
+		return ManifestTestUtils.getAvailableTestTypes().stream()
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
+					assertDerivativeIsLocal(settings(),
+							valueType, dummyType,
+							AnnotationManifest::isLocalValueType,
+							AnnotationManifest::setValueType);
+					}));
 	}
 
 	/**
@@ -237,8 +237,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	@TestFactory
 	default Stream<DynamicTest> testGetNoEntryValue() {
 		return ManifestTestUtils.getAvailableTestTypes().stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						Object[] values = ManifestTestUtils.getTestValues(valueType);
 						assertTrue(values.length>1, "Insufficient test values for type: "+valueType);
 						Object value1 = values[0];
@@ -246,8 +245,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 
 						assertDerivativeOptGetter(settings(), value1, value2, TestUtils.NO_DEFAULT(),
 								AnnotationManifest::getNoEntryValue, AnnotationManifest::setNoEntryValue);
-					});
-				});
+					}));
 	}
 
 	/**
@@ -256,8 +254,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	@TestFactory
 	default Stream<DynamicTest> testIsLocalNoEntryValue() {
 		return ManifestTestUtils.getAvailableTestTypes().stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						Object[] values = ManifestTestUtils.getTestValues(valueType);
 						assertTrue(values.length>1, "Insufficient test valeus for type: "+valueType);
 						Object value1 = values[0];
@@ -265,8 +262,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 
 						assertDerivativeIsLocal(settings(), value1, value2,
 								AnnotationManifest::isLocalNoEntryValue, AnnotationManifest::setNoEntryValue);
-					});
-				});
+					}));
 	}
 
 	/**
@@ -368,16 +364,14 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	@TestFactory
 	default Stream<DynamicTest> testSetNoEntryValue() {
 		return ManifestTestUtils.getAvailableTestTypes().stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						Object value = ManifestTestUtils.getTestValue(valueType);
 						//TODO verify if we need value check for noEntryValue field
 //						Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
 						assertLockableSetter(settings(),
 								AnnotationManifest::setNoEntryValue,
 								value, false, TYPE_CAST_CHECK/*, illegalValue*/);
-					});
-				});
+					}));
 	}
 
 	/**

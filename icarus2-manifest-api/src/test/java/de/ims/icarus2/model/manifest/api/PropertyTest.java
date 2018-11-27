@@ -82,11 +82,9 @@ public interface PropertyTest<P extends Property> extends LockableTest<P>, Clone
 	@TestFactory
 	default Stream<DynamicTest> testGetValueType() {
 		return ValueType.valueTypes().stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						assertEquals(valueType, createTestInstance(settings(), "property1", valueType).getValueType());
-					});
-				});
+					}));
 	}
 
 	/**
@@ -95,14 +93,12 @@ public interface PropertyTest<P extends Property> extends LockableTest<P>, Clone
 	@TestFactory
 	default Stream<DynamicTest> testGetValue() {
 		return ManifestTestUtils.getAvailableTestTypes().stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						Object value = ManifestTestUtils.getTestValue(valueType);
 						P instance = createTestInstance(settings(), "property"+valueType.getName(), valueType);
 						instance.setValue(value);
 						assertOptionalEquals(value, instance.getValue());
-					});
-				});
+					}));
 	}
 
 	/**
@@ -143,13 +139,11 @@ public interface PropertyTest<P extends Property> extends LockableTest<P>, Clone
 	@TestFactory
 	default Stream<DynamicTest> testSetValue() {
 		return ManifestTestUtils.getAvailableTestTypes().stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						Object value = ManifestTestUtils.getTestValue(valueType);
 						P instance = createTestInstance(settings(), "property"+valueType.getName(), valueType);
 						instance.setValue(value);
-					});
-				});
+					}));
 	}
 
 	/**

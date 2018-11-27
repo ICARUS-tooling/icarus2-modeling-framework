@@ -31,7 +31,6 @@ import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -168,18 +167,15 @@ public interface ManifestXmlDelegateTest<M extends TypedManifest, D extends Mani
 		List<Config> configurations = configurations();
 		assertCollectionNotEmpty(configurations);
 
-		List<DynamicTest> tests = new ArrayList<>();
-
-		for(Config config : configurations) {
-
-			/*
-			 * Create 1 test case per configuration.
-			 * Within the test case we still check every scenario given by the
-			 * incremental build stages separately. But it is much clearer to have
-			 * them wrapped this way instead of hundreds of almost identically named
-			 * dynamic tests...
-			 */
-			tests.add(dynamicTest(config.getLabel(), () -> {
+		/*
+		 * Create 1 test case per configuration.
+		 * Within the test case we still check every scenario given by the
+		 * incremental build stages separately. But it is much clearer to have
+		 * them wrapped this way instead of hundreds of almost identically named
+		 * dynamic tests...
+		 */
+		return configurations.stream()
+			.map(config -> dynamicTest(config.getLabel(), () -> {
 
 				final IncrementalBuild<M> build = ManifestGenerator.generateOnce(
 					generator, type, config);
@@ -204,9 +200,6 @@ public interface ManifestXmlDelegateTest<M extends TypedManifest, D extends Mani
 							true); // dump intermediary xml representation
 				} while(build.applyNextChange());
 			}));
-		}
-
-		return tests.stream();
 	}
 
 }

@@ -81,16 +81,14 @@ public interface ValueRangeTest<R extends ValueRange>
 	@TestFactory
 	default Stream<DynamicTest> testGetLowerBound() {
 		return LEGAL_VALUE_TYPES.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						Object[] values = ManifestTestUtils.getTestValues(valueType);
 						assertOptGetter(createWithType(settings(), valueType),
 								(Comparable<?>)values[0], (Comparable<?>)values[1],
 								NO_DEFAULT(),
 								ValueRange::getLowerBound,
 								ValueRange::setLowerBound);
-					});
-				});
+					}));
 	}
 
 	/**
@@ -99,16 +97,14 @@ public interface ValueRangeTest<R extends ValueRange>
 	@TestFactory
 	default Stream<DynamicTest> testGetUpperBound() {
 		return LEGAL_VALUE_TYPES.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						Object[] values = ManifestTestUtils.getTestValues(valueType);
 						assertOptGetter(createWithType(settings(), valueType),
 								(Comparable<?>)values[0], (Comparable<?>)values[1],
 								NO_DEFAULT(),
 								ValueRange::getUpperBound,
 								ValueRange::setUpperBound);
-					});
-				});
+					}));
 	}
 
 	/**
@@ -117,16 +113,14 @@ public interface ValueRangeTest<R extends ValueRange>
 	@TestFactory
 	default Stream<DynamicTest> testGetStepSize() {
 		return LEGAL_VALUE_TYPES.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						Object[] values = ManifestTestUtils.getTestValues(valueType);
 						assertOptGetter(createWithType(settings(), valueType),
 								(Comparable<?>)values[0], (Comparable<?>)values[1],
 								NO_DEFAULT(),
 								ValueRange::getStepSize,
 								ValueRange::setStepSize);
-					});
-				});
+					}));
 	}
 
 	/**
@@ -159,11 +153,9 @@ public interface ValueRangeTest<R extends ValueRange>
 	@TestFactory
 	default Stream<DynamicTest> testGetValueType() {
 		return LEGAL_VALUE_TYPES.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						assertEquals(valueType, createWithType(settings(), valueType).getValueType());
-					});
-				});
+					}));
 	}
 
 	/**
@@ -222,14 +214,12 @@ public interface ValueRangeTest<R extends ValueRange>
 	@TestFactory
 	default Stream<DynamicTest> testUnsupportedValueTypes() {
 		return ILLEGAL_VALUE_TYPES.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						UnsupportedValueTypeException exception = assertThrows(UnsupportedValueTypeException.class,
 								() -> createWithType(settings(), valueType));
 
 						assertEquals(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE, exception.getErrorCode());
 						assertEquals(valueType, exception.getValueType());
-					});
-				});
+					}));
 	}
 }

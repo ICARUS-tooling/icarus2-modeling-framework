@@ -92,12 +92,10 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 	@TestFactory
 	default Stream<DynamicTest> testGetValue() {
 		return LEGAL_VALUE_TYPES.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						M empty = createWithType(settings(), valueType);
 						assertNotPresent(empty.getValue());
-					});
-				});
+					}));
 	}
 
 	/**
@@ -106,12 +104,10 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 	@TestFactory
 	default Stream<DynamicTest> testGetValueType() {
 		return LEGAL_VALUE_TYPES.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						M empty = createWithType(settings(), valueType);
 						assertEquals(valueType, empty.getValueType());
-					});
-				});
+					}));
 	}
 
 	/**
@@ -120,8 +116,7 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 	@TestFactory
 	default Stream<DynamicTest> testSetValue() {
 		return LEGAL_VALUE_TYPES.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						M manifest = createWithType(settings(), valueType);
 
 						Object testValue = ManifestTestUtils.getTestValue(valueType);
@@ -130,22 +125,19 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 						LockableTest.assertLockableSetter(
 								settings(), manifest,
 								ValueManifest::setValue, testValue, true, TYPE_CAST_CHECK, illegalValue);
-					});
-				});
+					}));
 	}
 
 	@Test
 	@TestFactory
 	default Stream<DynamicTest> testUnsupportedValueTypes() {
 		return ILLEGAL_VALUE_TYPES.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						UnsupportedValueTypeException exception = assertThrows(UnsupportedValueTypeException.class,
 								() -> createWithType(settings(), valueType));
 
 						assertEquals(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE, exception.getErrorCode());
 						assertEquals(valueType, exception.getValueType());
-					});
-				});
+					}));
 	}
 }

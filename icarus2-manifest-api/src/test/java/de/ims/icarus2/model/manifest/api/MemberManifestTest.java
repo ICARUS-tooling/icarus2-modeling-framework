@@ -91,8 +91,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 		String name2 = "property123_1";
 
 		return ManifestTestUtils.getAvailableTestTypes().stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						M manifest = createUnlocked();
 
 						assertNotPresent(manifest.getPropertyValue("no-such-property"));
@@ -118,8 +117,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 							assertNotPresent(template.getPropertyValue(name2));
 							assertOptionalEquals(value, derived.getPropertyValue(name2));
 						}
-					});
-				});
+					}));
 	}
 
 	/**
@@ -132,8 +130,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 		String nameM = "property123Mult";
 
 		return ManifestTestUtils.getAvailableTestTypes().stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						M manifest = createUnlocked();
 						Object value = ManifestTestUtils.getTestValue(valueType);
 						Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
@@ -162,8 +159,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 
 						manifest.lock();
 						LockableTest.assertLocked(() -> manifest.addProperty(name+"_1", valueType, false, value));
-					});
-				});
+					}));
 	}
 
 	public static Property mockProperty(String name) {
@@ -194,8 +190,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 		String name = "property123";
 
 		return ManifestTestUtils.getAvailableTestTypes().stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						M manifest = createUnlocked();
 						Object value = ManifestTestUtils.getTestValue(valueType);
 
@@ -211,8 +206,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 
 						manifest.lock();
 						LockableTest.assertLocked(() -> manifest.addProperty(property));
-					});
-				});
+					}));
 	}
 
 	/**
@@ -413,8 +407,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 		String name = "property123";
 
 		return ManifestTestUtils.getAvailableTestTypes().stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						M manifest = createUnlocked();
 						Object[] values = ManifestTestUtils.getTestValues(valueType);
 						assertTrue(values.length>1);
@@ -447,8 +440,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 							assertOptionalEquals(value, template.getPropertyValue(name));
 							assertOptionalEquals(value2, derived.getPropertyValue(name));
 						}
-					});
-				});
+					}));
 	}
 
 	/**

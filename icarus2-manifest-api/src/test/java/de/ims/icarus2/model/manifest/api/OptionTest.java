@@ -102,15 +102,13 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest<O>,
 	@TestFactory
 	default Stream<DynamicTest> testGetDefaultValue() {
 		return LEGAL_VALUE_TYPES.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						Object[] values = ManifestTestUtils.getTestValues(valueType);
 						TestUtils.assertOptGetter(createWithType(settings(), valueType),
 								values[0], values[1], NO_DEFAULT(),
 								Option::getDefaultValue,
 								Option::setDefaultValue);
-					});
-				});
+					}));
 	}
 
 	/**
@@ -120,15 +118,13 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest<O>,
 	@TestFactory
 	default Stream<DynamicTest> testGetValueType() {
 		return LEGAL_VALUE_TYPES.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						TestUtils.assertGetter(createWithType(settings(), valueType),
 								valueType, valueType,
 								DEFAULT(valueType),
 								Option::getValueType,
 								Option::setValueType);
-					});
-				});
+					}));
 	}
 
 	/**
@@ -138,13 +134,11 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest<O>,
 	@TestFactory
 	default Stream<DynamicTest> testGetSupportedValues() {
 		return LEGAL_VALUE_TYPES.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						TestUtils.assertOptGetter(createWithType(settings(), valueType),
 								mockValueSet(valueType), mockValueSet(valueType), NO_DEFAULT(),
 								Option::getSupportedValues, Option::setSupportedValues);
-					});
-				});
+					}));
 	}
 
 	/**
@@ -154,14 +148,12 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest<O>,
 	@TestFactory
 	default Stream<DynamicTest> testGetSupportedRange() {
 		return LEGAL_VALUE_TYPES.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						TestUtils.assertOptGetter(createWithType(settings(), valueType),
 								mockValueRange(valueType), mockValueRange(valueType),
 								NO_DEFAULT(),
 								Option::getSupportedRange, Option::setSupportedRange);
-					});
-				});
+					}));
 	}
 
 	/**
@@ -306,27 +298,23 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest<O>,
 	@TestFactory
 	default Stream<DynamicTest> testSetDefaultValue() {
 		return LEGAL_VALUE_TYPES.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						LockableTest.assertLockableSetter(settings(), createWithType(settings(), valueType),
 								Option::setDefaultValue, getTestValue(valueType),
 								false, TYPE_CAST_CHECK, getIllegalValue(valueType));
-					});
-				});
+					}));
 	}
 
 	@TestFactory
 	default Stream<DynamicTest> testUnsupportedValueTypes() {
 		return ILLEGAL_VALUE_TYPES.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						UnsupportedValueTypeException exception = assertThrows(UnsupportedValueTypeException.class,
 								() -> createWithType(settings(), valueType));
 
 						assertEquals(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE, exception.getErrorCode());
 						assertEquals(valueType, exception.getValueType());
-					});
-				});
+					}));
 	}
 
 }

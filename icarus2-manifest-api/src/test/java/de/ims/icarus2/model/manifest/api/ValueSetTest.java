@@ -70,15 +70,13 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 	default Stream<DynamicTest> testGetValues() {
 		return ManifestTestUtils.getAvailableTestTypes()
 			.stream()
-			.map(valueType -> {
-				return DynamicTest.dynamicTest(valueType.getName(), () -> {
+			.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 					Object[] values = ManifestTestUtils.getTestValues(valueType);
 					assertAccumulativeGetter(createWithType(settings(), valueType),
 							values[0], values[1],
 							ValueSet::getValues,
 							ValueSet::addValue);
-				});
-			});
+				}));
 	}
 
 	/**
@@ -88,8 +86,7 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 	default Stream<DynamicTest> testGetValuesAsList() {
 		return ManifestTestUtils.getAvailableTestTypes()
 				.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						Object[] values = ManifestTestUtils.getTestValues(valueType);
 						V instance = createWithType(settings(), valueType);
 						assertAccumulativeGetter(instance,
@@ -98,8 +95,7 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 								ValueSet::addValue);
 
 						assertListEquals(instance.getValuesAsList(), values[0], values[1]);
-					});
-				});
+					}));
 	}
 
 	/**
@@ -109,15 +105,13 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 	default Stream<DynamicTest> testValueCount() {
 		return ManifestTestUtils.getAvailableTestTypes()
 				.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						assertAccumulativeCount(createWithType(settings(), valueType),
 								ValueSet::addValue,
 								ValueSet::removeValue,
 								ValueSet::valueCount,
 								ManifestTestUtils.getTestValues(valueType));
-					});
-				});
+					}));
 	}
 
 	/**
@@ -128,8 +122,7 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 	default Stream<DynamicTest> testGetValueAt() {
 		return ManifestTestUtils.getAvailableTestTypes()
 				.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						Object[] values = ManifestTestUtils.getTestValues(valueType);
 						assertAccumulativeLookup(createWithType(settings(), valueType),
 								values[0], values[1],
@@ -138,8 +131,7 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 								ValueSet::addValue,
 								k -> ArrayUtils.indexOf(values, k),
 								2, 3, -1);
-					});
-				});
+					}));
 	}
 
 	/**
@@ -149,15 +141,13 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 	default Stream<DynamicTest> testForEachValue() {
 		return ManifestTestUtils.getAvailableTestTypes()
 				.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						Object[] values = ManifestTestUtils.getTestValues(valueType);
 						assertForEach(createWithType(settings(), valueType),
 								values[0], values[1],
 								(Function<V, Consumer<Consumer<Object>>>)v -> v::forEachValue,
 								ValueSet::addValue);
-					});
-				});
+					}));
 	}
 
 	/**
@@ -167,11 +157,9 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 	default Stream<DynamicTest> testGetValueType() {
 		return ManifestTestUtils.getAvailableTestTypes()
 				.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						assertEquals(valueType, createWithType(settings(), valueType).getValueType());
-					});
-				});
+					}));
 	}
 
 	/**
@@ -181,15 +169,13 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 	default Stream<DynamicTest> testIndexOfValue() {
 		return ManifestTestUtils.getAvailableTestTypes()
 				.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						assertListIndexOf(createWithType(settings(), valueType),
 								ValueSet::addValue,
 								ValueSet::removeValue,
 								ValueSet::indexOfValue,
 								Arrays.copyOf(ManifestTestUtils.getTestValues(valueType), 2)); // for boolean type
-					});
-				});
+					}));
 	}
 
 	/**
@@ -199,8 +185,7 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 	default Stream<DynamicTest> testAddValueObject() {
 		return ManifestTestUtils.getAvailableTestTypes()
 				.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						TestSettings settings = settings();
 						Object[] illegalValues = ManifestTestUtils.getIllegalValues(valueType);
 						LockableTest.assertLockableAccumulativeAdd(
@@ -210,8 +195,7 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 								illegalValues[0]==null ? NO_CHECK : TYPE_CAST_CHECK,
 								NPE_CHECK, NO_CHECK,
 								ManifestTestUtils.getTestValues(valueType));
-					});
-				});
+					}));
 	}
 
 	/**
@@ -221,16 +205,14 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 	default Stream<DynamicTest> testAddValueObjectInt() {
 		return ManifestTestUtils.getAvailableTestTypes()
 				.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						TestSettings settings = settings();
 						LockableTest.assertLockableListInsertAt(
 								settings, createWithType(settings, valueType),
 								ValueSet::addValue,
 								ValueSet::getValueAt,
 								ManifestTestUtils.getTestValues(valueType));
-					});
-				});
+					}));
 	}
 
 	/**
@@ -240,8 +222,7 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 	default Stream<DynamicTest> testRemoveValue() {
 		return ManifestTestUtils.getAvailableTestTypes()
 				.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						TestSettings settings = settings();
 						LockableTest.assertLockableListRemoveAt(
 								settings, createWithType(settings, valueType),
@@ -249,8 +230,7 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 								ValueSet::removeValueAt,
 								ValueSet::getValueAt,
 								ManifestTestUtils.getTestValues(valueType));
-					});
-				});
+					}));
 	}
 
 	/**
@@ -260,8 +240,7 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 	default Stream<DynamicTest> testRemoveValueObject() {
 		return ManifestTestUtils.getAvailableTestTypes()
 				.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						TestSettings settings = settings();
 						LockableTest.assertLockableAccumulativeRemove(
 								settings, createWithType(settings, valueType),
@@ -270,8 +249,7 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 								ValueSet::getValues,
 								NPE_CHECK, INVALID_INPUT_CHECK,
 								Arrays.copyOf(ManifestTestUtils.getTestValues(valueType), 2)); // for boolean type
-					});
-				});
+					}));
 	}
 
 	/**
@@ -281,8 +259,7 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 	default Stream<DynamicTest> testRemoveAllValues() {
 		return ManifestTestUtils.getAvailableTestTypes()
 				.stream()
-				.map(valueType -> {
-					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						V instance = createWithType(settings(), valueType);
 
 						Stream.of(ManifestTestUtils.getTestValues(valueType))
@@ -297,8 +274,7 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 						instance.lock();
 
 						LockableTest.assertLocked(() -> instance.removeAllValues());
-					});
-				});
+					}));
 	}
 
 }
