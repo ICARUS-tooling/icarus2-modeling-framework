@@ -19,13 +19,32 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static de.ims.icarus2.test.TestUtils.INDEX_OUT_OF_BOUNDS_CHECK;
+import static de.ims.icarus2.test.TestUtils.NO_CHECK;
+import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
+import static de.ims.icarus2.test.TestUtils.assertAccumulativeCount;
+import static de.ims.icarus2.test.TestUtils.assertAccumulativeGetter;
+import static de.ims.icarus2.test.TestUtils.assertAccumulativeLookup;
+import static de.ims.icarus2.test.TestUtils.assertForEach;
+import static de.ims.icarus2.test.TestUtils.assertListEquals;
+import static de.ims.icarus2.test.TestUtils.assertListIndexOf;
+import static de.ims.icarus2.test.TestUtils.settings;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.Test;
+import java.util.Arrays;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.TestFactory;
+
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.util.collections.ArrayUtils;
 
 /**
  * @author Markus Gärtner
@@ -47,81 +66,239 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#getValues()}.
 	 */
-	@Test
-	default void testValues() {
-		fail("Not yet implemented");
+	@TestFactory
+	default Stream<DynamicTest> testGetValues() {
+		return ManifestTestUtils.getAvailableTestTypes()
+			.stream()
+			.map(valueType -> {
+				return DynamicTest.dynamicTest(valueType.getName(), () -> {
+					Object[] values = ManifestTestUtils.getTestValues(valueType);
+					assertAccumulativeGetter(createWithType(settings(), valueType),
+							values[0], values[1],
+							ValueSet::getValues,
+							ValueSet::addValue);
+				});
+			});
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#getValuesAsList()}.
+	 */
+	@TestFactory
+	default Stream<DynamicTest> testGetValuesAsList() {
+		return ManifestTestUtils.getAvailableTestTypes()
+				.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						Object[] values = ManifestTestUtils.getTestValues(valueType);
+						V instance = createWithType(settings(), valueType);
+						assertAccumulativeGetter(instance,
+								values[0], values[1],
+								ValueSet::getValues,
+								ValueSet::addValue);
+
+						assertListEquals(instance.getValuesAsList(), values[0], values[1]);
+					});
+				});
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#valueCount()}.
 	 */
-	@Test
-	default void testValueCount() {
-		fail("Not yet implemented");
+	@TestFactory
+	default Stream<DynamicTest> testValueCount() {
+		return ManifestTestUtils.getAvailableTestTypes()
+				.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						assertAccumulativeCount(createWithType(settings(), valueType),
+								ValueSet::addValue,
+								ValueSet::removeValue,
+								ValueSet::valueCount,
+								ManifestTestUtils.getTestValues(valueType));
+					});
+				});
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#getValueAt(int)}.
 	 */
-	@Test
-	default void testGetValueAt() {
-		fail("Not yet implemented");
+	@SuppressWarnings("boxing")
+	@TestFactory
+	default Stream<DynamicTest> testGetValueAt() {
+		return ManifestTestUtils.getAvailableTestTypes()
+				.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						Object[] values = ManifestTestUtils.getTestValues(valueType);
+						assertAccumulativeLookup(createWithType(settings(), valueType),
+								values[0], values[1],
+								ValueSet::getValueAt,
+								NPE_CHECK, INDEX_OUT_OF_BOUNDS_CHECK,
+								ValueSet::addValue,
+								k -> ArrayUtils.indexOf(values, k),
+								2, 3, -1);
+					});
+				});
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#forEachValue(java.util.function.Consumer)}.
 	 */
-	@Test
-	default void testForEachValue() {
-		fail("Not yet implemented");
+	@TestFactory
+	default Stream<DynamicTest> testForEachValue() {
+		return ManifestTestUtils.getAvailableTestTypes()
+				.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						Object[] values = ManifestTestUtils.getTestValues(valueType);
+						assertForEach(createWithType(settings(), valueType),
+								values[0], values[1],
+								(Function<V, Consumer<Consumer<Object>>>)v -> v::forEachValue,
+								ValueSet::addValue);
+					});
+				});
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#getValueType()}.
 	 */
-	@Test
-	default void testGetValueType() {
-		fail("Not yet implemented");
+	@TestFactory
+	default Stream<DynamicTest> testGetValueType() {
+		return ManifestTestUtils.getAvailableTestTypes()
+				.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						assertEquals(valueType, createWithType(settings(), valueType).getValueType());
+					});
+				});
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#indexOfValue(java.lang.Object)}.
 	 */
-	@Test
-	default void testIndexOfValue() {
-		fail("Not yet implemented");
+	@TestFactory
+	default Stream<DynamicTest> testIndexOfValue() {
+		return ManifestTestUtils.getAvailableTestTypes()
+				.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						assertListIndexOf(createWithType(settings(), valueType),
+								ValueSet::addValue,
+								ValueSet::removeValue,
+								ValueSet::indexOfValue,
+								Arrays.copyOf(ManifestTestUtils.getTestValues(valueType), 2)); // for boolean type
+					});
+				});
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#addValue(java.lang.Object)}.
 	 */
-	@Test
-	default void testAddValueObject() {
-		fail("Not yet implemented");
+	@TestFactory
+	default Stream<DynamicTest> testAddValueObject() {
+		return ManifestTestUtils.getAvailableTestTypes()
+				.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						TestSettings settings = settings();
+						Object[] illegalValues = ManifestTestUtils.getIllegalValues(valueType);
+						LockableTest.assertLockableAccumulativeAdd(
+								settings, createWithType(settings(), valueType),
+								ValueSet::addValue,
+								illegalValues,
+								illegalValues[0]==null ? NO_CHECK : TYPE_CAST_CHECK,
+								NPE_CHECK, NO_CHECK,
+								ManifestTestUtils.getTestValues(valueType));
+					});
+				});
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#addValue(java.lang.Object, int)}.
 	 */
-	@Test
-	default void testAddValueObjectInt() {
-		fail("Not yet implemented");
+	@TestFactory
+	default Stream<DynamicTest> testAddValueObjectInt() {
+		return ManifestTestUtils.getAvailableTestTypes()
+				.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						TestSettings settings = settings();
+						LockableTest.assertLockableListInsertAt(
+								settings, createWithType(settings, valueType),
+								ValueSet::addValue,
+								ValueSet::getValueAt,
+								ManifestTestUtils.getTestValues(valueType));
+					});
+				});
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#removeValue(int)}.
 	 */
-	@Test
-	default void testRemoveValue() {
-		fail("Not yet implemented");
+	@TestFactory
+	default Stream<DynamicTest> testRemoveValue() {
+		return ManifestTestUtils.getAvailableTestTypes()
+				.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						TestSettings settings = settings();
+						LockableTest.assertLockableListRemoveAt(
+								settings, createWithType(settings, valueType),
+								ValueSet::addValue,
+								ValueSet::removeValueAt,
+								ValueSet::getValueAt,
+								ManifestTestUtils.getTestValues(valueType));
+					});
+				});
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#removeValue(Object)}.
+	 */
+	@TestFactory
+	default Stream<DynamicTest> testRemoveValueObject() {
+		return ManifestTestUtils.getAvailableTestTypes()
+				.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						TestSettings settings = settings();
+						LockableTest.assertLockableAccumulativeRemove(
+								settings, createWithType(settings, valueType),
+								ValueSet::addValue,
+								ValueSet::removeValue,
+								ValueSet::getValues,
+								NPE_CHECK, INVALID_INPUT_CHECK,
+								Arrays.copyOf(ManifestTestUtils.getTestValues(valueType), 2)); // for boolean type
+					});
+				});
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#removeAllValues()}.
 	 */
-	@Test
-	default void testRemoveAllValues() {
-		fail("Not yet implemented");
+	@TestFactory
+	default Stream<DynamicTest> testRemoveAllValues() {
+		return ManifestTestUtils.getAvailableTestTypes()
+				.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						V instance = createWithType(settings(), valueType);
+
+						Stream.of(ManifestTestUtils.getTestValues(valueType))
+							.forEach(instance::addValue);
+
+						assertTrue(instance.valueCount()>0);
+
+						instance.removeAllValues();
+
+						assertTrue(instance.valueCount()==0);
+
+						instance.lock();
+
+						LockableTest.assertLocked(() -> instance.removeAllValues());
+					});
+				});
 	}
 
 }

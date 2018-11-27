@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.standard.members.structure.builder;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
+import static de.ims.icarus2.util.Conditions.checkState;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -275,10 +276,8 @@ public class EdgeBuffer {
 	 * @param rootCandidates
 	 */
 	public void computeMetaData(Collection<? extends Item> rootCandidates) {
-		if(metadataComputed)
-			throw new IllegalStateException();
-		if(this.root==null)
-			throw new IllegalStateException("Missing virtual root node");
+		checkState(!metadataComputed);
+		checkState("Missing virtual root node", root!=null);
 
 		if(rootCandidates==null || rootCandidates.isEmpty()) {
 			rootCandidates = data.keySet();

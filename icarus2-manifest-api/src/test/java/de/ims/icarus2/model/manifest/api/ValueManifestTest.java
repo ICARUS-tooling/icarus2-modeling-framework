@@ -26,10 +26,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import javax.swing.Icon;
 
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
@@ -86,53 +89,63 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueManifest#getValue()}.
 	 */
-	@Test
-	default void testGetValue() {
-		for(ValueType valueType : LEGAL_VALUE_TYPES) {
-
-			M empty = createWithType(settings(), valueType);
-			assertNotPresent(empty.getValue());
-		}
+	@TestFactory
+	default Stream<DynamicTest> testGetValue() {
+		return LEGAL_VALUE_TYPES.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						M empty = createWithType(settings(), valueType);
+						assertNotPresent(empty.getValue());
+					});
+				});
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueManifest#getValueType()}.
 	 */
-	@Test
-	default void testGetValueType() {
-		for(ValueType valueType : LEGAL_VALUE_TYPES) {
-
-			M empty = createWithType(settings(), valueType);
-			assertEquals(valueType, empty.getValueType());
-		}
+	@TestFactory
+	default Stream<DynamicTest> testGetValueType() {
+		return LEGAL_VALUE_TYPES.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						M empty = createWithType(settings(), valueType);
+						assertEquals(valueType, empty.getValueType());
+					});
+				});
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueManifest#setValue(java.lang.Object)}.
 	 */
-	@Test
-	default void testSetValue() {
-		for(ValueType valueType : LEGAL_VALUE_TYPES) {
+	@TestFactory
+	default Stream<DynamicTest> testSetValue() {
+		return LEGAL_VALUE_TYPES.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						M manifest = createWithType(settings(), valueType);
 
-			M manifest = createWithType(settings(), valueType);
+						Object testValue = ManifestTestUtils.getTestValue(valueType);
+						Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
 
-			Object testValue = ManifestTestUtils.getTestValue(valueType);
-			Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
-
-			LockableTest.assertLockableSetter(
-					settings(), manifest,
-					ValueManifest::setValue, testValue, true, TYPE_CAST_CHECK, illegalValue);
-		}
+						LockableTest.assertLockableSetter(
+								settings(), manifest,
+								ValueManifest::setValue, testValue, true, TYPE_CAST_CHECK, illegalValue);
+					});
+				});
 	}
 
 	@Test
-	default void testUnsupportedValueTypes() {
-		for(ValueType valueType : ILLEGAL_VALUE_TYPES) {
-			UnsupportedValueTypeException exception = assertThrows(UnsupportedValueTypeException.class,
-					() -> createWithType(settings(), valueType));
+	@TestFactory
+	default Stream<DynamicTest> testUnsupportedValueTypes() {
+		return ILLEGAL_VALUE_TYPES.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						UnsupportedValueTypeException exception = assertThrows(UnsupportedValueTypeException.class,
+								() -> createWithType(settings(), valueType));
 
-			assertEquals(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE, exception.getErrorCode());
-			assertEquals(valueType, exception.getValueType());
-		}
+						assertEquals(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE, exception.getErrorCode());
+						assertEquals(valueType, exception.getValueType());
+					});
+				});
 	}
 }

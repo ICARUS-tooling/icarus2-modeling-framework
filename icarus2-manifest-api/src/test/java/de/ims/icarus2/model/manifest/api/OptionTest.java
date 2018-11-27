@@ -32,8 +32,11 @@ import static org.mockito.Mockito.when;
 import java.util.Collections;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.stream.Stream;
 
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.function.Executable;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
@@ -96,57 +99,69 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest<O>,
 	 * Test method for
 	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getDefaultValue()}.
 	 */
-	@Test
-	default void testGetDefaultValue() {
-		for (ValueType valueType : LEGAL_VALUE_TYPES) {
-			Object[] values = ManifestTestUtils.getTestValues(valueType);
-			TestUtils.assertOptGetter(createWithType(settings(), valueType),
-					values[0], values[1], NO_DEFAULT(),
-					Option::getDefaultValue,
-					Option::setDefaultValue);
-		}
+	@TestFactory
+	default Stream<DynamicTest> testGetDefaultValue() {
+		return LEGAL_VALUE_TYPES.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						Object[] values = ManifestTestUtils.getTestValues(valueType);
+						TestUtils.assertOptGetter(createWithType(settings(), valueType),
+								values[0], values[1], NO_DEFAULT(),
+								Option::getDefaultValue,
+								Option::setDefaultValue);
+					});
+				});
 	}
 
 	/**
 	 * Test method for
 	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getValueType()}.
 	 */
-	@Test
-	default void testGetValueType() {
-		for (ValueType valueType : LEGAL_VALUE_TYPES) {
-			TestUtils.assertGetter(createWithType(settings(), valueType),
-					valueType, valueType,
-					DEFAULT(valueType),
-					Option::getValueType,
-					Option::setValueType);
-		}
+	@TestFactory
+	default Stream<DynamicTest> testGetValueType() {
+		return LEGAL_VALUE_TYPES.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						TestUtils.assertGetter(createWithType(settings(), valueType),
+								valueType, valueType,
+								DEFAULT(valueType),
+								Option::getValueType,
+								Option::setValueType);
+					});
+				});
 	}
 
 	/**
 	 * Test method for
 	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getSupportedValues()}.
 	 */
-	@Test
-	default void testGetSupportedValues() {
-		for (ValueType valueType : LEGAL_VALUE_TYPES) {
-			TestUtils.assertOptGetter(createWithType(settings(), valueType),
-					mockValueSet(valueType), mockValueSet(valueType), NO_DEFAULT(),
-					Option::getSupportedValues, Option::setSupportedValues);
-		}
+	@TestFactory
+	default Stream<DynamicTest> testGetSupportedValues() {
+		return LEGAL_VALUE_TYPES.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						TestUtils.assertOptGetter(createWithType(settings(), valueType),
+								mockValueSet(valueType), mockValueSet(valueType), NO_DEFAULT(),
+								Option::getSupportedValues, Option::setSupportedValues);
+					});
+				});
 	}
 
 	/**
 	 * Test method for
 	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getSupportedRange()}.
 	 */
-	@Test
-	default void testGetSupportedRange() {
-		for (ValueType valueType : LEGAL_VALUE_TYPES) {
-			TestUtils.assertOptGetter(createWithType(settings(), valueType),
-					mockValueRange(valueType), mockValueRange(valueType),
-					NO_DEFAULT(),
-					Option::getSupportedRange, Option::setSupportedRange);
-		}
+	@TestFactory
+	default Stream<DynamicTest> testGetSupportedRange() {
+		return LEGAL_VALUE_TYPES.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						TestUtils.assertOptGetter(createWithType(settings(), valueType),
+								mockValueRange(valueType), mockValueRange(valueType),
+								NO_DEFAULT(),
+								Option::getSupportedRange, Option::setSupportedRange);
+					});
+				});
 	}
 
 	/**
@@ -288,24 +303,30 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest<O>,
 	 * Test method for
 	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#setDefaultValue(java.lang.Object)}.
 	 */
-	@Test
-	default void testSetDefaultValue() {
-		for (ValueType valueType : LEGAL_VALUE_TYPES) {
-			LockableTest.assertLockableSetter(settings(), createWithType(settings(), valueType),
-					Option::setDefaultValue, getTestValue(valueType),
-					false, TYPE_CAST_CHECK, getIllegalValue(valueType));
-		}
+	@TestFactory
+	default Stream<DynamicTest> testSetDefaultValue() {
+		return LEGAL_VALUE_TYPES.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						LockableTest.assertLockableSetter(settings(), createWithType(settings(), valueType),
+								Option::setDefaultValue, getTestValue(valueType),
+								false, TYPE_CAST_CHECK, getIllegalValue(valueType));
+					});
+				});
 	}
 
-	@Test
-	default void testUnsupportedValueTypes() {
-		for (ValueType valueType : ILLEGAL_VALUE_TYPES) {
-			UnsupportedValueTypeException exception = assertThrows(UnsupportedValueTypeException.class,
-					() -> createWithType(settings(), valueType));
+	@TestFactory
+	default Stream<DynamicTest> testUnsupportedValueTypes() {
+		return ILLEGAL_VALUE_TYPES.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						UnsupportedValueTypeException exception = assertThrows(UnsupportedValueTypeException.class,
+								() -> createWithType(settings(), valueType));
 
-			assertEquals(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE, exception.getErrorCode());
-			assertEquals(valueType, exception.getValueType());
-		}
+						assertEquals(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE, exception.getErrorCode());
+						assertEquals(valueType, exception.getValueType());
+					});
+				});
 	}
 
 }

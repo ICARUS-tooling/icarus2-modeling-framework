@@ -16,229 +16,264 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import static de.ims.icarus2.model.manifest.ManifestTestUtils.getTestValues;
-import static de.ims.icarus2.model.manifest.xml.ManifestXmlTestUtils.assertSerializationEquals;
-import static de.ims.icarus2.test.TestUtils.assertHashContract;
-import static de.ims.icarus2.test.TestUtils.assertObjectContract;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static de.ims.icarus2.test.TestUtils.assertNPE;
+import static de.ims.icarus2.test.TestUtils.settings;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.model.manifest.api.ValueSetTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.manifest.xml.delegates.ValueSetXmlDelegate;
+import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.OverrideTest;
 
 /**
  * @author Markus Gärtner
  *
  */
-class ValueSetImplTest {
+class ValueSetImplTest implements ValueSetTest<ValueSetImpl> {
 
-	private void testAdd(ValueType valueType) throws Exception {
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
+	 */
+	@Override
+	public Class<? extends ValueSetImpl> getTestTargetClass() {
+		return ValueSetImpl.class;
+	}
 
-		ValueSetImpl valueSet = new ValueSetImpl(valueType);
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	public ManifestType getExpectedType() {
+		return ManifestType.VALUE_SET;
+	}
 
-		assertSame(valueType, valueSet.getValueType(), "Value type corrupted"); //$NON-NLS-1$
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.ValueSetTest#createWithType(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.types.ValueType)
+	 */
+	@Override
+	public ValueSetImpl createWithType(TestSettings settings, ValueType valueType) {
+		return settings.process(new ValueSetImpl(valueType));
+	}
 
-		Object[] values = getTestValues(valueType);
-
-		assertNotNull(values, "Test value array empty"); //$NON-NLS-1$
-
-		for(Object value : values) {
-			valueSet.addValue(value);
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#testMandatoryConstructors()
+	 */
+	@Override
+	@OverrideTest
+	@Test
+	public void testMandatoryConstructors() throws Exception {
+		for(ValueType valueType : ValueType.valueTypes()) {
+			createWithType(settings(), valueType);
 		}
 
-		assertEquals(values.length, valueSet.valueCount());
-
-		for(int i=0; i<values.length; i++) {
-			assertSame(values[i], valueSet.getValueAt(i), "Mismatching item at index "+i); //$NON-NLS-1$
-		}
+		assertNPE(() -> createWithType(settings(), null));
 	}
 
-	private void testXml(ValueType valueType) throws Exception {
-
-		ValueSetImpl valueSet = new ValueSetImpl(valueType);
-		Object[] values = getTestValues(valueType);
-
-		assertNotNull(values, "Test value array empty"); //$NON-NLS-1$
-
-		for(Object value : values) {
-			valueSet.addValue(value);
-		}
-
-		ValueSetImpl newValueSet = new ValueSetImpl(valueType);
-
-		assertSerializationEquals("Value type: "+valueType, valueSet, newValueSet,
-				new ValueSetXmlDelegate(), false, false);
-	}
-
-	@Test
-	public void testGeneral() throws Exception {
-		ValueSetImpl valueSet1 = new ValueSetImpl(ValueType.STRING);
-		ValueSetImpl valueSet2 = new ValueSetImpl(ValueType.INTEGER);
-
-		assertHashContract(valueSet1, valueSet2);
-		assertHashContract(valueSet1, valueSet1);
-	}
-
-	@Test
-	public void testObjectContract() throws Exception {
-		assertObjectContract(new ValueSetImpl(ValueType.STRING));
-	}
-
-	@Test
-	public void testAddNull() throws Exception {
-		ValueSetImpl valueSet = new ValueSetImpl(ValueType.STRING);
-
-		assertThrows(NullPointerException.class, () -> valueSet.addValue(null));
-	}
-
-	// CONSTRUCTION
-
-	@Test
-	public void testStringSet() throws Exception {
-		testAdd(ValueType.STRING);
-	}
-
-	@Test
-	public void testIntegerSet() throws Exception {
-		testAdd(ValueType.INTEGER);
-	}
-
-	@Test
-	public void testLongSet() throws Exception {
-		testAdd(ValueType.LONG);
-	}
-
-	@Test
-	public void testFloatSet() throws Exception {
-		testAdd(ValueType.FLOAT);
-	}
-
-	@Test
-	public void testDoubleSet() throws Exception {
-		testAdd(ValueType.DOUBLE);
-	}
-
-	@Test
-	public void testEnumSet() throws Exception {
-		testAdd(ValueType.ENUM);
-	}
-
-	@Test
-	public void testExtensionSet() throws Exception {
-		testAdd(ValueType.EXTENSION);
-	}
-
-	@Test
-	public void testImageSet() throws Exception {
-		testAdd(ValueType.IMAGE);
-	}
-
-	@Test
-	public void testImageResourceSet() throws Exception {
-		testAdd(ValueType.IMAGE_RESOURCE);
-	}
-
-	@Test
-	public void testBooleanSet() throws Exception {
-		testAdd(ValueType.BOOLEAN);
-	}
-
-	@Test
-	public void testUrlSet() throws Exception {
-		testAdd(ValueType.URL);
-	}
-
-	@Test
-	public void testUrlResourceSet() throws Exception {
-		testAdd(ValueType.URL_RESOURCE);
-	}
-
-	@Test
-	public void testUnknownSet() throws Exception {
-		testAdd(ValueType.UNKNOWN);
-	}
-
-	@Test
-	public void testCustomSet() throws Exception {
-		testAdd(ValueType.CUSTOM);
-	}
-
-	//SERIALIZATION
-
-	@Test
-	public void testXmlStringSet() throws Exception {
-		testXml(ValueType.STRING);
-	}
-
-	@Test
-	public void testXmlIntegerSet() throws Exception {
-		testXml(ValueType.INTEGER);
-	}
-
-	@Test
-	public void testXmlLongSet() throws Exception {
-		testXml(ValueType.LONG);
-	}
-
-	@Test
-	public void testXmlFloatSet() throws Exception {
-		testXml(ValueType.FLOAT);
-	}
-
-	@Test
-	public void testXmlDoubleSet() throws Exception {
-		testXml(ValueType.DOUBLE);
-	}
-
-	@Test
-	public void testXmlEnumSet() throws Exception {
-		testXml(ValueType.ENUM);
-	}
-
-	@Test
-	public void testXmlExtensionSet() throws Exception {
-		testXml(ValueType.EXTENSION);
-
-		// Use modified value type that bypasses the plugin engine
-//		testXml(TestUtils.EXTENSION_TYPE);
-	}
-
-	@Test
-	public void testXmlImageSet() throws Exception {
-		testXml(ValueType.IMAGE);
-	}
-
-	@Test
-	public void testXmlImageResourceSet() throws Exception {
-		assertThrows(UnsupportedOperationException.class, () -> testXml(ValueType.IMAGE_RESOURCE));
-	}
-
-	@Test
-	public void testXmlBooleanSet() throws Exception {
-		testXml(ValueType.BOOLEAN);
-	}
-
-	@Test
-	public void testXmlUrlSet() throws Exception {
-		testXml(ValueType.URL);
-	}
-
-	@Test
-	public void testXmlUrlResourceSet() throws Exception {
-		assertThrows(UnsupportedOperationException.class, () -> testXml(ValueType.URL_RESOURCE));
-	}
-
-	@Test
-	public void testXmlUnknownSet() throws Exception {
-		assertThrows(UnsupportedOperationException.class, () -> testXml(ValueType.UNKNOWN));
-	}
-
-	@Test
-	public void testXmlCustomSet() throws Exception {
-		assertThrows(UnsupportedOperationException.class, () -> testXml(ValueType.CUSTOM));
-	}
+//	private void testAdd(ValueType valueType) throws Exception {
+//
+//		ValueSetImpl valueSet = new ValueSetImpl(valueType);
+//
+//		assertSame(valueType, valueSet.getValueType(), "Value type corrupted"); //$NON-NLS-1$
+//
+//		Object[] values = getTestValues(valueType);
+//
+//		assertNotNull(values, "Test value array empty"); //$NON-NLS-1$
+//
+//		for(Object value : values) {
+//			valueSet.addValue(value);
+//		}
+//
+//		assertEquals(values.length, valueSet.valueCount());
+//
+//		for(int i=0; i<values.length; i++) {
+//			assertSame(values[i], valueSet.getValueAt(i), "Mismatching item at index "+i); //$NON-NLS-1$
+//		}
+//	}
+//
+//	private void testXml(ValueType valueType) throws Exception {
+//
+//		ValueSetImpl valueSet = new ValueSetImpl(valueType);
+//		Object[] values = getTestValues(valueType);
+//
+//		assertNotNull(values, "Test value array empty"); //$NON-NLS-1$
+//
+//		for(Object value : values) {
+//			valueSet.addValue(value);
+//		}
+//
+//		ValueSetImpl newValueSet = new ValueSetImpl(valueType);
+//
+//		assertSerializationEquals("Value type: "+valueType, valueSet, newValueSet,
+//				new ValueSetXmlDelegate(), false, false);
+//	}
+//
+//	@Test
+//	public void testGeneral() throws Exception {
+//		ValueSetImpl valueSet1 = new ValueSetImpl(ValueType.STRING);
+//		ValueSetImpl valueSet2 = new ValueSetImpl(ValueType.INTEGER);
+//
+//		assertHashContract(valueSet1, valueSet2);
+//		assertHashContract(valueSet1, valueSet1);
+//	}
+//
+//	@Test
+//	public void testObjectContract() throws Exception {
+//		assertObjectContract(new ValueSetImpl(ValueType.STRING));
+//	}
+//
+//	@Test
+//	public void testAddNull() throws Exception {
+//		ValueSetImpl valueSet = new ValueSetImpl(ValueType.STRING);
+//
+//		assertThrows(NullPointerException.class, () -> valueSet.addValue(null));
+//	}
+//
+//	// CONSTRUCTION
+//
+//	@Test
+//	public void testStringSet() throws Exception {
+//		testAdd(ValueType.STRING);
+//	}
+//
+//	@Test
+//	public void testIntegerSet() throws Exception {
+//		testAdd(ValueType.INTEGER);
+//	}
+//
+//	@Test
+//	public void testLongSet() throws Exception {
+//		testAdd(ValueType.LONG);
+//	}
+//
+//	@Test
+//	public void testFloatSet() throws Exception {
+//		testAdd(ValueType.FLOAT);
+//	}
+//
+//	@Test
+//	public void testDoubleSet() throws Exception {
+//		testAdd(ValueType.DOUBLE);
+//	}
+//
+//	@Test
+//	public void testEnumSet() throws Exception {
+//		testAdd(ValueType.ENUM);
+//	}
+//
+//	@Test
+//	public void testExtensionSet() throws Exception {
+//		testAdd(ValueType.EXTENSION);
+//	}
+//
+//	@Test
+//	public void testImageSet() throws Exception {
+//		testAdd(ValueType.IMAGE);
+//	}
+//
+//	@Test
+//	public void testImageResourceSet() throws Exception {
+//		testAdd(ValueType.IMAGE_RESOURCE);
+//	}
+//
+//	@Test
+//	public void testBooleanSet() throws Exception {
+//		testAdd(ValueType.BOOLEAN);
+//	}
+//
+//	@Test
+//	public void testUrlSet() throws Exception {
+//		testAdd(ValueType.URL);
+//	}
+//
+//	@Test
+//	public void testUrlResourceSet() throws Exception {
+//		testAdd(ValueType.URL_RESOURCE);
+//	}
+//
+//	@Test
+//	public void testUnknownSet() throws Exception {
+//		testAdd(ValueType.UNKNOWN);
+//	}
+//
+//	@Test
+//	public void testCustomSet() throws Exception {
+//		testAdd(ValueType.CUSTOM);
+//	}
+//
+//	//SERIALIZATION
+//
+//	@Test
+//	public void testXmlStringSet() throws Exception {
+//		testXml(ValueType.STRING);
+//	}
+//
+//	@Test
+//	public void testXmlIntegerSet() throws Exception {
+//		testXml(ValueType.INTEGER);
+//	}
+//
+//	@Test
+//	public void testXmlLongSet() throws Exception {
+//		testXml(ValueType.LONG);
+//	}
+//
+//	@Test
+//	public void testXmlFloatSet() throws Exception {
+//		testXml(ValueType.FLOAT);
+//	}
+//
+//	@Test
+//	public void testXmlDoubleSet() throws Exception {
+//		testXml(ValueType.DOUBLE);
+//	}
+//
+//	@Test
+//	public void testXmlEnumSet() throws Exception {
+//		testXml(ValueType.ENUM);
+//	}
+//
+//	@Test
+//	public void testXmlExtensionSet() throws Exception {
+//		testXml(ValueType.EXTENSION);
+//
+//		// Use modified value type that bypasses the plugin engine
+////		testXml(TestUtils.EXTENSION_TYPE);
+//	}
+//
+//	@Test
+//	public void testXmlImageSet() throws Exception {
+//		testXml(ValueType.IMAGE);
+//	}
+//
+//	@Test
+//	public void testXmlImageResourceSet() throws Exception {
+//		assertThrows(UnsupportedOperationException.class, () -> testXml(ValueType.IMAGE_RESOURCE));
+//	}
+//
+//	@Test
+//	public void testXmlBooleanSet() throws Exception {
+//		testXml(ValueType.BOOLEAN);
+//	}
+//
+//	@Test
+//	public void testXmlUrlSet() throws Exception {
+//		testXml(ValueType.URL);
+//	}
+//
+//	@Test
+//	public void testXmlUrlResourceSet() throws Exception {
+//		assertThrows(UnsupportedOperationException.class, () -> testXml(ValueType.URL_RESOURCE));
+//	}
+//
+//	@Test
+//	public void testXmlUnknownSet() throws Exception {
+//		assertThrows(UnsupportedOperationException.class, () -> testXml(ValueType.UNKNOWN));
+//	}
+//
+//	@Test
+//	public void testXmlCustomSet() throws Exception {
+//		assertThrows(UnsupportedOperationException.class, () -> testXml(ValueType.CUSTOM));
+//	}
 }

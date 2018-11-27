@@ -28,8 +28,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.function.Function;
+import java.util.stream.Stream;
 
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.MemberManifest.Property;
@@ -76,24 +79,30 @@ public interface PropertyTest<P extends Property> extends LockableTest<P>, Clone
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.MemberManifest.Property#getValueType()}.
 	 */
-	@Test
-	default void testGetValueType() {
-		for(ValueType valueType : ValueType.valueTypes()) {
-			assertEquals(valueType, createTestInstance(settings(), "property1", valueType).getValueType());
-		}
+	@TestFactory
+	default Stream<DynamicTest> testGetValueType() {
+		return ValueType.valueTypes().stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						assertEquals(valueType, createTestInstance(settings(), "property1", valueType).getValueType());
+					});
+				});
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.MemberManifest.Property#getValue()}.
 	 */
-	@Test
-	default void testGetValue() {
-		for(ValueType valueType : ManifestTestUtils.getAvailableTestTypes()) {
-			Object value = ManifestTestUtils.getTestValue(valueType);
-			P instance = createTestInstance(settings(), "property"+valueType.getName(), valueType);
-			instance.setValue(value);
-			assertOptionalEquals(value, instance.getValue());
-		}
+	@TestFactory
+	default Stream<DynamicTest> testGetValue() {
+		return ManifestTestUtils.getAvailableTestTypes().stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						Object value = ManifestTestUtils.getTestValue(valueType);
+						P instance = createTestInstance(settings(), "property"+valueType.getName(), valueType);
+						instance.setValue(value);
+						assertOptionalEquals(value, instance.getValue());
+					});
+				});
 	}
 
 	/**
@@ -131,13 +140,16 @@ public interface PropertyTest<P extends Property> extends LockableTest<P>, Clone
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.MemberManifest.Property#setValue(java.lang.Object)}.
 	 */
-	@Test
-	default void testSetValue() {
-		for(ValueType valueType : ManifestTestUtils.getAvailableTestTypes()) {
-			Object value = ManifestTestUtils.getTestValue(valueType);
-			P instance = createTestInstance(settings(), "property"+valueType.getName(), valueType);
-			instance.setValue(value);
-		}
+	@TestFactory
+	default Stream<DynamicTest> testSetValue() {
+		return ManifestTestUtils.getAvailableTestTypes().stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						Object value = ManifestTestUtils.getTestValue(valueType);
+						P instance = createTestInstance(settings(), "property"+valueType.getName(), valueType);
+						instance.setValue(value);
+					});
+				});
 	}
 
 	/**

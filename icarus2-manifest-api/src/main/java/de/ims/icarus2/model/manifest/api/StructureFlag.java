@@ -36,6 +36,18 @@ public enum StructureFlag implements StringResource, Flag {
 	VIRTUAL("virtual"),
 
 	/**
+	 * Specifies whether or not structures may contain additional nodes
+	 * (virtual or not) that are not already part of their respective base
+	 * containers. For example constituency parses contain constituents
+	 * as nodes besides the terminals defined by the basic tokens in the
+	 * underlying sentences.
+	 *
+	 * @see #VIRTUAL
+	 * @see ContainerFlag#VIRTUAL
+	 */
+	AUGMENTED("augmented"),
+
+	/**
 	 * Specifies whether or not structures are allowed
 	 * to have an edge count of {@code 0}, i.e. being empty.
 	 */

@@ -201,4 +201,24 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 
 		LockableTest.assertLocked(() -> inserter.accept(lockable, values[0], 0));
 	}
+
+	default <K extends Object> void assertLockableListRemoveAt(
+			TestSettings settings,
+			BiConsumer<L, K> adder,
+			BiConsumer<L, Integer> remover,
+			BiFunction<L, Integer, K> atIndex, @SuppressWarnings("unchecked") K...values) {
+		assertLockableListRemoveAt(settings, createUnlocked(settings), adder, remover, atIndex, values);
+	}
+
+	@SuppressWarnings("boxing")
+	public static <L extends Lockable, K extends Object> void assertLockableListRemoveAt(
+			TestSettings settings, L lockable, BiConsumer<L, K> adder,
+			BiConsumer<L, Integer> remover,
+			BiFunction<L, Integer, K> atIndex, @SuppressWarnings("unchecked") K...values) {
+		TestUtils.assertListRemoveAt(lockable, adder, remover, atIndex, values);
+
+		lockable.lock();
+
+		LockableTest.assertLocked(() -> remover.accept(lockable, 0));
+	}
 }

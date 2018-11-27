@@ -32,7 +32,7 @@ import de.ims.icarus2.model.manifest.api.StructureManifest;
  * <p>
  * Note that the creation of {@link Position} instances to address
  * boundaries of {@link Fragment fragments} is <b>not</i> part of this
- * factory since they are covered by the appropriate {@link Rasterizer}.
+ * factory since they are covered by the appropriate {@link Rasterizer} implementation!
  *
  * @author Markus Gärtner
  *

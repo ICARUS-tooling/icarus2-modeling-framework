@@ -17,9 +17,11 @@
 package de.ims.icarus2.model.manifest.api;
 
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.eval.Expression;
@@ -69,6 +71,12 @@ public interface ValueSet extends Lockable, TypedManifest {
 				.getAsSet();
 	}
 
+	default List<Object> getValuesAsList() {
+		return LazyCollection.lazyList(valueCount())
+				.addFromForEach(this::forEachValue)
+				.getAsList();
+	}
+
 	/**
 	 * Returns the type of this set
 	 */
@@ -99,21 +107,25 @@ public interface ValueSet extends Lockable, TypedManifest {
 	 *
 	 * @param value
 	 */
-	default void addValue(Object value) {
-		addValue(value, -1);
-	}
+	void addValue(Object value);
 
 	/**
 	 * Adds the given {@code value} at the specified {@code index}.
-	 * If the {@code index} is {@code -1} then the {@code value} should
-	 * be appended to the end of this set.
 	 *
 	 * @param value
 	 * @param index
 	 */
 	void addValue(Object value, int index);
 
-	void removeValue(int index);
+	void removeValueAt(int index);
+
+	default void removeValue(Object value) {
+		int index = indexOfValue(value);
+		if(index==-1)
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
+					"Unknown value: "+value);
+		removeValueAt(index);
+	}
 
 	void removeAllValues();
 }

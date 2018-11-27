@@ -39,7 +39,7 @@ public enum ContainerFlag implements StringResource, Flag {
 	 * to have an item count of {@code 0}, i.e. being empty.
 	 * Note that this restriction is only used when the framework verifies a container
 	 * constructed by a driver implementation or when checking whether or not an
-	 * attempted action is feasible.
+	 * attempted (user-)action is feasible.
 	 */
 	EMPTY("empty"),
 

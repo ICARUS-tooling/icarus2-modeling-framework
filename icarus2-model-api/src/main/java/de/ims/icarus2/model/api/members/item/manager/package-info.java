@@ -17,7 +17,7 @@
  */
 /**
  * Defines the mechanism for organizing collections of items and access
- * them in various modes, such as as chunks.
+ * them in various modes, such as chunk-wise retrieval.
  *
  * @author Markus Gärtner
  *

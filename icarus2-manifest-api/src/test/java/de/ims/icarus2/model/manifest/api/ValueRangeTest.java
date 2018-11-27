@@ -30,8 +30,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Stream;
 
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
@@ -75,46 +78,55 @@ public interface ValueRangeTest<R extends ValueRange>
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueRange#getLowerBound()}.
 	 */
-	@Test
-	default void testGetLowerBound() {
-		for(ValueType valueType : LEGAL_VALUE_TYPES) {
-			Object[] values = ManifestTestUtils.getTestValues(valueType);
-			assertOptGetter(createWithType(settings(), valueType),
-					(Comparable<?>)values[0], (Comparable<?>)values[1],
-					NO_DEFAULT(),
-					ValueRange::getLowerBound,
-					ValueRange::setLowerBound);
-		}
+	@TestFactory
+	default Stream<DynamicTest> testGetLowerBound() {
+		return LEGAL_VALUE_TYPES.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						Object[] values = ManifestTestUtils.getTestValues(valueType);
+						assertOptGetter(createWithType(settings(), valueType),
+								(Comparable<?>)values[0], (Comparable<?>)values[1],
+								NO_DEFAULT(),
+								ValueRange::getLowerBound,
+								ValueRange::setLowerBound);
+					});
+				});
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueRange#getUpperBound()}.
 	 */
-	@Test
-	default void testGetUpperBound() {
-		for(ValueType valueType : LEGAL_VALUE_TYPES) {
-			Object[] values = ManifestTestUtils.getTestValues(valueType);
-			assertOptGetter(createWithType(settings(), valueType),
-					(Comparable<?>)values[0], (Comparable<?>)values[1],
-					NO_DEFAULT(),
-					ValueRange::getUpperBound,
-					ValueRange::setUpperBound);
-		}
+	@TestFactory
+	default Stream<DynamicTest> testGetUpperBound() {
+		return LEGAL_VALUE_TYPES.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						Object[] values = ManifestTestUtils.getTestValues(valueType);
+						assertOptGetter(createWithType(settings(), valueType),
+								(Comparable<?>)values[0], (Comparable<?>)values[1],
+								NO_DEFAULT(),
+								ValueRange::getUpperBound,
+								ValueRange::setUpperBound);
+					});
+				});
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueRange#getStepSize()}.
 	 */
-	@Test
-	default void testGetStepSize() {
-		for(ValueType valueType : LEGAL_VALUE_TYPES) {
-			Object[] values = ManifestTestUtils.getTestValues(valueType);
-			assertOptGetter(createWithType(settings(), valueType),
-					(Comparable<?>)values[0], (Comparable<?>)values[1],
-					NO_DEFAULT(),
-					ValueRange::getStepSize,
-					ValueRange::setStepSize);
-		}
+	@TestFactory
+	default Stream<DynamicTest> testGetStepSize() {
+		return LEGAL_VALUE_TYPES.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						Object[] values = ManifestTestUtils.getTestValues(valueType);
+						assertOptGetter(createWithType(settings(), valueType),
+								(Comparable<?>)values[0], (Comparable<?>)values[1],
+								NO_DEFAULT(),
+								ValueRange::getStepSize,
+								ValueRange::setStepSize);
+					});
+				});
 	}
 
 	/**
@@ -144,11 +156,14 @@ public interface ValueRangeTest<R extends ValueRange>
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueRange#getValueType()}.
 	 */
-	@Test
-	default void testGetValueType() {
-		for(ValueType valueType : LEGAL_VALUE_TYPES) {
-			assertEquals(valueType, createWithType(settings(), valueType).getValueType());
-		}
+	@TestFactory
+	default Stream<DynamicTest> testGetValueType() {
+		return LEGAL_VALUE_TYPES.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						assertEquals(valueType, createWithType(settings(), valueType).getValueType());
+					});
+				});
 	}
 
 	/**
@@ -204,14 +219,17 @@ public interface ValueRangeTest<R extends ValueRange>
 	}
 
 
-	@Test
-	default void testUnsupportedValueTypes() {
-		for(ValueType valueType : ILLEGAL_VALUE_TYPES) {
-			UnsupportedValueTypeException exception = assertThrows(UnsupportedValueTypeException.class,
-					() -> createWithType(settings(), valueType));
+	@TestFactory
+	default Stream<DynamicTest> testUnsupportedValueTypes() {
+		return ILLEGAL_VALUE_TYPES.stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						UnsupportedValueTypeException exception = assertThrows(UnsupportedValueTypeException.class,
+								() -> createWithType(settings(), valueType));
 
-			assertEquals(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE, exception.getErrorCode());
-			assertEquals(valueType, exception.getValueType());
-		}
+						assertEquals(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE, exception.getErrorCode());
+						assertEquals(valueType, exception.getValueType());
+					});
+				});
 	}
 }

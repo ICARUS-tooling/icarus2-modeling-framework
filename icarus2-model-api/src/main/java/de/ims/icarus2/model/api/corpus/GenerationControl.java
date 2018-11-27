@@ -85,6 +85,6 @@ public interface GenerationControl {
 	 *
 	 */
 	public interface Stage extends Comparable<Stage>, StringResource {
-
+		// marker interface
 	}
 }

@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.model.manifest.xml;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
@@ -24,6 +25,7 @@ import java.io.Reader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -66,6 +68,7 @@ import de.ims.icarus2.model.manifest.standard.StructureManifestImpl;
 import de.ims.icarus2.model.manifest.xml.delegates.DefaultManifestXmlDelegateFactory;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.lang.Lazy;
 import de.ims.icarus2.util.xml.UnexpectedTagException;
@@ -128,6 +131,9 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 		this.registry = builder.getRegistry();
 		this.namespacePrefix = builder.getPrefix();
 		this.namespaceUri = builder.getUri();
+
+		List<ManifestLocation> sources = builder.getSources();
+		sources.forEach(this::addSource);
 	}
 
 	public void addSource(ManifestLocation source) {
@@ -652,6 +658,8 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 		 */
 		private String prefix;
 
+		private final List<ManifestLocation> sources = new ArrayList<>();
+
 		private Builder() {
 			// no-op
 		}
@@ -670,6 +678,10 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 
 		public String getPrefix() {
 			return prefix;
+		}
+
+		public List<ManifestLocation> getSources() {
+			return Collections.unmodifiableList(sources);
 		}
 
 		public Builder registry(ManifestRegistry registry) {
@@ -704,6 +716,15 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 			checkState("Namespace URI already set", this.uri==null);
 
 			this.uri = namespaceUri;
+
+			return thisAsCast();
+		}
+
+		public Builder source(ManifestLocation...locations) {
+			requireNonNull(locations);
+			checkArgument(locations.length>0);
+
+			CollectionUtils.feedItems(sources, locations);
 
 			return thisAsCast();
 		}

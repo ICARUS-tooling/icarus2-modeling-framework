@@ -1569,6 +1569,11 @@
 					<xsd:documentation>Specifies whether edges are allowed to be virtual (i.e. they may have virtual items assigned to them as terminals). Note that this restriction only applies to edges that are not attached to the virtual root node of a structure!</xsd:documentation>
 				</xsd:annotation>
 			</xsd:enumeration>
+			<xsd:enumeration value="augmented" >
+				<xsd:annotation>
+					<xsd:documentation>Specifies whether or not structures may contain additional nodes (virtual or not) that are not already part of their respective base containers. For example constituency parses contain constituents as nodes besides the terminals defined by the basic tokens in the underlying sentences.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
 			<xsd:enumeration value="empty" >
 				<xsd:annotation>
 					<xsd:documentation>Specifies whether or not structures are allowed to have an edge count of 0, i.e. being empty.</xsd:documentation>

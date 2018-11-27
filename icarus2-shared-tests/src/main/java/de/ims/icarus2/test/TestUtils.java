@@ -305,7 +305,7 @@ public class TestUtils {
 
 	@SuppressWarnings("unchecked")
 	public static <E extends Object> void assertCollectionEquals(Collection<? extends E> actual, E...expected) {
-		assertEquals(expected.length, actual.size());
+		assertEquals(expected.length, actual.size(), "collection size mismatch");
 
 		for(E element : expected) {
 			assertTrue(actual.contains(element), "Missing element: "+element);
@@ -329,6 +329,16 @@ public class TestUtils {
 		for(int i=0; i<expected.size(); i++) {
 			assertEquals(expected.get(i), actual.get(i),
 					"Mismatch at index "+i+": expected "+expected.get(i)+" - got "+actual.get(i));
+		}
+	}
+
+	public static <E extends Object> void assertListEquals(
+			List<? extends E> actual, @SuppressWarnings("unchecked") E...expected) {
+		assertEquals(expected.length, actual.size());
+
+		for(int i=0; i<expected.length; i++) {
+			assertEquals(expected[i], actual.get(i),
+					"Mismatch at index "+i+": expected "+expected[i]+" - got "+actual.get(i));
 		}
 	}
 
@@ -486,6 +496,10 @@ public class TestUtils {
 
 	public static final BiConsumer<Executable, String> ILLEGAL_STATE_CHECK = (e, msg) -> {
 		assertThrows(IllegalStateException.class, e, msg);
+	};
+
+	public static final BiConsumer<Executable, String> INDEX_OUT_OF_BOUNDS_CHECK = (e, msg) -> {
+		assertThrows(IndexOutOfBoundsException.class, e, msg);
 	};
 
 	/**
@@ -1047,6 +1061,34 @@ public class TestUtils {
 			int index = buffer.isEmpty() ? 0 : Math.min(0, buffer.size()-1);
 			inserter.accept(instance, value, index);
 			buffer.add(index, value);
+
+			assertListEquals(instance, buffer, atIndex);
+		}
+	}
+
+	@SuppressWarnings("boxing")
+	public static <T extends Object, K extends Object> void assertListRemoveAt(
+			T instance, BiConsumer<T, K> adder,
+			BiConsumer<T, Integer> remover,
+			BiFunction<T, Integer, K> atIndex, @SuppressWarnings("unchecked") K...values) {
+
+		assertTrue(values.length>2, "Needs at least 3 test values for insert/remove");
+
+		assertThrows(IndexOutOfBoundsException.class, () -> remover.accept(instance, -1));
+		assertThrows(IndexOutOfBoundsException.class, () -> remover.accept(instance, 0));
+
+		List<K> buffer = new ArrayList<>(values.length);
+
+		for(K value : values) {
+			buffer.add(value);
+			adder.accept(instance, value);
+		}
+
+		// Incremental add
+		while(!buffer.isEmpty()) {
+			int index = buffer.size()>1 ? buffer.size()-1 : 0;
+			remover.accept(instance, index);
+			buffer.remove(index);
 
 			assertListEquals(instance, buffer, atIndex);
 		}

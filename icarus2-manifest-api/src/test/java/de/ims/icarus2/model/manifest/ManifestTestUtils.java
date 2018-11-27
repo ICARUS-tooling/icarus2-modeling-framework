@@ -107,7 +107,7 @@ public class ManifestTestUtils {
 		addTestValues(ValueType.LONG, "illegal", 1L, 20L, 300L);
 		addTestValues(ValueType.FLOAT, "illegal", 1.1F, 2.5F, 3F);
 		addTestValues(ValueType.DOUBLE, "illegal", 1.765324D, 2.56789D, -3D);
-		addTestValues(ValueType.BOOLEAN, "illegal", true, false);
+		addTestValues(ValueType.BOOLEAN, "illegal", true, false, true);
 		addTestValues(ValueType.ENUM, "illegal", (Object[]) TestEnum.values());
 		addTestValues(ValueType.IMAGE, "illegal",
 				new IconWrapper("testIconName1"), //$NON-NLS-1$
@@ -173,9 +173,29 @@ public class ManifestTestUtils {
 				Paths.get("anotherFile"),
 				Paths.get("some","path","with","a","file.txt"));
 
-		addTestValues(ValueType.REF, null, Ref.emptyRef(), Ref.emptyRef(), Ref.emptyRef());
+		addTestValues(ValueType.REF, null, Ref.emptyRef(), new DummyRef(), new DummyRef());
 
 		//FIXME add some test values for the other more complex types!
+	}
+
+	private static class DummyRef implements Ref<Object> {
+
+		/**
+		 * @see de.ims.icarus2.model.manifest.types.Ref#hasTarget()
+		 */
+		@Override
+		public boolean hasTarget() {
+			return false;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.manifest.types.Ref#getTarget()
+		 */
+		@Override
+		public Object getTarget() {
+			return null;
+		}
+
 	}
 
 	public static Set<ValueType> getAvailableTestTypes() {
@@ -204,6 +224,10 @@ public class ManifestTestUtils {
 			throw new InternalError("No test values for type: "+type);
 
 		return info.illegalValue;
+	}
+
+	public static Object[] getIllegalValues(ValueType type) {
+		return new Object[] {getIllegalValue(type)};
 	}
 
 	private static final String[] legalIdValues = {

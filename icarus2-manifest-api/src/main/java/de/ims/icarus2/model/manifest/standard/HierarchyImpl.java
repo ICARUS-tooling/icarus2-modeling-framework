@@ -22,7 +22,6 @@ package de.ims.icarus2.model.manifest.standard;
 import static de.ims.icarus2.util.strings.StringUtil.getName;
 import static java.util.Objects.requireNonNull;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -31,6 +30,8 @@ import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.util.collections.CollectionUtils;
+import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
+import it.unimi.dsi.fastutil.objects.ReferenceList;
 
 /**
  * @author Markus Gärtner
@@ -39,7 +40,7 @@ import de.ims.icarus2.util.collections.CollectionUtils;
 @NotThreadSafe
 public class HierarchyImpl<E extends Object> extends AbstractLockable implements Hierarchy<E> {
 
-	private final ArrayList<E> items = new ArrayList<>();
+	private final ReferenceList<E> items = new ReferenceArrayList<>();
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.Hierarchy#getRoot()

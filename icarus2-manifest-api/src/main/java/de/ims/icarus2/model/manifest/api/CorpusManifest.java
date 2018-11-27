@@ -153,7 +153,7 @@ public interface CorpusManifest extends MemberManifest {
 	 * @return
 	 *
 	 * @see #getContextManifest(String)
-	 * @see ContextManifest#getLayerManifest(String)
+	 * @see ContextManifest#getLayerManifest(String, boolean)
 	 */
 	@SuppressWarnings("unchecked")
 	default <M extends LayerManifest> Optional<M> getLayerManifest(String qualifiedLayerId) {

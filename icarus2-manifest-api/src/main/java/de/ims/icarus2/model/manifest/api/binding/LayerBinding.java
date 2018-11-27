@@ -212,7 +212,8 @@ public final class LayerBinding implements Bindable, Serializable {
 				}
 
 				// Level-2 check
-				Optional<LayerManifest> layer = contextManifest.get().getLayerManifest(layerPointer.getLayerId());
+				Optional<LayerManifest> layer = contextManifest.get()
+						.getLayerManifest(layerPointer.getLayerId());
 				if(!layer.isPresent()) {
 					failedPointers++;
 					reportBuilder.addError(ManifestErrorCode.MANIFEST_UNKNOWN_ID,

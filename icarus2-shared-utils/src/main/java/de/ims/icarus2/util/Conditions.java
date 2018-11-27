@@ -61,4 +61,9 @@ public class Conditions {
 		if(!condition)
 			throw new IllegalArgumentException(msg);
 	}
+
+	public static void checkIndex(int index, int min, int max) {
+		if(index<min || (index!=min && index>max))
+			throw new IndexOutOfBoundsException();
+	}
 }

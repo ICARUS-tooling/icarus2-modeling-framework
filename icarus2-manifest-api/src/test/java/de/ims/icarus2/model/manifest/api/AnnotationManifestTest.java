@@ -28,8 +28,11 @@ import static org.mockito.Mockito.mock;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Stream;
 
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.types.ValueType;
@@ -231,35 +234,39 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationManifest#getNoEntryValue()}.
 	 */
-	@Test
-	default void testGetNoEntryValue() {
+	@TestFactory
+	default Stream<DynamicTest> testGetNoEntryValue() {
+		return ManifestTestUtils.getAvailableTestTypes().stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						Object[] values = ManifestTestUtils.getTestValues(valueType);
+						assertTrue(values.length>1, "Insufficient test values for type: "+valueType);
+						Object value1 = values[0];
+						Object value2 = values[1];
 
-		for(ValueType valueType : ManifestTestUtils.getAvailableTestTypes()) {
-			Object[] values = ManifestTestUtils.getTestValues(valueType);
-			assertTrue(values.length>1, "Insufficient test values for type: "+valueType);
-			Object value1 = values[0];
-			Object value2 = values[1];
-
-			assertDerivativeOptGetter(settings(), value1, value2, TestUtils.NO_DEFAULT(),
-					AnnotationManifest::getNoEntryValue, AnnotationManifest::setNoEntryValue);
-		}
+						assertDerivativeOptGetter(settings(), value1, value2, TestUtils.NO_DEFAULT(),
+								AnnotationManifest::getNoEntryValue, AnnotationManifest::setNoEntryValue);
+					});
+				});
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationManifest#isLocalNoEntryValue()}.
 	 */
-	@Test
-	default void testIsLocalNoEntryValue() {
+	@TestFactory
+	default Stream<DynamicTest> testIsLocalNoEntryValue() {
+		return ManifestTestUtils.getAvailableTestTypes().stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						Object[] values = ManifestTestUtils.getTestValues(valueType);
+						assertTrue(values.length>1, "Insufficient test valeus for type: "+valueType);
+						Object value1 = values[0];
+						Object value2 = values[1];
 
-		for(ValueType valueType : ManifestTestUtils.getAvailableTestTypes()) {
-			Object[] values = ManifestTestUtils.getTestValues(valueType);
-			assertTrue(values.length>1, "Insufficient test valeus for type: "+valueType);
-			Object value1 = values[0];
-			Object value2 = values[1];
-
-			assertDerivativeIsLocal(settings(), value1, value2,
-					AnnotationManifest::isLocalNoEntryValue, AnnotationManifest::setNoEntryValue);
-		}
+						assertDerivativeIsLocal(settings(), value1, value2,
+								AnnotationManifest::isLocalNoEntryValue, AnnotationManifest::setNoEntryValue);
+					});
+				});
 	}
 
 	/**
@@ -358,16 +365,19 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationManifest#setNoEntryValue(java.lang.Object)}.
 	 */
-	@Test
-	default void testSetNoEntryValue() {
-		for(ValueType valueType : ManifestTestUtils.getAvailableTestTypes()) {
-			Object value = ManifestTestUtils.getTestValue(valueType);
-			//TODO verify if we need value check for noEntryValue field
-//			Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
-			assertLockableSetter(settings(),
-					AnnotationManifest::setNoEntryValue,
-					value, false, TYPE_CAST_CHECK/*, illegalValue*/);
-		}
+	@TestFactory
+	default Stream<DynamicTest> testSetNoEntryValue() {
+		return ManifestTestUtils.getAvailableTestTypes().stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						Object value = ManifestTestUtils.getTestValue(valueType);
+						//TODO verify if we need value check for noEntryValue field
+//						Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
+						assertLockableSetter(settings(),
+								AnnotationManifest::setNoEntryValue,
+								value, false, TYPE_CAST_CHECK/*, illegalValue*/);
+					});
+				});
 	}
 
 	/**

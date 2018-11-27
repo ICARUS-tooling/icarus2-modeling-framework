@@ -319,7 +319,7 @@ public interface Item extends CorpusMember {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public interface ManagedItem {
+	public interface ManagedItem extends Item {
 		void setId(long id);
 		void setContainer(Container container);
 		void setAlive(boolean alive);

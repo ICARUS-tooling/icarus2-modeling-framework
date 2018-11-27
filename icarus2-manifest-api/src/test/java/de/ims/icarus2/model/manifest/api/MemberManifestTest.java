@@ -31,8 +31,11 @@ import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.Optional;
+import java.util.stream.Stream;
 
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
@@ -82,79 +85,85 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.MemberManifest#getPropertyValue(java.lang.String)}.
 	 */
-	@Test
-	default void testGetPropertyValue() {
+	@TestFactory
+	default Stream<DynamicTest> testGetPropertyValue() {
 		String name = "property123";
 		String name2 = "property123_1";
 
-		for(ValueType valueType : ManifestTestUtils.getAvailableTestTypes()) {
-			M manifest = createUnlocked();
+		return ManifestTestUtils.getAvailableTestTypes().stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						M manifest = createUnlocked();
 
-			assertNotPresent(manifest.getPropertyValue("no-such-property"));
-			TestUtils.assertNPE(() -> manifest.getPropertyValue(null));
+						assertNotPresent(manifest.getPropertyValue("no-such-property"));
+						TestUtils.assertNPE(() -> manifest.getPropertyValue(null));
 
-			Object value = ManifestTestUtils.getTestValue(valueType);
+						Object value = ManifestTestUtils.getTestValue(valueType);
 
-			Property property = mockProperty(name, ValueType.STRING, false, value);
-			manifest.addProperty(property);
+						Property property = mockProperty(name, ValueType.STRING, false, value);
+						manifest.addProperty(property);
 
-			assertOptionalEquals(value, manifest.getPropertyValue(name));
+						assertOptionalEquals(value, manifest.getPropertyValue(name));
 
-			if(getExpectedType().isSupportTemplating()) {
-				M template = createTemplate(settings());
-				template.addProperty(property);
-				M derived = createDerived(settings(), template);
+						if(getExpectedType().isSupportTemplating()) {
+							M template = createTemplate(settings());
+							template.addProperty(property);
+							M derived = createDerived(settings(), template);
 
-				assertOptionalEquals(value, derived.getPropertyValue(name));
+							assertOptionalEquals(value, derived.getPropertyValue(name));
 
-				Property property2 = mockProperty(name2, ValueType.STRING, false, value);
-				derived.addProperty(property2);
+							Property property2 = mockProperty(name2, ValueType.STRING, false, value);
+							derived.addProperty(property2);
 
-				assertNotPresent(template.getPropertyValue(name2));
-				assertOptionalEquals(value, derived.getPropertyValue(name2));
-			}
-		}
+							assertNotPresent(template.getPropertyValue(name2));
+							assertOptionalEquals(value, derived.getPropertyValue(name2));
+						}
+					});
+				});
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.MemberManifest#addProperty(java.lang.String, de.ims.icarus2.model.manifest.types.ValueType, boolean, java.lang.Object)}.
 	 */
-	@Test
-	default void testAddPropertyStringValueTypeBooleanObject() {
+	@TestFactory
+	default Stream<DynamicTest> testAddPropertyStringValueTypeBooleanObject() {
 
 		String name = "property123";
 		String nameM = "property123Mult";
 
-		for(ValueType valueType : ManifestTestUtils.getAvailableTestTypes()) {
-			M manifest = createUnlocked();
-			Object value = ManifestTestUtils.getTestValue(valueType);
-			Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
+		return ManifestTestUtils.getAvailableTestTypes().stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						M manifest = createUnlocked();
+						Object value = ManifestTestUtils.getTestValue(valueType);
+						Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
 
-			if(illegalValue!=null) {
-				ManifestTestUtils.assertIllegalValue(() -> manifest.addProperty(
-						nameM, valueType, false, illegalValue), illegalValue);
-			}
+						if(illegalValue!=null) {
+							ManifestTestUtils.assertIllegalValue(() -> manifest.addProperty(
+									nameM, valueType, false, illegalValue), illegalValue);
+						}
 
-			TestUtils.assertNPE(() -> manifest.addProperty(null, valueType, false, value));
-			TestUtils.assertNPE(() -> manifest.addProperty(name, null, false, value));
-			TestUtils.assertNPE(() -> manifest.addProperty(name, valueType, false, null));
+						TestUtils.assertNPE(() -> manifest.addProperty(null, valueType, false, value));
+						TestUtils.assertNPE(() -> manifest.addProperty(name, null, false, value));
+						TestUtils.assertNPE(() -> manifest.addProperty(name, valueType, false, null));
 
-			Property property = manifest.addProperty(name, valueType, false, value);
-			assertNotNull(property);
-			assertEquals(valueType, property.getValueType());
-			assertNotPresent(property.getOption());
-			assertOptionalEquals(value, property.getValue());
+						Property property = manifest.addProperty(name, valueType, false, value);
+						assertNotNull(property);
+						assertEquals(valueType, property.getValueType());
+						assertNotPresent(property.getOption());
+						assertOptionalEquals(value, property.getValue());
 
-			Object valueM = Collections.singleton(value);
-			Property propertyM = manifest.addProperty(nameM, valueType, true, valueM);
-			assertNotNull(propertyM);
-			assertEquals(valueType, propertyM.getValueType());
-			assertNotPresent(propertyM.getOption());
-			assertOptionalEquals(valueM, propertyM.getValue());
+						Object valueM = Collections.singleton(value);
+						Property propertyM = manifest.addProperty(nameM, valueType, true, valueM);
+						assertNotNull(propertyM);
+						assertEquals(valueType, propertyM.getValueType());
+						assertNotPresent(propertyM.getOption());
+						assertOptionalEquals(valueM, propertyM.getValue());
 
-			manifest.lock();
-			LockableTest.assertLocked(() -> manifest.addProperty(name+"_1", valueType, false, value));
-		}
+						manifest.lock();
+						LockableTest.assertLocked(() -> manifest.addProperty(name+"_1", valueType, false, value));
+					});
+				});
 	}
 
 	public static Property mockProperty(String name) {
@@ -179,28 +188,31 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.MemberManifest#addProperty(de.ims.icarus2.model.manifest.api.MemberManifest.Property)}.
 	 */
-	@Test
-	default void testAddPropertyProperty() {
+	@TestFactory
+	default Stream<DynamicTest> testAddPropertyProperty() {
 
 		String name = "property123";
 
-		for(ValueType valueType : ManifestTestUtils.getAvailableTestTypes()) {
-			M manifest = createUnlocked();
-			Object value = ManifestTestUtils.getTestValue(valueType);
+		return ManifestTestUtils.getAvailableTestTypes().stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						M manifest = createUnlocked();
+						Object value = ManifestTestUtils.getTestValue(valueType);
 
-			Property property = mockProperty(name, valueType, false, value);
+						Property property = mockProperty(name, valueType, false, value);
 
-			TestUtils.assertNPE(() -> manifest.addProperty(null));
+						TestUtils.assertNPE(() -> manifest.addProperty(null));
 
-			manifest.addProperty(property);
+						manifest.addProperty(property);
 
-			ManifestTestUtils.assertManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
-					() -> manifest.addProperty(property),
-					"Teating duplicate property id");
+						ManifestTestUtils.assertManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
+								() -> manifest.addProperty(property),
+								"Teating duplicate property id");
 
-			manifest.lock();
-			LockableTest.assertLocked(() -> manifest.addProperty(property));
-		}
+						manifest.lock();
+						LockableTest.assertLocked(() -> manifest.addProperty(property));
+					});
+				});
 	}
 
 	/**
@@ -396,44 +408,47 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.MemberManifest#setPropertyValue(java.lang.String, java.lang.Object)}.
 	 */
-	@Test
-	default void testSetPropertyValue() {
+	@TestFactory
+	default Stream<DynamicTest> testSetPropertyValue() {
 		String name = "property123";
 
-		for(ValueType valueType : ManifestTestUtils.getAvailableTestTypes()) {
-			M manifest = createUnlocked();
-			Object[] values = ManifestTestUtils.getTestValues(valueType);
-			assertTrue(values.length>1);
+		return ManifestTestUtils.getAvailableTestTypes().stream()
+				.map(valueType -> {
+					return DynamicTest.dynamicTest(valueType.getName(), () -> {
+						M manifest = createUnlocked();
+						Object[] values = ManifestTestUtils.getTestValues(valueType);
+						assertTrue(values.length>1);
 
-			Object value = values[0];
-			Object value2 = values[1];
-			Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
+						Object value = values[0];
+						Object value2 = values[1];
+						Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
 
-			TestUtils.assertNPE(() -> manifest.setPropertyValue(null, value));
-			ManifestTestUtils.assertManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
-					() -> manifest.setPropertyValue(name, value2),
-					"Test modification attempt on unknown property id");
+						TestUtils.assertNPE(() -> manifest.setPropertyValue(null, value));
+						ManifestTestUtils.assertManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID,
+								() -> manifest.setPropertyValue(name, value2),
+								"Test modification attempt on unknown property id");
 
-			manifest.addProperty(name, valueType, false, value);
+						manifest.addProperty(name, valueType, false, value);
 
-			if(illegalValue!=null) {
-				ManifestTestUtils.assertIllegalValue(() -> manifest.setPropertyValue(name, illegalValue), illegalValue);
-			}
+						if(illegalValue!=null) {
+							ManifestTestUtils.assertIllegalValue(() -> manifest.setPropertyValue(name, illegalValue), illegalValue);
+						}
 
-			manifest.lock();
-			LockableTest.assertLocked(() -> manifest.setPropertyValue(name, value2));
+						manifest.lock();
+						LockableTest.assertLocked(() -> manifest.setPropertyValue(name, value2));
 
-			if(getExpectedType().isSupportTemplating()) {
-				M template = createTemplate(settings());
-				template.addProperty(name, valueType, false, value);
-				M derived = createDerived(settings(), template);
+						if(getExpectedType().isSupportTemplating()) {
+							M template = createTemplate(settings());
+							template.addProperty(name, valueType, false, value);
+							M derived = createDerived(settings(), template);
 
-				derived.setPropertyValue(name, value2);
+							derived.setPropertyValue(name, value2);
 
-				assertOptionalEquals(value, template.getPropertyValue(name));
-				assertOptionalEquals(value2, derived.getPropertyValue(name));
-			}
-		}
+							assertOptionalEquals(value, template.getPropertyValue(name));
+							assertOptionalEquals(value2, derived.getPropertyValue(name));
+						}
+					});
+				});
 	}
 
 	/**

@@ -25,7 +25,7 @@ import de.ims.icarus2.util.collections.set.DataSet;
  * to a non-empty list of shared {@link HighlightInfo} instances that contain
  * the actual metadata describing the source and nature of the highlight.
  * Note that those metadata entries apply to all the items the respective
- * highlight instance {@link DataSet#contains(Item) affects}!
+ * {@code Highlight} instance {@link DataSet#contains(Item) affects}!
  * <p>
  * This interface is defined in a way that allows it to be implemented as
  * a composite object that holds sharable instances of both {@link DataSet}

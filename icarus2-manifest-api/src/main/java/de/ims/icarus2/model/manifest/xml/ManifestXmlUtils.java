@@ -65,7 +65,7 @@ public final class ManifestXmlUtils {
 
 	public static final String MANIFEST_NS_PREFIX = XmlUtils.ICARUS_NS;
 
-	public static final String SCHEMA_NAME = "corpus.xsd";
+	public static final String SCHEMA_NAME = MANIFEST_NAMESPACE_URI+"/corpus.xsd";
 
 	public static void writeDefaultXsiInfo(XmlSerializer serializer) throws XMLStreamException {
 		serializer.writeAttribute("xmlns:xsi", XmlUtils.XSI_NS_URI);

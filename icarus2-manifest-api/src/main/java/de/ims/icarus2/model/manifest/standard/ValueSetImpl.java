@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
+import static de.ims.icarus2.util.Conditions.checkIndex;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
@@ -151,14 +152,23 @@ public class ValueSetImpl extends AbstractLockable implements ValueSet {
 	}
 
 	@Override
+	public void addValue(Object value) {
+		checkNotLocked();
+		requireNonNull(value);
+
+		addValue0(value, -1);
+	}
+
+	@Override
 	public void addValue(Object value, int index) {
 		checkNotLocked();
+		requireNonNull(value);
+		checkIndex(index, 0, values.size()-1);
 
 		addValue0(value, index);
 	}
 
 	protected void addValue0(Object value, int index) {
-		requireNonNull(value);
 		if(index==-1) {
 			index = values.size();
 		}
@@ -169,13 +179,13 @@ public class ValueSetImpl extends AbstractLockable implements ValueSet {
 	}
 
 	@Override
-	public void removeValue(int index) {
+	public void removeValueAt(int index) {
 		checkNotLocked();
 
-		removeValue0(index);
+		removeValueAt0(index);
 	}
 
-	protected void removeValue0(int index) {
+	protected void removeValueAt0(int index) {
 		values.remove(index);
 	}/**
 	 * @see de.ims.icarus2.model.manifest.api.ValueSet#removeAllValues()

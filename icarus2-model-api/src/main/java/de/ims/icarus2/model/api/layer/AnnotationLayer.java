@@ -173,6 +173,9 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 		 *
 		 * @throws UnsupportedOperationException if the corpus
 		 * is not editable
+		 *
+		 * @see #removeAllValues(String)
+		 * @deprecated see {@link #removeAllValues(String)}
 		 */
 		@Deprecated
 		default void removeAllValues() {

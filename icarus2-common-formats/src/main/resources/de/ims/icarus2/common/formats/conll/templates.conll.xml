@@ -2,7 +2,7 @@
 <!--
 
     ICARUS2 Corpus Modeling Framework
-    Copyright (C) 2014-2018 Markus Gärtner <markus.gaertner@uni-stuttgart.de>
+    Copyright (C) 2014-2018 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 -->
 <imf:manifest  xmlns:imf="http://www.ims.uni-stuttgart.de/icarus/xml/manifest"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.ims.uni-stuttgart.de/icarus/xml/manifest corpus.xsd">
+	xsi:schemaLocation="http://www.ims.uni-stuttgart.de/icarus/xml/manifest http://www.ims.uni-stuttgart.de/icarus/xml/manifest/corpus.xsd">
 	
 	<imf:templates>
 	
@@ -35,7 +35,9 @@
 				<imf:itemLayer id="sentence" layerType="common.layer.sentence">
 					<imf:baseLayer layerId="tokens"/>
 					<imf:foundationLayer layerId="tokens"/>
-					<imf:container containerType="span" />
+					<imf:hierarchy>
+						<imf:container containerType="span" />
+					</imf:hierarchy>
 				</imf:itemLayer>
 				<imf:annotationLayer id="form" layerType="common.layer.form">
 					<imf:baseLayer layerId="token"/>
@@ -45,13 +47,19 @@
 					<imf:baseLayer layerId="token"/>
 					<imf:boundaryLayer layerId="sentence"/>
 					<imf:foundationLayer layerId="token"/>
-					<imf:structure containerType="span" structureType="tree" />
+					<imf:hierarchy>
+						<imf:container containerType="span" />
+						<imf:structure containerType="span" structureType="tree" />
+					</imf:hierarchy>
 				</imf:structureLayer>
 				<imf:structureLayer id="goldDependency" layerType="common.layer.dependencySyntax">
 					<imf:baseLayer layerId="token"/>
 					<imf:boundaryLayer layerId="sentence"/>
 					<imf:foundationLayer layerId="token"/>
-					<imf:structure containerType="span" structureType="tree" />
+					<imf:hierarchy>
+						<imf:container containerType="span" />
+						<imf:structure containerType="span" structureType="tree" />
+					</imf:hierarchy>
 				</imf:structureLayer>
 				<imf:annotationLayer id="goldPos" layerType="common.layer.pos">
 					<imf:baseLayer layerId="token"/>

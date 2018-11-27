@@ -211,14 +211,15 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 		return false;
 	}
 
-	private LayerManifest lookupLayer(final String id) {
+	@SuppressWarnings("unchecked")
+	private <L extends LayerManifest> Optional<L> lookupLayer(final String id) {
 		for(LayerManifest layerManifest : layerManifests) {
 			if(id.equals(layerManifest.getId().orElse(null))) {
-				return layerManifest;
+				return (Optional<L>) Optional.of(layerManifest);
 			}
 		}
 
-		return null;
+		return Optional.empty();
 	}
 
 	/**
@@ -229,7 +230,7 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	public <L extends LayerManifest> Optional<L> getLayerManifest(String id) {
 		requireNonNull(id);
 
-		return Optional.ofNullable((L)lookupLayer(id));
+		return lookupLayer(id);
 	}
 
 	protected class LayerLink extends Link<ItemLayerManifest> {
@@ -255,7 +256,7 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 		 */
 		@Override
 		protected Optional<ItemLayerManifest> resolve() {
-			return Optional.ofNullable((ItemLayerManifest) lookupLayer(getId()));
+			return lookupLayer(getId());
 		}
 
 	}
