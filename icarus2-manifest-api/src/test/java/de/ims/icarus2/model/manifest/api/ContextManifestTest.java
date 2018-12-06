@@ -37,6 +37,7 @@ import static de.ims.icarus2.test.TestUtils.assertPresent;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static de.ims.icarus2.test.TestUtils.transform_genericCollectionGetter;
 import static de.ims.icarus2.test.TestUtils.unwrapGetter;
+import static de.ims.icarus2.test.TestUtils.wrapForEach;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -184,18 +185,19 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 	}
 
 	/**
-	 * Creates a wrapper around the given {@code forEachGen} that
+	 * Creates a wrapper around the given {@code forEach} that
 	 * provides a {@code forEach} signature for {@code String} values instead of
 	 * {@link PrerequisiteManifest}. This way it can be used together with the modifier methods
 	 * such as {@link ContextManifest#addPrerequisite(String)} for testing.
 	 *
 	 * @return
 	 */
-	public static <M extends ContextManifest, C extends Consumer<String>, A extends Consumer<? super PrerequisiteManifest>>
-			Function<M, Consumer<C>> inject_forEachPrerequisiteManifest(Function<M, Consumer<A>> forEachGen) {
-		return m -> LazyCollection.<String>lazyList()
-				.addFromForEach(forEachGen.apply(m), t -> t.getAlias())
-				::forEach;
+	public static <M extends ContextManifest>
+			BiConsumer<M, Consumer<? super String>> inject_forEachPrerequisiteManifest(
+					BiConsumer<M, Consumer<? super PrerequisiteManifest>> forEach) {
+		return (m, action) -> LazyCollection.<String>lazyList()
+				.addFromForEachTransformed(wrapForEach(m, forEach), t -> t.getAlias())
+				.forEach(action);
 	}
 
 	/**
@@ -227,7 +229,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 	default void testForEachPrerequisite() {
 		assertDerivativeForEach(settings(),
 				"alias1", "alias2",
-				inject_forEachPrerequisiteManifest(m -> m::forEachPrerequisite),
+				inject_forEachPrerequisiteManifest(ContextManifest::forEachPrerequisite),
 				inject_createPrerequisiteManifest(ContextManifest::addPrerequisite));
 	}
 
@@ -238,7 +240,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 	default void testForEachLocalPrerequisite() {
 		assertDerivativeForEachLocal(settings(),
 				"alias1", "alias2",
-				inject_forEachPrerequisiteManifest(m -> m::forEachLocalPrerequisite),
+				inject_forEachPrerequisiteManifest(ContextManifest::forEachLocalPrerequisite),
 				inject_createPrerequisiteManifest(ContextManifest::addPrerequisite));
 	}
 
@@ -365,7 +367,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 				settings().processor(processor_stubLayerGroup()),
 				LayerManifestTest.mockLayerManifest("layer1"),
 				LayerManifestTest.mockLayerManifest("layer2"),
-				m -> m::forEachLayerManifest,
+				ContextManifest::forEachLayerManifest,
 				inject_addLayerManifest(DEFAULT_GROUP));
 	}
 
@@ -378,7 +380,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 				settings().processor(processor_stubLayerGroup()),
 				LayerManifestTest.mockLayerManifest("layer1"),
 				LayerManifestTest.mockLayerManifest("layer2"),
-				m -> m::forEachLocalLayerManifest,
+				ContextManifest::forEachLocalLayerManifest,
 				inject_addLayerManifest(DEFAULT_GROUP));
 	}
 
@@ -439,7 +441,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 		assertDerivativeForEach(settings(),
 				mockGroupManifest("group1"),
 				mockGroupManifest("group2"),
-				m -> m::forEachGroupManifest,
+				ContextManifest::forEachGroupManifest,
 				ContextManifest::addLayerGroup);
 	}
 
@@ -451,7 +453,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 		assertDerivativeForEachLocal(settings(),
 				mockGroupManifest("group1"),
 				mockGroupManifest("group2"),
-				m -> m::forEachLocalGroupManifest,
+				ContextManifest::forEachLocalGroupManifest,
 				ContextManifest::addLayerGroup);
 	}
 

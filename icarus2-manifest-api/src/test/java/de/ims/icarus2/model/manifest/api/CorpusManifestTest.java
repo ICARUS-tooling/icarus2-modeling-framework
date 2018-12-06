@@ -48,8 +48,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 
@@ -100,7 +98,7 @@ public interface CorpusManifestTest<M extends CorpusManifest> extends MemberMani
 				createUnlocked(settings().processor(processor_makeParallel())),
 				mockContextManifest("context1"),
 				mockContextManifest("context2"),
-				(Function<M, Consumer<Consumer<? super ContextManifest>>>)m -> m::forEachRootContextManifest,
+				CorpusManifest::forEachRootContextManifest,
 				CorpusManifest::addRootContextManifest);
 	}
 
@@ -184,7 +182,7 @@ public interface CorpusManifestTest<M extends CorpusManifest> extends MemberMani
 				createUnlocked(settings()),
 				mockContextManifest("context1"),
 				mockContextManifest("context2"),
-				(Function<M, Consumer<Consumer<? super ContextManifest>>>)m -> m::forEachCustomContextManifest,
+				CorpusManifest::forEachCustomContextManifest,
 				CorpusManifest::addCustomContextManifest);
 	}
 
@@ -220,7 +218,7 @@ public interface CorpusManifestTest<M extends CorpusManifest> extends MemberMani
 				createUnlocked(settings()),
 				root,
 				mockContextManifest("context2"),
-				(Function<M, Consumer<Consumer<? super ContextManifest>>>)m -> m::forEachContextManifest,
+				CorpusManifest::forEachContextManifest,
 				adder);
 	}
 
@@ -330,7 +328,7 @@ public interface CorpusManifestTest<M extends CorpusManifest> extends MemberMani
 				createUnlocked(),
 				mock(Note.class),
 				mock(Note.class),
-				(Function<M, Consumer<Consumer<? super Note>>>)m -> m::forEachNote,
+				CorpusManifest::forEachNote,
 				CorpusManifest::addNote);
 	}
 

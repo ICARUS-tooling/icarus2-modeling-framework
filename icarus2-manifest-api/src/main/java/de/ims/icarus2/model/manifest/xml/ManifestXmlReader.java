@@ -104,6 +104,7 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 
 	private final Set<ManifestLocation> templateSources = new LinkedHashSet<>();
 	private final Set<ManifestLocation> corpusSources = new LinkedHashSet<>();
+	//TODO add a buffer for sources for which the template state is unknown?
 	private final AtomicBoolean reading = new AtomicBoolean(false);
 
 	private final ManifestRegistry registry;

@@ -187,7 +187,7 @@ public abstract class ValueVerifier {
 
 			if(valueSet!=null) {
 				allowedValues = new ReferenceOpenHashSet<>(valueSet.valueCount());
-				valueSet.forEachValue(allowedValues::add);
+				valueSet.forEach(allowedValues::add);
 			} else {
 				allowedValues = null;
 			}
@@ -251,7 +251,7 @@ public abstract class ValueVerifier {
 
 			if(valueSet!=null) {
 				allowedValues = new IntOpenHashSet(valueSet.valueCount());
-				valueSet.forEachValue(v -> allowedValues.add(((Number)v).intValue()));
+				valueSet.forEach(v -> allowedValues.add(((Number)v).intValue()));
 			} else {
 				allowedValues = null;
 			}
@@ -321,7 +321,7 @@ public abstract class ValueVerifier {
 
 			if(valueSet!=null) {
 				allowedValues = new LongOpenHashSet(valueSet.valueCount());
-				valueSet.forEachValue(v -> allowedValues.add(((Number)v).longValue()));
+				valueSet.forEach(v -> allowedValues.add(((Number)v).longValue()));
 			} else {
 				allowedValues = null;
 			}
@@ -395,7 +395,7 @@ public abstract class ValueVerifier {
 
 			if(valueSet!=null) {
 				allowedValues = new FloatOpenHashSet(valueSet.valueCount());
-				valueSet.forEachValue(v -> allowedValues.add(((Number)v).floatValue()));
+				valueSet.forEach(v -> allowedValues.add(((Number)v).floatValue()));
 			} else {
 				allowedValues = null;
 			}
@@ -474,7 +474,7 @@ public abstract class ValueVerifier {
 
 			if(valueSet!=null) {
 				allowedValues = new DoubleOpenHashSet(valueSet.valueCount());
-				valueSet.forEachValue(v -> allowedValues.add(((Number)v).doubleValue()));
+				valueSet.forEach(v -> allowedValues.add(((Number)v).doubleValue()));
 			} else {
 				allowedValues = null;
 			}

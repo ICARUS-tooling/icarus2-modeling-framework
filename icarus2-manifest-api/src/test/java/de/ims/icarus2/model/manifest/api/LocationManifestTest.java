@@ -35,9 +35,6 @@ import static de.ims.icarus2.test.TestUtils.settings;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.function.Consumer;
-import java.util.function.Function;
-
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
@@ -132,7 +129,7 @@ public interface LocationManifestTest<M extends LocationManifest> extends Manife
 		assertForEach(createUnlocked(),
 				mockEntry(PathType.FILE, "file1"),
 				mockEntry(PathType.FILE, "file2"),
-				(Function<M, Consumer<Consumer<? super PathEntry>>>)m -> m::forEachPathEntry,
+				LocationManifest::forEachPathEntry,
 				LocationManifest::addPathEntry);
 	}
 

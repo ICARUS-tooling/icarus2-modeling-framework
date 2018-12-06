@@ -72,7 +72,8 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	default void testForEachAnnotationManifest() {
 		assertDerivativeForEach(settings(),
 				mockAnnotationManifest("key1"), mockAnnotationManifest("key2"),
-				m -> m::forEachAnnotationManifest, AnnotationLayerManifest::addAnnotationManifest);
+				AnnotationLayerManifest::forEachAnnotationManifest,
+				AnnotationLayerManifest::addAnnotationManifest);
 	}
 
 	/**
@@ -82,7 +83,8 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	default void testForEachLocalAnnotationManifest() {
 		assertDerivativeForEachLocal(settings(),
 				mockAnnotationManifest("key1"), mockAnnotationManifest("key2"),
-				m -> m::forEachLocalAnnotationManifest, AnnotationLayerManifest::addAnnotationManifest);
+				AnnotationLayerManifest::forEachLocalAnnotationManifest,
+				AnnotationLayerManifest::addAnnotationManifest);
 	}
 
 	/**
@@ -205,7 +207,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 			assertDerivativeForEach(
 					settings(),
 					flag, TestUtils.other(flag),
-					m -> m::forEachActiveAnnotationFlag,
+					AnnotationLayerManifest::forEachActiveAnnotationFlag,
 					(m,f) -> m.setAnnotationFlag(f, true));
 		}
 	}
@@ -219,7 +221,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 			assertDerivativeForEachLocal(
 					settings(),
 					flag, TestUtils.other(flag),
-					m -> m::forEachActiveLocalAnnotationFlag,
+					AnnotationLayerManifest::forEachActiveLocalAnnotationFlag,
 					(m,f) -> m.setAnnotationFlag(f, true));
 		}
 	}
@@ -259,7 +261,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	default void testForEachReferenceLayerManifest() {
 		assertDerivativeForEach(settings(),
 				"layer1", "layer2",
-				inject_forEachTargetLayerManifest(m -> m::forEachReferenceLayerManifest),
+				inject_forEachTargetLayerManifest(AnnotationLayerManifest::forEachReferenceLayerManifest),
 				inject_createTargetLayerManifest(AnnotationLayerManifest::addReferenceLayerId));
 	}
 
@@ -270,7 +272,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	default void testForEachLocalReferenceLayerManifest() {
 		assertDerivativeForEachLocal(settings(),
 				"layer1", "layer2",
-				inject_forEachTargetLayerManifest(m -> m::forEachLocalReferenceLayerManifest),
+				inject_forEachTargetLayerManifest(AnnotationLayerManifest::forEachLocalReferenceLayerManifest),
 				inject_createTargetLayerManifest(AnnotationLayerManifest::addReferenceLayerId));
 	}
 

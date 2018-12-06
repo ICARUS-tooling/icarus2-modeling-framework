@@ -23,9 +23,6 @@ import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
-import java.util.function.Consumer;
-import java.util.function.Function;
-
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.api.Documentation.Resource;
@@ -72,7 +69,8 @@ public interface DocumentationTest<D extends Documentation> extends LockableTest
 	default void testForEachResource() {
 		TestUtils.assertForEach(createUnlocked(),
 				mock(Resource.class), mock(Resource.class),
-				(Function<D, Consumer<Consumer<? super Resource>>>)d -> d::forEachResource, Documentation::addResource);
+				Documentation::forEachResource,
+				Documentation::addResource);
 	}
 
 	/**

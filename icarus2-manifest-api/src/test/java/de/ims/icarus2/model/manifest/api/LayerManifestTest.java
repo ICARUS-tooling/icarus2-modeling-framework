@@ -26,6 +26,7 @@ import static de.ims.icarus2.test.TestUtils.assertNotPresent;
 import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
 import static de.ims.icarus2.test.TestUtils.assertPresent;
 import static de.ims.icarus2.test.TestUtils.settings;
+import static de.ims.icarus2.test.TestUtils.wrapForEach;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -183,11 +184,11 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	 *
 	 * @return
 	 */
-	public static <M extends LayerManifest, C extends Consumer<String>, A extends Consumer<? super TargetLayerManifest>>
-			Function<M, Consumer<C>> inject_forEachTargetLayerManifest(Function<M, Consumer<A>> forEachGen) {
-		return m -> LazyCollection.<String>lazyList()
-				.addFromForEach(forEachGen.apply(m), t -> t.getLayerId())
-				::forEach;
+	public static <M extends LayerManifest> BiConsumer<M, Consumer<? super String>> inject_forEachTargetLayerManifest(
+					BiConsumer<M, Consumer<? super TargetLayerManifest>> forEach) {
+		return (m, action) -> LazyCollection.<String>lazyList()
+				.addFromForEachTransformed(wrapForEach(m, forEach), t -> t.getLayerId())
+				.forEach(action);
 	}
 
 	/**
@@ -255,7 +256,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	default void testForEachBaseLayerManifest() {
 		assertDerivativeForEach(settings(),
 				"layer1", "layer2",
-				inject_forEachTargetLayerManifest(m -> m::forEachBaseLayerManifest),
+				inject_forEachTargetLayerManifest(LayerManifest::forEachBaseLayerManifest),
 				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
 	}
 
@@ -266,7 +267,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	default void testForEachLocalBaseLayerManifest() {
 		assertDerivativeForEachLocal(settings(),
 				"layer1", "layer2",
-				inject_forEachTargetLayerManifest(m -> m::forEachLocalBaseLayerManifest),
+				inject_forEachTargetLayerManifest(LayerManifest::forEachLocalBaseLayerManifest),
 				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
 	}
 

@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.util.Searchable;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.eval.Expression;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
@@ -36,19 +37,26 @@ import it.unimi.dsi.fastutil.objects.ReferenceSet;
  * <ul>
  * <li>An {@link Expression} relying on the environment this set is used in to generate the final values</li>
  * <li>A wrapper object around a primitive value</li>
+ * <li>A {@link ValueManifest} that wraps a value and adds additional information to it</li>
  * <li>The value as an object</li>
  * </ul>
  *
  * @author Markus Gärtner
  *
  */
-public interface ValueSet extends Lockable, TypedManifest {
+public interface ValueSet extends Lockable, TypedManifest, Searchable<Object> {
 
 	int valueCount();
 
 	Object getValueAt(int index);
 
-	void forEachValue(Consumer<? super Object> action);
+	/**
+	 * Executes the given {@code action} for every entry in this set.
+	 *
+	 * @see de.ims.icarus2.util.Traversable#forEach(java.util.function.Consumer)
+	 */
+	@Override
+	void forEach(Consumer<? super Object> action);
 
 	/**
 	 * Returns the elements in this {@link ValueSet} as a regular {@link Set}.
@@ -67,13 +75,13 @@ public interface ValueSet extends Lockable, TypedManifest {
 	 */
 	default Set<Object> getValuesAsSet() {
 		return LazyCollection.lazyIdentitySet(valueCount())
-				.addFromForEach(this::forEachValue)
+				.addFromForEach(this::forEach)
 				.getAsSet();
 	}
 
 	default List<Object> getValuesAsList() {
 		return LazyCollection.lazyList(valueCount())
-				.addFromForEach(this::forEachValue)
+				.addFromForEach(this::forEach)
 				.getAsList();
 	}
 

@@ -100,7 +100,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	default void testForEachAlias() {
 		assertDerivativeForEach(settings(),
 				"alias1", "alias2",
-				m -> m::forEachAlias,
+				AnnotationManifest::forEachAlias,
 				AnnotationManifest::addAlias);
 	}
 
@@ -120,7 +120,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	default void testForEachLocalAlias() {
 		assertDerivativeForEachLocal(settings(),
 				"alias1", "alias2",
-				m -> m::forEachLocalAlias,
+				AnnotationManifest::forEachLocalAlias,
 				AnnotationManifest::addAlias);
 	}
 

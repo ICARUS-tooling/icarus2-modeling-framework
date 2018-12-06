@@ -311,7 +311,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	default void testForEachProperty() {
 		assertDerivativeForEach(settings(),
 				mockProperty("property1"), mockProperty("property2"),
-				m -> m::forEachProperty,
+				MemberManifest::forEachProperty,
 				MemberManifest::addProperty);
 	}
 
@@ -322,7 +322,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	default void testForEachLocalProperty() {
 		assertDerivativeForEachLocal(settings(),
 				mockProperty("property1"), mockProperty("property2"),
-				m -> m::forEachLocalProperty,
+				MemberManifest::forEachLocalProperty,
 				MemberManifest::addProperty);
 	}
 

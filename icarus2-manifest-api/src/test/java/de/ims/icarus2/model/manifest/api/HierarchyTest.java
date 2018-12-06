@@ -33,8 +33,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
@@ -179,7 +177,7 @@ public interface HierarchyTest<E extends Object, H extends Hierarchy> extends Lo
 		TestUtils.assertForEach(createUnlocked(),
 				mockItem(),
 				mockItem(),
-				(Function<H, Consumer<Consumer<Object>>>)m -> m::forEachItem,
+				Hierarchy::forEachItem,
 				Hierarchy::add);
 	}
 

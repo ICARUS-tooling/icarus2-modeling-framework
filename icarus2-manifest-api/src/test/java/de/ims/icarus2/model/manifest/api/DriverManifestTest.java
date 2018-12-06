@@ -90,7 +90,7 @@ public interface DriverManifestTest<M extends DriverManifest>
 		assertDerivativeForEach(settings(),
 				mockMappingManifest("mapping1"),
 				mockMappingManifest("mapping2"),
-				m -> m::forEachMappingManifest,
+				DriverManifest::forEachMappingManifest,
 				DriverManifest::addMappingManifest);
 	}
 
@@ -102,7 +102,7 @@ public interface DriverManifestTest<M extends DriverManifest>
 		assertDerivativeForEachLocal(settings(),
 				mockMappingManifest("mapping1"),
 				mockMappingManifest("mapping2"),
-				m -> m::forEachLocalMappingManifest,
+				DriverManifest::forEachLocalMappingManifest,
 				DriverManifest::addMappingManifest);
 	}
 
@@ -188,7 +188,7 @@ public interface DriverManifestTest<M extends DriverManifest>
 		assertDerivativeForEach(settings(),
 				mockModuleManifest("module1"),
 				mockModuleManifest("module2"),
-				m -> m::forEachModuleManifest,
+				DriverManifest::forEachModuleManifest,
 				DriverManifest::addModuleManifest);
 	}
 
@@ -200,7 +200,7 @@ public interface DriverManifestTest<M extends DriverManifest>
 		assertDerivativeForEachLocal(settings(),
 				mockModuleManifest("module1"),
 				mockModuleManifest("module2"),
-				m -> m::forEachLocalModuleManifest,
+				DriverManifest::forEachLocalModuleManifest,
 				DriverManifest::addModuleManifest);
 	}
 
@@ -236,7 +236,7 @@ public interface DriverManifestTest<M extends DriverManifest>
 		assertDerivativeForEach(settings(),
 				mockModuleSpec("spec1"),
 				mockModuleSpec("spec2"),
-				m -> m::forEachModuleSpec,
+				DriverManifest::forEachModuleSpec,
 				DriverManifest::addModuleSpec);
 	}
 
@@ -248,7 +248,7 @@ public interface DriverManifestTest<M extends DriverManifest>
 		assertDerivativeForEachLocal(settings(),
 				mockModuleSpec("spec1"),
 				mockModuleSpec("spec2"),
-				m -> m::forEachLocalModuleSpec,
+				DriverManifest::forEachLocalModuleSpec,
 				DriverManifest::addModuleSpec);
 	}
 

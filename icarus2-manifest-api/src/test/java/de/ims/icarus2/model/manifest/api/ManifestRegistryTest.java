@@ -58,7 +58,6 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
@@ -182,7 +181,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 				createTestInstance(settings()),
 				mockLayerType("type1"),
 				mockLayerType("type2"),
-				(Function<R, Consumer<Consumer<? super LayerType>>>)m -> m::forEachLayerType,
+				ManifestRegistry::forEachLayerType,
 				ManifestRegistry::addLayerType);
 	}
 
@@ -535,7 +534,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 				createTestInstance(settings()),
 				mockCorpusManifest("corpus1"),
 				mockCorpusManifest("corpus2"),
-				(Function<R, Consumer<Consumer<? super CorpusManifest>>>)reg -> reg::forEachCorpus,
+				ManifestRegistry::forEachCorpus,
 				ManifestRegistry::addCorpusManifest);
 	}
 
@@ -757,7 +756,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 				createTestInstance(settings()),
 				mockTemplate("template1"),
 				mockTemplate("template2"),
-				(Function<R, Consumer<Consumer<? super Manifest>>>)reg -> reg::forEachTemplate,
+				ManifestRegistry::forEachTemplate,
 				ManifestRegistry::addTemplate);
 	}
 

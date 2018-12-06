@@ -27,8 +27,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 
@@ -75,7 +73,8 @@ public interface CategorizableTest<C extends Categorizable> extends LockableTest
 	default void testForEachCategory() {
 		TestUtils.assertForEach(createUnlocked(),
 				mockCategory("cat1"), mockCategory("cat2"),
-				(Function<C, Consumer<Consumer<? super Category>>>)m -> m::forEachCategory, Categorizable::addCategory);
+				Categorizable::forEachCategory,
+				Categorizable::addCategory);
 	}
 
 	/**

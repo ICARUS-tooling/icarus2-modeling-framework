@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import de.ims.icarus2.model.manifest.api.ValueSet;
 import de.ims.icarus2.model.manifest.types.ValueType;
@@ -155,8 +156,16 @@ public class ValueSetImpl extends AbstractLockable implements ValueSet {
 	}
 
 	@Override
-	public void forEachValue(Consumer<? super Object> action) {
+	public void forEach(Consumer<? super Object> action) {
 		values.forEach(action);
+	}
+
+	/**
+	 * @see de.ims.icarus2.util.Searchable#forEachUntil(java.util.function.Predicate)
+	 */
+	@Override
+	public void forEachUntil(Predicate<? super Object> check) {
+		values.stream().sequential().anyMatch(check);
 	}
 
 	@Override

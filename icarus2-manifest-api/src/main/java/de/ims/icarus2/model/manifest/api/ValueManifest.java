@@ -63,5 +63,4 @@ public interface ValueManifest extends Documentable, ModifiableIdentity, TypedMa
 	// Modification methods
 
 	void setValue(Object value);
-
 }

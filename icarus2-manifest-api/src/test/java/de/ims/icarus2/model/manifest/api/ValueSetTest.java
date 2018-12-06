@@ -34,8 +34,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicTest;
@@ -136,17 +134,34 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#forEachValue(java.util.function.Consumer)}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#forEach(java.util.function.Consumer)}.
 	 */
 	@TestFactory
-	default Stream<DynamicTest> testForEachValue() {
+	default Stream<DynamicTest> testForEach() {
 		return ManifestTestUtils.getAvailableTestTypes()
 				.stream()
 				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						Object[] values = ManifestTestUtils.getTestValues(valueType);
 						assertForEach(createWithType(settings(), valueType),
 								values[0], values[1],
-								(Function<V, Consumer<Consumer<Object>>>)v -> v::forEachValue,
+								ValueSet::forEach,
+								ValueSet::addValue);
+					}));
+	}
+
+	/**
+	 * Test method for {@link ValueSet#forEachUntil(java.util.function.Predicate)}
+	 * @return
+	 */
+	@TestFactory
+	default Stream<DynamicTest> testForEachUntil() {
+		return ManifestTestUtils.getAvailableTestTypes()
+				.stream()
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
+						Object[] values = ManifestTestUtils.getTestValues(valueType);
+						assertForEach(createWithType(settings(), valueType),
+								values[0], values[1],
+								ValueSet::forEach,
 								ValueSet::addValue);
 					}));
 	}

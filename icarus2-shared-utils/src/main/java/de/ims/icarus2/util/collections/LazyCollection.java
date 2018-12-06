@@ -169,7 +169,7 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <C extends Consumer<? super E>> LazyCollection<E> addFromForEach(Consumer<C> forEach,
+	public <C extends Consumer<? super E>> LazyCollection<E> addFromForEachFiltered(Consumer<C> forEach,
 			Predicate<? super E> filter) {
 		ensureBuffer();
 		Consumer<E> action = item -> {
@@ -182,7 +182,7 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <K extends Object, C extends Consumer<? super K>> LazyCollection<E> addFromForEach(
+	public <K extends Object, C extends Consumer<? super K>> LazyCollection<E> addFromForEachTransformed(
 			Consumer<C> forEach, Function<K, E> transform) {
 		ensureBuffer();
 		Consumer<K> action = val -> addExpectingBuffer(transform.apply(val));

@@ -32,8 +32,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.util.Collections;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 
@@ -122,7 +120,7 @@ public interface LayerGroupManifestTest<M extends LayerGroupManifest>
 		TestUtils.assertForEach(createUnlocked(),
 				mockLayerManifest("layer1"),
 				mockLayerManifest("layer2"),
-				(Function<M, Consumer<Consumer<? super LayerManifest>>>)m -> m::forEachLayerManifest,
+				LayerGroupManifest::forEachLayerManifest,
 				LayerGroupManifest::addLayerManifest);
 	}
 

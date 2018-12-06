@@ -125,7 +125,7 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 	default void testForEachGroupIdentifier() {
 		assertDerivativeForEach(settings(),
 				mockIdentity("group1"), mockIdentity("group2"),
-				m -> m::forEachGroupIdentifier,
+				OptionsManifest::forEachGroupIdentifier,
 				OptionsManifest::addGroupIdentifier);
 	}
 
@@ -136,7 +136,7 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 	default void testForEachLocalGroupIdentifier() {
 		assertDerivativeForEachLocal(settings(),
 				mockIdentity("group1"), mockIdentity("group2"),
-				m -> m::forEachLocalGroupIdentifier,
+				OptionsManifest::forEachLocalGroupIdentifier,
 				OptionsManifest::addGroupIdentifier);
 	}
 
@@ -195,7 +195,7 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 	default void testForEachOption() {
 		assertDerivativeForEach(settings(),
 				mockOption("id1"), mockOption("ids2"),
-				m -> m::forEachOption,
+				OptionsManifest::forEachOption,
 				OptionsManifest::addOption);
 	}
 
@@ -206,7 +206,7 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 	default void testForEachLocalOption() {
 		assertDerivativeForEachLocal(settings(),
 				mockOption("id1"), mockOption("ids2"),
-				m -> m::forEachLocalOption,
+				OptionsManifest::forEachLocalOption,
 				OptionsManifest::addOption);
 	}
 

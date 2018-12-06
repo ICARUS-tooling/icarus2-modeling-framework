@@ -110,7 +110,7 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 			assertDerivativeForEach(
 					settings(),
 					flag, TestUtils.other(flag),
-					m -> m::forEachActiveHighlightFlag,
+					HighlightLayerManifest::forEachActiveHighlightFlag,
 					(m,f) -> m.setHighlightFlag(f, true));
 		}
 	}
@@ -124,7 +124,7 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 			assertDerivativeForEachLocal(
 					settings(),
 					flag, TestUtils.other(flag),
-					m -> m::forEachActiveLocalHighlightFlag,
+					HighlightLayerManifest::forEachActiveLocalHighlightFlag,
 					(m,f) -> m.setHighlightFlag(f, true));
 		}
 	}

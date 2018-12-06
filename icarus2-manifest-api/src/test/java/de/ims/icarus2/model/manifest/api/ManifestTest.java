@@ -27,6 +27,7 @@ import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.assertNotPresent;
 import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
 import static de.ims.icarus2.test.TestUtils.settings;
+import static de.ims.icarus2.test.TestUtils.wrapForEach;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -277,42 +278,42 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	}
 
 	@SuppressWarnings("unchecked")
-	default <K extends Object, A extends Consumer<? super K>> void assertDerivativeForEach(
-			TestSettings settings, K value1, K value2, Function<M,Consumer<A>> forEachGen, BiConsumer<M, K> adder) {
+	default <K extends Object> void assertDerivativeForEach(
+			TestSettings settings, K value1, K value2, BiConsumer<M,Consumer<? super K>> forEach, BiConsumer<M, K> adder) {
 
-		TestUtils.assertForEach(createUnlocked(settings), value1, value2, forEachGen, adder);
+		TestUtils.assertForEach(createUnlocked(settings), value1, value2, forEach, adder);
 
 		if(getExpectedType().isSupportTemplating()) {
 			M template = createTemplate(settings);
 			adder.accept(template, value1);
 			M derived = createDerived(settings, template);
 
-			TestUtils.assertForEachUnsorted(forEachGen.apply(derived), value1);
+			TestUtils.assertForEachUnsorted(wrapForEach(derived, forEach), value1);
 
 			adder.accept(derived, value2);
 
-			TestUtils.assertForEachUnsorted(forEachGen.apply(derived), value1, value2);
-			TestUtils.assertForEachUnsorted(forEachGen.apply(template), value1);
+			TestUtils.assertForEachUnsorted(wrapForEach(derived, forEach), value1, value2);
+			TestUtils.assertForEachUnsorted(wrapForEach(template, forEach), value1);
 		}
 	}
 
 	@SuppressWarnings("unchecked")
-	default <K extends Object, A extends Consumer<? super K>> void assertDerivativeForEachLocal(
-			TestSettings settings, K value1, K value2, Function<M,Consumer<A>> forEachLocalGen, BiConsumer<M, K> adder) {
+	default <K extends Object> void assertDerivativeForEachLocal(
+			TestSettings settings, K value1, K value2, BiConsumer<M,Consumer<? super K>> forEachLocal, BiConsumer<M, K> adder) {
 
-		TestUtils.assertForEachLocal(createUnlocked(settings), value1, value2, forEachLocalGen, adder);
+		TestUtils.assertForEachLocal(createUnlocked(settings), value1, value2, forEachLocal, adder);
 
 		if(getExpectedType().isSupportTemplating()) {
 			M template = createTemplate(settings);
 			adder.accept(template, value1);
 			M derived = createDerived(settings, template);
 
-			TestUtils.assertForEachEmpty(forEachLocalGen.apply(derived));
+			TestUtils.assertForEachEmpty(wrapForEach(derived, forEachLocal));
 
 			adder.accept(derived, value2);
 
-			TestUtils.assertForEachUnsorted(forEachLocalGen.apply(derived), value2);
-			TestUtils.assertForEachUnsorted(forEachLocalGen.apply(template), value1);
+			TestUtils.assertForEachUnsorted(wrapForEach(derived, forEachLocal), value2);
+			TestUtils.assertForEachUnsorted(wrapForEach(template, forEachLocal), value1);
 		}
 	}
 

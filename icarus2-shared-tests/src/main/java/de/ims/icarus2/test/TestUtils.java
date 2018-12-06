@@ -33,11 +33,13 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
@@ -52,6 +54,7 @@ import org.mockito.Mockito;
 
 import de.ims.icarus2.test.DiffUtils.Trace;
 import de.ims.icarus2.test.func.TriConsumer;
+import de.ims.icarus2.test.util.IdentitySet;
 
 /**
  * Collection of useful testing methods.
@@ -260,7 +263,7 @@ public class TestUtils {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <K extends Object, A extends Consumer<? super K>> void assertForEachUnsorted(Consumer<A> loop, K...expected) {
-		Set<K> actual = new HashSet<>();
+		IdentitySet<K> actual = new IdentitySet<>();
 
 		Consumer<K> action = actual::add;
 
@@ -293,6 +296,34 @@ public class TestUtils {
 
 	public static <K extends Object, A extends Consumer<? super K>> void assertForEachNPE(Consumer<A> loop) {
 		assertNPE(() -> loop.accept(null));
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <K extends Object, A extends Predicate<? super K>> void assertForEachUntilSentinel(
+			Consumer<A> loop, K sentinel, int expectedCalls) {
+		LongAdder count = new LongAdder();
+		Predicate<? super K> pred = v -> {
+			count.increment();
+			return sentinel.equals(v);
+		};
+
+		loop.accept((A)pred);
+
+		assertEquals(expectedCalls, count.intValue());
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <K extends Object, A extends Predicate<? super K>> void assertForEachUntilPred(
+			Consumer<A> loop, A pred, int expectedCalls) {
+		LongAdder count = new LongAdder();
+		Predicate<? super K> sum = v -> {
+			count.increment();
+			return pred.test(v);
+		};
+
+		loop.accept((A)sum);
+
+		assertEquals(expectedCalls, count.intValue());
 	}
 
 	public static <E extends Object> void assertCollectionEquals(
@@ -366,6 +397,22 @@ public class TestUtils {
 		}
 
 		return (E) values[pos];
+	}
+
+	private static <E extends Object> E[] filterUniques(E[] data) {
+		if(data.length<2) {
+			return data;
+		}
+
+		Set<E> buffer = new HashSet<>();
+		Collections.addAll(buffer, data);
+
+		if(buffer.size()<data.length) {
+			data = Arrays.copyOf(data, buffer.size());
+			buffer.toArray(data);
+		}
+
+		return data;
 	}
 
     private static boolean isEquals(Object expected, Object actual) {
@@ -648,6 +695,8 @@ public class TestUtils {
 			K[] illegalValues, BiConsumer<Executable, String> legalityCheck, boolean checkNPE,
 			BiConsumer<Executable, String> duplicateCheck, @SuppressWarnings("unchecked") K...values) {
 
+		values = filterUniques(values);
+
 		if(checkNPE) {
 			assertNPE(() -> adder.accept(instance, null));
 		}
@@ -656,9 +705,11 @@ public class TestUtils {
 			adder.accept(instance, values[i]);
 		}
 
+		K first = values[0];
+
 		if(duplicateCheck!=NO_CHECK) {
-			duplicateCheck.accept(() -> adder.accept(instance, values[0]),
-					forValue("Testing duplicate value", values[0]));
+			duplicateCheck.accept(() -> adder.accept(instance, first),
+					forValue("Testing duplicate value", first));
 		}
 
 		if(legalityCheck!=NO_CHECK && illegalValues!=null) {
@@ -674,6 +725,8 @@ public class TestUtils {
 			Function<T, C> getter, boolean checkNPE,
 			BiConsumer<Executable, String> invalidRemoveCheck, @SuppressWarnings("unchecked") K...values) {
 
+		values = filterUniques(values);
+
 		for(K value : values) {
 			adder.accept(instance, value);
 		}
@@ -688,9 +741,11 @@ public class TestUtils {
 
 		assertCollectionEquals(getter.apply(instance), Arrays.copyOfRange(values, 1, values.length));
 
+		K first = values[0];
+
 		if(invalidRemoveCheck!=NO_CHECK) {
-			invalidRemoveCheck.accept(() -> remover.accept(instance, values[0]),
-					forValue("Testing invalid remove value", values[0]));
+			invalidRemoveCheck.accept(() -> remover.accept(instance, first),
+					forValue("Testing invalid remove value", first));
 		}
 
 		for(int i=1; i<values.length; i++) {
@@ -782,6 +837,8 @@ public class TestUtils {
 	@SuppressWarnings("unchecked")
 	public static <T extends Object, K extends Object> void assertAccumulativeFlagGetter(
 			T instance, BiPredicate<T,K> getter, BiConsumer<T, K> adder, BiConsumer<T, K> remover, K...values) {
+
+		values = filterUniques(values);
 
 		for(K value : values) {
 			assertFalse(getter.test(instance, value));
@@ -880,6 +937,8 @@ public class TestUtils {
 			BiConsumer<T, K> adder, BiConsumer<T, K> remover,
 			Function<T, Integer> counter, @SuppressWarnings("unchecked") K...values) {
 
+		values = filterUniques(values);
+
 		assertTrue(values.length>1, "Needs at least 2 test values for add/remove");
 
 		assertEquals(0, counter.apply(instance).intValue());
@@ -907,6 +966,8 @@ public class TestUtils {
 			Predicate<? super K> filter,
 			@SuppressWarnings("unchecked") K...values) {
 
+		values = filterUniques(values);
+
 		assertTrue(values.length>1, "Needs at least 2 test values for add/remove");
 
 		List<K> expectedValues = new ArrayList<>();
@@ -924,9 +985,36 @@ public class TestUtils {
 		assertCollectionEquals(expectedValues, filtered);
 	}
 
+	public static <T extends Object, K extends Object> Consumer<Consumer<? super K>> wrapForEach(
+			T instance, BiConsumer<T,Consumer<? super K>> forEach) {
+		return action -> forEach.accept(instance, action);
+	}
+
 	@SuppressWarnings("unchecked")
-	public static <T extends Object, K extends Object, A extends Consumer<? super K>> void assertForEach(
-			T instance, K value1, K value2, Function<T,Consumer<A>> forEachGen, BiConsumer<T, K> adder) {
+	public static <T extends Object, K extends Object> void assertForEach(
+			T instance, K value1, K value2, BiConsumer<T,Consumer<? super K>> forEach, BiConsumer<T, K> adder) {
+
+		Consumer<Consumer<? super K>> loop = wrapForEach(instance, forEach);
+
+		assertForEachNPE(loop);
+
+		assertForEachEmpty(loop);
+
+		adder.accept(instance, value1);
+		assertForEachUnsorted(loop, value1);
+
+		adder.accept(instance, value2);
+		assertForEachUnsorted(loop, value1, value2);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T extends Object, K extends Object> void assertForEachUntil(
+			T instance, BiConsumer<T, Consumer<Predicate<? super K>>> forEachUntil,
+			BiConsumer<T, K> adder, K... values) {
+
+		values = filterUniques(values);
+
+		assertNPE(() -> forEachUntil.accept(instance, null));
 
 		assertForEachNPE(forEachGen.apply(instance));
 
@@ -940,18 +1028,20 @@ public class TestUtils {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T extends Object, K extends Object, A extends Consumer<? super K>> void assertForEachLocal(
-			T instance, K value1, K value2, Function<T,Consumer<A>> forEachLocalGen, BiConsumer<T, K> adder) {
+	public static <T extends Object, K extends Object> void assertForEachLocal(
+			T instance, K value1, K value2, BiConsumer<T,Consumer<? super K>> forEachLocal, BiConsumer<T, K> adder) {
 
-		assertForEachNPE(forEachLocalGen.apply(instance));
+		Consumer<Consumer<? super K>> loop = wrapForEach(instance, forEachLocal);
 
-		assertForEachEmpty(forEachLocalGen.apply(instance));
+		assertForEachNPE(loop);
+
+		assertForEachEmpty(loop);
 
 		adder.accept(instance, value1);
-		assertForEachUnsorted(forEachLocalGen.apply(instance), value1);
+		assertForEachUnsorted(loop, value1);
 
 		adder.accept(instance, value2);
-		assertForEachUnsorted(forEachLocalGen.apply(instance), value1, value2);
+		assertForEachUnsorted(loop, value1, value2);
 	}
 
 	/**
@@ -1014,6 +1104,8 @@ public class TestUtils {
 			T instance, BiConsumer<T, K> adder, BiConsumer<T, K> remover,
 			BiFunction<T, K, Integer> indexOf, @SuppressWarnings("unchecked") K...values) {
 
+		values = filterUniques(values);
+
 		assertTrue(values.length>1, "Needs at least 2 test values for add/remove");
 
 		assertEquals(-1, indexOf.apply(instance, values[0]).intValue());
@@ -1042,6 +1134,8 @@ public class TestUtils {
 	public static <T extends Object, K extends Object> void assertListAtIndex(
 			T instance, BiConsumer<T, K> adder, BiConsumer<T, K> remover,
 			BiFunction<T, Integer, K> atIndex, @SuppressWarnings("unchecked") K...values) {
+
+		values = filterUniques(values);
 
 		assertTrue(values.length>1, "Needs at least 2 test values for add/remove");
 
@@ -1072,9 +1166,13 @@ public class TestUtils {
 			T instance, TriConsumer<T, K, Integer> inserter,
 			BiFunction<T, Integer, K> atIndex, @SuppressWarnings("unchecked") K...values) {
 
-		assertTrue(values.length>2, "Needs at least 3 test values for insert/remove");
+		values = filterUniques(values);
 
-		assertThrows(IndexOutOfBoundsException.class, () -> inserter.accept(instance, values[0], -1));
+		assertTrue(values.length>1, "Needs at least 2 test values for insert/remove");
+
+		K first = values[0];
+
+		assertThrows(IndexOutOfBoundsException.class, () -> inserter.accept(instance, first, -1));
 		assertNPE(() -> inserter.accept(instance, null, 0));
 
 		List<K> buffer = new ArrayList<>(values.length);
@@ -1095,7 +1193,9 @@ public class TestUtils {
 			BiConsumer<T, Integer> remover,
 			BiFunction<T, Integer, K> atIndex, @SuppressWarnings("unchecked") K...values) {
 
-		assertTrue(values.length>2, "Needs at least 3 test values for insert/remove");
+		values = filterUniques(values);
+
+		assertTrue(values.length>1, "Needs at least 2 test values for insert/remove");
 
 		assertThrows(IndexOutOfBoundsException.class, () -> remover.accept(instance, -1));
 		assertThrows(IndexOutOfBoundsException.class, () -> remover.accept(instance, 0));

@@ -104,7 +104,7 @@ public interface ContainerManifestTest<M extends ContainerManifest> extends Embe
 	default void testForEachActiveContainerFlag() {
 		for(ContainerFlag flag : ContainerFlag.values()) {
 			assertDerivativeForEach(settings(), flag, TestUtils.other(flag),
-					m -> m::forEachActiveContainerFlag,
+					ContainerManifest::forEachActiveContainerFlag,
 					(m,f) -> m.setContainerFlag(f, true));
 		}
 	}
@@ -116,7 +116,7 @@ public interface ContainerManifestTest<M extends ContainerManifest> extends Embe
 	default void testForEachActiveLocalContainerFlag() {
 		for(ContainerFlag flag : ContainerFlag.values()) {
 			assertDerivativeForEachLocal(settings(), flag, TestUtils.other(flag),
-					m -> m::forEachActiveLocalContainerFlag,
+					ContainerManifest::forEachActiveLocalContainerFlag,
 					(m,f) -> m.setContainerFlag(f, true));
 		}
 	}

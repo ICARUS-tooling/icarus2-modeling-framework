@@ -93,7 +93,7 @@ public interface StructureManifestTest<M extends StructureManifest> extends Cont
 	default void testForEachActiveStructureFlag() {
 		for(StructureFlag flag : StructureFlag.values()) {
 			assertDerivativeForEach(settings(), flag, TestUtils.other(flag),
-					m -> m::forEachActiveStructureFlag,
+					StructureManifest::forEachActiveStructureFlag,
 					(m,f) -> m.setStructureFlag(f, true));
 		}
 	}
@@ -105,7 +105,7 @@ public interface StructureManifestTest<M extends StructureManifest> extends Cont
 	default void testForEachActiveLocalStructureFlag() {
 		for(StructureFlag flag : StructureFlag.values()) {
 			assertDerivativeForEachLocal(settings(), flag, TestUtils.other(flag),
-					m -> m::forEachActiveLocalStructureFlag,
+					StructureManifest::forEachActiveLocalStructureFlag,
 					(m,f) -> m.setStructureFlag(f, true));
 		}
 	}

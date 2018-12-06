@@ -23,6 +23,7 @@ import javax.xml.stream.XMLStreamException;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ValueManifest;
 import de.ims.icarus2.model.manifest.api.ValueSet;
@@ -31,6 +32,7 @@ import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.xml.UnexpectedTagException;
 import de.ims.icarus2.util.xml.UnsupportedNestingException;
 import de.ims.icarus2.util.xml.XmlSerializer;
@@ -156,6 +158,18 @@ public class ValueSetXmlDelegate extends AbstractXmlDelegate<ValueSet> {
 		return Optional.ofNullable(handler);
 	}
 
+	private Object maybeSimplify(ValueManifest manifest) {
+		Object value = manifest;
+
+		if(IcarusUtils.nonePresent(manifest.getId(), manifest.getName(),
+				manifest.getDescription(), manifest.getIcon())) {
+			value = manifest.getValue()
+					.orElseThrow(ManifestException.error("value not set"));
+		}
+
+		return value;
+	}
+
 	/**
 	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlHandler#endNestedHandler(de.ims.icarus2.model.manifest.api.ManifestLocation, java.lang.String, java.lang.String, java.lang.String, de.ims.icarus2.model.manifest.xml.ManifestXmlHandler)
 	 */
@@ -166,9 +180,9 @@ public class ValueSetXmlDelegate extends AbstractXmlDelegate<ValueSet> {
 		switch (localName) {
 
 		case ManifestXmlTags.VALUE : {
-			Object value = ((ValueManifestXmlDelegate) handler).getInstance();
+			ValueManifest value = ((ValueManifestXmlDelegate) handler).getInstance();
 
-			getInstance().addValue(value);
+			getInstance().addValue(maybeSimplify(value));
 		} break;
 
 		default:
