@@ -28,7 +28,6 @@ import static de.ims.icarus2.test.TestUtils.NO_ILLEGAL;
 import static de.ims.icarus2.test.TestUtils.NO_NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.assertAccumulativeGetter;
-import static de.ims.icarus2.test.TestUtils.assertForEach;
 import static de.ims.icarus2.test.TestUtils.assertGetter;
 import static de.ims.icarus2.test.TestUtils.assertOptGetter;
 import static de.ims.icarus2.test.TestUtils.settings;
@@ -126,7 +125,7 @@ public interface LocationManifestTest<M extends LocationManifest> extends Manife
 	 */
 	@Test
 	default void testForEachPathEntry() {
-		assertForEach(createUnlocked(),
+		TestUtils.<M, PathEntry>assertForEach(createUnlocked(),
 				mockEntry(PathType.FILE, "file1"),
 				mockEntry(PathType.FILE, "file2"),
 				LocationManifest::forEachPathEntry,

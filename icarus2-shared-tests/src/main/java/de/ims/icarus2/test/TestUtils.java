@@ -39,6 +39,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -301,15 +303,22 @@ public class TestUtils {
 	@SuppressWarnings("unchecked")
 	public static <K extends Object, A extends Predicate<? super K>> void assertForEachUntilSentinel(
 			Consumer<A> loop, K sentinel, int expectedCalls) {
-		LongAdder count = new LongAdder();
+		AtomicInteger count = new AtomicInteger(-1);
+		AtomicBoolean sentinelFound = new AtomicBoolean(false);
 		Predicate<? super K> pred = v -> {
-			count.increment();
-			return sentinel.equals(v);
+			count.incrementAndGet();
+			boolean found = sentinel.equals(v);
+			sentinelFound.compareAndSet(false, found);
+			return found;
 		};
 
 		loop.accept((A)pred);
 
-		assertEquals(expectedCalls, count.intValue());
+		if(sentinelFound.get()) {
+			assertEquals(expectedCalls, count.intValue());
+		} else {
+			assertEquals(expectedCalls, -1);
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -1007,24 +1016,36 @@ public class TestUtils {
 		assertForEachUnsorted(loop, value1, value2);
 	}
 
+	public static <T extends Object, K extends Object> Consumer<Predicate<? super K>> wrapForEachUntil(
+			T instance, BiConsumer<T,Predicate<? super K>> forEachUntil) {
+		return action -> forEachUntil.accept(instance, action);
+	}
+
 	@SuppressWarnings("unchecked")
 	public static <T extends Object, K extends Object> void assertForEachUntil(
-			T instance, BiConsumer<T, Consumer<Predicate<? super K>>> forEachUntil,
+			T instance, BiConsumer<T, Predicate<? super K>> forEachUntil,
 			BiConsumer<T, K> adder, K... values) {
 
 		values = filterUniques(values);
 
 		assertNPE(() -> forEachUntil.accept(instance, null));
 
-		assertForEachNPE(forEachGen.apply(instance));
+		// Verify that none of our values can be found
+		for(int i=0; i<values.length; i++) {
+			assertForEachUntilSentinel(wrapForEachUntil(instance, forEachUntil), values[i], -1);
+		}
 
-		assertForEachEmpty(forEachGen.apply(instance));
+		// Fill target
+		for(K value : values) {
+			adder.accept(instance, value);
+		}
 
-		adder.accept(instance, value1);
-		assertForEachUnsorted(forEachGen.apply(instance), value1);
+		// Now do the real lookups
+		for(int i=0; i<values.length; i++) {
+			assertForEachUntilSentinel(wrapForEachUntil(instance, forEachUntil), values[i], i);
+		}
 
-		adder.accept(instance, value2);
-		assertForEachUnsorted(forEachGen.apply(instance), value1, value2);
+		//TODO do we want to also cover the case of a foreign value not being found?
 	}
 
 	@SuppressWarnings("unchecked")

@@ -31,7 +31,6 @@ import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.assertAccumulativeGetter;
 import static de.ims.icarus2.test.TestUtils.assertAccumulativeLookupContains;
 import static de.ims.icarus2.test.TestUtils.assertAccumulativeOptLookup;
-import static de.ims.icarus2.test.TestUtils.assertForEach;
 import static de.ims.icarus2.test.TestUtils.assertGetter;
 import static de.ims.icarus2.test.TestUtils.assertNotPresent;
 import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
@@ -54,6 +53,7 @@ import org.junit.jupiter.api.Test;
 import de.ims.icarus2.model.manifest.ManifestTestFeature;
 import de.ims.icarus2.model.manifest.api.CorpusManifest.Note;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.TestUtils;
 
 /**
  * @author Markus Gärtner
@@ -94,7 +94,7 @@ public interface CorpusManifestTest<M extends CorpusManifest> extends MemberMani
 	 */
 	@Test
 	default void testForEachRootContextManifest() {
-		assertForEach(
+		TestUtils.<M, ContextManifest>assertForEach(
 				createUnlocked(settings().processor(processor_makeParallel())),
 				mockContextManifest("context1"),
 				mockContextManifest("context2"),
@@ -178,7 +178,7 @@ public interface CorpusManifestTest<M extends CorpusManifest> extends MemberMani
 	 */
 	@Test
 	default void testForEachCustomContextManifest() {
-		assertForEach(
+		TestUtils.<M, ContextManifest>assertForEach(
 				createUnlocked(settings()),
 				mockContextManifest("context1"),
 				mockContextManifest("context2"),
@@ -214,7 +214,7 @@ public interface CorpusManifestTest<M extends CorpusManifest> extends MemberMani
 			}
 		};
 
-		assertForEach(
+		TestUtils.<M, ContextManifest>assertForEach(
 				createUnlocked(settings()),
 				root,
 				mockContextManifest("context2"),
@@ -324,7 +324,7 @@ public interface CorpusManifestTest<M extends CorpusManifest> extends MemberMani
 	 */
 	@Test
 	default void testForEachNote() {
-		assertForEach(
+		TestUtils.<M, Note>assertForEach(
 				createUnlocked(),
 				mock(Note.class),
 				mock(Note.class),

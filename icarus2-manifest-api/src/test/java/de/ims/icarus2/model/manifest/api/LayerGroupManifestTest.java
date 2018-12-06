@@ -117,7 +117,7 @@ public interface LayerGroupManifestTest<M extends LayerGroupManifest>
 	 */
 	@Test
 	default void testForEachLayerManifest() {
-		TestUtils.assertForEach(createUnlocked(),
+		TestUtils.<M, LayerManifest>assertForEach(createUnlocked(),
 				mockLayerManifest("layer1"),
 				mockLayerManifest("layer2"),
 				LayerGroupManifest::forEachLayerManifest,

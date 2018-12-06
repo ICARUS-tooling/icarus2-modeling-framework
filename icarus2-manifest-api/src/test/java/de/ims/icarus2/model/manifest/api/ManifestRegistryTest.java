@@ -33,7 +33,6 @@ import static de.ims.icarus2.test.TestUtils.assertAccumulativeOptLookup;
 import static de.ims.icarus2.test.TestUtils.assertAccumulativeRemove;
 import static de.ims.icarus2.test.TestUtils.assertCollectionEmpty;
 import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
-import static de.ims.icarus2.test.TestUtils.assertForEach;
 import static de.ims.icarus2.test.TestUtils.assertMock;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
@@ -66,6 +65,7 @@ import de.ims.icarus2.model.manifest.ManifestFrameworkTest;
 import de.ims.icarus2.model.manifest.api.events.ManifestEvents;
 import de.ims.icarus2.model.manifest.standard.DefaultLayerTypeIds;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.util.events.EventManagerTest;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.events.SimpleEventListener;
@@ -177,7 +177,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 	 */
 	@Test
 	default void testForEachLayerType() {
-		assertForEach(
+		TestUtils.<R, LayerType>assertForEach(
 				createTestInstance(settings()),
 				mockLayerType("type1"),
 				mockLayerType("type2"),
@@ -530,7 +530,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 	 */
 	@Test
 	default void testForEachCorpus() {
-		assertForEach(
+		TestUtils.<R, CorpusManifest>assertForEach(
 				createTestInstance(settings()),
 				mockCorpusManifest("corpus1"),
 				mockCorpusManifest("corpus2"),
@@ -752,7 +752,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 	 */
 	@Test
 	default void testForEachTemplate() {
-		assertForEach(
+		TestUtils.<R, Manifest>assertForEach(
 				createTestInstance(settings()),
 				mockTemplate("template1"),
 				mockTemplate("template2"),

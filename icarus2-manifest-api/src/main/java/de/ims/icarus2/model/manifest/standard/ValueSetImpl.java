@@ -195,6 +195,15 @@ public class ValueSetImpl extends AbstractLockable implements ValueSet {
 		values.add(index, value);
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.ValueSet#removeValue(java.lang.Object)
+	 */
+	@Override
+	public void removeValue(Object value) {
+		checkNotLocked();
+		ValueSet.super.removeValue(value);
+	}
+
 	@Override
 	public void removeValueAt(int index) {
 		checkNotLocked();

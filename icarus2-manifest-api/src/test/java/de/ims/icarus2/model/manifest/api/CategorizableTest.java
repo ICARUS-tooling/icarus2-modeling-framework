@@ -71,7 +71,7 @@ public interface CategorizableTest<C extends Categorizable> extends LockableTest
 	 */
 	@Test
 	default void testForEachCategory() {
-		TestUtils.assertForEach(createUnlocked(),
+		TestUtils.<Categorizable, Category>assertForEach(createUnlocked(),
 				mockCategory("cat1"), mockCategory("cat2"),
 				Categorizable::forEachCategory,
 				Categorizable::addCategory);

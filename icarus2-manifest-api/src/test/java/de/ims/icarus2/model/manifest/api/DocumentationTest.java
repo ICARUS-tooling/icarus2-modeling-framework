@@ -67,7 +67,7 @@ public interface DocumentationTest<D extends Documentation> extends LockableTest
 	 */
 	@Test
 	default void testForEachResource() {
-		TestUtils.assertForEach(createUnlocked(),
+		TestUtils.<D, Resource>assertForEach(createUnlocked(),
 				mock(Resource.class), mock(Resource.class),
 				Documentation::forEachResource,
 				Documentation::addResource);

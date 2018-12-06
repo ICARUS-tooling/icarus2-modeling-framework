@@ -26,14 +26,12 @@ import static de.ims.icarus2.test.TestUtils.assertAccumulativeArrayGetter;
 import static de.ims.icarus2.test.TestUtils.assertAccumulativeCount;
 import static de.ims.icarus2.test.TestUtils.assertAccumulativeGetter;
 import static de.ims.icarus2.test.TestUtils.assertAccumulativeLookup;
-import static de.ims.icarus2.test.TestUtils.assertForEach;
 import static de.ims.icarus2.test.TestUtils.assertListEquals;
 import static de.ims.icarus2.test.TestUtils.assertListIndexOf;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Arrays;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicTest;
@@ -42,6 +40,7 @@ import org.junit.jupiter.api.TestFactory;
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.util.collections.ArrayUtils;
 
@@ -142,7 +141,8 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 				.stream()
 				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						Object[] values = ManifestTestUtils.getTestValues(valueType);
-						assertForEach(createWithType(settings(), valueType),
+						TestUtils.<V, Object>assertForEach(
+								createWithType(settings(), valueType),
 								values[0], values[1],
 								ValueSet::forEach,
 								ValueSet::addValue);
@@ -158,11 +158,11 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 		return ManifestTestUtils.getAvailableTestTypes()
 				.stream()
 				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
-						Object[] values = ManifestTestUtils.getTestValues(valueType);
-						assertForEach(createWithType(settings(), valueType),
-								values[0], values[1],
-								ValueSet::forEach,
-								ValueSet::addValue);
+						TestUtils.<V, Object>assertForEachUntil(
+								createWithType(settings(), valueType),
+								ValueSet::forEachUntil,
+								ValueSet::addValue,
+								ManifestTestUtils.getTestValues(valueType));
 					}));
 	}
 
@@ -190,7 +190,7 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 								ValueSet::addValue,
 								ValueSet::removeValue,
 								ValueSet::indexOfValue,
-								Arrays.copyOf(ManifestTestUtils.getTestValues(valueType), 2)); // for boolean type
+								ManifestTestUtils.getTestValues(valueType));
 					}));
 	}
 
@@ -264,7 +264,7 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 								ValueSet::removeValue,
 								ValueSet::getValuesAsSet,
 								NPE_CHECK, INVALID_INPUT_CHECK,
-								Arrays.copyOf(ManifestTestUtils.getTestValues(valueType), 2)); // for boolean type
+								ManifestTestUtils.getTestValues(valueType));
 					}));
 	}
 

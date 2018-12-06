@@ -363,7 +363,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 	 */
 	@Test
 	default void testForEachLayerManifest() {
-		assertDerivativeForEach(
+		EmbeddedMemberManifestTest.super.<LayerManifest>assertDerivativeForEach(
 				settings().processor(processor_stubLayerGroup()),
 				LayerManifestTest.mockLayerManifest("layer1"),
 				LayerManifestTest.mockLayerManifest("layer2"),
@@ -376,7 +376,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 	 */
 	@Test
 	default void testForEachLocalLayerManifest() {
-		assertDerivativeForEachLocal(
+		EmbeddedMemberManifestTest.super.<LayerManifest>assertDerivativeForEachLocal(
 				settings().processor(processor_stubLayerGroup()),
 				LayerManifestTest.mockLayerManifest("layer1"),
 				LayerManifestTest.mockLayerManifest("layer2"),
@@ -438,7 +438,8 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 	 */
 	@Test
 	default void testForEachGroupManifest() {
-		assertDerivativeForEach(settings(),
+		EmbeddedMemberManifestTest.super.<LayerGroupManifest>assertDerivativeForEach(
+				settings(),
 				mockGroupManifest("group1"),
 				mockGroupManifest("group2"),
 				ContextManifest::forEachGroupManifest,
@@ -450,7 +451,8 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 	 */
 	@Test
 	default void testForEachLocalGroupManifest() {
-		assertDerivativeForEachLocal(settings(),
+		EmbeddedMemberManifestTest.super.<LayerGroupManifest>assertDerivativeForEachLocal(
+				settings(),
 				mockGroupManifest("group1"),
 				mockGroupManifest("group2"),
 				ContextManifest::forEachLocalGroupManifest,

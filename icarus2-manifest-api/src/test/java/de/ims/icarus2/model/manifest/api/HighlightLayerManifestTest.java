@@ -29,7 +29,11 @@ import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static de.ims.icarus2.test.TestUtils.transform_genericOptValue;
 
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.test.TestUtils;
 
@@ -76,85 +80,91 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.HighlightLayerManifest#isHighlightFlagSet(de.ims.icarus2.model.manifest.api.HighlightFlag)}.
 	 */
-	@Test
-	default void testIsHighlightFlagSet() {
-		for(HighlightFlag flag : HighlightFlag.values()) {
-			assertDerivativeFlagGetter(
-					settings(),
-					Boolean.FALSE,
-					m -> m.isHighlightFlagSet(flag),
-					(m, active) -> m.setHighlightFlag(flag, active.booleanValue()));
-		}
+	@TestFactory
+	default Stream<DynamicTest> testIsHighlightFlagSet() {
+		return Stream.of(HighlightFlag.values())
+				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
+					assertDerivativeFlagGetter(
+							settings(),
+							Boolean.FALSE,
+							m -> m.isHighlightFlagSet(flag),
+							(m, active) -> m.setHighlightFlag(flag, active.booleanValue()));
+						}));
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.HighlightLayerManifest#isLocalHighlightFlagSet(de.ims.icarus2.model.manifest.api.HighlightFlag)}.
 	 */
-	@Test
-	default void testIsLocalHighlightFlagSet() {
-		for(HighlightFlag flag : HighlightFlag.values()) {
-			assertDerivativeLocalFlagGetter(
-					settings(),
-					Boolean.FALSE,
-					m -> m.isLocalHighlightFlagSet(flag),
-					(m, active) -> m.setHighlightFlag(flag, active.booleanValue()));
-		}
+	@TestFactory
+	default Stream<DynamicTest> testIsLocalHighlightFlagSet() {
+		return Stream.of(HighlightFlag.values())
+				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
+					assertDerivativeLocalFlagGetter(
+							settings(),
+							Boolean.FALSE,
+							m -> m.isLocalHighlightFlagSet(flag),
+							(m, active) -> m.setHighlightFlag(flag, active.booleanValue()));
+						}));
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.HighlightLayerManifest#forEachActiveHighlightFlag(java.util.function.Consumer)}.
 	 */
-	@Test
-	default void testForEachActiveHighlightFlag() {
-		for(HighlightFlag flag : HighlightFlag.values()) {
-			assertDerivativeForEach(
-					settings(),
-					flag, TestUtils.other(flag),
-					HighlightLayerManifest::forEachActiveHighlightFlag,
-					(m,f) -> m.setHighlightFlag(f, true));
-		}
+	@TestFactory
+	default Stream<DynamicTest> testForEachActiveHighlightFlag() {
+		return Stream.of(HighlightFlag.values())
+				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
+					LayerManifestTest.super.<HighlightFlag>assertDerivativeForEach(
+							settings(),
+							flag, TestUtils.other(flag),
+							HighlightLayerManifest::forEachActiveHighlightFlag,
+							(m,f) -> m.setHighlightFlag(f, true));
+						}));
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.HighlightLayerManifest#forEachActiveLocalHighlightFlag(java.util.function.Consumer)}.
 	 */
-	@Test
-	default void testForEachActiveLocalHighlightFlag() {
-		for(HighlightFlag flag : HighlightFlag.values()) {
-			assertDerivativeForEachLocal(
-					settings(),
-					flag, TestUtils.other(flag),
-					HighlightLayerManifest::forEachActiveLocalHighlightFlag,
-					(m,f) -> m.setHighlightFlag(f, true));
-		}
+	@TestFactory
+	default Stream<DynamicTest> testForEachActiveLocalHighlightFlag() {
+		return Stream.of(HighlightFlag.values())
+				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
+					LayerManifestTest.super.<HighlightFlag>assertDerivativeForEachLocal(
+							settings(),
+							flag, TestUtils.other(flag),
+							HighlightLayerManifest::forEachActiveLocalHighlightFlag,
+							(m,f) -> m.setHighlightFlag(f, true));
+						}));
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.HighlightLayerManifest#getActiveHighlightFlags()}.
 	 */
-	@Test
-	default void testGetActiveHighlightFlags() {
-		for(HighlightFlag flag : HighlightFlag.values()) {
-			assertDerivativeAccumulativeGetter(
-					settings(),
-					flag, TestUtils.other(flag),
-					HighlightLayerManifest::getActiveHighlightFlags,
-					(m,f) -> m.setHighlightFlag(f, true));
-		}
+	@TestFactory
+	default Stream<DynamicTest> testGetActiveHighlightFlags() {
+		return Stream.of(HighlightFlag.values())
+				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
+					assertDerivativeAccumulativeGetter(
+							settings(),
+							flag, TestUtils.other(flag),
+							HighlightLayerManifest::getActiveHighlightFlags,
+							(m,f) -> m.setHighlightFlag(f, true));
+						}));
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.HighlightLayerManifest#getActiveLocalHighlightFlags()}.
 	 */
-	@Test
-	default void testGetActiveLocalHighlightFlags() {
-		for(HighlightFlag flag : HighlightFlag.values()) {
-			assertDerivativeAccumulativeLocalGetter(
-					settings(),
-					flag, TestUtils.other(flag),
-					HighlightLayerManifest::getActiveLocalHighlightFlags,
-					(m,f) -> m.setHighlightFlag(f, true));
-		}
+	@TestFactory
+	default Stream<DynamicTest> testGetActiveLocalHighlightFlags() {
+		return Stream.of(HighlightFlag.values())
+				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
+					assertDerivativeAccumulativeLocalGetter(
+							settings(),
+							flag, TestUtils.other(flag),
+							HighlightLayerManifest::getActiveLocalHighlightFlags,
+							(m,f) -> m.setHighlightFlag(f, true));
+						}));
 	}
 
 	/**
@@ -171,12 +181,13 @@ public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> ex
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.HighlightLayerManifest#setHighlightFlag(de.ims.icarus2.model.manifest.api.HighlightFlag, boolean)}.
 	 */
-	@Test
-	default void testSetHighlightFlag() {
-		for(HighlightFlag flag : HighlightFlag.values()) {
-			assertLockableSetter(settings(),
-					(m, active) -> m.setHighlightFlag(flag, active.booleanValue()));
-		}
+	@TestFactory
+	default Stream<DynamicTest> testSetHighlightFlag() {
+		return Stream.of(HighlightFlag.values())
+				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
+					assertLockableSetter(settings(),
+							(m, active) -> m.setHighlightFlag(flag, active.booleanValue()));
+						}));
 	}
 
 }

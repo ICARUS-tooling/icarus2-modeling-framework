@@ -98,7 +98,8 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testForEachAlias() {
-		assertDerivativeForEach(settings(),
+		EmbeddedMemberManifestTest.super.<String>assertDerivativeForEach(
+				settings(),
 				"alias1", "alias2",
 				AnnotationManifest::forEachAlias,
 				AnnotationManifest::addAlias);
@@ -109,8 +110,11 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testIsLocalAlias() {
-		assertDerivativeAccumulativeIsLocal(settings(), "alias1", "alias2",
-				AnnotationManifest::isLocalAlias, AnnotationManifest::addAlias);
+		assertDerivativeAccumulativeIsLocal(
+				settings(),
+				"alias1", "alias2",
+				AnnotationManifest::isLocalAlias,
+				AnnotationManifest::addAlias);
 	}
 
 	/**
@@ -118,7 +122,7 @@ public interface AnnotationManifestTest<M extends AnnotationManifest> extends Em
 	 */
 	@Test
 	default void testForEachLocalAlias() {
-		assertDerivativeForEachLocal(settings(),
+		EmbeddedMemberManifestTest.super.<String>assertDerivativeForEachLocal(settings(),
 				"alias1", "alias2",
 				AnnotationManifest::forEachLocalAlias,
 				AnnotationManifest::addAlias);

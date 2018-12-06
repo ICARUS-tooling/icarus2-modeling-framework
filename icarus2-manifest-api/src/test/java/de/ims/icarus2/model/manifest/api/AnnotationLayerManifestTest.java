@@ -29,8 +29,11 @@ import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.test.TestUtils;
@@ -70,7 +73,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	 */
 	@Test
 	default void testForEachAnnotationManifest() {
-		assertDerivativeForEach(settings(),
+		LayerManifestTest.super.<AnnotationManifest>assertDerivativeForEach(settings(),
 				mockAnnotationManifest("key1"), mockAnnotationManifest("key2"),
 				AnnotationLayerManifest::forEachAnnotationManifest,
 				AnnotationLayerManifest::addAnnotationManifest);
@@ -81,7 +84,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	 */
 	@Test
 	default void testForEachLocalAnnotationManifest() {
-		assertDerivativeForEachLocal(settings(),
+		LayerManifestTest.super.<AnnotationManifest>assertDerivativeForEachLocal(settings(),
 				mockAnnotationManifest("key1"), mockAnnotationManifest("key2"),
 				AnnotationLayerManifest::forEachLocalAnnotationManifest,
 				AnnotationLayerManifest::addAnnotationManifest);
@@ -172,86 +175,92 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationLayerManifest#isAnnotationFlagSet(de.ims.icarus2.model.manifest.api.AnnotationFlag)}.
 	 */
 	@SuppressWarnings("boxing")
-	@Test
-	default void testIsAnnotationFlagSet() {
-		for(AnnotationFlag flag : AnnotationFlag.values()) {
-			assertDerivativeFlagGetter(
-					settings(),
-					Boolean.FALSE,
-					m -> m.isAnnotationFlagSet(flag),
-					(m, active) -> m.setAnnotationFlag(flag, active));
-		}
+	@TestFactory
+	default Stream<DynamicTest> testIsAnnotationFlagSet() {
+		return Stream.of(AnnotationFlag.values())
+				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
+					assertDerivativeFlagGetter(
+							settings(),
+							Boolean.FALSE,
+							m -> m.isAnnotationFlagSet(flag),
+							(m, active) -> m.setAnnotationFlag(flag, active));
+						}));
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationLayerManifest#isLocalAnnotationFlagSet(de.ims.icarus2.model.manifest.api.AnnotationFlag)}.
 	 */
 	@SuppressWarnings("boxing")
-	@Test
-	default void testIsLocalAnnotationFlagSet() {
-		for(AnnotationFlag flag : AnnotationFlag.values()) {
-			assertDerivativeLocalFlagGetter(
-					settings(),
-					Boolean.FALSE,
-					m -> m.isLocalAnnotationFlagSet(flag),
-					(m, active) -> m.setAnnotationFlag(flag, active));
-		}
+	@TestFactory
+	default Stream<DynamicTest> testIsLocalAnnotationFlagSet() {
+		return Stream.of(AnnotationFlag.values())
+				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
+					assertDerivativeLocalFlagGetter(
+							settings(),
+							Boolean.FALSE,
+							m -> m.isLocalAnnotationFlagSet(flag),
+							(m, active) -> m.setAnnotationFlag(flag, active));
+						}));
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationLayerManifest#forEachActiveAnnotationFlag(java.util.function.Consumer)}.
 	 */
-	@Test
-	default void testForEachActiveAnnotationFlag() {
-		for(AnnotationFlag flag : AnnotationFlag.values()) {
-			assertDerivativeForEach(
-					settings(),
-					flag, TestUtils.other(flag),
-					AnnotationLayerManifest::forEachActiveAnnotationFlag,
-					(m,f) -> m.setAnnotationFlag(f, true));
-		}
+	@TestFactory
+	default Stream<DynamicTest> testForEachActiveAnnotationFlag() {
+		return Stream.of(AnnotationFlag.values())
+				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
+					LayerManifestTest.super.<AnnotationFlag>assertDerivativeForEach(
+							settings(),
+							flag, TestUtils.other(flag),
+							AnnotationLayerManifest::forEachActiveAnnotationFlag,
+							(m,f) -> m.setAnnotationFlag(f, true));
+						}));
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationLayerManifest#forEachActiveLocalAnnotationFlag(java.util.function.Consumer)}.
 	 */
-	@Test
-	default void testForEachActiveLocalAnnotationFlag() {
-		for(AnnotationFlag flag : AnnotationFlag.values()) {
-			assertDerivativeForEachLocal(
-					settings(),
-					flag, TestUtils.other(flag),
-					AnnotationLayerManifest::forEachActiveLocalAnnotationFlag,
-					(m,f) -> m.setAnnotationFlag(f, true));
-		}
+	@TestFactory
+	default Stream<DynamicTest> testForEachActiveLocalAnnotationFlag() {
+		return Stream.of(AnnotationFlag.values())
+				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
+					LayerManifestTest.super.<AnnotationFlag>assertDerivativeForEachLocal(
+							settings(),
+							flag, TestUtils.other(flag),
+							AnnotationLayerManifest::forEachActiveLocalAnnotationFlag,
+							(m,f) -> m.setAnnotationFlag(f, true));
+						}));
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationLayerManifest#getActiveAnnotationFlags()}.
 	 */
-	@Test
-	default void testGetActiveAnnotationFlags() {
-		for(AnnotationFlag flag : AnnotationFlag.values()) {
-			assertDerivativeAccumulativeGetter(
-					settings(),
-					flag, TestUtils.other(flag),
-					AnnotationLayerManifest::getActiveAnnotationFlags,
-					(m,f) -> m.setAnnotationFlag(f, true));
-		}
+	@TestFactory
+	default Stream<DynamicTest> testGetActiveAnnotationFlags() {
+		return Stream.of(AnnotationFlag.values())
+				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
+					assertDerivativeAccumulativeGetter(
+							settings(),
+							flag, TestUtils.other(flag),
+							AnnotationLayerManifest::getActiveAnnotationFlags,
+							(m,f) -> m.setAnnotationFlag(f, true));
+						}));
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationLayerManifest#getLocalActiveAnnotationFlags()}.
 	 */
-	@Test
-	default void testGetLocalActiveAnnotationFlags() {
-		for(AnnotationFlag flag : AnnotationFlag.values()) {
-			assertDerivativeAccumulativeLocalGetter(
-					settings(),
-					flag, TestUtils.other(flag),
-					AnnotationLayerManifest::getLocalActiveAnnotationFlags,
-					(m,f) -> m.setAnnotationFlag(f, true));
-		}
+	@TestFactory
+	default Stream<DynamicTest> testGetLocalActiveAnnotationFlags() {
+		return Stream.of(AnnotationFlag.values())
+				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
+					assertDerivativeAccumulativeLocalGetter(
+							settings(),
+							flag, TestUtils.other(flag),
+							AnnotationLayerManifest::getLocalActiveAnnotationFlags,
+							(m,f) -> m.setAnnotationFlag(f, true));
+						}));
 	}
 
 	/**
@@ -337,11 +346,12 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationLayerManifest#setAnnotationFlag(de.ims.icarus2.model.manifest.api.AnnotationFlag, boolean)}.
 	 */
 	@SuppressWarnings("boxing")
-	@Test
-	default void testSetAnnotationFlag() {
-		for(AnnotationFlag flag : AnnotationFlag.values()) {
-			assertLockableSetter(settings(),(m, active) -> m.setAnnotationFlag(flag, active));
-		}
+	@TestFactory
+	default Stream<DynamicTest> testSetAnnotationFlag() {
+		return Stream.of(AnnotationFlag.values())
+				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
+					assertLockableSetter(settings(),(m, active) -> m.setAnnotationFlag(flag, active));
+						}));
 	}
 
 	/**

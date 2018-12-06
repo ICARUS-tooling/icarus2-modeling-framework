@@ -87,7 +87,7 @@ public interface DriverManifestTest<M extends DriverManifest>
 	 */
 	@Test
 	default void testForEachMappingManifest() {
-		assertDerivativeForEach(settings(),
+		EmbeddedMemberManifestTest.super.<MappingManifest>assertDerivativeForEach(settings(),
 				mockMappingManifest("mapping1"),
 				mockMappingManifest("mapping2"),
 				DriverManifest::forEachMappingManifest,
@@ -99,7 +99,7 @@ public interface DriverManifestTest<M extends DriverManifest>
 	 */
 	@Test
 	default void testForEachLocalMappingManifest() {
-		assertDerivativeForEachLocal(settings(),
+		EmbeddedMemberManifestTest.super.<MappingManifest>assertDerivativeForEachLocal(settings(),
 				mockMappingManifest("mapping1"),
 				mockMappingManifest("mapping2"),
 				DriverManifest::forEachLocalMappingManifest,
@@ -185,7 +185,7 @@ public interface DriverManifestTest<M extends DriverManifest>
 	 */
 	@Test
 	default void testForEachModuleManifest() {
-		assertDerivativeForEach(settings(),
+		EmbeddedMemberManifestTest.super.<ModuleManifest>assertDerivativeForEach(settings(),
 				mockModuleManifest("module1"),
 				mockModuleManifest("module2"),
 				DriverManifest::forEachModuleManifest,
@@ -197,7 +197,7 @@ public interface DriverManifestTest<M extends DriverManifest>
 	 */
 	@Test
 	default void testForEachLocalModuleManifest() {
-		assertDerivativeForEachLocal(settings(),
+		EmbeddedMemberManifestTest.super.<ModuleManifest>assertDerivativeForEachLocal(settings(),
 				mockModuleManifest("module1"),
 				mockModuleManifest("module2"),
 				DriverManifest::forEachLocalModuleManifest,
@@ -233,7 +233,7 @@ public interface DriverManifestTest<M extends DriverManifest>
 	 */
 	@Test
 	default void testForEachModuleSpec() {
-		assertDerivativeForEach(settings(),
+		EmbeddedMemberManifestTest.super.<ModuleSpec>assertDerivativeForEach(settings(),
 				mockModuleSpec("spec1"),
 				mockModuleSpec("spec2"),
 				DriverManifest::forEachModuleSpec,
@@ -245,7 +245,7 @@ public interface DriverManifestTest<M extends DriverManifest>
 	 */
 	@Test
 	default void testForEachLocalModuleSpec() {
-		assertDerivativeForEachLocal(settings(),
+		EmbeddedMemberManifestTest.super.<ModuleSpec>assertDerivativeForEachLocal(settings(),
 				mockModuleSpec("spec1"),
 				mockModuleSpec("spec2"),
 				DriverManifest::forEachLocalModuleSpec,
