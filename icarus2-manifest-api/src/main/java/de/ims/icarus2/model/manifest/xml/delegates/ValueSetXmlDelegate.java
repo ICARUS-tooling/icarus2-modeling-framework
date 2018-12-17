@@ -146,7 +146,7 @@ public class ValueSetXmlDelegate extends AbstractXmlDelegate<ValueSet> {
 		} break;
 
 		case ManifestXmlTags.VALUE : {
-			Object value = getInstance().getValueType().parseAndPersist(text, manifestLocation.getClassLoader());
+			Object value = ManifestXmlUtils.parse(getInstance().getValueType(), manifestLocation, text, true);
 
 			getInstance().addValue(value);
 		} break;

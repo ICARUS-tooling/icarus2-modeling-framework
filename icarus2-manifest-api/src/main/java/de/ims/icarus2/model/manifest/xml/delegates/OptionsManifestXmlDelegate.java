@@ -286,7 +286,7 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 		} break;
 
 		case ManifestXmlTags.VALUE : {
-			Object value = option.getValueType().parseAndPersist(text, manifestLocation.getClassLoader());
+			Object value = ManifestXmlUtils.parse(option.getValueType(), manifestLocation, text, true);
 			if(option.isMultiValue()) {
 				addDefaultValue(value);
 			} else {

@@ -154,7 +154,7 @@ public class ValueType implements StringResource, NamedObject {
 	 * @param value
 	 * @return
 	 */
-	public CharSequence toChars(Object value) {
+	public CharSequence toChars(Object value) throws ValueConversionException {
 		if(!isSerializable())
 			throw new IllegalStateException("Cannot serialize data of type '"+getStringValue()+"'");
 
@@ -172,7 +172,7 @@ public class ValueType implements StringResource, NamedObject {
 	 * @param classLoader
 	 * @return
 	 */
-	public Object parse(CharSequence s, ClassLoader classLoader) {
+	public Object parse(CharSequence s, ClassLoader classLoader) throws ValueConversionException {
 		throw new IllegalStateException("Cannot parse data of type '"+getStringValue()+"'");
 
 		//TODO make marker interface for setting a "parse" method (stati) for custom types?
@@ -200,8 +200,12 @@ public class ValueType implements StringResource, NamedObject {
 	 * @param s
 	 * @param classLoader
 	 * @return
+	 * @throws ValueConversionException if anything went wrong
+	 *
+	 * @see #parse(CharSequence, ClassLoader)
+	 * @see #toChars(Object)
 	 */
-	public Object parseAndPersist(CharSequence s, ClassLoader classLoader) {
+	public Object parseAndPersist(CharSequence s, ClassLoader classLoader) throws ValueConversionException {
 		return persist(parse(s, classLoader));
 	}
 
@@ -730,14 +734,14 @@ public class ValueType implements StringResource, NamedObject {
 		 * @see de.ims.icarus2.model.manifest.types.ValueType#toChars(java.lang.Object)
 		 */
 		@Override
-		public CharSequence toChars(Object value) {
+		public CharSequence toChars(Object value) throws ValueConversionException {
 			Object result;
 			try {
 				result = Modifier.isStatic(toStringMethod.getModifiers()) ?
 						toStringMethod.invoke(null, value)
 						: toStringMethod.invoke(value);
 			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-				//TODO
+				throw new ValueConversionException("Failed to serialize value: "+value, e, this, value, true);
 			}
 
 			return CharSequence.class.cast(result);
@@ -747,12 +751,12 @@ public class ValueType implements StringResource, NamedObject {
 		 * @see de.ims.icarus2.model.manifest.types.ValueType#parse(java.lang.CharSequence, java.lang.ClassLoader)
 		 */
 		@Override
-		public Object parse(CharSequence s, ClassLoader classLoader) {
+		public Object parse(CharSequence s, ClassLoader classLoader) throws ValueConversionException {
 			Object result;
 			try {
 				result = parseMethod.invoke(null, s);
 			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-				//TODO
+				throw new ValueConversionException("Failed to parse input: "+s, e, this, s, true);
 			}
 			return result;
 		}
@@ -863,7 +867,7 @@ public class ValueType implements StringResource, NamedObject {
 		}
 
 		@Override
-		public CharSequence toChars(Object value) {
+		public CharSequence toChars(Object value) throws ValueConversionException {
 			StringBuilder sb = new StringBuilder();
 
 			int length = Array.getLength(value);
@@ -923,7 +927,8 @@ public class ValueType implements StringResource, NamedObject {
 			return Array.newInstance(Primitives.unwrap(componentType.getBaseClass()), size);
 		}
 
-		private static Object parseStaticSized(CharSequence s, ClassLoader classLoader, ValueType componentType, int size) {
+		private static Object parseStaticSized(CharSequence s, ClassLoader classLoader, ValueType componentType, int size)
+				throws ValueConversionException {
 
 			// Create array with unwrapped types
 			Object array = createArray(componentType, size);
@@ -976,10 +981,11 @@ public class ValueType implements StringResource, NamedObject {
 		}
 
 		/**
+		 * @throws ValueConversionException
 		 * @see de.ims.icarus2.model.manifest.types.ValueType#parse(java.lang.String, java.lang.ClassLoader)
 		 */
 		@Override
-		public Object parse(CharSequence s, ClassLoader classLoader) {
+		public Object parse(CharSequence s, ClassLoader classLoader) throws ValueConversionException {
 
 			int size = this.size;
 
@@ -1153,7 +1159,7 @@ public class ValueType implements StringResource, NamedObject {
 		}
 
 		@Override
-		public CharSequence toChars(Object value) {
+		public CharSequence toChars(Object value) throws ValueConversionException {
 			StringBuilder sb = new StringBuilder();
 
 			int size = rows*columns;
@@ -1190,10 +1196,11 @@ public class ValueType implements StringResource, NamedObject {
 		}
 
 		/**
+		 * @throws ValueConversionException
 		 * @see de.ims.icarus2.model.manifest.types.ValueType#parse(java.lang.String, java.lang.ClassLoader)
 		 */
 		@Override
-		public Object parse(CharSequence s, ClassLoader classLoader) {
+		public Object parse(CharSequence s, ClassLoader classLoader) throws ValueConversionException {
 
 			int size = rows*columns;
 

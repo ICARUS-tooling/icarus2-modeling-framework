@@ -190,6 +190,9 @@ public enum ManifestErrorCode implements ErrorCode {
 	/**
 	 * Some value (annotation, property, option, ...) declared in a manifest is incompatible
 	 * with the respective value type specified in the context of that value.
+	 * <p>
+	 * This also includes errors encountered during serialization and deserialization of
+	 * values for a given type when reading or creating a manifest.
 	 */
 	MANIFEST_TYPE_CAST(620),
 

@@ -194,7 +194,7 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 						ManifestXmlUtils.writeValueElement(serializer, ManifestXmlTags.VALUE, item, type);
 					}
 				} else {
-					serializer.writeTextOrCData(type.toChars(value.get()));
+					ManifestXmlUtils.writeValue(serializer, value, type);
 				}
 
 				serializer.endElement(ManifestXmlTags.PROPERTY);
@@ -328,7 +328,7 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 		case ManifestXmlTags.PROPERTY: {
 
 			if(!property.isMultiValue()) {
-				property.setValue(property.getValueType().parseAndPersist(text, manifestLocation.getClassLoader()));
+				property.setValue(ManifestXmlUtils.parse(property.getValueType(), manifestLocation, text, true));
 			}
 
 			getInstance().addProperty(property);
@@ -337,7 +337,7 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 		} break;
 
 		case ManifestXmlTags.VALUE: {
-			Object value = property.getValueType().parse(text, manifestLocation.getClassLoader());
+			Object value = ManifestXmlUtils.parse(property.getValueType(), manifestLocation, text, true);
 			addValue(value);
 			handler = this;
 		} break;

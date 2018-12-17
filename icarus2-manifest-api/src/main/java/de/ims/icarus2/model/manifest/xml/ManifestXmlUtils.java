@@ -23,6 +23,7 @@ import javax.swing.Icon;
 import javax.xml.stream.XMLStreamException;
 
 import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
@@ -31,8 +32,10 @@ import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest.Note;
 import de.ims.icarus2.model.manifest.api.Documentation.Resource;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
+import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ModifiableIdentity;
 import de.ims.icarus2.model.manifest.standard.DefaultCategory;
+import de.ims.icarus2.model.manifest.types.ValueConversionException;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.util.date.DateUtils;
 import de.ims.icarus2.util.eval.Expression;
@@ -242,16 +245,24 @@ public final class ManifestXmlUtils {
 		serializer.endElement(name);
 	}
 
-	private static void writeValue(XmlSerializer serializer,
+	public static void writeValue(XmlSerializer serializer,
 			@Nullable Object value, ValueType type) throws XMLStreamException {
 		if(value instanceof Optional) {
 			value = ((Optional<?>) value).orElse(null);
 		}
 
+		if(value==null) {
+			return;
+		}
+
 		if(value instanceof Expression) {
 			writeEvalElement(serializer, (Expression)value);
 		} else {
-			serializer.writeTextOrCData(type.toChars(value));
+			try {
+				serializer.writeTextOrCData(type.toChars(value));
+			} catch (ValueConversionException e) {
+				throw new XMLStreamException("Failed to write value: "+value, e);
+			}
 		}
 	}
 
@@ -494,5 +505,22 @@ public final class ManifestXmlUtils {
 
 		// If we couldn't find any way to perform simple serialization, default to null
 		return Optional.empty();
+	}
+
+	public static Object parse(ValueType type, ManifestLocation location, CharSequence input, boolean persist) throws SAXException {
+
+		Object value;
+
+		try {
+			value = type.parse(input, location.getClassLoader());
+		} catch (ValueConversionException e) {
+			throw new SAXException("Failed to parse input of type '"+type+"': "+input, e);
+		}
+
+		if(persist) {
+			value = type.persist(value);
+		}
+
+		return value;
 	}
 }

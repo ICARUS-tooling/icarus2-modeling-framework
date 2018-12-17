@@ -21,6 +21,11 @@ import de.ims.icarus2.model.manifest.api.ManifestException;
 
 
 /**
+ * Special exception class for the {@link ManifestErrorCode#MANIFEST_UNSUPPORTED_TYPE}
+ * error type.
+ * <p>
+ * This is an <i>unchecked exception</i> class.
+ *
  * @author Markus Gärtner
  *
  */

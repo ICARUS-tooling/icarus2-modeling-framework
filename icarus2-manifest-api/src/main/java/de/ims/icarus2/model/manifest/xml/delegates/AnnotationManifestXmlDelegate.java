@@ -228,7 +228,7 @@ public class AnnotationManifestXmlDelegate extends AbstractMemberManifestXmlDele
 		} break;
 
 		case ManifestXmlTags.NO_ENTRY_VALUE: {
-			getInstance().setNoEntryValue(getInstance().getValueType().parseAndPersist(text, manifestLocation.getClassLoader()));
+			getInstance().setNoEntryValue(ManifestXmlUtils.parse(getInstance().getValueType(), manifestLocation, text, true));
 		} break;
 
 		default:

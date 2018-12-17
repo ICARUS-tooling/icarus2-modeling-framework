@@ -162,19 +162,19 @@ public class ValueRangeXmlDelegate extends AbstractXmlDelegate<ValueRange> {
 
 		case ManifestXmlTags.MIN : {
 			if(text!=null && !range.getLowerBound().isPresent()) {
-				range.setLowerBound((Comparable<?>)valueType.parseAndPersist(text, manifestLocation.getClassLoader()));
+				range.setLowerBound((Comparable<?>)ManifestXmlUtils.parse(valueType, manifestLocation, text, true));
 			}
 		} break;
 
 		case ManifestXmlTags.MAX : {
 			if(text!=null && !range.getUpperBound().isPresent()) {
-				range.setUpperBound((Comparable<?>)valueType.parseAndPersist(text, manifestLocation.getClassLoader()));
+				range.setUpperBound((Comparable<?>)ManifestXmlUtils.parse(valueType, manifestLocation, text, true));
 			}
 		} break;
 
 		case ManifestXmlTags.STEP_SIZE : {
 			if(text!=null && !range.getStepSize().isPresent()) {
-				range.setStepSize((Comparable<?>)valueType.parseAndPersist(text, manifestLocation.getClassLoader()));
+				range.setStepSize((Comparable<?>)ManifestXmlUtils.parse(valueType, manifestLocation, text, true));
 			}
 		} break;
 

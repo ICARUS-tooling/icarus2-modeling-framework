@@ -82,24 +82,24 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 		ManifestXmlUtils.writeIdentityFieldElements(serializer, manifest);
 
 		serializer.startElement(ManifestXmlTags.CONTENT);
-		serializer.writeTextOrCData(type.toChars(value));
+		ManifestXmlUtils.writeValue(serializer, value, type);
 		serializer.endElement(ManifestXmlTags.CONTENT);
 
 		serializer.endElement(ManifestXmlTags.VALUE);
 	}
 
-	protected void readAttributes(Attributes attributes, ManifestLocation manifestLocation) {
+	protected void readAttributes(Attributes attributes, ManifestLocation manifestLocation) throws SAXException {
 		ValueManifest manifest = getInstance();
 
 		ManifestXmlUtils.readIdentityAttributes(attributes, manifest);
 
-		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CONTENT)
-			.ifPresent(content -> {
-				if(!manifest.getValueType().isSerializable())
-					throw new ManifestException(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE,
-							"Attribute location not supported by non-simple type: "+manifest.getValueType());
-				manifest.setValue(manifest.getValueType().parseAndPersist(content, manifestLocation.getClassLoader()));
-			});
+		Optional<String> content = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CONTENT);
+		if(content.isPresent()) {
+			if(!manifest.getValueType().isSerializable())
+				throw new ManifestException(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE,
+						"Attribute location not supported by non-simple type: "+manifest.getValueType());
+			manifest.setValue(ManifestXmlUtils.parse(manifest.getValueType(), manifestLocation, content.get(), true));
+		}
 	}
 
 	@Override
@@ -159,7 +159,7 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 
 		case ManifestXmlTags.VALUE: {
 			if(!manifest.getDocumentation().isPresent() && text!=null && !text.isEmpty()) {
-				manifest.setValue(manifest.getValueType().parseAndPersist(text, manifestLocation.getClassLoader()));
+				manifest.setValue(ManifestXmlUtils.parse(manifest.getValueType(), manifestLocation, text, true));
 			}
 
 			handler = null;
@@ -169,7 +169,7 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 			if(manifest.getValue().isPresent())
 				throw new UnexpectedTagException(qName, false, ManifestXmlTags.VALUE);
 
-			manifest.setValue(manifest.getValueType().parse(text, manifestLocation.getClassLoader()));
+			manifest.setValue(ManifestXmlUtils.parse(manifest.getValueType(), manifestLocation, text, true));
 		} break;
 
 		default:
