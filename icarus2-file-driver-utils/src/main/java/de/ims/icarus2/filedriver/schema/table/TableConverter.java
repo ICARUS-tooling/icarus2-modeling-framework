@@ -47,6 +47,7 @@ import java.util.regex.Pattern;
 
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.Report;
 import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.ReportBuilder;
@@ -444,11 +445,12 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 	}
 
 	/**
+	 * @throws IcarusApiException
 	 * @see de.ims.icarus2.filedriver.Converter#loadFile(int, de.ims.icarus2.model.standard.driver.ChunkConsumer)
 	 */
 	@Override
 	public LoadResult loadFile(final int fileIndex, final ChunkConsumer action)
-			throws IOException, InterruptedException {
+			throws IOException, InterruptedException, IcarusApiException {
 		checkAdded();
 
 		@SuppressWarnings("resource")
@@ -546,7 +548,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 	@Override
 	protected Item readItemFromCursor(DelegatingCursor<?> cursor)
-			throws IOException, InterruptedException {
+			throws IOException, InterruptedException, IcarusApiException {
 
 		DelegatingTableCursor tableCursor = (DelegatingTableCursor) cursor;
 		tableCursor.fillCharacterBuffer();
@@ -1307,7 +1309,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 	 */
 	@FunctionalInterface
 	public interface ContextProcessor<O extends Object> extends Closeable {
-		O process(InputResolverContext context);
+		O process(InputResolverContext context) throws IcarusApiException;
 
 		default void prepareForReading(Converter converter, ReadMode mode, Function<ItemLayer, InputCache> caches) {
 			// no-op
@@ -1427,7 +1429,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * @return
 		 */
 		@Override
-		public ScanResult process(InputResolverContext context) {
+		public ScanResult process(InputResolverContext context) throws IcarusApiException {
 			try {
 				matcher.reset(context.rawData());
 				if(matcher.find()) {
@@ -2284,7 +2286,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 
 		@Override
-		public Void process(InputResolverContext context) {
+		public Void process(InputResolverContext context) throws IcarusApiException {
 			if(noEntryLabel==null || !StringUtil.equals(noEntryLabel, context.rawData())) {
 				// Original item
 				Item providedItem = context.currentItem();
@@ -2642,7 +2644,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * @param context
 		 * @return
 		 */
-		public boolean isBeginLine(InputResolverContext context) {
+		public boolean isBeginLine(InputResolverContext context) throws IcarusApiException {
 			return beginDelimiter.process(context)!=ScanResult.FAILED;
 		}
 
@@ -2653,7 +2655,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * @param context
 		 * @return
 		 */
-		public boolean isEndLine(InputResolverContext context) {
+		public boolean isEndLine(InputResolverContext context) throws IcarusApiException {
 			return endDelimiter.process(context)!=ScanResult.FAILED;
 		}
 
@@ -2665,7 +2667,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * @param context
 		 * @return
 		 */
-		public boolean isAttributeLine(InputResolverContext context) {
+		public boolean isAttributeLine(InputResolverContext context) throws IcarusApiException {
 			if(attributeHandlers!=null) {
 				ContextProcessor<ScanResult> pendingAttributeHandler = this.pendingAttributeHandler;
 				this.pendingAttributeHandler = null;
@@ -2803,7 +2805,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * @param lines
 		 * @param context
 		 */
-		private void scanBegin(LineIterator lines, InputResolverContext context) {
+		private void scanBegin(LineIterator lines, InputResolverContext context) throws IcarusApiException {
 			while(!isBeginLine(context)) {
 				advanceLine(lines, context);
 			}
@@ -2824,7 +2826,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * @param lines
 		 * @param context
 		 */
-		private void scanEnd(LineIterator lines, InputResolverContext context) {
+		private void scanEnd(LineIterator lines, InputResolverContext context) throws IcarusApiException {
 			while(!isEndLine(context)) {
 				advanceLine(lines, context);
 			}
@@ -2843,7 +2845,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * @param context
 		 * @throws InterruptedException
 		 */
-		public void readChunk(LineIterator lines, InputResolverContext context) throws InterruptedException {
+		public void readChunk(LineIterator lines, InputResolverContext context)
+				throws IcarusApiException, InterruptedException {
 
 			long index = context.currentIndex();
 			Container container = context.currentContainer();
@@ -2875,8 +2878,9 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * @param context
 		 * @return
 		 * @throws InterruptedException
+		 * @throws IcarusApiException
 		 */
-		private boolean tryReadNestedBlocks(LineIterator lines, InputResolverContext context) throws InterruptedException {
+		private boolean tryReadNestedBlocks(LineIterator lines, InputResolverContext context) throws InterruptedException, IcarusApiException {
 			if(nestedBlockHandlers!=null) {
 
 				long index = context.currentIndex();
@@ -2929,8 +2933,9 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * @param lines
 		 * @param context
 		 * @throws InterruptedException
+		 * @throws IcarusApiException
 		 */
-		private void readColumnLines(LineIterator lines, InputResolverContext context) throws InterruptedException {
+		private void readColumnLines(LineIterator lines, InputResolverContext context) throws InterruptedException, IcarusApiException {
 
 			long index = context.currentIndex();
 			Container host = context.currentContainer();
@@ -2980,7 +2985,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			}
 		}
 
-		private void processColumns(LineIterator lines, InputResolverContext context) {
+		private void processColumns(LineIterator lines, InputResolverContext context) throws IcarusApiException {
 			final CharSequence rawContent = context.rawData();
 
 			Item item = context.currentItem();

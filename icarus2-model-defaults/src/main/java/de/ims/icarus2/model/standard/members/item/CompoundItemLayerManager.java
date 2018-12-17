@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.model.api.driver.ChunkInfo;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.layer.ItemLayer;
@@ -76,20 +77,22 @@ public class CompoundItemLayerManager implements ItemLayerManager {
 	}
 
 	/**
+	 * @throws IcarusApiException
 	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#load(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer, java.util.function.Consumer)
 	 */
 	@Override
 	public long load(IndexSet[] indices, ItemLayer layer,
-			Consumer<ChunkInfo> action) throws InterruptedException {
+			Consumer<ChunkInfo> action) throws InterruptedException, IcarusApiException {
 		return getManager(layer).load(indices, layer, action);
 	}
 
 	/**
+	 * @throws IcarusApiException
 	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#release(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer)
 	 */
 	@Override
 	public void release(IndexSet[] indices, ItemLayer layer)
-			throws InterruptedException {
+			throws InterruptedException, IcarusApiException {
 		getManager(layer).release(indices, layer);
 	}
 

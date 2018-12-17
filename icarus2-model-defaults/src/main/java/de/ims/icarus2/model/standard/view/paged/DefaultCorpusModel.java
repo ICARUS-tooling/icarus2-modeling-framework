@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -1068,7 +1069,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		 * @see de.ims.icarus2.model.api.events.PageListener#pageFailed(de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl, int, de.ims.icarus2.model.api.ModelException)
 		 */
 		@Override
-		public void pageFailed(PageControl source, int page, ModelException ex) {
+		public void pageFailed(PageControl source, int page, IcarusApiException ex) {
 			checkPageControl(source);
 
 			clear();

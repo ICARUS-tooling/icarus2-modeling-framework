@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.model.api.events;
 
-import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl;
 
 /**
@@ -58,10 +58,10 @@ public class PageAdapter implements PageListener {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.events.PageListener#pageFailed(de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl, int, de.ims.icarus2.model.api.ModelException)
+	 * @see de.ims.icarus2.model.api.events.PageListener#pageFailed(PageControl, int, IcarusApiException)
 	 */
 	@Override
-	public void pageFailed(PageControl source, int page, ModelException ex) {
+	public void pageFailed(PageControl source, int page, IcarusApiException ex) {
 		// no-op
 	}
 

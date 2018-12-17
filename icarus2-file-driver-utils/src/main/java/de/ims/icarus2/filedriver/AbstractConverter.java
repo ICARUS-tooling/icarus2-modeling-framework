@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.filedriver.FileDriver.LockableFileObject;
 import de.ims.icarus2.filedriver.FileDriverMetadata.ChunkIndexKey;
 import de.ims.icarus2.filedriver.FileDriverMetadata.ContainerKey;
@@ -251,8 +252,10 @@ public abstract class AbstractConverter extends AbstractDriverModule implements 
 	 * @return
 	 * @throws IOException
 	 * @throws InterruptedException
+	 * @throws IcarusApiException
 	 */
-	protected abstract Item readItemFromCursor(DelegatingCursor<?> cursor) throws IOException, InterruptedException;
+	protected abstract Item readItemFromCursor(DelegatingCursor<?> cursor)
+			throws IOException, InterruptedException, IcarusApiException;
 
 	/**
 	 * Returns a recommended buffer size when reading in chunks of data block-wise.
@@ -394,12 +397,13 @@ public abstract class AbstractConverter extends AbstractDriverModule implements 
 		}
 
 		/**
+		 * @throws IcarusApiException
 		 * @see de.ims.icarus2.filedriver.Converter.Cursor#load(long)
 		 *
 		 * @throws IllegalStateException if this cursor is not open
 		 */
 		@Override
-		public Item load(long index) throws IOException, InterruptedException {
+		public Item load(long index) throws IOException, InterruptedException, IcarusApiException {
 			checkState(open);
 			checkInterrupted();
 

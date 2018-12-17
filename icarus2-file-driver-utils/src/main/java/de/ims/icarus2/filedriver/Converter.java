@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.Report;
 import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.filedriver.mapping.chunks.ChunkIndex;
@@ -123,7 +124,7 @@ public interface Converter extends DriverModule {
 	 * In addition it should perform content verification and return a report containing information
 	 * about violations.
 	 */
-	Report<ReportItem> scanFile(int fileIndex) throws IOException, InterruptedException;
+	Report<ReportItem> scanFile(int fileIndex) throws IOException, InterruptedException, IcarusApiException;
 
 	/**
 	 * Loads the entire content of the specified file and converts its content into proper model
@@ -134,8 +135,9 @@ public interface Converter extends DriverModule {
 	 * @return the total number of elements in the respective primary layer that have been loaded from the file
 	 * @throws IOException
 	 * @throws InterruptedException
+	 * @throws IcarusApiException
 	 */
-	LoadResult loadFile(int fileIndex, ChunkConsumer action) throws IOException, InterruptedException;
+	LoadResult loadFile(int fileIndex, ChunkConsumer action) throws IOException, InterruptedException, IcarusApiException;
 
 	/**
 	 * Returns a cursor that allows {@code random-access} style reading of the specified layer.
@@ -149,7 +151,7 @@ public interface Converter extends DriverModule {
 	 * @return
 	 * @throws IOException
 	 */
-	Cursor<?> getCursor(int fileIndex, ItemLayer layer) throws IOException;
+	Cursor<?> getCursor(int fileIndex, ItemLayer layer) throws IOException, IcarusApiException;
 
 //	/**
 //	 * Releases any internal resources and most importantly disconnects from the
@@ -189,7 +191,7 @@ public interface Converter extends DriverModule {
 
 		//TODO
 
-		Item load(long id) throws IOException, InterruptedException;
+		Item load(long id) throws IOException, InterruptedException, IcarusApiException;
 
 		/**
 		 * Short-hand method to load a large number of items from this cursor.
@@ -201,8 +203,10 @@ public interface Converter extends DriverModule {
 		 * @return the total number of {@link ChunkState#VALID valid} items that have been loaded
 		 * @throws IOException
 		 * @throws InterruptedException
+		 * @throws IcarusApiException
 		 */
-		default LoadResult loadAll(IndexSet[] indices, ChunkConsumer consumer) throws IOException, InterruptedException {
+		default LoadResult loadAll(IndexSet[] indices, ChunkConsumer consumer)
+				throws IOException, InterruptedException, IcarusApiException {
 			// Reset result
 			getResult();
 

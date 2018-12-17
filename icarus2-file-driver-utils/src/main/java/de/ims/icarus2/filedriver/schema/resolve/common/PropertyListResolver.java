@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.filedriver.Converter;
 import de.ims.icarus2.filedriver.Converter.ReadMode;
 import de.ims.icarus2.filedriver.schema.resolve.Resolver;
@@ -115,8 +116,9 @@ public class PropertyListResolver implements Resolver {
 	 * @param context original context passed to the main {@link #process(ResolverContext)} method.
 	 * @param key parsed key for the property assignment
 	 * @param value parsed value for the property assignment
+	 * @throws IcarusApiException
 	 */
-	private void saveAnnotation(ResolverContext context, String key, CharSequence value) {
+	private void saveAnnotation(ResolverContext context, String key, CharSequence value) throws IcarusApiException {
 		BasicAnnotationResolver<?> resolver = (fixedPropertyResolvers==null) ? null : fixedPropertyResolvers.get(key);
 		if(resolver!=null) {
 			// In case of nested resolver we delegate the work
@@ -135,7 +137,7 @@ public class PropertyListResolver implements Resolver {
 	 */
 	private final FlexibleSubSequence subSequence = new FlexibleSubSequence();
 
-	private void parseAssignment(ResolverContext context, CharSequence data, int begin, int end) {
+	private void parseAssignment(ResolverContext context, CharSequence data, int begin, int end) throws IcarusApiException {
 
 		int assignmentIndex = -1;
 		for(int i=begin+1; i<end;i++) {
@@ -158,10 +160,11 @@ public class PropertyListResolver implements Resolver {
 	}
 
 	/**
+	 * @throws IcarusApiException
 	 * @see de.ims.icarus2.filedriver.schema.resolve.Resolver#process(de.ims.icarus2.filedriver.schema.resolve.ResolverContext)
 	 */
 	@Override
-	public Item process(ResolverContext context) {
+	public Item process(ResolverContext context) throws IcarusApiException {
 		CharSequence data = context.rawData();
 		Item item = context.currentItem();
 

@@ -16,11 +16,11 @@
  */
 package de.ims.icarus2.model.api.driver;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -67,7 +67,7 @@ public interface Driver extends ItemLayerManager {
 	 * {@link #getMappings()} will be successful without basic connection
 	 * errors.
 	 */
-	void connect(Corpus target) throws InterruptedException;
+	void connect(Corpus target) throws InterruptedException, IcarusApiException;
 
 	/**
 	 * Called when a context is removed from a corpus or the entire model framework is shutting down.
@@ -81,7 +81,7 @@ public interface Driver extends ItemLayerManager {
 	 * driver instances should be discarded immediately.
 	 * @throws InterruptedException
 	 */
-	void disconnect(Corpus target) throws InterruptedException;
+	void disconnect(Corpus target) throws InterruptedException, IcarusApiException;
 
 	/**
 	 * Returns {@code true} iff a previous call to {@link #connect(Corpus) connect}
@@ -303,7 +303,7 @@ public interface Driver extends ItemLayerManager {
 		return result.booleanValue();
 	}
 
-	default void prepareModules(ModuleMonitor monitor) throws InterruptedException {
+	default void prepareModules(ModuleMonitor monitor) throws InterruptedException, IcarusApiException {
 
 		Collection<DriverModule> modules = getModules();
 
@@ -348,9 +348,31 @@ public interface Driver extends ItemLayerManager {
 
 	//FIXME experimental transaction stuff, needs review!!!
 
-	boolean hasPendingChanges();
+	/**
+	 * Default implementation always returns {@code false}.
+	 * <p>
+	 * Subclasses that implement a synchronous link to their backend storage
+	 * should use this method to signal client code about unfinished maintenance
+	 * work.
+	 *
+	 * @see de.ims.icarus2.model.api.driver.Driver#hasPendingChanges()
+	 */
+	default boolean hasPendingChanges() {
+		return false;
+	}
 
-	void flush() throws IOException;
+	/**
+	 * Default implementation does nothing.
+	 * <p>
+	 * Subclasses that implement a synchronous link to their backend storage
+	 * should use this method to finish maintenance work.
+	 *
+	 * @throws InterruptedException
+	 * @throws IcarusApiException
+	 */
+	default void flush() throws InterruptedException, IcarusApiException {
+		// no-op
+	}
 
 	// Notification stuff
 
@@ -408,7 +430,7 @@ public interface Driver extends ItemLayerManager {
 	 */
 	@Override
 	long load(IndexSet[] indices, ItemLayer layer,
-			Consumer<ChunkInfo> action) throws InterruptedException;
+			Consumer<ChunkInfo> action) throws InterruptedException, IcarusApiException;
 
 	/**
 	 * Tells this driver to decrement the use counter for a series of items referenced by the given {@code indices}.
@@ -420,5 +442,5 @@ public interface Driver extends ItemLayerManager {
 	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#release(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer)
 	 */
 	@Override
-	void release(IndexSet[] indices, ItemLayer layer) throws InterruptedException;
+	void release(IndexSet[] indices, ItemLayer layer) throws InterruptedException, IcarusApiException;
 }

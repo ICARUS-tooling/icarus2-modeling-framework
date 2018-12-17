@@ -195,6 +195,11 @@ public class ByteArrayChannel implements SeekableByteChannel {
 	}
 
 	/**
+	 * Two instances of {@link ByteArrayChannel} are considered to be equal
+	 * if their underlying byte arrays are equal, disregarding of whether or
+	 * not they are declared to be read-only or where the current {@link #position()}
+	 * is located.
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -203,12 +208,17 @@ public class ByteArrayChannel implements SeekableByteChannel {
 			return true;
 		} else if(obj instanceof ByteArrayChannel) {
 			ByteArrayChannel other = (ByteArrayChannel) obj;
-			return size==other.size
-					&& readOnly==other.readOnly
-					&& position==other.position
-					&& Arrays.equals(data, other.data);
+			return Arrays.equals(data, other.data);
 		}
 		return false;
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Arrays.hashCode(data);
 	}
 
 	/**

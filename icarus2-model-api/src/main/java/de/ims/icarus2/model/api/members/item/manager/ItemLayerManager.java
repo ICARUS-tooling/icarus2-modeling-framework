@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.ObjLongConsumer;
 
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.driver.ChunkInfo;
@@ -96,17 +97,19 @@ public interface ItemLayerManager {
 	 * @param action
 	 * @return
 	 * @throws InterruptedException
+	 * @throws IcarusApiException
 	 */
-	long load(IndexSet[] indices, ItemLayer layer, Consumer<ChunkInfo> action) throws InterruptedException;
+	long load(IndexSet[] indices, ItemLayer layer, Consumer<ChunkInfo> action) throws InterruptedException, IcarusApiException;
 
 	/**
 	 * Calls {@link #load(IndexSet[], ItemLayer, Consumer) load} without the optional {@code action} argument.
 	 * This method only exists as an alternative for client code to load data chunks when it is not actually
 	 * interested in directly handling the intermediate parts of the loading process.
+	 * @throws IcarusApiException
 	 *
 	 * @see #load(IndexSet[], ItemLayer, Consumer)
 	 */
-	default long load(IndexSet[] indices, ItemLayer layer) throws InterruptedException {
+	default long load(IndexSet[] indices, ItemLayer layer) throws InterruptedException, IcarusApiException {
 		return load(indices, layer, null);
 	}
 
@@ -118,8 +121,9 @@ public interface ItemLayerManager {
 	 * requested in load or release operations. Once that virtual 'reference' counter reaches
 	 * {@code 0} as a result of a release request, the implementation is free to release the
 	 * associated resources and effectively destroy or recycle the item instance.
+	 * @throws IcarusApiException
 	 */
-	void release(IndexSet[] indices, ItemLayer layer) throws InterruptedException;
+	void release(IndexSet[] indices, ItemLayer layer) throws InterruptedException, IcarusApiException;
 
 	/**
 	 * Looks up the item stored for the given combination of {@code layer} and {@code index}

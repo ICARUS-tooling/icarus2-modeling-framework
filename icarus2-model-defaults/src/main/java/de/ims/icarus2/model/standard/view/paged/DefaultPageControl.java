@@ -35,6 +35,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
@@ -284,7 +285,7 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 		currentPage.setPageState(PageState.CLOSING);
 		try {
 			itemLayerManager.release(IndexUtils.wrap(indices), getPrimaryLayer());
-		} catch (ModelException e) {
+		} catch (IcarusApiException e) {
 			firePageFailed(pageIndex, e);
 			throw new ModelException(GlobalErrorCode.DELEGATION_FAILED, "Failed to close page: "+pageIndex, e);
 		} finally {
@@ -315,7 +316,7 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 			currentPage.setPageIndex(pageIndex);
 			currentPage.setIndices(indices);
 			currentPage.setPageState(PageState.LOADED);
-		} catch (ModelException e) {
+		} catch (IcarusApiException e) {
 			firePageFailed(pageIndex, e);
 			currentPage.setPageState(PageState.BLANK);
 			throw new ModelException(GlobalErrorCode.DELEGATION_FAILED, "Failed to load page for index: "+pageIndex, e);
@@ -399,7 +400,7 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 		}
 	}
 
-	protected void firePageFailed(int page, ModelException ex) {
+	protected void firePageFailed(int page, IcarusApiException ex) {
 		for(PageListener listener : pageListeners) {
 			listener.pageFailed(this, page, ex);
 		}

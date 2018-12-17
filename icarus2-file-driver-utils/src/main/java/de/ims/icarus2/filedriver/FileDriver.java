@@ -44,6 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.Report;
 import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.ReportBuilder;
@@ -531,12 +532,13 @@ public class FileDriver extends AbstractDriver {
 	 * before calling the super method.
 	 * After that, a customizable series of {@link PreparationStep preparation steps} is performed
 	 * to allow for a more flexible initialization.
+	 * @throws IcarusApiException
 	 *
 	 * @see de.ims.icarus2.model.standard.driver.AbstractDriver#doConnect()
 	 * @see #getPreparationSteps()
 	 */
 	@Override
-	protected void doConnect() throws InterruptedException {
+	protected void doConnect() throws InterruptedException, IcarusApiException {
 
 		MetadataRegistry metadataRegistry = getMetadataRegistry();
 
@@ -611,19 +613,19 @@ public class FileDriver extends AbstractDriver {
 	}
 
 	/**
+	 * @throws IcarusApiException
+	 * @throws InterruptedException
 	 * @see de.ims.icarus2.model.standard.driver.AbstractDriver#afterConnect()
 	 */
 	@Override
-	protected void afterConnect() {
+	protected void afterConnect() throws IcarusApiException, InterruptedException {
 
 		// Check if we should directly load all the files
 		if(OptionKey.LOAD_ON_CONNECT.<Boolean>getValue(getManifest()).orElse(Boolean.FALSE).booleanValue()) {
 			try {
 				loadAllFiles(null);
 			} catch(IOException e) {
-				throw new ModelException(getCorpus(), GlobalErrorCode.IO_ERROR, "Failed to load complete file resources");
-			} catch (InterruptedException e) {
-				throw new ModelException(getCorpus(), GlobalErrorCode.INTERRUPTED, "Loading of complete file resources canceled");
+				throw new IcarusApiException(GlobalErrorCode.IO_ERROR, "Failed to load complete file resources");
 			}
 		}
 	}
@@ -642,11 +644,12 @@ public class FileDriver extends AbstractDriver {
 	/**
 	 * Calls the super method and then closes the internal {@link MetadataRegistry}
 	 * and discards the current set of {@link FileDataStates states}.
+	 * @throws IcarusApiException
 	 *
 	 * @see de.ims.icarus2.model.standard.driver.AbstractDriver#doDisconnect()
 	 */
 	@Override
-	protected void doDisconnect() throws InterruptedException {
+	protected void doDisconnect() throws InterruptedException, IcarusApiException {
 
 		@SuppressWarnings("resource")
 		MetadataRegistry metadataRegistry = getMetadataRegistry();
@@ -660,7 +663,6 @@ public class FileDriver extends AbstractDriver {
 
 			// Only attempt to close converter if we actually used it
 			if(converter.created()) {
-				@SuppressWarnings("resource")
 				Converter converter = getConverter();
 				try {
 					converter.removeNotify(this);
@@ -733,9 +735,10 @@ public class FileDriver extends AbstractDriver {
 	 * respective {@link FileInfo} object.
 	 *
 	 * @param fileIndex
+	 * @throws IcarusApiException
 	 * @throws Exception
 	 */
-	public boolean scanFile(int fileIndex) throws IOException, InterruptedException {
+	public boolean scanFile(int fileIndex) throws IOException, InterruptedException, IcarusApiException {
 
 		/*
 		 *  Start by checking whether or not we should use a chunk index.
@@ -1111,12 +1114,13 @@ public class FileDriver extends AbstractDriver {
 	 * Translates the indices to indices in the surrounding layer group in case the specified
 	 * layer is not the respective primary layer and then delegates to an internal
 	 * {@link #loadPrimaryLayer(IndexSet[], ItemLayer, Consumer) load} method.
+	 * @throws IcarusApiException
 	 *
 	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#load(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer, java.util.function.Consumer)
 	 */
 	@Override
 	public long load(IndexSet[] indices, ItemLayer layer,
-			Consumer<ChunkInfo> action) throws InterruptedException {
+			Consumer<ChunkInfo> action) throws InterruptedException, IcarusApiException {
 		requireNonNull(indices);
 		requireNonNull(layer);
 
@@ -1319,7 +1323,7 @@ public class FileDriver extends AbstractDriver {
 	}
 
 	protected long loadPrimaryLayer(IndexSet[] indices, ItemLayer layer,
-			Consumer<ChunkInfo> action) throws IOException, InterruptedException {
+			Consumer<ChunkInfo> action) throws IOException, InterruptedException, IcarusApiException {
 		checkConnected();
 		checkReady();
 
@@ -1430,10 +1434,11 @@ public class FileDriver extends AbstractDriver {
 	 *
 	 * @param fileIndex
 	 * @throws IOException
+	 * @throws IcarusApiException
 	 * @throws ModelException in case the specified file has already been (partially) loaded
 	 */
 	public long loadFile(int fileIndex, Consumer<ChunkInfo> action)
-			throws IOException, InterruptedException {
+			throws IOException, InterruptedException, IcarusApiException {
 
 		LockableFileObject fileObject = getFileObject(fileIndex);
 		StampedLock lock = fileObject.getLock();
@@ -1513,8 +1518,9 @@ public class FileDriver extends AbstractDriver {
 	 * @param action
 	 * @throws IOException
 	 * @throws InterruptedException
+	 * @throws IcarusApiException
 	 */
-	public void loadAllFiles(Consumer<ChunkInfo> action) throws IOException, InterruptedException {
+	public void loadAllFiles(Consumer<ChunkInfo> action) throws IOException, InterruptedException, IcarusApiException {
 		ResourceSet dataFiles = getDataFiles();
 
 		int fileCount = dataFiles.getResourceCount();

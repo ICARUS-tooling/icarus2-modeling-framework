@@ -198,8 +198,20 @@ public class ManifestTestUtils {
 
 	}
 
+	public static boolean hasTestValues(ValueType type) {
+		return testValues.containsKey(type);
+	}
+
 	public static Set<ValueType> getAvailableTestTypes() {
 		return Collections.unmodifiableSet(testValues.keySet());
+	}
+
+	public static Object getOrMockTestValue(ValueType type) {
+		if(hasTestValues(type)) {
+			return getTestValue(type);
+		} else {
+			return mock(type.getBaseClass());
+		}
 	}
 
 	public static Object[] getTestValues(ValueType type) {
@@ -291,7 +303,7 @@ public class ManifestTestUtils {
 		return legalIdValues.clone();
 	}
 
-	private static class Dummy {
+	public static class Dummy {
 		/**
 		 * @see java.lang.Object#toString()
 		 */

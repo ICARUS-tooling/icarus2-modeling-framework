@@ -20,7 +20,6 @@ import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -30,6 +29,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
@@ -186,7 +186,7 @@ public abstract class AbstractDriver implements Driver {
 	}
 
 	@Override
-	public void connect(Corpus target) throws InterruptedException {
+	public void connect(Corpus target) throws InterruptedException, IcarusApiException {
 		requireNonNull(target);
 
 		Lock lock = getGlobalLock();
@@ -228,8 +228,10 @@ public abstract class AbstractDriver implements Driver {
 	 * main connection routine.
 	 * <p>
 	 * This method will be called outside the global lock!
+	 * @throws IcarusApiException
+	 * @throws InterruptedException
 	 */
-	protected void afterConnect() {
+	protected void afterConnect() throws IcarusApiException, InterruptedException {
 		// no-op
 	}
 
@@ -278,7 +280,7 @@ public abstract class AbstractDriver implements Driver {
 	 *
 	 * @throws InterruptedException
 	 */
-	protected void doConnect() throws InterruptedException {
+	protected void doConnect() throws InterruptedException, IcarusApiException {
 		setContext(createContext());
 		setMappings(createMappings());
 	}
@@ -346,7 +348,7 @@ public abstract class AbstractDriver implements Driver {
 	}
 
 	@Override
-	public void disconnect(Corpus target) throws InterruptedException {
+	public void disconnect(Corpus target) throws InterruptedException, IcarusApiException {
 		requireNonNull(target);
 
 		beforeDisconnect();
@@ -387,7 +389,7 @@ public abstract class AbstractDriver implements Driver {
 		}
 	}
 
-	protected void beforeDisconnect() {
+	protected void beforeDisconnect() throws InterruptedException, IcarusApiException {
 		// no-op
 	}
 
@@ -403,7 +405,7 @@ public abstract class AbstractDriver implements Driver {
 	 *
 	 * @throws InterruptedException
 	 */
-	protected void doDisconnect() throws InterruptedException {
+	protected void doDisconnect() throws InterruptedException, IcarusApiException {
 		closeMappings();
 	}
 
@@ -602,33 +604,6 @@ public abstract class AbstractDriver implements Driver {
 			long toIndex) {
 		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Driver implementation does not support moving of items");
-	}
-
-	/**
-	 * Default implementation always returns {@code false}.
-	 * <p>
-	 * Subclasses that implement a synchronous link to their backend storage
-	 * should use this method to signal client code about unfinished maintenance
-	 * work.
-	 *
-	 * @see de.ims.icarus2.model.api.driver.Driver#hasPendingChanges()
-	 */
-	@Override
-	public boolean hasPendingChanges() {
-		return false;
-	}
-
-	/**
-	 * Default implementation does nothing.
-	 * <p>
-	 * Subclasses that implement a synchronous link to their backend storage
-	 * should use this method to finish maintenance work.
-	 *
-	 * @see de.ims.icarus2.model.api.driver.Driver#flush()
-	 */
-	@Override
-	public void flush() throws IOException {
-		// no-op
 	}
 
 	/**

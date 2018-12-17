@@ -31,6 +31,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.model.manifest.types.ValueConversionException;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.ValueVerifier;
 import de.ims.icarus2.model.manifest.util.ValueVerifier.DoubleVerifier;
@@ -161,10 +162,11 @@ public abstract class BasicAnnotationResolver<E extends Object> implements Resol
 		}
 
 		/**
+		 * @throws ValueConversionException
 		 * @see de.ims.icarus2.filedriver.schema.resolve.Resolver#process(java.lang.String)
 		 */
 		@Override
-		public Item process(ResolverContext context) {
+		public Item process(ResolverContext context) throws ValueConversionException {
 			Object value = valueType.parse(context.rawData(), BasicAnnotationResolver.class.getClassLoader());
 
 			if(verifier!=null) {

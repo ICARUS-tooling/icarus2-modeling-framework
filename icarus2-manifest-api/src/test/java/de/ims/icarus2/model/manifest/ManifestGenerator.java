@@ -432,7 +432,7 @@ public class ManifestGenerator {
 		container.addNestedManifestChange("options", ManifestType.OPTIONS_MANIFEST,
 				manifest, config, manifest::setOptionsManifest);
 
-		for(ValueType valueType : ValueType.simpleValueTypes()) {
+		for(ValueType valueType : ValueType.serializableValueTypes()) {
 			container.addLazyFieldChange(manifest::addProperty, "property"+valueType,
 					() -> createProperty(valueType));
 		}
@@ -462,7 +462,7 @@ public class ManifestGenerator {
 
 		container.addFieldChange(manifest::setDefaultKey, "defaultKey", index("defaultKey"));
 
-		for(ValueType valueType : ValueType.simpleValueTypes()) {
+		for(ValueType valueType : ValueType.serializableValueTypes()) {
 			container.addManifestChange("annotationManifest"+valueType,
 					ManifestType.ANNOTATION_MANIFEST, config.valueType(valueType), manifest::addAnnotationManifest);
 		}
@@ -855,7 +855,7 @@ public class ManifestGenerator {
 	private void prepareOptionsManifest(OptionsManifest manifest,
 			IncrementalBuild<?> container, Config config) {
 
-		for(ValueType valueType : ValueType.simpleValueTypes()) {
+		for(ValueType valueType : ValueType.serializableValueTypes()) {
 			container.addManifestChange("option"+valueType, ManifestType.OPTION, config.valueType(valueType), manifest::addOption);
 		}
 

@@ -24,6 +24,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context.VirtualContext;
@@ -200,7 +201,8 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	 * @return
 	 * @throws InterruptedException
 	 */
-	StreamedCorpusView createStream(Scope scope, AccessMode accessMode, Options options) throws InterruptedException;
+	StreamedCorpusView createStream(Scope scope, AccessMode accessMode, Options options)
+			throws IcarusApiException, InterruptedException;
 
 	void forEachStream(Consumer<? super StreamedCorpusView> action);
 
@@ -236,7 +238,7 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	 *
 	 * @see {@link ModelErrorCode#VIEW_ALREADY_OPENED}
 	 */
-	PagedCorpusView createView(Scope scope, IndexSet[] indices, AccessMode mode, Options options) throws InterruptedException;
+	PagedCorpusView createView(Scope scope, IndexSet[] indices, AccessMode mode, Options options) throws IcarusApiException, InterruptedException;
 
 	/**
 	 * Creates a new corpus view object that gives access to the entire corpus.
@@ -251,7 +253,7 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	 * @return
 	 * @throws InterruptedException
 	 */
-	default PagedCorpusView createFullView(AccessMode mode, Options options) throws InterruptedException {
+	default PagedCorpusView createFullView(AccessMode mode, Options options) throws IcarusApiException, InterruptedException {
 		Scope scope = createCompleteScope();
 		return createView(scope, null, mode, options);
 	}
@@ -508,7 +510,7 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	 * @throws NullPointerException if the {@code type} argument is {@code null}.
 	 */
 	default Collection<Layer> getLayers(LayerType type) {
-		return getLayers(l -> type.equals(l.getManifest().getLayerType()));
+		return getLayers(l -> type.equals(l.getManifest().getLayerType().orElse(null)));
 	}
 
 	void addVirtualContext(VirtualContext context);

@@ -16,10 +16,7 @@
  */
 package de.ims.icarus2.filedriver.schema.table;
 
-import java.io.IOException;
-
 import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
 
 import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.AttributeSchemaImpl;
 import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.BlockSchemaImpl;
@@ -81,7 +78,7 @@ public class TableConverterTest {
 
 	@Test
 	@ResourceTest
-	public void test1TierSchema() throws IOException, SAXException, InterruptedException {
+	public void test1TierSchema() throws Exception {
 
 		CorpusManager corpusManager = DefaultCorpusManager.newBuilder()
 			.defaultEnvironment()

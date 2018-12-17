@@ -38,6 +38,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
@@ -454,7 +455,7 @@ public class DefaultCorpus implements Corpus {
 					proxy.close();
 				} catch (InterruptedException e) {
 					throw e;
-				} catch (Exception e) {
+				} catch (IcarusApiException e) {
 					buffer.addException(e);
 				}
 			}
@@ -962,6 +963,9 @@ public class DefaultCorpus implements Corpus {
 				} catch (InterruptedException e) {
 					throw new ModelException(corpus, ModelErrorCode.DRIVER_CONNECTION,
 							"Initalization of driver cancelled by user: "+getName(manifest), e);
+				} catch (IcarusApiException e) {
+					throw new ModelException(corpus, ModelErrorCode.DRIVER_CONNECTION,
+							"Initalization of driver failed: "+getName(manifest), e);
 				} finally {
 					lock.unlock();
 				}
@@ -970,7 +974,7 @@ public class DefaultCorpus implements Corpus {
 			return driver;
 		}
 
-		public synchronized void close() throws InterruptedException {
+		public synchronized void close() throws InterruptedException, IcarusApiException {
 
 			if(driver!=null) {
 

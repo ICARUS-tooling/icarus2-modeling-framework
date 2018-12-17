@@ -18,6 +18,7 @@ package de.ims.icarus2.filedriver.schema.resolve;
 
 import java.util.function.Function;
 
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.filedriver.Converter;
 import de.ims.icarus2.filedriver.Converter.ReadMode;
 import de.ims.icarus2.filedriver.schema.Schema;
@@ -57,10 +58,12 @@ public interface Resolver {
 	 * If no substitution takes place during conversion, the return values of this method are
 	 * ignored.
 	 */
-	Item process(ResolverContext context);
+	Item process(ResolverContext context) throws IcarusApiException;
 
 	/**
 	 * Optional method for subclasses to release internal resources.
+	 * <p>
+	 * Called exactly once during a resolver's life cycle.
 	 */
 	default void close() {
 		// no-op

@@ -28,6 +28,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.ChunkInfo;
 import de.ims.icarus2.model.api.driver.Driver;
@@ -213,22 +214,24 @@ public class VirtualDriver extends AbstractDriver {
 	}
 
 	/**
+	 * @throws IcarusApiException
 	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#release(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer)
 	 */
 	@Override
 	public void release(IndexSet[] indices, ItemLayer layer)
-			throws InterruptedException {
+			throws InterruptedException, IcarusApiException {
 		getItemLayerManager().release(indices, layer);
 	}
 
 	/**
 	 * First creates the {@link ItemLayerManager} instance to be used for this driver
 	 * and then {@link DriverModule#addNotify(Driver) notifies} all modules
+	 * @throws IcarusApiException
 	 *
 	 * @see de.ims.icarus2.model.standard.driver.AbstractDriver#doConnect()
 	 */
 	@Override
-	protected void doConnect() throws InterruptedException {
+	protected void doConnect() throws InterruptedException, IcarusApiException {
 
 		super.doConnect();
 
@@ -257,11 +260,12 @@ public class VirtualDriver extends AbstractDriver {
 	 * Note that in case subclasses wish to perform maintenance work on the
 	 * item layer manager while disconnecting, they should do it <b>prior</b> to
 	 * calling this super method!
+	 * @throws IcarusApiException
 	 *
 	 * @see de.ims.icarus2.model.standard.driver.AbstractDriver#doDisconnect()
 	 */
 	@Override
-	protected void doDisconnect() throws InterruptedException {
+	protected void doDisconnect() throws InterruptedException, IcarusApiException {
 
 		for(DriverModule module : modules) {
 			module.removeNotify(this);
@@ -287,13 +291,14 @@ public class VirtualDriver extends AbstractDriver {
 	 * If subclasses decide to perform actual data loading in this method, they should either make sure
 	 * to call registered listeners themselves or simply delegate to the super method after the
 	 * actual loading of data chunks.
+	 * @throws IcarusApiException
 	 *
 	 * @see de.ims.icarus2.model.standard.driver.AbstractDriver#loadPrimaryLayer(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.layer.ItemLayer, java.util.function.Consumer)
 	 * @see ItemLayerManager#load(IndexSet[], ItemLayer, Consumer)
 	 */
 	@Override
 	public long load(IndexSet[] indices, ItemLayer layer,
-			Consumer<ChunkInfo> action) throws InterruptedException {
+			Consumer<ChunkInfo> action) throws InterruptedException, IcarusApiException {
 		requireNonNull(indices);
 		requireNonNull(layer);
 
