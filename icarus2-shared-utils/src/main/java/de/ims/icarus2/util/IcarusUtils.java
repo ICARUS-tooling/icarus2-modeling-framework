@@ -26,7 +26,7 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 
 /**
  * @author Markus Gärtner
@@ -50,7 +50,7 @@ public class IcarusUtils {
 
 	/**
 	 * Checks if the provided {@code value} exceeds {@link #MAX_INTEGER_INDEX}.
-	 * Throws {@link IcarusException} with code {@link GlobalErrorCode#INDEX_OVERFLOW}
+	 * Throws {@link IcarusRuntimeException} with code {@link GlobalErrorCode#INDEX_OVERFLOW}
 	 * if that's the case and otherwise returns the supplied value.
 	 *
 	 * @param value
@@ -58,7 +58,7 @@ public class IcarusUtils {
 	 */
 	public static int ensureIntegerValueRange(long value) {
 		if(value>MAX_INTEGER_INDEX)
-			throw new IcarusException(GlobalErrorCode.INDEX_OVERFLOW, "Not a legal value in integer range: "+value);
+			throw new IcarusRuntimeException(GlobalErrorCode.INDEX_OVERFLOW, "Not a legal value in integer range: "+value);
 
 		return (int) value;
 	}

@@ -33,7 +33,7 @@ import javax.xml.validation.SchemaFactory;
 import org.xml.sax.SAXException;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.lang.Lazy;
 
 /**
@@ -70,7 +70,7 @@ public class XmlUtils {
 		try {
 			schema = factory.newSchema(location);
 		} catch (SAXException e) {
-			throw new IcarusException(GlobalErrorCode.DELEGATION_FAILED, "Failed to create XML schema from location: "+location, e);
+			throw new IcarusRuntimeException(GlobalErrorCode.DELEGATION_FAILED, "Failed to create XML schema from location: "+location, e);
 		}
 		return schema;
 	}

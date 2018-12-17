@@ -19,7 +19,7 @@ package de.ims.icarus2.model.manifest;
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.ErrorCodeScope;
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
@@ -286,9 +286,9 @@ public enum ManifestErrorCode implements ErrorCode {
 		ErrorCode error = ErrorCode.forCode(code);
 
 		if(error==null)
-			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Unknown error code: "+code);
+			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT, "Unknown error code: "+code);
 		if(!ManifestErrorCode.class.isInstance(error))
-			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Corrupted mapping for error code: "+code);
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Corrupted mapping for error code: "+code);
 
 		return ManifestErrorCode.class.cast(error);
 	}

@@ -17,7 +17,7 @@
 package de.ims.icarus2.util.collections.seq;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 
 /**
  * @author Markus Gärtner
@@ -38,7 +38,7 @@ public class EmptySequence<E extends Object> implements DataSequence<E> {
 	 */
 	@Override
 	public E elementAt(long index) {
-		throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Member sequence is empty!");
+		throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Member sequence is empty!");
 	}
 
 }

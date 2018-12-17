@@ -17,7 +17,7 @@
 package de.ims.icarus2.util;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 
 /**
  * @author Markus Gärtner
@@ -33,7 +33,7 @@ public class AbstractPart<O extends Object> implements Part<O> {
 
 	protected void checkAdded() {
 		if(!isAdded())
-			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE,
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE,
 					"No owner set");
 	}
 
@@ -43,7 +43,7 @@ public class AbstractPart<O extends Object> implements Part<O> {
 	@Override
 	public void addNotify(O owner) {
 		if(this.owner!=null)
-			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE,
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE,
 					"Owner of part already set");
 
 		this.owner = owner;
@@ -55,10 +55,10 @@ public class AbstractPart<O extends Object> implements Part<O> {
 	@Override
 	public void removeNotify(O owner) {
 		if(this.owner==null)
-			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE,
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE,
 					"Owner of part not yet set");
 		if(this.owner!=owner)
-			throw new IcarusException(GlobalErrorCode.INVALID_INPUT,
+			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT,
 					"Cannot remove foreign owner");
 
 		this.owner = null;

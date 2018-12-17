@@ -43,7 +43,7 @@ public final class ErrorCodeScope {
 		synchronized (_scopes) {
 			ErrorCodeScope scope = _scopes.get(code);
 			if(scope!=null)
-				throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Code already in use: "+code);
+				throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT, "Code already in use: "+code);
 
 			scope = new ErrorCodeScope(code, label);
 
@@ -95,7 +95,7 @@ public final class ErrorCodeScope {
 
 	public void checkCode(int code) {
 		if(!isValidCode(code))
-			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Not a valid "+label+" code: "+code);
+			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT, "Not a valid "+label+" code: "+code);
 	}
 
 	public int getRawCode(int code) {

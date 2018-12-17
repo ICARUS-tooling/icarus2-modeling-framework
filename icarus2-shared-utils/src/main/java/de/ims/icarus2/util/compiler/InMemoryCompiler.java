@@ -30,7 +30,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.ToolProvider;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 
 /**
  * @author Markus Gärtner
@@ -68,7 +68,7 @@ public class InMemoryCompiler {
 	private static JavaCompiler getJavaCompiler() {
 		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 		if(compiler==null)
-			throw new IcarusException(GlobalErrorCode.VM_JDK_REQUIRED, "No java compiler available");
+			throw new IcarusRuntimeException(GlobalErrorCode.VM_JDK_REQUIRED, "No java compiler available");
 		return compiler;
 	}
 
@@ -118,7 +118,7 @@ public class InMemoryCompiler {
 	@SuppressWarnings({ "rawtypes", "boxing" })
 	public boolean compile(DiagnosticListener diagnosticListener) {
 		if(inputFiles.isEmpty())
-			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Nothing to compile - no input files specified");
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Nothing to compile - no input files specified");
 
 		try {
 			@SuppressWarnings("unchecked")

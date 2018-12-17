@@ -24,7 +24,7 @@ import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.ColumnSchema;
@@ -53,7 +53,7 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema>, TableSch
 			serializer = XmlStreamSerializer.withoutNamespace(
 					XMLOutputFactory.newFactory().createXMLStreamWriter(output));
 		} catch (XMLStreamException | FactoryConfigurationError e) {
-			throw new IcarusException(GlobalErrorCode.DELEGATION_FAILED, "Unable to create xml stream writer", e);
+			throw new IcarusRuntimeException(GlobalErrorCode.DELEGATION_FAILED, "Unable to create xml stream writer", e);
 		}
 	}
 

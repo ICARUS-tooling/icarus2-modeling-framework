@@ -24,7 +24,7 @@ import java.util.function.Supplier;
 
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.model.api.corpus.Corpus;
 
 /**
@@ -37,7 +37,7 @@ import de.ims.icarus2.model.api.corpus.Corpus;
  * @author Markus Gärtner
  *
  */
-public class ModelException extends IcarusException {
+public class ModelException extends IcarusRuntimeException {
 
 	public static Supplier<ModelException> create(ErrorCode errorCode, String message) {
 		return () -> new ModelException(errorCode, message);

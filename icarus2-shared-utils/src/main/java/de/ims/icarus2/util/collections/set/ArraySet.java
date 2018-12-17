@@ -22,7 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.collections.ArrayUtils;
 import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Reference;
@@ -66,7 +66,7 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 	@Override
 	public E entryAt(int index) {
 		if(items==null)
-			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Missing items");
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Missing items");
 		@SuppressWarnings("unchecked")
 		E item = (E) items[index];
 		return item;
@@ -103,7 +103,7 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 
 	public void set(int index, E member) {
 		if(items==null)
-			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Missing items");
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Missing items");
 
 		items[index] = member;
 	}
@@ -130,7 +130,7 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 	@Override
 	public boolean contains(E member) {
 		if(items==null)
-			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Missing items");
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Missing items");
 		if (member == null)
 			throw new NullPointerException("Invalid member"); //$NON-NLS-1$
 
@@ -143,7 +143,7 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 	@Override
 	public void add(E element) {
 		if(items==null)
-			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Missing items");
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Missing items");
 		if (element == null)
 			throw new NullPointerException("Invalid element"); //$NON-NLS-1$
 
@@ -154,6 +154,6 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 			}
 		}
 
-		throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Set already full"); //$NON-NLS-1$
+		throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Set already full"); //$NON-NLS-1$
 	}
 }

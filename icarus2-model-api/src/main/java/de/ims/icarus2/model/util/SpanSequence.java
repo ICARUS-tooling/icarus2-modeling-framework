@@ -19,7 +19,7 @@ package de.ims.icarus2.model.util;
 import java.util.ConcurrentModificationException;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.util.collections.seq.DataSequence;
@@ -36,7 +36,7 @@ public class SpanSequence implements DataSequence<Item> {
 
 	public SpanSequence(Container target, long beginIndex, long size) {
 		if(size<=0L)
-			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Size must be greater than 0: "+size);
+			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT, "Size must be greater than 0: "+size);
 
 		this.target = target;
 		this.beginIndex = beginIndex;

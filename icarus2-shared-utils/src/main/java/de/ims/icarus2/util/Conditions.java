@@ -17,7 +17,7 @@
 package de.ims.icarus2.util;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 
 /**
  * @author Markus Gärtner
@@ -29,7 +29,7 @@ public class Conditions {
 	 * Utility method to ensure that certain fields get set at most once during
 	 * the lifetime of an object. In case the given {@code present} object is not
 	 * {@code null} and is not the same (as in reference equality) as the {@code given}
-	 * argument, this method throws a {@code IcarusException} of type
+	 * argument, this method throws a {@code IcarusRuntimeException} of type
 	 * {@link GlobalErrorCode#ILLEGAL_STATE illegal state}.
 	 *
 	 * @param msg
@@ -38,7 +38,7 @@ public class Conditions {
 	 */
 	public static void checkNotSet(String msg, Object present, Object given) {
 		if(present!=null && present!=given)
-			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE,
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE,
 					String.format("%s: %s already present - cant set %s", msg, present, given));
 	}
 

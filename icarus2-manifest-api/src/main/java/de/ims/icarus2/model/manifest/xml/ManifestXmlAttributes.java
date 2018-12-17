@@ -17,7 +17,7 @@
 package de.ims.icarus2.model.manifest.xml;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 
 /**
  * @author Markus Gärtner
@@ -26,7 +26,7 @@ import de.ims.icarus2.IcarusException;
 public class ManifestXmlAttributes {
 
 	private ManifestXmlAttributes() {
-		throw new IcarusException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Instantiation not supported");
+		throw new IcarusRuntimeException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Instantiation not supported");
 	}
 
 	public static final String CONTENT_TYPE = "contentType"; //$NON-NLS-1$

@@ -17,7 +17,7 @@
 package de.ims.icarus2.util.collections.seq;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 
 /**
  * @author Markus Gärtner
@@ -48,7 +48,7 @@ public class SingletonSequence<E extends Object> implements DataSequence<E> {
 	@Override
 	public E elementAt(long index) {
 		if(index!=0L)
-			throw new IcarusException(GlobalErrorCode.INVALID_INPUT,
+			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT,
 					"Invalid index for singleton sequence (only 0 allowed): "+index);
 
 		return element;

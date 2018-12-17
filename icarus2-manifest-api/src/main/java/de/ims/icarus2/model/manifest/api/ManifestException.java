@@ -19,7 +19,7 @@ package de.ims.icarus2.model.manifest.api;
 import java.util.function.Supplier;
 
 import de.ims.icarus2.ErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 
@@ -27,7 +27,7 @@ import de.ims.icarus2.model.manifest.util.ManifestUtils;
  * @author Markus Gärtner
  *
  */
-public class ManifestException extends IcarusException {
+public class ManifestException extends IcarusRuntimeException {
 
 	public static Supplier<ManifestException> error(ErrorCode errorCode, String message) {
 		return () -> new ManifestException(errorCode, message);

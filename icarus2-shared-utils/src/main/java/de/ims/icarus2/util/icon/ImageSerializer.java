@@ -37,7 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 
 /**
  * Utility class with methods to convert between images/icons and a Base64 string representation.
@@ -50,7 +50,7 @@ public class ImageSerializer {
 	private static final Logger log = LoggerFactory.getLogger(ImageSerializer.class);
 
 	private ImageSerializer() {
-		throw new IcarusException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Instantiation not supported");
+		throw new IcarusRuntimeException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Instantiation not supported");
 	}
 
 	/**

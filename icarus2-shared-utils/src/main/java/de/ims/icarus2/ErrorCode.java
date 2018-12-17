@@ -72,8 +72,8 @@ public interface ErrorCode {
 	}
 
 	public static ErrorCode forException(Exception e, ErrorCode defaultCode) {
-		if(e instanceof IcarusException) {
-			return ((IcarusException)e).getErrorCode();
+		if(e instanceof IcarusRuntimeException) {
+			return ((IcarusRuntimeException)e).getErrorCode();
 		}
 
 		return defaultCode;

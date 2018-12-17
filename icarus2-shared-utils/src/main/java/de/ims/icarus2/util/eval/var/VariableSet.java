@@ -19,7 +19,7 @@ package de.ims.icarus2.util.eval.var;
 import java.util.List;
 import java.util.function.Consumer;
 
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.collections.LazyCollection;
 
 /**
@@ -125,7 +125,7 @@ public interface VariableSet {
 	 *
 	 * @throws ClassCastException if the given {@code value} is not assignment compatible with
 	 * the {@link VariableDescriptor#getNamespaceClass() namespace} for the variable.
-	 * @throws IcarusException iff the given {@code value} is {@code null} and the variable is
+	 * @throws IcarusRuntimeException iff the given {@code value} is {@code null} and the variable is
 	 * not declared to be {@link VariableDescriptor#isNullable() nullable}.
 	 */
 	void setValue(String variableName, Object value);

@@ -39,7 +39,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 
 /**
  * @author Markus Gärtner
@@ -177,20 +177,20 @@ public class FileResourceProvider implements ResourceProvider {
 				try {
 					lock.release();
 				} catch (IOException e) {
-					throw new IcarusException(GlobalErrorCode.IO_ERROR, "Failed to release internal lock on file: "+uri, e);
+					throw new IcarusRuntimeException(GlobalErrorCode.IO_ERROR, "Failed to release internal lock on file: "+uri, e);
 				}
 			}
 
 			try {
 				ensureChannel();
 			} catch (IOException e) {
-				throw new IcarusException(GlobalErrorCode.IO_ERROR, "Failed to establish channel for file: "+uri, e);
+				throw new IcarusRuntimeException(GlobalErrorCode.IO_ERROR, "Failed to establish channel for file: "+uri, e);
 			}
 
 			try {
 				lock = channel.lock();
 			} catch (IOException e) {
-				throw new IcarusException(GlobalErrorCode.IO_ERROR, "Failed to acquire lock on file: "+uri, e);
+				throw new IcarusRuntimeException(GlobalErrorCode.IO_ERROR, "Failed to acquire lock on file: "+uri, e);
 			}
 		}
 
@@ -232,14 +232,14 @@ public class FileResourceProvider implements ResourceProvider {
 				try {
 					lock.release();
 				} catch (IOException e) {
-					throw new IcarusException(GlobalErrorCode.IO_ERROR, "Failed to release internal lock on file: "+uri, e);
+					throw new IcarusRuntimeException(GlobalErrorCode.IO_ERROR, "Failed to release internal lock on file: "+uri, e);
 				}
 			}
 
 			try {
 				ensureChannel();
 			} catch (IOException e) {
-				throw new IcarusException(GlobalErrorCode.IO_ERROR, "Failed to establish channel for file: "+uri, e);
+				throw new IcarusRuntimeException(GlobalErrorCode.IO_ERROR, "Failed to establish channel for file: "+uri, e);
 			}
 
 			long originalMillis = System.currentTimeMillis();
@@ -252,7 +252,7 @@ public class FileResourceProvider implements ResourceProvider {
 				try {
 					lock = channel.tryLock();
 				} catch (IOException e) {
-					throw new IcarusException(GlobalErrorCode.IO_ERROR, "Failed to acquire lock on file: "+uri, e);
+					throw new IcarusRuntimeException(GlobalErrorCode.IO_ERROR, "Failed to acquire lock on file: "+uri, e);
 				}
 			} while(waitMillis>-1 && (System.currentTimeMillis()-originalMillis)<waitMillis);
 
@@ -277,7 +277,7 @@ public class FileResourceProvider implements ResourceProvider {
 					channel.close();
 				}
 			} catch (IOException e) {
-				throw new IcarusException(GlobalErrorCode.IO_ERROR, "Failed to release lock", e);
+				throw new IcarusRuntimeException(GlobalErrorCode.IO_ERROR, "Failed to release lock", e);
 			} finally {
 				// make sure the lock mapping gets removed from the host resolver object
 				lock = null;

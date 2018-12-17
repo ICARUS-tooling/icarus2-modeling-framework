@@ -24,7 +24,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.strings.StringUtil;
 
@@ -54,7 +54,7 @@ public class ByteChannelCharacterSequence implements CharSequence {
 			start = 0;
 			end = len;
 		} catch (IOException e) {
-			throw new IcarusException(GlobalErrorCode.IO_ERROR, "Failed to fetch size of channel", e);
+			throw new IcarusRuntimeException(GlobalErrorCode.IO_ERROR, "Failed to fetch size of channel", e);
 		}
 	}
 
@@ -108,14 +108,14 @@ public class ByteChannelCharacterSequence implements CharSequence {
 
 			return (char)((buffer.get(0) << 8) | (buffer.get(1) & 0xff));
 		} catch (IOException e) {
-			throw new IcarusException(GlobalErrorCode.IO_ERROR, "Failed to read channel", e);
+			throw new IcarusRuntimeException(GlobalErrorCode.IO_ERROR, "Failed to read channel", e);
 		} finally {
 			buffer.clear();
 			if(position!=-1) {
 				try {
 					channel.position(position);
 				} catch (IOException e) {
-					throw new IcarusException(GlobalErrorCode.IO_ERROR, "Failed to reset channel position", e);
+					throw new IcarusRuntimeException(GlobalErrorCode.IO_ERROR, "Failed to reset channel position", e);
 				}
 			}
 		}

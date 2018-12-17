@@ -17,7 +17,7 @@
 package de.ims.icarus2.util.collections.set;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Reference;
 import de.ims.icarus2.util.mem.ReferenceType;
@@ -42,7 +42,7 @@ public class SingletonSet<E extends Object> extends AbstractDataSet<E> {
 	@Override
 	public int entryCount() {
 		if(item==null)
-			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Missing item");
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Missing item");
 
 		return 1;
 	}
@@ -54,7 +54,7 @@ public class SingletonSet<E extends Object> extends AbstractDataSet<E> {
 	@Override
 	public E entryAt(int index) {
 		if(item==null)
-			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Missing item");
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Missing item");
 		if(index!=0)
 			throw new IndexOutOfBoundsException();
 
@@ -84,7 +84,7 @@ public class SingletonSet<E extends Object> extends AbstractDataSet<E> {
 	@Override
 	public boolean contains(E member) {
 		if(item==null)
-			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Missing item");
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Missing item");
 		if (member == null)
 			throw new NullPointerException("Invalid member"); //$NON-NLS-1$
 		return item==member;
@@ -104,7 +104,7 @@ public class SingletonSet<E extends Object> extends AbstractDataSet<E> {
 		if (element == null)
 			throw new NullPointerException("Invalid element"); //$NON-NLS-1$
 		if(item!=null)
-			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Element already set"); //$NON-NLS-1$
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Element already set"); //$NON-NLS-1$
 		item = element;
 	}
 }

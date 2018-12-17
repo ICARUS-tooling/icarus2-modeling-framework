@@ -17,7 +17,7 @@
 package de.ims.icarus2.util;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.lang.Primitives;
 
 /**
@@ -68,7 +68,7 @@ public interface Mutable<O extends Object> extends Wrapper<O>, Cloneable {
 		}
 
 		if(result==null)
-			throw new IcarusException(GlobalErrorCode.NOT_IMPLEMENTED, "Unable to produce mutable storage for class: "+clazz);
+			throw new IcarusRuntimeException(GlobalErrorCode.NOT_IMPLEMENTED, "Unable to produce mutable storage for class: "+clazz);
 
 		return result;
 	}

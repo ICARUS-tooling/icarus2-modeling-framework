@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.Mutable;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableByte;
@@ -56,7 +56,7 @@ public class SimpleVariableSet implements VariableSet {
 			String name = descriptor.getName();
 
 			if(variablesLookup.containsKey(name))
-				throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Duplicate variable name: "+name);
+				throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT, "Duplicate variable name: "+name);
 
 			Variable variable = new Variable(createStorage(descriptor), descriptor);
 
@@ -89,7 +89,7 @@ public class SimpleVariableSet implements VariableSet {
 	protected Variable getVariableFor(String variableName) {
 		Variable variable = variablesLookup.get(variableName);
 		if(variable==null)
-			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Unknown variable name: "+variableName);
+			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT, "Unknown variable name: "+variableName);
 		return variable;
 	}
 
@@ -104,7 +104,7 @@ public class SimpleVariableSet implements VariableSet {
 	public void setValue(String variableName, Object value) {
 		Variable variable = getVariableFor(variableName);
 		if(value==null && !variable.descriptor.isNullable())
-			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Variable is not nullable: "+variableName);
+			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT, "Variable is not nullable: "+variableName);
 		variable.storage.set(value);
 	}
 

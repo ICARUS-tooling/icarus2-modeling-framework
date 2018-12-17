@@ -23,7 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.eval.var.VariableDescriptor;
 import de.ims.icarus2.util.eval.var.VariableDescriptor.Mode;
@@ -61,7 +61,7 @@ public abstract class ExpressionFactory extends Environment {
 		requireNonNull(mode);
 
 		if(variables.containsKey(id))
-			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Duplicate variable id: "+id);
+			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT, "Duplicate variable id: "+id);
 
 		VariableDescriptor variable = new VariableDescriptor(id, namespace, mode, nullable);
 

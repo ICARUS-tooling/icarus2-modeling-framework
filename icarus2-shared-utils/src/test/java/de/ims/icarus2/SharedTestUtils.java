@@ -32,7 +32,7 @@ public class SharedTestUtils {
 
 
 	public static void assertIcarusException(ErrorCode errorCode, Executable executable, String msg) {
-		IcarusException exception = assertThrows(IcarusException.class, executable, msg);
+		IcarusRuntimeException exception = assertThrows(IcarusRuntimeException.class, executable, msg);
 		assertEquals(errorCode, exception.getErrorCode(), msg);
 	}
 }

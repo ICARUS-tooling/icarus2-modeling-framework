@@ -28,7 +28,7 @@ import java.util.Objects;
  * @author Markus Gärtner
  *
  */
-public class IcarusException extends RuntimeException {
+public class IcarusRuntimeException extends RuntimeException {
 	private static final long serialVersionUID = -4948728458934647064L;
 
 	private final ErrorCode errorCode;
@@ -37,7 +37,7 @@ public class IcarusException extends RuntimeException {
 	 * @param message
 	 * @param cause
 	 */
-	public IcarusException(ErrorCode errorCode, String message, Throwable cause) {
+	public IcarusRuntimeException(ErrorCode errorCode, String message, Throwable cause) {
 		super(message, cause);
 		this.errorCode = requireNonNull(errorCode);
 	}
@@ -45,7 +45,7 @@ public class IcarusException extends RuntimeException {
 	/**
 	 * @param message
 	 */
-	public IcarusException(ErrorCode errorCode, String message) {
+	public IcarusRuntimeException(ErrorCode errorCode, String message) {
 		super(message);
 		this.errorCode = requireNonNull(errorCode);
 	}
@@ -53,7 +53,7 @@ public class IcarusException extends RuntimeException {
 	/**
 	 * @param cause
 	 */
-	public IcarusException(ErrorCode errorCode, Throwable cause) {
+	public IcarusRuntimeException(ErrorCode errorCode, Throwable cause) {
 		super(cause);
 		this.errorCode = requireNonNull(errorCode);
 	}
@@ -73,8 +73,8 @@ public class IcarusException extends RuntimeException {
 	public boolean equals(Object obj) {
 		if(obj==this) {
 			return true;
-		} else if(obj instanceof IcarusException) {
-			IcarusException other = (IcarusException) obj;
+		} else if(obj instanceof IcarusRuntimeException) {
+			IcarusRuntimeException other = (IcarusRuntimeException) obj;
 			return errorCode==other.errorCode
 					&& Objects.equals(getMessage(), other.getMessage());
 			//TODO we do ignore stack trace here

@@ -28,7 +28,7 @@ import static de.ims.icarus2.util.lang.Primitives._long;
 import static de.ims.icarus2.util.lang.Primitives._short;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 
 
 /**
@@ -2037,7 +2037,7 @@ public class MutablePrimitives {
 			case DOUBLE: return "DOUBLE";
 
 			default:
-				throw new IcarusException(GlobalErrorCode.INVALID_INPUT,
+				throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT,
 						"Not a valid type: "+String.valueOf(type));
 			}
 		}

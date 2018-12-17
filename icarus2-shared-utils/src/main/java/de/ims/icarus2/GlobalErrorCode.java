@@ -194,9 +194,9 @@ public enum GlobalErrorCode implements ErrorCode {
 		ErrorCode error = ErrorCode.forCode(code);
 
 		if(error==null)
-			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "Unknown error code: "+code);
+			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT, "Unknown error code: "+code);
 		if(!GlobalErrorCode.class.isInstance(error))
-			throw new IcarusException(GlobalErrorCode.ILLEGAL_STATE, "Corrupted mapping for error code: "+code);
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Corrupted mapping for error code: "+code);
 
 		return GlobalErrorCode.class.cast(error);
 	}

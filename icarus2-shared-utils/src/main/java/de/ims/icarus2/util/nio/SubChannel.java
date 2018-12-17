@@ -25,7 +25,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SeekableByteChannel;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 
 /**
  * @author Markus Gärtner
@@ -243,7 +243,7 @@ public class SubChannel implements SeekableByteChannel {
 	 */
 	@Override
 	public SeekableByteChannel truncate(long size) throws IOException {
-		throw new IcarusException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot truncate sub-channel");
+		throw new IcarusRuntimeException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot truncate sub-channel");
 	}
 
 }

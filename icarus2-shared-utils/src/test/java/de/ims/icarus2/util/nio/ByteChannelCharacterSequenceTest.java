@@ -30,7 +30,7 @@ import java.nio.channels.SeekableByteChannel;
 
 import org.junit.jupiter.api.Test;
 
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.IcarusUtils;
 
 /**
@@ -51,7 +51,7 @@ class ByteChannelCharacterSequenceTest {
 		assertSame(channel, sequence.getChannel());
 
 		doReturn(Long.valueOf(Long.MAX_VALUE)).when(channel).size();
-		assertThrows(IcarusException.class, () -> new ByteChannelCharacterSequence(channel));
+		assertThrows(IcarusRuntimeException.class, () -> new ByteChannelCharacterSequence(channel));
 	}
 
 	/**

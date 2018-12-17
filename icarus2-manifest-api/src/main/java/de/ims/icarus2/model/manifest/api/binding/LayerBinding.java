@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.Report;
 import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.ReportBuilder;
@@ -278,7 +278,7 @@ public final class LayerBinding implements Bindable, Serializable {
 
 		Entry binding = mappings.get(alias);
 		if(binding==null)
-			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "No mappings defined for alias: "+alias);
+			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT, "No mappings defined for alias: "+alias);
 
 		return binding;
 	}

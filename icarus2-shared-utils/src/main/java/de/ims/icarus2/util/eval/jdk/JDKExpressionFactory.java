@@ -37,7 +37,7 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.compiler.InMemoryCompiler;
 import de.ims.icarus2.util.eval.Expression;
 import de.ims.icarus2.util.eval.ExpressionFactory;
@@ -134,12 +134,12 @@ public class JDKExpressionFactory extends ExpressionFactory {
 			}
 			sb.append("=========================================================\n");
 
-			throw new IcarusException(GlobalErrorCode.DELEGATION_FAILED, sb.toString());
+			throw new IcarusRuntimeException(GlobalErrorCode.DELEGATION_FAILED, sb.toString());
 		}
 
 
 		if(newClazz==null)
-			throw new IcarusException(GlobalErrorCode.INTERNAL_ERROR, "Failed to load freshly compiled expression class: "+className);
+			throw new IcarusRuntimeException(GlobalErrorCode.INTERNAL_ERROR, "Failed to load freshly compiled expression class: "+className);
 
 		JDKCompiledExpression expression = (JDKCompiledExpression) newClazz.newInstance();
 

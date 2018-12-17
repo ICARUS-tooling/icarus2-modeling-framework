@@ -25,7 +25,7 @@ import javax.xml.stream.XMLStreamException;
 import org.xml.sax.Attributes;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.model.manifest.api.Category;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest.Note;
@@ -56,7 +56,7 @@ import de.ims.icarus2.util.xml.XmlUtils;
 public final class ManifestXmlUtils {
 
 	private ManifestXmlUtils() {
-		throw new IcarusException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Instantiation not supported");
+		throw new IcarusRuntimeException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Instantiation not supported");
 	}
 
 	public static final String MANIFEST_LABEL = "manifest";

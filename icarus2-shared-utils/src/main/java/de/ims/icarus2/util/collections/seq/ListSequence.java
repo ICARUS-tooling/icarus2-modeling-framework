@@ -20,7 +20,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.IcarusUtils;
 
 /**
@@ -36,7 +36,7 @@ public class ListSequence<E extends Object> implements DataSequence<E>, Iterable
 		if (list == null)
 			throw new NullPointerException("Invalid list");
 		if (list.isEmpty())
-			throw new IcarusException(GlobalErrorCode.INVALID_INPUT, "List of elements must not be empty");
+			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT, "List of elements must not be empty");
 
 		this.list = list;
 	}

@@ -35,7 +35,7 @@ import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeTarget;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema;
@@ -72,7 +72,7 @@ public class TableSchemaXmlReader implements ObjectReader<TableSchema>, TableSch
 		try {
 			eventReader = XMLInputFactory.newFactory().createXMLEventReader(input);
 		} catch (XMLStreamException | FactoryConfigurationError e) {
-			throw new IcarusException(GlobalErrorCode.DELEGATION_FAILED, "Unable to create xml event reader", e);
+			throw new IcarusRuntimeException(GlobalErrorCode.DELEGATION_FAILED, "Unable to create xml event reader", e);
 		}
 	}
 

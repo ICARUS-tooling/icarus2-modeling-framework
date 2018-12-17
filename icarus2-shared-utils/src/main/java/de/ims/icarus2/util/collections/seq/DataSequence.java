@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
-import de.ims.icarus2.IcarusException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.collections.set.DataSet;
@@ -58,7 +58,7 @@ public interface DataSequence<E extends Object> extends Iterable<E> {
 	 *
 	 * @param index
 	 * @return
-	 * @throws IcarusException if the backing data is unreachable or if
+	 * @throws IcarusRuntimeException if the backing data is unreachable or if
 	 * modifications have been made to the backing data that rendered
 	 * it inconsistent.
 	 * @throws IndexOutOfBoundsException if the given index lies outside the
