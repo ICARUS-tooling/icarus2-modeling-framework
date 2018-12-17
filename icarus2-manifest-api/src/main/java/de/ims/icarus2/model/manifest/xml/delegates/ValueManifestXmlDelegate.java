@@ -95,7 +95,7 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 
 		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CONTENT)
 			.ifPresent(content -> {
-				if(!manifest.getValueType().isSimpleType())
+				if(!manifest.getValueType().isSerializable())
 					throw new ManifestException(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE,
 							"Attribute location not supported by non-simple type: "+manifest.getValueType());
 				manifest.setValue(manifest.getValueType().parseAndPersist(content, manifestLocation.getClassLoader()));

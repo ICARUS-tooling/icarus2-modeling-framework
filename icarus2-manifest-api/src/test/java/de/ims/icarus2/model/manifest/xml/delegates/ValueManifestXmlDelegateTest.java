@@ -61,7 +61,7 @@ class ValueManifestXmlDelegateTest implements ManifestXmlDelegateTest<ValueManif
 	public List<Config> configurations() {
 		return ValueManifest.SUPPORTED_VALUE_TYPES
 			.stream()
-			.filter(ValueType::isSimpleType)
+			.filter(ValueType::isSerializable)
 			.map(type -> ManifestGenerator.config()
 					.valueType(type)
 					.label(type.getName()))

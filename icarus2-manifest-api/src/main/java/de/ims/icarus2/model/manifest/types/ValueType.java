@@ -22,8 +22,12 @@ import static de.ims.icarus2.util.lang.Primitives._double;
 import static de.ims.icarus2.util.lang.Primitives._float;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
+import static java.util.Objects.requireNonNull;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -56,6 +60,12 @@ import de.ims.icarus2.util.strings.StringPrimitives;
 import de.ims.icarus2.util.strings.StringResource;
 
 /**
+ * Models type specifications/restrictions for the manifest framework.
+ * <p>
+ * Currently we do not support nesting of {@link VectorType} or {@link MatrixType}
+ * definitions for use as component types in those two special families of
+ * value types.
+ *
  * @author Markus Gärtner
  *
  */
@@ -63,7 +73,7 @@ public class ValueType implements StringResource, NamedObject {
 
 	private final Class<?> baseClass;
 	private final String xmlForm;
-	private final boolean simple;
+	private final boolean serializable;
 	private final boolean basic;
 
 	private static Map<String, ValueType> xmlLookup = new HashMap<>();
@@ -78,10 +88,10 @@ public class ValueType implements StringResource, NamedObject {
 			 * be tested first, since the parseXxxType methods
 			 * react to invalid input with exceptions.
 			 */
-			if(VectorType.isVectorType(s)) {
-				result = VectorType.parseVectorType(s);
-			} else if(MatrixType.isMatrixType(s)) {
+			if(MatrixType.isMatrixType(s)) { // matrix first as it is more specific
 				result = MatrixType.parseMatrixType(s);
+			} else if(VectorType.isVectorType(s)) {
+				result = VectorType.parseVectorType(s);
 			} else
 				throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_TYPE,
 						"Not a known value type definition: "+s); //$NON-NLS-1$
@@ -90,23 +100,64 @@ public class ValueType implements StringResource, NamedObject {
 		return result;
 	}
 
-	protected ValueType(String xmlForm, Class<?> baseClass, boolean simple) {
-		this(xmlForm, baseClass, simple, false);
+	/**
+	 * Constructor for external subclasses.
+	 *
+	 * @param xmlForm
+	 * @param baseClass
+	 * @param serializable
+	 */
+	protected ValueType(String xmlForm, Class<?> baseClass, boolean serializable) {
+		this(xmlForm, baseClass, serializable, false);
 	}
 
-	private ValueType(String xmlForm, Class<?> baseClass, boolean simple, boolean basic) {
+	/**
+	 * Constructor for internally predefined types.
+	 *
+	 * @param xmlForm
+	 * @param baseClass
+	 * @param serializable
+	 * @param basic
+	 */
+	private ValueType(String xmlForm, Class<?> baseClass, boolean serializable, boolean basic) {
+		this(xmlForm, baseClass, true, serializable, basic);
+	}
+
+	/**
+	 * Constructor used by compound types to decide whether or not they want to be cached
+	 *
+	 * @param xmlForm
+	 * @param baseClass
+	 * @param canCache
+	 * @param serializable
+	 * @param basic
+	 */
+	private ValueType(String xmlForm, Class<?> baseClass, boolean canCache, boolean serializable, boolean basic) {
 		// Make sure every xmlForm is unique
-		checkState("Duplicate XML-form of value type: "+xmlForm, !xmlLookup.containsKey(xmlForm));
+		checkState("Duplicate XML-form of value type: "+xmlForm, !canCache || !xmlLookup.containsKey(xmlForm));
 
 		this.baseClass = baseClass;
 		this.xmlForm = xmlForm;
-		this.simple = simple;
+		this.serializable = serializable;
 		this.basic = basic;
 
-		xmlLookup.put(xmlForm, this);
+		if(canCache) {
+			xmlLookup.put(xmlForm, this);
+		}
 	}
 
+	/**
+	 * Serializes the given {@code value} object into a {@link CharSequence}.
+	 * The return type was chosen to provide more flexibility as opposed to
+	 * forcing a return value of type {@link String}.
+	 *
+	 * @param value
+	 * @return
+	 */
 	public CharSequence toChars(Object value) {
+		if(!isSerializable())
+			throw new IllegalStateException("Cannot serialize data of type '"+getStringValue()+"'");
+
 		return String.valueOf(value);
 	}
 
@@ -122,7 +173,9 @@ public class ValueType implements StringResource, NamedObject {
 	 * @return
 	 */
 	public Object parse(CharSequence s, ClassLoader classLoader) {
-		throw new IllegalStateException("Cannot parse data of type '"+getStringValue()+"'"); //$NON-NLS-1$
+		throw new IllegalStateException("Cannot parse data of type '"+getStringValue()+"'");
+
+		//TODO make marker interface for setting a "parse" method (stati) for custom types?
 	}
 
 	/**
@@ -153,13 +206,13 @@ public class ValueType implements StringResource, NamedObject {
 	}
 
 	/**
-	 * Returns whether or not the type has a simple form that makes it
+	 * Returns whether or not the type has a serializable form that makes it
 	 * easily serializable.
 	 *
 	 * @return
 	 */
-	public final boolean isSimpleType() {
-		return simple;
+	public final boolean isSerializable() {
+		return serializable;
 	}
 
 	public final boolean isBasicType() {
@@ -493,7 +546,7 @@ public class ValueType implements StringResource, NamedObject {
 	}
 
 	public static Set<ValueType> simpleValueTypes() {
-		return filterIncluding(ValueType::isSimpleType);
+		return filterIncluding(ValueType::isSerializable);
 	}
 
 	/**
@@ -633,6 +686,79 @@ public class ValueType implements StringResource, NamedObject {
 	}
 
 	/**
+	 * Utility method for the {@link VectorType} and {@link MatrixType} classes
+	 * to verify valid types to be used as component type.
+	 *
+	 * @param type
+	 */
+	private static void checkComponentType(ValueType type) {
+		if(type instanceof VectorType)
+			throw new ManifestException(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE,
+					"Vector types cannot be used as component type: "+type);
+		if(type instanceof MatrixType)
+			throw new ManifestException(ManifestErrorCode.MANIFEST_UNSUPPORTED_TYPE,
+					"Matrix types cannot be used as component type: "+type);
+	}
+
+	public static final class DelegatingType extends ValueType {
+
+		/**
+		 * Serialization method to transform a single value into
+		 * {@link CharSequence}.
+		 */
+		private final Method toStringMethod;
+
+		/**
+		 * Deserialization method to transform a {@link CharSequence}
+		 * into a single value object.
+		 */
+		private final Method parseMethod;
+
+		/**
+		 * @param xmlForm
+		 * @param baseClass
+		 * @param serializable
+		 */
+		private DelegatingType(String xmlForm, Class<?> baseClass, Method toStringMethod, Method parseMethod) {
+			super(xmlForm, baseClass, true);
+
+			this.toStringMethod = requireNonNull(toStringMethod);
+			this.parseMethod = requireNonNull(parseMethod);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.manifest.types.ValueType#toChars(java.lang.Object)
+		 */
+		@Override
+		public CharSequence toChars(Object value) {
+			Object result;
+			try {
+				result = Modifier.isStatic(toStringMethod.getModifiers()) ?
+						toStringMethod.invoke(null, value)
+						: toStringMethod.invoke(value);
+			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+				//TODO
+			}
+
+			return CharSequence.class.cast(result);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.manifest.types.ValueType#parse(java.lang.CharSequence, java.lang.ClassLoader)
+		 */
+		@Override
+		public Object parse(CharSequence s, ClassLoader classLoader) {
+			Object result;
+			try {
+				result = parseMethod.invoke(null, s);
+			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+				//TODO
+			}
+			return result;
+		}
+	}
+
+	/**
 	 *
 	 * The serialized form of this value type adheres to the following format:<br>
 	 * {@code <component_type>[<size>]}<br>
@@ -667,17 +793,34 @@ public class ValueType implements StringResource, NamedObject {
 				String sizeString = s.substring(openIdx+1, s.length()-1);
 
 				if(WILDCARD_SIZE_STRING.equals(sizeString)) {
-					result = new VectorType(componentType);
+					result = withUndefinedSize(componentType);
 				} else {
 					int size = Integer.parseInt(sizeString);
 
-					result = new VectorType(componentType, size);
+					result = withSize(componentType, size);
 				}
 			} else
 				throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_TYPE,
 						"Not a valid vector type definition: "+s); //$NON-NLS-1$
 
 			return result;
+		}
+
+		public static VectorType withUndefinedSize(ValueType type) {
+			requireNonNull(type);
+			checkComponentType(type);
+
+			return new VectorType(type, toXmlForm(type, UNDEFINED_SIZE), UNDEFINED_SIZE);
+		}
+
+		public static VectorType withSize(ValueType type, int size) {
+			requireNonNull(type);
+			checkComponentType(type);
+
+			if(size<1)
+				throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Size has to be greater than 0: "+size); //$NON-NLS-1$
+
+			return new VectorType(type, toXmlForm(type, size), size);
 		}
 
 		static final char SIZE_OPEN = '[';
@@ -702,22 +845,10 @@ public class ValueType implements StringResource, NamedObject {
 			}
 		}
 
-		public VectorType(ValueType componentType, int size) {
-			super(toXmlForm(componentType, size), Object.class, false, true);
-
-			if(size<1)
-				throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Size has to be greater than 0: "+size); //$NON-NLS-1$
+		private VectorType(ValueType componentType, String xmlForm, int size) {
+			super(xmlForm, Object.class, false, false, true);
 
 			this.size = size;
-			this.componentType = componentType;
-
-			emptyArray = createArray(componentType, 0);
-		}
-
-		public VectorType(ValueType componentType) {
-			super(toXmlForm(componentType, UNDEFINED_SIZE), Object.class, false, true);
-
-			this.size = UNDEFINED_SIZE;
 			this.componentType = componentType;
 
 			emptyArray = createArray(componentType, 0);
@@ -958,7 +1089,7 @@ public class ValueType implements StringResource, NamedObject {
 				int rowSize = Integer.parseInt(rowSizeString);
 				int colSize = Integer.parseInt(colSizeString);
 
-				result = new MatrixType(componentType, rowSize, colSize);
+				result = withSize(componentType, rowSize, colSize);
 			} else
 				throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_TYPE,
 						"Not a valid matrix value type definition: "+s); //$NON-NLS-1$
@@ -974,18 +1105,25 @@ public class ValueType implements StringResource, NamedObject {
 
 		private final transient Object emptyArray;
 
-		private static String toXmlForm(ValueType componentType, int rows, int columns) {
-			return componentType.getStringValue()+VectorType.SIZE_OPEN+rows+SIZE_SEPARATOR+columns+VectorType.SIZE_CLOSE;
-		}
-
-		public MatrixType(ValueType componentType, int rows, int columns) {
-			super(toXmlForm(componentType, rows, columns), Object.class, false, true);
+		public static MatrixType withSize(ValueType type, int rows, int columns) {
+			requireNonNull(type);
+			checkComponentType(type);
 
 			if(rows<0)
 				throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Row count must not be negative: "+rows); //$NON-NLS-1$
 
 			if(columns<0)
 				throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Column count must not be negative: "+columns); //$NON-NLS-1$
+
+			return new MatrixType(type, toXmlForm(type, rows, columns), rows, columns);
+		}
+
+		private static String toXmlForm(ValueType componentType, int rows, int columns) {
+			return componentType.getStringValue()+VectorType.SIZE_OPEN+rows+SIZE_SEPARATOR+columns+VectorType.SIZE_CLOSE;
+		}
+
+		private MatrixType(ValueType componentType, String xmlForm, int rows, int columns) {
+			super(xmlForm, Object.class, false, false, true);
 
 			this.rows = rows;
 			this.columns = columns;

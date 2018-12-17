@@ -64,7 +64,7 @@ class ValueRangeXmlDelegateTest implements ManifestXmlDelegateTest<ValueRange, V
 	public List<Config> configurations() {
 		return ValueRange.SUPPORTED_VALUE_TYPES
 			.stream()
-			.filter(ValueType::isSimpleType)
+			.filter(ValueType::isSerializable)
 			.map(type -> ManifestGenerator.config()
 					.valueType(type)
 					.label(type.getName()))

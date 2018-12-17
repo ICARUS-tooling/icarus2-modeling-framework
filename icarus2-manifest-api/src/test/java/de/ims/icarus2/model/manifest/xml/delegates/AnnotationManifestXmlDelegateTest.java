@@ -68,7 +68,7 @@ class AnnotationManifestXmlDelegateTest
 	public List<Config> configurations() {
 		return ManifestTestUtils.getAvailableTestTypes()
 			.stream()
-			.filter(ValueType::isSimpleType)
+			.filter(ValueType::isSerializable)
 			.map(type -> ManifestGenerator.config()
 					.valueType(type)
 					.label(type.getName()))
