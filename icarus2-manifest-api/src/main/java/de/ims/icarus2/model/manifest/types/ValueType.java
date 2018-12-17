@@ -495,8 +495,8 @@ public class ValueType implements StringResource, NamedObject {
 		}
 	};
 
-	public static final String BINARY_TYPE_LABEL = "binary";
-	public static final ValueType BINARY_STREAM = new ValueType(BINARY_TYPE_LABEL, SeekableByteChannel.class, true, true) {
+	public static final String BINARY_STREAM_TYPE_LABEL = "binary";
+	public static final ValueType BINARY_STREAM = new ValueType(BINARY_STREAM_TYPE_LABEL, SeekableByteChannel.class, true, true) {
 
 		@Override
 		public Object parse(CharSequence s, ClassLoader classLoader) {
@@ -549,7 +549,7 @@ public class ValueType implements StringResource, NamedObject {
 		return filterIncluding(ValueType::isBasicType);
 	}
 
-	public static Set<ValueType> simpleValueTypes() {
+	public static Set<ValueType> serializableValueTypes() {
 		return filterIncluding(ValueType::isSerializable);
 	}
 

@@ -3,15 +3,25 @@
  */
 package de.ims.icarus2.model.manifest.types;
 
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertManifestException;
+import static de.ims.icarus2.test.TestUtils.assertCollectionNotEmpty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.types.ValueType.MatrixType;
 import de.ims.icarus2.model.manifest.types.ValueType.VectorType;
 
@@ -50,73 +60,131 @@ class ValueTypeTest {
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.types.ValueType#toChars(java.lang.Object)}.
 	 */
-	@Test
-	void testToChars() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	Stream<DynamicTest> testToChars() {
+		return ValueType.serializableValueTypes()
+				.stream()
+				.filter(ManifestTestUtils::hasTestValues)
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
+					Object value = ManifestTestUtils.getTestValue(valueType);
+					assertNotNull(valueType.toChars(value));
+				}));
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.types.ValueType#parse(java.lang.CharSequence, java.lang.ClassLoader)}.
 	 */
-	@Test
-	void testParse() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	Stream<DynamicTest> testParse() {
+		return ValueType.serializableValueTypes()
+				.stream()
+				.filter(ManifestTestUtils::hasTestValues)
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
+					Object value = ManifestTestUtils.getTestValue(valueType);
+					CharSequence serializedForm = valueType.toChars(value);
+					Object parsedValue = valueType.parse(serializedForm, valueType.getClass().getClassLoader());
+					assertNotNull(parsedValue);
+					assertEquals(value, parsedValue);
+				}));
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.types.ValueType#persist(java.lang.Object)}.
 	 */
-	@Test
-	void testPersist() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	Stream<DynamicTest> testPersist() {
+		return ValueType.serializableValueTypes()
+				.stream()
+				.filter(ManifestTestUtils::hasTestValues)
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
+					Object value = ManifestTestUtils.getTestValue(valueType);
+					assertEquals(value, valueType.persist(value));
+				}));
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.types.ValueType#parseAndPersist(java.lang.CharSequence, java.lang.ClassLoader)}.
 	 */
-	@Test
-	void testParseAndPersist() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	Stream<DynamicTest> testParseAndPersist() {
+		return ValueType.serializableValueTypes()
+				.stream()
+				.filter(ManifestTestUtils::hasTestValues)
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
+					Object value = ManifestTestUtils.getTestValue(valueType);
+					Object reparsedValue = valueType.parseAndPersist(valueType.toChars(value), valueType.getClass().getClassLoader());
+					assertEquals(value, reparsedValue);
+					assertEquals(reparsedValue, valueType.persist(reparsedValue));
+				}));
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.types.ValueType#getStringValue()}.
 	 */
-	@Test
-	void testGetStringValue() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	Stream<DynamicTest> testGetStringValue() {
+		return DynamicTest.stream(ValueType.valueTypes().iterator(),
+				valueType -> valueType.getClass().getName(),
+				valueType -> assertNotNull(valueType.getStringValue()));
+
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.types.ValueType#getName()}.
 	 */
-	@Test
-	void testGetName() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	Stream<DynamicTest> testGetName() {
+		return DynamicTest.stream(ValueType.valueTypes().iterator(),
+				valueType -> valueType.getClass().getName(),
+				valueType -> assertNotNull(valueType.getName()));
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.types.ValueType#getBaseClass()}.
 	 */
-	@Test
-	void testGetBaseClass() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	Stream<DynamicTest> testGetBaseClass() {
+		return DynamicTest.stream(ValueType.valueTypes().iterator(),
+				valueType -> valueType.getClass().getName(),
+				valueType -> assertNotNull(valueType.getBaseClass()));
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.types.ValueType#isValidValue(java.lang.Object)}.
 	 */
-	@Test
-	void testIsValidValue() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	Stream<DynamicTest> testIsValidValue() {
+		return DynamicTest.stream(ValueType.valueTypes().iterator(),
+				ValueType::getName,
+				valueType -> {
+					Object value = ManifestTestUtils.getOrMockTestValue(valueType);
+					assertTrue(valueType.isValidValue(value));
+
+					if(!Object.class.equals(valueType.getBaseClass())) {
+						Object invalidValue = mock(ManifestTestUtils.Dummy.class);
+						assertFalse(valueType.isValidValue(invalidValue));
+					}
+				});
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.types.ValueType#isValidType(java.lang.Class)}.
 	 */
-	@Test
-	void testIsValidType() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	Stream<DynamicTest> testIsValidType() {
+		return DynamicTest.stream(ValueType.valueTypes().iterator(),
+				ValueType::getName,
+				valueType -> {
+					assertTrue(valueType.isValidType(valueType.getBaseClass()));
+
+					/*
+					 *  For any more specific type we need to check that arbitrary
+					 *  foreign classes don't get accepted
+					 */
+					if(!Object.class.equals(valueType.getBaseClass())) {
+						assertFalse(valueType.isValidType(ManifestTestUtils.Dummy.class));
+					}
+				});
 	}
 
 	/**
@@ -124,7 +192,7 @@ class ValueTypeTest {
 	 */
 	@Test
 	void testValueTypes() {
-		fail("Not yet implemented"); // TODO
+		assertCollectionNotEmpty(ValueType.valueTypes());
 	}
 
 	/**
@@ -132,39 +200,103 @@ class ValueTypeTest {
 	 */
 	@Test
 	void testBasicValueTypes() {
-		fail("Not yet implemented"); // TODO
+		Collection<ValueType> types = ValueType.basicValueTypes();
+		assertCollectionNotEmpty(types);
+
+		types.forEach(type -> assertTrue(type.isBasicType(), "Not a proper basic type: "+type));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.types.ValueType#simpleValueTypes()}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.types.ValueType#serializableValueTypes()}.
 	 */
 	@Test
-	void testSimpleValueTypes() {
-		fail("Not yet implemented"); // TODO
+	void testSserializableValueTypes() {
+		Collection<ValueType> types = ValueType.serializableValueTypes();
+		assertCollectionNotEmpty(types);
+
+		types.forEach(type -> assertTrue(type.isSerializable(), "Not a proper serializable type: "+type));
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.types.ValueType#checkValue(java.lang.Object)}.
 	 */
-	@Test
-	void testCheckValue() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	Stream<DynamicTest> testCheckValue() {
+		return DynamicTest.stream(ValueType.valueTypes().iterator(),
+				ValueType::getName,
+				valueType -> {
+					Object validValue = ManifestTestUtils.getOrMockTestValue(valueType);
+					valueType.checkValue(validValue);
+
+					if(!Object.class.equals(valueType.getBaseClass())) {
+						Object invalidValue = mock(ManifestTestUtils.Dummy.class);
+						assertManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
+								() -> valueType.checkValue(invalidValue),
+								"Checking invalid type for "+valueType);
+					}
+				});
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.types.ValueType#checkValues(java.util.Collection)}.
 	 */
-	@Test
-	void testCheckValuesCollectionOfQ() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	Stream<DynamicTest> testCheckValuesCollectionOfQ() {
+		return DynamicTest.stream(ValueType.valueTypes().iterator(),
+				ValueType::getName,
+				valueType -> {
+					Object validValue = ManifestTestUtils.getOrMockTestValue(valueType);
+					valueType.checkValues(Collections.singleton(validValue));
+					valueType.checkValues(Arrays.asList(validValue, validValue, validValue));
+
+					if(!Object.class.equals(valueType.getBaseClass())) {
+						Object invalidValue = mock(ManifestTestUtils.Dummy.class);
+
+						// Test with various combinations
+						assertManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
+								() -> valueType.checkValues(Collections.singleton(invalidValue)),
+								"Checking invalid values (singleton) for "+valueType);
+
+						assertManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
+								() -> valueType.checkValues(Arrays.asList(invalidValue, invalidValue)),
+								"Checking invalid values (2 invalid) for "+valueType);
+
+						assertManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
+								() -> valueType.checkValues(Arrays.asList(validValue, invalidValue, validValue)),
+								"Checking invalid values (inv,val,inv) for "+valueType);
+					}
+				});
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.types.ValueType#checkValues(java.lang.Object[])}.
 	 */
-	@Test
-	void testCheckValuesObjectArray() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	Stream<DynamicTest> testCheckValuesObjectArray() {
+		return DynamicTest.stream(ValueType.valueTypes().iterator(),
+				ValueType::getName,
+				valueType -> {
+					Object validValue = ManifestTestUtils.getOrMockTestValue(valueType);
+					valueType.checkValues(new Object[] {validValue});
+					valueType.checkValues(new Object[] {validValue, validValue, validValue});
+
+					if(!Object.class.equals(valueType.getBaseClass())) {
+						Object invalidValue = mock(ManifestTestUtils.Dummy.class);
+
+						// Test with various combinations
+						assertManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
+								() -> valueType.checkValues(new Object[] {invalidValue}),
+								"Checking invalid values (singleton) for "+valueType);
+
+						assertManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
+								() -> valueType.checkValues(new Object[] {invalidValue, invalidValue}),
+								"Checking invalid values (2 invalid) for "+valueType);
+
+						assertManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
+								() -> valueType.checkValues(new Object[] {validValue, invalidValue, validValue}),
+								"Checking invalid values (inv,val,inv) for "+valueType);
+					}
+				});
 	}
 
 }
