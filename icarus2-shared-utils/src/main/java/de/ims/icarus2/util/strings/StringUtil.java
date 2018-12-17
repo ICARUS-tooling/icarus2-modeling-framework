@@ -19,7 +19,6 @@ package de.ims.icarus2.util.strings;
 import static java.util.Objects.requireNonNull;
 
 import java.awt.Component;
-import java.awt.Font;
 import java.awt.FontMetrics;
 import java.text.Collator;
 import java.text.DecimalFormat;
@@ -32,9 +31,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.swing.JLabel;
-import javax.swing.UIManager;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +39,6 @@ import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.intern.Interner;
 import de.ims.icarus2.util.intern.StrongInterner;
 import de.ims.icarus2.util.intern.WeakInterner;
-import de.ims.icarus2.util.xml.HtmlUtils;
 
 
 /**
@@ -580,57 +575,6 @@ public final class StringUtil {
 			return ((TextItem)obj).getText();
 
 		return obj.toString();
-	}
-
-	private static JLabel textDummy;
-
-	private static JLabel getTextDummy() {
-		if(textDummy==null) {
-			textDummy = new JLabel();
-		}
-
-		return textDummy;
-	}
-
-	private static final int DEFAULT_TOOLTIP_WIDTH = 300;
-
-	private static final String HTML_TAG = "<html>"; //$NON-NLS-1$
-
-	public static String toSwingTooltip(String tooltip) {
-		if(tooltip==null || tooltip.isEmpty()) {
-			return null;
-		}
-		if(tooltip.startsWith(HTML_TAG)) {
-			return tooltip;
-		}
-
-		Font font = UIManager.getFont("ToolTip.font"); //$NON-NLS-1$
-		FontMetrics fm = getTextDummy().getFontMetrics(font);
-		tooltip = StringUtil.wrap(tooltip, fm, DEFAULT_TOOLTIP_WIDTH);
-		String convertedTooltip = HtmlUtils.escapeHTML(tooltip).replaceAll(
-				"\\n\\r|\\r\\n|\\n|\\r", "<br>"); //$NON-NLS-1$ //$NON-NLS-2$
-		if(convertedTooltip.length()!=tooltip.length()) {
-			tooltip = HTML_TAG+convertedTooltip;
-		}
-
-		return tooltip;
-	}
-
-	public static String toUnwrappedSwingTooltip(String tooltip) {
-		if(tooltip==null || tooltip.isEmpty()) {
-			return null;
-		}
-		if(tooltip.startsWith(HTML_TAG)) {
-			return tooltip;
-		}
-
-		String convertedTooltip = HtmlUtils.escapeHTML(tooltip).replaceAll(
-				"\\n\\r|\\r\\n|\\n|\\r", "<br>"); //$NON-NLS-1$ //$NON-NLS-2$
-		if(convertedTooltip.length()!=tooltip.length()) {
-			tooltip = "<html>"+convertedTooltip; //$NON-NLS-1$
-		}
-
-		return tooltip;
 	}
 
 	private static volatile Pattern indexPattern;

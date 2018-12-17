@@ -330,25 +330,6 @@ class StringUtilTest {
 	}
 
 	@Test
-	@PostponedTest
-	void testToSwingTooltip() {
-		fail("Not yet implemented");
-	}
-
-	@Test
-	void testToUnwrappedSwingTooltip() {
-		assertEquals(null, StringUtil.toUnwrappedSwingTooltip(null));
-		assertEquals(null, StringUtil.toUnwrappedSwingTooltip(""));
-		assertEquals("xy", StringUtil.toUnwrappedSwingTooltip("xy"));
-		assertEquals("<html>x<br>y", StringUtil.toUnwrappedSwingTooltip("x\ny"));
-		assertEquals("<html>x<br>y", StringUtil.toUnwrappedSwingTooltip("x\r\ny"));
-		assertEquals("<html>x<br>y", StringUtil.toUnwrappedSwingTooltip("x\n\ry"));
-		assertEquals("<html>x<br>y", StringUtil.toUnwrappedSwingTooltip("x\ry"));
-		assertEquals("<html>x<br><br>y", StringUtil.toUnwrappedSwingTooltip("x\n\ny"));
-		assertEquals("<html>x<br><br>y", StringUtil.toUnwrappedSwingTooltip("x\r\ry"));
-	}
-
-	@Test
 	void testGetBaseName() {
 		assertEquals("", StringUtil.getBaseName(""));
 		assertEquals("x", StringUtil.getBaseName("x"));
