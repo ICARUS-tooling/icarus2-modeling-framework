@@ -24,6 +24,8 @@ package de.ims.icarus2.model.api.members;
  */
 public interface Annotation {
 
+	//TODO re-evaluate the reason for this class. Shouldn't ValueManifest be sufficient?
+
 	/**
 	 * Returns the {@code value} this annotation wraps.
 	 * @return

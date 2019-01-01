@@ -24,6 +24,9 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
+ * An implementation that allows all types of edits as long as the indices
+ * are located properly within the bounds of the associated container.
+ *
  * @author Markus Gärtner
  *
  */
@@ -32,9 +35,7 @@ public class DefaultContainerEditVerifier implements ContainerEditVerifier {
 	private Container source;
 
 	public DefaultContainerEditVerifier(Container source) {
-		requireNonNull(source);
-
-		this.source = source;
+		this.source = requireNonNull(source);
 	}
 
 	/**
@@ -66,7 +67,7 @@ public class DefaultContainerEditVerifier implements ContainerEditVerifier {
 	 */
 	@Override
 	public boolean canAddItem(long index, Item item) {
-		return item!=null && isValidAddItemIndex(index);
+		return isValidAddItemIndex(index);
 	}
 
 	/**
@@ -74,7 +75,7 @@ public class DefaultContainerEditVerifier implements ContainerEditVerifier {
 	 */
 	@Override
 	public boolean canAddItems(long index, DataSequence<? extends Item> items) {
-		return items!=null && isValidAddItemIndex(index);
+		return isValidAddItemIndex(index);
 	}
 
 	/**

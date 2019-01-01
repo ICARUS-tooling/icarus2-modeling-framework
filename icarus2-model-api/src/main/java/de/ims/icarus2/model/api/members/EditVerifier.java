@@ -28,9 +28,10 @@ package de.ims.icarus2.model.api.members;
  * @author Markus Gärtner
  *
  */
-public interface EditVerifier<E extends Object> {
+public interface EditVerifier<E extends Object> extends AutoCloseable {
 
 	E getSource();
 
+	@Override
 	void close();
 }

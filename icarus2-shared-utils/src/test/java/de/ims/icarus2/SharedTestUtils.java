@@ -21,8 +21,13 @@ package de.ims.icarus2;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.function.Executable;
+
+import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
  * @author Markus Gärtner
@@ -34,5 +39,26 @@ public class SharedTestUtils {
 	public static void assertIcarusException(ErrorCode errorCode, Executable executable, String msg) {
 		IcarusRuntimeException exception = assertThrows(IcarusRuntimeException.class, executable, msg);
 		assertEquals(errorCode, exception.getErrorCode(), msg);
+	}
+
+	@SuppressWarnings("boxing")
+	public static <E extends Object> DataSequence<E> mockSequence(long size) {
+		DataSequence<E> sequence = mock(DataSequence.class);
+		when(sequence.entryCount()).thenReturn(size);
+		return sequence;
+	}
+
+	public static <E extends Object> DataSequence<E> mockSequence(long size, E element) {
+		DataSequence<E> sequence = mockSequence(size);
+
+		when(sequence.elementAt(anyLong())).then(invocation -> {
+			@SuppressWarnings("boxing")
+			long index = invocation.getArgument(0);
+			if(index<0 || index>=size)
+				throw new IndexOutOfBoundsException();
+			return element;
+		});
+
+		return sequence;
 	}
 }

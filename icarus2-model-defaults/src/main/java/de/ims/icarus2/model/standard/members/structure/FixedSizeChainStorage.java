@@ -22,6 +22,7 @@ import static de.ims.icarus2.model.standard.members.MemberUtils.checkNonEmptyCon
 import static de.ims.icarus2.model.standard.members.MemberUtils.checkNonPartialStructure;
 import static de.ims.icarus2.model.standard.members.MemberUtils.checkStaticContainer;
 import static de.ims.icarus2.model.util.ModelUtils.getName;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -99,7 +100,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		checkNoLoopsStructure(context);
 
 		int itemCount = IcarusUtils.ensureIntegerValueRange(context.getItemCount());
-		int capacity = itemCount*2;
+		int capacity = IcarusUtils.ensureIntegerValueRange(itemCount*2L);
 
 		if(edges==null || edges.length<capacity) {
 			edges = new Edge[capacity];
@@ -313,7 +314,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		return getUncheckedEdgeCount(context, node, isSource);
 	}
 
-	public long getUncheckedEdgeCount(Structure context, Item node, boolean isSource) {
+	long getUncheckedEdgeCount(Structure context, Item node, boolean isSource) {
 
 		if(node==root) {
 			if(isSource) {
@@ -706,10 +707,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 				Structure source) {
 			super(source);
 
-			if (storage == null)
-				throw new NullPointerException("Invalid storage");
-
-			this.storage = storage;
+			this.storage = requireNonNull(storage);
 		}
 
 		@Override

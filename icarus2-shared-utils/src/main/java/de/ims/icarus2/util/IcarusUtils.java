@@ -41,7 +41,7 @@ public class IcarusUtils {
 	 * Some VMs reserve a couple bytes as array headers and as such
 	 * {@link Integer#MAX_VALUE} would result in an exception.
 	 */
-	public static final long MAX_INTEGER_INDEX = Integer.MAX_VALUE-8;
+	public static final int MAX_INTEGER_INDEX = Integer.MAX_VALUE-8;
 
 	public static String toLoggableString(Object value) {
 		//TODO ensure the generated string is short enough and does not contain line breaks

@@ -146,7 +146,9 @@ public class CompoundStructureEditVerifier implements StructureEditVerifier {
 	 */
 	@Override
 	public boolean canMoveEdge(long index0, long index1) {
-		return isValidRemoveEdgeIndex(index0) && isValidRemoveEdgeIndex(index1);
+		return index0!=index1
+				&& isValidRemoveEdgeIndex(index0)
+				&& isValidRemoveEdgeIndex(index1);
 	}
 
 	/**

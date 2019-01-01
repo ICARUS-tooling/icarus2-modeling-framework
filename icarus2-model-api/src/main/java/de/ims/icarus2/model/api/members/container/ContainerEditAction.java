@@ -16,16 +16,59 @@
  */
 package de.ims.icarus2.model.api.members.container;
 
+import de.ims.icarus2.model.api.edit.EditAction;
+import de.ims.icarus2.model.api.members.item.Item;
+
 /**
  * @author Markus Gärtner
  *
  */
-public enum ContainerEditAction {
+public enum ContainerEditAction implements EditAction<Container> {
 
-	ADD_ITEM,
-	ADD_ITEM_SET,
-	REMOVE_ITEM,
-	REMOVE_ITEM_SET,
-	MOVE_ITEM,
+	ADD_ITEM(EditType.ADD, false),
+	ADD_ITEM_SET(EditType.ADD, true),
+	REMOVE_ITEM(EditType.REMOVE, false),
+	REMOVE_ITEM_SET(EditType.REMOVE, true),
+	MOVE_ITEM(EditType.MOVE, false),
 	;
+
+	private final EditType type;
+	private final boolean batch;
+
+	private ContainerEditAction(EditType type, boolean batch) {
+		this.type = type;
+		this.batch = batch;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.edit.EditAction#getSourceClass()
+	 */
+	@Override
+	public Class<Container> getSourceClass() {
+		return Container.class;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.edit.EditAction#getElementClass()
+	 */
+	@Override
+	public Class<? extends Item> getElementClass() {
+		return Item.class;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.edit.EditAction#getType()
+	 */
+	@Override
+	public EditType getType() {
+		return type;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.edit.EditAction#isBatch()
+	 */
+	@Override
+	public boolean isBatch() {
+		return batch;
+	}
 }

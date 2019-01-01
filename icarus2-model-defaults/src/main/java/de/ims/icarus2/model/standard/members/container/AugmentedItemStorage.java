@@ -36,13 +36,15 @@ import de.ims.icarus2.util.collections.seq.ListSequence;
  * and augments them with additional items. To streamline management it is assumed to not
  * be allowed for the wrapping storage to forward edits to the base container and access
  * to elements is managed as follows:
- * <p><blockquote><pre>
+ * <p>
+ * <blockquote><pre>
  *       +------------------------------+---------------------+
  *       |         BASE CONTAINER       |    AUGMENTATION     |
  *       |          immutable           |      mutable        |
  *       +------------------------------+---------------------+
  *
- * Index 0                             K-1                   N-1</pre></blockquote>
+ * Index 0                             K-1                   N-1
+ * </pre></blockquote>
  * The total number of elements in this storage is {@code N} with the base container holding
  * {@code K} items. Legal index values for edit operations range from {@code K} to {@code N-1}.
  * Attempts to add, remove or move items in the index range occupied by the base container
@@ -105,6 +107,10 @@ public class AugmentedItemStorage extends WrappingItemStorage {
 		return ContainerType.LIST;
 	}
 
+	protected long getWrappedItemCount(Container context) {
+		return super.getItemCount(context);
+	}
+
 	/**
 	 * Returns the sum of the base containers item count and the size of this storage's
 	 * internal augmentation list.
@@ -113,17 +119,17 @@ public class AugmentedItemStorage extends WrappingItemStorage {
 	 */
 	@Override
 	public long getItemCount(Container context) {
-		return super.getItemCount(context) + augmentation.size();
+		return getWrappedItemCount(context) + augmentation.size();
 	}
 
 	@Override
 	public Item getItemAt(Container context, long index) {
 
-		long wrappedCount = super.getItemCount(context);
+		long wrappedCount = getWrappedItemCount(context);
 		if(index<wrappedCount) {
 			return super.getItemAt(context, index);
 		} else {
-			return augmentation.get(IcarusUtils.ensureIntegerValueRange(index-wrappedCount));
+			return augmentation.get(translateAndCheckEditIndex(context, index));
 		}
 	}
 
@@ -132,14 +138,22 @@ public class AugmentedItemStorage extends WrappingItemStorage {
 
 		int index = augmentation.indexOf(item);
 		if(index!=-1) {
-			return index + super.getItemCount(context);
+			return index + getWrappedItemCount(context);
 		} else {
 			return super.indexOfItem(context, item);
 		}
 	}
 
+	/**
+	 * Translates a global index into one usable for edit operations on the internal
+	 * {@link #augmentation} storage.
+	 *
+	 * @param context
+	 * @param index
+	 * @return
+	 */
 	protected int translateAndCheckEditIndex(Container context, long index) {
-		long wrappedCount = super.getItemCount(context);
+		long wrappedCount = getWrappedItemCount(context);
 		if(index<wrappedCount)
 			throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
 					"Augmented container storage cannot modify underlying container - unable to perform edit at index: "+index);
@@ -147,9 +161,16 @@ public class AugmentedItemStorage extends WrappingItemStorage {
 		return IcarusUtils.ensureIntegerValueRange(index-wrappedCount);
 	}
 
-	protected boolean isWrappedIndex(Container context, long index) {
-		long wrappedCount = super.getItemCount(context);
-		return index>=wrappedCount;
+	/**
+	 * Returns whether the given {@code index} lies within the wrapped part of
+	 * the container or
+	 * @param context
+	 * @param index
+	 * @return
+	 */
+	public boolean isWrappedIndex(Container context, long index) {
+		long wrappedCount = getWrappedItemCount(context);
+		return index<wrappedCount;
 	}
 
 	@Override
@@ -177,7 +198,7 @@ public class AugmentedItemStorage extends WrappingItemStorage {
 
 		final List<Item> buffer = new ArrayList<>(Math.max(1, idx1-idx0+1));
 
-		augmentation.removeAll(idx0, idx1, e -> buffer.add(e));
+		augmentation.removeAll(idx0, idx1, buffer::add);
 
 		return new ListSequence<>(buffer);
 	}
@@ -197,41 +218,5 @@ public class AugmentedItemStorage extends WrappingItemStorage {
 	@Override
 	public ContainerEditVerifier createEditVerifier(Container context) {
 		return new AugmentedContainerEditVerifier(context, this);
-	}
-
-	/**
-	 * An extended default edit verifier that overrides the index validation methods
-	 * of {@link DefaultContainerEditVerifier} to check that supplied indices are
-	 * not located within the "wrapped" part of the item storage.
-	 *
-	 * @author Markus Gärtner
-	 *
-	 */
-	public static class AugmentedContainerEditVerifier extends DefaultContainerEditVerifier {
-
-		private AugmentedItemStorage storage;
-
-		/**
-		 * @param source
-		 */
-		public AugmentedContainerEditVerifier(Container source, AugmentedItemStorage storage) {
-			super(source);
-
-			if (storage == null)
-				throw new NullPointerException("Invalid storage");
-
-			this.storage = storage;
-		}
-
-		@Override
-		protected boolean isValidAddItemIndex(long index) {
-			return !storage.isWrappedIndex(getSource(), index) && index<=storage.getItemCount(getSource());
-		}
-
-		@Override
-		protected boolean isValidRemoveItemIndex(long index) {
-			return !storage.isWrappedIndex(getSource(), index) && index<storage.getItemCount(getSource());
-		}
-
 	}
 }

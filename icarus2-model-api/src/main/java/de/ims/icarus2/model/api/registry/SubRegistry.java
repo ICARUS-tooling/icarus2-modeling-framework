@@ -41,7 +41,7 @@ public class SubRegistry implements MetadataRegistry {
 		 *  Performance optimization:
 		 *
 		 *  In case the given source registry already is an instance of this class,
-		 *  simply combine the key prefixes and reference only at the original registry.
+		 *  simply combine the key prefixes and reference only the original registry.
 		 *  This prevents costly chaining of SubRegistry instances and ensures that we
 		 *  only ever get a direct pointer to the first foreign implementation in the
 		 *  registry hierarchy.

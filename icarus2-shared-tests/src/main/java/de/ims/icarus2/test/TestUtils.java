@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.test;
 
+import static de.ims.icarus2.test.util.Pair.pair;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -57,6 +58,7 @@ import org.mockito.Mockito;
 import de.ims.icarus2.test.DiffUtils.Trace;
 import de.ims.icarus2.test.func.TriConsumer;
 import de.ims.icarus2.test.util.IdentitySet;
+import de.ims.icarus2.test.util.Pair;
 
 /**
  * Collection of useful testing methods.
@@ -99,6 +101,66 @@ public class TestUtils {
 	public static void print(String s) {
 		if(out!=null)
 			out.print(s);
+	}
+
+	/**
+	 * Clone of the field in de.ims.icarus2.util.IcarusUtils
+	 */
+	public static final int MAX_INTEGER_INDEX = Integer.MAX_VALUE-8;
+
+	@SuppressWarnings({ "boxing", "rawtypes" })
+	private static final Pair[] displayLabels = {
+			pair(Long.MIN_VALUE, "Long.MIN_VALUE"),
+			pair(Integer.MIN_VALUE, "Integer.MIN_VALUE"),
+			pair(Short.MIN_VALUE, "Short.MIN_VALUE"),
+			pair(Byte.MIN_VALUE, "Byte.MIN_VALUE"),
+			pair(Byte.MAX_VALUE, "Byte.MAX_VALUE"),
+			pair(Short.MAX_VALUE, "Short.MAX_VALUE"),
+			pair(Integer.MAX_VALUE/2, "Integer.MAX_VALUE/2"),
+			pair(MAX_INTEGER_INDEX, "MAX_INDEX"),
+			pair(Integer.MAX_VALUE, "Integer.MAX_VALUE"),
+			pair(Long.MAX_VALUE/2, "Long.MAX_VALUE/2"),
+			pair(Long.MAX_VALUE, "Long.MAX_VALUE"),
+	};
+
+	private static final int displayRange = 10;
+
+	/**
+	 * Utility method that produces a more human-readable string for a given number.
+	 * It will use fixed numeric points such as {@link Integer#MAX_VALUE} to produce
+	 * String for numbers around those points such as {@code "Integer.MAX_VALUE-4"}.
+	 *
+	 * @param value
+	 * @return
+	 */
+	public static String displayString(long value) {
+		for(@SuppressWarnings("rawtypes") Pair entry : displayLabels) {
+			long center = ((Number)entry.first).longValue();
+			String label = (String)entry.second;
+
+			if(value==center) {
+				return label;
+			} else if(value < center && value >= center-displayRange) {
+				return label+"-"+(center-value);
+			} else if(value > center && value <= center+displayRange) {
+				return label+"+"+(value-center);
+			}
+		}
+
+		return String.valueOf(value);
+	}
+
+	public static String displayString(String pattern, Object...args) {
+		for(int i=0; i<args.length; i++) {
+			Object arg = args[i];
+			if(Number.class.isInstance(arg)) { //TODO potential issue: floating-point numbers might get distorted?
+				args[i] = displayString(((Number)arg).longValue());
+			} else {
+				args[i] = String.valueOf(arg);
+			}
+		}
+
+		return String.format(pattern, args);
 	}
 
 	public static void println() {

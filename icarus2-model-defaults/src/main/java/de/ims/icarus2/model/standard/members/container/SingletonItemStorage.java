@@ -207,19 +207,11 @@ public class SingletonItemStorage implements ItemStorage {
 	 */
 	@Override
 	public ContainerEditVerifier createEditVerifier(Container context) {
-		return new DefaultContainerEditVerifier(context) {
-
-			@Override
-			public boolean canMoveItem(long index0, long index1) {
-				return false;
-			}
-
-		};
+		return new SingletonContainerEditVerifier(context);
 	}
 
 	@Override
 	public boolean isDirty(Container context) {
 		return false;
 	}
-
 }

@@ -16,18 +16,62 @@
  */
 package de.ims.icarus2.model.api.members.structure;
 
+import de.ims.icarus2.model.api.edit.EditAction;
+import de.ims.icarus2.model.api.members.item.Edge;
+import de.ims.icarus2.model.api.members.item.Item;
+
 /**
  * @author Markus Gärtner
  *
  */
-public enum StructureEditAction {
+public enum StructureEditAction implements EditAction<Structure> {
 
-	ADD_EDGE,
-	ADD_EDGE_SET,
-	REMOVE_EDGE,
-	REMOVE_EDGE_SET,
-	MOVE_EDGE,
-	CHANGE_SOURCE_TERMINAL,
-	CHANGE_TARGET_TERMINAL,
+	ADD_EDGE(EditType.ADD, false),
+	ADD_EDGE_SET(EditType.ADD, true),
+	REMOVE_EDGE(EditType.REMOVE, false),
+	REMOVE_EDGE_SET(EditType.REMOVE, true),
+	MOVE_EDGE(EditType.MOVE, false),
+	CHANGE_SOURCE_TERMINAL(EditType.CHANGE_TERMINAL, false),
+	CHANGE_TARGET_TERMINAL(EditType.CHANGE_TERMINAL, false),
 	;
+
+	private final EditType type;
+	private final boolean batch;
+
+	private StructureEditAction(EditType type, boolean batch) {
+		this.type = type;
+		this.batch = batch;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.edit.EditAction#getSourceClass()
+	 */
+	@Override
+	public Class<Structure> getSourceClass() {
+		return Structure.class;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.edit.EditAction#getElementClass()
+	 */
+	@Override
+	public Class<? extends Item> getElementClass() {
+		return type==EditType.CHANGE_TERMINAL ? Item.class : Edge.class;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.edit.EditAction#getType()
+	 */
+	@Override
+	public EditType getType() {
+		return type;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.edit.EditAction#isBatch()
+	 */
+	@Override
+	public boolean isBatch() {
+		return batch;
+	}
 }

@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
+import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -33,10 +35,7 @@ public class ImmutableContainerEditVerifier implements ContainerEditVerifier {
 	private Container source;
 
 	public ImmutableContainerEditVerifier(Container source) {
-		if (source == null)
-			throw new NullPointerException("Invalid source");
-
-		this.source = source;
+		this.source = requireNonNull(source);
 	}
 
 	/**
