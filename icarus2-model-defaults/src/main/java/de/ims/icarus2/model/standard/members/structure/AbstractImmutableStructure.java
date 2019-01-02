@@ -69,7 +69,7 @@ public abstract class AbstractImmutableStructure extends AbstractImmutableContai
 	}
 
 	@Override
-	public void moveEdge(long index0, long index1) {
+	public void swapEdges(long index0, long index1) {
 		signalUnsupportedOperation();
 	}
 

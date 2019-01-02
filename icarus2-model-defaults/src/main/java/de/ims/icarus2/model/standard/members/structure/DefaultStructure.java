@@ -284,10 +284,10 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.structure.Structure#moveEdge(long, long)
+	 * @see de.ims.icarus2.model.api.members.structure.Structure#swapEdges(long, long)
 	 */
 	@Override
-	public void moveEdge(long index0, long index1) {
+	public void swapEdges(long index0, long index1) {
 		edgeStorage().moveEdge(this, index0, index1);
 	}
 

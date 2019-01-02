@@ -189,10 +189,10 @@ public class StaticStructure extends DefaultItem implements Structure {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.container.Container#moveItem(long, long)
+	 * @see de.ims.icarus2.model.api.members.container.Container#swapItems(long, long)
 	 */
 	@Override
-	public void moveItem(long index0, long index1) {
+	public void swapItems(long index0, long index1) {
 		signalUnsupportedOperation();
 	}
 
@@ -398,10 +398,10 @@ public class StaticStructure extends DefaultItem implements Structure {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.structure.Structure#moveEdge(long, long)
+	 * @see de.ims.icarus2.model.api.members.structure.Structure#swapEdges(long, long)
 	 */
 	@Override
-	public void moveEdge(long index0, long index1) {
+	public void swapEdges(long index0, long index1) {
 		signalUnsupportedOperation();
 	}
 

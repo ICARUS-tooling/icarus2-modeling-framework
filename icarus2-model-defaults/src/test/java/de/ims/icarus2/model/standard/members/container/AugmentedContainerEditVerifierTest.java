@@ -79,13 +79,13 @@ class AugmentedContainerEditVerifierTest {
 			.addBatchIllegal(-1, 1)
 			.removeSingleIllegal(-1, 0, 1)
 			.removeBatchIllegal(longPair(0, 0), longPair(1, 1), longPair(0, 1))
-			.moveSingleIllegal(longPair(0, 0), longPair(1, 1))
+			.swapSingleIllegal(longPair(0, 0), longPair(1, 1))
 			.createTests();
 	}
 
 	@SuppressWarnings("unchecked")
 	@TestFactory
-	public Stream<DynamicTest> testSmallContainerWithAugmentation() {
+	public Stream<DynamicTest> testSmallContainerSize5Aug5() {
 		Container container = mockContainer(5);
 		AugmentedItemStorage storage = mockStorage(container, 5);
 		return new ContainerEditVerifierTestSpec(
@@ -99,15 +99,15 @@ class AugmentedContainerEditVerifierTest {
 			.removeBatchLegal(longPair(5, 5), longPair(9, 9), longPair(5, 9), longPair(7, 8))
 			.removeBatchIllegal(longPair(0, 0), longPair(1, 1), longPair(4, 4),
 					longPair(0, 4), longPair(0, 1), longPair(4, 9), longPair(10, 10))
-			.moveSingleLegal(longPair(5, 9), longPair(9, 7))
-			.moveSingleIllegal(longPair(0, 0), longPair(1, 1), longPair(4, 4),
+			.swapSingleLegal(longPair(5, 9), longPair(9, 7))
+			.swapSingleIllegal(longPair(0, 0), longPair(1, 1), longPair(4, 4),
 					longPair(4, 9))
 			.createTests();
 	}
 
 	@SuppressWarnings("unchecked")
 	@TestFactory
-	public Stream<DynamicTest> testSmallContainerWithoutAugmentation() {
+	public Stream<DynamicTest> testSmallContainerSize10NoAug() {
 		Container container = mockContainer(10);
 		AugmentedItemStorage storage = mockStorage(container, 0);
 		return new ContainerEditVerifierTestSpec(
@@ -118,7 +118,7 @@ class AugmentedContainerEditVerifierTest {
 			.addBatchIllegal(-1, 0, 9)
 			.removeSingleIllegal(-1, 0, 1, 9, 10)
 			.removeBatchIllegal(longPair(0, 0), longPair(1, 1), longPair(4, 9), longPair(10, 10))
-			.moveSingleIllegal(longPair(0, 0), longPair(1, 1), longPair(4, 9), longPair(9, 10))
+			.swapSingleIllegal(longPair(0, 0), longPair(1, 1), longPair(4, 9), longPair(9, 10))
 			.createTests();
 	}
 
@@ -144,8 +144,8 @@ class AugmentedContainerEditVerifierTest {
 			.removeBatchLegal(longPair(WS, WS), longPair(WS+AS-1, WS+AS-1), longPair(WS, WS+AS-1), longPair(WS+AS/2, WS+AS-2))
 			.removeBatchIllegal(longPair(0, 0), longPair(1, 1), longPair(WS-1, WS-1),
 					longPair(0, 1000), longPair(0, WS), longPair(4, WS+AS), longPair(WS+AS, WS+AS))
-			.moveSingleLegal(longPair(WS, WS+AS-1), longPair(WS+AS-1, WS+1))
-			.moveSingleIllegal(longPair(0, 0), longPair(1, 1), longPair(WS/2, 4),
+			.swapSingleLegal(longPair(WS, WS+AS-1), longPair(WS+AS-1, WS+1))
+			.swapSingleIllegal(longPair(0, 0), longPair(1, 1), longPair(WS/2, 4),
 					longPair(WS/2, WS+AS-1))
 			.createTests();
 	}

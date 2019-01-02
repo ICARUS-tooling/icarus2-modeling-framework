@@ -149,7 +149,7 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 	}
 
 	public void moveItem(ItemLayer layer, long index0, long index1) {
-		getRootContainer(layer).moveItem(index0, index1);
+		getRootContainer(layer).swapItems(index0, index1);
 	}
 
 	public void addItems(ItemLayer layer, long index, DataSequence<? extends Item> items) {

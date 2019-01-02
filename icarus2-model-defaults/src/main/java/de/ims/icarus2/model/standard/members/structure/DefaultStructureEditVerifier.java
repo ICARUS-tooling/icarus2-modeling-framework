@@ -82,10 +82,10 @@ public class DefaultStructureEditVerifier extends DefaultContainerEditVerifier i
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canMoveEdge(long, long)
+	 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canSwapEdges(long, long)
 	 */
 	@Override
-	public boolean canMoveEdge(long index0, long index1) {
+	public boolean canSwapEdges(long index0, long index1) {
 		return isValidRemoveEdgeIndex(index0) && isValidRemoveEdgeIndex(index1);
 	}
 

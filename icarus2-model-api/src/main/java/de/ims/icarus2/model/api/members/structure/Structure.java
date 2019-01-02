@@ -256,8 +256,7 @@ public interface Structure extends Container {
 	 * Returns the
 	 * <p>
 	 * This is an optional method and only to be expected when the type of
-	 * this structure is neither {@value StructureType#SET} nor
-	 * {@value StructureType#GRAPH}.
+	 * this structure is neither {@value StructureType#SET} nor {@value StructureType#GRAPH}.
 	 *
 	 * @param child
 	 * @param offset
@@ -276,7 +275,8 @@ public interface Structure extends Container {
 	 * Returns the length of the longest path to a leaf node in the tree whose root the given
 	 * item is. If the given {@code node} is a leaf itself the method returns {@code 0}.
 	 * <p>
-	 * This is an optional method. If a structure does not support this kind of information it should simply return {@code -1};
+	 * This is an optional method. If a structure does not support this kind of information
+	 * it should simply return {@code -1};
 	 *
 	 * @param node
 	 * @return
@@ -288,7 +288,8 @@ public interface Structure extends Container {
 	 * Returns the length of the longest path from the {@link #getVirtualRoot() root node} to
 	 * any of the reachable leafs in the structure.
 	 * <p>
-	 * This is an optional method. If a structure does not support this kind of information it should simply return {@code -1};
+	 * This is an optional method. If a structure does not support this kind of information
+	 * it should simply return {@code -1};
 	 *
 	 * @return
 	 */
@@ -303,7 +304,8 @@ public interface Structure extends Container {
 	 * that a return value of {@code -1} signals that the specified node has no valid 'parent'
 	 * path to the virtual root and the actual depth could not be calculated.
 	 * <p>
-	 * This is an optional method. If a structure does not support this kind of information it should simply return {@code -1};
+	 * This is an optional method. If a structure does not support this kind of information
+	 * it should simply return {@code -1};
 	 *
 	 * @param node
 	 * @return
@@ -316,7 +318,8 @@ public interface Structure extends Container {
 	 * This includes children of the given node and all successive grand children. If called
 	 * for a leaf node this method returns {@code 0}.
 	 * <p>
-	 * This is an optional method. If a structure does not support this kind of information it should simply return {@code -1};
+	 * This is an optional method. If a structure does not support this kind of information
+	 * it should simply return {@code -1};
 	 *
 	 * @param parent
 	 * @return
@@ -370,8 +373,7 @@ public interface Structure extends Container {
 	DataSequence<? extends Edge> removeEdges(long index0, long index1);
 
 	/**
-	 * Moves the edge currently located at position {@code index0}
-	 * over to position {@code index1}.
+	 * Swaps the edges currently located at positions {@code index0} and {@code index1}.
 	 *
 	 * @param index0
 	 * @param index1
@@ -381,7 +383,7 @@ public interface Structure extends Container {
 	 * @throws UnsupportedOperationException if the corpus
 	 * is not editable or the operation is not supported by the implementation
 	 */
-	void moveEdge(long index0, long index1);
+	void swapEdges(long index0, long index1);
 
 	/**
 	 * Changes the specified terminal (source or target) of the given edge to

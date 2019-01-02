@@ -219,7 +219,7 @@ public class SerializableAtomicModelChange {
 			checkExpectedMember("Move failed - item0", currentItem0, item0);
 			checkExpectedMember("Move failed - item1", currentItem1, item1);
 
-			container.moveItem(index0, index1);
+			container.swapItems(index0, index1);
 
 			// Swap indices and expected items
 
@@ -531,7 +531,7 @@ public class SerializableAtomicModelChange {
 			checkExpectedMember("Move failed - edge0", currentEdge0, edge0);
 			checkExpectedMember("Move failed - edge1", currentEdge1, edge1);
 
-			structure.moveEdge(index0, index1);
+			structure.swapEdges(index0, index1);
 
 			// Swap indices and expected edges
 

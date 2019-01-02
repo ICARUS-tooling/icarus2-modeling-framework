@@ -143,7 +143,7 @@ public interface EdgeStorage extends Recyclable {
 	DataSequence<? extends Edge> removeEdges(Structure context, long index0, long index1);
 
 	/**
-	 * @see Structure#moveEdge(long, long)
+	 * @see Structure#swapEdges(long, long)
 	 */
 	void moveEdge(Structure context, long index0, long index1);
 

@@ -87,10 +87,10 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.item.manager.ItemList#moveItem(long, long)
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemList#swapItems(long, long)
 	 */
 	@Override
-	public void moveItem(long index0, long index1) {
+	public void swapItems(long index0, long index1) {
 		move(IcarusUtils.ensureIntegerValueRange(index0), IcarusUtils.ensureIntegerValueRange(index1));
 	}
 

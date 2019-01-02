@@ -84,10 +84,10 @@ public abstract class AbstractImmutableContainer implements Container {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.container.Container#moveItem(long, long)
+	 * @see de.ims.icarus2.model.api.members.container.Container#swapItems(long, long)
 	 */
 	@Override
-	public void moveItem(long index0, long index1) {
+	public void swapItems(long index0, long index1) {
 		signalUnsupportedOperation();
 	}
 

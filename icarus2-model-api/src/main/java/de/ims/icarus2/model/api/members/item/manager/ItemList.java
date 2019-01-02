@@ -97,7 +97,7 @@ public interface ItemList extends ItemLookup {
 	 * @throws UnsupportedOperationException if the corpus
 	 * is not editable or the operation is not supported by the implementation
 	 */
-	void moveItem(long index0, long index1);
+	void swapItems(long index0, long index1);
 
 	/**
 	 * Inserts a sequence of items at the specified position.

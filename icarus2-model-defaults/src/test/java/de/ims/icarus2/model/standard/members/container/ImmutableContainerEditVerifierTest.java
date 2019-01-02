@@ -45,20 +45,20 @@ class ImmutableContainerEditVerifierTest {
 			.addBatchIllegal(-1, 1)
 			.removeSingleIllegal(-1, 0, 1)
 			.removeBatchIllegal(longPair(0, 0), longPair(1, 1), longPair(0, 1))
-			.moveSingleIllegal(longPair(0, 0), longPair(1, 1))
+			.swapSingleIllegal(longPair(0, 0), longPair(1, 1))
 			.createTests();
 	}
 
 	@SuppressWarnings("unchecked")
 	@TestFactory
-	public Stream<DynamicTest> testSmallContainer() {
+	public Stream<DynamicTest> testSmallContainerSize10() {
 		return new ContainerEditVerifierTestSpec(
 				new ImmutableContainerEditVerifier(mockContainer(10)))
 			.addSingleIllegal(0, 1, Long.MAX_VALUE)
 			.addBatchIllegal(0, 3, 9, Long.MAX_VALUE)
 			.removeSingleIllegal(-1, 0, 5, 9, Long.MAX_VALUE)
 			.removeBatchIllegal(longPair(0, 0), longPair(1, 1), longPair(0, 1))
-			.moveSingleIllegal(longPair(0, 0), longPair(1, 1), longPair(9, 1))
+			.swapSingleIllegal(longPair(0, 0), longPair(1, 1), longPair(9, 1))
 			.createTests();
 	}
 
@@ -71,7 +71,7 @@ class ImmutableContainerEditVerifierTest {
 			.addBatchIllegal(-1, 1, Long.MAX_VALUE)
 			.removeSingleIllegal(-1, 0, Long.MAX_VALUE)
 			.removeBatchIllegal(longPair(0, 0), longPair(1, Long.MAX_VALUE), longPair(0, 1))
-			.moveSingleIllegal(longPair(0, 0), longPair(1, Long.MAX_VALUE), longPair(Long.MAX_VALUE, 1))
+			.swapSingleIllegal(longPair(0, 0), longPair(1, Long.MAX_VALUE), longPair(Long.MAX_VALUE, 1))
 			.createTests();
 	}
 }

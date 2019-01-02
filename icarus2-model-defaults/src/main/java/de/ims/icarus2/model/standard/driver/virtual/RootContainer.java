@@ -270,7 +270,7 @@ public class RootContainer extends AbstractImmutableContainer {
 	}
 
 	@Override
-	public void moveItem(long index0, long index1) {
-		getItems().moveItem(index0, index1);
+	public void swapItems(long index0, long index1) {
+		getItems().swapItems(index0, index1);
 	}
 }

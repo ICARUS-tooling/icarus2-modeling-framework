@@ -95,10 +95,10 @@ public class DefaultContainerEditVerifier implements ContainerEditVerifier {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.container.ContainerEditVerifier#canMoveItem(long, long)
+	 * @see de.ims.icarus2.model.api.members.container.ContainerEditVerifier#canSwapItems(long, long)
 	 */
 	@Override
-	public boolean canMoveItem(long index0, long index1) {
+	public boolean canSwapItems(long index0, long index1) {
 		return isValidRemoveItemIndex(index0) && isValidRemoveItemIndex(index1);
 	}
 }

@@ -90,7 +90,7 @@ public interface StructureEditVerifier extends ContainerEditVerifier {
 	 */
 	boolean canRemoveEdges(long index0, long index1);
 
-	boolean canMoveEdge(long index0, long index1);
+	boolean canSwapEdges(long index0, long index1);
 
 	boolean canSetTerminal(Edge edge, Item terminal, boolean isSource);
 

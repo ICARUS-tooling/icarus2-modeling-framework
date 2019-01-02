@@ -86,11 +86,11 @@ public class CompoundStructureEditVerifier implements StructureEditVerifier {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.container.ContainerEditVerifier#canMoveItem(long, long)
+	 * @see de.ims.icarus2.model.api.members.container.ContainerEditVerifier#canSwapItems(long, long)
 	 */
 	@Override
-	public boolean canMoveItem(long index0, long index1) {
-		return containerEditVerifier.canMoveItem(index0, index1);
+	public boolean canSwapItems(long index0, long index1) {
+		return containerEditVerifier.canSwapItems(index0, index1);
 	}
 
 	/**
@@ -142,10 +142,10 @@ public class CompoundStructureEditVerifier implements StructureEditVerifier {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canMoveEdge(long, long)
+	 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canSwapEdges(long, long)
 	 */
 	@Override
-	public boolean canMoveEdge(long index0, long index1) {
+	public boolean canSwapEdges(long index0, long index1) {
 		return index0!=index1
 				&& isValidRemoveEdgeIndex(index0)
 				&& isValidRemoveEdgeIndex(index1);

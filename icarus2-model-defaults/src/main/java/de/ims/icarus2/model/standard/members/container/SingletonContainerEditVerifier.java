@@ -36,10 +36,10 @@ public class SingletonContainerEditVerifier extends DefaultContainerEditVerifier
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.container.DefaultContainerEditVerifier#canMoveItem(long, long)
+	 * @see de.ims.icarus2.model.standard.members.container.DefaultContainerEditVerifier#canSwapItems(long, long)
 	 */
 	@Override
-	public boolean canMoveItem(long index0, long index1) {
+	public boolean canSwapItems(long index0, long index1) {
 		return false;
 	}
 }

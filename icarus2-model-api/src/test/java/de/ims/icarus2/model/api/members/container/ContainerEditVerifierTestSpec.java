@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package de.ims.icarus2.model.api.members.container;
 
@@ -61,13 +61,13 @@ public class ContainerEditVerifierTestSpec {
 	final List<Pair<Long, Long>> removeBatchIllegal = new ArrayList<>();
 
 	/**
-	 * Legal values for {@link ContainerEditVerifier#canMoveItem(long, long)}
+	 * Legal values for {@link ContainerEditVerifier#canSwapItems(long, long)}
 	 */
-	final List<Pair<Long, Long>> moveSingleLegal = new ArrayList<>();
+	final List<Pair<Long, Long>> swapSingleLegal = new ArrayList<>();
 	/**
-	 * Illegal values for {@link ContainerEditVerifier#canMoveItem(long, long)}
+	 * Illegal values for {@link ContainerEditVerifier#canSwapItems(long, long)}
 	 */
-	final List<Pair<Long, Long>> moveSingleIllegal = new ArrayList<>();
+	final List<Pair<Long, Long>> swapSingleIllegal = new ArrayList<>();
 
 	public ContainerEditVerifierTestSpec(ContainerEditVerifier verifier) {
 		this.verifier = requireNonNull(verifier);
@@ -151,23 +151,23 @@ public class ContainerEditVerifierTestSpec {
 		return this;
 	}
 
-	public ContainerEditVerifierTestSpec moveSingleLegal(long index0, long index1) {
-		moveSingleLegal.add(new Pair<>(index0, index1));
+	public ContainerEditVerifierTestSpec swapSingleLegal(long index0, long index1) {
+		swapSingleLegal.add(new Pair<>(index0, index1));
 		return this;
 	}
-	public ContainerEditVerifierTestSpec moveSingleLegal(
+	public ContainerEditVerifierTestSpec swapSingleLegal(
 			@SuppressWarnings("unchecked") Pair<Long, Long>...entries) {
-		Collections.addAll(moveSingleLegal, entries);
+		Collections.addAll(swapSingleLegal, entries);
 		return this;
 	}
 
-	public ContainerEditVerifierTestSpec moveSingleIllegal(long index0, long index1) {
-		moveSingleIllegal.add(new Pair<>(index0, index1));
+	public ContainerEditVerifierTestSpec swapSingleIllegal(long index0, long index1) {
+		swapSingleIllegal.add(new Pair<>(index0, index1));
 		return this;
 	}
-	public ContainerEditVerifierTestSpec moveSingleIllegal(
+	public ContainerEditVerifierTestSpec swapSingleIllegal(
 			@SuppressWarnings("unchecked") Pair<Long, Long>...entries) {
-		Collections.addAll(moveSingleIllegal, entries);
+		Collections.addAll(swapSingleIllegal, entries);
 		return this;
 	}
 
@@ -211,12 +211,12 @@ public class ContainerEditVerifierTestSpec {
 				p -> spec.verifier.canRemoveItems(p.first, p.second), false, tests::add);
 
 		// MOVE
-		TestUtils.makeTests(spec.moveSingleLegal,
-				p -> displayString("move single legal: %s to %s", p.first, p.second),
-				p -> spec.verifier.canMoveItem(p.first, p.second), true, tests::add);
-		TestUtils.makeTests(spec.moveSingleIllegal,
-				p -> displayString("move single illegal: %s to %s", p.first, p.second),
-				p -> spec.verifier.canMoveItem(p.first, p.second), false, tests::add);
+		TestUtils.makeTests(spec.swapSingleLegal,
+				p -> displayString("swap single legal: %s to %s", p.first, p.second),
+				p -> spec.verifier.canSwapItems(p.first, p.second), true, tests::add);
+		TestUtils.makeTests(spec.swapSingleIllegal,
+				p -> displayString("swap single illegal: %s to %s", p.first, p.second),
+				p -> spec.verifier.canSwapItems(p.first, p.second), false, tests::add);
 
 		return tests;
 	}

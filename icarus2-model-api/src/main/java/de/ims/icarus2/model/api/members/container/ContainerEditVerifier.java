@@ -70,11 +70,11 @@ public interface ContainerEditVerifier extends EditVerifier<Container> {
 	boolean canRemoveItems(long index0, long index1);
 
 	/**
-	 * Precondition check for the {@link Container#moveItem(long, long)} method.
+	 * Precondition check for the {@link Container#swapItems(long, long)} method.
 	 *
 	 * @param index0
 	 * @param index1
 	 * @return
 	 */
-	boolean canMoveItem(long index0, long index1);
+	boolean canSwapItems(long index0, long index1);
 }

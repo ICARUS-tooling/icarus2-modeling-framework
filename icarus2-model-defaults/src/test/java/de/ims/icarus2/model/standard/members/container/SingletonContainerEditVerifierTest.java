@@ -47,7 +47,7 @@ class SingletonContainerEditVerifierTest {
 			.addBatchIllegal(-1, 1)
 			.removeSingleIllegal(-1, 0, 1)
 			.removeBatchIllegal(longPair(0, 0), longPair(1, 1), longPair(0, 1))
-			.moveSingleIllegal(longPair(0, 0), longPair(1, 1))
+			.swapSingleIllegal(longPair(0, 0), longPair(1, 1))
 			.createTests();
 	}
 
@@ -62,7 +62,7 @@ class SingletonContainerEditVerifierTest {
 			.removeSingleIllegal(-1, 1)
 			.removeBatchLegal(longPair(0, 0))
 			.removeBatchIllegal(longPair(1, 1), longPair(0, 1))
-			.moveSingleIllegal(longPair(0, 0), longPair(1, 1))
+			.swapSingleIllegal(longPair(0, 0), longPair(1, 1))
 			.createTests();
 	}
 

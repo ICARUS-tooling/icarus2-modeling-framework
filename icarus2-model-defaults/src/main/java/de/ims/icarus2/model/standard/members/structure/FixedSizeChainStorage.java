@@ -791,10 +791,10 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canMoveEdge(long, long)
+		 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canSwapEdges(long, long)
 		 */
 		@Override
-		public boolean canMoveEdge(long index0, long index1) {
+		public boolean canSwapEdges(long index0, long index1) {
 			return false;
 		}
 
