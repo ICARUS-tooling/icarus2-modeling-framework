@@ -5,35 +5,38 @@ package de.ims.icarus2.model.standard.members.container;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
 import static de.ims.icarus2.test.util.Pair.longPair;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.api.members.container.Container;
-import de.ims.icarus2.model.api.members.container.ContainerEditVerifierTest;
-import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.model.api.members.container.ContainerEditVerifierTestSpec;
 
 /**
  * @author Markus Gärtner
  *
  */
-class DefaultContainerEditVerifierTest implements ContainerEditVerifierTest<DefaultContainerEditVerifier> {
+class DefaultContainerEditVerifierTest {
 
-	/**
-	 * @see de.ims.icarus2.model.api.members.container.ContainerEditVerifierTest#createContainerEditVerifier(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.api.members.container.Container)
-	 */
-	@Override
-	public DefaultContainerEditVerifier createContainerEditVerifier(TestSettings settings, Container container) {
-		return new DefaultContainerEditVerifier(container);
+	@Test
+	void testLifecycle() {
+		Container container = mockContainer(0);
+		@SuppressWarnings("resource")
+		DefaultContainerEditVerifier verifier = new DefaultContainerEditVerifier(container);
+
+		assertEquals(container, verifier.getSource());
+
+		verifier.close();
+
+		assertNull(verifier.getSource());
 	}
 
-	/**
-	 * @see de.ims.icarus2.model.api.members.container.ContainerEditVerifierTest#testEmptyContainer()
-	 */
 	@SuppressWarnings("unchecked")
-	@Override
 	@TestFactory
 	public Stream<DynamicTest> testEmptyContainer() {
 		return new ContainerEditVerifierTestSpec(
@@ -45,14 +48,10 @@ class DefaultContainerEditVerifierTest implements ContainerEditVerifierTest<Defa
 				.removeSingleIllegal(-1, 0, 1)
 				.removeBatchIllegal(longPair(0, 0), longPair(1, 1), longPair(0, 1))
 				.moveSingleIllegal(longPair(0, 0), longPair(-1, 0), longPair(0, 1))
-				.test();
+				.createTests();
 	}
 
-	/**
-	 * @see de.ims.icarus2.model.api.members.container.ContainerEditVerifierTest#testSmallContainer()
-	 */
 	@SuppressWarnings("unchecked")
-	@Override
 	@TestFactory
 	public Stream<DynamicTest> testSmallContainer() {
 		return new ContainerEditVerifierTestSpec(
@@ -67,14 +66,10 @@ class DefaultContainerEditVerifierTest implements ContainerEditVerifierTest<Defa
 				.removeBatchIllegal(longPair(0, 10), longPair(2, 11), longPair(-1, 5), longPair(5, 3))
 				.moveSingleLegal(longPair(0, 0), longPair(9, 9), longPair(9, 0), longPair(2, 6))
 				.moveSingleIllegal(longPair(-1, 1), longPair(8, 10), longPair(0, 12))
-				.test();
+				.createTests();
 	}
 
-	/**
-	 * @see de.ims.icarus2.model.api.members.container.ContainerEditVerifierTest#testLargeContainer()
-	 */
 	@SuppressWarnings("unchecked")
-	@Override
 	@TestFactory
 	public Stream<DynamicTest> testLargeContainer() {
 		return new ContainerEditVerifierTestSpec(
@@ -95,6 +90,6 @@ class DefaultContainerEditVerifierTest implements ContainerEditVerifierTest<Defa
 						longPair(Long.MAX_VALUE-2, 0))
 				.moveSingleIllegal(longPair(-1, 1),
 						longPair(Long.MAX_VALUE-2, Long.MAX_VALUE))
-				.test();
+				.createTests();
 	}
 }

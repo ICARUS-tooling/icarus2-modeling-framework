@@ -52,6 +52,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.Mockito;
 
@@ -1390,5 +1391,20 @@ public class TestUtils {
 
 	public static <V extends Object> Supplier<V> constant(V value) {
 		return () -> value;
+	}
+
+	public static <E extends Object> void makeTests(List<E> args,
+			Function<E, String> labelGen,
+			Predicate<? super E> check, boolean expectTrue,
+			Consumer<? super DynamicTest> collector) {
+		for(E arg : args) {
+			collector.accept(DynamicTest.dynamicTest(labelGen.apply(arg), () -> {
+				if(expectTrue) {
+					assertTrue(check.test(arg));
+				} else {
+					assertFalse(check.test(arg));
+				}
+			}));
+		}
 	}
 }

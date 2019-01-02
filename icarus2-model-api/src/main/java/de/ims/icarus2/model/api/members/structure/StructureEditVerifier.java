@@ -41,12 +41,53 @@ public interface StructureEditVerifier extends ContainerEditVerifier {
 	@Override
 	Structure getSource();
 
+	/**
+	 * Verify if the given {@code edge} can be inserted at the given {@code index}.
+	 * Note that the edge's {@link Edge#getTerminal(boolean) terminals} must be
+	 * items that are already present as nodes in the underlying structure!
+	 * <p>
+	 * Precondition check for the {@link Structure#addEdge(long, Edge)} method.
+	 *
+	 * @param index
+	 * @param edge
+	 * @return
+	 */
 	boolean canAddEdge(long index, Edge edge);
 
+	/**
+	 * Verify if the given {@code edges} can be inserted at the given {@code index}.
+	 * Note that the {@link Edge#getTerminal(boolean) terminals} of all provided
+	 * edges must be items that are already present as nodes in the underlying structure!
+	 * <p>
+	 * Precondition check for the {@link Structure#addEdges(long, DataSequence)} method.
+	 *
+	 * @param index
+	 * @param edges
+	 * @return
+	 */
 	boolean canAddEdges(long index, DataSequence<? extends Edge> edges);
 
+	/**
+	 * Verify that whichever edge is currently located at the given {@code index}
+	 * can safely be removed.
+	 * <p>
+	 * Precondition check for the {@link Structure#removeEdge(long)} method.
+	 *
+	 * @param index
+	 * @return
+	 */
 	boolean canRemoveEdge(long index);
 
+	/**
+	 * Verify that a section of the underlying structrue's edge storage can safely
+	 * be removed.
+	 * <p>
+	 * Precondition check for the {@link Structure#removeEdges(long, long)} method.
+	 *
+	 * @param index0
+	 * @param index1
+	 * @return
+	 */
 	boolean canRemoveEdges(long index0, long index1);
 
 	boolean canMoveEdge(long index0, long index1);

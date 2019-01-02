@@ -24,10 +24,14 @@ import de.ims.icarus2.model.standard.members.container.ImmutableContainerEditVer
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
+ * A simple {@link StructureEditVerifier} implementation that returns {@code false}
+ * for all edit verification methods.
+ *
  * @author Markus Gärtner
  *
  */
-public class ImmutableStructureEditVerifier extends ImmutableContainerEditVerifier implements StructureEditVerifier {
+public class ImmutableStructureEditVerifier extends ImmutableContainerEditVerifier
+		implements StructureEditVerifier {
 
 	public ImmutableStructureEditVerifier(Structure source) {
 		super(source);

@@ -111,15 +111,16 @@ public interface ItemList extends ItemLookup {
 
 	/**
 	 * Clears the internal storage of this list and returns all the previously
-	 * contained items in their former order. If the
-	 *
-	 * This default implementation
+	 * contained items in their former order. If the list is empty this method
+	 * returns also {@link DataSequence#emptySequence() an empty} sequence.
+	 * Otherwise this default implementation delegates to {@link #removeItems(long, long)}
+	 * with a range from {@code 0} to {@link #getItemCount()}{@code -1}.
 	 *
 	 * @return
 	 */
 	default DataSequence<? extends Item> removeAllItems() {
 		if(isEmpty()) {
-			return null;
+			return DataSequence.emptySequence();
 		}
 
 		return removeItems(0, getItemCount()-1);

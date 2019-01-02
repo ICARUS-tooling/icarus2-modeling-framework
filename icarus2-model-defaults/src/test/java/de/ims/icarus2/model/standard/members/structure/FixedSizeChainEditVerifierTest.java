@@ -3,13 +3,16 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
-import de.ims.icarus2.model.api.members.structure.StructureEditVerifierTest;
-import de.ims.icarus2.model.standard.members.structure.FixedSizeChainStorage.FixedSizeChainEditVerifier;
+import org.junit.jupiter.api.Nested;
 
 /**
  * @author Markus Gärtner
  *
  */
-class FixedSizeChainEditVerifierTest implements StructureEditVerifierTest<FixedSizeChainEditVerifier> {
+class FixedSizeChainEditVerifierTest {
 
+	@Nested
+	class GivenEmptyContainer {
+
+	}
 }

@@ -7,6 +7,8 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
 import static de.ims.icarus2.test.util.Pair.longPair;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -14,29 +16,34 @@ import static org.mockito.Mockito.when;
 
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.api.members.container.Container;
-import de.ims.icarus2.model.api.members.container.ContainerEditVerifierTest;
-import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.model.api.members.container.ContainerEditVerifierTestSpec;
 import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
-class AugmentedContainerEditVerifierTest implements ContainerEditVerifierTest<AugmentedContainerEditVerifier> {
+class AugmentedContainerEditVerifierTest {
 
-	/**
-	 * @see de.ims.icarus2.model.api.members.container.ContainerEditVerifierTest#createContainerEditVerifier(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.api.members.container.Container)
-	 */
-	@Override
-	public AugmentedContainerEditVerifier createContainerEditVerifier(TestSettings settings, Container container) {
+	@Test
+	void testLifecycle() {
+		Container container = mockContainer(0);
 		AugmentedItemStorage storage = mockStorage(container, 0);
+		@SuppressWarnings("resource")
+		AugmentedContainerEditVerifier verifier = new AugmentedContainerEditVerifier(container, storage);
 
-		return new AugmentedContainerEditVerifier(container, storage);
+		assertEquals(container, verifier.getSource());
+		assertEquals(storage, verifier.getStorage());
+
+		verifier.close();
+
+		assertNull(verifier.getSource());
+		assertNull(verifier.getStorage());
 	}
 
 	@SuppressWarnings("boxing")
@@ -59,11 +66,7 @@ class AugmentedContainerEditVerifierTest implements ContainerEditVerifierTest<Au
 		return storage;
 	}
 
-	/**
-	 * @see de.ims.icarus2.model.api.members.container.ContainerEditVerifierTest#testEmptyContainer()
-	 */
 	@SuppressWarnings("unchecked")
-	@Override
 	@TestFactory
 	public Stream<DynamicTest> testEmptyContainer() {
 		Container container = mockContainer(0);
@@ -77,17 +80,12 @@ class AugmentedContainerEditVerifierTest implements ContainerEditVerifierTest<Au
 			.removeSingleIllegal(-1, 0, 1)
 			.removeBatchIllegal(longPair(0, 0), longPair(1, 1), longPair(0, 1))
 			.moveSingleIllegal(longPair(0, 0), longPair(1, 1))
-			.test();
+			.createTests();
 	}
 
-	/**
-	 * @see de.ims.icarus2.model.api.members.container.ContainerEditVerifierTest#testSmallContainer()
-	 */
 	@SuppressWarnings("unchecked")
-	@Override
 	@TestFactory
-	@DisplayName("testSmallContainer() [wrapped=5, augment=5]")
-	public Stream<DynamicTest> testSmallContainer() {
+	public Stream<DynamicTest> testSmallContainerWithAugmentation() {
 		Container container = mockContainer(5);
 		AugmentedItemStorage storage = mockStorage(container, 5);
 		return new ContainerEditVerifierTestSpec(
@@ -104,13 +102,12 @@ class AugmentedContainerEditVerifierTest implements ContainerEditVerifierTest<Au
 			.moveSingleLegal(longPair(5, 9), longPair(9, 7))
 			.moveSingleIllegal(longPair(0, 0), longPair(1, 1), longPair(4, 4),
 					longPair(4, 9))
-			.test();
+			.createTests();
 	}
 
 	@SuppressWarnings("unchecked")
 	@TestFactory
-	@DisplayName("testSmallContainer2() [wrapped=10, augment=0]")
-	public Stream<DynamicTest> testSmallContainer2() {
+	public Stream<DynamicTest> testSmallContainerWithoutAugmentation() {
 		Container container = mockContainer(10);
 		AugmentedItemStorage storage = mockStorage(container, 0);
 		return new ContainerEditVerifierTestSpec(
@@ -122,17 +119,12 @@ class AugmentedContainerEditVerifierTest implements ContainerEditVerifierTest<Au
 			.removeSingleIllegal(-1, 0, 1, 9, 10)
 			.removeBatchIllegal(longPair(0, 0), longPair(1, 1), longPair(4, 9), longPair(10, 10))
 			.moveSingleIllegal(longPair(0, 0), longPair(1, 1), longPair(4, 9), longPair(9, 10))
-			.test();
+			.createTests();
 	}
 
-	/**
-	 * @see de.ims.icarus2.model.api.members.container.ContainerEditVerifierTest#testLargeContainer()
-	 */
 	@SuppressWarnings("unchecked")
-	@Override
 	@TestFactory
-	@DisplayName("testLargeContainer() [wrapped=Long.MAX_VALUE/2, augment=MAX_INDEX]")
-	public Stream<DynamicTest> testLargeContainer() {
+	public Stream<DynamicTest> testLargeContainerWithAugmentation() {
 		// Wrapped Size
 		final long WS = Long.MAX_VALUE/2;
 		// Augmentation Size
@@ -155,6 +147,6 @@ class AugmentedContainerEditVerifierTest implements ContainerEditVerifierTest<Au
 			.moveSingleLegal(longPair(WS, WS+AS-1), longPair(WS+AS-1, WS+1))
 			.moveSingleIllegal(longPair(0, 0), longPair(1, 1), longPair(WS/2, 4),
 					longPair(WS/2, WS+AS-1))
-			.test();
+			.createTests();
 	}
 }
