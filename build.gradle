@@ -100,6 +100,8 @@ subprojects {
 		lucene "org.apache.lucene:lucene-core:${versions.luceneVersion}"
 			
 		// TEST ENVIRONMENT
+		
+		//junit platform("org.junit:junit-bom:${versions.junitVersion}")
 		    
 	    // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
 		junit "org.junit.jupiter:junit-jupiter-api:${versions.junitVersion}"
