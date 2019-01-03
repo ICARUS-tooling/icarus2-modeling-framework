@@ -57,6 +57,10 @@ public class DefaultContainer extends DefaultItem implements Container, Recyclab
 		// no-op
 	}
 
+	public DefaultContainer(ItemStorage itemStorage) {
+		setItemStorage(itemStorage);
+	}
+
 	/**
 	 * Method for accessing the internal item storage in a situation where it
 	 * is expected to not be {@code null}.
@@ -252,9 +256,7 @@ public class DefaultContainer extends DefaultItem implements Container, Recyclab
 	public void setItemStorage(ItemStorage itemStorage) {
 		checkItemStorage(itemStorage);
 
-		if(this.itemStorage!=null) {
-			this.itemStorage.removeNotify(this);
-		}
+		clearItemStorage();
 
 		this.itemStorage = itemStorage;
 

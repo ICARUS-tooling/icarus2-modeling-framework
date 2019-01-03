@@ -31,6 +31,7 @@ import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.MemberFlags;
 import de.ims.icarus2.model.standard.members.container.DefaultContainer;
+import de.ims.icarus2.model.standard.members.container.ItemStorage;
 import de.ims.icarus2.model.standard.members.structure.info.StructureInfoBuilder;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
@@ -44,6 +45,12 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 
 	public DefaultStructure() {
 		// no-op
+	}
+
+	public DefaultStructure(ItemStorage itemStorage, EdgeStorage edgeStorage) {
+		super(itemStorage);
+
+		setEdgeStorage(edgeStorage);
 	}
 
 	/**
@@ -81,9 +88,7 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 	public void setEdgeStorage(EdgeStorage edgeStorage) {
 		checkEdgeStorage(edgeStorage);
 
-		if(this.edgeStorage!=null) {
-			this.edgeStorage.removeNotify(this);
-		}
+		clearEdgeStorage();
 
 		this.edgeStorage = edgeStorage;
 

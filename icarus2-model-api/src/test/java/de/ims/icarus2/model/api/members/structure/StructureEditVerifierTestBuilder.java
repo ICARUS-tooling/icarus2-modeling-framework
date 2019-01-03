@@ -23,7 +23,7 @@ import de.ims.icarus2.test.util.Triple;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
 @SuppressWarnings("boxing")
-public class StructureEditVerifierTestSpec {
+public class StructureEditVerifierTestBuilder {
 
 	final StructureEditVerifier verifier;
 
@@ -96,125 +96,125 @@ public class StructureEditVerifierTestSpec {
 	 */
 	final List<Pair<Long, Long>> createEdgeIllegal = new ArrayList<>();
 
-	public StructureEditVerifierTestSpec(StructureEditVerifier verifier) {
+	public StructureEditVerifierTestBuilder(StructureEditVerifier verifier) {
 		this.verifier = requireNonNull(verifier);
 	}
 
-	public StructureEditVerifierTestSpec addSingleLegal(Edge edge, long...values) {
+	public StructureEditVerifierTestBuilder addSingleLegal(Edge edge, long...values) {
 		for(long index : values) {
 			addSingleLegal.add(pair(index, edge));
 		}
 		return this;
 	}
 
-	public StructureEditVerifierTestSpec addSingleLegal(long...values) {
+	public StructureEditVerifierTestBuilder addSingleLegal(long...values) {
 		return addSingleLegal(ModelTestUtils.EDGE, values);
 	}
 
-	public StructureEditVerifierTestSpec addSingleIllegal(Edge edge, long...values) {
+	public StructureEditVerifierTestBuilder addSingleIllegal(Edge edge, long...values) {
 		for(long index : values) {
 			addSingleIllegal.add(pair(index, edge));
 		}
 		return this;
 	}
 
-	public StructureEditVerifierTestSpec addSingleIllegal(long...values) {
+	public StructureEditVerifierTestBuilder addSingleIllegal(long...values) {
 		return addSingleIllegal(ModelTestUtils.EDGE, values);
 	}
 
-	public StructureEditVerifierTestSpec addBatchLegal(DataSequence<Edge> edges, long...values) {
+	public StructureEditVerifierTestBuilder addBatchLegal(DataSequence<Edge> edges, long...values) {
 		for(long index : values) {
 			addBatchLegal.add(pair(index, edges));
 		}
 		return this;
 	}
 
-	public StructureEditVerifierTestSpec addBatchLegal(long...values) {
+	public StructureEditVerifierTestBuilder addBatchLegal(long...values) {
 		return addBatchLegal(ModelTestUtils.EDGE_SEQUENCE, values);
 	}
 
-	public StructureEditVerifierTestSpec addBatchIllegal(DataSequence<Edge> edges, long...values) {
+	public StructureEditVerifierTestBuilder addBatchIllegal(DataSequence<Edge> edges, long...values) {
 		for(long index : values) {
 			addBatchIllegal.add(pair(index, edges));
 		}
 		return this;
 	}
 
-	public StructureEditVerifierTestSpec addBatchIllegal(long...values) {
+	public StructureEditVerifierTestBuilder addBatchIllegal(long...values) {
 		return addBatchIllegal(ModelTestUtils.EDGE_SEQUENCE, values);
 	}
 
-	public StructureEditVerifierTestSpec removeSingleLegal(long...values) {
+	public StructureEditVerifierTestBuilder removeSingleLegal(long...values) {
 		for(long index : values) {
 			removeSingleLegal.add(index);
 		}
 		return this;
 	}
 
-	public StructureEditVerifierTestSpec removeSingleIllegal(long...values) {
+	public StructureEditVerifierTestBuilder removeSingleIllegal(long...values) {
 		for(long index : values) {
 			removeSingleIllegal.add(index);
 		}
 		return this;
 	}
 
-	public StructureEditVerifierTestSpec removeBatchLegal(
+	public StructureEditVerifierTestBuilder removeBatchLegal(
 			@SuppressWarnings("unchecked") Pair<Long, Long>...entries) {
 		Collections.addAll(removeBatchLegal, entries);
 		return this;
 	}
-	public StructureEditVerifierTestSpec removeBatchLegal(long from, long to) {
+	public StructureEditVerifierTestBuilder removeBatchLegal(long from, long to) {
 		removeBatchLegal.add(pair(from, to));
 		return this;
 	}
 
-	public StructureEditVerifierTestSpec removeBatchIllegal(
+	public StructureEditVerifierTestBuilder removeBatchIllegal(
 			@SuppressWarnings("unchecked") Pair<Long, Long>...entries) {
 		Collections.addAll(removeBatchIllegal, entries);
 		return this;
 	}
-	public StructureEditVerifierTestSpec removeBatchIllegal(long from, long to) {
+	public StructureEditVerifierTestBuilder removeBatchIllegal(long from, long to) {
 		removeBatchIllegal.add(pair(from, to));
 		return this;
 	}
 
-	public StructureEditVerifierTestSpec swapSingleLegal(long index0, long index1) {
+	public StructureEditVerifierTestBuilder swapSingleLegal(long index0, long index1) {
 		swapSingleLegal.add(pair(index0, index1));
 		return this;
 	}
-	public StructureEditVerifierTestSpec swapSingleLegal(
+	public StructureEditVerifierTestBuilder swapSingleLegal(
 			@SuppressWarnings("unchecked") Pair<Long, Long>...entries) {
 		Collections.addAll(swapSingleLegal, entries);
 		return this;
 	}
 
-	public StructureEditVerifierTestSpec swapSingleIllegal(long index0, long index1) {
+	public StructureEditVerifierTestBuilder swapSingleIllegal(long index0, long index1) {
 		swapSingleIllegal.add(pair(index0, index1));
 		return this;
 	}
-	public StructureEditVerifierTestSpec swapSingleIllegal(
+	public StructureEditVerifierTestBuilder swapSingleIllegal(
 			@SuppressWarnings("unchecked") Pair<Long, Long>...entries) {
 		Collections.addAll(swapSingleIllegal, entries);
 		return this;
 	}
 
-	public StructureEditVerifierTestSpec setTerminalLegal(
+	public StructureEditVerifierTestBuilder setTerminalLegal(
 			@SuppressWarnings("unchecked") Triple<Edge, Long, Boolean>...entries) {
 		Collections.addAll(setTerminalLegal, entries);
 		return this;
 	}
-	public StructureEditVerifierTestSpec setTerminalIllegal(
+	public StructureEditVerifierTestBuilder setTerminalIllegal(
 			@SuppressWarnings("unchecked") Triple<Edge, Long, Boolean>...entries) {
 		Collections.addAll(setTerminalIllegal, entries);
 		return this;
 	}
 
-	public StructureEditVerifierTestSpec createEdgeLegal(
+	public StructureEditVerifierTestBuilder createEdgeLegal(
 			@SuppressWarnings("unchecked") Pair<Long, Long>...entries) {
 		Collections.addAll(createEdgeLegal, entries);
 		return this;
 	}
-	public StructureEditVerifierTestSpec createEdgeIllegal(
+	public StructureEditVerifierTestBuilder createEdgeIllegal(
 			@SuppressWarnings("unchecked") Pair<Long, Long>...entries) {
 		Collections.addAll(createEdgeIllegal, entries);
 		return this;
@@ -232,7 +232,7 @@ public class StructureEditVerifierTestSpec {
 		return createTestsForSpec(this).stream();
 	}
 
-	public static List<DynamicTest> createTestsForSpec(StructureEditVerifierTestSpec spec) {
+	public static List<DynamicTest> createTestsForSpec(StructureEditVerifierTestBuilder spec) {
 		List<DynamicTest> tests = new ArrayList<>();
 
 		// SINGLE ADD

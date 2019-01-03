@@ -20,7 +20,7 @@ import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
 @SuppressWarnings("boxing")
-public class ContainerEditVerifierTestSpec {
+public class ContainerEditVerifierTestBuilder {
 
 	final ContainerEditVerifier verifier;
 
@@ -69,103 +69,103 @@ public class ContainerEditVerifierTestSpec {
 	 */
 	final List<Pair<Long, Long>> swapSingleIllegal = new ArrayList<>();
 
-	public ContainerEditVerifierTestSpec(ContainerEditVerifier verifier) {
+	public ContainerEditVerifierTestBuilder(ContainerEditVerifier verifier) {
 		this.verifier = requireNonNull(verifier);
 	}
 
-	public ContainerEditVerifierTestSpec addSingleLegal(Item item, long...values) {
+	public ContainerEditVerifierTestBuilder addSingleLegal(Item item, long...values) {
 		for(long index : values) {
 			addSingleLegal.add(new Pair<>(index, item));
 		}
 		return this;
 	}
 
-	public ContainerEditVerifierTestSpec addSingleLegal(long...values) {
+	public ContainerEditVerifierTestBuilder addSingleLegal(long...values) {
 		return addSingleLegal(ModelTestUtils.ITEM, values);
 	}
 
-	public ContainerEditVerifierTestSpec addSingleIllegal(Item item, long...values) {
+	public ContainerEditVerifierTestBuilder addSingleIllegal(Item item, long...values) {
 		for(long index : values) {
 			addSingleIllegal.add(new Pair<>(index, item));
 		}
 		return this;
 	}
 
-	public ContainerEditVerifierTestSpec addSingleIllegal(long...values) {
+	public ContainerEditVerifierTestBuilder addSingleIllegal(long...values) {
 		return addSingleIllegal(ModelTestUtils.ITEM, values);
 	}
 
-	public ContainerEditVerifierTestSpec addBatchLegal(DataSequence<Item> items, long...values) {
+	public ContainerEditVerifierTestBuilder addBatchLegal(DataSequence<Item> items, long...values) {
 		for(long index : values) {
 			addBatchLegal.add(new Pair<>(index, items));
 		}
 		return this;
 	}
 
-	public ContainerEditVerifierTestSpec addBatchLegal(long...values) {
+	public ContainerEditVerifierTestBuilder addBatchLegal(long...values) {
 		return addBatchLegal(ModelTestUtils.ITEM_SEQUENCE, values);
 	}
 
-	public ContainerEditVerifierTestSpec addBatchIllegal(DataSequence<Item> items, long...values) {
+	public ContainerEditVerifierTestBuilder addBatchIllegal(DataSequence<Item> items, long...values) {
 		for(long index : values) {
 			addBatchIllegal.add(new Pair<>(index, items));
 		}
 		return this;
 	}
 
-	public ContainerEditVerifierTestSpec addBatchIllegal(long...values) {
+	public ContainerEditVerifierTestBuilder addBatchIllegal(long...values) {
 		return addBatchIllegal(ModelTestUtils.ITEM_SEQUENCE, values);
 	}
 
-	public ContainerEditVerifierTestSpec removeSingleLegal(long...values) {
+	public ContainerEditVerifierTestBuilder removeSingleLegal(long...values) {
 		for(long index : values) {
 			removeSingleLegal.add(index);
 		}
 		return this;
 	}
 
-	public ContainerEditVerifierTestSpec removeSingleIllegal(long...values) {
+	public ContainerEditVerifierTestBuilder removeSingleIllegal(long...values) {
 		for(long index : values) {
 			removeSingleIllegal.add(index);
 		}
 		return this;
 	}
 
-	public ContainerEditVerifierTestSpec removeBatchLegal(
+	public ContainerEditVerifierTestBuilder removeBatchLegal(
 			@SuppressWarnings("unchecked") Pair<Long, Long>...entries) {
 		Collections.addAll(removeBatchLegal, entries);
 		return this;
 	}
-	public ContainerEditVerifierTestSpec removeBatchLegal(long from, long to) {
+	public ContainerEditVerifierTestBuilder removeBatchLegal(long from, long to) {
 		removeBatchLegal.add(new Pair<>(from, to));
 		return this;
 	}
 
-	public ContainerEditVerifierTestSpec removeBatchIllegal(
+	public ContainerEditVerifierTestBuilder removeBatchIllegal(
 			@SuppressWarnings("unchecked") Pair<Long, Long>...entries) {
 		Collections.addAll(removeBatchIllegal, entries);
 		return this;
 	}
-	public ContainerEditVerifierTestSpec removeBatchIllegal(long from, long to) {
+	public ContainerEditVerifierTestBuilder removeBatchIllegal(long from, long to) {
 		removeBatchIllegal.add(new Pair<>(from, to));
 		return this;
 	}
 
-	public ContainerEditVerifierTestSpec swapSingleLegal(long index0, long index1) {
+	public ContainerEditVerifierTestBuilder swapSingleLegal(long index0, long index1) {
 		swapSingleLegal.add(new Pair<>(index0, index1));
 		return this;
 	}
-	public ContainerEditVerifierTestSpec swapSingleLegal(
+	public ContainerEditVerifierTestBuilder swapSingleLegal(
 			@SuppressWarnings("unchecked") Pair<Long, Long>...entries) {
 		Collections.addAll(swapSingleLegal, entries);
 		return this;
 	}
 
-	public ContainerEditVerifierTestSpec swapSingleIllegal(long index0, long index1) {
+	public ContainerEditVerifierTestBuilder swapSingleIllegal(long index0, long index1) {
 		swapSingleIllegal.add(new Pair<>(index0, index1));
 		return this;
 	}
-	public ContainerEditVerifierTestSpec swapSingleIllegal(
+	public ContainerEditVerifierTestBuilder swapSingleIllegal(
 			@SuppressWarnings("unchecked") Pair<Long, Long>...entries) {
 		Collections.addAll(swapSingleIllegal, entries);
 		return this;
@@ -175,7 +175,7 @@ public class ContainerEditVerifierTestSpec {
 		return createTestsForSpec(this).stream();
 	}
 
-	public static List<DynamicTest> createTestsForSpec(ContainerEditVerifierTestSpec spec) {
+	public static List<DynamicTest> createTestsForSpec(ContainerEditVerifierTestBuilder spec) {
 		List<DynamicTest> tests = new ArrayList<>();
 
 		// SINGLE ADD

@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.api.members.container.Container;
-import de.ims.icarus2.model.api.members.container.ContainerEditVerifierTestSpec;
+import de.ims.icarus2.model.api.members.container.ContainerEditVerifierTestBuilder;
 
 /**
  * @author Markus Gärtner
@@ -39,7 +39,7 @@ class SingletonContainerEditVerifierTest {
 	@SuppressWarnings("unchecked")
 	@TestFactory
 	public Stream<DynamicTest> testEmptyContainer() {
-		return new ContainerEditVerifierTestSpec(
+		return new ContainerEditVerifierTestBuilder(
 				new SingletonContainerEditVerifier(mockContainer(0)))
 			.addSingleLegal(0)
 			.addSingleIllegal(-1, 1)
@@ -54,7 +54,7 @@ class SingletonContainerEditVerifierTest {
 	@SuppressWarnings("unchecked")
 	@TestFactory
 	public Stream<DynamicTest> testFullContainer() {
-		return new ContainerEditVerifierTestSpec(
+		return new ContainerEditVerifierTestBuilder(
 				new SingletonContainerEditVerifier(mockContainer(1)))
 			.addSingleIllegal(-1, 0, 1)
 			.addBatchIllegal(-1, 0, 1)

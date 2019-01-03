@@ -57,6 +57,10 @@ public class DefaultItem extends AbstractMember implements Item, Item.ManagedIte
 		// no-op
 	}
 
+	public DefaultItem(Container container) {
+		setContainer(container);
+	}
+
 	public DefaultItem(Container container, long id) {
 		setContainer(container);
 		setId(id);

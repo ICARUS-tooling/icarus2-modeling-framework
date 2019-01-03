@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.api.members.container.Container;
-import de.ims.icarus2.model.api.members.container.ContainerEditVerifierTestSpec;
+import de.ims.icarus2.model.api.members.container.ContainerEditVerifierTestBuilder;
 import de.ims.icarus2.util.IcarusUtils;
 
 /**
@@ -71,7 +71,7 @@ class AugmentedContainerEditVerifierTest {
 	public Stream<DynamicTest> testEmptyContainer() {
 		Container container = mockContainer(0);
 		AugmentedItemStorage storage = mockStorage(container, 0);
-		return new ContainerEditVerifierTestSpec(
+		return new ContainerEditVerifierTestBuilder(
 				new AugmentedContainerEditVerifier(container, storage))
 			.addSingleLegal(0)
 			.addSingleIllegal(-1, 1)
@@ -88,7 +88,7 @@ class AugmentedContainerEditVerifierTest {
 	public Stream<DynamicTest> testSmallContainerSize5Aug5() {
 		Container container = mockContainer(5);
 		AugmentedItemStorage storage = mockStorage(container, 5);
-		return new ContainerEditVerifierTestSpec(
+		return new ContainerEditVerifierTestBuilder(
 				new AugmentedContainerEditVerifier(container, storage))
 			.addSingleLegal(5, 7, 9, 10)
 			.addSingleIllegal(-1, 0, 1, 4)
@@ -110,7 +110,7 @@ class AugmentedContainerEditVerifierTest {
 	public Stream<DynamicTest> testSmallContainerSize10NoAug() {
 		Container container = mockContainer(10);
 		AugmentedItemStorage storage = mockStorage(container, 0);
-		return new ContainerEditVerifierTestSpec(
+		return new ContainerEditVerifierTestBuilder(
 				new AugmentedContainerEditVerifier(container, storage))
 			.addSingleLegal(10)
 			.addSingleIllegal(-1, 0, 9)
@@ -133,7 +133,7 @@ class AugmentedContainerEditVerifierTest {
 		Container container = mockContainer(WS);
 		AugmentedItemStorage storage = mockStorage(container, AS);
 
-		return new ContainerEditVerifierTestSpec(
+		return new ContainerEditVerifierTestBuilder(
 				new AugmentedContainerEditVerifier(container, storage))
 			.addSingleLegal(WS, WS+AS/2, WS+AS)
 			.addSingleIllegal(-1, 0, WS-1, WS+AS+1, Long.MAX_VALUE)

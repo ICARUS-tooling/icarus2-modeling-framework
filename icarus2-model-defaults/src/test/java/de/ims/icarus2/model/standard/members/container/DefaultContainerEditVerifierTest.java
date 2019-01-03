@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.api.members.container.Container;
-import de.ims.icarus2.model.api.members.container.ContainerEditVerifierTestSpec;
+import de.ims.icarus2.model.api.members.container.ContainerEditVerifierTestBuilder;
 
 /**
  * @author Markus Gärtner
@@ -39,7 +39,7 @@ class DefaultContainerEditVerifierTest {
 	@SuppressWarnings("unchecked")
 	@TestFactory
 	public Stream<DynamicTest> testEmptyContainer() {
-		return new ContainerEditVerifierTestSpec(
+		return new ContainerEditVerifierTestBuilder(
 					new DefaultContainerEditVerifier(mockContainer(0)))
 				.addSingleLegal(0)
 				.addSingleIllegal(-1, 1, Long.MAX_VALUE)
@@ -54,7 +54,7 @@ class DefaultContainerEditVerifierTest {
 	@SuppressWarnings("unchecked")
 	@TestFactory
 	public Stream<DynamicTest> testSmallContainerSize10() {
-		return new ContainerEditVerifierTestSpec(
+		return new ContainerEditVerifierTestBuilder(
 						new DefaultContainerEditVerifier(mockContainer(10)))
 				.addSingleLegal(0, 1, 5, 8, 9, 10)
 				.addSingleIllegal(-1, 11, Long.MAX_VALUE)
@@ -72,7 +72,7 @@ class DefaultContainerEditVerifierTest {
 	@SuppressWarnings("unchecked")
 	@TestFactory
 	public Stream<DynamicTest> testLargeContainer() {
-		return new ContainerEditVerifierTestSpec(
+		return new ContainerEditVerifierTestBuilder(
 						new DefaultContainerEditVerifier(mockContainer(Long.MAX_VALUE-1)))
 				.addSingleLegal(0, Long.MAX_VALUE-1)
 				.addSingleIllegal(-1, Long.MAX_VALUE)

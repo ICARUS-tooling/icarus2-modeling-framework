@@ -330,6 +330,18 @@ public interface Structure extends Container {
 	// EDIT METHODS
 
 	/**
+	 * Short-hand version of {@link #addEdge(long, Edge)} that tries to
+	 * append the given {@code edge} to the end of this structrue's internal
+	 * edge list.
+	 *
+	 * @param edge
+	 * @return
+	 */
+	default long addEdge(Edge edge) {
+		return addEdge(Math.max(0, getEdgeCount()-1), edge);
+	}
+
+	/**
 	 * Adds the given {@code edge} to the internal edge storage and
 	 * returns the position the edge is positioned at. Note that it is
 	 * up to the actual implementation whether or not to honor the
@@ -337,7 +349,7 @@ public interface Structure extends Container {
 	 *
 	 * @param index
 	 * @param edge
-	 * @return
+	 * @return the actual index the edge was inserted at
 	 */
 	long addEdge(long index, Edge edge);
 
