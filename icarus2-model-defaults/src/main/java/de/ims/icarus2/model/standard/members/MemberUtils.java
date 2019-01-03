@@ -23,7 +23,6 @@ import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
-import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.ContainerFlag;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
@@ -81,6 +80,13 @@ public class MemberUtils {
 		}
 	}
 
+	/**
+	 * Throw {@link ModelException} of type {@link ModelErrorCode#MODEL_ILLEGAL_LINKING}
+	 * if the container's {@link ContainerManifest manifest} has set the
+	 * {@link ContainerFlag#NON_STATIC} flag.
+	 *
+	 * @param container
+	 */
 	public static void checkStaticContainer(Container container) {
 		ContainerManifest manifest = container.getManifest();
 		if(manifest.isContainerFlagSet(ContainerFlag.NON_STATIC))
@@ -88,6 +94,13 @@ public class MemberUtils {
 					"Container must be static in terms of items: "+getName(container));
 	}
 
+	/**
+	 * Throw {@link ModelException} of type {@link ModelErrorCode#MODEL_ILLEGAL_LINKING}
+	 * if the container's {@link ContainerManifest manifest} has set the
+	 * {@link ContainerFlag#EMPTY} flag.
+	 *
+	 * @param container
+	 */
 	public static void checkNonEmptyContainer(Container container) {
 		ContainerManifest manifest = container.getManifest();
 		if(manifest.isContainerFlagSet(ContainerFlag.EMPTY))
@@ -95,6 +108,13 @@ public class MemberUtils {
 					"Container must not be allowed to be empty: "+getName(container));
 	}
 
+	/**
+	 * Throw {@link ModelException} of type {@link ModelErrorCode#MODEL_ILLEGAL_LINKING}
+	 * if the structure's {@link StructureManifest manifest} has set the
+	 * {@link StructureFlag#EMPTY} flag.
+	 *
+	 * @param container
+	 */
 	public static void checkNonEmptyStructure(Structure structure) {
 		StructureManifest manifest = structure.getManifest();
 		if(manifest.isStructureFlagSet(StructureFlag.EMPTY))
@@ -102,6 +122,13 @@ public class MemberUtils {
 					"Structure must not be allowed to be empty: "+getName(structure));
 	}
 
+	/**
+	 * Throw {@link ModelException} of type {@link ModelErrorCode#MODEL_ILLEGAL_LINKING}
+	 * if the structure's {@link StructureManifest manifest} has set the
+	 * {@link StructureFlag#PARTIAL} flag.
+	 *
+	 * @param container
+	 */
 	public static void checkNonPartialStructure(Structure structure) {
 		StructureManifest manifest = structure.getManifest();
 		if(manifest.isStructureFlagSet(StructureFlag.PARTIAL))
@@ -109,6 +136,13 @@ public class MemberUtils {
 					"Structure must not be allowed to be partial: "+getName(structure));
 	}
 
+	/**
+	 * Throw {@link ModelException} of type {@link ModelErrorCode#MODEL_ILLEGAL_LINKING}
+	 * if the structure's {@link StructureManifest manifest} has set the
+	 * {@link StructureFlag#LOOPS} flag.
+	 *
+	 * @param container
+	 */
 	public static void checkNoLoopsStructure(Structure structure) {
 		StructureManifest manifest = structure.getManifest();
 		if(manifest.isStructureFlagSet(StructureFlag.LOOPS))
@@ -116,6 +150,13 @@ public class MemberUtils {
 					"Structure must not be allowed to contain loops: "+getName(structure));
 	}
 
+	/**
+	 * Throw {@link ModelException} of type {@link ModelErrorCode#MODEL_ILLEGAL_MEMBER}
+	 * if the {@link Edge#getStructure() host} of the given {@code edge} does not match the
+	 * {@code expectedHost} structure.
+	 *
+	 * @param container
+	 */
 	public static void checkHostStructure(Edge edge, Structure expectedHost) {
 		if(edge.getStructure()!=expectedHost)
 			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
@@ -123,9 +164,9 @@ public class MemberUtils {
 							getName(expectedHost), getName(edge.getStructure())));
 	}
 
-	public static void checkNonVirtualRoot(Item node, Structure structure) {
-		if(structure.getVirtualRoot()==node)
-			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
-					"Method not designed for virtual root node");
-	}
+//	public static void checkNonVirtualRoot(Item node, Structure structure) {
+//		if(structure.getVirtualRoot()==node)
+//			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
+//					"Method not designed for virtual root node");
+//	}
 }
