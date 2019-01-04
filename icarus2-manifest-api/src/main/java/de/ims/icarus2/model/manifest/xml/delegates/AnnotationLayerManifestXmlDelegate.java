@@ -163,7 +163,7 @@ public class AnnotationLayerManifestXmlDelegate extends AbstractLayerManifestXml
 
 		case ManifestXmlTags.REFERENCE_LAYER: {
 			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID)
-				.ifPresent(getInstance()::addReferenceLayerId);
+				.ifPresent(getInstance()::addAndGetReferenceLayerId);
 		} break;
 
 		case ManifestXmlTags.ANNOTATION: {

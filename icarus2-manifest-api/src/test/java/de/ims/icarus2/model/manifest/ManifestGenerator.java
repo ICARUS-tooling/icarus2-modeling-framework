@@ -468,7 +468,7 @@ public class ManifestGenerator {
 		}
 
 		for(int i=0; i<3; i++) {
-			container.addFieldChange(manifest::addReferenceLayerId, "referenceLayer", index("layer"));
+			container.addFieldChange(manifest::addAndGetReferenceLayerId, "referenceLayer", index("layer"));
 		}
 
 		for(AnnotationFlag flag : AnnotationFlag.values()) {
