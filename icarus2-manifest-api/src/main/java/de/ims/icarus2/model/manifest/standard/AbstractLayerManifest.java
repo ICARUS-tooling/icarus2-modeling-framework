@@ -42,8 +42,8 @@ import de.ims.icarus2.model.manifest.standard.Links.MemoryLink;
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractLayerManifest<L extends LayerManifest>
-		extends AbstractMemberManifest<L, LayerGroupManifest> implements LayerManifest {
+public abstract class AbstractLayerManifest<L extends LayerManifest<L>>
+		extends AbstractMemberManifest<L, LayerGroupManifest> implements LayerManifest<L> {
 
 	private final List<TargetLayerManifest> baseLayerManifests = new ArrayList<>(3);
 	private LayerTypeLink layerType;
@@ -184,7 +184,7 @@ public abstract class AbstractLayerManifest<L extends LayerManifest>
 		throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "No base layer manifest defined for id: "+baseLayerId);
 	}
 
-	protected Link<LayerManifest> createLayerLink(String id, String linkType) {
+	protected Link<LayerManifest<?>> createLayerLink(String id, String linkType) {
 		return new GlobalLayerLink(id, linkType);
 	}
 
@@ -223,7 +223,7 @@ public abstract class AbstractLayerManifest<L extends LayerManifest>
 
 	}
 
-	protected class GlobalLayerLink extends Link<LayerManifest> {
+	protected class GlobalLayerLink extends Link<LayerManifest<?>> {
 
 		private final String linkType;
 
@@ -248,10 +248,10 @@ public abstract class AbstractLayerManifest<L extends LayerManifest>
 		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#resolve()
 		 */
 		@Override
-		protected Optional<LayerManifest> resolve() {
+		protected Optional<LayerManifest<?>> resolve() {
 			// This takes care of layer id resolution in terms of prerequisite aliases
 			return getContextManifest()
-					.flatMap(c -> c.getLayerManifest(getId()));
+					.flatMap(c -> c.getLayerManifest(getId()).map(l -> (LayerManifest<?>)l));
 		}
 
 	}
@@ -286,7 +286,7 @@ public abstract class AbstractLayerManifest<L extends LayerManifest>
 
 	public class TargetLayerManifestImpl implements TargetLayerManifest {
 
-		private Link<LayerManifest> resolvedLayer;
+		private Link<LayerManifest<?>> resolvedLayer;
 		private Link<PrerequisiteManifest> prerequisite;
 
 		public TargetLayerManifestImpl(String targetId, String linkType) {
@@ -298,7 +298,7 @@ public abstract class AbstractLayerManifest<L extends LayerManifest>
 		 * @see de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest#getLayerManifest()
 		 */
 		@Override
-		public LayerManifest getLayerManifest() {
+		public LayerManifest<?> getLayerManifest() {
 			return AbstractLayerManifest.this;
 		}
 
@@ -352,7 +352,7 @@ public abstract class AbstractLayerManifest<L extends LayerManifest>
 		 * @see de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest#getResolvedLayerManifest()
 		 */
 		@Override
-		public Optional<LayerManifest> getResolvedLayerManifest() {
+		public Optional<LayerManifest<?>> getResolvedLayerManifest() {
 			return Optional.ofNullable(resolvedLayer.get());
 		}
 	}

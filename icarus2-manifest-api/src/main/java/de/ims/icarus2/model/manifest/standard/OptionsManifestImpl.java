@@ -52,7 +52,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 	private final Set<Identity> groupIdentifiers = new HashSet<>();
 	private final Map<String, Option> options = new HashMap<>();
 
-	private final Optional<MemberManifest> memberManifest;
+	private final Optional<MemberManifest<?>> memberManifest;
 
 	/**
 	 * @param manifestLocation
@@ -66,7 +66,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 	}
 
 	public OptionsManifestImpl(ManifestLocation manifestLocation,
-			ManifestRegistry registry, MemberManifest memberManifest) {
+			ManifestRegistry registry, MemberManifest<?> memberManifest) {
 		super(manifestLocation, registry);
 
 		Manifest.verifyEnvironment(manifestLocation, memberManifest, MemberManifest.class);
@@ -74,7 +74,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		this.memberManifest = Optional.ofNullable(memberManifest);
 	}
 
-	public OptionsManifestImpl(MemberManifest memberManifest) {
+	public OptionsManifestImpl(MemberManifest<?> memberManifest) {
 		this(memberManifest.getManifestLocation(), memberManifest.getRegistry(), memberManifest);
 	}
 

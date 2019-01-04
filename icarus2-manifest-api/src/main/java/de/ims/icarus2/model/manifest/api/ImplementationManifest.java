@@ -42,7 +42,7 @@ import de.ims.icarus2.util.strings.StringResource;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface ImplementationManifest extends MemberManifest, Embedded {
+public interface ImplementationManifest extends MemberManifest<ImplementationManifest>, Embedded {
 
 	public static final boolean DEFAULT_USE_FACTORY_VALUE = false;
 	public static final SourceType DEFAULT_SOURCE_TYPE = SourceType.DEFAULT;
@@ -51,7 +51,7 @@ public interface ImplementationManifest extends MemberManifest, Embedded {
 	 * Returns the surrounding 'host' manifest.
 	 * @return
 	 */
-	default <M extends MemberManifest> Optional<M> getHostManifest() {
+	default <M extends MemberManifest<M>> Optional<M> getHostManifest() {
 		return getHost();
 	}
 

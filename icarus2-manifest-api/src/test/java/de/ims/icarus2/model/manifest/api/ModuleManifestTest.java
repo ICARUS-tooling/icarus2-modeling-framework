@@ -45,15 +45,15 @@ import de.ims.icarus2.test.annotations.Provider;
  * @author Markus Gärtner
  *
  */
-public interface ModuleManifestTest<M extends ModuleManifest> extends EmbeddedTest<M>,
-		ForeignImplementationManifestTest<M> {
+public interface ModuleManifestTest extends EmbeddedTest<ModuleManifest>,
+		ForeignImplementationManifestTest<ModuleManifest> {
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
 	@Override
 	@Provider
-	default M createTestInstance(TestSettings settings) {
+	default ModuleManifest createTestInstance(TestSettings settings) {
 		return ForeignImplementationManifestTest.super.createTestInstance(settings);
 	}
 
@@ -99,7 +99,7 @@ public interface ModuleManifestTest<M extends ModuleManifest> extends EmbeddedTe
 		when(driverManifest.getModuleSpec(any())).thenReturn(Optional.empty());
 		when(driverManifest.getModuleSpec(eq(specId))).thenReturn(Optional.of(spec));
 
-		M instance = createEmbedded(settings(), driverManifest);
+		ModuleManifest instance = createEmbedded(settings(), driverManifest);
 		assertNotPresent(instance.getModuleSpec());
 		instance.setModuleSpecId(specId);
 		assertOptionalEquals(spec, instance.getModuleSpec());

@@ -30,7 +30,7 @@ import de.ims.icarus2.test.TestUtils;
  * @author Markus Gärtner
  *
  */
-public interface ForeignImplementationManifestTest<M extends ForeignImplementationManifest> extends MemberManifestTest<M> {
+public interface ForeignImplementationManifestTest<M extends ForeignImplementationManifest<M>> extends MemberManifestTest<M> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ForeignImplementationManifest#getImplementationManifest()}.

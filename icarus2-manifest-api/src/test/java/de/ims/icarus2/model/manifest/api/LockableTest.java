@@ -104,12 +104,36 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 		assertLocked(() -> lockable.checkNotLocked());
 	}
 
+	/**
+	 *
+	 * @param settings
+	 * @param setter
+	 * @param value
+	 * @param checkNPE
+	 * @param legalityCheck
+	 * @param illegalValues
+	 *
+	 * @param <K> type of values to be set
+	 */
 	default <K extends Object> void assertLockableSetter(TestSettings settings,
 			BiConsumer<L, K> setter, K value,
 			boolean checkNPE, BiConsumer<Executable, String> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
 		assertLockableSetter(settings, createUnlocked(settings), setter, value, checkNPE, legalityCheck, illegalValues);
 	}
 
+	/**
+	 *
+	 * @param settings
+	 * @param lockable
+	 * @param setter
+	 * @param value
+	 * @param checkNPE
+	 * @param legalityCheck
+	 * @param illegalValues
+	 *
+	 * @param <L> type of object under test
+	 * @param <K> type of values to be set
+	 */
 	@SuppressWarnings("unchecked")
 	public static <L extends Lockable, K extends Object> void assertLockableSetter(
 			TestSettings settings, L lockable, BiConsumer<L, K> setter,
@@ -117,6 +141,17 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 		assertLockableSetterBatch(settings, lockable, setter, (K[]) new Object[] {value}, checkNPE, legalityCheck, illegalValues);
 	}
 
+	/**
+	 *
+	 * @param settings
+	 * @param setter
+	 * @param values
+	 * @param checkNPE
+	 * @param legalityCheck
+	 * @param illegalValues
+	 *
+	 * @param <K> type of values to be set
+	 */
 	default <K extends Object> void assertLockableSetterBatch(
 			TestSettings settings, BiConsumer<L, K> setter, K[] values,
 			boolean checkNPE, BiConsumer<Executable, String> legalityCheck,
@@ -124,6 +159,19 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 		assertLockableSetterBatch(settings, createUnlocked(settings), setter, values, checkNPE, legalityCheck, illegalValues);
 	}
 
+	/**
+	 *
+	 * @param settings
+	 * @param lockable
+	 * @param setter
+	 * @param values
+	 * @param checkNPE
+	 * @param legalityCheck
+	 * @param illegalValues
+	 *
+	 * @param <L> type of object under test
+	 * @param <K> type of values to be set
+	 */
 	public static <L extends Lockable, K extends Object> void assertLockableSetterBatch(
 			TestSettings settings, L lockable, BiConsumer<L, K> setter, K[] values,
 			boolean checkNPE, BiConsumer<Executable, String> legalityCheck,
@@ -135,10 +183,23 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 		LockableTest.assertLocked(() -> setter.accept(lockable, values[0]));
 	}
 
+	/**
+	 *
+	 * @param settings
+	 * @param setter
+	 */
 	default void assertLockableSetter(TestSettings settings, BiConsumer<L, Boolean> setter) {
 		assertLockableSetter(settings, createUnlocked(settings), setter);
 	}
 
+	/**
+	 *
+	 * @param settings
+	 * @param lockable
+	 * @param setter
+	 *
+	 * @param <L> type of object under test
+	 */
 	public static <L extends Lockable> void assertLockableSetter(TestSettings settings, L lockable, BiConsumer<L, Boolean> setter) {
 		TestUtils.assertSetter(lockable, setter);
 
@@ -147,6 +208,18 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 		LockableTest.assertLocked(() -> setter.accept(lockable, Boolean.TRUE));
 	}
 
+	/**
+	 *
+	 * @param settings
+	 * @param adder
+	 * @param illegalValues
+	 * @param legalityCheck
+	 * @param checkNPE
+	 * @param duplicateCheck
+	 * @param values
+	 *
+	 * @param <K> type of values to be added
+	 */
 	default <K extends Object> void assertLockableAccumulativeAdd(
 			TestSettings settings, BiConsumer<L, K> adder,
 			K[] illegalValues, BiConsumer<Executable, String> legalityCheck,
@@ -155,6 +228,20 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 		assertLockableAccumulativeAdd(settings, createUnlocked(settings), adder, illegalValues, legalityCheck, checkNPE, duplicateCheck, values);
 	}
 
+	/**
+	 *
+	 * @param settings
+	 * @param lockable
+	 * @param adder
+	 * @param illegalValues
+	 * @param legalityCheck
+	 * @param checkNPE
+	 * @param duplicateCheck
+	 * @param values
+	 *
+	 * @param <L> type of object under test
+	 * @param <K> type of values to be added
+	 */
 	public static <L extends Lockable, K extends Object> void assertLockableAccumulativeAdd(
 			TestSettings settings, L lockable, BiConsumer<L, K> adder,
 			K[] illegalValues, BiConsumer<Executable, String> legalityCheck,
@@ -167,6 +254,19 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 		LockableTest.assertLocked(() -> adder.accept(lockable, values[values.length-1]));
 	}
 
+	/**
+	 *
+	 * @param settings
+	 * @param adder
+	 * @param remover
+	 * @param getter
+	 * @param checkNPE
+	 * @param invalidRemoveCheck
+	 * @param values
+	 *
+	 * @param <K> type of values to be removed
+	 * @param <C> type of collection to expect
+	 */
 	default <K extends Object, C extends Collection<K>> void assertLockableAccumulativeRemove(
 			TestSettings settings, BiConsumer<L, K> adder, BiConsumer<L, K> remover,
 			Function<L, C> getter, boolean checkNPE,
@@ -174,6 +274,21 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 		assertLockableAccumulativeRemove(settings, createUnlocked(settings), adder, remover, getter, checkNPE, invalidRemoveCheck, values);
 	}
 
+	/**
+	 *
+	 * @param settings
+	 * @param lockable
+	 * @param adder
+	 * @param remover
+	 * @param getter
+	 * @param checkNPE
+	 * @param invalidRemoveCheck
+	 * @param values
+	 *
+	 * @param <L> type of object under test
+	 * @param <K> type of values to be removed
+	 * @param <C> type of collection to expect
+	 */
 	public static <L extends Lockable, K extends Object, C extends Collection<K>> void assertLockableAccumulativeRemove(
 			TestSettings settings, L lockable, BiConsumer<L, K> adder, BiConsumer<L, K> remover,
 			Function<L, C> getter, boolean checkNPE,
@@ -185,12 +300,32 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 		LockableTest.assertLocked(() -> remover.accept(lockable, values[0]));
 	}
 
+	/**
+	 *
+	 * @param settings
+	 * @param inserter
+	 * @param atIndex
+	 * @param values
+	 *
+	 * @param <K> type of values to be inserted
+	 */
 	default <K extends Object> void assertLockableListInsertAt(
 			TestSettings settings, TriConsumer<L, K, Integer> inserter,
 			BiFunction<L, Integer, K> atIndex, @SuppressWarnings("unchecked") K...values) {
 		assertLockableListInsertAt(settings, createUnlocked(settings), inserter, atIndex, values);
 	}
 
+	/**
+	 *
+	 * @param settings
+	 * @param lockable
+	 * @param inserter
+	 * @param atIndex
+	 * @param values
+	 *
+	 * @param <L> type of object under test
+	 * @param <K> type of values to be added
+	 */
 	@SuppressWarnings("boxing")
 	public static <L extends Lockable, K extends Object> void assertLockableListInsertAt(
 			TestSettings settings, L lockable, TriConsumer<L, K, Integer> inserter,
@@ -202,6 +337,16 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 		LockableTest.assertLocked(() -> inserter.accept(lockable, values[0], 0));
 	}
 
+	/**
+	 *
+	 * @param settings
+	 * @param adder
+	 * @param remover
+	 * @param atIndex
+	 * @param values
+	 *
+	 * @param <K> type of values to be removed
+	 */
 	default <K extends Object> void assertLockableListRemoveAt(
 			TestSettings settings,
 			BiConsumer<L, K> adder,
@@ -210,6 +355,18 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 		assertLockableListRemoveAt(settings, createUnlocked(settings), adder, remover, atIndex, values);
 	}
 
+	/**
+	 *
+	 * @param settings
+	 * @param lockable
+	 * @param adder
+	 * @param remover
+	 * @param atIndex
+	 * @param values
+	 *
+	 * @param <L> type of object under test
+	 * @param <K> type of values to be removed
+	 */
 	@SuppressWarnings("boxing")
 	public static <L extends Lockable, K extends Object> void assertLockableListRemoveAt(
 			TestSettings settings, L lockable, BiConsumer<L, K> adder,

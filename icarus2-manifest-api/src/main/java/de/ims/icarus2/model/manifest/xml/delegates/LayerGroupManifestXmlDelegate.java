@@ -101,6 +101,7 @@ public class LayerGroupManifestXmlDelegate extends AbstractXmlDelegate<LayerGrou
 	/**
 	 * @see de.ims.icarus2.model.manifest.xml.ManifestXmlElement#writeXml(de.ims.icarus2.util.xml.XmlSerializer)
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public void writeXml(XmlSerializer serializer) throws XMLStreamException {
 		serializer.startElement(ManifestXmlTags.LAYER_GROUP);
@@ -118,12 +119,10 @@ public class LayerGroupManifestXmlDelegate extends AbstractXmlDelegate<LayerGrou
 
 		ManifestXmlUtils.writeIdentityFieldElements(serializer, manifest);
 
-		for(Iterator<LayerManifest> it = manifest.getLayerManifests().iterator(); it.hasNext();) {
-			LayerManifest layerManifest = it.next();
+		for(Iterator<LayerManifest<?>> it = manifest.getLayerManifests().iterator(); it.hasNext();) {
+			LayerManifest<?> layerManifest = it.next();
 
-			@SuppressWarnings("unchecked")
-			AbstractLayerManifestXmlDelegate<LayerManifest> delegate = getLayerDelegate(layerManifest.getManifestType());
-			delegate.reset(layerManifest).writeXml(serializer);
+			getLayerDelegate(layerManifest.getManifestType()).reset(layerManifest).writeXml(serializer);
 
 			if(it.hasNext()) {
 				serializer.writeLineBreak();

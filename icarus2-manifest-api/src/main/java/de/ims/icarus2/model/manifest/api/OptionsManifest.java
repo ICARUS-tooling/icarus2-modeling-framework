@@ -42,7 +42,7 @@ import de.ims.icarus2.util.id.Identity;
 @AccessControl(AccessPolicy.DENY)
 public interface OptionsManifest extends Manifest, Embedded {
 
-	default <M extends MemberManifest> Optional<M> getMemberManifest() {
+	default <M extends MemberManifest<M>> Optional<M> getMemberManifest() {
 		return getHost();
 	}
 

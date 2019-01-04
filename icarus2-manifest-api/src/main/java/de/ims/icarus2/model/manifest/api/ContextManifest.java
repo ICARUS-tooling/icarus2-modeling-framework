@@ -40,7 +40,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface ContextManifest extends MemberManifest, Bindable, Embedded {
+public interface ContextManifest extends MemberManifest<ContextManifest>, Bindable, Embedded {
 
 	public static final boolean DEFAULT_INDEPENDENT_VALUE = false;
 	public static final boolean DEFAULT_EDITABLE_VALUE = false;
@@ -118,13 +118,13 @@ public interface ContextManifest extends MemberManifest, Bindable, Embedded {
 	}
 
 	@AccessRestriction(AccessMode.READ)
-	default void forEachLayerManifest(Consumer<? super LayerManifest> action) {
+	default void forEachLayerManifest(Consumer<? super LayerManifest<?>> action) {
 		requireNonNull(action);
 		forEachGroupManifest(g -> g.forEachLayerManifest(action));
 	}
 
 	@AccessRestriction(AccessMode.READ)
-	default void forEachLocalLayerManifest(Consumer<? super LayerManifest> action) {
+	default void forEachLocalLayerManifest(Consumer<? super LayerManifest<?>> action) {
 		requireNonNull(action);
 		forEachLocalGroupManifest(g -> g.forEachLayerManifest(action));
 	}
@@ -135,8 +135,8 @@ public interface ContextManifest extends MemberManifest, Bindable, Embedded {
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	default List<LayerManifest> getLayerManifests() {
-		LazyCollection<LayerManifest> result = LazyCollection.lazyList();
+	default List<LayerManifest<?>> getLayerManifests() {
+		LazyCollection<LayerManifest<?>> result = LazyCollection.lazyList();
 
 		forEachLayerManifest(result);
 
@@ -144,8 +144,8 @@ public interface ContextManifest extends MemberManifest, Bindable, Embedded {
 	}
 
 	@AccessRestriction(AccessMode.READ)
-	default List<LayerManifest> getLocalLayerManifests() {
-		LazyCollection<LayerManifest> result = LazyCollection.lazyList();
+	default List<LayerManifest<?>> getLocalLayerManifests() {
+		LazyCollection<LayerManifest<?>> result = LazyCollection.lazyList();
 
 		forEachLocalLayerManifest(result);
 
@@ -154,12 +154,12 @@ public interface ContextManifest extends MemberManifest, Bindable, Embedded {
 
 	@SuppressWarnings("unchecked")
 	@AccessRestriction(AccessMode.READ)
-	default <L extends LayerManifest> List<L> getLayerManifests(Predicate<? super LayerManifest> p) {
+	default <L extends LayerManifest<?>> List<L> getLayerManifests(Predicate<? super LayerManifest<?>> p) {
 		LazyCollection<L> result = LazyCollection.lazyList();
 
 		forEachLayerManifest(m -> {
 			if(p.test(m)) {
-				result.add((L) m);
+				result.add((L)m);
 			}
 		});
 
@@ -239,7 +239,7 @@ public interface ContextManifest extends MemberManifest, Bindable, Embedded {
 	 * @throws NullPointerException iff {@code id} is {@code null}
 	 */
 	@AccessRestriction(AccessMode.READ)
-	<L extends LayerManifest> Optional<L> getLayerManifest(String id);
+	<L extends LayerManifest<L>> Optional<L> getLayerManifest(String id);
 
 	/**
 	 * Returns the manifests that describes where the data for this context's

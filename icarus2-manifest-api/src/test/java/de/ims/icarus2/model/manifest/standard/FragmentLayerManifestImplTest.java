@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
+import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifestTest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
@@ -30,13 +31,13 @@ import de.ims.icarus2.test.TestSettings;
  * @author Markus Gärtner
  *
  */
-class FragmentLayerManifestImplTest implements FragmentLayerManifestTest<FragmentLayerManifestImpl> {
+class FragmentLayerManifestImplTest implements FragmentLayerManifestTest {
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.EmbeddedMemberManifestTest#createHosted(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.TypedManifest)
 	 */
 	@Override
-	public FragmentLayerManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
+	public FragmentLayerManifest createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
 		return settings.process(new FragmentLayerManifestImpl(manifestLocation, registry, (LayerGroupManifest) host));
 	}
@@ -45,7 +46,7 @@ class FragmentLayerManifestImplTest implements FragmentLayerManifestTest<Fragmen
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends FragmentLayerManifestImpl> getTestTargetClass() {
+	public Class<? extends FragmentLayerManifest> getTestTargetClass() {
 		return FragmentLayerManifestImpl.class;
 	}
 

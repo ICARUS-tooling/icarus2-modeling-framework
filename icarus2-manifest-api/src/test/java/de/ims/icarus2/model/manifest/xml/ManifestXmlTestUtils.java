@@ -126,7 +126,7 @@ public class ManifestXmlTestUtils {
 		 *  since they will be properly validated when used in a wider context
 		 *  as part of higher components!
 		 */
-		boolean validate = false;
+		boolean validate = allowValidation;
 
 		/*
 		 *  Special case: if we're testing a typed manifest and it actually

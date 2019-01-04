@@ -56,7 +56,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface AnnotationLayerManifest extends LayerManifest {
+public interface AnnotationLayerManifest extends LayerManifest<AnnotationLayerManifest> {
 
 	@AccessRestriction(AccessMode.READ)
 	void forEachAnnotationManifest(Consumer<? super AnnotationManifest> action);

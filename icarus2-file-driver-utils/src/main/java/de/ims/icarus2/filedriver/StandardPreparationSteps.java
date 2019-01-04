@@ -334,6 +334,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 
 	/**
 	 * Verify that the 'scanned' properties for individual files and the layers
+	 * TODO
 	 */
 	CHECK_LAYER_METADATA {
 

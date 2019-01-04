@@ -31,8 +31,8 @@ import org.junit.jupiter.api.Test;
  * @author Markus Gärtner
  *
  */
-public interface RasterizerManifestTest<M extends RasterizerManifest>
-		extends ForeignImplementationManifestTest<M>, EmbeddedMemberManifestTest<M> {
+public interface RasterizerManifestTest
+		extends ForeignImplementationManifestTest<RasterizerManifest>, EmbeddedMemberManifestTest<RasterizerManifest> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.RasterizerManifest#getLayerManifest()}.

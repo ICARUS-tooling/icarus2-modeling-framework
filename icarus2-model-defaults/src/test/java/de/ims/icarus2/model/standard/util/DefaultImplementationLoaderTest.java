@@ -42,6 +42,7 @@ import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.registry.CorpusManager;
+import de.ims.icarus2.model.manifest.api.ImplementationLoader;
 import de.ims.icarus2.model.manifest.api.ImplementationLoaderTest;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest.SourceType;
 import de.ims.icarus2.test.Dummy;
@@ -51,7 +52,7 @@ import de.ims.icarus2.test.TestSettings;
  * @author Markus Gärtner
  *
  */
-class DefaultImplementationLoaderTest implements ImplementationLoaderTest<DefaultImplementationLoader> {
+class DefaultImplementationLoaderTest implements ImplementationLoaderTest {
 
 	@Override
 	public Class<? extends DefaultImplementationLoader> getTestTargetClass() {
@@ -121,7 +122,7 @@ class DefaultImplementationLoaderTest implements ImplementationLoaderTest<Defaul
 	 * @see de.ims.icarus2.model.manifest.api.ImplementationLoaderTest#createForLoading(de.ims.icarus2.test.TestSettings, java.lang.Class)
 	 */
 	@Override
-	public DefaultImplementationLoader createForLoading(
+	public ImplementationLoader<?> createForLoading(
 			TestSettings settings, Class<?> classToLoad,
 			String source, String classname) {
 
@@ -154,7 +155,7 @@ class DefaultImplementationLoaderTest implements ImplementationLoaderTest<Defaul
 	 */
 	@Test
 	void testGetCorpusManager() {
-		assertNotNull(create().getCorpusManager());
+		assertNotNull(((DefaultImplementationLoader)create()).getCorpusManager());
 	}
 
 	/**
@@ -162,7 +163,7 @@ class DefaultImplementationLoaderTest implements ImplementationLoaderTest<Defaul
 	 */
 	@Test
 	void testGetCorpus() {
-		assertGetter(create(),
+		assertGetter((DefaultImplementationLoader)create(),
 				mock(Corpus.class), NO_VALUE(),
 				NO_DEFAULT(),
 				DefaultImplementationLoader::getCorpus,
@@ -174,14 +175,14 @@ class DefaultImplementationLoaderTest implements ImplementationLoaderTest<Defaul
 	 */
 	@Test
 	void testCorpus() {
-		assertRestrictedSetter(create(),
+		assertRestrictedSetter((DefaultImplementationLoader)create(),
 				DefaultImplementationLoader::corpus,
 				mock(Corpus.class),
 				mock(Corpus.class),
 				NPE_CHECK, ILLEGAL_STATE_CHECK);
 
 		// Test special behavior if corpus isn't set directly
-		DefaultImplementationLoader instance = create();
+		DefaultImplementationLoader instance = (DefaultImplementationLoader)create();
 		assertNull(instance.getCorpus());
 
 		// Assert that loader derived corpus from environment

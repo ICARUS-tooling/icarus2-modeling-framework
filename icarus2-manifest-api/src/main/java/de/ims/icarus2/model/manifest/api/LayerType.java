@@ -43,5 +43,5 @@ public interface LayerType extends Category {
 	 * additional content restrictions.
 	 * @return
 	 */
-	Optional<LayerManifest> getSharedManifest();
+	Optional<LayerManifest<?>> getSharedManifest();
 }

@@ -21,6 +21,7 @@ import static java.util.Objects.requireNonNull;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -129,6 +130,14 @@ public class DocumentationImpl extends AbstractLockable implements Documentation
 		for(Resource resource : resources) {
 			resource.lock();
 		}
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(content, resources);
 	}
 
 	/**

@@ -45,16 +45,16 @@ import de.ims.icarus2.test.annotations.Provider;
  * @author Markus Gärtner
  *
  */
-public interface PropertyTest<P extends Property> extends LockableTest<P>, CloneableTest<P> {
+public interface PropertyTest extends LockableTest<Property>, CloneableTest<Property> {
 
 	@Provider
-	P createTestInstance(TestSettings settings, String name, ValueType valueType);
+	Property createTestInstance(TestSettings settings, String name, ValueType valueType);
 
 	/**
 	 * @see de.ims.icarus2.test.CloneableTest#cloneFunction()
 	 */
 	@Override
-	default Function<P, Object> cloneFunction() {
+	default Function<Property, Object> cloneFunction() {
 		return Property::clone;
 	}
 
@@ -62,7 +62,7 @@ public interface PropertyTest<P extends Property> extends LockableTest<P>, Clone
 	 * @see de.ims.icarus2.test.CloneableTest#assertCloneContentEquals(java.lang.Cloneable, java.lang.Object)
 	 */
 	@Override
-	default void assertCloneContentEquals(P original, Object other) {
+	default void assertCloneContentEquals(Property original, Object other) {
 		assertTrue(other instanceof Property);
 
 		Property clone = (Property)other;
@@ -95,7 +95,7 @@ public interface PropertyTest<P extends Property> extends LockableTest<P>, Clone
 		return ManifestTestUtils.getAvailableTestTypes().stream()
 				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						Object value = ManifestTestUtils.getTestValue(valueType);
-						P instance = createTestInstance(settings(), "property"+valueType.getName(), valueType);
+						Property instance = createTestInstance(settings(), "property"+valueType.getName(), valueType);
 						instance.setValue(value);
 						assertOptionalEquals(value, instance.getValue());
 					}));
@@ -116,7 +116,7 @@ public interface PropertyTest<P extends Property> extends LockableTest<P>, Clone
 	 */
 	@Test
 	default void testGetOption() {
-		P instance = create();
+		Property instance = create();
 
 		assertNotPresent(instance.getOption());
 	}
@@ -141,7 +141,7 @@ public interface PropertyTest<P extends Property> extends LockableTest<P>, Clone
 		return ManifestTestUtils.getAvailableTestTypes().stream()
 				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						Object value = ManifestTestUtils.getTestValue(valueType);
-						P instance = createTestInstance(settings(), "property"+valueType.getName(), valueType);
+						Property instance = createTestInstance(settings(), "property"+valueType.getName(), valueType);
 						instance.setValue(value);
 					}));
 	}

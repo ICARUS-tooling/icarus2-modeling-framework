@@ -23,8 +23,6 @@ import javax.xml.stream.XMLStreamException;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
-import de.ims.icarus2.model.manifest.api.ContainerFlag;
-import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.StructureFlag;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
@@ -41,7 +39,7 @@ import de.ims.icarus2.util.xml.XmlSerializer;
  * @author Markus Gärtner
  *
  */
-public class StructureManifestXmlDelegate extends AbstractMemberManifestXmlDelegate<StructureManifest> {
+public class StructureManifestXmlDelegate extends ContainerManifestXmlDelegate {
 
 	public StructureManifestXmlDelegate() {
 		// no-op
@@ -62,16 +60,19 @@ public class StructureManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 		return this;
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.xml.delegates.AbstractXmlDelegate#getInstance()
+	 */
+	@Override
+	public StructureManifest getInstance() {
+		return (StructureManifest) super.getInstance();
+	}
+
 	@Override
 	protected void writeAttributes(XmlSerializer serializer) throws XMLStreamException {
 		super.writeAttributes(serializer);
 
 		StructureManifest manifest = getInstance();
-
-		// Write container type
-		if(manifest.isLocalContainerType()) {
-			serializer.writeAttribute(ManifestXmlAttributes.CONTAINER_TYPE, manifest.getContainerType().getStringValue());
-		}
 
 		// Write structure type
 		if(manifest.isLocalStructureType()) {
@@ -84,12 +85,6 @@ public class StructureManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 		super.writeElements(serializer);
 
 		StructureManifest manifest = getInstance();
-
-		for(ContainerFlag flag : manifest.getActiveLocalContainerFlags()) {
-			serializer.startElement(ManifestXmlTags.CONTAINER_FLAG);
-			serializer.writeText(flag.getStringValue());
-			serializer.endElement(ManifestXmlTags.CONTAINER_FLAG);
-		}
 
 		for(StructureFlag flag : manifest.getActiveLocalStructureFlags()) {
 			serializer.startElement(ManifestXmlTags.STRUCTURE_FLAG);
@@ -109,11 +104,6 @@ public class StructureManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.STRUCTURE_TYPE)
 			.map(StructureType::parseStructureType)
 			.ifPresent(getInstance()::setStructureType);
-
-		// Read container type
-		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CONTAINER_TYPE)
-			.map(ContainerType::parseContainerType)
-			.ifPresent(getInstance()::setContainerType);
 	}
 
 	@Override
@@ -126,10 +116,6 @@ public class StructureManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 		} break;
 
 		case ManifestXmlTags.STRUCTURE_FLAG: {
-			// no-op
-		} break;
-
-		case ManifestXmlTags.CONTAINER_FLAG: {
 			// no-op
 		} break;
 
@@ -153,10 +139,6 @@ public class StructureManifestXmlDelegate extends AbstractMemberManifestXmlDeleg
 
 		case ManifestXmlTags.STRUCTURE_FLAG: {
 			getInstance().setStructureFlag(StructureFlag.parseStructureFlag(text), true);
-		} break;
-
-		case ManifestXmlTags.CONTAINER_FLAG: {
-			getInstance().setContainerFlag(ContainerFlag.parseContainerFlag(text), true);
 		} break;
 
 		default:

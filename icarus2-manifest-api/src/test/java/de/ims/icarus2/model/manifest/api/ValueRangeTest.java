@@ -47,8 +47,8 @@ import de.ims.icarus2.test.annotations.Provider;
  * @author Markus Gärtner
  *
  */
-public interface ValueRangeTest<R extends ValueRange>
-		extends LockableTest<R>, TypedManifestTest<R> {
+public interface ValueRangeTest
+		extends LockableTest<ValueRange>, TypedManifestTest<ValueRange> {
 
 	public static final Set<ValueType> LEGAL_VALUE_TYPES = ValueRange.SUPPORTED_VALUE_TYPES;
 	public static final Set<ValueType> ILLEGAL_VALUE_TYPES = Collections.unmodifiableSet(
@@ -57,13 +57,13 @@ public interface ValueRangeTest<R extends ValueRange>
 	public static final ValueType DEFAULT_VALUE_TYPE = ValueType.INTEGER;
 
 	@Provider
-	R createWithType(TestSettings settings, ValueType valueType);
+	ValueRange createWithType(TestSettings settings, ValueType valueType);
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
 	@Override
-	default R createTestInstance(TestSettings settings) {
+	default ValueRange createTestInstance(TestSettings settings) {
 		return createWithType(settings, DEFAULT_VALUE_TYPE);
 	}
 

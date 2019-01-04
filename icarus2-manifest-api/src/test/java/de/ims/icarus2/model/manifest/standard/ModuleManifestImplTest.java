@@ -20,6 +20,7 @@
 package de.ims.icarus2.model.manifest.standard;
 
 import de.ims.icarus2.model.manifest.api.DriverManifest;
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ModuleManifestTest;
@@ -31,13 +32,13 @@ import de.ims.icarus2.test.TestSettings;
  * @author Markus Gärtner
  *
  */
-class ModuleManifestImplTest implements ModuleManifestTest<ModuleManifestImpl> {
+class ModuleManifestImplTest implements ModuleManifestTest {
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#createEmbedded(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.api.TypedManifest)
 	 */
 	@Override
-	public ModuleManifestImpl createEmbedded(TestSettings settings, TypedManifest host) {
+	public ModuleManifest createEmbedded(TestSettings settings, TypedManifest host) {
 		return settings.process(new ModuleManifestImpl((DriverManifest) host));
 	}
 
@@ -45,7 +46,7 @@ class ModuleManifestImplTest implements ModuleManifestTest<ModuleManifestImpl> {
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends ModuleManifestImpl> getTestTargetClass() {
+	public Class<? extends ModuleManifest> getTestTargetClass() {
 		return ModuleManifestImpl.class;
 	}
 
@@ -53,7 +54,7 @@ class ModuleManifestImplTest implements ModuleManifestTest<ModuleManifestImpl> {
 	 * @see de.ims.icarus2.model.manifest.api.ManifestTest#createTestInstance(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry)
 	 */
 	@Override
-	public ModuleManifestImpl createTestInstance(TestSettings settings, ManifestLocation location,
+	public ModuleManifest createTestInstance(TestSettings settings, ManifestLocation location,
 			ManifestRegistry registry) {
 		return settings.process(new ModuleManifestImpl(location, registry));
 	}

@@ -122,7 +122,7 @@ public class LayerTypeWrapper implements LayerType {
 	 * @see de.ims.icarus2.model.manifest.api.LayerType#getSharedManifest()
 	 */
 	@Override
-	public Optional<LayerManifest> getSharedManifest() {
+	public Optional<LayerManifest<?>> getSharedManifest() {
 		return getProxy().getSharedManifest();
 	}
 }

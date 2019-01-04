@@ -44,7 +44,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface LayerManifest extends MemberManifest, Embedded {
+public interface LayerManifest<L extends LayerManifest<L>> extends MemberManifest<L>, Embedded {
 
 	@AccessRestriction(AccessMode.READ)
 	Optional<ContextManifest> getContextManifest();
@@ -135,7 +135,7 @@ public interface LayerManifest extends MemberManifest, Embedded {
 		 *
 		 * @return
 		 */
-		LayerManifest getLayerManifest();
+		LayerManifest<?> getLayerManifest();
 
 		/**
 		 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
@@ -165,6 +165,6 @@ public interface LayerManifest extends MemberManifest, Embedded {
 		 *
 		 * @return
 		 */
-		Optional<LayerManifest> getResolvedLayerManifest();
+		Optional<LayerManifest<?>> getResolvedLayerManifest();
 	}
 }

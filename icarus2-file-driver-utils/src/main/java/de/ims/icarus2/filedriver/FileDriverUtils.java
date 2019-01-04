@@ -232,10 +232,10 @@ public class FileDriverUtils {
 		ContextManifest contextManifest = ManifestUtils.requireGrandHost(mappingManifest);
 
 		ItemLayerManifest source = (ItemLayerManifest) mappingManifest.getSourceLayerId()
-				.flatMap(contextManifest::getLayerManifest)
+				.flatMap(id -> contextManifest.<ItemLayerManifest>getLayerManifest(id))
 				.orElseThrow(ManifestException.missing(mappingManifest, "resolvable source layer"));
 		ItemLayerManifest target = (ItemLayerManifest) mappingManifest.getTargetLayerId()
-				.flatMap(contextManifest::getLayerManifest)
+				.flatMap(id -> contextManifest.<ItemLayerManifest>getLayerManifest(id))
 				.orElseThrow(ManifestException.missing(mappingManifest, "resolvable target layer"));
 
 		options.put(MappingProperty.BLOCK_CACHE.key(), toBlockCache(metadataRegistry.getValue(MappingKey.BLOCK_CACHE.getKey(source, target))));

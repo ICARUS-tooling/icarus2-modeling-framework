@@ -32,7 +32,7 @@ import de.ims.icarus2.util.access.AccessRestriction;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface HighlightLayerManifest extends LayerManifest {
+public interface HighlightLayerManifest extends LayerManifest<HighlightLayerManifest> {
 
 	//FIXME finish specification
 

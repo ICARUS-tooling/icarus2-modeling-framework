@@ -56,7 +56,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  * @author Markus Gärtner
  *
  */
-public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemberManifestTest<M> {
+public interface LayerManifestTest<M extends LayerManifest<?>> extends EmbeddedMemberManifestTest<M> {
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
@@ -107,12 +107,12 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 		return type;
 	}
 
-	public static <M extends LayerManifest> M mockLayerManifest(Class<M> clazz, String id) {
+	public static <M extends LayerManifest<?>> M mockLayerManifest(Class<M> clazz, String id) {
 		return stubId(mockTypedManifest(clazz), id);
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <M extends LayerManifest> M mockLayerManifest(String id) {
+	public static <M extends LayerManifest<M>> M mockLayerManifest(String id) {
 		return (M) mockLayerManifest(LayerManifest.class, id);
 	}
 
@@ -149,7 +149,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	 *
 	 * @return
 	 */
-	public static <M extends LayerManifest> BiConsumer<M, LayerType> inject_setLayerTypeId() {
+	public static <M extends LayerManifest<?>> BiConsumer<M, LayerType> inject_setLayerTypeId() {
 		// Ensure our mocked LayerType is available from the registry
 		return (m, type) -> {
 			ManifestRegistry mockedRegistry = TestUtils.assertMock(m.getRegistry());
@@ -165,7 +165,9 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	 */
 	@Test
 	default void testGetLayerType() {
-		assertDerivativeOptGetter(settings(), mockLayerType("type1"), mockLayerType("type2"), TestUtils.NO_DEFAULT(),
+		assertDerivativeOptGetter(settings(),
+				mockLayerType("type1"), mockLayerType("type2"),
+				TestUtils.NO_DEFAULT(),
 				LayerManifest::getLayerType, inject_setLayerTypeId());
 	}
 
@@ -174,7 +176,8 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	 */
 	@Test
 	default void testIsLocalLayerType() {
-		assertDerivativeIsLocal(settings(), mockLayerType("type1"), mockLayerType("type2"),
+		assertDerivativeIsLocal(settings(),
+				mockLayerType("type1"), mockLayerType("type2"),
 				LayerManifest::isLocalLayerType, inject_setLayerTypeId());
 	}
 
@@ -186,7 +189,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	 *
 	 * @return
 	 */
-	public static <M extends LayerManifest> BiConsumer<M, Consumer<? super String>> inject_forEachTargetLayerManifest(
+	public static <M extends LayerManifest<?>> BiConsumer<M, Consumer<? super String>> inject_forEachTargetLayerManifest(
 					BiConsumer<M, Consumer<? super TargetLayerManifest>> forEach) {
 		return (m, action) -> LazyCollection.<String>lazyList()
 				.addFromForEachTransformed(wrapForEach(m, forEach), t -> t.getLayerId())
@@ -202,7 +205,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	 * @param creator
 	 * @return
 	 */
-	public static <M extends LayerManifest> BiConsumer<M, String> inject_createTargetLayerManifest(
+	public static <M extends LayerManifest<?>> BiConsumer<M, String> inject_createTargetLayerManifest(
 			BiFunction<M, String, TargetLayerManifest> creator) {
 		return (m, id) -> {
 			TargetLayerManifest targetLayerManifest = creator.apply(m, id);
@@ -226,7 +229,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	 * @param creator
 	 * @return
 	 */
-	public static <M extends LayerManifest> BiConsumer<M, String> inject_consumeTargetLayerManifest(
+	public static <M extends LayerManifest<M>> BiConsumer<M, String> inject_consumeTargetLayerManifest(
 			TriConsumer<M, String, Consumer<? super TargetLayerManifest>> creator) {
 		return (m, id) -> {
 			TargetLayerManifest targetLayerManifest =
@@ -238,7 +241,8 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 		};
 	}
 
-	public static <M extends Object, L extends LayerManifest> BiConsumer<M, L> inject_setLayerId(
+	@SuppressWarnings("unchecked")
+	public static <M extends Object, L extends LayerManifest<?>> BiConsumer<M, L> inject_setLayerId(
 			BiConsumer<M, String> setter, Function<M, Optional<ContextManifest>> contextGetter) {
 		return (m, layerManifest) -> {
 
@@ -246,13 +250,14 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 			assertNotNull(id);
 
 			ContextManifest contextManifest = assertMock(contextGetter.apply(m));
-			when(contextManifest.getLayerManifest(id)).thenReturn(Optional.of(layerManifest));
+			when((Optional<L>)contextManifest.getLayerManifest(id)).thenReturn(Optional.of(layerManifest));
 
 			setter.accept(m, id);
 		};
 	}
 
-	public static <M extends Object, L extends LayerManifest> BiConsumer<M, L> inject_layerLookup(
+	@SuppressWarnings("unchecked")
+	public static <M extends Object, L extends LayerManifest<?>> BiConsumer<M, L> inject_layerLookup(
 			BiConsumer<M, L> setter, Function<M, Optional<ContextManifest>> contextGetter) {
 		return (m, layerManifest) -> {
 
@@ -260,7 +265,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 			assertNotNull(id);
 
 			ContextManifest contextManifest = assertMock(contextGetter.apply(m));
-			when(contextManifest.getLayerManifest(id)).thenReturn(Optional.of(layerManifest));
+			when((Optional<L>)contextManifest.getLayerManifest(id)).thenReturn(Optional.of(layerManifest));
 
 			setter.accept(m, layerManifest);
 		};
@@ -302,7 +307,7 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	 * Transforms a {@link LayerManifest} into a {@link String} by using
 	 * the manifest's {@link LayerManifest#getId() id}.
 	 */
-	public static <M extends LayerManifest> Function<M, String> transform_layerManifestId(){
+	public static <M extends LayerManifest<?>> Function<M, String> transform_layerManifestId(){
 		return m -> m==null ? null : m.getId().get();
 	}
 

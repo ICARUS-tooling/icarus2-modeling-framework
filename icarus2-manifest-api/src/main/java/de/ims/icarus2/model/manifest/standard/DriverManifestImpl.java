@@ -472,10 +472,12 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		 * @param documentation the documentation to set
 		 */
 		@Override
-		public void setDocumentation(Documentation documentation) {
+		public ModuleSpec setDocumentation(Documentation documentation) {
 			checkNotLocked();
 
 			setDocumentation0(documentation);
+
+			return this;
 		}
 
 		protected void setDocumentation0(Documentation documentation) {

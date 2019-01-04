@@ -33,10 +33,10 @@ import de.ims.icarus2.test.annotations.Provider;
  * @author Markus Gärtner
  *
  */
-public interface PathEntryTest<P extends PathEntry> {
+public interface PathEntryTest {
 
 	@Provider
-	P createInstance(PathType type, String value);
+	PathEntry createInstance(PathType type, String value);
 
 	@Test
 	default void testCreation() {

@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
+import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestTest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
@@ -30,13 +31,13 @@ import de.ims.icarus2.test.TestSettings;
  * @author Markus Gärtner
  *
  */
-class ItemLayerManifestImplTest implements ItemLayerManifestTest<ItemLayerManifestImpl> {
+class ItemLayerManifestImplTest implements ItemLayerManifestTest {
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.EmbeddedMemberManifestTest#createHosted(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.TypedManifest)
 	 */
 	@Override
-	public ItemLayerManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
+	public ItemLayerManifest createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
 		return settings.process(new ItemLayerManifestImpl(manifestLocation, registry, (LayerGroupManifest) host));
 	}
@@ -45,7 +46,7 @@ class ItemLayerManifestImplTest implements ItemLayerManifestTest<ItemLayerManife
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends ItemLayerManifestImpl> getTestTargetClass() {
+	public Class<? extends ItemLayerManifest> getTestTargetClass() {
 		return ItemLayerManifestImpl.class;
 	}
 

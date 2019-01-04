@@ -34,7 +34,15 @@ import de.ims.icarus2.test.asserter.Equals;
  * @author Markus Gärtner
  *
  */
-public interface VersionManifestTest<M extends VersionManifest> extends LockableTest<M>, TypedManifestTest<M> {
+public interface VersionManifestTest extends LockableTest<VersionManifest>, TypedManifestTest<VersionManifest> {
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.VERSION;
+	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.VersionManifest#getFormatId()}.
@@ -60,8 +68,8 @@ public interface VersionManifestTest<M extends VersionManifest> extends Lockable
 	}
 
 	@Provider
-	default M createVersionManifest(String formatId, String versionString) {
-		M manifest = createUnlocked();
+	default VersionManifest createVersionManifest(String formatId, String versionString) {
+		VersionManifest manifest = createUnlocked();
 		manifest.setFormatId(formatId);
 		manifest.setVersionString(versionString);
 		manifest.lock();

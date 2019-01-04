@@ -20,6 +20,7 @@
 package de.ims.icarus2.model.manifest.standard;
 
 import de.ims.icarus2.model.manifest.api.OptionTest;
+import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
 import de.ims.icarus2.model.manifest.standard.OptionsManifestImpl.OptionImpl;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestSettings;
@@ -28,13 +29,13 @@ import de.ims.icarus2.test.TestSettings;
  * @author Markus Gärtner
  *
  */
-class OptionImplTest implements OptionTest<OptionImpl> {
+class OptionImplTest implements OptionTest {
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends OptionImpl> getTestTargetClass() {
+	public Class<? extends Option> getTestTargetClass() {
 		return OptionImpl.class;
 	}
 
@@ -42,7 +43,7 @@ class OptionImplTest implements OptionTest<OptionImpl> {
 	 * @see de.ims.icarus2.model.manifest.api.OptionTest#createWithType(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.types.ValueType)
 	 */
 	@Override
-	public OptionImpl createWithType(TestSettings settings, ValueType valueType) {
+	public Option createWithType(TestSettings settings, ValueType valueType) {
 		return settings.process(new OptionImpl("optionX", valueType));
 	}
 
@@ -50,7 +51,7 @@ class OptionImplTest implements OptionTest<OptionImpl> {
 	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#createEmpty()
 	 */
 	@Override
-	public OptionImpl createEmpty() {
+	public Option createEmpty() {
 		return new OptionImpl();
 	}
 }

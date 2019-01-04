@@ -48,7 +48,7 @@ import de.ims.icarus2.util.xml.XmlUtils;
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest>
+public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest<M>>
 		extends AbstractManifestXmlDelegate<M> {
 
 	private int localPropertyCount = 0;
@@ -112,7 +112,7 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 	protected void writeAttributes(XmlSerializer serializer) throws XMLStreamException {
 		super.writeAttributes(serializer);
 
-		MemberManifest manifest = getInstance();
+		M manifest = getInstance();
 
 		// IMPORTANT: we must not write the ID field again, since super implementation took care of that!
 		serializer.writeAttribute(ManifestXmlAttributes.NAME, manifest.getName());
@@ -135,7 +135,7 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
 		super.writeElements(serializer);
 
-		MemberManifest manifest = getInstance();
+		M manifest = getInstance();
 
 		ManifestXmlUtils.writeIdentityFieldElements(serializer, manifest);
 

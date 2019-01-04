@@ -93,7 +93,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 				&& groupManifests.isEmpty() && !driverManifest.isPresent() && locationManifests.isEmpty();
 	}
 
-	private <L extends LayerManifest> Optional<L> lookupLayerManifest(String id) {
+	private <L extends LayerManifest<L>> Optional<L> lookupLayerManifest(String id) {
 		requireNonNull(id);
 
 		Optional<L> result = Optional.empty();
@@ -133,7 +133,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	 * @see de.ims.icarus2.model.manifest.api.ContextManifest#getLayerManifest(java.lang.String)
 	 */
 	@Override
-	public <L extends LayerManifest> Optional<L> getLayerManifest(String id) {
+	public <L extends LayerManifest<L>> Optional<L> getLayerManifest(String id) {
 		return lookupLayerManifest(id);
 	}
 

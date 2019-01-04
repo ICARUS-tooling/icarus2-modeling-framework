@@ -35,6 +35,7 @@ public interface ManifestLocationTest {
 	@Test
 	default void testGetUrl() {
 		fail("Not yet implemented");
+		//TODO
 	}
 
 	/**
@@ -43,6 +44,7 @@ public interface ManifestLocationTest {
 	@Test
 	default void testGetInput() {
 		fail("Not yet implemented");
+		//TODO
 	}
 
 	/**
@@ -51,6 +53,7 @@ public interface ManifestLocationTest {
 	@Test
 	default void testGetOutput() {
 		fail("Not yet implemented");
+		//TODO
 	}
 
 	/**
@@ -59,6 +62,7 @@ public interface ManifestLocationTest {
 	@Test
 	default void testIsReadOnly() {
 		fail("Not yet implemented");
+		//TODO
 	}
 
 	/**
@@ -67,6 +71,7 @@ public interface ManifestLocationTest {
 	@Test
 	default void testIsTemplate() {
 		fail("Not yet implemented");
+		//TODO
 	}
 
 	/**
@@ -75,6 +80,7 @@ public interface ManifestLocationTest {
 	@Test
 	default void testGetClassLoader() {
 		fail("Not yet implemented");
+		//TODO
 	}
 
 }

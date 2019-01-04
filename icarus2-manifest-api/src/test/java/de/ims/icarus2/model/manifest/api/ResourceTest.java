@@ -35,6 +35,7 @@ public interface ResourceTest {
 	@Test
 	default void testGetUri() {
 		fail("Not yet implemented");
+		//TODO
 	}
 
 	/**
@@ -43,6 +44,7 @@ public interface ResourceTest {
 	@Test
 	default void testSetUri() {
 		fail("Not yet implemented");
+		//TODO
 	}
 
 }

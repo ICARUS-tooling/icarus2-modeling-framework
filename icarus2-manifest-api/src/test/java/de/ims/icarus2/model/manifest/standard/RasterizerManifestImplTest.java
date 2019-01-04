@@ -22,6 +22,7 @@ package de.ims.icarus2.model.manifest.standard;
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
+import de.ims.icarus2.model.manifest.api.RasterizerManifest;
 import de.ims.icarus2.model.manifest.api.RasterizerManifestTest;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.test.TestSettings;
@@ -30,13 +31,13 @@ import de.ims.icarus2.test.TestSettings;
  * @author Markus Gärtner
  *
  */
-class RasterizerManifestImplTest implements RasterizerManifestTest<RasterizerManifestImpl> {
+class RasterizerManifestImplTest implements RasterizerManifestTest {
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends RasterizerManifestImpl> getTestTargetClass() {
+	public Class<? extends RasterizerManifest> getTestTargetClass() {
 		return RasterizerManifestImpl.class;
 	}
 
@@ -44,7 +45,7 @@ class RasterizerManifestImplTest implements RasterizerManifestTest<RasterizerMan
 	 * @see de.ims.icarus2.model.manifest.api.ManifestTest#createTestInstance(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry)
 	 */
 	@Override
-	public RasterizerManifestImpl createTestInstance(TestSettings settings, ManifestLocation location,
+	public RasterizerManifest createTestInstance(TestSettings settings, ManifestLocation location,
 			ManifestRegistry registry) {
 		return settings.process(new RasterizerManifestImpl(location, registry));
 	}
@@ -53,7 +54,7 @@ class RasterizerManifestImplTest implements RasterizerManifestTest<RasterizerMan
 	 * @see de.ims.icarus2.model.manifest.api.EmbeddedMemberManifestTest#createHosted(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.TypedManifest)
 	 */
 	@Override
-	public RasterizerManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
+	public RasterizerManifest createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
 		return settings.process(new RasterizerManifestImpl(manifestLocation, registry, (FragmentLayerManifest) host));
 	}

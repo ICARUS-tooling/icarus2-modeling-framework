@@ -30,11 +30,11 @@ import de.ims.icarus2.util.access.AccessRestriction;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface Documentable extends Lockable {
+public interface Documentable<D extends Documentable<D>> extends Lockable {
 
 	@AccessRestriction(AccessMode.READ)
 	Optional<Documentation> getDocumentation();
 
 	@AccessRestriction(AccessMode.WRITE)
-	void setDocumentation(Documentation documentation);
+	D setDocumentation(Documentation documentation);
 }

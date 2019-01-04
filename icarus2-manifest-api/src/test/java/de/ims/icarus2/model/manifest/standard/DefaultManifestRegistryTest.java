@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
+import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestRegistryTest;
 import de.ims.icarus2.test.TestSettings;
 
@@ -26,13 +27,13 @@ import de.ims.icarus2.test.TestSettings;
  * @author Markus Gärtner
  *
  */
-class DefaultManifestRegistryTest implements ManifestRegistryTest<DefaultManifestRegistry> {
+class DefaultManifestRegistryTest implements ManifestRegistryTest {
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends DefaultManifestRegistry> getTestTargetClass() {
+	public Class<? extends ManifestRegistry> getTestTargetClass() {
 		return DefaultManifestRegistry.class;
 	}
 
@@ -40,7 +41,7 @@ class DefaultManifestRegistryTest implements ManifestRegistryTest<DefaultManifes
 	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
 	@Override
-	public DefaultManifestRegistry createTestInstance(TestSettings settings) {
+	public ManifestRegistry createTestInstance(TestSettings settings) {
 		return settings.process(new DefaultManifestRegistry());
 	}
 

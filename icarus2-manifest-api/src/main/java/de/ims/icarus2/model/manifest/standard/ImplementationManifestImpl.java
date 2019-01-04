@@ -28,6 +28,7 @@ import de.ims.icarus2.model.manifest.api.MemberManifest;
  * @author Markus Gärtner
  *
  */
+@SuppressWarnings("rawtypes")
 public class ImplementationManifestImpl extends AbstractMemberManifest<ImplementationManifest, MemberManifest>
 		implements ImplementationManifest {
 
@@ -41,11 +42,11 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	 * @param registry
 	 */
 	public ImplementationManifestImpl(ManifestLocation manifestLocation,
-			ManifestRegistry registry, MemberManifest hostManifest) {
+			ManifestRegistry registry, MemberManifest<?> hostManifest) {
 		super(manifestLocation, registry, hostManifest, MemberManifest.class);
 	}
 
-	public ImplementationManifestImpl(MemberManifest hostManifest) {
+	public ImplementationManifestImpl(MemberManifest<?> hostManifest) {
 		super(hostManifest, hostIdentity(), MemberManifest.class);
 	}
 

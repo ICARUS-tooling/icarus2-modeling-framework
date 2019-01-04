@@ -74,8 +74,8 @@ import de.ims.icarus2.util.events.SimpleEventListener;
  * @author Markus Gärtner
  *
  */
-public interface ManifestRegistryTest<R extends ManifestRegistry>
-		extends ManifestFrameworkTest<R>, EventManagerTest<R> {
+public interface ManifestRegistryTest
+		extends ManifestFrameworkTest<ManifestRegistry>, EventManagerTest<ManifestRegistry> {
 
 	public static CorpusManifest mockCorpusManifest(String id) {
 		return (CorpusManifest) stubId(
@@ -147,7 +147,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 
 		final int iterations = 50_000;
 
-		R instance = createTestInstance(settings());
+		ManifestRegistry instance = createTestInstance(settings());
 
 		for(int i=0; i<iterations; i++) {
 			int uid = instance.createUID();
@@ -163,7 +163,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 	 */
 	@Test
 	default void testResetUIDs() {
-		R instance = createTestInstance(settings());
+		ManifestRegistry instance = createTestInstance(settings());
 
 		instance.createUID();
 
@@ -177,7 +177,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 	 */
 	@Test
 	default void testForEachLayerType() {
-		TestUtils.<R, LayerType>assertForEach(
+		TestUtils.<ManifestRegistry, LayerType>assertForEach(
 				createTestInstance(settings()),
 				mockLayerType("type1"),
 				mockLayerType("type2"),
@@ -203,7 +203,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 	 */
 	@Test
 	default void testGetLayerTypesPredicateOfQsuperLayerType() {
-		R registry = createTestInstance(settings());
+		ManifestRegistry registry = createTestInstance(settings());
 
 		Predicate<LayerType> pAll = m -> true;
 		Predicate<LayerType> pNone = m -> false;
@@ -295,7 +295,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 	 */
 	@Test
 	default void testGetOverlayLayerType() {
-		R instance = createTestInstance(settings());
+		ManifestRegistry instance = createTestInstance(settings());
 
 		// No registry implementation is expected to provide its own overlay layer type, so we need to add it first
 		instance.addLayerType(mockLayerType(DefaultLayerTypeIds.ITEM_LAYER_OVERLAY));
@@ -339,7 +339,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 	 */
 	@Test
 	default void testGetCorpusSources() {
-		R registry = createTestInstance(settings());
+		ManifestRegistry registry = createTestInstance(settings());
 
 		assertCollectionEmpty(registry.getCorpusSources());
 
@@ -400,7 +400,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 			boolean template, Manifest...lockedManifests) {
 
 		// Run every assertion with a brand new registry
-		R registry = createTestInstance(settings.clone());
+		ManifestRegistry registry = createTestInstance(settings.clone());
 
 		// Phase 1: register manifest with registry and check that all subs are locked
 
@@ -472,7 +472,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 
 		// OptionsManifest instances referenced by a MemberManifest
 		for(ManifestType type : ManifestType.getMemberTypes()) {
-			MemberManifest manifest = mockTypedManifest(type, "manifest"+type);
+			MemberManifest<?> manifest = mockTypedManifest(type, "manifest"+type);
 			if(type.isSupportTemplating()) {
 				when(manifest.isTemplate()).thenReturn(Boolean.TRUE);
 			}
@@ -484,10 +484,10 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 
 		// LayerManifest instances referenced by a live LayerType
 		for(ManifestType type : ManifestType.getLayerTypes()) {
-			LayerManifest sharedManifest = mockTemplate("sharedManifest"+type, type);
+			LayerManifest<?> sharedManifest = mockTemplate("sharedManifest"+type, type);
 			LayerType layerType = mockLayerType("type");
 			when(layerType.getSharedManifest()).thenReturn(Optional.of(sharedManifest));
-			LayerManifest manifest = mockTemplate("template"+type, type);
+			LayerManifest<?> manifest = mockTemplate("template"+type, type);
 			when(manifest.getLayerType()).thenReturn(Optional.of(layerType));
 			assertLocked(settings().message("Testing referenced layer type for type: "+type),
 					manifest, true, sharedManifest);
@@ -507,9 +507,9 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 		// LayerManifest instances inside a ContextManifest
 		for(ManifestType type : ManifestType.getLayerTypes()) {
 			ContextManifest contextManifestForLayerTest = mockTemplate("context", ManifestType.CONTEXT_MANIFEST);
-			LayerManifest layerManifest = mockTemplate("template"+type, type);
+			LayerManifest<?> layerManifest = mockTemplate("template"+type, type);
 			doAnswer(invocation -> {
-				((Consumer<? super LayerManifest>)invocation.getArgument(0)).accept(layerManifest);
+				((Consumer<? super LayerManifest<?>>)invocation.getArgument(0)).accept(layerManifest);
 				return null;
 			}).when(contextManifestForLayerTest).forEachLayerManifest(any());
 			assertLocked(settings().message("Testing layer manifest inside context: "+type),
@@ -530,7 +530,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 	 */
 	@Test
 	default void testForEachCorpus() {
-		TestUtils.<R, CorpusManifest>assertForEach(
+		TestUtils.<ManifestRegistry, CorpusManifest>assertForEach(
 				createTestInstance(settings()),
 				mockCorpusManifest("corpus1"),
 				mockCorpusManifest("corpus2"),
@@ -571,7 +571,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 	 */
 	@Test
 	default void testGetCorpusManifestsPredicateOfQsuperCorpusManifest() {
-		R registry = createTestInstance(settings());
+		ManifestRegistry registry = createTestInstance(settings());
 
 		ManifestLocation location1 = mockManifestLocation(false);
 		ManifestLocation location2 = mockManifestLocation(false);
@@ -617,7 +617,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 	 */
 	@Test
 	default void testGetCorpusManifestsForSource() {
-		R registry = createTestInstance(settings());
+		ManifestRegistry registry = createTestInstance(settings());
 
 		assertNPE(() -> registry.getCorpusManifestsForSource(null));
 
@@ -683,7 +683,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 	 */
 	@Test
 	default void testCorpusManifestChanged() {
-		R registry = createTestInstance(settings());
+		ManifestRegistry registry = createTestInstance(settings());
 
 		CorpusManifest manifest = mockCorpusManifest("corpus1");
 
@@ -716,7 +716,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 	 */
 	@Test
 	default void testContextManifestChanged() {
-		R registry = createTestInstance(settings());
+		ManifestRegistry registry = createTestInstance(settings());
 
 		CorpusManifest corpusManifest = mockCorpusManifest("corpus1");
 		ContextManifest contextManifest = mockTypedManifest(ManifestType.CONTEXT_MANIFEST);
@@ -752,7 +752,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 	 */
 	@Test
 	default void testForEachTemplate() {
-		TestUtils.<R, Manifest>assertForEach(
+		TestUtils.<ManifestRegistry, Manifest>assertForEach(
 				createTestInstance(settings()),
 				mockTemplate("template1"),
 				mockTemplate("template2"),
@@ -778,7 +778,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 	 */
 	@Test
 	default void testGetTemplatesPredicateOfQsuperM() {
-		R registry = createTestInstance(settings());
+		ManifestRegistry registry = createTestInstance(settings());
 
 		Predicate<Manifest> pAll = m -> true;
 		Predicate<Manifest> pNone = m -> false;
@@ -832,7 +832,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 	 */
 	@Test
 	default void testGetTemplatesOfType() {
-		R registry = createTestInstance(settings());
+		ManifestRegistry registry = createTestInstance(settings());
 
 		assertNPE(() -> registry.getTemplatesOfType(null));
 
@@ -863,7 +863,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 	 */
 	@Test
 	default void testGetTemplatesOfClass() {
-		R registry = createTestInstance(settings());
+		ManifestRegistry registry = createTestInstance(settings());
 
 		assertNPE(() -> registry.getTemplatesOfClass(null));
 
@@ -894,7 +894,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 	 */
 	@Test
 	default void testGetTemplatesForSource() {
-		R registry = createTestInstance(settings());
+		ManifestRegistry registry = createTestInstance(settings());
 
 		assertNPE(() -> registry.getTemplatesForSource(null));
 
@@ -925,7 +925,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 	 */
 	@Test
 	default void testGetRootContextTemplates() {
-		R registry = createTestInstance(settings());
+		ManifestRegistry registry = createTestInstance(settings());
 
 		assertCollectionEmpty(registry.getRootContextTemplates());
 
@@ -944,7 +944,7 @@ public interface ManifestRegistryTest<R extends ManifestRegistry>
 	 */
 	@Test
 	default void testGetTemplateSources() {
-		R registry = createTestInstance(settings());
+		ManifestRegistry registry = createTestInstance(settings());
 
 		assertCollectionEmpty(registry.getTemplateSources());
 

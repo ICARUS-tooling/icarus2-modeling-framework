@@ -20,6 +20,7 @@
 package de.ims.icarus2.model.manifest.standard;
 
 import de.ims.icarus2.model.manifest.api.DriverManifest;
+import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifestTest;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.test.TestSettings;
@@ -28,13 +29,13 @@ import de.ims.icarus2.test.TestSettings;
  * @author Markus Gärtner
  *
  */
-class MappingManifestImplTest implements MappingManifestTest<MappingManifestImpl> {
+class MappingManifestImplTest implements MappingManifestTest {
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends MappingManifestImpl> getTestTargetClass() {
+	public Class<? extends MappingManifest> getTestTargetClass() {
 		return MappingManifestImpl.class;
 	}
 
@@ -42,7 +43,7 @@ class MappingManifestImplTest implements MappingManifestTest<MappingManifestImpl
 	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#createEmbedded(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.api.TypedManifest)
 	 */
 	@Override
-	public MappingManifestImpl createEmbedded(TestSettings settings, TypedManifest host) {
+	public MappingManifest createEmbedded(TestSettings settings, TypedManifest host) {
 		return settings.process(new MappingManifestImpl((DriverManifest) host));
 	}
 

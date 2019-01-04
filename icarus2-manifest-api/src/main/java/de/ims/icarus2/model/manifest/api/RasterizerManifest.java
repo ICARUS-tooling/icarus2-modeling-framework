@@ -26,7 +26,7 @@ import de.ims.icarus2.util.access.AccessPolicy;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface RasterizerManifest extends ForeignImplementationManifest, Embedded {
+public interface RasterizerManifest extends ForeignImplementationManifest<RasterizerManifest>, Embedded {
 
 	default <M extends FragmentLayerManifest> Optional<M> getLayerManifest() {
 		return getHost();

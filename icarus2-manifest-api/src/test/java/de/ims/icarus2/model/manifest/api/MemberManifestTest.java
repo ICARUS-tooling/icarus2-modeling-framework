@@ -49,7 +49,7 @@ import de.ims.icarus2.util.Options;
  * @author Markus Gärtner
  *
  */
-public interface MemberManifestTest<M extends MemberManifest> extends ModifiableIdentityTest<M>,
+public interface MemberManifestTest<M extends MemberManifest<?>> extends ModifiableIdentityTest<M>,
 	CategorizableTest<M>, DocumentableTest<M>, ManifestTest<M> {
 
 	/**
@@ -309,7 +309,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testForEachProperty() {
-		ManifestTest.super.<Property>assertDerivativeForEach(settings(),
+		assertDerivativeForEach(settings(),
 				mockProperty("property1"), mockProperty("property2"),
 				MemberManifest::forEachProperty,
 				MemberManifest::addProperty);
@@ -320,7 +320,7 @@ public interface MemberManifestTest<M extends MemberManifest> extends Modifiable
 	 */
 	@Test
 	default void testForEachLocalProperty() {
-		ManifestTest.super.<Property>assertDerivativeForEachLocal(settings(),
+		assertDerivativeForEachLocal(settings(),
 				mockProperty("property1"), mockProperty("property2"),
 				MemberManifest::forEachLocalProperty,
 				MemberManifest::addProperty);

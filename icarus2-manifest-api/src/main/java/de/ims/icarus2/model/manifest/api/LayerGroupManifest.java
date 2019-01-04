@@ -49,7 +49,7 @@ public interface LayerGroupManifest extends ModifiableIdentity, ManifestFragment
 	int layerCount();
 
 	@AccessRestriction(AccessMode.READ)
-	void forEachLayerManifest(Consumer<? super LayerManifest> action);
+	void forEachLayerManifest(Consumer<? super LayerManifest<?>> action);
 
 	/**
 	 * Returns the list of manifests that describe the layers in this group.
@@ -57,8 +57,8 @@ public interface LayerGroupManifest extends ModifiableIdentity, ManifestFragment
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	default List<LayerManifest> getLayerManifests() {
-		LazyCollection<LayerManifest> result = LazyCollection.lazyList();
+	default List<LayerManifest<?>> getLayerManifests() {
+		LazyCollection<LayerManifest<?>> result = LazyCollection.lazyList();
 
 		forEachLayerManifest(result);
 
@@ -99,7 +99,7 @@ public interface LayerGroupManifest extends ModifiableIdentity, ManifestFragment
 	 * @return the layer mapped to {@code id} if one could be found or an empty {@link Optional} otherwise
 	 */
 	@AccessRestriction(AccessMode.READ)
-	<L extends LayerManifest> Optional<L> getLayerManifest(String id);
+	<L extends LayerManifest<L>> Optional<L> getLayerManifest(String id);
 
 	/**
 	 * Tests whether this {@code LayerGroupManifest} equals the given {@code Object} {@code o}.
@@ -114,9 +114,9 @@ public interface LayerGroupManifest extends ModifiableIdentity, ManifestFragment
 
 	// Modification methods
 
-	void addLayerManifest(LayerManifest layerManifest);
+	void addLayerManifest(LayerManifest<?> layerManifest);
 
-	void removeLayerManifest(LayerManifest layerManifest);
+	void removeLayerManifest(LayerManifest<?> layerManifest);
 
 	void setPrimaryLayerId(String primaryLayerId);
 

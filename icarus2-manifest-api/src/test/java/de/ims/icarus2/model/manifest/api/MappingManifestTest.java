@@ -46,8 +46,8 @@ import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
  * @author Markus Gärtner
  *
  */
-public interface MappingManifestTest<M extends MappingManifest>
-	extends ManifestFragmentTest<M>, EmbeddedTest<M> {
+public interface MappingManifestTest
+	extends ManifestFragmentTest<MappingManifest>, EmbeddedTest<MappingManifest> {
 
 	public static MappingManifest mockMappingManifest(String id) {
 		MappingManifest manifest = mockTypedManifest(ManifestType.MAPPING_MANIFEST);

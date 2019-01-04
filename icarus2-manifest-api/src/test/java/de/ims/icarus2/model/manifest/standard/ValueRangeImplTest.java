@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
+import de.ims.icarus2.model.manifest.api.ValueRange;
 import de.ims.icarus2.model.manifest.api.ValueRangeTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestSettings;
@@ -27,13 +28,13 @@ import de.ims.icarus2.test.TestSettings;
  * @author Markus Gärtner
  *
  */
-class ValueRangeImplTest implements ValueRangeTest<ValueRangeImpl> {
+class ValueRangeImplTest implements ValueRangeTest {
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends ValueRangeImpl> getTestTargetClass() {
+	public Class<? extends ValueRange> getTestTargetClass() {
 		return ValueRangeImpl.class;
 	}
 
@@ -41,7 +42,7 @@ class ValueRangeImplTest implements ValueRangeTest<ValueRangeImpl> {
 	 * @see de.ims.icarus2.model.manifest.api.ValueRangeTest#createWithType(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.types.ValueType)
 	 */
 	@Override
-	public ValueRangeImpl createWithType(TestSettings settings, ValueType valueType) {
+	public ValueRange createWithType(TestSettings settings, ValueType valueType) {
 		return settings.process(new ValueRangeImpl(valueType));
 	}
 }

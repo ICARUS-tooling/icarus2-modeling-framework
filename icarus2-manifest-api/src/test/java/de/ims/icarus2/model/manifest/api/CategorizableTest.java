@@ -36,7 +36,7 @@ import de.ims.icarus2.test.TestUtils;
  * @author Markus Gärtner
  *
  */
-public interface CategorizableTest<C extends Categorizable> extends LockableTest<C> {
+public interface CategorizableTest<C extends Categorizable<?>> extends LockableTest<C> {
 
 	public static Category mockCategory(String id) {
 		Category category = mock(Category.class);
@@ -71,7 +71,7 @@ public interface CategorizableTest<C extends Categorizable> extends LockableTest
 	 */
 	@Test
 	default void testForEachCategory() {
-		TestUtils.<Categorizable, Category>assertForEach(createUnlocked(),
+		TestUtils.assertForEach(createUnlocked(),
 				mockCategory("cat1"), mockCategory("cat2"),
 				Categorizable::forEachCategory,
 				Categorizable::addCategory);

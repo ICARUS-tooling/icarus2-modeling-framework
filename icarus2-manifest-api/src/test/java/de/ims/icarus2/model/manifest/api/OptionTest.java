@@ -52,7 +52,7 @@ import de.ims.icarus2.test.annotations.Provider;
  * @author Markus Gärtner
  *
  */
-public interface OptionTest<O extends Option> extends ModifiableIdentityTest<O>, LockableTest<O>, TypedManifestTest<O> {
+public interface OptionTest extends ModifiableIdentityTest<Option>, LockableTest<Option>, TypedManifestTest<Option> {
 
 	public static final BiConsumer<Executable, String> UNSUPPORTED_TYPE_CHECK = (ex, msg) -> {
 		UnsupportedValueTypeException exception = assertThrows(UnsupportedValueTypeException.class, ex, msg);
@@ -76,14 +76,14 @@ public interface OptionTest<O extends Option> extends ModifiableIdentityTest<O>,
 	}
 
 	@Provider
-	O createWithType(TestSettings settings, ValueType valueType);
+	Option createWithType(TestSettings settings, ValueType valueType);
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
 	@Override
 	@Provider
-	default O createTestInstance(TestSettings settings) {
+	default Option createTestInstance(TestSettings settings) {
 		return createWithType(settings, ValueType.STRING);
 	}
 

@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
+import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifestTest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
@@ -30,13 +31,13 @@ import de.ims.icarus2.test.TestSettings;
  * @author Markus Gärtner
  *
  */
-class AnnotationLayerManifestImplTest implements AnnotationLayerManifestTest<AnnotationLayerManifestImpl> {
+class AnnotationLayerManifestImplTest implements AnnotationLayerManifestTest {
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.MemberManifestTest#createHosted(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.TypedManifest)
 	 */
 	@Override
-	public AnnotationLayerManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
+	public AnnotationLayerManifest createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
 		return settings.process(new AnnotationLayerManifestImpl(manifestLocation, registry, (LayerGroupManifest) host));
 	}
@@ -45,7 +46,7 @@ class AnnotationLayerManifestImplTest implements AnnotationLayerManifestTest<Ann
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends AnnotationLayerManifestImpl> getTestTargetClass() {
+	public Class<? extends AnnotationLayerManifest> getTestTargetClass() {
 		return AnnotationLayerManifestImpl.class;
 	}
 

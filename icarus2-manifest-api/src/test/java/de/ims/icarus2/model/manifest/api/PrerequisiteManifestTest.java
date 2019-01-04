@@ -24,6 +24,7 @@ import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.assertOptGetter;
 import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
 import static de.ims.icarus2.test.TestUtils.settings;
+import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -31,6 +32,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 
@@ -46,14 +48,22 @@ import de.ims.icarus2.util.Multiplicity;
  * @author Markus Gärtner
  *
  */
-public interface PrerequisiteManifestTest<M extends PrerequisiteManifest> extends
-	EmbeddedTest<M>, LayerPrerequisiteTest<M>, LockableTest<M> {
+public interface PrerequisiteManifestTest extends
+	EmbeddedTest<PrerequisiteManifest>, LayerPrerequisiteTest<PrerequisiteManifest>, LockableTest<PrerequisiteManifest> {
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#getAllowedHostTypes()
+	 */
+	@Override
+	default Set<ManifestType> getAllowedHostTypes() {
+		return singleton(ManifestType.CONTEXT_MANIFEST);
+	}
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
 	@Override
-	default M createTestInstance(TestSettings settings) {
+	default PrerequisiteManifest createTestInstance(TestSettings settings) {
 		return createTestInstance(settings, "randomAlias");
 	}
 
@@ -61,15 +71,15 @@ public interface PrerequisiteManifestTest<M extends PrerequisiteManifest> extend
 	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#createEmbedded(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.api.TypedManifest)
 	 */
 	@Override
-	default M createEmbedded(TestSettings settings, TypedManifest host) {
+	default PrerequisiteManifest createEmbedded(TestSettings settings, TypedManifest host) {
 		return createEmbedded(settings, host, "randomAlias");
 	}
 
 	@Provider
-	M createEmbedded(TestSettings settings, TypedManifest host, String alias);
+	PrerequisiteManifest createEmbedded(TestSettings settings, TypedManifest host, String alias);
 
 	@Provider
-	M createTestInstance(TestSettings settings,
+	PrerequisiteManifest createTestInstance(TestSettings settings,
 			String alias);
 
 	/**
@@ -77,11 +87,11 @@ public interface PrerequisiteManifestTest<M extends PrerequisiteManifest> extend
 	 */
 	@Provider
 	@Override
-	default M createTestInstance(TestSettings settings,
+	default PrerequisiteManifest createTestInstance(TestSettings settings,
 			String alias, @Nullable String layerId,
 			@Nullable String contextId, @Nullable String typeId,
 			@Nullable String description, Multiplicity multiplicity) {
-		M instance = createTestInstance(settings, alias);
+		PrerequisiteManifest instance = createTestInstance(settings, alias);
 		if(layerId!=null) {
 			instance.setLayerId(layerId);
 		}
@@ -145,7 +155,7 @@ public interface PrerequisiteManifestTest<M extends PrerequisiteManifest> extend
 		when(context2.hasTemplate()).thenReturn(Boolean.TRUE);
 		when(context2.getTemplate()).thenReturn(context1);
 
-		M prerequisite2 = createEmbedded(settings(), context2, alias);
+		PrerequisiteManifest prerequisite2 = createEmbedded(settings(), context2, alias);
 
 		assertOptionalEquals(prerequisite1, prerequisite2.getUnresolvedForm());
 	}

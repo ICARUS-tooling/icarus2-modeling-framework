@@ -55,7 +55,7 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 		setInstance(documentation);
 	}
 
-	public DocumentationXmlDelegate(Documentable documentable) {
+	public DocumentationXmlDelegate(Documentable<?> documentable) {
 		setInstance(new DocumentationImpl());
 	}
 

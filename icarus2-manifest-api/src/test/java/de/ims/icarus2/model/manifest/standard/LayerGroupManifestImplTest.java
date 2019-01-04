@@ -20,6 +20,7 @@
 package de.ims.icarus2.model.manifest.standard;
 
 import de.ims.icarus2.model.manifest.api.ContextManifest;
+import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifestTest;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.test.TestSettings;
@@ -28,13 +29,13 @@ import de.ims.icarus2.test.TestSettings;
  * @author Markus Gärtner
  *
  */
-class LayerGroupManifestImplTest implements LayerGroupManifestTest<LayerGroupManifestImpl>{
+class LayerGroupManifestImplTest implements LayerGroupManifestTest{
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends LayerGroupManifestImpl> getTestTargetClass() {
+	public Class<? extends LayerGroupManifest> getTestTargetClass() {
 		return LayerGroupManifestImpl.class;
 	}
 
@@ -42,7 +43,7 @@ class LayerGroupManifestImplTest implements LayerGroupManifestTest<LayerGroupMan
 	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#createEmbedded(TestSettings, de.ims.icarus2.model.manifest.api.TypedManifest)
 	 */
 	@Override
-	public LayerGroupManifestImpl createEmbedded(TestSettings settings, TypedManifest host) {
+	public LayerGroupManifest createEmbedded(TestSettings settings, TypedManifest host) {
 		return settings.process(new LayerGroupManifestImpl((ContextManifest) host));
 	}
 

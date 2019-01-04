@@ -36,7 +36,7 @@ import de.ims.icarus2.test.annotations.OverrideTest;
  * @author Markus Gärtner
  *
  */
-public interface ImplementationManifestTest<M extends ImplementationManifest> extends EmbeddedMemberManifestTest<M> {
+public interface ImplementationManifestTest extends EmbeddedMemberManifestTest<ImplementationManifest> {
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()

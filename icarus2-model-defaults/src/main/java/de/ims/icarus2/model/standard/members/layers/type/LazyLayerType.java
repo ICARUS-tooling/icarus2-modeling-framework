@@ -41,7 +41,7 @@ public class LazyLayerType implements LayerType {
 	private Optional<Icon> icon = Optional.empty();
 
 	private Optional<String> layerId = Optional.empty();
-	private Optional<LayerManifest> sharedManifest = Optional.empty();
+	private Optional<LayerManifest<?>> sharedManifest = Optional.empty();
 
 	private final ManifestRegistry registry;
 
@@ -113,7 +113,7 @@ public class LazyLayerType implements LayerType {
 	 * @see de.ims.icarus2.model.manifest.api.LayerType#getSharedManifest()
 	 */
 	@Override
-	public Optional<LayerManifest> getSharedManifest() {
+	public Optional<LayerManifest<?>> getSharedManifest() {
 		if(!sharedManifest.isPresent() && layerId.isPresent()) {
 			sharedManifest = registry.getTemplate(layerId.get());
 		}

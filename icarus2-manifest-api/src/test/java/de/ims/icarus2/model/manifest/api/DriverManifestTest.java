@@ -49,8 +49,8 @@ import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec;
  * @author Markus Gärtner
  *
  */
-public interface DriverManifestTest<M extends DriverManifest>
-		extends ForeignImplementationManifestTest<M>, EmbeddedMemberManifestTest<M> {
+public interface DriverManifestTest
+		extends ForeignImplementationManifestTest<DriverManifest>, EmbeddedMemberManifestTest<DriverManifest> {
 
 	public static ModuleManifest mockModuleManifest(String id) {
 		return (ModuleManifest)stubId(mockTypedManifest(ManifestType.MODULE_MANIFEST), id);

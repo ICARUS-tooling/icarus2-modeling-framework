@@ -41,8 +41,9 @@ import de.ims.icarus2.util.Multiplicity;
  * @author Markus Gärtner
  *
  */
-public interface ModuleSpecTest<M extends ModuleSpec> extends ManifestFragmentTest<M>,
-		ModifiableIdentityTest<M>, DocumentableTest<M>, CategorizableTest<M>, EmbeddedTest<M> {
+public interface ModuleSpecTest extends ManifestFragmentTest<ModuleSpec>,
+		ModifiableIdentityTest<ModuleSpec>, DocumentableTest<ModuleSpec>,
+		CategorizableTest<ModuleSpec>, EmbeddedTest<ModuleSpec> {
 
 
 	/**

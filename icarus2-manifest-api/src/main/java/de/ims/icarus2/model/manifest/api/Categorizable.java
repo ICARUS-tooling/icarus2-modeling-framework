@@ -29,26 +29,28 @@ import de.ims.icarus2.util.collections.LazyCollection;
  * @author Markus Gärtner
  *
  */
-public interface Categorizable extends Lockable {
+public interface Categorizable<C extends Categorizable<C>> extends Lockable {
 
 	boolean addCategory(Category category);
 
-	default Categorizable addCategories(Category...categories) {
+	@SuppressWarnings("unchecked")
+	default C addCategories(Category...categories) {
 		for(Category category : categories) {
 			addCategory(category);
 		}
 
-		return this;
+		return (C) this;
 	}
 
 	boolean removeCategory(Category category);
 
-	default Categorizable removeCategories(Category...categories) {
+	@SuppressWarnings("unchecked")
+	default C removeCategories(Category...categories) {
 		for(Category category : categories) {
 			removeCategory(category);
 		}
 
-		return this;
+		return (C) this;
 	}
 
 	void forEachCategory(Consumer<? super Category> action);

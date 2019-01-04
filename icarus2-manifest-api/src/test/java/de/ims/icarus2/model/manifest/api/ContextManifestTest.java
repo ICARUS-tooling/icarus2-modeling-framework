@@ -85,7 +85,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  * @author Markus Gärtner
  *
  */
-public interface ContextManifestTest<M extends ContextManifest> extends EmbeddedMemberManifestTest<M>, BindableTest<M> {
+public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextManifest>, BindableTest<ContextManifest> {
 
 	public static PrerequisiteManifest mockPrerequisiteManifest(String alias) {
 		PrerequisiteManifest manifest = mock(PrerequisiteManifest.class);
@@ -113,11 +113,11 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 	 * @see de.ims.icarus2.model.manifest.api.binding.BindableTest#createWithBindingEndpoints(de.ims.icarus2.test.TestSettings, java.util.Set)
 	 */
 	@Override
-	default M createWithBindingEndpoints(TestSettings settings,
+	default ContextManifest createWithBindingEndpoints(TestSettings settings,
 			Set<LayerPrerequisite> bindingEndpoints) {
 		assertCollectionNotEmpty(bindingEndpoints);
 
-		M manifest = createUnlocked(settings);
+		ContextManifest manifest = createUnlocked(settings);
 
 		for(LayerPrerequisite binding : bindingEndpoints) {
 			assertTrue(binding.getMultiplicity()==Multiplicity.ONE);
@@ -284,7 +284,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 	@Test
 	default void testGetPrerequisite() {
 
-		BiFunction<M, String, Optional<String>> lookup = (context, alias) -> {
+		BiFunction<ContextManifest, String, Optional<String>> lookup = (context, alias) -> {
 			Optional<PrerequisiteManifest> prerequisite = context.getPrerequisite(alias);
 
 			if(prerequisite.isPresent()) {
@@ -316,7 +316,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 			LayerGroupManifest layerGroup = mock(LayerGroupManifest.class);
 			when(layerGroup.getHost()).thenReturn(Optional.of(manifest));
 
-			final List<LayerManifest> layers = new ArrayList<>();
+			final List<LayerManifest<?>> layers = new ArrayList<>();
 
 			// Intercept adding of new layers
 			doAnswer((Answer<Void>) invocation -> {
@@ -344,7 +344,8 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 	 * @param groupIndex
 	 * @return
 	 */
-	public static <M extends ContextManifest> BiConsumer<M, LayerManifest> inject_addLayerManifest(int groupIndex) {
+	@SuppressWarnings("unchecked")
+	public static <M extends ContextManifest> BiConsumer<M, LayerManifest<?>> inject_addLayerManifest(int groupIndex) {
 		return (context, layer) -> {
 			assertPresent(layer.getId());
 
@@ -352,7 +353,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 			LayerGroupManifest groupManifest = assertMock(context.getLocalGroupManifests().get(groupIndex));
 
 			groupManifest.addLayerManifest(layer);
-			when(groupManifest.getLayerManifest(layer.getId().get())).thenReturn(Optional.of(layer));
+			when((Optional<LayerManifest<?>>)groupManifest.getLayerManifest(layer.getId().get())).thenReturn(Optional.of(layer));
 		};
 	}
 
@@ -366,7 +367,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 	 */
 	@Test
 	default void testForEachLayerManifest() {
-		EmbeddedMemberManifestTest.super.<LayerManifest>assertDerivativeForEach(
+		EmbeddedMemberManifestTest.super.<LayerManifest<?>>assertDerivativeForEach(
 				settings().processor(processor_stubLayerGroup()),
 				LayerManifestTest.mockLayerManifest("layer1"),
 				LayerManifestTest.mockLayerManifest("layer2"),
@@ -379,7 +380,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 	 */
 	@Test
 	default void testForEachLocalLayerManifest() {
-		EmbeddedMemberManifestTest.super.<LayerManifest>assertDerivativeForEachLocal(
+		EmbeddedMemberManifestTest.super.<LayerManifest<?>>assertDerivativeForEachLocal(
 				settings().processor(processor_stubLayerGroup()),
 				LayerManifestTest.mockLayerManifest("layer1"),
 				LayerManifestTest.mockLayerManifest("layer2"),
@@ -420,11 +421,11 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 	@Test
 	default void testGetLayerManifestsPredicateOfQsuperLayerManifest() {
 
-		Predicate<LayerManifest> all = m -> true;
-		Predicate<LayerManifest> none = m -> true;
-		Predicate<LayerManifest> onlyLayer2 = m -> "layer2".equals(m.getId().orElse(null));
+		Predicate<LayerManifest<?>> all = m -> true;
+		Predicate<LayerManifest<?>> none = m -> true;
+		Predicate<LayerManifest<?>> onlyLayer2 = m -> "layer2".equals(m.getId().orElse(null));
 
-		for(Predicate<LayerManifest> filter : list(all, none, onlyLayer2)) {
+		for(Predicate<LayerManifest<?>> filter : list(all, none, onlyLayer2)) {
 			assertAccumulativeFilter(
 					settings().processor(processor_stubLayerGroup()).process(createUnlocked()),
 					inject_addLayerManifest(DEFAULT_GROUP),
@@ -495,10 +496,10 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 	 * @return
 	 * @see #inject_addLayerManifest(int)
 	 */
-	public static <M extends ContextManifest, L extends LayerManifest> BiConsumer<M, L>
+	public static <M extends ContextManifest, L extends LayerManifest<?>> BiConsumer<M, L>
 			inject_addLayerManifestAndSetId(
 					int groupIndex, BiConsumer<M, String> idSetter) {
-		final BiConsumer<M, LayerManifest> adder = inject_addLayerManifest(groupIndex);
+		final BiConsumer<M, LayerManifest<?>> adder = inject_addLayerManifest(groupIndex);
 
 		return (context, layer) -> {
 			adder.accept(context, layer);
@@ -565,7 +566,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 				settings().processor(processor_stubLayerGroup()),
 				LayerManifestTest.mockLayerManifest("layer1"),
 				LayerManifestTest.mockLayerManifest("layer2"),
-				ContextManifest::getLayerManifest,
+				(m, id) -> m.getLayerManifest(id).map(l -> (LayerManifest<?>)l),
 				NPE_CHECK,
 				inject_addLayerManifest(DEFAULT_GROUP),
 				unwrapGetter(LayerManifest::getId),
@@ -619,7 +620,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 
 		CorpusManifest corpusManifest = mockTypedManifest(ManifestType.CORPUS_MANIFEST);
 
-		M instance = createEmbedded(settings(), corpusManifest);
+		ContextManifest instance = createEmbedded(settings(), corpusManifest);
 
 		assertFalse(instance.isRootContext());
 
@@ -732,7 +733,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 		final Map<String, PrerequisiteManifest> prerequisites = new IdentityHashMap<>();
 
 		// Make a specialized adder to ensure we save any created PrerequisiteManifest instances in our lookup
-		BiConsumer<M, String> adder = (context, alias) -> {
+		BiConsumer<ContextManifest, String> adder = (context, alias) -> {
 			PrerequisiteManifest prerequisite = context.addAndGetPrerequisite(alias);
 			assertNotNull(prerequisite);
 			assertEquals(alias, prerequisite.getAlias());
@@ -742,7 +743,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 		};
 
 		// Specialized remover to use our lookup to fetch actual PrerequisiteManifest instances for a given alias
-		BiConsumer<M, String> remover = (context, alias) -> {
+		BiConsumer<ContextManifest, String> remover = (context, alias) -> {
 			// Make sure we directly delegate null values
 			if(alias==null) {
 				context.removePrerequisite(null);
@@ -780,8 +781,8 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 				mockGroupManifest("group2"),
 				mockGroupManifest("group3"));
 
-		M instance = createUnlocked();
-		M other = createUnlocked();
+		ContextManifest instance = createUnlocked();
+		ContextManifest other = createUnlocked();
 		LayerGroupManifest groupManifest = mockGroupManifest("group1");
 		when(groupManifest.getContextManifest()).thenReturn(Optional.of(other));
 

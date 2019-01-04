@@ -45,13 +45,21 @@ import de.ims.icarus2.test.TestUtils;
  * @author Markus Gärtner
  *
  */
-public interface LocationManifestTest<M extends LocationManifest> extends ManifestTest<M> {
+public interface LocationManifestTest extends ManifestTest<LocationManifest> {
 
 	public static PathEntry mockEntry(PathType type, String value) {
 		PathEntry entry = mock(PathEntry.class);
 		when(entry.getType()).thenReturn(type);
 		when(entry.getValue()).thenReturn(value);
 		return entry;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.LOCATION_MANIFEST;
 	}
 
 	/**
@@ -72,7 +80,7 @@ public interface LocationManifestTest<M extends LocationManifest> extends Manife
 	 */
 	@Test
 	default void testGetInlineData() {
-		M instance = createUnlocked();
+		LocationManifest instance = createUnlocked();
 		instance.setIsInline(true);
 
 		assertOptGetter(instance,
@@ -125,7 +133,7 @@ public interface LocationManifestTest<M extends LocationManifest> extends Manife
 	 */
 	@Test
 	default void testForEachPathEntry() {
-		TestUtils.<M, PathEntry>assertForEach(createUnlocked(),
+		TestUtils.<LocationManifest, PathEntry>assertForEach(createUnlocked(),
 				mockEntry(PathType.FILE, "file1"),
 				mockEntry(PathType.FILE, "file2"),
 				LocationManifest::forEachPathEntry,
@@ -157,7 +165,7 @@ public interface LocationManifestTest<M extends LocationManifest> extends Manife
 	 */
 	@Test
 	default void testSetInlineData() {
-		M instance = createUnlocked();
+		LocationManifest instance = createUnlocked();
 		assertManifestException(ManifestErrorCode.MANIFEST_ERROR,
 				() -> instance.setInlineData("data"),
 				"Expecting manifest error when setting inline data without setting inline flag");
@@ -173,7 +181,7 @@ public interface LocationManifestTest<M extends LocationManifest> extends Manife
 	 */
 	@Test
 	default void testSetRootPath() {
-		M instance = createUnlocked();
+		LocationManifest instance = createUnlocked();
 		instance.setIsInline(true);
 		assertManifestException(ManifestErrorCode.MANIFEST_ERROR,
 				() -> instance.setRootPath("path"),
@@ -190,7 +198,7 @@ public interface LocationManifestTest<M extends LocationManifest> extends Manife
 	 */
 	@Test
 	default void testSetRootPathType() {
-		M instance = createUnlocked();
+		LocationManifest instance = createUnlocked();
 		instance.setIsInline(true);
 		assertManifestException(ManifestErrorCode.MANIFEST_ERROR,
 				() -> instance.setRootPathType(PathType.FILE),
@@ -209,7 +217,7 @@ public interface LocationManifestTest<M extends LocationManifest> extends Manife
 	 */
 	@Test
 	default void testSetPathResolverManifest() {
-		M instance = createUnlocked();
+		LocationManifest instance = createUnlocked();
 		instance.setIsInline(true);
 		assertManifestException(ManifestErrorCode.MANIFEST_ERROR,
 				() -> instance.setPathResolverManifest(mockTypedManifest(ManifestType.PATH_RESOLVER_MANIFEST)),
@@ -227,7 +235,7 @@ public interface LocationManifestTest<M extends LocationManifest> extends Manife
 	 */
 	@Test
 	default void testAddPathEntry() {
-		M instance = createUnlocked();
+		LocationManifest instance = createUnlocked();
 		instance.setIsInline(true);
 		assertManifestException(ManifestErrorCode.MANIFEST_ERROR,
 				() -> instance.addPathEntry(mockEntry(PathType.FILE, "path")),
@@ -245,7 +253,7 @@ public interface LocationManifestTest<M extends LocationManifest> extends Manife
 	 */
 	@Test
 	default void testRemovePathEntry() {
-		M instance = createUnlocked();
+		LocationManifest instance = createUnlocked();
 		instance.setIsInline(true);
 		assertManifestException(ManifestErrorCode.MANIFEST_ERROR,
 				() -> instance.removePathEntry(mockEntry(PathType.FILE, "path")),

@@ -261,12 +261,12 @@ public class TestUtils {
 		assertTrue(value.isPresent());
 	}
 
-	public static <V extends Object> void assertPresent(Optional<V> value, String msg) {
+	public static <V> void assertPresent(Optional<V> value, String msg) {
 		assertNotNull(value, msg);
 		assertTrue(value.isPresent(), msg);
 	}
 
-	public static <V extends Object> void assertNotPresent(Optional<V> value) {
+	public static void assertNotPresent(Optional<?> value) {
 		assertNotNull(value);
 		assertFalse(value.isPresent());
 	}
@@ -276,7 +276,7 @@ public class TestUtils {
 		assertFalse(value.isPresent(), msg);
 	}
 
-	public static <V extends Object> void assertOptionalEquals(V expected, Optional<V> actual) {
+	public static <V extends Object> void assertOptionalEquals(V expected, Optional<?> actual) {
 		assertNotNull(actual);
 		assertEquals(expected, actual.orElse(null));
 	}
@@ -894,7 +894,6 @@ public class TestUtils {
 		assertCollectionEquals(getter.apply(instance), value1, value2);
 	}
 
-	@SuppressWarnings("unchecked")
 	public static <T extends Object, K extends Object> void assertAccumulativeArrayGetter(
 			T instance, K value1, K value2, Function<T, K[]> getter, BiConsumer<T, K> adder) {
 		assertArrayEmpty(getter.apply(instance));
@@ -961,6 +960,21 @@ public class TestUtils {
 		assertEquals(value2, lookup.apply(instance, keyGen.apply(value2)));
 	}
 
+	/**
+	 *
+	 * @param instance
+	 * @param value1
+	 * @param value2
+	 * @param lookup
+	 * @param checkNPE
+	 * @param adder
+	 * @param keyGen
+	 * @param invalidLookups
+	 *
+	 * @param <T> type of object under test
+	 * @param <K> type of values added to object
+	 * @param <I> type of intermediary key representatio nfor lookup
+	 */
 	public static <T extends Object, K extends Object, I extends Object> void assertAccumulativeOptLookup(
 			T instance, K value1, K value2, BiFunction<T, I, Optional<K>> lookup,
 			boolean checkNPE,
@@ -1004,10 +1018,11 @@ public class TestUtils {
 		assertTrue(check.test(instance, keyGen.apply(value2)));
 	}
 
+	@SafeVarargs
 	public static <T extends Object, K extends Object> void assertAccumulativeCount(
 			T instance,
 			BiConsumer<T, K> adder, BiConsumer<T, K> remover,
-			Function<T, Integer> counter, @SuppressWarnings("unchecked") K...values) {
+			Function<T, Integer> counter, K...values) {
 
 		values = filterUniques(values);
 

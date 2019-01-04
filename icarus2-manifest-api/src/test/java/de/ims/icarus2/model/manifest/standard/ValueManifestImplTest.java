@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
+import de.ims.icarus2.model.manifest.api.ValueManifest;
 import de.ims.icarus2.model.manifest.api.ValueManifestTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestSettings;
@@ -27,13 +28,13 @@ import de.ims.icarus2.test.TestSettings;
  * @author Markus Gärtner
  *
  */
-class ValueManifestImplTest implements ValueManifestTest<ValueManifestImpl> {
+class ValueManifestImplTest implements ValueManifestTest {
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ValueManifestTest#createWithType(de.ims.icarus2.model.manifest.types.ValueType)
 	 */
 	@Override
-	public ValueManifestImpl createWithType(TestSettings settings, ValueType valueType) {
+	public ValueManifest createWithType(TestSettings settings, ValueType valueType) {
 		return settings.process(new ValueManifestImpl(valueType));
 	}
 
@@ -41,7 +42,7 @@ class ValueManifestImplTest implements ValueManifestTest<ValueManifestImpl> {
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends ValueManifestImpl> getTestTargetClass() {
+	public Class<? extends ValueManifest> getTestTargetClass() {
 		return ValueManifestImpl.class;
 	}
 

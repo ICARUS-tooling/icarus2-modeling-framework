@@ -27,7 +27,6 @@ import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.standard.FragmentLayerManifestImpl;
-import de.ims.icarus2.model.manifest.standard.ItemLayerManifestImpl;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
@@ -38,10 +37,9 @@ import de.ims.icarus2.util.xml.XmlSerializer;
  * @author Markus Gärtner
  *
  */
-public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelegate<FragmentLayerManifest> {
+public class FragmentLayerManifestXmlDelegate extends ItemLayerManifestXmlDelegate {
 
 	private RasterizerManifestXmlDelegate rasterizerManifestXmlDelegate;
-	private ContainerManifestXmlDelegate containerManifestXmlDelegate;
 
 	public FragmentLayerManifestXmlDelegate() {
 		// no-op
@@ -55,6 +53,14 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 		setInstance(new FragmentLayerManifestImpl(groupManifest));
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.xml.delegates.AbstractXmlDelegate#getInstance()
+	 */
+	@Override
+	public FragmentLayerManifest getInstance() {
+		return (FragmentLayerManifest) super.getInstance();
+	}
+
 	private RasterizerManifestXmlDelegate getRasterizerManifestXmLDelegate() {
 		if(rasterizerManifestXmlDelegate==null) {
 			rasterizerManifestXmlDelegate = new RasterizerManifestXmlDelegate();
@@ -63,14 +69,7 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 		return rasterizerManifestXmlDelegate;
 	}
 
-	private ContainerManifestXmlDelegate getContainerManifestXmlDelegate() {
-		if(containerManifestXmlDelegate==null) {
-			containerManifestXmlDelegate = new ContainerManifestXmlDelegate();
-		}
-
-		return containerManifestXmlDelegate;
-	}
-
+	@Override
 	public FragmentLayerManifestXmlDelegate reset(LayerGroupManifest groupManifest) {
 		reset();
 		setInstance(new FragmentLayerManifestImpl(groupManifest));
@@ -87,10 +86,6 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 
 		if(rasterizerManifestXmlDelegate!=null) {
 			rasterizerManifestXmlDelegate.reset();
-		}
-
-		if(containerManifestXmlDelegate!=null) {
-			containerManifestXmlDelegate.reset();
 		}
 	}
 
@@ -126,8 +121,6 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
 		super.writeElements(serializer);
 
-		ItemLayerManifestXmlDelegate.defaultWriteElements(this, getContainerManifestXmlDelegate(), serializer);
-
 		FragmentLayerManifest manifest = getInstance();
 
 		if(manifest.isLocalValueLayerManifest()) {
@@ -149,24 +142,6 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 		switch (localName) {
 		case ManifestXmlTags.FRAGMENT_LAYER: {
 			readAttributes(attributes);
-		} break;
-
-		case ManifestXmlTags.BOUNDARY_LAYER: {
-			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID)
-				.ifPresent(getInstance()::setBoundaryLayerId);
-		} break;
-
-		case ManifestXmlTags.FOUNDATION_LAYER: {
-			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID)
-				.ifPresent(getInstance()::setFoundationLayerId);
-		} break;
-
-		case ManifestXmlTags.HIERARCHY: {
-			ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(getInstance());
-		} break;
-
-		case ManifestXmlTags.CONTAINER: {
-			handler = getContainerManifestXmlDelegate().reset(getInstance());
 		} break;
 
 		case ManifestXmlTags.VALUE_LAYER: {
@@ -196,18 +171,6 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 			handler = null;
 		} break;
 
-		case ManifestXmlTags.BOUNDARY_LAYER: {
-			// no-op
-		} break;
-
-		case ManifestXmlTags.FOUNDATION_LAYER: {
-			// no-op
-		} break;
-
-		case ManifestXmlTags.HIERARCHY: {
-			// no-op
-		} break;
-
 		case ManifestXmlTags.VALUE_LAYER: {
 			// no-op
 		} break;
@@ -227,11 +190,6 @@ public class FragmentLayerManifestXmlDelegate extends AbstractLayerManifestXmlDe
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
 		switch (localName) {
-
-		case ManifestXmlTags.CONTAINER: {
-			ItemLayerManifestXmlDelegate.defaultAddContainerManifest(this,
-					((ContainerManifestXmlDelegate)handler).getInstance());
-		} break;
 
 		case ManifestXmlTags.RASTERIZER: {
 			getInstance().setRasterizerManifest(((RasterizerManifestXmlDelegate) handler).getInstance());

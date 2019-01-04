@@ -34,7 +34,7 @@ import de.ims.icarus2.util.xml.XmlSerializer;
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractForeignImplementationManifestXmlDelegate<M extends ForeignImplementationManifest>
+public abstract class AbstractForeignImplementationManifestXmlDelegate<M extends ForeignImplementationManifest<M>>
 		extends AbstractMemberManifestXmlDelegate<M> {
 
 	private ImplementationManifestXmlDelegate implementationManifestXmlDelegate;
@@ -54,7 +54,7 @@ public abstract class AbstractForeignImplementationManifestXmlDelegate<M extends
 	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
 		super.writeElements(serializer);
 
-		ForeignImplementationManifest manifest = getInstance();
+		M manifest = getInstance();
 
 		if(manifest.isLocalImplementation()) {
 			getImplementationManifestXmlDelegate().reset(manifest.getImplementationManifest().get()).writeXml(serializer);

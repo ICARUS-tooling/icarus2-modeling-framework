@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
+import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifestTest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
@@ -30,13 +31,13 @@ import de.ims.icarus2.test.TestSettings;
  * @author Markus Gärtner
  *
  */
-class ContextManifestImplTest implements ContextManifestTest<ContextManifestImpl> {
+class ContextManifestImplTest implements ContextManifestTest {
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.EmbeddedMemberManifestTest#createHosted(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.TypedManifest)
 	 */
 	@Override
-	public ContextManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
+	public ContextManifest createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
 		return settings.process(new ContextManifestImpl(manifestLocation, registry, (CorpusManifest) host));
 	}
@@ -45,7 +46,7 @@ class ContextManifestImplTest implements ContextManifestTest<ContextManifestImpl
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends ContextManifestImpl> getTestTargetClass() {
+	public Class<? extends ContextManifest> getTestTargetClass() {
 		return ContextManifestImpl.class;
 	}
 

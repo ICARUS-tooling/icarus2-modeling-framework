@@ -45,22 +45,22 @@ import de.ims.icarus2.test.annotations.Provider;
  * @author Markus Gärtner
  *
  */
-public interface ValueManifestTest<M extends ValueManifest> extends DocumentableTest<M>,
-		ModifiableIdentityTest<M>, TypedManifestTest<M> {
+public interface ValueManifestTest extends DocumentableTest<ValueManifest>,
+		ModifiableIdentityTest<ValueManifest>, TypedManifestTest<ValueManifest> {
 
 	public static final Set<ValueType> LEGAL_VALUE_TYPES = ValueManifest.SUPPORTED_VALUE_TYPES;
 	public static final Set<ValueType> ILLEGAL_VALUE_TYPES = Collections.unmodifiableSet(
 			ValueType.filterWithout(LEGAL_VALUE_TYPES::contains));
 
 	@Provider
-	M createWithType(TestSettings settings, ValueType valueType);
+	ValueManifest createWithType(TestSettings settings, ValueType valueType);
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
 	@Override
 	@Provider
-	default M createTestInstance(TestSettings settings) {
+	default ValueManifest createTestInstance(TestSettings settings) {
 		return createWithType(settings, ValueType.STRING);
 	}
 
@@ -69,8 +69,8 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 	 */
 	@Override
 	@Provider
-	default M createFromIdentity(String id, String name, String description, Icon icon) {
-		M manifest = createWithType(settings(), ValueType.STRING);
+	default ValueManifest createFromIdentity(String id, String name, String description, Icon icon) {
+		ValueManifest manifest = createWithType(settings(), ValueType.STRING);
 		manifest.setId(id);
 		manifest.setName(name);
 		manifest.setDescription(description);
@@ -93,7 +93,7 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 	default Stream<DynamicTest> testGetValue() {
 		return LEGAL_VALUE_TYPES.stream()
 				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
-						M empty = createWithType(settings(), valueType);
+						ValueManifest empty = createWithType(settings(), valueType);
 						assertNotPresent(empty.getValue());
 					}));
 	}
@@ -105,7 +105,7 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 	default Stream<DynamicTest> testGetValueType() {
 		return LEGAL_VALUE_TYPES.stream()
 				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
-						M empty = createWithType(settings(), valueType);
+						ValueManifest empty = createWithType(settings(), valueType);
 						assertEquals(valueType, empty.getValueType());
 					}));
 	}
@@ -117,7 +117,7 @@ public interface ValueManifestTest<M extends ValueManifest> extends Documentable
 	default Stream<DynamicTest> testSetValue() {
 		return LEGAL_VALUE_TYPES.stream()
 				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
-						M manifest = createWithType(settings(), valueType);
+						ValueManifest manifest = createWithType(settings(), valueType);
 
 						Object testValue = ManifestTestUtils.getTestValue(valueType);
 						Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);

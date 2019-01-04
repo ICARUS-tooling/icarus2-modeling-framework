@@ -32,7 +32,7 @@ import de.ims.icarus2.model.manifest.types.ValueType;
  * @author Markus Gärtner
  *
  */
-public interface ValueManifest extends Documentable, ModifiableIdentity, TypedManifest {
+public interface ValueManifest extends Documentable<ValueManifest>, ModifiableIdentity, TypedManifest {
 
 
 	public static final Set<ValueType> SUPPORTED_VALUE_TYPES =

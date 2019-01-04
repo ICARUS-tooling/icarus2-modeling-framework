@@ -24,27 +24,22 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
-import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
-import de.ims.icarus2.model.manifest.standard.ItemLayerManifestImpl;
 import de.ims.icarus2.model.manifest.standard.StructureLayerManifestImpl;
-import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
-import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelegate<StructureLayerManifest> {
+public class StructureLayerManifestXmlDelegate extends ItemLayerManifestXmlDelegate {
 
-	private ContainerManifestXmlDelegate containerManifestXmlDelegate;
 	private StructureManifestXmlDelegate structureManifestXmlDelegate;
 
 	public StructureLayerManifestXmlDelegate() {
@@ -59,12 +54,12 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 		setInstance(new StructureLayerManifestImpl(groupManifest));
 	}
 
-	private ContainerManifestXmlDelegate getContainerManifestXmlDelegate() {
-		if(containerManifestXmlDelegate==null) {
-			containerManifestXmlDelegate = new ContainerManifestXmlDelegate();
-		}
-
-		return containerManifestXmlDelegate;
+	/**
+	 * @see de.ims.icarus2.model.manifest.xml.delegates.AbstractXmlDelegate#getInstance()
+	 */
+	@Override
+	public StructureLayerManifest getInstance() {
+		return (StructureLayerManifest) super.getInstance();
 	}
 
 	private StructureManifestXmlDelegate getStructureManifestXmlDelegate() {
@@ -75,6 +70,7 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 		return structureManifestXmlDelegate;
 	}
 
+	@Override
 	public StructureLayerManifestXmlDelegate reset(LayerGroupManifest groupManifest) {
 		reset();
 		setInstance(new StructureLayerManifestImpl(groupManifest));
@@ -89,46 +85,21 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 	public void reset() {
 		super.reset();
 
-		if(containerManifestXmlDelegate!=null) {
-			containerManifestXmlDelegate.reset();
-		}
-
 		if(structureManifestXmlDelegate!=null) {
 			structureManifestXmlDelegate.reset();
 		}
 	}
 
-
 	/**
-	 * @see de.ims.icarus2.model.manifest.standard.AbstractLayerManifest#writeElements(de.ims.icarus2.util.xml.XmlSerializer)
+	 * @see de.ims.icarus2.model.manifest.xml.delegates.ItemLayerManifestXmlDelegate#writeContainerElement(de.ims.icarus2.util.xml.XmlSerializer, de.ims.icarus2.model.manifest.api.ContainerManifest)
 	 */
 	@Override
-	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
-		super.writeElements(serializer);
-
-		StructureLayerManifest manifest = getInstance();
-
-		if(manifest.isLocalBoundaryLayerManifest()) {
-			ManifestXmlUtils.writeTargetLayerManifestElement(serializer,
-					ManifestXmlTags.BOUNDARY_LAYER, manifest.getBoundaryLayerManifest().get());
-		}
-
-		if(manifest.isLocalFoundationLayerManifest()) {
-			ManifestXmlUtils.writeTargetLayerManifestElement(serializer,
-					ManifestXmlTags.FOUNDATION_LAYER, manifest.getFoundationLayerManifest().get());
-		}
-
-		if(manifest.hasLocalContainerHierarchy()) {
-			serializer.startElement(ManifestXmlTags.HIERARCHY);
-			for(ContainerManifest containerManifest : manifest.getContainerHierarchy()
-					.orElse(Hierarchy.empty())) {
-				if(containerManifest.getManifestType()==ManifestType.STRUCTURE_MANIFEST) {
-					getStructureManifestXmlDelegate().reset((StructureManifest)containerManifest).writeXml(serializer);
-				} else {
-					getContainerManifestXmlDelegate().reset(containerManifest).writeXml(serializer);
-				}
-			}
-			serializer.endElement(ManifestXmlTags.HIERARCHY);
+	protected void writeContainerElement(XmlSerializer serializer, ContainerManifest containerManifest)
+			throws XMLStreamException {
+		if(containerManifest.getManifestType()==ManifestType.STRUCTURE_MANIFEST) {
+			getStructureManifestXmlDelegate().reset((StructureManifest)containerManifest).writeXml(serializer);
+		} else {
+			getContainerManifestXmlDelegate().reset(containerManifest).writeXml(serializer);
 		}
 	}
 
@@ -141,20 +112,6 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 		switch (localName) {
 		case ManifestXmlTags.STRUCTURE_LAYER: {
 			readAttributes(attributes);
-		} break;
-
-		case ManifestXmlTags.BOUNDARY_LAYER: {
-			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID)
-				.ifPresent(getInstance()::setBoundaryLayerId);
-		} break;
-
-		case ManifestXmlTags.FOUNDATION_LAYER: {
-			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID)
-				.ifPresent(getInstance()::setFoundationLayerId);
-		} break;
-
-		case ManifestXmlTags.HIERARCHY: {
-			ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(getInstance());
 		} break;
 
 		case ManifestXmlTags.CONTAINER: {
@@ -183,18 +140,6 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 			handler = null;
 		} break;
 
-		case ManifestXmlTags.BOUNDARY_LAYER: {
-			// no-op
-		} break;
-
-		case ManifestXmlTags.FOUNDATION_LAYER: {
-			// no-op
-		} break;
-
-		case ManifestXmlTags.HIERARCHY: {
-			// no-op
-		} break;
-
 		default:
 			return super.endElement(manifestLocation, uri, localName, qName, text);
 		}
@@ -210,11 +155,6 @@ public class StructureLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 			String localName, String qName, ManifestXmlHandler handler)
 			throws SAXException {
 		switch (localName) {
-
-		case ManifestXmlTags.CONTAINER: {
-			ItemLayerManifestXmlDelegate.defaultAddContainerManifest(this,
-					((ContainerManifestXmlDelegate)handler).getInstance());
-		} break;
 
 		case ManifestXmlTags.STRUCTURE: {
 			ItemLayerManifestXmlDelegate.defaultAddContainerManifest(this, (

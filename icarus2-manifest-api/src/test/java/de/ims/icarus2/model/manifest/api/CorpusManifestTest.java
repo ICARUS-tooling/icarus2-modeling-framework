@@ -59,7 +59,7 @@ import de.ims.icarus2.test.TestUtils;
  * @author Markus Gärtner
  *
  */
-public interface CorpusManifestTest<M extends CorpusManifest> extends MemberManifestTest<M> {
+public interface CorpusManifestTest extends MemberManifestTest<CorpusManifest> {
 
 	public static ContextManifest mockContextManifest(String id) {
 		return stubId(mockTypedManifest(ContextManifest.class), id);
@@ -77,7 +77,7 @@ public interface CorpusManifestTest<M extends CorpusManifest> extends MemberMani
 	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
 	@Override
-	default M createTestInstance(TestSettings settings) {
+	default CorpusManifest createTestInstance(TestSettings settings) {
 		return createTestInstance(settings,
 				mockManifestLocation(settings.hasFeature(ManifestTestFeature.TEMPLATE)),
 				mockManifestRegistry());
@@ -94,7 +94,7 @@ public interface CorpusManifestTest<M extends CorpusManifest> extends MemberMani
 	 */
 	@Test
 	default void testForEachRootContextManifest() {
-		TestUtils.<M, ContextManifest>assertForEach(
+		TestUtils.assertForEach(
 				createUnlocked(settings().processor(processor_makeParallel())),
 				mockContextManifest("context1"),
 				mockContextManifest("context2"),
@@ -126,7 +126,7 @@ public interface CorpusManifestTest<M extends CorpusManifest> extends MemberMani
 		ContextManifest root1 = mockContextManifest("root1");
 		ContextManifest root2 = mockContextManifest("root2");
 
-		M instance = createUnlocked();
+		CorpusManifest instance = createUnlocked();
 
 		assertNotPresent(instance.getRootContextManifest());
 
@@ -154,7 +154,7 @@ public interface CorpusManifestTest<M extends CorpusManifest> extends MemberMani
 		ContextManifest root1 = mockContextManifest("root1");
 		ContextManifest root2 = mockContextManifest("root2");
 
-		M instance = createUnlocked();
+		CorpusManifest instance = createUnlocked();
 
 		assertFalse(instance.isRootContext(root1));
 		assertFalse(instance.isRootContext(root2));
@@ -178,7 +178,7 @@ public interface CorpusManifestTest<M extends CorpusManifest> extends MemberMani
 	 */
 	@Test
 	default void testForEachCustomContextManifest() {
-		TestUtils.<M, ContextManifest>assertForEach(
+		TestUtils.assertForEach(
 				createUnlocked(settings()),
 				mockContextManifest("context1"),
 				mockContextManifest("context2"),
@@ -206,7 +206,7 @@ public interface CorpusManifestTest<M extends CorpusManifest> extends MemberMani
 	default void testForEachContextManifest() {
 		ContextManifest root = mockContextManifest("root");
 
-		BiConsumer<M, ContextManifest> adder = (corpus, context) -> {
+		BiConsumer<CorpusManifest, ContextManifest> adder = (corpus, context) -> {
 			if(context==root) {
 				corpus.addRootContextManifest(context);
 			} else {
@@ -214,7 +214,7 @@ public interface CorpusManifestTest<M extends CorpusManifest> extends MemberMani
 			}
 		};
 
-		TestUtils.<M, ContextManifest>assertForEach(
+		TestUtils.assertForEach(
 				createUnlocked(settings()),
 				root,
 				mockContextManifest("context2"),
@@ -258,7 +258,7 @@ public interface CorpusManifestTest<M extends CorpusManifest> extends MemberMani
 	@Test
 	default void testGetLayerManifest() {
 
-		final Map<String, LayerManifest> layers = new HashMap<>();
+		final Map<String, LayerManifest<?>> layers = new HashMap<>();
 
 		ContextManifest context = mockContextManifest("context");
 
@@ -267,7 +267,7 @@ public interface CorpusManifestTest<M extends CorpusManifest> extends MemberMani
 
 			requireNonNull(id);
 
-			LayerManifest layer = layers.get(id);
+			LayerManifest<?> layer = layers.get(id);
 
 //			if(layer==null)
 //				throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, "TEST EXCEPTION !!!");
@@ -275,18 +275,18 @@ public interface CorpusManifestTest<M extends CorpusManifest> extends MemberMani
 			return Optional.ofNullable(layer);
 		});
 
-		BiConsumer<M, LayerManifest> adder = (corpus, layer) -> {
+		BiConsumer<CorpusManifest, LayerManifest<?>> adder = (corpus, layer) -> {
 			layers.put(layer.getId().get(), layer);
 		};
 
-		M instance = createUnlocked();
+		CorpusManifest instance = createUnlocked();
 		instance.addRootContextManifest(context);
 
 		assertAccumulativeOptLookup(
 				instance,
 				LayerManifestTest.mockLayerManifest("layer1"),
 				LayerManifestTest.mockLayerManifest("layer2"),
-				CorpusManifest::getLayerManifest,
+				(m, id) -> m.getLayerManifest(id).map( l -> (LayerManifest<?>)l),
 				NPE_CHECK,
 				adder,
 				unwrapGetter(LayerManifest::getId),
@@ -324,7 +324,7 @@ public interface CorpusManifestTest<M extends CorpusManifest> extends MemberMani
 	 */
 	@Test
 	default void testForEachNote() {
-		TestUtils.<M, Note>assertForEach(
+		TestUtils.assertForEach(
 				createUnlocked(),
 				mock(Note.class),
 				mock(Note.class),

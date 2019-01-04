@@ -60,8 +60,8 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet;
  *
  */
 //FIXME currently implementing Embedded on this level is a simplification
-public abstract class AbstractMemberManifest<M extends MemberManifest, H extends TypedManifest>
-		extends AbstractManifest<M> implements MemberManifest, Embedded {
+public abstract class AbstractMemberManifest<M extends MemberManifest<M>, H extends TypedManifest>
+		extends AbstractManifest<M> implements MemberManifest<M>, Embedded {
 
 	private Optional<String> name = Optional.empty();
 	private Optional<String> description = Optional.empty();
@@ -76,7 +76,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest, H extends
 
 	/**
 	 * Fetch the {@link Manifest} to be used instead of the {@code host} environment
-	 * and throw expection if not present.
+	 * and throw exception if not present.
 	 *
 	 * @param host
 	 * @param properSource
@@ -162,6 +162,12 @@ public abstract class AbstractMemberManifest<M extends MemberManifest, H extends
 		this.host = Optional.of(host);
 	}
 
+	protected final M thisAsCast() {
+		@SuppressWarnings("unchecked")
+		M result = (M) this;
+		return result;
+	}
+
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
 	 */
@@ -193,10 +199,12 @@ public abstract class AbstractMemberManifest<M extends MemberManifest, H extends
 	 * @param documentation the documentation to set
 	 */
 	@Override
-	public void setDocumentation(Documentation documentation) {
+	public M setDocumentation(Documentation documentation) {
 		checkNotLocked();
 
 		setDocumentation0(documentation);
+
+		return thisAsCast();
 	}
 
 	protected void setDocumentation0(Documentation documentation) {
@@ -215,10 +223,12 @@ public abstract class AbstractMemberManifest<M extends MemberManifest, H extends
 	 * @param optionsManifest the optionsManifest to set
 	 */
 	@Override
-	public void setOptionsManifest(@Nullable OptionsManifest optionsManifest) {
+	public M setOptionsManifest(@Nullable OptionsManifest optionsManifest) {
 		checkNotLocked();
 
 		setOptionsManifest0(optionsManifest);
+
+		return thisAsCast();
 	}
 
 	protected void setOptionsManifest0(@Nullable OptionsManifest optionsManifest) {
@@ -337,10 +347,12 @@ public abstract class AbstractMemberManifest<M extends MemberManifest, H extends
 	}
 
 	@Override
-	public void setPropertyValue(String name, Object value) {
+	public M setPropertyValue(String name, Object value) {
 		checkNotLocked();
 
 		setPropertyValue0(name, value);
+
+		return thisAsCast();
 	}
 
 	protected void setPropertyValue0(String name, Object value) {
@@ -576,11 +588,13 @@ public abstract class AbstractMemberManifest<M extends MemberManifest, H extends
 		 * @see de.ims.icarus2.model.manifest.api.MemberManifest.Property#setValue(java.lang.Object)
 		 */
 		@Override
-		public void setValue(@Nullable Object value) {
+		public Property setValue(@Nullable Object value) {
 			checkNotLocked();
 			checkValue(value);
 
 			this.value = Optional.ofNullable(value);
+
+			return this;
 		}
 
 		/**
@@ -620,9 +634,11 @@ public abstract class AbstractMemberManifest<M extends MemberManifest, H extends
 		}
 
 		@Override
-		public void setMultiValue(boolean multiValue) {
+		public Property setMultiValue(boolean multiValue) {
 			checkNotLocked();
 			this.multiValue = multiValue;
+
+			return this;
 		}
 
 		@Override

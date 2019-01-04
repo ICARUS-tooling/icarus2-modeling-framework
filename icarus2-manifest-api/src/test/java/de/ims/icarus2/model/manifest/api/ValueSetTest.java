@@ -48,16 +48,24 @@ import de.ims.icarus2.util.collections.ArrayUtils;
  * @author Markus Gärtner
  *
  */
-public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, TypedManifestTest<V> {
+public interface ValueSetTest extends LockableTest<ValueSet>, TypedManifestTest<ValueSet> {
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.VALUE_SET;
+	}
 
 	@Provider
-	V createWithType(TestSettings settings, ValueType valueType);
+	ValueSet createWithType(TestSettings settings, ValueType valueType);
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
 	@Override
-	default V createTestInstance(TestSettings settings) {
+	default ValueSet createTestInstance(TestSettings settings) {
 		return createWithType(settings, ValueType.STRING);
 	}
 
@@ -86,7 +94,7 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 				.stream()
 				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						Object[] values = ManifestTestUtils.getTestValues(valueType);
-						V instance = createWithType(settings(), valueType);
+						ValueSet instance = createWithType(settings(), valueType);
 						assertAccumulativeGetter(instance,
 								values[0], values[1],
 								ValueSet::getValuesAsList,
@@ -141,7 +149,7 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 				.stream()
 				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						Object[] values = ManifestTestUtils.getTestValues(valueType);
-						TestUtils.<V, Object>assertForEach(
+						TestUtils.<ValueSet, Object>assertForEach(
 								createWithType(settings(), valueType),
 								values[0], values[1],
 								ValueSet::forEach,
@@ -158,7 +166,7 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 		return ManifestTestUtils.getAvailableTestTypes()
 				.stream()
 				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
-						TestUtils.<V, Object>assertForEachUntil(
+						TestUtils.<ValueSet, Object>assertForEachUntil(
 								createWithType(settings(), valueType),
 								ValueSet::forEachUntil,
 								ValueSet::addValue,
@@ -276,7 +284,7 @@ public interface ValueSetTest<V extends ValueSet> extends LockableTest<V>, Typed
 		return ManifestTestUtils.getAvailableTestTypes()
 				.stream()
 				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
-						V instance = createWithType(settings(), valueType);
+						ValueSet instance = createWithType(settings(), valueType);
 
 						Stream.of(ManifestTestUtils.getTestValues(valueType))
 							.forEach(instance::addValue);

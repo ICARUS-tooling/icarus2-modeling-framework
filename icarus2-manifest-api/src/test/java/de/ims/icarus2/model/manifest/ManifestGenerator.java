@@ -399,7 +399,7 @@ public class ManifestGenerator {
 		//TODO currently we don't add any templating related fields
 	}
 
-	private <D extends Documentable & TypedManifest> void prepareDocumentable(
+	private <D extends Documentable<?> & TypedManifest> void prepareDocumentable(
 			D documentable, IncrementalBuild<?> container, Config config) {
 		container.<Documentation>addManifestChange("documentation", ManifestType.DOCUMENTATION,
 				config, documentable::setDocumentation);
@@ -417,12 +417,12 @@ public class ManifestGenerator {
 		//TODO add Icon
 	}
 
-	private void prepareCategorizable(Categorizable categorizable,
+	private void prepareCategorizable(Categorizable<?> categorizable,
 			IncrementalBuild<?> container, Config config) {
 		container.addFieldChange(categorizable::addCategory, "category", createCategory(0));
 	}
 
-	private void prepareMemberManifest(MemberManifest manifest,
+	private void prepareMemberManifest(MemberManifest<?> manifest,
 			IncrementalBuild<?> container, Config config) {
 		prepareManifest(manifest, container, config);
 		prepareIdentity(manifest, container, config);
@@ -438,7 +438,7 @@ public class ManifestGenerator {
 		}
 	}
 
-	private void prepareLayerManifest(LayerManifest manifest,
+	private void prepareLayerManifest(LayerManifest<?> manifest,
 			IncrementalBuild<?> container, Config config) {
 		prepareMemberManifest(manifest, container, config);
 
@@ -446,7 +446,7 @@ public class ManifestGenerator {
 			container.addFieldChange(manifest::addBaseLayerId, "baseLayer", index("layer"));
 	}
 
-	private void prepareForeignImplementationManifest(ForeignImplementationManifest manifest,
+	private void prepareForeignImplementationManifest(ForeignImplementationManifest<?> manifest,
 			IncrementalBuild<?> container, Config config) {
 		prepareMemberManifest(manifest, container, config);
 
@@ -620,7 +620,7 @@ public class ManifestGenerator {
 	 * @param groupManifest
 	 * @param layerManifest
 	 */
-	private void injectLayer(LayerGroupManifest groupManifest, LayerManifest layerManifest) {
+	private void injectLayer(LayerGroupManifest groupManifest, LayerManifest<?> layerManifest) {
 		if(!isMock(groupManifest)) {
 			groupManifest.addLayerManifest(layerManifest);
 		} else {
@@ -639,7 +639,7 @@ public class ManifestGenerator {
 			IncrementalBuild<?> container, Config config) {
 		prepareLayerManifest(manifest, container, config);
 
-		LayerManifest layerManifest = manifest.getContextManifest()
+		LayerManifest<?> layerManifest = manifest.getContextManifest()
 				.map(c -> c.getLayerManifests(ManifestUtils::isItemLayerManifest))
 				.filter(l -> !l.isEmpty())
 				.map(l -> l.get(0))
@@ -696,7 +696,7 @@ public class ManifestGenerator {
 		}
 	}
 
-	private Consumer<LayerManifest> createLayerLookup(ContextManifest contextManifest) {
+	private Consumer<LayerManifest<?>> createLayerLookup(ContextManifest contextManifest) {
 		if(!isMock(contextManifest)) {
 			return TestUtils.DO_NOTHING();
 		}
@@ -717,8 +717,8 @@ public class ManifestGenerator {
 		 *  this group during preparation phase and then pick
 		 *  an item layer amongst them to be used as primary layer
 		 */
-		Consumer<LayerManifest> action = createLayerLookup(manifest.getContextManifest().orElse(null));
-		List<LayerManifest> layers = new ArrayList<>();
+		Consumer<LayerManifest<?>> action = createLayerLookup(manifest.getContextManifest().orElse(null));
+		List<LayerManifest<?>> layers = new ArrayList<>();
 		action = action.andThen(layers::add);
 		action = action.andThen(manifest::addLayerManifest);
 

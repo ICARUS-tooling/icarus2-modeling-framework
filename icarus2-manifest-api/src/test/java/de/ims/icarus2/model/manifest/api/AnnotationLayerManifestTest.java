@@ -43,7 +43,7 @@ import de.ims.icarus2.test.TestUtils;
  * @author Markus Gärtner
  *
  */
-public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> extends LayerManifestTest<M> {
+public interface AnnotationLayerManifestTest extends LayerManifestTest<AnnotationLayerManifest> {
 
 	public static AnnotationManifest mockAnnotationManifest(String key) {
 		assertNotNull(key);

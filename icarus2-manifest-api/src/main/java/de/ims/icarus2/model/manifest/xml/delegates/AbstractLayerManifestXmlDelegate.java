@@ -37,7 +37,7 @@ import de.ims.icarus2.util.xml.XmlSerializer;
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractLayerManifestXmlDelegate<L extends LayerManifest> extends AbstractMemberManifestXmlDelegate<L> {
+public abstract class AbstractLayerManifestXmlDelegate<L extends LayerManifest<L>> extends AbstractMemberManifestXmlDelegate<L> {
 
 
 	/**
@@ -47,7 +47,7 @@ public abstract class AbstractLayerManifestXmlDelegate<L extends LayerManifest> 
 	protected void writeAttributes(XmlSerializer serializer) throws XMLStreamException {
 		super.writeAttributes(serializer);
 
-		LayerManifest manifest = getInstance();
+		L manifest = getInstance();
 
 		// Write layer type
 		if(manifest.isLocalLayerType()) {

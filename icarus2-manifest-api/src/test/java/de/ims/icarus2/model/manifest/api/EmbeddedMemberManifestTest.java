@@ -44,7 +44,7 @@ import de.ims.icarus2.test.annotations.Provider;
  * @author Markus Gärtner
  *
  */
-public interface EmbeddedMemberManifestTest<M extends MemberManifest & Embedded> extends MemberManifestTest<M>, EmbeddedTest<M> {
+public interface EmbeddedMemberManifestTest<M extends MemberManifest<?> & Embedded> extends MemberManifestTest<M>, EmbeddedTest<M> {
 
 
 	/**

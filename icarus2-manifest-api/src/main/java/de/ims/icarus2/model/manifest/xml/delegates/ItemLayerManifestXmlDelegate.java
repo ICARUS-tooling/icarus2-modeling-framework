@@ -30,6 +30,7 @@ import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.standard.ItemLayerManifestImpl;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlDelegate;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
@@ -55,7 +56,7 @@ public class ItemLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelega
 		setInstance(new ItemLayerManifestImpl(groupManifest));
 	}
 
-	private ContainerManifestXmlDelegate getContainerManifestXmlDelegate() {
+	protected ContainerManifestXmlDelegate getContainerManifestXmlDelegate() {
 		if(containerManifestXmlDelegate==null) {
 			containerManifestXmlDelegate = new ContainerManifestXmlDelegate();
 		}
@@ -83,7 +84,7 @@ public class ItemLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelega
 	}
 
 	public static<L extends ItemLayerManifest> void defaultWriteElements(
-			AbstractLayerManifestXmlDelegate<L> delegate,
+			ManifestXmlDelegate<L> delegate,
 			ContainerManifestXmlDelegate containerDelegate, XmlSerializer serializer) throws XMLStreamException {
 
 		ItemLayerManifest manifest = delegate.getInstance();
@@ -116,7 +117,30 @@ public class ItemLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelega
 	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
 		super.writeElements(serializer);
 
-		defaultWriteElements(this, getContainerManifestXmlDelegate(), serializer);
+		ItemLayerManifest manifest = getInstance();
+
+		if(manifest.isLocalBoundaryLayerManifest()) {
+			ManifestXmlUtils.writeTargetLayerManifestElement(serializer,
+					ManifestXmlTags.BOUNDARY_LAYER, manifest.getBoundaryLayerManifest().get());
+		}
+
+		if(manifest.isLocalFoundationLayerManifest()) {
+			ManifestXmlUtils.writeTargetLayerManifestElement(serializer,
+					ManifestXmlTags.FOUNDATION_LAYER, manifest.getFoundationLayerManifest().get());
+		}
+
+		if(manifest.hasLocalContainerHierarchy()) {
+			serializer.startElement(ManifestXmlTags.HIERARCHY);
+			for(ContainerManifest containerManifest : manifest.getContainerHierarchy()
+					.orElse(Hierarchy.empty())) {
+				writeContainerElement(serializer, containerManifest);
+			}
+			serializer.endElement(ManifestXmlTags.HIERARCHY);
+		}
+	}
+
+	protected void writeContainerElement(XmlSerializer serializer, ContainerManifest containerManifest) throws XMLStreamException {
+		getContainerManifestXmlDelegate().reset(containerManifest).writeXml(serializer);
 	}
 
 	@Override
@@ -205,7 +229,7 @@ public class ItemLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelega
 	}
 
 	public static <L extends ItemLayerManifest> void defaultAddContainerManifest(
-			AbstractLayerManifestXmlDelegate<L> delegate, ContainerManifest containerManifest) {
+			ManifestXmlDelegate<L> delegate, ContainerManifest containerManifest) {
 		delegate.getInstance().getContainerHierarchy().get().add(containerManifest);
 	}
 

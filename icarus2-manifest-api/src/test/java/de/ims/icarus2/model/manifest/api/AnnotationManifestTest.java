@@ -43,7 +43,7 @@ import de.ims.icarus2.util.data.ContentType;
  * @author Markus Gärtner
  *
  */
-public interface AnnotationManifestTest<M extends AnnotationManifest> extends EmbeddedMemberManifestTest<M> {
+public interface AnnotationManifestTest extends EmbeddedMemberManifestTest<AnnotationManifest> {
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()

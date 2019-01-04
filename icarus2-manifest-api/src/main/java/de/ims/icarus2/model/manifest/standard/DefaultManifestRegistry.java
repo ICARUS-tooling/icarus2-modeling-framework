@@ -179,7 +179,7 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 
 		fireEvent(new EventObject(ManifestEvents.REMOVE_LAYER_TYPE, "layerType", layerType)); //$NON-NLS-1$
 
-		Optional<LayerManifest> manifest = layerType.getSharedManifest();
+		Optional<LayerManifest<?>> manifest = layerType.getSharedManifest();
 		if(manifest.isPresent() && isLocked(manifest.get()))
 			throw new ManifestException(ManifestErrorCode.MANIFEST_LOCKED,
 					"Cannot remove layer type while underlying manifest is locked");
@@ -499,13 +499,13 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 
 			// Traverse options manifest
 			if(manifest instanceof MemberManifest) {
-				MemberManifest memberManifest = (MemberManifest) manifest;
+				MemberManifest<?> memberManifest = (MemberManifest<?>) manifest;
 				walkTemplate(memberManifest.getOptionsManifest(), true, delta);
 			}
 
 			// For layer manifests lock the underlying shared manifest
 			if(manifest instanceof LayerManifest) {
-				LayerManifest layerManifest = (LayerManifest) manifest;
+				LayerManifest<?> layerManifest = (LayerManifest<?>) manifest;
 				Optional<LayerType> layerType = layerManifest.getLayerType();
 				if(layerType.isPresent()) {
 					walkTemplate(layerType.get().getSharedManifest(), true, delta);

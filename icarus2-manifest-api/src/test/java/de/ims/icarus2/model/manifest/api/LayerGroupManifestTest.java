@@ -42,14 +42,14 @@ import de.ims.icarus2.test.annotations.OverrideTest;
  * @author Markus Gärtner
  *
  */
-public interface LayerGroupManifestTest<M extends LayerGroupManifest>
-		extends ModifiableIdentityTest<M>, ManifestFragmentTest<M>, EmbeddedTest<M> {
+public interface LayerGroupManifestTest
+		extends ModifiableIdentityTest<LayerGroupManifest>, ManifestFragmentTest<LayerGroupManifest>, EmbeddedTest<LayerGroupManifest> {
 
-	public static LayerManifest mockLayerManifest(String id) {
+	public static LayerManifest<?> mockLayerManifest(String id) {
 		return LayerManifestTest.mockLayerManifest(id);
 	}
 
-	public static <M extends LayerGroupManifest, L extends LayerManifest> BiConsumer<M, L> inject_addLayer(
+	public static <M extends LayerGroupManifest, L extends LayerManifest<L>> BiConsumer<M, L> inject_addLayer(
 			BiConsumer<M, L> setter) {
 		return (m, layerManifest) -> {
 
@@ -117,7 +117,7 @@ public interface LayerGroupManifestTest<M extends LayerGroupManifest>
 	 */
 	@Test
 	default void testForEachLayerManifest() {
-		TestUtils.<M, LayerManifest>assertForEach(createUnlocked(),
+		TestUtils.assertForEach(createUnlocked(),
 				mockLayerManifest("layer1"),
 				mockLayerManifest("layer2"),
 				LayerGroupManifest::forEachLayerManifest,
@@ -166,7 +166,7 @@ public interface LayerGroupManifestTest<M extends LayerGroupManifest>
 		TestUtils.assertAccumulativeOptLookup(createUnlocked(),
 				mockLayerManifest("layer1"),
 				mockLayerManifest("layer2"),
-				(m, id) -> m.getLayerManifest(id),
+				(m, id) -> m.getLayerManifest(id).map(l -> (LayerManifest<?>)l),
 				true,
 				LayerGroupManifest::addLayerManifest,
 				transform_id());
@@ -192,7 +192,7 @@ public interface LayerGroupManifestTest<M extends LayerGroupManifest>
 	 */
 	@Test
 	default void testRemoveLayerManifest() {
-		assertLockableAccumulativeRemove(settings(),
+		this.assertLockableAccumulativeRemove(settings(),
 				LayerManifestTest.inject_layerLookup(
 						LayerGroupManifest::addLayerManifest,
 						LayerGroupManifest::getContextManifest),

@@ -125,7 +125,7 @@ public class ContextManifestResolver {
 		}
 	}
 
-	protected void copyDocumentableFields(Documentable source, Documentable target) {
+	protected void copyDocumentableFields(Documentable<?> source, Documentable<?> target) {
 		if(source==null || target==null) {
 			return;
 		}
@@ -142,7 +142,7 @@ public class ContextManifestResolver {
 	 * @param source
 	 * @param target
 	 */
-	protected void copyMemberFields(MemberManifest source, MemberManifest target) {
+	protected void copyMemberFields(MemberManifest<?> source, MemberManifest<?> target) {
 		if(source==null || target==null) {
 			return;
 		}
@@ -187,7 +187,7 @@ public class ContextManifestResolver {
 				"Primary layer does not declare valid identifier"))));
 	}
 
-	protected void copyLayerFields(LayerManifest source, LayerManifest target) {
+	protected void copyLayerFields(LayerManifest<?> source, LayerManifest<?> target) {
 		if(source==null || target==null) {
 			return;
 		}
@@ -323,7 +323,7 @@ public class ContextManifestResolver {
 		source.getTypeId().ifPresent(target::setTypeId);
 	}
 
-	public ImplementationManifest cloneImplementationManifest(ImplementationManifest source, MemberManifest host) {
+	public ImplementationManifest cloneImplementationManifest(ImplementationManifest source, MemberManifest<?> host) {
 		ImplementationManifest target = manifestFactory.create(ManifestType.IMPLEMENTATION_MANIFEST, host, null);
 
 		copyImplementationFields(source, target);
@@ -336,14 +336,14 @@ public class ContextManifestResolver {
 
 		copyLayerGroupFields(source, target);
 
-		for(LayerManifest layerManifest : source.getLayerManifests()) {
+		for(LayerManifest<?> layerManifest : source.getLayerManifests()) {
 			target.addLayerManifest(cloneLayerManifest(layerManifest, target));
 		}
 
 		return target;
 	}
 
-	public LayerManifest cloneLayerManifest(LayerManifest source, LayerGroupManifest layerGroupManifest) {
+	public LayerManifest<?> cloneLayerManifest(LayerManifest<?> source, LayerGroupManifest layerGroupManifest) {
 		switch (source.getManifestType()) {
 		case ANNOTATION_LAYER_MANIFEST: return cloneAnnotationLayerManifest((AnnotationLayerManifest) source, layerGroupManifest);
 		case ITEM_LAYER_MANIFEST: return cloneItemLayerManifest((ItemLayerManifest) source, layerGroupManifest);

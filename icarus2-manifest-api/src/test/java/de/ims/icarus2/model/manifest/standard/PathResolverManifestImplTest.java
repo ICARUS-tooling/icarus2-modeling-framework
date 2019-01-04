@@ -22,6 +22,7 @@ package de.ims.icarus2.model.manifest.standard;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
+import de.ims.icarus2.model.manifest.api.PathResolverManifest;
 import de.ims.icarus2.model.manifest.api.PathResolverManifestTest;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.test.TestSettings;
@@ -30,13 +31,13 @@ import de.ims.icarus2.test.TestSettings;
  * @author Markus Gärtner
  *
  */
-class PathResolverManifestImplTest implements PathResolverManifestTest<PathResolverManifestImpl> {
+class PathResolverManifestImplTest implements PathResolverManifestTest {
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends PathResolverManifestImpl> getTestTargetClass() {
+	public Class<? extends PathResolverManifest> getTestTargetClass() {
 		return PathResolverManifestImpl.class;
 	}
 
@@ -44,7 +45,7 @@ class PathResolverManifestImplTest implements PathResolverManifestTest<PathResol
 	 * @see de.ims.icarus2.model.manifest.api.EmbeddedMemberManifestTest#createHosted(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.TypedManifest)
 	 */
 	@Override
-	public PathResolverManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
+	public PathResolverManifest createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
 		return settings.process(new PathResolverManifestImpl(manifestLocation, registry, (LocationManifest) host));
 	}

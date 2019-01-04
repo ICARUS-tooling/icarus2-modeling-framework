@@ -31,7 +31,7 @@ import de.ims.icarus2.util.access.AccessRestriction;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface ItemLayerManifest extends LayerManifest {
+public interface ItemLayerManifest extends LayerManifest<ItemLayerManifest> {
 
 	@AccessRestriction(AccessMode.READ)
 	Optional<Hierarchy<ContainerManifest>> getContainerHierarchy();

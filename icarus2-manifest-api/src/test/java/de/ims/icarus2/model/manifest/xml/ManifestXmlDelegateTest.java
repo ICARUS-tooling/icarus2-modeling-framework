@@ -57,7 +57,7 @@ import de.ims.icarus2.test.annotations.Provider;
  * @author Markus Gärtner
  *
  */
-public interface ManifestXmlDelegateTest<M extends TypedManifest, D extends ManifestXmlDelegate<M>>
+public interface ManifestXmlDelegateTest<M extends TypedManifest, D extends ManifestXmlDelegate<? super M>>
 	extends GenericTest<D> {
 
 	ManifestType getHandledType();
@@ -93,12 +93,13 @@ public interface ManifestXmlDelegateTest<M extends TypedManifest, D extends Mani
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.xml.ManifestXmlDelegate#getInstance()}.
 	 */
+	@SuppressWarnings("unchecked")
 	@Test
 	default void testGetInstance() {
 		assertRestrictedGetter(create(),
 				mockManifest(),
 				ILLEGAL_STATE_CHECK,
-				ManifestXmlDelegate::getInstance,
+				d -> (M) d.getInstance(),
 				ManifestXmlDelegate::setInstance);
 	}
 

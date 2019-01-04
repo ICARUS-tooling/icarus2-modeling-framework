@@ -42,7 +42,7 @@ import de.ims.icarus2.util.id.Identity;
  * @author Markus Gärtner
  *
  */
-public interface OptionsManifestTest<M extends OptionsManifest> extends ManifestTest<M>, EmbeddedTest<M> {
+public interface OptionsManifestTest extends ManifestTest<OptionsManifest>, EmbeddedTest<OptionsManifest> {
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ManifestTest#createTestInstance(de.ims.icarus2.test.TestSettings)
@@ -51,7 +51,7 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 	 */
 	@Provider
 	@Override
-	default M createTestInstance(TestSettings settings) {
+	default OptionsManifest createTestInstance(TestSettings settings) {
 		return ManifestTest.super.createTestInstance(settings);
 	}
 
@@ -92,7 +92,7 @@ public interface OptionsManifestTest<M extends OptionsManifest> extends Manifest
 		assertNotPresent(createUnlocked().getMemberManifest());
 		assertNotPresent(createTemplate(settings()).getMemberManifest());
 
-		MemberManifest host = mockTypedManifest(MemberManifest.class);
+		MemberManifest<?> host = mockTypedManifest(MemberManifest.class);
 		assertOptionalEquals(host, createEmbedded(settings(), host).getMemberManifest());
 	}
 

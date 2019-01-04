@@ -19,40 +19,32 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
+import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifestTest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.test.TestSettings;
 
 /**
  * @author Markus Gärtner
  *
  */
-class LocationManifestImplTest implements LocationManifestTest<LocationManifestImpl>{
+class LocationManifestImplTest implements LocationManifestTest{
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ManifestTest#createTestInstance(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry)
 	 */
 	@Override
-	public LocationManifestImpl createTestInstance(TestSettings settings, ManifestLocation location,
+	public LocationManifest createTestInstance(TestSettings settings, ManifestLocation location,
 			ManifestRegistry registry) {
 		return settings.process(new LocationManifestImpl(location, registry));
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
-	 */
-	@Override
-	public ManifestType getExpectedType() {
-		return ManifestType.LOCATION_MANIFEST;
 	}
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends LocationManifestImpl> getTestTargetClass() {
+	public Class<? extends LocationManifest> getTestTargetClass() {
 		return LocationManifestImpl.class;
 	}
 

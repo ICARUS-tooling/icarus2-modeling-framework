@@ -21,7 +21,7 @@ import static de.ims.icarus2.test.TestUtils.settings;
 
 import org.junit.jupiter.api.Test;
 
-import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.model.manifest.api.ValueSet;
 import de.ims.icarus2.model.manifest.api.ValueSetTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestSettings;
@@ -31,29 +31,21 @@ import de.ims.icarus2.test.annotations.OverrideTest;
  * @author Markus Gärtner
  *
  */
-class ValueSetImplTest implements ValueSetTest<ValueSetImpl> {
+class ValueSetImplTest implements ValueSetTest {
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends ValueSetImpl> getTestTargetClass() {
+	public Class<? extends ValueSet> getTestTargetClass() {
 		return ValueSetImpl.class;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
-	 */
-	@Override
-	public ManifestType getExpectedType() {
-		return ManifestType.VALUE_SET;
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ValueSetTest#createWithType(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.types.ValueType)
 	 */
 	@Override
-	public ValueSetImpl createWithType(TestSettings settings, ValueType valueType) {
+	public ValueSet createWithType(TestSettings settings, ValueType valueType) {
 		return settings.process(new ValueSetImpl(valueType));
 	}
 

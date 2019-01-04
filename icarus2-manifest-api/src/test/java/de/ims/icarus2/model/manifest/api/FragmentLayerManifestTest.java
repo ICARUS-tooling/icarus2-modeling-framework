@@ -35,7 +35,7 @@ import org.junit.jupiter.api.Test;
  * @author Markus Gärtner
  *
  */
-public interface FragmentLayerManifestTest<M extends FragmentLayerManifest> extends LayerManifestTest<M> {
+public interface FragmentLayerManifestTest extends ItemLayerManifestTestMixin<FragmentLayerManifest> {
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()

@@ -57,7 +57,7 @@ import de.ims.icarus2.test.fail.FailOnConstructor;
  * @author Markus Gärtner
  *
  */
-public interface ImplementationLoaderTest<L extends ImplementationLoader<L>> extends GenericTest<L> {
+public interface ImplementationLoaderTest extends GenericTest<ImplementationLoader<?>> {
 
 	/**
 	 * Allows actual test implementations to specify which source types their
@@ -80,11 +80,11 @@ public interface ImplementationLoaderTest<L extends ImplementationLoader<L>> ext
 	 * @return
 	 */
 	@Provider
-	L createForLoading(TestSettings settings, Class<?> classToLoad,
+	ImplementationLoader<?> createForLoading(TestSettings settings, Class<?> classToLoad,
 			String source, String classname);
 
 	@SuppressWarnings("boxing")
-	default L createPreparedInstanceForLoading(TestSettings settings, Class<?> classToLoad,
+	default ImplementationLoader<?> createPreparedInstanceForLoading(TestSettings settings, Class<?> classToLoad,
 			SourceType sourceType, String source, String classname, Class<?>[] constructorSig, boolean factory) {
 
 		// Mock some utility parts
@@ -95,13 +95,13 @@ public interface ImplementationLoaderTest<L extends ImplementationLoader<L>> ext
 		when(manifest.getSourceType()).thenReturn(Optional.of(sourceType));
 		when(manifest.isUseFactory()).thenReturn(factory);
 
-		MemberManifest host = mock(MemberManifest.class);
+		MemberManifest<?> host = mock(MemberManifest.class);
 		when(host.getName()).thenReturn(Optional.of("host"));
 
 		when(manifest.getHost()).thenReturn(Optional.of(host));
 
 		// Use same loader for all calls under this source type
-		L instance = createForLoading(settings(), classToLoad, source, classname);
+		ImplementationLoader<?> instance = createForLoading(settings(), classToLoad, source, classname);
 
 		instance.manifest(manifest);
 		instance.environment(host);
@@ -128,7 +128,7 @@ public interface ImplementationLoaderTest<L extends ImplementationLoader<L>> ext
 		for(SourceType sourceType : SourceType.values()) {
 
 			// Use same loader for all regular calls under this source type
-			L instance = createPreparedInstanceForLoading(settings(),
+			ImplementationLoader<?> instance = createPreparedInstanceForLoading(settings(),
 					classToLoad, sourceType, realSource, classname, null, false);
 
 			// Basic check
@@ -163,7 +163,7 @@ public interface ImplementationLoaderTest<L extends ImplementationLoader<L>> ext
 				// Force InstantiationException
 				Class<?> failInstantiationClass = FailOnConstructor.createClassForException(
 						"", "FailInstantiationClass", null, InstantiationException.class);
-				L failInstantiationLoader = createPreparedInstanceForLoading(settings(),
+				ImplementationLoader<?> failInstantiationLoader = createPreparedInstanceForLoading(settings(),
 						failInstantiationClass, sourceType, realSource,
 						failInstantiationClass.getName(), null, false);
 				assertIcarusException(ManifestErrorCode.IMPLEMENTATION_ERROR,
@@ -173,7 +173,7 @@ public interface ImplementationLoaderTest<L extends ImplementationLoader<L>> ext
 				// Force IllegalAccessException
 				Class<?> illegalAccessClass = FailOnConstructor.createClassForException(
 						"", "IllegalAccessClass", null, IllegalAccessException.class);
-				L illegalAccessLoader = createPreparedInstanceForLoading(settings(),
+				ImplementationLoader<?> illegalAccessLoader = createPreparedInstanceForLoading(settings(),
 						illegalAccessClass, sourceType, realSource,
 						illegalAccessClass.getName(), null, false);
 				assertIcarusException(ManifestErrorCode.IMPLEMENTATION_NOT_ACCESSIBLE,
@@ -185,7 +185,7 @@ public interface ImplementationLoaderTest<L extends ImplementationLoader<L>> ext
 				//----------------------------------------
 
 				// Valid factory creation, make sure the loader properly delegates arguments
-				L validFactoryLoader = createPreparedInstanceForLoading(settings(),
+				ImplementationLoader<?> validFactoryLoader = createPreparedInstanceForLoading(settings(),
 						TestFactory.class, sourceType, realSource,
 						TestFactory.class.getName(), null, true);
 				TestFactory factory = validFactoryLoader.instantiate(TestFactory.class);
@@ -194,7 +194,7 @@ public interface ImplementationLoaderTest<L extends ImplementationLoader<L>> ext
 				assertSame(TestFactory.class, factory.resultClass);
 
 				// Force factory to create null result
-				L nullFactoryLoader = createPreparedInstanceForLoading(settings(),
+				ImplementationLoader<?> nullFactoryLoader = createPreparedInstanceForLoading(settings(),
 						NullFactory.class, sourceType, realSource,
 						NullFactory.class.getName(), null, true);
 				assertIcarusException(ManifestErrorCode.IMPLEMENTATION_ERROR,
@@ -202,7 +202,7 @@ public interface ImplementationLoaderTest<L extends ImplementationLoader<L>> ext
 						"Testing forced null return of factory for source type: "+sourceType);
 
 				// Force factory to create null result
-				L failFactoryLoader = createPreparedInstanceForLoading(settings(),
+				ImplementationLoader<?> failFactoryLoader = createPreparedInstanceForLoading(settings(),
 						FailFactory.class, sourceType, realSource,
 						FailFactory.class.getName(), null, true);
 				assertIcarusException(ManifestErrorCode.IMPLEMENTATION_FACTORY,
@@ -234,7 +234,7 @@ public interface ImplementationLoaderTest<L extends ImplementationLoader<L>> ext
 		for(SourceType sourceType : SourceType.values()) {
 
 			// Use same loader for all regular calls under this source type
-			L instance = createPreparedInstanceForLoading(settings(),
+			ImplementationLoader<?> instance = createPreparedInstanceForLoading(settings(),
 					classToLoad, sourceType, realSource,
 					classname, constructorSig, false);
 
@@ -274,7 +274,7 @@ public interface ImplementationLoaderTest<L extends ImplementationLoader<L>> ext
 				// Force InstantiationException
 				Class<?> failInstantiationClass = FailOnConstructor.createClassForException(
 						"", "FailInstantiationClass", null, InstantiationException.class, constructorSig);
-				L failInstantiationLoader = createPreparedInstanceForLoading(settings(),
+				ImplementationLoader<?> failInstantiationLoader = createPreparedInstanceForLoading(settings(),
 						failInstantiationClass, sourceType, realSource,
 						failInstantiationClass.getName(), constructorSig, false);
 				assertIcarusException(ManifestErrorCode.IMPLEMENTATION_ERROR,
@@ -284,7 +284,7 @@ public interface ImplementationLoaderTest<L extends ImplementationLoader<L>> ext
 				// Force InvocationTargetException
 				Class<?> failInvocationClass = FailOnConstructor.createClassForException(
 						"", "FailInvocationClass", null, Exception.class, constructorSig);
-				L failInvocationLoader = createPreparedInstanceForLoading(settings(),
+				ImplementationLoader<?> failInvocationLoader = createPreparedInstanceForLoading(settings(),
 						failInvocationClass, sourceType, realSource,
 						failInvocationClass.getName(), constructorSig, false);
 				assertIcarusException(ManifestErrorCode.IMPLEMENTATION_ERROR,
@@ -292,7 +292,7 @@ public interface ImplementationLoaderTest<L extends ImplementationLoader<L>> ext
 						"Testing forced InvocationTargetException for source type: "+sourceType);
 
 				// Force NoSuchMethodException
-				L noSuchMethodLoader = createPreparedInstanceForLoading(settings(),
+				ImplementationLoader<?> noSuchMethodLoader = createPreparedInstanceForLoading(settings(),
 						PrivateStringIntStringDummy.class, sourceType, realSource,
 						PrivateStringIntStringDummy.class.getName(), constructorSig, false);
 				assertIcarusException(ManifestErrorCode.IMPLEMENTATION_NOT_FOUND,
@@ -300,7 +300,7 @@ public interface ImplementationLoaderTest<L extends ImplementationLoader<L>> ext
 						"Testing forced NoSuchMethodException for source type: "+sourceType);
 
 				// Force IllegalArgumentException
-				L illegalArgumentLoader = createPreparedInstanceForLoading(settings(),
+				ImplementationLoader<?> illegalArgumentLoader = createPreparedInstanceForLoading(settings(),
 						StringIntStringDummy.class, sourceType, realSource,
 						StringIntStringDummy.class.getName(), constructorSig, false);
 				assertIcarusException(ManifestErrorCode.IMPLEMENTATION_ERROR,
@@ -329,7 +329,7 @@ public interface ImplementationLoaderTest<L extends ImplementationLoader<L>> ext
 		for(SourceType sourceType : SourceType.values()) {
 
 			// Use same loader for all calls under this source type
-			L instance = createPreparedInstanceForLoading(settings(),
+			ImplementationLoader<?> instance = createPreparedInstanceForLoading(settings(),
 					classToLoad, sourceType, realSource, classname, null, false);
 
 			// Basic check

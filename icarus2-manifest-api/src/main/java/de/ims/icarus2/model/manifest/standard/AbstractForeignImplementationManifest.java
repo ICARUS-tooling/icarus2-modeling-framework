@@ -31,8 +31,8 @@ import de.ims.icarus2.model.manifest.api.TypedManifest;
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractForeignImplementationManifest<M extends MemberManifest & ForeignImplementationManifest, H extends TypedManifest>
-	extends AbstractMemberManifest<M, H> implements ForeignImplementationManifest {
+public abstract class AbstractForeignImplementationManifest<M extends MemberManifest<M> & ForeignImplementationManifest<M>, H extends TypedManifest>
+	extends AbstractMemberManifest<M, H> implements ForeignImplementationManifest<M> {
 
 	private Optional<ImplementationManifest> implementationManifest = Optional.empty();
 
@@ -89,11 +89,13 @@ public abstract class AbstractForeignImplementationManifest<M extends MemberMani
 	 * @param implementationManifest the implementationManifest to set
 	 */
 	@Override
-	public void setImplementationManifest(
+	public M setImplementationManifest(
 			ImplementationManifest implementationManifest) {
 		checkNotLocked();
 
 		setImplementationManifest0(implementationManifest);
+
+		return thisAsCast();
 	}
 
 	protected void setImplementationManifest0(
@@ -101,8 +103,9 @@ public abstract class AbstractForeignImplementationManifest<M extends MemberMani
 		this.implementationManifest = Optional.of(implementationManifest);
 	}
 
-	public void clearImplementationManifest() {
+	public M clearImplementationManifest() {
 		implementationManifest = Optional.empty();
+		return thisAsCast();
 	}
 
 	@Override

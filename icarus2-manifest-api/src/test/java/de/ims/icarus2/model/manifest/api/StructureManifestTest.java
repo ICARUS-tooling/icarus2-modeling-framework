@@ -35,7 +35,7 @@ import de.ims.icarus2.test.TestUtils;
  * @author Markus Gärtner
  *
  */
-public interface StructureManifestTest<M extends StructureManifest> extends ContainerManifestTest<M> {
+public interface StructureManifestTest extends ContainerManifestTestMixin<StructureManifest> {
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
@@ -98,7 +98,7 @@ public interface StructureManifestTest<M extends StructureManifest> extends Cont
 	default Stream<DynamicTest> testForEachActiveStructureFlag() {
 		return Stream.of(StructureFlag.values())
 				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
-					ContainerManifestTest.super.<StructureFlag>assertDerivativeForEach(
+					assertDerivativeForEach(
 							settings(),
 							flag, TestUtils.other(flag),
 							StructureManifest::forEachActiveStructureFlag,
@@ -113,7 +113,7 @@ public interface StructureManifestTest<M extends StructureManifest> extends Cont
 	default Stream<DynamicTest> testForEachActiveLocalStructureFlag() {
 		return Stream.of(StructureFlag.values())
 				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
-					ContainerManifestTest.super.<StructureFlag>assertDerivativeForEachLocal(
+					assertDerivativeForEachLocal(
 							settings(),
 							flag, TestUtils.other(flag),
 							StructureManifest::forEachActiveLocalStructureFlag,
@@ -128,7 +128,8 @@ public interface StructureManifestTest<M extends StructureManifest> extends Cont
 	default Stream<DynamicTest> testGetActiveStructureFlags() {
 		return Stream.of(StructureFlag.values())
 				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
-					assertDerivativeAccumulativeGetter(settings(), flag, TestUtils.other(flag),
+					assertDerivativeAccumulativeGetter(settings(),
+							flag, TestUtils.other(flag),
 							StructureManifest::getActiveStructureFlags,
 							(m,f) -> m.setStructureFlag(f, true));
 						}));
@@ -141,7 +142,8 @@ public interface StructureManifestTest<M extends StructureManifest> extends Cont
 	default Stream<DynamicTest> testGetActiveLocalStructureFlags() {
 		return Stream.of(StructureFlag.values())
 				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
-					assertDerivativeAccumulativeLocalGetter(settings(), flag, TestUtils.other(flag),
+					assertDerivativeAccumulativeLocalGetter(settings(),
+							flag, TestUtils.other(flag),
 							StructureManifest::getActiveLocalStructureFlags,
 							(m,f) -> m.setStructureFlag(f, true));
 						}));

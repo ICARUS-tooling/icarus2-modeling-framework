@@ -72,10 +72,12 @@ public class ValueManifestImpl extends DefaultModifiableIdentity implements Valu
 	 * @param documentation the documentation to set
 	 */
 	@Override
-	public void setDocumentation(Documentation documentation) {
+	public ValueManifest setDocumentation(Documentation documentation) {
 		checkNotLocked();
 
 		setDocumentation0(documentation);
+
+		return this;
 	}
 
 	protected void setDocumentation0(Documentation documentation) {

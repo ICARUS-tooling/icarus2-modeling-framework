@@ -25,7 +25,7 @@ import de.ims.icarus2.util.access.AccessRestriction;
  * @author Markus Gärtner
  *
  */
-public interface ForeignImplementationManifest extends MemberManifest {
+public interface ForeignImplementationManifest<F extends ForeignImplementationManifest<F>> extends MemberManifest<F> {
 
 
 	/**
@@ -43,5 +43,5 @@ public interface ForeignImplementationManifest extends MemberManifest {
 
 	// Modification methods
 
-	void setImplementationManifest(ImplementationManifest implementationManifest);
+	F setImplementationManifest(ImplementationManifest implementationManifest);
 }

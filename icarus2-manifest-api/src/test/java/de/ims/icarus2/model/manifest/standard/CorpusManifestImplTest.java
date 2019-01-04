@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
+import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifestTest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
@@ -28,14 +29,14 @@ import de.ims.icarus2.test.TestSettings;
  * @author Markus Gärtner
  *
  */
-class CorpusManifestImplTest implements CorpusManifestTest<CorpusManifestImpl> {
+class CorpusManifestImplTest implements CorpusManifestTest {
 
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends CorpusManifestImpl> getTestTargetClass() {
+	public Class<? extends CorpusManifest> getTestTargetClass() {
 		return CorpusManifestImpl.class;
 	}
 
@@ -43,7 +44,7 @@ class CorpusManifestImplTest implements CorpusManifestTest<CorpusManifestImpl> {
 	 * @see de.ims.icarus2.model.manifest.api.ManifestTest#createTestInstance(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry)
 	 */
 	@Override
-	public CorpusManifestImpl createTestInstance(TestSettings settings, ManifestLocation location,
+	public CorpusManifest createTestInstance(TestSettings settings, ManifestLocation location,
 			ManifestRegistry registry) {
 		return settings.process(new CorpusManifestImpl(location, registry));
 	}

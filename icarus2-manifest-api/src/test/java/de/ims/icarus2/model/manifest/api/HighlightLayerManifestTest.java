@@ -41,7 +41,7 @@ import de.ims.icarus2.test.TestUtils;
  * @author Markus Gärtner
  *
  */
-public interface HighlightLayerManifestTest<M extends HighlightLayerManifest> extends LayerManifestTest<M> {
+public interface HighlightLayerManifestTest extends LayerManifestTest<HighlightLayerManifest> {
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()

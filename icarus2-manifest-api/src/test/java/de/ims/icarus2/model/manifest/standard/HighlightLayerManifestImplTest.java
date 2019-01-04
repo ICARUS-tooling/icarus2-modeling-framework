@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
+import de.ims.icarus2.model.manifest.api.HighlightLayerManifest;
 import de.ims.icarus2.model.manifest.api.HighlightLayerManifestTest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
@@ -30,13 +31,13 @@ import de.ims.icarus2.test.TestSettings;
  * @author Markus Gärtner
  *
  */
-class HighlightLayerManifestImplTest implements HighlightLayerManifestTest<HighlightLayerManifestImpl> {
+class HighlightLayerManifestImplTest implements HighlightLayerManifestTest {
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.MemberManifestTest#createHosted(TestSettings, de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.TypedManifest)
 	 */
 	@Override
-	public HighlightLayerManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
+	public HighlightLayerManifest createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
 		return settings.process(new HighlightLayerManifestImpl(manifestLocation, registry, (LayerGroupManifest) host));
 	}
@@ -45,7 +46,7 @@ class HighlightLayerManifestImplTest implements HighlightLayerManifestTest<Highl
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends HighlightLayerManifestImpl> getTestTargetClass() {
+	public Class<? extends HighlightLayerManifest> getTestTargetClass() {
 		return HighlightLayerManifestImpl.class;
 	}
 

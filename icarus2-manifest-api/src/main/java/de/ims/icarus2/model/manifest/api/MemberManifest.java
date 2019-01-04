@@ -48,7 +48,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface MemberManifest extends ModifiableIdentity, Categorizable, Documentable, Manifest {
+public interface MemberManifest<M extends MemberManifest<M>> extends ModifiableIdentity, Categorizable<M>, Documentable<M>, Manifest {
 
 
 	/**
@@ -181,14 +181,14 @@ public interface MemberManifest extends ModifiableIdentity, Categorizable, Docum
 	 * @throws UnsupportedOperationException if the manifest does not declare
 	 * any properties the user can modify.
 	 */
-	void setPropertyValue(String name, @Nullable Object value);
+	M setPropertyValue(String name, @Nullable Object value);
 
 	/**
 	 * Attaches a new {@link OptionsManifest} to this manifest or
 	 * removes the current one when supplying a {@code null} parameter.
 	 * @param optionsManifest
 	 */
-	void setOptionsManifest(@Nullable OptionsManifest optionsManifest);
+	M setOptionsManifest(@Nullable OptionsManifest optionsManifest);
 
 	// Extension of Categorizable
 
@@ -244,7 +244,7 @@ public interface MemberManifest extends ModifiableIdentity, Categorizable, Docum
 		 *
 		 * @param value
 		 */
-		void setValue(@Nullable Object value);
+		Property setValue(@Nullable Object value);
 
 		// Cloning
 
@@ -255,6 +255,6 @@ public interface MemberManifest extends ModifiableIdentity, Categorizable, Docum
 		 */
 		Property clone();
 
-		void setMultiValue(boolean multiValue);
+		Property setMultiValue(boolean multiValue);
 	}
 }

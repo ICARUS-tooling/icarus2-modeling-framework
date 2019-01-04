@@ -43,7 +43,7 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 
 	private final ContextManifest contextManifest;
 
-	private final List<LayerManifest> layerManifests = new ArrayList<>();
+	private final List<LayerManifest<?>> layerManifests = new ArrayList<>();
 	private Link<ItemLayerManifest> primaryLayer;
 	private Boolean independent;
 
@@ -87,12 +87,12 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	 * @see de.ims.icarus2.model.manifest.api.LayerGroupManifest#getLayerManifests()
 	 */
 	@Override
-	public List<LayerManifest> getLayerManifests() {
+	public List<LayerManifest<?>> getLayerManifests() {
 		return CollectionUtils.getListProxy(layerManifests);
 	}
 
 	@Override
-	public void forEachLayerManifest(Consumer<? super LayerManifest> action) {
+	public void forEachLayerManifest(Consumer<? super LayerManifest<?>> action) {
 		layerManifests.forEach(action);
 	}
 
@@ -128,13 +128,13 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	}
 
 	@Override
-	public void addLayerManifest(LayerManifest layerManifest) {
+	public void addLayerManifest(LayerManifest<?> layerManifest) {
 		checkNotLocked();
 
 		addLayerManifest0(layerManifest);
 	}
 
-	protected void addLayerManifest0(LayerManifest layerManifest) {
+	protected void addLayerManifest0(LayerManifest<?> layerManifest) {
 		requireNonNull(layerManifest);
 
 		if(layerManifests.contains(layerManifest))
@@ -145,13 +145,13 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	}
 
 	@Override
-	public void removeLayerManifest(LayerManifest layerManifest) {
+	public void removeLayerManifest(LayerManifest<?> layerManifest) {
 		checkNotLocked();
 
 		removeLayerManifest0(layerManifest);
 	}
 
-	protected void removeLayerManifest0(LayerManifest layerManifest) {
+	protected void removeLayerManifest0(LayerManifest<?> layerManifest) {
 		requireNonNull(layerManifest);
 
 		if(!layerManifests.remove(layerManifest))
@@ -212,8 +212,8 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	}
 
 	@SuppressWarnings("unchecked")
-	private <L extends LayerManifest> Optional<L> lookupLayer(final String id) {
-		for(LayerManifest layerManifest : layerManifests) {
+	private <L extends LayerManifest<L>> Optional<L> lookupLayer(final String id) {
+		for(LayerManifest<?> layerManifest : layerManifests) {
 			if(id.equals(layerManifest.getId().orElse(null))) {
 				return (Optional<L>) Optional.of(layerManifest);
 			}
@@ -225,9 +225,8 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.LayerGroupManifest#getLayerManifest(java.lang.String)
 	 */
-	@SuppressWarnings("unchecked")
 	@Override
-	public <L extends LayerManifest> Optional<L> getLayerManifest(String id) {
+	public <L extends LayerManifest<L>> Optional<L> getLayerManifest(String id) {
 		requireNonNull(id);
 
 		return lookupLayer(id);

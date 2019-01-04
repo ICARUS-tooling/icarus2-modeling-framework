@@ -32,8 +32,8 @@ import org.junit.jupiter.api.Test;
  * @author Markus Gärtner
  *
  */
-public interface PathResolverManifestTest<M extends PathResolverManifest>
-		extends ForeignImplementationManifestTest<M>, EmbeddedMemberManifestTest<M> {
+public interface PathResolverManifestTest
+		extends ForeignImplementationManifestTest<PathResolverManifest>, EmbeddedMemberManifestTest<PathResolverManifest> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.PathResolverManifest#getLocationManifest()}.

@@ -22,6 +22,7 @@ package de.ims.icarus2.model.manifest.standard;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
+import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureManifestTest;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.test.TestSettings;
@@ -30,13 +31,13 @@ import de.ims.icarus2.test.TestSettings;
  * @author Markus Gärtner
  *
  */
-class StructureManifestImplTest implements StructureManifestTest<StructureManifestImpl> {
+class StructureManifestImplTest implements StructureManifestTest {
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.MemberManifestTest#createHosted(TestSettings, de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry, de.ims.icarus2.model.manifest.api.TypedManifest)
 	 */
 	@Override
-	public StructureManifestImpl createHosted(TestSettings settings, ManifestLocation manifestLocation,
+	public StructureManifest createHosted(TestSettings settings, ManifestLocation manifestLocation,
 			ManifestRegistry registry, TypedManifest host) {
 		return settings.process(new StructureManifestImpl(manifestLocation, registry, (StructureLayerManifest)host));
 	}
@@ -45,7 +46,7 @@ class StructureManifestImplTest implements StructureManifestTest<StructureManife
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends StructureManifestImpl> getTestTargetClass() {
+	public Class<? extends StructureManifest> getTestTargetClass() {
 		return StructureManifestImpl.class;
 	}
 

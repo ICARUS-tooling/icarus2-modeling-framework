@@ -200,10 +200,10 @@ public class DefaultMappingFactory implements MappingFactory {
 				driver.getManifest().getContextManifest(), driver.getManifest(), "contextManifest");
 
 		ItemLayerManifest sourceLayer = (ItemLayerManifest) manifest.getSourceLayerId()
-				.flatMap(contextManifest::getLayerManifest)
+				.flatMap(id -> contextManifest.<ItemLayerManifest>getLayerManifest(id))
 				.orElseThrow(ManifestException.error("Failed to obtain source layer"));
 		ItemLayerManifest targetLayer = (ItemLayerManifest) manifest.getTargetLayerId()
-				.flatMap(contextManifest::getLayerManifest)
+				.flatMap(id -> contextManifest.<ItemLayerManifest>getLayerManifest(id))
 				.orElseThrow(ManifestException.error("Failed to obtain target layer"));
 
 		return new MappingImplIdentity(driver, manifest, sourceLayer, targetLayer);
@@ -218,10 +218,10 @@ public class DefaultMappingFactory implements MappingFactory {
 				.orElseThrow(ManifestException.error("Failed to obtain context manifest for lookup"));
 
 		ItemLayerManifest sourceLayer = (ItemLayerManifest) manifest.getSourceLayerId()
-				.flatMap(contextManifest::getLayerManifest)
+				.flatMap(id -> contextManifest.<ItemLayerManifest>getLayerManifest(id))
 				.orElseThrow(ManifestException.error("Failed to obtain source layer"));
 		ItemLayerManifest targetLayer = (ItemLayerManifest) manifest.getTargetLayerId()
-				.flatMap(contextManifest::getLayerManifest)
+				.flatMap(id -> contextManifest.<ItemLayerManifest>getLayerManifest(id))
 				.orElseThrow(ManifestException.error("Failed to obtain target layer"));
 
 		builder.sourceLayer(sourceLayer);

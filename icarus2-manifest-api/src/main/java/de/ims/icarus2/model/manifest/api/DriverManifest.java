@@ -37,7 +37,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface DriverManifest extends ForeignImplementationManifest, Embedded {
+public interface DriverManifest extends ForeignImplementationManifest<DriverManifest>, Embedded {
 
 	@AccessRestriction(AccessMode.READ)
 	void forEachMappingManifest(Consumer<? super MappingManifest> action);
@@ -223,8 +223,8 @@ public interface DriverManifest extends ForeignImplementationManifest, Embedded 
 	 *
 	 */
 	@AccessControl(AccessPolicy.DENY)
-	public interface ModuleSpec extends ModifiableIdentity, Categorizable,
-			ManifestFragment, Documentable, Embedded {
+	public interface ModuleSpec extends ModifiableIdentity, Categorizable<ModuleSpec>,
+			ManifestFragment, Documentable<ModuleSpec>, Embedded {
 
 		public static final boolean DEFAULT_IS_CUSTOMIZABLE = false;
 		public static final Multiplicity DEFAULT_MULTIPLICITY = Multiplicity.ONE;
@@ -297,7 +297,7 @@ public interface DriverManifest extends ForeignImplementationManifest, Embedded 
 	 *
 	 */
 	@AccessControl(AccessPolicy.DENY)
-	public interface ModuleManifest extends ForeignImplementationManifest, Embedded {
+	public interface ModuleManifest extends ForeignImplementationManifest<ModuleManifest>, Embedded {
 
 		@AccessRestriction(AccessMode.READ)
 		default <M extends DriverManifest> Optional<M> getDriverManifest() {

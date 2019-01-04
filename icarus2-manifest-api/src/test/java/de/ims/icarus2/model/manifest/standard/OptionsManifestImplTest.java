@@ -22,6 +22,7 @@ package de.ims.icarus2.model.manifest.standard;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
+import de.ims.icarus2.model.manifest.api.OptionsManifest;
 import de.ims.icarus2.model.manifest.api.OptionsManifestTest;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.test.TestSettings;
@@ -30,14 +31,14 @@ import de.ims.icarus2.test.TestSettings;
  * @author Markus Gärtner
  *
  */
-class OptionsManifestImplTest implements OptionsManifestTest<OptionsManifestImpl>{
+class OptionsManifestImplTest implements OptionsManifestTest{
 
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends OptionsManifestImpl> getTestTargetClass() {
+	public Class<? extends OptionsManifest> getTestTargetClass() {
 		return OptionsManifestImpl.class;
 	}
 
@@ -45,15 +46,15 @@ class OptionsManifestImplTest implements OptionsManifestTest<OptionsManifestImpl
 	 * @see de.ims.icarus2.model.manifest.api.EmbeddedTest#createEmbedded(TestSettings, de.ims.icarus2.model.manifest.api.TypedManifest)
 	 */
 	@Override
-	public OptionsManifestImpl createEmbedded(TestSettings settings, TypedManifest host) {
-		return settings.process(new OptionsManifestImpl((MemberManifest) host));
+	public OptionsManifest createEmbedded(TestSettings settings, TypedManifest host) {
+		return settings.process(new OptionsManifestImpl((MemberManifest<?>) host));
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ManifestTest#createTestInstance(de.ims.icarus2.test.TestSettings, de.ims.icarus2.model.manifest.api.ManifestLocation, de.ims.icarus2.model.manifest.api.ManifestRegistry)
 	 */
 	@Override
-	public OptionsManifestImpl createTestInstance(TestSettings settings, ManifestLocation location,
+	public OptionsManifest createTestInstance(TestSettings settings, ManifestLocation location,
 			ManifestRegistry registry) {
 		return settings.process(new OptionsManifestImpl(location, registry));
 	}

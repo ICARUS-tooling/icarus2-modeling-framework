@@ -38,7 +38,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface CorpusManifest extends MemberManifest {
+public interface CorpusManifest extends MemberManifest<CorpusManifest> {
 
 	public static final boolean DEFAULT_EDITABLE_VALUE = false;
 	public static final boolean DEFAULT_PARALLEL_VALUE = false;
@@ -156,12 +156,13 @@ public interface CorpusManifest extends MemberManifest {
 	 * @see ContextManifest#getLayerManifest(String, boolean)
 	 */
 	@SuppressWarnings("unchecked")
-	default <M extends LayerManifest> Optional<M> getLayerManifest(String qualifiedLayerId) {
-		return (Optional<M>) Optional.ofNullable(ManifestUtils.extractHostId(qualifiedLayerId))
+	default <M extends LayerManifest<M>> Optional<M> getLayerManifest(String qualifiedLayerId) {
+		return Optional.ofNullable(ManifestUtils.extractHostId(qualifiedLayerId))
 				.flatMap(id -> getContextManifest(id))
 				.map(Optional::of)
 				.orElseGet(this::getRootContextManifest)
-				.flatMap(c -> c.getLayerManifest(ManifestUtils.extractElementId(qualifiedLayerId)));
+				// not the most elegant solution below, but casting Optional instances around is equally bad
+				.map(c -> (M)c.getLayerManifest(ManifestUtils.extractElementId(qualifiedLayerId)).orElse(null));
 	}
 
 	/**
