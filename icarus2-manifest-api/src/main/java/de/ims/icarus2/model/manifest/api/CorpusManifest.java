@@ -202,13 +202,13 @@ public interface CorpusManifest extends MemberManifest {
 
 	// Modification methods
 
-	void addRootContextManifest(ContextManifest manifest);
+	CorpusManifest addRootContextManifest(ContextManifest manifest);
 
-	void removeRootContextManifest(ContextManifest manifest);
+	CorpusManifest removeRootContextManifest(ContextManifest manifest);
 
-	void addCustomContextManifest(ContextManifest manifest);
+	CorpusManifest addCustomContextManifest(ContextManifest manifest);
 
-	void removeCustomContextManifest(ContextManifest manifest);
+	CorpusManifest removeCustomContextManifest(ContextManifest manifest);
 
 	/**
 	 *
@@ -218,8 +218,8 @@ public interface CorpusManifest extends MemberManifest {
 	 * @throws IllegalArgumentException if the content of the given {@code note}
 	 * 			exceeds the {@link Note#MAX_CHARACTER_LIMIT} limit
 	 */
-	void addNote(Note note);
-	void removeNote(Note note);
+	CorpusManifest addNote(Note note);
+	CorpusManifest removeNote(Note note);
 
 	/**
 	 * Changes whether or not the user is allowed to make modifications to the content
@@ -236,7 +236,7 @@ public interface CorpusManifest extends MemberManifest {
 	 * @param value
 	 * @see #DEFAULT_EDITABLE_VALUE
 	 */
-	void setEditable(boolean value);
+	CorpusManifest setEditable(boolean value);
 
 	/**
 	 * Changes whether or not this corpus is allowed to host multiple concurrent root contexts.
@@ -244,7 +244,7 @@ public interface CorpusManifest extends MemberManifest {
 	 * @param value
 	 * @see #DEFAULT_PARALLEL_VALUE
 	 */
-	void setParallel(boolean value);
+	CorpusManifest setParallel(boolean value);
 
 	/**
 	 * Notes are user made textual additions that are saved together with the corpus manifest.
@@ -290,6 +290,6 @@ public interface CorpusManifest extends MemberManifest {
 		 *
 		 * @param content
 		 */
-		void setContent(String content);
+		Note setContent(String content);
 	}
 }

@@ -166,20 +166,24 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest, T
 	 * @see de.ims.icarus2.model.manifest.api.CorpusManifest#addRootContextManifest(de.ims.icarus2.model.manifest.api.ContextManifest)
 	 */
 	@Override
-	public void addRootContextManifest(ContextManifest manifest) {
+	public CorpusManifest addRootContextManifest(ContextManifest manifest) {
 		checkNotLocked();
 
 		addContextManifest0(manifest, true);
+
+		return this;
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.CorpusManifest#removeRootContextManifest(de.ims.icarus2.model.manifest.api.ContextManifest)
 	 */
 	@Override
-	public void removeRootContextManifest(ContextManifest manifest) {
+	public CorpusManifest removeRootContextManifest(ContextManifest manifest) {
 		checkNotLocked();
 
 		removeContextManifest0(manifest, true);
+
+		return this;
 	}
 
 	/**
@@ -205,20 +209,24 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest, T
 	 * @see de.ims.icarus2.model.manifest.api.CorpusManifest#addCustomContextManifest(de.ims.icarus2.model.manifest.api.ContextManifest)
 	 */
 	@Override
-	public void addCustomContextManifest(ContextManifest manifest) {
+	public CorpusManifest addCustomContextManifest(ContextManifest manifest) {
 		checkNotLocked();
 
 		addContextManifest0(manifest, false);
+
+		return this;
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.CorpusManifest#removeCustomContextManifest(de.ims.icarus2.model.manifest.api.ContextManifest)
 	 */
 	@Override
-	public void removeCustomContextManifest(ContextManifest manifest) {
+	public CorpusManifest removeCustomContextManifest(ContextManifest manifest) {
 		checkNotLocked();
 
 		removeContextManifest0(manifest, false);
+
+		return this;
 	}
 
 	/**
@@ -253,10 +261,12 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest, T
 	 * @see de.ims.icarus2.model.manifest.api.CorpusManifest#setEditable(boolean)
 	 */
 	@Override
-	public void setEditable(boolean value) {
+	public CorpusManifest setEditable(boolean value) {
 		checkNotLocked();
 
 		setEditable0(value);
+
+		return this;
 	}
 
 	protected void setEditable0(boolean value) {
@@ -284,10 +294,12 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest, T
 	 * @see de.ims.icarus2.model.manifest.api.CorpusManifest#setParallel(boolean)
 	 */
 	@Override
-	public void setParallel(boolean value) {
+	public CorpusManifest setParallel(boolean value) {
 		checkNotLocked();
 
 		setParallel0(value);
+
+		return this;
 	}
 
 	protected void setParallel0(boolean value) {
@@ -302,10 +314,12 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest, T
 	 * @see de.ims.icarus2.model.manifest.api.CorpusManifest#addNote(de.ims.icarus2.model.manifest.api.CorpusManifest.Note)
 	 */
 	@Override
-	public void addNote(Note note) {
+	public CorpusManifest addNote(Note note) {
 		checkNotLocked();
 
 		addNote0(note);
+
+		return this;
 	}
 
 	protected void addNote0(Note note) {
@@ -321,10 +335,12 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest, T
 	 * @see de.ims.icarus2.model.manifest.api.CorpusManifest#removeNote(de.ims.icarus2.model.manifest.api.CorpusManifest.Note)
 	 */
 	@Override
-	public void removeNote(Note note) {
+	public CorpusManifest removeNote(Note note) {
 		checkNotLocked();
 
 		removeNote0(note);
+
+		return this;
 	}
 
 	protected void removeNote0(Note note) {
@@ -413,9 +429,10 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest, T
 		 * @param content the content to set
 		 */
 		@Override
-		public void setContent(String content) {
+		public Note setContent(String content) {
 			changeContent(content);
 			setModificationDate(LocalDateTime.now());
+			return this;
 		}
 
 		/**
