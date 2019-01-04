@@ -78,10 +78,12 @@ public class DocumentationImpl extends AbstractLockable implements Documentation
 	 * @param content the content to set
 	 */
 	@Override
-	public void setContent(String content) {
+	public Documentation setContent(String content) {
 		checkNotLocked();
 
 		setContent0(content);
+
+		return this;
 	}
 
 	protected void setContent0(String content) {
@@ -89,10 +91,12 @@ public class DocumentationImpl extends AbstractLockable implements Documentation
 	}
 
 	@Override
-	public void addResource(Resource resource) {
+	public Documentation addResource(Resource resource) {
 		checkNotLocked();
 
 		addResource0(resource);
+
+		return this;
 	}
 
 	protected void addResource0(Resource resource) {
@@ -105,10 +109,12 @@ public class DocumentationImpl extends AbstractLockable implements Documentation
 	}
 
 	@Override
-	public void removeResource(Resource resource) {
+	public Documentation removeResource(Resource resource) {
 		checkNotLocked();
 
 		removeResource0(resource);
+
+		return this;
 	}
 
 	protected void removeResource0(Resource resource) {
@@ -182,10 +188,12 @@ public class DocumentationImpl extends AbstractLockable implements Documentation
 		 * @param uri the uri to set
 		 */
 		@Override
-		public void setUri(URI uri) {
+		public Resource setUri(URI uri) {
 			checkNotLocked();
 
 			setUri0(uri);
+
+			return this;
 		}
 
 		protected void setUri0(URI uri) {

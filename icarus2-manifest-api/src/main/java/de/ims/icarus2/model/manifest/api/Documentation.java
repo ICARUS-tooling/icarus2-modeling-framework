@@ -63,11 +63,11 @@ public interface Documentation extends Lockable, TypedManifest {
 
 	// Modification methods
 
-	void setContent(String content);
+	Documentation setContent(String content);
 
-	void addResource(Resource resource);
+	Documentation addResource(Resource resource);
 
-	void removeResource(Resource resource);
+	Documentation removeResource(Resource resource);
 
 	/**
 	 * Links to additional resources that can be used for documentation
@@ -82,6 +82,6 @@ public interface Documentation extends Lockable, TypedManifest {
 		@AccessRestriction(AccessMode.READ)
 		URI getUri();
 
-		void setUri(URI uri);
+		Resource setUri(URI uri);
 	}
 }
