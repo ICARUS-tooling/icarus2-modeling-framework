@@ -225,10 +225,12 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	 * @see de.ims.icarus2.model.manifest.api.DriverManifest#addMappingManifest(de.ims.icarus2.model.manifest.api.MappingManifest)
 	 */
 	@Override
-	public void addMappingManifest(MappingManifest mappingManifest) {
+	public DriverManifest addMappingManifest(MappingManifest mappingManifest) {
 		checkNotLocked();
 
 		addMappingManifest0(mappingManifest);
+
+		return thisAsCast();
 	}
 
 	protected void addMappingManifest0(MappingManifest mappingManifest) {
@@ -246,10 +248,12 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	 * @see de.ims.icarus2.model.manifest.api.DriverManifest#removeMappingManifest(de.ims.icarus2.model.manifest.api.MappingManifest)
 	 */
 	@Override
-	public void removeMappingManifest(MappingManifest mappingManifest) {
+	public DriverManifest removeMappingManifest(MappingManifest mappingManifest) {
 		checkNotLocked();
 
 		removeMappingManifest0(mappingManifest);
+
+		return thisAsCast();
 	}
 
 	protected void removeMappingManifest0(MappingManifest mappingManifest) {
@@ -265,10 +269,12 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	 * @see de.ims.icarus2.model.manifest.api.DriverManifest#addModuleManifest(de.ims.icarus2.model.manifest.api.ModuleManifest)
 	 */
 	@Override
-	public void addModuleManifest(ModuleManifest moduleManifest) {
+	public DriverManifest addModuleManifest(ModuleManifest moduleManifest) {
 		checkNotLocked();
 
 		addModuleManifest0(moduleManifest);
+
+		return thisAsCast();
 	}
 
 	protected void addModuleManifest0(ModuleManifest moduleManifest) {
@@ -296,10 +302,12 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	 * @see de.ims.icarus2.model.manifest.api.DriverManifest#removeModuleManifest(de.ims.icarus2.model.manifest.api.ModuleManifest)
 	 */
 	@Override
-	public void removeModuleManifest(ModuleManifest moduleManifest) {
+	public DriverManifest removeModuleManifest(ModuleManifest moduleManifest) {
 		checkNotLocked();
 
 		removeModuleManifest0(moduleManifest);
+
+		return thisAsCast();
 	}
 
 	protected void removeModuleManifest0(ModuleManifest moduleManifest) {
@@ -320,10 +328,12 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	 * @see de.ims.icarus2.model.manifest.api.DriverManifest#addModuleManifest(de.ims.icarus2.model.manifest.api.addModuleSpec)
 	 */
 	@Override
-	public void addModuleSpec(ModuleSpec moduleSpec) {
+	public DriverManifest addModuleSpec(ModuleSpec moduleSpec) {
 		checkNotLocked();
 
 		addModuleSpec0(moduleSpec);
+
+		return thisAsCast();
 	}
 
 	protected void addModuleSpec0(ModuleSpec moduleSpec) {
@@ -341,10 +351,12 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	 * @see de.ims.icarus2.model.manifest.api.DriverManifest#removeModuleManifest(de.ims.icarus2.model.manifest.api.removeModuleSpec)
 	 */
 	@Override
-	public void removeModuleSpec(ModuleSpec moduleSpec) {
+	public DriverManifest removeModuleSpec(ModuleSpec moduleSpec) {
 		checkNotLocked();
 
 		removeModuleSpec0(moduleSpec);
+
+		return thisAsCast();
 	}
 
 	protected void removeModuleSpec0(ModuleSpec moduleSpec) {
@@ -360,10 +372,12 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	 * @see de.ims.icarus2.model.manifest.api.DriverManifest#setLocationType(de.ims.icarus2.model.io.LocationType)
 	 */
 	@Override
-	public void setLocationType(LocationType locationType) {
+	public DriverManifest setLocationType(LocationType locationType) {
 		checkNotLocked();
 
 		setLocationType0(locationType);
+
+		return thisAsCast();
 	}
 
 	protected void setLocationType0(LocationType locationType) {
@@ -485,10 +499,12 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		}
 
 		@Override
-		public void setMultiplicity(Multiplicity multiplicity) {
+		public ModuleSpec setMultiplicity(Multiplicity multiplicity) {
 			checkNotLocked();
 
 			setMultiplicity0(multiplicity);
+
+			return this;
 		}
 
 		protected void setMultiplicity0(Multiplicity multiplicity) {
@@ -499,10 +515,12 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		 * @param customizable the customizable to set
 		 */
 		@Override
-		public void setCustomizable(boolean customizable) {
+		public ModuleSpec setCustomizable(boolean customizable) {
 			checkNotLocked();
 
 			setCustomizable0(customizable);
+
+			return this;
 		}
 
 		protected void setCustomizable0(boolean customizable) {
@@ -513,10 +531,12 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		 * @param extensionPointUid the extensionPointUid to set
 		 */
 		@Override
-		public void setExtensionPointUid(@Nullable String extensionPointUid) {
+		public ModuleSpec setExtensionPointUid(@Nullable String extensionPointUid) {
 			checkNotLocked();
 
 			setExtensionPointUid0(extensionPointUid);
+
+			return this;
 		}
 
 		protected void setExtensionPointUid0(String extensionPointUid) {
@@ -613,10 +633,12 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		 * @param moduleSpecId the moduleSpecId to set
 		 */
 		@Override
-		public void setModuleSpecId(String moduleSpecId) {
+		public ModuleManifest setModuleSpecId(String moduleSpecId) {
 			checkNotLocked();
 
 			setModuleSpecId0(moduleSpecId);
+
+			return this;
 		}
 
 		protected void setModuleSpecId0(String moduleSpecId) {

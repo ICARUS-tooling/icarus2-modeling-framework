@@ -198,16 +198,16 @@ public interface DriverManifest extends ForeignImplementationManifest<DriverMani
 
 	// Modification methods
 
-	void addMappingManifest(MappingManifest mappingManifest);
-	void removeMappingManifest(MappingManifest mappingManifest);
+	DriverManifest addMappingManifest(MappingManifest mappingManifest);
+	DriverManifest removeMappingManifest(MappingManifest mappingManifest);
 
-	void addModuleManifest(ModuleManifest moduleManifest);
-	void removeModuleManifest(ModuleManifest moduleManifest);
+	DriverManifest addModuleManifest(ModuleManifest moduleManifest);
+	DriverManifest removeModuleManifest(ModuleManifest moduleManifest);
 
-	void addModuleSpec(ModuleSpec moduleSpec);
-	void removeModuleSpec(ModuleSpec moduleSpec);
+	DriverManifest addModuleSpec(ModuleSpec moduleSpec);
+	DriverManifest removeModuleSpec(ModuleSpec moduleSpec);
 
-	void setLocationType(LocationType locationType);
+	DriverManifest setLocationType(LocationType locationType);
 
 	/**
 	 * Describes a module this driver manifest is depending on. A driver can
@@ -286,9 +286,9 @@ public interface DriverManifest extends ForeignImplementationManifest<DriverMani
 
 		// Modification methods
 
-		void setMultiplicity(Multiplicity multiplicity);
-		void setCustomizable(boolean customizable);
-		void setExtensionPointUid(@Nullable String extensionPointUid);
+		ModuleSpec setMultiplicity(Multiplicity multiplicity);
+		ModuleSpec setCustomizable(boolean customizable);
+		ModuleSpec setExtensionPointUid(@Nullable String extensionPointUid);
 	}
 
 	/**
@@ -319,6 +319,6 @@ public interface DriverManifest extends ForeignImplementationManifest<DriverMani
 		@AccessRestriction(AccessMode.READ)
 		Optional<ModuleSpec> getModuleSpec();
 
-		void setModuleSpecId(String moduleSpecId);
+		ModuleManifest setModuleSpecId(String moduleSpecId);
 	}
 }
