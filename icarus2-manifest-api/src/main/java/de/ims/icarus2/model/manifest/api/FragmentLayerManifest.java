@@ -17,7 +17,9 @@
 package de.ims.icarus2.model.manifest.api;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -58,9 +60,13 @@ public interface FragmentLayerManifest extends ItemLayerManifest {
 
 	// Modification methods
 
-	TargetLayerManifest setValueLayerId(String valueLayerId);
+	default TargetLayerManifest setAndGetValueLayer(String valueLayerId) {
+		return IcarusUtils.extractSupplied(action -> setValueLayerId(valueLayerId, action));
+	}
 
-	void setAnnotationKey(String key);
+	FragmentLayerManifest setValueLayerId(String valueLayerId, Consumer<? super TargetLayerManifest> action);
 
-	void setRasterizerManifest(RasterizerManifest rasterizerManifest);
+	FragmentLayerManifest setAnnotationKey(String key);
+
+	FragmentLayerManifest setRasterizerManifest(RasterizerManifest rasterizerManifest);
 }

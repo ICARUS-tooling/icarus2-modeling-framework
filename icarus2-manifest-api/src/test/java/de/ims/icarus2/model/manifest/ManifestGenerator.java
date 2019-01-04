@@ -607,7 +607,7 @@ public class ManifestGenerator {
 		prepareItemLayerManifest(manifest, container, config);
 
 		container.addFieldChange(manifest::setAnnotationKey, "annotationKey", index("key"));
-		container.addFieldChange(manifest::setValueLayerId, "valueLayer", index("valueLayer"));
+		container.addFieldChange(manifest::setAndGetValueLayer, "valueLayer", index("valueLayer"));
 		container.addNestedManifestChange("rasterizer", ManifestType.RASTERIZER_MANIFEST, manifest,
 				config, manifest::setRasterizerManifest);
 	}

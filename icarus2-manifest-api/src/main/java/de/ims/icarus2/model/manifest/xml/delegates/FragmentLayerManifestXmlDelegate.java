@@ -146,7 +146,7 @@ public class FragmentLayerManifestXmlDelegate extends ItemLayerManifestXmlDelega
 
 		case ManifestXmlTags.VALUE_LAYER: {
 			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID)
-				.ifPresent(getInstance()::setValueLayerId);
+				.ifPresent(getInstance()::setAndGetValueLayer);
 		} break;
 
 		case ManifestXmlTags.RASTERIZER: {

@@ -234,7 +234,7 @@ public class ContextManifestResolver {
 
 		copyItemLayerFields(source, target);
 
-		source.getValueLayerManifest().ifPresent(m -> target.setValueLayerId(m.getLayerId()));
+		source.getValueLayerManifest().ifPresent(m -> target.setAndGetValueLayer(m.getLayerId()));
 		source.getAnnotationKey().ifPresent(target::setAnnotationKey);
 	}
 

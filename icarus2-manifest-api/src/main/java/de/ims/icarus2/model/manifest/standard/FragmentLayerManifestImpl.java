@@ -19,6 +19,7 @@ package de.ims.icarus2.model.manifest.standard;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
@@ -28,6 +29,7 @@ import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.RasterizerManifest;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
@@ -133,13 +135,12 @@ public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements 
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.FragmentLayerManifest#setValueLayerManifest(de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest)
+	 * @see de.ims.icarus2.model.manifest.api.FragmentLayerManifest#setValueLayerId(java.lang.String, java.util.function.Consumer)
 	 */
 	@Override
-	public TargetLayerManifest setValueLayerId(String valueLayerId) {
-		checkNotLocked();
-
-		return setValueLayerId0(valueLayerId);
+	public FragmentLayerManifest setValueLayerId(String valueLayerId, Consumer<? super TargetLayerManifest> action) {
+		IcarusUtils.consumeIfAble(setValueLayerId0(valueLayerId), action);
+		return this;
 	}
 
 	protected TargetLayerManifest setValueLayerId0(String valueLayerId) {
@@ -155,10 +156,12 @@ public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements 
 	 * @see de.ims.icarus2.model.manifest.api.FragmentLayerManifest#setAnnotationKey(java.lang.String)
 	 */
 	@Override
-	public void setAnnotationKey(String key) {
+	public FragmentLayerManifest setAnnotationKey(String key) {
 		checkNotLocked();
 
 		setAnnotationKey0(key);
+
+		return this;
 	}
 
 	protected void setAnnotationKey0(String key) {
@@ -175,10 +178,12 @@ public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements 
 	 * @see de.ims.icarus2.model.manifest.api.FragmentLayerManifest#setRasterizerManifest(de.ims.icarus2.model.manifest.api.RasterizerManifest)
 	 */
 	@Override
-	public void setRasterizerManifest(RasterizerManifest rasterizerManifest) {
+	public FragmentLayerManifest setRasterizerManifest(RasterizerManifest rasterizerManifest) {
 		checkNotLocked();
 
 		setRasterizerManifest0(rasterizerManifest);
+
+		return this;
 	}
 
 	protected void setRasterizerManifest0(RasterizerManifest rasterizerManifest) {
