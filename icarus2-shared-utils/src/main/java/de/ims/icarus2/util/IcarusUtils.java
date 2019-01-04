@@ -20,6 +20,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -27,6 +28,7 @@ import org.slf4j.Logger;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
+import de.ims.icarus2.util.Mutable.MutableObject;
 
 /**
  * @author Markus Gärtner
@@ -153,5 +155,19 @@ public class IcarusUtils {
 
 	public static <V extends Object> boolean equals(Optional<V> opt, V value) {
 		return opt.isPresent() && value.equals(opt.get());
+	}
+
+	public static <R> R extractSupplied(Consumer<Consumer<? super R>> method) {
+		MutableObject<R> buffer = new MutableObject<>();
+
+		method.accept(buffer::set);
+
+		return buffer.get();
+	}
+
+	public static <T> void consumeIfAble(T data, Consumer<? super T> action) {
+		if(action!=null) {
+			action.accept(data);
+		}
 	}
 }

@@ -49,7 +49,7 @@ import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.test.func.TriConsumer;
-import de.ims.icarus2.util.Mutable.MutableObject;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
 
 /**
@@ -229,11 +229,8 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	public static <M extends LayerManifest> BiConsumer<M, String> inject_consumeTargetLayerManifest(
 			TriConsumer<M, String, Consumer<? super TargetLayerManifest>> creator) {
 		return (m, id) -> {
-			MutableObject<TargetLayerManifest> buffer = new MutableObject<>();
-
-			creator.accept(m, id, buffer::set);
-
-			TargetLayerManifest targetLayerManifest = buffer.get();
+			TargetLayerManifest targetLayerManifest =
+					IcarusUtils.extractSupplied(action -> creator.accept(m, id, action));
 			assertNotNull(targetLayerManifest);
 			assertEquals(id, targetLayerManifest.getLayerId());
 			assertSame(m, targetLayerManifest.getLayerManifest());

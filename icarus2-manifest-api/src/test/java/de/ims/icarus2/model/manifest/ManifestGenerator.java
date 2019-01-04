@@ -517,7 +517,7 @@ public class ManifestGenerator {
 		prepareMemberManifest(manifest, container, config);
 
 		for(int i=0; i<3; i++) {
-			container.addFieldChange(manifest::addPrerequisite, "prerequisite", index("alias"));
+			container.addFieldChange(manifest::addAndGetPrerequisite, "prerequisite", index("alias"));
 		}
 
 		for(int i=0; i<3; i++) {

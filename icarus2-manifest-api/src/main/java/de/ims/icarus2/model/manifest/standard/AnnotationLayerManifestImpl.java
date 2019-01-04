@@ -37,6 +37,7 @@ import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
@@ -209,10 +210,7 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 			Consumer<? super TargetLayerManifest> action) {
 		checkNotLocked();
 
-		TargetLayerManifest refLayerManifest = addReferenceLayerId0(referenceLayerId);
-		if(action!=null) {
-			action.accept(refLayerManifest);
-		}
+		IcarusUtils.consumeIfAble(addReferenceLayerId0(referenceLayerId), action);
 
 		return this;
 	}

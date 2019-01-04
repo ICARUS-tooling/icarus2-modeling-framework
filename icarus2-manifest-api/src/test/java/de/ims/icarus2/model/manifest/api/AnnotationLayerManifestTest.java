@@ -359,7 +359,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationLayerManifest#addReferenceLayerId(java.lang.String)}.
 	 */
 	@Test
-	default void testAddReferenceLayerId() {
+	default void testAddAndGetReferenceLayerId() {
 		assertLockableAccumulativeAdd(settings(),
 				inject_createTargetLayerManifest(AnnotationLayerManifest::addAndGetReferenceLayerId),
 				ManifestTestUtils.getIllegalIdValues(), INVALID_ID_CHECK,
@@ -370,7 +370,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationLayerManifest#addReferenceLayerId(String, java.util.function.Consumer)}.
 	 */
 	@Test
-	default void testAddReferenceLayerIdStringConsumer() {
+	default void testAddReferenceLayerId() {
 		assertLockableAccumulativeAdd(settings(),
 				inject_consumeTargetLayerManifest(AnnotationLayerManifest::addReferenceLayerId),
 				ManifestTestUtils.getIllegalIdValues(), INVALID_ID_CHECK,

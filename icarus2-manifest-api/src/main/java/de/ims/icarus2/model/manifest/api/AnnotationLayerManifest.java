@@ -24,7 +24,7 @@ import java.util.function.Consumer;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
-import de.ims.icarus2.util.Mutable.MutableObject;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -203,9 +203,7 @@ public interface AnnotationLayerManifest extends LayerManifest {
 	AnnotationLayerManifest setAnnotationFlag(AnnotationFlag flag, boolean active);
 
 	default TargetLayerManifest addAndGetReferenceLayerId(String referenceLayerId) {
-		MutableObject<TargetLayerManifest> result = new MutableObject<>();
-		addReferenceLayerId(referenceLayerId, result::set);
-		return result.get();
+		return IcarusUtils.extractSupplied(action -> addReferenceLayerId(referenceLayerId, action));
 	}
 
 	AnnotationLayerManifest addReferenceLayerId(String referenceLayerId, Consumer<? super TargetLayerManifest> action);
