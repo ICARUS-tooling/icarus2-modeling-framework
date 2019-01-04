@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
+import de.ims.icarus2.util.Mutable.MutableObject;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -193,15 +194,21 @@ public interface AnnotationLayerManifest extends LayerManifest {
 
 	// Modification methods
 
-	void setDefaultKey(String key);
+	AnnotationLayerManifest setDefaultKey(String key);
 
-	void addAnnotationManifest(AnnotationManifest annotationManifest);
+	AnnotationLayerManifest addAnnotationManifest(AnnotationManifest annotationManifest);
 
-	void removeAnnotationManifest(AnnotationManifest annotationManifest);
+	AnnotationLayerManifest removeAnnotationManifest(AnnotationManifest annotationManifest);
 
-	void setAnnotationFlag(AnnotationFlag flag, boolean active);
+	AnnotationLayerManifest setAnnotationFlag(AnnotationFlag flag, boolean active);
 
-	TargetLayerManifest addReferenceLayerId(String referenceLayerId);
+	default TargetLayerManifest addAndGetReferenceLayerId(String referenceLayerId) {
+		MutableObject<TargetLayerManifest> result = new MutableObject<>();
+		addReferenceLayerId(referenceLayerId, result::set);
+		return result.get();
+	}
 
-	void removeReferenceLayerId(String referenceLayerId);
+	AnnotationLayerManifest addReferenceLayerId(String referenceLayerId, Consumer<? super TargetLayerManifest> action);
+
+	AnnotationLayerManifest removeReferenceLayerId(String referenceLayerId);
 }

@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_consumeTargetLayerManifest;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_createTargetLayerManifest;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_forEachTargetLayerManifest;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.transform_targetLayerId;
@@ -271,7 +272,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 		assertDerivativeForEach(settings(),
 				"layer1", "layer2",
 				inject_forEachTargetLayerManifest(AnnotationLayerManifest::forEachReferenceLayerManifest),
-				inject_createTargetLayerManifest(AnnotationLayerManifest::addReferenceLayerId));
+				inject_createTargetLayerManifest(AnnotationLayerManifest::addAndGetReferenceLayerId));
 	}
 
 	/**
@@ -282,7 +283,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 		assertDerivativeForEachLocal(settings(),
 				"layer1", "layer2",
 				inject_forEachTargetLayerManifest(AnnotationLayerManifest::forEachLocalReferenceLayerManifest),
-				inject_createTargetLayerManifest(AnnotationLayerManifest::addReferenceLayerId));
+				inject_createTargetLayerManifest(AnnotationLayerManifest::addAndGetReferenceLayerId));
 	}
 
 	/**
@@ -293,7 +294,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 		assertDerivativeAccumulativeGetter(settings(),
 				"layer1", "layer2",
 				TestUtils.transform_genericCollectionGetter(AnnotationLayerManifest::getReferenceLayerManifests, transform_targetLayerId()),
-				inject_createTargetLayerManifest(AnnotationLayerManifest::addReferenceLayerId));
+				inject_createTargetLayerManifest(AnnotationLayerManifest::addAndGetReferenceLayerId));
 	}
 
 	/**
@@ -307,7 +308,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 						AnnotationLayerManifest::getLocalReferenceLayerManifests,
 						transform_targetLayerId()),
 				inject_createTargetLayerManifest(
-						AnnotationLayerManifest::addReferenceLayerId));
+						AnnotationLayerManifest::addAndGetReferenceLayerId));
 	}
 
 	/**
@@ -360,7 +361,18 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	@Test
 	default void testAddReferenceLayerId() {
 		assertLockableAccumulativeAdd(settings(),
-				inject_createTargetLayerManifest(AnnotationLayerManifest::addReferenceLayerId),
+				inject_createTargetLayerManifest(AnnotationLayerManifest::addAndGetReferenceLayerId),
+				ManifestTestUtils.getIllegalIdValues(), INVALID_ID_CHECK,
+				true, DUPLICATE_ID_CHECK, ManifestTestUtils.getLegalIdValues());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.AnnotationLayerManifest#addReferenceLayerId(String, java.util.function.Consumer)}.
+	 */
+	@Test
+	default void testAddReferenceLayerIdStringConsumer() {
+		assertLockableAccumulativeAdd(settings(),
+				inject_consumeTargetLayerManifest(AnnotationLayerManifest::addReferenceLayerId),
 				ManifestTestUtils.getIllegalIdValues(), INVALID_ID_CHECK,
 				true, DUPLICATE_ID_CHECK, ManifestTestUtils.getLegalIdValues());
 	}
@@ -371,7 +383,7 @@ public interface AnnotationLayerManifestTest<M extends AnnotationLayerManifest> 
 	@Test
 	default void testRemoveReferenceLayerId() {
 		assertLockableAccumulativeRemove(settings(),
-				AnnotationLayerManifest::addReferenceLayerId,
+				AnnotationLayerManifest::addAndGetReferenceLayerId,
 				AnnotationLayerManifest::removeReferenceLayerId,
 				TestUtils.transform_genericCollectionGetter(AnnotationLayerManifest::getReferenceLayerManifests, transform_targetLayerId()),
 				true, UNKNOWN_ID_CHECK,

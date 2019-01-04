@@ -128,10 +128,12 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	}
 
 	@Override
-	public void addAnnotationManifest(AnnotationManifest manifest) {
+	public AnnotationLayerManifest addAnnotationManifest(AnnotationManifest manifest) {
 		checkNotLocked();
 
 		addAnnotationManifest0(manifest);
+
+		return this;
 	}
 
 	private static String keyForManifest(AnnotationManifest manifest) {
@@ -153,10 +155,12 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	}
 
 	@Override
-	public void removeAnnotationManifest(AnnotationManifest manifest) {
+	public AnnotationLayerManifest removeAnnotationManifest(AnnotationManifest manifest) {
 		checkNotLocked();
 
 		removeAnnotationManifest0(manifest);
+
+		return this;
 	}
 
 	protected void removeAnnotationManifest0(AnnotationManifest manifest) {
@@ -188,10 +192,12 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	 * @param defaultAnnotationManifest the defaultAnnotationManifest to set
 	 */
 	@Override
-	public void setDefaultKey(String defaultKey) {
+	public AnnotationLayerManifest setDefaultKey(String defaultKey) {
 		checkNotLocked();
 
 		setDefaultKey0(defaultKey);
+
+		return this;
 	}
 
 	protected void setDefaultKey0(String defaultKey) {
@@ -199,10 +205,16 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	}
 
 	@Override
-	public TargetLayerManifest addReferenceLayerId(String referenceLayerId) {
+	public AnnotationLayerManifest addReferenceLayerId(String referenceLayerId,
+			Consumer<? super TargetLayerManifest> action) {
 		checkNotLocked();
 
-		return addReferenceLayerId0(referenceLayerId);
+		TargetLayerManifest refLayerManifest = addReferenceLayerId0(referenceLayerId);
+		if(action!=null) {
+			action.accept(refLayerManifest);
+		}
+
+		return this;
 	}
 
 	protected TargetLayerManifest addReferenceLayerId0(String referenceLayerId) {
@@ -220,10 +232,12 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	}
 
 	@Override
-	public void removeReferenceLayerId(String referenceLayerId) {
+	public AnnotationLayerManifest removeReferenceLayerId(String referenceLayerId) {
 		checkNotLocked();
 
 		removeReferenceLayerId0(referenceLayerId);
+
+		return this;
 	}
 
 	protected void removeReferenceLayerId0(String referenceLayerId) {
@@ -255,10 +269,12 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	}
 
 	@Override
-	public void setAnnotationFlag(AnnotationFlag flag, boolean active) {
+	public AnnotationLayerManifest setAnnotationFlag(AnnotationFlag flag, boolean active) {
 		checkNotLocked();
 
 		setAnnotationFlag0(flag, active);
+
+		return this;
 	}
 
 	protected void setAnnotationFlag0(AnnotationFlag flag, boolean active) {

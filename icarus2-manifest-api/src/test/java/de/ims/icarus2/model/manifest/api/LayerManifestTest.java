@@ -48,6 +48,8 @@ import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.func.TriConsumer;
+import de.ims.icarus2.util.Mutable.MutableObject;
 import de.ims.icarus2.util.collections.LazyCollection;
 
 /**
@@ -196,9 +198,6 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	 * objects. The created {@link BiFunction function} takes a {@link String} and calls the specified
 	 * {@code creator}. Subsequently the created {@link TargetLayerManifest} is tested for various
 	 * consistency predicates.
-	 * <p>
-	 * This method expects the {@link LayerManifest} supplied to the created function to have a
-	 * {@link Mockito#mock(Class) mocked} instance of {@link ContextManifest} associated with it.
 	 *
 	 * @param creator
 	 * @return
@@ -206,18 +205,39 @@ public interface LayerManifestTest<M extends LayerManifest> extends EmbeddedMemb
 	public static <M extends LayerManifest> BiConsumer<M, String> inject_createTargetLayerManifest(
 			BiFunction<M, String, TargetLayerManifest> creator) {
 		return (m, id) -> {
-//			LayerManifest target = mock(LayerManifest.class);
-//			ContextManifest contextManifest = TestUtils.assertMock(m.getContextManifest());
-
-//			when(contextManifest.getLayerManifest(id)).thenReturn(target);
-
 			TargetLayerManifest targetLayerManifest = creator.apply(m, id);
 			assertNotNull(targetLayerManifest);
 			assertEquals(id, targetLayerManifest.getLayerId());
 			assertSame(m, targetLayerManifest.getLayerManifest());
 			assertOptionalEquals(m, targetLayerManifest.getHost());
+		};
+	}
 
-//			assertSame(target, targetLayerManifest.getResolvedLayerManifest());
+	/**
+	 * Creates a wrapper around a {@code creator} function that produces {@link TargetLayerManifest}
+	 * objects and passes them to a {@link Consumer}. The created {@link BiFunction function} takes
+	 * a {@link String} and calls the specified {@code creator} with a local consumer to fetch the
+	 * result. Subsequently the {@link TargetLayerManifest} obtained this way is tested for
+	 * various consistency predicates.
+	 * <p>
+	 * This method expects the {@link LayerManifest} supplied to the created function to have a
+	 * {@link Mockito#mock(Class) mocked} instance of {@link ContextManifest} associated with it.
+	 *
+	 * @param creator
+	 * @return
+	 */
+	public static <M extends LayerManifest> BiConsumer<M, String> inject_consumeTargetLayerManifest(
+			TriConsumer<M, String, Consumer<? super TargetLayerManifest>> creator) {
+		return (m, id) -> {
+			MutableObject<TargetLayerManifest> buffer = new MutableObject<>();
+
+			creator.accept(m, id, buffer::set);
+
+			TargetLayerManifest targetLayerManifest = buffer.get();
+			assertNotNull(targetLayerManifest);
+			assertEquals(id, targetLayerManifest.getLayerId());
+			assertSame(m, targetLayerManifest.getLayerManifest());
+			assertOptionalEquals(m, targetLayerManifest.getHost());
 		};
 	}
 
