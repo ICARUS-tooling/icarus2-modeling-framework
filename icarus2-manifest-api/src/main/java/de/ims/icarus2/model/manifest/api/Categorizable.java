@@ -33,7 +33,23 @@ public interface Categorizable extends Lockable {
 
 	boolean addCategory(Category category);
 
+	default Categorizable addCategories(Category...categories) {
+		for(Category category : categories) {
+			addCategory(category);
+		}
+
+		return this;
+	}
+
 	boolean removeCategory(Category category);
+
+	default Categorizable removeCategories(Category...categories) {
+		for(Category category : categories) {
+			removeCategory(category);
+		}
+
+		return this;
+	}
 
 	void forEachCategory(Consumer<? super Category> action);
 
