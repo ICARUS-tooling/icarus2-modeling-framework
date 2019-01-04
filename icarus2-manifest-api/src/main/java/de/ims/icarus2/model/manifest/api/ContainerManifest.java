@@ -111,7 +111,7 @@ public interface ContainerManifest extends MemberManifest, Embedded {
 
 	// Modification methods
 
-	void setContainerType(ContainerType containerType);
+	ContainerManifest setContainerType(ContainerType containerType);
 
-	void setContainerFlag(ContainerFlag flag, boolean active);
+	ContainerManifest setContainerFlag(ContainerFlag flag, boolean active);
 }

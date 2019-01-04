@@ -90,10 +90,12 @@ public class ContainerManifestImpl extends AbstractMemberManifest<ContainerManif
 	}
 
 	@Override
-	public void setContainerType(ContainerType containerType) {
+	public ContainerManifest setContainerType(ContainerType containerType) {
 		checkNotLocked();
 
 		setContainerType0(containerType);
+
+		return this;
 	}
 
 	protected void setContainerType0(ContainerType containerType) {
@@ -106,10 +108,12 @@ public class ContainerManifestImpl extends AbstractMemberManifest<ContainerManif
 	}
 
 	@Override
-	public void setContainerFlag(ContainerFlag flag, boolean active) {
+	public ContainerManifest setContainerFlag(ContainerFlag flag, boolean active) {
 		checkNotLocked();
 
 		setContainerFlag0(flag, active);
+
+		return this;
 	}
 
 	protected void setContainerFlag0(ContainerFlag flag, boolean active) {
