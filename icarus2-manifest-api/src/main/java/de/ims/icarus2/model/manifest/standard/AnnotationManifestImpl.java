@@ -136,10 +136,12 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 * @param key the key to set
 	 */
 	@Override
-	public void setKey(String key) {
+	public AnnotationManifest setKey(String key) {
 		checkNotLocked();
 
 		setKey0(key);
+
+		return this;
 	}
 
 	private void setKey0(String key) {
@@ -180,10 +182,12 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	}
 
 	@Override
-	public void addAlias(String alias) {
+	public AnnotationManifest addAlias(String alias) {
 		checkNotLocked();
 
 		addAlias0(alias);
+
+		return this;
 	}
 
 	private void addAlias0(String alias) {
@@ -196,10 +200,12 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	}
 
 	@Override
-	public void removeAlias(String alias) {
+	public AnnotationManifest removeAlias(String alias) {
 		checkNotLocked();
 
 		removeAlias0(alias);
+
+		return this;
 	}
 
 	private void removeAlias0(String alias) {
@@ -225,10 +231,12 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	}
 
 	@Override
-	public void setAllowUnknownValues(boolean allowUnknownValues) {
+	public AnnotationManifest setAllowUnknownValues(boolean allowUnknownValues) {
 		checkNotLocked();
 
 		setAllowUnknownValues0(allowUnknownValues);
+
+		return this;
 	}
 
 	private void setAllowUnknownValues0(boolean allowUnknownValues) {
@@ -322,10 +330,12 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	}
 
 	@Override
-	public void setNoEntryValue(Object noEntryValue) {
+	public AnnotationManifest setNoEntryValue(Object noEntryValue) {
 		checkNotLocked();
 
 		setNoEntryValue0(noEntryValue);
+
+		return this;
 	}
 
 	private void setNoEntryValue0(Object noEntryValue) {
@@ -336,10 +346,12 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 * @param contentType the contentType to set
 	 */
 	@Override
-	public void setContentType(ContentType contentType) {
+	public AnnotationManifest setContentType(ContentType contentType) {
 		checkNotLocked();
 
 		setContentType0(contentType);
+
+		return this;
 	}
 
 	private void setContentType0(ContentType contentType) {
@@ -350,10 +362,12 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 * @param valueType the valueType to set
 	 */
 	@Override
-	public void setValueType(ValueType valueType) {
+	public AnnotationManifest setValueType(ValueType valueType) {
 		checkNotLocked();
 
 		setValueType0(valueType);
+
+		return this;
 	}
 
 	private void setValueType0(ValueType valueType) {
@@ -363,10 +377,12 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	}
 
 	@Override
-	public void setValueSet(ValueSet values) {
+	public AnnotationManifest setValueSet(ValueSet values) {
 		checkNotLocked();
 
 		setValueSet0(values);
+
+		return this;
 	}
 
 	private void setValueSet0(ValueSet values) {
@@ -377,10 +393,12 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 * @param valueRange the valueRange to set
 	 */
 	@Override
-	public void setValueRange(ValueRange valueRange) {
+	public AnnotationManifest setValueRange(ValueRange valueRange) {
 		checkNotLocked();
 
 		setValueRange0(valueRange);
+
+		return this;
 	}
 
 	private void setValueRange0(ValueRange valueRange) {

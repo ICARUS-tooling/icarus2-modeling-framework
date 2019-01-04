@@ -232,21 +232,21 @@ public interface AnnotationManifest extends MemberManifest, Embedded {
 
 	// Modification methods
 
-	void setKey(String key);
+	AnnotationManifest setKey(String key);
 
-	void addAlias(String alias);
+	AnnotationManifest addAlias(String alias);
 
-	void removeAlias(String alias);
+	AnnotationManifest removeAlias(String alias);
 
-	void setValueRange(ValueRange range);
+	AnnotationManifest setValueRange(ValueRange range);
 
-	void setValueSet(ValueSet values);
+	AnnotationManifest setValueSet(ValueSet values);
 
-	void setValueType(ValueType valueType);
+	AnnotationManifest setValueType(ValueType valueType);
 
-	void setContentType(ContentType contentType);
+	AnnotationManifest setContentType(ContentType contentType);
 
-	void setNoEntryValue(Object noEntryValue);
+	AnnotationManifest setNoEntryValue(Object noEntryValue);
 
-	void setAllowUnknownValues(boolean allowUnknownValues);
+	AnnotationManifest setAllowUnknownValues(boolean allowUnknownValues);
 }
