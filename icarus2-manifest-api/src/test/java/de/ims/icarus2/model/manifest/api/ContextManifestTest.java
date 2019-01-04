@@ -76,6 +76,8 @@ import de.ims.icarus2.model.manifest.api.binding.BindableTest;
 import de.ims.icarus2.model.manifest.api.binding.LayerPrerequisite;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.func.TriConsumer;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Multiplicity;
 import de.ims.icarus2.util.collections.LazyCollection;
 
@@ -120,7 +122,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 		for(LayerPrerequisite binding : bindingEndpoints) {
 			assertTrue(binding.getMultiplicity()==Multiplicity.ONE);
 
-			PrerequisiteManifest prerequisite = manifest.addPrerequisite(binding.getAlias());
+			PrerequisiteManifest prerequisite = manifest.addAndGetPrerequisite(binding.getAlias());
 
 			assertEquals(binding.getAlias(), prerequisite.getAlias());
 
@@ -188,7 +190,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 	 * Creates a wrapper around the given {@code forEach} that
 	 * provides a {@code forEach} signature for {@code String} values instead of
 	 * {@link PrerequisiteManifest}. This way it can be used together with the modifier methods
-	 * such as {@link ContextManifest#addPrerequisite(String)} for testing.
+	 * such as {@link ContextManifest#addAndGetPrerequisite(String)} for testing.
 	 *
 	 * @return
 	 */
@@ -213,9 +215,10 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 	 * @return
 	 */
 	public static <M extends ContextManifest> BiConsumer<M, String> inject_createPrerequisiteManifest(
-			BiFunction<M, String, PrerequisiteManifest> creator) {
+			TriConsumer<M, String, Consumer<? super PrerequisiteManifest>> creator) {
 		return (m, alias) -> {
-			PrerequisiteManifest prerequisiteManifest = creator.apply(m, alias);
+			PrerequisiteManifest prerequisiteManifest =
+					IcarusUtils.extractSupplied(action -> creator.accept(m,  alias, action));
 			assertNotNull(prerequisiteManifest);
 			assertEquals(alias, prerequisiteManifest.getAlias());
 			assertSame(m, prerequisiteManifest.getContextManifest());
@@ -296,7 +299,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 				"alias1", "alias2",
 				lookup,
 				NPE_CHECK,
-				ContextManifest::addPrerequisite,
+				ContextManifest::addAndGetPrerequisite,
 				TestUtils.<String>IDENTITY(),
 				ManifestTestUtils.getIllegalIdValues());
 	}
@@ -698,12 +701,24 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContextManifest#addPrerequisite(java.lang.String)}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContextManifest#addAndGetPrerequisite(java.lang.String)}.
+	 */
+	@Test
+	default void testAddAndGetPrerequisite() {
+		assertLockableAccumulativeAdd(settings(),
+				ContextManifest::addAndGetPrerequisite,
+				ManifestTestUtils.getIllegalIdValues(),
+				INVALID_ID_CHECK, NPE_CHECK, DUPLICATE_ID_CHECK,
+				"layer1", "layer2", "layerxyz123456789");
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContextManifest#addPrerequisite(String, Consumer)}.
 	 */
 	@Test
 	default void testAddPrerequisite() {
 		assertLockableAccumulativeAdd(settings(),
-				ContextManifest::addPrerequisite,
+				inject_createPrerequisiteManifest(ContextManifest::addPrerequisite),
 				ManifestTestUtils.getIllegalIdValues(),
 				INVALID_ID_CHECK, NPE_CHECK, DUPLICATE_ID_CHECK,
 				"layer1", "layer2", "layerxyz123456789");
@@ -718,7 +733,7 @@ public interface ContextManifestTest<M extends ContextManifest> extends Embedded
 
 		// Make a specialized adder to ensure we save any created PrerequisiteManifest instances in our lookup
 		BiConsumer<M, String> adder = (context, alias) -> {
-			PrerequisiteManifest prerequisite = context.addPrerequisite(alias);
+			PrerequisiteManifest prerequisite = context.addAndGetPrerequisite(alias);
 			assertNotNull(prerequisite);
 			assertEquals(alias, prerequisite.getAlias());
 			assertSame(context, prerequisite.getContextManifest());

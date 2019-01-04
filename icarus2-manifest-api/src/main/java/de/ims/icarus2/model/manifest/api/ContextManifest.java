@@ -27,6 +27,7 @@ import java.util.function.Predicate;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.api.binding.Bindable;
 import de.ims.icarus2.model.manifest.api.binding.LayerPrerequisite;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Multiplicity;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
@@ -286,27 +287,31 @@ public interface ContextManifest extends MemberManifest, Bindable, Embedded {
 
 	// Modification methods
 
-	void setEditable(boolean editable);
+	ContextManifest setEditable(boolean editable);
 
-	void setDriverManifest(DriverManifest driverManifest);
+	ContextManifest setDriverManifest(DriverManifest driverManifest);
 
-	void setPrimaryLayerId(String primaryLayerId);
+	ContextManifest setPrimaryLayerId(String primaryLayerId);
 
-	void setFoundationLayerId(String foundationLayerId);
+	ContextManifest setFoundationLayerId(String foundationLayerId);
 
-	void setIndependentContext(boolean isIndependent);
+	ContextManifest setIndependentContext(boolean isIndependent);
 
-	PrerequisiteManifest addPrerequisite(String alias);
+	default PrerequisiteManifest addAndGetPrerequisite(String alias) {
+		return IcarusUtils.extractSupplied(action -> addPrerequisite(alias, action));
+	}
 
-	void removePrerequisite(PrerequisiteManifest prerequisiteManifest);
+	ContextManifest addPrerequisite(String alias, Consumer<? super PrerequisiteManifest> action);
 
-	void addLayerGroup(LayerGroupManifest groupManifest);
+	ContextManifest removePrerequisite(PrerequisiteManifest prerequisiteManifest);
 
-	void removeLayerGroup(LayerGroupManifest groupManifest);
+	ContextManifest addLayerGroup(LayerGroupManifest groupManifest);
 
-	void addLocationManifest(LocationManifest manifest);
+	ContextManifest removeLayerGroup(LayerGroupManifest groupManifest);
 
-	void removeLocationManifest(LocationManifest manifest);
+	ContextManifest addLocationManifest(LocationManifest manifest);
+
+	ContextManifest removeLocationManifest(LocationManifest manifest);
 
 	/**
 	 * Abstract description of a layer object this context depends on.

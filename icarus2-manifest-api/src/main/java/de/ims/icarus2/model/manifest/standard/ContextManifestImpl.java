@@ -40,6 +40,7 @@ import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.standard.Links.Link;
 import de.ims.icarus2.model.manifest.standard.Links.MemoryLink;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**
@@ -164,10 +165,12 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	}
 
 	@Override
-	public void addLocationManifest(LocationManifest manifest) {
+	public ContextManifest addLocationManifest(LocationManifest manifest) {
 		checkNotLocked();
 
 		addLocationManifest0(manifest);
+
+		return this;
 	}
 
 	protected void addLocationManifest0(LocationManifest manifest) {
@@ -181,10 +184,12 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	}
 
 	@Override
-	public void removeLocationManifest(LocationManifest manifest) {
+	public ContextManifest removeLocationManifest(LocationManifest manifest) {
 		checkNotLocked();
 
 		removeLocationManifest0(manifest);
+
+		return this;
 	}
 
 	protected void removeLocationManifest0(LocationManifest manifest) {
@@ -219,10 +224,12 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	 * @param independent the independent to set
 	 */
 	@Override
-	public void setIndependentContext(boolean independent) {
+	public ContextManifest setIndependentContext(boolean independent) {
 		checkNotLocked();
 
 		setIndependentContext0(independent);
+
+		return this;
 	}
 
 	protected void setIndependentContext0(boolean independent) {
@@ -252,10 +259,12 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	 * @param independent the independent to set
 	 */
 	@Override
-	public void setEditable(boolean editable) {
+	public ContextManifest setEditable(boolean editable) {
 		checkNotLocked();
 
 		setEditable0(editable);
+
+		return this;
 	}
 
 	protected void setEditable0(boolean editable) {
@@ -354,10 +363,12 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	 * @param primaryLayerManifest the primaryLayerManifest to set
 	 */
 	@Override
-	public void setPrimaryLayerId(String primaryLayerId) {
+	public ContextManifest setPrimaryLayerId(String primaryLayerId) {
 		checkNotLocked();
 
 		setPrimaryLayerId0(primaryLayerId);
+
+		return this;
 	}
 
 	protected void setPrimaryLayerId0(String primaryLayerId) {
@@ -390,10 +401,12 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	 * @param foundationLayerId the foundationLayerId to set
 	 */
 	@Override
-	public void setFoundationLayerId(String foundationLayerId) {
+	public ContextManifest setFoundationLayerId(String foundationLayerId) {
 		checkNotLocked();
 
 		setFoundationLayerId0(foundationLayerId);
+
+		return this;
 	}
 
 	protected void setFoundationLayerId0(String foundationLayerId) {
@@ -407,10 +420,12 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	 * @param driverManifest the driverManifest to set
 	 */
 	@Override
-	public void setDriverManifest(DriverManifest driverManifest) {
+	public ContextManifest setDriverManifest(DriverManifest driverManifest) {
 		checkNotLocked();
 
 		setDriverManifest0(driverManifest);
+
+		return this;
 	}
 
 	protected void setDriverManifest0(DriverManifest driverManifest) {
@@ -418,10 +433,22 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	}
 
 	@Override
-	public PrerequisiteManifest addPrerequisite(String alias) {
+	public PrerequisiteManifest addAndGetPrerequisite(String alias) {
 		checkNotLocked();
 
 		return addPrerequisite0(alias);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.ContextManifest#addPrerequisite(java.lang.String, java.util.function.Consumer)
+	 */
+	@Override
+	public ContextManifest addPrerequisite(String alias, Consumer<? super PrerequisiteManifest> action) {
+		checkNotLocked();
+
+		IcarusUtils.consumeIfAble(addPrerequisite0(alias), action);
+
+		return this;
 	}
 
 	protected PrerequisiteManifest addPrerequisite0(String alias) {
@@ -441,10 +468,12 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	}
 
 	@Override
-	public void removePrerequisite(PrerequisiteManifest prerequisiteManifest) {
+	public ContextManifest removePrerequisite(PrerequisiteManifest prerequisiteManifest) {
 		checkNotLocked();
 
 		removePrerequisite0(prerequisiteManifest);
+
+		return this;
 	}
 
 	protected void removePrerequisite0(PrerequisiteManifest prerequisiteManifest) {
@@ -457,10 +486,12 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	}
 
 	@Override
-	public void addLayerGroup(LayerGroupManifest groupManifest) {
+	public ContextManifest addLayerGroup(LayerGroupManifest groupManifest) {
 		checkNotLocked();
 
 		addLayerGroup0(groupManifest);
+
+		return this;
 	}
 
 	protected void addLayerGroup0(LayerGroupManifest groupManifest) {
@@ -482,10 +513,12 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	}
 
 	@Override
-	public void removeLayerGroup(LayerGroupManifest groupManifest) {
+	public ContextManifest removeLayerGroup(LayerGroupManifest groupManifest) {
 		checkNotLocked();
 
 		removeLayerGroup0(groupManifest);
+
+		return this;
 	}
 
 	protected void removeLayerGroup0(LayerGroupManifest groupManifest) {

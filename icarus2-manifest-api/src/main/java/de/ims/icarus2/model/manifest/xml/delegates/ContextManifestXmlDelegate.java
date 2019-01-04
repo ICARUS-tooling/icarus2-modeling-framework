@@ -269,7 +269,7 @@ public class ContextManifestXmlDelegate extends AbstractMemberManifestXmlDelegat
 
 		case ManifestXmlTags.PREREQUISITE: {
 			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.ALIAS)
-				.map(getInstance()::addPrerequisite)
+				.map(getInstance()::addAndGetPrerequisite)
 				.ifPresent(prereq -> readPrereqAttributes(prereq, attributes));
 		} break;
 

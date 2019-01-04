@@ -439,7 +439,7 @@ public class ContextManifestResolver {
 		source.forEachGroupManifest(g -> target.addLayerGroup(cloneLayerGroupManifest(g, target)));
 
 		source.forEachPrerequisite(p -> {
-			PrerequisiteManifest pNew = target.addPrerequisite(p.getAlias());
+			PrerequisiteManifest pNew = target.addAndGetPrerequisite(p.getAlias());
 			copyPrerequisiteFields(p, pNew);
 		});
 
