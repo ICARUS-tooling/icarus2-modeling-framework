@@ -53,7 +53,7 @@ public interface VersionManifest extends Lockable, TypedManifest {
 
 	// Modification methods
 
-	void setFormatId(String formatId);
+	VersionManifest setFormatId(String formatId);
 
-	void setVersionString(String versionString);
+	VersionManifest setVersionString(String versionString);
 }

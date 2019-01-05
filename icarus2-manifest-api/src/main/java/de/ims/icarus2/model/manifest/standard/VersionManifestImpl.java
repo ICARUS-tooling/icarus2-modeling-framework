@@ -53,10 +53,12 @@ public class VersionManifestImpl extends AbstractLockable implements VersionMani
 	 * @param formatId the formatId to set
 	 */
 	@Override
-	public void setFormatId(String formatId) {
+	public VersionManifest setFormatId(String formatId) {
 		checkNotLocked();
 
 		setFormatId0(formatId);
+
+		return this;
 	}
 
 	protected void setFormatId0(String formatId) {
@@ -75,10 +77,12 @@ public class VersionManifestImpl extends AbstractLockable implements VersionMani
 	 * @param versionString the versionString to set
 	 */
 	@Override
-	public void setVersionString(String versionString) {
+	public VersionManifest setVersionString(String versionString) {
 		checkNotLocked();
 
 		setVersionString0(versionString);
+
+		return this;
 	}
 
 	protected void setVersionString0(String versionString) {
