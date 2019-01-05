@@ -28,6 +28,7 @@ import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
@@ -141,7 +142,7 @@ public class ItemLayerManifestImpl extends AbstractLayerManifest<ItemLayerManife
 	public ItemLayerManifest setBoundaryLayerId(String boundaryLayerId, Consumer<? super TargetLayerManifest> action) {
 		checkNotLocked();
 
-		setBoundaryLayerId0(boundaryLayerId);
+		IcarusUtils.consumeIfAble(setBoundaryLayerId0(boundaryLayerId), action);
 
 		return thisAsCast();
 	}
@@ -181,7 +182,7 @@ public class ItemLayerManifestImpl extends AbstractLayerManifest<ItemLayerManife
 			Consumer<? super TargetLayerManifest> action) {
 		checkNotLocked();
 
-		setFoundationLayerId0(foundationLayerId);
+		IcarusUtils.consumeIfAble(setFoundationLayerId0(foundationLayerId), action);
 
 		return thisAsCast();
 	}

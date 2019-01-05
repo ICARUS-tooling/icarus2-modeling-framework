@@ -37,6 +37,7 @@ import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.standard.Links.Link;
 import de.ims.icarus2.model.manifest.standard.Links.MemoryLink;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
@@ -149,7 +150,7 @@ public abstract class AbstractLayerManifest<L extends LayerManifest<L>>
 	public L addBaseLayerId(String baseLayerId, Consumer<? super TargetLayerManifest> action) {
 		checkNotLocked();
 
-		addBaseLayerId0(baseLayerId);
+		IcarusUtils.consumeIfAble(addBaseLayerId0(baseLayerId), action);
 
 		return thisAsCast();
 	}
