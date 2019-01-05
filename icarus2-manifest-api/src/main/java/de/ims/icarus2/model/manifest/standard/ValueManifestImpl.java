@@ -29,7 +29,7 @@ import de.ims.icarus2.model.manifest.types.ValueType;
  * @author Markus Gärtner
  *
  */
-public class ValueManifestImpl extends DefaultModifiableIdentity implements ValueManifest {
+public class ValueManifestImpl extends DefaultModifiableIdentity<ValueManifest> implements ValueManifest {
 
 	private Optional<Object> value = Optional.empty();
 	private Optional<Documentation> documentation = Optional.empty();

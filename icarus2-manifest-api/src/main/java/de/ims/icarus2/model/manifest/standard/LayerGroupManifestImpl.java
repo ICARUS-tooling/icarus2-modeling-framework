@@ -39,7 +39,7 @@ import de.ims.icarus2.util.lang.ClassUtils;
  * @author Markus Gärtner
  *
  */
-public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements LayerGroupManifest {
+public class LayerGroupManifestImpl extends DefaultModifiableIdentity<LayerGroupManifest> implements LayerGroupManifest {
 
 	private final ContextManifest contextManifest;
 

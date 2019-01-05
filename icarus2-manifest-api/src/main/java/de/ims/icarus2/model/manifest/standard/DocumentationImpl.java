@@ -163,7 +163,7 @@ public class DocumentationImpl extends AbstractLockable implements Documentation
 		return false;
 	}
 
-	public static class ResourceImpl extends DefaultModifiableIdentity implements Resource {
+	public static class ResourceImpl extends DefaultModifiableIdentity<Resource> implements Resource {
 
 		private URI uri;
 

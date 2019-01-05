@@ -269,7 +269,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		return !options.isEmpty();
 	}
 
-	public static class OptionImpl extends DefaultModifiableIdentity implements Option {
+	public static class OptionImpl extends DefaultModifiableIdentity<Option> implements Option {
 		private Optional<Object> defaultValue = Optional.empty();
 		private Optional<ValueType> valueType = Optional.empty();
 		private Optional<String> group = Optional.empty();
