@@ -91,7 +91,7 @@ public final class ModelUtils {
 	public static String getUniqueId(Layer layer, char separator) {
 		requireNonNull(layer);
 
-		LayerManifest manifest = layer.getManifest();
+		LayerManifest<?> manifest = layer.getManifest();
 
 		String id = null;
 
@@ -145,7 +145,7 @@ public final class ModelUtils {
 		return type.isValidValue(value);
 	}
 
-	public static ContextManifest getContextManifest(MemberManifest manifest) {
+	public static ContextManifest getContextManifest(MemberManifest<?> manifest) {
 		requireNonNull(manifest);
 
 		switch (manifest.getManifestType()) {
@@ -153,7 +153,7 @@ public final class ModelUtils {
 		case ITEM_LAYER_MANIFEST:
 		case STRUCTURE_LAYER_MANIFEST:
 		case HIGHLIGHT_LAYER_MANIFEST:
-			return ManifestUtils.requireHost((LayerManifest)manifest);
+			return ManifestUtils.requireHost((LayerManifest<?>)manifest);
 
 		case CONTEXT_MANIFEST:
 			return (ContextManifest) manifest;
@@ -195,19 +195,19 @@ public final class ModelUtils {
 		return type==ManifestType.STRUCTURE_LAYER_MANIFEST;
 	}
 
-	public static boolean isItemLayer(LayerManifest manifest) {
+	public static boolean isItemLayer(LayerManifest<?> manifest) {
 		ManifestType type = manifest.getManifestType();
 		return type==ManifestType.ITEM_LAYER_MANIFEST
 				|| type==ManifestType.STRUCTURE_LAYER_MANIFEST
 				|| type==ManifestType.FRAGMENT_LAYER_MANIFEST;
 	}
 
-	public static boolean isStructureLayer(LayerManifest manifest) {
+	public static boolean isStructureLayer(LayerManifest<?> manifest) {
 		ManifestType type = manifest.getManifestType();
 		return type==ManifestType.STRUCTURE_LAYER_MANIFEST;
 	}
 
-	public static boolean isFragmentLayer(LayerManifest manifest) {
+	public static boolean isFragmentLayer(LayerManifest<?> manifest) {
 		ManifestType type = manifest.getManifestType();
 		return type==ManifestType.FRAGMENT_LAYER_MANIFEST;
 	}
@@ -217,7 +217,7 @@ public final class ModelUtils {
 		return type==ManifestType.FRAGMENT_LAYER_MANIFEST;
 	}
 
-	public static boolean isAnnotationLayer(LayerManifest manifest) {
+	public static boolean isAnnotationLayer(LayerManifest<?> manifest) {
 		ManifestType type = manifest.getManifestType();
 		return type==ManifestType.ANNOTATION_LAYER_MANIFEST;
 	}
@@ -314,7 +314,7 @@ public final class ModelUtils {
 		return hierarchy.atLevel(level);
 	}
 
-	public static Layer getLayer(Corpus corpus, LayerManifest manifest) {
+	public static Layer getLayer(Corpus corpus, LayerManifest<?> manifest) {
 		ContextManifest contextManifest = ManifestUtils.requireHost(manifest);
 		return corpus.getContext(ManifestUtils.requireId(contextManifest))
 				.getLayer(ManifestUtils.requireId(manifest));
@@ -375,7 +375,7 @@ public final class ModelUtils {
 		return result;
 	}
 
-	public static Map<String, Object> getProperties(MemberManifest manifest) {
+	public static Map<String, Object> getProperties(MemberManifest<?> manifest) {
 		requireNonNull(manifest);
 
 		Map<String, Object> result = new HashMap<>();

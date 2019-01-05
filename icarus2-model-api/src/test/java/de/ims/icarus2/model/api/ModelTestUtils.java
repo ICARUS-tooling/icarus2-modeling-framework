@@ -108,7 +108,6 @@ public class ModelTestUtils {
 			throw new IndexOutOfBoundsException();
 	}
 
-	@SuppressWarnings("boxing")
 	public static Structure mockStructure(long itemCount, Pair<Long, Long>...edges) {
 
 		Structure structure = mockStructure(itemCount, edges.length);

@@ -57,7 +57,7 @@ public class CorpusVerifier {
 	private final CorpusManifest corpusManifest;
 	private final ReportBuilder<ReportItem> reportBuilder;
 
-	private Stack<MemberManifest> stack = new Stack<>();
+	private Stack<MemberManifest<?>> stack = new Stack<>();
 
 	private CorpusVerifier(CorpusManifest corpusManifest, ReportBuilder<ReportItem> reportBuilder) {
 		requireNonNull(corpusManifest);
@@ -83,7 +83,7 @@ public class CorpusVerifier {
 
 	}
 
-	private void push(MemberManifest manifest) {
+	private void push(MemberManifest<?> manifest) {
 		stack.push(manifest);
 	}
 
@@ -91,7 +91,7 @@ public class CorpusVerifier {
 		stack.pop();
 	}
 
-	private void checkManifest0(MemberManifest manifest) {
+	private void checkManifest0(MemberManifest<?> manifest) {
 		if(manifest.getId()==null) {
 			error(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Missing id"); //$NON-NLS-1$
 		}
@@ -167,14 +167,14 @@ public class CorpusVerifier {
 		}
 
 		// Check layers
-		for(LayerManifest layerManifest : manifest.getLayerManifests()) {
+		for(LayerManifest<?> layerManifest : manifest.getLayerManifests()) {
 			checkLayer(layerManifest, manifest);
 		}
 
 		pop();
 	}
 
-	private void checkLayer(LayerManifest manifest, ContextManifest contextManifest) {
+	private void checkLayer(LayerManifest<?> manifest, ContextManifest contextManifest) {
 		push(manifest);
 
 		checkManifest0(manifest);
@@ -287,7 +287,7 @@ public class CorpusVerifier {
 		//TODO
 	}
 
-	private void checkType(MemberManifest manifest, ManifestType type) {
+	private void checkType(MemberManifest<?> manifest, ManifestType type) {
 
 		if(manifest.getManifestType()==null) {
 			error(ManifestErrorCode.MANIFEST_MISSING_TYPE, "Missing manifest type"); //$NON-NLS-1$
@@ -296,7 +296,7 @@ public class CorpusVerifier {
 		}
 	}
 
-	private CorpusManifest getRoot(LayerManifest manifest) {
+	private CorpusManifest getRoot(LayerManifest<?> manifest) {
 		return ManifestUtils.requireGrandHost(manifest);
 	}
 

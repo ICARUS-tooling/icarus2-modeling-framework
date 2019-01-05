@@ -54,7 +54,7 @@ public class CorpusGraph {
 
 	private final List<ContextManifest> contexts = new ArrayList<>();
 
-	private final Map<LayerManifest, Node> nodeMap = new Object2ObjectOpenHashMap<>();
+	private final Map<LayerManifest<?>, Node> nodeMap = new Object2ObjectOpenHashMap<>();
 
 	final Lock lock = new ReentrantLock();
 
@@ -84,7 +84,7 @@ public class CorpusGraph {
 		try {
 			contexts.add(context);
 
-			for(LayerManifest layer : context.getLayerManifests()) {
+			for(LayerManifest<?> layer : context.getLayerManifests()) {
 				getNode(layer);
 			}
 		} finally {
@@ -92,7 +92,7 @@ public class CorpusGraph {
 		}
 	}
 
-	public Node getNode(LayerManifest layer) {
+	public Node getNode(LayerManifest<?> layer) {
 		requireNonNull(layer);
 		//TODO maybe ensure that we only accept layers that are part of the saved corpus!!!
 
@@ -139,7 +139,7 @@ public class CorpusGraph {
 	}
 
 	public class Node extends Cell {
-		private final LayerManifest layer;
+		private final LayerManifest<?> layer;
 
 		private AtomicBoolean initialized = new AtomicBoolean(false);
 
@@ -147,11 +147,11 @@ public class CorpusGraph {
 		private List<Edge> incomingEdges = new ArrayList<>(5);
 
 
-		Node(LayerManifest layer) {
+		Node(LayerManifest<?> layer) {
 			this.layer = layer;
 		}
 
-		public LayerManifest getLayer() {
+		public LayerManifest<?> getLayer() {
 			return layer;
 		}
 
@@ -185,7 +185,7 @@ public class CorpusGraph {
 				return;
 			}
 
-			LayerManifest targetLayer = manifest.getResolvedLayerManifest()
+			LayerManifest<?> targetLayer = manifest.getResolvedLayerManifest()
 					.orElseThrow(ManifestException.error(
 							"Unresolved target layer manifest: "+ManifestUtils.getName(manifest)));
 
