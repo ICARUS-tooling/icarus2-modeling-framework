@@ -169,13 +169,13 @@ public interface OptionsManifest extends Manifest, Embedded {
 
 	// Modification methods
 
-	void addOption(Option option);
+	OptionsManifest addOption(Option option);
 
-	void removeOption(Option option);
+	OptionsManifest removeOption(Option option);
 
-	void addGroupIdentifier(Identity identity);
+	OptionsManifest addGroupIdentifier(Identity identity);
 
-	void removeGroupIdentifier(Identity identity);
+	OptionsManifest removeGroupIdentifier(Identity identity);
 
 	/**
 	 *

@@ -140,10 +140,12 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 	}
 
 	@Override
-	public void addOption(Option option) {
+	public OptionsManifest addOption(Option option) {
 		checkNotLocked();
 
 		addOption0(option);
+
+		return thisAsCast();
 	}
 
 	private String getOptionId(Option option) {
@@ -164,10 +166,12 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 	}
 
 	@Override
-	public void removeOption(Option option) {
+	public OptionsManifest removeOption(Option option) {
 		checkNotLocked();
 
 		removeOption0(option);
+
+		return thisAsCast();
 	}
 
 	protected void removeOption0(Option option) {
@@ -193,10 +197,12 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 	}
 
 	@Override
-	public void addGroupIdentifier(Identity identity) {
+	public OptionsManifest addGroupIdentifier(Identity identity) {
 		checkNotLocked();
 
 		addGroupIdentifier0(identity);
+
+		return thisAsCast();
 	}
 
 	protected void addGroupIdentifier0(Identity identity) {
@@ -215,10 +221,12 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 	}
 
 	@Override
-	public void removeGroupIdentifier(Identity identity) {
+	public OptionsManifest removeGroupIdentifier(Identity identity) {
 		checkNotLocked();
 
 		removeGroupIdentifier0(identity);
+
+		return thisAsCast();
 	}
 
 	protected void removeGroupIdentifier0(Identity identity) {
