@@ -468,7 +468,7 @@ public class ManifestGenerator {
 		}
 
 		for(int i=0; i<3; i++) {
-			container.addFieldChange(manifest::addAndGetReferenceLayerId, "referenceLayer", index("layer"));
+			container.addFieldChange(manifest::addAndGetReferenceLayer, "referenceLayer", index("layer"));
 		}
 
 		for(AnnotationFlag flag : AnnotationFlag.values()) {
@@ -654,7 +654,7 @@ public class ManifestGenerator {
 
 		String id = ManifestUtils.requireId(layerManifest);
 
-		container.addFieldChange(manifest::setPrimaryLayerId, "primaryLayer", id);
+		container.addFieldChange(manifest::setAndGetPrimaryLayer, "primaryLayer", id);
 
 		for(HighlightFlag flag : HighlightFlag.values()) {
 			container.addFieldChange(f -> manifest.setHighlightFlag(f, true), "highLightFlag", flag);

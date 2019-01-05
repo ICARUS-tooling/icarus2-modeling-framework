@@ -92,7 +92,7 @@ public class HighlightLayerManifestXmlDelegate extends AbstractLayerManifestXmlD
 
 		case ManifestXmlTags.PRIMARY_LAYER: {
 			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID)
-				.ifPresent(getInstance()::setPrimaryLayerId);
+				.ifPresent(getInstance()::setAndGetPrimaryLayer);
 		} break;
 
 		case ManifestXmlTags.HIGHLIGHT_FLAG: {

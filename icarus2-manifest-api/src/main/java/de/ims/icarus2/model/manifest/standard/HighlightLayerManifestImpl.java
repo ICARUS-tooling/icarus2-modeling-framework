@@ -28,6 +28,7 @@ import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
@@ -68,10 +69,12 @@ public class HighlightLayerManifestImpl extends AbstractLayerManifest<HighlightL
 	}
 
 	@Override
-	public void setHighlightFlag(HighlightFlag flag, boolean active) {
+	public HighlightLayerManifest setHighlightFlag(HighlightFlag flag, boolean active) {
 		checkNotLocked();
 
 		setHighlightFlag0(flag, active);
+
+		return this;
 	}
 
 	protected void setHighlightFlag0(HighlightFlag flag, boolean active) {
@@ -118,11 +121,15 @@ public class HighlightLayerManifestImpl extends AbstractLayerManifest<HighlightL
 		return primaryLayer!=null;
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.HighlightLayerManifest#setPrimaryLayerId(java.lang.String, java.util.function.Consumer)
+	 */
 	@Override
-	public TargetLayerManifest setPrimaryLayerId(String primaryLayerId) {
+	public HighlightLayerManifest setPrimaryLayerId(String primaryLayerId,
+			Consumer<? super TargetLayerManifest> action) {
 		checkNotLocked();
-
-		return setPrimaryLayerId0(primaryLayerId);
+		IcarusUtils.consumeIfAble(setPrimaryLayerId0(primaryLayerId), action);
+		return this;
 	}
 
 	protected TargetLayerManifest setPrimaryLayerId0(String primaryLayerId) {

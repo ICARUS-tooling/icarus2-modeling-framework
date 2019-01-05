@@ -21,6 +21,7 @@ package de.ims.icarus2.model.manifest.api;
 
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.getIllegalIdValues;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.getLegalIdValues;
+import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_consumeTargetLayerManifest;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_createTargetLayerManifest;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.mockItemLayerManifest;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.transform_layerManifestId;
@@ -61,7 +62,7 @@ public interface HighlightLayerManifestTest extends LayerManifestTest<HighlightL
 				"layer2",
 				NO_DEFAULT(),
 				transform_genericOptValue(HighlightLayerManifest::getPrimaryLayerManifest, transform_targetLayerId()),
-				inject_createTargetLayerManifest(HighlightLayerManifest::setPrimaryLayerId));
+				inject_createTargetLayerManifest(HighlightLayerManifest::setAndGetPrimaryLayer));
 	}
 
 	/**
@@ -74,7 +75,7 @@ public interface HighlightLayerManifestTest extends LayerManifestTest<HighlightL
 				mockItemLayerManifest("layer1"),
 				mockItemLayerManifest("layer2"),
 				HighlightLayerManifest::isLocalPrimaryLayerManifest,
-				TestUtils.inject_genericSetter(HighlightLayerManifest::setPrimaryLayerId, transform_layerManifestId()));
+				TestUtils.inject_genericSetter(HighlightLayerManifest::setAndGetPrimaryLayer, transform_layerManifestId()));
 	}
 
 	/**
@@ -168,12 +169,23 @@ public interface HighlightLayerManifestTest extends LayerManifestTest<HighlightL
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.HighlightLayerManifest#setPrimaryLayerId(java.lang.String)}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.HighlightLayerManifest#setAndGetPrimaryLayer(java.lang.String)}.
+	 */
+	@Test
+	default void testSetAndGetPrimaryLayer() {
+		assertLockableSetterBatch(settings(),
+				HighlightLayerManifest::setAndGetPrimaryLayer,
+				getLegalIdValues(), true,
+				INVALID_ID_CHECK, getIllegalIdValues());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.HighlightLayerManifest#setPrimaryLayerId(String, java.util.function.Consumer)}.
 	 */
 	@Test
 	default void testSetPrimaryLayerId() {
 		assertLockableSetterBatch(settings(),
-				HighlightLayerManifest::setPrimaryLayerId,
+				inject_consumeTargetLayerManifest(HighlightLayerManifest::setPrimaryLayerId),
 				getLegalIdValues(), true,
 				INVALID_ID_CHECK, getIllegalIdValues());
 	}
