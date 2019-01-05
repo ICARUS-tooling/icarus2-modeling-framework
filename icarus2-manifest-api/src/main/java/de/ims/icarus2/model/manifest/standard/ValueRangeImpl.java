@@ -178,10 +178,12 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	 * @param lower the lower to set
 	 */
 	@Override
-	public void setLowerBound(Comparable<?> lower) {
+	public ValueRange setLowerBound(Comparable<?> lower) {
 		checkNotLocked();
 
 		setLowerBound0(lower);
+
+		return this;
 	}
 
 	protected void setLowerBound0(Comparable<?> lower) {
@@ -196,10 +198,12 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	 * @param upper the upper to set
 	 */
 	@Override
-	public void setUpperBound(Comparable<?> upper)  {
+	public ValueRange setUpperBound(Comparable<?> upper)  {
 		checkNotLocked();
 
 		setUpperBound0(upper);
+
+		return this;
 	}
 
 	protected void setUpperBound0(Comparable<?> upper) {
@@ -214,10 +218,12 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	 * @param upper the upper to set
 	 */
 	@Override
-	public void setStepSize(Comparable<?> stepSize) {
+	public ValueRange setStepSize(Comparable<?> stepSize) {
 		checkNotLocked();
 
 		setStepSize0(stepSize);
+
+		return this;
 	}
 
 	protected void setStepSize0(Comparable<?> stepSize) {
@@ -232,10 +238,12 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	 * @param lowerIncluded the lowerIncluded to set
 	 */
 	@Override
-	public void setLowerBoundInclusive(boolean lowerIncluded) {
+	public ValueRange setLowerBoundInclusive(boolean lowerIncluded) {
 		checkNotLocked();
 
 		setLowerBoundIncluded0(lowerIncluded);
+
+		return this;
 	}
 
 	protected void setLowerBoundIncluded0(boolean lowerIncluded) {
@@ -246,10 +254,12 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	 * @param upperIncluded the upperIncluded to set
 	 */
 	@Override
-	public void setUpperBoundInclusive(boolean upperIncluded) {
+	public ValueRange setUpperBoundInclusive(boolean upperIncluded) {
 		checkNotLocked();
 
 		setUpperBoundIncluded0(upperIncluded);
+
+		return this;
 	}
 
 	protected void setUpperBoundIncluded0(boolean upperIncluded) {
