@@ -3,7 +3,9 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
+import static de.ims.icarus2.model.api.ModelTestUtils.mockStructure;
 import static de.ims.icarus2.test.util.Pair.longPair;
+import static org.mockito.Mockito.mock;
 
 import java.util.stream.Stream;
 
@@ -14,8 +16,6 @@ import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureEditVerifierTestBuilder;
-import de.ims.icarus2.model.standard.members.container.ItemStorage;
-import de.ims.icarus2.model.standard.members.container.ListItemStorageInt;
 import de.ims.icarus2.model.standard.members.structure.FixedSizeChainStorage.FixedSizeChainEditVerifier;
 
 /**
@@ -24,18 +24,16 @@ import de.ims.icarus2.model.standard.members.structure.FixedSizeChainStorage.Fix
  */
 class FixedSizeChainEditVerifierTest {
 
-	private ItemStorage itemStorage;
 	private FixedSizeChainStorage edgeStorage;
 	private FixedSizeChainEditVerifier verifier;
 	private Structure structure;
 
 	@BeforeEach
 	void prepare() {
-		itemStorage = new ListItemStorageInt();
-		edgeStorage = new FixedSizeChainStorage();
-		structure = new DefaultStructure(itemStorage, edgeStorage);
+		edgeStorage = mock(FixedSizeChainStorage.class);
+		structure = mockStructure(0, 0);
 
-		verifier = (FixedSizeChainEditVerifier) structure.createEditVerifier();
+		verifier = new FixedSizeChainEditVerifier(edgeStorage, structure);
 	}
 
 	@AfterEach
@@ -43,8 +41,9 @@ class FixedSizeChainEditVerifierTest {
 		verifier = null;
 		structure = null;
 		edgeStorage = null;
-		itemStorage = null;
 	}
+
+	//TODO add stubbing helper method to prepare the edgeStorage and structure fields
 
 	@SuppressWarnings("unchecked")
 	@TestFactory
@@ -59,4 +58,6 @@ class FixedSizeChainEditVerifierTest {
 				//TODO add illegal values for terminal changes and edge creation!!!
 				.createTests();
 	}
+
+	//TODO add test methods for different chain scenarios
 }
