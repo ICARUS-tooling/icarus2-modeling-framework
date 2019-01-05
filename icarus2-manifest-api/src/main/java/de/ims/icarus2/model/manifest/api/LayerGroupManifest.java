@@ -114,11 +114,11 @@ public interface LayerGroupManifest extends ModifiableIdentity, ManifestFragment
 
 	// Modification methods
 
-	void addLayerManifest(LayerManifest<?> layerManifest);
+	LayerGroupManifest addLayerManifest(LayerManifest<?> layerManifest);
 
-	void removeLayerManifest(LayerManifest<?> layerManifest);
+	LayerGroupManifest removeLayerManifest(LayerManifest<?> layerManifest);
 
-	void setPrimaryLayerId(String primaryLayerId);
+	LayerGroupManifest setPrimaryLayerId(String primaryLayerId);
 
-	void setIndependent(boolean isIndependent);
+	LayerGroupManifest setIndependent(boolean isIndependent);
 }

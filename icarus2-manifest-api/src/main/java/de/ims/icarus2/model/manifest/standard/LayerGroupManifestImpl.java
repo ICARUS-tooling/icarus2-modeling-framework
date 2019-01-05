@@ -117,10 +117,12 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	 * @param independent the independent to set or {@code null} if the implementation should use the default value
 	 */
 	@Override
-	public void setIndependent(boolean independent) {
+	public LayerGroupManifest setIndependent(boolean independent) {
 		checkNotLocked();
 
 		setIndependent0(independent);
+
+		return this;
 	}
 
 	protected void setIndependent0(boolean independent) {
@@ -128,10 +130,12 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	}
 
 	@Override
-	public void addLayerManifest(LayerManifest<?> layerManifest) {
+	public LayerGroupManifest addLayerManifest(LayerManifest<?> layerManifest) {
 		checkNotLocked();
 
 		addLayerManifest0(layerManifest);
+
+		return this;
 	}
 
 	protected void addLayerManifest0(LayerManifest<?> layerManifest) {
@@ -145,10 +149,12 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	}
 
 	@Override
-	public void removeLayerManifest(LayerManifest<?> layerManifest) {
+	public LayerGroupManifest removeLayerManifest(LayerManifest<?> layerManifest) {
 		checkNotLocked();
 
 		removeLayerManifest0(layerManifest);
+
+		return this;
 	}
 
 	protected void removeLayerManifest0(LayerManifest<?> layerManifest) {
@@ -163,10 +169,12 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity implements
 	 * @param primaryLayerManifest the primaryLayerManifest to set
 	 */
 	@Override
-	public void setPrimaryLayerId(String primaryLayerId) {
+	public LayerGroupManifest setPrimaryLayerId(String primaryLayerId) {
 		checkNotLocked();
 
 		setPrimaryLayerId0(primaryLayerId);
+
+		return this;
 	}
 
 	protected void setPrimaryLayerId0(String primaryLayerId) {
