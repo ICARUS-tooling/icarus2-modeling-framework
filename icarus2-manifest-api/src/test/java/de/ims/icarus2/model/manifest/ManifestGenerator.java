@@ -443,7 +443,7 @@ public class ManifestGenerator {
 		prepareMemberManifest(manifest, container, config);
 
 		for(int i=0; i<3; i++)
-			container.addFieldChange(manifest::addBaseLayerId, "baseLayer", index("layer"));
+			container.addFieldChange(manifest::addAndGetBaseLayer, "baseLayer", index("layer"));
 	}
 
 	private void prepareForeignImplementationManifest(ForeignImplementationManifest<?> manifest,

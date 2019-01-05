@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -103,11 +104,15 @@ public interface LayerManifest<L extends LayerManifest<L>> extends MemberManifes
 
 	// Modification methods
 
-	void setLayerTypeId(String layerTypeId);
+	L setLayerTypeId(String layerTypeId);
 
-	TargetLayerManifest addBaseLayerId(String baseLayerId);
+	default TargetLayerManifest addAndGetBaseLayer(String baseLayerId) {
+		return IcarusUtils.extractSupplied(action -> addBaseLayerId(baseLayerId, action));
+	}
 
-	void removeBaseLayerId(String baseLayerId);
+	L addBaseLayerId(String baseLayerId, Consumer<? super TargetLayerManifest> action);
+
+	L removeBaseLayerId(String baseLayerId);
 
 	/**
 	 * Models a resolved dependency on the layer level. A target layer may either be

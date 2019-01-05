@@ -197,7 +197,7 @@ public class ContextManifestResolver {
 		source.getLayerType().ifPresent(t -> target.setLayerTypeId(t.getId().orElseThrow(Manifest.invalidId(
 				"Layer type does not declare valid identifier"))));
 
-		source.forEachBaseLayerManifest(b -> target.addBaseLayerId(b.getLayerId()));
+		source.forEachBaseLayerManifest(b -> target.addAndGetBaseLayer(b.getLayerId()));
 	}
 
 	protected void copyItemLayerFields(ItemLayerManifest source, ItemLayerManifest target) {

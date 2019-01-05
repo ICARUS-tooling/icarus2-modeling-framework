@@ -185,7 +185,7 @@ public interface LayerManifestTest<M extends LayerManifest<?>> extends EmbeddedM
 	 * Creates a wrapper around the given {@code forEachGen} that
 	 * provides a {@code forEach} signature for {@code String} values instead of
 	 * {@link TargetLayerManifest}. This way it can be used together with the modifier methods
-	 * such as {@link LayerManifest#addBaseLayerId(String)} for testing.
+	 * such as {@link LayerManifest#addAndGetBaseLayer(String)} for testing.
 	 *
 	 * @return
 	 */
@@ -279,7 +279,7 @@ public interface LayerManifestTest<M extends LayerManifest<?>> extends EmbeddedM
 		assertDerivativeForEach(settings(),
 				"layer1", "layer2",
 				inject_forEachTargetLayerManifest(LayerManifest::forEachBaseLayerManifest),
-				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
+				inject_createTargetLayerManifest(LayerManifest::addAndGetBaseLayer));
 	}
 
 	/**
@@ -290,7 +290,7 @@ public interface LayerManifestTest<M extends LayerManifest<?>> extends EmbeddedM
 		assertDerivativeForEachLocal(settings(),
 				"layer1", "layer2",
 				inject_forEachTargetLayerManifest(LayerManifest::forEachLocalBaseLayerManifest),
-				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
+				inject_createTargetLayerManifest(LayerManifest::addAndGetBaseLayer));
 	}
 
 	/**
@@ -319,7 +319,7 @@ public interface LayerManifestTest<M extends LayerManifest<?>> extends EmbeddedM
 		assertDerivativeAccumulativeGetter(settings(),
 				"layer1", "layer2",
 				TestUtils.transform_genericCollectionGetter(LayerManifest::getBaseLayerManifests, transform_targetLayerId()),
-				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
+				inject_createTargetLayerManifest(LayerManifest::addAndGetBaseLayer));
 	}
 
 	/**
@@ -330,7 +330,7 @@ public interface LayerManifestTest<M extends LayerManifest<?>> extends EmbeddedM
 		assertDerivativeAccumulativeLocalGetter(settings(),
 				"layer1", "layer2",
 				TestUtils.transform_genericCollectionGetter(LayerManifest::getLocalBaseLayerManifests, transform_targetLayerId()),
-				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId));
+				inject_createTargetLayerManifest(LayerManifest::addAndGetBaseLayer));
 	}
 
 	/**
@@ -344,12 +344,23 @@ public interface LayerManifestTest<M extends LayerManifest<?>> extends EmbeddedM
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.LayerManifest#addBaseLayerId(java.lang.String)}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.LayerManifest#addAndGetBaseLayer(java.lang.String)}.
+	 */
+	@Test
+	default void testAddAndGetBaseLayer() {
+		assertLockableAccumulativeAdd(settings(),
+				LayerManifest::addAndGetBaseLayer,
+				ManifestTestUtils.getIllegalIdValues(), INVALID_ID_CHECK,
+				true, DUPLICATE_ID_CHECK, ManifestTestUtils.getLegalIdValues());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.LayerManifest#addBaseLayerId(String, Consumer)}.
 	 */
 	@Test
 	default void testAddBaseLayerId() {
 		assertLockableAccumulativeAdd(settings(),
-				inject_createTargetLayerManifest(LayerManifest::addBaseLayerId),
+				inject_consumeTargetLayerManifest(LayerManifest::addBaseLayerId),
 				ManifestTestUtils.getIllegalIdValues(), INVALID_ID_CHECK,
 				true, DUPLICATE_ID_CHECK, ManifestTestUtils.getLegalIdValues());
 	}
@@ -360,7 +371,7 @@ public interface LayerManifestTest<M extends LayerManifest<?>> extends EmbeddedM
 	@Test
 	default void testRemoveBaseLayerId() {
 		assertLockableAccumulativeRemove(
-				settings(),LayerManifest::addBaseLayerId,
+				settings(),LayerManifest::addAndGetBaseLayer,
 				LayerManifest::removeBaseLayerId,
 				TestUtils.transform_genericCollectionGetter(LayerManifest::getBaseLayerManifests, transform_targetLayerId()),
 				true, UNKNOWN_ID_CHECK,

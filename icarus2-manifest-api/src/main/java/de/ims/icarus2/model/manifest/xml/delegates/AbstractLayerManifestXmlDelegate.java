@@ -90,7 +90,7 @@ public abstract class AbstractLayerManifestXmlDelegate<L extends LayerManifest<L
 		switch (localName) {
 		case ManifestXmlTags.BASE_LAYER: {
 			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID)
-				.ifPresent(getInstance()::addBaseLayerId);
+				.ifPresent(getInstance()::addAndGetBaseLayer);
 		} break;
 
 		default:

@@ -80,10 +80,12 @@ public abstract class AbstractLayerManifest<L extends LayerManifest<L>>
 	 * @param layerType the layerType to set
 	 */
 	@Override
-	public void setLayerTypeId(String layerTypeId) {
+	public L setLayerTypeId(String layerTypeId) {
 		checkNotLocked();
 
 		setLayerTypeId0(layerTypeId);
+
+		return thisAsCast();
 	}
 
 	protected void setLayerTypeId0(String layerTypeId) {
@@ -140,11 +142,16 @@ public abstract class AbstractLayerManifest<L extends LayerManifest<L>>
 					"Cannot make links to other layers without enclosing layer group or context: "+getId()); //$NON-NLS-1$
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.LayerManifest#addBaseLayerId(java.lang.String, java.util.function.Consumer)
+	 */
 	@Override
-	public TargetLayerManifest addBaseLayerId(String baseLayerId) {
+	public L addBaseLayerId(String baseLayerId, Consumer<? super TargetLayerManifest> action) {
 		checkNotLocked();
 
-		return addBaseLayerId0(baseLayerId);
+		addBaseLayerId0(baseLayerId);
+
+		return thisAsCast();
 	}
 
 	protected TargetLayerManifest addBaseLayerId0(String baseLayerId) {
@@ -163,10 +170,12 @@ public abstract class AbstractLayerManifest<L extends LayerManifest<L>>
 	}
 
 	@Override
-	public void removeBaseLayerId(String baseLayerId) {
+	public L removeBaseLayerId(String baseLayerId) {
 		checkNotLocked();
 
 		removeBaseLayerId0(baseLayerId);
+
+		return thisAsCast();
 	}
 
 	protected void removeBaseLayerId0(String baseLayerId) {

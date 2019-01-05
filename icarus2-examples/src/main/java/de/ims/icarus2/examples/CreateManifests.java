@@ -55,10 +55,10 @@ public class CreateManifests {
 		ItemLayerManifest sentenceLayer = factory.create(ManifestType.ITEM_LAYER_MANIFEST, group);
 		sentenceLayer.setId("sentences");
 		sentenceLayer.setAndGetFoundationLayer("tokens");
-		sentenceLayer.addBaseLayerId("tokens");
+		sentenceLayer.addAndGetBaseLayer("tokens");
 
 		AnnotationLayerManifest annoLayer = factory.create(ManifestType.ANNOTATION_LAYER_MANIFEST, group);
-		annoLayer.addBaseLayerId("tokens");
+		annoLayer.addAndGetBaseLayer("tokens");
 
 		AnnotationManifest forms = factory.create(ManifestType.ANNOTATION_MANIFEST, annoLayer);
 		forms.setId("forms");
