@@ -62,5 +62,5 @@ public interface ValueManifest extends Documentable<ValueManifest>, ModifiableId
 
 	// Modification methods
 
-	void setValue(Object value);
+	ValueManifest setValue(Object value);
 }

@@ -88,10 +88,12 @@ public class ValueManifestImpl extends DefaultModifiableIdentity implements Valu
 	 * @param value the value to set
 	 */
 	@Override
-	public void setValue(Object value) {
+	public ValueManifest setValue(Object value) {
 		checkNotLocked();
 
 		setValue0(value);
+
+		return this;
 	}
 
 	protected void setValue0(Object value) {
