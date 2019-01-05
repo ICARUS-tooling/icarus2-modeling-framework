@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
+import javax.swing.Icon;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
@@ -48,8 +49,8 @@ import de.ims.icarus2.util.collections.LazyCollection;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface MemberManifest<M extends MemberManifest<M>> extends ModifiableIdentity, Categorizable<M>, Documentable<M>, Manifest {
-
+public interface MemberManifest<M extends MemberManifest<M>>
+		extends ModifiableIdentity, Categorizable<M>, Documentable<M>, Manifest {
 
 	/**
 	 * Returns the manifest that describes possible options the
@@ -189,6 +190,16 @@ public interface MemberManifest<M extends MemberManifest<M>> extends ModifiableI
 	 * @param optionsManifest
 	 */
 	M setOptionsManifest(@Nullable OptionsManifest optionsManifest);
+
+	// Since we inherit the following Identity related methods from two pathes, we need to unify return types
+	@Override
+	M setId(String id);
+	@Override
+	M setName(String name);
+	@Override
+	M setDescription(String description);
+	@Override
+	M setIcon(Icon icon);
 
 	// Extension of Categorizable
 

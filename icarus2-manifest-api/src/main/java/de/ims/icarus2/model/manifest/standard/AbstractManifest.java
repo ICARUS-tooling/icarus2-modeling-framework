@@ -64,6 +64,12 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 		this.registry = registry;
 	}
 
+	protected final T thisAsCast() {
+		@SuppressWarnings("unchecked")
+		T result = (T) this;
+		return result;
+	}
+
 	@SuppressWarnings("unchecked")
 	protected final <V extends Object, I extends T> Optional<V> getDerivable(
 			Optional<V> localValue, Function<I, Optional<V>> getter) {
@@ -209,10 +215,12 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 	 * @param versionManifest the versionManifest to set
 	 */
 	@Override
-	public void setVersionManifest(VersionManifest versionManifest) {
+	public T setVersionManifest(VersionManifest versionManifest) {
 		checkNotLocked();
 
 		setVersionManifest0(versionManifest);
+
+		return thisAsCast();
 	}
 
 	protected void setVersionManifest0(VersionManifest versionManifest) {
@@ -228,10 +236,12 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 	 * @param id the id to set
 	 */
 	@Override
-	public void setId(String id) {
+	public T setId(String id) {
 		checkNotLocked();
 
 		setId0(id);
+
+		return thisAsCast();
 	}
 
 	protected void setId0(String id) {
@@ -245,10 +255,12 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 	 * @see de.ims.icarus2.model.manifest.api.Manifest#setTemplateId(java.lang.String)
 	 */
 	@Override
-	public void setTemplateId(String templateId) {
+	public T setTemplateId(String templateId) {
 		checkNotLocked();
 
 		setTemplateId0(templateId);
+
+		return thisAsCast();
 	}
 
 	protected void setTemplateId0(String templateId) {
@@ -282,10 +294,12 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 	 * @param isTemplate the isTemplate to set
 	 */
 	@Override
-	public void setIsTemplate(boolean isTemplate) {
+	public T setIsTemplate(boolean isTemplate) {
 		checkNotLocked();
 
 		setIsTemplate0(isTemplate);
+
+		return thisAsCast();
 	}
 
 	protected void setIsTemplate0(boolean isTemplate) {

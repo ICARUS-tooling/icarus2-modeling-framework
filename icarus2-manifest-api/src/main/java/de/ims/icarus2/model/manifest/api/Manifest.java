@@ -171,7 +171,7 @@ public interface Manifest extends ManifestFragment {
 	 * must not be {@code null}.
 	 * @param id
 	 */
-	void setId(String id);
+	Manifest setId(String id);
 
 	/**
 	 * Marks a manifest to be a template. Note that templates must be hosted within
@@ -184,7 +184,7 @@ public interface Manifest extends ManifestFragment {
 	 *
 	 * @param isTemplate
 	 */
-	void setIsTemplate(boolean isTemplate);
+	Manifest setIsTemplate(boolean isTemplate);
 
 	/**
 	 * Changes the template (identified by its {@code id}) used for this manifest.
@@ -192,7 +192,7 @@ public interface Manifest extends ManifestFragment {
 	 *
 	 * @param templateId
 	 */
-	void setTemplateId(String templateId);
+	Manifest setTemplateId(String templateId);
 
 	/**
 	 * Returns the registry that is managing this manifest.
@@ -227,7 +227,7 @@ public interface Manifest extends ManifestFragment {
 	 *
 	 * @param versionManifest
 	 */
-	void setVersionManifest(VersionManifest versionManifest);
+	Manifest setVersionManifest(VersionManifest versionManifest);
 
 	public static void verifyEnvironment(ManifestLocation manifestLocation, Object environment, Class<?> expected) {
 		if(!manifestLocation.isTemplate() && !expected.isInstance(environment))

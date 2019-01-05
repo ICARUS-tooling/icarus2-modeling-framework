@@ -24,7 +24,7 @@ import de.ims.icarus2.model.manifest.api.Category;
  * @author Markus Gärtner
  *
  */
-public class DefaultCategory extends DefaultModifiableIdentity implements Category {
+public class DefaultCategory extends DefaultModifiableIdentity<DefaultCategory> implements Category {
 
 	private Optional<String> namespace = Optional.empty();
 

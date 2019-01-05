@@ -30,7 +30,8 @@ import de.ims.icarus2.util.id.Identity;
  * @author Markus Gärtner
  *
  */
-public class DefaultModifiableIdentity extends AbstractLockable implements ModifiableIdentity {
+public class DefaultModifiableIdentity<I extends ModifiableIdentity>
+		extends AbstractLockable implements ModifiableIdentity {
 
 	private Optional<String> id = Optional.empty();
 	private Optional<String> name = Optional.empty();
@@ -54,6 +55,12 @@ public class DefaultModifiableIdentity extends AbstractLockable implements Modif
 
 	public DefaultModifiableIdentity(String id, String description) {
 		this(id, null, description, null);
+	}
+
+	protected final I thisAsCast() {
+		@SuppressWarnings("unchecked")
+		I result = (I) this;
+		return result;
 	}
 
 	/**
@@ -92,10 +99,12 @@ public class DefaultModifiableIdentity extends AbstractLockable implements Modif
 	 * @param id the id to set
 	 */
 	@Override
-	public void setId(String id) {
+	public I setId(String id) {
 		checkNotLocked();
 
 		setId0(id);
+
+		return thisAsCast();
 	}
 
 	protected void setId0(String id) {
@@ -110,10 +119,12 @@ public class DefaultModifiableIdentity extends AbstractLockable implements Modif
 	 * @param name the name to set
 	 */
 	@Override
-	public void setName(String name) {
+	public I setName(String name) {
 		checkNotLocked();
 
 		setName0(name);
+
+		return thisAsCast();
 	}
 
 	protected void setName0(String name) {
@@ -124,10 +135,12 @@ public class DefaultModifiableIdentity extends AbstractLockable implements Modif
 	 * @param description the description to set
 	 */
 	@Override
-	public void setDescription(String description) {
+	public I setDescription(String description) {
 		checkNotLocked();
 
 		setDescription0(description);
+
+		return thisAsCast();
 	}
 
 	protected void setDescription0(String description) {
@@ -138,10 +151,12 @@ public class DefaultModifiableIdentity extends AbstractLockable implements Modif
 	 * @param icon the icon to set
 	 */
 	@Override
-	public void setIcon(Icon icon) {
+	public I setIcon(Icon icon) {
 		checkNotLocked();
 
 		setIcon0(icon);
+
+		return thisAsCast();
 	}
 
 	protected void setIcon0(Icon icon) {

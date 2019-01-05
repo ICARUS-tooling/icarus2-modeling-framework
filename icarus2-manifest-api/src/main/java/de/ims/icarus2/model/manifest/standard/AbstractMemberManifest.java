@@ -162,12 +162,6 @@ public abstract class AbstractMemberManifest<M extends MemberManifest<M>, H exte
 		this.host = Optional.of(host);
 	}
 
-	protected final M thisAsCast() {
-		@SuppressWarnings("unchecked")
-		M result = (M) this;
-		return result;
-	}
-
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
 	 */
@@ -433,10 +427,12 @@ public abstract class AbstractMemberManifest<M extends MemberManifest<M>, H exte
 	}
 
 	@Override
-	public void setName(String name) {
+	public M setName(String name) {
 		checkNotLocked();
 
 		setName0(name);
+
+		return thisAsCast();
 	}
 
 	protected void setName0(String name) {
@@ -449,10 +445,12 @@ public abstract class AbstractMemberManifest<M extends MemberManifest<M>, H exte
 	}
 
 	@Override
-	public void setDescription(String description) {
+	public M setDescription(String description) {
 		checkNotLocked();
 
 		setDescription0(description);
+
+		return thisAsCast();
 	}
 
 	protected void setDescription0(String description) {
@@ -465,10 +463,12 @@ public abstract class AbstractMemberManifest<M extends MemberManifest<M>, H exte
 	}
 
 	@Override
-	public void setIcon(Icon icon) {
+	public M setIcon(Icon icon) {
 		checkNotLocked();
 
 		setIcon0(icon);
+
+		return thisAsCast();
 	}
 
 	protected void setIcon0(Icon icon) {

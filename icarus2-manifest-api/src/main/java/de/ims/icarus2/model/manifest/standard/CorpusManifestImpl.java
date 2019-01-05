@@ -83,19 +83,21 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest, T
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractManifest#setIsTemplate(boolean)
 	 */
 	@Override
-	public void setIsTemplate(boolean isTemplate) {
+	public CorpusManifest setIsTemplate(boolean isTemplate) {
 		if(isTemplate)
 			throw new ManifestException(ManifestErrorCode.MANIFEST_ILLEGAL_TEMPLATE_STATE,
 					"Cannot declare corpus manifest as template");
 
 		super.setIsTemplate(isTemplate);
+
+		return this;
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractManifest#setTemplateId(java.lang.String)
 	 */
 	@Override
-	public void setTemplateId(String templateId) {
+	public CorpusManifest setTemplateId(String templateId) {
 		throw new ManifestException(ManifestErrorCode.MANIFEST_ILLEGAL_TEMPLATE_STATE,
 				"Corpus manifest does not support templating");
 	}

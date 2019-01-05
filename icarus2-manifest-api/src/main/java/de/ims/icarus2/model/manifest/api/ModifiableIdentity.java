@@ -57,11 +57,11 @@ public interface ModifiableIdentity extends Identity {
 	 *
 	 * @throws NullPointerException if the given {@code id} is {@code null}
 	 */
-	void setId(String id);
+	ModifiableIdentity setId(String id);
 
-	void setName(String name);
+	ModifiableIdentity setName(String name);
 
-	void setDescription(String description);
+	ModifiableIdentity setDescription(String description);
 
-	void setIcon(Icon icon);
+	ModifiableIdentity setIcon(Icon icon);
 }
