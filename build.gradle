@@ -127,6 +127,9 @@ subprojects {
 	test {
  		useTestNG()
 	    useJUnitPlatform()
+	    
+	  	minHeapSize = "512m"
+	 	maxHeapSize = "2g"
 	}
 	
 	javadoc {
