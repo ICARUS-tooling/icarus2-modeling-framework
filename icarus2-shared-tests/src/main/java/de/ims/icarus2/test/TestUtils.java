@@ -97,7 +97,7 @@ public class TestUtils {
 
 	public static final String EMOJI = "👍"; // thumbs-up emoji
 
-	private static final PrintStream out = null;
+	private static final PrintStream out = null; //TODO need a facility to change this dynamically
 
 	public static void print(String s) {
 		if(out!=null)

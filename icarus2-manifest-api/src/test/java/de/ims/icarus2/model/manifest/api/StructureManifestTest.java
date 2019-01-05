@@ -98,7 +98,7 @@ public interface StructureManifestTest extends ContainerManifestTestMixin<Struct
 	default Stream<DynamicTest> testForEachActiveStructureFlag() {
 		return Stream.of(StructureFlag.values())
 				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
-					assertDerivativeForEach(
+					this.<StructureFlag>assertDerivativeForEach(
 							settings(),
 							flag, TestUtils.other(flag),
 							StructureManifest::forEachActiveStructureFlag,
@@ -113,7 +113,7 @@ public interface StructureManifestTest extends ContainerManifestTestMixin<Struct
 	default Stream<DynamicTest> testForEachActiveLocalStructureFlag() {
 		return Stream.of(StructureFlag.values())
 				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
-					assertDerivativeForEachLocal(
+					this.<StructureFlag>assertDerivativeForEachLocal(
 							settings(),
 							flag, TestUtils.other(flag),
 							StructureManifest::forEachActiveLocalStructureFlag,

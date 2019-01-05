@@ -111,7 +111,7 @@ interface ContainerManifestTestMixin<M extends ContainerManifest> extends Embedd
 	default Stream<DynamicTest> testForEachActiveContainerFlag() {
 		return Stream.of(ContainerFlag.values())
 				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
-					assertDerivativeForEach(
+					this.<ContainerFlag>assertDerivativeForEach(
 							settings(),
 							flag, TestUtils.other(flag),
 							ContainerManifest::forEachActiveContainerFlag,
@@ -126,7 +126,7 @@ interface ContainerManifestTestMixin<M extends ContainerManifest> extends Embedd
 	default Stream<DynamicTest> testForEachActiveLocalContainerFlag() {
 		return Stream.of(ContainerFlag.values())
 				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
-					assertDerivativeForEachLocal(
+					this.<ContainerFlag>assertDerivativeForEachLocal(
 							settings(),
 							flag, TestUtils.other(flag),
 							ContainerManifest::forEachActiveLocalContainerFlag,

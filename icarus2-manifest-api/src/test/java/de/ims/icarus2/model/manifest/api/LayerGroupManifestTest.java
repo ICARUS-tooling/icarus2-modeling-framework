@@ -117,7 +117,7 @@ public interface LayerGroupManifestTest
 	 */
 	@Test
 	default void testForEachLayerManifest() {
-		TestUtils.assertForEach(createUnlocked(),
+		TestUtils.<LayerGroupManifest, LayerManifest<?>>assertForEach(createUnlocked(),
 				mockLayerManifest("layer1"),
 				mockLayerManifest("layer2"),
 				LayerGroupManifest::forEachLayerManifest,
@@ -141,12 +141,12 @@ public interface LayerGroupManifestTest
 	 */
 	@Test
 	default void testGetPrimaryLayerManifest() {
-		TestUtils.assertOptGetter(createUnlocked(),
+		TestUtils.<LayerGroupManifest, ItemLayerManifest>assertOptGetter(createUnlocked(),
 				LayerManifestTest.mockItemLayerManifest("layer1"),
 				LayerManifestTest.mockItemLayerManifest("layer2"),
 				NO_DEFAULT(),
-				LayerGroupManifest::getPrimaryLayerManifest,
-				inject_addLayer(TestUtils.inject_genericSetter(
+				g -> g.getPrimaryLayerManifest(),
+				inject_addLayer(TestUtils.<LayerGroupManifest,ItemLayerManifest,String>inject_genericSetter(
 						LayerGroupManifest::setPrimaryLayerId, transform_id())));
 	}
 

@@ -153,7 +153,7 @@ public interface ManifestXmlDelegateTest<M extends TypedManifest, D extends Mani
 	 * Test method for {@link de.ims.icarus2.model.manifest.xml.ManifestXmlDelegate#writeXml(de.ims.icarus2.util.xml.XmlSerializer)}.
 	 * @throws Exception
 	 */
-	@SuppressWarnings("boxing")
+	@SuppressWarnings({ "boxing", "unchecked" })
 	@TestFactory
 	@DisplayName("test writeXml() with simple value types")
 	default Stream<DynamicTest> testWriteXml() throws Exception {
@@ -195,8 +195,9 @@ public interface ManifestXmlDelegateTest<M extends TypedManifest, D extends Mani
 					String label = String.format("%s: %s - step %d/%d",
 							build.currentLabel(), type, step++, build.getChangeCount()+1);
 
-					ManifestXmlTestUtils.assertSerializationEquals(
-							label, original, target, delegate,
+					ManifestXmlTestUtils.<M>assertSerializationEquals(
+							label, original, target,
+							(ManifestXmlDelegate<M>)delegate,
 							true,
 							true); // dump intermediary xml representation
 				} while(build.applyNextChange());

@@ -36,7 +36,6 @@ import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
 import static de.ims.icarus2.test.TestUtils.assertPresent;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static de.ims.icarus2.test.TestUtils.transform_genericCollectionGetter;
-import static de.ims.icarus2.test.TestUtils.unwrapGetter;
 import static de.ims.icarus2.test.TestUtils.wrapForEach;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
@@ -393,7 +392,7 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 	 */
 	@Test
 	default void testGetLayerManifests() {
-		assertDerivativeAccumulativeGetter(
+		this.<LayerManifest<?>>assertDerivativeAccumulativeGetter(
 				settings().processor(processor_stubLayerGroup()),
 				LayerManifestTest.mockLayerManifest("layer1"),
 				LayerManifestTest.mockLayerManifest("layer2"),
@@ -406,7 +405,7 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 	 */
 	@Test
 	default void testGetLocalLayerManifests() {
-		assertDerivativeAccumulativeLocalGetter(
+		this.<LayerManifest<?>>assertDerivativeAccumulativeLocalGetter(
 				settings().processor(processor_stubLayerGroup()),
 				LayerManifestTest.mockLayerManifest("layer1"),
 				LayerManifestTest.mockLayerManifest("layer2"),
@@ -562,14 +561,14 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 	 */
 	@Test
 	default void testGetLayerManifest() {
-		assertDerivativeAccumulativeOptLookup(
+		this.<LayerManifest<?>, String>assertDerivativeAccumulativeOptLookup(
 				settings().processor(processor_stubLayerGroup()),
 				LayerManifestTest.mockLayerManifest("layer1"),
 				LayerManifestTest.mockLayerManifest("layer2"),
 				(m, id) -> m.getLayerManifest(id).map(l -> (LayerManifest<?>)l),
 				NPE_CHECK,
 				inject_addLayerManifest(DEFAULT_GROUP),
-				unwrapGetter(LayerManifest::getId),
+				TestUtils.<LayerManifest<?>, String>unwrapGetter(LayerManifest::getId),
 				"layer3", "layer4");
 	}
 

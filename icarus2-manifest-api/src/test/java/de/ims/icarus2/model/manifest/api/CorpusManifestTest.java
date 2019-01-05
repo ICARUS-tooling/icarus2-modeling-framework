@@ -94,7 +94,7 @@ public interface CorpusManifestTest extends MemberManifestTest<CorpusManifest> {
 	 */
 	@Test
 	default void testForEachRootContextManifest() {
-		TestUtils.assertForEach(
+		TestUtils.<CorpusManifest, ContextManifest>assertForEach(
 				createUnlocked(settings().processor(processor_makeParallel())),
 				mockContextManifest("context1"),
 				mockContextManifest("context2"),
@@ -178,7 +178,7 @@ public interface CorpusManifestTest extends MemberManifestTest<CorpusManifest> {
 	 */
 	@Test
 	default void testForEachCustomContextManifest() {
-		TestUtils.assertForEach(
+		TestUtils.<CorpusManifest, ContextManifest>assertForEach(
 				createUnlocked(settings()),
 				mockContextManifest("context1"),
 				mockContextManifest("context2"),
@@ -214,7 +214,7 @@ public interface CorpusManifestTest extends MemberManifestTest<CorpusManifest> {
 			}
 		};
 
-		TestUtils.assertForEach(
+		TestUtils.<CorpusManifest, ContextManifest>assertForEach(
 				createUnlocked(settings()),
 				root,
 				mockContextManifest("context2"),
@@ -282,14 +282,14 @@ public interface CorpusManifestTest extends MemberManifestTest<CorpusManifest> {
 		CorpusManifest instance = createUnlocked();
 		instance.addRootContextManifest(context);
 
-		assertAccumulativeOptLookup(
+		TestUtils.<CorpusManifest, LayerManifest<?>, String>assertAccumulativeOptLookup(
 				instance,
 				LayerManifestTest.mockLayerManifest("layer1"),
 				LayerManifestTest.mockLayerManifest("layer2"),
 				(m, id) -> m.getLayerManifest(id).map( l -> (LayerManifest<?>)l),
 				NPE_CHECK,
 				adder,
-				unwrapGetter(LayerManifest::getId),
+				TestUtils.<LayerManifest<?>, String>unwrapGetter(LayerManifest::getId),
 				"layer3", "layer4");
 	}
 
@@ -324,7 +324,7 @@ public interface CorpusManifestTest extends MemberManifestTest<CorpusManifest> {
 	 */
 	@Test
 	default void testForEachNote() {
-		TestUtils.assertForEach(
+		TestUtils.<CorpusManifest, Note>assertForEach(
 				createUnlocked(),
 				mock(Note.class),
 				mock(Note.class),
