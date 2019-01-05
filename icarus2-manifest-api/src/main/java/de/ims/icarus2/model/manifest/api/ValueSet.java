@@ -117,7 +117,7 @@ public interface ValueSet extends Lockable, TypedManifest, Searchable<Object> {
 	 *
 	 * @param value
 	 */
-	void addValue(Object value);
+	ValueSet addValue(Object value);
 
 	/**
 	 * Adds the given {@code value} at the specified {@code index}.
@@ -125,17 +125,17 @@ public interface ValueSet extends Lockable, TypedManifest, Searchable<Object> {
 	 * @param value
 	 * @param index
 	 */
-	void addValue(Object value, int index);
+	ValueSet addValue(Object value, int index);
 
-	void removeValueAt(int index);
+	ValueSet removeValueAt(int index);
 
-	default void removeValue(Object value) {
+	default ValueSet removeValue(Object value) {
 		int index = indexOfValue(value);
 		if(index==-1)
 			throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
 					"Unknown value: "+value);
-		removeValueAt(index);
+		return removeValueAt(index);
 	}
 
-	void removeAllValues();
+	ValueSet removeAllValues();
 }

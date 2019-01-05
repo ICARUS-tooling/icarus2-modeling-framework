@@ -169,20 +169,24 @@ public class ValueSetImpl extends AbstractLockable implements ValueSet {
 	}
 
 	@Override
-	public void addValue(Object value) {
+	public ValueSet addValue(Object value) {
 		checkNotLocked();
 		requireNonNull(value);
 
 		addValue0(value, -1);
+
+		return this;
 	}
 
 	@Override
-	public void addValue(Object value, int index) {
+	public ValueSet addValue(Object value, int index) {
 		checkNotLocked();
 		requireNonNull(value);
 		checkIndex(index, 0, values.size()-1);
 
 		addValue0(value, index);
+
+		return this;
 	}
 
 	protected void addValue0(Object value, int index) {
@@ -199,16 +203,20 @@ public class ValueSetImpl extends AbstractLockable implements ValueSet {
 	 * @see de.ims.icarus2.model.manifest.api.ValueSet#removeValue(java.lang.Object)
 	 */
 	@Override
-	public void removeValue(Object value) {
+	public ValueSet removeValue(Object value) {
 		checkNotLocked();
 		ValueSet.super.removeValue(value);
+
+		return this;
 	}
 
 	@Override
-	public void removeValueAt(int index) {
+	public ValueSet removeValueAt(int index) {
 		checkNotLocked();
 
 		removeValueAt0(index);
+
+		return this;
 	}
 
 	protected void removeValueAt0(int index) {
@@ -217,10 +225,12 @@ public class ValueSetImpl extends AbstractLockable implements ValueSet {
 	 * @see de.ims.icarus2.model.manifest.api.ValueSet#removeAllValues()
 	 */
 	@Override
-	public void removeAllValues() {
+	public ValueSet removeAllValues() {
 		checkNotLocked();
 
 		removeAllValues0();
+
+		return this;
 	}
 
 	protected void removeAllValues0() {
