@@ -99,10 +99,12 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	 * @param sourceType the sourceType to set
 	 */
 	@Override
-	public void setSourceType(SourceType sourceType) {
+	public ImplementationManifest setSourceType(SourceType sourceType) {
 		checkNotLocked();
 
 		setSourceType0(sourceType);
+
+		return thisAsCast();
 	}
 
 	protected void setSourceType0(SourceType sourceType) {
@@ -113,10 +115,12 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	 * @param source the source to set
 	 */
 	@Override
-	public void setSource(String source) {
+	public ImplementationManifest setSource(String source) {
 		checkNotLocked();
 
 		setSource0(source);
+
+		return thisAsCast();
 	}
 
 	protected void setSource0(String source) {
@@ -127,10 +131,12 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	 * @param classname the classname to set
 	 */
 	@Override
-	public void setClassname(String classname) {
+	public ImplementationManifest setClassname(String classname) {
 		checkNotLocked();
 
 		setClassname0(classname);
+
+		return thisAsCast();
 	}
 
 	protected void setClassname0(String classname) {
@@ -141,10 +147,12 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	 * @param useFactory the useFactory to set
 	 */
 	@Override
-	public void setUseFactory(boolean useFactory) {
+	public ImplementationManifest setUseFactory(boolean useFactory) {
 		checkNotLocked();
 
 		setUseFactory0(useFactory);
+
+		return thisAsCast();
 	}
 
 	protected void setUseFactory0(boolean useFactory) {

@@ -119,13 +119,13 @@ public interface ImplementationManifest extends MemberManifest<ImplementationMan
 
 	// Modification methods
 
-	void setSourceType(SourceType sourceType);
+	ImplementationManifest setSourceType(SourceType sourceType);
 
-	void setSource(String source);
+	ImplementationManifest setSource(String source);
 
-	void setClassname(String classname);
+	ImplementationManifest setClassname(String classname);
 
-	void setUseFactory(boolean useFactory);
+	ImplementationManifest setUseFactory(boolean useFactory);
 
 	public enum SourceType implements StringResource {
 
