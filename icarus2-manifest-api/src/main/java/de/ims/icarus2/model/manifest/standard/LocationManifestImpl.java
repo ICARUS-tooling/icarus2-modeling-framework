@@ -164,10 +164,12 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	 * @see de.ims.icarus2.model.manifest.api.LocationManifest#setIsInline(boolean)
 	 */
 	@Override
-	public void setIsInline(boolean value) {
+	public LocationManifest setIsInline(boolean value) {
 		checkNotLocked();
 
 		setIsInline0(value);
+
+		return this;
 	}
 
 	protected void setIsInline0(boolean value) {
@@ -178,11 +180,13 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	 * @see de.ims.icarus2.model.manifest.api.LocationManifest#setInlineData(java.lang.CharSequence)
 	 */
 	@Override
-	public void setInlineData(CharSequence data) {
+	public LocationManifest setInlineData(CharSequence data) {
 		checkNotLocked();
 		checkInline();
 
 		setInlineData0(data);
+
+		return this;
 	}
 
 	protected void setInlineData0(CharSequence data) {
@@ -195,10 +199,12 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	 * @param rootPath the rootPath to set
 	 */
 	@Override
-	public void setRootPath(String rootPath) {
+	public LocationManifest setRootPath(String rootPath) {
 		checkNotLocked();
 
 		setRootPath0(rootPath);
+
+		return this;
 	}
 
 	protected void setRootPath0(String rootPath) {
@@ -218,10 +224,12 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	}
 
 	@Override
-	public void setRootPathType(PathType type) {
+	public LocationManifest setRootPathType(PathType type) {
 		checkNotLocked();
 
 		setRootPathType0(type);
+
+		return this;
 	}
 
 	protected void setRootPathType0(PathType type) {
@@ -232,10 +240,12 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	}
 
 	@Override
-	public void setPathResolverManifest(PathResolverManifest pathResolverManifest) {
+	public LocationManifest setPathResolverManifest(PathResolverManifest pathResolverManifest) {
 		checkNotLocked();
 
 		setPathResolverManifest0(pathResolverManifest);
+
+		return this;
 	}
 
 	protected void setPathResolverManifest0(PathResolverManifest pathResolverManifest) {
@@ -255,10 +265,12 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	}
 
 	@Override
-	public void addPathEntry(PathEntry entry) {
+	public LocationManifest addPathEntry(PathEntry entry) {
 		checkNotLocked();
 
 		addPathEntry0(entry);
+
+		return this;
 	}
 
 	protected void addPathEntry0(PathEntry entry) {
@@ -273,10 +285,12 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	}
 
 	@Override
-	public void removePathEntry(PathEntry entry) {
+	public LocationManifest removePathEntry(PathEntry entry) {
 		checkNotLocked();
 
 		removePathEntry0(entry);
+
+		return this;
 	}
 
 	protected void removePathEntry0(PathEntry entry) {

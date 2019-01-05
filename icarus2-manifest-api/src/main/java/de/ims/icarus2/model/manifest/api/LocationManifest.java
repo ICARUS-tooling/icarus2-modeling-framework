@@ -103,19 +103,19 @@ public interface LocationManifest extends Manifest {
 
 	// Modification methods
 
-	void setIsInline(boolean value);
+	LocationManifest setIsInline(boolean value);
 
-	void setInlineData(CharSequence data);
+	LocationManifest setInlineData(CharSequence data);
 
-	void setRootPath(String path);
+	LocationManifest setRootPath(String path);
 
-	void setRootPathType(PathType type);
+	LocationManifest setRootPathType(PathType type);
 
-	void setPathResolverManifest(PathResolverManifest pathResolverManifest);
+	LocationManifest setPathResolverManifest(PathResolverManifest pathResolverManifest);
 
-	void addPathEntry(PathEntry entry);
+	LocationManifest addPathEntry(PathEntry entry);
 
-	void removePathEntry(PathEntry entry);
+	LocationManifest removePathEntry(PathEntry entry);
 
 	public enum PathType implements StringResource {
 
