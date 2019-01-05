@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
+import java.util.function.IntFunction;
 
 /**
  * @author Markus Gärtner
@@ -32,18 +33,33 @@ import java.util.Random;
  */
 public class Randomizer<T extends Object> {
 
-	private final List<T> buffer = new ArrayList<>();
+	public static <T> Randomizer<T> from(List<? extends T> items) {
+		return new Randomizer<>(items.size(), items::get);
+	}
+
+	public static <T> Randomizer<T> from(Collection<? extends T> items) {
+		return from(new ArrayList<>(items));
+	}
+
+	@SafeVarargs
+	public static <T> Randomizer<T> from(T...items) {
+		return new Randomizer<>(items.length, idx -> items[idx]);
+	}
+
+	private final IntFunction<T> mapper;
+	private final int size;
 	private final Random rng = new Random(System.currentTimeMillis());
 
-	public Randomizer(Collection<? extends T> items) {
-		requireNonNull(items);
-		if(items.size()<2)
+	public Randomizer(int size, IntFunction<T> mapper) {
+		if(size<2)
 			throw new IllegalArgumentException("No point in ranodmizing collection with less than 2 elements...");
-		buffer.addAll(items);
+
+		this.size = size;
+		this.mapper = requireNonNull(mapper);
 	}
 
 	public T randomize() {
-		int index = rng.nextInt(buffer.size());
-		return buffer.get(index);
+		int index = rng.nextInt(size);
+		return mapper.apply(index);
 	}
 }

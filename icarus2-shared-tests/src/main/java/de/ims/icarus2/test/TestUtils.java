@@ -184,7 +184,7 @@ public class TestUtils {
 			final T singleton = source.iterator().next();
 			return () -> singleton;
 		} else {
-			Randomizer<T> randomizer = new Randomizer<>(source);
+			Randomizer<T> randomizer = Randomizer.from(source);
 			return randomizer::randomize;
 		}
 	}
