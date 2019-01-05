@@ -25,6 +25,7 @@ import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubId;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubType;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.transform_id;
+import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_consumeTargetLayerManifest;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_createTargetLayerManifest;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.transform_targetLayerId;
 import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
@@ -142,7 +143,7 @@ interface ItemLayerManifestTestMixin<M extends ItemLayerManifest> extends LayerM
 				"layer2",
 				NO_DEFAULT(),
 				transform_genericOptValue(ItemLayerManifest::getBoundaryLayerManifest, transform_targetLayerId()),
-				inject_createTargetLayerManifest(ItemLayerManifest::setBoundaryLayerId));
+				inject_createTargetLayerManifest(ItemLayerManifest::setAndGetBoundaryLayer));
 	}
 
 	/**
@@ -154,7 +155,7 @@ interface ItemLayerManifestTestMixin<M extends ItemLayerManifest> extends LayerM
 				"layer1",
 				"layer2",
 				ItemLayerManifest::isLocalBoundaryLayerManifest,
-				inject_createTargetLayerManifest(ItemLayerManifest::setBoundaryLayerId));
+				inject_createTargetLayerManifest(ItemLayerManifest::setAndGetBoundaryLayer));
 	}
 
 	/**
@@ -167,7 +168,7 @@ interface ItemLayerManifestTestMixin<M extends ItemLayerManifest> extends LayerM
 				"layer2",
 				NO_DEFAULT(),
 				transform_genericOptValue(ItemLayerManifest::getFoundationLayerManifest, transform_targetLayerId()),
-				inject_createTargetLayerManifest(ItemLayerManifest::setFoundationLayerId));
+				inject_createTargetLayerManifest(ItemLayerManifest::setAndGetFoundationLayer));
 	}
 
 	/**
@@ -179,7 +180,7 @@ interface ItemLayerManifestTestMixin<M extends ItemLayerManifest> extends LayerM
 				"layer1",
 				"layer2",
 				ItemLayerManifest::isLocalFoundationLayerManifest,
-				inject_createTargetLayerManifest(ItemLayerManifest::setFoundationLayerId));
+				inject_createTargetLayerManifest(ItemLayerManifest::setAndGetFoundationLayer));
 	}
 
 	/**
@@ -197,23 +198,45 @@ interface ItemLayerManifestTestMixin<M extends ItemLayerManifest> extends LayerM
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#setBoundaryLayerId(java.lang.String)}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#setAndGetBoundaryLayer(java.lang.String)}.
 	 */
 	@Test
-	default void testSetBoundaryLayerId() {
+	default void testSetAndGetBoundaryLayer() {
 		assertLockableSetterBatch(settings(),
-				ItemLayerManifest::setBoundaryLayerId,
+				ItemLayerManifest::setAndGetBoundaryLayer,
 				getLegalIdValues(), true,
 				INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#setFoundationLayerId(java.lang.String)}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#setBoundaryLayerId(String, java.util.function.Consumer)}.
+	 */
+	@Test
+	default void testSetBoundaryLayerId() {
+		assertLockableSetterBatch(settings(),
+				inject_consumeTargetLayerManifest(ItemLayerManifest::setBoundaryLayerId),
+				getLegalIdValues(), true,
+				INVALID_ID_CHECK, getIllegalIdValues());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#setAndGetFoundationLayer(java.lang.String)}.
+	 */
+	@Test
+	default void testSetAndGetFoundationLayer() {
+		assertLockableSetterBatch(settings(),
+				ItemLayerManifest::setAndGetFoundationLayer,
+				getLegalIdValues(), true,
+				INVALID_ID_CHECK, getIllegalIdValues());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#setFoundationLayerId(String, java.util.function.Consumer)}.
 	 */
 	@Test
 	default void testSetFoundationLayerId() {
 		assertLockableSetterBatch(settings(),
-				ItemLayerManifest::setFoundationLayerId,
+				inject_consumeTargetLayerManifest(ItemLayerManifest::setFoundationLayerId),
 				getLegalIdValues(), true,
 				INVALID_ID_CHECK, getIllegalIdValues());
 	}

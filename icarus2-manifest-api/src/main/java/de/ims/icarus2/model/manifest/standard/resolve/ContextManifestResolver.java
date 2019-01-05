@@ -207,8 +207,8 @@ public class ContextManifestResolver {
 
 		copyLayerFields(source, target);
 
-		source.getBoundaryLayerManifest().ifPresent(m -> target.setBoundaryLayerId(m.getLayerId()));
-		source.getFoundationLayerManifest().ifPresent(m -> target.setFoundationLayerId(m.getLayerId()));
+		source.getBoundaryLayerManifest().ifPresent(m -> target.setAndGetBoundaryLayer(m.getLayerId()));
+		source.getFoundationLayerManifest().ifPresent(m -> target.setAndGetFoundationLayer(m.getLayerId()));
 
 		// Containers
 		Optional<Hierarchy<ContainerManifest>> containerHierarchy = source.getContainerHierarchy();

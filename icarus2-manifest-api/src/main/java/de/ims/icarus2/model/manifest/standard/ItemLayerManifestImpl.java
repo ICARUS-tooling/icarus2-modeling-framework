@@ -19,6 +19,7 @@ package de.ims.icarus2.model.manifest.standard;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.Hierarchy;
@@ -86,10 +87,12 @@ public class ItemLayerManifestImpl extends AbstractLayerManifest<ItemLayerManife
 	 * @see de.ims.icarus2.model.manifest.api.ItemLayerManifest#setContainerHierarchy(de.ims.icarus2.model.manifest.api.Hierarchy)
 	 */
 	@Override
-	public void setContainerHierarchy(Hierarchy<ContainerManifest> hierarchy) {
+	public ItemLayerManifest setContainerHierarchy(Hierarchy<ContainerManifest> hierarchy) {
 		checkNotLocked();
 
 		setContainerHierarchy0(hierarchy);
+
+		return thisAsCast();
 	}
 
 	protected void setContainerHierarchy0(Hierarchy<ContainerManifest> hierarchy) {
@@ -132,13 +135,15 @@ public class ItemLayerManifestImpl extends AbstractLayerManifest<ItemLayerManife
 	}
 
 	/**
-	 * @param boundaryLayerManifest the boundaryLayerManifest to set
+	 * @see de.ims.icarus2.model.manifest.api.ItemLayerManifest#setBoundaryLayerId(java.lang.String, java.util.function.Consumer)
 	 */
 	@Override
-	public TargetLayerManifest setBoundaryLayerId(String boundaryLayerId) {
+	public ItemLayerManifest setBoundaryLayerId(String boundaryLayerId, Consumer<? super TargetLayerManifest> action) {
 		checkNotLocked();
 
-		return setBoundaryLayerId0(boundaryLayerId);
+		setBoundaryLayerId0(boundaryLayerId);
+
+		return thisAsCast();
 	}
 
 	protected TargetLayerManifest setBoundaryLayerId0(String boundaryLayerId) {
@@ -169,13 +174,16 @@ public class ItemLayerManifestImpl extends AbstractLayerManifest<ItemLayerManife
 	}
 
 	/**
-	 * @param boundaryLayerManifest the boundaryLayerManifest to set
+	 * @see de.ims.icarus2.model.manifest.api.ItemLayerManifest#setFoundationLayerId(java.lang.String, java.util.function.Consumer)
 	 */
 	@Override
-	public TargetLayerManifest setFoundationLayerId(String foundationLayerId) {
+	public ItemLayerManifest setFoundationLayerId(String foundationLayerId,
+			Consumer<? super TargetLayerManifest> action) {
 		checkNotLocked();
 
-		return setFoundationLayerId0(foundationLayerId);
+		setFoundationLayerId0(foundationLayerId);
+
+		return thisAsCast();
 	}
 
 	protected TargetLayerManifest setFoundationLayerId0(String foundationLayerId) {

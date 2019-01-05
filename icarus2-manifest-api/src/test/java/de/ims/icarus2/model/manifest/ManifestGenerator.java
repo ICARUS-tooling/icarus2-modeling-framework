@@ -681,8 +681,8 @@ public class ManifestGenerator {
 
 		prepareLayerManifest(manifest, container, config);
 
-		container.addFieldChange(manifest::setFoundationLayerId, "foundationLayer", index("layer"));
-		container.addFieldChange(manifest::setBoundaryLayerId, "boundaryLayer", index("layer"));
+		container.addFieldChange(manifest::setAndGetFoundationLayer, "foundationLayer", index("layer"));
+		container.addFieldChange(manifest::setAndGetBoundaryLayer, "boundaryLayer", index("layer"));
 
 		for(ContainerType containerType : ContainerType.values()) {
 			if(containerType==ContainerType.PROXY) {
@@ -884,8 +884,8 @@ public class ManifestGenerator {
 
 		prepareLayerManifest(manifest, container, config);
 
-		container.addFieldChange(manifest::setFoundationLayerId, "foundationLayer", index("layer"));
-		container.addFieldChange(manifest::setBoundaryLayerId, "boundaryLayer", index("layer"));
+		container.addFieldChange(manifest::setAndGetFoundationLayer, "foundationLayer", index("layer"));
+		container.addFieldChange(manifest::setAndGetBoundaryLayer, "boundaryLayer", index("layer"));
 
 		for(StructureType structureType : StructureType.values()) {
 			container.addNestedManifestChange("structure::"+structureType, ManifestType.STRUCTURE_MANIFEST,

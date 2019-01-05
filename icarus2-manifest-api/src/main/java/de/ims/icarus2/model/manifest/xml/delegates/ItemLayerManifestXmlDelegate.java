@@ -156,12 +156,12 @@ public class ItemLayerManifestXmlDelegate extends AbstractLayerManifestXmlDelega
 
 		case ManifestXmlTags.BOUNDARY_LAYER: {
 			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID)
-				.ifPresent(getInstance()::setBoundaryLayerId);
+				.ifPresent(getInstance()::setAndGetBoundaryLayer);
 		} break;
 
 		case ManifestXmlTags.FOUNDATION_LAYER: {
 			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.LAYER_ID)
-				.ifPresent(getInstance()::setFoundationLayerId);
+				.ifPresent(getInstance()::setAndGetFoundationLayer);
 		} break;
 
 		case ManifestXmlTags.HIERARCHY: {

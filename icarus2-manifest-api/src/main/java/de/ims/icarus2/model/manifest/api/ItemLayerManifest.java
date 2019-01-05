@@ -17,7 +17,9 @@
 package de.ims.icarus2.model.manifest.api;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -90,9 +92,17 @@ public interface ItemLayerManifest extends LayerManifest<ItemLayerManifest> {
 
 	// Modification methods
 
-	void setContainerHierarchy(Hierarchy<ContainerManifest> hierarchy);
+	ItemLayerManifest setContainerHierarchy(Hierarchy<ContainerManifest> hierarchy);
 
-	TargetLayerManifest setBoundaryLayerId(String boundaryLayerId);
+	default TargetLayerManifest setAndGetBoundaryLayer(String boundaryLayerId) {
+		return IcarusUtils.extractSupplied(action -> setBoundaryLayerId(boundaryLayerId, action));
+	}
 
-	TargetLayerManifest setFoundationLayerId(String foundationLayerId);
+	ItemLayerManifest setBoundaryLayerId(String boundaryLayerId, Consumer<? super TargetLayerManifest> action);
+
+	default TargetLayerManifest setAndGetFoundationLayer(String foundationLayerId) {
+		return IcarusUtils.extractSupplied(action -> setFoundationLayerId(foundationLayerId, action));
+	}
+
+	ItemLayerManifest setFoundationLayerId(String foundationLayerId, Consumer<? super TargetLayerManifest> action);
 }
