@@ -146,10 +146,12 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	}
 
 	@Override
-	public void setInverseId(String inverseId) {
+	public MappingManifest setInverseId(String inverseId) {
 		checkNotLocked();
 
 		setInverseId0(inverseId);
+
+		return this;
 	}
 
 	protected void setInverseId0(String inverseId) {
@@ -162,10 +164,12 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	 * @param coverage the coverage to set
 	 */
 	@Override
-	public void setCoverage(Coverage coverage) {
+	public MappingManifest setCoverage(Coverage coverage) {
 		checkNotLocked();
 
 		setCoverage0(coverage);
+
+		return this;
 	}
 
 	protected void setCoverage0(Coverage coverage) {
@@ -177,10 +181,12 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	 * @param relation the relation to set
 	 */
 	@Override
-	public void setRelation(Relation relation) {
+	public MappingManifest setRelation(Relation relation) {
 		checkNotLocked();
 
 		setRelation0(relation);
+
+		return this;
 	}
 
 	protected void setRelation0(Relation relation) {
@@ -192,10 +198,12 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	 * @param sourceLayerId the sourceLayerId to set
 	 */
 	@Override
-	public void setSourceLayerId(String sourceLayerId) {
+	public MappingManifest setSourceLayerId(String sourceLayerId) {
 		checkNotLocked();
 
 		setSourceLayerId0(sourceLayerId);
+
+		return this;
 	}
 
 	protected void setSourceLayerId0(String sourceLayerId) {
@@ -211,10 +219,12 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	 * @param targetLayerId the targetLayerId to set
 	 */
 	@Override
-	public void setTargetLayerId(String targetLayerId) {
+	public MappingManifest setTargetLayerId(String targetLayerId) {
 		checkNotLocked();
 
 		setTargetLayerId0(targetLayerId);
+
+		return this;
 	}
 
 	protected void setTargetLayerId0(String targetLayerId) {
@@ -231,10 +241,12 @@ public class MappingManifestImpl extends AbstractLockable implements MappingMani
 	}
 
 	@Override
-	public void setId(String id) {
+	public MappingManifest setId(String id) {
 		checkNotLocked();
 
 		setId0(id);
+
+		return this;
 	}
 
 	protected void setId0(String id) {

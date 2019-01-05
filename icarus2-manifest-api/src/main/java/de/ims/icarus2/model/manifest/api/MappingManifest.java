@@ -82,17 +82,17 @@ public interface MappingManifest extends ManifestFragment, Embedded {
 
 	// Modification methods
 
-	void setSourceLayerId(String sourceLayerId);
+	MappingManifest setSourceLayerId(String sourceLayerId);
 
-	void setTargetLayerId(String targetLayerId);
+	MappingManifest setTargetLayerId(String targetLayerId);
 
-	void setRelation(Relation relation);
+	MappingManifest setRelation(Relation relation);
 
-	void setCoverage(Coverage coverage);
+	MappingManifest setCoverage(Coverage coverage);
 
-	void setInverseId(String inverseId);
+	MappingManifest setInverseId(String inverseId);
 
-	void setId(String id);
+	MappingManifest setId(String id);
 
 	/**
 	 * Models the actual quantitative relation type of a mapping, i.e. the relative number
