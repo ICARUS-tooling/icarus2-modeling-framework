@@ -85,10 +85,12 @@ public class StructureManifestImpl extends ContainerManifestImpl implements Stru
 	}
 
 	@Override
-	public void setStructureType(StructureType structureType) {
+	public StructureManifest setStructureType(StructureType structureType) {
 		checkNotLocked();
 
 		setStructureType0(structureType);
+
+		return this;
 	}
 
 	protected void setStructureType0(StructureType structureType) {
@@ -109,10 +111,12 @@ public class StructureManifestImpl extends ContainerManifestImpl implements Stru
 	}
 
 	@Override
-	public void setStructureFlag(StructureFlag flag, boolean active) {
+	public StructureManifest setStructureFlag(StructureFlag flag, boolean active) {
 		checkNotLocked();
 
 		setStructureFlag0(flag, active);
+
+		return this;
 	}
 
 	protected void setStructureFlag0(StructureFlag flag, boolean active) {

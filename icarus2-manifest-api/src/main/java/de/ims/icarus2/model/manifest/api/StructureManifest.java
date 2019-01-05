@@ -77,7 +77,7 @@ public interface StructureManifest extends ContainerManifest {
 
 	// Modification methods
 
-	void setStructureType(StructureType structureType);
+	StructureManifest setStructureType(StructureType structureType);
 
-	void setStructureFlag(StructureFlag flag, boolean active);
+	StructureManifest setStructureFlag(StructureFlag flag, boolean active);
 }
