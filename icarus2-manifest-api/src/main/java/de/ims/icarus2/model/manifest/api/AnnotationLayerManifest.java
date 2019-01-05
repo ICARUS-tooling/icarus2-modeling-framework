@@ -202,7 +202,7 @@ public interface AnnotationLayerManifest extends LayerManifest<AnnotationLayerMa
 
 	AnnotationLayerManifest setAnnotationFlag(AnnotationFlag flag, boolean active);
 
-	default TargetLayerManifest addAndGetReferenceLayerId(String referenceLayerId) {
+	default TargetLayerManifest addAndGetReferenceLayer(String referenceLayerId) {
 		return IcarusUtils.extractSupplied(action -> addReferenceLayerId(referenceLayerId, action));
 	}
 

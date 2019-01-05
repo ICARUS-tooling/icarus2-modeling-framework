@@ -272,7 +272,7 @@ public interface AnnotationLayerManifestTest extends LayerManifestTest<Annotatio
 		assertDerivativeForEach(settings(),
 				"layer1", "layer2",
 				inject_forEachTargetLayerManifest(AnnotationLayerManifest::forEachReferenceLayerManifest),
-				inject_createTargetLayerManifest(AnnotationLayerManifest::addAndGetReferenceLayerId));
+				inject_createTargetLayerManifest(AnnotationLayerManifest::addAndGetReferenceLayer));
 	}
 
 	/**
@@ -283,7 +283,7 @@ public interface AnnotationLayerManifestTest extends LayerManifestTest<Annotatio
 		assertDerivativeForEachLocal(settings(),
 				"layer1", "layer2",
 				inject_forEachTargetLayerManifest(AnnotationLayerManifest::forEachLocalReferenceLayerManifest),
-				inject_createTargetLayerManifest(AnnotationLayerManifest::addAndGetReferenceLayerId));
+				inject_createTargetLayerManifest(AnnotationLayerManifest::addAndGetReferenceLayer));
 	}
 
 	/**
@@ -294,7 +294,7 @@ public interface AnnotationLayerManifestTest extends LayerManifestTest<Annotatio
 		assertDerivativeAccumulativeGetter(settings(),
 				"layer1", "layer2",
 				TestUtils.transform_genericCollectionGetter(AnnotationLayerManifest::getReferenceLayerManifests, transform_targetLayerId()),
-				inject_createTargetLayerManifest(AnnotationLayerManifest::addAndGetReferenceLayerId));
+				inject_createTargetLayerManifest(AnnotationLayerManifest::addAndGetReferenceLayer));
 	}
 
 	/**
@@ -308,7 +308,7 @@ public interface AnnotationLayerManifestTest extends LayerManifestTest<Annotatio
 						AnnotationLayerManifest::getLocalReferenceLayerManifests,
 						transform_targetLayerId()),
 				inject_createTargetLayerManifest(
-						AnnotationLayerManifest::addAndGetReferenceLayerId));
+						AnnotationLayerManifest::addAndGetReferenceLayer));
 	}
 
 	/**
@@ -361,7 +361,7 @@ public interface AnnotationLayerManifestTest extends LayerManifestTest<Annotatio
 	@Test
 	default void testAddAndGetReferenceLayerId() {
 		assertLockableAccumulativeAdd(settings(),
-				inject_createTargetLayerManifest(AnnotationLayerManifest::addAndGetReferenceLayerId),
+				AnnotationLayerManifest::addAndGetReferenceLayer,
 				ManifestTestUtils.getIllegalIdValues(), INVALID_ID_CHECK,
 				true, DUPLICATE_ID_CHECK, ManifestTestUtils.getLegalIdValues());
 	}
@@ -383,7 +383,7 @@ public interface AnnotationLayerManifestTest extends LayerManifestTest<Annotatio
 	@Test
 	default void testRemoveReferenceLayerId() {
 		assertLockableAccumulativeRemove(settings(),
-				AnnotationLayerManifest::addAndGetReferenceLayerId,
+				AnnotationLayerManifest::addAndGetReferenceLayer,
 				AnnotationLayerManifest::removeReferenceLayerId,
 				TestUtils.transform_genericCollectionGetter(AnnotationLayerManifest::getReferenceLayerManifests, transform_targetLayerId()),
 				true, UNKNOWN_ID_CHECK,

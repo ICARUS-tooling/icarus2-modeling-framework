@@ -229,7 +229,7 @@ public interface LayerManifestTest<M extends LayerManifest<?>> extends EmbeddedM
 	 * @param creator
 	 * @return
 	 */
-	public static <M extends LayerManifest<M>> BiConsumer<M, String> inject_consumeTargetLayerManifest(
+	public static <M extends LayerManifest<?>> BiConsumer<M, String> inject_consumeTargetLayerManifest(
 			TriConsumer<M, String, Consumer<? super TargetLayerManifest>> creator) {
 		return (m, id) -> {
 			TargetLayerManifest targetLayerManifest =

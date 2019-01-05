@@ -139,6 +139,7 @@ public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements 
 	 */
 	@Override
 	public FragmentLayerManifest setValueLayerId(String valueLayerId, Consumer<? super TargetLayerManifest> action) {
+		checkNotLocked();
 		IcarusUtils.consumeIfAble(setValueLayerId0(valueLayerId), action);
 		return this;
 	}

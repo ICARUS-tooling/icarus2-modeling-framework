@@ -22,6 +22,7 @@ package de.ims.icarus2.model.manifest.api;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.getIllegalIdValues;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.getLegalIdValues;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
+import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_consumeTargetLayerManifest;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.inject_createTargetLayerManifest;
 import static de.ims.icarus2.model.manifest.api.LayerManifestTest.transform_targetLayerId;
 import static de.ims.icarus2.test.TestUtils.NO_CHECK;
@@ -124,9 +125,20 @@ public interface FragmentLayerManifestTest extends ItemLayerManifestTestMixin<Fr
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.FragmentLayerManifest#setAndGetValueLayer(java.lang.String)}.
 	 */
 	@Test
-	default void testSetValueLayerId() {
+	default void testSetAndGetValueLayer() {
 		assertLockableSetterBatch(settings(),
 				FragmentLayerManifest::setAndGetValueLayer,
+				getLegalIdValues(), true,
+				INVALID_ID_CHECK, getIllegalIdValues());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.FragmentLayerManifest#setValueLayerId(String, java.util.function.Consumer)}.
+	 */
+	@Test
+	default void testSetValueLayerId() {
+		assertLockableSetterBatch(settings(),
+				inject_consumeTargetLayerManifest(FragmentLayerManifest::setValueLayerId),
 				getLegalIdValues(), true,
 				INVALID_ID_CHECK, getIllegalIdValues());
 	}
