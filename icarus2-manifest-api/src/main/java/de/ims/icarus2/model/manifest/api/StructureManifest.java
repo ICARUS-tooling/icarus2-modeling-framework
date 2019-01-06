@@ -30,9 +30,17 @@ import de.ims.icarus2.util.access.AccessRestriction;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface StructureManifest extends ContainerManifest {
+public interface StructureManifest extends ContainerManifestBase<StructureManifest> {
 
 	public static final StructureType DEFAULT_STRUCTURE_TYPE = StructureType.SET;
+
+	/**
+	 * @see de.ims.icarus2.model.api.standard.manifest.ContainerManifestImpl#getManifestType()
+	 */
+	@Override
+	default ManifestType getManifestType() {
+		return ManifestType.STRUCTURE_MANIFEST;
+	}
 
 	/**
 	 * Returns the type of this structure

@@ -40,6 +40,11 @@ public interface LayerGroupManifest extends ModifiableIdentity, ManifestFragment
 
 	public static final boolean DEFAULT_INDEPENDENT_VALUE = false;
 
+	@Override
+	default ManifestType getManifestType() {
+		return ManifestType.LAYER_GROUP_MANIFEST;
+	}
+
 	@AccessRestriction(AccessMode.READ)
 	default <M extends ContextManifest> Optional<M> getContextManifest() {
 		return getHost();
@@ -68,14 +73,14 @@ public interface LayerGroupManifest extends ModifiableIdentity, ManifestFragment
 	/**
 	 * Returns the primary layer of this group.
 	 * Note that unlike many other methods in this framework that link to
-	 * other layers (such as {@link ItemLayerManifest#getBaseLayerManifests()}
+	 * other layers (such as {@link ItemLayerManifestBase#getBaseLayerManifests()}
 	 * this one does <b>not</b> return an optional of {@link TargetLayerManifest}
 	 * since the returned layer <b>must</b> be a member of this group and as such
 	 * is not obtained by resolving a (potentially foreign) id or alias.
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
-	<L extends ItemLayerManifest> Optional<L> getPrimaryLayerManifest();
+	<L extends ItemLayerManifestBase<?>> Optional<L> getPrimaryLayerManifest();
 
 	/**
 	 * Signals that the layers in this group do not depend on external data hosted in other
@@ -99,7 +104,7 @@ public interface LayerGroupManifest extends ModifiableIdentity, ManifestFragment
 	 * @return the layer mapped to {@code id} if one could be found or an empty {@link Optional} otherwise
 	 */
 	@AccessRestriction(AccessMode.READ)
-	<L extends LayerManifest<L>> Optional<L> getLayerManifest(String id);
+	<L extends LayerManifest<?>> Optional<L> getLayerManifest(String id);
 
 	/**
 	 * Tests whether this {@code LayerGroupManifest} equals the given {@code Object} {@code o}.

@@ -35,7 +35,7 @@ import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
 import de.ims.icarus2.model.api.driver.mapping.WritableMapping;
 import de.ims.icarus2.model.api.io.SynchronizedAccessor;
 import de.ims.icarus2.model.api.io.resources.IOResource;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 
 /**
@@ -51,8 +51,8 @@ public abstract class AbstractStoredMapping implements WritableMapping {
 
 	private final Driver driver;
 	private final MappingManifest manifest;
-	private final ItemLayerManifest sourceLayer;
-	private final ItemLayerManifest targetLayer;
+	private final ItemLayerManifestBase<?> sourceLayer;
+	private final ItemLayerManifestBase<?> targetLayer;
 	private final BufferedIOResource resource;
 
 	protected AbstractStoredMapping(AbstractStoredMappingBuilder<?,?> builder) {
@@ -107,7 +107,7 @@ public abstract class AbstractStoredMapping implements WritableMapping {
 	 * @see de.ims.icarus2.model.api.driver.mapping.Mapping#getSourceLayer()
 	 */
 	@Override
-	public ItemLayerManifest getSourceLayer() {
+	public ItemLayerManifestBase<?> getSourceLayer() {
 		return sourceLayer;
 	}
 
@@ -115,7 +115,7 @@ public abstract class AbstractStoredMapping implements WritableMapping {
 	 * @see de.ims.icarus2.model.api.driver.mapping.Mapping#getTargetLayer()
 	 */
 	@Override
-	public ItemLayerManifest getTargetLayer() {
+	public ItemLayerManifestBase<?> getTargetLayer() {
 		return targetLayer;
 	}
 

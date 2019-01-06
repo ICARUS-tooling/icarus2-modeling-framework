@@ -47,6 +47,14 @@ public interface AnnotationManifest extends MemberManifest<AnnotationManifest>, 
 	public static final boolean DEFAULT_ALLOW_UNKNOWN_VALUES = false;
 
 	/**
+	 * @see de.ims.icarus2.model.manifest.api.MemberManifest#getManifestType()
+	 */
+	@Override
+	default ManifestType getManifestType() {
+		return ManifestType.ANNOTATION_MANIFEST;
+	}
+
+	/**
 	 * Returns the hosting layer manifest or an empty {@link Optional} if this manifest
 	 * is a template.
 	 *

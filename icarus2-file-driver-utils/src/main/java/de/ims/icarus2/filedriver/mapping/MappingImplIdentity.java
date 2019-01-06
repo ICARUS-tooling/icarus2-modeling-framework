@@ -27,7 +27,7 @@ import de.ims.icarus2.model.api.driver.indices.standard.SingletonIndexSet;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 
 /**
@@ -51,7 +51,7 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 	 * @param targetLayer
 	 */
 	public MappingImplIdentity(Driver driver, MappingManifest manifest,
-			ItemLayerManifest sourceLayer, ItemLayerManifest targetLayer) {
+			ItemLayerManifestBase<?> sourceLayer, ItemLayerManifestBase<?> targetLayer) {
 		super(driver, manifest, sourceLayer, targetLayer);
 	}
 

@@ -23,12 +23,10 @@ import javax.xml.stream.XMLStreamException;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
+import de.ims.icarus2.model.manifest.api.ContainerFlag;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
+import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
-import de.ims.icarus2.model.manifest.api.StructureFlag;
-import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
-import de.ims.icarus2.model.manifest.api.StructureManifest;
-import de.ims.icarus2.model.manifest.api.StructureType;
-import de.ims.icarus2.model.manifest.standard.StructureManifestImpl;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
@@ -39,44 +37,19 @@ import de.ims.icarus2.util.xml.XmlSerializer;
  * @author Markus Gärtner
  *
  */
-public class StructureManifestXmlDelegate extends AbstractContainerManifestBaseXmlDelegate<StructureManifest> {
-
-	public StructureManifestXmlDelegate() {
-		// no-op
-	}
-
-	public StructureManifestXmlDelegate(StructureManifest structureManifest) {
-		setInstance(structureManifest);
-	}
-
-	public StructureManifestXmlDelegate(StructureLayerManifest structureLayerManifest) {
-		setInstance(new StructureManifestImpl(structureLayerManifest));
-	}
-
-	public StructureManifestXmlDelegate reset(StructureLayerManifest structureLayerManifest) {
-		reset();
-		setInstance(new StructureManifestImpl(structureLayerManifest));
-
-		return this;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.xml.delegates.AbstractXmlDelegate#getInstance()
-	 */
-	@Override
-	public StructureManifest getInstance() {
-		return (StructureManifest) super.getInstance();
-	}
+public abstract class AbstractContainerManifestBaseXmlDelegate<M extends ContainerManifestBase<M>>
+		extends AbstractMemberManifestXmlDelegate<M> {
 
 	@Override
 	protected void writeAttributes(XmlSerializer serializer) throws XMLStreamException {
 		super.writeAttributes(serializer);
 
-		StructureManifest manifest = getInstance();
+		ContainerManifestBase<?> manifest = getInstance();
 
-		// Write structure type
-		if(manifest.isLocalStructureType()) {
-			serializer.writeAttribute(ManifestXmlAttributes.STRUCTURE_TYPE, manifest.getStructureType().getStringValue());
+		// Write container type
+		if(manifest.isLocalContainerType()) {
+			serializer.writeAttribute(ManifestXmlAttributes.CONTAINER_TYPE,
+					manifest.getContainerType().getStringValue());
 		}
 	}
 
@@ -84,26 +57,21 @@ public class StructureManifestXmlDelegate extends AbstractContainerManifestBaseX
 	protected void writeElements(XmlSerializer serializer) throws XMLStreamException {
 		super.writeElements(serializer);
 
-		StructureManifest manifest = getInstance();
-
-		for(StructureFlag flag : manifest.getActiveLocalStructureFlags()) {
-			serializer.startElement(ManifestXmlTags.STRUCTURE_FLAG);
+		for(ContainerFlag flag : getInstance().getActiveLocalContainerFlags()) {
+			serializer.startElement(ManifestXmlTags.CONTAINER_FLAG);
 			serializer.writeText(flag.getStringValue());
-			serializer.endElement(ManifestXmlTags.STRUCTURE_FLAG);
+			serializer.endElement(ManifestXmlTags.CONTAINER_FLAG);
 		}
 	}
 
-	/**
-	 * @see de.ims.icarus2.model.manifest.standard.AbstractMemberManifest#readAttributes(org.xml.sax.Attributes)
-	 */
 	@Override
 	protected void readAttributes(Attributes attributes) {
 		super.readAttributes(attributes);
 
-		// Read structure type
-		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.STRUCTURE_TYPE)
-			.map(StructureType::parseStructureType)
-			.ifPresent(getInstance()::setStructureType);
+		// Read container type
+		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CONTAINER_TYPE)
+			.map(ContainerType::parseContainerType)
+			.ifPresent(getInstance()::setContainerType);
 	}
 
 	@Override
@@ -111,11 +79,11 @@ public class StructureManifestXmlDelegate extends AbstractContainerManifestBaseX
 			String uri, String localName, String qName, Attributes attributes)
 					throws SAXException {
 		switch (localName) {
-		case ManifestXmlTags.STRUCTURE: {
+		case ManifestXmlTags.CONTAINER: {
 			readAttributes(attributes);
 		} break;
 
-		case ManifestXmlTags.STRUCTURE_FLAG: {
+		case ManifestXmlTags.CONTAINER_FLAG: {
 			// no-op
 		} break;
 
@@ -130,15 +98,16 @@ public class StructureManifestXmlDelegate extends AbstractContainerManifestBaseX
 	public Optional<ManifestXmlHandler> endElement(ManifestLocation manifestLocation,
 			String uri, String localName, String qName, String text)
 					throws SAXException {
-		ManifestXmlHandler handler = this;
+		ManifestXmlHandler handler = null;
 
 		switch (localName) {
-		case ManifestXmlTags.STRUCTURE: {
-			handler = null;
+		case ManifestXmlTags.CONTAINER: {
+			// no-op;
 		} break;
 
-		case ManifestXmlTags.STRUCTURE_FLAG: {
-			getInstance().setStructureFlag(StructureFlag.parseStructureFlag(text), true);
+		case ManifestXmlTags.CONTAINER_FLAG: {
+			getInstance().setContainerFlag(ContainerFlag.parseContainerFlag(text), true);
+			handler = this;
 		} break;
 
 		default:
@@ -146,10 +115,5 @@ public class StructureManifestXmlDelegate extends AbstractContainerManifestBaseX
 		}
 
 		return Optional.ofNullable(handler);
-	}
-
-	@Override
-	protected String xmlTag() {
-		return ManifestXmlTags.STRUCTURE;
 	}
 }

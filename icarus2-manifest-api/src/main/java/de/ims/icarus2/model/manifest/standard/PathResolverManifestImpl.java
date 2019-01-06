@@ -19,7 +19,6 @@ package de.ims.icarus2.model.manifest.standard;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.PathResolverManifest;
 
 /**
@@ -41,13 +40,5 @@ public class PathResolverManifestImpl extends AbstractForeignImplementationManif
 
 	public PathResolverManifestImpl(LocationManifest locationManifest) {
 		super(locationManifest, hostIdentity(), LocationManifest.class);
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.MemberManifest#getManifestType()
-	 */
-	@Override
-	public ManifestType getManifestType() {
-		return ManifestType.PATH_RESOLVER_MANIFEST;
 	}
 }

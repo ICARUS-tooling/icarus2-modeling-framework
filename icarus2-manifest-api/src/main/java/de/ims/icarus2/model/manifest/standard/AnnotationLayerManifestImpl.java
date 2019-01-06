@@ -35,7 +35,6 @@ import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.IcarusUtils;
 
@@ -77,14 +76,6 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	@Override
 	public boolean isEmpty() {
 		return super.isEmpty() && annotationManifests.isEmpty() && annotationFlags.isEmpty();
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.MemberManifest#getManifestType()
-	 */
-	@Override
-	public ManifestType getManifestType() {
-		return ManifestType.ANNOTATION_LAYER_MANIFEST;
 	}
 
 	@Override

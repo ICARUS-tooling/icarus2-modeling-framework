@@ -33,7 +33,7 @@ import de.ims.icarus2.model.manifest.ManifestGenerator;
 import de.ims.icarus2.model.manifest.ManifestGenerator.Config;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlDelegateTest;
 import de.ims.icarus2.test.annotations.OverrideTest;
@@ -86,14 +86,14 @@ class ContainerManifestXmlDelegateTest implements ManifestXmlDelegateTest<Contai
 		ContainerManifest manifest = mockManifest();
 		assertEquals(manifest, new ContainerManifestXmlDelegate(manifest).getInstance());
 
-		ItemLayerManifest layerManifest = mockTypedManifest(ManifestType.ITEM_LAYER_MANIFEST);
+		ItemLayerManifestBase<?> layerManifest = mockTypedManifest(ManifestType.ITEM_LAYER_MANIFEST);
 		assertOptionalEquals(layerManifest, new ContainerManifestXmlDelegate(layerManifest).getInstance().getLayerManifest());
 	}
 
 	@Test
 	void testResetItemLayerManifest() {
 		ContainerManifestXmlDelegate delegate = create();
-		ItemLayerManifest layerManifest = mockTypedManifest(ManifestType.ITEM_LAYER_MANIFEST);
+		ItemLayerManifestBase<?> layerManifest = mockTypedManifest(ManifestType.ITEM_LAYER_MANIFEST);
 		assertOptionalEquals(layerManifest, delegate.reset(layerManifest).getInstance().getLayerManifest());
 	}
 }

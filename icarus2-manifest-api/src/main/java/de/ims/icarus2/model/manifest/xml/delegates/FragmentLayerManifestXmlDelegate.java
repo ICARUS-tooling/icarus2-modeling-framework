@@ -37,7 +37,7 @@ import de.ims.icarus2.util.xml.XmlSerializer;
  * @author Markus Gärtner
  *
  */
-public class FragmentLayerManifestXmlDelegate extends ItemLayerManifestXmlDelegate {
+public class FragmentLayerManifestXmlDelegate extends AbstractItemLayerManifestBaseXmlDelegate<FragmentLayerManifest> {
 
 	private RasterizerManifestXmlDelegate rasterizerManifestXmlDelegate;
 
@@ -69,7 +69,6 @@ public class FragmentLayerManifestXmlDelegate extends ItemLayerManifestXmlDelega
 		return rasterizerManifestXmlDelegate;
 	}
 
-	@Override
 	public FragmentLayerManifestXmlDelegate reset(LayerGroupManifest groupManifest) {
 		reset();
 		setInstance(new FragmentLayerManifestImpl(groupManifest));

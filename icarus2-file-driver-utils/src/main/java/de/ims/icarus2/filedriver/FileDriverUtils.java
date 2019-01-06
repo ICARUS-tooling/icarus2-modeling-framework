@@ -34,7 +34,7 @@ import de.ims.icarus2.model.api.io.resources.IOResource;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
@@ -231,11 +231,11 @@ public class FileDriverUtils {
 
 		ContextManifest contextManifest = ManifestUtils.requireGrandHost(mappingManifest);
 
-		ItemLayerManifest source = (ItemLayerManifest) mappingManifest.getSourceLayerId()
-				.flatMap(id -> contextManifest.<ItemLayerManifest>getLayerManifest(id))
+		ItemLayerManifestBase<?> source = (ItemLayerManifestBase<?>) mappingManifest.getSourceLayerId()
+				.flatMap(id -> contextManifest.<ItemLayerManifestBase<?>>getLayerManifest(id))
 				.orElseThrow(ManifestException.missing(mappingManifest, "resolvable source layer"));
-		ItemLayerManifest target = (ItemLayerManifest) mappingManifest.getTargetLayerId()
-				.flatMap(id -> contextManifest.<ItemLayerManifest>getLayerManifest(id))
+		ItemLayerManifestBase<?> target = (ItemLayerManifestBase<?>) mappingManifest.getTargetLayerId()
+				.flatMap(id -> contextManifest.<ItemLayerManifestBase<?>>getLayerManifest(id))
 				.orElseThrow(ManifestException.missing(mappingManifest, "resolvable target layer"));
 
 		options.put(MappingProperty.BLOCK_CACHE.key(), toBlockCache(metadataRegistry.getValue(MappingKey.BLOCK_CACHE.getKey(source, target))));

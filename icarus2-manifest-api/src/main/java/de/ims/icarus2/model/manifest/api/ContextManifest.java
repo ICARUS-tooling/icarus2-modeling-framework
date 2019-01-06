@@ -45,6 +45,14 @@ public interface ContextManifest extends MemberManifest<ContextManifest>, Bindab
 	public static final boolean DEFAULT_INDEPENDENT_VALUE = false;
 	public static final boolean DEFAULT_EDITABLE_VALUE = false;
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.MemberManifest#getManifestType()
+	 */
+	@Override
+	default ManifestType getManifestType() {
+		return ManifestType.CONTEXT_MANIFEST;
+	}
+
 	@AccessRestriction(AccessMode.READ)
 	default <M extends CorpusManifest> Optional<M> getCorpusManifest() {
 		return getHost();
@@ -203,7 +211,7 @@ public interface ContextManifest extends MemberManifest<ContextManifest>, Bindab
 	/**
 	 * Returns the primary layer of this context.
 	 * Note that unlike many other methods in this framework that link to
-	 * other layers (such as {@link ItemLayerManifest#getBaseLayerManifests()}
+	 * other layers (such as {@link ItemLayerManifestBase#getBaseLayerManifests()}
 	 * this one does <b>not</b> return an optional of {@link TargetLayerManifest}
 	 * since the returned layer <b>must</b> be a member of this context and as such
 	 * is not obtained by resolving a (potentially foreign) id or alias.
@@ -212,7 +220,7 @@ public interface ContextManifest extends MemberManifest<ContextManifest>, Bindab
 	 * @see LayerGroupManifest#getPrimaryLayerManifest()
 	 */
 	@AccessRestriction(AccessMode.READ)
-	<L extends ItemLayerManifest> Optional<L> getPrimaryLayerManifest();
+	<L extends ItemLayerManifestBase<?>> Optional<L> getPrimaryLayerManifest();
 
 	boolean isLocalPrimaryLayerManifest();
 
@@ -220,11 +228,11 @@ public interface ContextManifest extends MemberManifest<ContextManifest>, Bindab
 	 * Returns the layer manifest that describes this context's atomic units
 	 * or an empty {@link Optional} if that layer resides outside of this context. Note that
 	 * the layer that serves as a foundation layer of a context is not allowed
-	 * to declare another foundation layer in turn (i.e. his {@link ItemLayerManifest#getFoundationLayerManifest()}
+	 * to declare another foundation layer in turn (i.e. his {@link ItemLayerManifestBase#getFoundationLayerManifest()}
 	 * method must return an empty {@link Optional}!
 	 */
 	@AccessRestriction(AccessMode.READ)
-	<L extends ItemLayerManifest> Optional<L> getFoundationLayerManifest();
+	<L extends ItemLayerManifestBase<?>> Optional<L> getFoundationLayerManifest();
 
 	boolean isLocalFoundationLayerManifest();
 
@@ -239,7 +247,7 @@ public interface ContextManifest extends MemberManifest<ContextManifest>, Bindab
 	 * @throws NullPointerException iff {@code id} is {@code null}
 	 */
 	@AccessRestriction(AccessMode.READ)
-	<L extends LayerManifest<L>> Optional<L> getLayerManifest(String id);
+	<L extends LayerManifest<?>> Optional<L> getLayerManifest(String id);
 
 	/**
 	 * Returns the manifests that describes where the data for this context's

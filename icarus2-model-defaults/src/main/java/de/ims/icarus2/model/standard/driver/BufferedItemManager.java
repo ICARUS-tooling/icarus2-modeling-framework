@@ -35,7 +35,7 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.Item.ManagedItem;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.standard.driver.cache.TrackedMember;
 import de.ims.icarus2.model.util.ModelUtils;
@@ -80,7 +80,7 @@ public class BufferedItemManager {
 		return layer.getManifest().getUID();
 	}
 
-	private static int keyForLayer(ItemLayerManifest layerManifest) {
+	private static int keyForLayer(ItemLayerManifestBase<?> layerManifest) {
 		return layerManifest.getUID();
 	}
 
@@ -520,14 +520,14 @@ public class BufferedItemManager {
 		}
 
 		/**
-		 * Adds a new {@link LayerBuffer} for the specified {@link ItemLayerManifest layer}
+		 * Adds a new {@link LayerBuffer} for the specified {@link ItemLayerManifestBase<?> layer}
 		 * that has no {@link ObjLongConsumer action} assigned to dispose items with and has
 		 * an unspecified default starting size for the internal map.
 		 *
 		 * @param itemLayerManifest
 		 * @return
 		 */
-		public Builder addBuffer(ItemLayerManifest itemLayerManifest) {
+		public Builder addBuffer(ItemLayerManifestBase<?> itemLayerManifest) {
 			requireNonNull(itemLayerManifest);
 
 			addBuffer0(itemLayerManifest, -1, null);
@@ -536,7 +536,7 @@ public class BufferedItemManager {
 		}
 
 		/**
-		 * Adds a new {@link LayerBuffer} for the specified {@link ItemLayerManifest layer}
+		 * Adds a new {@link LayerBuffer} for the specified {@link ItemLayerManifestBase<?> layer}
 		 * that has no {@link ObjLongConsumer action} assigned to dispose items with and uses
 		 * the given capacity as starting size for the internal map.
 		 *
@@ -544,7 +544,7 @@ public class BufferedItemManager {
 		 * @param capacity
 		 * @return
 		 */
-		public Builder addBuffer(ItemLayerManifest itemLayerManifest, int capacity) {
+		public Builder addBuffer(ItemLayerManifestBase<?> itemLayerManifest, int capacity) {
 			requireNonNull(itemLayerManifest);
 			checkArgument(capacity>0);
 
@@ -554,7 +554,7 @@ public class BufferedItemManager {
 		}
 
 		/**
-		 * Adds a new {@link LayerBuffer} for the specified {@link ItemLayerManifest layer}
+		 * Adds a new {@link LayerBuffer} for the specified {@link ItemLayerManifestBase<?> layer}
 		 * with the given {@code disposeItemAction} to dispose items with and that has
 		 * an unspecified default starting size for the internal map.
 		 *
@@ -562,7 +562,7 @@ public class BufferedItemManager {
 		 * @param disposeItemAction
 		 * @return
 		 */
-		public Builder addBuffer(ItemLayerManifest itemLayerManifest, ObjLongConsumer<Item> disposeItemAction) {
+		public Builder addBuffer(ItemLayerManifestBase<?> itemLayerManifest, ObjLongConsumer<Item> disposeItemAction) {
 			requireNonNull(itemLayerManifest);
 			requireNonNull(disposeItemAction);
 
@@ -572,7 +572,7 @@ public class BufferedItemManager {
 		}
 
 		/**
-		 * Adds a new {@link LayerBuffer} for the specified {@link ItemLayerManifest layer}
+		 * Adds a new {@link LayerBuffer} for the specified {@link ItemLayerManifestBase<?> layer}
 		 * with the given {@code disposeItemAction} to dispose items with and that uses
 		 * the given capacity as starting size for the internal map.
 		 *
@@ -581,7 +581,7 @@ public class BufferedItemManager {
 		 * @param disposeItemAction
 		 * @return
 		 */
-		public Builder addBuffer(ItemLayerManifest itemLayerManifest, int capacity, ObjLongConsumer<Item> disposeItemAction) {
+		public Builder addBuffer(ItemLayerManifestBase<?> itemLayerManifest, int capacity, ObjLongConsumer<Item> disposeItemAction) {
 			requireNonNull(itemLayerManifest);
 			requireNonNull(disposeItemAction);
 			checkArgument(capacity>0);
@@ -591,7 +591,7 @@ public class BufferedItemManager {
 			return thisAsCast();
 		}
 
-		private void addBuffer0(ItemLayerManifest itemLayerManifest, int capacity, ObjLongConsumer<Item> disposeItemAction) {
+		private void addBuffer0(ItemLayerManifestBase<?> itemLayerManifest, int capacity, ObjLongConsumer<Item> disposeItemAction) {
 			int key = keyForLayer(itemLayerManifest);
 
 			if(layerBuffers.containsKey(key))
@@ -614,7 +614,7 @@ public class BufferedItemManager {
 			return layerBuffers;
 		}
 
-		public LayerBuffer getLayerBuffer(ItemLayerManifest layerManifest) {
+		public LayerBuffer getLayerBuffer(ItemLayerManifestBase<?> layerManifest) {
 			return layerBuffers.get(keyForLayer(layerManifest));
 		}
 

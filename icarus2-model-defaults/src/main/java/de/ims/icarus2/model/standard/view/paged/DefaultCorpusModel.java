@@ -60,7 +60,7 @@ import de.ims.icarus2.model.api.view.paged.CorpusModel;
 import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
 import de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
-import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.types.ValueType;
@@ -1203,7 +1203,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		 * @see de.ims.icarus2.model.api.members.container.Container#getManifest()
 		 */
 		@Override
-		public ContainerManifest getManifest() {
+		public ContainerManifestBase<?> getManifest() {
 			return layer.getManifest().getRootContainerManifest().get();
 		}
 

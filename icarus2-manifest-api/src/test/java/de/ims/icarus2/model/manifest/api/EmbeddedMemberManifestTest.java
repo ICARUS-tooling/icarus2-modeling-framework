@@ -118,14 +118,14 @@ public interface EmbeddedMemberManifestTest<M extends MemberManifest<?> & Embedd
 	 */
 	default void assertConstructorManifestLocationManifestRegistryHost() throws Exception {
 
-		for(ManifestType manifestType : getAllowedHostTypes()) {
+		for(ManifestType hostType : getAllowedHostTypes()) {
 
-			TypedManifest host = mockTypedManifest(manifestType, true);
+			TypedManifest host = mockTypedManifest(hostType, true);
 			ManifestLocation location = getOrMockManifestLocation(host, false);
 			ManifestRegistry registry = getOrMockManifestRegistry(host);
 
 			M manifest = create(
-					new Class<?>[]{ManifestLocation.class, ManifestRegistry.class, manifestType.getBaseClass()},
+					new Class<?>[]{ManifestLocation.class, ManifestRegistry.class, hostType.getGenericBaseClass()},
 					location, registry, host);
 
 			assertSame(location, manifest.getManifestLocation());
@@ -162,12 +162,12 @@ public interface EmbeddedMemberManifestTest<M extends MemberManifest<?> & Embedd
 	 */
 	default void assertConstructorHost() throws Exception {
 
-		for(ManifestType manifestType : getAllowedHostTypes()) {
+		for(ManifestType hostType : getAllowedHostTypes()) {
 
-			TypedManifest host = mockTypedManifest(manifestType, true);
+			TypedManifest host = mockTypedManifest(hostType, true);
 
 			M manifest = create(
-					new Class<?>[]{manifestType.getBaseClass()}, host);
+					new Class<?>[]{hostType.getGenericBaseClass()}, host);
 
 			assertOptionalEquals(host, manifest.getHost());
 			assertNotNull(manifest.getRegistry());

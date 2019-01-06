@@ -53,7 +53,7 @@ import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.standard.members.DefaultLayerMemberFactory;
@@ -154,10 +154,10 @@ public abstract class AbstractDriver implements Driver {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.driver.Driver#getIdManager(de.ims.icarus2.model.manifest.api.ItemLayerManifest)
+	 * @see de.ims.icarus2.model.api.driver.Driver#getIdManager(de.ims.icarus2.model.manifest.api.ItemLayerManifestBase<?>)
 	 */
 	@Override
-	public IdManager getIdManager(ItemLayerManifest layer) {
+	public IdManager getIdManager(ItemLayerManifestBase<?> layer) {
 		int key = layer.getUID();
 		IdManager manager = idManagers.get(key);
 		if(manager==null) {
@@ -172,7 +172,7 @@ public abstract class AbstractDriver implements Driver {
 		return manager;
 	}
 
-	protected IdManager createIdManager(ItemLayerManifest itemLayerManifest) {
+	protected IdManager createIdManager(ItemLayerManifestBase<?> itemLayerManifest) {
 		return new IdManager.IdentityIdManager(itemLayerManifest);
 	}
 
@@ -330,7 +330,7 @@ public abstract class AbstractDriver implements Driver {
 		MappingStorage.Builder builder = new MappingStorage.Builder();
 
 		// Allow for subclasses to provide a fallback function
-		BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> fallback = getMappingFallback();
+		BiFunction<ItemLayerManifestBase<?>, ItemLayerManifestBase<?>, Mapping> fallback = getMappingFallback();
 		if(fallback!=null) {
 			builder.fallback(fallback);
 		}
@@ -343,7 +343,7 @@ public abstract class AbstractDriver implements Driver {
 	 *
 	 * @return
 	 */
-	protected BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> getMappingFallback() {
+	protected BiFunction<ItemLayerManifestBase<?>, ItemLayerManifestBase<?>, Mapping> getMappingFallback() {
 		return null;
 	}
 
@@ -489,10 +489,10 @@ public abstract class AbstractDriver implements Driver {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.driver.Driver#getMapping(ItemLayerManifest, ItemLayerManifest)
+	 * @see de.ims.icarus2.model.api.driver.Driver#getMapping(ItemLayerManifestBase, ItemLayerManifestBase)
 	 */
 	@Override
-	public Mapping getMapping(ItemLayerManifest sourceLayer, ItemLayerManifest targetLayer) {
+	public Mapping getMapping(ItemLayerManifestBase<?> sourceLayer, ItemLayerManifestBase<?> targetLayer) {
 		return getMappings().getMapping(sourceLayer, targetLayer);
 	}
 

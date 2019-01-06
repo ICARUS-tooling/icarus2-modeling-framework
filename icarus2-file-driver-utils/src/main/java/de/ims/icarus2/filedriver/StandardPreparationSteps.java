@@ -47,7 +47,7 @@ import de.ims.icarus2.model.api.driver.mods.ModuleMonitor;
 import de.ims.icarus2.model.api.io.resources.ResourceProvider;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.IcarusUtils;
@@ -345,7 +345,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			ResourceSet dataFiles = driver.getDataFiles();
 			ContextManifest manifest = getContextManifest(driver);
-			List<ItemLayerManifest> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
+			List<ItemLayerManifestBase<?>> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
 
 			int fileCount = dataFiles.getResourceCount();
 
@@ -363,7 +363,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 				}
 			}
 
-			for(ItemLayerManifest layer : layers) {
+			for(ItemLayerManifestBase<?> layer : layers) {
 
 //				state.setFormatted("fileConnector.checkLayerMetadata", layer.getId());
 
@@ -476,13 +476,13 @@ public enum StandardPreparationSteps implements PreparationStep {
 			}
 
 			// Update layer info and metadata
-			List<ItemLayerManifest> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
+			List<ItemLayerManifestBase<?>> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
 			ElementFlag flag = invalidFiles==0 ? ElementFlag.SCANNED : ElementFlag.PARTIALLY_SCANNED;
 			if(invalidFiles==fileCount) {
 				flag = ElementFlag.UNUSABLE;
 			}
 
-			for(ItemLayerManifest layer : layers) {
+			for(ItemLayerManifestBase<?> layer : layers) {
 
 				LayerInfo layerInfo = driver.getFileStates().getLayerInfo(layer);
 				layerInfo.setFlag(flag);
@@ -508,11 +508,11 @@ public enum StandardPreparationSteps implements PreparationStep {
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			ResourceProvider resourceProvider = driver.getResourceProvider();
 			ContextManifest manifest = getContextManifest(driver);
-			List<ItemLayerManifest> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
+			List<ItemLayerManifestBase<?>> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
 
 			int invalidLayers = 0;
 
-			for(ItemLayerManifest layer : layers) {
+			for(ItemLayerManifestBase<?> layer : layers) {
 
 //				state.setFormatted("fileConnector.checkLayerChunkIndex", layer.getId());
 
@@ -562,7 +562,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 		 * matches the global continuity condition and returns the {@code endIndex}
 		 * stored in the metadata.
 		 */
-		private boolean verifyFileMetadataForLayer(ItemLayerManifest layer, int fileIndex,
+		private boolean verifyFileMetadataForLayer(ItemLayerManifestBase<?> layer, int fileIndex,
 				FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) {
 
 //			driver.getModuleState().setFormatted("fileConnector.checkLayerContinuity", layer.getId(), fileIndex);
@@ -633,14 +633,14 @@ public enum StandardPreparationSteps implements PreparationStep {
 
 			ContextManifest manifest = getContextManifest(driver);
 			ResourceSet dataFiles = driver.getDataFiles();
-			List<ItemLayerManifest> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
+			List<ItemLayerManifestBase<?>> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
 
 			int fileCount = dataFiles.getResourceCount();
 			int invalidLayers = 0;
 
 			env.put(LAST_END_INDEX_KEY, _long(IcarusUtils.UNSET_LONG));
 
-			for(ItemLayerManifest layer : layers) {
+			for(ItemLayerManifestBase<?> layer : layers) {
 
 				LayerInfo layerInfo = driver.getFileStates().getLayerInfo(layer);
 

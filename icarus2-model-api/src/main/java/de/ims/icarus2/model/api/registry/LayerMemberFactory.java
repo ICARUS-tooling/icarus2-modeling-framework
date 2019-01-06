@@ -23,7 +23,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.api.raster.Rasterizer;
-import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 
 /**
@@ -51,7 +51,7 @@ public interface LayerMemberFactory {
 	 * @param id
 	 * @return
 	 */
-	Container newContainer(ContainerManifest manifest, Container host, long id);
+	Container newContainer(ContainerManifestBase<?> manifest, Container host, long id);
 
 	/**
 	 * Creates a new general structure that is linked to the given {@code host} container

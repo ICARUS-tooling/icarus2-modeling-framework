@@ -34,7 +34,7 @@ import java.util.function.Predicate;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
-import de.ims.icarus2.model.manifest.standard.ItemLayerManifestImpl;
+import de.ims.icarus2.model.manifest.standard.AbstractItemLayerManifestBase;
 
 /**
  * @author Markus Gärtner
@@ -65,11 +65,12 @@ public interface StructureLayerManifestTest extends ItemLayerManifestTestMixin<S
 	 * @param manifest
 	 * @param containerManifests
 	 */
-	default <C extends ContainerManifest> void assertInvalidRootStructure(
+	default <C extends ContainerManifestBase<?>> void assertInvalidRootStructure(
 			boolean expectEmpty, @SuppressWarnings("unchecked") C...containerManifests) {
 		StructureLayerManifest manifest = createUnlocked();
 
-		Hierarchy<ContainerManifest> hierarchy = ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(manifest);
+		Hierarchy<ContainerManifestBase<?>> hierarchy = AbstractItemLayerManifestBase
+				.getOrCreateLocalContainerhierarchy(manifest);
 		assertTrue(hierarchy.isEmpty());
 
 		for(C containerManifest : containerManifests) {
@@ -106,8 +107,9 @@ public interface StructureLayerManifestTest extends ItemLayerManifestTestMixin<S
 			return m.getRootStructureManifest().orElse(null)==structure;
 		};
 
-		BiFunction<StructureLayerManifest, ContainerManifest, Boolean> staticModifier = (m, cont) -> {
-			Hierarchy<ContainerManifest> hierarchy = ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(m);
+		BiFunction<StructureLayerManifest, ContainerManifestBase<?>, Boolean> staticModifier = (m, cont) -> {
+			Hierarchy<ContainerManifestBase<?>> hierarchy = AbstractItemLayerManifestBase
+					.getOrCreateLocalContainerhierarchy(m);
 			hierarchy.add(cont);
 			return hierarchy.getDepth()>1 && hierarchy.levelOf(structure)>0;
 		};
@@ -116,8 +118,9 @@ public interface StructureLayerManifestTest extends ItemLayerManifestTestMixin<S
 		assertPredicate(createUnlocked(), staticModifier, rootCheck, transform_id(),
 				root, structure, container1, container2);
 
-		BiFunction<StructureLayerManifest, ContainerManifest, Boolean> mixedModifier = (m, cont) -> {
-			Hierarchy<ContainerManifest> hierarchy = ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(m);
+		BiFunction<StructureLayerManifest, ContainerManifestBase<?>, Boolean> mixedModifier = (m, cont) -> {
+			Hierarchy<ContainerManifestBase<?>> hierarchy = AbstractItemLayerManifestBase
+					.getOrCreateLocalContainerhierarchy(m);
 			hierarchy.insert(cont, 0);
 			return hierarchy.getDepth()>1 && hierarchy.levelOf(structure)>0;
 		};

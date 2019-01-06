@@ -27,7 +27,7 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerType;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.collections.seq.DataSequence;
@@ -112,7 +112,7 @@ public class ListItemStorageInt implements ItemStorage {
 	@Override
 	public void addNotify(Container context) {
 		doStoreItemsForOffset = context.getManifest().getLayerManifest()
-				.flatMap(ItemLayerManifest::getFoundationLayerManifest)
+				.flatMap(ItemLayerManifestBase::getFoundationLayerManifest)
 				.isPresent();
 
 		beginItem = endItem = null;

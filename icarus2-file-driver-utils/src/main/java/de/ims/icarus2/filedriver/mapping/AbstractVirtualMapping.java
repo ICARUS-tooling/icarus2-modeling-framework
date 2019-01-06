@@ -22,7 +22,7 @@ import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.util.AbstractBuilder;
 
@@ -34,11 +34,11 @@ public abstract class AbstractVirtualMapping implements Mapping {
 
 	private final Driver driver;
 	private final MappingManifest manifest;
-	private final ItemLayerManifest sourceLayer;
-	private final ItemLayerManifest targetLayer;
+	private final ItemLayerManifestBase<?> sourceLayer;
+	private final ItemLayerManifestBase<?> targetLayer;
 
 	protected AbstractVirtualMapping(Driver driver, MappingManifest manifest,
-			ItemLayerManifest sourceLayer, ItemLayerManifest targetLayer) {
+			ItemLayerManifestBase<?> sourceLayer, ItemLayerManifestBase<?> targetLayer) {
 		requireNonNull(driver);
 		requireNonNull(manifest);
 		requireNonNull(sourceLayer);
@@ -91,7 +91,7 @@ public abstract class AbstractVirtualMapping implements Mapping {
 	 * @see de.ims.icarus2.model.api.driver.mapping.Mapping#getSourceLayer()
 	 */
 	@Override
-	public ItemLayerManifest getSourceLayer() {
+	public ItemLayerManifestBase<?> getSourceLayer() {
 		return sourceLayer;
 	}
 
@@ -99,7 +99,7 @@ public abstract class AbstractVirtualMapping implements Mapping {
 	 * @see de.ims.icarus2.model.api.driver.mapping.Mapping#getTargetLayer()
 	 */
 	@Override
-	public ItemLayerManifest getTargetLayer() {
+	public ItemLayerManifestBase<?> getTargetLayer() {
 		return targetLayer;
 	}
 
@@ -131,7 +131,7 @@ public abstract class AbstractVirtualMapping implements Mapping {
 	public static abstract class AbstractMappingBuilder<B extends AbstractMappingBuilder<B, M>, M extends Mapping> extends AbstractBuilder<B, M> {
 		private Driver driver;
 		private MappingManifest manifest;
-		private ItemLayerManifest sourceLayer, targetLayer;
+		private ItemLayerManifestBase<?> sourceLayer, targetLayer;
 		private IndexValueType valueType;
 
 		protected AbstractMappingBuilder() {
@@ -156,7 +156,7 @@ public abstract class AbstractVirtualMapping implements Mapping {
 			return thisAsCast();
 		}
 
-		public B sourceLayer(ItemLayerManifest sourceLayer) {
+		public B sourceLayer(ItemLayerManifestBase<?> sourceLayer) {
 			requireNonNull(sourceLayer);
 			checkState(this.sourceLayer==null);
 
@@ -165,7 +165,7 @@ public abstract class AbstractVirtualMapping implements Mapping {
 			return thisAsCast();
 		}
 
-		public B targetLayer(ItemLayerManifest targetLayer) {
+		public B targetLayer(ItemLayerManifestBase<?> targetLayer) {
 			requireNonNull(targetLayer);
 			checkState(this.targetLayer==null);
 
@@ -191,11 +191,11 @@ public abstract class AbstractVirtualMapping implements Mapping {
 			return manifest;
 		}
 
-		public ItemLayerManifest getSourceLayer() {
+		public ItemLayerManifestBase<?> getSourceLayer() {
 			return sourceLayer;
 		}
 
-		public ItemLayerManifest getTargetLayer() {
+		public ItemLayerManifestBase<?> getTargetLayer() {
 			return targetLayer;
 		}
 

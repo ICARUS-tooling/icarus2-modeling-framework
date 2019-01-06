@@ -19,7 +19,7 @@ package de.ims.icarus2.model.manifest.standard;
 import java.util.Optional;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
-import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
@@ -34,7 +34,8 @@ import de.ims.icarus2.model.manifest.util.ManifestUtils;
  * @author Markus Gärtner
  *
  */
-public class StructureLayerManifestImpl extends ItemLayerManifestImpl implements StructureLayerManifest {
+public class StructureLayerManifestImpl extends AbstractItemLayerManifestBase<StructureLayerManifest>
+		implements StructureLayerManifest {
 
 	/**
 	 * @param manifestLocation
@@ -56,27 +57,11 @@ public class StructureLayerManifestImpl extends ItemLayerManifestImpl implements
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.standard.manifest.AbstractManifest#getTemplate()
-	 */
-	@Override
-	public synchronized StructureLayerManifest getTemplate() {
-		return (StructureLayerManifest) super.getTemplate();
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.ItemLayerManifestImpl.manifest.MarkableLayerManifestImpl#getManifestType()
-	 */
-	@Override
-	public ManifestType getManifestType() {
-		return ManifestType.STRUCTURE_LAYER_MANIFEST;
-	}
-
-	/**
 	 * @see de.ims.icarus2.model.manifest.api.StructureLayerManifest#getRootStructureManifest()
 	 */
 	@Override
 	public Optional<StructureManifest> getRootStructureManifest() {
-		Hierarchy<ContainerManifest> hierarchy = getContainerHierarchy().orElse(null);
+		Hierarchy<ContainerManifestBase<?>> hierarchy = getContainerHierarchy().orElse(null);
 
 		// Bail early if there's not enough data to even host a structure manifest
 		if(hierarchy==null || hierarchy.getDepth()<2) {
@@ -86,7 +71,7 @@ public class StructureLayerManifestImpl extends ItemLayerManifestImpl implements
 
 		// Find and return first structure manifest
 		for(int level=1; level<hierarchy.getDepth(); level++) {
-			ContainerManifest manifest = hierarchy.atLevel(level);
+			ContainerManifestBase<?> manifest = hierarchy.atLevel(level);
 			if(manifest.getManifestType()==ManifestType.STRUCTURE_MANIFEST) {
 				return Optional.of((StructureManifest) manifest);
 			}

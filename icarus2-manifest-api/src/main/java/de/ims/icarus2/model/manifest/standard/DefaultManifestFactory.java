@@ -31,7 +31,7 @@ import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
@@ -120,7 +120,7 @@ public class DefaultManifestFactory implements ManifestFactory {
 	static {
 		registerInfo(ManifestType.ANNOTATION_LAYER_MANIFEST,AnnotationLayerManifestImpl.class, LayerGroupManifest.class);
 		registerInfo(ManifestType.ANNOTATION_MANIFEST, AnnotationManifestImpl.class, AnnotationLayerManifest.class);
-		registerInfo(ManifestType.CONTAINER_MANIFEST, ContainerManifestImpl.class, ItemLayerManifest.class);
+		registerInfo(ManifestType.CONTAINER_MANIFEST, ContainerManifestImpl.class, ItemLayerManifestBase.class);
 		registerInfo(ManifestType.CONTEXT_MANIFEST, ContextManifestImpl.class, CorpusManifest.class);
 		registerInfo(ManifestType.CORPUS_MANIFEST, CorpusManifestImpl.class, null);
 		registerInfo(ManifestType.DRIVER_MANIFEST, DriverManifestImpl.class, ContextManifest.class);

@@ -36,7 +36,7 @@ import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.registry.LayerMemberFactory;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
@@ -275,7 +275,7 @@ public interface ComponentSupplier extends AutoCloseable {
 		 * @return
 		 */
 		protected Item newComponent(Container host, long id) {
-			ItemLayerManifest manifest = componentLayer.getManifest();
+			ItemLayerManifestBase<?> manifest = componentLayer.getManifest();
 			switch (componentType) {
 			case CONTAINER:
 				return memberFactory.newContainer(manifest.getRootContainerManifest()

@@ -48,7 +48,7 @@ public abstract class AbstractForeignImplementationManifest<M extends MemberMani
 	 * {@inheritDoc}
 	 */
 	protected AbstractForeignImplementationManifest(ManifestLocation manifestLocation, ManifestRegistry registry,
-			H host, Class<? extends H> expectedHostClass) {
+			H host, Class<? super H> expectedHostClass) {
 		super(manifestLocation, registry, host, expectedHostClass);
 	}
 
@@ -57,7 +57,7 @@ public abstract class AbstractForeignImplementationManifest<M extends MemberMani
 	 */
 	protected AbstractForeignImplementationManifest(H host,
 			Function<H, Manifest> properRegistrySource,
-			Class<? extends H> expectedHostClass) {
+			Class<? super H> expectedHostClass) {
 		super(host, properRegistrySource, expectedHostClass);
 	}
 

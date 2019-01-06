@@ -25,6 +25,8 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
 @SuppressWarnings("boxing")
 public class StructureEditVerifierTestBuilder {
 
+	public static final long ROOT = -1L;
+
 	final StructureEditVerifier verifier;
 
 	/**
@@ -225,7 +227,8 @@ public class StructureEditVerifierTestBuilder {
 	}
 
 	Item itemAt(long index) {
-		return verifier.getSource().getItemAt(index);
+		Structure structure = verifier.getSource();
+		return index==ROOT ? structure.getVirtualRoot() : structure.getItemAt(index);
 	}
 
 	public Stream<DynamicTest> createTests() {
@@ -277,24 +280,24 @@ public class StructureEditVerifierTestBuilder {
 
 		// TERMINAL
 		TestUtils.makeTests(spec.setTerminalLegal,
-				p -> displayString("set terminal legal: item_%d as %s at %s",
-						p.second, p.first, label(p.third)),
+				p -> displayString("set terminal legal: item_%s as %s at %s",
+						p.second, label(p.third), p.first),
 				p -> spec.verifier.canSetTerminal(p.first, spec.itemAt(p.second), p.third),
 						true, tests::add);
 		TestUtils.makeTests(spec.setTerminalIllegal,
-				p -> displayString("set terminal illegal: item_%d as %s at %s",
-						p.second, p.first, label(p.third)),
+				p -> displayString("set terminal illegal: item_%s as %s at %s",
+						p.second, label(p.third), p.first),
 				p -> spec.verifier.canSetTerminal(p.first, spec.itemAt(p.second), p.third),
 						false, tests::add);
 
 		// CREATE
 		TestUtils.makeTests(spec.createEdgeLegal,
-				p -> displayString("create edge legal: item_%d to item_%d",
+				p -> displayString("create edge legal: item_%s to item_%s",
 						p.first, p.second),
 				p -> spec.verifier.canCreateEdge(spec.itemAt(p.first), spec.itemAt(p.second)),
 						true, tests::add);
 		TestUtils.makeTests(spec.createEdgeIllegal,
-				p -> displayString("create edge illegal: item_%d to item_%d",
+				p -> displayString("create edge illegal: item_%s to item_%s",
 						p.first, p.second),
 				p -> spec.verifier.canCreateEdge(spec.itemAt(p.first), spec.itemAt(p.second)),
 						false, tests::add);

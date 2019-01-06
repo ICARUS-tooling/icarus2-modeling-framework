@@ -31,7 +31,15 @@ import de.ims.icarus2.util.access.AccessRestriction;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface FragmentLayerManifest extends ItemLayerManifest {
+public interface FragmentLayerManifest extends ItemLayerManifestBase<FragmentLayerManifest> {
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.standard.ItemLayerManifestImpl#getManifestType()
+	 */
+	@Override
+	default ManifestType getManifestType() {
+		return ManifestType.FRAGMENT_LAYER_MANIFEST;
+	}
 
 	/**
 	 * Links to the annotation layer that is used to fetch the annotation

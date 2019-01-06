@@ -148,10 +148,8 @@ public class ContextFactory {
 	 * @return
 	 */
 	public Context createContext(Corpus corpus, ContextManifest manifest, Options options) {
-		if (corpus == null)
-			throw new NullPointerException("Invalid corpus");  //$NON-NLS-1$
-		if (manifest == null)
-			throw new NullPointerException("Invalid manifest"); //$NON-NLS-1$
+		requireNonNull(corpus);
+		requireNonNull(manifest);
 
 		if(options==null) {
 			options = Options.NONE;
@@ -173,7 +171,7 @@ public class ContextFactory {
 			context.addLayerGroup(group);
 
 			// Create layers
-			for(LayerManifest layerManifest : groupManifest.getLayerManifests()) {
+			for(LayerManifest<?> layerManifest : groupManifest.getLayerManifests()) {
 				LayerLinker linker = newLayer(corpus, layerManifest, producers, options);
 
 				group.addLayer(linker.getLayer());
@@ -235,7 +233,7 @@ public class ContextFactory {
 	 * @param manifest
 	 * @return
 	 */
-	protected LayerLinker newLayer(Corpus corpus, LayerManifest manifest, Producers producers, Options options) {
+	protected LayerLinker newLayer(Corpus corpus, LayerManifest<?> manifest, Producers producers, Options options) {
 
 		switch (manifest.getManifestType()) {
 		case ANNOTATION_LAYER_MANIFEST:
@@ -353,7 +351,7 @@ public class ContextFactory {
 		 * supplied layers (not those of foreign contexts!) will be of type {@link DefaultLayerGroup}.
 		 */
 		public void link() {
-			LayerManifest layerManifest = layer.getManifest();
+			LayerManifest<?> layerManifest = layer.getManifest();
 
 			// Link base layers
 			List<TargetLayerManifest> baseManifests = layerManifest.getBaseLayerManifests();
@@ -382,7 +380,7 @@ public class ContextFactory {
 
 		@SuppressWarnings("unchecked")
 		public <L extends Layer> L resolveTargetLayer(TargetLayerManifest target) {
-			LayerManifest targetManifest = target.getResolvedLayerManifest().orElseThrow(
+			LayerManifest<?> targetManifest = target.getResolvedLayerManifest().orElseThrow(
 					ManifestException.error("Unresolved target layer manifest: "+ManifestUtils.getName(target)));
 			ContextManifest targetContextManifest = ManifestUtils.requireGrandHost(targetManifest);
 

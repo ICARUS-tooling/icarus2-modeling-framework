@@ -35,7 +35,6 @@ import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 
@@ -100,14 +99,6 @@ public class CorpusManifestImpl extends AbstractMemberManifest<CorpusManifest, T
 	public CorpusManifest setTemplateId(String templateId) {
 		throw new ManifestException(ManifestErrorCode.MANIFEST_ILLEGAL_TEMPLATE_STATE,
 				"Corpus manifest does not support templating");
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.MemberManifest#getManifestType()
-	 */
-	@Override
-	public ManifestType getManifestType() {
-		return ManifestType.CORPUS_MANIFEST;
 	}
 
 	/**

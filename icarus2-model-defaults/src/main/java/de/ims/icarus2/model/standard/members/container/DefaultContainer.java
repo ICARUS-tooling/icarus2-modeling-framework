@@ -25,6 +25,7 @@ import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerFlag;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.MemberFlags;
@@ -143,7 +144,7 @@ public class DefaultContainer extends DefaultItem implements Container, Recyclab
 	 * @see de.ims.icarus2.model.api.members.container.Container#getManifest()
 	 */
 	@Override
-	public ContainerManifest getManifest() {
+	public ContainerManifestBase<?> getManifest() {
 		return ModelUtils.getContainerManifest(this);
 	}
 

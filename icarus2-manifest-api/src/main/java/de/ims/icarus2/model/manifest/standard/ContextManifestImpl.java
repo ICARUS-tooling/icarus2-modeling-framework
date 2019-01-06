@@ -28,7 +28,7 @@ import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
@@ -36,7 +36,6 @@ import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.standard.Links.Link;
 import de.ims.icarus2.model.manifest.standard.Links.MemoryLink;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
@@ -93,7 +92,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 				&& groupManifests.isEmpty() && !driverManifest.isPresent() && locationManifests.isEmpty();
 	}
 
-	private <L extends LayerManifest<L>> Optional<L> lookupLayerManifest(String id) {
+	private <L extends LayerManifest<?>> Optional<L> lookupLayerManifest(String id) {
 		requireNonNull(id);
 
 		Optional<L> result = Optional.empty();
@@ -133,7 +132,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	 * @see de.ims.icarus2.model.manifest.api.ContextManifest#getLayerManifest(java.lang.String)
 	 */
 	@Override
-	public <L extends LayerManifest<L>> Optional<L> getLayerManifest(String id) {
+	public <L extends LayerManifest<?>> Optional<L> getLayerManifest(String id) {
 		return lookupLayerManifest(id);
 	}
 
@@ -283,14 +282,6 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.MemberManifest#getManifestType()
-	 */
-	@Override
-	public ManifestType getManifestType() {
-		return ManifestType.CONTEXT_MANIFEST;
-	}
-
-	/**
 	 * @see de.ims.icarus2.model.manifest.api.ContextManifest#getDriverManifest()
 	 */
 	@Override
@@ -344,7 +335,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	 * @see de.ims.icarus2.model.manifest.api.ContextManifest#getPrimaryLayerManifest()
 	 */
 	@Override
-	public <L extends ItemLayerManifest> Optional<L> getPrimaryLayerManifest() {
+	public <L extends ItemLayerManifestBase<?>> Optional<L> getPrimaryLayerManifest() {
 		@SuppressWarnings("unchecked")
 		Optional<L> result = Optional.ofNullable(
 				primaryLayer==null ? null : (L)primaryLayer.get());
@@ -382,7 +373,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	 * @return the foundationLayerManifest
 	 */
 	@Override
-	public <L extends ItemLayerManifest> Optional<L> getFoundationLayerManifest() {
+	public <L extends ItemLayerManifestBase<?>> Optional<L> getFoundationLayerManifest() {
 		@SuppressWarnings("unchecked")
 		Optional<L> result = Optional.ofNullable(
 				foundationLayer==null ? null : (L)foundationLayer.get());
@@ -545,7 +536,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 		}
 	}
 
-	protected class LayerLink extends Link<ItemLayerManifest> {
+	protected class LayerLink extends Link<ItemLayerManifestBase<?>> {
 
 		/**
 		 * @param id
@@ -558,7 +549,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#resolve()
 		 */
 		@Override
-		protected Optional<ItemLayerManifest> resolve() {
+		protected Optional<ItemLayerManifestBase<?>> resolve() {
 			return getLayerManifest(getId());
 		}
 

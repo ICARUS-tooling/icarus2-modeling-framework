@@ -25,7 +25,7 @@ import java.util.Set;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -55,7 +55,7 @@ public class ChunkIndexStorage {
 		return hasChunkIndex(layer.getManifest());
 	}
 
-	public boolean hasChunkIndex(ItemLayerManifest layer) {
+	public boolean hasChunkIndex(ItemLayerManifestBase<?> layer) {
 		return chunkIndexMap.containsKey(layer.getUID());
 	}
 
@@ -63,7 +63,7 @@ public class ChunkIndexStorage {
 		return getChunkIndex(layer.getManifest());
 	}
 
-	public ChunkIndex getChunkIndex(ItemLayerManifest layer) {
+	public ChunkIndex getChunkIndex(ItemLayerManifestBase<?> layer) {
 		requireNonNull(layer);
 
 		int id = layer.getUID();
@@ -84,7 +84,7 @@ public class ChunkIndexStorage {
 
 		private final Int2ObjectMap<ChunkIndex> chunkIndexMap = new Int2ObjectOpenHashMap<>();
 
-		public Builder add(ItemLayerManifest layer, ChunkIndex chunkIndex) {
+		public Builder add(ItemLayerManifestBase<?> layer, ChunkIndex chunkIndex) {
 			requireNonNull(layer);
 			requireNonNull(chunkIndex);
 

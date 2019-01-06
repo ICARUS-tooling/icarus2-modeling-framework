@@ -35,7 +35,7 @@ import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.api.registry.SubRegistry;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
@@ -355,7 +355,7 @@ public class FileDriverMetadata {
 	/**
 	 * Metadata keys for files.
 	 * The {@link #isLayerSubKey()} method signals whether or not a key is additionally
-	 * associated with a {@link ItemLayerManifest layer}.
+	 * associated with a {@link ItemLayerManifestBase<?> layer}.
 	 *
 	 * @author Markus Gärtner
 	 *
@@ -423,7 +423,7 @@ public class FileDriverMetadata {
 			return getFileKey(fileIndex, suffix);
 		}
 
-		public String getKey(int fileIndex, ItemLayerManifest layer) {
+		public String getKey(int fileIndex, ItemLayerManifestBase<?> layer) {
 			if(!isLayerSubKey)
 				throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 						"Key does not allow layer context: "+suffix);
@@ -444,7 +444,7 @@ public class FileDriverMetadata {
 	}
 
 	/**
-	 * Metadata keys for {@link ItemLayerManifest layers}.
+	 * Metadata keys for {@link ItemLayerManifestBase<?> layers}.
 	 *
 	 * @author Markus Gärtner
 	 *
@@ -482,7 +482,7 @@ public class FileDriverMetadata {
 			return suffix;
 		}
 
-		public String getKey(ItemLayerManifest layer) {
+		public String getKey(ItemLayerManifestBase<?> layer) {
 			return getLayerKey(layer, suffix);
 		}
 
@@ -491,7 +491,7 @@ public class FileDriverMetadata {
 			return type;
 		}
 
-		public void deleteLayerData(MetadataRegistry metadataRegistry, ItemLayerManifest layer) {
+		public void deleteLayerData(MetadataRegistry metadataRegistry, ItemLayerManifestBase<?> layer) {
 			delete(metadataRegistry, getLayerKey(layer, ""));
 		}
 	}
@@ -573,7 +573,7 @@ public class FileDriverMetadata {
 			return suffix;
 		}
 
-		public String getKey(ItemLayerManifest layer) {
+		public String getKey(ItemLayerManifestBase<?> layer) {
 			return getChunkIndexKey(layer, suffix);
 		}
 
@@ -582,7 +582,7 @@ public class FileDriverMetadata {
 			return type;
 		}
 
-		public void deleteChunkIndexData(MetadataRegistry metadataRegistry, ItemLayerManifest layer) {
+		public void deleteChunkIndexData(MetadataRegistry metadataRegistry, ItemLayerManifestBase<?> layer) {
 			delete(metadataRegistry, getChunkIndexKey(layer, ""));
 		}
 	}
@@ -671,14 +671,14 @@ public class FileDriverMetadata {
 			return suffix;
 		}
 
-		public String getKey(ItemLayerManifest layer, int level) {
+		public String getKey(ItemLayerManifestBase<?> layer, int level) {
 			if(isTypeSubKey)
 				throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 						"Key requires type context: "+suffix);
 			return getContainerKey(layer, level, suffix);
 		}
 
-		public String getKey(ItemLayerManifest layer, int level, ContainerType type) {
+		public String getKey(ItemLayerManifestBase<?> layer, int level, ContainerType type) {
 			if(!isTypeSubKey)
 				throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 						"Key does not allow type context: "+suffix);
@@ -690,7 +690,7 @@ public class FileDriverMetadata {
 			return type;
 		}
 
-		public void deleteContainerData(MetadataRegistry metadataRegistry, ItemLayerManifest layer, int level) {
+		public void deleteContainerData(MetadataRegistry metadataRegistry, ItemLayerManifestBase<?> layer, int level) {
 			delete(metadataRegistry, getContainerKey(layer, level, ""));
 		}
 	}
@@ -797,7 +797,7 @@ public class FileDriverMetadata {
 			return suffix;
 		}
 
-		public String getKey(ItemLayerManifest source, ItemLayerManifest target) {
+		public String getKey(ItemLayerManifestBase<?> source, ItemLayerManifestBase<?> target) {
 			return getMappingKey(source, target, suffix);
 		}
 
@@ -806,7 +806,7 @@ public class FileDriverMetadata {
 			return type;
 		}
 
-		public void deleteMappingData(MetadataRegistry metadataRegistry, ItemLayerManifest source, ItemLayerManifest target) {
+		public void deleteMappingData(MetadataRegistry metadataRegistry, ItemLayerManifestBase<?> source, ItemLayerManifestBase<?> target) {
 			delete(metadataRegistry, getMappingKey(source, target, ""));
 		}
 	}
@@ -827,23 +827,23 @@ public class FileDriverMetadata {
 		return FILE_PREFIX+String.valueOf(fileIndex)+_SEP_+suffix;
 	}
 
-	private static String getFileKey(int fileIndex, ItemLayerManifest layer, String suffix) {
+	private static String getFileKey(int fileIndex, ItemLayerManifestBase<?> layer, String suffix) {
 		return FILE_PREFIX+String.valueOf(fileIndex)+_SEP_+ID_PREFIX+id(layer)+_SEP_+suffix;
 	}
 
-	private static String getLayerKey(ItemLayerManifest layer, String suffix) {
+	private static String getLayerKey(ItemLayerManifestBase<?> layer, String suffix) {
 		return ID_PREFIX+id(layer)+_SEP_+suffix;
 	}
 
-	private static String getChunkIndexKey(ItemLayerManifest layer, String suffix) {
+	private static String getChunkIndexKey(ItemLayerManifestBase<?> layer, String suffix) {
 		return ID_PREFIX+id(layer)+_SEP_+CHUNK_INDEX_PREFIX+_SEP_+suffix;
 	}
 
-	private static String getContainerKey(ItemLayerManifest layer, int level, String suffix) {
+	private static String getContainerKey(ItemLayerManifestBase<?> layer, int level, String suffix) {
 		return ID_PREFIX+id(layer)+_SEP_+LEVEL_PREFIX+String.valueOf(level)+_SEP_+suffix;
 	}
 
-	private static String getContainerTypeKey(ItemLayerManifest layer, int level, ContainerType type, String suffix) {
+	private static String getContainerTypeKey(ItemLayerManifestBase<?> layer, int level, ContainerType type, String suffix) {
 		return ID_PREFIX+id(layer)+_SEP_+LEVEL_PREFIX+String.valueOf(level)+_SEP_+type.name()+_SEP_+suffix;
 	}
 
@@ -855,7 +855,7 @@ public class FileDriverMetadata {
 		return ID_PREFIX+id(layer)+_SEP_+LEVEL_PREFIX+String.valueOf(level)+_SEP_+type.name()+_SEP_+suffix;
 	}
 
-	private static String getMappingKey(ItemLayerManifest source, ItemLayerManifest target, String suffix) {
+	private static String getMappingKey(ItemLayerManifestBase<?> source, ItemLayerManifestBase<?> target, String suffix) {
 		return MAPPING_PREFIX+_SEP_+ID_PREFIX+source.getId()+LINK+ID_PREFIX+target.getId()+_SEP_+suffix;
 	}
 }

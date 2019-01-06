@@ -1422,4 +1422,22 @@ public class TestUtils {
 			}));
 		}
 	}
+
+	public static int[] intRange(int from, int to) {
+		int[] array = new int[to-from+1];
+		for(int idx = 0; idx<array.length; idx++) {
+			array[idx] = from+idx;
+		}
+		return array;
+	}
+
+	public static long[] longRange(long from, long to) {
+		long diff = to-from+1;
+		assertTrue(diff<MAX_INTEGER_INDEX);
+		long[] array = new long[(int)diff];
+		for(int idx = 0; idx<array.length; idx++) {
+			array[idx] = from+idx;
+		}
+		return array;
+	}
 }

@@ -20,6 +20,8 @@ import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2LongMap;
+import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 
 /**
  * @author Markus Gärtner
@@ -66,7 +68,9 @@ public class ModelTestUtils {
 		Container container = mock(Container.class);
 		when(container.getItemCount()).thenReturn(itemCount);
 
-		stubItems(container);
+		if(itemCount>0) {
+			stubItems(container);
+		}
 
 		return container;
 	}
@@ -76,17 +80,26 @@ public class ModelTestUtils {
 			throw new IndexOutOfBoundsException();
 	}
 
-	private static void stubItems(Container container) {
+	@SuppressWarnings("boxing")
+	public static void stubItems(Container container) {
 
 		final Long2ObjectMap<Item> items = new Long2ObjectOpenHashMap<>();
+		final Object2LongMap<Item> indices = new Object2LongOpenHashMap<>();
+		indices.defaultReturnValue(-1);
 
 		when(container.getItemAt(anyLong())).then(invocation -> {
-			@SuppressWarnings("boxing")
 			long index = invocation.getArgument(0);
 			checkItemIndex(container, index);
 
-			return items.computeIfAbsent(index, k -> stubId(mockItem(), k));
+			return items.computeIfAbsent(index, k -> {
+				Item item = stubId(mockItem(), k);
+				indices.put(item, k);
+				return item;
+			});
 		});
+
+		when(container.indexOfItem(any())).then(
+				invocation -> indices.getLong(invocation.getArgument(0)));
 	}
 
 	@SuppressWarnings("boxing")
@@ -98,7 +111,9 @@ public class ModelTestUtils {
 		when(structure.getItemCount()).thenReturn(itemCount);
 		when(structure.getEdgeCount()).thenReturn(edgeCount);
 
-		stubItems(structure);
+		if(itemCount>0) {
+			stubItems(structure);
+		}
 
 		return structure;
 	}

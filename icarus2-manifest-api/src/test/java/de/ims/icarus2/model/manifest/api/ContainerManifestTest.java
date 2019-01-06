@@ -25,5 +25,12 @@ package de.ims.icarus2.model.manifest.api;
  */
 public interface ContainerManifestTest extends EmbeddedMemberManifestTest<ContainerManifest>,
 	ContainerManifestTestMixin<ContainerManifest> {
-	// no-op
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.CONTAINER_MANIFEST;
+	}
 }

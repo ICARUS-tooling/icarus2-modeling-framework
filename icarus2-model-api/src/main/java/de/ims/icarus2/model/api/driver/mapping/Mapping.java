@@ -17,7 +17,7 @@
 package de.ims.icarus2.model.api.driver.mapping;
 
 import de.ims.icarus2.model.api.driver.Driver;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 
 /**
@@ -40,14 +40,14 @@ public interface Mapping {
 	 *
 	 * @return
 	 */
-	ItemLayerManifest getSourceLayer();
+	ItemLayerManifestBase<?> getSourceLayer();
 
 	/**
 	 * Returns the {@code target} layer for the mapping this index represents.
 	 *
 	 * @return
 	 */
-	ItemLayerManifest getTargetLayer();
+	ItemLayerManifestBase<?> getTargetLayer();
 
 	/**
 	 * Returns the manifest this mapping is based upon.

@@ -33,7 +33,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
@@ -85,7 +85,7 @@ public class FileDataStates {
 		for(LayerManifest layerManifest : contextManifest.getLayerManifests()) {
 
 			if(ManifestUtils.isItemLayerManifest(layerManifest)) {
-				layerInfos.put(layerManifest.getUID(), new LayerInfo((ItemLayerManifest)layerManifest));
+				layerInfos.put(layerManifest.getUID(), new LayerInfo((ItemLayerManifestBase<?>)layerManifest));
 			}
 		}
 
@@ -255,7 +255,7 @@ public class FileDataStates {
 			this.checksum = checksum;
 		}
 
-		private LayerCoverage getCoverage(ItemLayerManifest layer, boolean createIfMissing) {
+		private LayerCoverage getCoverage(ItemLayerManifestBase<?> layer, boolean createIfMissing) {
 			int key = layer.getUID();
 			LayerCoverage cov = stats.get(key);
 
@@ -267,34 +267,34 @@ public class FileDataStates {
 			return cov;
 		}
 
-		public long getItemCount(ItemLayerManifest layer) {
+		public long getItemCount(ItemLayerManifestBase<?> layer) {
 			LayerCoverage cov = getCoverage(layer, false);
 			return cov==null ? IcarusUtils.UNSET_LONG : cov.count;
 		}
 
-		public long getBeginIndex(ItemLayerManifest layer) {
+		public long getBeginIndex(ItemLayerManifestBase<?> layer) {
 			LayerCoverage cov = getCoverage(layer, false);
 			return cov==null ? IcarusUtils.UNSET_LONG : cov.first;
 		}
 
-		public long getEndIndex(ItemLayerManifest layer) {
+		public long getEndIndex(ItemLayerManifestBase<?> layer) {
 			LayerCoverage cov = getCoverage(layer, false);
 			return cov==null ? IcarusUtils.UNSET_LONG : cov.last;
 		}
 
-		public void setItemCount(ItemLayerManifest layer, long itemCount) {
+		public void setItemCount(ItemLayerManifestBase<?> layer, long itemCount) {
 			getCoverage(layer, true).count = itemCount;
 		}
 
-		public void setBeginIndex(ItemLayerManifest layer, long beginIndex) {
+		public void setBeginIndex(ItemLayerManifestBase<?> layer, long beginIndex) {
 			getCoverage(layer, true).first = beginIndex;
 		}
 
-		public void setEndIndex(ItemLayerManifest layer, long endIndex) {
+		public void setEndIndex(ItemLayerManifestBase<?> layer, long endIndex) {
 			getCoverage(layer, true).last = endIndex;
 		}
 
-		public void setCoverage(ItemLayerManifest layer, long itemCount, long beginIndex, long endIndex) {
+		public void setCoverage(ItemLayerManifestBase<?> layer, long itemCount, long beginIndex, long endIndex) {
 			LayerCoverage coverage = getCoverage(layer, true);
 			coverage.count = itemCount;
 			coverage.first = beginIndex;
@@ -342,7 +342,7 @@ public class FileDataStates {
 	}
 
 	public static class LayerInfo extends ElementInfo {
-		private final ItemLayerManifest layer;
+		private final ItemLayerManifestBase<?> layer;
 
 		// Total number of elements in top-level container
 		private long size = IcarusUtils.UNSET_LONG;
@@ -351,11 +351,11 @@ public class FileDataStates {
 		private LongCounter<StructureType> structureTypeCount;
 		private NumericalStats itemCount, spanSize, edgeCount, height, branching, roots;
 
-		public LayerInfo(ItemLayerManifest layer) {
+		public LayerInfo(ItemLayerManifestBase<?> layer) {
 			this.layer = requireNonNull(layer);
 		}
 
-		public ItemLayerManifest getLayer() {
+		public ItemLayerManifestBase<?> getLayer() {
 			return layer;
 		}
 

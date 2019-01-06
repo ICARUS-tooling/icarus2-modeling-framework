@@ -95,7 +95,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.Item.ManagedItem;
 import de.ims.icarus2.model.api.registry.LayerMemberFactory;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.manifest.util.Messages;
@@ -182,7 +182,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * with the cost of resizing the buffer a few times.
 		 */
 		String layerId = tableSchema.getRootBlock().getLayerId();
-		ItemLayerManifest layerManifest = (ItemLayerManifest) contextManifest.getLayerManifest(layerId)
+		ItemLayerManifestBase<?> layerManifest = (ItemLayerManifestBase<?>) contextManifest.getLayerManifest(layerId)
 				.orElseThrow(ManifestException.error("No such layer: "+layerId));
 		// We use the recommended size for byte buffers here to be on the safe side for our character buffer
 		characterChunkSize = getRecommendedByteBufferSize(layerManifest);

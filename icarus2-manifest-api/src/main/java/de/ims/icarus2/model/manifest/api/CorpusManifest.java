@@ -43,6 +43,14 @@ public interface CorpusManifest extends MemberManifest<CorpusManifest> {
 	public static final boolean DEFAULT_EDITABLE_VALUE = false;
 	public static final boolean DEFAULT_PARALLEL_VALUE = false;
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.MemberManifest#getManifestType()
+	 */
+	@Override
+	default ManifestType getManifestType() {
+		return ManifestType.CORPUS_MANIFEST;
+	}
+
 	@AccessRestriction(AccessMode.READ)
 	void forEachRootContextManifest(Consumer<? super ContextManifest> action);
 

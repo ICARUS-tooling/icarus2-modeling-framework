@@ -19,7 +19,7 @@ package de.ims.icarus2.model.api.driver.id;
 import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 
 /**
  * Implements an {@link IdManager} that reflects the simple identity relation between
@@ -36,12 +36,12 @@ public class StaticContinuousIdManager implements IdManager {
 
 	//TODO maybe we should at least verify for each parameter that it is a valid id/index ? maybe shift requirement up to IdManager interface contract
 
-	private final ItemLayerManifest layerManifest;
+	private final ItemLayerManifestBase<?> layerManifest;
 
 	/**
 	 * @param layerManifest
 	 */
-	public StaticContinuousIdManager(ItemLayerManifest layerManifest) {
+	public StaticContinuousIdManager(ItemLayerManifestBase<?> layerManifest) {
 		requireNonNull(layerManifest);
 		this.layerManifest = layerManifest;
 	}
@@ -58,7 +58,7 @@ public class StaticContinuousIdManager implements IdManager {
 	 * @see de.ims.icarus2.model.api.driver.id.IdManager#getLayerManifest()
 	 */
 	@Override
-	public ItemLayerManifest getLayerManifest() {
+	public ItemLayerManifestBase<?> getLayerManifest() {
 		return layerManifest;
 	}
 

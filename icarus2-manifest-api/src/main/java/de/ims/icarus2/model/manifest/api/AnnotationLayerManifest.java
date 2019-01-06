@@ -58,6 +58,14 @@ import de.ims.icarus2.util.collections.LazyCollection;
 @AccessControl(AccessPolicy.DENY)
 public interface AnnotationLayerManifest extends LayerManifest<AnnotationLayerManifest> {
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.MemberManifest#getManifestType()
+	 */
+	@Override
+	default ManifestType getManifestType() {
+		return ManifestType.ANNOTATION_LAYER_MANIFEST;
+	}
+
 	@AccessRestriction(AccessMode.READ)
 	void forEachAnnotationManifest(Consumer<? super AnnotationManifest> action);
 

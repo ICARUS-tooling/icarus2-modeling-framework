@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
@@ -47,7 +47,7 @@ public class MappingStorage {
 	private final Long2ObjectMap<Mapping> mappingMap;
 	private final Set<Mapping> mappingSet = new ReferenceOpenHashSet<>();
 
-	private final BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> fallback;
+	private final BiFunction<ItemLayerManifestBase<?>, ItemLayerManifestBase<?>, Mapping> fallback;
 
 	protected MappingStorage(Builder builder) {
 
@@ -64,7 +64,7 @@ public class MappingStorage {
 		return CollectionUtils.getSetProxy(mappingSet);
 	}
 
-	public Mapping getMapping(ItemLayerManifest source, ItemLayerManifest target) {
+	public Mapping getMapping(ItemLayerManifestBase<?> source, ItemLayerManifestBase<?> target) {
 		long key = getKey(source, target);
 		Mapping mapping = mappingMap.get(key);
 
@@ -79,11 +79,11 @@ public class MappingStorage {
 		return mapping;
 	}
 
-	public boolean hasMapping(ItemLayerManifest source, ItemLayerManifest target) {
+	public boolean hasMapping(ItemLayerManifestBase<?> source, ItemLayerManifestBase<?> target) {
 		return mappingMap.containsKey(getKey(source, target));
 	}
 
-	public List<Mapping> getOutgoingMappings(ItemLayerManifest source) {
+	public List<Mapping> getOutgoingMappings(ItemLayerManifestBase<?> source) {
 		LazyCollection<Mapping> result = LazyCollection.lazyList();
 
 		for(Mapping mapping : mappingSet) {
@@ -95,7 +95,7 @@ public class MappingStorage {
 		return result.getAsList();
 	}
 
-	public List<Mapping> getIncomingMappings(ItemLayerManifest target) {
+	public List<Mapping> getIncomingMappings(ItemLayerManifestBase<?> target) {
 		LazyCollection<Mapping> result = LazyCollection.lazyList();
 
 		for(Mapping mapping : mappingSet) {
@@ -107,7 +107,7 @@ public class MappingStorage {
 		return result.getAsList();
 	}
 
-	public void forEachIncomingMapping(ItemLayerManifest target, Consumer<? super Mapping> action) {
+	public void forEachIncomingMapping(ItemLayerManifestBase<?> target, Consumer<? super Mapping> action) {
 		for(Mapping mapping : mappingSet) {
 			if(mapping.getTargetLayer()==target) {
 				action.accept(mapping);
@@ -115,7 +115,7 @@ public class MappingStorage {
 		}
 	}
 
-	public void forEachOutgoingMapping(ItemLayerManifest target, Consumer<? super Mapping> action) {
+	public void forEachOutgoingMapping(ItemLayerManifestBase<?> target, Consumer<? super Mapping> action) {
 		for(Mapping mapping : mappingSet) {
 			if(mapping.getSourceLayer()==target) {
 				action.accept(mapping);
@@ -132,13 +132,13 @@ public class MappingStorage {
 	}
 
 
-	public static long getKey(LayerManifest source, LayerManifest target) {
+	public static long getKey(LayerManifest<?> source, LayerManifest<?> target) {
 		return (long)source.getUID() | ((long)target.getUID()<<32);
 	}
 
 	public static class Builder {
 		private Long2ObjectMap<Mapping> mappingMap;
-		private BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> fallback;
+		private BiFunction<ItemLayerManifestBase<?>, ItemLayerManifestBase<?>, Mapping> fallback;
 
 		public Builder() {
 			reset();
@@ -157,14 +157,14 @@ public class MappingStorage {
 			return this;
 		}
 
-		public Mapping getMapping(ItemLayerManifest source, ItemLayerManifest target) {
+		public Mapping getMapping(ItemLayerManifestBase<?> source, ItemLayerManifestBase<?> target) {
 
 			long key = getKey(source, target);
 
 			return mappingMap.get(key);
 		}
 
-		public Builder fallback(BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> fallback) {
+		public Builder fallback(BiFunction<ItemLayerManifestBase<?>, ItemLayerManifestBase<?>, Mapping> fallback) {
 			requireNonNull(fallback);
 			checkState(this.fallback==null);
 

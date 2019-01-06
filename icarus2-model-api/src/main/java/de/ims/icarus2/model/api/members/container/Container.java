@@ -23,6 +23,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.manager.ItemList;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
 import de.ims.icarus2.model.util.stream.ModelStreams;
@@ -36,7 +37,7 @@ import de.ims.icarus2.util.collections.set.DataSet;
  * @author Markus Gärtner
  *
  */
-public interface Container extends Item, ManifestOwner<ContainerManifest>, ItemList {
+public interface Container extends Item, ManifestOwner<ContainerManifestBase<?>>, ItemList {
 
 	/**
 	 * Returns the type of this container. This provides
@@ -59,7 +60,7 @@ public interface Container extends Item, ManifestOwner<ContainerManifest>, ItemL
 	 * @return
 	 */
 	@Override
-	ContainerManifest getManifest();
+	ContainerManifestBase<?> getManifest();
 
 	/**
 	 * Creates a verifier that can be used to check whether or not certain

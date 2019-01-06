@@ -77,7 +77,7 @@ import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.standard.members.container.AbstractImmutableContainer;
 import de.ims.icarus2.model.standard.members.container.ProxyContainer;
@@ -1141,7 +1141,7 @@ public class DefaultCorpus implements Corpus {
 		 * @see de.ims.icarus2.model.api.layer.ItemLayer#getManifest()
 		 */
 		@Override
-		public ItemLayerManifest getManifest() {
+		public ItemLayerManifestBase<?> getManifest() {
 			//TODO re-evaluate if null is a good return value here!!!
 			return null;
 		}

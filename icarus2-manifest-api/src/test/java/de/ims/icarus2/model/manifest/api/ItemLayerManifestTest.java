@@ -24,5 +24,12 @@ package de.ims.icarus2.model.manifest.api;
  *
  */
 public interface ItemLayerManifestTest extends ItemLayerManifestTestMixin<ItemLayerManifest> {
-	//no-op
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
+	 */
+	@Override
+	default ManifestType getExpectedType() {
+		return ManifestType.ITEM_LAYER_MANIFEST;
+	}
 }

@@ -37,6 +37,14 @@ public interface HighlightLayerManifest extends LayerManifest<HighlightLayerMani
 
 	//FIXME finish specification
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.ManifestFragment#getManifestType()
+	 */
+	@Override
+	default ManifestType getManifestType() {
+		return ManifestType.HIGHLIGHT_LAYER_MANIFEST;
+	}
+
 	Optional<TargetLayerManifest> getPrimaryLayerManifest();
 
 	boolean isLocalPrimaryLayerManifest();

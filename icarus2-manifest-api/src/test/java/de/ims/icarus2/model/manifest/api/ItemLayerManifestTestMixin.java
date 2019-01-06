@@ -49,14 +49,14 @@ import java.util.function.Predicate;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.ManifestTestFeature;
-import de.ims.icarus2.model.manifest.standard.ItemLayerManifestImpl;
+import de.ims.icarus2.model.manifest.standard.AbstractItemLayerManifestBase;
 import de.ims.icarus2.test.func.TriConsumer;
 
 /**
  * @author Markus Gärtner
  *
  */
-interface ItemLayerManifestTestMixin<M extends ItemLayerManifest> extends LayerManifestTest<M> {
+interface ItemLayerManifestTestMixin<M extends ItemLayerManifestBase<M>> extends LayerManifestTest<M> {
 
 	public static ContainerManifest mockContainerManifest(String id) {
 		ContainerManifest containerManifest = mockTypedManifest(ManifestType.CONTAINER_MANIFEST);
@@ -73,16 +73,16 @@ interface ItemLayerManifestTestMixin<M extends ItemLayerManifest> extends LayerM
 	}
 
 	@SuppressWarnings("boxing")
-	public static <M extends ItemLayerManifest, V extends ContainerManifest> TriConsumer<M, V, Integer>
+	public static <M extends ItemLayerManifestBase<?>, V extends ContainerManifestBase<?>> TriConsumer<M, V, Integer>
 			inject_insert() {
 		return (m, cont, index) -> {
-			ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(m)
+			AbstractItemLayerManifestBase.getOrCreateLocalContainerhierarchy(m)
 				.insert(cont, index);
 		};
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#getRootContainerManifest()}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifestBase#getRootContainerManifest()}.
 	 */
 	@SuppressWarnings("boxing")
 	@Test
@@ -94,17 +94,17 @@ interface ItemLayerManifestTestMixin<M extends ItemLayerManifest> extends LayerM
 		// Test basic behavior when constantly changing the root manifest itself
 		assertOptGetter(createUnlocked(),
 				container1, container2, null,
-				ItemLayerManifest::getRootContainerManifest,
+				ItemLayerManifestBase::getRootContainerManifest,
 				inject_genericInserter(inject_insert(), constant(0)));
 
-		Predicate<ItemLayerManifest> rootCheck = m -> {
-			Optional<ContainerManifest> manifest = m.getRootContainerManifest();
+		Predicate<M> rootCheck = m -> {
+			Optional<ContainerManifestBase<?>> manifest = m.getRootContainerManifest();
 			assertPresent(manifest);
 			return manifest.get()==root;
 		};
 
-		BiFunction<ItemLayerManifest, ContainerManifest, Boolean> staticModifier = (m, cont) -> {
-			ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(m).add(cont);
+		BiFunction<M, ContainerManifest, Boolean> staticModifier = (m, cont) -> {
+			AbstractItemLayerManifestBase.getOrCreateLocalContainerhierarchy(m).add(cont);
 			return true;
 		};
 
@@ -112,8 +112,8 @@ interface ItemLayerManifestTestMixin<M extends ItemLayerManifest> extends LayerM
 		assertPredicate(createUnlocked(), staticModifier, rootCheck, transform_id(),
 				root, container1, container2);
 
-		BiFunction<ItemLayerManifest, ContainerManifest, Boolean> mixedModifier = (m, cont) -> {
-			ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(m).insert(cont, 0);
+		BiFunction<M, ContainerManifestBase<?>, Boolean> mixedModifier = (m, cont) -> {
+			AbstractItemLayerManifestBase.getOrCreateLocalContainerhierarchy(m).insert(cont, 0);
 			return cont==root;
 		};
 
@@ -123,18 +123,18 @@ interface ItemLayerManifestTestMixin<M extends ItemLayerManifest> extends LayerM
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#hasLocalContainerHierarchy()}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifestBase#hasLocalContainerHierarchy()}.
 	 */
 	@Test
 	default void testIsLocalContainerHierarchy() {
 		assertDerivativeIsLocal(settings(),
 				mock(Hierarchy.class), mock(Hierarchy.class),
-				ItemLayerManifest::hasLocalContainerHierarchy,
-				ItemLayerManifest::setContainerHierarchy);
+				ItemLayerManifestBase::hasLocalContainerHierarchy,
+				ItemLayerManifestBase::setContainerHierarchy);
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#getBoundaryLayerManifest()}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifestBase#getBoundaryLayerManifest()}.
 	 */
 	@Test
 	default void testGetBoundaryLayerManifest() {
@@ -142,8 +142,8 @@ interface ItemLayerManifestTestMixin<M extends ItemLayerManifest> extends LayerM
 				"layer1",
 				"layer2",
 				NO_DEFAULT(),
-				transform_genericOptValue(ItemLayerManifest::getBoundaryLayerManifest, transform_targetLayerId()),
-				inject_createTargetLayerManifest(ItemLayerManifest::setAndGetBoundaryLayer));
+				transform_genericOptValue(ItemLayerManifestBase::getBoundaryLayerManifest, transform_targetLayerId()),
+				inject_createTargetLayerManifest(ItemLayerManifestBase::setAndGetBoundaryLayer));
 	}
 
 	/**
@@ -154,12 +154,12 @@ interface ItemLayerManifestTestMixin<M extends ItemLayerManifest> extends LayerM
 		assertDerivativeIsLocal(settings(),
 				"layer1",
 				"layer2",
-				ItemLayerManifest::isLocalBoundaryLayerManifest,
-				inject_createTargetLayerManifest(ItemLayerManifest::setAndGetBoundaryLayer));
+				ItemLayerManifestBase::isLocalBoundaryLayerManifest,
+				inject_createTargetLayerManifest(ItemLayerManifestBase::setAndGetBoundaryLayer));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#getFoundationLayerManifest()}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifestBase#getFoundationLayerManifest()}.
 	 */
 	@Test
 	default void testGetFoundationLayerManifest() {
@@ -167,30 +167,30 @@ interface ItemLayerManifestTestMixin<M extends ItemLayerManifest> extends LayerM
 				"layer1",
 				"layer2",
 				NO_DEFAULT(),
-				transform_genericOptValue(ItemLayerManifest::getFoundationLayerManifest, transform_targetLayerId()),
-				inject_createTargetLayerManifest(ItemLayerManifest::setAndGetFoundationLayer));
+				transform_genericOptValue(ItemLayerManifestBase::getFoundationLayerManifest, transform_targetLayerId()),
+				inject_createTargetLayerManifest(ItemLayerManifestBase::setAndGetFoundationLayer));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#isLocalFoundationLayerManifest()}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifestBase#isLocalFoundationLayerManifest()}.
 	 */
 	@Test
 	default void testIsLocalFoundationLayerManifest() {
 		assertDerivativeIsLocal(settings(),
 				"layer1",
 				"layer2",
-				ItemLayerManifest::isLocalFoundationLayerManifest,
-				inject_createTargetLayerManifest(ItemLayerManifest::setAndGetFoundationLayer));
+				ItemLayerManifestBase::isLocalFoundationLayerManifest,
+				inject_createTargetLayerManifest(ItemLayerManifestBase::setAndGetFoundationLayer));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#isPrimaryLayerManifest()}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifestBase#isPrimaryLayerManifest()}.
 	 */
 	@Test
 	default void testIsPrimaryLayerManifest() {
 		assertFalse(createUnlocked().isPrimaryLayerManifest());
 
-		ItemLayerManifest manifest = createTestInstance(settings(ManifestTestFeature.EMBEDDED));
+		M manifest = createTestInstance(settings(ManifestTestFeature.EMBEDDED));
 		LayerGroupManifest groupManifest = assertMock(manifest.getGroupManifest());
 		when(groupManifest.getPrimaryLayerManifest()).thenReturn(Optional.of(manifest));
 
@@ -198,45 +198,45 @@ interface ItemLayerManifestTestMixin<M extends ItemLayerManifest> extends LayerM
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#setAndGetBoundaryLayer(java.lang.String)}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifestBase#setAndGetBoundaryLayer(java.lang.String)}.
 	 */
 	@Test
 	default void testSetAndGetBoundaryLayer() {
 		assertLockableSetterBatch(settings(),
-				ItemLayerManifest::setAndGetBoundaryLayer,
+				ItemLayerManifestBase::setAndGetBoundaryLayer,
 				getLegalIdValues(), true,
 				INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#setBoundaryLayerId(String, java.util.function.Consumer)}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifestBase#setBoundaryLayerId(String, java.util.function.Consumer)}.
 	 */
 	@Test
 	default void testSetBoundaryLayerId() {
 		assertLockableSetterBatch(settings(),
-				inject_consumeTargetLayerManifest(ItemLayerManifest::setBoundaryLayerId),
+				inject_consumeTargetLayerManifest(ItemLayerManifestBase::setBoundaryLayerId),
 				getLegalIdValues(), true,
 				INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#setAndGetFoundationLayer(java.lang.String)}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifestBase#setAndGetFoundationLayer(java.lang.String)}.
 	 */
 	@Test
 	default void testSetAndGetFoundationLayer() {
 		assertLockableSetterBatch(settings(),
-				ItemLayerManifest::setAndGetFoundationLayer,
+				ItemLayerManifestBase::setAndGetFoundationLayer,
 				getLegalIdValues(), true,
 				INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifest#setFoundationLayerId(String, java.util.function.Consumer)}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ItemLayerManifestBase#setFoundationLayerId(String, java.util.function.Consumer)}.
 	 */
 	@Test
 	default void testSetFoundationLayerId() {
 		assertLockableSetterBatch(settings(),
-				inject_consumeTargetLayerManifest(ItemLayerManifest::setFoundationLayerId),
+				inject_consumeTargetLayerManifest(ItemLayerManifestBase::setFoundationLayerId),
 				getLegalIdValues(), true,
 				INVALID_ID_CHECK, getIllegalIdValues());
 	}

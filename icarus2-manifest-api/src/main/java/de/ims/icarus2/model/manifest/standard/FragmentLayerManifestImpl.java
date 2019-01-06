@@ -27,7 +27,6 @@ import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.RasterizerManifest;
 import de.ims.icarus2.util.IcarusUtils;
 
@@ -35,7 +34,8 @@ import de.ims.icarus2.util.IcarusUtils;
  * @author Markus Gärtner
  *
  */
-public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements FragmentLayerManifest {
+public class FragmentLayerManifestImpl extends AbstractItemLayerManifestBase<FragmentLayerManifest>
+		implements FragmentLayerManifest {
 
 	private TargetLayerManifest valueManifest;
 	private Optional<String> annotationKey = Optional.empty();
@@ -66,14 +66,6 @@ public class FragmentLayerManifestImpl extends ItemLayerManifestImpl implements 
 	@Override
 	public boolean isEmpty() {
 		return super.isEmpty() && !rasterizerManifest.isPresent() && valueManifest==null;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.standard.ItemLayerManifestImpl#getManifestType()
-	 */
-	@Override
-	public ManifestType getManifestType() {
-		return ManifestType.FRAGMENT_LAYER_MANIFEST;
 	}
 
 	/**

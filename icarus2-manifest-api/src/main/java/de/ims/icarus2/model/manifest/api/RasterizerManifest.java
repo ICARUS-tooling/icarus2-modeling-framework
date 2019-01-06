@@ -31,4 +31,12 @@ public interface RasterizerManifest extends ForeignImplementationManifest<Raster
 	default <M extends FragmentLayerManifest> Optional<M> getLayerManifest() {
 		return getHost();
 	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.MemberManifest#getManifestType()
+	 */
+	@Override
+	default ManifestType getManifestType() {
+		return ManifestType.RASTERIZER_MANIFEST;
+	}
 }

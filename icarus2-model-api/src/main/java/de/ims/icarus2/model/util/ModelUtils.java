@@ -58,10 +58,11 @@ import de.ims.icarus2.model.api.raster.Rasterizer;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.Hierarchy;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LocationType;
 import de.ims.icarus2.model.manifest.api.ManifestException;
@@ -195,6 +196,17 @@ public final class ModelUtils {
 		return type==ManifestType.STRUCTURE_LAYER_MANIFEST;
 	}
 
+	/**
+	 * Returns {@code true} if the given manifest describes a layer belonging
+	 * to one of the three <i>item layer</i> types:
+	 * <ul>
+	 * <li>{@link ManifestType#ITEM_LAYER_MANIFEST}</li>
+	 * <li>{@link ManifestType#STRUCTURE_LAYER_MANIFEST}</li>
+	 * <li>{@link ManifestType#FRAGMENT_LAYER_MANIFEST}</li>
+	 * </ul>
+	 * @param manifest
+	 * @return
+	 */
 	public static boolean isItemLayer(LayerManifest<?> manifest) {
 		ManifestType type = manifest.getManifestType();
 		return type==ManifestType.ITEM_LAYER_MANIFEST
@@ -283,7 +295,7 @@ public final class ModelUtils {
 		editModel.execute(change);
 	}
 
-	public static ContainerManifest getContainerManifest(Container container) {
+	public static ContainerManifestBase<?> getContainerManifest(Container container) {
 		requireNonNull(container);
 
 		// Fetch the container level and ask the
@@ -305,9 +317,9 @@ public final class ModelUtils {
 		 * contexts as early as possible from live items/containers to
 		 * the respective manifest framework members.
 		 */
-		ItemLayerManifest manifest = container.getLayer().getManifest();
+		ItemLayerManifestBase<?> manifest = container.getLayer().getManifest();
 
-		Hierarchy<ContainerManifest> hierarchy = manifest.getContainerHierarchy()
+		Hierarchy<ContainerManifestBase<?>> hierarchy = manifest.getContainerHierarchy()
 				.orElseThrow(() -> new ManifestException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
 					"Host manifest has no container hierarchy: "+ManifestUtils.getName(manifest)));
 

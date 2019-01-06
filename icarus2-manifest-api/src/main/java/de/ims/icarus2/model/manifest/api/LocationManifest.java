@@ -39,6 +39,11 @@ public interface LocationManifest extends Manifest {
 	public static final PathType DEFAULT_ROOT_PATH_TYPE = PathType.FILE;
 	public static final boolean DEFAULT_IS_INLINE = false;
 
+	@Override
+	default ManifestType getManifestType() {
+		return ManifestType.LOCATION_MANIFEST;
+	}
+
 //	LocationType getType();
 
 	/**

@@ -36,6 +36,7 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
@@ -70,9 +71,9 @@ public class ContainerTest {
 		when(containerManifest.getContainerType()).thenReturn(containerType);
 		when(containerManifest.getParentManifest()).thenReturn(Optional.of(rootManifest));
 
-		Hierarchy<ContainerManifest> hierarchy = mock(Hierarchy.class);
-		when(hierarchy.atLevel(0)).thenReturn(rootManifest);
-		when(hierarchy.atLevel(1)).thenReturn(containerManifest);
+		Hierarchy<ContainerManifestBase<?>> hierarchy = mock(Hierarchy.class);
+		when(hierarchy.atLevel(0)).then(invocation -> rootManifest);
+		when(hierarchy.atLevel(1)).then(invocation ->containerManifest);
 
 		when(layerManifest.getContainerHierarchy()).thenReturn(Optional.of(hierarchy));
 
@@ -80,7 +81,7 @@ public class ContainerTest {
 		layer.setIdManager(new IdManager.IdentityIdManager(layerManifest));
 
 		Container root = mock(Container.class);
-		when(root.getManifest()).thenReturn(rootManifest);
+		when(root.getManifest()).then(invocation -> rootManifest);
 		when(root.getLayer()).thenReturn(layer);
 
 		return root;

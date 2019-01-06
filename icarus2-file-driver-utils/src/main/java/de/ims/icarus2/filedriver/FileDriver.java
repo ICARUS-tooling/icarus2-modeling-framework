@@ -89,7 +89,7 @@ import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
@@ -275,7 +275,7 @@ public class FileDriver extends AbstractDriver {
 
 		Options options = new Options();
 
-		for(LayerManifest layer : manifest.getLayerManifests(ModelUtils::isItemLayer)) {
+		for(LayerManifest<?> layer : manifest.getLayerManifests(ModelUtils::isItemLayer)) {
 			//TODO access states and create optimized layers?
 		}
 
@@ -334,7 +334,7 @@ public class FileDriver extends AbstractDriver {
 		MappingStorage.Builder builder = new MappingStorage.Builder();
 
 		// Allow for subclasses to provide a fallback function
-		BiFunction<ItemLayerManifest, ItemLayerManifest, Mapping> fallback = getMappingFallback();
+		BiFunction<ItemLayerManifestBase<?>, ItemLayerManifestBase<?>, Mapping> fallback = getMappingFallback();
 		if(fallback!=null) {
 			builder.fallback(fallback);
 		}
@@ -413,18 +413,18 @@ public class FileDriver extends AbstractDriver {
 	}
 
 	/**
-	 * Generates a lookup key using {@link ItemLayerKey#ITEMS#getKey(ItemLayerManifest)}. This key
+	 * Generates a lookup key using {@link ItemLayerKey#ITEMS#getKey(ItemLayerManifestBase<?>)}. This key
 	 * is then used to query the underlying {@link MetadataRegistry} for the mapped
 	 * {@link MetadataRegistry#getLongValue(String, long) long value}, supplying {@value IcarusUtils#UNSET_LONG}
 	 * as default value for the case that no matching entry was found.
 	 *
 	 * TODO refresh description
 	 *
-	 * @see de.ims.icarus2.model.api.driver.Driver#getItemCount(de.ims.icarus2.model.manifest.api.ItemLayerManifest)
+	 * @see de.ims.icarus2.model.api.driver.Driver#getItemCount(de.ims.icarus2.model.manifest.api.ItemLayerManifestBase<?>)
 	 * @see ItemLayerKey#ITEMS
 	 */
 	@Override
-	public long getItemCount(ItemLayerManifest layer) {
+	public long getItemCount(ItemLayerManifestBase<?> layer) {
 		checkReady();
 
 		LayerInfo info = getFileStates().getLayerInfo(layer);
@@ -450,8 +450,8 @@ public class FileDriver extends AbstractDriver {
 	protected BufferedItemManager createBufferedItemManager() {
 		BufferedItemManager.Builder builder = BufferedItemManager.newBuilder();
 
-		for(LayerManifest layerManifest : getContext().getManifest().getLayerManifests(ManifestUtils::isItemLayerManifest)) {
-			ItemLayerManifest itemLayerManifest = (ItemLayerManifest) layerManifest;
+		for(LayerManifest<?> layerManifest : getContext().getManifest().getLayerManifests(ManifestUtils::isItemLayerManifest)) {
+			ItemLayerManifestBase<?> itemLayerManifest = (ItemLayerManifestBase<?>) layerManifest;
 			//TODO add options to activate recycling and pooling of items
 			long layerSize = getItemCount(itemLayerManifest);
 
@@ -704,7 +704,7 @@ public class FileDriver extends AbstractDriver {
 	 *
 	 * @see Arrays#binarySearch(long[], int, int, long)
 	 */
-	private int findFileForIndex(long index, ItemLayerManifest layer, int min, int max) {
+	private int findFileForIndex(long index, ItemLayerManifestBase<?> layer, int min, int max) {
         int low = min;
         int high = max - 1;
 
@@ -894,7 +894,7 @@ public class FileDriver extends AbstractDriver {
 	}
 
 	protected ChunkIndex createChunkIndex(LayerGroupManifest groupManifest) {
-		ItemLayerManifest layerManifest = groupManifest.getPrimaryLayerManifest()
+		ItemLayerManifestBase<?> layerManifest = groupManifest.getPrimaryLayerManifest()
 				.orElseThrow(ManifestException.missing(getManifest(), "resolvable primary layer"));
 		MetadataRegistry metadataRegistry = getMetadataRegistry();
 

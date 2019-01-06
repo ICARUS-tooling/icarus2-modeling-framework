@@ -25,11 +25,10 @@ import java.util.function.Consumer;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.standard.Links.Link;
 import de.ims.icarus2.util.collections.CollectionUtils;
@@ -44,7 +43,7 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity<LayerGroup
 	private final ContextManifest contextManifest;
 
 	private final List<LayerManifest<?>> layerManifests = new ArrayList<>();
-	private Link<ItemLayerManifest> primaryLayer;
+	private Link<ItemLayerManifestBase<?>> primaryLayer;
 	private Boolean independent;
 
 	public LayerGroupManifestImpl(ContextManifest contextManifest) {
@@ -59,11 +58,6 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity<LayerGroup
 		requireNonNull(name);
 
 		setName(name);
-	}
-
-	@Override
-	public ManifestType getManifestType() {
-		return ManifestType.LAYER_GROUP_MANIFEST;
 	}
 
 	/**
@@ -101,7 +95,7 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity<LayerGroup
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public <L extends ItemLayerManifest> Optional<L> getPrimaryLayerManifest() {
+	public <L extends ItemLayerManifestBase<?>> Optional<L> getPrimaryLayerManifest() {
 		return Optional.ofNullable(primaryLayer==null ? null : (L)primaryLayer.get());
 	}
 
@@ -220,7 +214,7 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity<LayerGroup
 	}
 
 	@SuppressWarnings("unchecked")
-	private <L extends LayerManifest<L>> Optional<L> lookupLayer(final String id) {
+	private <L extends LayerManifest<?>> Optional<L> lookupLayer(final String id) {
 		for(LayerManifest<?> layerManifest : layerManifests) {
 			if(id.equals(layerManifest.getId().orElse(null))) {
 				return (Optional<L>) Optional.of(layerManifest);
@@ -234,13 +228,13 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity<LayerGroup
 	 * @see de.ims.icarus2.model.manifest.api.LayerGroupManifest#getLayerManifest(java.lang.String)
 	 */
 	@Override
-	public <L extends LayerManifest<L>> Optional<L> getLayerManifest(String id) {
+	public <L extends LayerManifest<?>> Optional<L> getLayerManifest(String id) {
 		requireNonNull(id);
 
 		return lookupLayer(id);
 	}
 
-	protected class LayerLink extends Link<ItemLayerManifest> {
+	protected class LayerLink extends Link<ItemLayerManifestBase<?>> {
 
 		/**
 		 * @param lazyResolver
@@ -262,7 +256,7 @@ public class LayerGroupManifestImpl extends DefaultModifiableIdentity<LayerGroup
 		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#resolve()
 		 */
 		@Override
-		protected Optional<ItemLayerManifest> resolve() {
+		protected Optional<ItemLayerManifestBase<?>> resolve() {
 			return lookupLayer(getId());
 		}
 

@@ -26,9 +26,8 @@ import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.manager.ItemList;
-import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ContainerType;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.standard.members.container.AbstractImmutableContainer;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
@@ -177,13 +176,13 @@ public class RootContainer extends AbstractImmutableContainer {
 	}
 
 	/**
-	 * Delegates to the surrounding layer's model by invoking its {@link ItemLayerManifest#getRootContainerManifest()}
+	 * Delegates to the surrounding layer's model by invoking its {@link ItemLayerManifestBase<?>#getRootContainerManifest()}
 	 * method.
 	 *
 	 * @see de.ims.icarus2.model.api.members.container.Container#getManifest()
 	 */
 	@Override
-	public ContainerManifest getManifest() {
+	public ContainerManifestBase<?> getManifest() {
 		return getLayer().getManifest().getRootContainerManifest().get();
 	}
 

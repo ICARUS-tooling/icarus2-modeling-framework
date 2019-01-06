@@ -23,6 +23,7 @@ import de.ims.icarus2.model.api.driver.id.IdManager;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.standard.members.container.ProxyContainer;
 import de.ims.icarus2.model.standard.members.layers.AbstractLayer;
 
@@ -30,7 +31,7 @@ import de.ims.icarus2.model.standard.members.layers.AbstractLayer;
  * @author Markus Gärtner
  *
  */
-public class DefaultItemLayer extends AbstractLayer<ItemLayerManifest> implements ItemLayer {
+public class DefaultItemLayer extends AbstractLayer<ItemLayerManifestBase<?>> implements ItemLayer {
 
 	private ItemLayer boundaryLayer;
 	private ItemLayer foundationLayer;
@@ -49,6 +50,16 @@ public class DefaultItemLayer extends AbstractLayer<ItemLayerManifest> implement
 	public DefaultItemLayer(ItemLayerManifest manifest) {
 		super(manifest);
 
+		initProxy();
+	}
+
+	protected DefaultItemLayer(ItemLayerManifestBase<?> manifest) {
+		super(manifest);
+
+		initProxy();
+	}
+
+	private void initProxy() {
 		proxyContainer = new ProxyContainer(this);
 	}
 

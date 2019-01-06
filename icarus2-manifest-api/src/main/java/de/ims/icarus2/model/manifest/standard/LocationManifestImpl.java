@@ -31,7 +31,6 @@ import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.PathResolverManifest;
 import de.ims.icarus2.util.lang.ClassUtils;
 
@@ -133,11 +132,6 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 		checkInline();
 
 		return inlineData;
-	}
-
-	@Override
-	public ManifestType getManifestType() {
-		return ManifestType.LOCATION_MANIFEST;
 	}
 
 	/**

@@ -96,7 +96,7 @@ public interface Layer extends NamedCorpusMember, Part<LayerGroup> {
 	 *
 	 * @return The manifest describing the content of this layer
 	 */
-	LayerManifest getManifest();
+	LayerManifest<?> getManifest();
 
 	/**
 	 * Defines the set of base layers to be used for this layer.

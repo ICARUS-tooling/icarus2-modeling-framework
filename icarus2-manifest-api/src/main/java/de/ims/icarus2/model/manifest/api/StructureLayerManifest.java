@@ -32,7 +32,15 @@ import de.ims.icarus2.util.access.AccessRestriction;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface StructureLayerManifest extends ItemLayerManifest {
+public interface StructureLayerManifest extends ItemLayerManifestBase<StructureLayerManifest> {
+
+	/**
+	 * @see de.ims.icarus2.model.api.ItemLayerManifestImpl.manifest.MarkableLayerManifestImpl#getManifestType()
+	 */
+	@Override
+	default ManifestType getManifestType() {
+		return ManifestType.STRUCTURE_LAYER_MANIFEST;
+	}
 
 	/**
 	 * Returns the first manifest within the {@link #getContainerHierarchy() container hierarchy}

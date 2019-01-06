@@ -24,6 +24,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestType;
@@ -38,7 +39,7 @@ import de.ims.icarus2.util.xml.XmlSerializer;
  * @author Markus Gärtner
  *
  */
-public class StructureLayerManifestXmlDelegate extends ItemLayerManifestXmlDelegate {
+public class StructureLayerManifestXmlDelegate extends AbstractItemLayerManifestBaseXmlDelegate<StructureLayerManifest> {
 
 	private StructureManifestXmlDelegate structureManifestXmlDelegate;
 
@@ -70,7 +71,6 @@ public class StructureLayerManifestXmlDelegate extends ItemLayerManifestXmlDeleg
 		return structureManifestXmlDelegate;
 	}
 
-	@Override
 	public StructureLayerManifestXmlDelegate reset(LayerGroupManifest groupManifest) {
 		reset();
 		setInstance(new StructureLayerManifestImpl(groupManifest));
@@ -94,13 +94,14 @@ public class StructureLayerManifestXmlDelegate extends ItemLayerManifestXmlDeleg
 	 * @see de.ims.icarus2.model.manifest.xml.delegates.ItemLayerManifestXmlDelegate#writeContainerElement(de.ims.icarus2.util.xml.XmlSerializer, de.ims.icarus2.model.manifest.api.ContainerManifest)
 	 */
 	@Override
-	protected void writeContainerElement(XmlSerializer serializer, ContainerManifest containerManifest)
+	protected void writeContainerElement(XmlSerializer serializer, ContainerManifestBase<?> containerManifest)
 			throws XMLStreamException {
 		if(containerManifest.getManifestType()==ManifestType.STRUCTURE_MANIFEST) {
 			getStructureManifestXmlDelegate().reset((StructureManifest)containerManifest).writeXml(serializer);
-		} else {
-			getContainerManifestXmlDelegate().reset(containerManifest).writeXml(serializer);
-		}
+		} else if(containerManifest.getManifestType()==ManifestType.CONTAINER_MANIFEST) {
+			getContainerManifestXmlDelegate().reset((ContainerManifest)containerManifest).writeXml(serializer);
+		} else
+			throw new XMLStreamException("Unsupported container class: "+containerManifest.getClass());
 	}
 
 	@Override
@@ -157,7 +158,7 @@ public class StructureLayerManifestXmlDelegate extends ItemLayerManifestXmlDeleg
 		switch (localName) {
 
 		case ManifestXmlTags.STRUCTURE: {
-			ItemLayerManifestXmlDelegate.defaultAddContainerManifest(this, (
+			AbstractItemLayerManifestBaseXmlDelegate.defaultAddContainerManifest(this, (
 					(StructureManifestXmlDelegate)handler).getInstance());
 		} break;
 

@@ -26,6 +26,7 @@ import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.ContainerFlag;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.StructureFlag;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.util.Messages;
@@ -47,7 +48,7 @@ public class MemberUtils {
 	}
 
 	public static void checkContainerFlagsSet(Container container, ContainerFlag...flags) {
-		ContainerManifest manifest = container.getManifest();
+		ContainerManifestBase<?> manifest = container.getManifest();
 		LazyCollection<ContainerFlag> missingFlags = LazyCollection.lazySet(flags.length);
 
 		for(ContainerFlag flag : flags) {
@@ -64,7 +65,7 @@ public class MemberUtils {
 	}
 
 	public static void checkContainerFlagsNotSet(Container container, ContainerFlag...flags) {
-		ContainerManifest manifest = container.getManifest();
+		ContainerManifestBase<?> manifest = container.getManifest();
 		LazyCollection<ContainerFlag> forbiddenFlags = LazyCollection.lazySet(flags.length);
 
 		for(ContainerFlag flag : flags) {
@@ -88,7 +89,7 @@ public class MemberUtils {
 	 * @param container
 	 */
 	public static void checkStaticContainer(Container container) {
-		ContainerManifest manifest = container.getManifest();
+		ContainerManifestBase<?> manifest = container.getManifest();
 		if(manifest.isContainerFlagSet(ContainerFlag.NON_STATIC))
 			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_LINKING,
 					"Container must be static in terms of items: "+getName(container));
@@ -102,7 +103,7 @@ public class MemberUtils {
 	 * @param container
 	 */
 	public static void checkNonEmptyContainer(Container container) {
-		ContainerManifest manifest = container.getManifest();
+		ContainerManifestBase<?> manifest = container.getManifest();
 		if(manifest.isContainerFlagSet(ContainerFlag.EMPTY))
 			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_LINKING,
 					"Container must not be allowed to be empty: "+getName(container));

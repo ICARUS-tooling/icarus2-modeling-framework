@@ -33,7 +33,7 @@ import de.ims.icarus2.model.api.layer.DependencyType;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.api.Manifest;
@@ -165,7 +165,7 @@ public class CorpusGraph {
 					}
 
 					if(ModelUtils.isItemLayer(layer)) {
-						ItemLayerManifest itemLayer = (ItemLayerManifest) layer;
+						ItemLayerManifestBase<?> itemLayer = (ItemLayerManifestBase<?>) layer;
 						tryCreateEdge(itemLayer.getBoundaryLayerManifest().orElse(null), DependencyType.BOUNDARY);
 						tryCreateEdge(itemLayer.getFoundationLayerManifest().orElse(null), DependencyType.FOUNDATION);
 

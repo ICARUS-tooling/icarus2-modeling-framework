@@ -19,7 +19,6 @@ package de.ims.icarus2.model.manifest.standard;
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.RasterizerManifest;
 
 /**
@@ -45,13 +44,5 @@ public class RasterizerManifestImpl extends AbstractForeignImplementationManifes
 
 	public RasterizerManifestImpl(FragmentLayerManifest layerManifest) {
 		this(layerManifest.getManifestLocation(), layerManifest.getRegistry(), layerManifest);
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.MemberManifest#getManifestType()
-	 */
-	@Override
-	public ManifestType getManifestType() {
-		return ManifestType.RASTERIZER_MANIFEST;
 	}
 }

@@ -4,6 +4,9 @@
 package de.ims.icarus2.test.util;
 
 import static java.util.Objects.requireNonNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import de.ims.icarus2.test.TestUtils;
 
 public class Pair<E_1 extends Object, E_2 extends Object> {
 
@@ -14,6 +17,31 @@ public class Pair<E_1 extends Object, E_2 extends Object> {
 	@SuppressWarnings("boxing")
 	public static Pair<Integer, Integer> intPair(int first, int second) {
 		return new Pair<>(first, second);
+	}
+
+	public static Pair<Integer, Integer>[] intChain(int from, int to) {
+		@SuppressWarnings("unchecked")
+		Pair<Integer, Integer>[] array = new Pair[to-from];
+
+		for(int idx = 0; idx<array.length; idx++) {
+			array[idx] = intPair(from+idx, from+idx+1);
+		}
+
+		return array;
+	}
+
+	public static Pair<Long, Long>[] longChain(long from, long to) {
+		long diff = to-from;
+		assertTrue(diff<TestUtils.MAX_INTEGER_INDEX);
+
+		@SuppressWarnings("unchecked")
+		Pair<Long, Long>[] array = new Pair[(int)diff];
+
+		for(int idx = 0; idx<array.length; idx++) {
+			array[idx] = longPair(from+idx, from+idx+1);
+		}
+
+		return array;
 	}
 
 	@SuppressWarnings("boxing")
@@ -29,4 +57,11 @@ public class Pair<E_1 extends Object, E_2 extends Object> {
 		this.second = requireNonNull(second);
 	}
 
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return TestUtils.displayString("<%s,%s>", first, second);
+	}
 }

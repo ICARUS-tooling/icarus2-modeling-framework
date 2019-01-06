@@ -24,7 +24,7 @@ import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.registry.LayerMemberFactory;
-import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.standard.driver.cache.TrackedMember.TrackedContainer;
 import de.ims.icarus2.model.standard.driver.cache.TrackedMember.TrackedItem;
@@ -80,10 +80,10 @@ public class DefaultLayerMemberFactory implements LayerMemberFactory {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.registry.LayerMemberFactory#newContainer(de.ims.icarus2.model.manifest.api.ContainerManifest, de.ims.icarus2.model.api.members.container.Container)
+	 * @see de.ims.icarus2.model.api.registry.LayerMemberFactory#newContainer(ContainerManifestBase, Container, long)
 	 */
 	@Override
-	public Container newContainer(ContainerManifest manifest, Container host, long id) {
+	public Container newContainer(ContainerManifestBase<?> manifest, Container host, long id) {
 		ItemStorage itemStorage = createItemStorage(manifest);
 
 		DefaultContainer container = host.isProxy() ? new TrackedContainer() : new DefaultContainer();
@@ -94,7 +94,7 @@ public class DefaultLayerMemberFactory implements LayerMemberFactory {
 		return container;
 	}
 
-	protected ItemStorage createItemStorage(ContainerManifest manifest) {
+	protected ItemStorage createItemStorage(ContainerManifestBase<?> manifest) {
 		//TODO implement
 		throw new ModelException(GlobalErrorCode.NOT_IMPLEMENTED, "TODO");
 	}

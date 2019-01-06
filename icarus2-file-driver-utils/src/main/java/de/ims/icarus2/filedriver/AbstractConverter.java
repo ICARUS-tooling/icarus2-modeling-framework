@@ -48,7 +48,7 @@ import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
 import de.ims.icarus2.model.standard.driver.ChunkConsumer;
@@ -263,7 +263,7 @@ public abstract class AbstractConverter extends AbstractDriverModule implements 
 	 * or the length of the largest chunk in the data if such information has been
 	 * stored in the metadata available to the surrounding {@link FileDriver driver}.
 	 */
-	protected int getRecommendedByteBufferSize(ItemLayerManifest layerManifest) {
+	protected int getRecommendedByteBufferSize(ItemLayerManifestBase<?> layerManifest) {
 
 		// Determine good buffer size for the block-wise stream
 		int bufferSize = IOUtil.DEFAULT_BUFFER_SIZE;
@@ -286,7 +286,7 @@ public abstract class AbstractConverter extends AbstractDriverModule implements 
 	 * @return
 	 * @throws ModelException if there is no exploitable metadata on the maximum size of containers for the given layer
 	 */
-	protected int getRecommendedIndexBufferSize(ItemLayerManifest sourceLayer) {
+	protected int getRecommendedIndexBufferSize(ItemLayerManifestBase<?> sourceLayer) {
 		int bufferSize  = -1;
 		MetadataRegistry metadataRegistry = getDriver().getMetadataRegistry();
 		String savedMaxSize = metadataRegistry.getValue(ContainerKey.MAX_ITEM_COUNT.getKey(sourceLayer, 0));

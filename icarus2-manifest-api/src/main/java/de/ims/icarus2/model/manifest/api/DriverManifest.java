@@ -39,6 +39,14 @@ import de.ims.icarus2.util.collections.LazyCollection;
 @AccessControl(AccessPolicy.DENY)
 public interface DriverManifest extends ForeignImplementationManifest<DriverManifest>, Embedded {
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.MemberManifest#getManifestType()
+	 */
+	@Override
+	default ManifestType getManifestType() {
+		return ManifestType.DRIVER_MANIFEST;
+	}
+
 	@AccessRestriction(AccessMode.READ)
 	void forEachMappingManifest(Consumer<? super MappingManifest> action);
 

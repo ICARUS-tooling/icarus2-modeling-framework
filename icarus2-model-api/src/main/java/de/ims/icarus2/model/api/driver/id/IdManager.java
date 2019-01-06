@@ -20,7 +20,7 @@ import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 
 
 /**
@@ -34,7 +34,7 @@ public interface IdManager extends AutoCloseable {
 	 *
 	 * @return
 	 */
-	public ItemLayerManifest getLayerManifest();
+	public ItemLayerManifestBase<?> getLayerManifest();
 
 	/**
 	 * Maps a given {@code index} to the {@link Item#getId() id} of the item at that position.
@@ -54,19 +54,19 @@ public interface IdManager extends AutoCloseable {
 	long indexOfId(long id);
 
 	public static class IdentityIdManager implements IdManager {
-		private ItemLayerManifest layerManifest;
+		private ItemLayerManifestBase<?> layerManifest;
 
 		/**
 		 * @param layerManifest
 		 */
-		public IdentityIdManager(ItemLayerManifest layerManifest) {
+		public IdentityIdManager(ItemLayerManifestBase<?> layerManifest) {
 			requireNonNull(layerManifest);
 
 			this.layerManifest = layerManifest;
 		}
 
 		/**
-		 * Clears the link to this manager's {@link ItemLayerManifest}
+		 * Clears the link to this manager's {@link ItemLayerManifestBase}
 		 * layer manifest.
 		 *
 		 * @see java.lang.AutoCloseable#close()
@@ -80,7 +80,7 @@ public interface IdManager extends AutoCloseable {
 		 * @see de.ims.icarus2.model.api.driver.id.IdManager#getLayerManifest()
 		 */
 		@Override
-		public ItemLayerManifest getLayerManifest() {
+		public ItemLayerManifestBase<?> getLayerManifest() {
 			checkState("Manager already closed", layerManifest!=null);
 
 			return layerManifest;

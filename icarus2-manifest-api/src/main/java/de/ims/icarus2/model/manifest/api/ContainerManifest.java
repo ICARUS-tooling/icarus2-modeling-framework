@@ -16,16 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import java.util.EnumSet;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Consumer;
-
-import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.util.access.AccessControl;
-import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
-import de.ims.icarus2.util.access.AccessRestriction;
 
 /**
  * A manifest that describes a container and its content.
@@ -34,84 +26,14 @@ import de.ims.icarus2.util.access.AccessRestriction;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface ContainerManifest extends MemberManifest<ContainerManifest>, Embedded {
+public interface ContainerManifest extends ContainerManifestBase<ContainerManifest> {
 
-	public static final ContainerType DEFAULT_CONTAINER_TYPE = ContainerType.LIST;
-
-	/**
-	 * Returns the manifest of the {@code ItemLayer} the container
-	 * is hosted in.
-	 * @return
-	 */
-	@AccessRestriction(AccessMode.READ)
-	default <M extends ItemLayerManifest> Optional<M> getLayerManifest() {
-		return getHost();
-	}
 
 	/**
-	 * Returns the type of this container. This provides
-	 * information about how contained {@code Item}s are ordered and
-	 * if they represent a continuous subset of the corpus. Note that the
-	 * container type of a {@link Structure} object is undefined and therefore
-	 * this method is optional when this container is a structure.
-	 *
-	 * @return The {@code ContainerType} of this {@code Container}
-	 * @throws ManifestException of type {@link GlobalErrorCode#ILLEGAL_STATE} if
-	 * the container type is not set.
-	 * @see ContainerType
+	 * @see de.ims.icarus2.model.manifest.api.MemberManifest#getManifestType()
 	 */
-	@AccessRestriction(AccessMode.READ)
-	ContainerType getContainerType();
-
-	boolean isLocalContainerType();
-
-	/**
-	 * Checks whether the given {@code flag} is set for this manifest.
-	 *
-	 * @return
-	 */
-	@AccessRestriction(AccessMode.READ)
-	boolean isContainerFlagSet(ContainerFlag flag);
-
-	@AccessRestriction(AccessMode.READ)
-	void forEachActiveContainerFlag(Consumer<? super ContainerFlag> action);
-
-	@AccessRestriction(AccessMode.READ)
-	void forEachActiveLocalContainerFlag(Consumer<? super ContainerFlag> action);
-
-	default Set<ContainerFlag> getActiveContainerFlags() {
-		EnumSet<ContainerFlag> result = EnumSet.noneOf(ContainerFlag.class);
-
-		forEachActiveContainerFlag(result::add);
-
-		return result;
+	@Override
+	default ManifestType getManifestType() {
+		return ManifestType.CONTAINER_MANIFEST;
 	}
-
-	default Set<ContainerFlag> getActiveLocalContainerFlags() {
-		EnumSet<ContainerFlag> result = EnumSet.noneOf(ContainerFlag.class);
-
-		forEachActiveLocalContainerFlag(result::add);
-
-		return result;
-	}
-
-	@AccessRestriction(AccessMode.READ)
-	default Optional<ContainerManifest> getParentManifest() {
-		return getLayerManifest()
-				.flatMap(ItemLayerManifest::getContainerHierarchy)
-				.flatMap(h -> h.adjacent(this, Hierarchy.Direction.ABOVE));
-	}
-
-	@AccessRestriction(AccessMode.READ)
-	default Optional<ContainerManifest> getElementManifest() {
-		return getLayerManifest()
-				.flatMap(ItemLayerManifest::getContainerHierarchy)
-				.flatMap(h -> h.adjacent(this, Hierarchy.Direction.BELOW));
-	}
-
-	// Modification methods
-
-	ContainerManifest setContainerType(ContainerType containerType);
-
-	ContainerManifest setContainerFlag(ContainerFlag flag, boolean active);
 }

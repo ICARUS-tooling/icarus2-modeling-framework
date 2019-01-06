@@ -48,6 +48,14 @@ public interface ImplementationManifest extends MemberManifest<ImplementationMan
 	public static final SourceType DEFAULT_SOURCE_TYPE = SourceType.DEFAULT;
 
 	/**
+	 * @see de.ims.icarus2.model.manifest.api.Manifest#getManifestType()
+	 */
+	@Override
+	default ManifestType getManifestType() {
+		return ManifestType.IMPLEMENTATION_MANIFEST;
+	}
+
+	/**
 	 * Returns the surrounding 'host' manifest.
 	 * @return
 	 */

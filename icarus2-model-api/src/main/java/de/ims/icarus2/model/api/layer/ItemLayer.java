@@ -20,7 +20,7 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.id.IdManager;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
@@ -35,10 +35,10 @@ import de.ims.icarus2.util.access.AccessRestriction;
  *
  */
 @AccessControl(AccessPolicy.DENY)
-public interface ItemLayer extends Layer, ManifestOwner<ItemLayerManifest> {
+public interface ItemLayer extends Layer, ManifestOwner<ItemLayerManifestBase<?>> {
 
 	/**
-	 * Returns the shared {@code ItemLayerManifest} that holds
+	 * Returns the shared {@code ItemLayerManifestBase} that holds
 	 * information about markable composition and possible structures
 	 * in this layer.
 	 *
@@ -46,7 +46,7 @@ public interface ItemLayer extends Layer, ManifestOwner<ItemLayerManifest> {
 	 */
 	@AccessRestriction(AccessMode.ALL)
 	@Override
-	ItemLayerManifest getManifest();
+	ItemLayerManifestBase<?> getManifest();
 
 	/**
 	 * Short-hand method for fetching the {@link IdManager} that is used to map

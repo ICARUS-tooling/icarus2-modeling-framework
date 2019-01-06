@@ -27,7 +27,6 @@ import de.ims.icarus2.model.manifest.api.HighlightLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.util.IcarusUtils;
 
 /**
@@ -99,14 +98,6 @@ public class HighlightLayerManifestImpl extends AbstractLayerManifest<HighlightL
 	@Override
 	public void forEachActiveLocalHighlightFlag(Consumer<? super HighlightFlag> action) {
 		highlightFlags.forEach(action);
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.ManifestFragment#getManifestType()
-	 */
-	@Override
-	public ManifestType getManifestType() {
-		return ManifestType.HIGHLIGHT_LAYER_MANIFEST;
 	}
 
 	@Override

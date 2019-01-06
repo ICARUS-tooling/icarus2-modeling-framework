@@ -40,7 +40,6 @@ import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.standard.Links.Link;
@@ -82,14 +81,6 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	public boolean isEmpty() {
 		return super.isEmpty() && mappingManifests.isEmpty()
 				&& moduleSpecs.isEmpty() && moduleManifests.isEmpty();
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.MemberManifest#getManifestType()
-	 */
-	@Override
-	public ManifestType getManifestType() {
-		return ManifestType.DRIVER_MANIFEST;
 	}
 
 	@Override
@@ -610,14 +601,6 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 
 		public ModuleManifestImpl(DriverManifest driverManifest) {
 			super(driverManifest, hostIdentity(), DriverManifest.class);
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.manifest.api.Manifest#getManifestType()
-		 */
-		@Override
-		public ManifestType getManifestType() {
-			return ManifestType.MODULE_MANIFEST;
 		}
 
 		/**

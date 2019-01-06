@@ -42,6 +42,14 @@ import de.ims.icarus2.util.id.Identity;
 @AccessControl(AccessPolicy.DENY)
 public interface OptionsManifest extends Manifest, Embedded {
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.Manifest#getManifestType()
+	 */
+	@Override
+	default ManifestType getManifestType() {
+		return ManifestType.OPTIONS_MANIFEST;
+	}
+
 	default <M extends MemberManifest<M>> Optional<M> getMemberManifest() {
 		return getHost();
 	}

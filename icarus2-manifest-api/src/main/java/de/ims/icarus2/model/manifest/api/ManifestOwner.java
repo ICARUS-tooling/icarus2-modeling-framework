@@ -20,7 +20,7 @@ package de.ims.icarus2.model.manifest.api;
  * @author Markus Gärtner
  *
  */
-public interface ManifestOwner<M extends MemberManifest<M>> {
+public interface ManifestOwner<M extends MemberManifest<?>> {
 
 	M getManifest();
 }

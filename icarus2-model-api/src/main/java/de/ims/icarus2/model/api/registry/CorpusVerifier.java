@@ -30,11 +30,12 @@ import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.AnnotationFlag;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
-import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
@@ -186,7 +187,7 @@ public class CorpusVerifier {
 
 		//TODO this part needs some fixing to bring it in line with the layer linking contract
 		for(TargetLayerManifest baseLayer : manifest.getBaseLayerManifests()) {
-			ItemLayerManifest baseLayerManifest = (ItemLayerManifest) baseLayer.getResolvedLayerManifest().orElse(null);
+			ItemLayerManifestBase<?> baseLayerManifest = (ItemLayerManifestBase<?>) baseLayer.getResolvedLayerManifest().orElse(null);
 			if(baseLayerManifest!=null) {
 				CorpusManifest root = getRoot(baseLayerManifest);
 				if(root!=corpusManifest) {
@@ -250,21 +251,21 @@ public class CorpusVerifier {
 		pop();
 	}
 
-	private void checkItemLayer(ItemLayerManifest manifest) {
-		ContainerManifest rootContainerManifest = manifest.getRootContainerManifest().orElse(null);
+	private void checkItemLayer(ItemLayerManifestBase<?> manifest) {
+		ContainerManifestBase<?> rootContainerManifest = manifest.getRootContainerManifest().orElse(null);
 		if(rootContainerManifest==null) {
 			error(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Missing root container manifest");
 		} else {
-			chechContainer(rootContainerManifest, manifest);
+			checkContainer(rootContainerManifest, manifest);
 		}
 
-		Hierarchy<ContainerManifest> hierarchy = manifest.getContainerHierarchy().orElse(null);
+		Hierarchy<ContainerManifestBase<?>> hierarchy = manifest.getContainerHierarchy().orElse(null);
 		if(hierarchy==null) {
 			error(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Missing container hierarchy");
 		} else {
-			ContainerManifest parent = rootContainerManifest;
+			ContainerManifestBase<?> parent = rootContainerManifest;
 			for(int i=0; i<hierarchy.getDepth(); i++) {
-				ContainerManifest containerManifest = hierarchy.atLevel(i);
+				ContainerManifestBase<?> containerManifest = hierarchy.atLevel(i);
 
 				//TODO inconsistency: we start at level 0 and expect a parent?
 
@@ -272,14 +273,14 @@ public class CorpusVerifier {
 					error(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Corrupted hierarchy - foreign parent container at level "+i); //$NON-NLS-1$
 				}
 
-				chechContainer(containerManifest, manifest);
+				checkContainer(containerManifest, manifest);
 
 				parent = containerManifest;
 			}
 		}
 	}
 
-	private void chechContainer(ContainerManifest manifest, ItemLayerManifest itemLayerManifest) {
+	private void checkContainer(ContainerManifestBase<?> manifest, ItemLayerManifestBase<?> itemLayerManifest) {
 		//TODO
 	}
 

@@ -38,7 +38,7 @@ import de.ims.icarus2.test.TestUtils;
  * @author Markus Gärtner
  *
  */
-interface ContainerManifestTestMixin<M extends ContainerManifest> extends EmbeddedMemberManifestTest<M> {
+interface ContainerManifestTestMixin<M extends ContainerManifestBase<?>> extends EmbeddedMemberManifestTest<M> {
 
 
 	/**
@@ -50,15 +50,7 @@ interface ContainerManifestTestMixin<M extends ContainerManifest> extends Embedd
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
-	 */
-	@Override
-	default ManifestType getExpectedType() {
-		return ManifestType.CONTAINER_MANIFEST;
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifest#getLayerManifest()}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifestBase#getLayerManifest()}.
 	 */
 	@Test
 	default void testGetLayerManifest() {
@@ -67,32 +59,34 @@ interface ContainerManifestTestMixin<M extends ContainerManifest> extends Embedd
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifest#getContainerType()}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifestBase#getContainerType()}.
 	 */
 	@TestFactory
 	default Stream<DynamicTest> testGetContainerType() {
 		return Stream.of(ContainerType.values())
 				.map(containerType -> DynamicTest.dynamicTest(containerType.getStringValue(), () -> {
 					assertDerivativeGetter(settings(), containerType, TestUtils.other(containerType),
-							DEFAULT(ContainerManifest.DEFAULT_CONTAINER_TYPE),
-							ContainerManifest::getContainerType, ContainerManifest::setContainerType);
+							DEFAULT(ContainerManifestBase.DEFAULT_CONTAINER_TYPE),
+							ContainerManifestBase::getContainerType,
+							ContainerManifestBase::setContainerType);
 						}));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifest#isLocalContainerType()}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifestBase#isLocalContainerType()}.
 	 */
 	@TestFactory
 	default Stream<DynamicTest> testIsLocalContainerType() {
 		return Stream.of(ContainerType.values())
 				.map(containerType -> DynamicTest.dynamicTest(containerType.getStringValue(), () -> {
 					assertDerivativeIsLocal(settings(), containerType, TestUtils.other(containerType),
-							ContainerManifest::isLocalContainerType, ContainerManifest::setContainerType);
+							ContainerManifestBase::isLocalContainerType,
+							ContainerManifestBase::setContainerType);
 						}));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifest#isContainerFlagSet(de.ims.icarus2.model.manifest.api.ContainerFlag)}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifestBase#isContainerFlagSet(de.ims.icarus2.model.manifest.api.ContainerFlag)}.
 	 */
 	@TestFactory
 	default Stream<DynamicTest> testIsContainerFlagSet() {
@@ -105,7 +99,7 @@ interface ContainerManifestTestMixin<M extends ContainerManifest> extends Embedd
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifest#forEachActiveContainerFlag(java.util.function.Consumer)}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifestBase#forEachActiveContainerFlag(java.util.function.Consumer)}.
 	 */
 	@TestFactory
 	default Stream<DynamicTest> testForEachActiveContainerFlag() {
@@ -114,13 +108,13 @@ interface ContainerManifestTestMixin<M extends ContainerManifest> extends Embedd
 					this.<ContainerFlag>assertDerivativeForEach(
 							settings(),
 							flag, TestUtils.other(flag),
-							ContainerManifest::forEachActiveContainerFlag,
+							ContainerManifestBase::forEachActiveContainerFlag,
 							(m,f) -> m.setContainerFlag(f, true));
 						}));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifest#forEachActiveLocalContainerFlag(java.util.function.Consumer)}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifestBase#forEachActiveLocalContainerFlag(java.util.function.Consumer)}.
 	 */
 	@TestFactory
 	default Stream<DynamicTest> testForEachActiveLocalContainerFlag() {
@@ -129,39 +123,39 @@ interface ContainerManifestTestMixin<M extends ContainerManifest> extends Embedd
 					this.<ContainerFlag>assertDerivativeForEachLocal(
 							settings(),
 							flag, TestUtils.other(flag),
-							ContainerManifest::forEachActiveLocalContainerFlag,
+							ContainerManifestBase::forEachActiveLocalContainerFlag,
 							(m,f) -> m.setContainerFlag(f, true));
 						}));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifest#getActiveContainerFlags()}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifestBase#getActiveContainerFlags()}.
 	 */
 	@TestFactory
 	default Stream<DynamicTest> testGetActiveContainerFlags() {
 		return Stream.of(ContainerFlag.values())
 				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
 					assertDerivativeAccumulativeGetter(settings(), flag, TestUtils.other(flag),
-							ContainerManifest::getActiveContainerFlags,
+							ContainerManifestBase::getActiveContainerFlags,
 							(m,f) -> m.setContainerFlag(f, true));
 						}));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifest#getActiveLocalContainerFlags()}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifestBase#getActiveLocalContainerFlags()}.
 	 */
 	@TestFactory
 	default Stream<DynamicTest> testGetActiveLocalContainerFlags() {
 		return Stream.of(ContainerFlag.values())
 				.map(flag -> DynamicTest.dynamicTest(flag.getStringValue(), () -> {
 					assertDerivativeAccumulativeLocalGetter(settings(), flag, TestUtils.other(flag),
-							ContainerManifest::getActiveLocalContainerFlags,
+							ContainerManifestBase::getActiveLocalContainerFlags,
 							(m,f) -> m.setContainerFlag(f, true));
 						}));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifest#getParentManifest()}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifestBase#getParentManifest()}.
 	 */
 	@Test
 	default void testGetParentManifest() {
@@ -169,7 +163,7 @@ interface ContainerManifestTestMixin<M extends ContainerManifest> extends Embedd
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifest#getElementManifest()}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifestBase#getElementManifest()}.
 	 */
 	@Test
 	default void testGetElementManifest() {
@@ -177,18 +171,18 @@ interface ContainerManifestTestMixin<M extends ContainerManifest> extends Embedd
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifest#setContainerType(de.ims.icarus2.model.manifest.api.ContainerType)}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifestBase#setContainerType(de.ims.icarus2.model.manifest.api.ContainerType)}.
 	 */
 	@Test
 	default void testSetContainerType() {
 		for(ContainerType containerType : ContainerType.values()) {
-			assertLockableSetter(settings(), ContainerManifest::setContainerType,
+			assertLockableSetter(settings(), ContainerManifestBase::setContainerType,
 					containerType, true, TYPE_CAST_CHECK);
 		}
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifest#setContainerFlag(de.ims.icarus2.model.manifest.api.ContainerFlag, boolean)}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContainerManifestBase#setContainerFlag(de.ims.icarus2.model.manifest.api.ContainerFlag, boolean)}.
 	 */
 	@TestFactory
 	default Stream<DynamicTest> testSetContainerFlag() {

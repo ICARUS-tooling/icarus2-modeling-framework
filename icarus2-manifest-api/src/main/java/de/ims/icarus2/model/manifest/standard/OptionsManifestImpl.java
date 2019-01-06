@@ -32,7 +32,6 @@ import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.OptionsManifest;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
@@ -100,14 +99,6 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		super.lockNested();
 
 		options.values().forEach(Option::lock);
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.Manifest#getManifestType()
-	 */
-	@Override
-	public ManifestType getManifestType() {
-		return ManifestType.OPTIONS_MANIFEST;
 	}
 
 	/**

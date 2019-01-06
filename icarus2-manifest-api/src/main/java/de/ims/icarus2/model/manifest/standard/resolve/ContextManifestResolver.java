@@ -25,6 +25,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
@@ -33,6 +34,7 @@ import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.Manifest;
@@ -47,7 +49,7 @@ import de.ims.icarus2.model.manifest.api.RasterizerManifest;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.ValueManifest;
-import de.ims.icarus2.model.manifest.standard.ItemLayerManifestImpl;
+import de.ims.icarus2.model.manifest.standard.AbstractItemLayerManifestBase;
 import de.ims.icarus2.util.id.Identifiable;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.id.MutableIdentifiable;
@@ -200,7 +202,7 @@ public class ContextManifestResolver {
 		source.forEachBaseLayerManifest(b -> target.addAndGetBaseLayer(b.getLayerId()));
 	}
 
-	protected void copyItemLayerFields(ItemLayerManifest source, ItemLayerManifest target) {
+	protected void copyItemLayerFields(ItemLayerManifestBase<?> source, ItemLayerManifestBase<?> target) {
 		if(source==null || target==null) {
 			return;
 		}
@@ -211,10 +213,10 @@ public class ContextManifestResolver {
 		source.getFoundationLayerManifest().ifPresent(m -> target.setAndGetFoundationLayer(m.getLayerId()));
 
 		// Containers
-		Optional<Hierarchy<ContainerManifest>> containerHierarchy = source.getContainerHierarchy();
+		Optional<Hierarchy<ContainerManifestBase<?>>> containerHierarchy = source.getContainerHierarchy();
 		if(containerHierarchy.isPresent()) {
-			for(ContainerManifest containerManifest : containerHierarchy.get()) {
-				ContainerManifest clonedManifest;
+			for(ContainerManifestBase<?> containerManifest : containerHierarchy.get()) {
+				ContainerManifestBase<?> clonedManifest;
 				if(containerManifest.getManifestType()==ManifestType.STRUCTURE_MANIFEST) {
 					clonedManifest = cloneStructureManifest((StructureManifest) containerManifest,
 							(StructureLayerManifest) target);
@@ -222,7 +224,7 @@ public class ContextManifestResolver {
 					clonedManifest = cloneContainerManifest(containerManifest, target);
 				}
 
-				ItemLayerManifestImpl.getOrCreateLocalContainerhierarchy(target).add(clonedManifest);
+				AbstractItemLayerManifestBase.getOrCreateLocalContainerhierarchy(target).add(clonedManifest);
 			}
 		}
 	}
@@ -238,7 +240,7 @@ public class ContextManifestResolver {
 		source.getAnnotationKey().ifPresent(target::setAnnotationKey);
 	}
 
-	protected void copyContainerFields(ContainerManifest source, ContainerManifest target) {
+	protected void copyContainerFields(ContainerManifestBase<?> source, ContainerManifestBase<?> target) {
 		if(source==null || target==null) {
 			return;
 		}
@@ -377,8 +379,8 @@ public class ContextManifestResolver {
 		return target;
 	}
 
-	public ItemLayerManifest cloneItemLayerManifest(ItemLayerManifest source, LayerGroupManifest layerGroupManifest) {
-		ItemLayerManifest target = manifestFactory.create(ManifestType.ITEM_LAYER_MANIFEST, layerGroupManifest, null);
+	public ItemLayerManifestBase<?> cloneItemLayerManifest(ItemLayerManifestBase<?> source, LayerGroupManifest layerGroupManifest) {
+		ItemLayerManifestBase<?> target = manifestFactory.create(ManifestType.ITEM_LAYER_MANIFEST, layerGroupManifest, null);
 
 		// Generic item layer fields
 		copyItemLayerFields(source, target);
@@ -386,7 +388,7 @@ public class ContextManifestResolver {
 		return target;
 	}
 
-	public ContainerManifest cloneContainerManifest(ContainerManifest source, ItemLayerManifest itemLayerManifest) {
+	public ContainerManifestBase<?> cloneContainerManifest(ContainerManifestBase<?> source, ItemLayerManifestBase<?> itemLayerManifest) {
 		ContainerManifest target = manifestFactory.create(ManifestType.CONTAINER_MANIFEST, itemLayerManifest, null);
 
 		copyContainerFields(source, target);

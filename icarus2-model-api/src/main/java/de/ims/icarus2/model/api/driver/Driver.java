@@ -46,7 +46,7 @@ import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.IcarusUtils;
@@ -117,7 +117,7 @@ public interface Driver extends ItemLayerManager {
 	 * @return
 	 * @throws ModelException
 	 */
-	long getItemCount(ItemLayerManifest layer);
+	long getItemCount(ItemLayerManifestBase<?> layer);
 
 	/**
 	 * Returns the {@link IdManager} for the specified {@code layer}.
@@ -125,7 +125,7 @@ public interface Driver extends ItemLayerManager {
 	 * @param layer
 	 * @return
 	 */
-	IdManager getIdManager(ItemLayerManifest layer);
+	IdManager getIdManager(ItemLayerManifestBase<?> layer);
 
 	/**
 	 * Returns all the mappings available for the context this driver manages.
@@ -155,13 +155,13 @@ public interface Driver extends ItemLayerManager {
 	 * if both layers are unrelated, that is there exists no hierarchical dependency
 	 * between the two
 	 */
-	Mapping getMapping(ItemLayerManifest sourceLayer, ItemLayerManifest targetLayer);
+	Mapping getMapping(ItemLayerManifestBase<?> sourceLayer, ItemLayerManifestBase<?> targetLayer);
 
 	default Mapping getMapping(ItemLayer sourceLayer, ItemLayer targetLayer) {
 		return getMapping(sourceLayer.getManifest(), targetLayer.getManifest());
 	}
 
-	default IndexValueType getValueTypeForLayer(ItemLayerManifest manifest) {
+	default IndexValueType getValueTypeForLayer(ItemLayerManifestBase<?> manifest) {
 
 		IndexValueType valueType = IndexValueType.LONG;
 
@@ -188,7 +188,7 @@ public interface Driver extends ItemLayerManager {
 	 * @throws ModelException
 	 * @throws InterruptedException
 	 */
-	default IndexSet[] mapIndices(ItemLayerManifest sourceLayer, ItemLayerManifest targetLayer, IndexSet[] sourceIndices) throws InterruptedException {
+	default IndexSet[] mapIndices(ItemLayerManifestBase<?> sourceLayer, ItemLayerManifestBase<?> targetLayer, IndexSet[] sourceIndices) throws InterruptedException {
 
 
 		Mapping mapping = getMapping(sourceLayer, targetLayer);
@@ -213,8 +213,8 @@ public interface Driver extends ItemLayerManager {
 		return result;
 	}
 
-	default public boolean mapIndices(ItemLayerManifest targetLayer,
-			ItemLayerManifest sourceLayer, IndexSet[] indices, IndexCollector collector)
+	default public boolean mapIndices(ItemLayerManifestBase<?> targetLayer,
+			ItemLayerManifestBase<?> sourceLayer, IndexSet[] indices, IndexCollector collector)
 			throws InterruptedException {
 
 		Mapping mapping = getMapping(sourceLayer, targetLayer);

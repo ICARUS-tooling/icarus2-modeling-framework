@@ -37,7 +37,7 @@ import de.ims.icarus2.model.api.io.resources.IOResource;
 import de.ims.icarus2.model.api.io.resources.VirtualIOResource;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
@@ -199,11 +199,11 @@ public class DefaultMappingFactory implements MappingFactory {
 		ContextManifest contextManifest = ManifestUtils.require(
 				driver.getManifest().getContextManifest(), driver.getManifest(), "contextManifest");
 
-		ItemLayerManifest sourceLayer = (ItemLayerManifest) manifest.getSourceLayerId()
-				.flatMap(id -> contextManifest.<ItemLayerManifest>getLayerManifest(id))
+		ItemLayerManifestBase<?> sourceLayer = (ItemLayerManifestBase<?>) manifest.getSourceLayerId()
+				.flatMap(id -> contextManifest.<ItemLayerManifestBase<?>>getLayerManifest(id))
 				.orElseThrow(ManifestException.error("Failed to obtain source layer"));
-		ItemLayerManifest targetLayer = (ItemLayerManifest) manifest.getTargetLayerId()
-				.flatMap(id -> contextManifest.<ItemLayerManifest>getLayerManifest(id))
+		ItemLayerManifestBase<?> targetLayer = (ItemLayerManifestBase<?>) manifest.getTargetLayerId()
+				.flatMap(id -> contextManifest.<ItemLayerManifestBase<?>>getLayerManifest(id))
 				.orElseThrow(ManifestException.error("Failed to obtain target layer"));
 
 		return new MappingImplIdentity(driver, manifest, sourceLayer, targetLayer);
@@ -217,11 +217,11 @@ public class DefaultMappingFactory implements MappingFactory {
 				.getContextManifest()
 				.orElseThrow(ManifestException.error("Failed to obtain context manifest for lookup"));
 
-		ItemLayerManifest sourceLayer = (ItemLayerManifest) manifest.getSourceLayerId()
-				.flatMap(id -> contextManifest.<ItemLayerManifest>getLayerManifest(id))
+		ItemLayerManifestBase<?> sourceLayer = (ItemLayerManifestBase<?>) manifest.getSourceLayerId()
+				.flatMap(id -> contextManifest.<ItemLayerManifestBase<?>>getLayerManifest(id))
 				.orElseThrow(ManifestException.error("Failed to obtain source layer"));
-		ItemLayerManifest targetLayer = (ItemLayerManifest) manifest.getTargetLayerId()
-				.flatMap(id -> contextManifest.<ItemLayerManifest>getLayerManifest(id))
+		ItemLayerManifestBase<?> targetLayer = (ItemLayerManifestBase<?>) manifest.getTargetLayerId()
+				.flatMap(id -> contextManifest.<ItemLayerManifestBase<?>>getLayerManifest(id))
 				.orElseThrow(ManifestException.error("Failed to obtain target layer"));
 
 		builder.sourceLayer(sourceLayer);
@@ -232,7 +232,7 @@ public class DefaultMappingFactory implements MappingFactory {
 		return builder;
 	}
 
-	protected IndexValueType getValueType(ItemLayerManifest source, ItemLayerManifest target, Options options) {
+	protected IndexValueType getValueType(ItemLayerManifestBase<?> source, ItemLayerManifestBase<?> target, Options options) {
 
 		// Try direct type declared in options
 		Object declaredValueType = FileDriverUtils.MappingProperty.VALUE_TYPE.getValue(options);
@@ -330,7 +330,7 @@ public class DefaultMappingFactory implements MappingFactory {
 		throw new ModelException(GlobalErrorCode.NOT_IMPLEMENTED, "Not yet implemented");
 	}
 
-	public Mapping createCompoundMapping(ItemLayerManifest sourceLayer, ItemLayerManifest targetLayer) {
+	public Mapping createCompoundMapping(ItemLayerManifestBase<?> sourceLayer, ItemLayerManifestBase<?> targetLayer) {
 		throw new ModelException(GlobalErrorCode.NOT_IMPLEMENTED, "Not yet implemented");
 	}
 }

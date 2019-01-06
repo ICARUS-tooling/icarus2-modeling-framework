@@ -36,7 +36,7 @@ import de.ims.icarus2.util.collections.set.DataSet;
  * @author Markus Gärtner
  *
  */
-public class AbstractLayer<M extends LayerManifest> extends AbstractPart<LayerGroup> implements Layer {
+public abstract class AbstractLayer<M extends LayerManifest<?>> extends AbstractPart<LayerGroup> implements Layer {
 
 	private final M manifest;
 	private DataSet<ItemLayer> baseLayers = DataSet.emptySet();
@@ -53,6 +53,14 @@ public class AbstractLayer<M extends LayerManifest> extends AbstractPart<LayerGr
 //		uid = manifest.getRegistry().createUID();
 
 		itemProxy = new ProxyItem();
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.layer.Layer#getManifest()
+	 */
+	@Override
+	public M getManifest() {
+		return manifest;
 	}
 
 	/**
@@ -107,14 +115,6 @@ public class AbstractLayer<M extends LayerManifest> extends AbstractPart<LayerGr
 	@Override
 	public DataSet<ItemLayer> getBaseLayers() {
 		return baseLayers;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.layer.Layer#getManifest()
-	 */
-	@Override
-	public M getManifest() {
-		return manifest;
 	}
 
 	/**

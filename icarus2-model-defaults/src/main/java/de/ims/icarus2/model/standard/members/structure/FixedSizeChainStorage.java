@@ -317,11 +317,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 	long getUncheckedEdgeCount(Structure context, Item node, boolean isSource) {
 
 		if(node==root) {
-			if(isSource) {
-				return root.getEdgeCount();
-			} else
-				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-						"Virtual root node cannot have incoming edges");
+			return isSource ? root.getEdgeCount() : 0;
 		} else {
 			int index = localIndexForNode(context, node);
 

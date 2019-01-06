@@ -31,4 +31,12 @@ public interface PathResolverManifest extends ForeignImplementationManifest<Path
 	default <M extends LocationManifest> Optional<M> getLocationManifest() {
 		return getHost();
 	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.api.MemberManifest#getManifestType()
+	 */
+	@Override
+	default ManifestType getManifestType() {
+		return ManifestType.PATH_RESOLVER_MANIFEST;
+	}
 }

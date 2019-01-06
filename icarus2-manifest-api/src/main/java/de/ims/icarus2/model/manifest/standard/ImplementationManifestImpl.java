@@ -21,7 +21,6 @@ import java.util.Optional;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 
 /**
@@ -48,14 +47,6 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 
 	public ImplementationManifestImpl(MemberManifest<?> hostManifest) {
 		super(hostManifest, hostIdentity(), MemberManifest.class);
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.manifest.api.Manifest#getManifestType()
-	 */
-	@Override
-	public ManifestType getManifestType() {
-		return ManifestType.IMPLEMENTATION_MANIFEST;
 	}
 
 

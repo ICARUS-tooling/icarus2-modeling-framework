@@ -54,6 +54,7 @@ import de.ims.icarus2.model.manifest.api.Categorizable;
 import de.ims.icarus2.model.manifest.api.Category;
 import de.ims.icarus2.model.manifest.api.ContainerFlag;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
@@ -72,6 +73,7 @@ import de.ims.icarus2.model.manifest.api.HighlightFlag;
 import de.ims.icarus2.model.manifest.api.HighlightLayerManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
@@ -503,7 +505,7 @@ public class ManifestGenerator {
 		}
 	}
 
-	private void prepareContainerManifest(ContainerManifest manifest,
+	private void prepareContainerManifest(ContainerManifestBase<?> manifest,
 			IncrementalBuild<?> container, Config config) {
 		prepareMemberManifest(manifest, container, config);
 
@@ -672,11 +674,11 @@ public class ManifestGenerator {
 				Boolean.valueOf(!ImplementationManifest.DEFAULT_USE_FACTORY_VALUE));
 	}
 
-	private void prepareItemLayerManifest(ItemLayerManifest manifest,
+	private void prepareItemLayerManifest(ItemLayerManifestBase<?> manifest,
 			IncrementalBuild<?> container, Config config) {
 
-		Hierarchy<ContainerManifest> hierarchy = new HierarchyImpl<>();
-		hierarchy.add((ContainerManifest)generate0(ManifestType.CONTAINER_MANIFEST, manifest, config).applyAllAndGet());
+		Hierarchy<ContainerManifestBase<?>> hierarchy = new HierarchyImpl<>();
+		hierarchy.add((ContainerManifestBase<?>)generate0(ManifestType.CONTAINER_MANIFEST, manifest, config).applyAllAndGet());
 		manifest.setContainerHierarchy(hierarchy);
 
 		prepareLayerManifest(manifest, container, config);
@@ -877,7 +879,7 @@ public class ManifestGenerator {
 	private void prepareStructureLayerManifest(StructureLayerManifest manifest,
 			IncrementalBuild<?> container, Config config) {
 
-		Hierarchy<ContainerManifest> hierarchy = new HierarchyImpl<>();
+		Hierarchy<ContainerManifestBase<?>> hierarchy = new HierarchyImpl<>();
 		hierarchy.add((ContainerManifest)generate0(ManifestType.CONTAINER_MANIFEST, manifest, config).applyAllAndGet());
 		hierarchy.add((StructureManifest)generate0(ManifestType.STRUCTURE_MANIFEST, manifest, config).applyAllAndGet());
 		manifest.setContainerHierarchy(hierarchy);

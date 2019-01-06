@@ -30,7 +30,7 @@ import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerType;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.util.ModelUtils;
@@ -100,7 +100,7 @@ public class DefaultItemLayerAnalyzer extends AbstractFileDriverAnalyzer impleme
 	 */
 	@Override
 	protected void writeStates(FileDataStates states) {
-		ItemLayerManifest layerManifest = layer.getManifest();
+		ItemLayerManifestBase<?> layerManifest = layer.getManifest();
 
 		// Refresh file info
 		FileInfo fileInfo = states.getFileInfo(fileIndex);

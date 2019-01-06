@@ -5,6 +5,8 @@ package de.ims.icarus2.test.util;
 
 import static java.util.Objects.requireNonNull;
 
+import de.ims.icarus2.test.TestUtils;
+
 /**
  * @author Markus Gärtner
  *
@@ -28,5 +30,13 @@ public class Triple<E_1, E_2, E_3> {
 		this.first = requireNonNull(first);
 		this.second = requireNonNull(second);
 		this.third = requireNonNull(third);
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return TestUtils.displayString("<%s,%s,%s>", first, second, third);
 	}
 }

@@ -199,7 +199,7 @@ public interface ManifestXmlDelegateTest<M extends TypedManifest, D extends Mani
 							label, original, target,
 							(ManifestXmlDelegate<M>)delegate,
 							true,
-							true); // dump intermediary xml representation
+							true); // dump intermediary xml representation if allowed by TestUtils
 				} while(build.applyNextChange());
 			}));
 	}

@@ -33,7 +33,18 @@ public enum ManifestType {
 	ANNOTATION_MANIFEST(AnnotationManifest.class, true),
 
 	ANNOTATION_LAYER_MANIFEST(AnnotationLayerManifest.class, true),
-	ITEM_LAYER_MANIFEST(ItemLayerManifest.class, true),
+	ITEM_LAYER_MANIFEST(ItemLayerManifest.class, true){
+		/**
+		 * For generalization purposes we need to delegate to {@link ItemLayerManifestBase}
+		 * here instead of the concrete type {@link ItemLayerManifest}!
+		 *
+		 * @see de.ims.icarus2.model.manifest.api.ManifestType#getGenericBaseClass()
+		 */
+		@Override
+		public Class<? extends TypedManifest> getGenericBaseClass() {
+			return ItemLayerManifestBase.class;
+		}
+	},
 	STRUCTURE_LAYER_MANIFEST(StructureLayerManifest.class, true),
 	FRAGMENT_LAYER_MANIFEST(FragmentLayerManifest.class, true),
 	HIGHLIGHT_LAYER_MANIFEST(HighlightLayerManifest.class, true),
@@ -161,9 +172,24 @@ public enum ManifestType {
 	}
 
 	/**
+	 * Returns the class every manifest of this type is expected to be
+	 * an instance of.
+	 *
 	 * @return the baseClass
 	 */
 	public Class<? extends TypedManifest> getBaseClass() {
 		return baseClass;
+	}
+
+	/**
+	 * Returns a generalized version (if available) of the {@link #getBaseClass() base class}
+	 * of this manifest type. This method should rarely be used in production code, but is a
+	 * helper testing purposes when an instance needs to be created for a manifest type that
+	 * serves as host for another manifest under test.
+	 *
+	 * @return
+	 */
+	public Class<? extends TypedManifest> getGenericBaseClass() {
+		return getBaseClass();
 	}
 }

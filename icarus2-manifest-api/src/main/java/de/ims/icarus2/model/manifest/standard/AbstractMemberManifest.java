@@ -131,7 +131,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest<M>, H exte
 	 */
 	protected AbstractMemberManifest(ManifestLocation manifestLocation,
 			ManifestRegistry registry, H host,
-			Class<? extends H> expectedHostClass) {
+			Class<? super H> expectedHostClass) {
 		super(manifestLocation, registry);
 
 		Manifest.verifyEnvironment(manifestLocation, host, expectedHostClass);
@@ -152,7 +152,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest<M>, H exte
 	 * {@link Manifest} instance in the existing hierarchy
 	 */
 	protected AbstractMemberManifest(H host, Function<H, Manifest> properRegistrySource,
-			Class<? extends H> expectedHostClass) {
+			Class<? super H> expectedHostClass) {
 		super(locationFromSource(host, properRegistrySource),
 				registryFromSource(host, properRegistrySource));
 

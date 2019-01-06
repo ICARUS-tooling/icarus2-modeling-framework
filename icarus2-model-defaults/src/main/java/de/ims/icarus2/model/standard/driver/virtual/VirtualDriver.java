@@ -39,7 +39,7 @@ import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.standard.driver.AbstractDriver;
 import de.ims.icarus2.util.IcarusUtils;
@@ -166,13 +166,13 @@ public class VirtualDriver extends AbstractDriver {
 		return itemLayerManager;
 	}
 
-	public ItemLayer getLayerForManifest(ItemLayerManifest manifest) {
+	public ItemLayer getLayerForManifest(ItemLayerManifestBase<?> manifest) {
 		ensureLayerMap();
 
 		return idMap.get(keyForManifest(manifest));
 	}
 
-	protected int keyForManifest(LayerManifest manifest) {
+	protected int keyForManifest(LayerManifest<?> manifest) {
 		return manifest.getUID();
 	}
 
@@ -277,7 +277,7 @@ public class VirtualDriver extends AbstractDriver {
 	}
 
 	@Override
-	public long getItemCount(ItemLayerManifest layer) {
+	public long getItemCount(ItemLayerManifestBase<?> layer) {
 		return (isReady() && isConnected()) ? getItemCount(getLayerForManifest(layer)) : IcarusUtils.UNSET_LONG;
 	}
 

@@ -24,7 +24,6 @@ import java.util.function.Consumer;
 
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.StructureFlag;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
@@ -34,7 +33,8 @@ import de.ims.icarus2.model.manifest.api.StructureType;
  * @author Markus Gärtner
  *
  */
-public class StructureManifestImpl extends ContainerManifestImpl implements StructureManifest {
+public class StructureManifestImpl extends AbstractContainerManifestBase<StructureManifest, StructureLayerManifest>
+		implements StructureManifest {
 
 	private Optional<StructureType> structureType = Optional.empty();
 
@@ -42,7 +42,7 @@ public class StructureManifestImpl extends ContainerManifestImpl implements Stru
 
 	public StructureManifestImpl(ManifestLocation manifestLocation,
 			ManifestRegistry registry, StructureLayerManifest layerManifest) {
-		super(manifestLocation, registry, layerManifest);
+		super(manifestLocation, registry, layerManifest, StructureLayerManifest.class);
 	}
 
 	public StructureManifestImpl(ManifestLocation manifestLocation,
@@ -51,20 +51,12 @@ public class StructureManifestImpl extends ContainerManifestImpl implements Stru
 	}
 
 	public StructureManifestImpl(StructureLayerManifest layerManifest) {
-		super(layerManifest);
+		super(layerManifest, StructureLayerManifest.class);
 	}
 
 	@Override
 	public boolean isEmpty() {
 		return super.isEmpty() && structureFlags.isEmpty();
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.standard.manifest.ContainerManifestImpl#getManifestType()
-	 */
-	@Override
-	public ManifestType getManifestType() {
-		return ManifestType.STRUCTURE_MANIFEST;
 	}
 
 	/**
