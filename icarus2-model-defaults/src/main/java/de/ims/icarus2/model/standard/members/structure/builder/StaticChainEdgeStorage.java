@@ -726,16 +726,10 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		static {
 
 			// Object header + 4 int fields
-			int size = 8 + 4*Integer.BYTES;
+			int size = IcarusUtils.OBJ_HEADER_BYTES + 4*Integer.BYTES;
 
-			// Default assumption of 32bit system
-			int pointerSize = 4;
-
-			// Adjust pointer size of we're on 64bit
-			String arch = System.getProperty("sun.arch.data.model");
-			if(arch.contains("64")) {
-				pointerSize = 8;
-			}
+			// Size of reference pointer, 4 or 8 bytes
+			int pointerSize = IcarusUtils.OBJ_REF_SIZE;
 
 			UNUSED_ENTRY_SIZE = pointerSize;
 			USED_ENTRY_SIZE = size + pointerSize;

@@ -18,6 +18,9 @@ package de.ims.icarus2.util;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.PlatformManagedObject;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -34,9 +37,38 @@ import de.ims.icarus2.util.Mutable.MutableObject;
  * @author Markus Gärtner
  *
  */
-public class IcarusUtils {
+public final class IcarusUtils {
 
 	public static final Runnable NO_OP = () -> {/* no-op */};
+
+	/**
+	 * Returns {@code true} if the JVM currently in use is reportedly
+	 * using a 64 bit architecture model.
+	 *
+	 * @return
+	 */
+	public static final boolean IS_64BIT_VM;
+
+	/**
+	 * Size of object header.
+	 */
+	public static final int OBJ_HEADER_BYTES;
+
+	/**
+	 * Size of object header for arrays.
+	 */
+	public static final int ARRAY_HEADER_BYTES;
+
+	/**
+	 * Estimated size of a reference pointer under the current JVM settings.
+	 * <p>
+	 * This value represents a best guess, as it is not possible via public
+	 * APIs to consistently access this information from within a running
+	 * VM without additional externla help.
+	 * <p>
+	 * The returned value will be either {@code 4} or {@code 8}.
+	 */
+	public static final int OBJ_REF_SIZE;
 
 	/**
 	 * Maximum value for use in arrays.
@@ -44,6 +76,56 @@ public class IcarusUtils {
 	 * {@link Integer#MAX_VALUE} would result in an exception.
 	 */
 	public static final int MAX_INTEGER_INDEX = Integer.MAX_VALUE-8;
+
+	static {
+		int objHeaderBytes = 16;
+		int arrayHeaderOverhead = 8;
+		int refSize = 4;
+
+		IS_64BIT_VM = Optional.ofNullable(System.getProperty("sun.arch.data.model"))
+				.orElse(System.getProperty("os.arch"))
+				.contains("64");
+
+		if(IS_64BIT_VM) {
+			refSize = 8;
+		}
+
+		boolean compressedOop = false; // -XX:UseCompressedOops
+		boolean compressedClassesPointer = false; // -XX:UseCompressedClassesPointers
+
+		try {
+			@SuppressWarnings("unchecked")
+			Class<PlatformManagedObject> beanClazz =
+					(Class<PlatformManagedObject>) Class.forName("com.sun.management.HotSpotDiagnosticMXBean");
+
+			// Fetch MXBean of the HotSpot VM
+			PlatformManagedObject vmBean = ManagementFactory.getPlatformMXBean(beanClazz);
+
+			Method getVMOptionMethod = beanClazz.getMethod("getVMOption", String.class);
+			try {
+				Object vmOption = getVMOptionMethod.invoke(vmBean, "UseCompressedOops");
+				compressedOop = Boolean.parseBoolean(vmOption.getClass().getMethod("getValue").invoke(vmOption).toString());
+			} catch (ReflectiveOperationException | RuntimeException e) {
+				compressedOop = false;
+			}
+			try {
+				Object vmOption = getVMOptionMethod.invoke(vmBean, "UseCompressedClassesPointers");
+				compressedOop = Boolean.parseBoolean(vmOption.getClass().getMethod("getValue").invoke(vmOption).toString());
+			} catch (ReflectiveOperationException | RuntimeException e) {
+				compressedClassesPointer = false;
+			}
+		} catch (RuntimeException | ReflectiveOperationException e) {
+			// ignore
+		}
+
+		if(compressedOop) {
+			refSize = 4;
+		}
+
+		OBJ_HEADER_BYTES = objHeaderBytes;
+		ARRAY_HEADER_BYTES = OBJ_HEADER_BYTES + arrayHeaderOverhead;
+		OBJ_REF_SIZE = refSize;
+	}
 
 	public static String toLoggableString(Object value) {
 		//TODO ensure the generated string is short enough and does not contain line breaks
