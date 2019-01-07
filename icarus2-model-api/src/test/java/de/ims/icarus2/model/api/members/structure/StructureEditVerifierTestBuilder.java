@@ -93,11 +93,11 @@ public class StructureEditVerifierTestBuilder {
 	/**
 	 * Legal values for {@link StructureEditVerifier#canSetTerminal(Edge, Item, boolean)}
 	 */
-	final List<Triple<Edge, Long, Boolean>> setTerminalLegal = new ArrayList<>();
+	final List<Triple<Edge, Item, Boolean>> setTerminalLegal = new ArrayList<>();
 	/**
 	 * Illegal values for {@link StructureEditVerifier#canSetTerminal(Edge, Item, boolean)}
 	 */
-	final List<Triple<Edge, Long, Boolean>> setTerminalIllegal = new ArrayList<>();
+	final List<Triple<Edge, Item, Boolean>> setTerminalIllegal = new ArrayList<>();
 
 	/**
 	 * Legal values for {@link StructureEditVerifier#canCreateEdge(Item, Item)}
@@ -105,14 +105,16 @@ public class StructureEditVerifierTestBuilder {
 	 * Note that we store index values here for simplicity. The actual test code translates
 	 * them into the respective {@code Item} instances located at those indices.
 	 */
-	final List<Pair<Long, Long>> createEdgeLegal = new ArrayList<>();
+	final List<Pair<Item, Item>> createEdgeLegal = new ArrayList<>();
 	/**
 	 * Illegal values for {@link StructureEditVerifier#canCreateEdge(Item, Item)}
 	 * <p>
 	 * Note that we store index values here for simplicity. The actual test code translates
 	 * them into the respective {@code Item} instances located at those indices.
 	 */
-	final List<Pair<Long, Long>> createEdgeIllegal = new ArrayList<>();
+	final List<Pair<Item, Item>> createEdgeIllegal = new ArrayList<>();
+
+	//TODO add list of Executable calls with expected error types
 
 	public StructureEditVerifierTestBuilder(StructureEditVerifier verifier) {
 		this.verifier = requireNonNull(verifier);
@@ -216,25 +218,57 @@ public class StructureEditVerifierTestBuilder {
 		return this;
 	}
 
+
 	public StructureEditVerifierTestBuilder setTerminalLegal(
-			@SuppressWarnings("unchecked") Triple<Edge, Long, Boolean>...entries) {
+			@SuppressWarnings("unchecked") Triple<Edge, Item, Boolean>...entries) {
 		Collections.addAll(setTerminalLegal, entries);
 		return this;
 	}
 	public StructureEditVerifierTestBuilder setTerminalIllegal(
-			@SuppressWarnings("unchecked") Triple<Edge, Long, Boolean>...entries) {
+			@SuppressWarnings("unchecked") Triple<Edge, Item, Boolean>...entries) {
 		Collections.addAll(setTerminalIllegal, entries);
 		return this;
 	}
 
+	public StructureEditVerifierTestBuilder setTerminalLegalIndirect(
+			@SuppressWarnings("unchecked") Triple<Edge, Long, Boolean>...entries) {
+		Stream.of(entries)
+				.map(t -> Triple.of(t.first, itemAt(t.second), t.third))
+				.forEach(setTerminalLegal::add);
+		return this;
+	}
+	public StructureEditVerifierTestBuilder setTerminalIllegalIndirect(
+			@SuppressWarnings("unchecked") Triple<Edge, Long, Boolean>...entries) {
+		Stream.of(entries)
+			.map(t -> Triple.of(t.first, itemAt(t.second), t.third))
+			.forEach(setTerminalIllegal::add);
+		return this;
+	}
+
 	public StructureEditVerifierTestBuilder createEdgeLegal(
-			@SuppressWarnings("unchecked") Pair<Long, Long>...entries) {
+			@SuppressWarnings("unchecked") Pair<Item, Item>...entries) {
 		Collections.addAll(createEdgeLegal, entries);
 		return this;
 	}
 	public StructureEditVerifierTestBuilder createEdgeIllegal(
-			@SuppressWarnings("unchecked") Pair<Long, Long>...entries) {
+			@SuppressWarnings("unchecked") Pair<Item, Item>...entries) {
 		Collections.addAll(createEdgeIllegal, entries);
+		return this;
+	}
+
+
+	public StructureEditVerifierTestBuilder createEdgeLegalIndirect(
+			@SuppressWarnings("unchecked") Pair<Long, Long>...entries) {
+		Stream.of(entries)
+			.map(p -> Pair.pair(itemAt(p.first), itemAt(p.second)))
+			.forEach(createEdgeLegal::add);
+		return this;
+	}
+	public StructureEditVerifierTestBuilder createEdgeIllegalIndirect(
+			@SuppressWarnings("unchecked") Pair<Long, Long>...entries) {
+		Stream.of(entries)
+			.map(p -> Pair.pair(itemAt(p.first), itemAt(p.second)))
+			.forEach(createEdgeIllegal::add);
 		return this;
 	}
 
@@ -298,24 +332,24 @@ public class StructureEditVerifierTestBuilder {
 		TestUtils.makeTests(spec.setTerminalLegal,
 				p -> displayString("set terminal legal: item_%s as %s at %s",
 						p.second, label(p.third), p.first),
-				p -> spec.verifier.canSetTerminal(p.first, spec.itemAt(p.second), p.third),
+				p -> spec.verifier.canSetTerminal(p.first, p.second, p.third),
 						true, tests::add);
 		TestUtils.makeTests(spec.setTerminalIllegal,
 				p -> displayString("set terminal illegal: item_%s as %s at %s",
 						p.second, label(p.third), p.first),
-				p -> spec.verifier.canSetTerminal(p.first, spec.itemAt(p.second), p.third),
+				p -> spec.verifier.canSetTerminal(p.first, p.second, p.third),
 						false, tests::add);
 
 		// CREATE
 		TestUtils.makeTests(spec.createEdgeLegal,
 				p -> displayString("create edge legal: item_%s to item_%s",
 						p.first, p.second),
-				p -> spec.verifier.canCreateEdge(spec.itemAt(p.first), spec.itemAt(p.second)),
+				p -> spec.verifier.canCreateEdge(p.first, p.second),
 						true, tests::add);
 		TestUtils.makeTests(spec.createEdgeIllegal,
 				p -> displayString("create edge illegal: item_%s to item_%s",
 						p.first, p.second),
-				p -> spec.verifier.canCreateEdge(spec.itemAt(p.first), spec.itemAt(p.second)),
+				p -> spec.verifier.canCreateEdge(p.first, p.second),
 						false, tests::add);
 
 		return tests;

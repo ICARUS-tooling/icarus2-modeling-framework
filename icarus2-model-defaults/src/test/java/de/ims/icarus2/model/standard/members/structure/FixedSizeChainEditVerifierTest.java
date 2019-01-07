@@ -20,6 +20,7 @@
 package de.ims.icarus2.model.standard.members.structure;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.EDGE;
+import static de.ims.icarus2.model.api.ModelTestUtils.ITEM;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockStructure;
 import static de.ims.icarus2.model.api.ModelTestUtils.stubItems;
@@ -158,13 +159,19 @@ class FixedSizeChainEditVerifierTest {
 				.removeSingleIllegal(longRange(-1, 1))
 				.removeBatchIllegal(longPair(0, 0), longPair(0,  1))
 				.swapSingleIllegal(longPair(0,  0), longPair(0,  1))
-				.setTerminalIllegal(of(EDGE,0L,true), of(EDGE,0L,false))
+				.setTerminalIllegal(of(EDGE,ITEM,true), of(EDGE,ITEM,false))
 				//TODO add illegal values for terminal changes and edge creation!!!
 				.createTests();
 	}
 
 	/**
-	 * Test with a full chain of 3 connected edges
+	 * Test with a full chain of 3 connected edges:
+	 * <blockquote><pre>
+	 *   _   _   _
+	 *  / \ / \ / \
+	 * R   X   X   X
+	 * </pre></blockquote>
+	 *
 	 */
 	@TestFactory
 	@DisplayName("full [---]")

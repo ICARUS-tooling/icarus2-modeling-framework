@@ -284,6 +284,14 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		return edges[localIndex];
 	}
 
+	/**
+	 * Returns the outgoing edge (if present) for the given {@code node} which must not be
+	 * the {@link #getVirtualRoot(Structure) root node}.
+	 *
+	 * @param context
+	 * @param node
+	 * @return
+	 */
 	public Edge getOutgoingEdge(Structure context, Item node) {
 //		checkChainConsistency();
 
@@ -294,6 +302,14 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		return getAsSource(context, node);
 	}
 
+	/**
+	 * Returns the incoming edge (if present) for the given {@code node} which must not be
+	 * the {@link #getVirtualRoot(Structure) root node}.
+	 *
+	 * @param context
+	 * @param node
+	 * @return
+	 */
 	public Edge getIncomingEdge(Structure context, Item node) {
 //		checkChainConsistency();
 
@@ -314,6 +330,14 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		return getUncheckedEdgeCount(context, node, isSource);
 	}
 
+	/**
+	 * Helper method to fetch the edge count for the specified {@code node}.
+	 *
+	 * @param context
+	 * @param node
+	 * @param isSource
+	 * @return
+	 */
 	long getUncheckedEdgeCount(Structure context, Item node, boolean isSource) {
 
 		if(node==root) {
