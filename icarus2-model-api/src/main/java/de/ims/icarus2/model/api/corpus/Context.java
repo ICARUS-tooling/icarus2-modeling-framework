@@ -31,6 +31,7 @@ import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.LayerType;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
 import de.ims.icarus2.util.Connectible;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Part;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.id.UnknownIdentifierException;
@@ -98,7 +99,8 @@ public interface Context extends ManifestOwner<ContextManifest>, Connectible<Dri
 	}
 
 	default Collection<Layer> getLayers(LayerType type) {
-		return getLayers(l -> type.equals(l.getManifest().getLayerType()));
+		return getLayers(l -> IcarusUtils.equals(
+				l.getManifest().getLayerType(), type));
 	}
 
 	default Collection<Layer> getLayers(Class<? extends Layer> clazz) {
