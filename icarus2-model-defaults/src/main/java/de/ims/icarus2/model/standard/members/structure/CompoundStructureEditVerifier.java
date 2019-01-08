@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
+import static de.ims.icarus2.model.standard.members.MemberUtils.checkContainsEdge;
+import static de.ims.icarus2.model.standard.members.MemberUtils.checkContainsItem;
+import static de.ims.icarus2.model.standard.members.MemberUtils.checkHostStructure;
+import static de.ims.icarus2.model.standard.members.MemberUtils.checkNotContainsEdge;
 import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
@@ -114,6 +118,13 @@ public class CompoundStructureEditVerifier implements StructureEditVerifier {
 	 */
 	@Override
 	public boolean canAddEdge(long index, Edge edge) {
+		requireNonNull(edge);
+
+		final Structure structure = getSource();
+
+		checkHostStructure(edge, structure);
+		checkNotContainsEdge(structure, edge);
+
 		return edge!=null && isValidAddEdgeIndex(index);
 	}
 
@@ -122,6 +133,12 @@ public class CompoundStructureEditVerifier implements StructureEditVerifier {
 	 */
 	@Override
 	public boolean canAddEdges(long index, DataSequence<? extends Edge> edges) {
+		requireNonNull(edges);
+
+		final Structure structure = getSource();
+
+		edges.forEach(edge -> checkNotContainsEdge(structure, edge)); //TODO not very pretty, as the exception will be thrown inside the internal iteration code
+
 		return edges!=null && isValidAddEdgeIndex(index);
 	}
 
@@ -156,7 +173,16 @@ public class CompoundStructureEditVerifier implements StructureEditVerifier {
 	 */
 	@Override
 	public boolean canSetTerminal(Edge edge, Item terminal, boolean isSource) {
-		return !(terminal==getSource().getVirtualRoot() && !isSource);
+		requireNonNull(edge);
+		requireNonNull(terminal);
+
+		final Structure structure = getSource();
+
+		checkHostStructure(edge, structure);
+		checkContainsEdge(structure, edge);
+		checkContainsItem(structure, terminal);
+
+		return !(terminal==structure.getVirtualRoot() && !isSource);
 	}
 
 	/**
@@ -164,6 +190,14 @@ public class CompoundStructureEditVerifier implements StructureEditVerifier {
 	 */
 	@Override
 	public boolean canCreateEdge(Item source, Item target) {
+		requireNonNull(source);
+		requireNonNull(target);
+
+		final Structure structure = getSource();
+
+		checkContainsItem(structure, source);
+		checkContainsItem(structure, target);
+
 		return true;
 	}
 }

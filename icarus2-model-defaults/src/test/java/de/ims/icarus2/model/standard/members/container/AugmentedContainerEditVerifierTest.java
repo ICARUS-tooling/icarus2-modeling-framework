@@ -46,6 +46,15 @@ import de.ims.icarus2.util.IcarusUtils;
  */
 class AugmentedContainerEditVerifierTest {
 
+	@TestFactory
+	public Stream<DynamicTest> testNullArguments() {
+		Container container = mockContainer(0);
+		AugmentedItemStorage storage = mockStorage(container, 0);
+
+		return ContainerEditVerifierTestBuilder.createNullArgumentsTests(
+				new AugmentedContainerEditVerifier(container, storage));
+	}
+
 	@Test
 	void testLifecycle() {
 		Container container = mockContainer(0);

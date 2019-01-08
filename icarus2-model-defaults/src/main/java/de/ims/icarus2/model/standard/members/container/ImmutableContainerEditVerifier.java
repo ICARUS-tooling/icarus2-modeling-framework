@@ -59,6 +59,7 @@ public class ImmutableContainerEditVerifier implements ContainerEditVerifier {
 	 */
 	@Override
 	public boolean canAddItem(long index, Item item) {
+		requireNonNull(item);
 		return false;
 	}
 
@@ -67,6 +68,7 @@ public class ImmutableContainerEditVerifier implements ContainerEditVerifier {
 	 */
 	@Override
 	public boolean canAddItems(long index, DataSequence<? extends Item> items) {
+		requireNonNull(items);
 		return false;
 	}
 

@@ -16,10 +16,13 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
+import static de.ims.icarus2.model.standard.members.MemberUtils.checkContainsEdge;
+import static de.ims.icarus2.model.standard.members.MemberUtils.checkContainsItem;
 import static de.ims.icarus2.model.standard.members.MemberUtils.checkHostStructure;
 import static de.ims.icarus2.model.standard.members.MemberUtils.checkNoLoopsStructure;
 import static de.ims.icarus2.model.standard.members.MemberUtils.checkNonEmptyContainer;
 import static de.ims.icarus2.model.standard.members.MemberUtils.checkNonPartialStructure;
+import static de.ims.icarus2.model.standard.members.MemberUtils.checkNotContainsEdge;
 import static de.ims.icarus2.model.standard.members.MemberUtils.checkStaticContainer;
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static java.util.Objects.requireNonNull;
@@ -758,7 +761,13 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		 */
 		@Override
 		public boolean canAddEdge(long index, Edge edge) {
+			requireNonNull(edge);
+
 			final Structure structure = getSource();
+
+			checkHostStructure(edge, structure);
+			checkNotContainsEdge(structure, edge);
+
 			final Item source = edge.getSource();
 			final Item target = edge.getTarget();
 			final Item root = storage.getVirtualRoot(structure);
@@ -775,20 +784,23 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		@Override
 		public boolean canAddEdges(long index,
 				DataSequence<? extends Edge> edges) {
+			requireNonNull(edges);
 
-			if(!isValidEdgeAddIndex(index)) {
-				return false;
-			}
+//			if(!isValidEdgeAddIndex(index)) {
+//				return false;
+//			}
 
 			int size = IcarusUtils.ensureIntegerValueRange(edges.entryCount());
 
+			boolean canAdd = true;
+
 			for(int i=0; i<size; i++) {
 				if(!canAddEdge(i, edges.elementAt(i))) {
-					return false;
+					canAdd = false;
 				}
 			}
 
-			return true;
+			return canAdd;
 		}
 
 		/**
@@ -823,11 +835,19 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		 */
 		@Override
 		public boolean canSetTerminal(Edge edge, Item terminal, boolean isSource) {
+			requireNonNull(edge);
+			requireNonNull(terminal);
+
+			final Structure structure = getSource();
+
+			checkHostStructure(edge, structure);
+			checkContainsEdge(structure, edge);
+			checkContainsItem(structure, terminal);
+
 			if(edge.getTerminal(isSource)==terminal) {
 				return false;
 			}
 
-			final Structure structure = getSource();
 			final Item root = storage.getVirtualRoot(structure);
 
 			return (isSource && (terminal==root || storage.getUncheckedEdgeCount(structure, terminal, true)==0L))
@@ -839,7 +859,15 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		 */
 		@Override
 		public boolean canCreateEdge(Item source, Item target) {
-			return target!=storage.getVirtualRoot(getSource());
+			requireNonNull(source);
+			requireNonNull(target);
+
+			final Structure structure = getSource();
+
+			checkContainsItem(structure, source);
+			checkContainsItem(structure, target);
+
+			return target!=storage.getVirtualRoot(structure);
 		}
 	}
 }

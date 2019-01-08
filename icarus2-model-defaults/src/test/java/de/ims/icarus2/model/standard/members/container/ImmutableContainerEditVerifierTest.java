@@ -39,6 +39,14 @@ import de.ims.icarus2.model.api.members.container.ContainerEditVerifierTestBuild
  */
 class ImmutableContainerEditVerifierTest {
 
+	@TestFactory
+	public Stream<DynamicTest> testNullArguments() {
+		Container container = mockContainer(0);
+		ImmutableContainerEditVerifier verifier = new ImmutableContainerEditVerifier(container);
+
+		return ContainerEditVerifierTestBuilder.createNullArgumentsTests(verifier);
+	}
+
 	@Test
 	void testLifecycle() {
 		Container container = mockContainer(0);

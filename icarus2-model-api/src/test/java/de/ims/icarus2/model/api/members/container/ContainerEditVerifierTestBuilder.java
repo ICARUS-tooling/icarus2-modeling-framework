@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.api.members.container;
 
+import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.displayString;
 import static java.util.Objects.requireNonNull;
 
@@ -235,5 +236,17 @@ public class ContainerEditVerifierTestBuilder {
 				p -> spec.verifier.canSwapItems(p.first, p.second), false, tests::add);
 
 		return tests;
+	}
+
+	public static Stream<DynamicTest> createNullArgumentsTests(ContainerEditVerifier verifier) {
+		List<DynamicTest> tests = new ArrayList<>();
+
+		tests.add(DynamicTest.dynamicTest("add single null", () -> assertNPE(
+				() -> verifier.canAddItem(0, null))));
+
+		tests.add(DynamicTest.dynamicTest("add batch null", () -> assertNPE(
+				() -> verifier.canAddItems(0, null))));
+
+		return tests.stream();
 	}
 }

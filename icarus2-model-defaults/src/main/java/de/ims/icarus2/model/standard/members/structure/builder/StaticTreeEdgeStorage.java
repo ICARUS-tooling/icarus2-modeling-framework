@@ -269,7 +269,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			int pointer = pointer(data);
 			int count = toInt(edgeData[pointer+1]);
 			if(index<0 || index>=count)
-				throw new IndexOutOfBoundsException(Messages.indexOutOfBoundsMessage(null, 0, count-1, index));
+				throw new IndexOutOfBoundsException(Messages.indexOutOfBounds(null, 0, count-1, index));
 
 			return toInt(edgeData[pointer+1+index]);
 		}
@@ -641,7 +641,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			int pointer = pointer(data);
 			int count = toInt(edgeData[pointer+1]);
 			if(index<0 || index>=count)
-				throw new IndexOutOfBoundsException(Messages.indexOutOfBoundsMessage(null, 0, count-1, index));
+				throw new IndexOutOfBoundsException(Messages.indexOutOfBounds(null, 0, count-1, index));
 
 			return toInt(edgeData[pointer+1+index]);
 		}

@@ -61,4 +61,19 @@ public class SharedTestUtils {
 
 		return sequence;
 	}
+
+	@SafeVarargs
+	public static <E extends Object> DataSequence<E> mockSequence(E...elements) {
+		DataSequence<E> sequence = mockSequence(elements.length);
+
+		when(sequence.elementAt(anyLong())).then(invocation -> {
+			@SuppressWarnings("boxing")
+			long index = invocation.getArgument(0);
+			if(index<0 || index>=elements.length)
+				throw new IndexOutOfBoundsException();
+			return elements[(int) index];
+		});
+
+		return sequence;
+	}
 }

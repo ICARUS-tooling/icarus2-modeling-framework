@@ -39,6 +39,14 @@ import de.ims.icarus2.model.api.members.container.ContainerEditVerifierTestBuild
  */
 class SingletonContainerEditVerifierTest {
 
+	@TestFactory
+	public Stream<DynamicTest> testNullArguments() {
+		Container container = mockContainer(0);
+		SingletonContainerEditVerifier verifier = new SingletonContainerEditVerifier(container);
+
+		return ContainerEditVerifierTestBuilder.createNullArgumentsTests(verifier);
+	}
+
 	@Test
 	void testLifecycle() {
 		Container container = mockContainer(0);

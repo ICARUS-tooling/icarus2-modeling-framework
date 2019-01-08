@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.api.members.structure;
 
+import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -51,6 +53,11 @@ public interface StructureEditVerifier extends ContainerEditVerifier {
 	 * @param index
 	 * @param edge
 	 * @return
+	 *
+	 * @throws ModelException of type {@link ModelErrorCode#MODEL_ILLEGAL_MEMBER}
+	 * 		when the provided {@code edge} is already contained in the underlying
+	 * 		structure (this is an optional error condition and implementations
+	 * 		should indicate whether they enforce this restriction).
 	 */
 	boolean canAddEdge(long index, Edge edge);
 
@@ -64,6 +71,11 @@ public interface StructureEditVerifier extends ContainerEditVerifier {
 	 * @param index
 	 * @param edges
 	 * @return
+	 *
+	 * @throws ModelException of type {@link ModelErrorCode#MODEL_ILLEGAL_MEMBER}
+	 * 		when the any of the provided {@code edges} are already contained in the underlying
+	 * 		structure (this is an optional error condition and implementations
+	 * 		should indicate whether they enforce this restriction).
 	 */
 	boolean canAddEdges(long index, DataSequence<? extends Edge> edges);
 
@@ -90,9 +102,52 @@ public interface StructureEditVerifier extends ContainerEditVerifier {
 	 */
 	boolean canRemoveEdges(long index0, long index1);
 
+	/**
+	 * Precondition check for the {@link Structure#swapEdges(long, long)} method.
+	 *
+	 * @param index0
+	 * @param index1
+	 * @return
+	 */
 	boolean canSwapEdges(long index0, long index1);
 
+	/**
+	 * Precondition check for the {@link Structure#setTerminal(Edge, Item, boolean)} method.
+	 *
+	 * @param edge
+	 * @param terminal
+	 * @param isSource
+	 * @return
+	 *
+	 * @throws ModelException of type {@link ModelErrorCode#MODEL_ILLEGAL_MEMBER}
+	 * 		when the provided {@code edge} is not contained in the underlying
+	 * 		structure (this is an optional error condition and implementations
+	 * 		should indicate whether they enforce this restriction).
+	 *
+	 * @throws ModelException of type {@link ModelErrorCode#MODEL_ILLEGAL_MEMBER}
+	 * 		when the provided {@code item} is not contained in the underlying
+	 * 		structure (this is an optional error condition and implementations
+	 * 		should indicate whether they enforce this restriction).
+	 */
 	boolean canSetTerminal(Edge edge, Item terminal, boolean isSource);
 
-	boolean canCreateEdge(Item source, Item target);
+	/**
+	 * Verify that an edge can be created between the {@code source} and {@code target} items
+	 * without violating any restrictions imposed by the underlying structure.
+	 * <p>
+	 * Note that there is
+	 *
+	 * @param source
+	 * @param target
+	 * @return
+	 *
+	 * @throws ModelException of type {@link ModelErrorCode#MODEL_ILLEGAL_MEMBER}
+	 * 		when any of the two provided {@code items} is not contained in the underlying
+	 * 		structure (this is an optional error condition and implementations
+	 * 		should indicate whether they enforce this restriction).
+	 */
+	default boolean canCreateEdge(Item source, Item target) {
+		//TODO
+		return getSource().containsItem(source) && getSource().containsItem(target);
+	}
 }

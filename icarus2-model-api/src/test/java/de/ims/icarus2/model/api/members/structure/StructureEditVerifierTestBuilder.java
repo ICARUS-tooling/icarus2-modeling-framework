@@ -19,18 +19,26 @@
  */
 package de.ims.icarus2.model.api.members.structure;
 
+import static de.ims.icarus2.SharedTestUtils.mockSequence;
+import static de.ims.icarus2.model.api.ModelTestUtils.assertIllegalMember;
+import static de.ims.icarus2.model.api.ModelTestUtils.mockEdge;
+import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
+import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.displayString;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static java.util.Objects.requireNonNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.function.Executable;
 
-import de.ims.icarus2.model.api.ModelTestUtils;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.test.TestUtils;
@@ -114,10 +122,20 @@ public class StructureEditVerifierTestBuilder {
 	 */
 	final List<Pair<Item, Item>> createEdgeIllegal = new ArrayList<>();
 
+	/**
+	 * Additional calls that are expected to fail with an exception which
+	 * is to be evaluated by a custom consumer.
+	 */
+	final List<Triple<String, Executable, Consumer<? super Exception>>> fail = new ArrayList<>();
+
 	//TODO add list of Executable calls with expected error types
 
 	public StructureEditVerifierTestBuilder(StructureEditVerifier verifier) {
 		this.verifier = requireNonNull(verifier);
+	}
+
+	private Edge edge() {
+		return mockEdge(verifier.getSource());
 	}
 
 	public StructureEditVerifierTestBuilder addSingleLegal(Edge edge, long...values) {
@@ -128,7 +146,7 @@ public class StructureEditVerifierTestBuilder {
 	}
 
 	public StructureEditVerifierTestBuilder addSingleLegal(long...values) {
-		return addSingleLegal(ModelTestUtils.EDGE, values);
+		return addSingleLegal(edge(), values);
 	}
 
 	public StructureEditVerifierTestBuilder addSingleIllegal(Edge edge, long...values) {
@@ -139,7 +157,7 @@ public class StructureEditVerifierTestBuilder {
 	}
 
 	public StructureEditVerifierTestBuilder addSingleIllegal(long...values) {
-		return addSingleIllegal(ModelTestUtils.EDGE, values);
+		return addSingleIllegal(edge(), values);
 	}
 
 	public StructureEditVerifierTestBuilder addBatchLegal(DataSequence<Edge> edges, long...values) {
@@ -150,7 +168,7 @@ public class StructureEditVerifierTestBuilder {
 	}
 
 	public StructureEditVerifierTestBuilder addBatchLegal(long...values) {
-		return addBatchLegal(ModelTestUtils.EDGE_SEQUENCE, values);
+		return addBatchLegal(mockSequence(3, edge()), values);
 	}
 
 	public StructureEditVerifierTestBuilder addBatchIllegal(DataSequence<Edge> edges, long...values) {
@@ -161,7 +179,7 @@ public class StructureEditVerifierTestBuilder {
 	}
 
 	public StructureEditVerifierTestBuilder addBatchIllegal(long...values) {
-		return addBatchIllegal(ModelTestUtils.EDGE_SEQUENCE, values);
+		return addBatchIllegal(mockSequence(3, edge()), values);
 	}
 
 	public StructureEditVerifierTestBuilder removeSingleLegal(long...values) {
@@ -272,6 +290,17 @@ public class StructureEditVerifierTestBuilder {
 		return this;
 	}
 
+	public StructureEditVerifierTestBuilder fail(String label,
+			Executable task, Consumer<? super Exception> exceptionHandler) {
+		fail.add(Triple.of(label, task, exceptionHandler));
+		return this;
+	}
+	public StructureEditVerifierTestBuilder fail(
+			@SuppressWarnings("unchecked") Triple<String,Executable,Consumer<? super Exception>>...entries) {
+		Collections.addAll(fail, entries);
+		return this;
+	}
+
 	Edge edgeAt(long index) {
 		return verifier.getSource().getEdgeAt(index);
 	}
@@ -291,71 +320,136 @@ public class StructureEditVerifierTestBuilder {
 		// SINGLE ADD
 		TestUtils.makeTests(spec.addSingleLegal,
 				p -> displayString("add single legal: %s", p.first),
-				p -> spec.verifier.canAddItem(p.first, p.second), true, tests::add);
+				p -> spec.verifier.canAddEdge(p.first, p.second), true, tests::add);
 		TestUtils.makeTests(spec.addSingleIllegal,
 				p -> displayString("add single illegal: %s", p.first),
-				p -> spec.verifier.canAddItem(p.first, p.second), false, tests::add);
+				p -> spec.verifier.canAddEdge(p.first, p.second), false, tests::add);
 
 		// BATCH ADD
 		TestUtils.makeTests(spec.addBatchLegal,
 				p -> displayString("add batch legal: %s [len=%s]", p.first, p.second.entryCount()),
-				p -> spec.verifier.canAddItems(p.first, p.second), true, tests::add);
+				p -> spec.verifier.canAddEdges(p.first, p.second), true, tests::add);
 		TestUtils.makeTests(spec.addBatchIllegal,
 				p -> displayString("add batch illegal: %s [len=%s]", p.first, p.second.entryCount()),
-				p -> spec.verifier.canAddItems(p.first, p.second), false, tests::add);
+				p -> spec.verifier.canAddEdges(p.first, p.second), false, tests::add);
 
 		// SINGLE REMOVE
 		TestUtils.makeTests(spec.removeSingleLegal,
 				idx -> displayString("remove single legal: %s", idx),
-				idx -> spec.verifier.canRemoveItem(idx), true, tests::add);
+				idx -> spec.verifier.canRemoveEdge(idx), true, tests::add);
 		TestUtils.makeTests(spec.removeSingleIllegal,
 				idx -> displayString("remove single illegal: %s", idx),
-				idx -> spec.verifier.canRemoveItem(idx), false, tests::add);
+				idx -> spec.verifier.canRemoveEdge(idx), false, tests::add);
 
 		// BATCH REMOVE
 		TestUtils.makeTests(spec.removeBatchLegal,
 				p -> displayString("remove batch legal: %s to %s", p.first, p.second),
-				p -> spec.verifier.canRemoveItems(p.first, p.second), true, tests::add);
+				p -> spec.verifier.canRemoveEdges(p.first, p.second), true, tests::add);
 		TestUtils.makeTests(spec.removeBatchIllegal,
 				p -> displayString("remove batch illegal: %s to %s", p.first, p.second),
-				p -> spec.verifier.canRemoveItems(p.first, p.second), false, tests::add);
+				p -> spec.verifier.canRemoveEdges(p.first, p.second), false, tests::add);
 
 		// MOVE
 		TestUtils.makeTests(spec.swapSingleLegal,
 				p -> displayString("swap single legal: %s to %s", p.first, p.second),
-				p -> spec.verifier.canSwapItems(p.first, p.second), true, tests::add);
+				p -> spec.verifier.canSwapEdges(p.first, p.second), true, tests::add);
 		TestUtils.makeTests(spec.swapSingleIllegal,
 				p -> displayString("swap single illegal: %s to %s", p.first, p.second),
-				p -> spec.verifier.canSwapItems(p.first, p.second), false, tests::add);
+				p -> spec.verifier.canSwapEdges(p.first, p.second), false, tests::add);
 
 		// TERMINAL
 		TestUtils.makeTests(spec.setTerminalLegal,
-				p -> displayString("set terminal legal: item_%s as %s at %s",
-						p.second, label(p.third), p.first),
-				p -> spec.verifier.canSetTerminal(p.first, p.second, p.third),
+				t -> displayString("set terminal legal: item_%s as %s at %s",
+						t.second, label(t.third), t.first),
+				t -> spec.verifier.canSetTerminal(t.first, t.second, t.third),
 						true, tests::add);
 		TestUtils.makeTests(spec.setTerminalIllegal,
-				p -> displayString("set terminal illegal: item_%s as %s at %s",
-						p.second, label(p.third), p.first),
-				p -> spec.verifier.canSetTerminal(p.first, p.second, p.third),
+				t -> displayString("set terminal illegal: item_%s as %s at %s",
+						t.second, label(t.third), t.first),
+				t -> spec.verifier.canSetTerminal(t.first, t.second, t.third),
 						false, tests::add);
 
 		// CREATE
 		TestUtils.makeTests(spec.createEdgeLegal,
-				p -> displayString("create edge legal: item_%s to item_%s",
-						p.first, p.second),
-				p -> spec.verifier.canCreateEdge(p.first, p.second),
+				t -> displayString("create edge legal: item_%s to item_%s",
+						t.first, t.second),
+				t -> spec.verifier.canCreateEdge(t.first, t.second),
 						true, tests::add);
 		TestUtils.makeTests(spec.createEdgeIllegal,
-				p -> displayString("create edge illegal: item_%s to item_%s",
-						p.first, p.second),
-				p -> spec.verifier.canCreateEdge(p.first, p.second),
+				t -> displayString("create edge illegal: item_%s to item_%s",
+						t.first, t.second),
+				t -> spec.verifier.canCreateEdge(t.first, t.second),
 						false, tests::add);
+
+		// FAIL
+		spec.fail.stream()
+			.map(t -> DynamicTest.dynamicTest(t.first, () -> {
+				Exception ex = assertThrows(Exception.class, t.second);
+				t.third.accept(ex);
+			}))
+			.forEach(tests::add);
 
 		return tests;
 	}
 
 	static String label(boolean isSource) {
 		return isSource ? "source" : "target";
+	}
+
+	public static Stream<DynamicTest> createNullArgumentsTests(StructureEditVerifier verifier) {
+		List<DynamicTest> tests = new ArrayList<>();
+
+		tests.add(DynamicTest.dynamicTest("add single null", () -> assertNPE(
+				() -> verifier.canAddEdge(0, null))));
+
+		tests.add(DynamicTest.dynamicTest("add batch null", () -> assertNPE(
+				() -> verifier.canAddEdges(0, null))));
+
+		tests.add(DynamicTest.dynamicTest("set terminal null edge", () -> assertNPE(
+				() -> verifier.canSetTerminal(null, mockItem(), true))));
+		tests.add(DynamicTest.dynamicTest("set terminal null edge", () -> assertNPE(
+				() -> verifier.canSetTerminal(mockEdge(), null, true))));
+
+		tests.add(DynamicTest.dynamicTest("create edge null source", () -> assertNPE(
+				() -> verifier.canCreateEdge(null, mockItem()))));
+		tests.add(DynamicTest.dynamicTest("create edge null target", () -> assertNPE(
+				() -> verifier.canCreateEdge(mockItem(), null))));
+
+		return tests.stream();
+	}
+
+	/**
+	 * Creates tests for calling verifier methods with illegal members.
+	 * <p>
+	 * Note that the supplied {@code verifier} <b>must</b> have an underlying
+	 * structure with <b>at least</b> {@code 1} edge whose terminals are also contained!
+	 *
+	 * @param verifier
+	 * @return
+	 */
+	public static Stream<DynamicTest> createIllegalMemberTests(StructureEditVerifier verifier) {
+		List<DynamicTest> tests = new ArrayList<>();
+
+		assertTrue(verifier.getSource().getEdgeCount()>0, "must have at least 1 edge for testing");
+
+		Edge edge = verifier.getSource().getEdgeAt(0);
+
+		tests.add(DynamicTest.dynamicTest("add single redundant", () -> assertIllegalMember(
+				() -> verifier.canAddEdge(0, edge))));
+
+		tests.add(DynamicTest.dynamicTest("add batch redundant", () -> assertIllegalMember(
+				() -> verifier.canAddEdges(0, mockSequence(mockEdge(), mockEdge(), edge)))));
+
+		tests.add(DynamicTest.dynamicTest("set terminal foreign edge", () -> assertIllegalMember(
+				() -> verifier.canSetTerminal(mockEdge(), edge.getTarget(), true))));
+		tests.add(DynamicTest.dynamicTest("set terminal foreign item", () -> assertIllegalMember(
+				() -> verifier.canSetTerminal(edge, mockItem(), true))));
+
+		tests.add(DynamicTest.dynamicTest("create edge foreign source", () -> assertIllegalMember(
+				() -> verifier.canCreateEdge(mockItem(), edge.getTarget()))));
+		tests.add(DynamicTest.dynamicTest("create edge foreign target", () -> assertIllegalMember(
+				() -> verifier.canCreateEdge(edge.getTarget(), mockItem()))));
+
+		return tests.stream();
 	}
 }

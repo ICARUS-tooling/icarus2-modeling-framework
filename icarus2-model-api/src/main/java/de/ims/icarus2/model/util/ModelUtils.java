@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import de.ims.icarus2.GlobalErrorCode;
@@ -72,6 +73,7 @@ import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.manifest.util.Messages;
+import de.ims.icarus2.util.id.Identity;
 
 /**
  * @author Markus Gärtner
@@ -333,6 +335,10 @@ public final class ModelUtils {
 	}
 
 	public static String getName(Object obj) {
+		if(obj==null) {
+			return "<null>";
+		}
+
 		String result = null;
 
 		if(obj instanceof PrerequisiteManifest) {
@@ -348,9 +354,13 @@ public final class ModelUtils {
 					result = prerequisite.toString();
 			}
 		} else if (obj instanceof ManifestOwner) {
-			result = ((ManifestOwner<?>)obj).getManifest().getName().orElse(null);
+			result = Optional.ofNullable((MemberManifest<?>)((ManifestOwner<?>)obj).getManifest())
+						.flatMap(Identity::getName)
+						.orElse(null);
 		} else if (obj instanceof LayerGroup) {
-			result = ((LayerGroup)obj).getManifest().getName().orElse(null);
+			result = Optional.ofNullable(((LayerGroup)obj).getManifest())
+						.flatMap(Identity::getName)
+						.orElse(null);
 		} else if (obj instanceof NamedCorpusMember) {
 			result = ((NamedCorpusMember)obj).getName();
 		} else {
@@ -452,7 +462,7 @@ public final class ModelUtils {
 		ItemLayer fLayer2 = m2.getLayer().getFoundationLayer();
 		if(fLayer1!=fLayer2)
 			throw new ModelException(ModelErrorCode.MODEL_INCOMPATIBLE_FOUNDATIONS,
-					Messages.incompatibleFoundationLayersMessage(null, m1, m1, fLayer1, fLayer2));
+					Messages.incompatibleFoundationLayers(null, m1, m1, fLayer1, fLayer2));
 
 		long result = m1.getBeginOffset()-m2.getBeginOffset();
 
@@ -493,7 +503,7 @@ public final class ModelUtils {
 		ItemLayer fLayer2 = m2.getLayer().getFoundationLayer();
 		if(fLayer1!=fLayer2)
 			throw new ModelException(ModelErrorCode.MODEL_INCOMPATIBLE_FOUNDATIONS,
-					Messages.incompatibleFoundationLayersMessage(null, m1, m1, fLayer1, fLayer2));
+					Messages.incompatibleFoundationLayers(null, m1, m1, fLayer1, fLayer2));
 
 		return m2.getBeginOffset()>=m1.getBeginOffset()
 				&& m2.getEndOffset()<=m1.getEndOffset();

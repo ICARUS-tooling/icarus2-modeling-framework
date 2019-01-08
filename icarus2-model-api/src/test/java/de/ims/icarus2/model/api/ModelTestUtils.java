@@ -23,11 +23,16 @@ import static de.ims.icarus2.SharedTestUtils.mockSequence;
 import static de.ims.icarus2.test.TestUtils.assertMock;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import org.junit.jupiter.api.function.Executable;
+
+import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -53,8 +58,8 @@ public class ModelTestUtils {
 	public static <I extends Item> I stubId(I item, long id) {
 		assertMock(item);
 		when(item.getId()).thenReturn(id);
-		when(item.equals(any())).then(
-				invocation -> equals(item, invocation.getArgument(0)));
+//		when(item.equals(any())).then(
+//				invocation -> equals(item, invocation.getArgument(0)));
 		return item;
 	}
 
@@ -63,18 +68,31 @@ public class ModelTestUtils {
 	}
 
 	public static Edge mockEdge() {
-		return mock(Edge.class);
+		return stubHost(mock(Edge.class), STRUCTURE);
+	}
+
+	public static Edge mockEdge(Structure structure) {
+		return stubHost(mock(Edge.class), structure);
+	}
+
+	private static Edge stubHost(Edge edge, Structure structure) {
+		when(edge.getStructure()).thenReturn(structure);
+		return edge;
 	}
 
 	public static Edge mockEdge(Item source, Item target) {
 		requireNonNull(source);
 		requireNonNull(target);
 
-		Edge edge = mock(Edge.class);
+		Edge edge = mockEdge();
 		when(edge.getSource()).thenReturn(source);
 		when(edge.getTarget()).thenReturn(target);
 
 		return edge;
+	}
+
+	public static Edge mockEdge(Structure structure, Item source, Item target) {
+		return stubHost(mockEdge(source, target), structure);
 	}
 
 	@SuppressWarnings("boxing")
@@ -148,8 +166,23 @@ public class ModelTestUtils {
 		return structure;
 	}
 
-	public static final Item ITEM = mock(Item.class);
+	public static final Item ITEM = mockItem();
 	public static final DataSequence<Item> ITEM_SEQUENCE = mockSequence(1, ITEM);
-	public static final Edge EDGE = mock(Edge.class);
+	public static final Edge EDGE = mockEdge();
 	public static final DataSequence<Edge> EDGE_SEQUENCE = mockSequence(1, EDGE);
+	public static final Container CONTAINER = mockContainer(0);
+	public static final Structure STRUCTURE = mockStructure(0, 0);
+
+	public static void assertIllegalMember(Executable executable, String msg) {
+		assertModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, executable, msg);
+	}
+
+	public static void assertIllegalMember(Executable executable) {
+		assertModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, executable, null);
+	}
+
+	public static void assertModelException(ErrorCode errorCode, Executable executable, String msg) {
+		ModelException exception = assertThrows(ModelException.class, executable, msg);
+		assertEquals(errorCode, exception.getErrorCode(), msg);
+	}
 }

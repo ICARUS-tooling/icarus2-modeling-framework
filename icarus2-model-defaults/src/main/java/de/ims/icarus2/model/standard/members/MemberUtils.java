@@ -17,12 +17,14 @@
 package de.ims.icarus2.model.standard.members;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
+import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
+import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.ContainerFlag;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
@@ -40,6 +42,7 @@ import de.ims.icarus2.util.collections.set.DataSet;
 public class MemberUtils {
 
 	public static void checkSingleBaseContainer(Container container) {
+		requireNonNull(container);
 		DataSet<Container> baseContainers = container.getBaseContainers();
 
 		if(baseContainers.entryCount()>1)
@@ -48,6 +51,8 @@ public class MemberUtils {
 	}
 
 	public static void checkContainerFlagsSet(Container container, ContainerFlag...flags) {
+		requireNonNull(container);
+
 		ContainerManifestBase<?> manifest = container.getManifest();
 		LazyCollection<ContainerFlag> missingFlags = LazyCollection.lazySet(flags.length);
 
@@ -65,6 +70,8 @@ public class MemberUtils {
 	}
 
 	public static void checkContainerFlagsNotSet(Container container, ContainerFlag...flags) {
+		requireNonNull(container);
+
 		ContainerManifestBase<?> manifest = container.getManifest();
 		LazyCollection<ContainerFlag> forbiddenFlags = LazyCollection.lazySet(flags.length);
 
@@ -89,6 +96,8 @@ public class MemberUtils {
 	 * @param container
 	 */
 	public static void checkStaticContainer(Container container) {
+		requireNonNull(container);
+
 		ContainerManifestBase<?> manifest = container.getManifest();
 		if(manifest.isContainerFlagSet(ContainerFlag.NON_STATIC))
 			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_LINKING,
@@ -103,6 +112,8 @@ public class MemberUtils {
 	 * @param container
 	 */
 	public static void checkNonEmptyContainer(Container container) {
+		requireNonNull(container);
+
 		ContainerManifestBase<?> manifest = container.getManifest();
 		if(manifest.isContainerFlagSet(ContainerFlag.EMPTY))
 			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_LINKING,
@@ -117,7 +128,9 @@ public class MemberUtils {
 	 * @param container
 	 */
 	public static void checkNonEmptyStructure(Structure structure) {
-		StructureManifest manifest = structure.getManifest();
+		requireNonNull(structure);
+
+		StructureManifest manifest = requireNonNull(structure.getManifest());
 		if(manifest.isStructureFlagSet(StructureFlag.EMPTY))
 			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_LINKING,
 					"Structure must not be allowed to be empty: "+getName(structure));
@@ -131,7 +144,9 @@ public class MemberUtils {
 	 * @param container
 	 */
 	public static void checkNonPartialStructure(Structure structure) {
-		StructureManifest manifest = structure.getManifest();
+		requireNonNull(structure);
+
+		StructureManifest manifest = requireNonNull(structure.getManifest());
 		if(manifest.isStructureFlagSet(StructureFlag.PARTIAL))
 			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_LINKING,
 					"Structure must not be allowed to be partial: "+getName(structure));
@@ -145,7 +160,9 @@ public class MemberUtils {
 	 * @param container
 	 */
 	public static void checkNoLoopsStructure(Structure structure) {
-		StructureManifest manifest = structure.getManifest();
+		requireNonNull(structure);
+
+		StructureManifest manifest = requireNonNull(structure.getManifest());
 		if(manifest.isStructureFlagSet(StructureFlag.LOOPS))
 			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_LINKING,
 					"Structure must not be allowed to contain loops: "+getName(structure));
@@ -159,10 +176,82 @@ public class MemberUtils {
 	 * @param container
 	 */
 	public static void checkHostStructure(Edge edge, Structure expectedHost) {
+		requireNonNull(edge);
+		requireNonNull(expectedHost);
+		requireNonNull(edge.getStructure());
+
 		if(edge.getStructure()!=expectedHost)
 			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
 					Messages.mismatch("Foreign hosting structure for edge "+getName(edge),
 							getName(expectedHost), getName(edge.getStructure())));
+	}
+
+	/**
+	 * Throw {@link ModelException} of type {@link ModelErrorCode#MODEL_ILLEGAL_MEMBER}
+	 * if the specified {@code structure} does not {@link Structure#containsEdge(Edge) contain}
+	 * the given {@code edge}.
+	 *
+	 * @param container
+	 */
+	public static void checkContainsEdge(Structure structure, Edge edge) {
+		requireNonNull(structure);
+		requireNonNull(edge);
+
+		if(!structure.containsEdge(edge))
+			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
+					Messages.noSuchElement("Unknown edge",
+							getName(edge), getName(structure)));
+	}
+
+	/**
+	 * Throw {@link ModelException} of type {@link ModelErrorCode#MODEL_ILLEGAL_MEMBER}
+	 * if the specified {@code structure} does {@link Structure#containsEdge(Edge) contain}
+	 * the given {@code edge}.
+	 *
+	 * @param container
+	 */
+	public static void checkNotContainsEdge(Structure structure, Edge edge) {
+		requireNonNull(structure);
+		requireNonNull(edge);
+
+		if(structure.containsEdge(edge))
+			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
+					Messages.unexpectedElement("Edge already present",
+							getName(edge), getName(structure)));
+	}
+
+	/**
+	 * Throw {@link ModelException} of type {@link ModelErrorCode#MODEL_ILLEGAL_MEMBER}
+	 * if the specified {@code container} does not {@link Container#containsItem(Item) contain}
+	 * the given {@code item}.
+	 *
+	 * @param container
+	 */
+	public static void checkContainsItem(Container container, Item item) {
+		requireNonNull(container);
+		requireNonNull(item);
+
+		if(!container.containsItem(item))
+			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
+					Messages.noSuchElement("Unknown item",
+							getName(item), getName(container)));
+	}
+
+	/**
+	 * Throw {@link ModelException} of type {@link ModelErrorCode#MODEL_ILLEGAL_MEMBER}
+	 * if the specified {@code container} does {@link Container#containsItem(Item) contain}
+	 * the given {@code item}.
+	 *
+	 * @param container
+	 */
+	public static void checkNotContainsItem(Container container, Item item) {
+		requireNonNull(container);
+		requireNonNull(item);
+
+		if(container.containsItem(item))
+			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
+					Messages.unexpectedElement("Item already present",
+							getName(item), getName(container)));
 	}
 
 //	public static void checkNonVirtualRoot(Item node, Structure structure) {
