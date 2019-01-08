@@ -67,6 +67,8 @@ public class DefaultContainerEditVerifier implements ContainerEditVerifier {
 	 */
 	@Override
 	public boolean canAddItem(long index, Item item) {
+		requireNonNull(item);
+
 		return isValidAddItemIndex(index);
 	}
 
@@ -75,6 +77,8 @@ public class DefaultContainerEditVerifier implements ContainerEditVerifier {
 	 */
 	@Override
 	public boolean canAddItems(long index, DataSequence<? extends Item> items) {
+		requireNonNull(items);
+
 		return isValidAddItemIndex(index);
 	}
 

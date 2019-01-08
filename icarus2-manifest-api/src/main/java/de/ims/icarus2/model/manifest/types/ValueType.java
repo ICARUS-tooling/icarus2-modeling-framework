@@ -1166,7 +1166,7 @@ public class ValueType implements StringResource, NamedObject {
 
 			if(size!=Array.getLength(value))
 				throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
-						Messages.sizeMismatchMessage("Invalid size of matrix buffer array", size, Array.getLength(value)));
+						Messages.sizeMismatch("Invalid size of matrix buffer array", size, Array.getLength(value)));
 
 			for(int row=0; row<rows; row++) {
 				for(int col=0; col<columns; col++) {

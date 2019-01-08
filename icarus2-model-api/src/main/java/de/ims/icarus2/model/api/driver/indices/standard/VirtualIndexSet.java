@@ -80,7 +80,7 @@ public class VirtualIndexSet implements IndexSet {
 	public long indexAt(int index) {
 		if(index<0 || index>=size)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					Messages.indexOutOfBoundsMessage("Invalid index value", 0, size-1, index));
+					Messages.indexOutOfBounds("Invalid index value", 0, size-1, index));
 		return valueType.checkValue(func.applyAsLong(offset+index));
 	}
 

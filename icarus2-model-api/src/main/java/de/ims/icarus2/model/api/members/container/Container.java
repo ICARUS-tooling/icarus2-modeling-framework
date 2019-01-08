@@ -27,6 +27,7 @@ import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
 import de.ims.icarus2.model.util.stream.ModelStreams;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.set.DataSet;
 
 
@@ -161,7 +162,7 @@ public interface Container extends Item, ManifestOwner<ContainerManifestBase<?>>
 	long indexOfItem(Item item);
 
 	default boolean containsItem(Item item) {
-		return indexOfItem(item)>=0L;
+		return indexOfItem(item)!=IcarusUtils.UNSET_LONG;
 	}
 
 	/**

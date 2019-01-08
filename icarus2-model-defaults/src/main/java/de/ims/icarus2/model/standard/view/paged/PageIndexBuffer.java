@@ -125,7 +125,7 @@ public class PageIndexBuffer {
 	public IndexSet createPage(int pageIndex) {
 		if(pageIndex<0 || pageIndex>=pageCount)
 			throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
-					Messages.outOfBoundsMessage(null, pageIndex, 0, pageCount-1));
+					Messages.outOfBounds(null, pageIndex, 0, pageCount-1));
 
 		// If it's only a single output page just aggregate all the source indices
 		if(pageCount==1) {

@@ -195,7 +195,7 @@ public interface Driver extends ItemLayerManager {
 
 		if(mapping==null)
 			throw new ManifestException(ManifestErrorCode.MANIFEST_MISSING_MAPPING,
-					Messages.missingMappingMessage(null, sourceLayer, targetLayer));
+					Messages.missingMapping(null, sourceLayer, targetLayer));
 
 		IndexSet[] result;
 
@@ -221,7 +221,7 @@ public interface Driver extends ItemLayerManager {
 
 		if(mapping==null)
 			throw new ManifestException(ManifestErrorCode.MANIFEST_MISSING_MAPPING,
-					Messages.missingMappingMessage(null, sourceLayer, targetLayer));
+					Messages.missingMapping(null, sourceLayer, targetLayer));
 
 		boolean result;
 

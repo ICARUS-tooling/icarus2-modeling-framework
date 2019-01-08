@@ -434,7 +434,7 @@ public class IndexUtils {
 
 		if(size>IcarusUtils.MAX_INTEGER_INDEX)
 			throw new ModelException(GlobalErrorCode.INDEX_OVERFLOW,
-					Messages.outOfBoundsMessage(null, size, 0, IcarusUtils.MAX_INTEGER_INDEX));
+					Messages.outOfBounds(null, size, 0, IcarusUtils.MAX_INTEGER_INDEX));
 
 		IndexValueType valueType = getDominantType(indices);
 

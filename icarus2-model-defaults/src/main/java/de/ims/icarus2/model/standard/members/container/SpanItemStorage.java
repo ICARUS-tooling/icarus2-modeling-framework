@@ -131,7 +131,7 @@ public class SpanItemStorage implements ItemStorage {
 		long size = getItemCount(context);
 		if(index<0 || index>=size)
 			throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
-					Messages.indexOutOfBoundsMessage(null, context, size, index));
+					Messages.indexOutOfBounds(null, context, size, index));
 
 		return target(context).getItemAt(beginIndex()+index);
 	}
@@ -179,7 +179,7 @@ public class SpanItemStorage implements ItemStorage {
 
 			if(beginIndex==IcarusUtils.UNSET_LONG)
 				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
-						Messages.foreignItemMessage(null, target, item));
+						Messages.foreignItem(null, target, item));
 		} else {
 			long size = getItemCount(context);
 
@@ -228,7 +228,7 @@ public class SpanItemStorage implements ItemStorage {
 
 			// Ensure the span sequence operates on the same target container
 			if(sequenceTarget!=target)
-				throw new ModelException(GlobalErrorCode.INVALID_INPUT, Messages.foreignContainerMessage(
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, Messages.foreignContainer(
 						null, target, sequenceTarget));
 
 			// Fetch interval bounds in target container's space
@@ -250,7 +250,7 @@ public class SpanItemStorage implements ItemStorage {
 
 				if(targetindex==IcarusUtils.UNSET_LONG)
 					throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
-							Messages.foreignItemMessage(null, target, item));
+							Messages.foreignItem(null, target, item));
 
 				minIndex = Math.min(minIndex, targetindex);
 				maxIndex = Math.max(maxIndex, targetindex);
@@ -268,7 +268,7 @@ public class SpanItemStorage implements ItemStorage {
 
 
 		if(index1<beginIndex-1 || index0>endIndex+1)
-			throw new ModelException(GlobalErrorCode.INVALID_INPUT, Messages.nonOverlappingIntervalsMessage(
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, Messages.nonOverlappingIntervals(
 					null, beginIndex, endIndex, index0, index1));
 
 		beginIndex = Math.min(index0, beginIndex);

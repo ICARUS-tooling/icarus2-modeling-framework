@@ -64,6 +64,14 @@ public class Messages {
 		return msg;
 	}
 
+	public static String noSuchElement(String msg, Object element, Object host) {
+		return String.format("%s: no such element in %s: %s", ensureMsg(msg), host, element);
+	}
+
+	public static String unexpectedElement(String msg, Object element, Object host) {
+		return String.format("%s: unexpected element in %s: %s", ensureMsg(msg), host, element);
+	}
+
 	public static String mismatch(String msg, Object expected, Object provided) {
 		return String.format("%s: expected %s - got %s", ensureMsg(msg), expected, provided); //$NON-NLS-1$
 	}

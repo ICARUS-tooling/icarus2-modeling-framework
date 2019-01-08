@@ -241,7 +241,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 					"Negative index for add: "+index);
 		if(index>size)
 			throw new ModelException(getCorpus(), ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
-					Messages.indexOutOfBoundsMessage("Invalid index for add", 0, size, index));
+					Messages.indexOutOfBounds("Invalid index for add", 0, size, index));
 
 	}
 
@@ -252,7 +252,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 					"Negative index for remove: "+index);
 		if(index>=size)
 			throw new ModelException(getCorpus(), ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
-					Messages.indexOutOfBoundsMessage("Invalid index for remove", 0, size-1, index));
+					Messages.indexOutOfBounds("Invalid index for remove", 0, size-1, index));
 
 	}
 

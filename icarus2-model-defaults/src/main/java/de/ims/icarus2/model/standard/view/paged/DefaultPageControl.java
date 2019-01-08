@@ -151,7 +151,7 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 	protected void checkPageIndex(int pageIndex) {
 		if(pageIndex<0 || pageIndex>=pageBuffer.getPageCount())
 			throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
-					Messages.indexOutOfBoundsMessage("Page index out of bounds",
+					Messages.indexOutOfBounds("Page index out of bounds",
 							0, pageBuffer.getPageCount(), pageIndex));
 	}
 

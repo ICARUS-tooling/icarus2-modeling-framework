@@ -55,7 +55,7 @@ public class SerializableAtomicModelChange {
 	protected static void checkExpectedSize(String msg, long size, long expected) {
 		if(size!=expected)
 			throw new ModelException(ModelErrorCode.MODEL_CORRUPTED_EDIT,
-					Messages.sizeMismatchMessage(msg, expected, size));
+					Messages.sizeMismatch(msg, expected, size));
 	}
 
 	protected static <E extends Item> void checkExpectedMember(String msg, E item, E expected) {

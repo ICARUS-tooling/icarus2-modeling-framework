@@ -28,6 +28,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.util.stream.ModelStreams;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.annotations.OptionalMethod;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
@@ -135,6 +136,10 @@ public interface Structure extends Container {
 	 * @throws NullPointerException if the {@code edge} argument is {@code null}
 	 */
 	long indexOfEdge(Edge edge);
+
+	default boolean containsEdge(Edge edge) {
+		return indexOfEdge(edge)!=IcarusUtils.UNSET_LONG;
+	}
 
 	/**
 	 * Return the total number of edges for a given node.
