@@ -764,12 +764,14 @@ public class FixedSizeChainStorage implements EdgeStorage {
 			requireNonNull(edge);
 
 			final Structure structure = getSource();
+			final Item source = edge.getSource();
+			final Item target = edge.getTarget();
 
 			checkHostStructure(edge, structure);
 			checkNotContainsEdge(structure, edge);
+			checkContainsItem(structure, source);
+			checkContainsItem(structure, target);
 
-			final Item source = edge.getSource();
-			final Item target = edge.getTarget();
 			final Item root = storage.getVirtualRoot(structure);
 
 			return isValidEdgeAddIndex(index)

@@ -16,11 +16,18 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
+import static de.ims.icarus2.model.standard.members.MemberUtils.checkContainsEdge;
+import static de.ims.icarus2.model.standard.members.MemberUtils.checkContainsItem;
+import static de.ims.icarus2.model.standard.members.MemberUtils.checkHostStructure;
+import static de.ims.icarus2.model.standard.members.MemberUtils.checkNotContainsEdge;
+import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureEditVerifier;
 import de.ims.icarus2.model.standard.members.container.DefaultContainerEditVerifier;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
@@ -54,7 +61,18 @@ public class DefaultStructureEditVerifier extends DefaultContainerEditVerifier i
 	 */
 	@Override
 	public boolean canAddEdge(long index, Edge edge) {
-		return edge!=null && isValidAddEdgeIndex(index);
+		requireNonNull(edge);
+
+		final Structure structure = getSource();
+		final Item source = edge.getSource();
+		final Item target = edge.getTarget();
+
+		checkHostStructure(edge, structure);
+		checkNotContainsEdge(structure, edge);
+		checkContainsItem(structure, source);
+		checkContainsItem(structure, target);
+
+		return isValidAddEdgeIndex(index);
 	}
 
 	/**
@@ -62,7 +80,19 @@ public class DefaultStructureEditVerifier extends DefaultContainerEditVerifier i
 	 */
 	@Override
 	public boolean canAddEdges(long index, DataSequence<? extends Edge> edges) {
-		return edges!=null && isValidAddEdgeIndex(index);
+		requireNonNull(edges);
+
+		int size = IcarusUtils.ensureIntegerValueRange(edges.entryCount());
+
+		boolean canAdd = true;
+
+		for(int i=0; i<size; i++) {
+			if(!canAddEdge(i, edges.elementAt(i))) {
+				canAdd = false;
+			}
+		}
+
+		return canAdd;
 	}
 
 	/**
@@ -94,6 +124,15 @@ public class DefaultStructureEditVerifier extends DefaultContainerEditVerifier i
 	 */
 	@Override
 	public boolean canSetTerminal(Edge edge, Item terminal, boolean isSource) {
+		requireNonNull(edge);
+		requireNonNull(terminal);
+
+		final Structure structure = getSource();
+
+		checkHostStructure(edge, structure);
+		checkContainsEdge(structure, edge);
+		checkContainsItem(structure, terminal);
+
 		return !(terminal==getSource().getVirtualRoot() && !isSource);
 	}
 
@@ -102,6 +141,14 @@ public class DefaultStructureEditVerifier extends DefaultContainerEditVerifier i
 	 */
 	@Override
 	public boolean canCreateEdge(Item source, Item target) {
+		requireNonNull(source);
+		requireNonNull(target);
+
+		final Structure structure = getSource();
+
+		checkContainsItem(structure, source);
+		checkContainsItem(structure, target);
+
 		return true;
 	}
 

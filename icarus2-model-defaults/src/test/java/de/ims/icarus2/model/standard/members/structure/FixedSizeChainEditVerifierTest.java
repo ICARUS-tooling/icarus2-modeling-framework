@@ -28,6 +28,7 @@ import static de.ims.icarus2.test.util.Pair.intChain;
 import static de.ims.icarus2.test.util.Pair.intPair;
 import static de.ims.icarus2.test.util.Pair.longChain;
 import static de.ims.icarus2.test.util.Pair.longPair;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -86,8 +87,8 @@ class FixedSizeChainEditVerifierTest {
 	}
 
 	@SuppressWarnings("boxing")
-	private void prepareStructureAndStorage(int nodeCount,
-			@SuppressWarnings("unchecked") Pair<Integer, Integer>...edges) {
+	private void prepareStructureAndStorage(final int nodeCount,
+			final @SuppressWarnings("unchecked") Pair<Integer, Integer>...edges) {
 		assertTrue(nodeCount>0);
 		assertTrue(edges.length>0);
 
@@ -144,15 +145,15 @@ class FixedSizeChainEditVerifierTest {
 		when(edgeStorage.getVirtualRoot(eq(structure))).thenReturn(root);
 
 		when(edgeStorage.getUncheckedEdgeCount(eq(structure), any(), anyBoolean())).then(invocation -> {
-			Item item = invocation.getArgument(1);
+			Item item = requireNonNull(invocation.getArgument(1));
 
 			if(item==edgeStorage.getVirtualRoot(structure)) {
-				return (boolean) invocation.getArgument(2) ? rootOutgoingEdges.intValue() : 0;
+				return (boolean) invocation.getArgument(2) ? rootOutgoingEdges.longValue() : 0L;
 			} else {
-				int index = IcarusUtils.ensureIntegerValueRange(structure.indexOfChild(item));
+				int index = IcarusUtils.ensureIntegerValueRange(structure.indexOfItem(item));
 
 				boolean[] hint = (boolean) invocation.getArgument(2) ? out : in;
-				return hint[index] ? 1 : 0;
+				return hint[index] ? 1L : 0L;
 			}
 		});
 		when(structure.getEdgeCount(any(), anyBoolean())).then(
@@ -162,6 +163,23 @@ class FixedSizeChainEditVerifierTest {
 		when(edgeStorage.hasEdgeAt(eq(structure), anyLong())).then(invocation -> {
 			int index = ((Number)invocation.getArgument(1)).intValue();
 			return in[index];
+		});
+
+		when(structure.containsEdge(any())).then(invocation -> {
+			Edge edge = invocation.getArgument(0);
+			boolean sourceMatched = false;
+			boolean targetMatched = false;
+			for(int i=0; i<nodeCount; i++) {
+				Item node = structure.getItemAt(i);
+				if(node.equals(edge.getSource())) {
+					sourceMatched = true;
+				}
+				if(node.equals(edge.getTarget())) {
+					targetMatched = true;
+				}
+			}
+
+			return sourceMatched && targetMatched;
 		});
 	}
 

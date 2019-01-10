@@ -132,8 +132,15 @@ public class ModelTestUtils {
 			});
 		});
 
-		when(container.indexOfItem(any())).then(
-				invocation -> indices.getLong(invocation.getArgument(0)));
+		when(container.indexOfItem(any())).then(invocation -> {
+			Item item = invocation.getArgument(0);
+			for(int i=0; i<(int)container.getItemCount(); i++) {
+				if(container.getItemAt(i)==item) {
+					return (long)i;
+				}
+			}
+			return -1L;
+		});
 	}
 
 	@SuppressWarnings("boxing")
