@@ -37,7 +37,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.api.members.container.Container;
-import de.ims.icarus2.model.api.members.container.ContainerEditVerifierTestBuilder;
 import de.ims.icarus2.util.IcarusUtils;
 
 /**

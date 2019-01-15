@@ -29,7 +29,7 @@ import de.ims.icarus2.test.TestUtils;
  */
 public class Triple<E_1, E_2, E_3> {
 
-	public static <E_1, E_2, E_3> Triple<E_1, E_2, E_3> of(E_1 first, E_2 second, E_3 third) {
+	public static <E_1, E_2, E_3> Triple<E_1, E_2, E_3> triple(E_1 first, E_2 second, E_3 third) {
 		return new Triple<>(first, second, third);
 	}
 

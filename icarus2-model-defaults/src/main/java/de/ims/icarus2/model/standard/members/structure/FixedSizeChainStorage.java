@@ -40,6 +40,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureEditVerifier;
 import de.ims.icarus2.model.manifest.api.StructureType;
+import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.container.ImmutableContainerEditVerifier;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
@@ -125,6 +126,11 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		return RootItem.forStructure(context);
 	}
 
+	/**
+	 * Returns {@code true} iff the number of edges added to this
+	 * storage equals the number of nodes in the underlying container.
+	 * @return
+	 */
 	public boolean isCompleteChain() {
 		return edgeCount==(edges.length>>>1);
 	}
@@ -160,13 +166,40 @@ public class FixedSizeChainStorage implements EdgeStorage {
 	}
 
 	/**
+	 * Returns the incoming edge for the {@code index}'th node in the structure
+	 * if the structure is complete or the n'th edge in the order of the edges'
+	 * terminals if the structure is not complete.
+	 *
 	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#getEdgeAt(de.ims.icarus2.model.api.members.structure.Structure, long)
 	 */
 	@Override
 	public Edge getEdgeAt(Structure context, long index) {
 //		checkChainConsistency();
+		if(index>=edgeCount)
+			throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
+					Messages.outOfBounds("Invalid edge index", index, 0, edgeCount));
 
-		return edges[IcarusUtils.ensureIntegerValueRange(index)<<1];
+		/*
+		 * For a complete chain (or complete collection of subchains)
+		 * we can directly perform a lookup on the edge array.
+		 * Otherwise we need to iterate all the added edges (costly operation).
+		 */
+		if(isCompleteChain()) {
+			return edges[IcarusUtils.ensureIntegerValueRange(index<<1)];
+		} else {
+			// Run a local iterative search for the edge
+			int remaining = IcarusUtils.ensureIntegerValueRange(index);
+			int idx = 0;
+			do {
+				if(edges[idx]!=null) {
+					remaining--;
+				}
+				if(remaining>=0) {
+					idx+=2;
+				}
+			} while(remaining>=0);
+			return edges[idx];
+		}
 	}
 
 	protected void invalidateHeightAndDepth() {
@@ -194,6 +227,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
 					"Supplied item is not a legal node in the structure of this storage: "+getName(node));
 
+		// Double index to get to correct position in our internal storages
 		return IcarusUtils.ensureIntegerValueRange(nodeIndex)<<1;
 	}
 
@@ -211,7 +245,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		}
 	}
 
-
+	//TODO rework to not use recursion as for big structures we might easily reach the stack size limit
 	protected void refreshHeight0(Structure context, Edge edge, int localIndex, int depth) {
 
 		Edge successor = getOutgoingEdge(context, edge.getTarget());
@@ -239,8 +273,28 @@ public class FixedSizeChainStorage implements EdgeStorage {
 	public long indexOfEdge(Structure context, Edge edge) {
 //		checkChainConsistency();
 		checkHostStructure(edge, context);
+		requireNonNull(edge.getTarget(), "This implementation relies on target nodes of edges for storage");
 
-		return IcarusUtils.ensureIntegerValueRange(context.indexOfItem(edge.getTarget()));
+		if(isCompleteChain()) {
+			int index = IcarusUtils.ensureIntegerValueRange(context.indexOfItem(edge.getTarget()));
+			return edges[IcarusUtils.ensureIntegerValueRange(index<<1)]==edge ? index : IcarusUtils.UNSET_LONG;
+		} else {
+			// Run a local iterative search for the edge index
+			int remaining = edgeCount;
+			int idx = 0;
+			while(remaining>0) {
+				Edge current = edges[idx];
+				if(current!=null) {
+					if(current==edge) {
+						return idx>>>1;
+					} else {
+						remaining--;
+					}
+				}
+				idx += 2;
+			}
+			return IcarusUtils.UNSET_LONG;
+		}
 	}
 
 	/**
@@ -387,10 +441,10 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		}
 	}
 
-	public boolean hasEdgeAt(Structure context, long index) {
-		int localIndex = IcarusUtils.ensureIntegerValueRange(index)<<1;
-		return edges[localIndex] != null;
-	}
+//	public boolean hasEdgeAt(Structure context, long index) {
+//		int localIndex = IcarusUtils.ensureIntegerValueRange(index)<<1;
+//		return edges[localIndex] != null;
+//	}
 
 	public boolean containsEdge(Structure context, Edge edge) {
 		int localIndex = localIndexForNode(context, edge.getTarget());
@@ -513,19 +567,20 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		edgeCount++;
 		invalidateHeightAndDepth();
 
+		// Return the actual insertion index
 		return targetIndex>>1;
 	}
 
 	/**
-	 * Ignores the {@code index} parameter completely. Makes sure the given
-	 * {@code edge} derives from {@link ChainEdge} and then forwards the actual
-	 * workload to {@link #addEdge(Structure, ChainEdge)}.
+	 * Ignores the {@code index} parameter completely and forwards the actual
+	 * workload to {@link #addEdge(Structure, Edge)}.
 	 *
 	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#addEdge(de.ims.icarus2.model.api.members.structure.Structure, long, de.ims.icarus2.model.api.members.item.Edge)
-	 * @see #addEdge(Structure, ChainEdge)
+	 * @see #addEdge(Structure, Edge)
 	 */
 	@Override
 	public long addEdge(Structure context, long index, Edge edge) {
+		//TODO by ignoring the index parameter we allow "faulty" values there?
 
 		return addEdge(context, edge);
 	}
@@ -748,19 +803,15 @@ public class FixedSizeChainStorage implements EdgeStorage {
 			return (Structure) super.getSource();
 		}
 
-		protected boolean isValidEdgeAddIndex(long index) {
-			return index>0L && index<=getSource().getItemCount();
-		}
-
 		protected boolean isValidEdgeRemoveIndex(long index) {
-			return index>0L && index<getSource().getItemCount();
+			return index>=0L && index<getSource().getEdgeCount();
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdge(long, de.ims.icarus2.model.api.members.item.Edge)
+		 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdge(de.ims.icarus2.model.api.members.item.Edge)
 		 */
 		@Override
-		public boolean canAddEdge(long index, Edge edge) {
+		public boolean canAddEdge(Edge edge) {
 			requireNonNull(edge);
 
 			final Structure structure = getSource();
@@ -774,30 +825,26 @@ public class FixedSizeChainStorage implements EdgeStorage {
 
 			final Item root = storage.getVirtualRoot(structure);
 
-			return isValidEdgeAddIndex(index)
-					&& target!=root
+			return target!=root
 					&& (source==root || storage.getUncheckedEdgeCount(structure, source, true)==0L)
 					&& storage.getUncheckedEdgeCount(structure, target, false)==0L;
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdges(long, de.ims.icarus2.util.collections.seq.DataSequence)
+		 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdges(de.ims.icarus2.util.collections.seq.DataSequence)
 		 */
 		@Override
-		public boolean canAddEdges(long index,
-				DataSequence<? extends Edge> edges) {
+		public boolean canAddEdges(DataSequence<? extends Edge> edges) {
 			requireNonNull(edges);
 
 //			if(!isValidEdgeAddIndex(index)) {
 //				return false;
 //			}
 
-			int size = IcarusUtils.ensureIntegerValueRange(edges.entryCount());
-
 			boolean canAdd = true;
 
-			for(int i=0; i<size; i++) {
-				if(!canAddEdge(i, edges.elementAt(i))) {
+			for(Edge edge : edges) {
+				if(!canAddEdge(edge)) {
 					canAdd = false;
 				}
 			}
@@ -810,8 +857,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		 */
 		@Override
 		public boolean canRemoveEdge(long index) {
-			return isValidEdgeRemoveIndex(index)
-					&& storage.hasEdgeAt(getSource(), index);
+			return isValidEdgeRemoveIndex(index);
 		}
 
 		/**
@@ -846,14 +892,22 @@ public class FixedSizeChainStorage implements EdgeStorage {
 			checkContainsEdge(structure, edge);
 			checkContainsItem(structure, terminal);
 
+			// Early fail if no actual change
 			if(edge.getTerminal(isSource)==terminal) {
+				return false;
+			}
+
+			// No loops allowed
+			if(edge.getTerminal(!isSource)==terminal) {
 				return false;
 			}
 
 			final Item root = storage.getVirtualRoot(structure);
 
-			return (isSource && (terminal==root || storage.getUncheckedEdgeCount(structure, terminal, true)==0L))
-					|| (!isSource && storage.getUncheckedEdgeCount(structure, terminal, false)==0L);
+			boolean isRoot = root==terminal;
+
+			return (isSource && (isRoot || storage.getUncheckedEdgeCount(structure, terminal, true)==0L))
+					|| (!isSource && !isRoot && storage.getUncheckedEdgeCount(structure, terminal, false)==0L);
 		}
 
 		/**

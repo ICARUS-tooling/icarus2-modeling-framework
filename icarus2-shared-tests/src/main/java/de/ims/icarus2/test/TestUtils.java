@@ -189,6 +189,17 @@ public class TestUtils {
 		}
 	}
 
+	public static <T extends Object> Supplier<T> randomizer(
+			@SuppressWarnings("unchecked") T...source) {
+		requireNonNull(source);
+		if(source.length==1) {
+			return () -> source[0];
+		} else {
+			Randomizer<T> randomizer = Randomizer.from(source);
+			return randomizer::randomize;
+		}
+	}
+
 	public static <T extends Object> T random(@SuppressWarnings("unchecked") T...source) {
 		requireNonNull(source);
 		return source[random().nextInt(source.length)];

@@ -26,7 +26,7 @@ import de.ims.icarus2.model.api.members.container.Container;
  * @author Markus Gärtner
  *
  */
-public class SingletonContainerEditVerifier extends DefaultContainerEditVerifier {
+public class SingletonContainerEditVerifier extends UnrestrictedContainerEditVerifier {
 
 	/**
 	 * @param source
@@ -36,7 +36,7 @@ public class SingletonContainerEditVerifier extends DefaultContainerEditVerifier
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.container.DefaultContainerEditVerifier#isValidAddItemIndex(long)
+	 * @see de.ims.icarus2.model.standard.members.container.UnrestrictedContainerEditVerifier#isValidAddItemIndex(long)
 	 */
 	@Override
 	protected boolean isValidAddItemIndex(long index) {
@@ -44,7 +44,7 @@ public class SingletonContainerEditVerifier extends DefaultContainerEditVerifier
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.container.DefaultContainerEditVerifier#isValidRemoveItemIndex(long)
+	 * @see de.ims.icarus2.model.standard.members.container.UnrestrictedContainerEditVerifier#isValidRemoveItemIndex(long)
 	 */
 	@Override
 	protected boolean isValidRemoveItemIndex(long index) {
@@ -52,7 +52,7 @@ public class SingletonContainerEditVerifier extends DefaultContainerEditVerifier
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.container.DefaultContainerEditVerifier#canSwapItems(long, long)
+	 * @see de.ims.icarus2.model.standard.members.container.UnrestrictedContainerEditVerifier#canSwapItems(long, long)
 	 */
 	@Override
 	public boolean canSwapItems(long index0, long index1) {

@@ -17,7 +17,7 @@
 /**
  *
  */
-package de.ims.icarus2.model.api.members.container;
+package de.ims.icarus2.model.standard.members.container;
 
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.displayString;
@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.DynamicTest;
 
 import de.ims.icarus2.model.api.ModelTestUtils;
+import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.util.Pair;
@@ -39,55 +40,62 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
 @SuppressWarnings("boxing")
 public class ContainerEditVerifierTestBuilder {
 
-	final ContainerEditVerifier verifier;
+	private final ContainerEditVerifier verifier;
 
 	/**
 	 * Legal values for {@link ContainerEditVerifier#canAddItem(long, Item)}
 	 */
-	final List<Pair<Long, Item>> addSingleLegal = new ArrayList<>();
+	private final List<Pair<? extends Number, Item>> addSingleLegal = new ArrayList<>();
 	/**
 	 * Illegal values for {@link ContainerEditVerifier#canAddItem(long, Item)}
 	 */
-	final List<Pair<Long, Item>> addSingleIllegal = new ArrayList<>();
+	private final List<Pair<? extends Number, Item>> addSingleIllegal = new ArrayList<>();
 
 	/**
 	 * Legal values for {@link ContainerEditVerifier#canAddItems(long, de.ims.icarus2.util.collections.seq.DataSequence)}
 	 */
-	final List<Pair<Long, DataSequence<Item>>> addBatchLegal = new ArrayList<>();
+	private final List<Pair<? extends Number, DataSequence<Item>>> addBatchLegal = new ArrayList<>();
 	/**
 	 * Illegal values for {@link ContainerEditVerifier#canAddItems(long, de.ims.icarus2.util.collections.seq.DataSequence)}
 	 */
-	final List<Pair<Long, DataSequence<Item>>> addBatchIllegal = new ArrayList<>();
+	private final List<Pair<? extends Number, DataSequence<Item>>> addBatchIllegal = new ArrayList<>();
 
 	/**
 	 * Legal values for {@link ContainerEditVerifier#canRemoveItem(long)}
 	 */
-	final List<Long> removeSingleLegal = new ArrayList<>();
+	private final List<Number> removeSingleLegal = new ArrayList<>();
 	/**
 	 * Illegal values for {@link ContainerEditVerifier#canRemoveItem(long)}
 	 */
-	final List<Long> removeSingleIllegal = new ArrayList<>();
+	private final List<Number> removeSingleIllegal = new ArrayList<>();
 
 	/**
 	 * Legal values for {@link ContainerEditVerifier#canRemoveItems(long, long)}
 	 */
-	final List<Pair<Long, Long>> removeBatchLegal = new ArrayList<>();
+	private final List<Pair<? extends Number, ? extends Number>> removeBatchLegal = new ArrayList<>();
 	/**
 	 * Illegal values for {@link ContainerEditVerifier#canRemoveItems(long, long)}
 	 */
-	final List<Pair<Long, Long>> removeBatchIllegal = new ArrayList<>();
+	private final List<Pair<? extends Number, ? extends Number>> removeBatchIllegal = new ArrayList<>();
 
 	/**
 	 * Legal values for {@link ContainerEditVerifier#canSwapItems(long, long)}
 	 */
-	final List<Pair<Long, Long>> swapSingleLegal = new ArrayList<>();
+	private final List<Pair<? extends Number, ? extends Number>> swapSingleLegal = new ArrayList<>();
 	/**
 	 * Illegal values for {@link ContainerEditVerifier#canSwapItems(long, long)}
 	 */
-	final List<Pair<Long, Long>> swapSingleIllegal = new ArrayList<>();
+	private final List<Pair<? extends Number, ? extends Number>> swapSingleIllegal = new ArrayList<>();
 
 	public ContainerEditVerifierTestBuilder(ContainerEditVerifier verifier) {
 		this.verifier = requireNonNull(verifier);
+	}
+
+	/**
+	 * @return the verifier
+	 */
+	public ContainerEditVerifier getVerifier() {
+		return verifier;
 	}
 
 	public ContainerEditVerifierTestBuilder addSingleLegal(Item item, long...values) {
@@ -148,8 +156,8 @@ public class ContainerEditVerifierTestBuilder {
 		return this;
 	}
 
-	public ContainerEditVerifierTestBuilder removeBatchLegal(
-			@SuppressWarnings("unchecked") Pair<Long, Long>...entries) {
+	public <N extends Number> ContainerEditVerifierTestBuilder removeBatchLegal(
+			@SuppressWarnings("unchecked") Pair<N, N>...entries) {
 		Collections.addAll(removeBatchLegal, entries);
 		return this;
 	}
@@ -158,8 +166,8 @@ public class ContainerEditVerifierTestBuilder {
 		return this;
 	}
 
-	public ContainerEditVerifierTestBuilder removeBatchIllegal(
-			@SuppressWarnings("unchecked") Pair<Long, Long>...entries) {
+	public <N extends Number> ContainerEditVerifierTestBuilder removeBatchIllegal(
+			@SuppressWarnings("unchecked") Pair<N, N>...entries) {
 		Collections.addAll(removeBatchIllegal, entries);
 		return this;
 	}
@@ -172,8 +180,8 @@ public class ContainerEditVerifierTestBuilder {
 		swapSingleLegal.add(new Pair<>(index0, index1));
 		return this;
 	}
-	public ContainerEditVerifierTestBuilder swapSingleLegal(
-			@SuppressWarnings("unchecked") Pair<Long, Long>...entries) {
+	public <N extends Number> ContainerEditVerifierTestBuilder swapSingleLegal(
+			@SuppressWarnings("unchecked") Pair<N, N>...entries) {
 		Collections.addAll(swapSingleLegal, entries);
 		return this;
 	}
@@ -182,8 +190,8 @@ public class ContainerEditVerifierTestBuilder {
 		swapSingleIllegal.add(new Pair<>(index0, index1));
 		return this;
 	}
-	public ContainerEditVerifierTestBuilder swapSingleIllegal(
-			@SuppressWarnings("unchecked") Pair<Long, Long>...entries) {
+	public <N extends Number> ContainerEditVerifierTestBuilder swapSingleIllegal(
+			@SuppressWarnings("unchecked") Pair<N, N>...entries) {
 		Collections.addAll(swapSingleIllegal, entries);
 		return this;
 	}
@@ -198,42 +206,42 @@ public class ContainerEditVerifierTestBuilder {
 		// SINGLE ADD
 		TestUtils.makeTests(spec.addSingleLegal,
 				p -> displayString("add single legal: %s", p.first),
-				p -> spec.verifier.canAddItem(p.first, p.second), true, tests::add);
+				p -> spec.verifier.canAddItem(p.first.longValue(), p.second), true, tests::add);
 		TestUtils.makeTests(spec.addSingleIllegal,
 				p -> displayString("add single illegal: %s", p.first),
-				p -> spec.verifier.canAddItem(p.first, p.second), false, tests::add);
+				p -> spec.verifier.canAddItem(p.first.longValue(), p.second), false, tests::add);
 
 		// BATCH ADD
 		TestUtils.makeTests(spec.addBatchLegal,
 				p -> displayString("add batch legal: %s [len=%s]", p.first, p.second.entryCount()),
-				p -> spec.verifier.canAddItems(p.first, p.second), true, tests::add);
+				p -> spec.verifier.canAddItems(p.first.longValue(), p.second), true, tests::add);
 		TestUtils.makeTests(spec.addBatchIllegal,
 				p -> displayString("add batch illegal: %s [len=%s]", p.first, p.second.entryCount()),
-				p -> spec.verifier.canAddItems(p.first, p.second), false, tests::add);
+				p -> spec.verifier.canAddItems(p.first.longValue(), p.second), false, tests::add);
 
 		// SINGLE REMOVE
 		TestUtils.makeTests(spec.removeSingleLegal,
 				idx -> displayString("remove single legal: %s", idx),
-				idx -> spec.verifier.canRemoveItem(idx), true, tests::add);
+				idx -> spec.verifier.canRemoveItem(idx.longValue()), true, tests::add);
 		TestUtils.makeTests(spec.removeSingleIllegal,
 				idx -> displayString("remove single illegal: %s", idx),
-				idx -> spec.verifier.canRemoveItem(idx), false, tests::add);
+				idx -> spec.verifier.canRemoveItem(idx.longValue()), false, tests::add);
 
 		// BATCH REMOVE
 		TestUtils.makeTests(spec.removeBatchLegal,
 				p -> displayString("remove batch legal: %s to %s", p.first, p.second),
-				p -> spec.verifier.canRemoveItems(p.first, p.second), true, tests::add);
+				p -> spec.verifier.canRemoveItems(p.first.longValue(), p.second.longValue()), true, tests::add);
 		TestUtils.makeTests(spec.removeBatchIllegal,
 				p -> displayString("remove batch illegal: %s to %s", p.first, p.second),
-				p -> spec.verifier.canRemoveItems(p.first, p.second), false, tests::add);
+				p -> spec.verifier.canRemoveItems(p.first.longValue(), p.second.longValue()), false, tests::add);
 
 		// MOVE
 		TestUtils.makeTests(spec.swapSingleLegal,
 				p -> displayString("swap single legal: %s to %s", p.first, p.second),
-				p -> spec.verifier.canSwapItems(p.first, p.second), true, tests::add);
+				p -> spec.verifier.canSwapItems(p.first.longValue(), p.second.longValue()), true, tests::add);
 		TestUtils.makeTests(spec.swapSingleIllegal,
 				p -> displayString("swap single illegal: %s to %s", p.first, p.second),
-				p -> spec.verifier.canSwapItems(p.first, p.second), false, tests::add);
+				p -> spec.verifier.canSwapItems(p.first.longValue(), p.second.longValue()), false, tests::add);
 
 		return tests;
 	}

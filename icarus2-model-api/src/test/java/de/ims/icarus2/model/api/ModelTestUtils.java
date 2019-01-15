@@ -29,10 +29,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
+
+import java.util.function.BiFunction;
 
 import org.junit.jupiter.api.function.Executable;
+import org.mockito.internal.stubbing.answers.CallsRealMethods;
 
 import de.ims.icarus2.ErrorCode;
+import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -57,18 +62,35 @@ public class ModelTestUtils {
 	@SuppressWarnings("boxing")
 	public static <I extends Item> I stubId(I item, long id) {
 		assertMock(item);
+		String s = item.getMemberType()+"_"+id;
 		when(item.getId()).thenReturn(id);
+		when(item.toString()).thenReturn(s);
 //		when(item.equals(any())).then(
 //				invocation -> equals(item, invocation.getArgument(0)));
 		return item;
 	}
 
 	public static Item mockItem() {
-		return mock(Item.class);
+		return stubType(mock(Item.class), MemberType.ITEM);
+	}
+
+	public static Item mockItem(Container host) {
+		return stubHost(mockItem(), host);
+	}
+
+	private static Item stubHost(Item item, Container container) {
+		when(item.getContainer()).thenReturn(container);
+		return item;
+	}
+
+	private static <I extends Item> I stubType(I item, MemberType type) {
+		assertMock(item);
+		when(item.getMemberType()).thenReturn(type);
+		return item;
 	}
 
 	public static Edge mockEdge() {
-		return stubHost(mock(Edge.class), STRUCTURE);
+		return stubHost(stubType(mock(Edge.class), MemberType.EDGE), STRUCTURE);
 	}
 
 	public static Edge mockEdge(Structure structure) {
@@ -117,6 +139,15 @@ public class ModelTestUtils {
 	@SuppressWarnings("boxing")
 	public static void stubItems(Container container) {
 
+//		when(container.indexOfItem(any())).thenReturn(-1L);
+//		when(container.getItemAt(anyLong())).thenThrow(IndexOutOfBoundsException.class);
+//
+//		for(int i=0; i<container.getItemCount(); i++) {
+//			Item item = stubId(mockItem(container), i);
+//			when(container.indexOfItem(item)).thenReturn((long)i);
+//			when(container.getItemAt(i)).thenReturn(item);
+//		}
+
 		final Long2ObjectMap<Item> items = new Long2ObjectOpenHashMap<>();
 		final Object2LongMap<Item> indices = new Object2LongOpenHashMap<>();
 		indices.defaultReturnValue(-1);
@@ -148,9 +179,12 @@ public class ModelTestUtils {
 		checkArgument(itemCount>=0);
 		checkArgument(edgeCount>=0);
 
-		Structure structure = mock(Structure.class);
+		Structure structure = mock(Structure.class, withSettings().defaultAnswer(new CallsRealMethods()));
 		when(structure.getItemCount()).thenReturn(itemCount);
 		when(structure.getEdgeCount()).thenReturn(edgeCount);
+
+		Item root = mockItem(structure);
+		when(structure.getVirtualRoot()).thenReturn(root);
 
 		if(itemCount>0) {
 			stubItems(structure);
@@ -164,11 +198,60 @@ public class ModelTestUtils {
 			throw new IndexOutOfBoundsException();
 	}
 
-	public static Structure mockStructure(long itemCount, Pair<Long, Long>...edges) {
+	public static final long ROOT = -1;
+
+	private static Item itemAt(Structure structure, long index) {
+		return index==ROOT ? structure.getVirtualRoot() : structure.getItemAt(index);
+	}
+
+	@SuppressWarnings("boxing")
+	public static <N extends Number> Structure mockStructure(long itemCount,
+			@SuppressWarnings("unchecked") Pair<N, N>...edges) {
 
 		Structure structure = mockStructure(itemCount, edges.length);
 
-		//TODO stub the edges
+		when(structure.indexOfEdge(any())).thenReturn(Long.valueOf(-1));
+
+		for(int i=0; i<edges.length; i++) {
+			Pair<N,N> entry = edges[i];
+			Edge edge = mockEdge(structure,
+					itemAt(structure, entry.first.longValue()),
+					itemAt(structure, entry.second.longValue()));
+
+			when(structure.getEdgeAt(i)).thenReturn(edge);
+			when(structure.indexOfEdge(edge)).thenReturn(Long.valueOf(i));
+		}
+
+		return structure;
+	}
+
+	@SuppressWarnings("boxing")
+	public static Structure mockStructure(
+			long itemCount, long edgeCount,
+			BiFunction<Structure, Long, Edge> edgeCreator) {
+
+		Structure structure = mockStructure(itemCount, edgeCount);
+
+//		when(structure.indexOfEdge(any())).thenReturn(Long.valueOf(-1));
+
+		final Long2ObjectMap<Edge> edges = new Long2ObjectOpenHashMap<>();
+		final Object2LongMap<Edge> indices = new Object2LongOpenHashMap<>();
+		indices.defaultReturnValue(-1L);
+
+		when(structure.getEdgeAt(anyLong())).then(invocation -> {
+			long index = invocation.getArgument(0);
+			checkEdgeIndex(structure, index);
+
+			return edges.computeIfAbsent(index, k -> {
+				Edge edge = edgeCreator.apply(structure, index);
+				indices.put(edge, k);
+				return edge;
+			});
+		});
+
+		when(structure.indexOfEdge(any())).then(invocation -> {
+			return indices.getLong(invocation.getArgument(0));
+		});
 
 		return structure;
 	}

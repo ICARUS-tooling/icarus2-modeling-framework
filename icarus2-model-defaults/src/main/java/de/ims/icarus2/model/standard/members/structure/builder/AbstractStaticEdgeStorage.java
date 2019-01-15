@@ -30,6 +30,8 @@ import de.ims.icarus2.util.collections.LookupList;
 /**
  * @author Markus Gärtner
  *
+ * @param <R> type of the root node used for the structure
+ *
  */
 public abstract class AbstractStaticEdgeStorage<R extends Item> extends AbstractImmutableEdgeStorage {
 

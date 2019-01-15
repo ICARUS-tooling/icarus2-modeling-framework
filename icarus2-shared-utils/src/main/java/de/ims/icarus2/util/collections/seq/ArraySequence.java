@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.util.collections.seq;
 
+import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.util.IcarusUtils;
 
 /**
@@ -26,11 +28,8 @@ public class ArraySequence<E extends Object> implements DataSequence<E> {
 
 	private final E[] elements;
 
-	public ArraySequence(E[] elements) {
-		if (elements == null)
-			throw new NullPointerException("Invalid elements");
-
-		this.elements = elements;
+	public ArraySequence(@SuppressWarnings("unchecked") E... elements) {
+		this.elements = requireNonNull(elements);
 	}
 
 	/**

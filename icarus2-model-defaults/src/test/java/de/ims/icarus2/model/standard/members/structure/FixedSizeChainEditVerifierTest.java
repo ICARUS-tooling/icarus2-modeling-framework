@@ -19,24 +19,16 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.mockEdge;
-import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
-import static de.ims.icarus2.model.api.ModelTestUtils.mockStructure;
-import static de.ims.icarus2.model.api.ModelTestUtils.stubItems;
+import static de.ims.icarus2.model.standard.ModelDefaultsTestUtils.fillEdges;
+import static de.ims.icarus2.model.standard.ModelDefaultsTestUtils.fillItems;
+import static de.ims.icarus2.model.standard.ModelDefaultsTestUtils.makeStructure;
 import static de.ims.icarus2.test.TestUtils.longRange;
 import static de.ims.icarus2.test.util.Pair.intChain;
 import static de.ims.icarus2.test.util.Pair.intPair;
 import static de.ims.icarus2.test.util.Pair.longChain;
 import static de.ims.icarus2.test.util.Pair.longPair;
-import static java.util.Objects.requireNonNull;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static de.ims.icarus2.test.util.Triple.triple;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import java.util.stream.Stream;
 
@@ -46,14 +38,17 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 
-import de.ims.icarus2.model.api.members.item.Edge;
-import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
-import de.ims.icarus2.model.api.members.structure.StructureEditVerifierTestBuilder;
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
+import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.model.manifest.api.StructureManifest;
+import de.ims.icarus2.model.manifest.api.StructureType;
+import de.ims.icarus2.model.standard.members.container.ContainerEditVerifierTestBuilder;
+import de.ims.icarus2.model.standard.members.container.ImmutableContainerEditVerifierTest;
+import de.ims.icarus2.model.standard.members.container.ItemStorage;
+import de.ims.icarus2.model.standard.members.container.ListItemStorageInt;
 import de.ims.icarus2.model.standard.members.structure.FixedSizeChainStorage.FixedSizeChainEditVerifier;
 import de.ims.icarus2.test.util.Pair;
-import de.ims.icarus2.util.IcarusUtils;
-import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 
 /**
  * @author Markus Gärtner
@@ -62,8 +57,13 @@ import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 class FixedSizeChainEditVerifierTest {
 
 	private FixedSizeChainStorage edgeStorage;
-	private FixedSizeChainEditVerifier verifier;
+	private ItemStorage itemStorage;
 	private Structure structure;
+
+	/**
+	 * Verifier under test
+	 */
+	private FixedSizeChainEditVerifier verifier;
 
 	/**
 	 * Artificial index to indicate an edge should use the structrue's
@@ -73,8 +73,13 @@ class FixedSizeChainEditVerifierTest {
 
 	@BeforeEach
 	void setUp() {
-		edgeStorage = mock(FixedSizeChainStorage.class);
-		structure = mockStructure(0, 0);
+		StructureManifest manifest = ManifestTestUtils.MANIFEST_FACTORY
+				.create(ManifestType.STRUCTURE_MANIFEST, StructureManifest.class)
+				.setStructureType(StructureType.CHAIN);
+
+		itemStorage = new ListItemStorageInt();
+		edgeStorage = new FixedSizeChainStorage();
+		structure = makeStructure(manifest, itemStorage, edgeStorage);
 
 		verifier = new FixedSizeChainEditVerifier(edgeStorage, structure);
 	}
@@ -84,115 +89,56 @@ class FixedSizeChainEditVerifierTest {
 		verifier = null;
 		structure = null;
 		edgeStorage = null;
+		itemStorage = null;
 	}
 
-	@SuppressWarnings("boxing")
 	private void prepareStructureAndStorage(final int nodeCount,
 			final @SuppressWarnings("unchecked") Pair<Integer, Integer>...edges) {
 		assertTrue(nodeCount>0);
 		assertTrue(edges.length>0);
 
-		Edge[] edgeBuffer = new Edge[edges.length];
+		fillItems(structure, nodeCount);
 
-		// Make mocks return correct size info
-		when(edgeStorage.getEdgeCount(eq(structure))).thenReturn(Long.valueOf(edges.length));
-		when(edgeStorage.getEdgeAt(eq(structure), anyLong())).then(
-				invocation -> {
-					int index = ((Number)invocation.getArgument(1)).intValue();
-					Edge edge = edgeBuffer[index];
-					if(edge==null) {
-						Pair<Integer, Integer> entry = edges[index];
-						edge = mockEdge(structure, structure.getItemAt(entry.first),
-								structure.getItemAt(entry.second));
-						edgeBuffer[index] = edge;
-					}
-					return edge;
-				});
+		/*
+		 *  This takes care of internal maintenance the storage has to perform.
+		 *  We need this as the edge storage relies on static information from the
+		 *  underlying item storage.
+		 */
+		edgeStorage.addNotify(structure);
 
-		when(structure.getItemCount()).thenReturn((long)nodeCount);
-		when(structure.getEdgeCount()).then(invocation -> edgeStorage.getEdgeCount(structure));
-		when(structure.getEdgeAt(anyLong())).then(
-				invocation -> edgeStorage.getEdgeAt(structure, invocation.getArgument(0)));
+		fillEdges(structure, edges);
 
-		// Mock container management
-		stubItems(structure);
-
-		// A bit more complex: mock edge handling
-		boolean[] in = new boolean[nodeCount];
-		boolean[] out = new boolean[nodeCount];
-
-		MutableInteger rootOutgoingEdges = new MutableInteger();
-
-		for(int i=0; i<edges.length; i++) {
-			Pair<Integer, Integer> edge = edges[i];
-
-			assertFalse(in[edge.second], "Node already has incoming edge: "+edge.second);
-
-			if(edge.first==ROOT) {
-				rootOutgoingEdges.incrementAndGet();
-			} else {
-				assertFalse(out[edge.first], "Node already has outgoing edge: "+edge.first);
-				out[edge.first] = true;
-			}
-
-			in[edge.second] = true;
-		}
-
-		Item root = mockItem();
-
-		// Now mock the actual behavior
-
-		when(edgeStorage.getVirtualRoot(eq(structure))).thenReturn(root);
-
-		when(edgeStorage.getUncheckedEdgeCount(eq(structure), any(), anyBoolean())).then(invocation -> {
-			Item item = requireNonNull(invocation.getArgument(1));
-
-			if(item==edgeStorage.getVirtualRoot(structure)) {
-				return (boolean) invocation.getArgument(2) ? rootOutgoingEdges.longValue() : 0L;
-			} else {
-				int index = IcarusUtils.ensureIntegerValueRange(structure.indexOfItem(item));
-
-				boolean[] hint = (boolean) invocation.getArgument(2) ? out : in;
-				return hint[index] ? 1L : 0L;
-			}
-		});
-		when(structure.getEdgeCount(any(), anyBoolean())).then(
-				invocation -> edgeStorage.getUncheckedEdgeCount(structure,
-						invocation.getArgument(0), invocation.getArgument(1)));
-
-		when(edgeStorage.hasEdgeAt(eq(structure), anyLong())).then(invocation -> {
-			int index = ((Number)invocation.getArgument(1)).intValue();
-			return in[index];
-		});
-
-		when(structure.containsEdge(any())).then(invocation -> {
-			Edge edge = invocation.getArgument(0);
-			boolean sourceMatched = false;
-			boolean targetMatched = false;
-			for(int i=0; i<nodeCount; i++) {
-				Item node = structure.getItemAt(i);
-				if(node.equals(edge.getSource())) {
-					sourceMatched = true;
-				}
-				if(node.equals(edge.getTarget())) {
-					targetMatched = true;
-				}
-			}
-
-			return sourceMatched && targetMatched;
-		});
 	}
 
 	@TestFactory
 	public Stream<DynamicTest> testNullArguments() {
-		return StructureEditVerifierTestBuilder.createNullArgumentsTests(verifier);
+		return new StructureEditVerifierTestBuilder(verifier)
+				.failForNullMembers()
+				.createTests();
 	}
 
 	@SuppressWarnings("unchecked")
 	@TestFactory
 	public Stream<DynamicTest> testIllegalMemberArguments() {
 		prepareStructureAndStorage(2, intPair(0, 1));
-		return StructureEditVerifierTestBuilder.createIllegalMemberTests(verifier);
+		return new StructureEditVerifierTestBuilder(verifier)
+				.failForIllegalMembers()
+				.createTests();
+	}
+
+	@TestFactory
+	public Stream<DynamicTest> testContainerEditVerifierEmpty() {
+		return ImmutableContainerEditVerifierTest.configureBuilderEmpty(
+				new ContainerEditVerifierTestBuilder(verifier))
+				.createTests();
+	}
+
+	@TestFactory
+	public Stream<DynamicTest> testContainerEditVerifierFull() {
+		prepareStructureAndStorage(10, intChain(ROOT, 9));
+		return ImmutableContainerEditVerifierTest.configureBuilder(
+				new ContainerEditVerifierTestBuilder(verifier))
+				.createTests();
 	}
 
 	/**
@@ -201,42 +147,146 @@ class FixedSizeChainEditVerifierTest {
 	@SuppressWarnings({ "unchecked" })
 	@TestFactory
 	@DisplayName("empty []")
-	public Stream<DynamicTest> testEmpty() {
+	public Stream<DynamicTest> testStructureEmpty() {
 
+		/*
+		 * Structure under test contains no items/edges, so all
+		 * verifier methods requiring live items or edges will
+		 * throw an exception.
+		 *
+		 * This is covered in testIllegalMemberArguments()
+		 */
 		return new StructureEditVerifierTestBuilder(verifier)
-				.addSingleIllegal(longRange(-1, 1))
-				.addBatchIllegal(longRange(-1, 1))
 				.removeSingleIllegal(longRange(-1, 1))
 				.removeBatchIllegal(longPair(0, 0), longPair(0,  1))
 				.swapSingleIllegal(longPair(0,  0), longPair(0,  1))
-				// structure contains no items/edges, so all
-
 				.createTests();
 	}
 
 	/**
-	 * Test with a full chain of 3 connected edges:
+	 * Test with a full chain of 3 fully connected nodes:
 	 * <blockquote><pre>
-	 *   _   _   _
+	 *   0   1   2
 	 *  / \ / \ / \
-	 * R   X   X   X
+	 * R   0   1   2
 	 * </pre></blockquote>
 	 *
 	 */
+	@SuppressWarnings({ "unchecked", "boxing" })
 	@TestFactory
-	@DisplayName("full [---]")
+	@DisplayName("full [↷↷↷]")
 	public Stream<DynamicTest> testFullStructure() {
 		prepareStructureAndStorage(3, intChain(ROOT, 2));
 
 		return new StructureEditVerifierTestBuilder(verifier)
-				.addSingleIllegal(longRange(-1, 3))
-				.addBatchIllegal(longRange(-1, 3))
-				.removeSingleIllegal(longRange(-1, 3))
-				.removeBatchIllegal(longChain(-1, 2))
+				// no legal single edges to add
+				.addSingleIllegal(intPair(0,2), intPair(ROOT, 2))
+				// no legal batches of edges to add
+				.addBatchIllegalIndirect(intPair(0, 2), intPair(ROOT, 1))
+				.removeSingleLegal(0, 1, 2)
+				.removeSingleIllegal(-1, 3)
+				.removeBatchLegal(intPair(0, 0), intPair(0, 1), intPair(1, 2), intPair(0, 2))
+				.removeBatchIllegal(intPair(-1, 0), intPair(1, 3))
+				// no legal swap indices
 				.swapSingleIllegal(longChain(-1, 2))
-				//TODO add illegal values for terminal changes and edge creation!!!
+				.setTerminalLegalIndirect(triple(1, ROOT, true), triple(2, ROOT, true)) // legal to split chains into subchains
+				.setTerminalIllegalIndirect(
+						triple(0, 1, false), triple(1, 2, false), triple(2, 0, false), // edgeCount(target)>1
+						triple(0, 1, true), triple(1, 1, true), triple(2, 0, true), // edgeCount(source)>1
+						triple(0, ROOT, false), triple(1, 0, false), triple(2, 1, false)) // loops
+				.createEdgeLegalIndirect(
+						intPair(ROOT, 0), intPair(0, 1), intPair(1, 2), // single-step edges
+						intPair(ROOT, 1), intPair(ROOT, 2), intPair(0, 2)) // long-distance edges
+				.createEdgeIllegalIndirect(intPair(0, ROOT), intPair(1, ROOT), intPair(2, ROOT)) // no edges towards root
 				.createTests();
 	}
 
-	//TODO add test methods for different chain scenarios
+	/**
+	 * Test with a partial chain of 3 nodes and only 2 edges:
+	 * <blockquote><pre>
+	 *   0       1
+	 *  / \     / \
+	 * R   0   1   2
+	 * </pre></blockquote>
+	 *
+	 */
+	@SuppressWarnings({ "unchecked", "boxing" })
+	@TestFactory
+	@DisplayName("partial [↷_↷]")
+	public Stream<DynamicTest> testPartialStructure() {
+		prepareStructureAndStorage(3, intPair(ROOT, 0), intPair(1, 2));
+
+		return new StructureEditVerifierTestBuilder(verifier)
+				.addSingleLegal(intPair(0, 1), intPair(ROOT, 1))
+				.addSingleIllegal(intPair(0,2), intPair(ROOT, 2))
+				.addBatchLegalIndirect(intPair(0, 1))
+					.addBatchLegalIndirect(intPair(ROOT, 1))
+					.addBatchLegalIndirect(intPair(ROOT, 1), intPair(0, 1))
+				.addBatchIllegalIndirect(intPair(0, 2), intPair(ROOT, 1))
+				.removeSingleLegal(0, 1)
+				.removeSingleIllegal(-1, 2)
+				.removeBatchLegal(intPair(0, 0), intPair(0, 1), intPair(1, 1))
+				.removeBatchIllegal(intPair(-1, 0), intPair(-1, 1), intPair(1, 2))
+				// no legal swap indices
+				.swapSingleIllegal(longChain(-1, 2))
+				.setTerminalLegalIndirect(
+						// edge_0, source
+						triple(0, 2, true),
+						// edge_1, source
+						triple(1, 0, true), triple(1, ROOT, true),
+						// edge_0, target,
+						triple(0, 1, false))
+				.setTerminalIllegalIndirect(
+						triple(0, 2, false), triple(1, 0, false), // edgeCount(target)>1
+						triple(0, 1, true), // edgeCount(source)>1
+						triple(0, ROOT, false), triple(1, 1, false)) // loops
+				.createEdgeLegalIndirect(
+						intPair(ROOT, 0), intPair(0, 1), intPair(1, 2), // single-step edges
+						intPair(ROOT, 1), intPair(ROOT, 2), intPair(0, 2)) // long-distance edges
+				.createEdgeIllegalIndirect(intPair(0, ROOT), intPair(1, ROOT), intPair(2, ROOT)) // no edges towards root
+				.createTests();
+	}
+
+	/**
+	 * Test with a partial chain of 3 nodes and only 1 edge:
+	 * <blockquote><pre>
+	 *       0
+	 *      / \
+	 * R   0   1   2
+	 * </pre></blockquote>
+	 *
+	 */
+	@SuppressWarnings({ "unchecked", "boxing" })
+	@TestFactory
+	@DisplayName("partial [_↷_]")
+	public Stream<DynamicTest> testPartialStructure2() {
+		prepareStructureAndStorage(3, intPair(0, 1));
+
+		return new StructureEditVerifierTestBuilder(verifier)
+				.addSingleLegal(intPair(ROOT, 0), intPair(ROOT, 2), intPair(1, 2))
+				.addSingleIllegal(intPair(0, 1), intPair(ROOT, 1))
+				.addBatchLegalIndirect(intPair(ROOT, 0))
+					.addBatchLegalIndirect(intPair(ROOT, 2))
+					.addBatchLegalIndirect(intPair(1, 2))
+					.addBatchLegalIndirect(intPair(ROOT, 0), intPair(1, 2), intPair(ROOT, 2))
+				.addBatchIllegalIndirect(intPair(0, 2), intPair(ROOT, 1))
+				.removeSingleLegal(0)
+				.removeSingleIllegal(-1, 1)
+				.removeBatchLegal(intPair(0, 0))
+				.removeBatchIllegal(intPair(-1, 0), intPair(-1, 1), intPair(1, 1))
+				// no legal swap indices
+				.swapSingleIllegal(longChain(-1, 1))
+				.setTerminalLegalIndirect(
+						// edge_0, source
+						triple(0, 2, true), triple(0, ROOT, true),
+						// edge_0, target,
+						triple(0, 2, false))
+				.setTerminalIllegalIndirect(
+						triple(0, ROOT, false), triple(0, 0, false)) // loops+ROOT target
+				.createEdgeLegalIndirect(
+						intPair(ROOT, 0), intPair(0, 1), intPair(1, 2), // single-step edges
+						intPair(ROOT, 1), intPair(ROOT, 2), intPair(0, 2)) // long-distance edges
+				.createEdgeIllegalIndirect(intPair(0, ROOT), intPair(1, ROOT), intPair(2, ROOT)) // no edges towards root
+				.createTests();
+	}
 }

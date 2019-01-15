@@ -161,6 +161,14 @@ public interface Container extends Item, ManifestOwner<ContainerManifestBase<?>>
 	@Override
 	long indexOfItem(Item item);
 
+	/**
+	 * Checks whether the given {@code item} is contained in this container.
+	 * The default implementation simply checks the return value of
+	 * {@link #indexOfItem(Item)} to not be {@link IcarusUtils#UNSET_LONG -1}.
+	 *
+	 * @param item
+	 * @return
+	 */
 	default boolean containsItem(Item item) {
 		return indexOfItem(item)!=IcarusUtils.UNSET_LONG;
 	}

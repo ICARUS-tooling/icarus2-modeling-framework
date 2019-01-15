@@ -212,4 +212,12 @@ public class DefaultEdge extends DefaultItem implements Edge, Recyclable {
 	public boolean revive() {
 		return super.revive() && source!=null && target!=null;
 	}
+
+	/**
+	 * @see de.ims.icarus2.model.standard.members.item.DefaultItem#toString()
+	 */
+	@Override
+	public String toString() {
+		return super.toString()+"<"+(source==null ? "??" : source)+","+(target==null ? "??" : target)+">";
+	}
 }

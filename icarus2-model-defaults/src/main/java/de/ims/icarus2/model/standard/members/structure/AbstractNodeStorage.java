@@ -45,6 +45,9 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  *
  * @author Markus Gärtner
  *
+ * @param <N> type of the {@link NodeInfo} objects stored
+ * @param <E> type of edges stored
+ *
  */
 public abstract class AbstractNodeStorage<N extends NodeInfo, E extends Edge> implements EdgeStorage {
 
@@ -82,7 +85,7 @@ public abstract class AbstractNodeStorage<N extends NodeInfo, E extends Edge> im
 
 	/**
 	 * Reports the storage as being dirty when its manifest does not allow partial structures
-	 * and the number of stored {@code NodeInfo} obejcts does not match the number of available
+	 * and the number of stored {@code NodeInfo} objects does not match the number of available
 	 * nodes (not including the virtual root node).
 	 *
 	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#isDirty(de.ims.icarus2.model.api.members.structure.Structure)
@@ -321,6 +324,7 @@ public abstract class AbstractNodeStorage<N extends NodeInfo, E extends Edge> im
 		return signalUnsupportedOperation(context);
 	}
 
+	@SuppressWarnings("boxing")
 	@Override
 	public long indexOfChild(Structure context, Item child) {
 		return signalUnsupportedOperation(context);
@@ -331,16 +335,19 @@ public abstract class AbstractNodeStorage<N extends NodeInfo, E extends Edge> im
 		return signalUnsupportedOperation(context);
 	}
 
+	@SuppressWarnings("boxing")
 	@Override
 	public long getHeight(Structure context, Item node) {
 		return signalUnsupportedOperation(context);
 	}
 
+	@SuppressWarnings("boxing")
 	@Override
 	public long getDepth(Structure context, Item node) {
 		return signalUnsupportedOperation(context);
 	}
 
+	@SuppressWarnings("boxing")
 	@Override
 	public long getDescendantCount(Structure context, Item parent) {
 		return signalUnsupportedOperation(context);

@@ -45,11 +45,14 @@ import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.model.manifest.api.Embedded;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.model.manifest.api.ManifestFactory;
 import de.ims.icarus2.model.manifest.api.ManifestFragment;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
+import de.ims.icarus2.model.manifest.standard.DefaultManifestFactory;
+import de.ims.icarus2.model.manifest.standard.DefaultManifestRegistry;
 import de.ims.icarus2.model.manifest.types.DefaultIconLink;
 import de.ims.icarus2.model.manifest.types.DefaultLink;
 import de.ims.icarus2.model.manifest.types.DefaultUrlResource;
@@ -68,6 +71,13 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  */
 @SuppressWarnings("boxing")
 public class ManifestTestUtils {
+
+	public static final ManifestFactory MANIFEST_FACTORY = new DefaultManifestFactory(
+			ManifestLocation.newBuilder()
+				.readOnly()
+				.virtual()
+				.build(),
+			new DefaultManifestRegistry());
 
 	private static final Map<ValueType, TestInfo> testValues = new Object2ObjectOpenHashMap<>();
 

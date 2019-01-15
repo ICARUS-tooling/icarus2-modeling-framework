@@ -37,12 +37,12 @@ import de.ims.icarus2.model.api.members.container.Container;
  * @author Markus Gärtner
  *
  */
-public class ImmutableContainerEditVerifierTest {
+public class UnrestrictedContainerEditVerifierTest {
 
 	@TestFactory
 	Stream<DynamicTest> testNullArguments() {
 		Container container = mockContainer(0);
-		ImmutableContainerEditVerifier verifier = new ImmutableContainerEditVerifier(container);
+		UnrestrictedContainerEditVerifier verifier = new UnrestrictedContainerEditVerifier(container);
 
 		return ContainerEditVerifierTestBuilder.createNullArgumentsTests(verifier);
 	}
@@ -51,7 +51,7 @@ public class ImmutableContainerEditVerifierTest {
 	void testLifecycle() {
 		Container container = mockContainer(0);
 		@SuppressWarnings("resource")
-		ImmutableContainerEditVerifier verifier = new ImmutableContainerEditVerifier(container);
+		UnrestrictedContainerEditVerifier verifier = new UnrestrictedContainerEditVerifier(container);
 
 		assertEquals(container, verifier.getSource());
 
@@ -63,50 +63,75 @@ public class ImmutableContainerEditVerifierTest {
 	@TestFactory
 	Stream<DynamicTest> testEmptyContainer() {
 		return configureBuilderEmpty(new ContainerEditVerifierTestBuilder(
-				new ImmutableContainerEditVerifier(mockContainer(0))))
+					new UnrestrictedContainerEditVerifier(mockContainer(0))))
 				.createTests();
 	}
 
+	/**
+	 * Configures the given builder under the assumption that the
+	 * underlying container is empty, i.e. it contains exactly
+	 * {@code 0} items.
+	 *
+	 * @param builder
+	 * @return
+	 */
 	@SuppressWarnings("unchecked")
 	public static ContainerEditVerifierTestBuilder configureBuilderEmpty(
 			ContainerEditVerifierTestBuilder builder) {
 		assertTrue(builder.getVerifier().getSource().getItemCount()==0L);
 
 		return builder
-			.addSingleIllegal(0, 1, Long.MAX_VALUE)
-			.addBatchIllegal(0, 3, 9, Long.MAX_VALUE)
-			.removeSingleIllegal(-1, 0, 5, 9, Long.MAX_VALUE)
-			.removeBatchIllegal(longPair(0, 0), longPair(1, 1), longPair(0, 1))
-			.swapSingleIllegal(longPair(0, 0), longPair(1, 1), longPair(9, 1));
+				.addSingleLegal(0)
+				.addSingleIllegal(-1, 1, Long.MAX_VALUE)
+				.addBatchLegal(0)
+				.addBatchIllegal(-1, 1)
+				.removeSingleIllegal(-1, 0, 1)
+				.removeBatchIllegal(longPair(0, 0), longPair(1, 1), longPair(0, 1))
+				.swapSingleIllegal(longPair(0, 0), longPair(-1, 0), longPair(0, 1));
 	}
 
 	@TestFactory
 	Stream<DynamicTest> testSmallContainerSize10() {
 		return configureBuilder(new ContainerEditVerifierTestBuilder(
-				new ImmutableContainerEditVerifier(mockContainer(10))))
-			.createTests();
+						new UnrestrictedContainerEditVerifier(mockContainer(10))))
+				.createTests();
 	}
 
 	@TestFactory
-	Stream<DynamicTest> testLargeContainer() {
+	Stream<DynamicTest> testLargeContainerLongMax() {
 		return configureBuilder(new ContainerEditVerifierTestBuilder(
-				new ImmutableContainerEditVerifier(mockContainer(Long.MAX_VALUE))))
-			.createTests();
+						new UnrestrictedContainerEditVerifier(mockContainer(Long.MAX_VALUE-1))))
+				.createTests();
 	}
 
+	/**
+	 * Configures the given builder under the assumption that the
+	 * underlying container has at least 5 elements.
+	 *
+	 * @param builder
+	 * @return
+	 */
 	@SuppressWarnings("unchecked")
 	public static ContainerEditVerifierTestBuilder configureBuilder(
 			ContainerEditVerifierTestBuilder builder) {
+
 		long size = builder.getVerifier().getSource().getItemCount();
-		assertTrue(size>3);
+		assertTrue(size>4L, "must have 5 or more elements: "+size);
+		assertTrue(size<Long.MAX_VALUE, "size must be less than Long.MAX_VALUE");
 
 		long mid = size>>>1;
 
 		return builder
-			.addSingleIllegal(0, 1, size)
-			.addBatchIllegal(0, mid, size-1, size)
-			.removeSingleIllegal(-1, 0, mid, size-1, size)
-			.removeBatchIllegal(longPair(0, 0), longPair(1, size), longPair(0, 1))
-			.swapSingleIllegal(longPair(0, 0), longPair(1, size), longPair(size, 1));
+				.addSingleLegal(0, 1, mid, size-1, size)
+				.addSingleIllegal(-1, size+1)
+				.addBatchLegal(0, 1, mid, size-1, size)
+				.addBatchIllegal(-1, size+1)
+				.removeSingleLegal(0, 1, mid, size-2, size-1)
+				.removeSingleIllegal(-1, size, size+1)
+				.removeBatchLegal(longPair(0, 0), longPair(size-1, size-1),
+						longPair(0, size-1), longPair(1, mid), longPair(mid, size-1))
+				.removeBatchIllegal(longPair(0, size), longPair(1, size+1), longPair(-1, mid), longPair(mid, 1))
+				.swapSingleLegal(longPair(0, 0), longPair(size-1, size-1), longPair(size-1, 0), longPair(1, mid))
+				.swapSingleIllegal(longPair(-1, 1), longPair(size-2, size), longPair(0, size+1));
 	}
 }

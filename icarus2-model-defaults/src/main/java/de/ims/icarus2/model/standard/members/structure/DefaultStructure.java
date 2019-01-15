@@ -328,11 +328,6 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 			return new CompoundStructureEditVerifier(containerEditVerifier){
 
 				@Override
-				protected boolean isValidAddEdgeIndex(long index) {
-					return false;
-				}
-
-				@Override
 				protected boolean isValidRemoveEdgeIndex(long index) {
 					return false;
 				}

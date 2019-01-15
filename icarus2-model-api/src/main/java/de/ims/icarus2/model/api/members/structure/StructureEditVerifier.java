@@ -48,7 +48,7 @@ public interface StructureEditVerifier extends ContainerEditVerifier {
 	 * Note that the edge's {@link Edge#getTerminal(boolean) terminals} must be
 	 * items that are already present as nodes in the underlying structure!
 	 * <p>
-	 * Precondition check for the {@link Structure#addEdge(long, Edge)} method.
+	 * Precondition check for the {@link Structure#addEdge(Edge)} method.
 	 *
 	 * @param index
 	 * @param edge
@@ -59,7 +59,7 @@ public interface StructureEditVerifier extends ContainerEditVerifier {
 	 * 		structure (this is an optional error condition and implementations
 	 * 		should indicate whether they enforce this restriction).
 	 */
-	boolean canAddEdge(long index, Edge edge);
+	boolean canAddEdge(Edge edge);
 
 	/**
 	 * Verify if the given {@code edges} can be inserted at the given {@code index}.
@@ -77,7 +77,7 @@ public interface StructureEditVerifier extends ContainerEditVerifier {
 	 * 		structure (this is an optional error condition and implementations
 	 * 		should indicate whether they enforce this restriction).
 	 */
-	boolean canAddEdges(long index, DataSequence<? extends Edge> edges);
+	boolean canAddEdges(DataSequence<? extends Edge> edges);
 
 	/**
 	 * Verify that whichever edge is currently located at the given {@code index}

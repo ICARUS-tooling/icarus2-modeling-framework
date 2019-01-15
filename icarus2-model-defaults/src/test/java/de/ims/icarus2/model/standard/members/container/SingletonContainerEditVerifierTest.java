@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.api.members.container.Container;
-import de.ims.icarus2.model.api.members.container.ContainerEditVerifierTestBuilder;
 
 /**
  * @author Markus Gärtner
@@ -40,7 +39,7 @@ import de.ims.icarus2.model.api.members.container.ContainerEditVerifierTestBuild
 class SingletonContainerEditVerifierTest {
 
 	@TestFactory
-	public Stream<DynamicTest> testNullArguments() {
+	Stream<DynamicTest> testNullArguments() {
 		Container container = mockContainer(0);
 		SingletonContainerEditVerifier verifier = new SingletonContainerEditVerifier(container);
 
@@ -62,7 +61,7 @@ class SingletonContainerEditVerifierTest {
 
 	@SuppressWarnings("unchecked")
 	@TestFactory
-	public Stream<DynamicTest> testEmptyContainer() {
+	Stream<DynamicTest> testEmptyContainer() {
 		return new ContainerEditVerifierTestBuilder(
 				new SingletonContainerEditVerifier(mockContainer(0)))
 			.addSingleLegal(0)
@@ -77,7 +76,7 @@ class SingletonContainerEditVerifierTest {
 
 	@SuppressWarnings("unchecked")
 	@TestFactory
-	public Stream<DynamicTest> testFullContainer() {
+	Stream<DynamicTest> testFullContainer() {
 		return new ContainerEditVerifierTestBuilder(
 				new SingletonContainerEditVerifier(mockContainer(1)))
 			.addSingleIllegal(-1, 0, 1)

@@ -26,7 +26,7 @@ import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureEditVerifier;
-import de.ims.icarus2.model.standard.members.container.DefaultContainerEditVerifier;
+import de.ims.icarus2.model.standard.members.container.UnrestrictedContainerEditVerifier;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
@@ -34,14 +34,10 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
  * @author Markus Gärtner
  *
  */
-public class DefaultStructureEditVerifier extends DefaultContainerEditVerifier implements StructureEditVerifier {
+public class UnrestrictedStructureEditVerifier extends UnrestrictedContainerEditVerifier implements StructureEditVerifier {
 
-	public DefaultStructureEditVerifier(Structure source) {
+	public UnrestrictedStructureEditVerifier(Structure source) {
 		super(source);
-	}
-
-	protected boolean isValidAddEdgeIndex(long index) {
-		return index>0L && index<=getSource().getEdgeCount();
 	}
 
 	protected boolean isValidRemoveEdgeIndex(long index) {
@@ -57,10 +53,10 @@ public class DefaultStructureEditVerifier extends DefaultContainerEditVerifier i
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdge(long, de.ims.icarus2.model.api.members.item.Edge)
+	 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdge(de.ims.icarus2.model.api.members.item.Edge)
 	 */
 	@Override
-	public boolean canAddEdge(long index, Edge edge) {
+	public boolean canAddEdge(Edge edge) {
 		requireNonNull(edge);
 
 		final Structure structure = getSource();
@@ -72,14 +68,14 @@ public class DefaultStructureEditVerifier extends DefaultContainerEditVerifier i
 		checkContainsItem(structure, source);
 		checkContainsItem(structure, target);
 
-		return isValidAddEdgeIndex(index);
+		return true;
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdges(long, de.ims.icarus2.util.collections.seq.DataSequence)
+	 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdges(de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
-	public boolean canAddEdges(long index, DataSequence<? extends Edge> edges) {
+	public boolean canAddEdges(DataSequence<? extends Edge> edges) {
 		requireNonNull(edges);
 
 		int size = IcarusUtils.ensureIntegerValueRange(edges.entryCount());
@@ -87,7 +83,7 @@ public class DefaultStructureEditVerifier extends DefaultContainerEditVerifier i
 		boolean canAdd = true;
 
 		for(int i=0; i<size; i++) {
-			if(!canAddEdge(i, edges.elementAt(i))) {
+			if(!canAddEdge(edges.elementAt(i))) {
 				canAdd = false;
 			}
 		}

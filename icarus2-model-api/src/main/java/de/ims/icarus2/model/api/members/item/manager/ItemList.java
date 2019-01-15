@@ -18,7 +18,6 @@ package de.ims.icarus2.model.api.members.item.manager;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.IcarusUtils;
@@ -58,12 +57,7 @@ public interface ItemList extends ItemLookup {
 	}
 
 	/**
-	 * Adds a new item to this container
-	 *
-	 * Note that calling this method with an {@code index} parameter
-	 * equal to the size of the mutating container as returned by
-	 * {@link Container#getItemCount()} is equivalent to
-	 * using {@link #addItem()}.
+	 * Adds a new item to this container at the specified {@code index};
 	 *
 	 * @param index The position to insert the new item at
 	 * @param item
@@ -76,7 +70,8 @@ public interface ItemList extends ItemLookup {
 	void addItem(long index, Item item);
 
 	/**
-	 * Appends a new item to the end of the list.
+	 * Appends a new item to the end of the list or at whatever position
+	 * the implementation deems appropriate.
 	 *
 	 * @see #addItem(long, Item)
 	 */

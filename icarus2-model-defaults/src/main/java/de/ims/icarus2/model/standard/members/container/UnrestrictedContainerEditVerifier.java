@@ -30,11 +30,11 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
  * @author Markus Gärtner
  *
  */
-public class DefaultContainerEditVerifier implements ContainerEditVerifier {
+public class UnrestrictedContainerEditVerifier implements ContainerEditVerifier {
 
 	private Container source;
 
-	public DefaultContainerEditVerifier(Container source) {
+	public UnrestrictedContainerEditVerifier(Container source) {
 		this.source = requireNonNull(source);
 	}
 

@@ -105,19 +105,15 @@ public class CompoundStructureEditVerifier implements StructureEditVerifier {
 		return (Structure) containerEditVerifier.getSource();
 	}
 
-	protected boolean isValidAddEdgeIndex(long index) {
-		return index>=0L && index<=getSource().getEdgeCount();
-	}
-
 	protected boolean isValidRemoveEdgeIndex(long index) {
 		return index>=0L && index<getSource().getEdgeCount();
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdge(long, de.ims.icarus2.model.api.members.item.Edge)
+	 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdge(de.ims.icarus2.model.api.members.item.Edge)
 	 */
 	@Override
-	public boolean canAddEdge(long index, Edge edge) {
+	public boolean canAddEdge(Edge edge) {
 		requireNonNull(edge);
 
 		final Structure structure = getSource();
@@ -125,21 +121,21 @@ public class CompoundStructureEditVerifier implements StructureEditVerifier {
 		checkHostStructure(edge, structure);
 		checkNotContainsEdge(structure, edge);
 
-		return edge!=null && isValidAddEdgeIndex(index);
+		return true;
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdges(long, de.ims.icarus2.util.collections.seq.DataSequence)
+	 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdges(de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
-	public boolean canAddEdges(long index, DataSequence<? extends Edge> edges) {
+	public boolean canAddEdges(DataSequence<? extends Edge> edges) {
 		requireNonNull(edges);
 
 		final Structure structure = getSource();
 
 		edges.forEach(edge -> checkNotContainsEdge(structure, edge)); //TODO not very pretty, as the exception will be thrown inside the internal iteration code
 
-		return edges!=null && isValidAddEdgeIndex(index);
+		return true;
 	}
 
 	/**
@@ -182,7 +178,7 @@ public class CompoundStructureEditVerifier implements StructureEditVerifier {
 		checkContainsEdge(structure, edge);
 		checkContainsItem(structure, terminal);
 
-		return !(terminal==structure.getVirtualRoot() && !isSource);
+		return isSource || terminal!=structure.getVirtualRoot();
 	}
 
 	/**

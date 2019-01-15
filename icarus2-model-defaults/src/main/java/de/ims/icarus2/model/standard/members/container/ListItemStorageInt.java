@@ -98,7 +98,7 @@ public class ListItemStorageInt implements ItemStorage {
 	}
 
 	/**
-	 * Resets the cached {@code begin} and {@code end} items and determines whether or not to
+	 * Resets the cached {@code begin} and {@code end} items to {@code null} and determines whether or not to
 	 * store those items for the new {@code context}. This decision is solely based on the
 	 * presence of a declared <i>foundation layer</i> for the layer hosting the given container.
 	 * If a foundation layer is defined then all the elements stored will use boundary offsets
@@ -355,7 +355,7 @@ public class ListItemStorageInt implements ItemStorage {
 	 */
 	@Override
 	public ContainerEditVerifier createEditVerifier(Container context) {
-		return new DefaultContainerEditVerifier(context);
+		return new UnrestrictedContainerEditVerifier(context);
 	}
 
 	@Override

@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.util.collections.seq;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Iterator;
 import java.util.List;
 
@@ -33,8 +35,7 @@ public class ListSequence<E extends Object> implements DataSequence<E>, Iterable
 	protected final List<E> list;
 
 	public ListSequence(List<E> list) {
-		if (list == null)
-			throw new NullPointerException("Invalid list");
+		requireNonNull(list);
 		if (list.isEmpty())
 			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT, "List of elements must not be empty");
 

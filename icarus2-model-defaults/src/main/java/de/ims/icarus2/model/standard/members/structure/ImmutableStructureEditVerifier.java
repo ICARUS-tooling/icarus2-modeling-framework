@@ -16,6 +16,12 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
+import static de.ims.icarus2.model.standard.members.MemberUtils.checkContainsEdge;
+import static de.ims.icarus2.model.standard.members.MemberUtils.checkContainsItem;
+import static de.ims.icarus2.model.standard.members.MemberUtils.checkHostStructure;
+import static de.ims.icarus2.model.standard.members.MemberUtils.checkNotContainsEdge;
+import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
@@ -46,18 +52,33 @@ public class ImmutableStructureEditVerifier extends ImmutableContainerEditVerifi
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdge(long, de.ims.icarus2.model.api.members.item.Edge)
+	 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdge(de.ims.icarus2.model.api.members.item.Edge)
 	 */
 	@Override
-	public boolean canAddEdge(long index, Edge edge) {
+	public boolean canAddEdge(Edge edge) {
+		requireNonNull(edge);
+
+		final Structure structure = getSource();
+		final Item source = edge.getSource();
+		final Item target = edge.getTarget();
+
+		checkHostStructure(edge, structure);
+		checkNotContainsEdge(structure, edge);
+		checkContainsItem(structure, source);
+		checkContainsItem(structure, target);
+
 		return false;
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdges(long, de.ims.icarus2.util.collections.seq.DataSequence)
+	 * @see de.ims.icarus2.model.api.members.structure.StructureEditVerifier#canAddEdges(de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
-	public boolean canAddEdges(long index, DataSequence<? extends Edge> edges) {
+	public boolean canAddEdges(DataSequence<? extends Edge> edges) {
+		requireNonNull(edges);
+
+		edges.forEach(this::canAddEdge);
+
 		return false;
 	}
 
@@ -90,6 +111,15 @@ public class ImmutableStructureEditVerifier extends ImmutableContainerEditVerifi
 	 */
 	@Override
 	public boolean canSetTerminal(Edge edge, Item terminal, boolean isSource) {
+		requireNonNull(edge);
+		requireNonNull(terminal);
+
+		final Structure structure = getSource();
+
+		checkHostStructure(edge, structure);
+		checkContainsEdge(structure, edge);
+		checkContainsItem(structure, terminal);
+
 		return false;
 	}
 
@@ -98,6 +128,14 @@ public class ImmutableStructureEditVerifier extends ImmutableContainerEditVerifi
 	 */
 	@Override
 	public boolean canCreateEdge(Item source, Item target) {
+		requireNonNull(source);
+		requireNonNull(target);
+
+		final Structure structure = getSource();
+
+		checkContainsItem(structure, source);
+		checkContainsItem(structure, target);
+
 		return false;
 	}
 

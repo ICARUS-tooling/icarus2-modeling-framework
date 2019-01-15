@@ -74,7 +74,7 @@ public class DefaultGenerationControlTest {
 	}
 
 	@Test
-	public void testAdvance() throws Exception {
+	void testAdvance() throws Exception {
 		Stage oldStage = instance.getStage();
 		Stage newStage = instance.advance();
 
@@ -84,7 +84,7 @@ public class DefaultGenerationControlTest {
 	}
 
 	@Test
-	public void testBlankStep() throws Exception {
+	void testBlankStep() throws Exception {
 		Stage dummyStage1 = mock(Stage.class);
 		Stage dummyStage2 = mock(Stage.class);
 
@@ -96,7 +96,7 @@ public class DefaultGenerationControlTest {
 	}
 
 	@Test
-	public void testRevertSingle() throws Exception {
+	void testRevertSingle() throws Exception {
 
 		Stage oldStage = instance.getStage();
 		Stage newStage = instance.advance();
@@ -109,7 +109,7 @@ public class DefaultGenerationControlTest {
 	}
 
 	@Test
-	public void testRevertMultiple() throws Exception {
+	void testRevertMultiple() throws Exception {
 		Stack<Stage> stack = new ObjectArrayList<>();
 
 		stack.push(instance.getStage());

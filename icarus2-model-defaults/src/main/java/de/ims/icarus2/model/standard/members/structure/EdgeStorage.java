@@ -168,5 +168,15 @@ public interface EdgeStorage extends Recyclable {
 	 */
 	StructureEditVerifier createEditVerifier(Structure context, ContainerEditVerifier containerEditVerifier);
 
+	/**
+	 * Indicates whether or not the structure is currently in an inconsistent state.
+	 * Some {@link StructureType structure types} or structure implementations impose
+	 * certain requirements, i.e. an implementation optimized for modeling fully
+	 * connected {@link StructureType#CHAIN chains} is likely to report the structure
+	 * to be {@code dirty} when not every node in it is part of a (sub-)chain.
+	 *
+	 * @param context
+	 * @return
+	 */
 	boolean isDirty(Structure context);
 }

@@ -25,13 +25,13 @@ import de.ims.icarus2.model.api.members.container.Container;
 
 /**
  * An extended default edit verifier that overrides the index validation methods
- * of {@link DefaultContainerEditVerifier} to check that supplied indices are
+ * of {@link UnrestrictedContainerEditVerifier} to check that supplied indices are
  * not located within the "wrapped" part of the item storage.
  *
  * @author Markus Gärtner
  *
  */
-public class AugmentedContainerEditVerifier extends DefaultContainerEditVerifier {
+public class AugmentedContainerEditVerifier extends UnrestrictedContainerEditVerifier {
 
 	private AugmentedItemStorage storage;
 
@@ -72,7 +72,7 @@ public class AugmentedContainerEditVerifier extends DefaultContainerEditVerifier
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.container.DefaultContainerEditVerifier#close()
+	 * @see de.ims.icarus2.model.standard.members.container.UnrestrictedContainerEditVerifier#close()
 	 */
 	@Override
 	public void close() {

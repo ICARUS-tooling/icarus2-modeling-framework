@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.api.members.structure;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -29,6 +31,7 @@ import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.util.stream.ModelStreams;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.annotations.Internal;
 import de.ims.icarus2.util.annotations.OptionalMethod;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
@@ -102,6 +105,20 @@ public interface Structure extends Container {
 	 */
 	@OptionalMethod
 	StructureInfo getInfo();
+
+	/**
+	 * Extends the semantics of {@link Container#containsItem(Item)}:
+	 * An item is contained in a structure if it is either that structrue's
+	 * {@link #getVirtualRoot() virtual root} or is a member of its node
+	 * collection which is checked via the super method {@link Container#containsItem(Item)}.
+	 *
+	 * @see de.ims.icarus2.model.api.members.container.Container#containsItem(de.ims.icarus2.model.api.members.item.Item)
+	 */
+	@Override
+	default boolean containsItem(Item item) {
+		requireNonNull(item);
+		return item==getVirtualRoot() || Container.super.containsItem(item);
+	}
 
 	/**
 	 * Returns the total number of edges this structure hosts.
@@ -338,6 +355,12 @@ public interface Structure extends Container {
 	 * Short-hand version of {@link #addEdge(long, Edge)} that tries to
 	 * append the given {@code edge} to the end of this structrue's internal
 	 * edge list.
+	 * <p>
+	 * For all practical purposes this method should be preferred by client
+	 * code over the {@link #addEdge(long, Edge)} method, as unlike a {@link Container}
+	 * the responsibility for organizing edges resides solely by the respective
+	 * {@link Structure} implementation. Therefore it is always safer to not
+	 * assume a selected insertion index might be supported by structure.
 	 *
 	 * @param edge
 	 * @return
@@ -351,21 +374,45 @@ public interface Structure extends Container {
 	 * returns the position the edge is positioned at. Note that it is
 	 * up to the actual implementation whether or not to honor the
 	 * specified {@code index} at which to insert the new edge.
+	 * <p>
+	 * Note that this method should only be used by the model framework
+	 * itself or by driver code. See the {@link #addEdge(Edge)} method
+	 * for the preferred way of adding edges to a structure when
+	 * doing it from client code.
 	 *
 	 * @param index
 	 * @param edge
 	 * @return the actual index the edge was inserted at
+	 *
+	 * @see #addEdge(Edge)
 	 */
+	@Internal
 	long addEdge(long index, Edge edge);
+
+	/**
+	 * Public API equivalent of {@link #addEdges(long, DataSequence)}
+	 * to allow batch insertions of edges.
+	 *
+	 * @param edges
+	 */
+	default void addEdges(DataSequence<? extends Edge> edges) {
+		addEdges(getEdgeCount(), edges);
+	}
 
 	/**
 	 * Adds the given sequence of edges to this structure. Note that
 	 * it is up to the actual implementation whether or not to honor
 	 * specified {@code index} at which to insert the new edges.
+	 * <p>
+	 * Note that this method should only be used by the model framework
+	 * itself or by driver code. See the {@link #addEdges(DataSequence)} method
+	 * for the preferred way of adding multiple edges to a structure when
+	 * doing it from client code.
 	 *
 	 * @param index
 	 * @param edges
 	 */
+	@Internal
 	void addEdges(long index, DataSequence<? extends Edge> edges);
 
 	/**
