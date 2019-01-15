@@ -24,16 +24,20 @@ import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 
+import de.ims.icarus2.util.IcarusUtils;
+
 /**
  * @author Markus Gärtner
  *
  */
 public abstract class AbstractFencedSpliterator<T extends Object> implements Spliterator<T> {
 
+	protected static final long UNDEFINED_FENCE = IcarusUtils.UNSET_LONG;
+
 	/**
 	 * Maximum index (exclusive)
 	 */
-	protected final long fence;
+	protected long fence;
 
 	/**
 	 * Current position in the container
@@ -41,11 +45,17 @@ public abstract class AbstractFencedSpliterator<T extends Object> implements Spl
 	protected long pos;
 
 	protected AbstractFencedSpliterator(long pos, long fence) {
-		checkArgument(pos>=0L);
-		checkArgument(fence>pos);
+		checkArgument("pos must be positive or 0",pos>=-1L);
+		checkArgument("fence must be greater than pos or undefined (-1)",
+				fence==UNDEFINED_FENCE || fence>pos);
 
 		this.pos = pos;
 		this.fence = fence;
+	}
+
+	protected void updateFence() {
+		if(fence==UNDEFINED_FENCE)
+			throw new IllegalStateException("Base implementation does not support late adjustment of fence");
 	}
 
 	/**
@@ -53,6 +63,8 @@ public abstract class AbstractFencedSpliterator<T extends Object> implements Spl
 	 */
 	@Override
 	public boolean tryAdvance(Consumer<? super T> action) {
+		updateFence();
+
 		if(pos<fence) {
 			action.accept(current());
 			pos++;
@@ -69,6 +81,8 @@ public abstract class AbstractFencedSpliterator<T extends Object> implements Spl
 	 */
 	@Override
 	public Spliterator<T> trySplit() {
+		updateFence();
+
 		long lo = pos; // divide range in half
 		long mid = ((lo + fence) >>> 1) & ~1; // force midpoint to be even
 		if (lo < mid) { // split out left half
@@ -87,6 +101,8 @@ public abstract class AbstractFencedSpliterator<T extends Object> implements Spl
 	 */
 	@Override
 	public long estimateSize() {
+		updateFence();
+
 		return fence-pos;
 	}
 
@@ -100,6 +116,8 @@ public abstract class AbstractFencedSpliterator<T extends Object> implements Spl
 
 	@Override
 	public void forEachRemaining(Consumer<? super T> action) {
+		updateFence();
+
 		for(;pos<fence;pos++) {
 			action.accept(current());
 		}
@@ -122,6 +140,8 @@ public abstract class AbstractFencedSpliterator<T extends Object> implements Spl
 
 		@Override
 		public boolean tryAdvance(IntConsumer action) {
+			updateFence();
+
 			if(pos<fence) {
 				action.accept(currentInt());
 				pos++;
@@ -133,6 +153,8 @@ public abstract class AbstractFencedSpliterator<T extends Object> implements Spl
 
 		@Override
 		public void forEachRemaining(IntConsumer action) {
+			updateFence();
+
 			for(;pos<fence;pos++) {
 				action.accept(currentInt());
 			}
@@ -164,6 +186,8 @@ public abstract class AbstractFencedSpliterator<T extends Object> implements Spl
 
 		@Override
 		public boolean tryAdvance(LongConsumer action) {
+			updateFence();
+
 			if(pos<fence) {
 				action.accept(currentLong());
 				pos++;
@@ -175,6 +199,8 @@ public abstract class AbstractFencedSpliterator<T extends Object> implements Spl
 
 		@Override
 		public void forEachRemaining(LongConsumer action) {
+			updateFence();
+
 			for(;pos<fence;pos++) {
 				action.accept(currentLong());
 			}
@@ -206,6 +232,8 @@ public abstract class AbstractFencedSpliterator<T extends Object> implements Spl
 
 		@Override
 		public boolean tryAdvance(DoubleConsumer action) {
+			updateFence();
+
 			if(pos<fence) {
 				action.accept(currentDouble());
 				pos++;
@@ -217,6 +245,8 @@ public abstract class AbstractFencedSpliterator<T extends Object> implements Spl
 
 		@Override
 		public void forEachRemaining(DoubleConsumer action) {
+			updateFence();
+
 			for(;pos<fence;pos++) {
 				action.accept(currentDouble());
 			}

@@ -175,14 +175,19 @@ public interface Container extends Item, ManifestOwner<ContainerManifestBase<?>>
 
 	/**
 	 * Performs the given {@code action} for every element in this container.
+	 * <p>
+	 * This method makes no guarantees regarding the order in which the given
+	 * {@code action} is called for items in this container or the degree of
+	 * parallelism.
+	 * <p>
+	 * If a greater control regarding the details of internal iteration is
+	 * desired it is recommended to use the {@link #elements()} method and
+	 * adjust the generated stream.
 	 *
 	 * @param action
 	 */
 	default void forEachItem(BiConsumer<? super Container, ? super Item> action) {
-		long size = getItemCount();
-		for(long i = 0; i<size; i++) {
-			action.accept(this, getItemAt(i));
-		}
+		elements().forEach(item -> action.accept(this, item));
 	}
 
 	/**

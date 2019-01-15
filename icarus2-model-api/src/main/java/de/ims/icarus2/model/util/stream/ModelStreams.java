@@ -32,7 +32,7 @@ import de.ims.icarus2.model.manifest.api.StructureType;
 public class ModelStreams {
 
 	public static Stream<Item> newElementStream(Container container) {
-		return StreamSupport.stream(new ContainerSpliterator(container), false);
+		return StreamSupport.stream(ContainerSpliterator.spliterator(container), false);
 
 	}
 
@@ -41,12 +41,17 @@ public class ModelStreams {
 		if(structure.getStructureType()==StructureType.SET) {
 			return newElementStream(structure);
 		}
-		return StreamSupport.stream(new StructureNodeSpliterator(structure), false);
+		return StreamSupport.stream(StructureNodeSpliterator.spliterator(structure), false);
 
 	}
 
 	public static Stream<Edge> newEdgeStream(Structure structure) {
-		return StreamSupport.stream(new StructureEdgeSpliterator(structure), false);
+		return StreamSupport.stream(StructureEdgeSpliterator.spliterator(structure), false);
+
+	}
+
+	public static Stream<Edge> newEdgeStream(Structure structure, Item node, boolean outgoing) {
+		return StreamSupport.stream(StructureEdgeSpliterator.spliterator(structure, node, outgoing), false);
 
 	}
 }

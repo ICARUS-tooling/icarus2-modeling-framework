@@ -23,6 +23,7 @@ import java.util.Spliterator;
 
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.stream.AbstractFencedSpliterator;
 
 /**
@@ -31,19 +32,36 @@ import de.ims.icarus2.util.stream.AbstractFencedSpliterator;
  */
 public class ContainerSpliterator extends AbstractFencedSpliterator<Item> {
 
+	public static ContainerSpliterator spliterator(Container source, long pos, long fence) {
+		requireNonNull(source);
+		checkArgument(pos>=0L);
+		checkArgument(fence>pos && fence<=source.getItemCount());
+
+		return new ContainerSpliterator(source, pos, fence);
+	}
+
+	public static ContainerSpliterator spliterator(Container source) {
+		requireNonNull(source);
+
+		return new ContainerSpliterator(source, 0L, IcarusUtils.UNSET_LONG);
+	}
+
 	private final Container source;
 
 	public ContainerSpliterator(Container source, long pos, long fence) {
 		super(pos, fence);
-		requireNonNull(source);
-		checkArgument(fence<=source.getItemCount());
 
 		this.source = source;
 	}
 
-	public ContainerSpliterator(Container source) {
-		super(0L, source.getItemCount());
-		this.source = source;
+	/**
+	 * @see de.ims.icarus2.util.stream.AbstractFencedSpliterator#updateFence()
+	 */
+	@Override
+	protected void updateFence() {
+		if(fence==IcarusUtils.UNSET_LONG) {
+			fence = source.getItemCount();
+		}
 	}
 
 	/**

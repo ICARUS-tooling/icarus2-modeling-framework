@@ -20,103 +20,116 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Spliterator;
-import java.util.function.Consumer;
 
 import de.ims.icarus2.model.api.members.item.Edge;
+import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
+import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.stream.AbstractFencedSpliterator;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class StructureEdgeSpliterator implements Spliterator<Edge> {
+public class StructureEdgeSpliterator extends AbstractFencedSpliterator<Edge> {
 
-	private final Structure source;
+	public static Spliterator<Edge> spliterator(Structure source) {
+		requireNonNull(source);
 
-	/**
-	 * Maximum index (exclusive)
-	 */
-	private final long fence;
+		return new StructureEdgeSpliterator(source, 0, IcarusUtils.UNSET_LONG);
+	}
 
-	/**
-	 * Current position in the structure
-	 */
-	private long pos;
-
-	public StructureEdgeSpliterator(Structure source, long pos, long fence) {
+	public static Spliterator<Edge> spliterator(Structure source, long pos, long fence) {
 		requireNonNull(source);
 		checkArgument(pos>=0L);
 		checkArgument(fence>pos);
-		checkArgument(fence<=source.getItemCount());
+		checkArgument(fence<=source.getEdgeCount());
 
-		this.source = source;
-		this.pos = pos;
-		this.fence = fence;
+		return new StructureEdgeSpliterator(source, pos, fence);
 	}
 
-	public StructureEdgeSpliterator(Structure source) {
+	public static Spliterator<Edge> spliterator(Structure source, Item node, boolean isSource) {
 		requireNonNull(source);
+		requireNonNull(node);
 
-		this.source = source;
-		this.pos = 0L;
-		this.fence = source.getEdgeCount();
+		return new ForItem(source, node, isSource, 0, IcarusUtils.UNSET_LONG);
 	}
 
-	/**
-	 * @see java.util.Spliterator#tryAdvance(java.util.function.Consumer)
-	 */
+	public static Spliterator<Edge> spliterator(Structure source, Item node, boolean isSource,
+			long pos, long fence) {
+		requireNonNull(source);
+		requireNonNull(node);
+		checkArgument(fence>pos);
+		checkArgument(fence<=source.getEdgeCount(node, isSource));
+
+		return new ForItem(source, node, isSource, pos, fence);
+	}
+
+	final Structure source;
+
+	protected StructureEdgeSpliterator(Structure source, long pos, long fence) {
+		super(pos, fence);
+		this.source = source;
+	}
+
 	@Override
-	public boolean tryAdvance(Consumer<? super Edge> action) {
-		if(pos<fence) {
-			action.accept(edge());
-			pos++;
-			return true;
-		} else {
-			return false;
+	protected void updateFence() {
+		if(fence==UNDEFINED_FENCE) {
+			fence = source.getEdgeCount();
 		}
 	}
 
-	public Edge edge() {
+	@Override
+	protected Edge current() {
 		return source.getEdgeAt(pos);
 	}
 
-	/**
-	 * @see java.util.Spliterator#trySplit()
-	 */
 	@Override
-	public Spliterator<Edge> trySplit() {
-		long lo = pos; // divide range in half
-		long mid = ((lo + fence) >>> 1) & ~1; // force midpoint to be even
-		if (lo < mid) { // split out left half
-			pos = mid; // reset this Spliterator's origin
-			return new StructureEdgeSpliterator(source, lo, mid);
-		} else {
-			// too small to split
-			return null;
+	protected StructureEdgeSpliterator split(long pos, long fence) {
+		return new StructureEdgeSpliterator(source, pos, fence);
+	}
+
+	static class ForItem extends StructureEdgeSpliterator {
+
+		private final Item node;
+		private final boolean isSource;
+
+		/**
+		 * @param source
+		 * @param pos
+		 * @param fence
+		 */
+		ForItem(Structure source, Item node, boolean isSource, long pos, long fence) {
+			super(source, pos, fence);
+
+			this.node = node;
+			this.isSource = isSource;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.util.stream.StructureEdgeSpliterator#updateFence()
+		 */
+		@Override
+		protected void updateFence() {
+			if(fence==UNDEFINED_FENCE) {
+				fence = source.getEdgeCount(node, isSource);
+			}
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.util.stream.StructureEdgeSpliterator#split(long, long)
+		 */
+		@Override
+		protected StructureEdgeSpliterator split(long pos, long fence) {
+			return new ForItem(source, node, isSource, pos, fence);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.util.stream.StructureEdgeSpliterator#edge()
+		 */
+		@Override
+		protected Edge current() {
+			return source.getEdgeAt(node, pos, isSource);
 		}
 	}
-
-	/**
-	 * @see java.util.Spliterator#estimateSize()
-	 */
-	@Override
-	public long estimateSize() {
-		return fence-pos;
-	}
-
-	/**
-	 * @see java.util.Spliterator#characteristics()
-	 */
-	@Override
-	public int characteristics() {
-		return ORDERED | SIZED | IMMUTABLE | SUBSIZED;
-	}
-
-	@Override
-	public void forEachRemaining(Consumer<? super Edge> action) {
-		for(;pos<fence;pos++) {
-			action.accept(edge());
-		}
-	}
-
 }

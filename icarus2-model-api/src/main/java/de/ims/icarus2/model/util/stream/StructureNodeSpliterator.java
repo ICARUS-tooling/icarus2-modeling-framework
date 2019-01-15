@@ -20,10 +20,10 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Spliterator;
-import java.util.function.Consumer;
 
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
+import de.ims.icarus2.util.stream.AbstractFencedSpliterator;
 
 /**
  * TODO mention that when starting at -1 for initial pos, the virtual root node will be returned first!
@@ -31,95 +31,42 @@ import de.ims.icarus2.model.api.members.structure.Structure;
  * @author Markus Gärtner
  *
  */
-public class StructureNodeSpliterator implements Spliterator<Item> {
+public class StructureNodeSpliterator extends AbstractFencedSpliterator<Item> {
+
+	private static final long ROOT_POS = -1L;
+
+	public static StructureNodeSpliterator spliterator(Structure source, long pos, long fence) {
+		requireNonNull(source);
+		checkArgument(pos>=-1L);
+		checkArgument(fence>pos && fence<=source.getItemCount());
+
+		return new StructureNodeSpliterator(source, pos, fence);
+	}
+
+	public static StructureNodeSpliterator spliterator(Structure source) {
+		requireNonNull(source);
+
+		return new StructureNodeSpliterator(source, ROOT_POS, UNDEFINED_FENCE);
+	}
 
 	private final Structure source;
 
-	/**
-	 * Maximum index (exclusive)
-	 */
-	private final long fence;
-
-	/**
-	 * Current position in the structure
-	 */
-	private long pos;
-
 	public StructureNodeSpliterator(Structure source, long pos, long fence) {
-		requireNonNull(source);
-		checkArgument("pos must be positive or 0",pos>=-1L);
-		checkArgument("fence must be positive",fence>0);
-		checkArgument("fence must be greater than pos",fence>pos);
-		checkArgument("fence cannot exceed structrue size",fence<=source.getItemCount());
+		super(pos, fence);
 
 		this.source = source;
-		this.pos = pos;
-		this.fence = fence;
 	}
 
-	public StructureNodeSpliterator(Structure source) {
-		requireNonNull(source);
-
-		this.source = source;
-		this.pos = -1L;
-		this.fence = source.getItemCount();
-	}
-
-	/**
-	 * @see java.util.Spliterator#tryAdvance(java.util.function.Consumer)
-	 */
 	@Override
-	public boolean tryAdvance(Consumer<? super Item> action) {
-		if(pos<fence) {
-			action.accept(item());
-			pos++;
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	public Item item() {
+	protected Item current() {
 		return pos==-1L ? source.getVirtualRoot() : source.getItemAt(pos);
 	}
 
 	/**
-	 * @see java.util.Spliterator#trySplit()
+	 * @see de.ims.icarus2.util.stream.AbstractFencedSpliterator#split(long, long)
 	 */
 	@Override
-	public Spliterator<Item> trySplit() {
-		long lo = pos; // divide range in half
-		long mid = ((lo + fence) >>> 1) & ~1; // force midpoint to be even
-		if (lo < mid) { // split out left half
-			pos = mid; // reset this Spliterator's origin
-			return new StructureNodeSpliterator(source, lo, mid);
-		} else {
-			// too small to split
-			return null;
-		}
+	protected Spliterator<Item> split(long pos, long fence) {
+		return new StructureNodeSpliterator(source, pos, fence);
 	}
-
-	/**
-	 * @see java.util.Spliterator#estimateSize()
-	 */
-	@Override
-	public long estimateSize() {
-		return fence-pos;
-	}
-
-	/**
-	 * @see java.util.Spliterator#characteristics()
-	 */
-	@Override
-	public int characteristics() {
-		return ORDERED | SIZED | IMMUTABLE | SUBSIZED;
-	}
-
-	@Override
-	public void forEachRemaining(Consumer<? super Item> action) {
-		for(;pos<fence;pos++) {
-			action.accept(item());
-		}
-	}
-
 }

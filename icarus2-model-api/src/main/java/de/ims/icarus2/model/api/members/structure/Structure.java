@@ -173,7 +173,7 @@ public interface Structure extends Container {
 	 * Return the number of either outgoing or incoming edges for a given node
 	 * depending on the {@code isSource} argument.
 	 *
-	 * @param node the node to query for the number of outgoing edges.
+	 * @param node the node to query for the number of edges.
 	 * @return the number of <b>outgoing</i> edges for a given node.
 	 * @throws NullPointerException if the {@code node} is {@code null}
 	 * @throws IllegalArgumentException if the {@code node} is not a member
@@ -482,38 +482,37 @@ public interface Structure extends Container {
 	Edge newEdge(Item source, Item target);
 
 	/**
-	 * Performs the given {@code action} for every edge in this structure.
-	 * @param action
-	 */
-	default void forEachNode(BiConsumer<? super Structure, ? super Item> action) {
-		long itemCount = getItemCount();
-		for(long i = 0L; i<itemCount; i++) {
-			action.accept(this, getItemAt(i));
-		}
-	}
-
-	/**
-	 * Performs the given {@code action} for every edge in this structure.
-	 * @param action
-	 */
-	default void forEachEdge(BiConsumer<? super Structure, ? super Edge> action) {
-		long edgeCount = getEdgeCount();
-		for(long i = 0L; i<edgeCount; i++) {
-			action.accept(this, getEdgeAt(i));
-		}
-	}
-
-	/**
-	 * Applies the given {@code action} to all edges in the order in which they are returned when
-	 * iterating via {@link #getEdgeAt(long)} with increasing index values.
+	 * Performs the given {@code action} for every node in this structure.
+	 * <p>
+	 * This method makes no guarantees regarding the order in which the given
+	 * {@code action} is called for nodes in this structure or the degree of
+	 * parallelism.
+	 * <p>
+	 * If a greater control regarding the details of internal iteration is
+	 * desired it is recommended to use the {@link #nodes()} method and
+	 * adjust the generated stream.
 	 *
 	 * @param action
 	 */
-	default void forEachEdge(Consumer<? super Edge> action) {
-		long edgeCount = getEdgeCount();
-		for(long i = 0L; i<edgeCount; i++) {
-			action.accept(getEdgeAt(i));
-		}
+	default void forEachNode(BiConsumer<? super Structure, ? super Item> action) {
+		nodes().forEach(item -> action.accept(this, item));
+	}
+
+	/**
+	 * Performs the given {@code action} for every edge in this structure.
+	 * <p>
+	 * This method makes no guarantees regarding the order in which the given
+	 * {@code action} is called for edges in this structure or the degree of
+	 * parallelism.
+	 * <p>
+	 * If a greater control regarding the details of internal iteration is
+	 * desired it is recommended to use the {@link #edges()} method and
+	 * adjust the generated stream.
+	 *
+	 * @param action
+	 */
+	default void forEachEdge(BiConsumer<? super Structure, ? super Edge> action) {
+		edges().forEach(edge -> action.accept(this, edge));
 	}
 
 	default void forEachEdge(Item node, boolean isSource, Consumer<? super Edge> action) {
@@ -531,6 +530,17 @@ public interface Structure extends Container {
 		forEachEdge(node, true, action);
 	}
 
+	/**
+	 * Executes the given {@code action} first for all incoming edges of the
+	 * specified {@code node} and then for all the outgoing ones.
+	 * <p>
+	 * This method makes no guarantees regarding the order in which the given
+	 * {@code action} is called for edges in those two passes or the degree of
+	 * parallelism.
+	 *
+	 * @param node
+	 * @param action
+	 */
 	default void forEachEdge(Item node, Consumer<? super Edge> action) {
 		forEachEdge(node, false, action);
 		forEachEdge(node, true, action);
