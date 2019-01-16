@@ -16,10 +16,6 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
-import static de.ims.icarus2.model.standard.members.MemberUtils.checkContainsEdge;
-import static de.ims.icarus2.model.standard.members.MemberUtils.checkContainsItem;
-import static de.ims.icarus2.model.standard.members.MemberUtils.checkHostStructure;
-import static de.ims.icarus2.model.standard.members.MemberUtils.checkNotContainsEdge;
 import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.model.api.members.item.Edge;
@@ -41,7 +37,7 @@ public class UnrestrictedStructureEditVerifier extends UnrestrictedContainerEdit
 	}
 
 	protected boolean isValidRemoveEdgeIndex(long index) {
-		return index>0L && index<getSource().getEdgeCount();
+		return index>=0L && index<getSource().getEdgeCount();
 	}
 
 	/**
@@ -57,18 +53,9 @@ public class UnrestrictedStructureEditVerifier extends UnrestrictedContainerEdit
 	 */
 	@Override
 	public boolean canAddEdge(Edge edge) {
-		requireNonNull(edge);
+		StructureEditVerifier.checkEdgeForAdd(getSource(), edge);
 
-		final Structure structure = getSource();
-		final Item source = edge.getSource();
-		final Item target = edge.getTarget();
-
-		checkHostStructure(edge, structure);
-		checkNotContainsEdge(structure, edge);
-		checkContainsItem(structure, source);
-		checkContainsItem(structure, target);
-
-		return true;
+		return edge.getTarget()!=getSource().getVirtualRoot();
 	}
 
 	/**
@@ -120,14 +107,7 @@ public class UnrestrictedStructureEditVerifier extends UnrestrictedContainerEdit
 	 */
 	@Override
 	public boolean canSetTerminal(Edge edge, Item terminal, boolean isSource) {
-		requireNonNull(edge);
-		requireNonNull(terminal);
-
-		final Structure structure = getSource();
-
-		checkHostStructure(edge, structure);
-		checkContainsEdge(structure, edge);
-		checkContainsItem(structure, terminal);
+		StructureEditVerifier.checkEdgeForTerminalChange(getSource(), edge, terminal);
 
 		return !(terminal==getSource().getVirtualRoot() && !isSource);
 	}
@@ -137,13 +117,7 @@ public class UnrestrictedStructureEditVerifier extends UnrestrictedContainerEdit
 	 */
 	@Override
 	public boolean canCreateEdge(Item source, Item target) {
-		requireNonNull(source);
-		requireNonNull(target);
-
-		final Structure structure = getSource();
-
-		checkContainsItem(structure, source);
-		checkContainsItem(structure, target);
+		StructureEditVerifier.checkNodesForEdgeCreation(getSource(), source, target);
 
 		return true;
 	}

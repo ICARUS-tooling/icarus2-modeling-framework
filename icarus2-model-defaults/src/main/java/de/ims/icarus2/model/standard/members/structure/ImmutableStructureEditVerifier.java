@@ -16,10 +16,6 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
-import static de.ims.icarus2.model.standard.members.MemberUtils.checkContainsEdge;
-import static de.ims.icarus2.model.standard.members.MemberUtils.checkContainsItem;
-import static de.ims.icarus2.model.standard.members.MemberUtils.checkHostStructure;
-import static de.ims.icarus2.model.standard.members.MemberUtils.checkNotContainsEdge;
 import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.model.api.members.item.Edge;
@@ -56,16 +52,7 @@ public class ImmutableStructureEditVerifier extends ImmutableContainerEditVerifi
 	 */
 	@Override
 	public boolean canAddEdge(Edge edge) {
-		requireNonNull(edge);
-
-		final Structure structure = getSource();
-		final Item source = edge.getSource();
-		final Item target = edge.getTarget();
-
-		checkHostStructure(edge, structure);
-		checkNotContainsEdge(structure, edge);
-		checkContainsItem(structure, source);
-		checkContainsItem(structure, target);
+		StructureEditVerifier.checkEdgeForAdd(getSource(), edge);
 
 		return false;
 	}
@@ -111,14 +98,7 @@ public class ImmutableStructureEditVerifier extends ImmutableContainerEditVerifi
 	 */
 	@Override
 	public boolean canSetTerminal(Edge edge, Item terminal, boolean isSource) {
-		requireNonNull(edge);
-		requireNonNull(terminal);
-
-		final Structure structure = getSource();
-
-		checkHostStructure(edge, structure);
-		checkContainsEdge(structure, edge);
-		checkContainsItem(structure, terminal);
+		StructureEditVerifier.checkEdgeForTerminalChange(getSource(), edge, terminal);
 
 		return false;
 	}
@@ -128,13 +108,7 @@ public class ImmutableStructureEditVerifier extends ImmutableContainerEditVerifi
 	 */
 	@Override
 	public boolean canCreateEdge(Item source, Item target) {
-		requireNonNull(source);
-		requireNonNull(target);
-
-		final Structure structure = getSource();
-
-		checkContainsItem(structure, source);
-		checkContainsItem(structure, target);
+		StructureEditVerifier.checkNodesForEdgeCreation(getSource(), source, target);
 
 		return false;
 	}

@@ -20,11 +20,11 @@ import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.model.api.members.MemberUtils;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerType;
-import de.ims.icarus2.model.standard.members.MemberUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**

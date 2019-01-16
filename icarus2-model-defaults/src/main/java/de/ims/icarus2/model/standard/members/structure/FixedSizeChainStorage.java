@@ -16,14 +16,11 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
-import static de.ims.icarus2.model.standard.members.MemberUtils.checkContainsEdge;
-import static de.ims.icarus2.model.standard.members.MemberUtils.checkContainsItem;
-import static de.ims.icarus2.model.standard.members.MemberUtils.checkHostStructure;
-import static de.ims.icarus2.model.standard.members.MemberUtils.checkNoLoopsStructure;
-import static de.ims.icarus2.model.standard.members.MemberUtils.checkNonEmptyContainer;
-import static de.ims.icarus2.model.standard.members.MemberUtils.checkNonPartialStructure;
-import static de.ims.icarus2.model.standard.members.MemberUtils.checkNotContainsEdge;
-import static de.ims.icarus2.model.standard.members.MemberUtils.checkStaticContainer;
+import static de.ims.icarus2.model.api.members.MemberUtils.checkHostStructure;
+import static de.ims.icarus2.model.api.members.MemberUtils.checkNoLoopsStructure;
+import static de.ims.icarus2.model.api.members.MemberUtils.checkNonEmptyContainer;
+import static de.ims.icarus2.model.api.members.MemberUtils.checkNonPartialStructure;
+import static de.ims.icarus2.model.api.members.MemberUtils.checkStaticContainer;
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static java.util.Objects.requireNonNull;
 
@@ -812,16 +809,11 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		 */
 		@Override
 		public boolean canAddEdge(Edge edge) {
-			requireNonNull(edge);
+			StructureEditVerifier.checkEdgeForAdd(getSource(), edge);
 
 			final Structure structure = getSource();
 			final Item source = edge.getSource();
 			final Item target = edge.getTarget();
-
-			checkHostStructure(edge, structure);
-			checkNotContainsEdge(structure, edge);
-			checkContainsItem(structure, source);
-			checkContainsItem(structure, target);
 
 			final Item root = storage.getVirtualRoot(structure);
 
@@ -883,14 +875,9 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		 */
 		@Override
 		public boolean canSetTerminal(Edge edge, Item terminal, boolean isSource) {
-			requireNonNull(edge);
-			requireNonNull(terminal);
+			StructureEditVerifier.checkEdgeForTerminalChange(getSource(), edge, terminal);
 
 			final Structure structure = getSource();
-
-			checkHostStructure(edge, structure);
-			checkContainsEdge(structure, edge);
-			checkContainsItem(structure, terminal);
 
 			// Early fail if no actual change
 			if(edge.getTerminal(isSource)==terminal) {
@@ -902,7 +889,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 				return false;
 			}
 
-			final Item root = storage.getVirtualRoot(structure);
+			final Item root = structure.getVirtualRoot();
 
 			boolean isRoot = root==terminal;
 
@@ -915,15 +902,9 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		 */
 		@Override
 		public boolean canCreateEdge(Item source, Item target) {
-			requireNonNull(source);
-			requireNonNull(target);
+			StructureEditVerifier.checkNodesForEdgeCreation(getSource(), source, target);
 
-			final Structure structure = getSource();
-
-			checkContainsItem(structure, source);
-			checkContainsItem(structure, target);
-
-			return target!=storage.getVirtualRoot(structure);
+			return target!=getSource().getVirtualRoot();
 		}
 	}
 }

@@ -124,16 +124,10 @@ public class UnrestrictedStructureEditVerifierTest {
 				.swapSingleIllegal(intPair(0, 0), intPair(0, 1));
 	}
 
-	@TestFactory
-	Stream<DynamicTest> testSmallStructure10() {
-		return configureBuilder(new StructureEditVerifierTestBuilder(
-					new UnrestrictedStructureEditVerifier(mockStructure(10, intChain(ROOT, 9)))))
-				.createTests();
-	}
-
 	private static final int ROOT = -1;
 
-	private static final BiFunction<Structure, Long, Edge> MAKE_DEFAULT_EDGE =
+	@SuppressWarnings("boxing")
+	private static final BiFunction<Structure, Long, Edge> DEFAULT_MAKE_EDGE =
 			(structure, index) -> {
 				long idx = index.longValue();
 				Item target = structure.getItemAt(idx);
@@ -144,11 +138,18 @@ public class UnrestrictedStructureEditVerifierTest {
 			};
 
 	@TestFactory
+	Stream<DynamicTest> testSmallStructure10() {
+		return configureBuilder(new StructureEditVerifierTestBuilder(
+					new UnrestrictedStructureEditVerifier(mockStructure(10, intChain(ROOT, 9)))))
+				.createTests();
+	}
+
+	@TestFactory
 	Stream<DynamicTest> testLargeStructureLongMax() {
 		return configureBuilder(new StructureEditVerifierTestBuilder(
 					new UnrestrictedStructureEditVerifier(
 							mockStructure(Long.MAX_VALUE-1, Long.MAX_VALUE-1,
-							MAKE_DEFAULT_EDGE))))
+							DEFAULT_MAKE_EDGE))))
 				.createTests();
 	}
 
@@ -174,6 +175,7 @@ public class UnrestrictedStructureEditVerifierTest {
 		long midI = items>>>1;
 		long midE = edges>>>1;
 
+		//TODO rework test to be repeated and use random values for inner indices
 //		Supplier<Long> innerE = randomizer(0L, 1L, midE, edges-1);
 //		Supplier<Long> innerI = randomizer(0L, 1L, midI, items-1);
 

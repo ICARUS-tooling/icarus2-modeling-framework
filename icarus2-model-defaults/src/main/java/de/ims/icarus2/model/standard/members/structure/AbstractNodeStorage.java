@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
-import static de.ims.icarus2.model.standard.members.MemberUtils.checkHostStructure;
+import static de.ims.icarus2.model.api.members.MemberUtils.checkHostStructure;
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 
 import java.util.ArrayList;

@@ -16,6 +16,12 @@
  */
 package de.ims.icarus2.model.api.members.structure;
 
+import static de.ims.icarus2.model.api.members.MemberUtils.checkContainsEdge;
+import static de.ims.icarus2.model.api.members.MemberUtils.checkContainsItem;
+import static de.ims.icarus2.model.api.members.MemberUtils.checkHostStructure;
+import static de.ims.icarus2.model.api.members.MemberUtils.checkNotContainsEdge;
+import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
@@ -60,6 +66,19 @@ public interface StructureEditVerifier extends ContainerEditVerifier {
 	 * 		should indicate whether they enforce this restriction).
 	 */
 	boolean canAddEdge(Edge edge);
+
+	public static void checkEdgeForAdd(Structure structure, Edge edge) {
+		requireNonNull(structure);
+		requireNonNull(edge);
+
+		final Item source = edge.getSource();
+		final Item target = edge.getTarget();
+
+		checkHostStructure(edge, structure);
+		checkNotContainsEdge(structure, edge);
+		checkContainsItem(structure, source);
+		checkContainsItem(structure, target);
+	}
 
 	/**
 	 * Verify if the given {@code edges} can be inserted at the given {@code index}.
@@ -131,6 +150,15 @@ public interface StructureEditVerifier extends ContainerEditVerifier {
 	 */
 	boolean canSetTerminal(Edge edge, Item terminal, boolean isSource);
 
+	public static void checkEdgeForTerminalChange(Structure structure, Edge edge, Item terminal) {
+		requireNonNull(edge);
+		requireNonNull(terminal);
+
+		checkHostStructure(edge, structure);
+		checkContainsEdge(structure, edge);
+		checkContainsItem(structure, terminal);
+	}
+
 	/**
 	 * Verify that an edge can be created between the {@code source} and {@code target} items
 	 * without violating any restrictions imposed by the underlying structure.
@@ -146,8 +174,13 @@ public interface StructureEditVerifier extends ContainerEditVerifier {
 	 * 		structure (this is an optional error condition and implementations
 	 * 		should indicate whether they enforce this restriction).
 	 */
-	default boolean canCreateEdge(Item source, Item target) {
-		//TODO
-		return getSource().containsItem(source) && getSource().containsItem(target);
+	boolean canCreateEdge(Item source, Item target);
+
+	public static void checkNodesForEdgeCreation(Structure structure, Item source, Item target) {
+		requireNonNull(source);
+		requireNonNull(target);
+
+		checkContainsItem(structure, source);
+		checkContainsItem(structure, target);
 	}
 }

@@ -150,7 +150,7 @@ public class ModelTestUtils {
 
 		final Long2ObjectMap<Item> items = new Long2ObjectOpenHashMap<>();
 		final Object2LongMap<Item> indices = new Object2LongOpenHashMap<>();
-		indices.defaultReturnValue(-1);
+		indices.defaultReturnValue(-1L);
 
 		when(container.getItemAt(anyLong())).then(invocation -> {
 			long index = invocation.getArgument(0);
@@ -165,12 +165,18 @@ public class ModelTestUtils {
 
 		when(container.indexOfItem(any())).then(invocation -> {
 			Item item = invocation.getArgument(0);
-			for(int i=0; i<(int)container.getItemCount(); i++) {
-				if(container.getItemAt(i)==item) {
-					return (long)i;
+
+			long result = indices.getLong(item);
+
+			if(result==-1L) {
+				for(int i=0; i<(int)container.getItemCount(); i++) {
+					if(container.getItemAt(i)==item) {
+						return (long)i;
+					}
 				}
 			}
-			return -1L;
+
+			return result;
 		});
 	}
 
