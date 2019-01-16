@@ -515,11 +515,22 @@ public interface Structure extends Container {
 		edges().forEach(edge -> action.accept(this, edge));
 	}
 
+	/**
+	 * Performs the given {@code action} for every edge in this structure that is
+	 * an incoming or outgoing edge of the specified {@code node}.
+	 * <p>
+	 * This method makes no guarantees regarding the order in which the given
+	 * {@code action} is called for edges in this structure or the degree of
+	 * parallelism.
+	 * <p>
+	 * If a greater control regarding the details of internal iteration is
+	 * desired it is recommended to use the {@link #edges(Item, boolean)}
+	 * method and adjust the generated stream.
+	 *
+	 * @param action
+	 */
 	default void forEachEdge(Item node, boolean isSource, Consumer<? super Edge> action) {
-		long edgeCount = getEdgeCount(node, isSource);
-		for(long i = 0L; i<edgeCount; i++) {
-			action.accept(getEdgeAt(node, i, isSource));
-		}
+		edges(node, isSource).forEach(action);
 	}
 
 	default void forEachIncomingEdge(Item node, Consumer<? super Edge> action) {
@@ -564,5 +575,17 @@ public interface Structure extends Container {
 	 */
 	default Stream<Edge> edges() {
 		return ModelStreams.newEdgeStream(this);
+	}
+
+	/**
+	 * Returns a sequential {@link Stream} of the outgoing or incoming edges
+	 * of the given {@code node}.
+	 *
+	 * @param node
+	 * @param isSource
+	 * @return
+	 */
+	default Stream<Edge> edges(Item node, boolean isSource) {
+		return ModelStreams.newEdgeStream(this, node, isSource);
 	}
 }
