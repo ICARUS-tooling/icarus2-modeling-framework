@@ -38,6 +38,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 
+import de.ims.icarus2.model.api.ModelTestUtils;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.ManifestType;
@@ -69,7 +70,7 @@ class FixedSizeChainEditVerifierTest {
 	 * Artificial index to indicate an edge should use the structrue's
 	 * {@link Structure#getVirtualRoot() root} node as source.
 	 */
-	private static final int ROOT = -1;
+	private static final int ROOT = ModelTestUtils.ROOT;
 
 	@BeforeEach
 	void setUp() {

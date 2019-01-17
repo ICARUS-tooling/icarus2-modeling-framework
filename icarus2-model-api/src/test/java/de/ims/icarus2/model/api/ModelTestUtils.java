@@ -204,7 +204,7 @@ public class ModelTestUtils {
 			throw new IndexOutOfBoundsException();
 	}
 
-	public static final long ROOT = -1;
+	public static final int ROOT = -1;
 
 	private static Item itemAt(Structure structure, long index) {
 		return index==ROOT ? structure.getVirtualRoot() : structure.getItemAt(index);
@@ -231,14 +231,32 @@ public class ModelTestUtils {
 		return structure;
 	}
 
-	@SuppressWarnings("boxing")
 	public static Structure mockStructure(
 			long itemCount, long edgeCount,
 			BiFunction<Structure, Long, Edge> edgeCreator) {
 
 		Structure structure = mockStructure(itemCount, edgeCount);
 
-//		when(structure.indexOfEdge(any())).thenReturn(Long.valueOf(-1));
+		stubEdges(structure, edgeCreator);
+
+		return structure;
+	}
+
+	//TODO
+	@SuppressWarnings("boxing")
+	public static final BiFunction<Structure, Long, Edge> DEFAULT_MAKE_EDGE =
+			(structure, index) -> {
+				long idx = index.longValue();
+				Item target = structure.getItemAt(idx);
+				Item source = idx==ROOT ? structure.getVirtualRoot()
+						: structure.getItemAt(idx);
+
+				return stubId(mockEdge(structure, source, target), index);
+			};
+
+	@SuppressWarnings("boxing")
+	public static void stubEdges(Structure structure,
+			BiFunction<Structure, Long, Edge> edgeCreator) {
 
 		final Long2ObjectMap<Edge> edges = new Long2ObjectOpenHashMap<>();
 		final Object2LongMap<Edge> indices = new Object2LongOpenHashMap<>();
@@ -258,9 +276,13 @@ public class ModelTestUtils {
 		when(structure.indexOfEdge(any())).then(invocation -> {
 			return indices.getLong(invocation.getArgument(0));
 		});
-
-		return structure;
 	}
+
+	@SuppressWarnings("boxing")
+	public static void stubDefaultLazyEdges(Structure structure) {
+		stubEdges(structure, DEFAULT_MAKE_EDGE);
+	}
+
 
 	public static final Item ITEM = mockItem();
 	public static final DataSequence<Item> ITEM_SEQUENCE = mockSequence(1, ITEM);

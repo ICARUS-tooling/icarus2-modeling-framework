@@ -3,9 +3,8 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.mockEdge;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockStructure;
-import static de.ims.icarus2.model.api.ModelTestUtils.stubId;
+import static de.ims.icarus2.model.api.ModelTestUtils.stubDefaultLazyEdges;
 import static de.ims.icarus2.test.TestUtils.longRange;
 import static de.ims.icarus2.test.util.Pair.intChain;
 import static de.ims.icarus2.test.util.Pair.intPair;
@@ -15,15 +14,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
-import de.ims.icarus2.model.api.members.item.Edge;
-import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.ModelTestUtils;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.standard.members.container.ContainerEditVerifierTestBuilder;
 import de.ims.icarus2.model.standard.members.container.UnrestrictedContainerEditVerifierTest;
@@ -124,18 +121,7 @@ public class UnrestrictedStructureEditVerifierTest {
 				.swapSingleIllegal(intPair(0, 0), intPair(0, 1));
 	}
 
-	private static final int ROOT = -1;
-
-	@SuppressWarnings("boxing")
-	private static final BiFunction<Structure, Long, Edge> DEFAULT_MAKE_EDGE =
-			(structure, index) -> {
-				long idx = index.longValue();
-				Item target = structure.getItemAt(idx);
-				Item source = idx==ROOT ? structure.getVirtualRoot()
-						: structure.getItemAt(idx);
-
-				return stubId(mockEdge(structure, source, target), index);
-			};
+	private static final int ROOT = ModelTestUtils.ROOT;
 
 	@TestFactory
 	Stream<DynamicTest> testSmallStructure10() {
@@ -146,10 +132,12 @@ public class UnrestrictedStructureEditVerifierTest {
 
 	@TestFactory
 	Stream<DynamicTest> testLargeStructureLongMax() {
+		Structure structure = mockStructure(Long.MAX_VALUE-1, Long.MAX_VALUE-1);
+		stubDefaultLazyEdges(structure);
+
 		return configureBuilder(new StructureEditVerifierTestBuilder(
 					new UnrestrictedStructureEditVerifier(
-							mockStructure(Long.MAX_VALUE-1, Long.MAX_VALUE-1,
-							DEFAULT_MAKE_EDGE))))
+							structure)))
 				.createTests();
 	}
 
