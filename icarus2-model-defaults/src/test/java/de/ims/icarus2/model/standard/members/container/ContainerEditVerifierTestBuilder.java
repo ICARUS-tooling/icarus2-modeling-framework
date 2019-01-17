@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
+import static de.ims.icarus2.test.TestUtils.FALSE;
+import static de.ims.icarus2.test.TestUtils.TRUE;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.displayString;
 import static java.util.Objects.requireNonNull;
@@ -200,48 +202,109 @@ public class ContainerEditVerifierTestBuilder {
 		return createTestsForSpec(this).stream();
 	}
 
+	public Stream<DynamicTest> createTestsWithOracle(ContainerEditVerifier oracle) {
+		return createTestsForSpec(this, oracle).stream();
+	}
+
 	public static List<DynamicTest> createTestsForSpec(ContainerEditVerifierTestBuilder spec) {
 		List<DynamicTest> tests = new ArrayList<>();
 
 		// SINGLE ADD
 		TestUtils.makeTests(spec.addSingleLegal,
 				p -> displayString("add single legal: %s", p.first),
-				p -> spec.verifier.canAddItem(p.first.longValue(), p.second), true, tests::add);
+				p -> spec.verifier.canAddItem(p.first.longValue(), p.second), TRUE, tests::add);
 		TestUtils.makeTests(spec.addSingleIllegal,
 				p -> displayString("add single illegal: %s", p.first),
-				p -> spec.verifier.canAddItem(p.first.longValue(), p.second), false, tests::add);
+				p -> spec.verifier.canAddItem(p.first.longValue(), p.second), FALSE, tests::add);
 
 		// BATCH ADD
 		TestUtils.makeTests(spec.addBatchLegal,
 				p -> displayString("add batch legal: %s [len=%s]", p.first, p.second.entryCount()),
-				p -> spec.verifier.canAddItems(p.first.longValue(), p.second), true, tests::add);
+				p -> spec.verifier.canAddItems(p.first.longValue(), p.second), TRUE, tests::add);
 		TestUtils.makeTests(spec.addBatchIllegal,
 				p -> displayString("add batch illegal: %s [len=%s]", p.first, p.second.entryCount()),
-				p -> spec.verifier.canAddItems(p.first.longValue(), p.second), false, tests::add);
+				p -> spec.verifier.canAddItems(p.first.longValue(), p.second), FALSE, tests::add);
 
 		// SINGLE REMOVE
 		TestUtils.makeTests(spec.removeSingleLegal,
 				idx -> displayString("remove single legal: %s", idx),
-				idx -> spec.verifier.canRemoveItem(idx.longValue()), true, tests::add);
+				idx -> spec.verifier.canRemoveItem(idx.longValue()), TRUE, tests::add);
 		TestUtils.makeTests(spec.removeSingleIllegal,
 				idx -> displayString("remove single illegal: %s", idx),
-				idx -> spec.verifier.canRemoveItem(idx.longValue()), false, tests::add);
+				idx -> spec.verifier.canRemoveItem(idx.longValue()), FALSE, tests::add);
 
 		// BATCH REMOVE
 		TestUtils.makeTests(spec.removeBatchLegal,
 				p -> displayString("remove batch legal: %s to %s", p.first, p.second),
-				p -> spec.verifier.canRemoveItems(p.first.longValue(), p.second.longValue()), true, tests::add);
+				p -> spec.verifier.canRemoveItems(p.first.longValue(), p.second.longValue()), TRUE, tests::add);
 		TestUtils.makeTests(spec.removeBatchIllegal,
 				p -> displayString("remove batch illegal: %s to %s", p.first, p.second),
-				p -> spec.verifier.canRemoveItems(p.first.longValue(), p.second.longValue()), false, tests::add);
+				p -> spec.verifier.canRemoveItems(p.first.longValue(), p.second.longValue()), FALSE, tests::add);
 
 		// MOVE
 		TestUtils.makeTests(spec.swapSingleLegal,
 				p -> displayString("swap single legal: %s to %s", p.first, p.second),
-				p -> spec.verifier.canSwapItems(p.first.longValue(), p.second.longValue()), true, tests::add);
+				p -> spec.verifier.canSwapItems(p.first.longValue(), p.second.longValue()), TRUE, tests::add);
 		TestUtils.makeTests(spec.swapSingleIllegal,
 				p -> displayString("swap single illegal: %s to %s", p.first, p.second),
-				p -> spec.verifier.canSwapItems(p.first.longValue(), p.second.longValue()), false, tests::add);
+				p -> spec.verifier.canSwapItems(p.first.longValue(), p.second.longValue()), FALSE, tests::add);
+
+		return tests;
+	}
+
+	public static List<DynamicTest> createTestsForSpec(ContainerEditVerifierTestBuilder spec,
+			ContainerEditVerifier oracle) {
+		List<DynamicTest> tests = new ArrayList<>();
+
+		// SINGLE ADD
+		TestUtils.makeTests(spec.addSingleLegal,
+				p -> displayString("add single legal: %s", p.first),
+				p -> spec.verifier.canAddItem(p.first.longValue(), p.second),
+				p -> oracle.canAddItem(p.first.longValue(), p.second), tests::add);
+		TestUtils.makeTests(spec.addSingleIllegal,
+				p -> displayString("add single illegal: %s", p.first),
+				p -> spec.verifier.canAddItem(p.first.longValue(), p.second),
+				p -> oracle.canAddItem(p.first.longValue(), p.second), tests::add);
+
+		// BATCH ADD
+		TestUtils.makeTests(spec.addBatchLegal,
+				p -> displayString("add batch legal: %s [len=%s]", p.first, p.second.entryCount()),
+				p -> spec.verifier.canAddItems(p.first.longValue(), p.second),
+				p -> oracle.canAddItems(p.first.longValue(), p.second), tests::add);
+		TestUtils.makeTests(spec.addBatchIllegal,
+				p -> displayString("add batch illegal: %s [len=%s]", p.first, p.second.entryCount()),
+				p -> spec.verifier.canAddItems(p.first.longValue(), p.second),
+				p -> oracle.canAddItems(p.first.longValue(), p.second), tests::add);
+
+		// SINGLE REMOVE
+		TestUtils.makeTests(spec.removeSingleLegal,
+				idx -> displayString("remove single legal: %s", idx),
+				idx -> spec.verifier.canRemoveItem(idx.longValue()),
+				idx -> oracle.canRemoveItem(idx.longValue()), tests::add);
+		TestUtils.makeTests(spec.removeSingleIllegal,
+				idx -> displayString("remove single illegal: %s", idx),
+				idx -> spec.verifier.canRemoveItem(idx.longValue()),
+				idx -> oracle.canRemoveItem(idx.longValue()), tests::add);
+
+		// BATCH REMOVE
+		TestUtils.makeTests(spec.removeBatchLegal,
+				p -> displayString("remove batch legal: %s to %s", p.first, p.second),
+				p -> spec.verifier.canRemoveItems(p.first.longValue(), p.second.longValue()),
+				p -> oracle.canRemoveItems(p.first.longValue(), p.second.longValue()), tests::add);
+		TestUtils.makeTests(spec.removeBatchIllegal,
+				p -> displayString("remove batch illegal: %s to %s", p.first, p.second),
+				p -> spec.verifier.canRemoveItems(p.first.longValue(), p.second.longValue()),
+				p -> oracle.canRemoveItems(p.first.longValue(), p.second.longValue()), tests::add);
+
+		// MOVE
+		TestUtils.makeTests(spec.swapSingleLegal,
+				p -> displayString("swap single legal: %s to %s", p.first, p.second),
+				p -> spec.verifier.canSwapItems(p.first.longValue(), p.second.longValue()),
+				p -> oracle.canSwapItems(p.first.longValue(), p.second.longValue()), tests::add);
+		TestUtils.makeTests(spec.swapSingleIllegal,
+				p -> displayString("swap single illegal: %s to %s", p.first, p.second),
+				p -> spec.verifier.canSwapItems(p.first.longValue(), p.second.longValue()),
+				p -> oracle.canSwapItems(p.first.longValue(), p.second.longValue()), tests::add);
 
 		return tests;
 	}
