@@ -25,6 +25,8 @@ import static de.ims.icarus2.model.standard.ModelDefaultsTestUtils.expectErrorTy
 import static de.ims.icarus2.model.standard.ModelDefaultsTestUtils.expectNPE;
 import static de.ims.icarus2.model.standard.ModelDefaultsTestUtils.makeEdge;
 import static de.ims.icarus2.model.standard.ModelDefaultsTestUtils.makeItem;
+import static de.ims.icarus2.test.TestUtils.FALSE;
+import static de.ims.icarus2.test.TestUtils.TRUE;
 import static de.ims.icarus2.test.TestUtils.displayString;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static java.util.Objects.requireNonNull;
@@ -42,6 +44,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.function.Executable;
 
 import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.model.api.ModelTestUtils;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
@@ -56,7 +59,7 @@ import de.ims.icarus2.util.collections.seq.ListSequence;
 @SuppressWarnings("boxing")
 public class StructureEditVerifierTestBuilder {
 
-	public static final long ROOT = -1L;
+	public static final int ROOT = ModelTestUtils.ROOT;
 
 	private final StructureEditVerifier verifier;
 
@@ -600,66 +603,66 @@ public class StructureEditVerifierTestBuilder {
 		// SINGLE ADD
 		TestUtils.makeTests(spec.addSingleLegal,
 				e -> displayString("add single legal: %s", e),
-				e -> spec.verifier.canAddEdge(e), true, tests::add);
+				e -> spec.verifier.canAddEdge(e), TRUE, tests::add);
 		TestUtils.makeTests(spec.addSingleIllegal,
 				e -> displayString("add single illegal: %s", e),
-				e -> spec.verifier.canAddEdge(e), false, tests::add);
+				e -> spec.verifier.canAddEdge(e), FALSE, tests::add);
 
 		// BATCH ADD
 		TestUtils.makeTests(spec.addBatchLegal,
 				s -> displayString("add batch legal: [len=%s]", s.entryCount()),
-				s -> spec.verifier.canAddEdges(s), true, tests::add);
+				s -> spec.verifier.canAddEdges(s), TRUE, tests::add);
 		TestUtils.makeTests(spec.addBatchIllegal,
 				s -> displayString("add batch illegal: [len=%s]", s.entryCount()),
-				s -> spec.verifier.canAddEdges(s), false, tests::add);
+				s -> spec.verifier.canAddEdges(s), FALSE, tests::add);
 
 		// SINGLE REMOVE
 		TestUtils.makeTests(spec.removeSingleLegal,
 				idx -> displayString("remove single legal: %s", idx),
-				idx -> spec.verifier.canRemoveEdge(idx.longValue()), true, tests::add);
+				idx -> spec.verifier.canRemoveEdge(idx.longValue()), TRUE, tests::add);
 		TestUtils.makeTests(spec.removeSingleIllegal,
 				idx -> displayString("remove single illegal: %s", idx),
-				idx -> spec.verifier.canRemoveEdge(idx.longValue()), false, tests::add);
+				idx -> spec.verifier.canRemoveEdge(idx.longValue()), FALSE, tests::add);
 
 		// BATCH REMOVE
 		TestUtils.makeTests(spec.removeBatchLegal,
 				p -> displayString("remove batch legal: %s to %s", p.first, p.second),
-				p -> spec.verifier.canRemoveEdges(p.first.longValue(), p.second.longValue()), true, tests::add);
+				p -> spec.verifier.canRemoveEdges(p.first.longValue(), p.second.longValue()), TRUE, tests::add);
 		TestUtils.makeTests(spec.removeBatchIllegal,
 				p -> displayString("remove batch illegal: %s to %s", p.first, p.second),
-				p -> spec.verifier.canRemoveEdges(p.first.longValue(), p.second.longValue()), false, tests::add);
+				p -> spec.verifier.canRemoveEdges(p.first.longValue(), p.second.longValue()), FALSE, tests::add);
 
 		// MOVE
 		TestUtils.makeTests(spec.swapSingleLegal,
 				p -> displayString("swap single legal: %s to %s", p.first, p.second),
-				p -> spec.verifier.canSwapEdges(p.first.longValue(), p.second.longValue()), true, tests::add);
+				p -> spec.verifier.canSwapEdges(p.first.longValue(), p.second.longValue()), TRUE, tests::add);
 		TestUtils.makeTests(spec.swapSingleIllegal,
 				p -> displayString("swap single illegal: %s to %s", p.first, p.second),
-				p -> spec.verifier.canSwapEdges(p.first.longValue(), p.second.longValue()), false, tests::add);
+				p -> spec.verifier.canSwapEdges(p.first.longValue(), p.second.longValue()), FALSE, tests::add);
 
 		// TERMINAL
 		TestUtils.makeTests(spec.setTerminalLegal,
 				t -> displayString("set terminal legal: item_%s as %s at %s",
 						t.second, label(t.third), t.first),
 				t -> spec.verifier.canSetTerminal(t.first, t.second, t.third),
-						true, tests::add);
+				TRUE, tests::add);
 		TestUtils.makeTests(spec.setTerminalIllegal,
 				t -> displayString("set terminal illegal: item_%s as %s at %s",
 						t.second, label(t.third), t.first),
 				t -> spec.verifier.canSetTerminal(t.first, t.second, t.third),
-						false, tests::add);
+				FALSE, tests::add);
 
 		// CREATE
 		TestUtils.makeTests(spec.createEdgeLegal,
 				t -> displayString("create edge legal: item_%s to item_%s",
 						t.first, t.second),
 				t -> spec.verifier.canCreateEdge(t.first, t.second),
-						true, tests::add);
+						TRUE, tests::add);
 		TestUtils.makeTests(spec.createEdgeIllegal,
 				t -> displayString("create edge illegal: item_%s to item_%s",
 						t.first, t.second),
 				t -> spec.verifier.canCreateEdge(t.first, t.second),
-						false, tests::add);
+				FALSE, tests::add);
 
 		// FAIL
 		spec.fail.stream()

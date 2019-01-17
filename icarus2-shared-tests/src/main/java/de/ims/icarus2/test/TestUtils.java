@@ -1419,17 +1419,17 @@ public class TestUtils {
 		return () -> value;
 	}
 
+	public static Predicate<Object> TRUE = x -> true;
+	public static Predicate<Object> FALSE = x -> false;
+
 	public static <E extends Object> void makeTests(List<E> args,
 			Function<E, String> labelGen,
-			Predicate<? super E> check, boolean expectTrue,
+			Predicate<? super E> check, Predicate<? super E> oracle,
 			Consumer<? super DynamicTest> collector) {
 		for(E arg : args) {
 			collector.accept(DynamicTest.dynamicTest(labelGen.apply(arg), () -> {
-				if(expectTrue) {
-					assertTrue(check.test(arg));
-				} else {
-					assertFalse(check.test(arg));
-				}
+				assertEquals(Boolean.valueOf(oracle.test(arg)),
+						Boolean.valueOf(check.test(arg)));
 			}));
 		}
 	}

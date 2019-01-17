@@ -118,11 +118,24 @@ public class ModelTestUtils {
 	}
 
 	@SuppressWarnings("boxing")
-	public static Container mockContainer(long itemCount) {
+	public static <C extends Container> C stubItemCount(C container,
+			long itemCount) {
 		checkArgument(itemCount>=0);
+		assertMock(container);
 
-		Container container = mock(Container.class);
 		when(container.getItemCount()).thenReturn(itemCount);
+
+		return container;
+	}
+
+	public static Container mockContainer() {
+		return mock(Container.class);
+	}
+
+	public static Container mockContainer(long itemCount) {
+		Container container = mock(Container.class);
+
+		stubItemCount(container, itemCount);
 
 		if(itemCount>0) {
 			stubItems(container);
@@ -180,17 +193,30 @@ public class ModelTestUtils {
 		});
 	}
 
-	@SuppressWarnings("boxing")
-	public static Structure mockStructure(long itemCount, long edgeCount) {
-		checkArgument(itemCount>=0);
-		checkArgument(edgeCount>=0);
-
+	public static Structure mockStructure() {
 		Structure structure = mock(Structure.class, withSettings().defaultAnswer(new CallsRealMethods()));
-		when(structure.getItemCount()).thenReturn(itemCount);
-		when(structure.getEdgeCount()).thenReturn(edgeCount);
 
 		Item root = mockItem(structure);
 		when(structure.getVirtualRoot()).thenReturn(root);
+
+		return structure;
+	}
+
+	@SuppressWarnings("boxing")
+	public static <S extends Structure> S stubEdgeCount(S structure,
+			long edgeCount) {
+		checkArgument(edgeCount>=0);
+		assertMock(structure);
+
+		when(structure.getEdgeCount()).thenReturn(edgeCount);
+
+		return structure;
+	}
+
+	public static Structure mockStructure(long itemCount, long edgeCount) {
+		Structure structure = mockStructure();
+		stubItemCount(structure, itemCount);
+		stubEdgeCount(structure, edgeCount);
 
 		if(itemCount>0) {
 			stubItems(structure);
@@ -207,14 +233,12 @@ public class ModelTestUtils {
 	public static final int ROOT = -1;
 
 	private static Item itemAt(Structure structure, long index) {
-		return index==ROOT ? structure.getVirtualRoot() : structure.getItemAt(index);
+		return (int)index==ROOT ? structure.getVirtualRoot() : structure.getItemAt(index);
 	}
 
 	@SuppressWarnings("boxing")
-	public static <N extends Number> Structure mockStructure(long itemCount,
+	public static <S extends Structure, N extends Number> S stubEdges(S structure,
 			@SuppressWarnings("unchecked") Pair<N, N>...edges) {
-
-		Structure structure = mockStructure(itemCount, edges.length);
 
 		when(structure.indexOfEdge(any())).thenReturn(Long.valueOf(-1));
 
@@ -231,6 +255,16 @@ public class ModelTestUtils {
 		return structure;
 	}
 
+	public static <N extends Number> Structure mockStructure(long itemCount,
+			@SuppressWarnings("unchecked") Pair<N, N>...edges) {
+
+		Structure structure = mockStructure(itemCount, edges.length);
+
+		stubEdges(structure, edges);
+
+		return structure;
+	}
+
 	public static Structure mockStructure(
 			long itemCount, long edgeCount,
 			BiFunction<Structure, Long, Edge> edgeCreator) {
@@ -242,7 +276,7 @@ public class ModelTestUtils {
 		return structure;
 	}
 
-	//TODO
+	//TODO doc
 	@SuppressWarnings("boxing")
 	public static final BiFunction<Structure, Long, Edge> DEFAULT_MAKE_EDGE =
 			(structure, index) -> {
@@ -255,7 +289,7 @@ public class ModelTestUtils {
 			};
 
 	@SuppressWarnings("boxing")
-	public static void stubEdges(Structure structure,
+	public static <S extends Structure> S stubEdges(S structure,
 			BiFunction<Structure, Long, Edge> edgeCreator) {
 
 		final Long2ObjectMap<Edge> edges = new Long2ObjectOpenHashMap<>();
@@ -276,11 +310,12 @@ public class ModelTestUtils {
 		when(structure.indexOfEdge(any())).then(invocation -> {
 			return indices.getLong(invocation.getArgument(0));
 		});
+
+		return structure;
 	}
 
-	@SuppressWarnings("boxing")
-	public static void stubDefaultLazyEdges(Structure structure) {
-		stubEdges(structure, DEFAULT_MAKE_EDGE);
+	public static <S extends Structure> S stubDefaultLazyEdges(S structure) {
+		return stubEdges(structure, DEFAULT_MAKE_EDGE);
 	}
 
 
