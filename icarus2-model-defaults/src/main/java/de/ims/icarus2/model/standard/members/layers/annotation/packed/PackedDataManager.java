@@ -406,7 +406,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		// Run a real lock if needed
 		if(!lock.validate(stamp)) {
-			lock.readLock();
+			stamp = lock.readLock();
 			try {
 				registered = chunkAddresses.containsKey(item);
 			} finally {
@@ -488,7 +488,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		 *  SPECIAL NOTE: We shouldn't throw an exception here since
 		 *  it would break our optimistic locking:
 		 *
-		 *  I
+		 *  TODO
 		 */
 
 

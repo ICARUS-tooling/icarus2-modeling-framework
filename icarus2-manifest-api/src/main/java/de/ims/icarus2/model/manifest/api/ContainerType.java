@@ -18,6 +18,7 @@ package de.ims.icarus2.model.manifest.api;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -153,6 +154,24 @@ public enum ContainerType implements StringResource {
 	 */
 	public boolean isCompatibleWith(ContainerType target) {
 		return ordinal()>=target.ordinal();
+	}
+
+	private static final ContainerType[] _values = values();
+
+	public ContainerType[] getCompatibleTypes() {
+		if(ordinal()<=1) {
+			return new ContainerType[0];
+		} else {
+			return Arrays.copyOfRange(_values, 1, ordinal());
+		}
+	}
+
+	public ContainerType[] getIncompatibleTypes() {
+		if(ordinal()>=_values.length-1) {
+			return new ContainerType[0];
+		} else {
+			return Arrays.copyOfRange(_values, ordinal()+1, _values.length);
+		}
 	}
 
 	public byte id() {

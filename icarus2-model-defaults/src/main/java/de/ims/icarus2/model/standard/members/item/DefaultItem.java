@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.model.standard.members.item;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
@@ -110,7 +111,7 @@ public class DefaultItem extends AbstractMember implements Item, Item.ManagedIte
 	 */
 	@Override
 	public boolean revive() {
-		return getIndex()>-1 && getContainer()!=null;
+		return getIndex()>IcarusUtils.UNSET_LONG && getContainer()!=null;
 	}
 
 	/**
@@ -173,6 +174,7 @@ public class DefaultItem extends AbstractMember implements Item, Item.ManagedIte
 	@Override
 	public void setId(long id) {
 		checkState("Id already set", this.id==IcarusUtils.UNSET_LONG);
+		checkArgument(id==IcarusUtils.UNSET_LONG || id>=0L);
 
 		this.id = id;
 	}

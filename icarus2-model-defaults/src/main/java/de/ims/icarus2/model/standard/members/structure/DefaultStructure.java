@@ -19,6 +19,8 @@ package de.ims.icarus2.model.standard.members.structure;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.model.api.members.MemberType;
+import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -47,10 +49,22 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 		// no-op
 	}
 
-	public DefaultStructure(ItemStorage itemStorage, EdgeStorage edgeStorage) {
-		super(itemStorage);
+	public DefaultStructure(Container container) {
+		super(container);
+	}
+
+	public DefaultStructure(Container container, ItemStorage itemStorage, EdgeStorage edgeStorage) {
+		super(container, itemStorage);
 
 		setEdgeStorage(edgeStorage);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.standard.members.container.DefaultContainer#getMemberType()
+	 */
+	@Override
+	public MemberType getMemberType() {
+		return MemberType.STRUCTURE;
 	}
 
 	/**
@@ -67,9 +81,37 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 		return edgeStorage;
 	}
 
+	public EdgeStorage getEdgeStorage() {
+		return edgeStorage;
+	}
+
+	/**
+	 * Returns {@code true} if either the super method reports the {@link MemberFlags#isItemDirty(int) dirty flag}
+	 * to be set or if the underlying {@link #getEdgeStorage() edge-storage} reports a dirty state.
+	 *
+	 * @see DefaultContainer#isDirty()
+	 */
 	@Override
 	public boolean isDirty() {
 		return super.isDirty() || edgeStorage().isDirty(this);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.standard.members.container.DefaultContainer#recycle()
+	 */
+	@Override
+	public void recycle() {
+		super.recycle();
+
+		clearEdgeStorage();
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.standard.members.container.DefaultContainer#revive()
+	 */
+	@Override
+	public boolean revive() {
+		return super.revive() && edgeStorage!=null;
 	}
 
 	protected void checkEdgeStorage(EdgeStorage edgeStorage) {
@@ -293,7 +335,7 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 	 */
 	@Override
 	public void swapEdges(long index0, long index1) {
-		edgeStorage().moveEdge(this, index0, index1);
+		edgeStorage().swapEdges(this, index0, index1);
 	}
 
 	/**
@@ -326,6 +368,12 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 		// If edges are static don't even bother with asking the edge storage
 		if(!getManifest().isStructureFlagSet(StructureFlag.NON_STATIC)) {
 			return new CompoundStructureEditVerifier(containerEditVerifier){
+
+				@Override
+				public boolean isAllowEdits() {
+					// Fully rely on the container edit verifier in this case, as edges are immutable
+					return getContainerEditVerifier().isAllowEdits();
+				}
 
 				@Override
 				protected boolean isValidRemoveEdgeIndex(long index) {

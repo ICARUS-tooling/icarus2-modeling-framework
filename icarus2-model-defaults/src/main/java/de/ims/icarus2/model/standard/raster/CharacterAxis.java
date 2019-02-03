@@ -16,8 +16,11 @@
  */
 package de.ims.icarus2.model.standard.raster;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Optional;
 
+import javax.annotation.Nullable;
 import javax.swing.Icon;
 
 import de.ims.icarus2.model.api.layer.FragmentLayer;
@@ -28,7 +31,8 @@ public class CharacterAxis implements RasterAxis {
 
 	private static final String id = "characterAxis";
 	private static final String name = "Character Offset Axis";
-	private static final String description = "Orders characters according to their appearance in the hosting character sequence.";
+	private static final String description = "Orders characters according to their appearance "
+			+ "in the hosting character sequence.";
 
 	/**
 	 * @see de.ims.icarus2.util.id.Identity#getId()
@@ -91,7 +95,10 @@ public class CharacterAxis implements RasterAxis {
 	 * @see de.ims.icarus2.model.api.raster.RasterAxis#getRasterSize(de.ims.icarus2.model.api.members.item.Item, de.ims.icarus2.model.api.layer.FragmentLayer, java.lang.Object)
 	 */
 	@Override
-	public long getRasterSize(Item item, FragmentLayer layer, Object value) {
+	public long getRasterSize(Item item, FragmentLayer layer, @Nullable Object value) {
+		requireNonNull(item);
+		requireNonNull(layer);
+
 		CharSequence s = (CharSequence) value;
 
 		return s==null ? 0 : s.length();

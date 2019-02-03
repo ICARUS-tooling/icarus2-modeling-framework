@@ -32,6 +32,17 @@ public interface EditVerifier<E extends Object> extends AutoCloseable {
 
 	E getSource();
 
+	/**
+	 * General hint on whether this verifier allows any kind of edits at all.
+	 * <p>
+	 * The default implementation always returns {@code true}.
+	 *
+	 * @return
+	 */
+	default boolean isAllowEdits() {
+		return true;
+	}
+
 	@Override
 	void close();
 }

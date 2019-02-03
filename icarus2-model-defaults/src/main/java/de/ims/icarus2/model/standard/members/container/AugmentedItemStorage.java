@@ -204,7 +204,7 @@ public class AugmentedItemStorage extends WrappingItemStorage {
 	}
 
 	@Override
-	public void moveItem(Container context, long index0, long index1) {
+	public void swapItems(Container context, long index0, long index1) {
 		int idx0 = translateAndCheckEditIndex(context, index0);
 		int idx1 = translateAndCheckEditIndex(context, index1);
 

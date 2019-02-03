@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.examples;
 
+import static de.ims.icarus2.util.IcarusUtils.DO_NOTHING;
+
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
@@ -35,7 +37,7 @@ import de.ims.icarus2.model.manifest.standard.DefaultManifestRegistry;
  * @author Markus Gärtner
  *
  */
-public class CreateManifests {
+public class CreateManifestsWithFactory {
 
 	public static void main(String[] args) {
 		// Set up the factory
@@ -49,19 +51,23 @@ public class CreateManifests {
 		LayerGroupManifest group = factory.create(ManifestType.LAYER_GROUP_MANIFEST, context);
 		context.addLayerGroup(group);
 
-		ItemLayerManifest tokenLayer = factory.create(ManifestType.ITEM_LAYER_MANIFEST, group);
-		tokenLayer.setId("tokens");
+		ItemLayerManifest tokenLayer = factory
+				.<ItemLayerManifest>create(ManifestType.ITEM_LAYER_MANIFEST, group)
+				.setId("tokens");
 
-		ItemLayerManifest sentenceLayer = factory.create(ManifestType.ITEM_LAYER_MANIFEST, group);
-		sentenceLayer.setId("sentences");
-		sentenceLayer.setAndGetFoundationLayer("tokens");
-		sentenceLayer.addAndGetBaseLayer("tokens");
+		ItemLayerManifest sentenceLayer = factory
+				.<ItemLayerManifest>create(ManifestType.ITEM_LAYER_MANIFEST, group)
+				.setId("sentences")
+				.setFoundationLayerId("tokens", DO_NOTHING)
+				.setBoundaryLayerId("tokens", DO_NOTHING);
 
-		AnnotationLayerManifest annoLayer = factory.create(ManifestType.ANNOTATION_LAYER_MANIFEST, group);
-		annoLayer.addAndGetBaseLayer("tokens");
+		AnnotationLayerManifest annoLayer = factory
+				.<AnnotationLayerManifest>create(ManifestType.ANNOTATION_LAYER_MANIFEST, group)
+				.addBaseLayerId("tokens", DO_NOTHING);
 
-		AnnotationManifest forms = factory.create(ManifestType.ANNOTATION_MANIFEST, annoLayer);
-		forms.setId("forms");
+		AnnotationManifest forms = factory
+				.<AnnotationManifest>create(ManifestType.ANNOTATION_MANIFEST, annoLayer)
+				.setId("forms");
 		annoLayer.addAnnotationManifest(forms);
 		annoLayer.setDefaultKey("forms");
 

@@ -20,6 +20,7 @@ package de.ims.icarus2.util;
  * @author Markus Gärtner
  *
  */
+//TODO remove interface and replace usage by Predicate<Object>
 public interface Filter {
 
 	boolean accepts(Object obj);

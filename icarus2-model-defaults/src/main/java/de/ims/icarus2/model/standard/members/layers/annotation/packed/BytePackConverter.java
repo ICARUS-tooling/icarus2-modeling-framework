@@ -356,7 +356,7 @@ public abstract class BytePackConverter {
 		 */
 		@Override
 		public int sizeInBytes() {
-			return Float.BYTES;
+			return Integer.BYTES;
 		}
 
 		/**
@@ -391,7 +391,7 @@ public abstract class BytePackConverter {
 		 */
 		@Override
 		public int sizeInBytes() {
-			return Double.BYTES;
+			return Long.BYTES;
 		}
 
 		/**
@@ -411,7 +411,7 @@ public abstract class BytePackConverter {
 		}
 	}
 
-	public static class SubstitutingConverter<T extends Object> extends BytePackConverter {
+	public static class SubstitutingConverterInt<T extends Object> extends BytePackConverter {
 
 		private final IntFunction<T> resubstitution;
 		private final ToIntFunction<T> substitution;
@@ -427,7 +427,7 @@ public abstract class BytePackConverter {
 		 * into substituted numerical values.
 		 * @param resubstitution the function to reverse the substitution process
 		 */
-		public SubstitutingConverter(ValueType valueType, int bytes, ToIntFunction<T> substitution,
+		public SubstitutingConverterInt(ValueType valueType, int bytes, ToIntFunction<T> substitution,
 				IntFunction<T> resubstitution) {
 			checkArgument("Byte size must be between 1 and "+Integer.BYTES+", inclusively",
 					bytes>0 && bytes<=Integer.BYTES);

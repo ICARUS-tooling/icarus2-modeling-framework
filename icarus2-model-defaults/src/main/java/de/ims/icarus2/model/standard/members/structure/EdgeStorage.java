@@ -145,7 +145,7 @@ public interface EdgeStorage extends Recyclable {
 	/**
 	 * @see Structure#swapEdges(long, long)
 	 */
-	void moveEdge(Structure context, long index0, long index1);
+	void swapEdges(Structure context, long index0, long index1);
 
 	/**
 	 * @see Structure#setTerminal(Edge, Item, boolean)

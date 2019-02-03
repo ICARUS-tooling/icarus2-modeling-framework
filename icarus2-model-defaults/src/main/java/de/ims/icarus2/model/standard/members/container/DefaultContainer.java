@@ -16,6 +16,11 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
+import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
+
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
@@ -30,7 +35,6 @@ import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.MemberFlags;
 import de.ims.icarus2.model.standard.members.item.DefaultItem;
-import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.Recyclable;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
@@ -58,7 +62,12 @@ public class DefaultContainer extends DefaultItem implements Container, Recyclab
 		// no-op
 	}
 
-	public DefaultContainer(ItemStorage itemStorage) {
+	public DefaultContainer(Container container) {
+		super(container);
+	}
+
+	public DefaultContainer(Container container, @Nullable ItemStorage itemStorage) {
+		this(container);
 		setItemStorage(itemStorage);
 	}
 
@@ -145,7 +154,8 @@ public class DefaultContainer extends DefaultItem implements Container, Recyclab
 	 */
 	@Override
 	public ContainerManifestBase<?> getManifest() {
-		return ModelUtils.getContainerManifest(this);
+		checkState("Need access to a host container for fetching manifest", getContainer()!=null);
+		return getContainer().getManifest();
 	}
 
 	/**
@@ -225,7 +235,7 @@ public class DefaultContainer extends DefaultItem implements Container, Recyclab
 	 */
 	@Override
 	public void swapItems(long index0, long index1) {
-		itemStorage().moveItem(this, index0, index1);
+		itemStorage().swapItems(this, index0, index1);
 	}
 
 	@Override
@@ -254,7 +264,7 @@ public class DefaultContainer extends DefaultItem implements Container, Recyclab
 					Messages.mismatch("Incompatible container types", requiredType, givenType));
 	}
 
-	public void setItemStorage(ItemStorage itemStorage) {
+	public void setItemStorage(@Nullable ItemStorage itemStorage) {
 		checkItemStorage(itemStorage);
 
 		clearItemStorage();
@@ -274,15 +284,12 @@ public class DefaultContainer extends DefaultItem implements Container, Recyclab
 		itemStorage = null;
 	}
 
-	public void setBoundaryContainer(Container boundary) {
+	public void setBoundaryContainer(@Nullable Container boundary) {
 		this.boundaryContainer = boundary;
 	}
 
 	public void setBaseContainers(DataSet<Container> baseContainers) {
-		if (baseContainers == null)
-			throw new NullPointerException("Invalid baseContainers");
-
-		this.baseContainers = baseContainers;
+		this.baseContainers = requireNonNull(baseContainers);
 	}
 
 	/**
@@ -292,7 +299,7 @@ public class DefaultContainer extends DefaultItem implements Container, Recyclab
 	public void recycle() {
 		super.recycle();
 
-		itemStorage = null;
+		clearItemStorage();
 		baseContainers = DataSet.emptySet();
 		boundaryContainer = null;
 	}
@@ -302,6 +309,6 @@ public class DefaultContainer extends DefaultItem implements Container, Recyclab
 	 */
 	@Override
 	public boolean revive() {
-		return super.revive() && itemStorage!=null && baseContainers!=null;
+		return super.revive() && itemStorage!=null; // previously checked for baseContainers!=null, but that field never gets null
 	}
 }

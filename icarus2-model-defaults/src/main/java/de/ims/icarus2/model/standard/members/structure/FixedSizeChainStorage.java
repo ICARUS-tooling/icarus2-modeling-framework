@@ -677,10 +677,10 @@ public class FixedSizeChainStorage implements EdgeStorage {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#moveEdge(de.ims.icarus2.model.api.members.structure.Structure, long, long)
+	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#swapEdges(de.ims.icarus2.model.api.members.structure.Structure, long, long)
 	 */
 	@Override
-	public void moveEdge(Structure context, long index0, long index1) {
+	public void swapEdges(Structure context, long index0, long index1) {
 		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Order of edges is fixed in this implementation");
 	}
 

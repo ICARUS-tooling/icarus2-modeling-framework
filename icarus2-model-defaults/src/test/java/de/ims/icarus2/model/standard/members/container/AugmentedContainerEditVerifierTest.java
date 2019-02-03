@@ -25,6 +25,7 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -53,6 +54,17 @@ class AugmentedContainerEditVerifierTest {
 		return ContainerEditVerifierTestBuilder.createNullArgumentsTests(
 				new AugmentedContainerEditVerifier(container, storage));
 	}
+
+	@Test
+	void testIsAllowEdits() {
+		Container container = mockContainer(0);
+		AugmentedItemStorage storage = mockStorage(container, 0);
+		@SuppressWarnings("resource")
+		AugmentedContainerEditVerifier verifier = new AugmentedContainerEditVerifier(container, storage);
+
+		assertTrue(verifier.isAllowEdits());
+	}
+
 
 	@Test
 	void testLifecycle() {
@@ -92,7 +104,7 @@ class AugmentedContainerEditVerifierTest {
 
 	@SuppressWarnings("unchecked")
 	@TestFactory
-	public Stream<DynamicTest> testEmptyContainer() {
+	Stream<DynamicTest> testEmptyContainer() {
 		Container container = mockContainer(0);
 		AugmentedItemStorage storage = mockStorage(container, 0);
 		return new ContainerEditVerifierTestBuilder(
@@ -109,7 +121,7 @@ class AugmentedContainerEditVerifierTest {
 
 	@SuppressWarnings("unchecked")
 	@TestFactory
-	public Stream<DynamicTest> testSmallContainerSize5Aug5() {
+	Stream<DynamicTest> testSmallContainerSize5Aug5() {
 		Container container = mockContainer(5);
 		AugmentedItemStorage storage = mockStorage(container, 5);
 		return new ContainerEditVerifierTestBuilder(
@@ -131,7 +143,7 @@ class AugmentedContainerEditVerifierTest {
 
 	@SuppressWarnings("unchecked")
 	@TestFactory
-	public Stream<DynamicTest> testSmallContainerSize10NoAug() {
+	Stream<DynamicTest> testSmallContainerSize10NoAug() {
 		Container container = mockContainer(10);
 		AugmentedItemStorage storage = mockStorage(container, 0);
 		return new ContainerEditVerifierTestBuilder(
@@ -148,7 +160,7 @@ class AugmentedContainerEditVerifierTest {
 
 	@SuppressWarnings("unchecked")
 	@TestFactory
-	public Stream<DynamicTest> testLargeContainerWithAugmentation() {
+	Stream<DynamicTest> testLargeContainerWithAugmentation() {
 		// Wrapped Size
 		final long WS = Long.MAX_VALUE/2;
 		// Augmentation Size

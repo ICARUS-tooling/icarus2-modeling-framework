@@ -41,6 +41,8 @@ public final class IcarusUtils {
 
 	public static final Runnable NO_OP = () -> {/* no-op */};
 
+	public static final Consumer<Object> DO_NOTHING = x -> { /* no-op */};
+
 	/**
 	 * Returns {@code true} if the JVM currently in use is reportedly
 	 * using a 64 bit architecture model.

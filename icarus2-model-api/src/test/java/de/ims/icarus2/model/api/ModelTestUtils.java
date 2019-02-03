@@ -338,4 +338,9 @@ public class ModelTestUtils {
 		ModelException exception = assertThrows(ModelException.class, executable, msg);
 		assertEquals(errorCode, exception.getErrorCode(), msg);
 	}
+
+	public static void assertModelException(ErrorCode errorCode, Executable executable) {
+		ModelException exception = assertThrows(ModelException.class, executable);
+		assertEquals(errorCode, exception.getErrorCode());
+	}
 }

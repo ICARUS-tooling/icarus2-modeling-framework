@@ -342,7 +342,7 @@ public class SpanItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#moveItem(long, long)
 	 */
 	@Override
-	public void moveItem(Container context, long index0, long index1) {
+	public void swapItems(Container context, long index0, long index1) {
 		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Cannot move items within a span");
 	}

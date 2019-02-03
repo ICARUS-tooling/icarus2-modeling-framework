@@ -225,7 +225,8 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 			K[] illegalValues, BiConsumer<Executable, String> legalityCheck,
 			boolean checkNPE, BiConsumer<Executable, String> duplicateCheck,
 			@SuppressWarnings("unchecked") K...values) {
-		assertLockableAccumulativeAdd(settings, createUnlocked(settings), adder, illegalValues, legalityCheck, checkNPE, duplicateCheck, values);
+		assertLockableAccumulativeAdd(settings, createUnlocked(settings), adder,
+				illegalValues, legalityCheck, checkNPE, duplicateCheck, values);
 	}
 
 	/**
@@ -247,7 +248,8 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 			K[] illegalValues, BiConsumer<Executable, String> legalityCheck,
 			boolean checkNPE, BiConsumer<Executable, String> duplicateCheck,
 			@SuppressWarnings("unchecked") K...values) {
-		TestUtils.assertAccumulativeAdd(lockable, adder, illegalValues, legalityCheck, checkNPE, duplicateCheck, values);
+		TestUtils.assertAccumulativeAdd(lockable, adder, illegalValues,
+				legalityCheck, checkNPE, duplicateCheck, values);
 
 		lockable.lock();
 
@@ -271,7 +273,8 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 			TestSettings settings, BiConsumer<L, K> adder, BiConsumer<L, K> remover,
 			Function<L, C> getter, boolean checkNPE,
 			BiConsumer<Executable, String> invalidRemoveCheck, @SuppressWarnings("unchecked") K...values) {
-		assertLockableAccumulativeRemove(settings, createUnlocked(settings), adder, remover, getter, checkNPE, invalidRemoveCheck, values);
+		assertLockableAccumulativeRemove(settings, createUnlocked(settings),
+				adder, remover, getter, checkNPE, invalidRemoveCheck, values);
 	}
 
 	/**
@@ -293,7 +296,8 @@ public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<
 			TestSettings settings, L lockable, BiConsumer<L, K> adder, BiConsumer<L, K> remover,
 			Function<L, C> getter, boolean checkNPE,
 			BiConsumer<Executable, String> invalidRemoveCheck, @SuppressWarnings("unchecked") K...values) {
-		TestUtils.assertAccumulativeRemove(lockable, adder, remover, getter, checkNPE, invalidRemoveCheck, values);
+		TestUtils.assertAccumulativeRemove(lockable, adder, remover,
+				getter, checkNPE, invalidRemoveCheck, values);
 
 		lockable.lock();
 

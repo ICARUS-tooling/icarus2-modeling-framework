@@ -39,6 +39,16 @@ public class ImmutableContainerEditVerifier implements ContainerEditVerifier {
 	}
 
 	/**
+	 * Always returns {@code false}.
+	 *
+	 * @see de.ims.icarus2.model.api.members.EditVerifier#isAllowEdits()
+	 */
+	@Override
+	public boolean isAllowEdits() {
+		return false;
+	}
+
+	/**
 	 * @see de.ims.icarus2.model.api.members.container.ContainerEditVerifier#getSource()
 	 */
 	@Override

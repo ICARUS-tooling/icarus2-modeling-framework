@@ -26,12 +26,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class Randomizer<T extends Object> {
+public class Randomizer<T extends Object> implements Supplier<T> {
 
 	public static <T> Randomizer<T> from(List<? extends T> items) {
 		return new Randomizer<>(items.size(), items::get);
@@ -62,4 +63,15 @@ public class Randomizer<T extends Object> {
 		int index = rng.nextInt(size);
 		return mapper.apply(index);
 	}
+
+	/**
+	 * @see java.util.function.Supplier#get()
+	 */
+	@Override
+	public T get() {
+		return randomize();
+	}
+
+	public static Randomizer<Byte> BYTE = new Randomizer<>(Byte.MAX_VALUE, v -> Byte.valueOf((byte) v));
+	public static Randomizer<Integer> INTEGER = new Randomizer<>(Integer.MAX_VALUE, v -> Integer.valueOf(v));
 }

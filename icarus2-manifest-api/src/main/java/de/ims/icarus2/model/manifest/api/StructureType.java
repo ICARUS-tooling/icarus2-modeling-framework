@@ -18,6 +18,7 @@ package de.ims.icarus2.model.manifest.api;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -196,6 +197,24 @@ public enum StructureType implements StringResource {
 	 */
 	public boolean isCompatibleWith(StructureType target) {
 		return ordinal()>=target.ordinal();
+	}
+
+	private static final StructureType[] _values = values();
+
+	public StructureType[] getCompatibleTypes() {
+		if(ordinal()<1) {
+			return new StructureType[0];
+		} else {
+			return Arrays.copyOfRange(_values, 1, ordinal());
+		}
+	}
+
+	public StructureType[] getIncompatibleTypes() {
+		if(ordinal()>=_values.length-1) {
+			return new StructureType[0];
+		} else {
+			return Arrays.copyOfRange(_values, ordinal()+1, _values.length);
+		}
 	}
 
 	public byte id() {

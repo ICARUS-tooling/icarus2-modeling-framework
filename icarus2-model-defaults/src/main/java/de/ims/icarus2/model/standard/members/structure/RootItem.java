@@ -17,6 +17,8 @@
 package de.ims.icarus2.model.standard.members.structure;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
+import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
@@ -42,7 +44,7 @@ import de.ims.icarus2.util.mem.ReferenceType;
  * directly attached to the root to allow quick lookups without the host
  * structure having to do the storage work.
  * <p>
- * TODO rell about the 2 specialized subclasses
+ * TODO tell about the 3 specialized subclasses
  *
  * @author Markus Gärtner
  *
@@ -75,15 +77,17 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 	}
 
 	public void setStructure(Structure structure) {
+		requireNonNull(structure);
 		if (owner !=null)
 			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_LINKING, "Owning structure already set");
-		requireNonNull(structure);
 
 		this.owner = structure;
 	}
 
 	/**
-	 * Always returns {@code false}.
+	 * {@inheritDoc}
+	 * <p>
+	 * This implementation always returns {@code false}.
 	 *
 	 * @see de.ims.icarus2.model.api.members.item.Item#isTopLevel()
 	 */
@@ -176,7 +180,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 	}
 
 	/**
-	 * Root item is always alive.
+	 * Root item mirrors state of owner.
 	 *
 	 * @see de.ims.icarus2.model.api.members.item.Item#isAlive()
 	 */
@@ -186,7 +190,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 	}
 
 	/**
-	 * Root item can never be locked.
+	 * Root item mirrors state of owner.
 	 *
 	 * @see de.ims.icarus2.model.api.members.item.Item#isLocked()
 	 */
@@ -196,7 +200,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 	}
 
 	/**
-	 * Root item can never be dirty.
+	 * Root item mirrors state of owner.
 	 *
 	 * @see de.ims.icarus2.model.api.members.item.Item#isDirty()
 	 */
@@ -205,6 +209,14 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		return owner.isDirty();
 	}
 
+	/**
+	 * Implements a root item that cannot have edges, i.e. which is
+	 * always empty.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @param <E>
+	 */
 	public static class EmptyRootItem<E extends Edge> extends RootItem<E> {
 
 		public EmptyRootItem(Structure owner) {
@@ -237,7 +249,8 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		 */
 		@Override
 		public void addEdge(E edge) {
-			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Cannot add edge to empty root item: "+getName(edge));
+			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
+					"Cannot add edge to empty root item: "+getName(edge));
 		}
 
 		/**
@@ -245,7 +258,8 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		 */
 		@Override
 		public void removeEdge(E edge) {
-			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Cannot remove edge from empty root item: "+getName(edge));
+			throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
+					"Cannot remove edge from empty root item: "+getName(edge));
 		}
 
 		/**
@@ -253,12 +267,13 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		 */
 		@Override
 		public int indexOfEdge(Edge edge) {
-			return -1;
+			return UNSET_INT;
 		}
 
 	}
 
 	/**
+	 * Root item with at most one edge.
 	 *
 	 * @author Markus Gärtner
 	 *
@@ -288,6 +303,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		 */
 		@Override
 		public E getEdgeAt(int index) {
+			E edge = this.edge;
 			if(edge==null || index!=0)
 				throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
 						"No root edge available for index: "+index);
@@ -300,6 +316,8 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		 */
 		@Override
 		public void addEdge(E edge) {
+			requireNonNull(edge);
+
 			if(this.edge!=null)
 				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Singleton edge already set - cannot add "+ModelUtils.getName(edge));
 
@@ -311,6 +329,8 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		 */
 		@Override
 		public void removeEdge(E edge) {
+			requireNonNull(edge);
+
 			if(edge!=this.edge)
 				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Unknown edge - cannot remove "+ModelUtils.getName(edge));
 
@@ -322,12 +342,20 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		 */
 		@Override
 		public int indexOfEdge(Edge edge) {
-			return this.edge==edge ? 0 : -1;
+			requireNonNull(edge);
+			return this.edge==edge ? 0 : UNSET_INT;
 		}
 
 	}
 
 	/**
+	 * Root item that can have multiple edges stored in a {@link List}.
+	 * <p>
+	 * Note that this implementation does not provide any additional
+	 * help for the {@link #indexOfEdge(Edge)} lookup method. Thereby
+	 * it is possible to end up with bad performance for very large
+	 * numbers of edged connected to the root node when the aforementioned
+	 * method is called frequently.
 	 *
 	 * @author Markus Gärtner
 	 *
@@ -339,11 +367,11 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		private final List<E> edges;
 
 		public MultiEdgeRootItem(Structure owner) {
-			this(owner, -1);
+			this(owner, UNSET_INT);
 		}
 
 		public MultiEdgeRootItem() {
-			this(-1);
+			this(UNSET_INT);
 		}
 
 		public MultiEdgeRootItem(int capacity) {
@@ -358,8 +386,10 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 			edges = createEdgesBuffer(owner, capacity);
 		}
 
-		protected List<E> createEdgesBuffer(Structure owner, int capacity) {
-			if(capacity<0) {
+		private List<E> createEdgesBuffer(Structure owner, int capacity) {
+			checkArgument(capacity==UNSET_INT || capacity>0);
+
+			if(capacity==UNSET_INT) {
 				capacity = DEFAULT_CAPACITY;
 			}
 
@@ -387,6 +417,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		 */
 		@Override
 		public void addEdge(E edge) {
+			requireNonNull(edge);
 			if(edges.contains(edge))
 				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Edge already present: "+ModelUtils.getName(edge));
 
@@ -398,8 +429,13 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		 */
 		@Override
 		public void removeEdge(E edge) {
+			requireNonNull(edge);
 			if(!edges.remove(edge))
 				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Cannot remove unknown edge: "+ModelUtils.getName(edge));
+		}
+
+		public void removeAllEdges() {
+			edges.clear();
 		}
 
 		/**
@@ -407,6 +443,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		 */
 		@Override
 		public int indexOfEdge(Edge edge) {
+			requireNonNull(edge);
 			return edges.indexOf(edge);
 		}
 

@@ -155,10 +155,10 @@ public class EdgeProxyStorage implements ItemStorage {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#moveItem(de.ims.icarus2.model.api.members.container.Container, long, long)
+	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#swapItems(de.ims.icarus2.model.api.members.container.Container, long, long)
 	 */
 	@Override
-	public void moveItem(Container context, long index0, long index1) {
+	public void swapItems(Container context, long index0, long index1) {
 		signalUnsupportedOperation(context);
 	}
 

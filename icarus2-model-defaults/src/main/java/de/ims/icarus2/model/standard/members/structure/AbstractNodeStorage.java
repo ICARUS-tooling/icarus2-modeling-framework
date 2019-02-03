@@ -287,7 +287,7 @@ public abstract class AbstractNodeStorage<N extends NodeInfo, E extends Edge> im
 	}
 
 	@Override
-	public void moveEdge(Structure context, long index0, long index1) {
+	public void swapEdges(Structure context, long index0, long index1) {
 		int idx0 = IcarusUtils.ensureIntegerValueRange(index0);
 		int idx1 = IcarusUtils.ensureIntegerValueRange(index1);
 

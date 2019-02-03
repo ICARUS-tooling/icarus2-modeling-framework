@@ -27,8 +27,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
 
 import java.io.PrintStream;
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -50,6 +52,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DynamicTest;
@@ -64,12 +67,23 @@ import de.ims.icarus2.test.util.Pair;
 /**
  * Collection of useful testing methods.
  *
- * TODO: move shared testing code into a dedicated subproject (as main/java source) for proper dependency declarations
- *
  * @author Markus Gärtner
  *
  */
 public class TestUtils {
+
+	/**
+	 * Number of repetitions for tests
+	 * that rely on randomized input.
+	 */
+	public static final int RUNS = 10;
+
+	/**
+	 * Number of repetitions for tests that rely on randomized
+	 * input and for which a more thorough coverage of the random
+	 * space is desired.
+	 */
+	public static final int RUNS_EXHAUSTIVE = 100;
 
 	public static final String LOREM_IPSUM_ASCII =
 			"0f73n 51m1l4r c0mm4ndz @R j00, 4r3 Wh0 4cc355 k0n"
@@ -174,8 +188,29 @@ public class TestUtils {
 			out.println(s);
 	}
 
+	private static final Random RANDOM = new Random(System.currentTimeMillis());
+
 	public static Random random() {
-		return new Random(1L);
+//		return new Random(1L);
+		return RANDOM;
+	}
+
+	public static Pair<Long, Long> randomLongPair(long lowerInc, long upperEx) {
+		long[] vals = random().longs(2, lowerInc, upperEx).toArray();
+		return Pair.longPair(vals[0], vals[1]);
+	}
+
+	public static Stream<Pair<Long, Long>> randomPairs(long lowerInc, long upperEx) {
+		return Stream.generate(() -> randomLongPair(lowerInc, upperEx));
+	}
+
+	public static <T> T[] randomArray(int size, Class<T> clazz) {
+		@SuppressWarnings("unchecked")
+		T[] array = (T[]) Array.newInstance(clazz, size);
+		for (int i = 0; i < array.length; i++) {
+			array[i] = mock(clazz);
+		}
+		return array;
 	}
 
 	public static <T extends Object> Supplier<T> randomizer(Collection<? extends T> source) {

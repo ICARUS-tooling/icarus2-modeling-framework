@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.api.raster;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.api.layer.FragmentLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.util.id.Identity;
@@ -57,5 +59,5 @@ public interface RasterAxis extends Identity {
 	 * @param value
 	 * @return
 	 */
-	long getRasterSize(Item item, FragmentLayer layer, Object value);
+	long getRasterSize(Item item, FragmentLayer layer, @Nullable Object value);
 }

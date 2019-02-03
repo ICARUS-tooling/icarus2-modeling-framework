@@ -38,10 +38,13 @@ import de.ims.icarus2.util.Filter;
  *
  */
 public class FootprintBuilder {
-	
+
 	private static final Logger log = LoggerFactory
 			.getLogger(FootprintBuilder.class);
 
+	/**
+	 * Weak-keys map so we don't unnecessarily pollute the heap space.
+	 */
 	private static Map<Object, FootprintBuilder> builderMap = new WeakHashMap<>();
 
 	public static FootprintBuilder getSharedBuilder(Object context) {

@@ -343,7 +343,6 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 	 * @param groupIndex
 	 * @return
 	 */
-	@SuppressWarnings("unchecked")
 	public static <M extends ContextManifest> BiConsumer<M, LayerManifest<?>> inject_addLayerManifest(int groupIndex) {
 		return (context, layer) -> {
 			assertPresent(layer.getId());
@@ -352,7 +351,8 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 			LayerGroupManifest groupManifest = assertMock(context.getLocalGroupManifests().get(groupIndex));
 
 			groupManifest.addLayerManifest(layer);
-			when((Optional<LayerManifest<?>>)groupManifest.getLayerManifest(layer.getId().get())).thenReturn(Optional.of(layer));
+			when((Optional<LayerManifest<?>>)groupManifest.getLayerManifest(layer.getId().get()))
+					.thenReturn(Optional.of(layer));
 		};
 	}
 

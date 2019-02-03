@@ -102,7 +102,7 @@ public class CompoundStructureEditVerifier implements StructureEditVerifier {
 	 */
 	@Override
 	public Structure getSource() {
-		return (Structure) containerEditVerifier.getSource();
+		return containerEditVerifier==null ? null : (Structure) containerEditVerifier.getSource();
 	}
 
 	protected boolean isValidRemoveEdgeIndex(long index) {

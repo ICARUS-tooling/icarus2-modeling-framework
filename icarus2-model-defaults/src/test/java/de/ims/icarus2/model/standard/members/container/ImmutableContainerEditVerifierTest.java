@@ -22,6 +22,7 @@ package de.ims.icarus2.model.standard.members.container;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
 import static de.ims.icarus2.test.util.Pair.longPair;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -45,6 +46,15 @@ public class ImmutableContainerEditVerifierTest {
 		ImmutableContainerEditVerifier verifier = new ImmutableContainerEditVerifier(container);
 
 		return ContainerEditVerifierTestBuilder.createNullArgumentsTests(verifier);
+	}
+
+	@Test
+	void testIsAllowEdits() {
+		Container container = mockContainer(0);
+		@SuppressWarnings("resource")
+		ImmutableContainerEditVerifier verifier = new ImmutableContainerEditVerifier(container);
+
+		assertFalse(verifier.isAllowEdits());
 	}
 
 	@Test

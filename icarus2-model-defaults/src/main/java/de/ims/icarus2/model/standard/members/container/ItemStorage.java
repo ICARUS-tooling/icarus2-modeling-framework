@@ -61,7 +61,7 @@ public interface ItemStorage extends Recyclable {
 
 	DataSequence<? extends Item> removeItems(Container context, long index0, long index1);
 
-	void moveItem(Container context, long index0, long index1);
+	void swapItems(Container context, long index0, long index1);
 
 	long getBeginOffset(Container context);
 

@@ -593,6 +593,15 @@ public class StructureEditVerifierTestBuilder {
 				"missing item at "+index);
 	}
 
+	/**
+	 * Create the default tests according to previous specifications
+	 * in the builder. All parameters given to {@code xxxLegal} methods
+	 * will be used to create tests that expect the matching {@code canXXX}
+	 * method in {@link StructureEditVerifier} to report {@code true} and
+	 * {@code false} for the {@code xxxIllegal} parameters.
+	 *
+	 * @return
+	 */
 	public Stream<DynamicTest> createTests() {
 		return createTestsForSpec(this).stream();
 	}

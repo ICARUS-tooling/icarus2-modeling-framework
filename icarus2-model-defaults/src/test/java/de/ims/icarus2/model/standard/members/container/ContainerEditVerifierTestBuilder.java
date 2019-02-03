@@ -198,10 +198,27 @@ public class ContainerEditVerifierTestBuilder {
 		return this;
 	}
 
+	/**
+	 * Create the default tests according to previous specifications
+	 * in the builder. All parameters given to {@code xxxLegal} methods
+	 * will be used to create tests that expect the matching {@code canXXX}
+	 * method in {@link ContainerEditVerifier} to report {@code true} and
+	 * {@code false} for the {@code xxxIllegal} parameters.
+	 *
+	 * @return
+	 */
 	public Stream<DynamicTest> createTests() {
 		return createTestsForSpec(this).stream();
 	}
 
+	/**
+	 * Creates a series of tests based on previous specifications in the builder
+	 * where on each invocation of a {@code canXXX} method the expected result is
+	 * created by the given {@code oracle}.
+	 *
+	 * @param oracle
+	 * @return
+	 */
 	public Stream<DynamicTest> createTestsWithOracle(ContainerEditVerifier oracle) {
 		return createTestsForSpec(this, oracle).stream();
 	}

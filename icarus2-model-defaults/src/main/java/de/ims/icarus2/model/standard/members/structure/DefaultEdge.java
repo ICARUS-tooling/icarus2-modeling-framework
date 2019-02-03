@@ -18,6 +18,10 @@ package de.ims.icarus2.model.standard.members.structure;
 
 import static java.util.Objects.requireNonNull;
 
+import javax.annotation.Nullable;
+
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
@@ -51,8 +55,8 @@ public class DefaultEdge extends DefaultItem implements Edge, Recyclable {
 
 	public DefaultEdge(Structure structure, Item source, Item target) {
 		setStructure(structure);
-		setSource(source);
-		setTarget(target);
+		setSource(requireNonNull(source));
+		setTarget(requireNonNull(target));
 	}
 
 	@Override
@@ -94,7 +98,8 @@ public class DefaultEdge extends DefaultItem implements Edge, Recyclable {
 
 	@Override
 	public void setId(long id) {
-		throw new UnsupportedOperationException();
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
+				"Edges cannot have an id asigned");
 	}
 
 	@Override
@@ -110,8 +115,7 @@ public class DefaultEdge extends DefaultItem implements Edge, Recyclable {
 	 * @param source the source to set
 	 */
 	@Override
-	public void setSource(Item source) {
-		requireNonNull(source);
+	public void setSource(@Nullable Item source) {
 		this.source = source;
 	}
 
@@ -119,8 +123,7 @@ public class DefaultEdge extends DefaultItem implements Edge, Recyclable {
 	 * @param target the target to set
 	 */
 	@Override
-	public void setTarget(Item target) {
-		requireNonNull(target);
+	public void setTarget(@Nullable Item target) {
 		this.target = target;
 	}
 
@@ -129,7 +132,8 @@ public class DefaultEdge extends DefaultItem implements Edge, Recyclable {
 	 */
 	@Override
 	public long getBeginOffset() {
-		return (source==null || target==null) ? IcarusUtils.UNSET_LONG : Math.min(source.getBeginOffset(), target.getBeginOffset());
+		return (source==null || target==null) ? IcarusUtils.UNSET_LONG
+				: Math.min(source.getBeginOffset(), target.getBeginOffset());
 	}
 
 	/**
@@ -137,7 +141,8 @@ public class DefaultEdge extends DefaultItem implements Edge, Recyclable {
 	 */
 	@Override
 	public long getEndOffset() {
-		return (source==null || target==null) ? IcarusUtils.UNSET_LONG : Math.min(source.getEndOffset(), target.getEndOffset());
+		return (source==null || target==null) ? IcarusUtils.UNSET_LONG
+				: Math.max(source.getEndOffset(), target.getEndOffset());
 	}
 
 	/**
@@ -206,11 +211,14 @@ public class DefaultEdge extends DefaultItem implements Edge, Recyclable {
 	}
 
 	/**
+	 * Changes the revival behavior such that it no longer requires a valid
+	 * {@link #getIndex() index} to be reported.
+	 *
 	 * @see de.ims.icarus2.util.Recyclable#revive()
 	 */
 	@Override
 	public boolean revive() {
-		return super.revive() && source!=null && target!=null;
+		return getContainer()!=null && source!=null && target!=null;
 	}
 
 	/**

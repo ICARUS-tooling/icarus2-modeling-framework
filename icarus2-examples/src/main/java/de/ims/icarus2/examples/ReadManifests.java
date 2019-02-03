@@ -41,18 +41,24 @@ public class ReadManifests {
 
 		// Configure the reader (here with direct location definition via the builder)
 		ManifestXmlReader manifestXmlReader = ManifestXmlReader.newBuilder()
+				// Use above registry to store manifests
 				.registry(registry)
+				// Let the reader select its default settings
 				.useImplementationDefaults()
 				.source(ManifestLocation.newBuilder()
-//						.file(Paths.get("myCorpus.imf.xml"))
+						/*
+						 * Alternatively you could use the file(Path) method on the builder
+						 * to point it to a physical file on the file system.
+						 */
 						.url(ReadManifests.class.getResource("ReadManifests01.imf.xml"))
 						.template()
 						.build())
 				.build();
 
-		// Read manifests and automatically register them
+		// Read manifests and automatically register them with the underlying registry
 		manifestXmlReader.readAndRegisterAll();
 
+		// Process manifests, in this case we just dump their toString() output
 		System.out.println(registry.getTemplates());
 	}
 }

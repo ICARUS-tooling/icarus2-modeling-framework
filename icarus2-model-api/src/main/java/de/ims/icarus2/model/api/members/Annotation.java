@@ -39,5 +39,6 @@ public interface Annotation {
 	 *
 	 * @return
 	 */
+	//TODO this is the difference between this class and ValueManifest. actually needed?
 	AnnotationType getAnnotationType();
 }
