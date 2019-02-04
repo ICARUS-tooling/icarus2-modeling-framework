@@ -67,6 +67,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.driver.id.IdManager;
 import de.ims.icarus2.model.api.layer.ItemLayer;
+import de.ims.icarus2.model.api.members.MemberTest;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
@@ -84,7 +85,15 @@ import de.ims.icarus2.util.collections.set.DataSet;
  * @author Markus Gärtner
  *
  */
-class DefaultContainerTest {
+class DefaultContainerTest implements MemberTest<Container> {
+
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
+	 */
+	@Override
+	public Class<? extends Container> getTestTargetClass() {
+		return DefaultContainer.class;
+	}
 
 	@Nested
 	class Constructors {

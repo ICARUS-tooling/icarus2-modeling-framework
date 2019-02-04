@@ -83,7 +83,7 @@ class RootItemTest {
 		 * Test method for {@link de.ims.icarus2.model.standard.members.structure.RootItem#forStructure(de.ims.icarus2.model.api.members.structure.Structure)}.
 		 */
 		@Test
-		@Disabled("method udner test is just a delegate to the manifest.based method variant")
+		@Disabled("method under test is just a delegate to the manifest-based method variant")
 		void testForStructure() {
 			fail("Not yet implemented"); // TODO
 		}

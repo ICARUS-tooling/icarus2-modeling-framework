@@ -26,6 +26,7 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockEdge;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.NO_NPE_CHECK;
+import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertFlagGetter;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
@@ -61,11 +62,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.members.MemberTest;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureEditVerifier;
 import de.ims.icarus2.model.manifest.api.ContainerFlag;
 import de.ims.icarus2.model.manifest.api.ContainerType;
@@ -81,7 +84,15 @@ import de.ims.icarus2.util.collections.set.DataSet;
  * @author Markus Gärtner
  *
  */
-class DefaultStructureTest {
+class DefaultStructureTest implements MemberTest<Structure> {
+
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
+	 */
+	@Override
+	public Class<? extends Structure> getTestTargetClass() {
+		return DefaultStructure.class;
+	}
 
 	@Nested
 	class Constructors {
@@ -618,8 +629,6 @@ class DefaultStructureTest {
 
 		@Nested
 		class ExpectStorageDelegation {
-
-			private final int RUNS = 10;
 
 			/**
 			 * Test method for {@link de.ims.icarus2.model.standard.members.structure.DefaultStructure#getEdgeCount()}.

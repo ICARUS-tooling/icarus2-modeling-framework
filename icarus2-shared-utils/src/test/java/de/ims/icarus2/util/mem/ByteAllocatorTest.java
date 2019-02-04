@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.util.mem;
 
+import static de.ims.icarus2.test.TestTags.SLOW;
+import static de.ims.icarus2.test.TestTags.STANDALONE;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -76,7 +78,7 @@ class ByteAllocatorTest {
 
 	@BeforeEach
 	void setUp(TestInfo testInfo) {
-		if(!testInfo.getTags().contains("standalone")) {
+		if(!testInfo.getTags().contains(STANDALONE)) {
 			allocator = new ByteAllocator(defaultSlotSize, defaultChunkPower);
 		}
 	}
@@ -84,7 +86,7 @@ class ByteAllocatorTest {
 
 	@AfterEach
 	void tearDown(TestInfo testInfo) {
-		if(!testInfo.getTags().contains("standalone")) {
+		if(!testInfo.getTags().contains(STANDALONE)) {
 			allocator.clear();
 		}
 		allocator = null;
@@ -95,7 +97,7 @@ class ByteAllocatorTest {
 	 */
 	@ParameterizedTest
 	@ValueSource(ints = {-1, 0, 7})
-	@Tag("standalone")
+	@Tag(STANDALONE)
 	void testIllegalSlotSizeConstructor(int slotSize) {
 		assertThrows(IllegalArgumentException.class, () -> new ByteAllocator(slotSize, defaultSlotSize));
 	}
@@ -105,7 +107,7 @@ class ByteAllocatorTest {
 	 */
 	@ParameterizedTest
 	@ValueSource(ints = {-1, 0, 6, 18, Integer.MAX_VALUE})
-	@Tag("standalone")
+	@Tag(STANDALONE)
 	void testIllegalChunkPowerConstructor(int chunkpower) {
 		assertThrows(IllegalArgumentException.class, () -> new ByteAllocator(defaultSlotSize, chunkpower));
 	}
@@ -145,7 +147,7 @@ class ByteAllocatorTest {
 
 	@SuppressWarnings("boxing")
 	@Test
-	@Tag("expensive")
+	@Tag(SLOW)
 	void testAllocationConsistency() {
 		final int SIZE = 1_000_000;
 		final int RUNS = SIZE * 100;

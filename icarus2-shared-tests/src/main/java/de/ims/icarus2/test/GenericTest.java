@@ -19,11 +19,12 @@
  */
 package de.ims.icarus2.test;
 
-import static de.ims.icarus2.test.TestUtils.settings;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.lang.reflect.Constructor;
 
 import org.junit.jupiter.api.Test;
+import org.opentest4j.TestAbortedException;
 
 import de.ims.icarus2.test.annotations.Provider;
 
@@ -31,26 +32,9 @@ import de.ims.icarus2.test.annotations.Provider;
  * @author Markus Gärtner
  *
  */
-public interface GenericTest<T extends Object> {
+public interface GenericTest<T extends Object> extends Testable<T> {
 
 	Class<? extends T> getTestTargetClass();
-
-	@Provider
-	T createTestInstance(TestSettings settings);
-
-	/**
-	 * Shorthand method for {@link #createTestInstance(TestSettings)}
-	 * with a fresh new {@link TestSettings} instance. Should only be
-	 * used when test routines are not desired to be overridden by
-	 * subclasses/implementations as there is no way to pass new test
-	 * settings to a method that creates its test instances this way.
-	 *
-	 * @return
-	 */
-	@Provider
-	default T create() {
-		return createTestInstance(settings());
-	}
 
 	/**
 	 * Accesses the {@link #getTestTargetClass() class under test} and calls
@@ -60,8 +44,12 @@ public interface GenericTest<T extends Object> {
 	 * @throws Exception
 	 */
 	@Provider
-	default T createNoArgs() throws Exception {
-		return getTestTargetClass().newInstance();
+	default T createNoArgs() {
+		try {
+			return getTestTargetClass().newInstance();
+		} catch (InstantiationException | IllegalAccessException e) {
+			throw new TestAbortedException("Unable to cal ldefault no-args constructor", e);
+		}
 	}
 
 	/**
@@ -80,6 +68,11 @@ public interface GenericTest<T extends Object> {
 		Constructor<? extends T> constructor = clazz.getConstructor(signature);
 
 		return constructor.newInstance(values);
+	}
+
+	@Test
+	default void verifyCorrectTestType() {
+		assertEquals(getTestTargetClass(), create().getClass());
 	}
 
 	/**

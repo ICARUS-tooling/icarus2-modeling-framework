@@ -26,6 +26,7 @@ import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.NO_NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
+import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertGetter;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
@@ -54,7 +55,9 @@ import org.junit.jupiter.params.converter.ConvertWith;
 import org.junit.jupiter.params.provider.CsvFileSource;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.members.MemberTest;
 import de.ims.icarus2.model.api.members.MemberType;
+import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.test.TestUtils;
@@ -65,9 +68,15 @@ import de.ims.icarus2.test.util.convert.ExtendedStringToPrimitiveConverter;
  * @author Markus Gärtner
  *
  */
-class DefaultEdgeTest {
+class DefaultEdgeTest implements MemberTest<Edge> {
 
-	private final int RUNS = 10;
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
+	 */
+	@Override
+	public Class<? extends Edge> getTestTargetClass() {
+		return DefaultEdge.class;
+	}
 
 	@Nested
 	class Constructors {

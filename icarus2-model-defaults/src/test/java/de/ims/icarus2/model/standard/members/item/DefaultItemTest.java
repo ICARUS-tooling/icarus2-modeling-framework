@@ -48,8 +48,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.model.api.driver.id.IdManager;
 import de.ims.icarus2.model.api.layer.ItemLayer;
+import de.ims.icarus2.model.api.members.MemberTest;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
+import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.util.IcarusUtils;
 
@@ -57,7 +59,15 @@ import de.ims.icarus2.util.IcarusUtils;
  * @author Markus Gärtner
  *
  */
-class DefaultItemTest {
+class DefaultItemTest implements MemberTest<Item> {
+
+	/**
+	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
+	 */
+	@Override
+	public Class<? extends Item> getTestTargetClass() {
+		return DefaultItem.class;
+	}
 
 	@Nested
 	class Constructors {
