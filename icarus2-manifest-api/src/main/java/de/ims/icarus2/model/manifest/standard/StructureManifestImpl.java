@@ -22,6 +22,8 @@ import java.util.EnumSet;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.StructureFlag;
@@ -41,7 +43,7 @@ public class StructureManifestImpl extends AbstractContainerManifestBase<Structu
 	private final EnumSet<StructureFlag> structureFlags = EnumSet.noneOf(StructureFlag.class);
 
 	public StructureManifestImpl(ManifestLocation manifestLocation,
-			ManifestRegistry registry, StructureLayerManifest layerManifest) {
+			ManifestRegistry registry, @Nullable StructureLayerManifest layerManifest) {
 		super(manifestLocation, registry, layerManifest, StructureLayerManifest.class);
 	}
 

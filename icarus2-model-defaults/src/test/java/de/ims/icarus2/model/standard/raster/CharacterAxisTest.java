@@ -4,6 +4,7 @@
 package de.ims.icarus2.model.standard.raster;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
+import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.MAX_INTEGER_INDEX;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.random;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
@@ -101,6 +103,7 @@ class CharacterAxisTest implements RasterAxisTest<CharacterAxis> {
 		 * Test method for {@link de.ims.icarus2.model.standard.raster.CharacterAxis#getRasterSize(de.ims.icarus2.model.api.members.item.Item, de.ims.icarus2.model.api.layer.FragmentLayer, java.lang.Object)}.
 		 */
 		@TestFactory
+		@Tag(RANDOMIZED)
 		Stream<DynamicTest> testGetRasterSize() {
 			return Stream.concat(Stream.of("", "1"),
 					random().ints(RUNS, 2, MAX_INTEGER_INDEX)

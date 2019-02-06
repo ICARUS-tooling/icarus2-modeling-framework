@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
@@ -33,7 +35,7 @@ public class ContainerManifestImpl extends AbstractContainerManifestBase<Contain
 	 * @param registry
 	 */
 	public ContainerManifestImpl(ManifestLocation manifestLocation,
-			ManifestRegistry registry, ItemLayerManifestBase<?> layerManifest) {
+			ManifestRegistry registry, @Nullable ItemLayerManifestBase<?> layerManifest) {
 		super(manifestLocation, registry, layerManifest, ItemLayerManifestBase.class);
 	}
 

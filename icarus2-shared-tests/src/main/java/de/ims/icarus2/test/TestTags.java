@@ -22,6 +22,12 @@ public final class TestTags {
 	 */
 	public static final String RANDOMIZED = "ranodmized";
 
+	/**
+	 * Marks collections of tests that are generated completely
+	 * automatic.
+	 */
+	public static final String AUTOMATIC = "automatic";
+
 
 	/**
 	 * Marks tests that intend not to participate in the regular
@@ -30,4 +36,10 @@ public final class TestTags {
 	 * to ignore the marked tests for initialization or cleanup.
 	 */
 	public static final String STANDALONE = "standalone";
+
+	/**
+	 * Marks tests that want their {@link BeforeEach} method to
+	 * shuffle the underlying data.
+	 */
+	public static final String SHUFFLE = "shuffle";
 }

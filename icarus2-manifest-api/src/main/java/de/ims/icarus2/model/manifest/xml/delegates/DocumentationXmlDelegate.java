@@ -21,6 +21,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Optional;
 
+import javax.annotation.Nullable;
 import javax.xml.stream.XMLStreamException;
 
 import org.xml.sax.Attributes;
@@ -55,7 +56,7 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 		setInstance(documentation);
 	}
 
-	public DocumentationXmlDelegate(Documentable<?> documentable) {
+	public DocumentationXmlDelegate(@Nullable Documentable<?> documentable) {
 		setInstance(new DocumentationImpl());
 	}
 

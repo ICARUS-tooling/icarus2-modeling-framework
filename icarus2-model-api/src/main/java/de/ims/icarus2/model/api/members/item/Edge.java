@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.api.members.item;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.structure.Structure;
 
@@ -76,9 +78,9 @@ public interface Edge extends Item {
 
 	// Modification methods
 
-	void setSource(Item item);
+	void setSource(@Nullable Item item);
 
-	void setTarget(Item item);
+	void setTarget(@Nullable Item item);
 
 	default void setTerminal(Item item, boolean isSource) {
 		if(isSource) {

@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
@@ -34,7 +36,7 @@ public class PathResolverManifestImpl extends AbstractForeignImplementationManif
 	}
 
 	public PathResolverManifestImpl(ManifestLocation manifestLocation,
-			ManifestRegistry registry, LocationManifest locationManifest) {
+			ManifestRegistry registry, @Nullable LocationManifest locationManifest) {
 		super(manifestLocation, registry, locationManifest, LocationManifest.class);
 	}
 

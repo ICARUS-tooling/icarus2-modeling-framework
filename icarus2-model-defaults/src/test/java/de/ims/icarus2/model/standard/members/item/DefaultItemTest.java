@@ -20,6 +20,7 @@
 package de.ims.icarus2.model.standard.members.item;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
+import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
@@ -42,6 +43,7 @@ import static org.mockito.Mockito.when;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -303,6 +305,7 @@ class DefaultItemTest implements MemberTest<Item> {
 	 * @author Markus Gärtner
 	 *
 	 */
+	@Tag(RANDOMIZED)
 	class WithComplexEnvironment {
 		private IdManager idManager;
 		private ItemLayer layer;

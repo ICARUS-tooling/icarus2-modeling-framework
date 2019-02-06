@@ -26,6 +26,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.Manifest;
@@ -65,7 +67,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 	}
 
 	public OptionsManifestImpl(ManifestLocation manifestLocation,
-			ManifestRegistry registry, MemberManifest<?> memberManifest) {
+			ManifestRegistry registry, @Nullable MemberManifest<?> memberManifest) {
 		super(manifestLocation, registry);
 
 		Manifest.verifyEnvironment(manifestLocation, memberManifest, MemberManifest.class);

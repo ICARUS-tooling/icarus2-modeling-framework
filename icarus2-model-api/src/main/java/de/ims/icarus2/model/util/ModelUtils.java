@@ -517,8 +517,8 @@ public final class ModelUtils {
 		Item item = fragment.getItem();
 		FragmentLayer layer = fragment.getLayer();
 		Rasterizer rasterizer = layer.getRasterizer();
-
 		int dimensionality = rasterizer.getAxisCount();
+
 		if(begin!=null && begin.getDimensionality()!=dimensionality)
 			throw new ModelException(ModelErrorCode.MODEL_INVALID_POSITION,
 					"Begin position dimensionality mismatch: expected " //$NON-NLS-1$

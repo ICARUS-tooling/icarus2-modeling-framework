@@ -24,6 +24,7 @@ import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockEdge;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
+import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.NO_NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.RUNS;
@@ -58,6 +59,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
@@ -649,6 +651,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.structure.DefaultStructure#getEdgeAt(long)}.
 			 */
 			@Test
+			@Tag(RANDOMIZED)
 			void testGetEdgeAtLong() {
 				Edge[] edges = randomArray(RUNS, Edge.class);
 				long[] indices = random().longs(edges.length, 0, Long.MAX_VALUE).toArray();
@@ -670,6 +673,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			 */
 			@SuppressWarnings("boxing")
 			@Test
+			@Tag(RANDOMIZED)
 			void testIndexOfEdge() {
 				Edge[] edges = randomArray(10, Edge.class);
 				long[] indices = random().longs(edges.length, 0, Long.MAX_VALUE).toArray();
@@ -690,6 +694,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			 */
 			@SuppressWarnings("boxing")
 			@Test
+			@Tag(RANDOMIZED)
 			void testGetEdgeCountItem() {
 				Item[] items = randomArray(10, Item.class);
 				long[] counts = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
@@ -710,6 +715,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			 */
 			@SuppressWarnings("boxing")
 			@Test
+			@Tag(RANDOMIZED)
 			void testGetEdgeCountItemBoolean() {
 				Item[] items = randomArray(RUNS, Item.class);
 				long[] counts = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
@@ -733,6 +739,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.structure.DefaultStructure#getEdgeAt(de.ims.icarus2.model.api.members.item.Item, long, boolean)}.
 			 */
 			@Test
+			@Tag(RANDOMIZED)
 			void testGetEdgeAtItemLongBoolean() {
 				Item[] items = randomArray(RUNS, Item.class);
 				Edge[] edges = randomArray(RUNS, Edge.class);
@@ -799,6 +806,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			 */
 			@SuppressWarnings("boxing")
 			@Test
+			@Tag(RANDOMIZED)
 			void testIndexOfChild() {
 				Item[] items = randomArray(RUNS, Item.class);
 				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
@@ -821,6 +829,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.structure.DefaultStructure#getSiblingAt(de.ims.icarus2.model.api.members.item.Item, long)}.
 			 */
 			@Test
+			@Tag(RANDOMIZED)
 			void testGetSiblingAt() {
 				Item[] items = randomArray(RUNS, Item.class);
 				long[] indices = random().longs(RUNS).toArray();
@@ -845,6 +854,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			 */
 			@SuppressWarnings("boxing")
 			@Test
+			@Tag(RANDOMIZED)
 			void testGetHeight() {
 				Item[] items = randomArray(RUNS, Item.class);
 				long[] heights = random().longs(RUNS).toArray();
@@ -868,6 +878,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			 */
 			@SuppressWarnings("boxing")
 			@Test
+			@Tag(RANDOMIZED)
 			void testGetDepth() {
 				Item[] items = randomArray(RUNS, Item.class);
 				long[] depths = random().longs(RUNS).toArray();
@@ -891,6 +902,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			 */
 			@SuppressWarnings("boxing")
 			@Test
+			@Tag(RANDOMIZED)
 			void testGetDescendantCount() {
 				Item[] items = randomArray(RUNS, Item.class);
 				long[] counts = random().longs(RUNS).toArray();
@@ -913,6 +925,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.structure.DefaultStructure#addEdge(long, de.ims.icarus2.model.api.members.item.Edge)}.
 			 */
 			@Test
+			@Tag(RANDOMIZED)
 			void testAddEdge() {
 				Edge[] edges = randomArray(RUNS, Edge.class);
 				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
@@ -929,6 +942,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			 */
 			@SuppressWarnings("unchecked")
 			@Test
+			@Tag(RANDOMIZED)
 			void testAddEdges() {
 				@SuppressWarnings("rawtypes")
 				DataSequence[] edges = randomArray(RUNS, DataSequence.class);

@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
@@ -38,7 +40,7 @@ public class RasterizerManifestImpl extends AbstractForeignImplementationManifes
 	}
 
 	public RasterizerManifestImpl(ManifestLocation manifestLocation,
-			ManifestRegistry registry, FragmentLayerManifest layerManifest) {
+			ManifestRegistry registry, @Nullable FragmentLayerManifest layerManifest) {
 		super(manifestLocation, registry, layerManifest, FragmentLayerManifest.class);
 	}
 

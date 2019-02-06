@@ -25,6 +25,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.api.Documentation;
 import de.ims.icarus2.model.manifest.api.ManifestException;
@@ -46,7 +48,7 @@ public class DocumentationImpl extends AbstractLockable implements Documentation
 		// no-op
 	}
 
-	public DocumentationImpl(String content) {
+	public DocumentationImpl(@Nullable String content) {
 		setContent(content);
 	}
 

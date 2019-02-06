@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.api.members.item;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.FragmentLayer;
 import de.ims.icarus2.model.api.raster.Position;
@@ -78,7 +80,7 @@ public interface Fragment extends Item {
 	 * @throws ModelException if the {@code position} violates
 	 * the bounds specified by the raster size of the hosting item
 	 */
-	void setFragmentBegin(Position position);
+	void setFragmentBegin(@Nullable Position position);
 
 	/**
 	 * Changes the end position of the fragment to the new {@code position}.
@@ -87,5 +89,5 @@ public interface Fragment extends Item {
 	 * @throws ModelException if the {@code position} violates
 	 * the bounds specified by the raster size of the hosting item
 	 */
-	void setFragmentEnd(Position position);
+	void setFragmentEnd(@Nullable Position position);
 }

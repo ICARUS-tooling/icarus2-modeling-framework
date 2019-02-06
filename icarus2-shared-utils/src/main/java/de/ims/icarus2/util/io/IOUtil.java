@@ -64,7 +64,7 @@ public final class IOUtil {
 		// no-op
 	}
 
-	public static final int DEFAULT_BUFFER_SIZE  = 32768;
+	public static final int DEFAULT_BUFFER_SIZE  = 1024 << 6;
 
 	public static final Filter<Path> fileFilter = new Filter<Path>() {
 

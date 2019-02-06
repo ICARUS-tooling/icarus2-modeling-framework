@@ -22,6 +22,7 @@ package de.ims.icarus2.model.standard.members.structure;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockEdge;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockStructure;
+import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.MAX_INTEGER_INDEX;
 import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
@@ -54,6 +55,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -572,6 +574,7 @@ class RootItemTest {
 		 * Consistency between the 2 edge count methods is also tested.
 		 */
 		@TestFactory
+		@Tag(RANDOMIZED)
 		Stream<DynamicTest> testGetEdgeCount() {
 			return random().ints(RUNS, 0, 20)
 					.mapToObj(count -> dynamicTest(String.valueOf(count), () -> {
@@ -641,6 +644,7 @@ class RootItemTest {
 		 * Test method for {@link MultiEdgeRootItem#removeAllEdges()}.
 		 */
 		@Test
+		@Tag(RANDOMIZED)
 		void testRemoveAllEdges() {
 			IntStream.range(10, random().nextInt(10)+10).forEach(
 					_x -> instance.addEdge(mockEdge()));

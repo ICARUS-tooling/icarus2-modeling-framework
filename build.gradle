@@ -54,6 +54,7 @@ subprojects {
 		javapoet
 		xerces
 		lucene
+		apiguardian
 		// default logging functionality
 		implementation.extendsFrom(slf4j)
 			
@@ -98,6 +99,11 @@ subprojects {
 	  
 	  	// https://mvnrepository.com/artifact/org.apache.lucene/lucene-core
 		lucene "org.apache.lucene:lucene-core:${versions.luceneVersion}"
+		
+		// https://github.com/apiguardian-team/apiguardian
+		apiguardian "org.apiguardian:apiguardian-api:${versions.apiguardianVersion}"		
+		// https://github.com/apiguardian-team/apiguardian
+		apiguardian "com.google.code.findbugs:jsr305:${versions.jsr305Version}"
 			
 		// TEST ENVIRONMENT
 		

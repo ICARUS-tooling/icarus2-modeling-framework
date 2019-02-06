@@ -16,6 +16,9 @@
  */
 package de.ims.icarus2.model.standard.members.item;
 
+import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.model.api.layer.FragmentLayer;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.item.Fragment;
@@ -44,37 +47,36 @@ public class DefaultFragment extends DefaultItem implements Fragment {
 	 * @param item the item to set
 	 */
 	public void setItem(Item item) {
-		if (item == null)
-			throw new NullPointerException("Invalid item"); //$NON-NLS-1$
-		this.item = item;
+		this.item = requireNonNull(item);
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		if(this==obj) {
-			return true;
-		} else if(obj instanceof Fragment) {
-			Fragment other = (Fragment) obj;
-			return item==other.getItem()
-					&& fragmentBegin.equals(other.getFragmentBegin())
-					&& fragmentEnd.equals(other.getFragmentEnd());
-		}
-		return false;
-	}
+//	@Override
+//	public boolean equals(Object obj) {
+//		if(this==obj) {
+//			return true;
+//		} else if(obj instanceof Fragment) {
+//			Fragment other = (Fragment) obj;
+//			return item==other.getItem()
+//					&& fragmentBegin.equals(other.getFragmentBegin())
+//					&& fragmentEnd.equals(other.getFragmentEnd());
+//		}
+//		return false;
+//	}
 
-	/**
-	 * @see java.lang.Object#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		return fragmentBegin.hashCode()*fragmentEnd.hashCode()+1;
-	}
+//	/**
+//	 * @see java.lang.Object#hashCode()
+//	 */
+//	@Override
+//	public int hashCode() {
+//		return fragmentBegin.hashCode()*fragmentEnd.hashCode()+1;
+//	}
 
 	/**
 	 * @see de.ims.icarus2.model.api.members.item.Item#getBeginOffset()
 	 */
 	@Override
 	public long getBeginOffset() {
+		checkState(item!=null);
 		return item.getBeginOffset();
 	}
 
@@ -83,6 +85,7 @@ public class DefaultFragment extends DefaultItem implements Fragment {
 	 */
 	@Override
 	public long getEndOffset() {
+		checkState(item!=null);
 		return item.getEndOffset();
 	}
 
@@ -151,10 +154,8 @@ public class DefaultFragment extends DefaultItem implements Fragment {
 	 */
 	@Override
 	public void setFragmentBegin(Position begin) {
-		if (begin == null)
-			throw new NullPointerException("Invalid begin");  //$NON-NLS-1$
-
-		ModelUtils.checkFragmentPositions(this, begin, null);
+		requireNonNull(begin);
+		ModelUtils.checkFragmentPositions(this, begin, fragmentEnd);
 
 		fragmentBegin = begin;
 	}
@@ -164,17 +165,15 @@ public class DefaultFragment extends DefaultItem implements Fragment {
 	 */
 	@Override
 	public void setFragmentEnd(Position end) {
-		if (end == null)
-			throw new NullPointerException("Invalid end");  //$NON-NLS-1$
+		requireNonNull(end);
+		ModelUtils.checkFragmentPositions(this, fragmentBegin, end);
 
 		fragmentEnd = end;
 	}
 
 	public void setSpan(Position begin, Position end) {
-		if (begin == null)
-			throw new NullPointerException("Invalid begin");  //$NON-NLS-1$
-		if (end == null)
-			throw new NullPointerException("Invalid end");  //$NON-NLS-1$
+		requireNonNull(begin);
+		requireNonNull(end);
 
 		ModelUtils.checkFragmentPositions(this, begin, end);
 

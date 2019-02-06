@@ -22,6 +22,8 @@ import java.util.EnumSet;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.manifest.api.HighlightFlag;
 import de.ims.icarus2.model.manifest.api.HighlightLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
@@ -44,7 +46,7 @@ public class HighlightLayerManifestImpl extends AbstractLayerManifest<HighlightL
 	 * @param layerGroupManifest
 	 */
 	public HighlightLayerManifestImpl(ManifestLocation manifestLocation,
-			ManifestRegistry registry, LayerGroupManifest layerGroupManifest) {
+			ManifestRegistry registry, @Nullable LayerGroupManifest layerGroupManifest) {
 		super(manifestLocation, registry, layerGroupManifest);
 	}
 

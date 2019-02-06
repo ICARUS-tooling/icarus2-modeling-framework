@@ -28,7 +28,6 @@ import static de.ims.icarus2.test.TestUtils.NO_NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertGetter;
-import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
 import static de.ims.icarus2.test.TestUtils.randomLongPair;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
@@ -94,8 +93,6 @@ class DefaultEdgeTest implements MemberTest<Edge> {
 		 */
 		@Test
 		void testDefaultEdgeStructure() {
-			assertNPE(() -> new DefaultEdge(null));
-
 			Structure structure = mockStructure();
 			DefaultEdge edge = new DefaultEdge(structure);
 			assertSame(structure, edge.getStructure());
@@ -106,10 +103,6 @@ class DefaultEdgeTest implements MemberTest<Edge> {
 		 */
 		@Test
 		void testDefaultEdgeStructureItemItem() {
-			assertNPE(() -> new DefaultEdge(null, mockItem(), mockItem()));
-			assertNPE(() -> new DefaultEdge(mockStructure(), null, mockItem()));
-			assertNPE(() -> new DefaultEdge(mockStructure(), mockItem(), null));
-
 			Structure structure = mockStructure();
 			Item source = mockItem();
 			Item target = mockItem();

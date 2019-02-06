@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
@@ -34,7 +36,7 @@ public class ItemLayerManifestImpl extends AbstractItemLayerManifestBase<ItemLay
 	 * @param layerGroupManifest
 	 */
 	public ItemLayerManifestImpl(ManifestLocation manifestLocation,
-			ManifestRegistry registry, LayerGroupManifest layerGroupManifest) {
+			ManifestRegistry registry, @Nullable LayerGroupManifest layerGroupManifest) {
 		super(manifestLocation, registry, layerGroupManifest);
 	}
 

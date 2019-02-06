@@ -44,6 +44,7 @@ import java.util.function.Predicate;
 import javax.swing.Icon;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.EnumType;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.Messages;
@@ -69,6 +70,7 @@ import de.ims.icarus2.util.strings.StringResource;
  * @author Markus Gärtner
  *
  */
+@EnumType(method="parseValueType", key="integer")
 public class ValueType implements StringResource, NamedObject {
 
 	private final Class<?> baseClass;

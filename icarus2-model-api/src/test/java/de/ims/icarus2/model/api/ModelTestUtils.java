@@ -20,8 +20,12 @@
 package de.ims.icarus2.model.api;
 
 import static de.ims.icarus2.SharedTestUtils.mockSequence;
+import static de.ims.icarus2.test.TestUtils.RUNS;
+import static de.ims.icarus2.test.TestUtils.RUNS_EXHAUSTIVE;
 import static de.ims.icarus2.test.TestUtils.assertMock;
+import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -32,6 +36,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
 import java.util.function.BiFunction;
+import java.util.stream.LongStream;
 
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.internal.stubbing.answers.CallsRealMethods;
@@ -54,6 +59,14 @@ import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
  *
  */
 public class ModelTestUtils {
+
+	public static LongStream randomIndices() {
+		return random().longs(RUNS, UNSET_LONG, Long.MAX_VALUE);
+	}
+
+	public static LongStream exhaustiveRandomIndices() {
+		return random().longs(RUNS_EXHAUSTIVE, UNSET_LONG, Long.MAX_VALUE);
+	}
 
 	private static boolean equals(Item item, Object obj) {
 		return obj instanceof Item && item.getId()==((Item)obj).getId();

@@ -16,11 +16,28 @@
  */
 package de.ims.icarus2.util.eval.jdk;
 
+import static de.ims.icarus2.test.TestTags.RANDOMIZED;
+import static de.ims.icarus2.test.TestTags.SLOW;
+import static de.ims.icarus2.test.TestUtils.EMOJI;
+import static de.ims.icarus2.test.TestUtils.LOREM_IPSUM_ASCII;
+import static de.ims.icarus2.test.TestUtils.LOREM_IPSUM_CHINESE;
+import static de.ims.icarus2.test.TestUtils.LOREM_IPSUM_ISO;
+import static de.ims.icarus2.test.TestUtils.random;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Random;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestReporter;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.util.eval.Expression;
 
@@ -31,30 +48,66 @@ import de.ims.icarus2.util.eval.Expression;
 @SuppressWarnings("boxing")
 public class JDKExpressionFactoryTest {
 
-	@Test
-	public void testNoVariablesExpression() throws Exception {
-		JDKExpressionFactory factory = new JDKExpressionFactory();
+	@Nested
+	class WithSystemOut {
 
-		factory.setCode("System.out.println(\"Hello World\"); return null;");
-		factory.setReturnType(Void.TYPE);
+		ByteArrayOutputStream buffer;
+		PrintStream stdOut;
 
-		Expression expression = factory.compile();
+		@BeforeEach
+		void setUp() {
+			stdOut = System.out;
+			buffer = new ByteArrayOutputStream();
+			System.setOut(new PrintStream(buffer));
+		}
 
-		expression.evaluate();
-	}
+		@AfterEach
+		void tearDown() throws IOException {
+			System.setOut(stdOut);
+			stdOut = null;
+			buffer.close();
+			buffer = null;
+		}
 
-	@Test
-	public void testInputVariableExpression() throws Exception {
-		JDKExpressionFactory factory = new JDKExpressionFactory();
+		@Test
+		public void testNoVariablesExpression() throws Exception {
+			JDKExpressionFactory factory = new JDKExpressionFactory();
 
-		factory.addInputVariable("input", String.class);
-		factory.setCode("System.out.println(\"Hello World: \"+@input); return null;");
-		factory.setReturnType(Void.TYPE);
+			factory.setCode("System.out.print(\"Hello World\"); return null;");
+			factory.setReturnType(Void.TYPE);
 
-		Expression expression = factory.compile();
+			Expression expression = factory.compile();
 
-		expression.getVariables().setValue("input", "this is a test");
-		expression.evaluate();
+			expression.evaluate();
+
+			assertEquals("Hello World", buffer.toString());
+		}
+
+		@ParameterizedTest
+		@ValueSource(strings = {
+				"",
+				"test",
+				"this is a test",
+				"this is a test\nwith\nbreaks",
+				EMOJI,
+				LOREM_IPSUM_ASCII,
+				LOREM_IPSUM_ISO,
+				LOREM_IPSUM_CHINESE
+		})
+		public void testInputVariableExpression(String value) throws Exception {
+			JDKExpressionFactory factory = new JDKExpressionFactory();
+
+			factory.addInputVariable("input", String.class);
+			factory.setCode("System.out.print(\"Hello World: \"+@input); return null;");
+			factory.setReturnType(Void.TYPE);
+
+			Expression expression = factory.compile();
+
+			expression.getVariables().setValue("input", value);
+			expression.evaluate();
+
+			assertEquals("Hello World: "+value, buffer.toString());
+		}
 	}
 
 	@Test
@@ -120,7 +173,9 @@ public class JDKExpressionFactoryTest {
 	}
 
 	@Test
-	public void testExpressionPerformance() throws Exception {
+	@Tag(SLOW)
+	@Tag(RANDOMIZED)
+	public void testExpressionPerformance(TestReporter reporter) throws Exception {
 		JDKExpressionFactory factory = new JDKExpressionFactory();
 
 		factory.addInputVariable("a", double.class);
@@ -151,7 +206,7 @@ public class JDKExpressionFactoryTest {
 		long runtime_raw = 0L;
 		long runtime_exp = 0L;
 
-		Random r = new Random(System.currentTimeMillis());
+		Random r = random();
 
 		for(int i=0; i<runs; i++) {
 			double a = r.nextDouble();
@@ -177,7 +232,9 @@ public class JDKExpressionFactoryTest {
 			assertEquals(result_raw, result_exp, 0.001);
 		}
 
-		System.out.printf("Raw time (%d runs): %.03fs\n", runs, 0.001*(double)runtime_raw/runs);
-		System.out.printf("Compiled time (%d runs): %.03fs\n", runs, 0.001*(double)runtime_exp/runs);
+		reporter.publishEntry(String.format("Raw time (%d runs): %.03fs\n",
+				runs, 0.001*(double)runtime_raw/runs));
+		reporter.publishEntry(String.format("Compiled time (%d runs): %.03fs\n",
+				runs, 0.001*(double)runtime_exp/runs));
 	}
 }

@@ -61,7 +61,7 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 	private final Map<String,Collection<ModuleManifest>> moduleManifests = new LinkedHashMap<>();
 
 	public DriverManifestImpl(ManifestLocation manifestLocation,
-			ManifestRegistry registry, ContextManifest contextManifest) {
+			ManifestRegistry registry, @Nullable ContextManifest contextManifest) {
 		super(manifestLocation, registry, contextManifest, ContextManifest.class);
 	}
 
@@ -590,7 +590,7 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		private ModuleSpecLink moduleSpec;
 
 		public ModuleManifestImpl(ManifestLocation manifestLocation,
-				ManifestRegistry registry, DriverManifest driverManifest) {
+				ManifestRegistry registry, @Nullable DriverManifest driverManifest) {
 			super(manifestLocation, registry, driverManifest, DriverManifest.class);
 		}
 

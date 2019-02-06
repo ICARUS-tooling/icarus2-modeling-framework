@@ -55,6 +55,9 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	public ValueRangeImpl(ValueType valueType, Comparable<?> lower, Comparable<?> upper, boolean lowerIncluded, boolean upperIncluded) {
 		this(valueType, lowerIncluded, upperIncluded);
 
+		requireNonNull(lower);
+		requireNonNull(upper);
+
 		setLowerBound(lower);
 		setUpperBound(upper);
 	}

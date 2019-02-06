@@ -1,0 +1,7 @@
+
+description = 'Shared annotations and interfaces for documenting and guarding the API of other framework modules'
+
+configurations {
+	// external dependencies managed by root build.gradle
+	implementation.extendsFrom(apiguardian)
+}

@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
@@ -75,7 +77,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	}
 
 	public ContextManifestImpl(ManifestLocation manifestLocation,
-			ManifestRegistry registry, CorpusManifest corpusManifest) {
+			ManifestRegistry registry, @Nullable CorpusManifest corpusManifest) {
 		super(manifestLocation, registry, corpusManifest, CorpusManifest.class);
 	}
 

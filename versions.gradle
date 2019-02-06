@@ -17,4 +17,6 @@ ext {
 	versions.mockitoVersion = '2.19.1'
 	versions.luceneVersion = '7.4.0'
 	versions.uuidVersion = '3.1.5'
+	versions.apiguardianVersion = '1.0.0'
+	versions.jsr305Version = '3.0.2'
 }

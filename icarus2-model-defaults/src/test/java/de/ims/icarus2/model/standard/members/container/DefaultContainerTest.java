@@ -23,6 +23,7 @@ import static de.ims.icarus2.SharedTestUtils.mockSequence;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
+import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.DEFAULT;
 import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
@@ -30,7 +31,6 @@ import static de.ims.icarus2.test.TestUtils.NO_NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.assertFlagGetter;
 import static de.ims.icarus2.test.TestUtils.assertGetter;
-import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.test.TestUtils.randomArray;
@@ -60,6 +60,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
@@ -110,26 +111,10 @@ class DefaultContainerTest implements MemberTest<Container> {
 		 * Test method for {@link de.ims.icarus2.model.standard.members.container.DefaultContainer#DefaultContainer(Container)
 		 */
 		@Test
-		void testDefaultContainerContainerNull() {
-			assertNPE(() -> new DefaultContainer(null));
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.container.DefaultContainer#DefaultContainer(Container)
-		 */
-		@Test
 		void testDefaultContainerContainer() {
 			Container host = mockContainer();
 			DefaultContainer container = new DefaultContainer(host);
 			assertSame(host, container.getContainer());
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.container.DefaultContainer#DefaultContainer(Container, ItemStorage)
-		 */
-		@Test
-		void testDefaultContainerContainerItemStorageNull() {
-			assertNPE(() -> new DefaultContainer(null, mock(ItemStorage.class)));
 		}
 
 		/**
@@ -476,6 +461,7 @@ class DefaultContainerTest implements MemberTest<Container> {
 		 */
 		@SuppressWarnings("boxing")
 		@Test
+		@Tag(RANDOMIZED)
 		void testRevive() {
 			IdManager idManager = mock(IdManager.class);
 			ItemLayer layer = mock(ItemLayer.class);
@@ -648,6 +634,7 @@ class DefaultContainerTest implements MemberTest<Container> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.container.DefaultContainer#getItemAt(long)}.
 			 */
 			@Test
+			@Tag(RANDOMIZED)
 			void testGetItemAt() {
 				Item[] items = randomArray(RUNS, Item.class);
 				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
@@ -669,6 +656,7 @@ class DefaultContainerTest implements MemberTest<Container> {
 			 */
 			@SuppressWarnings("boxing")
 			@Test
+			@Tag(RANDOMIZED)
 			void testIndexOfItem() {
 				Item[] items = randomArray(RUNS, Item.class);
 				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
@@ -688,6 +676,7 @@ class DefaultContainerTest implements MemberTest<Container> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.container.DefaultContainer#removeItem(long)}.
 			 */
 			@Test
+			@Tag(RANDOMIZED)
 			void testRemoveItem() {
 				long[] indices = random().longs(20, 0, Long.MAX_VALUE).toArray();
 
@@ -733,6 +722,7 @@ class DefaultContainerTest implements MemberTest<Container> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.container.DefaultContainer#addItem(long, de.ims.icarus2.model.api.members.item.Item)}.
 			 */
 			@Test
+			@Tag(RANDOMIZED)
 			void testAddItem() {
 				Item[] items = randomArray(RUNS, Item.class);
 				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
@@ -749,6 +739,7 @@ class DefaultContainerTest implements MemberTest<Container> {
 			 */
 			@SuppressWarnings("unchecked")
 			@Test
+			@Tag(RANDOMIZED)
 			void testAddItems() {
 				@SuppressWarnings("rawtypes")
 				DataSequence[] items = randomArray(RUNS, DataSequence.class);
@@ -766,6 +757,7 @@ class DefaultContainerTest implements MemberTest<Container> {
 			 */
 			@SuppressWarnings("boxing")
 			@Test
+			@Tag(RANDOMIZED)
 			void testSwapItems() {
 				@SuppressWarnings("rawtypes")
 				Pair[] indices = {

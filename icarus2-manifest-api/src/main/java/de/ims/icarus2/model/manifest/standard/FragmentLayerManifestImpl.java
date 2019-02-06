@@ -21,6 +21,8 @@ import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
@@ -47,7 +49,7 @@ public class FragmentLayerManifestImpl extends AbstractItemLayerManifestBase<Fra
 	 * @param layerGroupManifest
 	 */
 	public FragmentLayerManifestImpl(ManifestLocation manifestLocation,
-			ManifestRegistry registry, LayerGroupManifest layerGroupManifest) {
+			ManifestRegistry registry, @Nullable LayerGroupManifest layerGroupManifest) {
 		super(manifestLocation, registry, layerGroupManifest);
 	}
 

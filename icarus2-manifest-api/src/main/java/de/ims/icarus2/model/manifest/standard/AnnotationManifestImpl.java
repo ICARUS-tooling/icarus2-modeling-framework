@@ -24,6 +24,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
@@ -59,7 +61,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 * @param registry
 	 */
 	public AnnotationManifestImpl(ManifestLocation manifestLocation,
-			ManifestRegistry registry, AnnotationLayerManifest layerManifest) {
+			ManifestRegistry registry, @Nullable AnnotationLayerManifest layerManifest) {
 		super(manifestLocation, registry, layerManifest, AnnotationLayerManifest.class);
 	}
 

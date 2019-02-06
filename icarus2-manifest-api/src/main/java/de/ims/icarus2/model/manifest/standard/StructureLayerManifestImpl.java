@@ -18,6 +18,8 @@ package de.ims.icarus2.model.manifest.standard;
 
 import java.util.Optional;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.Hierarchy;
@@ -43,7 +45,7 @@ public class StructureLayerManifestImpl extends AbstractItemLayerManifestBase<St
 	 * @param layerGroupManifest
 	 */
 	public StructureLayerManifestImpl(ManifestLocation manifestLocation,
-			ManifestRegistry registry, LayerGroupManifest layerGroupManifest) {
+			ManifestRegistry registry, @Nullable LayerGroupManifest layerGroupManifest) {
 		super(manifestLocation, registry, layerGroupManifest);
 	}
 

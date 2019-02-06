@@ -19,8 +19,12 @@
  */
 package de.ims.icarus2.util.mem;
 
+import static de.ims.icarus2.test.TestTags.RANDOMIZED;
+import static de.ims.icarus2.test.TestTags.SHUFFLE;
 import static de.ims.icarus2.test.TestTags.SLOW;
 import static de.ims.icarus2.test.TestTags.STANDALONE;
+import static de.ims.icarus2.test.TestUtils.RUNS;
+import static de.ims.icarus2.test.TestUtils.random;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -32,7 +36,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -64,8 +67,6 @@ import de.ims.icarus2.util.mem.ByteAllocator.Cursor;
 class ByteAllocatorTest {
 
 	private static final Logger log = LoggerFactory.getLogger(ByteAllocatorTest.class);
-
-	private static final Random random = new Random(System.currentTimeMillis()*System.nanoTime());
 
 	/** Object under test **/
 	private ByteAllocator allocator;
@@ -148,6 +149,7 @@ class ByteAllocatorTest {
 	@SuppressWarnings("boxing")
 	@Test
 	@Tag(SLOW)
+	@Tag(RANDOMIZED)
 	void testAllocationConsistency() {
 		final int SIZE = 1_000_000;
 		final int RUNS = SIZE * 100;
@@ -170,7 +172,7 @@ class ByteAllocatorTest {
 			int id = allocator.alloc();
 			assertTrue(id!=IcarusUtils.UNSET_INT);
 			assertFalse(used[id]);
-			long data = random.nextLong();
+			long data = random().nextLong();
 			allocator.setLong(id, offset, data);
 			stored[id] = data;
 			used[id] = true;
@@ -191,7 +193,7 @@ class ByteAllocatorTest {
 		 */
 		for(int i=0; i<RUNS; i++) {
 
-			int id = random.nextInt(SIZE);
+			int id = random().nextInt(SIZE);
 
 			// Should only happen in later phase -> just continue
 			if(!used[id]) {
@@ -202,7 +204,7 @@ class ByteAllocatorTest {
 			long data = allocator.getLong(id, offset);
 			assertEquals(stored[id], data);
 
-			int c = random.nextInt(100);
+			int c = random().nextInt(100);
 
 			// Release with a 5% chance
 			if(c < 5) {
@@ -213,7 +215,7 @@ class ByteAllocatorTest {
 			} else
 			// Modify with a 25% chance (after chance of deletion)
 			if(c < 30) {
-				long newData = random.nextLong();
+				long newData = random().nextLong();
 				allocator.setLong(id, offset, newData);
 				stored[id] = newData;
 				changed++;
@@ -222,7 +224,7 @@ class ByteAllocatorTest {
 				int newId = allocator.alloc();
 				assertTrue(newId!=IcarusUtils.UNSET_INT);
 				assertFalse(used[newId]);
-				long newData = random.nextLong();
+				long newData = random().nextLong();
 				allocator.setLong(newId, offset, newData);
 				stored[newId] = newData;
 				used[newId] = true;
@@ -645,8 +647,9 @@ class ByteAllocatorTest {
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#writeBytes(int, int, byte[], int)}.
 		 */
 		@TestFactory
+		@Tag(RANDOMIZED)
 		Stream<DynamicTest> testWriteBytes() {
-			return random.ints(5, 1, defaultSlotSize)
+			return random().ints(5, 1, defaultSlotSize)
 				.boxed()
 				.flatMap(n -> IntStream.range(defaultSlotSize-n.intValue()+1, defaultSlotSize)
 						.mapToObj(offset -> DynamicTest.dynamicTest(
@@ -668,8 +671,9 @@ class ByteAllocatorTest {
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#readBytes(int, int, byte[], int)}.
 		 */
 		@TestFactory
+		@Tag(RANDOMIZED)
 		Stream<DynamicTest> testReadBytes() {
-			return random.ints(5, 1, defaultSlotSize)
+			return random().ints(5, 1, defaultSlotSize)
 					.boxed()
 					.flatMap(n -> IntStream.range(defaultSlotSize-n.intValue()+1, defaultSlotSize)
 							.mapToObj(offset -> DynamicTest.dynamicTest(
@@ -723,12 +727,13 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getByte(int, int)}.
 		 */
-		@RepeatedTest(value=5)
+		@RepeatedTest(RUNS)
+		@Tag(RANDOMIZED)
 		void testForByte() {
-			final int offset = random.nextInt(allocator.getSlotSize());
+			final int offset = random().nextInt(allocator.getSlotSize());
 			byte[] array = new byte[SIZE]; // [id] = byte_stored
 
-			random.ints(SIZE, Byte.MIN_VALUE, Byte.MAX_VALUE)
+			random().ints(SIZE, Byte.MIN_VALUE, Byte.MAX_VALUE)
 				.forEach(v -> {
 					int id = allocator.alloc();
 					allocator.setByte(id, offset, (byte)v);
@@ -742,16 +747,17 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getNBytes(int, int, int)}.
 		 */
-		@RepeatedTest(value=10)
+		@RepeatedTest(RUNS)
+		@Tag(RANDOMIZED)
 		void testForNBytes() {
-			final int offset = random.nextInt(allocator.getSlotSize()-Long.BYTES);
+			final int offset = random().nextInt(allocator.getSlotSize()-Long.BYTES);
 			long[] array = new long[SIZE]; // [id] = long_stored
 			int[] n_bytes = new int[SIZE]; // [id] = n
 
-			random.longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
+			random().longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
 				.forEach(v -> {
 					int id = allocator.alloc();
-					int n = random.nextInt(Long.BYTES-2)+1;
+					int n = random().nextInt(Long.BYTES-2)+1;
 					allocator.setNBytes(id, offset, v, n);
 					array[id] = Bits.extractNBytes(v, n);
 					n_bytes[id] = n;
@@ -764,12 +770,13 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getShort(int, int)}.
 		 */
-		@RepeatedTest(value=5)
+		@RepeatedTest(RUNS)
+		@Tag(RANDOMIZED)
 		void testGetShort() {
-			final int offset = random.nextInt(allocator.getSlotSize()-Short.BYTES);
+			final int offset = random().nextInt(allocator.getSlotSize()-Short.BYTES);
 			short[] array = new short[SIZE]; // [id] = short_stored
 
-			random.ints(SIZE, Short.MIN_VALUE, Short.MAX_VALUE)
+			random().ints(SIZE, Short.MIN_VALUE, Short.MAX_VALUE)
 				.forEach(v -> {
 					int id = allocator.alloc();
 					allocator.setShort(id, offset, (short)v);
@@ -783,12 +790,13 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getInt(int, int)}.
 		 */
-		@RepeatedTest(value=5)
+		@RepeatedTest(RUNS)
+		@Tag(RANDOMIZED)
 		void testGetInt() {
-			final int offset = random.nextInt(allocator.getSlotSize()-Integer.BYTES);
+			final int offset = random().nextInt(allocator.getSlotSize()-Integer.BYTES);
 			int[] array = new int[SIZE]; // [id] = int_stored
 
-			random.ints(SIZE, Integer.MIN_VALUE, Integer.MAX_VALUE)
+			random().ints(SIZE, Integer.MIN_VALUE, Integer.MAX_VALUE)
 				.forEach(v -> {
 					int id = allocator.alloc();
 					allocator.setInt(id, offset, v);
@@ -802,12 +810,13 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getLong(int, int)}.
 		 */
-		@RepeatedTest(value=5)
+		@RepeatedTest(RUNS)
+		@Tag(RANDOMIZED)
 		void testGetLong() {
-			final int offset = random.nextInt(allocator.getSlotSize()-Long.BYTES);
+			final int offset = random().nextInt(allocator.getSlotSize()-Long.BYTES);
 			long[] array = new long[SIZE]; // [id] = long_stored
 
-			random.longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
+			random().longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
 				.forEach(v -> {
 					int id = allocator.alloc();
 					allocator.setLong(id, offset, v);
@@ -821,16 +830,17 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#writeBytes(int, int, byte[], int)}.
 		 */
-		@RepeatedTest(value=5)
+		@RepeatedTest(RUNS)
+		@Tag(RANDOMIZED)
 		void testForBulk() {
-			final int offset = random.nextInt(allocator.getSlotSize()-Long.BYTES);
+			final int offset = random().nextInt(allocator.getSlotSize()-Long.BYTES);
 			byte[][] array = new byte[SIZE][]; // [id] = bytes_stored
 
-			random.ints(SIZE, 1, defaultSlotSize-offset)
+			random().ints(SIZE, 1, defaultSlotSize-offset)
 				.forEach(n -> {
 					int id = allocator.alloc();
 					byte[] bytes = new byte[n];
-					random.nextBytes(bytes);
+					random().nextBytes(bytes);
 					allocator.writeBytes(id, offset, bytes, n);
 					array[id] = bytes;
 				});
@@ -998,27 +1008,28 @@ class ByteAllocatorTest {
 					ids[i] = allocator.alloc();
 				}
 
-				if(testInfo.getTags().contains("shuffle")) {
+				if(testInfo.getTags().contains(SHUFFLE)) {
 					shuffleIds();
 				}
 			}
 
 			private void shuffleIds() {
 				for (int i = 0; i < ids.length; i++) {
-					ids[i] = ids[random.nextInt(ids.length)];
+					ids[i] = ids[random().nextInt(ids.length)];
 				}
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getByte(int)}.
 			 */
-			@RepeatedTest(value=5)
-			@Tag("shuffle")
+			@RepeatedTest(RUNS)
+			@Tag(SHUFFLE)
+			@Tag(RANDOMIZED)
 			void testBytes() {
-				final int[] values = random
+				final int[] values = random()
 						.ints(SIZE, Byte.MIN_VALUE, Byte.MAX_VALUE)
 						.toArray(); // [id] = byte_value
-				final int offset = random.nextInt(defaultSlotSize);
+				final int offset = random().nextInt(defaultSlotSize);
 
 				// Write everything
 				for (int id : ids) {
@@ -1045,13 +1056,14 @@ class ByteAllocatorTest {
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getShort(int)}.
 			 */
-			@RepeatedTest(value=5)
-			@Tag("shuffle")
+			@RepeatedTest(RUNS)
+			@Tag(SHUFFLE)
+			@Tag(RANDOMIZED)
 			void testShort() {
-				final int[] values = random
+				final int[] values = random()
 						.ints(SIZE, Short.MIN_VALUE, Short.MAX_VALUE)
 						.toArray(); // [id] = short_value
-				final int offset = random.nextInt(defaultSlotSize-Short.BYTES);
+				final int offset = random().nextInt(defaultSlotSize-Short.BYTES);
 
 				// Write everything
 				for (int id : ids) {
@@ -1078,13 +1090,14 @@ class ByteAllocatorTest {
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getInt(int)}.
 			 */
-			@RepeatedTest(value=5)
-			@Tag("shuffle")
+			@RepeatedTest(RUNS)
+			@Tag(SHUFFLE)
+			@Tag(RANDOMIZED)
 			void testInt() {
-				final int[] values = random
+				final int[] values = random()
 						.ints(SIZE, Integer.MIN_VALUE, Integer.MAX_VALUE)
 						.toArray(); // [id] = int_value
-				final int offset = random.nextInt(defaultSlotSize-Integer.BYTES);
+				final int offset = random().nextInt(defaultSlotSize-Integer.BYTES);
 
 				// Write everything
 				for (int id : ids) {
@@ -1111,13 +1124,14 @@ class ByteAllocatorTest {
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getLong(int)}.
 			 */
-			@RepeatedTest(value=5)
-			@Tag("shuffle")
+			@RepeatedTest(RUNS)
+			@Tag(SHUFFLE)
+			@Tag(RANDOMIZED)
 			void testLong() {
-				final long[] values = random
+				final long[] values = random()
 						.longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
 						.toArray(); // [id] = long_value
-				final int offset = random.nextInt(defaultSlotSize-Long.BYTES);
+				final int offset = random().nextInt(defaultSlotSize-Long.BYTES);
 
 				// Write everything
 				for (int id : ids) {
@@ -1144,14 +1158,15 @@ class ByteAllocatorTest {
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getNBytes(int, int)}.
 			 */
-			@RepeatedTest(value=20)
-			@Tag("shuffle")
+			@RepeatedTest(RUNS*2)
+			@Tag(SHUFFLE)
+			@Tag(RANDOMIZED)
 			void testNBytes() {
-				final long[] values = random
+				final long[] values = random()
 						.longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
 						.toArray(); // [id] = long_value
-				final int n = random.nextInt(8)+1;
-				final int offset = random.nextInt(defaultSlotSize-n);
+				final int n = random().nextInt(8)+1;
+				final int offset = random().nextInt(defaultSlotSize-n);
 
 				// Write everything
 				for (int id : ids) {
@@ -1178,16 +1193,17 @@ class ByteAllocatorTest {
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#writeBytes(int, byte[], int)}.
 			 */
-			@RepeatedTest(value=20)
-			@Tag("shuffle")
+			@RepeatedTest(RUNS*2)
+			@Tag(SHUFFLE)
+			@Tag(RANDOMIZED)
 			void testBytesArray() {
 				final byte[][] values = new byte[SIZE][]; // [id] = long_value
-				final int n = random.nextInt(8)+1;
-				final int offset = random.nextInt(defaultSlotSize-n);
+				final int n = random().nextInt(8)+1;
+				final int offset = random().nextInt(defaultSlotSize-n);
 
 				for (int i = 0; i < values.length; i++) {
 					values[i] = new byte[n];
-					random.nextBytes(values[i]);
+					random().nextBytes(values[i]);
 				}
 
 				// Write everything

@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Optional;
 
+import javax.annotation.Nullable;
 import javax.swing.Icon;
 
 import de.ims.icarus2.model.manifest.api.ModifiableIdentity;
@@ -42,18 +43,20 @@ public class DefaultModifiableIdentity<I extends ModifiableIdentity>
 		// default constructor
 	}
 
-	public DefaultModifiableIdentity(String id, String name, String description, Icon icon) {
+	public DefaultModifiableIdentity(String id, @Nullable String name,
+			@Nullable String description, @Nullable Icon icon) {
 		setId(id);
 		setName(name);
 		setDescription(description);
 		setIcon(icon);
 	}
 
-	public DefaultModifiableIdentity(String id, String description, Icon icon) {
+	public DefaultModifiableIdentity(String id, @Nullable String description,
+			@Nullable Icon icon) {
 		this(id, null, description, icon);
 	}
 
-	public DefaultModifiableIdentity(String id, String description) {
+	public DefaultModifiableIdentity(String id, @Nullable String description) {
 		this(id, null, description, null);
 	}
 
