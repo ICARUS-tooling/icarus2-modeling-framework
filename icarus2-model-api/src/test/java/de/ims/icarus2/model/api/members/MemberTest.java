@@ -4,6 +4,7 @@
 package de.ims.icarus2.model.api.members;
 
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.GenericTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.contracts.EqualsContract;
@@ -13,9 +14,9 @@ import de.ims.icarus2.test.contracts.HashContract;
  * @author Markus Gärtner
  *
  */
-public interface MemberTest<I extends Item> extends GenericTest<I>, 
+public interface MemberTest<I extends Item> extends GenericTest<I>, ApiGuardedTest<I>,
 		EqualsContract<I>, HashContract<I> {
-	
+
 	/**
 	 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */

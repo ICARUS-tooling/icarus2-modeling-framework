@@ -38,7 +38,7 @@ import de.ims.icarus2.apiguard.Getter;
 import de.ims.icarus2.apiguard.Property;
 import de.ims.icarus2.apiguard.Setter;
 import de.ims.icarus2.test.func.TriConsumer;
-import de.ims.icarus2.test.refelct.ClassCache;
+import de.ims.icarus2.test.reflect.ClassCache;
 
 /**
  * @author Markus Gärtner

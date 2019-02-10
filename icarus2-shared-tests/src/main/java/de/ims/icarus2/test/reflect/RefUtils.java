@@ -1,7 +1,7 @@
 /**
  *
  */
-package de.ims.icarus2.test.refelct;
+package de.ims.icarus2.test.reflect;
 
 import java.lang.reflect.Executable;
 import java.util.Comparator;
