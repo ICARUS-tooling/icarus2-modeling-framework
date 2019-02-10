@@ -35,6 +35,7 @@ import java.util.function.BiConsumer;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.annotations.OverrideTest;
 
@@ -182,7 +183,7 @@ public interface LayerGroupManifestTest
 						LayerGroupManifest::addLayerManifest,
 						LayerGroupManifest::getContextManifest),
 				NO_ILLEGAL(), TestUtils.NO_CHECK, true,
-				DUPLICATE_ID_CHECK,
+				ManifestTestUtils.DUPLICATE_ID_CHECK,
 				LayerManifestTest.mockItemLayerManifest("layer1"),
 				LayerManifestTest.mockItemLayerManifest("layer2"));
 	}
@@ -198,7 +199,7 @@ public interface LayerGroupManifestTest
 						LayerGroupManifest::getContextManifest),
 				LayerGroupManifest::removeLayerManifest,
 				LayerGroupManifest::getLayerManifests,
-				true, UNKNOWN_ID_CHECK,
+				true, ManifestTestUtils.UNKNOWN_ID_CHECK,
 				LayerManifestTest.mockItemLayerManifest("layer1"),
 				LayerManifestTest.mockItemLayerManifest("layer2"));
 	}
@@ -211,7 +212,7 @@ public interface LayerGroupManifestTest
 		assertLockableSetterBatch(settings(),
 				LayerGroupManifest::setPrimaryLayerId,
 				getLegalIdValues(), true,
-				INVALID_ID_CHECK, getIllegalIdValues());
+				ManifestTestUtils.INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**

@@ -36,6 +36,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.test.TestUtils;
 
 /**
@@ -176,7 +177,7 @@ public interface HighlightLayerManifestTest extends LayerManifestTest<HighlightL
 		assertLockableSetterBatch(settings(),
 				HighlightLayerManifest::setAndGetPrimaryLayer,
 				getLegalIdValues(), true,
-				INVALID_ID_CHECK, getIllegalIdValues());
+				ManifestTestUtils.INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**
@@ -187,7 +188,7 @@ public interface HighlightLayerManifestTest extends LayerManifestTest<HighlightL
 		assertLockableSetterBatch(settings(),
 				inject_consumeTargetLayerManifest(HighlightLayerManifest::setPrimaryLayerId),
 				getLegalIdValues(), true,
-				INVALID_ID_CHECK, getIllegalIdValues());
+				ManifestTestUtils.INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**

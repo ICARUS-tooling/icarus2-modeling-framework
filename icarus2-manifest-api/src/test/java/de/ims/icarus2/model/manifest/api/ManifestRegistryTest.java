@@ -61,7 +61,7 @@ import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
 
-import de.ims.icarus2.model.manifest.ManifestFrameworkTest;
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.events.ManifestEvents;
 import de.ims.icarus2.model.manifest.standard.DefaultLayerTypeIds;
 import de.ims.icarus2.test.TestSettings;
@@ -75,7 +75,7 @@ import de.ims.icarus2.util.events.SimpleEventListener;
  *
  */
 public interface ManifestRegistryTest
-		extends ManifestFrameworkTest<ManifestRegistry>, EventManagerTest<ManifestRegistry> {
+		extends EventManagerTest<ManifestRegistry> {
 
 	public static CorpusManifest mockCorpusManifest(String id) {
 		return (CorpusManifest) stubId(
@@ -261,7 +261,7 @@ public interface ManifestRegistryTest
 				createTestInstance(settings()),
 				ManifestRegistry::addLayerType,
 				mockLayerType("type1"),
-				NPE_CHECK, DUPLICATE_ID_CHECK,
+				NPE_CHECK, ManifestTestUtils.DUPLICATE_ID_CHECK,
 				mockLayerType("type1"));
 
 //		assertSetter(
@@ -285,7 +285,7 @@ public interface ManifestRegistryTest
 				ManifestRegistry::addLayerType,
 				ManifestRegistry::removeLayerType,
 				ManifestRegistry::getLayerTypes,
-				NPE_CHECK, UNKNOWN_ID_CHECK,
+				NPE_CHECK, ManifestTestUtils.UNKNOWN_ID_CHECK,
 				mockLayerType("type1"),
 				mockLayerType("type2"));
 	}
@@ -312,7 +312,7 @@ public interface ManifestRegistryTest
 				createTestInstance(settings()),
 				ManifestRegistry::addCorpusManifest,
 				NO_ILLEGAL(), NO_CHECK,
-				NPE_CHECK, DUPLICATE_ID_CHECK,
+				NPE_CHECK, ManifestTestUtils.DUPLICATE_ID_CHECK,
 				mockCorpusManifest("corpus1"),
 				mockCorpusManifest("corpus2"),
 				mockCorpusManifest("corpus3"));
@@ -328,7 +328,7 @@ public interface ManifestRegistryTest
 				ManifestRegistry::addCorpusManifest,
 				ManifestRegistry::removeCorpusManifest,
 				ManifestRegistry::getCorpusManifests,
-				NPE_CHECK, UNKNOWN_ID_CHECK,
+				NPE_CHECK, ManifestTestUtils.UNKNOWN_ID_CHECK,
 				mockCorpusManifest("corpus1"),
 				mockCorpusManifest("corpus2"),
 				mockCorpusManifest("corpus3"));
@@ -981,7 +981,7 @@ public interface ManifestRegistryTest
 				createTestInstance(settings()),
 				ManifestRegistry::addTemplate,
 				NO_ILLEGAL(), NO_CHECK,
-				NPE_CHECK, DUPLICATE_ID_CHECK,
+				NPE_CHECK, ManifestTestUtils.DUPLICATE_ID_CHECK,
 				mockTemplate("template1"),
 				mockTemplate("template2"),
 				mockTemplate("template3"));
@@ -997,7 +997,7 @@ public interface ManifestRegistryTest
 				createTestInstance(settings()),
 				ManifestRegistry::addTemplates,
 				NO_ILLEGAL(), NO_CHECK,
-				NPE_CHECK, DUPLICATE_ID_CHECK,
+				NPE_CHECK, ManifestTestUtils.DUPLICATE_ID_CHECK,
 				set(mockTemplate("template1"),
 						mockTemplate("template2")),
 				list(mockTemplate("template3"),
@@ -1015,7 +1015,7 @@ public interface ManifestRegistryTest
 				ManifestRegistry::addTemplate,
 				ManifestRegistry::removeTemplate,
 				ManifestRegistry::getTemplates,
-				NPE_CHECK, UNKNOWN_ID_CHECK,
+				NPE_CHECK, ManifestTestUtils.UNKNOWN_ID_CHECK,
 				mockTemplate("template1"),
 				mockTemplate("template2"),
 				mockTemplate("template3"));

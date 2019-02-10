@@ -124,7 +124,7 @@ public interface ValueManifestTest extends DocumentableTest<ValueManifest>,
 
 						LockableTest.assertLockableSetter(
 								settings(), manifest,
-								ValueManifest::setValue, testValue, true, TYPE_CAST_CHECK, illegalValue);
+								ValueManifest::setValue, testValue, true, ManifestTestUtils.TYPE_CAST_CHECK, illegalValue);
 					}));
 	}
 

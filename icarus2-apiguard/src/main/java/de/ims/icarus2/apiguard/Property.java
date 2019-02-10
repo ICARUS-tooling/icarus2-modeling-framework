@@ -7,6 +7,7 @@ import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Documented;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
@@ -24,10 +25,15 @@ import java.lang.annotation.Target;
  * @author Markus Gärtner
  *
  */
+@Inherited
 @Documented
 @Retention(RUNTIME)
 @Target(METHOD)
 public @interface Property {
 
+	/**
+	 * Name of the property this method is associated with
+	 * @return
+	 */
 	String value() default "";
 }

@@ -37,6 +37,7 @@ import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.annotations.Provider;
 
@@ -125,7 +126,7 @@ public interface HierarchyTest<E extends Object, H extends Hierarchy> extends Lo
 	default void testAdd() {
 		assertLockableAccumulativeAdd(settings(),
 				Hierarchy::add,
-				NO_ILLEGAL(), NO_CHECK, true, DUPLICATE_ID_CHECK,
+				NO_ILLEGAL(), NO_CHECK, true, ManifestTestUtils.DUPLICATE_ID_CHECK,
 				mockItem(), mockItem(), mockItem(), mockItem());
 	}
 
@@ -139,7 +140,7 @@ public interface HierarchyTest<E extends Object, H extends Hierarchy> extends Lo
 				Hierarchy::add,
 				Hierarchy::remove,
 				Hierarchy::getItems,
-				true, UNKNOWN_ID_CHECK,
+				true, ManifestTestUtils.UNKNOWN_ID_CHECK,
 				mockItem(), mockItem(), mockItem(), mockItem());
 	}
 

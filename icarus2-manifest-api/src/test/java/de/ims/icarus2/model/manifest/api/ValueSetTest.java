@@ -216,7 +216,7 @@ public interface ValueSetTest extends LockableTest<ValueSet>, TypedManifestTest<
 								settings, createWithType(settings(), valueType),
 								ValueSet::addValue,
 								illegalValues,
-								illegalValues[0]==null ? NO_CHECK : TYPE_CAST_CHECK,
+								illegalValues[0]==null ? NO_CHECK : ManifestTestUtils.TYPE_CAST_CHECK,
 								NPE_CHECK, NO_CHECK,
 								ManifestTestUtils.getTestValues(valueType));
 					}));
@@ -271,7 +271,7 @@ public interface ValueSetTest extends LockableTest<ValueSet>, TypedManifestTest<
 								ValueSet::addValue,
 								ValueSet::removeValue,
 								ValueSet::getValuesAsSet,
-								NPE_CHECK, INVALID_INPUT_CHECK,
+								NPE_CHECK, ManifestTestUtils.INVALID_INPUT_CHECK,
 								ManifestTestUtils.getTestValues(valueType));
 					}));
 	}

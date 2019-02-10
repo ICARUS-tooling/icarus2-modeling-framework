@@ -28,6 +28,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest.SourceType;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.annotations.OverrideTest;
@@ -115,7 +116,7 @@ public interface ImplementationManifestTest extends EmbeddedMemberManifestTest<I
 	default void testSetSourceType() {
 
 		for(SourceType sourceType : SourceType.values()) {
-			assertLockableSetter(settings(),ImplementationManifest::setSourceType, sourceType, true, TYPE_CAST_CHECK);
+			assertLockableSetter(settings(),ImplementationManifest::setSourceType, sourceType, true, ManifestTestUtils.TYPE_CAST_CHECK);
 		}
 	}
 
@@ -125,7 +126,7 @@ public interface ImplementationManifestTest extends EmbeddedMemberManifestTest<I
 	@Test
 	default void testSetSource() {
 
-		assertLockableSetter(settings(),ImplementationManifest::setSource, "source", true, TYPE_CAST_CHECK);
+		assertLockableSetter(settings(),ImplementationManifest::setSource, "source", true, ManifestTestUtils.TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -133,7 +134,7 @@ public interface ImplementationManifestTest extends EmbeddedMemberManifestTest<I
 	 */
 	@Test
 	default void testSetClassname() {
-		assertLockableSetter(settings(),ImplementationManifest::setClassname, "classname", true, TYPE_CAST_CHECK);
+		assertLockableSetter(settings(),ImplementationManifest::setClassname, "classname", true, ManifestTestUtils.TYPE_CAST_CHECK);
 	}
 
 	/**

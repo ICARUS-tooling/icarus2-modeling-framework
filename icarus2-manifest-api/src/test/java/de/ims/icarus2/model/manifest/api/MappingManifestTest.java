@@ -39,6 +39,7 @@ import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
 
@@ -181,7 +182,7 @@ public interface MappingManifestTest
 		assertLockableSetterBatch(settings(),
 				MappingManifest::setSourceLayerId,
 				getLegalIdValues(),
-				true, INVALID_ID_CHECK, getIllegalIdValues());
+				true, ManifestTestUtils.INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**
@@ -192,7 +193,7 @@ public interface MappingManifestTest
 		assertLockableSetterBatch(settings(),
 				MappingManifest::setTargetLayerId,
 				getLegalIdValues(),
-				true, INVALID_ID_CHECK, getIllegalIdValues());
+				true, ManifestTestUtils.INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**
@@ -223,7 +224,7 @@ public interface MappingManifestTest
 		assertLockableSetterBatch(settings(),
 				MappingManifest::setInverseId,
 				getLegalIdValues(),
-				true, INVALID_ID_CHECK, getIllegalIdValues());
+				true, ManifestTestUtils.INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**
@@ -234,7 +235,7 @@ public interface MappingManifestTest
 		assertLockableSetterBatch(settings(),
 				MappingManifest::setId,
 				getLegalIdValues(),
-				true, INVALID_ID_CHECK, getIllegalIdValues());
+				true, ManifestTestUtils.INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 }

@@ -677,7 +677,7 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 	default void testSetPrimaryLayerId() {
 		assertLockableSetter(settings(),
 				ContextManifest::setPrimaryLayerId,
-				"layer1", NPE_CHECK, INVALID_ID_CHECK,
+				"layer1", NPE_CHECK, ManifestTestUtils.INVALID_ID_CHECK,
 				ManifestTestUtils.getIllegalIdValues());
 	}
 
@@ -688,7 +688,7 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 	default void testSetFoundationLayerId() {
 		assertLockableSetter(settings(),
 				ContextManifest::setFoundationLayerId,
-				"layer1", NPE_CHECK, INVALID_ID_CHECK,
+				"layer1", NPE_CHECK, ManifestTestUtils.INVALID_ID_CHECK,
 				ManifestTestUtils.getIllegalIdValues());
 	}
 
@@ -708,7 +708,7 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 		assertLockableAccumulativeAdd(settings(),
 				ContextManifest::addAndGetPrerequisite,
 				ManifestTestUtils.getIllegalIdValues(),
-				INVALID_ID_CHECK, NPE_CHECK, DUPLICATE_ID_CHECK,
+				ManifestTestUtils.INVALID_ID_CHECK, NPE_CHECK, ManifestTestUtils.DUPLICATE_ID_CHECK,
 				"layer1", "layer2", "layerxyz123456789");
 	}
 
@@ -720,7 +720,7 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 		assertLockableAccumulativeAdd(settings(),
 				inject_createPrerequisiteManifest(ContextManifest::addPrerequisite),
 				ManifestTestUtils.getIllegalIdValues(),
-				INVALID_ID_CHECK, NPE_CHECK, DUPLICATE_ID_CHECK,
+				ManifestTestUtils.INVALID_ID_CHECK, NPE_CHECK, ManifestTestUtils.DUPLICATE_ID_CHECK,
 				"layer1", "layer2", "layerxyz123456789");
 	}
 
@@ -763,7 +763,7 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 				remover,
 				transform_genericCollectionGetter(
 						ContextManifest::getPrerequisites, transform_prerequisiteAlias()),
-				NPE_CHECK, INVALID_INPUT_CHECK,
+				NPE_CHECK, ManifestTestUtils.INVALID_INPUT_CHECK,
 				"layer1", "layer2", "layer3");
 	}
 
@@ -775,7 +775,7 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 		assertLockableAccumulativeAdd(settings(),
 				ContextManifest::addLayerGroup,
 				NO_ILLEGAL(), NO_CHECK,
-				NPE_CHECK, DUPLICATE_ID_CHECK,
+				NPE_CHECK, ManifestTestUtils.DUPLICATE_ID_CHECK,
 				mockGroupManifest("group1"),
 				mockGroupManifest("group2"),
 				mockGroupManifest("group3"));
@@ -799,7 +799,7 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 				ContextManifest::addLayerGroup,
 				ContextManifest::removeLayerGroup,
 				ContextManifest::getGroupManifests,
-				NPE_CHECK, INVALID_INPUT_CHECK,
+				NPE_CHECK, ManifestTestUtils.INVALID_INPUT_CHECK,
 				mockGroupManifest("group1"),
 				mockGroupManifest("group2"),
 				mockGroupManifest("group3"));
@@ -813,7 +813,7 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 		assertLockableAccumulativeAdd(settings(),
 				ContextManifest::addLocationManifest,
 				NO_ILLEGAL(), NO_CHECK,
-				NPE_CHECK, INVALID_INPUT_CHECK,
+				NPE_CHECK, ManifestTestUtils.INVALID_INPUT_CHECK,
 				mockLocationManifest(),
 				mockLocationManifest(),
 				mockLocationManifest());
@@ -828,7 +828,7 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 				ContextManifest::addLocationManifest,
 				ContextManifest::removeLocationManifest,
 				ContextManifest::getLocationManifests,
-				NPE_CHECK, INVALID_INPUT_CHECK,
+				NPE_CHECK, ManifestTestUtils.INVALID_INPUT_CHECK,
 				mockLocationManifest(),
 				mockLocationManifest(),
 				mockLocationManifest());

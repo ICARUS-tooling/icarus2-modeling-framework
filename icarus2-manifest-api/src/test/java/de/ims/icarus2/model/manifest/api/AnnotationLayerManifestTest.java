@@ -326,7 +326,7 @@ public interface AnnotationLayerManifestTest extends LayerManifestTest<Annotatio
 	default void testAddAnnotationManifest() {
 		assertLockableAccumulativeAdd(settings(),
 				AnnotationLayerManifest::addAnnotationManifest, TestUtils.NO_ILLEGAL(),
-				TestUtils.NO_CHECK, true, DUPLICATE_ID_CHECK,
+				TestUtils.NO_CHECK, true, ManifestTestUtils.DUPLICATE_ID_CHECK,
 				mockAnnotationManifest("key1"), mockAnnotationManifest("key2"), mockAnnotationManifest("key3"));
 	}
 
@@ -339,7 +339,7 @@ public interface AnnotationLayerManifestTest extends LayerManifestTest<Annotatio
 				AnnotationLayerManifest::addAnnotationManifest,
 				AnnotationLayerManifest::removeAnnotationManifest,
 				AnnotationLayerManifest::getAnnotationManifests,
-				true, UNKNOWN_ID_CHECK,
+				true, ManifestTestUtils.UNKNOWN_ID_CHECK,
 				mockAnnotationManifest("key1"), mockAnnotationManifest("key2"), mockAnnotationManifest("key3"));
 	}
 
@@ -362,8 +362,8 @@ public interface AnnotationLayerManifestTest extends LayerManifestTest<Annotatio
 	default void testAddAndGetReferenceLayerId() {
 		assertLockableAccumulativeAdd(settings(),
 				AnnotationLayerManifest::addAndGetReferenceLayer,
-				ManifestTestUtils.getIllegalIdValues(), INVALID_ID_CHECK,
-				true, DUPLICATE_ID_CHECK, ManifestTestUtils.getLegalIdValues());
+				ManifestTestUtils.getIllegalIdValues(), ManifestTestUtils.INVALID_ID_CHECK,
+				true, ManifestTestUtils.DUPLICATE_ID_CHECK, ManifestTestUtils.getLegalIdValues());
 	}
 
 	/**
@@ -373,8 +373,8 @@ public interface AnnotationLayerManifestTest extends LayerManifestTest<Annotatio
 	default void testAddReferenceLayerId() {
 		assertLockableAccumulativeAdd(settings(),
 				inject_consumeTargetLayerManifest(AnnotationLayerManifest::addReferenceLayerId),
-				ManifestTestUtils.getIllegalIdValues(), INVALID_ID_CHECK,
-				true, DUPLICATE_ID_CHECK, ManifestTestUtils.getLegalIdValues());
+				ManifestTestUtils.getIllegalIdValues(), ManifestTestUtils.INVALID_ID_CHECK,
+				true, ManifestTestUtils.DUPLICATE_ID_CHECK, ManifestTestUtils.getLegalIdValues());
 	}
 
 	/**
@@ -386,7 +386,7 @@ public interface AnnotationLayerManifestTest extends LayerManifestTest<Annotatio
 				AnnotationLayerManifest::addAndGetReferenceLayer,
 				AnnotationLayerManifest::removeReferenceLayerId,
 				TestUtils.transform_genericCollectionGetter(AnnotationLayerManifest::getReferenceLayerManifests, transform_targetLayerId()),
-				true, UNKNOWN_ID_CHECK,
+				true, ManifestTestUtils.UNKNOWN_ID_CHECK,
 				"layer1", "layer2", "layer3");
 	}
 

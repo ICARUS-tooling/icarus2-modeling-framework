@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
-import de.ims.icarus2.model.manifest.ManifestFrameworkTest;
+import de.ims.icarus2.model.manifest.ManifestApiTest;
 import de.ims.icarus2.model.manifest.ManifestTestFeature;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.TestUtils;
@@ -45,7 +45,7 @@ import de.ims.icarus2.test.func.TriConsumer;
  * @author Markus Gärtner
  *
  */
-public interface LockableTest<L extends Lockable> extends ManifestFrameworkTest<L> {
+public interface LockableTest<L extends Lockable> extends ManifestApiTest<L> {
 
 	/**
 	 * Expects a {@link ManifestException} of type {@link ManifestErrorCode#MANIFEST_LOCKED}

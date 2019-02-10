@@ -32,6 +32,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.TestUtils;
@@ -275,7 +276,7 @@ public interface OptionsManifestTest extends ManifestTest<OptionsManifest>, Embe
 		assertLockableAccumulativeAdd(
 				settings(),
 				OptionsManifest::addOption, TestUtils.NO_ILLEGAL(),
-				TestUtils.NO_CHECK, true, DUPLICATE_ID_CHECK,
+				TestUtils.NO_CHECK, true, ManifestTestUtils.DUPLICATE_ID_CHECK,
 				mockOption("id1"), mockOption("ids2"), mockOption("id3"));
 	}
 
@@ -288,7 +289,7 @@ public interface OptionsManifestTest extends ManifestTest<OptionsManifest>, Embe
 				settings(),
 				OptionsManifest::addOption, OptionsManifest::removeOption,
 				OptionsManifest::getOptions,
-				true, UNKNOWN_ID_CHECK,
+				true, ManifestTestUtils.UNKNOWN_ID_CHECK,
 				mockOption("id1"), mockOption("ids2"), mockOption("id3"));
 	}
 
@@ -300,7 +301,7 @@ public interface OptionsManifestTest extends ManifestTest<OptionsManifest>, Embe
 		assertLockableAccumulativeAdd(
 				settings(),
 				OptionsManifest::addGroupIdentifier, TestUtils.NO_ILLEGAL(),
-				TestUtils.NO_CHECK, true, DUPLICATE_ID_CHECK,
+				TestUtils.NO_CHECK, true, ManifestTestUtils.DUPLICATE_ID_CHECK,
 				mockIdentity("id1"), mockIdentity("ids2"), mockIdentity("id3"));
 	}
 
@@ -313,7 +314,7 @@ public interface OptionsManifestTest extends ManifestTest<OptionsManifest>, Embe
 				settings(),
 				OptionsManifest::addGroupIdentifier, OptionsManifest::removeGroupIdentifier,
 				OptionsManifest::getGroupIdentifiers,
-				true, UNKNOWN_ID_CHECK,
+				true, ManifestTestUtils.UNKNOWN_ID_CHECK,
 				mockIdentity("id1"), mockIdentity("ids2"), mockIdentity("id3"));
 	}
 

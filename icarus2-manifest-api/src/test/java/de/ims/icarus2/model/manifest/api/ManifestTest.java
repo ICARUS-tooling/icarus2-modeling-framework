@@ -585,7 +585,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	@Test
 	default void testSetId() {
 		TestUtils.assertSetterBatch(createUnlocked(), Manifest::setId, ManifestTestUtils.getLegalIdValues(),
-				true, INVALID_ID_CHECK, ManifestTestUtils.getIllegalIdValues());
+				true, ManifestTestUtils.INVALID_ID_CHECK, ManifestTestUtils.getIllegalIdValues());
 	}
 
 	/**
@@ -684,7 +684,7 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 	 */
 	@Test
 	default void testSetVersionManifest() {
-		assertLockableSetter(settings(),Manifest::setVersionManifest, mock(VersionManifest.class), true, TYPE_CAST_CHECK);
+		assertLockableSetter(settings(),Manifest::setVersionManifest, mock(VersionManifest.class), true, ManifestTestUtils.TYPE_CAST_CHECK);
 
 		/*
 		 *  Additional test, since contract requires that any attempt

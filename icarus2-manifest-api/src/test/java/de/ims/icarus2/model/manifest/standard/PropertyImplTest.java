@@ -115,7 +115,7 @@ class PropertyImplTest implements PropertyTest {
 				new PropertyImpl("noName", ValueType.STRING),
 				PropertyImpl::setName,
 				ManifestTestUtils.getLegalIdValues(),
-				NPE_CHECK, INVALID_ID_CHECK, ManifestTestUtils.getIllegalIdValues());
+				NPE_CHECK, ManifestTestUtils.INVALID_ID_CHECK, ManifestTestUtils.getIllegalIdValues());
 	}
 
 	/**

@@ -18,6 +18,8 @@ package de.ims.icarus2.model.api.members.item;
 
 import javax.annotation.Nullable;
 
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Property;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.structure.Structure;
 
@@ -29,6 +31,7 @@ import de.ims.icarus2.model.api.members.structure.Structure;
  * @author Markus Gärtner
  *
  */
+@Api
 public interface Edge extends Item {
 
 	/**
@@ -37,13 +40,13 @@ public interface Edge extends Item {
 	 *
 	 * @return
 	 */
-	Structure getStructure();
+	@Nullable Structure getStructure();
 
 	/**
 	 * @see de.ims.icarus2.model.api.members.item.Item#getContainer()
 	 */
 	@Override
-	default Container getContainer() {
+	default @Nullable Container getContainer() {
 		return getStructure();
 	}
 
@@ -57,11 +60,13 @@ public interface Edge extends Item {
 		return false;
 	}
 
-	Item getSource();
+	@Property
+	@Nullable Item getSource();
 
-	Item getTarget();
+	@Property
+	@Nullable Item getTarget();
 
-	default Item getTerminal(boolean isSource) {
+	default @Nullable Item getTerminal(boolean isSource) {
 		return isSource ? getSource() : getTarget();
 	}
 
@@ -78,11 +83,13 @@ public interface Edge extends Item {
 
 	// Modification methods
 
+	@Property
 	void setSource(@Nullable Item item);
 
+	@Property
 	void setTarget(@Nullable Item item);
 
-	default void setTerminal(Item item, boolean isSource) {
+	default void setTerminal(@Nullable Item item, boolean isSource) {
 		if(isSource) {
 			setSource(item);
 		} else {

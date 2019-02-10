@@ -274,7 +274,7 @@ public interface OptionTest extends ModifiableIdentityTest<Option>, LockableTest
 	@Test
 	default void testSetOptionGroup() {
 		assertLockableSetterBatch(settings(), Option::setOptionGroup,
-				ManifestTestUtils.getLegalIdValues(), true, INVALID_ID_CHECK,
+				ManifestTestUtils.getLegalIdValues(), true, ManifestTestUtils.INVALID_ID_CHECK,
 				ManifestTestUtils.getIllegalIdValues());
 	}
 
@@ -301,7 +301,7 @@ public interface OptionTest extends ModifiableIdentityTest<Option>, LockableTest
 				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
 						LockableTest.assertLockableSetter(settings(), createWithType(settings(), valueType),
 								Option::setDefaultValue, getTestValue(valueType),
-								false, TYPE_CAST_CHECK, getIllegalValue(valueType));
+								false, ManifestTestUtils.TYPE_CAST_CHECK, getIllegalValue(valueType));
 					}));
 	}
 

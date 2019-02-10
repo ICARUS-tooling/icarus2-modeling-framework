@@ -27,6 +27,7 @@ import static de.ims.icarus2.test.TestUtils.settings;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.test.asserter.Equals;
 
@@ -103,7 +104,7 @@ public interface VersionManifestTest extends LockableTest<VersionManifest>, Type
 		assertLockableSetter(settings(),
 				VersionManifest::setFormatId,
 				"format", NPE_CHECK,
-				INVALID_INPUT_CHECK, "");
+				ManifestTestUtils.INVALID_INPUT_CHECK, "");
 	}
 
 	/**
@@ -114,7 +115,7 @@ public interface VersionManifestTest extends LockableTest<VersionManifest>, Type
 		assertLockableSetter(settings(),
 				VersionManifest::setVersionString,
 				"version", NPE_CHECK,
-				INVALID_INPUT_CHECK, "");
+				ManifestTestUtils.INVALID_INPUT_CHECK, "");
 	}
 
 }

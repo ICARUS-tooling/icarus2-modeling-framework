@@ -42,6 +42,7 @@ import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec;
 
@@ -361,7 +362,7 @@ public interface DriverManifestTest
 	default void testAddMappingManifest() {
 		assertLockableAccumulativeAdd(settings(),
 				DriverManifest::addMappingManifest,
-				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, DUPLICATE_ID_CHECK,
+				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, ManifestTestUtils.DUPLICATE_ID_CHECK,
 				mockMappingManifest("mapping1"),
 				mockMappingManifest("mapping2"));
 	}
@@ -375,7 +376,7 @@ public interface DriverManifestTest
 				DriverManifest::addMappingManifest,
 				DriverManifest::removeMappingManifest,
 				DriverManifest::getMappingManifests,
-				NPE_CHECK, UNKNOWN_ID_CHECK,
+				NPE_CHECK, ManifestTestUtils.UNKNOWN_ID_CHECK,
 				mockMappingManifest("mapping1"),
 				mockMappingManifest("mapping2"));
 	}
@@ -387,7 +388,7 @@ public interface DriverManifestTest
 	default void testAddModuleManifest() {
 		assertLockableAccumulativeAdd(settings(),
 				DriverManifest::addModuleManifest,
-				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, DUPLICATE_ID_CHECK,
+				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, ManifestTestUtils.DUPLICATE_ID_CHECK,
 				mockModuleManifest("module1"),
 				mockModuleManifest("module1"),
 				mockModuleManifest("module2"),
@@ -403,7 +404,7 @@ public interface DriverManifestTest
 				DriverManifest::addModuleManifest,
 				DriverManifest::removeModuleManifest,
 				DriverManifest::getModuleManifests,
-				NPE_CHECK, UNKNOWN_ID_CHECK,
+				NPE_CHECK, ManifestTestUtils.UNKNOWN_ID_CHECK,
 				mockModuleManifest("module1"),
 				mockModuleManifest("module2"));
 	}
@@ -415,7 +416,7 @@ public interface DriverManifestTest
 	default void testAddModuleSpec() {
 		assertLockableAccumulativeAdd(settings(),
 				DriverManifest::addModuleSpec,
-				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, DUPLICATE_ID_CHECK,
+				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, ManifestTestUtils.DUPLICATE_ID_CHECK,
 				mockModuleSpec("spec1"),
 				mockModuleSpec("spec2"));
 	}
@@ -429,7 +430,7 @@ public interface DriverManifestTest
 				DriverManifest::addModuleSpec,
 				DriverManifest::removeModuleSpec,
 				DriverManifest::getModuleSpecs,
-				NPE_CHECK, UNKNOWN_ID_CHECK,
+				NPE_CHECK, ManifestTestUtils.UNKNOWN_ID_CHECK,
 				mockModuleSpec("spec1"),
 				mockModuleSpec("spec2"));
 	}

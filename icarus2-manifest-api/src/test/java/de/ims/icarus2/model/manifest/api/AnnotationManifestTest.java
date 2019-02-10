@@ -297,7 +297,7 @@ public interface AnnotationManifestTest extends EmbeddedMemberManifestTest<Annot
 	 */
 	@Test
 	default void testSetKey() {
-		assertLockableSetter(settings(),AnnotationManifest::setKey, "key", true, TYPE_CAST_CHECK);
+		assertLockableSetter(settings(),AnnotationManifest::setKey, "key", true, ManifestTestUtils.TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -307,7 +307,7 @@ public interface AnnotationManifestTest extends EmbeddedMemberManifestTest<Annot
 	default void testAddAlias() {
 		assertLockableAccumulativeAdd(settings(),
 				AnnotationManifest::addAlias, TestUtils.NO_ILLEGAL(),
-				TYPE_CAST_CHECK, true, INVALID_INPUT_CHECK,
+				ManifestTestUtils.TYPE_CAST_CHECK, true, ManifestTestUtils.INVALID_INPUT_CHECK,
 				"alias1", "alias2", "alias3");
 	}
 
@@ -319,7 +319,7 @@ public interface AnnotationManifestTest extends EmbeddedMemberManifestTest<Annot
 		assertLockableAccumulativeRemove(settings(),
 				AnnotationManifest::addAlias, AnnotationManifest::removeAlias,
 				AnnotationManifest::getAliases,
-				true, INVALID_INPUT_CHECK, "alias1", "alias2", "alias3");
+				true, ManifestTestUtils.INVALID_INPUT_CHECK, "alias1", "alias2", "alias3");
 	}
 
 	/**
@@ -329,7 +329,7 @@ public interface AnnotationManifestTest extends EmbeddedMemberManifestTest<Annot
 	default void testSetValueRange() {
 		assertLockableSetter(settings(),
 				AnnotationManifest::setValueRange,
-				mock(ValueRange.class), false, TYPE_CAST_CHECK);
+				mock(ValueRange.class), false, ManifestTestUtils.TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -339,7 +339,7 @@ public interface AnnotationManifestTest extends EmbeddedMemberManifestTest<Annot
 	default void testSetValueSet() {
 		assertLockableSetter(settings(),
 				AnnotationManifest::setValueSet,
-				mock(ValueSet.class), false, TYPE_CAST_CHECK);
+				mock(ValueSet.class), false, ManifestTestUtils.TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -349,7 +349,7 @@ public interface AnnotationManifestTest extends EmbeddedMemberManifestTest<Annot
 	default void testSetValueType() {
 		assertLockableSetter(settings(),
 				AnnotationManifest::setValueType,
-				mock(ValueType.class), true, TYPE_CAST_CHECK);
+				mock(ValueType.class), true, ManifestTestUtils.TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -359,7 +359,7 @@ public interface AnnotationManifestTest extends EmbeddedMemberManifestTest<Annot
 	default void testSetContentType() {
 		assertLockableSetter(settings(),
 				AnnotationManifest::setContentType,
-				mock(ContentType.class), false, TYPE_CAST_CHECK);
+				mock(ContentType.class), false, ManifestTestUtils.TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -374,7 +374,7 @@ public interface AnnotationManifestTest extends EmbeddedMemberManifestTest<Annot
 //						Object illegalValue = ManifestTestUtils.getIllegalValue(valueType);
 						assertLockableSetter(settings(),
 								AnnotationManifest::setNoEntryValue,
-								value, false, TYPE_CAST_CHECK/*, illegalValue*/);
+								value, false, ManifestTestUtils.TYPE_CAST_CHECK);
 					}));
 	}
 

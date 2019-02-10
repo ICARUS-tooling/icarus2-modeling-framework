@@ -25,6 +25,7 @@ import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.Documentation.Resource;
 import de.ims.icarus2.test.TestUtils;
 
@@ -78,7 +79,7 @@ public interface DocumentationTest<D extends Documentation> extends LockableTest
 	 */
 	@Test
 	default void testSetContent() {
-		assertLockableSetter(settings(),Documentation::setContent, "content", false, TYPE_CAST_CHECK);
+		assertLockableSetter(settings(),Documentation::setContent, "content", false, ManifestTestUtils.TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -88,7 +89,7 @@ public interface DocumentationTest<D extends Documentation> extends LockableTest
 	default void testAddResource() {
 		assertLockableAccumulativeAdd(
 				settings(),Documentation::addResource,
-				TestUtils.NO_ILLEGAL(), TestUtils.NO_CHECK, true, INVALID_INPUT_CHECK,
+				TestUtils.NO_ILLEGAL(), TestUtils.NO_CHECK, true, ManifestTestUtils.INVALID_INPUT_CHECK,
 				mock(Resource.class), mock(Resource.class));
 	}
 
@@ -100,7 +101,7 @@ public interface DocumentationTest<D extends Documentation> extends LockableTest
 		assertLockableAccumulativeRemove(
 				settings(),Documentation::addResource,
 				Documentation::removeResource, Documentation::getResources,
-				true, INVALID_INPUT_CHECK, mock(Resource.class), mock(Resource.class));
+				true, ManifestTestUtils.INVALID_INPUT_CHECK, mock(Resource.class), mock(Resource.class));
 	}
 
 }

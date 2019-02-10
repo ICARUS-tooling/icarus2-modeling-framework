@@ -42,6 +42,7 @@ import java.util.function.Function;
 import org.junit.jupiter.api.function.Executable;
 
 import de.ims.icarus2.ErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.api.Embedded;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
@@ -579,4 +580,18 @@ public class ManifestTestUtils {
 		return i -> i.getId().orElseThrow(Manifest.invalidId(
 				"Identity declares null id"));
 	}
+
+	public static final BiConsumer<Executable, String> TYPE_CAST_CHECK = ManifestTestUtils::assertIllegalValue;
+
+	public static final BiConsumer<Executable, String> INVALID_ID_CHECK = (executable, msg) ->
+	assertManifestException(ManifestErrorCode.MANIFEST_INVALID_ID, executable, msg);
+
+	public static final BiConsumer<Executable, String> INVALID_INPUT_CHECK = (executable, msg) ->
+	assertManifestException(GlobalErrorCode.INVALID_INPUT, executable, msg);
+
+	public static final BiConsumer<Executable, String> DUPLICATE_ID_CHECK = (executable, msg) ->
+	assertManifestException(ManifestErrorCode.MANIFEST_DUPLICATE_ID, executable, msg);
+
+	public static final BiConsumer<Executable, String> UNKNOWN_ID_CHECK = (executable, msg) ->
+	assertManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, executable, msg);
 }

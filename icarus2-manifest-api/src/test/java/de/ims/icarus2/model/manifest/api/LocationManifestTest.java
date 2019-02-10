@@ -37,6 +37,7 @@ import static org.mockito.Mockito.when;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathEntry;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
 import de.ims.icarus2.test.TestUtils;
@@ -190,7 +191,7 @@ public interface LocationManifestTest extends ManifestTest<LocationManifest> {
 		assertLockableSetter(
 				settings(),
 				LocationManifest::setRootPath,
-				"path", NPE_CHECK, INVALID_INPUT_CHECK, "");
+				"path", NPE_CHECK, ManifestTestUtils.INVALID_INPUT_CHECK, "");
 	}
 
 	/**
@@ -243,7 +244,7 @@ public interface LocationManifestTest extends ManifestTest<LocationManifest> {
 
 		assertLockableAccumulativeAdd(settings(),
 				LocationManifest::addPathEntry,
-				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, INVALID_INPUT_CHECK,
+				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, ManifestTestUtils.INVALID_INPUT_CHECK,
 				mockEntry(PathType.FILE, "path1"),
 				mockEntry(PathType.FILE, "path2"));
 	}
@@ -263,7 +264,7 @@ public interface LocationManifestTest extends ManifestTest<LocationManifest> {
 				LocationManifest::addPathEntry,
 				LocationManifest::removePathEntry,
 				LocationManifest::getPathEntries,
-				NPE_CHECK, INVALID_INPUT_CHECK,
+				NPE_CHECK, ManifestTestUtils.INVALID_INPUT_CHECK,
 				mockEntry(PathType.FILE, "path1"),
 				mockEntry(PathType.FILE, "path2"));
 	}

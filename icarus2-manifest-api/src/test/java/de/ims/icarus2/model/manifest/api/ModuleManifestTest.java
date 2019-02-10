@@ -113,7 +113,7 @@ public interface ModuleManifestTest extends EmbeddedTest<ModuleManifest>,
 		assertLockableSetterBatch(settings(),
 				ModuleManifest::setModuleSpecId,
 				ManifestTestUtils.getLegalIdValues(),
-				NPE_CHECK, INVALID_ID_CHECK, ManifestTestUtils.getIllegalIdValues());
+				NPE_CHECK, ManifestTestUtils.INVALID_ID_CHECK, ManifestTestUtils.getIllegalIdValues());
 	}
 
 }

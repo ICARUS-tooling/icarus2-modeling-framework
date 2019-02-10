@@ -167,7 +167,7 @@ public interface ValueRangeTest
 		assertLockableSetter(settings(),
 				ValueRange::setLowerBound,
 				(Comparable<?>)ManifestTestUtils.getTestValue(DEFAULT_VALUE_TYPE),
-				NPE_CHECK, TYPE_CAST_CHECK);
+				NPE_CHECK, ManifestTestUtils.TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -179,7 +179,7 @@ public interface ValueRangeTest
 		assertLockableSetter(settings(),
 				ValueRange::setUpperBound,
 				(Comparable<?>)ManifestTestUtils.getTestValue(DEFAULT_VALUE_TYPE),
-				NPE_CHECK, TYPE_CAST_CHECK);
+				NPE_CHECK, ManifestTestUtils.TYPE_CAST_CHECK);
 	}
 
 	/**
@@ -191,7 +191,7 @@ public interface ValueRangeTest
 		assertLockableSetter(settings(),
 				ValueRange::setStepSize,
 				(Comparable<?>)ManifestTestUtils.getTestValue(DEFAULT_VALUE_TYPE),
-				NPE_CHECK, TYPE_CAST_CHECK);
+				NPE_CHECK, ManifestTestUtils.TYPE_CAST_CHECK);
 	}
 
 	/**

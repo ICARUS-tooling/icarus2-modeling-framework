@@ -7,7 +7,6 @@ import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 
 import java.lang.reflect.Constructor;
-import java.net.URI;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -38,22 +37,11 @@ class ConstructorGuardian extends Guardian {
 				.collect(Collectors.toList()));
 	}
 
-	private URI sourceUriFor(Constructor<?> constructor) {
-//		try {
-//			String s = "classpath:///";
-//			s += constructor.getDeclaringClass().getSimpleName().replace('.', '/');
-//			return new URI(s);
-//		} catch (URISyntaxException e) {
-//			throw new TestAbortedException("Failed to create test source URI", e);
-//		}
-		return null;
-	}
-
 	private DynamicNode createTestsForConstructor(Constructor<?> constructor) {
 		return dynamicContainer(
 				constructor.toGenericString(),
 				sourceUriFor(constructor),
 				variateNullParameter(constructor).stream().map(config ->
-					createTest(config, constructor::newInstance)));
+					createNullTest(config, constructor::newInstance)));
 	}
 }

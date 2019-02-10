@@ -32,6 +32,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.test.TestUtils;
 
 /**
@@ -177,7 +178,7 @@ interface ContainerManifestTestMixin<M extends ContainerManifestBase<?>> extends
 	default void testSetContainerType() {
 		for(ContainerType containerType : ContainerType.values()) {
 			assertLockableSetter(settings(), ContainerManifestBase::setContainerType,
-					containerType, true, TYPE_CAST_CHECK);
+					containerType, true, ManifestTestUtils.TYPE_CAST_CHECK);
 		}
 	}
 

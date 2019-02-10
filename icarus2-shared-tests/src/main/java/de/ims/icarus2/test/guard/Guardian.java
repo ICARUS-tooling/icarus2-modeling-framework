@@ -12,8 +12,10 @@ import static org.mockito.Mockito.mock;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
@@ -21,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
@@ -76,6 +79,8 @@ abstract class Guardian {
 
 		sharedDummies = Collections.unmodifiableMap(map);
 	}
+
+	private Map<Class<?>, Supplier<?>> paramFallbacks; //TODO use this for creating specialized parameters
 
 	/**
 	 * Fetches and returns an entry from the map of default
@@ -239,9 +244,20 @@ abstract class Guardian {
 		return result;
 	}
 
+	URI sourceUriFor(Constructor<?> constructor) {
+//		try {
+//			String s = "classpath:///";
+//			s += constructor.getDeclaringClass().getSimpleName().replace('.', '/');
+//			return new URI(s);
+//		} catch (URISyntaxException e) {
+//			throw new TestAbortedException("Failed to create test source URI", e);
+//		}
+		return null;
+	}
+
 	abstract DynamicNode createTests(TestReporter testReporter);
 
-	static DynamicTest createTest(ParamConfig config, ThrowingConsumer<Object[]> executor) {
+	static DynamicTest createNullTest(ParamConfig config, ThrowingConsumer<Object[]> executor) {
 		return DynamicTest.dynamicTest(config.displayName(), null,
 				() -> assertReflectionNPE(
 						() -> executor.accept(config.params)));

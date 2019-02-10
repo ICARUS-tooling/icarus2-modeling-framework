@@ -27,6 +27,13 @@ public @interface EnumType {
 	 * annotated type that returns the "enum-like" collection of
 	 * objects. The return type can be an array or a collection,
 	 * but it must never be {@code null}.
+	 * <p>
+	 * The following method signatures are supported:
+	 * <ul>
+	 * <li>A static no-arguments method</li>
+	 * <li>A static method taking a single String parameter,
+	 * which is the return value of {@link #key()}</li>
+	 * </ul>
 	 *
 	 * @return
 	 */

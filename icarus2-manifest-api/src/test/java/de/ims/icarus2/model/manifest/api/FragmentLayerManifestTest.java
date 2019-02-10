@@ -32,6 +32,8 @@ import static de.ims.icarus2.test.TestUtils.transform_genericOptValue;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
+
 /**
  * @author Markus Gärtner
  *
@@ -129,7 +131,7 @@ public interface FragmentLayerManifestTest extends ItemLayerManifestTestMixin<Fr
 		assertLockableSetterBatch(settings(),
 				FragmentLayerManifest::setAndGetValueLayer,
 				getLegalIdValues(), true,
-				INVALID_ID_CHECK, getIllegalIdValues());
+				ManifestTestUtils.INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**
@@ -140,7 +142,7 @@ public interface FragmentLayerManifestTest extends ItemLayerManifestTestMixin<Fr
 		assertLockableSetterBatch(settings(),
 				inject_consumeTargetLayerManifest(FragmentLayerManifest::setValueLayerId),
 				getLegalIdValues(), true,
-				INVALID_ID_CHECK, getIllegalIdValues());
+				ManifestTestUtils.INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**
@@ -150,7 +152,7 @@ public interface FragmentLayerManifestTest extends ItemLayerManifestTestMixin<Fr
 	default void testSetAnnotationKey() {
 		assertLockableSetter(settings(),
 				FragmentLayerManifest::setAnnotationKey,
-				"key1", true, INVALID_INPUT_CHECK, "");
+				"key1", true, ManifestTestUtils.INVALID_INPUT_CHECK, "");
 	}
 
 	/**

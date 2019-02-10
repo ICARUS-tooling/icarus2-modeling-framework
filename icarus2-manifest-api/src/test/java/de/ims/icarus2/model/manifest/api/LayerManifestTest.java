@@ -340,7 +340,7 @@ public interface LayerManifestTest<M extends LayerManifest<?>> extends EmbeddedM
 	default void testSetLayerTypeId() {
 		assertLockableSetterBatch(settings(),
 				LayerManifest::setLayerTypeId, ManifestTestUtils.getLegalIdValues(),
-				true, INVALID_ID_CHECK, ManifestTestUtils.getIllegalIdValues());
+				true, ManifestTestUtils.INVALID_ID_CHECK, ManifestTestUtils.getIllegalIdValues());
 	}
 
 	/**
@@ -350,8 +350,8 @@ public interface LayerManifestTest<M extends LayerManifest<?>> extends EmbeddedM
 	default void testAddAndGetBaseLayer() {
 		assertLockableAccumulativeAdd(settings(),
 				LayerManifest::addAndGetBaseLayer,
-				ManifestTestUtils.getIllegalIdValues(), INVALID_ID_CHECK,
-				true, DUPLICATE_ID_CHECK, ManifestTestUtils.getLegalIdValues());
+				ManifestTestUtils.getIllegalIdValues(), ManifestTestUtils.INVALID_ID_CHECK,
+				true, ManifestTestUtils.DUPLICATE_ID_CHECK, ManifestTestUtils.getLegalIdValues());
 	}
 
 	/**
@@ -361,8 +361,8 @@ public interface LayerManifestTest<M extends LayerManifest<?>> extends EmbeddedM
 	default void testAddBaseLayerId() {
 		assertLockableAccumulativeAdd(settings(),
 				inject_consumeTargetLayerManifest(LayerManifest::addBaseLayerId),
-				ManifestTestUtils.getIllegalIdValues(), INVALID_ID_CHECK,
-				true, DUPLICATE_ID_CHECK, ManifestTestUtils.getLegalIdValues());
+				ManifestTestUtils.getIllegalIdValues(), ManifestTestUtils.INVALID_ID_CHECK,
+				true, ManifestTestUtils.DUPLICATE_ID_CHECK, ManifestTestUtils.getLegalIdValues());
 	}
 
 	/**
@@ -374,7 +374,7 @@ public interface LayerManifestTest<M extends LayerManifest<?>> extends EmbeddedM
 				settings(),LayerManifest::addAndGetBaseLayer,
 				LayerManifest::removeBaseLayerId,
 				TestUtils.transform_genericCollectionGetter(LayerManifest::getBaseLayerManifests, transform_targetLayerId()),
-				true, UNKNOWN_ID_CHECK,
+				true, ManifestTestUtils.UNKNOWN_ID_CHECK,
 				"layer1", "layer2", "layer3");
 	}
 

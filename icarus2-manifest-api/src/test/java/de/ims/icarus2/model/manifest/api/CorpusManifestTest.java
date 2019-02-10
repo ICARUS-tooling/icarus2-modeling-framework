@@ -51,6 +51,7 @@ import java.util.function.BiConsumer;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.ManifestTestFeature;
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.CorpusManifest.Note;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.TestUtils;
@@ -353,7 +354,7 @@ public interface CorpusManifestTest extends MemberManifestTest<CorpusManifest> {
 		assertLockableAccumulativeAdd(
 				settings().processor(processor_makeParallel()),
 				CorpusManifest::addRootContextManifest,
-				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, DUPLICATE_ID_CHECK,
+				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, ManifestTestUtils.DUPLICATE_ID_CHECK,
 				mockContextManifest("context1"),
 				mockContextManifest("context2"));
 	}
@@ -368,7 +369,7 @@ public interface CorpusManifestTest extends MemberManifestTest<CorpusManifest> {
 				CorpusManifest::addRootContextManifest,
 				CorpusManifest::removeRootContextManifest,
 				CorpusManifest::getRootContextManifests,
-				NPE_CHECK, UNKNOWN_ID_CHECK,
+				NPE_CHECK, ManifestTestUtils.UNKNOWN_ID_CHECK,
 				mockContextManifest("context1"),
 				mockContextManifest("context2"));
 	}
@@ -381,7 +382,7 @@ public interface CorpusManifestTest extends MemberManifestTest<CorpusManifest> {
 		assertLockableAccumulativeAdd(
 				settings(),
 				CorpusManifest::addCustomContextManifest,
-				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, DUPLICATE_ID_CHECK,
+				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, ManifestTestUtils.DUPLICATE_ID_CHECK,
 				mockContextManifest("context1"),
 				mockContextManifest("context2"));
 	}
@@ -396,7 +397,7 @@ public interface CorpusManifestTest extends MemberManifestTest<CorpusManifest> {
 				CorpusManifest::addCustomContextManifest,
 				CorpusManifest::removeCustomContextManifest,
 				CorpusManifest::getCustomContextManifests,
-				NPE_CHECK, UNKNOWN_ID_CHECK,
+				NPE_CHECK, ManifestTestUtils.UNKNOWN_ID_CHECK,
 				mockContextManifest("context1"),
 				mockContextManifest("context2"));
 	}
@@ -409,7 +410,7 @@ public interface CorpusManifestTest extends MemberManifestTest<CorpusManifest> {
 		assertLockableAccumulativeAdd(
 				settings(),
 				CorpusManifest::addNote,
-				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, DUPLICATE_ID_CHECK,
+				NO_ILLEGAL(), NO_CHECK, NPE_CHECK, ManifestTestUtils.DUPLICATE_ID_CHECK,
 				mock(Note.class),
 				mock(Note.class));
 	}
@@ -424,7 +425,7 @@ public interface CorpusManifestTest extends MemberManifestTest<CorpusManifest> {
 				CorpusManifest::addNote,
 				CorpusManifest::removeNote,
 				CorpusManifest::getNotes,
-				NPE_CHECK, UNKNOWN_ID_CHECK,
+				NPE_CHECK, ManifestTestUtils.UNKNOWN_ID_CHECK,
 				mock(Note.class),
 				mock(Note.class));
 	}

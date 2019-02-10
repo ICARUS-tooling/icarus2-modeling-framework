@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.test.TestUtils;
 
 /**
@@ -157,7 +158,7 @@ public interface StructureManifestTest extends ContainerManifestTestMixin<Struct
 		return Stream.of(StructureType.values())
 				.map(structureType -> DynamicTest.dynamicTest(structureType.getStringValue(), () -> {
 					assertLockableSetter(settings(), StructureManifest::setStructureType,
-							structureType, true, TYPE_CAST_CHECK);
+							structureType, true, ManifestTestUtils.TYPE_CAST_CHECK);
 						}));
 	}
 

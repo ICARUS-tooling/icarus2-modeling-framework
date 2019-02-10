@@ -24,6 +24,7 @@ import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.test.TestUtils;
 
 /**
@@ -60,7 +61,7 @@ public interface ForeignImplementationManifestTest<M extends ForeignImplementati
 	default void testSetImplementationManifest() {
 		assertLockableSetter(settings(),
 				ForeignImplementationManifest::setImplementationManifest,
-				mock(ImplementationManifest.class), true, TYPE_CAST_CHECK);
+				mock(ImplementationManifest.class), true, ManifestTestUtils.TYPE_CAST_CHECK);
 	}
 
 }

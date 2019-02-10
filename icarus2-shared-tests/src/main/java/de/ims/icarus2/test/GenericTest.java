@@ -19,30 +19,20 @@
  */
 package de.ims.icarus2.test;
 
-import static de.ims.icarus2.test.TestTags.AUTOMATIC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.lang.reflect.Constructor;
-import java.util.stream.Stream;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.DynamicNode;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestFactory;
-import org.junit.jupiter.api.TestReporter;
 import org.opentest4j.TestAbortedException;
 
 import de.ims.icarus2.test.annotations.Provider;
-import de.ims.icarus2.test.guard.ApiGuard;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface GenericTest<T extends Object> extends Testable<T> {
-
-	Class<? extends T> getTestTargetClass();
+public interface GenericTest<T extends Object> extends TargetedTest<T> {
 
 	/**
 	 * Accesses the {@link #getTestTargetClass() class under test} and calls
@@ -81,17 +71,6 @@ public interface GenericTest<T extends Object> extends Testable<T> {
 	@Test
 	default void verifyCorrectTestType() {
 		assertEquals(getTestTargetClass(), create().getClass());
-	}
-
-	@SuppressWarnings("unchecked")
-	@TestFactory
-	@Tag(AUTOMATIC)
-	@DisplayName("ApiGuard")
-	default Stream<DynamicNode> guardApi(TestReporter testReporter) {
-		return new ApiGuard<T>((Class<T>)getTestTargetClass())
-				.testPropertiesIfApi()
-				.noArgsFallback(this::create)
-				.createTests(testReporter);
 	}
 
 	/**

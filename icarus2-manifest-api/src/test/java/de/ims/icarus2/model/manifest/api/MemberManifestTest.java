@@ -449,7 +449,7 @@ public interface MemberManifestTest<M extends MemberManifest<?>> extends Modifia
 	@Test
 	default void testSetOptionsManifest() {
 		assertLockableSetter(settings(), MemberManifest::setOptionsManifest,
-				mock(OptionsManifest.class), false, TYPE_CAST_CHECK);
+				mock(OptionsManifest.class), false, ManifestTestUtils.TYPE_CAST_CHECK);
 	}
 
 }

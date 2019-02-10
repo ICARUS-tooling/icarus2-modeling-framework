@@ -49,6 +49,7 @@ import java.util.function.Predicate;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.ManifestTestFeature;
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.standard.AbstractItemLayerManifestBase;
 import de.ims.icarus2.test.func.TriConsumer;
 
@@ -205,7 +206,7 @@ interface ItemLayerManifestTestMixin<M extends ItemLayerManifestBase<M>> extends
 		assertLockableSetterBatch(settings(),
 				ItemLayerManifestBase::setAndGetBoundaryLayer,
 				getLegalIdValues(), true,
-				INVALID_ID_CHECK, getIllegalIdValues());
+				ManifestTestUtils.INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**
@@ -216,7 +217,7 @@ interface ItemLayerManifestTestMixin<M extends ItemLayerManifestBase<M>> extends
 		assertLockableSetterBatch(settings(),
 				inject_consumeTargetLayerManifest(ItemLayerManifestBase::setBoundaryLayerId),
 				getLegalIdValues(), true,
-				INVALID_ID_CHECK, getIllegalIdValues());
+				ManifestTestUtils.INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**
@@ -227,7 +228,7 @@ interface ItemLayerManifestTestMixin<M extends ItemLayerManifestBase<M>> extends
 		assertLockableSetterBatch(settings(),
 				ItemLayerManifestBase::setAndGetFoundationLayer,
 				getLegalIdValues(), true,
-				INVALID_ID_CHECK, getIllegalIdValues());
+				ManifestTestUtils.INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 	/**
@@ -238,7 +239,7 @@ interface ItemLayerManifestTestMixin<M extends ItemLayerManifestBase<M>> extends
 		assertLockableSetterBatch(settings(),
 				inject_consumeTargetLayerManifest(ItemLayerManifestBase::setFoundationLayerId),
 				getLegalIdValues(), true,
-				INVALID_ID_CHECK, getIllegalIdValues());
+				ManifestTestUtils.INVALID_ID_CHECK, getIllegalIdValues());
 	}
 
 }
