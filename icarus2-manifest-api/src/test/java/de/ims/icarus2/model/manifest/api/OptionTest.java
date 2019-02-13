@@ -47,6 +47,7 @@ import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.guard.ApiGuard;
 
 /**
  * @author Markus Gärtner
@@ -93,6 +94,24 @@ public interface OptionTest extends ModifiableIdentityTest<Option>, LockableTest
 	@Override
 	default ManifestType getExpectedType() {
 		return ManifestType.OPTION;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.ManifestApiTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
+	 */
+	@Override
+	default void configureApiGuard(ApiGuard<Option> apiGuard) {
+		LockableTest.super.configureApiGuard(apiGuard);
+
+		// Make general methods obey valueType
+		apiGuard.parameterResolver(Object.class,
+				manifest -> getTestValue(manifest.getValueType()));
+
+		// Make the specialized constraint methods obey valueType
+		apiGuard.parameterResolver(ValueRange.class,
+				manifest -> mockValueRange(manifest.getValueType()));
+		apiGuard.parameterResolver(ValueSet.class,
+				manifest -> mockValueSet(manifest.getValueType()));
 	}
 
 	/**

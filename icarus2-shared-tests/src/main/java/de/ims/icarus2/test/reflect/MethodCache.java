@@ -4,17 +4,19 @@
 package de.ims.icarus2.test.reflect;
 
 import static java.util.Objects.requireNonNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -42,8 +44,11 @@ public class MethodCache {
 
 	final List<Map<Class<? extends Annotation>, List<Method>>> parameterAnnotations = new ArrayList<>();
 
-	MethodCache(Method method, Set<Method> overridden) {
+	final Consumer<String> log;
+
+	MethodCache(Method method, Set<Method> overridden, Consumer<String> log) {
 		this.method = requireNonNull(method);
+		this.log = log;
 
 		for (int i = 0; i < method.getParameterCount(); i++) {
 			parameterAnnotations.add(new HashMap<>());
@@ -53,6 +58,43 @@ public class MethodCache {
 		overridden.forEach(this::cacheMethodInfo);
 
 		//TODO sort method lists in the lookup maps
+	}
+
+	private List<Method> lookupList(Map<Class<? extends Annotation>, List<Method>> map,
+			Class<? extends Annotation> annotationClass) {
+		List<Method> list = map.get(annotationClass);
+		return list==null ? Collections.emptyList() :
+			Collections.unmodifiableList(list);
+	}
+
+	//TODO add getter methods for annotations and the associated method lists (cf. ClassCache)
+
+	private void cacheMethodInfo(Method method) {
+		mapAnnotation(resultAnnotations, method.getAnnotatedReturnType(), method, "result");
+		mapAnnotation(annotations, method, method, "method");
+//		mapAnnotation(exceptionAnnotations, method.getAnnotatedExceptionTypes(), method);
+
+		//TODO somehow we're missing out on parameter annotations in this cache...
+		Parameter[] parameters = method.getParameters();
+		assertEquals(parameterAnnotations.size(), parameters.length);
+		for (int i = 0; i < parameterAnnotations.size(); i++) {
+			mapAnnotation(parameterAnnotations.get(i), parameters[i], method, "parameter");
+		}
+	}
+
+	private void mapAnnotation(Map<Class<? extends Annotation>, List<Method>> map,
+			AnnotatedElement element, Method method, String type) {
+
+		for(Annotation annotation : element.getDeclaredAnnotations()) {
+			map.computeIfAbsent(annotation.annotationType(), k -> new ArrayList<>()).add(method);
+			if(log!=null)
+				log.accept(String.format("Mapping %s annotation '%s' for method: %s",
+						type, annotation.annotationType(), method));
+		}
+	}
+
+	private void sortHierarchically(List<Method> list) {
+		list.sort(RefUtils.METHOD_INHERITANCE_ORDER);
 	}
 
 	public Method getMethod() {
@@ -91,37 +133,5 @@ public class MethodCache {
 				.flatMap(List::stream)
 				.distinct()
 				.collect(Collectors.toList());
-	}
-
-	private List<Method> lookupList(Map<Class<? extends Annotation>, List<Method>> map,
-			Class<? extends Annotation> annotationClass) {
-		List<Method> list = map.get(annotationClass);
-		return list==null ? Collections.emptyList() :
-			Collections.unmodifiableList(list);
-	}
-
-	//TODO add getter methods for annotations and the associated method lists (cf. ClassCache)
-
-	private void cacheMethodInfo(Method method) {
-		mapAnnotation(resultAnnotations, method.getAnnotatedReturnType(), method);
-		mapAnnotation(annotations, method, method);
-//		mapAnnotation(exceptionAnnotations, method.getAnnotatedExceptionTypes(), method);
-
-		AnnotatedType[] paramAnnotations = method.getAnnotatedParameterTypes();
-		for (int i = 0; i < method.getParameterCount(); i++) {
-			mapAnnotation(parameterAnnotations.get(i), paramAnnotations[i], method);
-		}
-	}
-
-	private void mapAnnotation(Map<Class<? extends Annotation>, List<Method>> map,
-			AnnotatedElement element, Method method) {
-
-		for(Annotation annotation : element.getDeclaredAnnotations()) {
-			map.computeIfAbsent(annotation.getClass(), k -> new ArrayList<>()).add(method);
-		}
-	}
-
-	private void sortHierarchically(List<Method> list) {
-		list.sort(RefUtils.INHERITANCE_ORDER);
 	}
 }

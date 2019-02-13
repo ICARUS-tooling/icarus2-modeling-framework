@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.util.LazyStore;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
@@ -61,7 +64,11 @@ public interface LocationManifest extends Manifest {
 	 * exception.
 	 *
 	 * @return
+	 *
+	 * @throws ManifestException in case the manifest is {@link #isInline() not declared}
+	 * to host inline data.
 	 */
+	@Unguarded
 	Optional<CharSequence> getInlineData();
 
 	/**
@@ -110,13 +117,14 @@ public interface LocationManifest extends Manifest {
 
 	LocationManifest setIsInline(boolean value);
 
+	@Unguarded
 	LocationManifest setInlineData(CharSequence data);
 
 	LocationManifest setRootPath(String path);
 
 	LocationManifest setRootPathType(PathType type);
 
-	LocationManifest setPathResolverManifest(PathResolverManifest pathResolverManifest);
+	LocationManifest setPathResolverManifest(@Nullable PathResolverManifest pathResolverManifest);
 
 	LocationManifest addPathEntry(PathEntry entry);
 

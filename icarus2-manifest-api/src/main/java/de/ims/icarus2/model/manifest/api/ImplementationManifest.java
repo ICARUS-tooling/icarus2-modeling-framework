@@ -18,6 +18,7 @@ package de.ims.icarus2.model.manifest.api;
 
 import java.util.Optional;
 
+import de.ims.icarus2.apiguard.Getter;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -121,6 +122,7 @@ public interface ImplementationManifest extends MemberManifest<ImplementationMan
 	 * @see #DEFAULT_USE_FACTORY_VALUE
 	 */
 	@AccessRestriction(AccessMode.READ)
+	@Getter(value="useFactory", defaultValue="false")
 	boolean isUseFactory();
 
 	boolean isLocalUseFactory();

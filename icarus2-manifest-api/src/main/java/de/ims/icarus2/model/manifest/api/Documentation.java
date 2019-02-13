@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
 import de.ims.icarus2.util.access.AccessPolicy;
@@ -63,7 +65,7 @@ public interface Documentation extends Lockable, TypedManifest {
 
 	// Modification methods
 
-	Documentation setContent(String content);
+	Documentation setContent(@Nullable String content);
 
 	Documentation addResource(Resource resource);
 

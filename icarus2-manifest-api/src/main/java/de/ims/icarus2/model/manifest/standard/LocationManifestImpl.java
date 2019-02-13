@@ -24,6 +24,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
@@ -234,7 +236,7 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	}
 
 	@Override
-	public LocationManifest setPathResolverManifest(PathResolverManifest pathResolverManifest) {
+	public LocationManifest setPathResolverManifest(@Nullable PathResolverManifest pathResolverManifest) {
 		checkNotLocked();
 
 		setPathResolverManifest0(pathResolverManifest);

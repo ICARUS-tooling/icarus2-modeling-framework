@@ -17,12 +17,13 @@ import org.junit.jupiter.api.TestReporter;
  * @author Markus Gärtner
  *
  */
-class ConstructorGuardian extends Guardian {
+class ConstructorGuardian<T> extends Guardian<T> {
 
 	private final Class<?> targetClass;
 
-	public ConstructorGuardian(Class<?> targetClass) {
-		this.targetClass = requireNonNull(targetClass);
+	public ConstructorGuardian(ApiGuard<T> apiGuard) {
+		super(apiGuard);
+		this.targetClass = requireNonNull(apiGuard.getTargetClass());
 	}
 
 	/**
@@ -41,7 +42,7 @@ class ConstructorGuardian extends Guardian {
 		return dynamicContainer(
 				constructor.toGenericString(),
 				sourceUriFor(constructor),
-				variateNullParameter(constructor).stream().map(config ->
+				variateNullParameter(null, constructor).stream().map(config ->
 					createNullTest(config, constructor::newInstance)));
 	}
 }

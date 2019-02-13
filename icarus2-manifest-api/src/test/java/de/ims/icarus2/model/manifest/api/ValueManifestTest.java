@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.tryGetTestValue;
 import static de.ims.icarus2.test.TestUtils.assertNotPresent;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -40,6 +41,7 @@ import de.ims.icarus2.model.manifest.types.UnsupportedValueTypeException;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.guard.ApiGuard;
 
 /**
  * @author Markus Gärtner
@@ -84,6 +86,17 @@ public interface ValueManifestTest extends DocumentableTest<ValueManifest>,
 	@Override
 	default ManifestType getExpectedType() {
 		return ManifestType.VALUE_MANIFEST;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.ManifestApiTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
+	 */
+	@Override
+	default void configureApiGuard(ApiGuard<ValueManifest> apiGuard) {
+		DocumentableTest.super.configureApiGuard(apiGuard);
+
+		apiGuard.parameterResolver(Object.class,
+				manifest -> tryGetTestValue(manifest.getValueType()));
 	}
 
 	/**

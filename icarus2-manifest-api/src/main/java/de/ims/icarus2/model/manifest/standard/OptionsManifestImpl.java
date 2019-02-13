@@ -378,7 +378,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		 * @param defaultValue the defaultValue to set
 		 */
 		@Override
-		public Option setDefaultValue(Object defaultValue) {
+		public Option setDefaultValue(@Nullable Object defaultValue) {
 			checkNotLocked();
 
 			return setDefaultValue0(defaultValue);
@@ -446,7 +446,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		 * @param values the values to set
 		 */
 		@Override
-		public Option setSupportedValues(ValueSet values) {
+		public Option setSupportedValues(@Nullable ValueSet values) {
 			checkNotLocked();
 
 			return setSupportedValues0(values);
@@ -467,7 +467,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		 * @param range the range to set
 		 */
 		@Override
-		public Option setSupportedRange(ValueRange range) {
+		public Option setSupportedRange(@Nullable ValueRange range) {
 			checkNotLocked();
 
 			return setSupportedRange0(range);
@@ -488,7 +488,7 @@ public class OptionsManifestImpl extends AbstractManifest<OptionsManifest> imple
 		 * @param extensionPoint the extensionPointUid to set
 		 */
 		@Override
-		public Option setExtensionPointUid(String extensionPointUid) {
+		public Option setExtensionPointUid(@Nullable String extensionPointUid) {
 			checkNotLocked();
 
 			return setExtensionPointUid0(extensionPointUid);

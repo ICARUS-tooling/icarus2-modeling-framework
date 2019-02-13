@@ -33,7 +33,7 @@ import static de.ims.icarus2.test.TestUtils.assertFlagGetter;
 import static de.ims.icarus2.test.TestUtils.assertGetter;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
 import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomArray;
+import static de.ims.icarus2.test.TestUtils.filledArray;
 import static de.ims.icarus2.test.TestUtils.randomLongPair;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -636,7 +636,7 @@ class DefaultContainerTest implements MemberTest<Container> {
 			@Test
 			@Tag(RANDOMIZED)
 			void testGetItemAt() {
-				Item[] items = randomArray(RUNS, Item.class);
+				Item[] items = filledArray(RUNS, Item.class);
 				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
 
 				IntStream.range(0, RUNS).forEach(
@@ -658,7 +658,7 @@ class DefaultContainerTest implements MemberTest<Container> {
 			@Test
 			@Tag(RANDOMIZED)
 			void testIndexOfItem() {
-				Item[] items = randomArray(RUNS, Item.class);
+				Item[] items = filledArray(RUNS, Item.class);
 				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
 
 				IntStream.range(0, RUNS).forEach(
@@ -698,7 +698,7 @@ class DefaultContainerTest implements MemberTest<Container> {
 					randomLongPair(0, Long.MAX_VALUE),
 				};
 				@SuppressWarnings("rawtypes")
-				DataSequence[] items = randomArray(indices.length, DataSequence.class);
+				DataSequence[] items = filledArray(indices.length, DataSequence.class);
 				IntStream.range(0, indices.length).forEach(
 						idx -> {
 							Pair<Long, Long> p = indices[idx];
@@ -724,7 +724,7 @@ class DefaultContainerTest implements MemberTest<Container> {
 			@Test
 			@Tag(RANDOMIZED)
 			void testAddItem() {
-				Item[] items = randomArray(RUNS, Item.class);
+				Item[] items = filledArray(RUNS, Item.class);
 				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
 
 				IntStream.range(0, RUNS).forEach(
@@ -742,7 +742,7 @@ class DefaultContainerTest implements MemberTest<Container> {
 			@Tag(RANDOMIZED)
 			void testAddItems() {
 				@SuppressWarnings("rawtypes")
-				DataSequence[] items = randomArray(RUNS, DataSequence.class);
+				DataSequence[] items = filledArray(RUNS, DataSequence.class);
 				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
 
 				IntStream.range(0, RUNS).forEach(

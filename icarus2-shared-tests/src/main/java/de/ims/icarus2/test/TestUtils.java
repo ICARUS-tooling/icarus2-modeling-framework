@@ -204,7 +204,7 @@ public class TestUtils {
 		return Stream.generate(() -> randomLongPair(lowerInc, upperEx));
 	}
 
-	public static <T> T[] randomArray(int size, Class<T> clazz) {
+	public static <T> T[] filledArray(int size, Class<T> clazz) {
 		@SuppressWarnings("unchecked")
 		T[] array = (T[]) Array.newInstance(clazz, size);
 		for (int i = 0; i < array.length; i++) {
@@ -692,18 +692,43 @@ public class TestUtils {
 
 	private static final Supplier<?> NO_DEFAULT = () -> null;
 
+	/**
+	 * Used to expect a {@code null} default value.
+	 * @return
+	 */
 	@SuppressWarnings("unchecked")
 	public static <K extends Object> Supplier<K> NO_DEFAULT() {
 		return (Supplier<K>) NO_DEFAULT;
 	}
 
+	private static final Supplier<?> UNKNOWN_DEFAULT = () -> null;
+
+	/**
+	 * Used to expect an arbitrary but {@code non-null} default value
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public static <K extends Object> Supplier<K> UNKNOWN_DEFAULT() {
+		return (Supplier<K>) UNKNOWN_DEFAULT;
+	}
+
 	private static final Supplier<?> IGNORE_DEFAULT = () -> fail("Not supposed to request a default value!");
 
+	/**
+	 * Used to signal that no attempt should be made to assert any
+	 * return value.
+	 * @return
+	 */
 	@SuppressWarnings("unchecked")
 	public static <K extends Object> Supplier<K> IGNORE_DEFAULT() {
 		return (Supplier<K>) IGNORE_DEFAULT;
 	}
 
+	/**
+	 * Used to expect a very specific default {@code value}.
+	 * @param value
+	 * @return
+	 */
 	public static <K extends Object> Supplier<K> DEFAULT(K value) {
 		return () -> value;
 	}
@@ -712,12 +737,20 @@ public class TestUtils {
 		return (K[]) null;
 	}
 
+	/**
+	 * The identity function {@code f(x) = x}.
+	 * @return
+	 */
 	public static <K extends Object> Function<K, K> IDENTITY() {
 		return k -> k;
 	}
 
 	private static Object null_obj = null;
 
+	/**
+	 * Type-safe way of obtaining a {@code null} value.
+	 * @return
+	 */
 	@SuppressWarnings("unchecked")
 	public static <T extends Object> T NO_VALUE() {
 		return (T) null_obj;
@@ -885,6 +918,8 @@ public class TestUtils {
 			Function<T,K> getter, BiConsumer<T, K> setter) {
 		if(defaultValue==null || defaultValue==NO_DEFAULT()) {
 			assertNull(getter.apply(instance));
+		} else if(defaultValue==UNKNOWN_DEFAULT()) {
+			assertNotNull(getter.apply(instance));
 		} else if(defaultValue!=IGNORE_DEFAULT()) {
 			assertEquals(defaultValue.get(), getter.apply(instance));
 		}

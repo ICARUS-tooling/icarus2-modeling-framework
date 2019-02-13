@@ -26,4 +26,13 @@ public @interface Getter {
 	 * @return
 	 */
 	String value();
+
+	/**
+	 * String representation of the default value for this getter method.
+	 * Only applicable if the return type of the annotated method is
+	 * primitive.
+	 *
+	 * @return
+	 */
+	String defaultValue() default "";
 }

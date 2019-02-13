@@ -195,11 +195,11 @@ public interface MemberManifest<M extends MemberManifest<M>>
 	@Override
 	M setId(String id);
 	@Override
-	M setName(String name);
+	M setName(@Nullable String name);
 	@Override
-	M setDescription(String description);
+	M setDescription(@Nullable String description);
 	@Override
-	M setIcon(Icon icon);
+	M setIcon(@Nullable Icon icon);
 
 	// Extension of Categorizable
 

@@ -80,7 +80,7 @@ public class DocumentationImpl extends AbstractLockable implements Documentation
 	 * @param content the content to set
 	 */
 	@Override
-	public Documentation setContent(String content) {
+	public Documentation setContent(@Nullable String content) {
 		checkNotLocked();
 
 		setContent0(content);

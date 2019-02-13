@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Setter;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.access.AccessControl;
@@ -227,6 +228,7 @@ public interface Manifest extends ManifestFragment {
 	 *
 	 * @param versionManifest
 	 */
+	@Setter(value="versionManifest", restricted=true)
 	Manifest setVersionManifest(VersionManifest versionManifest);
 
 	public static void verifyEnvironment(ManifestLocation manifestLocation, Object environment, Class<?> expected) {

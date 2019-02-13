@@ -6,17 +6,18 @@ package de.ims.icarus2.test.guard;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.TestReporter;
 import org.opentest4j.TestAbortedException;
 
 import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Unguarded;
 
 /**
  * @author Markus Gärtner
@@ -47,16 +49,21 @@ public class ApiGuard<T> {
 	 * Signals that the api guard should also construct tests that
 	 * test simple getters and setters of properties.
 	 */
-	//TODO use this flag to actually buibld tests
 	private Boolean testProperties;
 
-	private final List<Guardian> guardians = new ArrayList<>(3);
+	/**
+	 * Signals that a Guardian responsible for testing property
+	 * methods should automatically detect the methods to be tested.
+	 */
+	private Boolean detectUnmarkedMethods;
+
+	private final List<Guardian<T>> guardians = new ArrayList<>(3);
+
+	private final Map<Class<?>, Function<T, ?>> parameterResolvers = new HashMap<>();
 
 	public ApiGuard(Class<T> targetClass) {
 		this.targetClass = requireNonNull(targetClass);
 		checkGuardableClass(targetClass);
-
-		guardians.add(new ConstructorGuardian(targetClass));
 	}
 
 	private void checkGuardableClass(Class<?> clazz) {
@@ -92,6 +99,22 @@ public class ApiGuard<T> {
 		return self();
 	}
 
+	public ApiGuard<T> detectUnmarkedMethods(boolean detectUnmarkedMethods) {
+		assertNull(this.detectUnmarkedMethods, "detectUnmarkedMethods already set");
+		this.detectUnmarkedMethods = Boolean.valueOf(detectUnmarkedMethods);
+		return self();
+	}
+
+	public <V> ApiGuard<T> parameterResolver(Class<V> paramClass,
+			Function<T, V> resolver) {
+		requireNonNull(paramClass);
+		requireNonNull(resolver);
+
+		parameterResolvers.put(paramClass, resolver);
+
+		return self();
+	}
+
 	public static boolean isApi(Class<?> clazz) {
 		if(clazz.isAnnotationPresent(Api.class)) {
 			return true;
@@ -120,59 +143,6 @@ public class ApiGuard<T> {
 		return false;
 	}
 
-	//-------------------------------------
-	// Code taken from:
-	// https://stackoverflow.com/questions/10082619/how-do-java-
-	// method-annotations-work-in-conjunction-with-method-overriding
-
-	//TODO optimize solution
-
-	public static <A extends Annotation> A getInheritedAnnotation(
-			Class<A> annotationClass, AnnotatedElement element) {
-		A annotation = element.getAnnotation(annotationClass);
-		if (annotation == null && element instanceof Method)
-			annotation = getOverriddenAnnotation(annotationClass, (Method) element);
-		return annotation;
-	}
-
-	private static <A extends Annotation> A getOverriddenAnnotation(Class<A> annotationClass, Method method) {
-		final Class<?> methodClass = method.getDeclaringClass();
-		final String name = method.getName();
-		final Class<?>[] params = method.getParameterTypes();
-
-		// prioritize all superclasses over all interfaces
-		final Class<?> superclass = methodClass.getSuperclass();
-		if (superclass != null) {
-			final A annotation = getOverriddenAnnotationFrom(annotationClass, superclass, name, params);
-			if (annotation != null)
-				return annotation;
-		}
-
-		// depth-first search over interface hierarchy
-		for (final Class<?> intf : methodClass.getInterfaces()) {
-			final A annotation = getOverriddenAnnotationFrom(annotationClass, intf, name, params);
-			if (annotation != null)
-				return annotation;
-		}
-
-		return null;
-	}
-
-	private static <A extends Annotation> A getOverriddenAnnotationFrom(Class<A> annotationClass, Class<?> searchClass,
-			String name, Class<?>[] params) {
-		try {
-			final Method method = searchClass.getMethod(name, params);
-			final A annotation = method.getAnnotation(annotationClass);
-			if (annotation != null)
-				return annotation;
-			return getOverriddenAnnotation(annotationClass, method);
-		} catch (final NoSuchMethodException e) {
-			return null;
-		}
-	}
-
-	// END COPY
-
 	/**
 	 * If the {@link #getTargetClass() target class} is marked with the
 	 * {@link Api} annotation.
@@ -189,7 +159,15 @@ public class ApiGuard<T> {
 		return testProperties!=null && testProperties.booleanValue();
 	}
 
-	private Supplier<? extends T> instanceCreator() {
+	public boolean isDetectUnmarkedMethods() {
+		return detectUnmarkedMethods!=null && detectUnmarkedMethods.booleanValue();
+	}
+
+	public Map<Class<?>, Function<T, ?>> getParameterResolvers() {
+		return Collections.unmodifiableMap(parameterResolvers);
+	}
+
+	public Supplier<? extends T> instanceCreator() {
 		Constructor<T> noArgsConstructor = null;
 		try {
 			noArgsConstructor = targetClass.getConstructor();
@@ -217,8 +195,14 @@ public class ApiGuard<T> {
 
 	public Stream<DynamicNode> createTests(TestReporter testReporter) {
 
+		if(targetClass.isAnnotationPresent(Unguarded.class)) {
+			return Stream.of(dynamicContainer("unguarded class", Collections.emptyList()));
+		}
+
+		guardians.add(new ConstructorGuardian<>(this));
+
 		if(isTestProperties()) {
-			guardians.add(new PropertyGuardian<>(targetClass, instanceCreator()));
+			guardians.add(new PropertyGuardian<>(this));
 		}
 
 		return guardians.stream()

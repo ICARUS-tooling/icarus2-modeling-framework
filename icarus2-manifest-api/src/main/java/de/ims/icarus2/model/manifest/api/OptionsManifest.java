@@ -22,6 +22,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
+import de.ims.icarus2.apiguard.Getter;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
@@ -309,6 +312,7 @@ public interface OptionsManifest extends Manifest, Embedded {
 		 * @return
 		 */
 		@AccessRestriction(AccessMode.READ)
+		@Getter(value="published", defaultValue="true")
 		boolean isPublished();
 
 		/**
@@ -320,6 +324,7 @@ public interface OptionsManifest extends Manifest, Embedded {
 		 * @return
 		 */
 		@AccessRestriction(AccessMode.READ)
+		@Getter(value="multiValue", defaultValue="false")
 		boolean isMultiValue();
 
 		/**
@@ -329,6 +334,7 @@ public interface OptionsManifest extends Manifest, Embedded {
 		 * @return
 		 */
 		@AccessRestriction(AccessMode.READ)
+		@Getter(value="allowNull", defaultValue="false")
 		boolean isAllowNull();
 
 		public Option setAllowNull(boolean allowNull);
@@ -337,16 +343,16 @@ public interface OptionsManifest extends Manifest, Embedded {
 
 		public Option setPublished(boolean published);
 
-		public Option setExtensionPointUid(String extensionPointUid);
+		public Option setExtensionPointUid(@Nullable String extensionPointUid);
 
-		public Option setSupportedRange(ValueRange range);
+		public Option setSupportedRange(@Nullable ValueRange range);
 
-		public Option setSupportedValues(ValueSet values);
+		public Option setSupportedValues(@Nullable ValueSet values);
 
 		public Option setOptionGroup(String group);
 
 		public Option setValueType(ValueType valueType);
 
-		public Option setDefaultValue(Object defaultValue);
+		public Option setDefaultValue(@Nullable Object defaultValue);
 	}
 }

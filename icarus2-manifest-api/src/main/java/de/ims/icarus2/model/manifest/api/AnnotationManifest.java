@@ -20,7 +20,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Getter;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
@@ -166,6 +169,7 @@ public interface AnnotationManifest extends MemberManifest<AnnotationManifest>, 
 	 * @see #getValueSet()
 	 */
 	@AccessRestriction(AccessMode.READ)
+	@Getter(value="allowUnknownValues", defaultValue="false")
 	boolean isAllowUnknownValues();
 
 	/**
@@ -246,15 +250,15 @@ public interface AnnotationManifest extends MemberManifest<AnnotationManifest>, 
 
 	AnnotationManifest removeAlias(String alias);
 
-	AnnotationManifest setValueRange(ValueRange range);
+	AnnotationManifest setValueRange(@Nullable ValueRange range);
 
-	AnnotationManifest setValueSet(ValueSet values);
+	AnnotationManifest setValueSet(@Nullable ValueSet values);
 
 	AnnotationManifest setValueType(ValueType valueType);
 
-	AnnotationManifest setContentType(ContentType contentType);
+	AnnotationManifest setContentType(@Nullable ContentType contentType);
 
-	AnnotationManifest setNoEntryValue(Object noEntryValue);
+	AnnotationManifest setNoEntryValue(@Nullable Object noEntryValue);
 
 	AnnotationManifest setAllowUnknownValues(boolean allowUnknownValues);
 }

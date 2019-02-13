@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-
+import javax.annotation.Nullable;
 
 /**
  * @author Markus Gärtner
@@ -34,7 +34,7 @@ public interface VersionManifest extends Lockable, TypedManifest {
 	 */
 	String getFormatId();
 
-	String getVersionString();
+	@Nullable String getVersionString();
 
 	/**
 	 * Equality of a version manifest requires equality of both the

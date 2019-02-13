@@ -18,6 +18,7 @@ package de.ims.icarus2.model.manifest.api;
 
 import java.util.Optional;
 
+import javax.annotation.Nullable;
 import javax.swing.Icon;
 
 import de.ims.icarus2.util.access.AccessControl;
@@ -59,9 +60,9 @@ public interface ModifiableIdentity extends Identity {
 	 */
 	ModifiableIdentity setId(String id);
 
-	ModifiableIdentity setName(String name);
+	ModifiableIdentity setName(@Nullable String name);
 
-	ModifiableIdentity setDescription(String description);
+	ModifiableIdentity setDescription(@Nullable String description);
 
-	ModifiableIdentity setIcon(Icon icon);
+	ModifiableIdentity setIcon(@Nullable Icon icon);
 }

@@ -472,7 +472,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest<M>, H exte
 	}
 
 	protected void setIcon0(Icon icon) {
-		this.icon = Optional.of(icon);
+		this.icon = Optional.ofNullable(icon);
 	}
 
 	@Override

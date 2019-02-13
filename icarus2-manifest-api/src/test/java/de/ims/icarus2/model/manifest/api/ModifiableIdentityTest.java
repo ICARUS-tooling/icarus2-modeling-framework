@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
 import static org.mockito.Mockito.mock;
 
@@ -52,6 +53,8 @@ public interface ModifiableIdentityTest<M extends ModifiableIdentity> extends Id
 	default void testSetId() {
 		M empty = createEmpty();
 		if(empty!=null) {
+			assertNPE(() -> empty.setId(null));
+
 			empty.setId("myId");
 			assertOptionalEquals("myId", empty.getId());
 		}

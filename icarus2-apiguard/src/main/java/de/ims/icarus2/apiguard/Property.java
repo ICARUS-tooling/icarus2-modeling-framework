@@ -24,6 +24,8 @@ import java.lang.annotation.Target;
  *
  * @author Markus Gärtner
  *
+ * @see Getter
+ * @see Setter
  */
 @Inherited
 @Documented

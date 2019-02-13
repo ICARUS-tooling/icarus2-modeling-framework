@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import javax.annotation.Nullable;
 
@@ -39,7 +39,7 @@ import de.ims.icarus2.apiguard.EnumType;
  * @author Markus Gärtner
  *
  */
-abstract class Guardian {
+abstract class Guardian<T> {
 
 
 	private static final Map<Class<?>, Object> sharedDummies;
@@ -80,7 +80,13 @@ abstract class Guardian {
 		sharedDummies = Collections.unmodifiableMap(map);
 	}
 
-	private Map<Class<?>, Supplier<?>> paramFallbacks; //TODO use this for creating specialized parameters
+	private final Map<Class<?>, Function<T, ?>> parameterResolvers;
+
+	protected Guardian(ApiGuard<T> apiGuard) {
+		requireNonNull(apiGuard);
+
+		parameterResolvers = requireNonNull(apiGuard.getParameterResolvers());
+	}
 
 	/**
 	 * Fetches and returns an entry from the map of default
@@ -160,12 +166,21 @@ abstract class Guardian {
 	 * @param clazz
 	 * @return
 	 */
-	Object resolveParameter(Class<?> clazz) {
-		Object defaultValue = getDefaultValue(clazz);
-		if(defaultValue==null) {
-			defaultValue = createParameter(clazz);
+	Object resolveParameter(T instance, Class<?> clazz) {
+		Object value = null;
+
+		Function<T, ?> resolver = parameterResolvers.get(clazz);
+		if(resolver!=null) {
+			value = resolver.apply(instance);
 		}
-		return defaultValue;
+
+		if(value==null) {
+			value = getDefaultValue(clazz);
+		}
+		if(value==null) {
+			value = createParameter(clazz);
+		}
+		return value;
 	}
 
 	private BitSet findNullableParameters(Executable executable) {
@@ -192,7 +207,7 @@ abstract class Guardian {
 		return clazz.getSimpleName();
 	}
 
-	Collection<ParamConfig> variateNullParameter(Executable executable) {
+	Collection<ParamConfig> variateNullParameter(T instance, Executable executable) {
 
 		final int paramCount = executable.getParameterCount();
 
@@ -212,7 +227,7 @@ abstract class Guardian {
 		assumeTrue(original.length==types.length);
 
 		for (int i = 0; i < original.length; i++) {
-			original[i] = resolveParameter(types[i]);
+			original[i] = resolveParameter(instance, types[i]);
 			labels[i] = label(types[i]);
 		}
 

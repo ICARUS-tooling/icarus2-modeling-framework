@@ -24,13 +24,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.ManifestApiTest;
 import de.ims.icarus2.test.GenericTest;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface TypedManifestTest<M extends TypedManifest> extends GenericTest<M> {
+public interface TypedManifestTest<M extends TypedManifest>
+		extends GenericTest<M>, ManifestApiTest<M> {
 
 	ManifestType getExpectedType();
 

@@ -32,7 +32,7 @@ import static de.ims.icarus2.test.TestUtils.assertFlagGetter;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
 import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomArray;
+import static de.ims.icarus2.test.TestUtils.filledArray;
 import static de.ims.icarus2.test.TestUtils.randomLongPair;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -653,7 +653,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			@Test
 			@Tag(RANDOMIZED)
 			void testGetEdgeAtLong() {
-				Edge[] edges = randomArray(RUNS, Edge.class);
+				Edge[] edges = filledArray(RUNS, Edge.class);
 				long[] indices = random().longs(edges.length, 0, Long.MAX_VALUE).toArray();
 
 				IntStream.range(0, edges.length).forEach(
@@ -675,7 +675,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			@Test
 			@Tag(RANDOMIZED)
 			void testIndexOfEdge() {
-				Edge[] edges = randomArray(10, Edge.class);
+				Edge[] edges = filledArray(10, Edge.class);
 				long[] indices = random().longs(edges.length, 0, Long.MAX_VALUE).toArray();
 
 				IntStream.range(0, edges.length).forEach(
@@ -696,7 +696,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			@Test
 			@Tag(RANDOMIZED)
 			void testGetEdgeCountItem() {
-				Item[] items = randomArray(10, Item.class);
+				Item[] items = filledArray(10, Item.class);
 				long[] counts = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
 
 				IntStream.range(0, RUNS).forEach(
@@ -717,7 +717,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			@Test
 			@Tag(RANDOMIZED)
 			void testGetEdgeCountItemBoolean() {
-				Item[] items = randomArray(RUNS, Item.class);
+				Item[] items = filledArray(RUNS, Item.class);
 				long[] counts = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
 				boolean isSource = random().nextBoolean();
 
@@ -741,8 +741,8 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			@Test
 			@Tag(RANDOMIZED)
 			void testGetEdgeAtItemLongBoolean() {
-				Item[] items = randomArray(RUNS, Item.class);
-				Edge[] edges = randomArray(RUNS, Edge.class);
+				Item[] items = filledArray(RUNS, Item.class);
+				Edge[] edges = filledArray(RUNS, Edge.class);
 				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
 				boolean isSource = random().nextBoolean();
 
@@ -784,8 +784,8 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			 */
 			@Test
 			void testGetParent() {
-				Item[] items = randomArray(RUNS, Item.class);
-				Item[] parents = randomArray(RUNS, Item.class);
+				Item[] items = filledArray(RUNS, Item.class);
+				Item[] parents = filledArray(RUNS, Item.class);
 
 				IntStream.range(0, RUNS).forEach(
 						idx -> when(edgeStorage.getParent(
@@ -808,7 +808,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			@Test
 			@Tag(RANDOMIZED)
 			void testIndexOfChild() {
-				Item[] items = randomArray(RUNS, Item.class);
+				Item[] items = filledArray(RUNS, Item.class);
 				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
 
 				IntStream.range(0, RUNS).forEach(
@@ -831,9 +831,9 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			@Test
 			@Tag(RANDOMIZED)
 			void testGetSiblingAt() {
-				Item[] items = randomArray(RUNS, Item.class);
+				Item[] items = filledArray(RUNS, Item.class);
 				long[] indices = random().longs(RUNS).toArray();
-				Item[] siblings = randomArray(RUNS, Item.class);
+				Item[] siblings = filledArray(RUNS, Item.class);
 
 				IntStream.range(0, RUNS).forEach(
 						idx -> when(edgeStorage.getSiblingAt(
@@ -856,7 +856,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			@Test
 			@Tag(RANDOMIZED)
 			void testGetHeight() {
-				Item[] items = randomArray(RUNS, Item.class);
+				Item[] items = filledArray(RUNS, Item.class);
 				long[] heights = random().longs(RUNS).toArray();
 
 				IntStream.range(0, RUNS).forEach(
@@ -880,7 +880,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			@Test
 			@Tag(RANDOMIZED)
 			void testGetDepth() {
-				Item[] items = randomArray(RUNS, Item.class);
+				Item[] items = filledArray(RUNS, Item.class);
 				long[] depths = random().longs(RUNS).toArray();
 
 				IntStream.range(0, RUNS).forEach(
@@ -904,7 +904,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			@Test
 			@Tag(RANDOMIZED)
 			void testGetDescendantCount() {
-				Item[] items = randomArray(RUNS, Item.class);
+				Item[] items = filledArray(RUNS, Item.class);
 				long[] counts = random().longs(RUNS).toArray();
 
 				IntStream.range(0, RUNS).forEach(
@@ -927,7 +927,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			@Test
 			@Tag(RANDOMIZED)
 			void testAddEdge() {
-				Edge[] edges = randomArray(RUNS, Edge.class);
+				Edge[] edges = filledArray(RUNS, Edge.class);
 				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
 
 				IntStream.range(0, RUNS).forEach(
@@ -945,7 +945,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			@Tag(RANDOMIZED)
 			void testAddEdges() {
 				@SuppressWarnings("rawtypes")
-				DataSequence[] edges = randomArray(RUNS, DataSequence.class);
+				DataSequence[] edges = filledArray(RUNS, DataSequence.class);
 				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
 
 				IntStream.range(0, RUNS).forEach(
@@ -980,7 +980,7 @@ class DefaultStructureTest implements MemberTest<Structure> {
 					randomLongPair(0, Long.MAX_VALUE),
 				};
 				@SuppressWarnings("rawtypes")
-				DataSequence[] edges = randomArray(indices.length, DataSequence.class);
+				DataSequence[] edges = filledArray(indices.length, DataSequence.class);
 				IntStream.range(0, indices.length).forEach(
 						idx -> {
 							Pair<Long, Long> p = indices[idx];
@@ -1033,8 +1033,8 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			 */
 			@RepeatedTest(value=5)
 			void testSetTerminal() {
-				Item[] items = randomArray(RUNS, Item.class);
-				Edge[] edges = randomArray(RUNS, Edge.class);
+				Item[] items = filledArray(RUNS, Item.class);
+				Edge[] edges = filledArray(RUNS, Edge.class);
 				boolean isSource = random().nextBoolean();
 
 				IntStream.range(0, RUNS).forEach(
@@ -1050,8 +1050,8 @@ class DefaultStructureTest implements MemberTest<Structure> {
 			 */
 			@Test
 			void testNewEdge() {
-				Item[] sources = randomArray(RUNS, Item.class);
-				Item[] targets = randomArray(RUNS, Item.class);
+				Item[] sources = filledArray(RUNS, Item.class);
+				Item[] targets = filledArray(RUNS, Item.class);
 
 				IntStream.range(0, RUNS).forEach(
 						idx -> instance.newEdge(sources[idx], targets[idx]));

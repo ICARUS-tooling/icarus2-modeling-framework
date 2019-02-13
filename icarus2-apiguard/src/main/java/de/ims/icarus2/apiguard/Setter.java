@@ -26,4 +26,11 @@ public @interface Setter {
 	 * @return
 	 */
 	String value();
+
+	/**
+	 * Signals that the method should not be called more than once with
+	 * valid parameters.
+	 * @return
+	 */
+	boolean restricted() default false;
 }

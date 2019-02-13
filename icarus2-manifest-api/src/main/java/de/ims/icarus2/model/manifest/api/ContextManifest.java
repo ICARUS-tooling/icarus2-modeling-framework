@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import de.ims.icarus2.apiguard.Getter;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.api.binding.Bindable;
 import de.ims.icarus2.model.manifest.api.binding.LayerPrerequisite;
@@ -265,6 +266,7 @@ public interface ContextManifest extends MemberManifest<ContextManifest>, Bindab
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
+	@Getter(value="independentContext", defaultValue="false")
 	boolean isIndependentContext();
 
 	boolean isLocalIndependentContext();
@@ -289,6 +291,7 @@ public interface ContextManifest extends MemberManifest<ContextManifest>, Bindab
 	 * @return
 	 */
 	@AccessRestriction(AccessMode.READ)
+	@Getter(value="editable", defaultValue="false")
 	boolean isEditable();
 
 	boolean isLocalEditable();

@@ -122,7 +122,7 @@ public class DefaultModifiableIdentity<I extends ModifiableIdentity>
 	 * @param name the name to set
 	 */
 	@Override
-	public I setName(String name) {
+	public I setName(@Nullable String name) {
 		checkNotLocked();
 
 		setName0(name);
@@ -138,7 +138,7 @@ public class DefaultModifiableIdentity<I extends ModifiableIdentity>
 	 * @param description the description to set
 	 */
 	@Override
-	public I setDescription(String description) {
+	public I setDescription(@Nullable String description) {
 		checkNotLocked();
 
 		setDescription0(description);
@@ -154,7 +154,7 @@ public class DefaultModifiableIdentity<I extends ModifiableIdentity>
 	 * @param icon the icon to set
 	 */
 	@Override
-	public I setIcon(Icon icon) {
+	public I setIcon(@Nullable Icon icon) {
 		checkNotLocked();
 
 		setIcon0(icon);

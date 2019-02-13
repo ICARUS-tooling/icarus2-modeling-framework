@@ -28,7 +28,7 @@ import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.assertRestrictedSetter;
 import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomArray;
+import static de.ims.icarus2.test.TestUtils.filledArray;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -591,7 +591,7 @@ class RootItemTest {
 		 */
 		@Test
 		void testGetEdgeAt() {
-			Edge[] edges = randomArray(RUNS, Edge.class);
+			Edge[] edges = filledArray(RUNS, Edge.class);
 
 			Stream.of(edges).forEach(instance::addEdge);
 
@@ -625,7 +625,7 @@ class RootItemTest {
 		void testRemoveEdgeE() {
 			assertNPE(() -> instance.removeEdge(null));
 			assertNPE(() -> instance.removeEdge(null, false));
-			Edge[] edges = randomArray(RUNS, Edge.class);
+			Edge[] edges = filledArray(RUNS, Edge.class);
 
 			Stream.of(edges).forEach(instance::addEdge);
 
@@ -663,7 +663,7 @@ class RootItemTest {
 		void testIndexOfEdge() {
 			assertNPE(() -> instance.indexOfEdge(null));
 
-			Edge[] edges = randomArray(RUNS, Edge.class);
+			Edge[] edges = filledArray(RUNS, Edge.class);
 
 			Stream.of(edges).forEach(instance::addEdge);
 

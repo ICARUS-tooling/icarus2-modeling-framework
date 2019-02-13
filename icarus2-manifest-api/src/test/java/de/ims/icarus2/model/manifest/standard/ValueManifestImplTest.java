@@ -45,5 +45,4 @@ class ValueManifestImplTest implements ValueManifestTest {
 	public Class<? extends ValueManifest> getTestTargetClass() {
 		return ValueManifestImpl.class;
 	}
-
 }

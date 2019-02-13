@@ -29,7 +29,8 @@ import org.junit.jupiter.api.Test;
  * @author Markus Gärtner
  *
  */
-public interface ManifestFragmentTest<M extends ManifestFragment> extends TypedManifestTest<M>, LockableTest<M> {
+public interface ManifestFragmentTest<M extends ManifestFragment>
+		extends TypedManifestTest<M>, LockableTest<M> {
 
 	@Test
 	default void testGetId() {

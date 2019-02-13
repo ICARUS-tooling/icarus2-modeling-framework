@@ -241,6 +241,12 @@ public class ManifestTestUtils {
 		return info.legalValues[0];
 	}
 
+	public static Object tryGetTestValue(ValueType type) {
+		TestInfo info = testValues.get(type);
+
+		return info==null ? null : info.legalValues[0];
+	}
+
 	public static Object getIllegalValue(ValueType type) {
 		TestInfo info = testValues.get(type);
 		if(info==null)
