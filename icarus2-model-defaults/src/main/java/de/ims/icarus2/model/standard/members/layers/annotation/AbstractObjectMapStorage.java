@@ -81,11 +81,6 @@ public abstract class AbstractObjectMapStorage<B extends Object> extends Abstrac
 		return buffer;
 	}
 
-	@Override
-	public void removeAllValues() {
-		annotations.clear();
-	}
-
 	/**
 	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#removeAllValues(java.util.function.Supplier)
 	 */

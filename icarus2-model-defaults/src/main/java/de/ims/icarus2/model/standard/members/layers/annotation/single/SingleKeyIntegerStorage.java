@@ -143,11 +143,6 @@ public class SingleKeyIntegerStorage extends AbstractSingleKeyStorage {
 		setIntegerValue(item, key, IcarusUtils.ensureIntegerValueRange(value));
 	}
 
-	@Override
-	public void removeAllValues() {
-		annotations.clear();
-	}
-
 	/**
 	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#removeAllValues(java.util.function.Supplier)
 	 */

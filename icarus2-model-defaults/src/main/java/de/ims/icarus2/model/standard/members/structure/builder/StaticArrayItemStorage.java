@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 
-import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerType;
@@ -79,14 +78,16 @@ public class StaticArrayItemStorage extends AbstractImmutableItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addNotify(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public void addNotify(Container context) throws ModelException {
+	public void addNotify(Container context) {
+		// no-op
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#removeNotify(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public void removeNotify(Container context) throws ModelException {
+	public void removeNotify(Container context) {
+		// no-op
 	}
 
 	/**

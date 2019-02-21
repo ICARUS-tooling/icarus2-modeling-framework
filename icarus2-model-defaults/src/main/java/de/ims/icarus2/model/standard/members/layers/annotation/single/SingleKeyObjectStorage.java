@@ -119,11 +119,6 @@ public class SingleKeyObjectStorage extends AbstractSingleKeyStorage {
 	}
 
 	@Override
-	public void removeAllValues() {
-		annotations.clear();
-	}
-
-	@Override
 	public boolean hasAnnotations() {
 		return !annotations.isEmpty();
 	}

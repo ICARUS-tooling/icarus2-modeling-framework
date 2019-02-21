@@ -262,15 +262,6 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 		return getPrimitive(item, key).booleanValue();
 	}
 
-	@Override
-	public void removeAllValues(String key) {
-		final int index = checkKeyAndGetIndex(key);
-		//TODO possibly too expensive, check parallel computation via lambda
-		getAnnotations().entrySet()
-			.parallelStream() // parallelize the entire operation
-			.forEach(entry -> entry.getValue()[index] = null); // clear the piece of data associated with 'key'
-	}
-
 	protected MutablePrimitive<?> getPrimitive(Item item, String key) {
 
 		Object value = getValue(item, key);

@@ -163,11 +163,6 @@ public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage
 		annotations.put(item, b);
 	}
 
-	@Override
-	public void removeAllValues() {
-		annotations.clear();
-	}
-
 	/**
 	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#removeAllValues(java.util.function.Supplier)
 	 */
@@ -177,19 +172,6 @@ public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage
 		while((item=source.get())!=null) {
 			annotations.removeByte(item);
 		}
-	}
-
-	@Override
-	public void removeAllValues(String key) {
-		int index = checkKeyAndGetIndex(key);
-
-		final byte mask = (byte) (EMPTY_BUFFER | ~(1<<index));
-
-		annotations.object2ByteEntrySet().forEach(entry -> {
-			byte value = entry.getByteValue();
-			value = (byte) (mask & value);
-			entry.setValue(value);
-		});
 	}
 
 	@Override

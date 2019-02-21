@@ -108,16 +108,6 @@ public abstract class AbstractAnnotationStorage implements ManagedAnnotationStor
 	}
 
 	@Override
-	public void removeAllValues() {
-		// no-op
-	}
-
-	@Override
-	public void removeAllValues(String key) {
-		// no-op
-	}
-
-	@Override
 	public void setIntegerValue(Item item, String key, int value) {
 		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot set integer value for key: "+key);
 	}

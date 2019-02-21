@@ -89,12 +89,6 @@ public abstract class AbstractSingleKeyStorage extends AbstractAnnotationStorage
 	}
 
 	@Override
-	public void removeAllValues(String key) {
-		checkKey(key);
-		removeAllValues();
-	}
-
-	@Override
 	public boolean containsItem(Item item) {
 		return hasAnnotations(item);
 	}

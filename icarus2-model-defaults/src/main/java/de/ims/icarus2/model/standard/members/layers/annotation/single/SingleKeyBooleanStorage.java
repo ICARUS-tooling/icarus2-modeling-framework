@@ -135,11 +135,6 @@ public class SingleKeyBooleanStorage extends AbstractSingleKeyStorage {
 		}
 	}
 
-	@Override
-	public void removeAllValues() {
-		annotations.clear();
-	}
-
 	/**
 	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#removeAllValues(java.util.function.Supplier)
 	 */
