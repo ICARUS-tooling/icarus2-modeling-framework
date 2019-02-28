@@ -16,12 +16,6 @@
  */
 package de.ims.icarus2.util.intern;
 
-
-
-
-
-
-
 /**
  * @author Markus Gärtner
  *

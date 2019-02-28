@@ -88,6 +88,8 @@ public class Primitives {
 				|| clazz==Boolean.class;
 	}
 
+	//TODO add documentation for all the cast and boxing methods!
+
 	public static int cast(Integer value) {
 		return value==null ? 0 : value.intValue();
 	}
