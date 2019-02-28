@@ -104,6 +104,8 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 
 	public abstract void removeEdge(E edge);
 
+	public abstract void removeAllEdges();
+
 	public abstract int indexOfEdge(Edge edge);
 
 	@Override
@@ -263,6 +265,14 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		}
 
 		/**
+		 * @see de.ims.icarus2.model.standard.members.structure.RootItem#removeAllEdges()
+		 */
+		@Override
+		public void removeAllEdges() {
+			// no-op
+		}
+
+		/**
 		 * @see de.ims.icarus2.model.standard.members.structure.RootItem#indexOfEdge(de.ims.icarus2.model.api.members.item.Edge)
 		 */
 		@Override
@@ -335,6 +345,14 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Unknown edge - cannot remove "+ModelUtils.getName(edge));
 
 			this.edge = null;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.members.structure.RootItem#removeAllEdges()
+		 */
+		@Override
+		public void removeAllEdges() {
+			edge = null;
 		}
 
 		/**
@@ -434,6 +452,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Cannot remove unknown edge: "+ModelUtils.getName(edge));
 		}
 
+		@Override
 		public void removeAllEdges() {
 			edges.clear();
 		}

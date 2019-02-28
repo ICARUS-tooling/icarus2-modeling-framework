@@ -137,11 +137,12 @@ public class FixedSizeChainStorage implements EdgeStorage {
 	 */
 	@Override
 	public void removeNotify(Structure context) {
-
+		root.removeAllEdges();
 		root = null;
 		Arrays.fill(edges, null);
 		Arrays.fill(heightAndDepthValues, -1);
 		edgeCount= 0;
+		heightInfoValid = false;
 	}
 
 	/**
@@ -577,8 +578,6 @@ public class FixedSizeChainStorage implements EdgeStorage {
 	 */
 	@Override
 	public long addEdge(Structure context, long index, Edge edge) {
-		//TODO by ignoring the index parameter we allow "faulty" values there?
-
 		return addEdge(context, edge);
 	}
 
@@ -741,14 +740,23 @@ public class FixedSizeChainStorage implements EdgeStorage {
 
 	@Override
 	public void recycle() {
-		// TODO Auto-generated method stub
-
+		if(root!=null) {
+			root.removeAllEdges();
+			root = null;
+		}
+		if(edges!=null) {
+			Arrays.fill(edges, null);
+		}
+		if(heightAndDepthValues!=null) {
+			Arrays.fill(heightAndDepthValues, -1);
+		}
+		edgeCount= 0;
+		heightInfoValid = false;
 	}
 
 	@Override
 	public boolean revive() {
-		// TODO Auto-generated method stub
-		return false;
+		return root!=null && edges!=null && heightAndDepthValues!=null;
 	}
 
 	/**
