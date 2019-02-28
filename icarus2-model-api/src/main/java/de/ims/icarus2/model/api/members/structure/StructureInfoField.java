@@ -26,11 +26,6 @@ import de.ims.icarus2.model.manifest.api.StructureType;
  */
 public enum StructureInfoField {
 
-	/**
-	 * @deprecated duplicate of {@link #OUTGOING_EDGES}
-	 */
-	@Deprecated
-	BRANCHING,
 	INCOMING_EDGES,
 	OUTGOING_EDGES,
 	HEIGHT(StructureType.CHAIN, StructureType.TREE, StructureType.SET),
