@@ -139,7 +139,8 @@ public class JDKExpressionFactory extends ExpressionFactory {
 
 
 		if(newClazz==null)
-			throw new IcarusRuntimeException(GlobalErrorCode.INTERNAL_ERROR, "Failed to load freshly compiled expression class: "+className);
+			throw new IcarusRuntimeException(GlobalErrorCode.INTERNAL_ERROR,
+					"Failed to load freshly compiled expression class: "+className);
 
 		JDKCompiledExpression expression = (JDKCompiledExpression) newClazz.newInstance();
 

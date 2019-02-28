@@ -28,6 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
 import org.junit.jupiter.api.AfterEach;
@@ -48,6 +50,8 @@ import de.ims.icarus2.util.eval.Expression;
 @SuppressWarnings("boxing")
 public class JDKExpressionFactoryTest {
 
+	private static final String UTF_8 = StandardCharsets.UTF_8.name();
+
 	@Nested
 	class WithSystemOut {
 
@@ -55,10 +59,10 @@ public class JDKExpressionFactoryTest {
 		PrintStream stdOut;
 
 		@BeforeEach
-		void setUp() {
+		void setUp() throws UnsupportedEncodingException {
 			stdOut = System.out;
 			buffer = new ByteArrayOutputStream();
-			System.setOut(new PrintStream(buffer));
+			System.setOut(new PrintStream(buffer, true, UTF_8));
 		}
 
 		@AfterEach
@@ -80,7 +84,7 @@ public class JDKExpressionFactoryTest {
 
 			expression.evaluate();
 
-			assertEquals("Hello World", buffer.toString());
+			assertEquals("Hello World", buffer.toString(UTF_8));
 		}
 
 		@ParameterizedTest
@@ -106,7 +110,7 @@ public class JDKExpressionFactoryTest {
 			expression.getVariables().setValue("input", value);
 			expression.evaluate();
 
-			assertEquals("Hello World: "+value, buffer.toString());
+			assertEquals("Hello World: "+value, buffer.toString(UTF_8));
 		}
 	}
 
