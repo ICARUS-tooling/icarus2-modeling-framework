@@ -473,7 +473,7 @@ class DefaultEdgeTest implements EdgeTest<Edge> {
 		 * Test method for {@link de.ims.icarus2.model.standard.members.structure.DefaultEdge#getBeginOffset()}.
 		 */
 		@ParameterizedTest
-		@CsvFileSource(resources= {"fixedBeginOffsets.csv"})
+		@CsvFileSource(resources= {"DefaultEdgeTest_fixedBeginOffsets.csv"})
 		void testGetBeginOffsetFixedValues(
 				@ConvertWith(ExtendedStringToPrimitiveConverter.class) long sourceBegin,
 				@ConvertWith(ExtendedStringToPrimitiveConverter.class) long targetBegin,
@@ -495,7 +495,7 @@ class DefaultEdgeTest implements EdgeTest<Edge> {
 		 * Test method for {@link de.ims.icarus2.model.standard.members.structure.DefaultEdge#getEndOffset()}.
 		 */
 		@ParameterizedTest
-		@CsvFileSource(resources= {"fixedEndOffsets.csv"})
+		@CsvFileSource(resources= {"DefaultEdgeTest_fixedEndOffsets.csv"})
 		void testGetEndOffsetFixedValues(
 				@ConvertWith(ExtendedStringToPrimitiveConverter.class) long sourceEnd,
 				@ConvertWith(ExtendedStringToPrimitiveConverter.class) long targetEnd,
