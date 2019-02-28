@@ -18,10 +18,12 @@ package de.ims.icarus2.model.api.members.item;
 
 import javax.annotation.Nullable;
 
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.FragmentLayer;
 import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.api.raster.Rasterizer;
+import de.ims.icarus2.model.util.ModelUtils;
 
 /**
  * A {@code Fragment} allows for the definition of {@code Item} objects that
@@ -53,7 +55,7 @@ public interface Fragment extends Item {
 	 *
 	 * @return
 	 */
-	Item getItem();
+	@Nullable Item getItem();
 
 	/**
 	 * Returns the position within the surrounding item of
@@ -61,7 +63,7 @@ public interface Fragment extends Item {
 	 *
 	 * @return
 	 */
-	Position getFragmentBegin();
+	@Nullable Position getFragmentBegin();
 
 	/**
 	 * Returns the position within the surrounding item of
@@ -69,7 +71,7 @@ public interface Fragment extends Item {
 	 *
 	 * @return
 	 */
-	Position getFragmentEnd();
+	@Nullable Position getFragmentEnd();
 
 	// Modification methods
 
@@ -79,8 +81,11 @@ public interface Fragment extends Item {
 	 * @param position
 	 * @throws ModelException if the {@code position} violates
 	 * the bounds specified by the raster size of the hosting item
+	 *
+	 * @see ModelUtils#checkFragmentPositions(Fragment, Position, Position)
 	 */
-	void setFragmentBegin(@Nullable Position position);
+	@Unguarded(reason="Complex environment needed to evaluate position argument")
+	void setFragmentBegin(Position position);
 
 	/**
 	 * Changes the end position of the fragment to the new {@code position}.
@@ -88,6 +93,9 @@ public interface Fragment extends Item {
 	 * @param position
 	 * @throws ModelException if the {@code position} violates
 	 * the bounds specified by the raster size of the hosting item
+	 *
+	 * @see ModelUtils#checkFragmentPositions(Fragment, Position, Position)
 	 */
-	void setFragmentEnd(@Nullable Position position);
+	@Unguarded(reason="Complex environment needed to evaluate position argument")
+	void setFragmentEnd(Position position);
 }

@@ -23,7 +23,6 @@ import java.util.function.Consumer;
 import javax.annotation.Nullable;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.apiguard.Getter;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
@@ -169,7 +168,6 @@ public interface AnnotationManifest extends MemberManifest<AnnotationManifest>, 
 	 * @see #getValueSet()
 	 */
 	@AccessRestriction(AccessMode.READ)
-	@Getter(value="allowUnknownValues", defaultValue="false")
 	boolean isAllowUnknownValues();
 
 	/**

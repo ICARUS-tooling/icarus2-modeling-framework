@@ -112,6 +112,10 @@ public interface OptionTest extends ModifiableIdentityTest<Option>, LockableTest
 				manifest -> mockValueRange(manifest.getValueType()));
 		apiGuard.parameterResolver(ValueSet.class,
 				manifest -> mockValueSet(manifest.getValueType()));
+
+		apiGuard.defaultReturnValue("allowNull", Boolean.valueOf(Option.DEFAULT_ALLOW_NULL));
+		apiGuard.defaultReturnValue("multiValue", Boolean.valueOf(Option.DEFAULT_MULTIVALUE_VALUE));
+		apiGuard.defaultReturnValue("published", Boolean.valueOf(Option.DEFAULT_PUBLISHED_VALUE));
 	}
 
 	/**

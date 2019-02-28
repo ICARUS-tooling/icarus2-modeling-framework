@@ -11,6 +11,7 @@ import static de.ims.icarus2.test.TestUtils.assertGetter;
 import static de.ims.icarus2.test.TestUtils.assertOptGetter;
 import static de.ims.icarus2.test.TestUtils.assertRestrictedSetter;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
+import static de.ims.icarus2.test.TestUtils.failTest;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
@@ -42,9 +43,8 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestReporter;
 import org.opentest4j.TestAbortedException;
 
-import de.ims.icarus2.apiguard.Getter;
-import de.ims.icarus2.apiguard.Property;
-import de.ims.icarus2.apiguard.Setter;
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
 import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.test.func.TriConsumer;
 import de.ims.icarus2.test.reflect.ClassCache;
@@ -83,12 +83,15 @@ class PropertyGuardian<T> extends Guardian<T> {
 				boolean hasParams = m.getParameterCount()>0;
 				boolean hasSingleParam = m.getParameterCount()==1; // setters
 				boolean isVoidReturn = m.getReturnType()==void.class;
+				boolean isChainable = m.getDeclaringClass().isAssignableFrom(m.getReturnType());
 
 //				System.out.printf("stat=%b, pub=%b, obj=%b, params=%b, single=%b, void=%b: %s%n",
 //						isStatic, isPublic, isObjMethod, hasParams, hasSingleParam, isVoidReturn, m);
 
-				return !isStatic && isPublic && !isObjMethod &&
-						(hasSingleParam || (!hasParams && !isVoidReturn));
+				return !isStatic && isPublic && !isObjMethod // Filter out via basic properties
+						&& ((hasSingleParam && isVoidReturn)
+							|| (hasSingleParam && isChainable)
+							|| (!hasParams && !isVoidReturn));
 			};
 
 	public PropertyGuardian(ApiGuard<T> apiGuard) {
@@ -120,15 +123,20 @@ class PropertyGuardian<T> extends Guardian<T> {
 		// Make sure we only keep the "correct" ones
 		validatePropertyMappings();
 
+		@SuppressWarnings("boxing")
+		String displayName = String.format("%s (%d)",
+				"Properties", propertyMethods.size());
+
 		// Turn method mapping into tests
-		return dynamicContainer("Properties",
+		return dynamicContainer(displayName,
 				propertyMethods.stream()
 				.map(this::createTestsForProperty)
 				.collect(Collectors.toList()));
 	}
 
 	private Object tryParseDefaultGetterValue(MethodCache methodCache) {
-		String defaultValue = extractConsistentValue(Getter.class, methodCache, Getter::defaultValue);
+		String defaultValue = extractConsistentValue(Guarded.class,
+				methodCache, Guarded::defaultValue);
 		if(defaultValue!=null && !defaultValue.isEmpty()) {
 			Class<?> returnType = methodCache.getMethod().getReturnType();
 			switch (returnType.getSimpleName()) {
@@ -142,22 +150,25 @@ class PropertyGuardian<T> extends Guardian<T> {
 			case "char": return Character.valueOf(defaultValue.charAt(0));
 
 			default:
-				throw new IllegalArgumentException("Unable to parse defautl value for return type: "+returnType);
+				throw new IllegalArgumentException("Unable to parse default value for return type: "+returnType);
 			}
 		}
 
 		return null;
 	}
 
-	private Supplier<Object> createDefault(MethodCache methodCache, boolean allowNullReturn) {
+	private Supplier<Object> createDefault(String property, MethodCache methodCache, boolean allowNullReturn) {
 		Class<?> returnType = methodCache.getMethod().getReturnType();
 		Object defaultValue = null;
 
+		// For primitives we MUST provide non-null default return values
 		if(returnType.isPrimitive()) {
 			defaultValue = tryParseDefaultGetterValue(methodCache);
 
 			if(defaultValue==null) {
-				defaultValue = getDefaultValue(returnType);
+				defaultValue = getDefaultReturnValue(property, returnType);
+
+//				System.out.printf("default value for '%s': %s%n", property, defaultValue);
 			}
 		}
 
@@ -174,26 +185,39 @@ class PropertyGuardian<T> extends Guardian<T> {
 		return allowNullReturn ? NO_DEFAULT() : UNKNOWN_DEFAULT();
 	}
 
+	private String displayName(PropertyConfig config) {
+		return String.format("%s [%s]", config.property,
+				config.getter.getReturnType().getName());
+	}
+
 	@SuppressWarnings("unchecked")
 	private DynamicNode createTestsForProperty(PropertyConfig config) {
 		MethodCache getterMethodCache = classCache.getMethodCache(config.getter);
 		MethodCache setterMethodCache = classCache.getMethodCache(config.setter);
 
 		boolean allowNullParam = setterMethodCache.hasParameterAnnotation(Nullable.class);
+
 		// Nullability of return value can be defined in two ways
 		boolean allowNullReturn = getterMethodCache.hasAnnotation(Nullable.class)
 				|| getterMethodCache.hasResultAnnotation(Nullable.class);
 
+		// If return value is declared to be nullable but is a primitive type, we have to abort
+		if(allowNullReturn && config.getter.getReturnType().isPrimitive())
+			return dynamicTest(
+					displayName(config),
+					failTest(String.format("Getter declares nullable primitive: %s", config.getter)));
+
 		// Need to handle getter methods that wrap values into an Optional
 		boolean isOptionalReturn = config.getter.getReturnType()==Optional.class;
 
-		boolean isRestrictedSetter = setterMethodCache.hasAnnotation(Setter.class)
-				&& extractConsistentValue(Setter.class, setterMethodCache, Setter::restricted).booleanValue();
+		boolean isRestrictedSetter = setterMethodCache.hasAnnotation(Guarded.class)
+				&& extractConsistentValue(Guarded.class, setterMethodCache, Guarded::restricted).booleanValue();
 
-		final Supplier<Object> DEFAULT = createDefault(getterMethodCache, allowNullReturn);
+		final Supplier<Object> DEFAULT = createDefault(config.property, getterMethodCache, allowNullReturn);
 
 		final Class<?> paramClass = config.setter.getParameterTypes()[0];
 
+		// Wrap setter to handle the reflection-related exceptions internally
 		BiConsumer<T, Object> setter = (instance, value) -> {
 			try {
 				config.setter.invoke(instance, value);
@@ -205,6 +229,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 			}
 		};
 
+		// Wrap getter to handle the reflection-related exceptions internally
 		Function<T, Object> getter = (instance) -> {
 			try {
 				return config.getter.invoke(instance);
@@ -243,6 +268,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 
 		DynamicTest setterTest;
 		if(isRestrictedSetter) {
+			// Restricted setter means we expect an exception after the first invokation
 			setterTest = dynamicTest("setter[restricted]",
 					() -> {
 						T instance = createInstance();
@@ -258,6 +284,8 @@ class PropertyGuardian<T> extends Guardian<T> {
 					() -> {
 						T instance = createInstance();
 //						System.out.printf("'%s', nullable=%b%n", config.setter, allowNullParam);
+
+						// Special case for boolean, as we know possible parameter values
 						if(Boolean.class.equals(paramClass) || Boolean.TYPE.equals(paramClass)) {
 							assertSetter(instance,
 									(x, b) -> setter.accept(x, b));
@@ -270,7 +298,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 		}
 
 		return dynamicContainer(
-				config.property,
+				displayName(config),
 				null,
 				Stream.of(getterTest, setterTest));
 	}
@@ -384,7 +412,6 @@ class PropertyGuardian<T> extends Guardian<T> {
 		TriConsumer<MethodType, String, Method> mapByType = (type, property, method) -> {
 			switch (type) {
 			case GETTER:
-			case BOOLEAN_GETTER:
 				mapGetter.accept(property, method);
 				break;
 
@@ -409,32 +436,24 @@ class PropertyGuardian<T> extends Guardian<T> {
 			Method method = methodCache.getMethod();
 
 			// Complex: need to extract type and possibly property name
-			if(methodCache.hasAnnotation(Property.class)) {
-				String property = extractConsistentValue(Property.class,
-						methodCache, Property::value);
-				MethodType type = getMethodType(method);
+			if(methodCache.hasAnnotation(Guarded.class)) {
+				// Fetch method type
+				MethodType type = extractConsistentValue(Guarded.class,
+						methodCache, Guarded::methodType);
+
+				if(type==null || type==MethodType.AUTO_DETECT) {
+					type = getMethodType(method);
+				}
+
+				// Fetch property name
+				String property = extractConsistentValue(Guarded.class,
+						methodCache, Guarded::name);
 
 				if(property.isEmpty()) {
 					property = extractPropertyName(method, type);
 				}
 
 				mapByType.accept(type, property, method);
-				continue;
-			}
-
-			// Easy: directly grab the getter's designated property and map
-			if(methodCache.hasAnnotation(Getter.class)) {
-				String property = extractConsistentValue(Getter.class,
-						methodCache, Getter::value);
-				mapGetter.accept(property, method);
-				continue;
-			}
-
-			// Easy: directly grab the setter's designated property and map
-			if(methodCache.hasAnnotation(Setter.class)) {
-				String property = extractConsistentValue(Setter.class,
-						methodCache, Setter::value);
-				mapSetter.accept(property, method);
 				continue;
 			}
 
@@ -475,14 +494,24 @@ class PropertyGuardian<T> extends Guardian<T> {
 
 	private String extractPropertyName(Method method, MethodType type) {
 		String name = method.getName();
-		int begin = type.prefix.length();
+		int begin = type==MethodType.GETTER ? "get".length() : "set".length();
+		if(name.startsWith("is")) {
+			begin = "is".length();
+		}
 		return Character.toLowerCase(name.charAt(begin))
 				+name.substring(begin+1);
 	}
 
+	private static final Map<String, MethodType> prefixToTypeMap = new HashMap<>();
+	static {
+		prefixToTypeMap.put("is", MethodType.GETTER);
+		prefixToTypeMap.put("get", MethodType.GETTER);
+		prefixToTypeMap.put("set", MethodType.SETTER);
+	}
+
 	/**
-	 * Important note: we only consider methods of the name {@code <prefix>Property}
-	 * where the property part (the non-prefix {@code Property} substring) is at least
+	 * Important note: we only consider methods of the name {@code <prefix>Guarded}
+	 * where the property part (the non-prefix {@code Guarded} substring) is at least
 	 * three characters long!
 	 *
 	 * @param method
@@ -490,22 +519,28 @@ class PropertyGuardian<T> extends Guardian<T> {
 	 */
 	private MethodType getMethodType(Method method) {
 		String name = method.getName();
-		for(MethodType type : MethodType.values) {
-			if(name.startsWith(type.prefix)
-					&& name.length()>type.prefix.length()+2
-					&& Character.isUpperCase(name.charAt(type.prefix.length()))) {
+
+		for(Map.Entry<String, MethodType> e : prefixToTypeMap.entrySet()) {
+			String prefix = e.getKey();
+			MethodType type = e.getValue();
+
+			if(name.startsWith(prefix)
+					&& name.length()>prefix.length()+2
+					&& Character.isUpperCase(name.charAt(prefix.length()))) {
+
+				boolean isGetter = type==MethodType.GETTER;
 
 				// Consistency checks for mislabeled methods
-				if(type.isGetter && method.getReturnType()==void.class) {
+				if(isGetter && method.getReturnType()==void.class) {
 					testReporter.publishEntry("inconsistentGetter",
 							"Getter method does not define return type: "+method);
-				} else if(type.isGetter && method.getParameterCount()==1) {
+				} else if(isGetter && method.getParameterCount()==1) {
 					testReporter.publishEntry("inconsistentGetter",
 							"Getter method expects arguments: "+method);
-				} else if(!type.isGetter && method.getParameterCount()==0) {
+				} else if(!isGetter && method.getParameterCount()==0) {
 					testReporter.publishEntry("inconsistentSetter",
 							"Setter method does not take arguments: "+method);
-				} else if(!type.isGetter && method.getReturnType()!=void.class
+				} else if(!isGetter && method.getReturnType()!=void.class
 						&& !method.getReturnType().isAssignableFrom(targetClass)) {
 					testReporter.publishEntry("inconsistentSetter",
 							"Setter method declares return (non-chainable) type: "+method);
@@ -516,23 +551,6 @@ class PropertyGuardian<T> extends Guardian<T> {
 		}
 
 		return null;
-	}
-
-	static enum MethodType {
-		SETTER("set", false),
-		GETTER("get", true),
-		BOOLEAN_GETTER("is", true),
-		;
-
-		private MethodType(String prefix, boolean isGetter) {
-			this.prefix = prefix;
-			this.isGetter = isGetter;
-		}
-
-		public final String prefix;
-		public final boolean isGetter;
-
-		static MethodType[] values = values();
 	}
 
 	static class PropertyConfig {

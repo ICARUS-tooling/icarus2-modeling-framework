@@ -76,6 +76,7 @@ import de.ims.icarus2.model.manifest.api.binding.LayerPrerequisite;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.func.TriConsumer;
+import de.ims.icarus2.test.guard.ApiGuard;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Multiplicity;
 import de.ims.icarus2.util.collections.LazyCollection;
@@ -98,6 +99,19 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 
 	public static LayerGroupManifest mockGroupManifest(String id) {
 		return stubIdentity(mockTypedManifest(ManifestType.LAYER_GROUP_MANIFEST), id);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.ManifestApiTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
+	 */
+	@Override
+	default void configureApiGuard(ApiGuard<ContextManifest> apiGuard) {
+		EmbeddedMemberManifestTest.super.configureApiGuard(apiGuard);
+
+		apiGuard.defaultReturnValue("editable",
+				Boolean.valueOf(ContextManifest.DEFAULT_EDITABLE_VALUE));
+		apiGuard.defaultReturnValue("independentContext",
+				Boolean.valueOf(ContextManifest.DEFAULT_INDEPENDENT_CONTEXT_VALUE));
 	}
 
 	/**
@@ -593,7 +607,7 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 	default void testIsIndependentContext() {
 		assertDerivativeGetter(settings(),
 				Boolean.TRUE, Boolean.FALSE,
-				DEFAULT(Boolean.valueOf(ContextManifest.DEFAULT_INDEPENDENT_VALUE)),
+				DEFAULT(ContextManifest.DEFAULT_INDEPENDENT_CONTEXT_VALUE),
 				ContextManifest::isIndependentContext,
 				ContextManifest::setIndependentContext);
 	}
@@ -635,7 +649,7 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 	default void testIsEditable() {
 		assertDerivativeGetter(settings(),
 				Boolean.TRUE, Boolean.FALSE,
-				DEFAULT(Boolean.valueOf(ContextManifest.DEFAULT_EDITABLE_VALUE)),
+				DEFAULT(ContextManifest.DEFAULT_EDITABLE_VALUE),
 				ContextManifest::isEditable,
 				ContextManifest::setEditable);
 	}

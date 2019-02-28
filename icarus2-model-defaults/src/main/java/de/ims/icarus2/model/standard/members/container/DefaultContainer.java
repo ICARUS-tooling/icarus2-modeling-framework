@@ -22,6 +22,7 @@ import static java.util.Objects.requireNonNull;
 import javax.annotation.Nullable;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.MemberType;
@@ -92,6 +93,7 @@ public class DefaultContainer extends DefaultItem implements Container, Recyclab
 	 *
 	 * @see de.ims.icarus2.model.standard.members.item.DefaultItem#isDirty()
 	 */
+	@Unguarded(reason = "Requires access to a valid ItemStorage instance")
 	@Override
 	public boolean isDirty() {
 		return super.isDirty() || itemStorage().isDirty(this);
@@ -247,7 +249,7 @@ public class DefaultContainer extends DefaultItem implements Container, Recyclab
 		setFlag(MemberFlags.ITEMS_COMPLETE, complete);
 	}
 
-	public ItemStorage getItemStorage() {
+	public @Nullable ItemStorage getItemStorage() {
 		return itemStorage;
 	}
 
@@ -264,6 +266,7 @@ public class DefaultContainer extends DefaultItem implements Container, Recyclab
 					Messages.mismatch("Incompatible container types", requiredType, givenType));
 	}
 
+	@Unguarded(reason = "Requires access to a manifest")
 	public void setItemStorage(@Nullable ItemStorage itemStorage) {
 		checkItemStorage(itemStorage);
 

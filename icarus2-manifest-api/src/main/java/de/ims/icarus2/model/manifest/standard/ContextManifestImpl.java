@@ -207,7 +207,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	@Override
 	public boolean isIndependentContext() {
 		if(independent==null) {
-			return hasTemplate() ? getTemplate().isIndependentContext() : DEFAULT_INDEPENDENT_VALUE;
+			return hasTemplate() ? getTemplate().isIndependentContext() : DEFAULT_INDEPENDENT_CONTEXT_VALUE;
 		} else {
 			return independent.booleanValue();
 		}
@@ -236,7 +236,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	protected void setIndependentContext0(boolean independent) {
 //		checkNotLive();
 
-		this.independent = (independent==DEFAULT_INDEPENDENT_VALUE && !hasTemplate()) ? null :  Boolean.valueOf(independent);
+		this.independent = (independent==DEFAULT_INDEPENDENT_CONTEXT_VALUE && !hasTemplate()) ? null :  Boolean.valueOf(independent);
 	}
 
 	@Override

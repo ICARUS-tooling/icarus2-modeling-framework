@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.standard.members.structure;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.MemberType;
@@ -91,6 +92,7 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 	 *
 	 * @see DefaultContainer#isDirty()
 	 */
+	@Unguarded(reason = "Requires access to a valid EdgeStorage instance")
 	@Override
 	public boolean isDirty() {
 		return super.isDirty() || edgeStorage().isDirty(this);
@@ -127,6 +129,7 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 					Messages.mismatch("Incompatible structure types", requiredType, givenType));
 	}
 
+	@Unguarded(reason = "Requires access to a manifest")
 	public void setEdgeStorage(EdgeStorage edgeStorage) {
 		checkEdgeStorage(edgeStorage);
 

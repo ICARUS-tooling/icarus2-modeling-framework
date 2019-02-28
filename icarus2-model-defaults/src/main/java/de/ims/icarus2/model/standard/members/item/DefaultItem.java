@@ -20,6 +20,10 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.model.api.corpus.Corpus;
+import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -94,6 +98,36 @@ public class DefaultItem extends AbstractMember implements Item, Item.ManagedIte
 	@Override
 	public Container getContainer() {
 		return container;
+	}
+
+	protected Container expectContainer() {
+		if(container==null)
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "No container present");
+		return container;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.item.Item#getLayer()
+	 */
+	@Override
+	public ItemLayer getLayer() {
+		return expectContainer().getLayer();
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.item.Item#getCorpus()
+	 */
+	@Override
+	public Corpus getCorpus() {
+		return expectContainer().getCorpus();
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.item.Item#isTopLevel()
+	 */
+	@Override
+	public boolean isTopLevel() {
+		return expectContainer().isProxy();
 	}
 
 	/**

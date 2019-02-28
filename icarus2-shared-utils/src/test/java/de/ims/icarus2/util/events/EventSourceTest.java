@@ -111,7 +111,7 @@ class EventSourceTest<E extends EventSource> implements EventManagerTest<E> {
 	void testIsEventsEnabled() {
 		assertGetter(create(),
 				Boolean.TRUE, Boolean.FALSE,
-				DEFAULT(Boolean.valueOf(EventSource.DEFAULT_EVENTS_ENABLED)),
+				DEFAULT(EventSource.DEFAULT_EVENTS_ENABLED),
 				EventSource::isEventsEnabled,
 				EventSource::setEventsEnabled);
 	}
@@ -179,6 +179,11 @@ class EventSourceTest<E extends EventSource> implements EventManagerTest<E> {
 		instance.addListener(listener2, "anotherEvent");
 		sender.accept(instance, eventObject);
 
+		/*
+		 *  For EDT execution we need to make sure
+		 *  the verifications above take place after the listener
+		 *  got notified, so we add a dummy task on the EDT.
+		 */
 		if(expectEDT) {
 			try {
 				SwingUtilities.invokeAndWait(IcarusUtils.NO_OP);

@@ -42,6 +42,7 @@ import de.ims.icarus2.model.manifest.types.UnsupportedValueTypeException;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.guard.ApiGuard;
 
 /**
  * @author Markus Gärtner
@@ -58,6 +59,19 @@ public interface ValueRangeTest
 
 	@Provider
 	ValueRange createWithType(TestSettings settings, ValueType valueType);
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.ManifestApiTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
+	 */
+	@Override
+	default void configureApiGuard(ApiGuard<ValueRange> apiGuard) {
+		LockableTest.super.configureApiGuard(apiGuard);
+
+		apiGuard.defaultReturnValue("lowerBoundInclusive",
+				Boolean.valueOf(ValueRange.DEFAULT_LOWER_INCLUSIVE_VALUE));
+		apiGuard.defaultReturnValue("upperBoundInclusive",
+				Boolean.valueOf(ValueRange.DEFAULT_UPPER_INCLUSIVE_VALUE));
+	}
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
@@ -130,7 +144,7 @@ public interface ValueRangeTest
 	default void testIsLowerBoundInclusive() {
 		assertGetter(createUnlocked(),
 				Boolean.TRUE, Boolean.FALSE,
-				DEFAULT(Boolean.valueOf(ValueRange.DEFAULT_LOWER_INCLUSIVE_VALUE)),
+				DEFAULT(ValueRange.DEFAULT_LOWER_INCLUSIVE_VALUE),
 				ValueRange::isLowerBoundInclusive,
 				ValueRange::setLowerBoundInclusive);
 	}
@@ -142,7 +156,7 @@ public interface ValueRangeTest
 	default void testIsUpperBoundInclusive() {
 		assertGetter(createUnlocked(),
 				Boolean.TRUE, Boolean.FALSE,
-				DEFAULT(Boolean.valueOf(ValueRange.DEFAULT_UPPER_INCLUSIVE_VALUE)),
+				DEFAULT(ValueRange.DEFAULT_UPPER_INCLUSIVE_VALUE),
 				ValueRange::isUpperBoundInclusive,
 				ValueRange::setUpperBoundInclusive);
 	}

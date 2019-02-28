@@ -86,7 +86,7 @@ public interface ModuleSpecTest extends ManifestFragmentTest<ModuleSpec>,
 	default void testIsCustomizable() {
 		assertGetter(create(),
 				Boolean.TRUE, Boolean.FALSE,
-				DEFAULT(Boolean.valueOf(ModuleSpec.DEFAULT_IS_CUSTOMIZABLE)),
+				DEFAULT(ModuleSpec.DEFAULT_IS_CUSTOMIZABLE),
 				ModuleSpec::isCustomizable,
 				ModuleSpec::setCustomizable);
 	}

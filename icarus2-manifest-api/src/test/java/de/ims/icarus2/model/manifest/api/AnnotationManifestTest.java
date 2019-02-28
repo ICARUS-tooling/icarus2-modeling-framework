@@ -37,6 +37,7 @@ import org.junit.jupiter.api.TestFactory;
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.guard.ApiGuard;
 import de.ims.icarus2.util.data.ContentType;
 
 /**
@@ -59,6 +60,17 @@ public interface AnnotationManifestTest extends EmbeddedMemberManifestTest<Annot
 	@Override
 	default Set<ManifestType> getAllowedHostTypes() {
 		return Collections.singleton(ManifestType.ANNOTATION_LAYER_MANIFEST);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.ManifestApiTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
+	 */
+	@Override
+	default void configureApiGuard(ApiGuard<AnnotationManifest> apiGuard) {
+		EmbeddedMemberManifestTest.super.configureApiGuard(apiGuard);
+
+		apiGuard.defaultReturnValue("allowUnknownValues",
+				Boolean.valueOf(AnnotationManifest.DEFAULT_ALLOW_UNKNOWN_VALUES));
 	}
 
 	/**

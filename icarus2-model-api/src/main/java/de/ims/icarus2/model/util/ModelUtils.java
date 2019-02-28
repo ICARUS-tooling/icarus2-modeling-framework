@@ -55,6 +55,7 @@ import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.raster.Metric;
 import de.ims.icarus2.model.api.raster.Position;
+import de.ims.icarus2.model.api.raster.RasterAxis;
 import de.ims.icarus2.model.api.raster.Rasterizer;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
@@ -509,6 +510,25 @@ public final class ModelUtils {
 				&& m2.getEndOffset()<=m1.getEndOffset();
 	}
 
+	/**
+	 * Validates that the given {@code begin} and {@code end} positions are valid wrt the
+	 * rasterization used for the given {@code fragment}.
+	 *
+	 *
+	 * @param fragment
+	 * @param begin
+	 * @param end
+	 *
+	 * @throws ModelException of type {@link GlobalErrorCode#INVALID_INPUT} if both position
+	 * arguments are {@code null}.
+	 * @throws ModelException of type {@link ModelErrorCode#MODEL_INVALID_POSITION} if either
+	 * {@code begin} or {@code end} are of incorrect {@link Position#getDimensionality() dimensionality}
+	 * or if {@code end} is located before {@code begin} wrt the underlying {@link Metric}
+	 * @throws ModelException of type {@link ModelErrorCode#MODEL_POSITION_OUT_OF_BOUNDS} if either
+	 * of the two position arguments declares a {@link Position#getValue(int)} value which violates
+	 * the {@link RasterAxis#getRasterSize(Item, FragmentLayer, Object) bounds} calculated for item
+	 * {@link Fragment#getItem() associated with} the {@code fragment}.
+	 */
 	public static void checkFragmentPositions(Fragment fragment, Position begin, Position end) {
 		if(begin==null && end==null)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,

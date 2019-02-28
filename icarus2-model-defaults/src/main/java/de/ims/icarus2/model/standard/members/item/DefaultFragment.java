@@ -21,6 +21,7 @@ import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.model.api.layer.FragmentLayer;
 import de.ims.icarus2.model.api.members.MemberType;
+import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.raster.Position;
@@ -42,6 +43,37 @@ public class DefaultFragment extends DefaultItem implements Fragment {
 	private Position fragmentBegin;
 	@Reference(ReferenceType.DOWNLINK)
 	private Position fragmentEnd;
+
+	public DefaultFragment() {
+		// no-op
+	}
+
+	public DefaultFragment(Container container) {
+		super(container);
+	}
+
+	public DefaultFragment(Container container, long id) {
+		super(container, id);
+	}
+
+	public DefaultFragment(Container container, long id, Item item) {
+		this(container, id);
+
+		setItem(item);
+	}
+
+	public DefaultFragment(Container container, long id, Item item,
+			Position fragmentBegin, Position fragmentEnd) {
+		this(container, id, item);
+
+		requireNonNull(fragmentBegin);
+		requireNonNull(fragmentEnd);
+
+		ModelUtils.checkFragmentPositions(this, fragmentBegin, fragmentEnd);
+
+		this.fragmentBegin = fragmentBegin;
+		this.fragmentEnd = fragmentEnd;
+	}
 
 	/**
 	 * @param item the item to set
@@ -130,7 +162,7 @@ public class DefaultFragment extends DefaultItem implements Fragment {
 	 */
 	@Override
 	public FragmentLayer getLayer() {
-		return (FragmentLayer) getContainer().getLayer();
+		return (FragmentLayer) expectContainer().getLayer();
 	}
 
 	/**

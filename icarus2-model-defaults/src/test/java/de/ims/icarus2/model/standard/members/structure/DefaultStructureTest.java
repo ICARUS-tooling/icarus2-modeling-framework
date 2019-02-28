@@ -31,8 +31,8 @@ import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertFlagGetter;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.test.TestUtils.filledArray;
+import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.test.TestUtils.randomLongPair;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -64,7 +64,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.api.members.MemberTest;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
@@ -72,6 +71,7 @@ import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureEditVerifier;
+import de.ims.icarus2.model.api.members.structure.StructureTest;
 import de.ims.icarus2.model.manifest.api.ContainerFlag;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.StructureFlag;
@@ -86,7 +86,7 @@ import de.ims.icarus2.util.collections.set.DataSet;
  * @author Markus Gärtner
  *
  */
-class DefaultStructureTest implements MemberTest<Structure> {
+class DefaultStructureTest implements StructureTest<Structure> {
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()

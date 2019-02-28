@@ -19,6 +19,8 @@ package de.ims.icarus2.model.api.members.container;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.manager.ItemList;
 import de.ims.icarus2.model.api.members.structure.Structure;
@@ -39,6 +41,8 @@ import de.ims.icarus2.util.collections.set.DataSet;
  *
  */
 public interface Container extends Item, ManifestOwner<ContainerManifestBase<?>>, ItemList {
+
+	public static final boolean DEFAULT_ITEMS_COMPLETE = false;
 
 	/**
 	 * Returns the type of this container. This provides
@@ -92,7 +96,7 @@ public interface Container extends Item, ManifestOwner<ContainerManifestBase<?>>
 	 *
 	 * @return
 	 */
-	Container getBoundaryContainer();
+	@Nullable Container getBoundaryContainer();
 
 	/**
 	 * Returns {@code true} in case the container contains all the elements it
@@ -133,11 +137,11 @@ public interface Container extends Item, ManifestOwner<ContainerManifestBase<?>>
 	Item getItemAt(long index);
 
 	default Item getFirstItem() {
-		return getItemAt(0L);
+		return getItemCount()==0L ? null : getItemAt(0L);
 	}
 
 	default Item getLastItem() {
-		return getItemAt(getItemCount()-1);
+		return getItemCount()==0L ? null : getItemAt(getItemCount()-1);
 	}
 
 	/**

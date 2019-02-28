@@ -146,7 +146,7 @@ public class ContextManifestXmlDelegate extends AbstractMemberManifestXmlDelegat
 		// Write flags
 		if(manifest.isLocalIndependentContext()) {
 			writeFlag(serializer, ManifestXmlAttributes.INDEPENDENT,
-					manifest.isIndependentContext(), ContextManifest.DEFAULT_INDEPENDENT_VALUE);
+					manifest.isIndependentContext(), ContextManifest.DEFAULT_INDEPENDENT_CONTEXT_VALUE);
 		}
 		if(manifest.isLocalEditable()) {
 			writeFlag(serializer, ManifestXmlAttributes.EDITABLE,
@@ -220,7 +220,7 @@ public class ContextManifestXmlDelegate extends AbstractMemberManifestXmlDelegat
 		ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.FOUNDATION_LAYER)
 			.ifPresent(manifest::setFoundationLayerId);
 
-		readFlag(attributes, ManifestXmlAttributes.INDEPENDENT, ContextManifest.DEFAULT_INDEPENDENT_VALUE)
+		readFlag(attributes, ManifestXmlAttributes.INDEPENDENT, ContextManifest.DEFAULT_INDEPENDENT_CONTEXT_VALUE)
 			.ifPresent(manifest::setIndependentContext);
 
 		readFlag(attributes, ManifestXmlAttributes.EDITABLE, ContextManifest.DEFAULT_EDITABLE_VALUE)

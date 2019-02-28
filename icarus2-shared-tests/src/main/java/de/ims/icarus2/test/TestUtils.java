@@ -263,9 +263,13 @@ public class TestUtils {
 		return obj!=null && Mockito.mockingDetails(obj).isMock();
 	}
 
+	private static final Supplier<String> msg(String s, Object...params) {
+		return () -> String.format(s, params);
+	}
+
 	public static <T extends Object> T assertMock(T mock) {
-		assertNotNull(mock, "Mock is null");
-		assertTrue(isMock(mock), "Given object is not a mock: "+mock);
+		assertNotNull(mock, TestMessages.mockIsNull);
+		assertTrue(isMock(mock), msg(TestMessages.notAMock, mock));
 		return mock;
 	}
 
@@ -274,17 +278,25 @@ public class TestUtils {
 	}
 
 	public static void assertNPE(Executable executable) {
-		assertThrows(NullPointerException.class, executable);
+		assertThrows(NullPointerException.class, executable, TestMessages.expectedNPE);
+	}
+
+	public static Executable npeAsserter(Executable executable) {
+		return () -> assertNPE(executable);
+	}
+
+	public static Executable failTest(String msg) {
+		return () -> fail(msg);
 	}
 
 	public static <T extends Object> void assertPairwiseNotEquals(
 			@SuppressWarnings("unchecked") T...items) {
 		assertNotNull(items);
-		assertTrue(items.length>1);
+		assertTrue(items.length>1, msg(TestMessages.insufficientElements, "")); //TODO
 
 		for(int i=0; i<items.length-1; i++) {
 			for(int j=i+1;j<items.length; j++) {
-				assertNotEquals(items[i], items[j]);
+				assertNotEquals(items[i], items[j]); //TODO make msg
 			}
 		}
 	}
@@ -733,6 +745,15 @@ public class TestUtils {
 		return () -> value;
 	}
 
+	/**
+	 * Used to expect a very specific default boolean {@code value}.
+	 * @param value
+	 * @return
+	 */
+	public static Supplier<Boolean> DEFAULT(boolean value) {
+		return () -> Boolean.valueOf(value);
+	}
+
 	public static <K extends Object> K[] NO_ILLEGAL() {
 		return (K[]) null;
 	}
@@ -917,19 +938,19 @@ public class TestUtils {
 			T instance, K value1, K value2, Supplier<? extends K> defaultValue,
 			Function<T,K> getter, BiConsumer<T, K> setter) {
 		if(defaultValue==null || defaultValue==NO_DEFAULT()) {
-			assertNull(getter.apply(instance));
+			assertNull(getter.apply(instance), "unexpected non-null default value");
 		} else if(defaultValue==UNKNOWN_DEFAULT()) {
-			assertNotNull(getter.apply(instance));
+			assertNotNull(getter.apply(instance), "unexpected null default value");
 		} else if(defaultValue!=IGNORE_DEFAULT()) {
-			assertEquals(defaultValue.get(), getter.apply(instance));
+			assertEquals(defaultValue.get(), getter.apply(instance), "unexpected default value");
 		}
 
 		setter.accept(instance, value1);
-		assertEquals(value1, getter.apply(instance));
+		assertEquals(value1, getter.apply(instance), "not honoring first value change");
 
 		if(value2!=null) {
 			setter.accept(instance, value2);
-			assertEquals(value2, getter.apply(instance));
+			assertEquals(value2, getter.apply(instance), "not honoring second value change");
 		}
 	}
 
@@ -942,16 +963,16 @@ public class TestUtils {
 					"Testing restricted getter call on empty instance");
 
 		setter.accept(instance, value1);
-		assertEquals(value1, getter.apply(instance));
+		assertEquals(value1, getter.apply(instance), "not honoring value change");
 	}
 
 	public static <T extends Object, K extends Object> void assertOptGetter(
 			T instance, K value1, K value2, Supplier<? extends K> defaultValue,
 			Function<T,Optional<K>> getter, BiConsumer<T, K> setter) {
 		if(defaultValue==null || defaultValue==NO_DEFAULT()) {
-			assertNotPresent(getter.apply(instance));
+			assertNotPresent(getter.apply(instance), "unexpeced presence of default value");
 		} else if(defaultValue!=IGNORE_DEFAULT()) {
-			assertOptionalEquals(defaultValue.get(), getter.apply(instance));
+			assertOptionalEquals(defaultValue.get(), getter.apply(instance), "unexpected default value");
 		}
 
 		setter.accept(instance, value1);

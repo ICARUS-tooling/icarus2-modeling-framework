@@ -56,7 +56,7 @@ subprojects {
 		lucene
 		apiguardian
 		// default logging functionality
-		implementation.extendsFrom(slf4j)
+		implementation.extendsFrom(slf4j, apiguardian)
 			
 		// TEST ENVIRONMENT
 		junit
@@ -131,7 +131,7 @@ subprojects {
  	}
 		
 	test {
- 		useTestNG()
+ 		//useTestNG()
 	    useJUnitPlatform()
 	    
 	  	minHeapSize = "512m"

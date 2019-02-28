@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 import javax.annotation.Nullable;
@@ -82,10 +83,19 @@ abstract class Guardian<T> {
 
 	private final Map<Class<?>, Function<T, ?>> parameterResolvers;
 
+	private final Map<String, Object> defaultReturnValues;
+
 	protected Guardian(ApiGuard<T> apiGuard) {
 		requireNonNull(apiGuard);
 
 		parameterResolvers = requireNonNull(apiGuard.getParameterResolvers());
+		defaultReturnValues = requireNonNull(apiGuard.getDefaultReturnValues());
+	}
+
+	final Object getDefaultReturnValue(String property, Class<?> returnType) {
+		return Optional.ofNullable(defaultReturnValues.get(property))
+				.orElseThrow(() -> new IllegalStateException(
+						"No valid default return value defined for property '"+property+"'"));
 	}
 
 	/**
@@ -95,7 +105,7 @@ abstract class Guardian<T> {
 	 * @param clazz
 	 * @return
 	 */
-	final Object getDefaultValue(Class<?> clazz) {
+	private Object getDefaultValue(Class<?> clazz) {
 		return sharedDummies.get(clazz);
 	}
 

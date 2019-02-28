@@ -55,6 +55,7 @@ import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.CorpusManifest.Note;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.guard.ApiGuard;
 
 /**
  * @author Markus Gärtner
@@ -72,6 +73,19 @@ public interface CorpusManifestTest extends MemberManifestTest<CorpusManifest> {
 	@Override
 	default ManifestType getExpectedType() {
 		return ManifestType.CORPUS_MANIFEST;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.ManifestApiTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
+	 */
+	@Override
+	default void configureApiGuard(ApiGuard<CorpusManifest> apiGuard) {
+		MemberManifestTest.super.configureApiGuard(apiGuard);
+
+		apiGuard.defaultReturnValue("editable",
+				Boolean.valueOf(CorpusManifest.DEFAULT_EDITABLE_VALUE));
+		apiGuard.defaultReturnValue("parallel",
+				Boolean.valueOf(CorpusManifest.DEFAULT_PARALLEL_VALUE));
 	}
 
 	/**
@@ -302,7 +316,7 @@ public interface CorpusManifestTest extends MemberManifestTest<CorpusManifest> {
 		assertGetter(createUnlocked(),
 				Boolean.TRUE,
 				Boolean.FALSE,
-				DEFAULT(Boolean.valueOf(CorpusManifest.DEFAULT_EDITABLE_VALUE)),
+				DEFAULT(CorpusManifest.DEFAULT_EDITABLE_VALUE),
 				CorpusManifest::isEditable,
 				CorpusManifest::setEditable);
 	}
@@ -315,7 +329,7 @@ public interface CorpusManifestTest extends MemberManifestTest<CorpusManifest> {
 		assertGetter(createUnlocked(),
 				Boolean.TRUE,
 				Boolean.FALSE,
-				DEFAULT(Boolean.valueOf(CorpusManifest.DEFAULT_PARALLEL_VALUE)),
+				DEFAULT(CorpusManifest.DEFAULT_PARALLEL_VALUE),
 				CorpusManifest::isParallel,
 				CorpusManifest::setParallel);
 	}

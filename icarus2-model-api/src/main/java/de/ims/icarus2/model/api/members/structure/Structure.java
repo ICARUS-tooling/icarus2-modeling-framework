@@ -51,6 +51,10 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
  */
 public interface Structure extends Container {
 
+	public static final boolean DEFAULT_AUGMENTED = false;
+
+	public static final boolean DEFAULT_EDGES_COMPLETE = false;
+
 	//TODO: add support for "multi-structure", i.e. n-best lists, blend-graphs for trees, etc...
 
 	@Override

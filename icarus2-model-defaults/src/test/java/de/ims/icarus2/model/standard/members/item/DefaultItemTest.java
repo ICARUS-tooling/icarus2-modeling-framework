@@ -19,11 +19,13 @@
  */
 package de.ims.icarus2.model.standard.members.item;
 
+import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
 import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
+import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertFlagGetter;
 import static de.ims.icarus2.test.TestUtils.assertGetter;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
@@ -32,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -43,14 +46,17 @@ import static org.mockito.Mockito.when;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.id.IdManager;
 import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.api.members.MemberTest;
+import de.ims.icarus2.model.api.members.ItemTest;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -61,7 +67,7 @@ import de.ims.icarus2.util.IcarusUtils;
  * @author Markus Gärtner
  *
  */
-class DefaultItemTest implements MemberTest<Item> {
+class DefaultItemTest implements ItemTest<Item> {
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
@@ -150,6 +156,30 @@ class DefaultItemTest implements MemberTest<Item> {
 		@AfterEach
 		void tearDown() {
 			instance = null;
+		}
+
+		/**
+		 * Test method for {@link DefaultItem#getCorpus())}.
+		 */
+		@Test
+		void testGetCorpus() {
+			assertModelException(GlobalErrorCode.ILLEGAL_STATE, () -> instance.getCorpus());
+		}
+
+		/**
+		 * Test method for {@link DefaultItem#isTopLevel())}.
+		 */
+		@Test
+		void testIsTopLevel() {
+			assertModelException(GlobalErrorCode.ILLEGAL_STATE, () -> instance.isTopLevel());
+		}
+
+		/**
+		 * Test method for {@link DefaultItem#getLayer())}.
+		 */
+		@Test
+		void testGetLayer() {
+			assertModelException(GlobalErrorCode.ILLEGAL_STATE, () -> instance.getLayer());
 		}
 
 		/**
@@ -306,6 +336,7 @@ class DefaultItemTest implements MemberTest<Item> {
 	 *
 	 */
 	@Tag(RANDOMIZED)
+	@Nested
 	class WithComplexEnvironment {
 		private IdManager idManager;
 		private ItemLayer layer;
@@ -362,18 +393,49 @@ class DefaultItemTest implements MemberTest<Item> {
 		 * Test method for {@link de.ims.icarus2.model.standard.members.item.DefaultItem#revive()}.
 		 */
 		@SuppressWarnings("boxing")
-		@Test
+		@RepeatedTest(value=RUNS)
 		void testRevive() {
 			when(idManager.indexOfId(anyLong())).thenReturn(IcarusUtils.UNSET_LONG);
 
 			assertFalse(instance.revive());
 
-			instance.setContainer(mockContainer());
-			instance.setId(1);
-
 			when(idManager.indexOfId(id)).thenReturn(index);
 
 			assertTrue(instance.revive());
+		}
+
+		/**
+		 * Test method for {@link DefaultItem#getCorpus())}.
+		 */
+		@Test
+		void testGetCorpus() {
+			Corpus corpus = mock(Corpus.class);
+
+			when(container.getCorpus()).thenReturn(corpus);
+			assertSame(corpus, instance.getCorpus());
+
+			verify(container).getCorpus();
+		}
+
+		/**
+		 * Test method for {@link DefaultItem#isTopLevel())}.
+		 */
+		@SuppressWarnings("boxing")
+		@Test
+		void testIsTopLevel() {
+			when(container.isProxy()).thenReturn(Boolean.TRUE);
+
+			assertTrue(instance.isTopLevel());
+
+			verify(container).isProxy();
+		}
+
+		/**
+		 * Test method for {@link DefaultItem#getLayer())}.
+		 */
+		@Test
+		void testGetLayer() {
+			assertSame(layer, instance.getLayer());
 		}
 
 	}

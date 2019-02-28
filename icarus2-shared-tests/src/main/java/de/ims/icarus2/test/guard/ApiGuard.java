@@ -61,6 +61,8 @@ public class ApiGuard<T> {
 
 	private final Map<Class<?>, Function<T, ?>> parameterResolvers = new HashMap<>();
 
+	private final Map<String, Object> defaultReturnValues = new HashMap<>();
+
 	public ApiGuard(Class<T> targetClass) {
 		this.targetClass = requireNonNull(targetClass);
 		checkGuardableClass(targetClass);
@@ -115,6 +117,26 @@ public class ApiGuard<T> {
 		return self();
 	}
 
+	/**
+	 * Registers a new default vlaue for the given {@code property} or removes
+	 * and previously registered one if the {@code value} parameter is {@code null}.
+	 *
+	 * @param property
+	 * @param value
+	 * @return
+	 */
+	public ApiGuard<T> defaultReturnValue(String property, Object value) {
+		requireNonNull(property);
+
+		if(value==null) {
+			defaultReturnValues.remove(property);
+		} else {
+			defaultReturnValues.put(property, value);
+		}
+
+		return self();
+	}
+
 	public static boolean isApi(Class<?> clazz) {
 		if(clazz.isAnnotationPresent(Api.class)) {
 			return true;
@@ -165,6 +187,10 @@ public class ApiGuard<T> {
 
 	public Map<Class<?>, Function<T, ?>> getParameterResolvers() {
 		return Collections.unmodifiableMap(parameterResolvers);
+	}
+
+	public Map<String, Object> getDefaultReturnValues() {
+		return Collections.unmodifiableMap(defaultReturnValues);
 	}
 
 	public Supplier<? extends T> instanceCreator() {

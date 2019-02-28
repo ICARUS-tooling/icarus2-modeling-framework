@@ -4,13 +4,16 @@
 package de.ims.icarus2.test.reflect;
 
 import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
 import java.util.Comparator;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Markus Gärtner
  *
  */
-class RefUtils {
+public class RefUtils {
 
 	private static final int INTERFACE = 1;
 	private static final int CLASS = 0;
@@ -42,4 +45,24 @@ class RefUtils {
 
 		return INHERITANCE_ORDER.compare(c1, c2);
 	};
+
+	public static String toSimpleString(Executable executable) {
+		StringBuilder sb = new StringBuilder();
+		if(executable instanceof Method) {
+			sb.append(((Method)executable).getReturnType().getSimpleName()).append(" ");
+		}
+
+		String name = executable.getName();
+		int split = name.lastIndexOf('.');
+
+		sb.append(name.substring(split+1));
+		sb.append('(');
+		sb.append(String.join(", ",
+				Stream.of(executable.getParameterTypes())
+				.map(Class::getSimpleName)
+				.collect(Collectors.toList())));
+		sb.append(')');
+
+		return sb.toString();
+	}
 }

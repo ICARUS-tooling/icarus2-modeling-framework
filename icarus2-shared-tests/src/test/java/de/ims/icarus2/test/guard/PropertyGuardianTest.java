@@ -38,11 +38,11 @@ class PropertyGuardianTest {
 			assertFilteredMethods("setter1", "getter1");
 		}
 
-		@Test
-		void tmp() {
-			Stream.of(Dummy1.class.getMethods())
-					.forEach(m -> System.out.println(m.getName()+": "+m.getReturnType()));
-		}
+//		@Test
+//		void tmp() {
+//			Stream.of(Dummy1.class.getMethods())
+//					.forEach(m -> System.out.println(m.getName()+": "+m.getReturnType()));
+//		}
 	}
 
 	// DUMMY CLASSES

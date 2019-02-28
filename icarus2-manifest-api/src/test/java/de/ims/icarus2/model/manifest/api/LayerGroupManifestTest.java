@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Test;
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.annotations.OverrideTest;
+import de.ims.icarus2.test.guard.ApiGuard;
 
 /**
  * @author Markus Gärtner
@@ -74,6 +75,17 @@ public interface LayerGroupManifestTest
 	@Override
 	default Set<ManifestType> getAllowedHostTypes() {
 		return Collections.singleton(ManifestType.CONTEXT_MANIFEST);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.ManifestApiTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
+	 */
+	@Override
+	default void configureApiGuard(ApiGuard<LayerGroupManifest> apiGuard) {
+		ManifestFragmentTest.super.configureApiGuard(apiGuard);
+
+		apiGuard.defaultReturnValue("independent",
+				Boolean.valueOf(LayerGroupManifest.DEFAULT_INDEPENDENT_VALUE));
 	}
 
 	/**

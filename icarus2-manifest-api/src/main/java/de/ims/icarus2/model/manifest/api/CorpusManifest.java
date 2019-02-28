@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import de.ims.icarus2.apiguard.Getter;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.access.AccessControl;
@@ -180,7 +179,6 @@ public interface CorpusManifest extends MemberManifest<CorpusManifest> {
 	 *
 	 * @return
 	 */
-	@Getter(value="editable", defaultValue="false")
 	boolean isEditable();
 
 	/**
@@ -189,7 +187,6 @@ public interface CorpusManifest extends MemberManifest<CorpusManifest> {
 	 *
 	 * @return
 	 */
-	@Getter(value="parallel", defaultValue="false")
 	boolean isParallel();
 
 	@AccessRestriction(AccessMode.READ)

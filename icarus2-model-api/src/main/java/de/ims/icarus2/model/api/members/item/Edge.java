@@ -19,7 +19,7 @@ package de.ims.icarus2.model.api.members.item;
 import javax.annotation.Nullable;
 
 import de.ims.icarus2.apiguard.Api;
-import de.ims.icarus2.apiguard.Property;
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.structure.Structure;
 
@@ -43,6 +43,44 @@ public interface Edge extends Item {
 	@Nullable Structure getStructure();
 
 	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * In addition to the directly set flag value an edge will only be considered
+	 * alive if both its terminals are {@code non-null}.
+	 *
+	 * @see de.ims.icarus2.model.api.members.item.Item#isAlive()
+	 */
+	@Unguarded(reason = "Liveness depends on the values of terminals")
+	@Override
+	boolean isAlive();
+
+	/**
+	 * An edge cannot be locked individually, so this method must always return {@code false}.
+	 * <p>
+	 * We do not declare a default implementation here, as the
+	 * expected override hierarchy passes by the {@link Item} class which
+	 * allows locking. Therefore every {@link Edge} implementation has to
+	 * explicitly override this method.
+	 *
+	 * @see de.ims.icarus2.model.api.members.item.Item#isLocked()
+	 */
+	@Unguarded(reason = "Edges are never locked, so return value is constant")
+	@Override
+	boolean isLocked();
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * In addition to the directly set flag value an edge will automatically be
+	 * considered dirty as soon as at least one of its terminals is {@code null}.
+	 *
+	 * @see de.ims.icarus2.model.api.members.item.Item#isDirty()
+	 */
+	@Unguarded(reason = "Dirtyness depends on the values of terminals")
+	@Override
+	boolean isDirty();
+
+	/**
 	 * @see de.ims.icarus2.model.api.members.item.Item#getContainer()
 	 */
 	@Override
@@ -60,10 +98,8 @@ public interface Edge extends Item {
 		return false;
 	}
 
-	@Property
 	@Nullable Item getSource();
 
-	@Property
 	@Nullable Item getTarget();
 
 	default @Nullable Item getTerminal(boolean isSource) {
@@ -83,10 +119,8 @@ public interface Edge extends Item {
 
 	// Modification methods
 
-	@Property
 	void setSource(@Nullable Item item);
 
-	@Property
 	void setTarget(@Nullable Item item);
 
 	default void setTerminal(@Nullable Item item, boolean isSource) {

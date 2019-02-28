@@ -18,13 +18,14 @@ public final class TestTags {
 	public static final String SLOW = "slow";
 
 	/**
-	 * Marks tests that rely on randomly generated input
+	 * Marks tests that rely on randomly generated input.
 	 */
 	public static final String RANDOMIZED = "ranodmized";
 
 	/**
 	 * Marks collections of tests that are generated completely
-	 * automatic.
+	 * automatic and to a large extent outside the control of
+	 * the individual test classes.
 	 */
 	public static final String AUTOMATIC = "automatic";
 

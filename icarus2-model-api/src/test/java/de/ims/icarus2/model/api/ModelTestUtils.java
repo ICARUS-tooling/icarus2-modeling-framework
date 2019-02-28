@@ -31,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
@@ -47,6 +48,10 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
+import de.ims.icarus2.model.api.raster.Metric;
+import de.ims.icarus2.model.api.raster.Position;
+import de.ims.icarus2.model.api.raster.RasterAxis;
+import de.ims.icarus2.model.api.raster.Rasterizer;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
@@ -128,6 +133,47 @@ public class ModelTestUtils {
 
 	public static Edge mockEdge(Structure structure, Item source, Item target) {
 		return stubHost(mockEdge(source, target), structure);
+	}
+
+	public static Position mockPosition(long...values) {
+		Position position = mock(Position.class);
+		stubValues(position, values);
+		return position;
+	}
+
+	@SuppressWarnings("boxing")
+	public static Rasterizer mockRasterizer(int axisCount) {
+		Rasterizer rasterizer = mock(Rasterizer.class);
+
+		when(rasterizer.getAxisCount()).thenReturn(axisCount);
+
+		for (int i = 0; i < axisCount; i++) {
+			RasterAxis axis = mock(RasterAxis.class);
+			when(rasterizer.getRasterAxisAt(eq(i))).thenReturn(axis);
+		}
+
+		Metric<Position> metric = mock(Metric.class);
+		when(rasterizer.getMetric()).thenReturn(metric);
+
+		return rasterizer;
+	}
+
+	@SuppressWarnings("boxing")
+	public static Rasterizer stubOrder(Rasterizer rasterizer, Position pos1, Position pos2) {
+		Metric<Position> metric = assertMock(rasterizer.getMetric());
+
+		when(metric.compare(pos1, pos2)).thenReturn(-1);
+
+		return rasterizer;
+	}
+
+	@SuppressWarnings("boxing")
+	public static Position stubValues(Position position, long...values) {
+		when(position.getDimensionality()).thenReturn(values.length);
+		for (int i = 0; i < values.length; i++) {
+			when(position.getValue(eq(i))).thenReturn(values[i]);
+		}
+		return position;
 	}
 
 	@SuppressWarnings("boxing")

@@ -54,10 +54,10 @@ import org.junit.jupiter.params.converter.ConvertWith;
 import org.junit.jupiter.params.provider.CsvFileSource;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.api.members.MemberTest;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.members.structure.EdgeTest;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.util.Pair;
@@ -67,7 +67,7 @@ import de.ims.icarus2.test.util.convert.ExtendedStringToPrimitiveConverter;
  * @author Markus Gärtner
  *
  */
-class DefaultEdgeTest implements MemberTest<Edge> {
+class DefaultEdgeTest implements EdgeTest<Edge> {
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()

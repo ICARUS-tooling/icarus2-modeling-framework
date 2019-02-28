@@ -32,6 +32,7 @@ import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest.SourceType;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.annotations.OverrideTest;
+import de.ims.icarus2.test.guard.ApiGuard;
 
 /**
  * @author Markus Gärtner
@@ -53,6 +54,17 @@ public interface ImplementationManifestTest extends EmbeddedMemberManifestTest<I
 	@Override
 	default Set<ManifestType> getAllowedHostTypes() {
 		return ManifestType.getMemberTypes();
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.manifest.ManifestApiTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
+	 */
+	@Override
+	default void configureApiGuard(ApiGuard<ImplementationManifest> apiGuard) {
+		EmbeddedMemberManifestTest.super.configureApiGuard(apiGuard);
+
+		apiGuard.defaultReturnValue("useFactory",
+				Boolean.valueOf(ImplementationManifest.DEFAULT_USE_FACTORY_VALUE));
 	}
 
 	/**

@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.api.members.item;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.layer.ItemLayer;
@@ -83,21 +85,21 @@ import de.ims.icarus2.util.access.AccessRestriction;
  * 	<td>{@link #isAlive() alive}</td>
  *  <td>successfully returned from a driver's<br> {@link Driver#getItem(long, ItemLayer) getItem} method</td>
  *  <td>either uninitialized or recycled</td>
- *  <td>{@code true}</td>
+ *  <td>{@value #DEFAULT_ALIVE}</td>
  *  <td>Exception for any method on dead items</td>
  * </tr>
  * <tr>
  *  <td>{@link #isLocked() locked}</td>
  *  <td>currently processed by the driver</td>
  *  <td>in full management by model</td>
- *  <td>{@code false}</td>
+ *  <td>{@value #DEFAULT_LOCKED}</td>
  *  <td>Exception for any <i>write</i> method on locked items</td>
  * </tr>
  * <tr>
  *  <td>{@link #isDirty() dirty}</td>
  *  <td>inconsistent state (potentially unrecoverable)</td>
  *  <td>consistent with background data storage</td>
- *  <td>{@code false}</td>
+ *  <td>{@value #DEFAULT_DIRTY}</td>
  *  <td>Exception for any <i>read</i> method on dirty items</td>
  * </tr>
  * </table>
@@ -109,6 +111,10 @@ import de.ims.icarus2.util.access.AccessRestriction;
  * are subject to long running background computations (like reading and converting audio or video data).
  * Visualizations of items should include dedicated optical feedback of an item's state (especially if a state
  * differs from the default).
+ * <p>
+ * Make sure to check the documentation on the flag related methods in subclasses, as they might impose additional
+ * conditions that influence the actual state of the flag. For example the {@link Edge} contract requires that
+ * a {@link Edge#isAlive() live} edge instance requires bot its terminals to be set to {@code non-null} values!
  *
  * @author Markus Gärtner
  *
@@ -116,6 +122,10 @@ import de.ims.icarus2.util.access.AccessRestriction;
  */
 @AccessControl(AccessPolicy.DENY)
 public interface Item extends CorpusMember {
+
+	public static final boolean DEFAULT_ALIVE = false;
+	public static final boolean DEFAULT_LOCKED = false;
+	public static final boolean DEFAULT_DIRTY = false;
 
 	/**
 	 * If this item is hosted within a container, returns that enclosing
@@ -133,7 +143,7 @@ public interface Item extends CorpusMember {
 	 * item is a top-level member and not hosted within a container.
 	 */
 	@AccessRestriction(AccessMode.ALL)
-	Container getContainer();
+	@Nullable Container getContainer();
 
 	/**
 	 * @see de.ims.icarus2.model.api.members.CorpusMember#getCorpus()
@@ -238,6 +248,15 @@ public interface Item extends CorpusMember {
 		return getIndex();
 	}
 
+	/**
+	 * Returns the span of <i>offset units</i> covered by this item.
+	 * <p>
+	 * If either one of {@link #getBeginOffset() begin offset} or
+	 * {@link #getEndOffset() end offset} is {@link IcarusUtils#UNSET_LONG -1}
+	 * this method will also return {@code -1}.
+	 *
+	 * @return
+	 */
 	default long getSpan() {
 		long begin = getBeginOffset();
 		if(begin==IcarusUtils.UNSET_LONG) {
@@ -293,7 +312,8 @@ public interface Item extends CorpusMember {
 	 * @return
 	 */
 	default boolean isVirtual() {
-		return getBeginOffset()==IcarusUtils.UNSET_LONG || getEndOffset()==IcarusUtils.UNSET_LONG;
+		return getBeginOffset()==IcarusUtils.UNSET_LONG
+				|| getEndOffset()==IcarusUtils.UNSET_LONG;
 	}
 
 	/**

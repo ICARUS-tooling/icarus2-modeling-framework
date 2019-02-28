@@ -41,9 +41,9 @@ public interface ItemStorage extends Recyclable {
 	 * @throws ModelException in case the given container is unfit as a
 	 * context for this storage
 	 */
-	void addNotify(Container context) throws ModelException;
+	void addNotify(Container context);
 
-	void removeNotify(Container context) throws ModelException;
+	void removeNotify(Container context);
 
 	ContainerType getContainerType();
 

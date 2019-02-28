@@ -128,7 +128,7 @@ public interface PropertyTest extends LockableTest<Property>, CloneableTest<Prop
 	default void testIsMultiValue() {
 		assertGetter(create(),
 				Boolean.TRUE, Boolean.FALSE,
-				DEFAULT(Boolean.valueOf(Property.DEFAULT_MULTI_VALUE)),
+				DEFAULT(Property.DEFAULT_MULTI_VALUE),
 				Property::isMultiValue,
 				Property::setMultiValue);
 	}

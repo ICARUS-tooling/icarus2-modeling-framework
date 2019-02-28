@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.model.api.members;
 
+import de.ims.icarus2.apiguard.Api;
 import de.ims.icarus2.model.api.corpus.Corpus;
 
 
@@ -25,6 +26,7 @@ import de.ims.icarus2.model.api.corpus.Corpus;
  * @author Markus Gärtner
  *
  */
+@Api
 public interface CorpusMember {
 
 //	/**
