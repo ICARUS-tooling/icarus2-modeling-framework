@@ -51,8 +51,12 @@ class ConstructorGuardian<T> extends Guardian<T> {
 	 */
 	@Override
 	DynamicNode createTests(TestReporter testReporter) {
-		return dynamicContainer("Constructors",
-				Stream.of(targetClass.getConstructors())
+		Constructor<?>[] constructors = targetClass.getConstructors();
+		String displayName = String.format("Constructors [%d]",
+				Integer.valueOf(constructors.length));
+
+		return dynamicContainer(displayName,
+				Stream.of(constructors)
 				.filter(c -> c.getParameterCount()>0)
 				.map(this::createTestsForConstructor)
 				.collect(Collectors.toList()));
