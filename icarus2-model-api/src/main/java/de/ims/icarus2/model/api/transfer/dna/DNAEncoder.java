@@ -33,7 +33,7 @@ import de.ims.icarus2.util.strings.StringUtil;
  * @author Markus Gärtner
  *
  */
-public class DNAEncoder extends CorpusMemberEncoder implements DNAConstants {
+public class DNAEncoder extends CorpusMemberEncoder {
 
 	/**
 	 * Serialized form of long ids in hexadecimal form
@@ -106,19 +106,19 @@ public class DNAEncoder extends CorpusMemberEncoder implements DNAConstants {
 	@Override
 	public void writeItem(Item item, IntConsumer out) {
 		writeLayer0(item.getLayer());
-		flush(out, _SEP_MID_);
+		flush(out, DNAConstants._SEP_MID_);
 
 		writeItem0(item);
-		flush(out, _SEP_END_);
+		flush(out, DNAConstants._SEP_END_);
 	}
 
 	@Override
 	public void writeItem(Item item, Appendable out) throws IOException {
 		writeLayer0(item.getLayer());
-		flush(out, _SEP_MID_);
+		flush(out, DNAConstants._SEP_MID_);
 
 		writeItem0(item);
-		flush(out, _SEP_END_);
+		flush(out, DNAConstants._SEP_END_);
 	}
 
 	@Override
@@ -135,7 +135,7 @@ public class DNAEncoder extends CorpusMemberEncoder implements DNAConstants {
 
 	@Override
 	public void writePath(CorpusPath path, IntConsumer out) {
-		out.accept(_PATH_BEGIN_);
+		out.accept(DNAConstants._PATH_BEGIN_);
 
 		int count = path.getElementCount();
 		for(int i=0; i<count; i++) {
@@ -146,7 +146,7 @@ public class DNAEncoder extends CorpusMemberEncoder implements DNAConstants {
 			switch (type) {
 			case LAYER:
 				writeLayer0(path.getLayer(i));
-				flush(out, _SEP_END_);
+				flush(out, DNAConstants._SEP_END_);
 				break;
 
 			case EDGE:
@@ -157,7 +157,7 @@ public class DNAEncoder extends CorpusMemberEncoder implements DNAConstants {
 			case EDGE_INDEX:
 			case ITEM_INDEX:
 				writeLong(path.getIndex(i));
-				flush(out, _SEP_END_);
+				flush(out, DNAConstants._SEP_END_);
 				break;
 
 			default:
@@ -165,12 +165,12 @@ public class DNAEncoder extends CorpusMemberEncoder implements DNAConstants {
 			}
 		}
 
-		out.accept(_PATH_END_);
+		out.accept(DNAConstants._PATH_END_);
 	}
 
 	@Override
 	public void writePath(CorpusPath path, Appendable out) throws IOException {
-		out.append(_PATH_BEGIN_);
+		out.append(DNAConstants._PATH_BEGIN_);
 
 		int count = path.getElementCount();
 		for(int i=0; i<count; i++) {
@@ -181,7 +181,7 @@ public class DNAEncoder extends CorpusMemberEncoder implements DNAConstants {
 			switch (type) {
 			case LAYER:
 				writeLayer0(path.getLayer(i));
-				flush(out, _SEP_END_);
+				flush(out, DNAConstants._SEP_END_);
 				break;
 
 			case EDGE:
@@ -192,7 +192,7 @@ public class DNAEncoder extends CorpusMemberEncoder implements DNAConstants {
 			case EDGE_INDEX:
 			case ITEM_INDEX:
 				writeLong(path.getIndex(i));
-				flush(out, _SEP_END_);
+				flush(out, DNAConstants._SEP_END_);
 				break;
 
 			default:
@@ -200,7 +200,7 @@ public class DNAEncoder extends CorpusMemberEncoder implements DNAConstants {
 			}
 		}
 
-		out.append(_PATH_END_);
+		out.append(DNAConstants._PATH_END_);
 	}
 
 	@Override

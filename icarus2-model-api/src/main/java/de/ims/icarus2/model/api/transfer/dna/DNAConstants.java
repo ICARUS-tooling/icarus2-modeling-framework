@@ -20,7 +20,7 @@ package de.ims.icarus2.model.api.transfer.dna;
  * @author Markus Gärtner
  *
  */
-public interface DNAConstants {
+public final class DNAConstants {
 
 	public static final char _SEP_MID_ = ':';
 	public static final char _SEP_END_ = ';';

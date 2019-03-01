@@ -54,7 +54,7 @@ import de.ims.icarus2.util.strings.StringUtil;
  * @author Markus Gärtner
  *
  */
-public class DNADecoder extends CorpusMemberDecoder implements DNAConstants {
+public class DNADecoder extends CorpusMemberDecoder {
 
 
 	private final char[] buffer = new char[16];
@@ -112,24 +112,24 @@ public class DNADecoder extends CorpusMemberDecoder implements DNAConstants {
 
 	@Override
 	public Item readItem(IntSupplier in) {
-		fill(in, _SEP_MID_);
+		fill(in, DNAConstants._SEP_MID_);
 		Layer layer = readLayer0();
 
 		checkArgument("Not an ItemLayer", ModelUtils.isItemLayer(layer));
 
-		fill(in, _SEP_END_);
+		fill(in, DNAConstants._SEP_END_);
 
 		return readItem0((ItemLayer) layer);
 	}
 
 	@Override
 	public Item readItem(Reader in) throws IOException {
-		fill(in, _SEP_MID_);
+		fill(in, DNAConstants._SEP_MID_);
 		Layer layer = readLayer0();
 
 		checkArgument("Not an ItemLayer", ModelUtils.isItemLayer(layer));
 
-		fill(in, _SEP_END_);
+		fill(in, DNAConstants._SEP_END_);
 
 		return readItem0((ItemLayer) layer);
 	}
@@ -151,18 +151,18 @@ public class DNADecoder extends CorpusMemberDecoder implements DNAConstants {
 
 	@Override
 	public CorpusPath readPath(IntSupplier in) {
-		fill(in, _PATH_BEGIN_);
+		fill(in, DNAConstants._PATH_BEGIN_);
 
 		builder.reset();
 
 		char next;
 
-		while((next = (char) in.getAsInt()) != _PATH_END_) {
+		while((next = (char) in.getAsInt()) != DNAConstants._PATH_END_) {
 			PathElementType type = PathElementType.forOrdinal(Character.digit(next, 16));
 
 			switch (type) {
 			case LAYER:
-				fill(in, _SEP_END_);
+				fill(in, DNAConstants._SEP_END_);
 				builder.appendLayer(readLayer0());
 				break;
 
@@ -175,12 +175,12 @@ public class DNADecoder extends CorpusMemberDecoder implements DNAConstants {
 				break;
 
 			case ITEM_INDEX:
-				fill(in, _SEP_END_);
+				fill(in, DNAConstants._SEP_END_);
 				builder.appendItemIndex(readLong0());
 				break;
 
 			case EDGE_INDEX:
-				fill(in, _SEP_END_);
+				fill(in, DNAConstants._SEP_END_);
 				builder.appendEdgeIndex(readLong0());
 				break;
 
@@ -194,18 +194,18 @@ public class DNADecoder extends CorpusMemberDecoder implements DNAConstants {
 
 	@Override
 	public CorpusPath readPath(Reader in) throws IOException {
-		fill(in, _PATH_BEGIN_);
+		fill(in, DNAConstants._PATH_BEGIN_);
 
 		builder.reset();
 
 		char next;
 
-		while((next = (char) in.read()) != _PATH_END_) {
+		while((next = (char) in.read()) != DNAConstants._PATH_END_) {
 			PathElementType type = PathElementType.forOrdinal(Character.digit(next, 16));
 
 			switch (type) {
 			case LAYER:
-				fill(in, _SEP_END_);
+				fill(in, DNAConstants._SEP_END_);
 				builder.appendLayer(readLayer0());
 				break;
 
@@ -218,12 +218,12 @@ public class DNADecoder extends CorpusMemberDecoder implements DNAConstants {
 				break;
 
 			case ITEM_INDEX:
-				fill(in, _SEP_END_);
+				fill(in, DNAConstants._SEP_END_);
 				builder.appendItemIndex(readLong0());
 				break;
 
 			case EDGE_INDEX:
-				fill(in, _SEP_END_);
+				fill(in, DNAConstants._SEP_END_);
 				builder.appendEdgeIndex(readLong0());
 				break;
 
