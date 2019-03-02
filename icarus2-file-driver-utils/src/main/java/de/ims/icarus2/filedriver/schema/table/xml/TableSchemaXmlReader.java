@@ -18,7 +18,9 @@ package de.ims.icarus2.filedriver.schema.table.xml;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
@@ -62,6 +64,17 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  *
  */
 public class TableSchemaXmlReader implements ObjectReader<TableSchema> {
+
+	public static List<TableSchema> readAllAsList(Reader reader, Options options)
+			throws IOException, InterruptedException {
+		List<TableSchema> result = new ArrayList<>();
+		try(TableSchemaXmlReader schemaReader = new TableSchemaXmlReader()) {
+			schemaReader.init(reader, options);
+
+			schemaReader.readAll(result::add);
+		}
+		return result;
+	}
 
 	private XMLEventReader eventReader;
 	private Stack<Object> stack = new Stack<>();

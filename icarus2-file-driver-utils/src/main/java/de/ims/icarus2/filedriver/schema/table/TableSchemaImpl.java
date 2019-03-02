@@ -31,12 +31,14 @@ import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.manifest.standard.DefaultModifiableIdentity;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.Options;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.lang.ClassUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(TableSchema.class)
 public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> implements TableSchema {
 
 	private String separator;
