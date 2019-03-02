@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerType;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.lang.ClassProxy;
 import de.ims.icarus2.util.lang.ClassUtils;
 
@@ -34,6 +35,7 @@ import de.ims.icarus2.util.lang.ClassUtils;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(LayerType.class)
 public class LayerTypeWrapper implements LayerType {
 
 	private static final Logger log = LoggerFactory

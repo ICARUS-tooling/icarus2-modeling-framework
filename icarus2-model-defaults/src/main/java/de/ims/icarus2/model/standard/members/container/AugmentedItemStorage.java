@@ -26,6 +26,7 @@ import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.seq.DataSequenceCollectionWrapper;
@@ -60,6 +61,7 @@ import de.ims.icarus2.util.collections.seq.ListSequence;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(ItemStorage.class)
 public class AugmentedItemStorage extends WrappingItemStorage {
 
 	public static final int DEFAULT_CAPACITY = 10;

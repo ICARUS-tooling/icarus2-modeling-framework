@@ -21,12 +21,14 @@ import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.standard.members.layers.AbstractLayer;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(AnnotationLayer.class)
 public class DefaultAnnotationLayer extends AbstractLayer<AnnotationLayerManifest> implements AnnotationLayer {
 
 	private AnnotationStorage storage;

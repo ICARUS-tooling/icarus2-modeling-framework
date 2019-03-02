@@ -22,11 +22,15 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * Signals that a class is aware of its potential memory footprint
+ * and that it provides further hints via annotations on its fields.
+ *
  * @author Markus Gärtner
  *
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
+@FootprintHint
 public @interface Assessable {
 
 	// marker annotation

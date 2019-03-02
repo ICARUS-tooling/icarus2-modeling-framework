@@ -29,6 +29,9 @@ import de.ims.icarus2.util.access.AccessRestriction;
 
 
 /**
+ * Common base for both the {@link ItemLayerManifest} and {@link StructureLayerManifest}
+ * class hierarchy.
+ *
  * @author Markus Gärtner
  *
  */

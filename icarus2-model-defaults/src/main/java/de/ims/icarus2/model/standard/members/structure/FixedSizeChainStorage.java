@@ -40,6 +40,7 @@ import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.container.ImmutableContainerEditVerifier;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.seq.ListSequence;
 
@@ -66,6 +67,7 @@ import de.ims.icarus2.util.collections.seq.ListSequence;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(EdgeStorage.class)
 public class FixedSizeChainStorage implements EdgeStorage {
 
 	protected RootItem<Edge> root;
@@ -778,6 +780,7 @@ public class FixedSizeChainStorage implements EdgeStorage {
 	 * @author Markus Gärtner
 	 *
 	 */
+	@TestableImplementation(StructureEditVerifier.class)
 	public static class FixedSizeChainEditVerifier extends ImmutableContainerEditVerifier implements StructureEditVerifier {
 
 		private FixedSizeChainStorage storage;

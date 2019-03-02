@@ -21,12 +21,14 @@ import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.api.highlight.Highlight;
 import de.ims.icarus2.model.api.highlight.HighlightInfo;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(Highlight.class)
 public class SimpleHighlight implements Highlight {
 
 	private final DataSet<Item> items;

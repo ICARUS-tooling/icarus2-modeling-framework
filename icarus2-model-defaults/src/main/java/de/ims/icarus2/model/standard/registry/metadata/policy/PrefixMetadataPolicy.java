@@ -24,6 +24,7 @@ import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.ManifestFragment;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * Implements a metadata policy for targets describable by a {@link ManifestFragment}.
@@ -34,6 +35,7 @@ import de.ims.icarus2.model.manifest.util.ManifestUtils;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(MetadataStoragePolicy.class)
 public class PrefixMetadataPolicy<M extends ManifestFragment> implements MetadataStoragePolicy<M> {
 
 	/**

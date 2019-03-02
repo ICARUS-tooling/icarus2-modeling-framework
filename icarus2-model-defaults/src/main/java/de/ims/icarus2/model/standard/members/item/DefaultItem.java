@@ -31,6 +31,7 @@ import de.ims.icarus2.model.standard.members.AbstractMember;
 import de.ims.icarus2.model.standard.members.MemberFlags;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Recyclable;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Primitive;
 import de.ims.icarus2.util.mem.Reference;
@@ -48,6 +49,7 @@ import de.ims.icarus2.util.mem.ReferenceType;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(Item.class)
 @Assessable
 public class DefaultItem extends AbstractMember implements Item, Item.ManagedItem, Recyclable {
 

@@ -20,6 +20,7 @@ import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.api.registry.MetadataStoragePolicy;
 import de.ims.icarus2.model.standard.registry.metadata.VirtualMetadataRegistry;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * Implements a metadata policy that creates a fresh new {@link VirtualMetadataRegistry} for every
@@ -31,6 +32,7 @@ import de.ims.icarus2.model.standard.registry.metadata.VirtualMetadataRegistry;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(MetadataStoragePolicy.class)
 public class IndividualVirtualMetadataPolicy<O extends Object> implements MetadataStoragePolicy<O> {
 
 	/**

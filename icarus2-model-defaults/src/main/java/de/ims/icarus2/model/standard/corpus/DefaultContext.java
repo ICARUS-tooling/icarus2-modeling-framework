@@ -45,11 +45,13 @@ import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(Context.class)
 public class DefaultContext implements Context {
 
 	private final Corpus corpus;

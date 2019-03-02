@@ -18,11 +18,13 @@ package de.ims.icarus2.model.standard.members.layers.item;
 
 import de.ims.icarus2.model.api.layer.StructureLayer;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(StructureLayer.class)
 public class DefaultStructureLayer extends DefaultItemLayer implements StructureLayer {
 
 	/**

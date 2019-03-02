@@ -27,6 +27,7 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
+@FootprintHint
 public @interface Reference {
 	ReferenceType value() default ReferenceType.UNDEFINED;
 }

@@ -27,6 +27,7 @@ import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.LazyCollection;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
@@ -34,6 +35,7 @@ import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(ItemLayerManager.class)
 public class CompoundItemLayerManager implements ItemLayerManager {
 
 	//FIXME

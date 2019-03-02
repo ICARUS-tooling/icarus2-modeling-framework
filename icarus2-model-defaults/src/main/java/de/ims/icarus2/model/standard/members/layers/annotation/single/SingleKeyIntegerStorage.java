@@ -22,11 +22,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
+import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
@@ -34,6 +36,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(AnnotationStorage.class)
 public class SingleKeyIntegerStorage extends AbstractSingleKeyStorage {
 
 	private final static Logger log = LoggerFactory.getLogger(SingleKeyIntegerStorage.class);

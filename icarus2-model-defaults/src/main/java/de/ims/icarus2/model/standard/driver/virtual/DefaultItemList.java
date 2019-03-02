@@ -23,6 +23,7 @@ import java.util.List;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.manager.ItemList;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.seq.DataSequenceCollectionWrapper;
@@ -32,6 +33,7 @@ import de.ims.icarus2.util.collections.seq.ListSequence;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(ItemList.class)
 public class DefaultItemList extends LookupList<Item> implements ItemList {
 
 	public DefaultItemList() {

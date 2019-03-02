@@ -27,11 +27,13 @@ import de.ims.icarus2.model.manifest.api.Category;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerType;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(LayerType.class)
 public class LazyLayerType implements LayerType {
 
 	private final Optional<String> id;

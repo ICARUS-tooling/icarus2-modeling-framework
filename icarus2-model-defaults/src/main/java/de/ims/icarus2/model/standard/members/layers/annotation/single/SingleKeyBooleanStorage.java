@@ -25,10 +25,12 @@ import java.util.function.Supplier;
 
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
+import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.WeakHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
@@ -36,6 +38,7 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(AnnotationStorage.class)
 public class SingleKeyBooleanStorage extends AbstractSingleKeyStorage {
 
 	private Set<Item> annotations;

@@ -22,11 +22,15 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * Allows classes to decide what {@link MemoryCalculator} to use
+ * when their memory footprint should be calculated.
+ *
  * @author Markus Gärtner
  *
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
+@FootprintHint
 public @interface Calculator {
 
 	Class<? extends MemoryCalculator> value();

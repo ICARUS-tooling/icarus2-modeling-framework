@@ -30,6 +30,7 @@ import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.standard.members.container.AbstractImmutableContainer;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
 
@@ -42,6 +43,7 @@ import de.ims.icarus2.util.collections.set.DataSet;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(Container.class)
 public class RootContainer extends AbstractImmutableContainer {
 
 	private final Supplier<? extends ItemList> supplier;

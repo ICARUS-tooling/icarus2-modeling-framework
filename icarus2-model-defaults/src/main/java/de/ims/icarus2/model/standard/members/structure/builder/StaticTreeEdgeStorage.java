@@ -27,9 +27,11 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.util.Messages;
+import de.ims.icarus2.model.standard.members.structure.EdgeStorage;
 import de.ims.icarus2.model.standard.members.structure.RootItem;
 import de.ims.icarus2.model.standard.members.structure.builder.StaticNodes.Node;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.LookupList;
 
 /**
@@ -88,6 +90,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 	 * @author Markus Gärtner
 	 *
 	 */
+	@TestableImplementation(EdgeStorage.class)
 	public static class CompactTreeEdgeStorageInt extends StaticTreeEdgeStorage {
 
 		public static final int MAX_NODE_COUNT = (1 << 8)-1;
@@ -456,6 +459,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 	 * @author Markus Gärtner
 	 *
 	 */
+	@TestableImplementation(EdgeStorage.class)
 	public static class CompactTreeEdgeStorageLong extends StaticTreeEdgeStorage {
 
 		public static final int MAX_NODE_COUNT = (1 << 16)-1;
@@ -811,6 +815,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 	 * @author Markus Gärtner
 	 *
 	 */
+	@TestableImplementation(EdgeStorage.class)
 	public static class LargeTreeEdgeStorage extends StaticTreeEdgeStorage {
 
 		private static int NO_INDEX = (int) IcarusUtils.UNSET_LONG;

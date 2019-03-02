@@ -129,9 +129,26 @@ public final class IcarusUtils {
 		OBJ_REF_SIZE = refSize;
 	}
 
+	/**
+	 * Default value when shortening strings into a readable form.
+	 */
+	public static final int PRINT_MARGIN = 80;
+
 	public static String toLoggableString(Object value) {
-		//TODO ensure the generated string is short enough and does not contain line breaks
-		return String.valueOf(value);
+		String s = String.valueOf(value);
+
+		int len = s.length();
+
+		int lb = s.indexOf('\n');
+		if(lb>0) {
+			len = Math.min(len, lb);
+		}
+
+		if(len<s.length()) {
+			s = s.substring(0, len).trim() + "[...]";
+		}
+
+		return s;
 	}
 
 	/**
@@ -218,7 +235,8 @@ public final class IcarusUtils {
 	}
 
 	@SafeVarargs
-	public static <V extends Object> Optional<V> filter(Supplier<? extends Optional<V>>...suppliers) {
+	public static <V extends Object> Optional<V> filter(
+			Supplier<? extends Optional<V>>...suppliers) {
 		for(Supplier<? extends Optional<V>> supplier : suppliers) {
 			Optional<V> optional = supplier.get();
 			if(optional.isPresent()) {

@@ -18,8 +18,6 @@ package de.ims.icarus2.model.api.driver.mapping;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.concurrent.Callable;
-
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
@@ -27,7 +25,7 @@ import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet;
 
 /**
- * A factory that creates {@link Callable} objects for lookup operations on a given
+ * A factory that creates {@link MappingRequest} objects for lookup operations on a given
  * {@link MappingReader}.
  *
  * @author Markus Gärtner

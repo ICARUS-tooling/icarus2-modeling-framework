@@ -24,14 +24,17 @@ import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.StructureType;
+import de.ims.icarus2.model.standard.members.structure.EdgeStorage;
 import de.ims.icarus2.model.standard.members.structure.RootItem;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.LookupList;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(EdgeStorage.class)
 public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<RootItem<?>> {
 
 	/**

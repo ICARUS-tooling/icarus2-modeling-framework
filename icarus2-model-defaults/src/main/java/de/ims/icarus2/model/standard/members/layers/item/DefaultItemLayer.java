@@ -26,11 +26,13 @@ import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.standard.members.container.ProxyContainer;
 import de.ims.icarus2.model.standard.members.layers.AbstractLayer;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(ItemLayer.class)
 public class DefaultItemLayer extends AbstractLayer<ItemLayerManifestBase<?>> implements ItemLayer {
 
 	private ItemLayer boundaryLayer;

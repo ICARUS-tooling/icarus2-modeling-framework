@@ -24,7 +24,9 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.standard.members.container.AbstractImmutableItemStorage;
+import de.ims.icarus2.model.standard.members.container.ItemStorage;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * Array based sorted storage for small containers using binary search for the
@@ -33,6 +35,7 @@ import de.ims.icarus2.util.IcarusUtils;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(ItemStorage.class)
 public class StaticArrayItemStorage extends AbstractImmutableItemStorage {
 
 	public static final int MAX_SIZE = 1<<10;

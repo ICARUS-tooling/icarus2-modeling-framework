@@ -31,6 +31,7 @@ import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractPart;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
@@ -38,6 +39,7 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(LayerGroup.class)
 public class DefaultLayerGroup extends AbstractPart<Context> implements LayerGroup {
 
 	private final Set<Layer> layers = new ReferenceOpenHashSet<>();

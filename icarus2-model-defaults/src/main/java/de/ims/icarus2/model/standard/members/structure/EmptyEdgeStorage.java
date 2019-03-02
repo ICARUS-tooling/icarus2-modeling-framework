@@ -23,11 +23,13 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(EdgeStorage.class)
 public class EmptyEdgeStorage extends AbstractImmutableEdgeStorage {
 
 	private RootItem<Edge> root;

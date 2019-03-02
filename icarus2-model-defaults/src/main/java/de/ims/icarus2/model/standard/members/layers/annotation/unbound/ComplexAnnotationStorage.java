@@ -25,11 +25,13 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.standard.members.layers.annotation.AbstractObjectMapStorage;
 import de.ims.icarus2.util.MutablePrimitives.GenericTypeAwareMutablePrimitive;
 import de.ims.icarus2.util.MutablePrimitives.MutablePrimitive;
 import de.ims.icarus2.util.Wrapper;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.lang.ClassUtils;
 import de.ims.icarus2.util.lang.Primitives;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -38,6 +40,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(AnnotationStorage.class)
 public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAnnotationStorage.AnnotationBundle> {
 
 	// Factory for creating annotation bundles (constructor assigns default implementation)

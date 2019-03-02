@@ -26,10 +26,12 @@ import org.slf4j.LoggerFactory;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
+import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import it.unimi.dsi.fastutil.objects.Object2ByteMap;
 import it.unimi.dsi.fastutil.objects.Object2ByteOpenHashMap;
 
@@ -37,6 +39,7 @@ import it.unimi.dsi.fastutil.objects.Object2ByteOpenHashMap;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(AnnotationStorage.class)
 public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage {
 
 	private static final Logger log = LoggerFactory

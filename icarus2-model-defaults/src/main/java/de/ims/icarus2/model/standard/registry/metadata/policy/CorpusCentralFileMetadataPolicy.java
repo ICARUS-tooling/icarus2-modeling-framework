@@ -32,6 +32,7 @@ import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.standard.io.DefaultFileStructure;
 import de.ims.icarus2.model.standard.registry.metadata.JAXBMetadataRegistry;
 import de.ims.icarus2.model.standard.registry.metadata.PlainMetadataRegistry;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * Implements a set of metadata policies that use a new file-based metadata registry for every target object.
@@ -117,6 +118,12 @@ public abstract class CorpusCentralFileMetadataPolicy<O extends Object> implemen
 		}
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	@TestableImplementation(MetadataStoragePolicy.class)
 	public static class CorpusPolicy extends CorpusCentralFileMetadataPolicy<CorpusManifest> {
 
 		/**
@@ -142,6 +149,12 @@ public abstract class CorpusCentralFileMetadataPolicy<O extends Object> implemen
 		}
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	@TestableImplementation(MetadataStoragePolicy.class)
 	public static class ContextPolicy extends CorpusCentralFileMetadataPolicy<ContextManifest> {
 
 		/**

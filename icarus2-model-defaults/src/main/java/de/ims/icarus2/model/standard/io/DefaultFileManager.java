@@ -26,12 +26,14 @@ import java.util.Map;
 
 import de.ims.icarus2.model.api.io.FileManager;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(FileManager.class)
 public class DefaultFileManager implements FileManager {
 
 	private final static Map<String, String> sharedFolderLookup;

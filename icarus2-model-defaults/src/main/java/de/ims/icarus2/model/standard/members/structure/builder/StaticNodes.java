@@ -368,7 +368,7 @@ public class StaticNodes {
 
 		public GraphNode(int[] edges, int inCount) {
 
-			Arrays.sort(edges);
+			Arrays.sort(edges); //TODO careful, aren't we mixing incoming and outgoing edges here?
 
 			this.edges = edges;
 			this.inCount = inCount;

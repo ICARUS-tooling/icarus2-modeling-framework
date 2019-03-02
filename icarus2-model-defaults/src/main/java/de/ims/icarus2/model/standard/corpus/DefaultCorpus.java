@@ -89,6 +89,7 @@ import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Options;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.collections.set.DataSet;
 import de.ims.icarus2.util.data.ContentType;
@@ -131,6 +132,7 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(Corpus.class)
 public class DefaultCorpus implements Corpus {
 
 	public static Builder newBuilder() {

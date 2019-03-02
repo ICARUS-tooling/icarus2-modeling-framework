@@ -15,17 +15,20 @@
  * limitations under the License.
  */
 /**
- * 
+ *
  */
 package de.ims.icarus2.model.standard.members.container;
 
 import de.ims.icarus2.model.api.members.container.Container;
+import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  *
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(ContainerEditVerifier.class)
 public class SingletonContainerEditVerifier extends UnrestrictedContainerEditVerifier {
 
 	/**

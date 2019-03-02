@@ -43,11 +43,13 @@ import de.ims.icarus2.model.standard.members.layers.item.DefaultItemLayer;
 import de.ims.icarus2.model.standard.members.layers.item.DefaultStructureLayer;
 import de.ims.icarus2.model.standard.util.DefaultImplementationLoader;
 import de.ims.icarus2.util.Options;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(CorpusMemberFactory.class)
 public class DefaultCorpusMemberFactory implements CorpusMemberFactory {
 
 	private final CorpusManager corpusManager;

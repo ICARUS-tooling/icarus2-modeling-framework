@@ -21,6 +21,7 @@ import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
@@ -30,6 +31,7 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(ContainerEditVerifier.class)
 public class UnrestrictedContainerEditVerifier implements ContainerEditVerifier {
 
 	private Container source;

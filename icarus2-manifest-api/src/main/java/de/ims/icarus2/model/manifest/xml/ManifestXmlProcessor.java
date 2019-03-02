@@ -61,7 +61,7 @@ public abstract class ManifestXmlProcessor {
 	 * Calls {@link ManifestXmlDelegate#reset()} on all delegates in the current
 	 * map of top-level delegates and then {@link Map#clear() clears} that map.
 	 */
-	protected void reset() {
+	protected void resetDelegates() {
 		topLevelDelegates.values().forEach(ManifestXmlDelegate::reset);
 		topLevelDelegates.clear();
 	}

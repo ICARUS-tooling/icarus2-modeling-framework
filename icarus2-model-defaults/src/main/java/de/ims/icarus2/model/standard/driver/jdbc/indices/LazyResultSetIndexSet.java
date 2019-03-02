@@ -29,6 +29,7 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * Implements an {@code IndexSet} that is backed by a {@link ResultSet}.
@@ -43,6 +44,7 @@ import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(IndexSet.class)
 public class LazyResultSetIndexSet implements IndexSet {
 
 	private volatile IndexBuffer buffer;

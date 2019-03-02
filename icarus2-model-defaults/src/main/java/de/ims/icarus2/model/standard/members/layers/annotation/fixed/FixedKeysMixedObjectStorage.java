@@ -22,6 +22,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
+import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
@@ -34,12 +35,14 @@ import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.MutablePrimitives.MutablePrimitive;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.lang.Primitives;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(AnnotationStorage.class)
 public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object[]> {
 
 	private boolean[] primitivesMask;

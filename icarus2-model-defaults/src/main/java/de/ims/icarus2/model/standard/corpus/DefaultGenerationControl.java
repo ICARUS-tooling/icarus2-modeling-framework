@@ -33,8 +33,9 @@ import de.ims.icarus2.model.api.edit.CorpusEditEvents;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.AbstractBuilder;
-import de.ims.icarus2.util.events.SimpleEventListener;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.events.EventObject;
+import de.ims.icarus2.util.events.SimpleEventListener;
 import de.ims.icarus2.util.io.IOUtil;
 import it.unimi.dsi.fastutil.Stack;
 
@@ -42,6 +43,7 @@ import it.unimi.dsi.fastutil.Stack;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(GenerationControl.class)
 public class DefaultGenerationControl implements GenerationControl, SimpleEventListener {
 
 	public static Builder newBuilder() {

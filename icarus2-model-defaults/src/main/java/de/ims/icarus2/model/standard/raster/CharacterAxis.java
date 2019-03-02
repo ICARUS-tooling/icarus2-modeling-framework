@@ -26,7 +26,14 @@ import javax.swing.Icon;
 import de.ims.icarus2.model.api.layer.FragmentLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.raster.RasterAxis;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
+/**
+ *
+ * @author Markus Gärtner
+ *
+ */
+@TestableImplementation(RasterAxis.class)
 public class CharacterAxis implements RasterAxis {
 
 	private static final String id = "characterAxis";

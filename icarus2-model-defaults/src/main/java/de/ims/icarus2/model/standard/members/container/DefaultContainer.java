@@ -37,6 +37,7 @@ import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.MemberFlags;
 import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.util.Recyclable;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
 import de.ims.icarus2.util.mem.Assessable;
@@ -47,6 +48,7 @@ import de.ims.icarus2.util.mem.Reference;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(Container.class)
 @Assessable
 public class DefaultContainer extends DefaultItem implements Container, Recyclable {
 

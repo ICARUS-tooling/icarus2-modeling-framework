@@ -21,6 +21,7 @@ import java.util.Arrays;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.raster.Position;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * @author Markus Gärtner
@@ -44,6 +45,7 @@ public class Positions {
 		}
 	}
 
+	@TestableImplementation(Position.class)
 	public static class Position1D implements Position, Comparable<Position1D> {
 
 		private final long x;
@@ -119,6 +121,7 @@ public class Positions {
 
 	}
 
+	@TestableImplementation(Position.class)
 	public static class Position2D implements Position {
 
 		private final long x, y;
@@ -200,6 +203,7 @@ public class Positions {
 		}
 	}
 
+	@TestableImplementation(Position.class)
 	public static class Position3D implements Position {
 
 		private final long x, y, z;
@@ -292,6 +296,7 @@ public class Positions {
 		}
 	}
 
+	@TestableImplementation(Position.class)
 	public static class PositionND implements Position {
 
 		private final long[] vector;

@@ -20,6 +20,7 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 
 import de.ims.icarus2.model.api.driver.mods.ModuleState;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.id.StaticIdentity;
 
@@ -27,6 +28,7 @@ import de.ims.icarus2.util.id.StaticIdentity;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(ModuleState.class)
 public class DefaultModuleState extends StaticIdentity implements ModuleState {
 
 	private boolean indeterminate;

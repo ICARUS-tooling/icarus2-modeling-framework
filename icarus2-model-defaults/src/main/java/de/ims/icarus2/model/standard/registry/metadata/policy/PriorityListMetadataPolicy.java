@@ -24,6 +24,7 @@ import java.util.List;
 import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.api.registry.MetadataStoragePolicy;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * Implements a delegating metadata policy that takes a priority list of actual policies
@@ -37,6 +38,7 @@ import de.ims.icarus2.model.api.registry.MetadataStoragePolicy;
  *
  * @param <O>
  */
+@TestableImplementation(MetadataStoragePolicy.class)
 public class PriorityListMetadataPolicy<O extends Object> implements MetadataStoragePolicy<O> {
 
 	@SuppressWarnings("rawtypes")

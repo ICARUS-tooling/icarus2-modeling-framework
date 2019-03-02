@@ -27,12 +27,14 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(Container.class)
 public class ProxyContainer extends AbstractImmutableContainer {
 
 	private final ItemLayer layer;

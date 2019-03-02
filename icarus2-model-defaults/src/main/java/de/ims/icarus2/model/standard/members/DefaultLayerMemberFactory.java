@@ -36,11 +36,13 @@ import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.model.standard.members.structure.DefaultEdge;
 import de.ims.icarus2.model.standard.members.structure.DefaultStructure;
 import de.ims.icarus2.model.standard.members.structure.EdgeStorage;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(LayerMemberFactory.class)
 public class DefaultLayerMemberFactory implements LayerMemberFactory {
 
 	/**

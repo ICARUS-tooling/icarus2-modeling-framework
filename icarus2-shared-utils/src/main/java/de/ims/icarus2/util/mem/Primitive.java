@@ -27,6 +27,7 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
+@FootprintHint
 public @interface Primitive {
 	// marker annotation
 }

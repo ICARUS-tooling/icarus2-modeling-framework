@@ -22,7 +22,19 @@ package de.ims.icarus2.util.mem;
  */
 public enum ReferenceType {
 
+	/**
+	 * Reference to another object that <i>owns</i> this object
+	 * and as such should have already been part of the memory
+	 * footprint calculation.
+	 */
 	UPLINK,
+	/**
+	 * Reference to another object that <i>is owned</i> by this
+	 * object, i.e. a private buffer list.
+	 */
 	DOWNLINK,
+	/**
+	 * No special information is available.
+	 */
 	UNDEFINED;
 }

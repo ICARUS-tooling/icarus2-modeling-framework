@@ -41,18 +41,27 @@ import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.events.ChangeSource;
+import de.ims.icarus2.util.mem.Assessable;
+import de.ims.icarus2.util.mem.Link;
+import de.ims.icarus2.util.mem.Reference;
+import de.ims.icarus2.util.mem.ReferenceType;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
  * @author Markus Gärtner
  *
  */
+@Assessable
 public abstract class AbstractCorpusView extends AbstractPart<Corpus> implements CorpusView, OwnableCorpusPart {
 
 	// Environment
+	@Link(type=ReferenceType.UPLINK,cache=true)
 	protected final Corpus corpus;
+	@Link(type=ReferenceType.UPLINK,cache=true)
 	protected final Scope scope;
+	@Link(type=ReferenceType.UPLINK,cache=true)
 	protected final AccessMode accessMode;
+	@Reference(ReferenceType.DOWNLINK)
 	protected final ChangeSource changeSource;
 
 	// Lifecycle states

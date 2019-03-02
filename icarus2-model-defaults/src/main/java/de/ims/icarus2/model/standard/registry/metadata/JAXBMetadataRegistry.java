@@ -37,12 +37,14 @@ import org.slf4j.LoggerFactory;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.xml.jaxb.JAXBGate;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(MetadataRegistry.class)
 public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageBuffer> implements MetadataRegistry {
 
 	/**

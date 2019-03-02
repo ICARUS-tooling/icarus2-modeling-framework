@@ -30,6 +30,7 @@ import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Recyclable;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Reference;
 
@@ -38,6 +39,7 @@ import de.ims.icarus2.util.mem.Reference;
  *
  */
 @Assessable
+@TestableImplementation(Edge.class)
 public class DefaultEdge extends DefaultItem implements Edge, Recyclable {
 
 	@Reference

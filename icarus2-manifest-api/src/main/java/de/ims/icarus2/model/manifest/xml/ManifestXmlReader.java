@@ -137,7 +137,7 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 		sources.forEach(this::addSource);
 	}
 
-	public void addSource(ManifestLocation source) {
+	public ManifestXmlReader addSource(ManifestLocation source) {
 		requireNonNull(source);
 
 		if(reading.get())
@@ -147,14 +147,17 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 
 		if(!storage.add(source))
 			throw new IllegalArgumentException("Source already registered: "+source.getUrl()); //$NON-NLS-1$
+
+		return this;
 	}
 
-	@Override
-	public void reset() {
+	public ManifestXmlReader reset() {
 		if(reading.get())
 			throw new IllegalStateException("Reading in progress, cannot add new sources"); //$NON-NLS-1$
 
-		super.reset();
+		resetDelegates();
+
+		return this;
 	}
 
 	private List<Manifest> parseSources(Set<ManifestLocation> sources, XMLReader reader, InputSource inputSource) throws IOException, SAXException {
@@ -228,7 +231,7 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 		}
 	}
 
-	public void readAndRegisterAll() throws IOException, SAXException {
+	public ManifestXmlReader readAndRegisterAll() throws IOException, SAXException {
 
 		if(!reading.compareAndSet(false, true))
 			throw new IllegalStateException("Reading already in progress"); //$NON-NLS-1$
@@ -252,6 +255,8 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 		} finally {
 			reading.set(false);
 		}
+
+		return this;
 	}
 
 	/**

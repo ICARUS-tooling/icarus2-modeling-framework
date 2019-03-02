@@ -26,6 +26,7 @@ import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Reference;
 import de.ims.icarus2.util.mem.ReferenceType;
@@ -34,6 +35,7 @@ import de.ims.icarus2.util.mem.ReferenceType;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(Fragment.class)
 @Assessable
 public class DefaultFragment extends DefaultItem implements Fragment {
 

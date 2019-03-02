@@ -29,6 +29,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.seq.DataSequenceCollectionWrapper;
@@ -46,6 +47,7 @@ import de.ims.icarus2.util.collections.seq.ListSequence;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(ItemStorage.class)
 public class ListItemStorageInt implements ItemStorage {
 
 	public static final int DEFAULT_CAPACITY = 10;

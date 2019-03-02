@@ -25,14 +25,17 @@ import java.util.function.IntFunction;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.highlight.Highlight;
+import de.ims.icarus2.model.api.highlight.HighlightCursor;
 import de.ims.icarus2.model.api.layer.HighlightLayer;
 import de.ims.icarus2.model.api.members.container.Container;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(HighlightCursor.class)
 public class LazyHighlightCursor extends AbstractHighlightCursor {
 
 	private final int concurrentHighlightCount;

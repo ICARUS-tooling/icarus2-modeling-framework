@@ -25,11 +25,13 @@ import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.api.raster.RasterAxis;
 import de.ims.icarus2.model.api.raster.Rasterizer;
 import de.ims.icarus2.model.manifest.util.Messages;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(Rasterizer.class)
 public class DefaultRasterizer implements Rasterizer {
 
 	private final RasterAxis[] axes;

@@ -20,6 +20,7 @@ import java.util.TreeMap;
 import java.util.function.BiConsumer;
 
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * Implements a virtual in-memory metadata registry whose content does not get synchronized to a
@@ -28,6 +29,7 @@ import de.ims.icarus2.model.api.registry.MetadataRegistry;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(MetadataRegistry.class)
 public class VirtualMetadataRegistry implements MetadataRegistry {
 
 	private final TreeMap<String, String> entries = new TreeMap<>();

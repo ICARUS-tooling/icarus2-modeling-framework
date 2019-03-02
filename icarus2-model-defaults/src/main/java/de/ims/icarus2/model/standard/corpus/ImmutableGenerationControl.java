@@ -23,6 +23,7 @@ import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.corpus.GenerationControl;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * Implements a generation control without any state.
@@ -33,6 +34,7 @@ import de.ims.icarus2.model.api.corpus.GenerationControl;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(GenerationControl.class)
 public class ImmutableGenerationControl implements GenerationControl {
 
 	private final Corpus corpus;

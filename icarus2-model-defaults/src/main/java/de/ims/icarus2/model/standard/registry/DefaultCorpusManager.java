@@ -64,6 +64,7 @@ import de.ims.icarus2.model.standard.corpus.DefaultCorpus;
 import de.ims.icarus2.model.standard.io.DefaultFileManager;
 import de.ims.icarus2.model.standard.registry.metadata.VirtualMetadataRegistry;
 import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.id.Identity;
 
@@ -76,6 +77,7 @@ import de.ims.icarus2.util.id.Identity;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(CorpusManager.class)
 public class DefaultCorpusManager implements CorpusManager {
 
 	public static Builder newBuilder() {

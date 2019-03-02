@@ -48,27 +48,40 @@ import de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AbstractPart;
+import de.ims.icarus2.util.annotations.TestableImplementation;
+import de.ims.icarus2.util.mem.Assessable;
+import de.ims.icarus2.util.mem.Link;
+import de.ims.icarus2.util.mem.ReferenceType;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(PageControl.class)
+@Assessable
 public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements PageControl {
 
 	public static Builder newBuilder() {
 		return new Builder();
 	}
 
+	@Link
 	protected final PageIndexBuffer pageBuffer;
+	@Link
 	protected final ItemLayerManager itemLayerManager;
 
+	@de.ims.icarus2.util.mem.Reference(ReferenceType.DOWNLINK)
 	protected final Cache<Integer, IndexSet> indexSetCache;
 
+	@de.ims.icarus2.util.mem.Reference(ReferenceType.DOWNLINK)
 	protected final Page currentPage = new Page();
+	@de.ims.icarus2.util.mem.Reference(ReferenceType.DOWNLINK)
 	protected final PageLock pageLock = new PageLock();
 
+	@de.ims.icarus2.util.mem.Reference(ReferenceType.DOWNLINK)
 	protected final ReentrantLock lock = new ReentrantLock();
 
+	@de.ims.icarus2.util.mem.Reference(ReferenceType.DOWNLINK)
 	protected final List<PageListener> pageListeners = new CopyOnWriteArrayList<>();
 
 	protected DefaultPageControl(Builder builder) {

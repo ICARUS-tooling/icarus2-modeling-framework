@@ -71,43 +71,56 @@ import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
 import de.ims.icarus2.util.events.ChangeSource;
 import de.ims.icarus2.util.lang.Lazy;
+import de.ims.icarus2.util.mem.Assessable;
+import de.ims.icarus2.util.mem.Primitive;
+import de.ims.icarus2.util.mem.Reference;
+import de.ims.icarus2.util.mem.ReferenceType;
 
 /**
  *
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(CorpusModel.class)
+@Assessable
 public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements CorpusModel {
 
 	public static Builder newBuilder() {
 		return new Builder();
 	}
 
+	@Primitive
 	protected final boolean writable;
+	@Primitive
 	protected final boolean readable;
 
+	@Reference(ReferenceType.DOWNLINK)
 	protected final ChangeSource changeSource;
 
 	/**
 	 * Listener added to the host corpus responsible for cleaning
 	 * up the model once the surrounding view gets closed
 	 */
+	@Reference(ReferenceType.DOWNLINK)
 	protected final CorpusListener viewObserver;
 
 	/**
 	 * Proxy container that represents the horizontal filtering performed
 	 * by the surrounding view. Created lazily when actually needed.
 	 */
+	@Reference(ReferenceType.DOWNLINK)
 	protected final Lazy<RootContainer> rootContainer;
 
 	/**
 	 * Raw access to back-end storage
 	 */
+	@Reference(ReferenceType.UPLINK)
 	protected final ItemLayerManager itemLayerManager;
 
 	/**
@@ -117,6 +130,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	 *
 	 * @see BufferedItemLookup
 	 */
+	@Reference(ReferenceType.DOWNLINK)
 	protected final Lazy<ItemLookup> itemLookup;
 
 	private static final Logger log = LoggerFactory.getLogger(DefaultCorpusModel.class);
@@ -128,7 +142,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		writable = builder.getAccessMode().isWrite();
 		readable = builder.getAccessMode().isRead();
 
-		viewObserver = createViewObserver();
+		viewObserver = createViewObserver(); //TODO bad, should not call non-private builder in constructor!
 		itemLookup = Lazy.create(this::createItemLookup, true);
 		rootContainer = Lazy.create(this::createRootContainer, true);
 

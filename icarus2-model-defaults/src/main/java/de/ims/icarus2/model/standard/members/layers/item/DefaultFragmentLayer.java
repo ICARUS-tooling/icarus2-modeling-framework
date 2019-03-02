@@ -25,11 +25,13 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.raster.Rasterizer;
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(FragmentLayer.class)
 public class DefaultFragmentLayer extends DefaultItemLayer implements FragmentLayer {
 
 	private Rasterizer rasterizer;

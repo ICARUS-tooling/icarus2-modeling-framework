@@ -27,6 +27,7 @@ import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.util.SpanSequence;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
 
@@ -43,6 +44,7 @@ import de.ims.icarus2.util.collections.set.DataSet;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(ItemStorage.class)
 public class SpanItemStorage implements ItemStorage {
 	protected long beginIndex = IcarusUtils.UNSET_LONG;
 	protected long endIndex = IcarusUtils.UNSET_LONG;

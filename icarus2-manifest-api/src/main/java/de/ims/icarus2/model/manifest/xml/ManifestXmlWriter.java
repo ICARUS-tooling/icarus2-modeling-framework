@@ -67,12 +67,14 @@ public class ManifestXmlWriter extends ManifestXmlProcessor {
 		getDelegate(manifest);
 	}
 
-	public void addManifest(Manifest manifest) {
+	public ManifestXmlWriter addManifest(Manifest manifest) {
 		checkManifest(manifest);
 
 		synchronized (manifests) {
 			manifests.add(manifest);
 		}
+
+		return this;
 	}
 
 	public void addManifests(List<? extends Manifest> manifests) {
@@ -85,27 +87,25 @@ public class ManifestXmlWriter extends ManifestXmlProcessor {
 		}
 	}
 
-	public void writeAll() throws Exception {
+	public ManifestXmlWriter writeAll() throws Exception {
 		synchronized (manifests) {
-			if(manifests.isEmpty()) {
-				// Nothing to do here
-				return;
+			if(!manifests.isEmpty()) {
+				XmlSerializer serializer = newSerializer(manifestLocation.getOutput());
+
+				String rootTag = manifestLocation.isTemplate() ? ManifestXmlTags.TEMPLATES : ManifestXmlTags.CORPORA;
+
+				serializer.startDocument();
+				serializer.startElement(rootTag);
+
+				ManifestXmlUtils.writeDefaultXsiInfo(serializer);
+
+				writeInline(serializer);
+
+				serializer.endElement(rootTag);
+				serializer.endDocument();
 			}
-
-			XmlSerializer serializer = newSerializer(manifestLocation.getOutput());
-
-			String rootTag = manifestLocation.isTemplate() ? ManifestXmlTags.TEMPLATES : ManifestXmlTags.CORPORA;
-
-			serializer.startDocument();
-			serializer.startElement(rootTag);
-
-			ManifestXmlUtils.writeDefaultXsiInfo(serializer);
-
-			writeInline(serializer);
-
-			serializer.endElement(rootTag);
-			serializer.endDocument();
 		}
+		return this;
 	}
 
 	public void writeInline(XmlSerializer serializer) throws Exception {
@@ -137,13 +137,13 @@ public class ManifestXmlWriter extends ManifestXmlProcessor {
 		}
 	}
 
-	@Override
-	public void reset() {
+	public ManifestXmlWriter reset() {
 		synchronized (manifests) {
 			manifests.clear();
 
-			super.reset();
+			resetDelegates();
 		}
+		return this;
 	}
 
 	/**

@@ -29,6 +29,11 @@ import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
 import de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl;
 import de.ims.icarus2.model.manifest.util.Messages;
+import de.ims.icarus2.util.mem.Assessable;
+import de.ims.icarus2.util.mem.Link;
+import de.ims.icarus2.util.mem.Primitive;
+import de.ims.icarus2.util.mem.Reference;
+import de.ims.icarus2.util.mem.ReferenceType;
 
 /**
  * Implements a buffer that holds a collection of raw {@link IndexSet} instances and
@@ -40,32 +45,38 @@ import de.ims.icarus2.model.manifest.util.Messages;
  * @author Markus Gärtner
  *
  */
+@Assessable
 public class PageIndexBuffer {
 
 	/**
 	 * Max size of a single returned {@link IndexSet}
 	 */
+	@Primitive
 	private final int pageSize;
 
 	/**
 	 * Number of pages the input indices can be split into.
 	 * Calculated at construction time
 	 */
+	@Primitive
 	private final int pageCount;
 
 	/**
 	 * Total number of index values available
 	 */
+	@Primitive
 	private final long size;
 
 	/**
 	 * Source collection of {@link IndexSet} instances
 	 */
+	@Link(cache=true)
 	private final IndexSet[] indices;
 
 	/**
 	 * Accumulated size informations for all the given index sets
 	 */
+	@Reference(ReferenceType.DOWNLINK)
 	private final long[] offsets;
 
 	public PageIndexBuffer(IndexSet[] indices, int pageSize) {

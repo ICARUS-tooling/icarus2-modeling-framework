@@ -24,6 +24,7 @@ import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.seq.SingletonSequence;
 
@@ -31,6 +32,7 @@ import de.ims.icarus2.util.collections.seq.SingletonSequence;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(ItemStorage.class)
 public class SingletonItemStorage implements ItemStorage {
 
 	protected Item singleton;

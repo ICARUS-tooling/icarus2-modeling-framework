@@ -34,12 +34,14 @@ import de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotation
 import de.ims.icarus2.model.standard.members.layers.annotation.packed.PackedDataManager.PackageHandle;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.Part;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(AnnotationStorage.class)
 public class PackedAnnotationStorage implements ManagedAnnotationStorage {
 
 	/**

@@ -36,12 +36,14 @@ import de.ims.icarus2.model.standard.members.MemberFlags;
 import de.ims.icarus2.model.standard.members.container.DefaultContainer;
 import de.ims.icarus2.model.standard.members.container.ItemStorage;
 import de.ims.icarus2.model.standard.members.structure.info.StructureInfoBuilder;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(Structure.class)
 public class DefaultStructure extends DefaultContainer implements Structure {
 
 	protected EdgeStorage edgeStorage;

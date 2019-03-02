@@ -38,6 +38,7 @@ import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
 import de.ims.icarus2.model.api.members.item.manager.ItemList;
 import de.ims.icarus2.model.standard.driver.ChunkInfoBuilder;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -47,6 +48,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(ItemLayerManager.class)
 public class VirtualItemLayerManager implements ItemLayerManager {
 
 	private final List<Layer> layers = new ArrayList<>();

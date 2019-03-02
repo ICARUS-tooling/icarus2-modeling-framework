@@ -32,11 +32,13 @@ import de.ims.icarus2.model.manifest.api.ImplementationLoader;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest.SourceType;
 import de.ims.icarus2.model.manifest.util.Messages;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(ImplementationLoader.class)
 public class DefaultImplementationLoader extends ImplementationLoader<DefaultImplementationLoader> {
 
 	private static final long serialVersionUID = 7686835827294851192L;

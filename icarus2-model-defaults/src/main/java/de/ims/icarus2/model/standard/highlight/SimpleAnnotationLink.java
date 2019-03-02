@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.model.api.highlight.HighlightInfo.AnnotationLink;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * Implements an immutable {@link AnnotationLink} that maintains
@@ -28,6 +29,7 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(AnnotationLink.class)
 public class SimpleAnnotationLink implements AnnotationLink {
 
 	private final AnnotationLayer layer;

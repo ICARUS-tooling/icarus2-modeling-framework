@@ -24,12 +24,14 @@ import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureEditVerifier;
 import de.ims.icarus2.model.standard.members.container.UnrestrictedContainerEditVerifier;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(StructureEditVerifier.class)
 public class UnrestrictedStructureEditVerifier extends UnrestrictedContainerEditVerifier implements StructureEditVerifier {
 
 	public UnrestrictedStructureEditVerifier(Structure source) {

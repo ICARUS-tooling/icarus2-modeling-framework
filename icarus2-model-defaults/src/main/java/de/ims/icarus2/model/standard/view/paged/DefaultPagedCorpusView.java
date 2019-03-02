@@ -26,12 +26,14 @@ import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
 import de.ims.icarus2.model.api.view.paged.CorpusModel;
 import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
 import de.ims.icarus2.model.standard.view.AbstractCorpusView;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.lang.Lazy;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(PagedCorpusView.class)
 public class DefaultPagedCorpusView extends AbstractCorpusView implements PagedCorpusView {
 
 	public static Builder newBuilder() {

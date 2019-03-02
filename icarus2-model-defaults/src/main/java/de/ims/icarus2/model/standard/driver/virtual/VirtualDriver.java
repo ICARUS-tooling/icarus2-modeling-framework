@@ -43,6 +43,7 @@ import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.standard.driver.AbstractDriver;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
@@ -53,6 +54,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(Driver.class)
 public class VirtualDriver extends AbstractDriver {
 
 	public static Builder newBuilder() {

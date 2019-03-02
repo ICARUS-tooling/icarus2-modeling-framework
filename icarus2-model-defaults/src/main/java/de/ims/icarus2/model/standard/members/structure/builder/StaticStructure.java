@@ -37,6 +37,7 @@ import de.ims.icarus2.model.standard.members.structure.EdgeStorage;
 import de.ims.icarus2.model.standard.members.structure.ImmutableStructureEditVerifier;
 import de.ims.icarus2.model.standard.members.structure.info.StructureInfoBuilder;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
 
@@ -44,6 +45,7 @@ import de.ims.icarus2.util.collections.set.DataSet;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(Structure.class)
 public class StaticStructure extends DefaultItem implements Structure {
 
 	private ItemStorage nodes;
