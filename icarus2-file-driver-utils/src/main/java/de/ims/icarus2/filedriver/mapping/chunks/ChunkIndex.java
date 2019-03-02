@@ -63,18 +63,6 @@ public interface ChunkIndex {
 	ResourceSet getFileSet();
 
 	/**
-	 * @deprecated use {@link #newCursor(boolean)} with a {@code readOnly} parameter of {@code true} instead
-	 */
-	@Deprecated
-	ChunkIndexReader newReader();
-
-	/**
-	 * @deprecated use {@link #newCursor(boolean)} instead
-	 */
-	@Deprecated
-	ChunkIndexWriter newWriter();
-
-	/**
 	 * Creates and returns a new cursor to interact with the data stored in the chunk index.
 	 *
 	 * @param readOnly specifies whether or not the cursor should also be able to write to the chunk index
