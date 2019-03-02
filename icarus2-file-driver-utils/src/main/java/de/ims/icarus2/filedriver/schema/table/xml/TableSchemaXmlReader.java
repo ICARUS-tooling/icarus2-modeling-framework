@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.ims.icarus2.filedriver.schema.table;
+package de.ims.icarus2.filedriver.schema.table.xml;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -36,6 +36,7 @@ import javax.xml.stream.events.XMLEvent;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
+import de.ims.icarus2.filedriver.schema.table.TableSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeTarget;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema;
@@ -44,6 +45,7 @@ import de.ims.icarus2.filedriver.schema.table.TableSchema.MemberSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.ResolverSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.SubstituteSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.SubstituteType;
+import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl;
 import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.AttributeSchemaImpl;
 import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.BlockSchemaImpl;
 import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.ColumnSchemaImpl;
@@ -59,7 +61,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  * @author Markus Gärtner
  *
  */
-public class TableSchemaXmlReader implements ObjectReader<TableSchema>, TableSchemaXmlConstants {
+public class TableSchemaXmlReader implements ObjectReader<TableSchema> {
 
 	private XMLEventReader eventReader;
 	private Stack<Object> stack = new Stack<>();
@@ -131,7 +133,7 @@ public class TableSchemaXmlReader implements ObjectReader<TableSchema>, TableSch
 	}
 
 	private static boolean isTableTag(QName name) {
-		return name.getLocalPart().equals(TAG_TABLE);
+		return name.getLocalPart().equals(TableSchemaXmlConstants.TAG_TABLE);
 	}
 
 	private void readTableSchema() throws XMLStreamException {
@@ -192,154 +194,154 @@ public class TableSchemaXmlReader implements ObjectReader<TableSchema>, TableSch
 
 	private void startElement(StartElement element) throws XMLStreamException {
 		switch (element.getName().getLocalPart()) {
-		case TAG_TABLE: {
+		case TableSchemaXmlConstants.TAG_TABLE: {
 			TableSchemaImpl tableSchema = push(new TableSchemaImpl());
 			mapAttributes(element);
 
-			String id = getAttribute(ATTR_ID);
+			String id = getAttribute(TableSchemaXmlConstants.ATTR_ID);
 			if(id!=null) {
 				tableSchema.setId(id);
 			}
 
-			String name = getAttribute(ATTR_NAME);
+			String name = getAttribute(TableSchemaXmlConstants.ATTR_NAME);
 			if(name!=null) {
 				tableSchema.setName(name);
 			}
 
-			String description = getAttribute(ATTR_DESCRIPTION);
+			String description = getAttribute(TableSchemaXmlConstants.ATTR_DESCRIPTION);
 			if(description!=null) {
 				tableSchema.setDescription(description);
 			}
 			// ignore icon declaration
 
-			String groupId = getAttribute(ATTR_GROUP_ID);
+			String groupId = getAttribute(TableSchemaXmlConstants.ATTR_GROUP_ID);
 			if(groupId!=null) {
 				tableSchema.setGroupId(groupId);
 			}
 		} break;
 
-		case TAG_BLOCK: {
+		case TableSchemaXmlConstants.TAG_BLOCK: {
 			BlockSchemaImpl blockSchema = push(new BlockSchemaImpl());
 			mapAttributes(element);
 
-			String layerId = getAttribute(ATTR_LAYER_ID);
+			String layerId = getAttribute(TableSchemaXmlConstants.ATTR_LAYER_ID);
 			if(layerId!=null) {
 				blockSchema.setLayerId(layerId);
 			}
 
-			String noEntryLabel = getAttribute(ATTR_NO_ENTRY_LABEL);
+			String noEntryLabel = getAttribute(TableSchemaXmlConstants.ATTR_NO_ENTRY_LABEL);
 			if(noEntryLabel!=null) {
 				blockSchema.setNoEntryLabel(noEntryLabel);
 			}
 
-			String columnOrderFixed = getAttribute(ATTR_COLUMN_ORDER_FIXED);
+			String columnOrderFixed = getAttribute(TableSchemaXmlConstants.ATTR_COLUMN_ORDER_FIXED);
 			if(columnOrderFixed!=null) {
 				blockSchema.setColumnOrderFixed(Boolean.parseBoolean(columnOrderFixed));
 			}
 		} break;
 
-		case TAG_BEGIN_DELIMITER:
-		case TAG_END_DELIMITER:
-		case TAG_ATTRIBUTE: {
+		case TableSchemaXmlConstants.TAG_BEGIN_DELIMITER:
+		case TableSchemaXmlConstants.TAG_END_DELIMITER:
+		case TableSchemaXmlConstants.TAG_ATTRIBUTE: {
 			AttributeSchemaImpl attributeSchema = push(new AttributeSchemaImpl());
 			mapAttributes(element);
 
-			String target = getAttribute(ATTR_TARGET);
+			String target = getAttribute(TableSchemaXmlConstants.ATTR_TARGET);
 			if(target!=null) {
 				attributeSchema.setTarget(AttributeTarget.valueOf(target.toUpperCase())); //TODO maybe implement dedicated parsing method on the enum?
 			}
 		} break;
 
-		case TAG_FALLBACK_COLUMN:
-		case TAG_COLUMN: {
+		case TableSchemaXmlConstants.TAG_FALLBACK_COLUMN:
+		case TableSchemaXmlConstants.TAG_COLUMN: {
 			ColumnSchemaImpl columnSchema = push(new ColumnSchemaImpl());
 			mapAttributes(element);
 
-			String name = getAttribute(ATTR_NAME);
+			String name = getAttribute(TableSchemaXmlConstants.ATTR_NAME);
 			if(name!=null) {
 				columnSchema.setName(name);
 			}
 
-			String annotationKey = getAttribute(ATTR_ANNOTATION_KEY);
+			String annotationKey = getAttribute(TableSchemaXmlConstants.ATTR_ANNOTATION_KEY);
 			if(annotationKey!=null) {
 				columnSchema.setAnnotationKey(annotationKey);
 			}
 
-			String ignoreColumn = getAttribute(ATTR_IGNORE);
+			String ignoreColumn = getAttribute(TableSchemaXmlConstants.ATTR_IGNORE);
 			if(ignoreColumn!=null) {
 				columnSchema.setIsIgnoreColumn(Boolean.parseBoolean(ignoreColumn));
 			}
 
-			String layerId = getAttribute(ATTR_LAYER_ID);
+			String layerId = getAttribute(TableSchemaXmlConstants.ATTR_LAYER_ID);
 			if(layerId!=null) {
 				columnSchema.setLayerId(layerId);
 			}
 
-			String noEntryLabel = getAttribute(ATTR_NO_ENTRY_LABEL);
+			String noEntryLabel = getAttribute(TableSchemaXmlConstants.ATTR_NO_ENTRY_LABEL);
 			if(noEntryLabel!=null) {
 				columnSchema.setNoEntryLabel(noEntryLabel);
 			}
 		} break;
 
-		case TAG_COMPONENT: {
+		case TableSchemaXmlConstants.TAG_COMPONENT: {
 			MemberSchemaImpl memberSchema = push(new MemberSchemaImpl());
 			mapAttributes(element);
 
-			String memberType = getAttribute(ATTR_MEMBER_TYPE);
+			String memberType = getAttribute(TableSchemaXmlConstants.ATTR_MEMBER_TYPE);
 			if(memberType!=null) {
 				memberSchema.setMemberType(MemberType.valueOf(memberType.toUpperCase()));
 			}
 
-			String reference = getAttribute(ATTR_REFERENCE);
+			String reference = getAttribute(TableSchemaXmlConstants.ATTR_REFERENCE);
 			if(reference!=null) {
 				memberSchema.setIsReference(Boolean.parseBoolean(reference));
 			}
 		} break;
 
-		case TAG_RESOLVER: {
+		case TableSchemaXmlConstants.TAG_RESOLVER: {
 			ResolverSchemaImpl resolverSchema = push(new ResolverSchemaImpl());
 			mapAttributes(element);
 
-			String type = getAttribute(ATTR_TYPE);
+			String type = getAttribute(TableSchemaXmlConstants.ATTR_TYPE);
 			if(type!=null) {
 				resolverSchema.setType(type);
 			}
 		} break;
 
-		case TAG_OPTION: {
+		case TableSchemaXmlConstants.TAG_OPTION: {
 			mapAttributes(element);
-			push(getAttribute(ATTR_NAME));
+			push(getAttribute(TableSchemaXmlConstants.ATTR_NAME));
 		} break;
 
-		case TAG_SUBSTITUTE: {
+		case TableSchemaXmlConstants.TAG_SUBSTITUTE: {
 			mapAttributes(element);
 			SubstituteSchemaImpl substituteSchema = push(new SubstituteSchemaImpl());
 
-			String type = getAttribute(ATTR_TYPE);
+			String type = getAttribute(TableSchemaXmlConstants.ATTR_TYPE);
 			if(type!=null) {
 				substituteSchema.setType(SubstituteType.valueOf(type.toUpperCase()));
 			}
 
-			String memberType = getAttribute(ATTR_MEMBER_TYPE);
+			String memberType = getAttribute(TableSchemaXmlConstants.ATTR_MEMBER_TYPE);
 			if(memberType!=null) {
 				substituteSchema.setMemberType(MemberType.valueOf(memberType.toUpperCase()));
 			}
 
-			String name = getAttribute(ATTR_NAME);
+			String name = getAttribute(TableSchemaXmlConstants.ATTR_NAME);
 			if(name!=null) {
 				substituteSchema.setName(name);
 			}
 		} break;
 
 		// Text-only tags
-		case TAG_SEPARATOR:
-		case TAG_DESCRIPTION:
-		case TAG_PATTERN:
+		case TableSchemaXmlConstants.TAG_SEPARATOR:
+		case TableSchemaXmlConstants.TAG_DESCRIPTION:
+		case TableSchemaXmlConstants.TAG_PATTERN:
 			break;
 
 		// "Wrapper" tags
-		case TAG_ATTRIBUTES:
-		case TAG_COLUMNS:
+		case TableSchemaXmlConstants.TAG_ATTRIBUTES:
+		case TableSchemaXmlConstants.TAG_COLUMNS:
 			break;
 
 		default:
@@ -352,11 +354,11 @@ public class TableSchemaXmlReader implements ObjectReader<TableSchema>, TableSch
 
 	private void endElement(EndElement element) throws XMLStreamException {
 		switch (element.getName().getLocalPart()) {
-		case TAG_TABLE:
+		case TableSchemaXmlConstants.TAG_TABLE:
 			// Leave table schema on the stack
 			break;
 
-		case TAG_BLOCK: {
+		case TableSchemaXmlConstants.TAG_BLOCK: {
 			BlockSchema blockSchema = pop(BlockSchema.class);
 			if(isContext(BlockSchema.class)) {
 				peek(BlockSchemaImpl.class).addBlock(blockSchema);
@@ -365,37 +367,37 @@ public class TableSchemaXmlReader implements ObjectReader<TableSchema>, TableSch
 			}
 		} break;
 
-		case TAG_BEGIN_DELIMITER: {
+		case TableSchemaXmlConstants.TAG_BEGIN_DELIMITER: {
 			AttributeSchema beginDelimiter = pop(AttributeSchema.class);
 			peek(BlockSchemaImpl.class).setBeginDelimiter(beginDelimiter);
 		} break;
 
-		case TAG_END_DELIMITER: {
+		case TableSchemaXmlConstants.TAG_END_DELIMITER: {
 			AttributeSchema endDelimiter = pop(AttributeSchema.class);
 			peek(BlockSchemaImpl.class).setEndDelimiter(endDelimiter);
 		} break;
 
-		case TAG_ATTRIBUTE: {
+		case TableSchemaXmlConstants.TAG_ATTRIBUTE: {
 			AttributeSchema attributeSchema = pop(AttributeSchema.class);
 			peek(BlockSchemaImpl.class).addAttribute(attributeSchema);
 		} break;
 
-		case TAG_FALLBACK_COLUMN: {
+		case TableSchemaXmlConstants.TAG_FALLBACK_COLUMN: {
 			ColumnSchema columnSchema = pop(ColumnSchema.class);
 			peek(BlockSchemaImpl.class).setFallbackColumn(columnSchema);
 		} break;
 
-		case TAG_COLUMN: {
+		case TableSchemaXmlConstants.TAG_COLUMN: {
 			ColumnSchema columnSchema = pop(ColumnSchema.class);
 			peek(BlockSchemaImpl.class).addColumn(columnSchema);
 		} break;
 
-		case TAG_COMPONENT: {
+		case TableSchemaXmlConstants.TAG_COMPONENT: {
 			MemberSchema memberSchema = pop(MemberSchema.class);
 			peek(BlockSchemaImpl.class).setComponentSchema(memberSchema);
 		} break;
 
-		case TAG_RESOLVER: {
+		case TableSchemaXmlConstants.TAG_RESOLVER: {
 			ResolverSchema resolverSchema = pop(ResolverSchema.class);
 			if(isContext(AttributeSchema.class)) {
 				peek(AttributeSchemaImpl.class).setResolver(resolverSchema);
@@ -404,12 +406,12 @@ public class TableSchemaXmlReader implements ObjectReader<TableSchema>, TableSch
 			}
 		} break;
 
-		case TAG_SUBSTITUTE: {
+		case TableSchemaXmlConstants.TAG_SUBSTITUTE: {
 			SubstituteSchema substituteSchema = pop(SubstituteSchema.class);
 			peek(ColumnSchemaImpl.class).addSubstitute(substituteSchema);
 		} break;
 
-		case TAG_SEPARATOR: {
+		case TableSchemaXmlConstants.TAG_SEPARATOR: {
 			String separator = text();
 			if(isContext(TableSchema.class)) {
 				peek(TableSchemaImpl.class).setSeparator(separator);
@@ -418,15 +420,15 @@ public class TableSchemaXmlReader implements ObjectReader<TableSchema>, TableSch
 			}
 		} break;
 
-		case TAG_PATTERN:
+		case TableSchemaXmlConstants.TAG_PATTERN:
 			peek(AttributeSchemaImpl.class).setPattern(text());
 			break;
 
-		case TAG_DESCRIPTION:
+		case TableSchemaXmlConstants.TAG_DESCRIPTION:
 			peek(TableSchemaImpl.class).setDescription(text());
 			break;
 
-		case TAG_OPTION: {
+		case TableSchemaXmlConstants.TAG_OPTION: {
 			String key = pop(String.class);
 			String value = text();
 
@@ -441,8 +443,8 @@ public class TableSchemaXmlReader implements ObjectReader<TableSchema>, TableSch
 		// none?
 
 		// "Wrapper" tags
-		case TAG_ATTRIBUTES:
-		case TAG_COLUMNS:
+		case TableSchemaXmlConstants.TAG_ATTRIBUTES:
+		case TableSchemaXmlConstants.TAG_COLUMNS:
 			break;
 
 		default:

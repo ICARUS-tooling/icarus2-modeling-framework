@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.ims.icarus2.filedriver.schema.table;
+package de.ims.icarus2.filedriver.schema.table.xml;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -25,6 +25,7 @@ import javax.xml.stream.XMLStreamException;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
+import de.ims.icarus2.filedriver.schema.table.TableSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema;
 import de.ims.icarus2.filedriver.schema.table.TableSchema.ColumnSchema;
@@ -40,7 +41,7 @@ import de.ims.icarus2.util.xml.stream.XmlStreamSerializer;
  * @author Markus Gärtner
  *
  */
-public class TableSchemaXmlWriter implements ObjectWriter<TableSchema>, TableSchemaXmlConstants {
+public class TableSchemaXmlWriter implements ObjectWriter<TableSchema> {
 
 	private XmlStreamSerializer serializer;
 
@@ -94,29 +95,29 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema>, TableSch
 	}
 
 	private void writeTableSchema(TableSchema schema) throws Exception {
-		serializer.startElement(TAG_TABLE);
+		serializer.startElement(TableSchemaXmlConstants.TAG_TABLE);
 
 		// ATTRIBUTES
 
 		// Identity
-		serializer.writeAttribute(ATTR_ID, schema.getId());
-		serializer.writeAttribute(ATTR_NAME, schema.getName());
+		serializer.writeAttribute(TableSchemaXmlConstants.ATTR_ID, schema.getId());
+		serializer.writeAttribute(TableSchemaXmlConstants.ATTR_NAME, schema.getName());
 
 		// Group ID
-		serializer.writeAttribute(ATTR_GROUP_ID, schema.getGroupId());
+		serializer.writeAttribute(TableSchemaXmlConstants.ATTR_GROUP_ID, schema.getGroupId());
 
 		// ELEMENTS
 
 		// Description
-		writeElement(TAG_DESCRIPTION, schema.getDescription().orElse(null));
+		writeElement(TableSchemaXmlConstants.TAG_DESCRIPTION, schema.getDescription().orElse(null));
 
 		// Separator
-		writeElement(TAG_SEPARATOR, schema.getSeparator());
+		writeElement(TableSchemaXmlConstants.TAG_SEPARATOR, schema.getSeparator());
 
 		// Root block
-		writeBlockSchema(TAG_BLOCK, schema.getRootBlock());
+		writeBlockSchema(TableSchemaXmlConstants.TAG_BLOCK, schema.getRootBlock());
 
-		serializer.endElement(TAG_TABLE);
+		serializer.endElement(TableSchemaXmlConstants.TAG_TABLE);
 	}
 
 	private void writeBlockSchema(String tag, BlockSchema schema) throws XMLStreamException {
@@ -129,64 +130,64 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema>, TableSch
 		// ATTRIBUTES
 
 		// Layer ID
-		serializer.writeAttribute(ATTR_LAYER_ID, schema.getLayerId());
+		serializer.writeAttribute(TableSchemaXmlConstants.ATTR_LAYER_ID, schema.getLayerId());
 
 		// No-entry label
-		serializer.writeAttribute(ATTR_NO_ENTRY_LABEL, schema.getNoEntryLabel());
+		serializer.writeAttribute(TableSchemaXmlConstants.ATTR_NO_ENTRY_LABEL, schema.getNoEntryLabel());
 
 		// Column order fixed
 		if(schema.isColumnOrderFixed()!=BlockSchema.DEFAULT_COLUMN_ORDER_FIXED) {
-			serializer.writeAttribute(ATTR_COLUMN_ORDER_FIXED, schema.isColumnOrderFixed());
+			serializer.writeAttribute(TableSchemaXmlConstants.ATTR_COLUMN_ORDER_FIXED, schema.isColumnOrderFixed());
 		}
 
 		// ELEMENTS
 
 		// Separator
-		writeElement(TAG_SEPARATOR, schema.getSeparator());
+		writeElement(TableSchemaXmlConstants.TAG_SEPARATOR, schema.getSeparator());
 
 		// Options
 		writeOptions(schema.getOptions());
 
 		// Component
-		writeMemberSchema(TAG_COMPONENT, schema.getComponentSchema());
+		writeMemberSchema(TableSchemaXmlConstants.TAG_COMPONENT, schema.getComponentSchema());
 
 		// Begin delimiter
-		writeAttributeSchema(TAG_BEGIN_DELIMITER, schema.getBeginDelimiter());
+		writeAttributeSchema(TableSchemaXmlConstants.TAG_BEGIN_DELIMITER, schema.getBeginDelimiter());
 
 		// End delimiter
-		writeAttributeSchema(TAG_END_DELIMITER, schema.getEndDelimiter());
+		writeAttributeSchema(TableSchemaXmlConstants.TAG_END_DELIMITER, schema.getEndDelimiter());
 
 		// Remaining attributes
 		AttributeSchema[] attributes = schema.getAttributes();
 		if(attributes!=null && attributes.length>0) {
-			serializer.startElement(TAG_ATTRIBUTES);
+			serializer.startElement(TableSchemaXmlConstants.TAG_ATTRIBUTES);
 			for(AttributeSchema attributeSchema : attributes) {
-				writeAttributeSchema(TAG_ATTRIBUTE, attributeSchema);
+				writeAttributeSchema(TableSchemaXmlConstants.TAG_ATTRIBUTE, attributeSchema);
 			}
-			serializer.endElement(TAG_ATTRIBUTES);
+			serializer.endElement(TableSchemaXmlConstants.TAG_ATTRIBUTES);
 		}
 
 		// Columns
 		ColumnSchema[] columns = schema.getColumns();
 		if(columns!=null && columns.length>0) {
-			serializer.startElement(TAG_COLUMNS);
+			serializer.startElement(TableSchemaXmlConstants.TAG_COLUMNS);
 			for(ColumnSchema columnSchema : columns) {
-				writeColumnSchema(TAG_COLUMN, columnSchema);
+				writeColumnSchema(TableSchemaXmlConstants.TAG_COLUMN, columnSchema);
 			}
-			serializer.endElement(TAG_COLUMNS);
+			serializer.endElement(TableSchemaXmlConstants.TAG_COLUMNS);
 		}
 
 		// Fallback column
-		writeColumnSchema(TAG_FALLBACK_COLUMN, schema.getFallbackColumn());
+		writeColumnSchema(TableSchemaXmlConstants.TAG_FALLBACK_COLUMN, schema.getFallbackColumn());
 
 		// Nested blocks
 		BlockSchema[] nestedBlocks = schema.getNestedBlocks();
 		if(nestedBlocks!=null && nestedBlocks.length>0) {
-			serializer.startElement(TAG_NESTED_BLOCKS);
+			serializer.startElement(TableSchemaXmlConstants.TAG_NESTED_BLOCKS);
 			for(BlockSchema blockSchema : nestedBlocks) {
-				writeBlockSchema(TAG_BLOCK, blockSchema);
+				writeBlockSchema(TableSchemaXmlConstants.TAG_BLOCK, blockSchema);
 			}
-			serializer.endElement(TAG_NESTED_BLOCKS);
+			serializer.endElement(TableSchemaXmlConstants.TAG_NESTED_BLOCKS);
 		}
 
 		serializer.endElement(tag);
@@ -197,10 +198,10 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema>, TableSch
 			for(String key : options.keySet()) {
 				String value = String.valueOf(options.get(key));
 
-				serializer.startElement(TAG_OPTION);
-				serializer.writeAttribute(ATTR_NAME, key);
+				serializer.startElement(TableSchemaXmlConstants.TAG_OPTION);
+				serializer.writeAttribute(TableSchemaXmlConstants.ATTR_NAME, key);
 				serializer.writeTextOrCData(value);
-				serializer.endElement(TAG_OPTION);
+				serializer.endElement(TableSchemaXmlConstants.TAG_OPTION);
 			}
 		}
 	}
@@ -213,9 +214,9 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema>, TableSch
 		// ATTRIBUTES
 
 		serializer.startEmptyElement(tag);
-		serializer.writeAttribute(ATTR_MEMBER_TYPE, schema.getMemberType().getStringValue());
+		serializer.writeAttribute(TableSchemaXmlConstants.ATTR_MEMBER_TYPE, schema.getMemberType().getStringValue());
 		if(schema.isReference()!=MemberSchema.DEFAULT_IS_REFERENCE) {
-			serializer.writeAttribute(ATTR_REFERENCE, schema.isReference());
+			serializer.writeAttribute(TableSchemaXmlConstants.ATTR_REFERENCE, schema.isReference());
 		}
 		serializer.endElement(tag);
 	}
@@ -231,15 +232,15 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema>, TableSch
 		// ATTRIBUTES
 
 		// Target
-		serializer.writeAttribute(ATTR_TARGET, schema.getTarget());
+		serializer.writeAttribute(TableSchemaXmlConstants.ATTR_TARGET, schema.getTarget());
 
 		// ELEMENTS
 
 		// Pattern
-		writeElement(TAG_PATTERN, schema.getPattern());
+		writeElement(TableSchemaXmlConstants.TAG_PATTERN, schema.getPattern());
 
 		// Resolver
-		writeResolverSchema(TAG_RESOLVER, schema.getResolver());
+		writeResolverSchema(TableSchemaXmlConstants.TAG_RESOLVER, schema.getResolver());
 
 		serializer.endElement(tag);
 	}
@@ -257,7 +258,7 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema>, TableSch
 		// ATTRIBUTES
 
 		// Type (implementing class)
-		serializer.writeAttribute(ATTR_TYPE, schema.getType());
+		serializer.writeAttribute(TableSchemaXmlConstants.ATTR_TYPE, schema.getType());
 
 		// ELEMENTS
 
@@ -277,25 +278,25 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema>, TableSch
 
 		// ATTRIBUTES
 
-		serializer.writeAttribute(ATTR_NAME, schema.getName());
-		serializer.writeAttribute(ATTR_ANNOTATION_KEY, schema.getAnnotationKey());
-		serializer.writeAttribute(ATTR_NO_ENTRY_LABEL, schema.getNoEntryLabel());
-		serializer.writeAttribute(ATTR_LAYER_ID, schema.getLayerId());
+		serializer.writeAttribute(TableSchemaXmlConstants.ATTR_NAME, schema.getName());
+		serializer.writeAttribute(TableSchemaXmlConstants.ATTR_ANNOTATION_KEY, schema.getAnnotationKey());
+		serializer.writeAttribute(TableSchemaXmlConstants.ATTR_NO_ENTRY_LABEL, schema.getNoEntryLabel());
+		serializer.writeAttribute(TableSchemaXmlConstants.ATTR_LAYER_ID, schema.getLayerId());
 		if(schema.isIgnoreColumn()!=ColumnSchema.DEFAULT_IGNORE_COLUMN) {
-			serializer.writeAttribute(ATTR_IGNORE, schema.isIgnoreColumn());
+			serializer.writeAttribute(TableSchemaXmlConstants.ATTR_IGNORE, schema.isIgnoreColumn());
 		}
 
 		// ELEMENTS
 
 		// Substitutes
 		if(schema.hasSubstitutes()) {
-			writeSubstituteSchema(TAG_SUBSTITUTE, schema.getSubstitute(SubstituteType.ADDITION));
-			writeSubstituteSchema(TAG_SUBSTITUTE, schema.getSubstitute(SubstituteType.REPLACEMENT));
-			writeSubstituteSchema(TAG_SUBSTITUTE, schema.getSubstitute(SubstituteType.TARGET));
+			writeSubstituteSchema(TableSchemaXmlConstants.TAG_SUBSTITUTE, schema.getSubstitute(SubstituteType.ADDITION));
+			writeSubstituteSchema(TableSchemaXmlConstants.TAG_SUBSTITUTE, schema.getSubstitute(SubstituteType.REPLACEMENT));
+			writeSubstituteSchema(TableSchemaXmlConstants.TAG_SUBSTITUTE, schema.getSubstitute(SubstituteType.TARGET));
 		}
 
 		// Resolver
-		writeResolverSchema(TAG_RESOLVER, schema.getResolver());
+		writeResolverSchema(TableSchemaXmlConstants.TAG_RESOLVER, schema.getResolver());
 
 		serializer.endElement(tag);
 	}
@@ -305,11 +306,11 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema>, TableSch
 			return;
 		}
 
-		serializer.startEmptyElement(TAG_SUBSTITUTE);
-		serializer.writeAttribute(ATTR_TYPE, schema.getType());
-		serializer.writeAttribute(ATTR_NAME, schema.getName());
-		serializer.writeAttribute(ATTR_MEMBER_TYPE, schema.getMemberType());
-		serializer.endElement(TAG_SUBSTITUTE);
+		serializer.startEmptyElement(TableSchemaXmlConstants.TAG_SUBSTITUTE);
+		serializer.writeAttribute(TableSchemaXmlConstants.ATTR_TYPE, schema.getType());
+		serializer.writeAttribute(TableSchemaXmlConstants.ATTR_NAME, schema.getName());
+		serializer.writeAttribute(TableSchemaXmlConstants.ATTR_MEMBER_TYPE, schema.getMemberType());
+		serializer.endElement(TableSchemaXmlConstants.TAG_SUBSTITUTE);
 	}
 
 	private void writeElement(String tag, String text) throws XMLStreamException {

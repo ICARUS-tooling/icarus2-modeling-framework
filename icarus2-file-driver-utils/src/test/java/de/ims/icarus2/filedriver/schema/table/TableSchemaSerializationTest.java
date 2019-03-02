@@ -40,6 +40,8 @@ import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.ColumnSchemaImpl;
 import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.MemberSchemaImpl;
 import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.ResolverSchemaImpl;
 import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.SubstituteSchemaImpl;
+import de.ims.icarus2.filedriver.schema.table.xml.TableSchemaXmlReader;
+import de.ims.icarus2.filedriver.schema.table.xml.TableSchemaXmlWriter;
 import de.ims.icarus2.model.api.members.MemberType;
 
 /**

@@ -14,13 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.ims.icarus2.filedriver.schema.table;
+package de.ims.icarus2.filedriver.schema.table.xml;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface TableSchemaXmlConstants {
+public final class TableSchemaXmlConstants {
 
 	public static final String TAG_TABLE = "table";
 	public static final String TAG_BLOCK = "block";

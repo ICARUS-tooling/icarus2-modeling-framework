@@ -34,7 +34,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.Converter;
 import de.ims.icarus2.filedriver.schema.table.TableConverter;
 import de.ims.icarus2.filedriver.schema.table.TableSchema;
-import de.ims.icarus2.filedriver.schema.table.TableSchemaXmlReader;
+import de.ims.icarus2.filedriver.schema.table.xml.TableSchemaXmlReader;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
