@@ -25,15 +25,8 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import de.ims.icarus2.filedriver.schema.tabular.TableSchema;
-import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl;
-import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.AttributeSchemaImpl;
-import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.BlockSchemaImpl;
-import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.ColumnSchemaImpl;
-import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.MemberSchemaImpl;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
-import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.registry.CorpusManager;
@@ -52,38 +45,6 @@ import de.ims.icarus2.util.AccessMode;
  *
  */
 public class TableConverterTest {
-
-
-	private TableSchema create2TierTableSchema() {
-
-		return new TableSchemaImpl()
-			.setRootBlock(new BlockSchemaImpl()
-				.setLayerId("sentenceLayer")
-				.setSeparator("SPACE")
-				.setEndDelimiter(new AttributeSchemaImpl().setPattern("EMPTY_LINE"))
-				.setComponentSchema(new MemberSchemaImpl().setMemberType(MemberType.CONTAINER))
-				.addBlock(new BlockSchemaImpl()
-					.setLayerId("tokenLayer")
-					.setComponentSchema(new MemberSchemaImpl().setMemberType(MemberType.ITEM))
-					.addColumn(new ColumnSchemaImpl("ID").setIsIgnoreColumn(true))
-					.addColumn(new ColumnSchemaImpl("FORM").setLayerId("annoLayer1"))
-					.addColumn(new ColumnSchemaImpl("LEMMA").setLayerId("annoLayer2")))
-				);
-	}
-
-	private TableSchema create1TierTableSchema() {
-
-		return new TableSchemaImpl()
-			.setRootBlock(new BlockSchemaImpl()
-				.setLayerId("token")
-				.setSeparator("WHITESPACES")
-				.setEndDelimiter(new AttributeSchemaImpl().setPattern("EMPTY_LINE"))
-				.setComponentSchema(new MemberSchemaImpl().setMemberType(MemberType.ITEM))
-				.addColumn(new ColumnSchemaImpl("ID").setIsIgnoreColumn(true))
-				.addColumn(new ColumnSchemaImpl("FORM").setLayerId("form"))
-				.addColumn(new ColumnSchemaImpl("LEMMA").setLayerId("lemma"))
-				);
-	}
 
 	@Test
 	@ResourceTest
