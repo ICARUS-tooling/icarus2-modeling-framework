@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.ims.icarus2.filedriver.schema.table;
+package de.ims.icarus2.filedriver.schema.tabular;
 
 import static de.ims.icarus2.util.lang.Primitives._boolean;
 import static java.util.Objects.requireNonNull;
@@ -48,7 +48,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 	private int blockCount = -1;
 
 	/**
-	 * @see de.ims.icarus2.filedriver.schema.table.TableSchema#getTotalBlockSchemaCount()
+	 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema#getTotalBlockSchemaCount()
 	 */
 	@Override
 	public int getTotalBlockSchemaCount() {
@@ -67,7 +67,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 	}
 
 	/**
-	 * @see de.ims.icarus2.filedriver.schema.table.TableSchema#getGroupId()
+	 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema#getGroupId()
 	 */
 	@Override
 	public String getGroupId() {
@@ -75,7 +75,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 	}
 
 	/**
-	 * @see de.ims.icarus2.filedriver.schema.table.TableSchema#getRootBlock()
+	 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema#getRootBlock()
 	 */
 	@Override
 	public BlockSchema getRootBlock() {
@@ -83,7 +83,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 	}
 
 	/**
-	 * @see de.ims.icarus2.filedriver.schema.table.TableSchema#getSeparator()
+	 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema#getSeparator()
 	 */
 	@Override
 	public String getSeparator() {
@@ -131,7 +131,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		private final Options options = new Options();
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema#getLayerId()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.BlockSchema#getLayerId()
 		 */
 		@Override
 		public String getLayerId() {
@@ -139,7 +139,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema#getComponentSchema()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.BlockSchema#getComponentSchema()
 		 */
 		@Override
 		public MemberSchema getComponentSchema() {
@@ -147,7 +147,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema#getBeginDelimiter()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.BlockSchema#getBeginDelimiter()
 		 */
 		@Override
 		public AttributeSchema getBeginDelimiter() {
@@ -155,7 +155,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema#getEndDelimiter()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.BlockSchema#getEndDelimiter()
 		 */
 		@Override
 		public AttributeSchema getEndDelimiter() {
@@ -163,7 +163,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema#getAttributes()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.BlockSchema#getAttributes()
 		 */
 		@Override
 		public AttributeSchema[] getAttributes() {
@@ -178,7 +178,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema#getColumns()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.BlockSchema#getColumns()
 		 */
 		@Override
 		public ColumnSchema[] getColumns() {
@@ -193,7 +193,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema#getFallbackColumn()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.BlockSchema#getFallbackColumn()
 		 */
 		@Override
 		public ColumnSchema getFallbackColumn() {
@@ -201,7 +201,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema#getNestedBlocks()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.BlockSchema#getNestedBlocks()
 		 */
 		@Override
 		public BlockSchema[] getNestedBlocks() {
@@ -216,7 +216,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema#getNoEntryLabel()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.BlockSchema#getNoEntryLabel()
 		 */
 		@Override
 		public String getNoEntryLabel() {
@@ -315,7 +315,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema#getOptions()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.BlockSchema#getOptions()
 		 */
 		@Override
 		public Options getOptions() {
@@ -329,7 +329,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema#getSeparator()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.BlockSchema#getSeparator()
 		 */
 		@Override
 		public String getSeparator() {
@@ -345,7 +345,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema#forEachNestedBlock(java.util.function.Consumer)
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.BlockSchema#forEachNestedBlock(java.util.function.Consumer)
 		 */
 		@Override
 		public void forEachNestedBlock(Consumer<? super BlockSchema> action) {
@@ -361,7 +361,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		private Boolean isReference;
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.MemberSchema#getMemberType()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.MemberSchema#getMemberType()
 		 */
 		@Override
 		public MemberType getMemberType() {
@@ -369,7 +369,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.MemberSchema#isReference()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.MemberSchema#isReference()
 		 */
 		@Override
 		public boolean isReference() {
@@ -430,7 +430,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		private AttributeTarget target;
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeSchema#getPattern()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.AttributeSchema#getPattern()
 		 */
 		@Override
 		public String getPattern() {
@@ -438,7 +438,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeSchema#getResolver()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.AttributeSchema#getResolver()
 		 */
 		@Override
 		public ResolverSchema getResolver() {
@@ -462,7 +462,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeSchema#getTarget()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.AttributeSchema#getTarget()
 		 */
 		@Override
 		public AttributeTarget getTarget() {
@@ -535,7 +535,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.ColumnSchema#getLayerId()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.ColumnSchema#getLayerId()
 		 */
 		@Override
 		public String getLayerId() {
@@ -543,7 +543,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.ColumnSchema#getAnnotationKey()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.ColumnSchema#getAnnotationKey()
 		 */
 		@Override
 		public String getAnnotationKey() {
@@ -551,7 +551,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.ColumnSchema#getNoEntryLabel()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.ColumnSchema#getNoEntryLabel()
 		 */
 		@Override
 		public String getNoEntryLabel() {
@@ -559,7 +559,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.ColumnSchema#isIgnoreColumn()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.ColumnSchema#isIgnoreColumn()
 		 */
 		@Override
 		public boolean isIgnoreColumn() {
@@ -567,7 +567,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.ColumnSchema#getResolver()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.ColumnSchema#getResolver()
 		 */
 		@Override
 		public ResolverSchema getResolver() {
@@ -575,7 +575,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.ColumnSchema#hasSubstitutes()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.ColumnSchema#hasSubstitutes()
 		 */
 		@Override
 		public boolean hasSubstitutes() {
@@ -639,7 +639,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.ColumnSchema#getSubstitute(de.ims.icarus2.filedriver.schema.table.TableSchema.SubstituteType)
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.ColumnSchema#getSubstitute(de.ims.icarus2.filedriver.schema.tabular.TableSchema.SubstituteType)
 		 */
 		@Override
 		public SubstituteSchema getSubstitute(SubstituteType type) {
@@ -693,7 +693,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		private String name;
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.SubstituteSchema#getType()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.SubstituteSchema#getType()
 		 */
 		@Override
 		public SubstituteType getType() {
@@ -701,7 +701,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.SubstituteSchema#getName()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.SubstituteSchema#getName()
 		 */
 		@Override
 		public String getName() {
@@ -709,7 +709,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.SubstituteSchema#getMemberType()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.SubstituteSchema#getMemberType()
 		 */
 		@Override
 		public MemberType getMemberType() {
@@ -780,7 +780,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		private final Options options = new Options();
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.ResolverSchema#getType()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.ResolverSchema#getType()
 		 */
 		@Override
 		public String getType() {
@@ -788,7 +788,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableSchema.ResolverSchema#getOptions()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.ResolverSchema#getOptions()
 		 */
 		@Override
 		public Options getOptions() {

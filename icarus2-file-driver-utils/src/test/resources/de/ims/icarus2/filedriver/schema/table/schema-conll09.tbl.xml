@@ -17,7 +17,7 @@
     limitations under the License.
 
 -->
-<schema id="conll09.tbl" name="CoNLL-2009 ST Format" type="de.ims.icarus2.filedriver.schema.table" group-id="sentences">
+<schema id="conll09.tbl" name="CoNLL-2009 ST Format" type="de.ims.icarus2.filedriver.schema.tabular" group-id="sentences">
 	<separator>WHITESPACES</separator>
 	
 	<block layerId="sentence">

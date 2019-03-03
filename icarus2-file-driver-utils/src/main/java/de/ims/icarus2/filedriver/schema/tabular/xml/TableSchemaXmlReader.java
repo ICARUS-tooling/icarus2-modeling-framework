@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.ims.icarus2.filedriver.schema.table.xml;
+package de.ims.icarus2.filedriver.schema.tabular.xml;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -38,22 +38,22 @@ import javax.xml.stream.events.XMLEvent;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
-import de.ims.icarus2.filedriver.schema.table.TableSchema;
-import de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeSchema;
-import de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeTarget;
-import de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema;
-import de.ims.icarus2.filedriver.schema.table.TableSchema.ColumnSchema;
-import de.ims.icarus2.filedriver.schema.table.TableSchema.MemberSchema;
-import de.ims.icarus2.filedriver.schema.table.TableSchema.ResolverSchema;
-import de.ims.icarus2.filedriver.schema.table.TableSchema.SubstituteSchema;
-import de.ims.icarus2.filedriver.schema.table.TableSchema.SubstituteType;
-import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl;
-import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.AttributeSchemaImpl;
-import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.BlockSchemaImpl;
-import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.ColumnSchemaImpl;
-import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.MemberSchemaImpl;
-import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.ResolverSchemaImpl;
-import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.SubstituteSchemaImpl;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchema;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchema.AttributeSchema;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchema.AttributeTarget;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchema.BlockSchema;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchema.ColumnSchema;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchema.MemberSchema;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchema.ResolverSchema;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchema.SubstituteSchema;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchema.SubstituteType;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.AttributeSchemaImpl;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.BlockSchemaImpl;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.ColumnSchemaImpl;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.MemberSchemaImpl;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.ResolverSchemaImpl;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.SubstituteSchemaImpl;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.io.ObjectReader;

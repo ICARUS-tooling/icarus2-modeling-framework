@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.ims.icarus2.filedriver.schema.table.xml;
+package de.ims.icarus2.filedriver.schema.tabular.xml;
 
 /**
  * @author Markus Gärtner

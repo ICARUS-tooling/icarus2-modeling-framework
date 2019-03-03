@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.ims.icarus2.filedriver.schema.table;
+package de.ims.icarus2.filedriver.schema.tabular;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
@@ -70,13 +70,13 @@ import de.ims.icarus2.filedriver.schema.resolve.Resolver;
 import de.ims.icarus2.filedriver.schema.resolve.ResolverContext;
 import de.ims.icarus2.filedriver.schema.resolve.ResolverFactory;
 import de.ims.icarus2.filedriver.schema.resolve.common.BasicAnnotationResolver;
-import de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeSchema;
-import de.ims.icarus2.filedriver.schema.table.TableSchema.AttributeTarget;
-import de.ims.icarus2.filedriver.schema.table.TableSchema.BlockSchema;
-import de.ims.icarus2.filedriver.schema.table.TableSchema.ColumnSchema;
-import de.ims.icarus2.filedriver.schema.table.TableSchema.ResolverSchema;
-import de.ims.icarus2.filedriver.schema.table.TableSchema.SubstituteSchema;
-import de.ims.icarus2.filedriver.schema.table.TableSchema.SubstituteType;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchema.AttributeSchema;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchema.AttributeTarget;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchema.BlockSchema;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchema.ColumnSchema;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchema.ResolverSchema;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchema.SubstituteSchema;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchema.SubstituteType;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
@@ -1404,7 +1404,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableConverter.ContextProcessor#prepareForReading(de.ims.icarus2.filedriver.Converter, de.ims.icarus2.filedriver.Converter.ReadMode, java.util.function.Function)
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableConverter.ContextProcessor#prepareForReading(de.ims.icarus2.filedriver.Converter, de.ims.icarus2.filedriver.Converter.ReadMode, java.util.function.Function)
 		 */
 		@Override
 		public void prepareForReading(Converter converter, ReadMode mode,
@@ -1415,7 +1415,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableConverter.ContextProcessor#close()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableConverter.ContextProcessor#close()
 		 */
 		@Override
 		public void close() {
@@ -1532,7 +1532,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableConverter.ContextProcessor#process(de.ims.icarus2.filedriver.schema.table.TableConverter.InputResolverContext)
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableConverter.ContextProcessor#process(de.ims.icarus2.filedriver.schema.tabular.TableConverter.InputResolverContext)
 		 */
 		@Override
 		public Item process(InputResolverContext context) {
@@ -1577,7 +1577,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableConverter.ContextProcessor#process(de.ims.icarus2.filedriver.schema.table.TableConverter.InputResolverContext)
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableConverter.ContextProcessor#process(de.ims.icarus2.filedriver.schema.tabular.TableConverter.InputResolverContext)
 		 */
 		@Override
 		public Item process(InputResolverContext context) {
@@ -1624,7 +1624,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableConverter.ContextProcessor#process(de.ims.icarus2.filedriver.schema.table.TableConverter.InputResolverContext)
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableConverter.ContextProcessor#process(de.ims.icarus2.filedriver.schema.tabular.TableConverter.InputResolverContext)
 		 */
 		@Override
 		public Item process(InputResolverContext context) {
@@ -1798,7 +1798,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableConverter.LineIterator#hasLine()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableConverter.LineIterator#hasLine()
 		 */
 		@Override
 		public boolean hasLine() {
@@ -1884,7 +1884,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableConverter.LineIterator#getLineNumber()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableConverter.LineIterator#getLineNumber()
 		 */
 		@Override
 		public long getLineNumber() {
@@ -1970,7 +1970,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableConverter.LineIterator#hasLine()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableConverter.LineIterator#hasLine()
 		 */
 		@Override
 		public boolean hasLine() {
@@ -2267,7 +2267,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableConverter.ContextProcessor#prepareForReading(de.ims.icarus2.filedriver.Converter, de.ims.icarus2.filedriver.Converter.ReadMode, java.util.function.Function)
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableConverter.ContextProcessor#prepareForReading(de.ims.icarus2.filedriver.Converter, de.ims.icarus2.filedriver.Converter.ReadMode, java.util.function.Function)
 		 */
 		@Override
 		public void prepareForReading(Converter converter, ReadMode mode,
@@ -2276,7 +2276,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 
 		/**
-		 * @see de.ims.icarus2.filedriver.schema.table.TableConverter.ContextProcessor#close()
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableConverter.ContextProcessor#close()
 		 */
 		@Override
 		public void close() {

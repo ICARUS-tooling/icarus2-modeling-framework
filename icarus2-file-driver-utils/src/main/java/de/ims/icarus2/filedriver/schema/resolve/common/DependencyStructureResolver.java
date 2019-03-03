@@ -96,10 +96,12 @@ public class DependencyStructureResolver implements BatchResolver {
 	 * @see de.ims.icarus2.filedriver.schema.resolve.Resolver#init(de.ims.icarus2.util.Options)
 	 */
 	@Override
-	public void prepareForReading(Converter converter, ReadMode mode, Function<ItemLayer, InputCache> caches, Options options) {
+	public void prepareForReading(Converter converter, ReadMode mode,
+			Function<ItemLayer, InputCache> caches, Options options) {
 		dependencyLayer = (StructureLayer) options.get(ResolverOptions.LAYER);
 		if(dependencyLayer==null)
-			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "No layer assigned to this resolver "+getClass());
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					"No layer assigned to this resolver "+getClass());
 
 		ItemLayer sentenceLayer = dependencyLayer.getBoundaryLayer();
 

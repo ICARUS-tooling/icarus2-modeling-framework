@@ -18,10 +18,12 @@ package de.ims.icarus2.filedriver.schema.table;
 
 import org.junit.jupiter.api.Test;
 
-import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.AttributeSchemaImpl;
-import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.BlockSchemaImpl;
-import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.ColumnSchemaImpl;
-import de.ims.icarus2.filedriver.schema.table.TableSchemaImpl.MemberSchemaImpl;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchema;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.AttributeSchemaImpl;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.BlockSchemaImpl;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.ColumnSchemaImpl;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.MemberSchemaImpl;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.MemberType;
