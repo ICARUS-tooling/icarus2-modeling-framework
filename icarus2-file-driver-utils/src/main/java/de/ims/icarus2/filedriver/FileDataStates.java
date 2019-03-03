@@ -82,7 +82,7 @@ public class FileDataStates {
 
 		// Collect layers
 		ContextManifest contextManifest = ManifestUtils.requireHost(driver.getManifest());
-		for(LayerManifest layerManifest : contextManifest.getLayerManifests()) {
+		for(LayerManifest<?> layerManifest : contextManifest.getLayerManifests()) {
 
 			if(ManifestUtils.isItemLayerManifest(layerManifest)) {
 				layerInfos.put(layerManifest.getUID(), new LayerInfo((ItemLayerManifestBase<?>)layerManifest));
@@ -119,7 +119,7 @@ public class FileDataStates {
 		return info;
 	}
 
-	public LayerInfo getLayerInfo(LayerManifest layerManifest) {
+	public LayerInfo getLayerInfo(LayerManifest<?> layerManifest) {
 		LayerInfo info = layerInfos.get(layerManifest.getUID());
 		if(info==null)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,

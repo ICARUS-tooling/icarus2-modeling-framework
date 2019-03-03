@@ -78,12 +78,12 @@ public interface ComponentSupplier extends AutoCloseable {
 	/**
 	 * Refreshes this supplier so that it returns items suitable
 	 * for members of the host container denoted by the given
-	 * {@code hostIndex}.
+	 * {@code sourceIndex}.
 	 * <p>
 	 * This is an optional method and implementations are free to
 	 * ignore its intended effects.
 	 *
-	 * @param hostIndex
+	 * @param sourceIndex
 	 * @throws InterruptedException
 	 */
 	@OptionalMethod

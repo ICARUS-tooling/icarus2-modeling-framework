@@ -16,6 +16,13 @@
  */
 package de.ims.icarus2.filedriver.schema.table;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema;
@@ -96,12 +103,18 @@ public class TableConverterTest {
 				getClass().getClassLoader(), true, false));
 		manifestXmlReader.readAndRegisterAll();
 
-		CorpusManifest corpusManifest = corpusManager.getManifestRegistry().getCorpusManifest("testCorpus").get();
+		CorpusManifest corpusManifest = corpusManager.getManifestRegistry()
+				.getCorpusManifest("testCorpus").get();
 
 		Corpus corpus = corpusManager.connect(corpusManifest);
 		PagedCorpusView view = corpus.createFullView(AccessMode.READ, null);
 
-		System.out.println(view.getSize());
+		// Reference file in tabular format
+		List<String> lines = Files.readAllLines(
+				Paths.get(getClass().getResource("singleBlock.txt").toURI()),
+				StandardCharsets.UTF_8);
+
+		assertEquals(lines.size(), view.getSize(), "Incorrect size of read corpus (view)");
 
 		PageControl pageControl = view.getPageControl();
 		pageControl.load();
@@ -109,16 +122,24 @@ public class TableConverterTest {
 		CorpusModel model = view.getModel();
 
 		Container rootContainer = model.getRootContainer();
-		System.out.println(rootContainer.getItemCount());
+		assertEquals(lines.size(), rootContainer.getItemCount(),
+				"Incorrect size of root container");
 
 		AnnotationLayer formLayer = view.fetchLayer("form");
 		AnnotationLayer lemmaLayer = view.fetchLayer("lemma");
 
 		for(int i=0; i<rootContainer.getItemCount(); i++) {
+			// Format per raw line: ID FORM LEMMA
+			String[] line = lines.get(i).split("\\s+");
+
 			Item item = rootContainer.getItemAt(i);
 			Object form = formLayer.getValue(item);
 			Object lemma = lemmaLayer.getValue(item);
-			System.out.printf("index=%d form=%s lemma=%s\n",item.getIndex(),form, lemma);
+
+			assertEquals(line[1], form, "Form mismatch in row "+(i+1));
+			assertEquals(line[2], lemma, "Lemma mismatch in row "+(i+1));
+
+//			System.out.printf("index=%d form=%s lemma=%s\n",item.getIndex(),form, lemma);
 		}
 	}
 }
