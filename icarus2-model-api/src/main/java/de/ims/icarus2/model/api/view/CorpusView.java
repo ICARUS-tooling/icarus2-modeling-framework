@@ -65,12 +65,19 @@ public interface CorpusView {
 		return getScope().getPrimaryLayer();
 	}
 
+	/**
+	 * Look up a {@link Layer} available for this view by its fully
+	 * qualified name.
+	 *
+	 * @param qualifiedLayerId
+	 * @return
+	 */
 	default <L extends Layer> L fetchLayer(String qualifiedLayerId) {
+		// First fetch layer from underlying corpus
 		L layer = getCorpus().getLayer(qualifiedLayerId, false);
 
-		Scope scope = getScope();
-
-		if(!scope.containsLayer(layer))
+		// Then make sure this view actually provides access to it
+		if(!getScope().containsLayer(layer))
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"No such layer available in current scope: "+qualifiedLayerId);
 
