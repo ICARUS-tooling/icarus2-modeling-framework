@@ -27,8 +27,8 @@ import static de.ims.icarus2.test.TestUtils.MAX_INTEGER_INDEX;
 import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.assertRestrictedSetter;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.test.TestUtils.filledArray;
+import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -646,7 +646,7 @@ class RootItemTest {
 		@Test
 		@Tag(RANDOMIZED)
 		void testRemoveAllEdges() {
-			IntStream.range(10, random().nextInt(10)+10).forEach(
+			IntStream.range(10, random().nextInt(10)+20).forEach(
 					_x -> instance.addEdge(mockEdge()));
 
 			assertTrue(instance.getEdgeCount()>0);
