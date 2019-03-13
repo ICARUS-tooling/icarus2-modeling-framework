@@ -112,7 +112,7 @@ public class DefaultContext implements Context {
 
 		Context foreignContext = getCorpus().getContext(contextId);
 
-		//TODO is it allowed for the foreign context to return a layer that is foreign to it?
+		// It is not allowed for the foreign context to return a layer that is foreign to it
 		return foreignContext.getNativeLayer(layerId);
 	}
 
@@ -214,8 +214,7 @@ public class DefaultContext implements Context {
 	 */
 	@Override
 	public String getName() {
-		// TODO Auto-generated method stub
-		return null;
+		return getManifest().getUniqueId();
 	}
 
 	/**
@@ -223,8 +222,7 @@ public class DefaultContext implements Context {
 	 */
 	@Override
 	public MemberType getMemberType() {
-		// TODO Auto-generated method stub
-		return null;
+		return MemberType.CONTEXT;
 	}
 
 	/**

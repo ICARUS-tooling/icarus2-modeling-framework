@@ -28,7 +28,7 @@ public enum StreamOption {
 	 * If set, then the stream implementation is capable of skipping
 	 * portions of the underlying data.
 	 * <p>
-	 * This usually comes with a certain trade-off on terms of buffer
+	 * This usually comes with a certain trade-off in terms of buffer
 	 * efficiency, and client code should only decide to use this
 	 * option if frequent skips over large numbers of items are to be
 	 * expected.

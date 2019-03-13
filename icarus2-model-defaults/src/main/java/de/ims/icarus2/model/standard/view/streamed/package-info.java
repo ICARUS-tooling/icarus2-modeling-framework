@@ -5,4 +5,4 @@
  * @author Markus Gärtner
  *
  */
-package de.ims.icarus2.model.standard.view.paged.streamed;
+package de.ims.icarus2.model.standard.view.streamed;

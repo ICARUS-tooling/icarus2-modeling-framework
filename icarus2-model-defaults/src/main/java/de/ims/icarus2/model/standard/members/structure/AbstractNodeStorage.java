@@ -303,8 +303,14 @@ public abstract class AbstractNodeStorage<N extends NodeInfo, E extends Edge> im
 	@Override
 	public void setTerminal(Structure context, Edge edge, Item item,
 			boolean isSource) {
-		// TODO Auto-generated method stub
 
+		NodeInfo sourceInfo = getNodeInfo(edge.getSource());
+		NodeInfo targetInfo = getNodeInfo(edge.getTarget());
+		NodeInfo terminalInfo = getNodeInfo(item);
+
+
+
+		// TODO Auto-generated method stub
 
 		invalidate();
 	}

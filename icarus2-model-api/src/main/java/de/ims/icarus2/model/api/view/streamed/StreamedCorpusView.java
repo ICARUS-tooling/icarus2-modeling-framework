@@ -25,7 +25,8 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.view.CorpusView;
 
 /**
- * Implements a <i>forward-only</i> traversal mechanism for
+ * Implements a <i>forward-only</i> traversal mechanism for a corpus
+ * or a section of a corpus.
  *
  * @author Markus Gärtner
  *
@@ -105,8 +106,10 @@ public interface StreamedCorpusView extends CorpusView, OwnableCorpusPart {
 	}
 
 	/**
+	 * Reset any internal state related to the mark. Does nothing if no
+	 * mark has been set.
 	 *
-	 * @return
+	 * @return {@code true} iff a mark has been set and was cleared
 	 *
 	 * @throws ModelException with {@link ModelErrorCode#STREAM_MARK_NOT_SUPPORTED}
 	 * if the stream implementation does not support marks.
@@ -117,14 +120,32 @@ public interface StreamedCorpusView extends CorpusView, OwnableCorpusPart {
 	}
 
 	/**
+	 * Tries to move the stream back to where the {@link #mark() mark} was
+	 * put previously. If the operation was successful, this will also
+	 * clear the current mark.
 	 *
-	 * @return
+	 * @return {@code true} iff the stream has been successfully moved back
+	 * to the previous position of the mark.
 	 *
 	 * @throws ModelException with {@link ModelErrorCode#STREAM_MARK_NOT_SET} if
 	 * no mark has been set previously or {@link ModelErrorCode#STREAM_MARK_NOT_SUPPORTED}
 	 * if the stream implementation does not support marks.
 	 */
 	default boolean reset() {
+		throw new ModelException(ModelErrorCode.STREAM_MARK_NOT_SUPPORTED,
+				"Default implemenattion does not support mark");
+	}
+
+	/**
+	 * Tests if {@link #advance() advancing} the current position would
+	 * invalidate the mark.
+	 *
+	 * @return
+	 * @throws ModelException with {@link ModelErrorCode#STREAM_MARK_NOT_SET} if
+	 * no mark has been set previously or {@link ModelErrorCode#STREAM_MARK_NOT_SUPPORTED}
+	 * if the stream implementation does not support marks.
+	 */
+	default boolean wouldInvalidateMark() {
 		throw new ModelException(ModelErrorCode.STREAM_MARK_NOT_SUPPORTED,
 				"Default implemenattion does not support mark");
 	}

@@ -42,7 +42,6 @@ public class DefaultModuleState extends StaticIdentity implements ModuleState {
 	 */
 	public DefaultModuleState(Identity source) {
 		super(source);
-		// TODO Auto-generated constructor stub
 	}
 
 	/**
@@ -50,7 +49,6 @@ public class DefaultModuleState extends StaticIdentity implements ModuleState {
 	 */
 	public DefaultModuleState(String id) {
 		super(id);
-		// TODO Auto-generated constructor stub
 	}
 
 	/**

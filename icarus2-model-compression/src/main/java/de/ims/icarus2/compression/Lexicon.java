@@ -124,7 +124,7 @@ public interface Lexicon extends Iterable<CharSequence> {
 		 *
 		 * @return {@code true} iff moving the cursor forward one step was successful
 		 */
-		boolean next();
+		boolean advance();
 
 		/**
 		 *

@@ -22,6 +22,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -464,10 +465,8 @@ public interface Structure extends Container {
 	 * @param isSource Specifies which terminal (source or target) should be changed
 	 * @throws NullPointerException if either one the {@code edge} or {@code item}
 	 * argument is {@code null}
-	 * @throws IllegalArgumentException if the given {@code item} is unknown to
-	 * this structure (i.e. not a member of its "node" container")
-	 * @throws IllegalArgumentException if the given {@code item} is not a valid
-	 * candidate for the specified terminal
+	 * @throws ModelException Of type {@link ModelErrorCode#MODEL_ILLEGAL_MEMBER}
+	 * if the {@link Edge#getStructure() host} of the given {@code edge} does not match this structure.
 	 */
 	void setTerminal(Edge edge, Item item, boolean isSource);
 
