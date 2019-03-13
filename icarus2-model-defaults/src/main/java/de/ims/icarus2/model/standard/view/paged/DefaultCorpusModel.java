@@ -318,7 +318,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	@Override
 	public MemberType getMemberType(CorpusMember member) {
-		//TODO always allow at least type queries?
+		// Always allow at least type queries?
 //		checkReadAccess();
 
 		return ensureNotNull(member.getMemberType());
@@ -849,18 +849,6 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		checkReadAccess();
 
 		return layer.getAnnotationStorage().getBooleanValue(item, key);
-	}
-
-	@Override
-	public void removeAllValues(AnnotationLayer layer) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void removeAllValues(AnnotationLayer layer, String key) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override

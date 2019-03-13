@@ -923,33 +923,6 @@ public interface CorpusModel extends Part<PagedCorpusView>, Changeable {
 	boolean getBooleanValue(AnnotationLayer layer, Item item, String key);
 
 	/**
-	 * Deletes all annotations in the specified layer.
-	 * <p>
-	 * Note that this does include all annotations for all keys,
-	 * not only those declares for the default annotation.
-	 * Note further that only values that are part of the current
-	 * {@link PageControl page} will be removed!
-	 *
-	 * @throws UnsupportedOperationException if the corpus
-	 * is not editable
-	 */
-	void removeAllValues(AnnotationLayer layer);
-
-	/**
-	 * Deletes in this layer all annotations for
-	 * the given {@code key}.
-	 * <p>
-	 * Note that only values that are part of the current
-	 * {@link PageControl page} will be removed!
-	 *
-	 * @param key The key for which annotations should be
-	 * deleted
-	 * @throws UnsupportedOperationException if the corpus
-	 * is not editable
-	 */
-	void removeAllValues(AnnotationLayer layer, String key);
-
-	/**
 	 * Assigns the given {@code value} as new annotation for the specified
 	 * {@code Item} and {@code key}, replacing any previously defined value.
 	 * If the {@code value} argument is {@code null} any stored annotation
