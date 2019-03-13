@@ -136,6 +136,13 @@ subprojects {
 	    
 	  	minHeapSize = "512m"
 	 	maxHeapSize = "2g"
+	 	
+	 	// At a later point let's see if we can effectively parallelize some tests
+	    systemProperties = [
+	        'junit.jupiter.execution.parallel.enabled': 'false',
+	        'junit.jupiter.execution.parallel.mode.default': 'same_thread'
+	    ]
+	 	
 	}
 	
 	javadoc {

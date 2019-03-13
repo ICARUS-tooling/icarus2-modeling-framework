@@ -95,6 +95,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 			(m) -> {
 				boolean isStatic = Modifier.isStatic(m.getModifiers()); // must not be static
 				boolean isPublic = Modifier.isPublic(m.getModifiers());  // must be public
+				boolean isAbstract = Modifier.isAbstract(m.getModifiers());  // must not be abstract
 				boolean isObjMethod = m.getDeclaringClass()==Object.class; // ignore all original Object methods
 				boolean hasParams = m.getParameterCount()>0;
 				boolean hasSingleParam = m.getParameterCount()==1; // setters
@@ -104,7 +105,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 //				System.out.printf("stat=%b, pub=%b, obj=%b, params=%b, single=%b, void=%b: %s%n",
 //						isStatic, isPublic, isObjMethod, hasParams, hasSingleParam, isVoidReturn, m);
 
-				return !isStatic && isPublic && !isObjMethod // Filter out via basic properties
+				return !isStatic && !isAbstract && isPublic && !isObjMethod // Filter out via basic properties
 						&& ((hasSingleParam && isVoidReturn)
 							|| (hasSingleParam && isChainable)
 							|| (!hasParams && !isVoidReturn));
