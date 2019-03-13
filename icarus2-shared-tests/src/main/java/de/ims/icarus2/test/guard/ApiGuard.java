@@ -73,6 +73,15 @@ public class ApiGuard<T> {
 	 */
 	private Boolean detectUnmarkedMethods;
 
+	/**
+	 * Signals that the Guardian responsible for testing property
+	 * methods is to use strict filtering when searching for setter
+	 * and getter methods. Strict filtering means that only methods
+	 * that follow the property naming convention and begin with either
+	 * of {@code [set,get,is]} are considered.
+	 */
+	private Boolean strictNameFilter;
+
 	private final List<Guardian<T>> guardians = new ArrayList<>(3);
 
 	private final Map<Class<?>, Function<T, ?>> parameterResolvers = new HashMap<>();
@@ -120,6 +129,12 @@ public class ApiGuard<T> {
 	public ApiGuard<T> detectUnmarkedMethods(boolean detectUnmarkedMethods) {
 		assertNull(this.detectUnmarkedMethods, "detectUnmarkedMethods already set");
 		this.detectUnmarkedMethods = Boolean.valueOf(detectUnmarkedMethods);
+		return self();
+	}
+
+	public ApiGuard<T> strictNameFilter(boolean strictNameFilter) {
+		assertNull(this.strictNameFilter, "strictNameFilter already set");
+		this.strictNameFilter = Boolean.valueOf(strictNameFilter);
 		return self();
 	}
 
@@ -199,6 +214,10 @@ public class ApiGuard<T> {
 
 	public boolean isDetectUnmarkedMethods() {
 		return detectUnmarkedMethods!=null && detectUnmarkedMethods.booleanValue();
+	}
+
+	public boolean isStrictNameFilter() {
+		return strictNameFilter!=null && strictNameFilter.booleanValue();
 	}
 
 	public Map<Class<?>, Function<T, ?>> getParameterResolvers() {

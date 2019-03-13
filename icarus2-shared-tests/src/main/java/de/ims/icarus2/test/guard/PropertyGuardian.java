@@ -91,25 +91,46 @@ class PropertyGuardian<T> extends Guardian<T> {
 
 	private Supplier<? extends T> creator;
 
-	static final Predicate<? super Method> PROPERTY_FILTER =
-			(m) -> {
-				boolean isStatic = Modifier.isStatic(m.getModifiers()); // must not be static
-				boolean isPublic = Modifier.isPublic(m.getModifiers());  // must be public
-				boolean isAbstract = Modifier.isAbstract(m.getModifiers());  // must not be abstract
-				boolean isObjMethod = m.getDeclaringClass()==Object.class; // ignore all original Object methods
-				boolean hasParams = m.getParameterCount()>0;
-				boolean hasSingleParam = m.getParameterCount()==1; // setters
-				boolean isVoidReturn = m.getReturnType()==void.class;
-				boolean isChainable = m.getDeclaringClass().isAssignableFrom(m.getReturnType());
+	private static final Map<String, MethodType> prefixToTypeMap = new HashMap<>();
+	static {
+		prefixToTypeMap.put("is", MethodType.GETTER);
+		prefixToTypeMap.put("get", MethodType.GETTER);
+		prefixToTypeMap.put("set", MethodType.SETTER);
+	}
 
-//				System.out.printf("stat=%b, pub=%b, obj=%b, params=%b, single=%b, void=%b: %s%n",
-//						isStatic, isPublic, isObjMethod, hasParams, hasSingleParam, isVoidReturn, m);
+	private static final String[] strictPrefixes = {
+			"is", "get", "set",
+	};
 
-				return !isStatic && !isAbstract && isPublic && !isObjMethod // Filter out via basic properties
-						&& ((hasSingleParam && isVoidReturn)
-							|| (hasSingleParam && isChainable)
-							|| (!hasParams && !isVoidReturn));
-			};
+	public static final Predicate<? super Method> PROPERTY_FILTER = (m) -> {
+		boolean isStatic = Modifier.isStatic(m.getModifiers()); // must not be static
+		boolean isPublic = Modifier.isPublic(m.getModifiers());  // must be public
+//			boolean isAbstract = Modifier.isAbstract(m.getModifiers());  // must not be abstract
+		boolean isObjMethod = m.getDeclaringClass()==Object.class; // ignore all original Object methods
+		boolean hasParams = m.getParameterCount()>0;
+		boolean hasSingleParam = m.getParameterCount()==1; // setters
+		boolean isVoidReturn = m.getReturnType()==void.class;
+		boolean isChainable = !isVoidReturn && m.getReturnType().isAssignableFrom(m.getDeclaringClass());
+
+//			System.out.printf("stat=%b, pub=%b, abs=%b, obj=%b, params=%b, single=%b, void=%b, chain=%b: %s%n",
+//					isStatic, isPublic, isAbstract, isObjMethod, hasParams, hasSingleParam, isVoidReturn, isChainable, m);
+
+		return !isStatic && isPublic && !isObjMethod // Filter out via basic properties
+				&& ((hasSingleParam && isVoidReturn)
+					|| (hasSingleParam && isChainable)
+					|| (!hasParams && !isVoidReturn));
+	};
+
+	private static boolean isStrictName(String name) {
+		for(String prefix : strictPrefixes) {
+			if(name.length()>prefix.length()
+					&& name.startsWith(prefix)
+					&& Character.isUpperCase(name.charAt(prefix.length()))) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	public PropertyGuardian(ApiGuard<T> apiGuard) {
 		super(apiGuard);
@@ -120,9 +141,36 @@ class PropertyGuardian<T> extends Guardian<T> {
 
 		classCache = ClassCache.<T>newBuilder()
 				.targetClass(targetClass)
-				.methodFilter(PROPERTY_FILTER)
-//				.log(System.out::println)
+				.methodFilter(createPropertyMethodFilter(apiGuard.isStrictNameFilter()))
+				.log(System.out::println)
 				.build();
+	}
+
+	private Predicate<? super Method> createPropertyMethodFilter(final boolean strict) {
+		return (m) -> {
+			boolean isStatic = Modifier.isStatic(m.getModifiers()); // must not be static
+			boolean isPublic = Modifier.isPublic(m.getModifiers());  // must be public
+//			boolean isAbstract = Modifier.isAbstract(m.getModifiers());  // must not be abstract
+			boolean isObjMethod = m.getDeclaringClass()==Object.class; // ignore all original Object methods
+			boolean hasParams = m.getParameterCount()>0;
+			boolean hasSingleParam = m.getParameterCount()==1; // setters
+			boolean isVoidReturn = m.getReturnType()==void.class;
+			boolean isChainable = !isVoidReturn && m.getReturnType().isAssignableFrom(m.getDeclaringClass());
+
+//			System.out.printf("stat=%b, pub=%b, abs=%b, obj=%b, params=%b, single=%b, void=%b, chain=%b: %s%n",
+//					isStatic, isPublic, isAbstract, isObjMethod, hasParams, hasSingleParam, isVoidReturn, isChainable, m);
+
+			boolean isOk = !isStatic && isPublic && !isObjMethod // Filter out via basic properties
+					&& ((hasSingleParam && isVoidReturn)
+						|| (hasSingleParam && isChainable)
+						|| (!hasParams && !isVoidReturn));
+
+			if(isOk && strict) {
+				isOk &= isStrictName(m.getName());
+			}
+
+			return isOk;
+		};
 	}
 
 	/**
@@ -517,13 +565,6 @@ class PropertyGuardian<T> extends Guardian<T> {
 		}
 		return Character.toLowerCase(name.charAt(begin))
 				+name.substring(begin+1);
-	}
-
-	private static final Map<String, MethodType> prefixToTypeMap = new HashMap<>();
-	static {
-		prefixToTypeMap.put("is", MethodType.GETTER);
-		prefixToTypeMap.put("get", MethodType.GETTER);
-		prefixToTypeMap.put("set", MethodType.SETTER);
 	}
 
 	/**
