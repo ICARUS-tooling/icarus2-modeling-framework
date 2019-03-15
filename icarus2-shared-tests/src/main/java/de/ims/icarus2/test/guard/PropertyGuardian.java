@@ -142,7 +142,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 		classCache = ClassCache.<T>newBuilder()
 				.targetClass(targetClass)
 				.methodFilter(createPropertyMethodFilter(apiGuard.isStrictNameFilter()))
-				.log(System.out::println)
+//				.log(System.out::println)
 				.build();
 	}
 

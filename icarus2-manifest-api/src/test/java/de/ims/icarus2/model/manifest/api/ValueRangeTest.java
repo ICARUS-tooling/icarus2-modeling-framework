@@ -19,6 +19,9 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertManifestException;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.getTestValue;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockExpression;
 import static de.ims.icarus2.test.TestUtils.DEFAULT;
 import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
@@ -43,6 +46,7 @@ import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.test.guard.ApiGuard;
+import de.ims.icarus2.util.eval.Expression;
 
 /**
  * @author Markus Gärtner
@@ -71,6 +75,9 @@ public interface ValueRangeTest
 				Boolean.valueOf(ValueRange.DEFAULT_LOWER_INCLUSIVE_VALUE));
 		apiGuard.defaultReturnValue("upperBoundInclusive",
 				Boolean.valueOf(ValueRange.DEFAULT_UPPER_INCLUSIVE_VALUE));
+
+		apiGuard.parameterResolver(Object.class,
+				valueRange -> getTestValue(valueRange.getValueType()));
 	}
 
 	/**
@@ -106,6 +113,38 @@ public interface ValueRangeTest
 	}
 
 	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueRange#getLowerBoundComparable()}.
+	 */
+	@TestFactory
+	default Stream<DynamicTest> testGetLowerBoundComparable() {
+		return LEGAL_VALUE_TYPES.stream()
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
+						Object[] values = ManifestTestUtils.getTestValues(valueType);
+						assertOptGetter(createWithType(settings(), valueType),
+								(Comparable<?>)values[0], (Comparable<?>)values[1],
+								NO_DEFAULT(),
+								ValueRange::getLowerBoundComparable,
+								ValueRange::setLowerBound);
+					}));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueRange#getLowerBoundComparable()}.
+	 */
+	@TestFactory
+	default Stream<DynamicTest> testGetLowerBoundComparable_Exception() {
+		return LEGAL_VALUE_TYPES.stream()
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
+						Expression expression = mockExpression(valueType);
+						ValueRange valueRange = createWithType(settings(), valueType);
+						valueRange.setLowerBound(expression);
+
+						assertManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
+								() -> valueRange.getLowerBoundComparable());
+					}));
+	}
+
+	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueRange#getUpperBound()}.
 	 */
 	@TestFactory
@@ -122,6 +161,38 @@ public interface ValueRangeTest
 	}
 
 	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueRange#getUpperBoundComparable()}.
+	 */
+	@TestFactory
+	default Stream<DynamicTest> testGetUpperBoundComparable() {
+		return LEGAL_VALUE_TYPES.stream()
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
+						Object[] values = ManifestTestUtils.getTestValues(valueType);
+						assertOptGetter(createWithType(settings(), valueType),
+								(Comparable<?>)values[0], (Comparable<?>)values[1],
+								NO_DEFAULT(),
+								ValueRange::getUpperBoundComparable,
+								ValueRange::setUpperBound);
+					}));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueRange#getUpperBoundComparable()}.
+	 */
+	@TestFactory
+	default Stream<DynamicTest> testGetUpperBoundComparable_Exception() {
+		return LEGAL_VALUE_TYPES.stream()
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
+						Expression expression = mockExpression(valueType);
+						ValueRange valueRange = createWithType(settings(), valueType);
+						valueRange.setUpperBound(expression);
+
+						assertManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
+								() -> valueRange.getUpperBoundComparable());
+					}));
+	}
+
+	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueRange#getStepSize()}.
 	 */
 	@TestFactory
@@ -134,6 +205,38 @@ public interface ValueRangeTest
 								NO_DEFAULT(),
 								ValueRange::getStepSize,
 								ValueRange::setStepSize);
+					}));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueRange#getStepSizeComparable()}.
+	 */
+	@TestFactory
+	default Stream<DynamicTest> testGetStepSizeComparable() {
+		return LEGAL_VALUE_TYPES.stream()
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
+						Object[] values = ManifestTestUtils.getTestValues(valueType);
+						assertOptGetter(createWithType(settings(), valueType),
+								(Comparable<?>)values[0], (Comparable<?>)values[1],
+								NO_DEFAULT(),
+								ValueRange::getStepSizeComparable,
+								ValueRange::setStepSize);
+					}));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueRange#getStepSizeComparable()}.
+	 */
+	@TestFactory
+	default Stream<DynamicTest> testGetStepSizeComparable_Exception() {
+		return LEGAL_VALUE_TYPES.stream()
+				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
+						Expression expression = mockExpression(valueType);
+						ValueRange valueRange = createWithType(settings(), valueType);
+						valueRange.setStepSize(expression);
+
+						assertManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
+								() -> valueRange.getStepSizeComparable());
 					}));
 	}
 

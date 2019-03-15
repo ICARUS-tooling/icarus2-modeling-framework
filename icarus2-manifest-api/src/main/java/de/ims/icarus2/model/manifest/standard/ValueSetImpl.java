@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import de.ims.icarus2.model.manifest.api.ValueSet;
 import de.ims.icarus2.model.manifest.types.ValueType;
@@ -56,6 +57,14 @@ public class ValueSetImpl extends AbstractLockable implements ValueSet {
 
 		valueType.checkValues(items);
 		CollectionUtils.feedItems(values, items);
+
+		return this;
+	}
+
+	public ValueSetImpl addAll(Stream<?> items) {
+		requireNonNull(items);
+
+		items.forEach(this::addValue);
 
 		return this;
 	}

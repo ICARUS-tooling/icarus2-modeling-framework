@@ -61,6 +61,7 @@ import de.ims.icarus2.model.manifest.types.Ref;
 import de.ims.icarus2.model.manifest.types.Url;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.util.eval.Expression;
 import de.ims.icarus2.util.icon.IconWrapper;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.nio.ByteArrayChannel;
@@ -257,6 +258,16 @@ public class ManifestTestUtils {
 
 	public static Object[] getIllegalValues(ValueType type) {
 		return new Object[] {getIllegalValue(type)};
+	}
+
+	@SuppressWarnings("unchecked")
+	public static Expression mockExpression(ValueType valueType) {
+		@SuppressWarnings("rawtypes")
+		Class clazz = valueType.getBaseClass();
+		Expression expression = mock(Expression.class);
+		when(expression.getReturnType()).thenReturn(clazz);
+
+		return expression;
 	}
 
 	private static final String[] legalIdValues = {
@@ -573,6 +584,11 @@ public class ManifestTestUtils {
 	public static void assertManifestException(ErrorCode errorCode, Executable executable, String msg) {
 		ManifestException exception = assertThrows(ManifestException.class, executable, msg);
 		assertEquals(errorCode, exception.getErrorCode(), msg);
+	}
+
+	public static void assertManifestException(ErrorCode errorCode, Executable executable) {
+		ManifestException exception = assertThrows(ManifestException.class, executable);
+		assertEquals(errorCode, exception.getErrorCode());
 	}
 
 	// ASSERTIONS FOR METHOD PATTERNS

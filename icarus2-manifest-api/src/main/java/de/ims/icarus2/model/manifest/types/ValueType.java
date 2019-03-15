@@ -35,6 +35,7 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -59,6 +60,7 @@ import de.ims.icarus2.util.nio.ByteChannelCharacterSequence;
 import de.ims.icarus2.util.strings.NamedObject;
 import de.ims.icarus2.util.strings.StringPrimitives;
 import de.ims.icarus2.util.strings.StringResource;
+import de.ims.icarus2.util.strings.StringUtil;
 
 /**
  * Models type specifications/restrictions for the manifest framework.
@@ -242,6 +244,24 @@ public class ValueType implements StringResource, NamedObject {
 		return baseClass;
 	}
 
+	/**
+	 * A hook for value type implementations to provide support for
+	 * {@link Comparable} features without their {@link #getBaseClass() base class}
+	 * actually implementing that interface. We especially need this for the
+	 * {@link #STRING} type, as the associated base class {@link CharSequence}
+	 * does not implement {@link Comparable}, but the majority of instances
+	 * for that type will be {@link String} objects.
+	 * <p>
+	 * The default implementation return {@code null}.
+	 *
+	 * @return a {@link Comparator} usable to sort objects for this type or {@code null}
+	 * if this type does not support sorting or the underlying {@link #getBaseClass() base class}
+	 * already implements {@link Comparable} directly.
+	 */
+	public Comparator<?> getComparator() {
+		return null;
+	}
+
 	public static final String UNKNOWN_TYPE_LABEL = "unknwon";
 	public static final ValueType UNKNOWN = new ValueType(UNKNOWN_TYPE_LABEL, Object.class, false, true);
 
@@ -309,6 +329,8 @@ public class ValueType implements StringResource, NamedObject {
 		}
 	};
 
+	private static Comparator<CharSequence> charSequenceComparator = StringUtil::compare;
+
 	// "Primitive"
 	public static final String STRING_TYPE_LABEL = "string";
 	public static final ValueType STRING = new ValueType(STRING_TYPE_LABEL, CharSequence.class, true, true) {
@@ -328,6 +350,17 @@ public class ValueType implements StringResource, NamedObject {
 		public Object persist(Object data) {
 			return data.toString();
 		};
+
+		/**
+		 * Returns a comparator that mimics {@link String#compareTo(String)}.
+		 *
+		 * @see de.ims.icarus2.model.manifest.types.ValueType#getComparator()
+		 * @see StringUtil#compare(CharSequence, CharSequence)
+		 */
+		@Override
+		public Comparator<?> getComparator() {
+			return charSequenceComparator;
+		}
 	};
 
 	public static final String BOOLEAN_TYPE_LABEL = "boolean";

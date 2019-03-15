@@ -162,19 +162,19 @@ public class ValueRangeXmlDelegate extends AbstractXmlDelegate<ValueRange> {
 
 		case ManifestXmlTags.MIN : {
 			if(text!=null && !range.getLowerBound().isPresent()) {
-				range.setLowerBound((Comparable<?>)ManifestXmlUtils.parse(valueType, manifestLocation, text, true));
+				range.setLowerBound(ManifestXmlUtils.parse(valueType, manifestLocation, text, true));
 			}
 		} break;
 
 		case ManifestXmlTags.MAX : {
 			if(text!=null && !range.getUpperBound().isPresent()) {
-				range.setUpperBound((Comparable<?>)ManifestXmlUtils.parse(valueType, manifestLocation, text, true));
+				range.setUpperBound(ManifestXmlUtils.parse(valueType, manifestLocation, text, true));
 			}
 		} break;
 
 		case ManifestXmlTags.STEP_SIZE : {
 			if(text!=null && !range.getStepSize().isPresent()) {
-				range.setStepSize((Comparable<?>)ManifestXmlUtils.parse(valueType, manifestLocation, text, true));
+				range.setStepSize(ManifestXmlUtils.parse(valueType, manifestLocation, text, true));
 			}
 		} break;
 
@@ -197,15 +197,15 @@ public class ValueRangeXmlDelegate extends AbstractXmlDelegate<ValueRange> {
 		case ManifestXmlTags.EVAL : {
 			switch (currentField) {
 			case MIN_FIELD:
-				getInstance().setLowerBound((Comparable<?>)((ExpressionXmlHandler) handler).createExpression());
+				getInstance().setLowerBound(((ExpressionXmlHandler) handler).createExpression());
 				break;
 
 			case MAX_FIELD:
-				getInstance().setUpperBound((Comparable<?>)((ExpressionXmlHandler) handler).createExpression());
+				getInstance().setUpperBound(((ExpressionXmlHandler) handler).createExpression());
 				break;
 
 			case STEP_SIZE_FIELD:
-				getInstance().setStepSize((Comparable<?>)((ExpressionXmlHandler) handler).createExpression());
+				getInstance().setStepSize(((ExpressionXmlHandler) handler).createExpression());
 				break;
 
 			default:

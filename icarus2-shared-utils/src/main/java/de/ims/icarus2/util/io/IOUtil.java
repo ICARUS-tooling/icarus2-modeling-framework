@@ -27,6 +27,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -66,29 +67,14 @@ public final class IOUtil {
 
 	public static final int DEFAULT_BUFFER_SIZE  = 1024 << 6;
 
-	public static final Filter<Path> fileFilter = new Filter<Path>() {
+	public static final Filter<Path> fileFilter =
+			entry -> Files.isRegularFile(entry, LinkOption.NOFOLLOW_LINKS);
 
-		@Override
-		public boolean accept(Path entry) throws IOException {
-			return Files.isRegularFile(entry, LinkOption.NOFOLLOW_LINKS);
-		}
-	};
+	public static final Filter<Path> jarFilter =
+			entry -> fileFilter.accept(entry) && entry.endsWith(".jar");
 
-	public static final Filter<Path> jarFilter = new Filter<Path>() {
-
-		@Override
-		public boolean accept(Path entry) throws IOException {
-			return fileFilter.accept(entry) && entry.endsWith(".jar"); //$NON-NLS-1$
-		}
-	};
-
-	public static final Filter<Path> directoryFilter = new Filter<Path>() {
-
-		@Override
-		public boolean accept(Path entry) throws IOException {
-			return Files.isDirectory(entry, LinkOption.NOFOLLOW_LINKS);
-		}
-	};
+	public static final Filter<Path> directoryFilter =
+			entry -> Files.isDirectory(entry, LinkOption.NOFOLLOW_LINKS);
 
 	public static void ensureFolder(Path path) {
 		if(!Files.isDirectory(path) && Files.notExists(path)) {
@@ -502,5 +488,33 @@ public final class IOUtil {
     		p = p.subpath(root.getNameCount(), p.getNameCount());
     	}
 		return p;
+    }
+
+    // Utility methods for reading or writing entire files
+
+    public static void writeFileUTF8(Path file, String content) throws IOException {
+    	try(Writer writer = Files.newBufferedWriter(file, UTF8_CHARSET)) {
+    		writer.write(content);
+    	}
+    }
+
+    public static void writeFile(Path file, byte[] content) throws IOException {
+    	Files.write(file, content);
+    }
+
+    public static byte[] readFile(Path file) throws IOException {
+    	return Files.readAllBytes(file);
+    }
+
+    public static String readFileUTF8(Path file) throws IOException {
+    	return new String(Files.readAllBytes(file), UTF8_CHARSET);
+    }
+
+    public static Path makeFile(Path folder, String name) throws IOException {
+    	Path file = folder.resolve(name);
+    	if(Files.notExists(file, LinkOption.NOFOLLOW_LINKS)) {
+    		Files.createFile(file);
+    	}
+    	return file;
     }
 }

@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -52,6 +53,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Assertions;
@@ -165,6 +167,36 @@ public class TestUtils {
 		return String.valueOf(value);
 	}
 
+	public static String displayString(Object value) {
+		if(Number.class.isInstance(value)) {
+			return displayString(((Number)value).longValue());
+		} else if(value!=null && value.getClass().isArray()) {
+			int len = Array.getLength(value);
+			StringBuilder sb = new StringBuilder(len*6);
+			sb.append('[');
+			for(int i=0; i<len; i++) {
+				if(i>0)
+					sb.append(", ");
+				sb.append(displayString(Array.get(value, i)));
+			}
+			sb.append(']');
+			return sb.toString();
+		} else if(value!=null && value instanceof Collection) {
+			Collection<?> col = (Collection<?>) value;
+			StringBuilder sb = new StringBuilder(col.size()*6);
+			sb.append('[');
+			for(Iterator<?> it = col.iterator(); it.hasNext();) {
+				sb.append(displayString(it.next()));
+				if(it.hasNext())
+					sb.append(", ");
+			}
+			sb.append(']');
+			return sb.toString();
+		} else {
+			return String.valueOf(value);
+		}
+	}
+
 	public static String displayString(String pattern, Object...args) {
 		for(int i=0; i<args.length; i++) {
 			Object arg = args[i];
@@ -202,6 +234,32 @@ public class TestUtils {
 
 	public static Stream<Pair<Long, Long>> randomPairs(long lowerInc, long upperEx) {
 		return Stream.generate(() -> randomLongPair(lowerInc, upperEx));
+	}
+
+	private static final String alNum =
+			  "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+          + "0123456789"
+          + "abcdefghijklmnopqrstuvxyz";
+
+	public static String randomString(int len) {
+		char[] tmp = new char[len];
+		for(int i=0; i<len; i++) {
+			tmp[i] = alNum.charAt(RANDOM.nextInt(alNum.length()));
+		}
+		return new String(tmp);
+	}
+
+	public static <T> Stream<T> stream(Supplier<T> source) {
+		return Stream.generate(source);
+	}
+
+	public static Stream<String> stringStream(int strLen) {
+		return stream(() -> randomString(strLen));
+	}
+
+	public static Stream<String> stringStream(int strMinLenInclusive, int strMaxLenExclusive) {
+		return IntStream.range(strMinLenInclusive, strMaxLenExclusive)
+				.mapToObj(TestUtils::randomString);
 	}
 
 	public static <T> T[] filledArray(int size, Class<T> clazz) {

@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.api.io.resources;
 
+import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.util.AccessMode;
@@ -29,7 +31,7 @@ public abstract class ReadWriteResource implements IOResource {
 	private final AccessMode accessMode;
 
 	protected ReadWriteResource(AccessMode accessMode) {
-		this.accessMode = accessMode;
+		this.accessMode = requireNonNull(accessMode);
 	}
 
 	protected void checkWriteAccess() {

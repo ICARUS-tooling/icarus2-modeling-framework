@@ -29,9 +29,9 @@ import de.ims.icarus2.util.lang.ClassUtils;
 public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 
 	private final ValueType valueType;
-	private Optional<Comparable<?>> lower = Optional.empty();
-	private Optional<Comparable<?>> upper = Optional.empty();
-	private Optional<Comparable<?>> stepSize = Optional.empty();
+	private Optional<Object> lower = Optional.empty();
+	private Optional<Object> upper = Optional.empty();
+	private Optional<Object> stepSize = Optional.empty();
 	private boolean lowerIncluded = DEFAULT_LOWER_INCLUSIVE_VALUE;
 	private boolean upperIncluded = DEFAULT_UPPER_INCLUSIVE_VALUE;
 
@@ -135,7 +135,7 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public <V extends Comparable<?>> Optional<V> getLowerBound() {
+	public <V> Optional<V> getLowerBound() {
 		return (Optional<V>) lower;
 	}
 
@@ -144,7 +144,7 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public <V extends Comparable<?>> Optional<V> getUpperBound() {
+	public <V> Optional<V> getUpperBound() {
 		return (Optional<V>) upper;
 	}
 
@@ -153,7 +153,7 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public <V extends Comparable<?>> Optional<V> getStepSize() {
+	public <V> Optional<V> getStepSize() {
 		return (Optional<V>) stepSize;
 	}
 
@@ -174,6 +174,12 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	}
 
 	protected void checkValue(Object value) {
+//		Class<?> valueClass = value.getClass();
+//		if(Expression.class.isAssignableFrom(valueClass)) {
+//			valueClass = ((Expression)value).getReturnType();
+//		}
+
+		// Takes care of nested Expression
 		valueType.checkValue(value);
 	}
 
@@ -181,7 +187,7 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	 * @param lower the lower to set
 	 */
 	@Override
-	public ValueRange setLowerBound(Comparable<?> lower) {
+	public ValueRange setLowerBound(Object lower) {
 		checkNotLocked();
 
 		setLowerBound0(lower);
@@ -189,7 +195,7 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 		return this;
 	}
 
-	protected void setLowerBound0(Comparable<?> lower) {
+	protected void setLowerBound0(Object lower) {
 		requireNonNull(lower);
 
 		checkValue(lower);
@@ -201,7 +207,7 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	 * @param upper the upper to set
 	 */
 	@Override
-	public ValueRange setUpperBound(Comparable<?> upper)  {
+	public ValueRange setUpperBound(Object upper)  {
 		checkNotLocked();
 
 		setUpperBound0(upper);
@@ -209,7 +215,7 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 		return this;
 	}
 
-	protected void setUpperBound0(Comparable<?> upper) {
+	protected void setUpperBound0(Object upper) {
 		requireNonNull(upper);
 
 		checkValue(upper);
@@ -221,7 +227,7 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 	 * @param upper the upper to set
 	 */
 	@Override
-	public ValueRange setStepSize(Comparable<?> stepSize) {
+	public ValueRange setStepSize(Object stepSize) {
 		checkNotLocked();
 
 		setStepSize0(stepSize);
@@ -229,7 +235,7 @@ public class ValueRangeImpl extends AbstractLockable implements ValueRange {
 		return this;
 	}
 
-	protected void setStepSize0(Comparable<?> stepSize) {
+	protected void setStepSize0(Object stepSize) {
 		requireNonNull(stepSize);
 
 		checkValue(stepSize);

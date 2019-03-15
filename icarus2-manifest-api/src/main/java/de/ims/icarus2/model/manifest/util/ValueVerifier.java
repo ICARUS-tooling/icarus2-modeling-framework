@@ -16,7 +16,10 @@
  */
 package de.ims.icarus2.model.manifest.util;
 
+import java.util.Comparator;
 import java.util.Set;
+
+import javax.annotation.Nullable;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
@@ -109,7 +112,7 @@ public abstract class ValueVerifier {
 		},
 
 		/**
-		 * THe value is missing in the
+		 * The value is missing in the supplied set.
 		 */
 		VALUE_NOT_IN_SET(true) {
 			@Override
@@ -147,7 +150,7 @@ public abstract class ValueVerifier {
 	 * @param valueRange
 	 * @param valueSet
 	 */
-	public ValueVerifier(ValueRange valueRange, ValueSet valueSet) {
+	public ValueVerifier(@Nullable ValueRange valueRange, @Nullable ValueSet valueSet) {
 		this.valueRange = valueRange;
 		this.valueSet = valueSet;
 
@@ -170,20 +173,31 @@ public abstract class ValueVerifier {
 					annotationManifest.getValueSet().orElse(null));
 		}
 
-		@SuppressWarnings("rawtypes")
-		private final Comparable lower, upper;
+		private final Object lower, upper;
 		private final Set<Object> allowedValues;
+		@SuppressWarnings("rawtypes")
+		private final Comparator comparator;
 
 		/**
 		 * @param valueRange
 		 * @param valueSet
 		 */
-		@SuppressWarnings("rawtypes")
+		@SuppressWarnings({ "rawtypes", "unchecked" })
 		public ObjectVerifier(ValueRange valueRange, ValueSet valueSet) {
 			super(valueRange, valueSet);
 
-			lower = valueRange==null ? null : (Comparable)valueRange.getLowerBound().orElse(null);
-			upper = valueRange==null ? null : (Comparable)valueRange.getUpperBound().orElse(null);
+			if(valueRange!=null) {
+				Comparator comp = valueRange.getValueType().getComparator();
+				if(comp==null) {
+					comp = (c1, c2) -> ((Comparable)c1).compareTo(c2);
+				}
+				comparator = comp;
+				lower = valueRange.getLowerBound().orElse(null);
+				upper = valueRange.getUpperBound().orElse(null);
+			} else {
+				comparator = null;
+				lower = upper = null;
+			}
 
 			if(valueSet!=null) {
 				allowedValues = new ReferenceOpenHashSet<>(valueSet.valueCount());
@@ -196,20 +210,21 @@ public abstract class ValueVerifier {
 		/**
 		 * @see de.ims.icarus2.model.manifest.util.ValueVerifier#verify(java.lang.Object)
 		 */
-		@SuppressWarnings({ "rawtypes", "unchecked" })
+		@SuppressWarnings({ "unchecked" })
 		@Override
 		public VerificationResult verify(Object value) {
 			if(allowedValues!=null && !allowedValues.contains(value)) {
 				return VerificationResult.VALUE_NOT_IN_SET;
 			}
 
-			if(lower!=null && lower.compareTo((Comparable)value)>lowerCompRequired) {
+			if(lower!=null && comparator.compare(lower, value)>lowerCompRequired) {
 				return VerificationResult.LOWER_BOUNDARY_VIOLATION;
 			}
 
-			if(upper!=null && upper.compareTo((Comparable)value)<upperCompRequired) {
+			if(upper!=null && comparator.compare(upper, value)<upperCompRequired) {
 				return VerificationResult.UPPER_BOUNDARY_VIOLATION;
 			}
+
 
 			// No check about step length here since general Comparable objects don't have any inherent "precision"
 
@@ -239,7 +254,7 @@ public abstract class ValueVerifier {
 		 * @param valueRange
 		 * @param valueSet
 		 */
-		public IntVerifier(ValueRange valueRange, ValueSet valueSet) {
+		public IntVerifier(@Nullable ValueRange valueRange, @Nullable ValueSet valueSet) {
 			super(valueRange, valueSet);
 
 			lower = valueRange==null || valueRange.getLowerBound()==null ?
@@ -309,7 +324,7 @@ public abstract class ValueVerifier {
 		 * @param valueRange
 		 * @param valueSet
 		 */
-		public LongVerifier(ValueRange valueRange, ValueSet valueSet) {
+		public LongVerifier(@Nullable ValueRange valueRange, @Nullable ValueSet valueSet) {
 			super(valueRange, valueSet);
 
 			lower = valueRange==null || valueRange.getLowerBound()==null ?
@@ -381,7 +396,7 @@ public abstract class ValueVerifier {
 		 * @param valueRange
 		 * @param valueSet
 		 */
-		public FloatVerifier(ValueRange valueRange, ValueSet valueSet) {
+		public FloatVerifier(@Nullable ValueRange valueRange, @Nullable ValueSet valueSet) {
 			super(valueRange, valueSet);
 
 			lower = valueRange==null || valueRange.getLowerBound()==null ?
@@ -460,7 +475,7 @@ public abstract class ValueVerifier {
 		 * @param valueRange
 		 * @param valueSet
 		 */
-		public DoubleVerifier(ValueRange valueRange, ValueSet valueSet) {
+		public DoubleVerifier(@Nullable ValueRange valueRange, @Nullable ValueSet valueSet) {
 			super(valueRange, valueSet);
 
 			lower = valueRange==null || valueRange.getLowerBound()==null ?

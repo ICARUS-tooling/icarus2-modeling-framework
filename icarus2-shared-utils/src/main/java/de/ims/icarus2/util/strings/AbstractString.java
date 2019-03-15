@@ -91,20 +91,7 @@ public abstract class AbstractString implements CharSequence, Comparable<CharSeq
 	 */
 	@Override
 	public int compareTo(CharSequence cs) {
-        int len1 = length();
-        int len2 = cs.length();
-        int lim = Math.min(len1, len2);
-
-        int k = 0;
-        while (k < lim) {
-            char c1 = charAt(k);
-            char c2 = cs.charAt(k);
-            if (c1 != c2) {
-                return c1 - c2;
-            }
-            k++;
-        }
-        return len1 - len2;
+        return StringUtil.compare(this, cs);
 	}
 
 	/**

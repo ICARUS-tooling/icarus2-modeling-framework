@@ -80,6 +80,31 @@ public final class StringUtil {
 		return NAME_COMPARATOR.compare(s1, s2);
 	}
 
+	/**
+	 * Implements {@link String#compareTo(String)} for arbitrary
+	 * {@link CharSequence} objects.
+	 *
+	 * @param cs1
+	 * @param cs2
+	 * @return
+	 */
+	public static int compare(CharSequence cs1, CharSequence cs2) {
+        int len1 = cs1.length();
+        int len2 = cs2.length();
+        int lim = Math.min(len1, len2);
+
+        int k = 0;
+        while (k < lim) {
+            char c1 = cs1.charAt(k);
+            char c2 = cs2.charAt(k);
+            if (c1 != c2) {
+                return c1 - c2;
+            }
+            k++;
+        }
+        return len1 - len2;
+	}
+
 	public static String format(String text, Object...params) {
 		StringBuilder result = new StringBuilder();
 		String index = null;
