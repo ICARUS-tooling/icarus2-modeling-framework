@@ -16,6 +16,11 @@
  */
 package de.ims.icarus2.model.manifest.util;
 
+import static de.ims.icarus2.util.IcarusUtils.UNSET_DOUBLE;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_FLOAT;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+
 import java.util.Comparator;
 import java.util.Set;
 
@@ -38,6 +43,9 @@ import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
+ * Implements a convenient way of using {@link ValueRange} and {@link ValueSet}
+ * objects and verify given values against them.
+ *
  * @author Markus Gärtner
  *
  */
@@ -160,7 +168,6 @@ public abstract class ValueVerifier {
 
 	public abstract VerificationResult verify(Object value);
 
-
 	public static class ObjectVerifier extends ValueVerifier {
 
 		public static ObjectVerifier forAnnotation(AnnotationManifest annotationManifest) {
@@ -232,7 +239,41 @@ public abstract class ValueVerifier {
 		}
 	}
 
-	public static class IntVerifier extends ValueVerifier {
+	private static void checkStepAndBounds(boolean hasStep, boolean hasLower, boolean hasUpper) {
+		if(hasStep && !hasLower && !hasUpper)
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
+					"Missing lower or upper bound definition"
+					+ " - step value meaningless without at least one of them");
+	}
+
+	private static String stepAndBoundsMismatch(Object step, Object lower, Object upper) {
+		return String.format("Inconsistent boundaries definition"
+				+ " - difference of min [%s] and max [%s] is not a multiple of step size [%s]",
+				lower, upper, step);
+	}
+
+	public abstract static class NumberVerifier extends ValueVerifier {
+
+		protected final boolean hasLower;
+		protected final boolean hasUpper;
+		protected final boolean hasStep;
+
+		/**
+		 * @param valueRange
+		 * @param valueSet
+		 */
+		protected NumberVerifier(@Nullable ValueRange valueRange, @Nullable ValueSet valueSet) {
+			super(valueRange, valueSet);
+
+			hasLower = valueRange!=null && valueRange.getLowerBound().isPresent();
+			hasUpper = valueRange!=null && valueRange.getUpperBound().isPresent();
+			hasStep = valueRange!=null && valueRange.getStepSize().isPresent();
+
+			checkStepAndBounds(hasStep, hasLower, hasUpper);
+		}
+	}
+
+	public static class IntVerifier extends NumberVerifier {
 
 		public static IntVerifier forAnnotation(AnnotationManifest annotationManifest) {
 			if(annotationManifest.getValueType()!=ValueType.INTEGER)
@@ -247,7 +288,7 @@ public abstract class ValueVerifier {
 					annotationManifest.getValueSet().orElse(null));
 		}
 
-		private final Number lower, upper, step;
+		private final int lower, upper, step;
 		private final IntSet allowedValues;
 
 		/**
@@ -257,12 +298,15 @@ public abstract class ValueVerifier {
 		public IntVerifier(@Nullable ValueRange valueRange, @Nullable ValueSet valueSet) {
 			super(valueRange, valueSet);
 
-			lower = valueRange==null || valueRange.getLowerBound()==null ?
-					null : (Number)valueRange.getLowerBound().orElse(null);
-			upper = valueRange==null || valueRange.getUpperBound()==null ?
-					null : (Number)valueRange.getUpperBound().orElse(null);
-			step = valueRange==null || valueRange.getStepSize()==null ?
-					null : (Number)valueRange.getStepSize().orElse(null);
+			lower = hasLower ? ((Number)valueRange.getLowerBound().get()).intValue() : UNSET_INT;
+			upper = hasUpper ? ((Number)valueRange.getUpperBound().get()).intValue() : UNSET_INT;
+			step = hasStep ? ((Number)valueRange.getStepSize().get()).intValue() : UNSET_INT;
+
+			if(hasStep && hasLower && hasUpper
+					&& (upper-lower)%step!=0)
+				throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
+						stepAndBoundsMismatch(Integer.valueOf(step),
+								Integer.valueOf(lower), Integer.valueOf(upper)));
 
 			if(valueSet!=null) {
 				allowedValues = new IntOpenHashSet(valueSet.valueCount());
@@ -286,23 +330,26 @@ public abstract class ValueVerifier {
 				return VerificationResult.VALUE_NOT_IN_SET;
 			}
 
-			if(lower!=null && Integer.compare(lower.intValue(), value)>lowerCompRequired) {
+			if(hasLower && Integer.compare(lower, value)>lowerCompRequired) {
 				return VerificationResult.LOWER_BOUNDARY_VIOLATION;
 			}
 
-			if(upper!=null && Integer.compare(upper.intValue(), value)<upperCompRequired) {
+			if(hasUpper && Integer.compare(upper, value)<upperCompRequired) {
 				return VerificationResult.UPPER_BOUNDARY_VIOLATION;
 			}
 
-			if(step!=null && value%((Number)step).intValue()!=0) {
-				return VerificationResult.PRECISION_MISMATCH;
+			if(hasStep) {
+				if((hasLower && (value-lower)%step!=0)
+						|| (hasUpper && (upper-value)%step!=0)) {
+					return VerificationResult.PRECISION_MISMATCH;
+				}
 			}
 
 			return VerificationResult.VALID;
 		}
 	}
 
-	public static class LongVerifier extends ValueVerifier {
+	public static class LongVerifier extends NumberVerifier {
 
 		public static LongVerifier forAnnotation(AnnotationManifest annotationManifest) {
 			if(annotationManifest.getValueType()!=ValueType.LONG)
@@ -317,7 +364,7 @@ public abstract class ValueVerifier {
 					annotationManifest.getValueSet().orElse(null));
 		}
 
-		private final Number lower, upper, step;
+		private final long lower, upper, step;
 		private final LongSet allowedValues;
 
 		/**
@@ -327,12 +374,15 @@ public abstract class ValueVerifier {
 		public LongVerifier(@Nullable ValueRange valueRange, @Nullable ValueSet valueSet) {
 			super(valueRange, valueSet);
 
-			lower = valueRange==null || valueRange.getLowerBound()==null ?
-					null : (Number)valueRange.getLowerBound().orElse(null);
-			upper = valueRange==null || valueRange.getUpperBound()==null ?
-					null : (Number)valueRange.getUpperBound().orElse(null);
-			step = valueRange==null || valueRange.getStepSize()==null ?
-					null : (Number)valueRange.getStepSize().orElse(null);
+			lower = hasLower ? ((Number)valueRange.getLowerBound().get()).longValue() : UNSET_LONG;
+			upper = hasUpper ? ((Number)valueRange.getUpperBound().get()).longValue() : UNSET_LONG;
+			step = hasStep ? ((Number)valueRange.getStepSize().get()).longValue() : UNSET_LONG;
+
+			if(hasStep && hasLower && hasUpper
+					&& (upper-lower)%step!=0)
+				throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
+						stepAndBoundsMismatch(Long.valueOf(step),
+								Long.valueOf(lower), Long.valueOf(upper)));
 
 			if(valueSet!=null) {
 				allowedValues = new LongOpenHashSet(valueSet.valueCount());
@@ -356,23 +406,26 @@ public abstract class ValueVerifier {
 				return VerificationResult.VALUE_NOT_IN_SET;
 			}
 
-			if(lower!=null && Long.compare(lower.longValue(), value)>lowerCompRequired) {
+			if(hasLower && Long.compare(lower, value)>lowerCompRequired) {
 				return VerificationResult.LOWER_BOUNDARY_VIOLATION;
 			}
 
-			if(upper!=null && Long.compare(upper.longValue(), value)<upperCompRequired) {
+			if(hasUpper && Long.compare(upper, value)<upperCompRequired) {
 				return VerificationResult.UPPER_BOUNDARY_VIOLATION;
 			}
 
-			if(step!=null && value%((Number)step).longValue()!=0) {
-				return VerificationResult.PRECISION_MISMATCH;
+			if(hasStep) {
+				if((hasLower && (value-lower)%step!=0)
+						|| (hasUpper && (upper-value)%step!=0)) {
+					return VerificationResult.PRECISION_MISMATCH;
+				}
 			}
 
 			return VerificationResult.VALID;
 		}
 	}
 
-	public static class FloatVerifier extends ValueVerifier {
+	public static class FloatVerifier extends NumberVerifier {
 
 		public static FloatVerifier forAnnotation(AnnotationManifest annotationManifest) {
 			if(annotationManifest.getValueType()!=ValueType.FLOAT)
@@ -387,7 +440,7 @@ public abstract class ValueVerifier {
 					annotationManifest.getValueSet().orElse(null));
 		}
 
-		private final Number lower, upper, step;
+		private final float lower, upper, step;
 		private final FloatSet allowedValues;
 
 		private final float stepInvert, accuracy;
@@ -399,14 +452,20 @@ public abstract class ValueVerifier {
 		public FloatVerifier(@Nullable ValueRange valueRange, @Nullable ValueSet valueSet) {
 			super(valueRange, valueSet);
 
-			lower = valueRange==null || valueRange.getLowerBound()==null ?
-					null : (Number)valueRange.getLowerBound().orElse(null);
-			upper = valueRange==null || valueRange.getUpperBound()==null ?
-					null : (Number)valueRange.getUpperBound().orElse(null);
-			step = valueRange==null || valueRange.getStepSize()==null ?
-					null : (Number)valueRange.getStepSize().orElse(null);
-			accuracy = step==null ? 0F : step.floatValue() * 0.001F;
-			stepInvert = step==null ? 0F : 1 / step.floatValue();
+			lower = hasLower ? ((Number)valueRange.getLowerBound().get()).floatValue() : UNSET_FLOAT;
+			upper = hasUpper ? ((Number)valueRange.getUpperBound().get()).floatValue() : UNSET_FLOAT;
+			step = hasStep ? ((Number)valueRange.getStepSize().get()).floatValue() : UNSET_FLOAT;
+
+			accuracy = hasStep ? step * 0.001F : UNSET_FLOAT;
+			stepInvert = hasStep ? 1 / step : UNSET_FLOAT;
+
+			if(hasStep && hasLower && hasUpper) {
+				float steps = (upper-lower) * stepInvert;
+				if((steps-Math.floor(steps))>accuracy)
+					throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
+							stepAndBoundsMismatch(Float.valueOf(step),
+									Float.valueOf(lower), Float.valueOf(upper)));
+			}
 
 			if(valueSet!=null) {
 				allowedValues = new FloatOpenHashSet(valueSet.valueCount());
@@ -430,17 +489,17 @@ public abstract class ValueVerifier {
 				return VerificationResult.VALUE_NOT_IN_SET;
 			}
 
-			if(lower!=null && Float.compare(lower.floatValue(), value)>lowerCompRequired) {
+			if(hasLower && Float.compare(lower, value)>lowerCompRequired) {
 				return VerificationResult.LOWER_BOUNDARY_VIOLATION;
 			}
 
-			if(upper!=null && Float.compare(upper.floatValue(), value)<upperCompRequired) {
+			if(hasUpper && Float.compare(upper, value)<upperCompRequired) {
 				return VerificationResult.UPPER_BOUNDARY_VIOLATION;
 			}
 
-			if(step!=null) {
+			if(hasStep) {
 				// Calculate the step and delta
-				float steps = value * stepInvert;
+				float steps = (hasLower ? (value-lower) : (upper-value)) * stepInvert;
 				if((steps-Math.floor(steps))>accuracy) {
 					// Precision mismatch is the case if delta exceeds accuracy
 					return VerificationResult.PRECISION_MISMATCH;
@@ -451,7 +510,7 @@ public abstract class ValueVerifier {
 		}
 	}
 
-	public static class DoubleVerifier extends ValueVerifier {
+	public static class DoubleVerifier extends NumberVerifier {
 
 		public static DoubleVerifier forAnnotation(AnnotationManifest annotationManifest) {
 			if(annotationManifest.getValueType()!=ValueType.DOUBLE)
@@ -466,7 +525,7 @@ public abstract class ValueVerifier {
 					annotationManifest.getValueSet().orElse(null));
 		}
 
-		private final Number lower, upper, step;
+		private final double lower, upper, step;
 		private final DoubleSet allowedValues;
 
 		private final double stepInvert, accuracy;
@@ -478,14 +537,20 @@ public abstract class ValueVerifier {
 		public DoubleVerifier(@Nullable ValueRange valueRange, @Nullable ValueSet valueSet) {
 			super(valueRange, valueSet);
 
-			lower = valueRange==null || valueRange.getLowerBound()==null ?
-					null : (Number)valueRange.getLowerBound().orElse(null);
-			upper = valueRange==null || valueRange.getUpperBound()==null ?
-					null : (Number)valueRange.getUpperBound().orElse(null);
-			step = valueRange==null || valueRange.getStepSize()==null ?
-					null : (Number)valueRange.getStepSize().orElse(null);
-			accuracy = step==null ? 0D : step.doubleValue() * 0.000001;
-			stepInvert = step==null ? 0D : 1 / step.doubleValue();
+			lower = hasLower ? ((Number)valueRange.getLowerBound().get()).doubleValue() : UNSET_DOUBLE;
+			upper = hasUpper ? ((Number)valueRange.getUpperBound().get()).doubleValue() : UNSET_DOUBLE;
+			step = hasStep ? ((Number)valueRange.getStepSize().get()).doubleValue() : UNSET_DOUBLE;
+
+			accuracy = hasStep ? step * 0.000001 : UNSET_DOUBLE;
+			stepInvert = hasStep ? 1 / step : UNSET_DOUBLE;
+
+			if(hasStep && hasLower && hasUpper) {
+				double steps = (upper-lower) * stepInvert;
+				if((steps-Math.floor(steps))>accuracy)
+					throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
+							stepAndBoundsMismatch(Double.valueOf(step),
+									Double.valueOf(lower), Double.valueOf(upper)));
+			}
 
 			if(valueSet!=null) {
 				allowedValues = new DoubleOpenHashSet(valueSet.valueCount());
@@ -509,17 +574,17 @@ public abstract class ValueVerifier {
 				return VerificationResult.VALUE_NOT_IN_SET;
 			}
 
-			if(lower!=null && Double.compare(lower.doubleValue(), value)>lowerCompRequired) {
+			if(hasLower && Double.compare(lower, value)>lowerCompRequired) {
 				return VerificationResult.LOWER_BOUNDARY_VIOLATION;
 			}
 
-			if(upper!=null && Double.compare(upper.doubleValue(), value)<upperCompRequired) {
+			if(hasUpper && Double.compare(upper, value)<upperCompRequired) {
 				return VerificationResult.UPPER_BOUNDARY_VIOLATION;
 			}
 
-			if(step!=null) {
+			if(hasStep) {
 				// Calculate the step and delta
-				double steps = value * stepInvert;
+				double steps = (hasLower ? (value-lower) : (upper-value)) * stepInvert;
 				if((steps-Math.floor(steps))>accuracy) {
 					// Precision mismatch is the case if delta exceeds accuracy
 					return VerificationResult.PRECISION_MISMATCH;

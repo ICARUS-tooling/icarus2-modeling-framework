@@ -8,6 +8,8 @@ import static de.ims.icarus2.test.TestUtils.EMOJI;
 import static de.ims.icarus2.test.TestUtils.displayString;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.test.TestUtils.stringStream;
+import static de.ims.icarus2.util.lang.Primitives._double;
+import static de.ims.icarus2.util.lang.Primitives._float;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
 import static java.util.Objects.requireNonNull;
@@ -22,6 +24,8 @@ import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.DoubleFunction;
+import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
@@ -37,6 +41,8 @@ import de.ims.icarus2.model.manifest.api.ValueSet;
 import de.ims.icarus2.model.manifest.standard.ValueRangeImpl;
 import de.ims.icarus2.model.manifest.standard.ValueSetImpl;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.manifest.util.ValueVerifier.DoubleVerifier;
+import de.ims.icarus2.model.manifest.util.ValueVerifier.FloatVerifier;
 import de.ims.icarus2.model.manifest.util.ValueVerifier.IntVerifier;
 import de.ims.icarus2.model.manifest.util.ValueVerifier.LongVerifier;
 import de.ims.icarus2.model.manifest.util.ValueVerifier.ObjectVerifier;
@@ -59,6 +65,19 @@ class ValueVerifierTest {
 	private static <C extends Comparable<?>> ValueRange createValueRange(ValueType valueType,
 			C lower, C upper, boolean lowerInc, boolean upperInc) {
 		return new ValueRangeImpl(valueType, lower, upper, lowerInc, upperInc);
+	}
+
+	private static <C extends Comparable<?>> ValueRange createOpenValueRange(ValueType valueType,
+			C bound, boolean inclusive, boolean isUpper) {
+		ValueRange valueRange = new ValueRangeImpl(valueType);
+		if(isUpper) {
+			valueRange.setUpperBound(bound)
+				.setUpperBoundInclusive(inclusive);
+		} else {
+			valueRange.setLowerBound(bound)
+				.setLowerBoundInclusive(inclusive);
+		}
+		return valueRange;
 	}
 
 	@Nested
@@ -89,7 +108,7 @@ class ValueVerifierTest {
 		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange [c,k]")
-		Stream<DynamicContainer> testWithRangeInclusive() {
+		Stream<DynamicContainer> testWithClosedRangeInclusive() {
 			// Use c to k as bounds
 			return config()
 					.valueRange(createValueRange(ValueType.STRING, "c", "k", true, true))
@@ -105,7 +124,7 @@ class ValueVerifierTest {
 		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange (c,k)")
-		Stream<DynamicContainer> testWithRangeExclusive() {
+		Stream<DynamicContainer> testWithClosedRangeExclusive() {
 			// Use c to k as bounds
 			return config()
 					.valueRange(createValueRange(ValueType.STRING, "c", "k", false, false))
@@ -113,6 +132,62 @@ class ValueVerifierTest {
 							IntStream.range('d', 'k').mapToObj(i -> String.valueOf((char)i)))
 					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
 							Stream.of("b", "c"))
+					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
+							Stream.of("k", "l"))
+					.createTests(ObjectVerifier::new);
+		}
+
+		@Tag(RANDOMIZED)
+		@TestFactory
+		@DisplayName("with ValueRange [c..")
+		Stream<DynamicContainer> testWithRightOpenRangeInclusive() {
+			// Use c to k as bounds
+			return config()
+					.valueRange(createOpenValueRange(ValueType.STRING, "c", true, false))
+					.expect(VerificationResult.VALID,
+							Stream.of("c", "d", "x"))
+					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
+							Stream.of("a", "b"))
+					.createTests(ObjectVerifier::new);
+		}
+
+		@Tag(RANDOMIZED)
+		@TestFactory
+		@DisplayName("with ValueRange ..k]")
+		Stream<DynamicContainer> testWithLeftOpenRangeInclusive() {
+			// Use c to k as bounds
+			return config()
+					.valueRange(createOpenValueRange(ValueType.STRING, "k", true, true))
+					.expect(VerificationResult.VALID,
+							Stream.of("k", "j", "a"))
+					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
+							Stream.of("l", "m"))
+					.createTests(ObjectVerifier::new);
+		}
+
+		@Tag(RANDOMIZED)
+		@TestFactory
+		@DisplayName("with ValueRange (c..")
+		Stream<DynamicContainer> testWithRightOpenRangeExclusive() {
+			// Use c to k as bounds
+			return config()
+					.valueRange(createOpenValueRange(ValueType.STRING, "c", false, false))
+					.expect(VerificationResult.VALID,
+							Stream.of("d", "e", "x"))
+					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
+							Stream.of("b", "c"))
+					.createTests(ObjectVerifier::new);
+		}
+
+		@Tag(RANDOMIZED)
+		@TestFactory
+		@DisplayName("with ValueRange ..k)")
+		Stream<DynamicContainer> testWithLeftOpenRangeExclusive() {
+			// Use c to k as bounds
+			return config()
+					.valueRange(createOpenValueRange(ValueType.STRING, "k", false, true))
+					.expect(VerificationResult.VALID,
+							Stream.of("j", "i", "a"))
 					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
 							Stream.of("k", "l"))
 					.createTests(ObjectVerifier::new);
@@ -146,64 +221,82 @@ class ValueVerifierTest {
 		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange [1,10]")
-		Stream<DynamicContainer> testWithRangeInclusive() {
-			// Use 1 to 10 as bounds
+		Stream<DynamicContainer> testWithClosedRangeInclusive() {
+			int lower = 1;
+			int upper = 10;
+
 			return config()
-					.valueRange(createValueRange(ValueType.INTEGER, _int(1), _int(10), true, true))
-					.expect(VerificationResult.VALID, IntStream.range(1, 10).boxed())
+					.valueRange(createValueRange(ValueType.INTEGER,
+							_int(lower), _int(upper), true, true))
+					.expect(VerificationResult.VALID, IntStream.range(lower, upper).boxed())
 					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
-							IntStream.of(-1, 0, Integer.MIN_VALUE).boxed())
+							IntStream.of(lower-2, lower-1, Integer.MIN_VALUE).boxed())
 					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
-							IntStream.of(11, 12, Integer.MAX_VALUE).boxed())
+							IntStream.of(upper+1, upper+2, Integer.MAX_VALUE).boxed())
 					.createTests(IntVerifier::new);
 		}
 
 		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange [1,10] stepSize=2")
-		Stream<DynamicContainer> testWithRangeInclusiveAndStepSize() {
-			// Use 1 to 10 as bounds
+		Stream<DynamicContainer> testWithClosedRangeInclusiveAndStepSize() {
+			int lower = 1;
+			int upper = 9;
+			int step = 2;
+
 			return config()
-					.valueRange(createValueRange(ValueType.INTEGER, _int(1), _int(10), true, true)
-							.setStepSize(_int(2)))
+					.valueRange(createValueRange(ValueType.INTEGER,
+							_int(lower), _int(upper), true, true)
+							.setStepSize(_int(step)))
 					.expect(VerificationResult.VALID,
-							IntStream.range(1, 10).filter(i -> i%2==0).boxed())
+							IntStream.range(lower, upper).filter(i -> (i-lower)%step==0).boxed())
 					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
-							IntStream.of(-1, 0, Integer.MIN_VALUE).boxed())
+							IntStream.of(lower-2, lower-1, Integer.MIN_VALUE).boxed())
 					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
-							IntStream.of(11, 12, Integer.MAX_VALUE).boxed())
+							IntStream.of(upper+1, upper+2, Integer.MAX_VALUE).boxed())
+					.expect(VerificationResult.PRECISION_MISMATCH,
+							IntStream.range(lower, upper).filter(i -> i%step==0).boxed())
 					.createTests(IntVerifier::new);
 		}
 
 		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange (1,10)")
-		Stream<DynamicContainer> testWithRangeExclusive() {
-			// Use 1 to 10 as bounds
+		Stream<DynamicContainer> testWithClosedRangeExclusive() {
+			int lower = 1;
+			int upper = 10;
+
 			return config()
-					.valueRange(createValueRange(ValueType.INTEGER, _int(1), _int(10), false, false))
-					.expect(VerificationResult.VALID, IntStream.range(2, 9).boxed())
+					.valueRange(createValueRange(ValueType.INTEGER,
+							_int(lower), _int(upper), false, false))
+					.expect(VerificationResult.VALID, IntStream.range(lower+1, upper-1).boxed())
 					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
-							IntStream.of(-1, 0, Integer.MIN_VALUE).boxed())
+							IntStream.of(lower-1, lower, Integer.MIN_VALUE).boxed())
 					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
-							IntStream.of(11, 12, Integer.MAX_VALUE).boxed())
+							IntStream.of(upper, upper+1, Integer.MAX_VALUE).boxed())
 					.createTests(IntVerifier::new);
 		}
 
 		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange (1,10) stepSize=2")
-		Stream<DynamicContainer> testWithRangeExclusiveAndStepSize() {
-			// Use 1 to 10 as bounds
+		Stream<DynamicContainer> testWithClosedRangeExclusiveAndStepSize() {
+			int lower = 1;
+			int upper = 9;
+			int step = 2;
+
 			return config()
-					.valueRange(createValueRange(ValueType.INTEGER, _int(1), _int(10), false, false)
-							.setStepSize(_int(2)))
+					.valueRange(createValueRange(ValueType.INTEGER,
+							_int(lower), _int(upper), false, false)
+							.setStepSize(_int(step)))
 					.expect(VerificationResult.VALID,
-							IntStream.range(2, 9).filter(i -> i%2==0).boxed())
+							IntStream.range(lower+1, upper-1).filter(i -> (i-lower)%step==0).boxed())
 					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
-							IntStream.of(-1, 0, Integer.MIN_VALUE).boxed())
+							IntStream.of(lower-1, lower, Integer.MIN_VALUE).boxed())
 					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
-							IntStream.of(11, 12, Integer.MAX_VALUE).boxed())
+							IntStream.of(upper, upper+1, Integer.MAX_VALUE).boxed())
+					.expect(VerificationResult.PRECISION_MISMATCH,
+							IntStream.range(lower, upper).filter(i -> i%step==0).boxed())
 					.createTests(IntVerifier::new);
 		}
 	}
@@ -235,70 +328,292 @@ class ValueVerifierTest {
 		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange [1,10]")
-		Stream<DynamicContainer> testWithRangeInclusive() {
-			// Use 1 to 10 as bounds
+		Stream<DynamicContainer> testWithClosedRangeInclusive() {
+			long lower = 1;
+			long upper = 10;
+
 			return config()
-					.valueRange(createValueRange(ValueType.LONG, _long(1), _long(10), true, true))
-					.expect(VerificationResult.VALID, LongStream.range(1, 10).boxed())
+					.valueRange(createValueRange(ValueType.LONG,
+							_long(lower), _long(upper), true, true))
+					.expect(VerificationResult.VALID, LongStream.range(lower, upper).boxed())
 					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
-							LongStream.of(-1, 0, Long.MIN_VALUE).boxed())
+							LongStream.of(lower-2, lower-1, Long.MIN_VALUE).boxed())
 					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
-							LongStream.of(11, 12, Long.MAX_VALUE).boxed())
+							LongStream.of(upper+1, upper+2, Long.MAX_VALUE).boxed())
 					.createTests(LongVerifier::new);
 		}
 
 		@Tag(RANDOMIZED)
 		@TestFactory
-		@DisplayName("with ValueRange [1,10] stepSize=2")
-		Stream<DynamicContainer> testWithRangeInclusiveAndStepSize() {
-			// Use 1 to 10 as bounds
+		@DisplayName("with ValueRange [1,9] stepSize=2")
+		Stream<DynamicContainer> testWithClosedRangeInclusiveAndStepSize() {
+			long lower = 1;
+			long upper = 9;
+			long step = 2;
+
 			return config()
-					.valueRange(createValueRange(ValueType.LONG, _long(1), _long(10), true, true)
-							.setStepSize(_long(2)))
+					.valueRange(createValueRange(ValueType.LONG,
+							_long(lower), _long(upper), true, true)
+							.setStepSize(_long(step)))
 					.expect(VerificationResult.VALID,
-							LongStream.range(1, 10).filter(i -> i%2==0).boxed())
+							LongStream.range(lower, upper).filter(i -> (i-lower)%step==0).boxed())
 					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
-							LongStream.of(-1, 0, Long.MIN_VALUE).boxed())
+							LongStream.of(lower-2, lower-1, Long.MIN_VALUE).boxed())
 					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
-							LongStream.of(11, 12, Long.MAX_VALUE).boxed())
+							LongStream.of(upper+1, upper+2, Long.MAX_VALUE).boxed())
+					.expect(VerificationResult.PRECISION_MISMATCH,
+							LongStream.range(lower, upper).filter(i -> i%step==0).boxed())
 					.createTests(LongVerifier::new);
 		}
 
 		@Tag(RANDOMIZED)
 		@TestFactory
-		@DisplayName("with ValueRange (1,10)")
-		Stream<DynamicContainer> testWithRangeExclusive() {
-			// Use 1 to 10 as bounds
+		@DisplayName("with ValueRange (1,9)")
+		Stream<DynamicContainer> testWithClosedRangeExclusive() {
+			long lower = 1;
+			long upper = 10;
+
 			return config()
-					.valueRange(createValueRange(ValueType.LONG, _long(1), _long(10), false, false))
-					.expect(VerificationResult.VALID, LongStream.range(2, 9).boxed())
+					.valueRange(createValueRange(ValueType.LONG,
+							_long(lower), _long(upper), false, false))
+					.expect(VerificationResult.VALID, LongStream.range(lower+1, upper-1).boxed())
 					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
-							LongStream.of(-1, 0, Long.MIN_VALUE).boxed())
+							LongStream.of(lower-1, lower, Long.MIN_VALUE).boxed())
 					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
-							LongStream.of(11, 12, Long.MAX_VALUE).boxed())
+							LongStream.of(upper, upper+1, Long.MAX_VALUE).boxed())
 					.createTests(LongVerifier::new);
 		}
 
 		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange (1,10) stepSize=2")
-		Stream<DynamicContainer> testWithRangeExclusiveAndStepSize() {
-			// Use 1 to 10 as bounds
+		Stream<DynamicContainer> testWithClosedRangeExclusiveAndStepSize() {
+			long lower = 1;
+			long upper = 9;
+			long step = 2;
+
 			return config()
-					.valueRange(createValueRange(ValueType.LONG, _long(1), _long(10), false, false)
-							.setStepSize(_long(2)))
+					.valueRange(createValueRange(ValueType.LONG,
+							_long(lower), _long(upper), false, false)
+							.setStepSize(_long(step)))
 					.expect(VerificationResult.VALID,
-							LongStream.range(2, 9).filter(i -> i%2==0).boxed())
+							LongStream.range(lower+1, upper-1).filter(i -> (i-lower)%step==0).boxed())
 					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
-							LongStream.of(-1, 0, Long.MIN_VALUE).boxed())
+							LongStream.of(lower-1, lower, Long.MIN_VALUE).boxed())
 					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
-							LongStream.of(11, 12, Long.MAX_VALUE).boxed())
+							LongStream.of(upper, upper+1, Long.MAX_VALUE).boxed())
+					.expect(VerificationResult.PRECISION_MISMATCH,
+							LongStream.range(lower, upper).filter(i -> i%step==0).boxed())
 					.createTests(LongVerifier::new);
 		}
 	}
 
+	private static final DoubleFunction<Float> toFloat =
+		v -> Float.valueOf((float)v);
 
-	//TODO other types (long, float, double)
+	@Nested
+	class ForFloatVerifier {
+
+		@Tag(RANDOMIZED)
+		@TestFactory
+		@DisplayName("empty")
+		Stream<DynamicContainer> testEmpty() {
+			return config()
+					.expect(VerificationResult.VALID,
+							random().doubles(10, Float.MIN_VALUE, Float.MAX_VALUE)
+							.mapToObj(toFloat))
+					.createTests(FloatVerifier::new);
+		}
+
+		@Tag(RANDOMIZED)
+		@TestFactory
+		@DisplayName("with ValueSet [1.5,3,...,15]")
+		Stream<DynamicContainer> testWithSet() {
+			// Use 1 to 10 as valid values
+			return config()
+					.valueSet(createValueSet(ValueType.FLOAT,
+							Stream.iterate(_float(1.5F), v -> _float(v.floatValue()+1.5F))
+							.limit(10)))
+					.expect(VerificationResult.VALUE_NOT_IN_SET,
+							DoubleStream.of(-1.1, 0.0, 1.4, 1.7, 3.5, 15.1, Float.MIN_VALUE, Float.MAX_VALUE)
+							.mapToObj(toFloat))
+					.createTests(FloatVerifier::new);
+		}
+
+		@Tag(RANDOMIZED)
+		@TestFactory
+		@DisplayName("with ValueRange [1.5,9.5]")
+		Stream<DynamicContainer> testWithClosedRangeInclusive() {
+			return config()
+					.valueRange(createValueRange(ValueType.FLOAT, _float(1.5F), _float(9.5F), true, true))
+					.expect(VerificationResult.VALID,
+							Stream.iterate(_float(1.5F), v -> _float(v.floatValue()+2F))
+							.limit(5))
+					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
+							DoubleStream.of(-1, 0, 1.499, Float.MIN_VALUE).mapToObj(toFloat))
+					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
+							DoubleStream.of(9.501, 12, Float.MAX_VALUE).mapToObj(toFloat))
+					.createTests(FloatVerifier::new);
+		}
+
+		@Tag(RANDOMIZED)
+		@TestFactory
+		@DisplayName("with ValueRange [1.5,9.5] stepSize=2")
+		Stream<DynamicContainer> testWithClosedRangeInclusiveAndStepSize() {
+			return config()
+					.valueRange(createValueRange(ValueType.FLOAT, _float(1.5F), _float(9.5F), true, true)
+							.setStepSize(_float(2)))
+					.expect(VerificationResult.VALID,
+							Stream.iterate(_float(1.5F), v -> _float(v.floatValue()+2F))
+							.limit(5))
+					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
+							DoubleStream.of(-1, 0, 1.499, Float.MIN_VALUE).mapToObj(toFloat))
+					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
+							DoubleStream.of(9.501, 12, Float.MAX_VALUE).mapToObj(toFloat))
+					.expect(VerificationResult.PRECISION_MISMATCH,
+							DoubleStream.of(1.6, 2.9, 3.1).mapToObj(toFloat)) //TODO
+					.createTests(FloatVerifier::new);
+		}
+
+		@Tag(RANDOMIZED)
+		@TestFactory
+		@DisplayName("with ValueRange (1.5,9.5)")
+		Stream<DynamicContainer> testWithClosedRangeExclusive() {
+			return config()
+					.valueRange(createValueRange(ValueType.FLOAT,
+							_float(1.5F), _float(9.5F), false, false))
+					.expect(VerificationResult.VALID,
+							Stream.iterate(_float(3.5F), v -> _float(v.floatValue()+2F))
+							.limit(3))
+					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
+							DoubleStream.of(-1, 0, 1.5, Float.MIN_VALUE).mapToObj(toFloat))
+					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
+							DoubleStream.of(9.5, 12, Float.MAX_VALUE).mapToObj(toFloat))
+					.createTests(FloatVerifier::new);
+		}
+
+		@Tag(RANDOMIZED)
+		@TestFactory
+		@DisplayName("with ValueRange (1.5,9.5) stepSize=2")
+		Stream<DynamicContainer> testWithClosedRangeExclusiveAndStepSize() {
+			return config()
+					.valueRange(createValueRange(ValueType.FLOAT,
+							_float(1.5F), _float(9.5F), false, false)
+							.setStepSize(_float(2)))
+					.expect(VerificationResult.VALID,
+							Stream.iterate(_float(3.5F), v -> _float(v.floatValue()+2F))
+							.limit(3))
+					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
+							DoubleStream.of(-1, 0, 1.5, Float.MIN_VALUE).mapToObj(toFloat))
+					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
+							DoubleStream.of(9.5, 12, Float.MAX_VALUE).mapToObj(toFloat))
+					.expect(VerificationResult.PRECISION_MISMATCH,
+							DoubleStream.of(1.6, 2.9, 3.1, 9.499).mapToObj(toFloat)) //TODO
+					.createTests(FloatVerifier::new);
+		}
+	}
+
+	@Nested
+	class ForDoubleVerifier {
+
+		@Tag(RANDOMIZED)
+		@TestFactory
+		@DisplayName("empty")
+		Stream<DynamicContainer> testEmpty() {
+			return config()
+					.expect(VerificationResult.VALID,
+							random().doubles(10, Double.MIN_VALUE, Double.MAX_VALUE).boxed())
+					.createTests(DoubleVerifier::new);
+		}
+
+		@Tag(RANDOMIZED)
+		@TestFactory
+		@DisplayName("with ValueSet [1.5,3,...,15]")
+		Stream<DynamicContainer> testWithSet() {
+			// Use 1 to 10 as valid values
+			return config()
+					.valueSet(createValueSet(ValueType.DOUBLE,
+							Stream.iterate(_double(1.5F), v -> _double(v.doubleValue()+1.5F))
+							.limit(10)))
+					.expect(VerificationResult.VALUE_NOT_IN_SET,
+							DoubleStream.of(-1.1, 0.0, 1.4, 1.7, 3.5, 15.1,
+									Double.MIN_VALUE, Double.MAX_VALUE).boxed())
+					.createTests(DoubleVerifier::new);
+		}
+
+		@Tag(RANDOMIZED)
+		@TestFactory
+		@DisplayName("with ValueRange [1.5,9.5]")
+		Stream<DynamicContainer> testWithClosedRangeInclusive() {
+			return config()
+					.valueRange(createValueRange(ValueType.DOUBLE, _double(1.5), _double(9.5), true, true))
+					.expect(VerificationResult.VALID,
+							Stream.iterate(_double(1.5), v -> _double(v.doubleValue()+2))
+							.limit(5))
+					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
+							DoubleStream.of(-1, 0, 1.499, Double.MIN_VALUE).boxed())
+					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
+							DoubleStream.of(9.501, 12, Double.MAX_VALUE).boxed())
+					.createTests(DoubleVerifier::new);
+		}
+
+		@Tag(RANDOMIZED)
+		@TestFactory
+		@DisplayName("with ValueRange [1.5,9.5] stepSize=2")
+		Stream<DynamicContainer> testWithClosedRangeInclusiveAndStepSize() {
+			return config()
+					.valueRange(createValueRange(ValueType.DOUBLE, _double(1.5), _double(9.5), true, true)
+							.setStepSize(_double(2)))
+					.expect(VerificationResult.VALID,
+							Stream.iterate(_double(1.5), v -> _double(v.doubleValue()+2))
+							.limit(5))
+					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
+							DoubleStream.of(-1, 0, 1.499, Double.MIN_VALUE).boxed())
+					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
+							DoubleStream.of(9.501, 12, Double.MAX_VALUE).boxed())
+					.expect(VerificationResult.PRECISION_MISMATCH,
+							DoubleStream.of(1.6, 2.9, 3.1).boxed()) //TODO
+					.createTests(DoubleVerifier::new);
+		}
+
+		@Tag(RANDOMIZED)
+		@TestFactory
+		@DisplayName("with ValueRange (1.5,9.5)")
+		Stream<DynamicContainer> testWithClosedRangeExclusive() {
+			return config()
+					.valueRange(createValueRange(ValueType.DOUBLE,
+							_double(1.5), _double(9.5), false, false))
+					.expect(VerificationResult.VALID,
+							Stream.iterate(_double(3.5), v -> _double(v.doubleValue()+2))
+							.limit(3))
+					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
+							DoubleStream.of(-1, 0, 1.5, Float.MIN_VALUE).boxed())
+					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
+							DoubleStream.of(9.5, 12, Float.MAX_VALUE).boxed())
+					.createTests(DoubleVerifier::new);
+		}
+
+		@Tag(RANDOMIZED)
+		@TestFactory
+		@DisplayName("with ValueRange (1.5,9.5) stepSize=2")
+		Stream<DynamicContainer> testWithClosedRangeExclusiveAndStepSize() {
+			return config()
+					.valueRange(createValueRange(ValueType.DOUBLE,
+							_double(1.5), _double(9.5), false, false)
+							.setStepSize(_double(2)))
+					.expect(VerificationResult.VALID,
+							Stream.iterate(_double(3.5), v -> _double(v.doubleValue()+2))
+							.limit(3))
+					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
+							DoubleStream.of(-1, 0, 1.5, Float.MIN_VALUE).boxed())
+					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
+							DoubleStream.of(9.5, 12, Float.MAX_VALUE).boxed())
+					.expect(VerificationResult.PRECISION_MISMATCH,
+							DoubleStream.of(1.6, 2.9, 3.1, 9.499).boxed()) //TODO
+					.createTests(DoubleVerifier::new);
+		}
+	}
+
 
 	private static TestConfig config() {
 		return new TestConfig();

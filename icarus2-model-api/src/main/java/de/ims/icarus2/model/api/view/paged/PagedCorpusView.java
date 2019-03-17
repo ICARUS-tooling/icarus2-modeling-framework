@@ -47,7 +47,7 @@ import de.ims.icarus2.util.Part;
  * areas of a corpus that are of interest for a certain task.
  * <p>
  * A corpus view instance has one state observable through the {@link Changeable}
- * interface, namely that of being {@link #isActive()}. The respective
+ * interface, namely that of being {@link #isActive() active}. The respective
  * {@link ChangeEvent} will fire exactly once, when the view gets {@link #close() closed}.
  * <p>
  * Note that a {@code PagedCorpusView} does not provide any methods to directly interact with

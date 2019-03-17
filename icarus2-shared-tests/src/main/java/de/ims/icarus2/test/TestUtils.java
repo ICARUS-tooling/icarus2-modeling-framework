@@ -126,7 +126,7 @@ public class TestUtils {
 	public static final int MAX_INTEGER_INDEX = Integer.MAX_VALUE-8;
 
 	@SuppressWarnings({ "boxing", "rawtypes" })
-	private static final Pair[] displayLabels = {
+	private static final Pair[] intDisplayLabels = {
 			pair(Long.MIN_VALUE, "Long.MIN_VALUE"),
 			pair(Integer.MIN_VALUE, "Integer.MIN_VALUE"),
 			pair(Short.MIN_VALUE, "Short.MIN_VALUE"),
@@ -151,7 +151,7 @@ public class TestUtils {
 	 * @return
 	 */
 	public static String displayString(long value) {
-		for(@SuppressWarnings("rawtypes") Pair entry : displayLabels) {
+		for(@SuppressWarnings("rawtypes") Pair entry : intDisplayLabels) {
 			long center = ((Number)entry.first).longValue();
 			String label = (String)entry.second;
 
@@ -167,10 +167,79 @@ public class TestUtils {
 		return String.valueOf(value);
 	}
 
+	@SuppressWarnings({ "boxing", "rawtypes" })
+	private static final Pair[] floatDisplayLabels = {
+			pair(Float.MIN_VALUE, "Float.MIN_VALUE"),
+			pair(Float.MAX_VALUE, "Float.MAX_VALUE"),
+			pair(Float.MIN_VALUE/2, "Float.MIN_VALUE/2"),
+			pair(Float.MAX_VALUE/2, "Float.MAX_VALUE/2"),
+	};
+
+	@SuppressWarnings({ "boxing", "rawtypes" })
+	private static final Pair[] doubleDisplayLabels = {
+			pair(Double.MIN_VALUE, "Double.MIN_VALUE"),
+			pair(Double.MAX_VALUE, "Double.MAX_VALUE"),
+			pair(Double.MIN_VALUE/2, "Double.MIN_VALUE/2"),
+			pair(Double.MAX_VALUE/2, "Double.MAX_VALUE/2"),
+	};
+
+	/**
+	 * Utility method that produces a more human-readable string for a given
+	 * floating point number (single precision).
+	 *
+	 * @param value
+	 * @return
+	 */
+	public static String displayString(float value) {
+		for(@SuppressWarnings("rawtypes") Pair entry : floatDisplayLabels) {
+			float center = ((Number)entry.first).floatValue();
+			String label = (String)entry.second;
+
+			if(value==center) {
+				return label;
+			}
+		}
+
+		return String.format("%.3f", Float.valueOf(value));
+	}
+
+	/**
+	 * Utility method that produces a more human-readable string for a given
+	 * floating point number (double precision).
+	 *
+	 * @param value
+	 * @return
+	 */
+	public static String displayString(double value) {
+		for(@SuppressWarnings("rawtypes") Pair entry : doubleDisplayLabels) {
+			double center = ((Number)entry.first).floatValue();
+			String label = (String)entry.second;
+
+			if(value==center) {
+				return label;
+			}
+		}
+
+		return String.format("%.5f", Double.valueOf(value));
+	}
+
+	private static boolean isIntType(Class<?> clazz) {
+		return clazz==Integer.class || clazz==Long.class
+				|| clazz==Short.class || clazz==Byte.class;
+	}
+
+	/**
+	 * If {@code value} is a {@link Number}
+	 * @param value
+	 * @return
+	 */
 	public static String displayString(Object value) {
-		if(Number.class.isInstance(value)) {
-			return displayString(((Number)value).longValue());
-		} else if(value!=null && value.getClass().isArray()) {
+		if(value==null) {
+			return "-";
+		}
+
+		// Aggregation checks
+		if(value.getClass().isArray()) {
 			int len = Array.getLength(value);
 			StringBuilder sb = new StringBuilder(len*6);
 			sb.append('[');
@@ -181,7 +250,7 @@ public class TestUtils {
 			}
 			sb.append(']');
 			return sb.toString();
-		} else if(value!=null && value instanceof Collection) {
+		} else if(value instanceof Collection) {
 			Collection<?> col = (Collection<?>) value;
 			StringBuilder sb = new StringBuilder(col.size()*6);
 			sb.append('[');
@@ -192,6 +261,15 @@ public class TestUtils {
 			}
 			sb.append(']');
 			return sb.toString();
+		}
+
+		// Type-specific conversion
+		if(isIntType(value.getClass())) {
+			return displayString(((Number)value).longValue());
+		} else if(value.getClass()==Float.class) {
+			return displayString(((Float)value).floatValue());
+		} else if(value.getClass()==Double.class) {
+			return displayString(((Double)value).doubleValue());
 		} else {
 			return String.valueOf(value);
 		}
@@ -200,8 +278,12 @@ public class TestUtils {
 	public static String displayString(String pattern, Object...args) {
 		for(int i=0; i<args.length; i++) {
 			Object arg = args[i];
-			if(Number.class.isInstance(arg)) { //TODO potential issue: floating-point numbers might get distorted?
+			if(isIntType(arg.getClass())) {
 				args[i] = displayString(((Number)arg).longValue());
+			} else if(arg.getClass()==Float.class) {
+				args[i] = displayString(((Float)arg).floatValue());
+			} else if(arg.getClass()==Double.class) {
+				args[i] = displayString(((Double)arg).doubleValue());
 			} else {
 				args[i] = String.valueOf(arg);
 			}
