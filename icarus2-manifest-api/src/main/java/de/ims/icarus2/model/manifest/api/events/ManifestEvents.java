@@ -16,7 +16,14 @@
  */
 package de.ims.icarus2.model.manifest.api.events;
 
+import de.ims.icarus2.model.manifest.api.ManifestRegistry;
+import de.ims.icarus2.util.events.EventObject;
+
 /**
+ * Event names for {@link EventObject events} fired
+ * by members of the manifest framework, most notably
+ * instances of {@link ManifestRegistry}.
+ *
  * @author Markus Gärtner
  *
  */

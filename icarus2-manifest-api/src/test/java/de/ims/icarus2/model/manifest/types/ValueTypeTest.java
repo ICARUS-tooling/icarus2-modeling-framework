@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
@@ -315,4 +316,13 @@ class ValueTypeTest {
 				});
 	}
 
+	@Nested
+	class VectorTypeTest {
+		//TODO
+	}
+
+	@Nested
+	class MatrixTypeTest {
+		//TODO
+	}
 }

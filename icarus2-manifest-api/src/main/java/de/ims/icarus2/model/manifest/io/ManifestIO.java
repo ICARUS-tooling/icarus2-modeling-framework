@@ -26,8 +26,10 @@ import java.util.List;
 
 import org.xml.sax.SAXException;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.Manifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.standard.DefaultManifestRegistry;
@@ -58,9 +60,11 @@ public class ManifestIO {
 				reader.parseTemplates() : reader.parseCorpora();
 
 		if(loadedManifests.size()==0)
-			throw new IOException("No manifest found in "+location.getUrl());
+			throw new ManifestException(GlobalErrorCode.IO_ERROR,
+					"No manifest found in "+location.getUrl());
 		if(loadedManifests.size()>limit)
-			throw new IOException("More than "+limit+" manifests found in "+location.getUrl());
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
+					"More than "+limit+" manifests found in "+location.getUrl());
 
 		if(location.isTemplate()) {
 			registry.addTemplates(loadedManifests);

@@ -171,6 +171,8 @@ public class ValueType implements StringResource, NamedObject {
 	 * is <b>not</b> required to be persistent. If client code wishes to
 	 * further use the returned object, it should use the {@link #persist(Object)}
 	 * method to transform it into a persistent state.
+	 * <p>
+	 * The default implementation throws a {@link IllegalArgumentException}.
 	 *
 	 * @param s
 	 * @param classLoader
