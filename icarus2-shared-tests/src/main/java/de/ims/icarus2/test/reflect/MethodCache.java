@@ -109,6 +109,7 @@ public class MethodCache {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private void sortHierarchically(List<Method> list) {
 		list.sort(RefUtils.METHOD_INHERITANCE_ORDER);
 	}

@@ -60,9 +60,11 @@ public enum StaticResolution {
 			case 256: return RES_256;
 			case 512: return RES_512;
 			case 1024: return RES_1024;
+
+			default:
+				throw new IllegalArgumentException("Unknown resolution: "+size);
 		}
 
-		throw new IllegalArgumentException("Unknown resolution: "+size);
 	}
 
 	public static StaticResolution getNextLarger(int size) {

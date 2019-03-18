@@ -24,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.lang.reflect.Method;
 
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -57,11 +56,7 @@ class ClassCacheTest {
 
 		@Nested
 		class EqualsMethod {
-
-		}
-		@Test
-		public void testtestName() throws Exception {
-
+			//TODO
 		}
 	}
 
@@ -77,16 +72,16 @@ class ClassCacheTest {
 	// DUMMY CLASSES FOR TESTING
 
 	static class Dummy1 {
-		public void voidMethod1(String s) { /* no-op */ };
-		public void voidMethod2(String s) { /* no-op */ };
-		public String stringMethod1() { return "string"; };
-		public String stringMethod1(String s) { return s; };
+		public void voidMethod1(String s) { /* no-op */ }
+		public void voidMethod2(String s) { /* no-op */ }
+		public String stringMethod1() { return "string"; }
+		public String stringMethod1(String s) { return s; }
 	}
 
 	static class Dummy2 extends Dummy1 {
 		@Override
-		public void voidMethod2(String s) { /* no-op */ };
+		public void voidMethod2(String s) { /* no-op */ }
 		@Override
-		public String stringMethod1(String s) { return s; };
+		public String stringMethod1(String s) { return s; }
 	}
 }

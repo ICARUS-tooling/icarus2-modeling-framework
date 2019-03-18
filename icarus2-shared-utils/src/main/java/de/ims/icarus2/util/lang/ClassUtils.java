@@ -228,6 +228,7 @@ public final class ClassUtils {
 	 * @return
 	 * @throws CloneNotSupportedException if all listed attempts of creating a clone fail
 	 */
+	@SuppressWarnings("resource")
 	public static Object clone(Object source) throws CloneNotSupportedException {
 		requireNonNull(source);
 

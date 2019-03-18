@@ -45,13 +45,13 @@ class ByteChannelCharacterSequenceTest {
 	 */
 	@Test
 	void testByteChannelCharacterSequence() throws IOException {
-		SeekableByteChannel channel = mock(SeekableByteChannel.class);
+		try(SeekableByteChannel channel = mock(SeekableByteChannel.class)) {
+			ByteChannelCharacterSequence sequence = new ByteChannelCharacterSequence(channel);
+			assertSame(channel, sequence.getChannel());
 
-		ByteChannelCharacterSequence sequence = new ByteChannelCharacterSequence(channel);
-		assertSame(channel, sequence.getChannel());
-
-		doReturn(Long.valueOf(Long.MAX_VALUE)).when(channel).size();
-		assertThrows(IcarusRuntimeException.class, () -> new ByteChannelCharacterSequence(channel));
+			doReturn(Long.valueOf(Long.MAX_VALUE)).when(channel).size();
+			assertThrows(IcarusRuntimeException.class, () -> new ByteChannelCharacterSequence(channel));
+		}
 	}
 
 	/**
@@ -60,55 +60,59 @@ class ByteChannelCharacterSequenceTest {
 	 */
 	@Test
 	void testLength() throws IOException {
-		SeekableByteChannel channel = mock(SeekableByteChannel.class);
-		doReturn(Long.valueOf(0)).when(channel).size();
+		try(SeekableByteChannel channel = mock(SeekableByteChannel.class)) {
+			doReturn(Long.valueOf(0)).when(channel).size();
 
-		ByteChannelCharacterSequence sequence = new ByteChannelCharacterSequence(channel);
-		assertEquals(0, sequence.length());
+			ByteChannelCharacterSequence sequence = new ByteChannelCharacterSequence(channel);
+			assertEquals(0, sequence.length());
 
-		for(long size : new long[]{1, 4, 12, 99, 1024, IcarusUtils.MAX_INTEGER_INDEX}) {
-			doReturn(Long.valueOf(size*2)).when(channel).size();
-			ByteChannelCharacterSequence seq = new ByteChannelCharacterSequence(channel);
-			assertEquals(size, seq.length());
+			for(long size : new long[]{1, 4, 12, 99, 1024, IcarusUtils.MAX_INTEGER_INDEX}) {
+				doReturn(Long.valueOf(size*2)).when(channel).size();
+				ByteChannelCharacterSequence seq = new ByteChannelCharacterSequence(channel);
+				assertEquals(size, seq.length());
+			}
 		}
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.util.nio.ByteChannelCharacterSequence#charAt(int)}.
+	 * @throws IOException
 	 */
 	@Test
-	void testCharAt() {
+	void testCharAt() throws IOException {
 		String payload = "this is a test!";
-		SeekableByteChannel channel = ByteArrayChannel.fromChars(payload);
+		try(SeekableByteChannel channel = ByteArrayChannel.fromChars(payload)) {
+			ByteChannelCharacterSequence sequence = new ByteChannelCharacterSequence(channel);
 
-		ByteChannelCharacterSequence sequence = new ByteChannelCharacterSequence(channel);
-
-		for(int i=payload.length()-1; i>0; i--) {
-			assertEquals(payload.charAt(i), sequence.charAt(i));
+			for(int i=payload.length()-1; i>0; i--) {
+				assertEquals(payload.charAt(i), sequence.charAt(i));
+			}
 		}
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.util.nio.ByteChannelCharacterSequence#subSequence(int, int)}.
+	 * @throws IOException
 	 */
 	@Test
-	void testSubSequence() {
+	void testSubSequence() throws IOException {
 		String payload = "this is a test!";
-		SeekableByteChannel channel = ByteArrayChannel.fromChars(payload);
+		try(SeekableByteChannel channel = ByteArrayChannel.fromChars(payload)) {
 
-		ByteChannelCharacterSequence seq0 = new ByteChannelCharacterSequence(channel);
+			ByteChannelCharacterSequence seq0 = new ByteChannelCharacterSequence(channel);
 
-		assertEquals(payload.length(), seq0.length());
-		assertEquals(payload, seq0.toString());
+			assertEquals(payload.length(), seq0.length());
+			assertEquals(payload, seq0.toString());
 
-		CharSequence seq_0_4 = seq0.subSequence(0, 4);
-		assertEquals("this", seq_0_4.toString());
+			CharSequence seq_0_4 = seq0.subSequence(0, 4);
+			assertEquals("this", seq_0_4.toString());
 
-		CharSequence seq_5_9 = seq0.subSequence(5, 9);
-		assertEquals("is a", seq_5_9.toString());
+			CharSequence seq_5_9 = seq0.subSequence(5, 9);
+			assertEquals("is a", seq_5_9.toString());
 
-		CharSequence seq_sub = seq_5_9.subSequence(3, 4);
-		assertEquals("a", seq_sub.toString());
+			CharSequence seq_sub = seq_5_9.subSequence(3, 4);
+			assertEquals("a", seq_sub.toString());
+		}
 	}
 
 }

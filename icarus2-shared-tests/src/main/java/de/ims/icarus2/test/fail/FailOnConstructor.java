@@ -44,6 +44,8 @@ import javax.tools.JavaFileObject.Kind;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
+import org.opentest4j.TestAbortedException;
+
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -116,17 +118,20 @@ public class FailOnConstructor {
 	private static <T extends Object> Class<T> createClass(JavaFileObject sourceFile,
 			String packageName, String className) {
 		ByteArrayJavaFileObject classFile = new ByteArrayJavaFileObject(packageName, className);
-		JavaFileManager fileManager = createFileManager(sourceFile, classFile);
+		try(JavaFileManager fileManager = createFileManager(sourceFile, classFile)) {
 
-		assertTrue(ToolProvider.getSystemJavaCompiler().getTask(
-				null, fileManager, null, null, null, Collections.singleton(sourceFile)).call());
+			assertTrue(ToolProvider.getSystemJavaCompiler().getTask(
+					null, fileManager, null, null, null, Collections.singleton(sourceFile)).call());
 
-		ClassLoader classLoader = createClassLoader(classFile);
+			ClassLoader classLoader = createClassLoader(classFile);
 
-		try {
-			return (Class<T>) classLoader.loadClass(createFullName(packageName, className, false));
-		} catch (ClassNotFoundException e) {
-			throw new InternalError("Unable to load new class :"+e.getMessage(), e);
+			try {
+				return (Class<T>) classLoader.loadClass(createFullName(packageName, className, false));
+			} catch (ClassNotFoundException e) {
+				throw new InternalError("Unable to load new class :"+e.getMessage(), e);
+			}
+		} catch (IOException e) {
+			throw new TestAbortedException("Failed to close file manager", e);
 		}
 	}
 

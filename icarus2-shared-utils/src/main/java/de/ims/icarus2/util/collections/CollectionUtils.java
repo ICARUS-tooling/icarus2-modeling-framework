@@ -1320,8 +1320,8 @@ public final class CollectionUtils {
                     return false;
 
             	Set<? extends Map.Entry<K,V>> s = ref();
-            	if(s==null) {
-            		return o==null;
+            	if(s==o) {
+            		return true;
             	}
                 @SuppressWarnings("rawtypes")
 				Set other = (Set) o;

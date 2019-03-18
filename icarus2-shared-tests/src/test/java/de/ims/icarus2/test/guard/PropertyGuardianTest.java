@@ -64,10 +64,10 @@ class PropertyGuardianTest {
 	// DUMMY CLASSES
 
 	public static class Dummy1 {
-		public void setter1(String s) { /* no-op */ };
-		public void setter2(String s, int x) { /* no-op */ };
+		public void setter1(String s) { /* no-op */ }
+		public void setter2(String s, int x) { /* no-op */ }
 
-		public String getter1() { return "result1"; };
-		public String getter2(String s) { return s; };
+		public String getter1() { return "result1"; }
+		public String getter2(String s) { return s; }
 	}
 }

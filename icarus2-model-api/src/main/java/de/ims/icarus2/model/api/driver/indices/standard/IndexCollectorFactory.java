@@ -158,15 +158,15 @@ public class IndexCollectorFactory {
 					builder = new LimitedUnsortedSetBuilderLong(capacity, chunkLimit);
 					break;
 
+				default:
+					 throw new ModelException(GlobalErrorCode.NOT_IMPLEMENTED,
+							 "Value type not supported: "+valueType);
+
 				}
 			} else {
 				builder = new BucketSetBuilder(valueType, chunkLimit);
 			}
 		}
-
-		 if(builder==null)
-			 throw new ModelException(GlobalErrorCode.NOT_IMPLEMENTED,
-					 "Could not create IndexSetBuilder for factory configuration: "+toString());
 
 //		if (builder == null) {
 //			// FIXME for debug reasons we just default to some basic builder
@@ -653,9 +653,9 @@ public class IndexCollectorFactory {
 		private final int chunkSize;
 		private final Bucket virtualRoot = new Bucket(){
 			@Override
-			public boolean isRoot() {return true;};
+			public boolean isRoot() {return true;}
 			@Override
-			public Bucket find(long val) {return getSmaller().find(val);};
+			public Bucket find(long val) {return getSmaller().find(val);}
 			@Override
 			public void insert(Bucket b) {
 				if(getSmaller()==null) {
@@ -663,9 +663,9 @@ public class IndexCollectorFactory {
 				} else {
 					getSmaller().insert(b);
 				}
-			};
+			}
 			@Override
-			public String toString() {return "ROOT";};
+			public String toString() {return "ROOT";}
 		};
 		private int size = 1;
 

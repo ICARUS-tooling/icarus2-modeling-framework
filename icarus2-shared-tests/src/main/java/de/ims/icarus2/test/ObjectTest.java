@@ -96,7 +96,6 @@ public interface ObjectTest {
 		}
 	}
 
-	@SuppressWarnings("boxing")
 	@Test
 	default void testHashCodeDifferent() {
 		Object[] objects = createDifferent();
@@ -116,7 +115,8 @@ public interface ObjectTest {
 			}
 
 			if(last!=null) {
-				assertNotEquals(last.hashCode(), object.hashCode(), "hash inequality violated between "+lastIndex+" and "+i);
+				assertNotEquals(last.hashCode(), object.hashCode(),
+						"hash inequality violated between "+lastIndex+" and "+i);
 			}
 
 			last = object;

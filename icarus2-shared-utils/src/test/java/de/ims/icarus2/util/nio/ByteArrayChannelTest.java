@@ -112,11 +112,11 @@ public class ByteArrayChannelTest {
 	@Test
 	public void testFromChars() throws Exception {
 		String in = "abcdefghijklmonp";
-		ByteArrayChannel channel = ByteArrayChannel.fromChars(in);
+		try(ByteArrayChannel channel = ByteArrayChannel.fromChars(in)) {
+			assertEquals(in.length()*2, channel.size());
 
-		assertEquals(in.length()*2, channel.size());
-
-		ByteChannelCharacterSequence sequence = new ByteChannelCharacterSequence(channel);
-		assertEquals(in, sequence.toString());
+			ByteChannelCharacterSequence sequence = new ByteChannelCharacterSequence(channel);
+			assertEquals(in, sequence.toString());
+		}
 	}
 }
