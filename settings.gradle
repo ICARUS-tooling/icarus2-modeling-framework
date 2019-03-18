@@ -17,14 +17,14 @@ include 'icarus2-experiments'
 include 'icarus2-examples'
 
 
-project(':icarus2-apiguard').projectDir = "$rootDir/icarus2-apiguard" as File
-project(':icarus2-shared-utils').projectDir = "$rootDir/icarus2-shared-utils" as File
-project(':icarus2-shared-tests').projectDir = "$rootDir/icarus2-shared-tests" as File
-project(':icarus2-manifest-api').projectDir = "$rootDir/icarus2-manifest-api" as File
-project(':icarus2-model-api').projectDir = "$rootDir/icarus2-model-api" as File
-project(':icarus2-model-defaults').projectDir = "$rootDir/icarus2-model-defaults" as File
-project(':icarus2-file-driver-utils').projectDir = "$rootDir/icarus2-file-driver-utils" as File
-project(':icarus2-model-compression').projectDir = "$rootDir/icarus2-model-compression" as File
-project(':icarus2-common-formats').projectDir = "$rootDir/icarus2-common-formats" as File
-project(':icarus2-experiments').projectDir = "$rootDir/icarus2-experiments" as File
-project(':icarus2-examples').projectDir = "$rootDir/icarus2-examples" as File
+//project(':icarus2-apiguard').projectDir = "$rootDir/icarus2-apiguard" as File
+//project(':icarus2-shared-utils').projectDir = "$rootDir/icarus2-shared-utils" as File
+//project(':icarus2-shared-tests').projectDir = "$rootDir/icarus2-shared-tests" as File
+//project(':icarus2-manifest-api').projectDir = "$rootDir/icarus2-manifest-api" as File
+//project(':icarus2-model-api').projectDir = "$rootDir/icarus2-model-api" as File
+//project(':icarus2-model-defaults').projectDir = "$rootDir/icarus2-model-defaults" as File
+//project(':icarus2-file-driver-utils').projectDir = "$rootDir/icarus2-file-driver-utils" as File
+//project(':icarus2-model-compression').projectDir = "$rootDir/icarus2-model-compression" as File
+//project(':icarus2-common-formats').projectDir = "$rootDir/icarus2-common-formats" as File
+//project(':icarus2-experiments').projectDir = "$rootDir/icarus2-experiments" as File
+//project(':icarus2-examples').projectDir = "$rootDir/icarus2-examples" as File
