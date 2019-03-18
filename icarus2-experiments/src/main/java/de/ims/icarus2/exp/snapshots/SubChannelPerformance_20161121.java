@@ -20,11 +20,8 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CoderResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -146,12 +143,13 @@ public class SubChannelPerformance_20161121 {
 		final long duration;
 		final long bytesread;
 		final double throughput;
+		@SuppressWarnings("rawtypes")
 		final Class[] stack;
 		final String info;
 		final int buffersize;
 
 		public TestResult(Object owner, long duration, long bytesread,
-				double throughput, int buffersize, String info, Class...stack) {
+				double throughput, int buffersize, String info, @SuppressWarnings("rawtypes") Class...stack) {
 			this.owner = owner;
 			this.duration = duration;
 			this.bytesread = bytesread;
@@ -171,17 +169,18 @@ public class SubChannelPerformance_20161121 {
 		 */
 		@Override
 		public String toString() {
-			StringBuilder sb = new StringBuilder("[");
+			StringBuilder sb = new StringBuilder();
 
+			if(owner!=null) {
+				sb.append(owner);
+			}
+
+			sb.append("[");
 			sb.append("throughput=").append(Math.floor(throughput*1000D/MB)).append("MB/s");
 
 			sb.append(" duration=").append(duration);
 
 			sb.append(" bytesread=").append(bytesread/MB).append("MB");
-
-			if(owner!=null) {
-				sb.append(' ').append(owner);
-			}
 
 			sb.append(" stack=");
 			for(int i=0; i<stack.length; i++) {
@@ -304,31 +303,5 @@ public class SubChannelPerformance_20161121 {
 		}
 
 		return count;
-	}
-
-	private static int readChannel(ReadableByteChannel channel, CharsetDecoder decoder, ByteBuffer bb, CharBuffer cb) throws IOException {
-		int count = 0;
-
-	    for(;;) {
-	        if(-1 == channel.read(bb)) {
-	            decoder.decode(bb, cb, true);
-	            decoder.flush(cb);
-	        	cb.flip();
-	        	count += cb.remaining();
-	            break;
-	        }
-	        bb.flip();
-
-	        CoderResult res = decoder.decode(bb, cb, false);
-	        if(CoderResult.OVERFLOW == res) {
-	        	cb.flip();
-	        	count += cb.remaining();
-	            cb.clear();
-	        } else if (CoderResult.UNDERFLOW == res) {
-	            bb.compact();
-	        }
-	    }
-
-	    return count;
 	}
 }

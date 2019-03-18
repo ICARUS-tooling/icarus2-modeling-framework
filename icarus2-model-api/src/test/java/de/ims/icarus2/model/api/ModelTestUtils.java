@@ -73,10 +73,6 @@ public class ModelTestUtils {
 		return random().longs(RUNS_EXHAUSTIVE, UNSET_LONG, Long.MAX_VALUE);
 	}
 
-	private static boolean equals(Item item, Object obj) {
-		return obj instanceof Item && item.getId()==((Item)obj).getId();
-	}
-
 	@SuppressWarnings("boxing")
 	public static <I extends Item> I stubId(I item, long id) {
 		assertMock(item);

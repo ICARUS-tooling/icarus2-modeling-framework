@@ -70,10 +70,6 @@ import de.ims.icarus2.model.manifest.util.ValueVerifier.VerificationResult;
  */
 class ValueVerifierTest {
 
-	private static ValueSet createValueSet(ValueType valueType, Object...values) {
-		return new ValueSetImpl(valueType).addAll(values);
-	}
-
 	private static ValueSet createValueSet(ValueType valueType, Stream<?> values) {
 		return new ValueSetImpl(valueType).addAll(values);
 	}

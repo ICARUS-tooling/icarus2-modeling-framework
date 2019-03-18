@@ -66,7 +66,6 @@ class ContainerManifestXmlDelegateTest implements ManifestXmlDelegateTest<Contai
 	@Override
 	public List<Config> configurations() {
 		return Stream.of(ContainerType.values())
-				.filter(ct -> ct!=ContainerType.PROXY) //TODO get rid of the PROXY type
 				.map(ct -> ManifestGenerator.config()
 							.preprocessor(ManifestType.CONTAINER_MANIFEST,
 									m -> ((ContainerManifest)m).setContainerType(ct))

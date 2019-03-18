@@ -269,7 +269,7 @@ public class ManifestUtils {
 				.orElseThrow(ManifestException.missing(fragment, "id"));
 	}
 
-	public static String requireName(MemberManifest manifest) {
+	public static String requireName(MemberManifest<?> manifest) {
 		return manifest.getName()
 				.orElseThrow(ManifestException.missing(manifest, "name"));
 	}

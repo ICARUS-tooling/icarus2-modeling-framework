@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.filedriver.io;
 
+import static de.ims.icarus2.util.lang.Primitives._int;
+
 import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -48,7 +50,7 @@ public class UnlimitedBlockCache implements BlockCache {
 	public String toString() {
 		return new StringBuilder()
 		.append(getClass().getName())
-		.append("[size=").append(blocks==null ? "<unopened>" : blocks.size())
+		.append("[size=").append(blocks==null ? "<unopened>" : _int(blocks.size()))
 		.append(']')
 		.toString();
 	}

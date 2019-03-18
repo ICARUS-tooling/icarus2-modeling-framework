@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.GlobalErrorCode;
@@ -69,7 +70,7 @@ public class ProxyContainer extends AbstractImmutableContainer {
 	 */
 	@Override
 	public ContainerType getContainerType() {
-		return ContainerType.PROXY;
+		return ContainerType.LIST;
 	}
 
 	/**
@@ -125,7 +126,7 @@ public class ProxyContainer extends AbstractImmutableContainer {
 	 */
 	@Override
 	public long indexOfItem(Item item) {
-		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Immutable proxy");
+		return UNSET_LONG;
 	}
 
 	/**

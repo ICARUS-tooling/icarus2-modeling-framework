@@ -71,7 +71,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  * @author Markus Gärtner
  *
  */
-@SuppressWarnings("boxing")
+@SuppressWarnings({ "boxing", "deprecation" })
 public class ManifestTestUtils {
 
 	public static final ManifestFactory MANIFEST_FACTORY = new DefaultManifestFactory(

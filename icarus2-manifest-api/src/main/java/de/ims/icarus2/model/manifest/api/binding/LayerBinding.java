@@ -197,7 +197,7 @@ public final class LayerBinding implements Bindable, Serializable {
 			ManifestRegistry registry, ReportBuilder<ReportItem> reportBuilder) {
 		// Resolve layer manifests if required
 		if(entry.layers==null && entry.targets!=null) {
-			Set<LayerManifest> layers = new ReferenceOpenHashSet<>();
+			Set<LayerManifest<?>> layers = new ReferenceOpenHashSet<>();
 			int failedPointers = 0;
 			for(LayerPointer layerPointer : entry.targets) {
 
@@ -212,7 +212,7 @@ public final class LayerBinding implements Bindable, Serializable {
 				}
 
 				// Level-2 check
-				Optional<LayerManifest> layer = contextManifest.get()
+				Optional<LayerManifest<?>> layer = contextManifest.get()
 						.getLayerManifest(layerPointer.getLayerId());
 				if(!layer.isPresent()) {
 					failedPointers++;
@@ -297,7 +297,7 @@ public final class LayerBinding implements Bindable, Serializable {
 		return nonNullReadOnlySet(getBinding(alias).targets);
 	}
 
-	public Set<LayerManifest> getLayerManifests(String alias) {
+	public Set<LayerManifest<?>> getLayerManifests(String alias) {
 		checkState("No manifests resolved yet", isResolved());
 		return nonNullReadOnlySet(getBinding(alias).layers);
 	}
@@ -568,7 +568,7 @@ public final class LayerBinding implements Bindable, Serializable {
 		 * Resolved target layer, must satisfy specification from this binding's
 		 * {@link LayerPrerequisite prerequisite}.
 		 */
-		public Set<LayerManifest> layers;
+		public Set<LayerManifest<?>> layers;
 	}
 
 	/**

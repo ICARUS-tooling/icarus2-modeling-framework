@@ -82,8 +82,8 @@ public class ExpressionXmlHandler implements ManifestXmlHandler {
 					.orElseThrow(ManifestXmlHandler.error("Missing variable name"));
 			String classname = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.CLASS)
 					.orElseThrow(ManifestXmlHandler.error("Missing variable class name"));
-			String pluginId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.PLUGIN_ID)
-					.orElse(null);
+//			String pluginId = ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.PLUGIN_ID)
+//					.orElse(null);
 
 			ClassLoader classLoader = getClass().getClassLoader();
 

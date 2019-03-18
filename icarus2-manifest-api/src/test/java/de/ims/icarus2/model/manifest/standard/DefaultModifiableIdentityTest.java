@@ -28,6 +28,7 @@ import de.ims.icarus2.test.TestSettings;
  * @author Markus Gärtner
  *
  */
+@SuppressWarnings("rawtypes")
 class DefaultModifiableIdentityTest implements ModifiableIdentityTest<DefaultModifiableIdentity> {
 
 
@@ -35,8 +36,8 @@ class DefaultModifiableIdentityTest implements ModifiableIdentityTest<DefaultMod
 	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#createFromIdentity(java.lang.String, java.lang.String, java.lang.String, javax.swing.Icon)
 	 */
 	@Override
-	public DefaultModifiableIdentity createFromIdentity(String id, String name, String description, Icon icon) {
-		return new DefaultModifiableIdentity(id, name, description, icon);
+	public DefaultModifiableIdentity<?> createFromIdentity(String id, String name, String description, Icon icon) {
+		return new DefaultModifiableIdentity<>(id, name, description, icon);
 	}
 
 	/**
@@ -44,15 +45,15 @@ class DefaultModifiableIdentityTest implements ModifiableIdentityTest<DefaultMod
 	 */
 	@Override
 	public Class<? extends DefaultModifiableIdentity> getTestTargetClass() {
-		return DefaultModifiableIdentity.class;
+		return (Class<? extends DefaultModifiableIdentity>) DefaultModifiableIdentity.class;
 	}
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
 	@Override
-	public DefaultModifiableIdentity createTestInstance(TestSettings settings) {
-		return settings.process(new DefaultModifiableIdentity());
+	public DefaultModifiableIdentity<?> createTestInstance(TestSettings settings) {
+		return settings.process(new DefaultModifiableIdentity<>());
 	}
 
 	//TODO test other constructors?

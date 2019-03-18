@@ -38,6 +38,7 @@ import de.ims.icarus2.util.nio.ByteCharMapper;
  * @author Markus Gärtner
  *
  */
+@SuppressWarnings("deprecation")
 public class CountBytePerformance {
 
 	public static void main(String[] args) throws IOException {

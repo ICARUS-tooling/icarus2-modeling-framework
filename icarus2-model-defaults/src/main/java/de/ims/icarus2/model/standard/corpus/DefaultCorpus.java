@@ -20,6 +20,7 @@ import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.model.util.ModelUtils.getUniqueId;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
@@ -260,9 +261,9 @@ public class DefaultCorpus implements Corpus {
 			indices = IndexUtils.wrapSpan(0L, itemCount-1);
 		}
 
-		int pageSize = options.getInteger(CorpusOption.PARAM_VIEW_PAGE_SIZE, -1);
+		int pageSize = options.getInteger(CorpusOption.PARAM_VIEW_PAGE_SIZE, UNSET_INT);
 
-		if(pageSize==-1) {
+		if(pageSize==UNSET_INT) {
 			//TODO introduce mechanism to fetch global settings from central CorpusManager
 			pageSize = CorpusOption.DEFAULT_VIEW_PAGE_SIZE;
 		}
@@ -318,7 +319,7 @@ public class DefaultCorpus implements Corpus {
 		synchronized (corpusPartStorage) {
 			if(!corpusPartStorage.canOpen(mode))
 				throw new ModelException(this, ModelErrorCode.VIEW_ALREADY_OPENED,
-						"Cannot open another stream in mode: "+mode);
+						"Cannot open another subcorpus in mode: "+mode);
 
 			//TODO actually build the stream
 			StreamedCorpusView stream = null;
@@ -917,10 +918,6 @@ public class DefaultCorpus implements Corpus {
 			this.manifest = manifest;
 		}
 
-		public String getId() {
-			return ManifestUtils.requireId(manifest);
-		}
-
 		public ContextManifest getManifest() {
 			return manifest;
 		}
@@ -952,7 +949,7 @@ public class DefaultCorpus implements Corpus {
 					final CorpusMemberFactory factory = corpus.getManager().newFactory();
 
 					driver = factory.newImplementationLoader()
-							.manifest(manifest.getDriverManifest()
+							.manifest(getManifest().getDriverManifest()
 									.flatMap(DriverManifest::getImplementationManifest)
 									.get())
 							.environment(corpus)
@@ -1156,11 +1153,6 @@ public class DefaultCorpus implements Corpus {
 		public ItemLayer getBoundaryLayer() {
 			return null;
 		}
-
-//		@Override
-//		public int getUID() {
-//			return uid;
-//		}
 
 		@Override
 		public ItemLayer getFoundationLayer() {

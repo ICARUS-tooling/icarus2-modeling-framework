@@ -294,27 +294,6 @@ public class ManifestXmlTestUtils {
 		return id;
 	}
 
-	private static void failForXml(String msg, String xml, Manifest manifest) {
-		String message = getId(manifest);
-
-		message += "  deserialization failed: \n"; //$NON-NLS-1$
-		message += xml;
-
-		if(msg!=null) {
-			message = msg+": "+message; //$NON-NLS-1$
-		}
-
-		fail(message);
-	}
-
-	private static void failForEqual(String msg, Object original, Object created) {
-		String message = "Expected result of deserialization to be different from original"; //$NON-NLS-1$
-		if(msg!=null) {
-			message = msg+": "+message; //$NON-NLS-1$
-		}
-		fail(message);
-	}
-
 	private static void failForTrace(String msg, Trace trace, Object manifest, String xml) {
 		String message = getId(manifest);
 

@@ -304,13 +304,22 @@ public abstract class AbstractNodeStorage<N extends NodeInfo, E extends Edge> im
 	public void setTerminal(Structure context, Edge edge, Item item,
 			boolean isSource) {
 
+		// Old states
 		NodeInfo sourceInfo = getNodeInfo(edge.getSource());
 		NodeInfo targetInfo = getNodeInfo(edge.getTarget());
 		NodeInfo terminalInfo = getNodeInfo(item);
 
+		// Reassign links
 
-
-		// TODO Auto-generated method stub
+		if(isSource) {
+			sourceInfo.removeEdge(edge, false);
+			terminalInfo.addEdge(edge, false);
+			edge.setSource(item);
+		} else {
+			targetInfo.removeEdge(edge, true);
+			terminalInfo.addEdge(edge, true);
+			edge.setTarget(item);
+		}
 
 		invalidate();
 	}

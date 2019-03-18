@@ -36,7 +36,7 @@ import de.ims.icarus2.util.concurrent.ExecutionUtil;
  *
  */
 public abstract class JAXBGate<B extends Object> {
-	
+
 	private static final Logger log = LoggerFactory.getLogger(JAXBGate.class);
 
 	private final Path file;
@@ -161,7 +161,7 @@ public abstract class JAXBGate<B extends Object> {
 		synchronized (fileLock) {
 			JAXBContext context = getJaxbContext();
 			Marshaller marshaller = context.createMarshaller();
-			marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+			marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
 			marshaller.marshal(buffer, Files.newOutputStream(file));
 		}
 	}

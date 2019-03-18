@@ -117,7 +117,8 @@ subprojects {
 		// https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-params
 		junit "org.junit.jupiter:junit-jupiter-params"
 		
-		junit "org.junit.platform:junit-platform-runner"
+    	// https://mvnrepository.com/artifact/org.junit.platform/junit-platform launcher
+		junit "org.junit.platform:junit-platform-launcher"
 			
 	    // https://mvnrepository.com/artifact/org.mockito/mockito-core
 		mockito "org.mockito:mockito-core:${versions.mockitoVersion}"

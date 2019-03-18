@@ -19,6 +19,7 @@ package de.ims.icarus2.model.api.driver.indices.standard;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkSorted;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
 import java.io.PrintStream;
@@ -1136,10 +1137,12 @@ public class IndexCollectorFactory {
 			return v>=left && v<=right;
 		}
 
+		@SuppressWarnings("unused")
 		public long getMin() {
 			return min;
 		}
 
+		@SuppressWarnings("unused")
 		public long getMax() {
 			return max;
 		}
@@ -1166,6 +1169,7 @@ public class IndexCollectorFactory {
 			return parent.smaller==this;
 		}
 
+		@SuppressWarnings("unused")
 		public boolean isRightChild() {
 			checkNotRoot();
 
@@ -1262,6 +1266,7 @@ public class IndexCollectorFactory {
 			return null;
 		}
 
+		@SuppressWarnings("unused")
 		private static Bucket successor(Bucket b) {
 			Bucket x = b;
 
@@ -1336,13 +1341,18 @@ public class IndexCollectorFactory {
 		 * Steps to consider when deleting a node in an AVL tree are the following:
 		 *
     	 * 1. If node X is a leaf or has only one child, skip to step 5 with Z:=X.
-    	 * 2. Otherwise, determine node Y by finding the largest node in node X's left subtree (the in-order predecessor of X − it does not have a right child) or the smallest in its right subtree (the in-order successor of X − it does not have a left child).
-    	 * 3. Exchange all the child and parent links of node X with those of node Y. In this step, the in-order sequence between nodes X and Y is temporarily disturbed, but the tree structure doesn't change.
+    	 * 2. Otherwise, determine node Y by finding the largest node in node X's left subtree
+    	 *    (the in-order predecessor of X − it does not have a right child) or the smallest
+    	 *    in its right subtree (the in-order successor of X − it does not have a left child).
+    	 * 3. Exchange all the child and parent links of node X with those of node Y. In this step,
+    	 *    the in-order sequence between nodes X and Y is temporarily disturbed, but the
+    	 *    tree structure doesn't change.
     	 * 4. Choose node Z to be all the child and parent links of old node Y = those of new node X.
     	 * 5. If node Z has a subtree (which then is a leaf), attach it to Z's parent.
     	 * 6. If node Z was the root (its parent is null), update root.
     	 * 7. Delete node Z.
-    	 * 8. Retrace the path back up the tree (starting with node Z's parent) to the root, adjusting the balance factors as needed.
+    	 * 8. Retrace the path back up the tree (starting with node Z's parent) to the root,
+    	 *    adjusting the balance factors as needed.
 		 *
 		 */
 		private static void remove(Bucket b) {
@@ -1490,7 +1500,9 @@ public class IndexCollectorFactory {
 		 */
 		@Override
 		public String toString() {
-			return String.format("{%s (%s,%s) b=%d s=%d %s}", text(left), text(min), text(max), heightDiff(), storage.size(), text(right));
+			return String.format("{%s (%s,%s) b=%d s=%d %s}",
+					text(left), text(min), text(max), _int(heightDiff()),
+					_int(storage.size()), text(right));
 		}
 	}
 }

@@ -56,8 +56,7 @@ public class StreamVsChannelComparison_20161117 {
 	}
 
 	private static final int MB = 1024*1024;
-	private static final int GB = 1024*1024*1024;
-	private static final int L1 = 32768;
+//	private static final int GB = 1024*1024*1024;
 	private static final int DEFAULT_BUFFER_SIZE = 8192;
 
 	private static final int[] BUFFER_SIZES = {
@@ -180,6 +179,7 @@ public class StreamVsChannelComparison_20161117 {
 
 		private final Object owner;
 		private final long duration;
+		@SuppressWarnings("rawtypes")
 		private final Class[] stack;
 		private final int buffersize;
 		private final Charset charset;
@@ -193,7 +193,7 @@ public class StreamVsChannelComparison_20161117 {
 		 * @param stack
 		 */
 		public TestResult(Object owner, long duration, int buffersize, Charset charset,
-				String info, Class...stack) {
+				String info, @SuppressWarnings("rawtypes") Class...stack) {
 			this.owner = owner;
 			this.duration = duration;
 			this.buffersize = buffersize;
@@ -215,13 +215,14 @@ public class StreamVsChannelComparison_20161117 {
 		 */
 		@Override
 		public String toString() {
-			StringBuilder sb = new StringBuilder("[");
-
-			sb.append("duration=").append(duration);
+			StringBuilder sb = new StringBuilder();
 
 			if(owner!=null) {
-				sb.append(' ').append(owner);
+				sb.append(owner);
 			}
+
+			sb.append("[");
+			sb.append("duration=").append(duration);
 
 			sb.append(" stack=");
 			for(int i=0; i<stack.length; i++) {

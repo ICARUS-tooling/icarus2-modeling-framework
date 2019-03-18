@@ -183,6 +183,7 @@ public interface OptionTest extends ModifiableIdentityTest<Option>, LockableTest
 	 * Test method for
 	 * {@link de.ims.icarus2.model.manifest.api.OptionsManifest.Option#getExtensionPointUid()}.
 	 */
+	@SuppressWarnings("deprecation")
 	@Test
 	default void testGetExtensionPointUid() {
 		TestUtils.assertOptGetter(createWithType(settings(), ValueType.EXTENSION),

@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.util.strings;
 
+import static de.ims.icarus2.util.lang.Primitives._int;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Arrays;
@@ -95,7 +97,7 @@ public class CharTableBuffer {
 	public String getErrorMessage(String prefix) {
 		return String.format(
 				"%s - error in block:%n==== starting at line %d%n%s%n==== ending at line %d", //$NON-NLS-1$
-				prefix, getBlockBegin(), toString(), getBlockEnd());
+				prefix, _int(getBlockBegin()), toString(), _int(getBlockEnd()));
 	}
 
 	public void startReading(Reader reader) throws IOException {

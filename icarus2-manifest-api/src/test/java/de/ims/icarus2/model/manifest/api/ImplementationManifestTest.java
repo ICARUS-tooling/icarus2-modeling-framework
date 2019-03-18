@@ -113,7 +113,6 @@ public interface ImplementationManifestTest extends EmbeddedMemberManifestTest<I
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ImplementationManifest#isUseFactory()}.
 	 */
-	@SuppressWarnings("boxing")
 	@Test
 	default void testIsUseFactory() {
 		assertDerivativeGetter(settings(), Boolean.TRUE, Boolean.FALSE,

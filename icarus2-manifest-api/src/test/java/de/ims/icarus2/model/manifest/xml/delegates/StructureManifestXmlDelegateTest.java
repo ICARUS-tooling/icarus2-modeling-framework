@@ -38,7 +38,6 @@ import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlDelegateTest;
 import de.ims.icarus2.test.annotations.OverrideTest;
-import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
@@ -69,7 +68,6 @@ class StructureManifestXmlDelegateTest implements ManifestXmlDelegateTest<Struct
 	@Override
 	public List<Config> configurations() {
 		return Stream.of(ContainerType.values())
-				.filter(IcarusUtils.notEq(ContainerType.PROXY))
 				.flatMap(ct -> Stream.of(StructureType.values())
 						.map(st -> ManifestGenerator.config()
 								.preprocessor(ManifestType.STRUCTURE_MANIFEST, m -> {

@@ -329,10 +329,6 @@ public class ManifestGenerator {
 		return base+index();
 	}
 
-	private Supplier<String> indexSupplier(String base) {
-		return () -> index(base);
-	}
-
 	/**
 	 * Wraps an entire (sub-)build into a single change by using its result as
 	 * the input for the specified {@code setter} method.
@@ -374,7 +370,7 @@ public class ManifestGenerator {
 	}
 
 	private Identity createIdentity(int index) {
-		ModifiableIdentity identity = new DefaultModifiableIdentity();
+		ModifiableIdentity identity = new DefaultModifiableIdentity<>();
 		fillIdentity(identity, index);
 		return identity;
 	}
@@ -687,9 +683,6 @@ public class ManifestGenerator {
 		container.addFieldChange(manifest::setAndGetBoundaryLayer, "boundaryLayer", index("layer"));
 
 		for(ContainerType containerType : ContainerType.values()) {
-			if(containerType==ContainerType.PROXY) {
-				continue;
-			}
 			container.addNestedManifestChange("container::"+containerType, ManifestType.CONTAINER_MANIFEST,
 					manifest, config.preprocessor(ManifestType.CONTAINER_MANIFEST,
 							c -> ((ContainerManifest)c).setContainerType(containerType))
@@ -898,9 +891,6 @@ public class ManifestGenerator {
 		}
 
 		for(ContainerType containerType : ContainerType.values()) {
-			if(containerType==ContainerType.PROXY) {
-				continue;
-			}
 			container.addNestedManifestChange("container::"+containerType, ManifestType.CONTAINER_MANIFEST,
 					manifest, config.preprocessor(ManifestType.CONTAINER_MANIFEST,
 							c -> ((ContainerManifest)c).setContainerType(containerType))

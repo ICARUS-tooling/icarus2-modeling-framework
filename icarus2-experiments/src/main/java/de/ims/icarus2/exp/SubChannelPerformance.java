@@ -20,11 +20,8 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CoderResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -306,34 +303,5 @@ public class SubChannelPerformance {
 		}
 
 		return count;
-	}
-
-	private static int readChannel(ReadableByteChannel channel, CharsetDecoder decoder, ByteBuffer bb, CharBuffer cb) throws IOException {
-		int count = 0;
-
-	    for(;;) {
-	        if(-1 == channel.read(bb)) {
-	            decoder.decode(bb, cb, true);
-	            decoder.flush(cb);
-	        	cb.flip();
-	        	count += cb.remaining();
-	            break;
-	        }
-	        bb.flip();
-
-	        CoderResult res = decoder.decode(bb, cb, false);
-	        if(res.isError())
-	        	res.throwException();
-
-	        if(res.isUnderflow()) {
-	        	bb.compact();
-	        }
-
-        	cb.flip();
-        	count += cb.remaining();
-            cb.clear();
-	    }
-
-	    return count;
 	}
 }

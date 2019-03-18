@@ -42,6 +42,8 @@ public final class HtmlUtils {
 				_int(color.getBlue()));
 	}
 
+	//TODO refactor to move use primitive map
+	@SuppressWarnings("boxing")
 	private static Map<Object, Object> htmlReplacements = ArrayUtils.asMap(
 		60, "&lt;", //< //$NON-NLS-1$
 		62, "&gt;", //> //$NON-NLS-1$
@@ -87,6 +89,7 @@ public final class HtmlUtils {
 		8364, "&euro;" //€ //$NON-NLS-1$
 	);
 
+	@SuppressWarnings("boxing")
 	public static String escapeHTML(String s) {
 		StringBuffer sb = new StringBuffer(s.length());
 		int n = s.length();

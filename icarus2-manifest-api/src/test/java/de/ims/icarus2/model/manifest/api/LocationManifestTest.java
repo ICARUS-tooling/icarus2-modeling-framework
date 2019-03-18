@@ -66,7 +66,6 @@ public interface LocationManifestTest extends ManifestTest<LocationManifest> {
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.LocationManifest#isInline()}.
 	 */
-	@SuppressWarnings("boxing")
 	@Test
 	default void testIsInline() {
 		assertGetter(createUnlocked(),

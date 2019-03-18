@@ -210,7 +210,7 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 		} break;
 
 		case ManifestXmlTags.GROUP: {
-			group = new DefaultModifiableIdentity();
+			group = new DefaultModifiableIdentity<>();
 			ManifestXmlUtils.readIdentityAttributes(attributes, group);
 
 			getInstance().addGroupIdentifier(group);
