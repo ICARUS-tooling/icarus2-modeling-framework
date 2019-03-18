@@ -2,6 +2,7 @@ plugins {
 	//id 'com.github.jk1.dependency-license-report' version '1.2'
     id "com.github.hierynomus.license" version "0.14.0"
 	id "com.github.spotbugs" version "1.6.4"
+	id "com.gradle.build-scan" version "2.2.1"
 }
 
 // Load version definitions for dependencies. Info will be stored in 'versions' map
@@ -187,7 +188,7 @@ subprojects {
 	    ignoreFailures = true
 		useDefaultMappings = true
 		dryRun = false
-		strictCheck=true
+		strictCheck = true
 	}
 	
 	spotbugs {
