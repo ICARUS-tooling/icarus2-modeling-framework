@@ -1,8 +1,9 @@
 plugins {
+	id 'java-library'
 	//id 'com.github.jk1.dependency-license-report' version '1.2'
-    id "com.github.hierynomus.license" version "0.14.0"
-	id "com.github.spotbugs" version "1.6.4"
-	id "com.gradle.build-scan" version "2.2.1"
+    id 'com.github.hierynomus.license' version '0.14.0' apply false
+	id 'com.github.spotbugs' version '1.6.4' apply false
+	id 'com.gradle.build-scan' version '2.2.1'
 }
 
 // Load version definitions for dependencies. Info will be stored in 'versions' map
@@ -24,6 +25,13 @@ wrapper {
 	gradleVersion = "5.2.1" 
 }
 
+// Build Scan publishing
+buildScan {
+	termsOfServiceUrl = 'https://gradle.com/terms-of-service'
+	termsOfServiceAgree = 'yes'
+
+	publishAlways()
+}
 
 subprojects {
   	apply plugin: 'java-library'

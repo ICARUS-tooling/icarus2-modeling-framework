@@ -289,7 +289,7 @@ interface StringTest<S extends AbstractString> extends CharSequenceTest<S> {
 
 		S fromEmptySource = createString("");
 		if(fromEmptySource!=null) {
-			assertEquals(new char[0], empty.toCharArray());
+			assertEquals(new char[0], fromEmptySource.toCharArray());
 			cleanup(fromEmptySource);
 		}
 	}
