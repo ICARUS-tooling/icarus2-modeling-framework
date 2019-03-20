@@ -580,6 +580,8 @@ public enum IndexValueType implements StringResource {
 	public abstract long maxValue();
 
 	public long checkValue(long value) {
+		if(value<0L)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, name()+" - Value is negative: "+value);
 		if(value>=maxValue())
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT, name()+" - Value exceeds max value: "+value);
 		return value;

@@ -263,6 +263,7 @@ public abstract class AbstractConverter extends AbstractDriverModule implements 
 	 * or the length of the largest chunk in the data if such information has been
 	 * stored in the metadata available to the surrounding {@link FileDriver driver}.
 	 */
+	@SuppressWarnings("resource")
 	protected int getRecommendedByteBufferSize(ItemLayerManifestBase<?> layerManifest) {
 
 		// Determine good buffer size for the block-wise stream
@@ -286,6 +287,7 @@ public abstract class AbstractConverter extends AbstractDriverModule implements 
 	 * @return
 	 * @throws ModelException if there is no exploitable metadata on the maximum size of containers for the given layer
 	 */
+	@SuppressWarnings("resource")
 	protected int getRecommendedIndexBufferSize(ItemLayerManifestBase<?> sourceLayer) {
 		int bufferSize  = -1;
 		MetadataRegistry metadataRegistry = getDriver().getMetadataRegistry();

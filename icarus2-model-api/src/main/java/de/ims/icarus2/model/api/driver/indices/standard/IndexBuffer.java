@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 
 import java.lang.reflect.Array;
@@ -38,6 +40,7 @@ import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.ArrayUtils;
 
@@ -68,9 +71,11 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		requireNonNull(valueType);
 
 		if(bufferSize<1)
-			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Buffer size must not be less than 1: "+bufferSize);
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					"Buffer size must not be less than 1: "+bufferSize);
 		if(bufferSize>IcarusUtils.MAX_INTEGER_INDEX)
-			throw new ModelException(GlobalErrorCode.INDEX_OVERFLOW, "Buffer size exceeds allowed limit for integer index values: "+bufferSize);
+			throw new ModelException(GlobalErrorCode.INDEX_OVERFLOW,
+					"Buffer size exceeds allowed limit for integer index values: "+bufferSize);
 
 		this.valueType = valueType;
 		buffer = valueType.newArray(bufferSize);
@@ -90,6 +95,7 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		return size;
 	}
 
+	@Override
 	public boolean isEmpty() {
 		return size==0;
 	}
@@ -108,7 +114,7 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 
 	public IndexSet snapshot() {
 
-		return isEmpty() ? null : subSet(0, size-1);
+		return isEmpty() ? null : subSet(0, size-1).externalize();
 	}
 
 	public int remaining() {
@@ -171,8 +177,12 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 	 */
 	@Override
 	public IndexSet subSet(int fromIndex, int toIndex) {
-		if(fromIndex>=size || toIndex>=size)
-			throw new IndexOutOfBoundsException();
+		if(fromIndex>=size)
+			throw new IndexOutOfBoundsException(Messages.outOfBounds(
+					"Invalid lower bound", fromIndex, 0, size-1));
+		if(toIndex>=size)
+			throw new IndexOutOfBoundsException(Messages.outOfBounds(
+					"Invalid upper bound", toIndex, 0, size-1));
 
 		return new ArrayIndexSet(getIndexValueType(), buffer, fromIndex, toIndex, isSorted());
 	}
@@ -214,11 +224,25 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 	}
 
 	public void add(IntSupplier supplier) {
-		add(supplier.getAsInt());
+		int index, previous = UNSET_INT;
+		while((index=supplier.getAsInt())!=UNSET_INT) {
+			if(previous!=UNSET_INT && index==previous) {
+				break;
+			}
+			add(index);
+			previous = index;
+		}
 	}
 
 	public void add(LongSupplier supplier) {
-		add(supplier.getAsLong());
+		long index, previous = UNSET_LONG;
+		while((index=supplier.getAsLong())!=UNSET_LONG) {
+			if(previous!=UNSET_LONG && index==previous) {
+				break;
+			}
+			add(index);
+			previous = index;
+		}
 	}
 
 	public void add(byte[] indices) {
@@ -229,7 +253,8 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		checkCapacity(length);
 
 		if(sorted) {
-			sorted = sorted && lastIndex()<=indices[offset] && ArrayUtils.isSorted(indices, offset, offset+length);
+			sorted = sorted && lastIndex()<=indices[offset]
+					&& ArrayUtils.isSorted(indices, offset, offset+length);
 		}
 		valueType.copyFrom(indices, offset, buffer, size, length);
 
@@ -244,7 +269,8 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		checkCapacity(length);
 
 		if(sorted) {
-			sorted = sorted && lastIndex()<=indices[offset] && ArrayUtils.isSorted(indices, offset, offset+length);
+			sorted = sorted && lastIndex()<=indices[offset]
+					&& ArrayUtils.isSorted(indices, offset, offset+length);
 		}
 		valueType.copyFrom(indices, offset, buffer, size, length);
 
@@ -259,7 +285,8 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		checkCapacity(length);
 
 		if(sorted) {
-			sorted = sorted && lastIndex()<=indices[offset] && ArrayUtils.isSorted(indices, offset, offset+length);
+			sorted = sorted && lastIndex()<=indices[offset]
+					&& ArrayUtils.isSorted(indices, offset, offset+length);
 		}
 		valueType.copyFrom(indices, offset, buffer, size, length);
 
@@ -274,7 +301,8 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		checkCapacity(length);
 
 		if(sorted) {
-			sorted = sorted && lastIndex()<=indices[offset] && ArrayUtils.isSorted(indices, offset, offset+length);
+			sorted = sorted && lastIndex()<=indices[offset]
+					&& ArrayUtils.isSorted(indices, offset, offset+length);
 		}
 		valueType.copyFrom(indices, offset, buffer, size, length);
 
@@ -305,7 +333,8 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		checkCapacity(addCount);
 
 		if(sorted) {
-			sorted = sorted && lastIndex()<=indices.indexAt(beginIndex) && IndexUtils.isSorted(indices, beginIndex, endIndex);
+			sorted = sorted && lastIndex()<=indices.indexAt(beginIndex)
+					&& IndexUtils.isSorted(indices, beginIndex, endIndex);
 		}
 
 		switch (valueType) {
@@ -336,19 +365,27 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		}
 	}
 
-	public void add(Item item) {
+	public void addFromItem(Item item) {
 		add(item.getIndex());
 	}
 
-	public void add(Supplier<? extends Item> supplier) {
-		add(supplier.get());
+	public void addFromItems(Supplier<? extends Item> supplier) {
+		Item item, previous = null;
+		while((item = supplier.get()) != null) {
+			if(previous!=null && item==previous) {
+				break;
+			}
+
+			addFromItem(item);
+			previous = item;
+		}
 	}
 
-	public void add(Item[] items) {
-		add(items, 0, items.length);
+	public void addFromItems(Item[] items) {
+		addFromItems(items, 0, items.length);
 	}
 
-	public void add(Item[] items, int offset, int length) {
+	public void addFromItems(Item[] items, int offset, int length) {
 		checkCapacity(length);
 		IntToLongFunction src;
 
@@ -366,15 +403,15 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		size += length;
 	}
 
-	public void add(List<? extends Item> items) {
-		add(items, 0, items.size());
+	public void addFromItems(List<? extends Item> items) {
+		addFromItems(items, 0, items.size());
 	}
 
-	public void add(List<? extends Item> items, int beginIndex) {
-		add(items, beginIndex, items.size());
+	public void addFromItems(List<? extends Item> items, int beginIndex) {
+		addFromItems(items, beginIndex, items.size());
 	}
 
-	public void add(List<? extends Item> items, int beginIndex, int endIndex) {
+	public void addFromItems(List<? extends Item> items, int beginIndex, int endIndex) {
 		int addCount = endIndex-beginIndex;
 		checkCapacity(addCount);
 

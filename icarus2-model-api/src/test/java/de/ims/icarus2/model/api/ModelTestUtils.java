@@ -24,11 +24,17 @@ import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.RUNS_EXHAUSTIVE;
 import static de.ims.icarus2.test.TestUtils.assertMock;
 import static de.ims.icarus2.test.TestUtils.random;
+import static de.ims.icarus2.test.TestUtils.randomBytes;
+import static de.ims.icarus2.test.TestUtils.randomInts;
+import static de.ims.icarus2.test.TestUtils.randomLongs;
+import static de.ims.icarus2.test.TestUtils.randomShorts;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -36,13 +42,21 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
+import java.util.PrimitiveIterator.OfLong;
 import java.util.function.BiFunction;
+import java.util.function.LongConsumer;
 import java.util.stream.LongStream;
 
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.internal.stubbing.answers.CallsRealMethods;
 
 import de.ims.icarus2.ErrorCode;
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.driver.indices.IndexSet;
+import de.ims.icarus2.model.api.driver.indices.IndexUtils;
+import de.ims.icarus2.model.api.driver.indices.IndexValueType;
+import de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet;
+import de.ims.icarus2.model.api.driver.indices.standard.VirtualIndexSet;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
@@ -52,10 +66,13 @@ import de.ims.icarus2.model.api.raster.Metric;
 import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.api.raster.RasterAxis;
 import de.ims.icarus2.model.api.raster.Rasterizer;
+import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 
@@ -65,6 +82,10 @@ import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
  */
 public class ModelTestUtils {
 
+	/**
+	 * Produces a stream of {@value TestUtils#RUNS} random {@code long} values.
+	 * @return
+	 */
 	public static LongStream randomIndices() {
 		return random().longs(RUNS, UNSET_LONG, Long.MAX_VALUE);
 	}
@@ -397,5 +418,68 @@ public class ModelTestUtils {
 	public static void assertModelException(ErrorCode errorCode, Executable executable) {
 		ModelException exception = assertThrows(ModelException.class, executable);
 		assertEquals(errorCode, exception.getErrorCode());
+	}
+
+	public static IndexSet sortedIndices(int size, long start) {
+		return new VirtualIndexSet(start, size, IndexValueType.forValue(start+size),
+				(offset, i) -> offset+i, true);
+	}
+
+	public static Object randomArray(IndexValueType indexValueType, int size) {
+		switch (indexValueType) {
+		case BYTE: return randomBytes(size, (byte)0, (byte)indexValueType.maxValue());
+		case SHORT: return randomShorts(size, (short)0, (short)indexValueType.maxValue());
+		case INTEGER: return randomInts(size, 0, (int)indexValueType.maxValue());
+		case LONG: return randomLongs(size, 0L, indexValueType.maxValue());
+
+		default:
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					"Unknown index value type: "+indexValueType);
+		}
+	}
+
+	public static IndexSet randomIndices(IndexValueType indexValueType, int size) {
+		return new ArrayIndexSet(indexValueType, randomArray(indexValueType, size));
+	}
+
+	public static void assertIndicesEqualsExact(IndexSet expected, IndexSet actual) {
+		assertEquals(expected.size(), actual.size(), "Size mismatch");
+
+		for (int i = 0; i < expected.size(); i++) {
+			assertEquals(expected.indexAt(i), actual.indexAt(i), "Mismatch at index "+i);
+		}
+	}
+
+	public static LongSet asSet(IndexSet source) {
+		LongSet set = new LongOpenHashSet(source.size());
+		source.forEachIndex((LongConsumer)set::add);
+		return set;
+	}
+
+	public static void assertIndicesEquals(IndexSet expected, IndexSet actual) {
+		assertEquals(expected.size(), actual.size(), "Size mismatch");
+
+		LongSet setExp = asSet(expected);
+		LongSet setAct = asSet(actual);
+
+		setExp.removeAll(setAct);
+		assertTrue(setExp.isEmpty(), "Total leftover indices: "+setExp.size());
+	}
+
+	public static void assertIndicesEquals(IndexSet[] expected, IndexSet[] actual) {
+		assertEquals(IndexUtils.count(expected),
+				IndexUtils.count(actual), "Size mismatch");
+
+		OfLong itExp = IndexUtils.asIterator(expected);
+		OfLong itAct = IndexUtils.asIterator(actual);
+
+		int idx = 0;
+		while(itExp.hasNext() && itAct.hasNext()) {
+			assertEquals(itExp.nextLong(), itAct.nextLong(), "Mismatch at index "+idx);
+			idx++;
+		}
+
+		assertFalse(itExp.hasNext());
+		assertFalse(itAct.hasNext());
 	}
 }

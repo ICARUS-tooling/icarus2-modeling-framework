@@ -326,6 +326,12 @@ public enum ModelErrorCode implements ErrorCode {
 	MODEL_UNSORTED_INDEX_SET(814),
 
 	/**
+	 * A method consuming {@code long} index values required them to be supplied in sorted order,
+	 * but at least one of them violated that contract.
+	 */
+	MODEL_UNSORTED_INPUT(815),
+
+	/**
 	 * An operation cannot be performed because the target {@link Item} has no
 	 * valid host container assigned to it.
 	 */

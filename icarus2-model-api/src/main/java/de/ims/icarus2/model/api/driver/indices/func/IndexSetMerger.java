@@ -58,6 +58,15 @@ public class IndexSetMerger extends AbstractIndexSetProcessor {
 		estimatedResultSize += indexSet.size();
 	}
 
+	/**
+	 * Tries to merge all the {@link IndexSet indices} set as input
+	 * for this merger into a single output {@link IndexSet}.
+	 *
+	 * @return
+	 *
+	 * @throws ModelException of type {@link GlobalErrorCode#ILLEGAL_STATE} in case
+	 * the estimated result size exceeds the limit of {@value IcarusUtils#MAX_INTEGER_INDEX}
+	 */
 	public IndexSet mergeAllToSingle() {
 		if(buffer.isEmpty()) {
 			return null;
@@ -93,6 +102,9 @@ public class IndexSetMerger extends AbstractIndexSetProcessor {
 			return IndexUtils.wrap(buffer.get(0));
 		}
 
+		/*
+		 *  Short-cut for maximum efficiency.
+		 */
 		if(estimatedResultSize<=IcarusUtils.MAX_INTEGER_INDEX) {
 			return IndexUtils.wrap(mergeAllToSingle());
 		}
@@ -100,6 +112,11 @@ public class IndexSetMerger extends AbstractIndexSetProcessor {
 		// Create merged stream of all the sources
 		OfLong mergedRawIterator = mergedIterator();
 
+		/*
+		 *  Little bit of cheap optimization here. Picking
+		 *  a small value type here can drastically reduce
+		 *  memory consumption.
+		 */
 		IndexValueType valueType = IndexUtils.getDominantType(buffer);
 
 		IndexSetBuilder builder = new IndexCollectorFactory()
@@ -139,6 +156,11 @@ public class IndexSetMerger extends AbstractIndexSetProcessor {
 		}
 	}
 
+	/**
+	 * Wraps the given consumer to create a filter against duplicates.
+	 * @param consumer
+	 * @return
+	 */
 	private LongConsumer filteredConsumer(LongConsumer consumer) {
 		return new DuplicateFilter(consumer);
 	}

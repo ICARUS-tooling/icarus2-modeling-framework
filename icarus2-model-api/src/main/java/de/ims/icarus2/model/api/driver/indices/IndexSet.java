@@ -37,8 +37,8 @@ import de.ims.icarus2.util.IcarusUtils;
 
 
 /**
- * Models an arbitrary collection of {@code long} index values. Values in the collection
- * can either appear in random order or be sorted!
+ * Models an arbitrary collection of non-negative{@code long} index values.
+ * Values in the collection can either appear in random order or be sorted!
  * The latter situation can be exploited to do easy checks for continuous collections
  * of indices:<br>
  * <i>Let i_0 be the first index in the set and i_n the last, with the set holding
@@ -98,6 +98,10 @@ public interface IndexSet {
 	 * like fashion.
 	 */
 	int size();
+
+	default boolean isEmpty() {
+		return size()==0;
+	}
 
 	long indexAt(int index);
 
@@ -307,14 +311,15 @@ public interface IndexSet {
 		int chunks = (int)Math.ceil((double)size/chunkSize);
 
 		if(chunks>IcarusUtils.MAX_INTEGER_INDEX)
-			throw new ModelException(GlobalErrorCode.INDEX_OVERFLOW, "Cannot create array of size: "+chunks); //$NON-NLS-1$
+			throw new ModelException(GlobalErrorCode.INDEX_OVERFLOW,
+					"Cannot create array of size: "+chunks); //$NON-NLS-1$
 
 		IndexSet[] result = new IndexSet[(int) chunks];
 
 		int fromIndex = 0;
 		int toIndex;
 		for(int i=0; i<chunks; i++) {
-			toIndex = Math.min(fromIndex+chunkSize, size-1);
+			toIndex = Math.min(fromIndex+chunkSize-1, size-1);
 			result[i] = subSet(fromIndex, toIndex);
 			fromIndex = toIndex+1;
 		}
@@ -335,6 +340,9 @@ public interface IndexSet {
 	 * as this one, but is disconnected from any implementation specific shared storage.
 	 * If an implementation is not relying on shared storage or cannot be disconnected from it,
 	 * this method should just return the current {@code IndexSet} itself.
+	 * <p
+	 * It is vital that the {@link IndexSet} returned by this method and the one this method
+	 * has been invoked on, do <b>not</b> share any state afterwards!
 	 */
 	IndexSet externalize();
 

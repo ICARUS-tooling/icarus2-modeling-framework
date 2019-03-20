@@ -19,10 +19,11 @@ package de.ims.icarus2.model.api.driver.indices.standard;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
-import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.PrimitiveIterator.OfLong;
 
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import it.unimi.dsi.fastutil.bytes.ByteList;
@@ -145,9 +146,10 @@ public class ArrayIndexSet implements IndexSet {
 	 */
 	@Override
 	public IndexSet externalize() {
-		if(fromIndex==0 && toIndex==Array.getLength(indices)-1) {
-			return this;
-		}
+		// We cannot use a shortcut here
+//		if(fromIndex==0 && toIndex==Array.getLength(indices)-1) {
+//			return this;
+//		}
 
 		Object newIndices = valueType.copyOf(indices, fromIndex, size());
 
@@ -291,5 +293,21 @@ public class ArrayIndexSet implements IndexSet {
 		}
 
 		return new ArrayIndexSet(IndexValueType.LONG, indices.toArray(), sorted);
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		switch (valueType) {
+		case BYTE: return Arrays.toString((byte[])indices);
+		case SHORT: return Arrays.toString((short[])indices);
+		case INTEGER: return Arrays.toString((int[])indices);
+		case LONG: return Arrays.toString((long[])indices);
+
+		default:
+			throw new ModelException("Unknown value type: "+valueType);
+		}
 	}
 }

@@ -16,6 +16,9 @@
  */
 package de.ims.icarus2.model.api.driver.indices;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
+
+import java.util.List;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.function.Consumer;
@@ -24,24 +27,63 @@ import java.util.function.LongConsumer;
 
 
 /**
+ * Provides a broad way of collecting index values. Ultimately all
+ * the default methods in this interface delegate to the {@link #add(long)}
+ * method for single values.
+ * <p>
+ * Implementations are encouraged to also override the {@link #add(IndexSet)}
+ * method, as all methods dealing with {@link IndexSet} objects as input also
+ * delegate to this method.
+ *
  * @author Markus Gärtner
  *
  */
 public interface IndexCollector extends LongConsumer, IntConsumer, Consumer<IndexSet> {
 
+	/**
+	 * Collects a single value.
+	 * <p>
+	 * This method is the delegation target for single value
+	 * operations.
+	 *
+	 * @param index
+	 */
 	void add(long index);
 
+	/**
+	 * Collects a continuous range of values.
+	 *
+	 * @param fromIndex
+	 * @param toIndex
+	 * @throws IllegalArgumentException if either of the two boundary values
+	 * is negative or if {@code fromIndex>toIndex}
+	 */
 	default void add(long fromIndex, long toIndex) {
+		checkArgument(fromIndex>=0 && fromIndex<=toIndex);
 		for(long index = fromIndex; index <= toIndex; index++) {
 			add(index);
 		}
 	}
 
+	/**
+	 * Adds an entire {@link IndexSet}.
+	 * <p>
+	 * This method is the delegation target for batch operations.
+	 * @param indices
+	 */
 	default void add(IndexSet indices) {
 		indices.forEachIndex((LongConsumer)this);
 	}
 
+	// DELEGATING METHODS
+
 	default void add(IndexSet[] indices) {
+		for(IndexSet set : indices) {
+			add(set);
+		}
+	}
+
+	default void add(List<? extends IndexSet> indices) {
 		for(IndexSet set : indices) {
 			add(set);
 		}

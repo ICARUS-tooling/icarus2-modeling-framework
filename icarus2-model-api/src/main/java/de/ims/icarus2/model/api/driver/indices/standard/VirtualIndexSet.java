@@ -22,7 +22,7 @@ package de.ims.icarus2.model.api.driver.indices.standard;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
-import java.util.function.LongUnaryOperator;
+import java.util.function.LongBinaryOperator;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
@@ -31,12 +31,14 @@ import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.manifest.util.Messages;
 
 /**
+ * An {@link IndexSet} solely based on a {@link LongBinaryOperator} that is used
+ * to produce the actual index value for a given combination of {@code offset}
+ * and {@code index}.
+ *
  * @author Markus Gärtner
  *
  */
 public class VirtualIndexSet implements IndexSet {
-
-	//TODO should model an index set that takes a starting index, a size and has a user-defined function that can create values for indices
 
 	/**
 	 * Offset to be added to index values passed to the
@@ -45,22 +47,35 @@ public class VirtualIndexSet implements IndexSet {
 	 */
 	protected final long offset;
 
+	protected final long start;
+
 	/**
 	 * Upper limit for index values passed to the
 	 * {@link #indexAt(int)} method.
 	 */
 	protected final int size;
 
-	protected final LongUnaryOperator func;
+	protected final boolean sorted;
+
+	protected final LongBinaryOperator func;
 
 	protected final IndexValueType valueType;
 
-	public VirtualIndexSet(long offset, int size, IndexValueType valueType, LongUnaryOperator func) {
+	public VirtualIndexSet(long start, int size, IndexValueType valueType,
+			LongBinaryOperator func, boolean sorted) {
+		this(start, 0L, size, valueType, func, sorted);
+	}
+
+	protected VirtualIndexSet(long start, long offset,
+			int size, IndexValueType valueType,
+			LongBinaryOperator func, boolean sorted) {
 		checkArgument("Offset must be >= 0", offset>=0);
 		checkArgument(size==IndexSet.UNKNOWN_SIZE || size>=0);
 
 		this.offset = offset;
+		this.start = start;
 		this.size = size;
+		this.sorted = sorted;
 		this.valueType = requireNonNull(valueType);
 		this.func = requireNonNull(func);
 	}
@@ -81,7 +96,7 @@ public class VirtualIndexSet implements IndexSet {
 		if(index<0 || index>=size)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					Messages.indexOutOfBounds("Invalid index value", 0, size-1, index));
-		return valueType.checkValue(func.applyAsLong(offset+index));
+		return valueType.checkValue(func.applyAsLong(start, offset+index));
 	}
 
 	/**
@@ -97,7 +112,7 @@ public class VirtualIndexSet implements IndexSet {
 	 */
 	@Override
 	public boolean isSorted() {
-		return false;
+		return sorted;
 	}
 
 	/**
@@ -105,7 +120,7 @@ public class VirtualIndexSet implements IndexSet {
 	 */
 	@Override
 	public boolean sort() {
-		return false;
+		return sorted;
 	}
 
 	/**
@@ -113,7 +128,7 @@ public class VirtualIndexSet implements IndexSet {
 	 */
 	@Override
 	public IndexSet subSet(int fromIndex, int toIndex) {
-		return new VirtualIndexSet(fromIndex, fromIndex-toIndex+1, valueType, func);
+		return new VirtualIndexSet(start, fromIndex, fromIndex-toIndex+1, valueType, func, sorted);
 	}
 
 	/**

@@ -19,13 +19,19 @@ package de.ims.icarus2.model.api.driver.indices.standard;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkSorted;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
@@ -35,32 +41,40 @@ import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.strings.StringUtil;
-import it.unimi.dsi.fastutil.bytes.ByteIterator;
-import it.unimi.dsi.fastutil.bytes.ByteOpenHashSet;
-import it.unimi.dsi.fastutil.bytes.ByteSet;
-import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
-import it.unimi.dsi.fastutil.shorts.ShortIterator;
 import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
+
 
 /**
  * Provides implementations of {@link IndexCollector} and the derived
  * {@link IndexSetBuilder} interface that allow for the efficient collection and
  * aggregation of large numbers of index values.
+ * <p>
+ * Implementation notes:<br>
+ * When setting a {@link #chunkSizeLimit(int) chunk size limit}, keep in mind that
+ * this only provides a guarantee for the maximum size of each individual {@link IndexSet}
+ * returned from {@link IndexSetBuilder#build()}!
  *
  * @author Markus Gärtner
  *
  */
 public class IndexCollectorFactory {
 
-	public static final int UNDEFINED_CHUNK_SIZE = -1;
-	public static final long UNDEFINED_TOTAL_SIZE = -1L;
+	private static final Logger log = LoggerFactory.getLogger(IndexCollectorFactory.class);
+
+	public static final int UNDEFINED_CHUNK_SIZE = UNSET_INT;
+	public static final long UNDEFINED_TOTAL_SIZE = UNSET_LONG;
 	public static final int DEFAULT_CAPACITY = 1 << 18;
+
+	private static void checkDiscouragedValueType(IndexValueType indexValueType) {
+		if(indexValueType==IndexValueType.BYTE)
+			log.warn(String.format("Use of %s.BYTE is discouraged here, use the SHORT enum!",
+					IndexValueType.class.getName()));
+	}
 
 	private Boolean inputSorted; // FIXME add flag for sorted output, since that
 									// would affect the way indices are stored
@@ -82,6 +96,7 @@ public class IndexCollectorFactory {
 	}
 
 	public IndexCollectorFactory totalSizeLimit(long totalSizeLimit) {
+		checkArgument("Size limit must be positive: "+totalSizeLimit, totalSizeLimit>0);
 		checkState(this.totalSizeLimit == null);
 
 		this.totalSizeLimit = Long.valueOf(totalSizeLimit);
@@ -95,6 +110,7 @@ public class IndexCollectorFactory {
 	}
 
 	public IndexCollectorFactory chunkSizeLimit(int chunkSizeLimit) {
+		checkArgument("Chunk bucketCount limit must be positive: "+chunkSizeLimit, chunkSizeLimit>0);
 		checkState(this.chunkSizeLimit == null);
 
 		this.chunkSizeLimit = Integer.valueOf(chunkSizeLimit);
@@ -109,6 +125,8 @@ public class IndexCollectorFactory {
 	public IndexCollectorFactory valueType(IndexValueType valueType) {
 		requireNonNull(valueType);
 		checkState(this.valueType == null);
+
+		checkDiscouragedValueType(valueType);
 
 		this.valueType = valueType;
 
@@ -129,7 +147,7 @@ public class IndexCollectorFactory {
 		final boolean isLimited = totalLimit != UNDEFINED_TOTAL_SIZE
 				&& totalLimit <= IcarusUtils.MAX_INTEGER_INDEX;
 		final int capacity = (int) (isLimited ? Math.min(DEFAULT_CAPACITY,
-				totalLimit) : -1);
+				totalLimit) : UNSET_INT);
 
 		IndexSetBuilder builder = null;
 
@@ -142,10 +160,9 @@ public class IndexCollectorFactory {
 		} else {
 			if (isLimited) {
 				switch (valueType) {
-				case BYTE:
-					builder = new LimitedUnsortedSetBuilderByte(capacity, chunkLimit);
-					break;
 
+				// No reason to have a special case for BYTE
+				case BYTE:
 				case SHORT:
 					builder = new LimitedUnsortedSetBuilderShort(capacity, chunkLimit);
 					break;
@@ -216,7 +233,7 @@ public class IndexCollectorFactory {
 	 * .<br>
 	 * {@link IndexBuffer#isSorted()} will always return {@code true}.
 	 */
-	static IndexBuffer createSortedBuffer(IndexValueType valueType,
+	private static IndexBuffer createSortedBuffer(IndexValueType valueType,
 			int bufferSize) {
 		return new IndexBuffer(valueType, bufferSize) {
 
@@ -232,6 +249,18 @@ public class IndexCollectorFactory {
 		};
 	}
 
+	private static void checkChunkSize(int chunkSize) {
+		if(chunkSize!=UNDEFINED_CHUNK_SIZE && chunkSize<1)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					"Chunk bucketCount must not be negative (unless -1 as UNDEFINED marker): "+chunkSize);
+	}
+
+	private static void checkCapacity(int capacity) {
+		if(capacity<1)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					"Capacity must be positive: "+capacity);
+	}
+
 	/**
 	 * Implements the {@link IndexSetBuilder} interface by wrapping around the
 	 * {@link IndexBuffer} class. It assumes every input to be sorted and arrive
@@ -241,9 +270,12 @@ public class IndexCollectorFactory {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static class LimitedSortedSetBuilder extends IndexBuffer implements IndexSetBuilder {
+	public static class LimitedSortedSetBuilder implements IndexSetBuilder {
 
+		private final IndexBuffer buffer;
 		private final int chunkSize;
+
+		private long lastIndex = UNSET_LONG;
 
 		/**
 		 * @param valueType
@@ -251,35 +283,52 @@ public class IndexCollectorFactory {
 		 */
 		public LimitedSortedSetBuilder(IndexValueType valueType,
 				int bufferSize, int chunkSize) {
-			super(valueType, bufferSize);
-
+			checkChunkSize(chunkSize);
+			buffer = createSortedBuffer(valueType, bufferSize);
 			this.chunkSize = chunkSize;
 		}
 
 		@Override
 		public IndexSet[] build() {
-			return split(chunkSize);
+			if(chunkSize==UNDEFINED_CHUNK_SIZE
+					|| chunkSize>=buffer.size()) {
+				return IndexUtils.wrap(buffer);
+			} else {
+				return buffer.split(chunkSize);
+			}
 		}
 
+		/**
+		 * @see de.ims.icarus2.model.api.driver.indices.IndexCollector#add(long)
+		 */
 		@Override
-		public boolean sort() {
-			return true;
+		public void add(long index) {
+			checkSorted(lastIndex, index);
+			buffer.add(index);
+			lastIndex = index;
 		}
 
+		/**
+		 * @see de.ims.icarus2.model.api.driver.indices.IndexCollector#add(de.ims.icarus2.model.api.driver.indices.IndexSet)
+		 */
 		@Override
-		public boolean isSorted() {
-			return true;
-		}
-
-		@Override
-		public void accept(IndexSet indices) {
+		public void add(IndexSet indices) {
 			checkSorted(indices);
-
-			super.add(indices);
+			checkSorted(lastIndex, indices.firstIndex());
+			buffer.add(indices);
+			lastIndex = indices.lastIndex();
 		}
-
 	}
 
+	/**
+	 * An implementation of {@link IndexSetBuilder} that uses a {@link List}
+	 * of {@link IndexSet} objects and an {@link IndexBuffer} as internal buffer.
+	 * All index values (provided individually or as {@code IndexSet}s) <b>must</b>
+	 * be sorted!
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public static class UnlimitedSortedSetBuilder implements IndexSetBuilder {
 		private List<IndexSet> chunks;
 		private IndexBuffer buffer;
@@ -288,18 +337,21 @@ public class IndexCollectorFactory {
 
 		public UnlimitedSortedSetBuilder(IndexValueType valueType, int chunkSize) {
 			requireNonNull(valueType);
+			checkChunkSize(chunkSize);
+
+			checkDiscouragedValueType(valueType);
 
 			// Override sorting behavior to reflect the fact that we are
 			// checking for sorted input
 			// and the storage is never exposed to external code!
 			buffer = createSortedBuffer(valueType, chunkSize);
-			chunks = new ArrayList<>();
+			chunks = new ArrayList<>(1024);
 		}
 
 		@Override
 		public void add(IndexSet indices) {
 			checkSorted(indices);
-			checkArgument("Input sequence must be sorted", lastIndex <= indices.firstIndex());
+			checkSorted(lastIndex, indices.firstIndex());
 
 			int cursor = 0;
 			int size = indices.size();
@@ -308,6 +360,7 @@ public class IndexCollectorFactory {
 				int chunkSize = Math.min(size-cursor, buffer.remaining());
 
 				buffer.add(indices, cursor, cursor+chunkSize);
+				lastIndex = buffer.lastIndex();
 				if(buffer.remaining()==0) {
 					chunks.add(buffer.snapshot());
 					buffer.clear();
@@ -322,7 +375,7 @@ public class IndexCollectorFactory {
 		 */
 		@Override
 		public void add(long index) {
-			checkArgument("Input sequence must be sorted", lastIndex <= index);
+			checkSorted(lastIndex, index);
 
 			buffer.add(index);
 			lastIndex = index;
@@ -367,6 +420,8 @@ public class IndexCollectorFactory {
 		private static final IndexValueType TYPE = IndexValueType.LONG;
 
 		public LimitedUnsortedSetBuilderLong(int capacity, int chunkSize) {
+			checkCapacity(capacity);
+			checkChunkSize(chunkSize);
 			buffer = new LongOpenHashSet(capacity);
 
 			this.chunkSize = chunkSize;
@@ -400,9 +455,7 @@ public class IndexCollectorFactory {
 		 */
 		@Override
 		public void forEach(LongConsumer action) {
-			for(LongIterator it = buffer.iterator(); it.hasNext();) {
-				action.accept(it.nextLong());
-			}
+			buffer.forEach(action);
 		}
 
 		@Override
@@ -417,7 +470,7 @@ public class IndexCollectorFactory {
 
 		@Override
 		public IndexSet asSet() {
-			return new ArrayIndexSet(TYPE, buffer.toArray());
+			return new ArrayIndexSet(TYPE, buffer.toLongArray());
 		}
 	}
 
@@ -438,6 +491,8 @@ public class IndexCollectorFactory {
 		private static final IndexValueType TYPE = IndexValueType.INTEGER;
 
 		public LimitedUnsortedSetBuilderInt(int capacity, int chunkSize) {
+			checkCapacity(capacity);
+			checkChunkSize(chunkSize);
 			buffer = new IntOpenHashSet(capacity);
 
 			this.chunkSize = chunkSize;
@@ -471,9 +526,7 @@ public class IndexCollectorFactory {
 		 */
 		@Override
 		public void forEach(LongConsumer action) {
-			for(IntIterator it = buffer.iterator(); it.hasNext();) {
-				action.accept(it.nextInt());
-			}
+			buffer.forEach((IntConsumer)v -> action.accept(v));
 		}
 
 		@Override
@@ -488,7 +541,7 @@ public class IndexCollectorFactory {
 
 		@Override
 		public IndexSet asSet() {
-			return new ArrayIndexSet(TYPE, buffer.toArray());
+			return new ArrayIndexSet(TYPE, buffer.toIntArray());
 		}
 	}
 
@@ -509,6 +562,8 @@ public class IndexCollectorFactory {
 		private static final IndexValueType TYPE = IndexValueType.SHORT;
 
 		public LimitedUnsortedSetBuilderShort(int capacity, int chunkSize) {
+			checkCapacity(capacity);
+			checkChunkSize(chunkSize);
 			buffer = new ShortOpenHashSet(capacity);
 
 			this.chunkSize = chunkSize;
@@ -542,9 +597,7 @@ public class IndexCollectorFactory {
 		 */
 		@Override
 		public void forEach(LongConsumer action) {
-			for(ShortIterator it = buffer.iterator(); it.hasNext();) {
-				action.accept(it.nextShort());
-			}
+			buffer.forEach((IntConsumer)v -> action.accept(v));
 		}
 
 		@Override
@@ -559,78 +612,7 @@ public class IndexCollectorFactory {
 
 		@Override
 		public IndexSet asSet() {
-			return new ArrayIndexSet(TYPE, buffer.toArray());
-		}
-	}
-
-	/**
-	 * Implements a storage with limited but growing capacity. The total
-	 * capacity of the storage is limited to {@link Integer#MAX_VALUE} and the
-	 * value type used when creating the resulting array of {@link IndexSet}
-	 * instances is {@link IndexValueType#BYTE}.
-	 *
-	 * @author Markus Gärtner
-	 *
-	 */
-	public static class LimitedUnsortedSetBuilderByte implements
-			IndexSetBuilder, IndexStorage {
-		private final ByteSet buffer;
-		private final int chunkSize;
-
-		private static final IndexValueType TYPE = IndexValueType.BYTE;
-
-		public LimitedUnsortedSetBuilderByte(int capacity, int chunkSize) {
-			buffer = new ByteOpenHashSet(capacity);
-
-			this.chunkSize = chunkSize;
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.driver.indices.IndexCollector#add(long)
-		 */
-		@Override
-		public void add(long index) {
-			buffer.add((byte) TYPE.checkValue(index));
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.IndexSetBuilder#build()
-		 */
-		@Override
-		public IndexSet[] build() {
-			IndexSet indices = asSet();
-
-			if (chunkSize == UNDEFINED_CHUNK_SIZE
-					|| indices.size() <= chunkSize) {
-				return IndexUtils.wrap(indices);
-			} else {
-				return indices.split(chunkSize);
-			}
-		}
-
-		/**
-		 * @see de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.IndexStorage#forEach(java.util.function.LongConsumer)
-		 */
-		@Override
-		public void forEach(LongConsumer action) {
-			for(ByteIterator it = buffer.iterator(); it.hasNext();) {
-				action.accept(it.nextByte());
-			}
-		}
-
-		@Override
-		public void clear() {
-			buffer.clear();
-		}
-
-		@Override
-		public int size() {
-			return buffer.size();
-		}
-
-		@Override
-		public IndexSet asSet() {
-			return new ArrayIndexSet(TYPE, buffer.toArray());
+			return new ArrayIndexSet(TYPE, buffer.toShortArray());
 		}
 	}
 
@@ -650,7 +632,9 @@ public class IndexCollectorFactory {
 	 */
 	public static class BucketSetBuilder implements IndexSetBuilder {
 		private final IndexValueType valueType;
+		/** Size of individual chunks, used as buffer bucketCount of buckets */
 		private final int chunkSize;
+		/** Root node to make rotations easier */
 		private final Bucket virtualRoot = new Bucket(){
 			@Override
 			public boolean isRoot() {return true;}
@@ -667,7 +651,8 @@ public class IndexCollectorFactory {
 			@Override
 			public String toString() {return "ROOT";}
 		};
-		private int size = 1;
+		/** Keeps track of growths */
+		private int bucketCount = 1;
 
 		/**
 		 * When splitting a bucket we leave the source to be used again. Reduces
@@ -702,7 +687,9 @@ public class IndexCollectorFactory {
 
 		public BucketSetBuilder(IndexValueType valueType, int chunkSize, boolean useLastHitCache) {
 			requireNonNull(valueType);
-			checkArgument("chunk size must be positive", chunkSize > 0);
+			checkArgument("chunk bucketCount must be positive", chunkSize > 0);
+
+			checkDiscouragedValueType(valueType);
 
 			this.valueType = valueType;
 			this.chunkSize = chunkSize;
@@ -736,7 +723,7 @@ public class IndexCollectorFactory {
 		}
 
 		public int getBucketCount() {
-			return size;
+			return bucketCount;
 		}
 
 		private Bucket getBucket() {
@@ -755,23 +742,19 @@ public class IndexCollectorFactory {
 			IndexStorage storage = null;
 
 			switch (valueType) {
+
+			// No special case for BYTE
+			case BYTE:
+			case SHORT:
+				storage = new LimitedUnsortedSetBuilderShort(chunkSize, UNDEFINED_CHUNK_SIZE);
+				break;
+
 			case LONG:
-				storage = new LimitedUnsortedSetBuilderLong(chunkSize,
-						chunkSize);
+				storage = new LimitedUnsortedSetBuilderLong(chunkSize, UNDEFINED_CHUNK_SIZE);
 				break;
 
 			case INTEGER:
-				storage = new LimitedUnsortedSetBuilderInt(chunkSize, chunkSize);
-				break;
-
-			case SHORT:
-				storage = new LimitedUnsortedSetBuilderShort(chunkSize,
-						chunkSize);
-				break;
-
-			case BYTE:
-				storage = new LimitedUnsortedSetBuilderByte(chunkSize,
-						chunkSize);
+				storage = new LimitedUnsortedSetBuilderInt(chunkSize, UNDEFINED_CHUNK_SIZE);
 				break;
 
 			default:
@@ -822,7 +805,7 @@ public class IndexCollectorFactory {
 		 */
 		@Override
 		public IndexSet[] build() {
-			IndexSet[] result = new IndexSet[size];
+			IndexSet[] result = new IndexSet[bucketCount];
 
 			collectSets(root(), result, 0);
 
@@ -948,7 +931,7 @@ public class IndexCollectorFactory {
 			virtualRoot.insert(right);
 
 			// Collect some meta info
-			size++;
+			bucketCount++;
 			splits++;
 
 			double leftCount = left.storage.size();

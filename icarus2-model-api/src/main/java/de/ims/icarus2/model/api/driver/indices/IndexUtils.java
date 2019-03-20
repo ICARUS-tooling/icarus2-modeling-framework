@@ -23,6 +23,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.Spliterator;
@@ -124,7 +125,7 @@ public class IndexUtils {
 		return result;
 	}
 
-	public static IndexValueType getDominantType(Collection<IndexSet> indices) {
+	public static IndexValueType getDominantType(Collection<? extends IndexSet> indices) {
 		IndexValueType result = IndexValueType.BYTE;
 
 		for(IndexSet set : indices) {
@@ -187,6 +188,13 @@ public class IndexUtils {
 		return true;
 	}
 
+	public static void checkSorted(long previous, long index) {
+		if(index<previous)
+			throw new ModelException(ModelErrorCode.MODEL_UNSORTED_INPUT,
+					String.format("Expected sorted index values: got %d, but previous was %d",
+							_long(index), _long(previous)));
+	}
+
 	public static void checkSorted(IndexSet indices) {
 		if(!indices.isSorted())
 			throw new ModelException(ModelErrorCode.MODEL_UNSORTED_INDEX_SET, "Index set is unsorted");
@@ -199,10 +207,12 @@ public class IndexUtils {
 		for(int i=0; i<indices.length; i++) {
 			IndexSet indexSet = indices[i];
 			if(!indexSet.isSorted())
-				throw new ModelException(ModelErrorCode.MODEL_UNSORTED_INDEX_SET, "Index set at position "+i+" is unsorted");
+				throw new ModelException(ModelErrorCode.MODEL_UNSORTED_INDEX_SET,
+						"Index set at position "+i+" is unsorted");
 
 			if(previousMax!=IcarusUtils.UNSET_LONG && indexSet.firstIndex()<previousMax)
-				throw new ModelException(ModelErrorCode.MODEL_UNSORTED_INDEX_SET, "Index set at position "+i+" is overlapping with previous one");
+				throw new ModelException(ModelErrorCode.MODEL_UNSORTED_INDEX_SET,
+						"Index set at position "+i+" is overlapping with previous one");
 
 			previousMax = indexSet.lastIndex();
 		}
@@ -211,10 +221,12 @@ public class IndexUtils {
 	public static void ensureSorted(IndexSet indices) {
 		if(!indices.isSorted()) {
 			if(!indices.hasFeatures(IndexSet.FEATURE_CAN_SORT))
-				throw new ModelException(ModelErrorCode.DRIVER_INDEX_SORT, "Sorting not supported by index set");
+				throw new ModelException(ModelErrorCode.DRIVER_INDEX_SORT,
+						"Sorting not supported by index set");
 
 			if(!indices.sort())
-				throw new ModelException(ModelErrorCode.DRIVER_INDEX_SORT, "Sorting failed due to index set internal reasons");
+				throw new ModelException(ModelErrorCode.DRIVER_INDEX_SORT,
+						"Sorting failed due to index set internal reasons");
 		}
 	}
 
@@ -246,6 +258,23 @@ public class IndexUtils {
 	 * @return
 	 */
 	public static long count(IndexSet[] indices) {
+		long result = 0;
+
+		for(IndexSet indexSet : indices) {
+			result += (long)indexSet.size();
+		}
+
+		return result;
+	}
+
+	/**
+	 * Sums and returns the total number of values in the
+	 * given {@code indices}.
+	 *
+	 * @param indices
+	 * @return
+	 */
+	public static long count(Collection<? extends IndexSet> indices) {
 		long result = 0;
 
 		for(IndexSet indexSet : indices) {
@@ -420,6 +449,49 @@ public class IndexUtils {
 	 * @return
 	 */
 	public static IndexSet combine(IndexSet[] indices) {
+		if(indices.length==1) {
+			return indices[0];
+		}
+
+		long size = 0;
+
+		long previousMax = IcarusUtils.UNSET_LONG;
+		for(IndexSet set : indices) {
+			if(set.firstIndex()<=previousMax)
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+						"Provided index sets are not disjoint");
+
+			size+=set.size();
+			previousMax = set.lastIndex();
+		}
+
+		if(size>IcarusUtils.MAX_INTEGER_INDEX)
+			throw new ModelException(GlobalErrorCode.INDEX_OVERFLOW,
+					Messages.outOfBounds(null, size, 0, IcarusUtils.MAX_INTEGER_INDEX));
+
+		IndexValueType valueType = getDominantType(indices);
+
+		IndexBuffer result = new IndexBuffer(valueType, (int) size);
+
+		result.add(indices);
+
+		return result;
+	}
+
+	/**
+	 * Combines a number of {@code IndexSet}s into a single one.
+	 * Note that all the sets in the given array must be disjoint
+	 * in addition to being sorted according to the specification
+	 * in {@link IndexSet}.
+	 *
+	 * @param indices
+	 * @return
+	 */
+	public static IndexSet combine(List<? extends IndexSet> indices) {
+		if(indices.size()==1) {
+			return indices.get(0);
+		}
+
 		long size = 0;
 
 		long previousMax = IcarusUtils.UNSET_LONG;
@@ -492,6 +564,14 @@ public class IndexUtils {
 			from = end+1;
 		}
 
+		return result;
+	}
+
+	public static IndexSet[] externalize(IndexSet...indices) {
+		IndexSet[] result = new IndexSet[indices.length];
+		for (int i = 0; i < result.length; i++) {
+			result[i] = indices[i].externalize();
+		}
 		return result;
 	}
 

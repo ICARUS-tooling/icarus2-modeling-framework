@@ -302,12 +302,16 @@ public class TestUtils {
 			out.println(s);
 	}
 
+	// RANDOMIZATION SECTION
+
 	private static final Random RANDOM = new Random(System.currentTimeMillis());
 
 	public static Random random() {
 //		return new Random(1L);
 		return RANDOM;
 	}
+
+	// RANDOM PAIRS
 
 	public static Pair<Long, Long> randomLongPair(long lowerInc, long upperEx) {
 		long[] vals = random().longs(2, lowerInc, upperEx).toArray();
@@ -317,6 +321,8 @@ public class TestUtils {
 	public static Stream<Pair<Long, Long>> randomPairs(long lowerInc, long upperEx) {
 		return Stream.generate(() -> randomLongPair(lowerInc, upperEx));
 	}
+
+	// RANDOM STRINGS
 
 	private static final String alNum =
 			  "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -331,6 +337,8 @@ public class TestUtils {
 		return new String(tmp);
 	}
 
+	// RANDOM STREAMS
+
 	public static <T> Stream<T> stream(Supplier<T> source) {
 		return Stream.generate(source);
 	}
@@ -344,14 +352,61 @@ public class TestUtils {
 				.mapToObj(TestUtils::randomString);
 	}
 
-	public static <T> T[] filledArray(int size, Class<T> clazz) {
-		@SuppressWarnings("unchecked")
-		T[] array = (T[]) Array.newInstance(clazz, size);
+	// RANDOM values within bounds
+
+	public static int random(int minInclusive, int maxExclusive) {
+		return minInclusive + random().nextInt(maxExclusive-minInclusive);
+	}
+
+	/**
+	 * Very inefficient implementation
+	 * @param minInclusive
+	 * @param maxExclusive
+	 * @return
+	 */
+	public static long random(long minInclusive, long maxExclusive) {
+		return randomLongs(1, minInclusive, maxExclusive)[0];
+	}
+
+	// RANDOM ARRAYS
+
+	public static long[] randomLongs(int size, long min, long max) {
+		return random().longs(size, min, max).toArray();
+	}
+
+	public static int[] randomInts(int size, int min, int max) {
+		return random().ints(size, min, max).toArray();
+	}
+
+	public static short[] randomShorts(int size, short min, short max) {
+		short[] array = new short[size];
 		for (int i = 0; i < array.length; i++) {
-			array[i] = mock(clazz);
+			array[i] = (short) (random().nextInt(min+(int)max)-min);
 		}
 		return array;
 	}
+
+	public static byte[] randomBytes(int size, byte min, byte max) {
+		byte[] array = new byte[size];
+		for (int i = 0; i < array.length; i++) {
+			array[i] = (byte) (random().nextInt(min+(byte)max)-min);
+		}
+		return array;
+	}
+
+	public static float[] randomFloats(int size) {
+		float[] array = new float[size];
+		for (int i = 0; i < array.length; i++) {
+			array[i] = random().nextFloat();
+		}
+		return array;
+	}
+
+	public static double[] randomDoubles(int size) {
+		return random().doubles().limit(size).toArray();
+	}
+
+	// RANDOMIZING OF INPUT
 
 	public static <T extends Object> Supplier<T> randomizer(Collection<? extends T> source) {
 		requireNonNull(source);
@@ -390,6 +445,19 @@ public class TestUtils {
 		requireNonNull(source);
 		return (T) random(source.toArray());
 	}
+
+	// ARRAY FILLING
+
+	public static <T> T[] filledArray(int size, Class<T> clazz) {
+		@SuppressWarnings("unchecked")
+		T[] array = (T[]) Array.newInstance(clazz, size);
+		for (int i = 0; i < array.length; i++) {
+			array[i] = mock(clazz);
+		}
+		return array;
+	}
+
+	// SETTINGS
 
 	public static TestSettings settings() {
 		return new TestSettings();
