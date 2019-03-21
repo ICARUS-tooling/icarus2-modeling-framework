@@ -3,6 +3,7 @@
  */
 package de.ims.icarus2.model.api.driver.indices;
 
+import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -13,6 +14,7 @@ import java.util.PrimitiveIterator.OfLong;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.test.annotations.Provider;
 
 /**
@@ -88,4 +90,9 @@ public interface IndexCollectorTest<C extends IndexCollector> {
 		assertNPE(() -> create().add((OfInt)null));
 	}
 
+	@Test
+	default void testNegativeInput() {
+		assertModelException(GlobalErrorCode.INVALID_INPUT,
+				() -> create().add(-1L));
+	}
 }

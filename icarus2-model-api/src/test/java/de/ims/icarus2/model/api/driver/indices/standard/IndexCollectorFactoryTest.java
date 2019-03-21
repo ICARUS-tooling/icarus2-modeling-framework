@@ -3,9 +3,12 @@
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
+import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEqualsExact;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.randomIndices;
 import static de.ims.icarus2.model.api.ModelTestUtils.sortedIndices;
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.count;
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.span;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestTags.SLOW;
@@ -42,6 +45,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
@@ -74,10 +79,9 @@ class IndexCollectorFactoryTest {
 	 */
 	private static final int MAX_TEST_SIZE = 1<<17;
 
-	private static Stream<TestParams> params(int cycles) {
+	private static Stream<IndexValueType> types() {
 		return Stream.of(IndexValueType.values())
-				.filter(type -> type!=IndexValueType.BYTE)
-				.map(valueType -> new TestParams(valueType, cycles));
+				.filter(type -> type!=IndexValueType.BYTE);
 	}
 
 	private static Executable wrapAssertUnsorted(Executable executable) {
@@ -92,10 +96,14 @@ class IndexCollectorFactoryTest {
 		};
 	}
 
-	private static Stream<DynamicNode> defaultCreateTests(int cycles,
+	private static Stream<DynamicNode> defaultCreateTests(
+			IndexValueType[] types, int cycles,
 			boolean sorted, boolean random,
 			Function<TestParams, IndexSetBuilder> builderGen) {
-		return params(cycles).map(params -> dynamicContainer(
+		return Stream.of(types)
+				.filter(type -> type!=IndexValueType.BYTE)
+				.map(valueType -> new TestParams(valueType, cycles))
+				.map(params -> dynamicContainer(
 					displayString(
 							"%s [size=%s, buffer=%s, chunkSize=%s, cycles=%s]",
 							params.valueType, _int(params.size), _int(params.bufferSize),
@@ -110,6 +118,13 @@ class IndexCollectorFactoryTest {
 					.createTests(() -> builderGen.apply(params))));
 	}
 
+	/**
+	 * Creates a series of tests to check for correct behavior of collectors
+	 * that expect sorted input when provided with unsorted data.
+	 *
+	 * @param collectorGen
+	 * @return
+	 */
 	@TestFactory
 	private static List<DynamicTest> createUnsortedInputTests(
 			Supplier<IndexCollector> collectorGen) {
@@ -197,21 +212,12 @@ class IndexCollectorFactoryTest {
 
 		@Nested
 		@DisplayName("sorted input")
-		class ForSortedInput {
+		class ForSortedInput implements FixedSplitTest, SortedTest {
 
-			@Tag(RANDOMIZED)
-			@TestFactory
-			Stream<DynamicNode> testSortedInputSingleCycle() {
-				return defaultCreateTests(1, true, false, params -> new LimitedSortedSetBuilder(
-						params.valueType, params.bufferSize, params.chunkSize));
-			}
-
-			@Tag(RANDOMIZED)
-			@Tag(SLOW)
-			@TestFactory
-			Stream<DynamicNode> testSortedInputMultiCycle() {
-				return defaultCreateTests(RUNS, true, false, params -> new LimitedSortedSetBuilder(
-						params.valueType, params.bufferSize, params.chunkSize));
+			@Override
+			public IndexSetBuilder apply(TestParams params) {
+				return new LimitedSortedSetBuilder(params.valueType,
+						params.bufferSize, params.chunkSize);
 			}
 		}
 	}
@@ -267,21 +273,11 @@ class IndexCollectorFactoryTest {
 
 		@Nested
 		@DisplayName("sorted input")
-		class ForSortedInput {
+		class ForSortedInput implements FixedSplitTest, SortedTest {
 
-			@Tag(RANDOMIZED)
-			@TestFactory
-			Stream<DynamicNode> testSortedInputSingleCycle() {
-				return defaultCreateTests(1, true, false, params -> new UnlimitedSortedSetBuilder(
-						params.valueType, params.chunkSize));
-			}
-
-			@Tag(RANDOMIZED)
-			@Tag(SLOW)
-			@TestFactory
-			Stream<DynamicNode> testSortedInputMultiCycle() {
-				return defaultCreateTests(RUNS, true, false, params -> new UnlimitedSortedSetBuilder(
-						params.valueType, params.chunkSize));
+			@Override
+			public IndexSetBuilder apply(TestParams params) {
+				return new UnlimitedSortedSetBuilder(params.valueType, params.chunkSize);
 			}
 		}
 	}
@@ -319,66 +315,31 @@ class IndexCollectorFactoryTest {
 			}
 		}
 
+		private class Source implements BuilderTest {
+
+			@Override
+			public IndexSetBuilder apply(TestParams params) {
+				return new LimitedUnsortedSetBuilderLong(params.bufferSize, params.chunkSize);
+			}
+
+		}
+
 		@Nested
 		@DisplayName("sorted input")
-		class ForSortedInput {
-
-			@Tag(RANDOMIZED)
-			@TestFactory
-			Stream<DynamicNode> testSortedInputSingleCycle() {
-				return defaultCreateTests(1, true, false, params ->
-					new LimitedUnsortedSetBuilderLong(params.bufferSize, params.chunkSize));
-			}
-
-			@Tag(RANDOMIZED)
-			@Tag(SLOW)
-			@TestFactory
-			Stream<DynamicNode> testSortedInputMultiCycle() {
-				return defaultCreateTests(RUNS, true, false, params ->
-					new LimitedUnsortedSetBuilderLong(params.bufferSize, params.chunkSize));
-			}
+		class ForSortedInput extends Source implements SortedTest {
+			// everything inherited
 		}
 
 		@Nested
 		@DisplayName("random input")
-		class ForRandomInput {
-
-			@Tag(RANDOMIZED)
-			@TestFactory
-			Stream<DynamicNode> testSortedInputSingleCycle() {
-				return defaultCreateTests(1, false, true, params ->
-					new LimitedUnsortedSetBuilderLong(params.bufferSize, params.chunkSize));
-			}
-
-			@Tag(RANDOMIZED)
-			@Tag(SLOW)
-			@TestFactory
-			Stream<DynamicNode> testSortedInputMultiCycle() {
-				return defaultCreateTests(RUNS, false, true, params ->
-					new LimitedUnsortedSetBuilderLong(params.bufferSize, params.chunkSize));
-			}
-
+		class ForRandomInput extends Source implements RandomTest {
+			// everything inherited
 		}
 
 		@Nested
 		@DisplayName("mixed input")
-		class ForMixedInput {
-
-			@Tag(RANDOMIZED)
-			@TestFactory
-			Stream<DynamicNode> testSortedInputSingleCycle() {
-				return defaultCreateTests(1, true, true, params ->
-					new LimitedUnsortedSetBuilderLong(params.bufferSize, params.chunkSize));
-			}
-
-			@Tag(RANDOMIZED)
-			@Tag(SLOW)
-			@TestFactory
-			Stream<DynamicNode> testSortedInputMultiCycle() {
-				return defaultCreateTests(RUNS, true, true, params ->
-					new LimitedUnsortedSetBuilderLong(params.bufferSize, params.chunkSize));
-			}
-
+		class ForMixedInput extends Source implements MixedTest {
+			// everything inherited
 		}
 	}
 
@@ -390,7 +351,71 @@ class IndexCollectorFactoryTest {
 	 */
 	@Nested
 	class ForLimitedUnsortedSetBuilderInt {
-		//TODO
+
+		@Nested
+		class ForInvalidArguments implements IndexCollectorTest<LimitedUnsortedSetBuilderInt> {
+
+			/**
+			 * @see de.ims.icarus2.model.api.driver.indices.IndexCollectorTest#create()
+			 */
+			@Override
+			public LimitedUnsortedSetBuilderInt create() {
+				return new LimitedUnsortedSetBuilderInt(1, 1);
+			}
+
+			@Test
+			void testConstructor_invalidCapacity() {
+				assertModelException(GlobalErrorCode.INVALID_INPUT,
+						() -> new LimitedUnsortedSetBuilderInt(0, 1));
+			}
+
+			@Test
+			void testConstructor_invalidChunkSize() {
+				assertModelException(GlobalErrorCode.INVALID_INPUT,
+						() -> new LimitedUnsortedSetBuilderInt(1, 0));
+			}
+
+			@ParameterizedTest
+			@ValueSource(longs = {
+					Long.MAX_VALUE,
+					Integer.MAX_VALUE+1L,
+			})
+			void testSingleValueIndexOverflow(long value) {
+				assertModelException(GlobalErrorCode.INVALID_INPUT,
+						() -> new LimitedUnsortedSetBuilderInt(1, 1).add(value));
+			}
+		}
+
+		private class Source implements BuilderTest {
+
+			@Override
+			public IndexSetBuilder apply(TestParams params) {
+				return new LimitedUnsortedSetBuilderInt(params.bufferSize, params.chunkSize);
+			}
+
+			@Override
+			public IndexValueType[] supportedTypes() {
+				return new IndexValueType[] {IndexValueType.SHORT, IndexValueType.INTEGER};
+			}
+		}
+
+		@Nested
+		@DisplayName("sorted input")
+		class ForSortedInput extends Source implements SortedTest {
+			// everything inherited
+		}
+
+		@Nested
+		@DisplayName("random input")
+		class ForRandomInput extends Source implements RandomTest {
+			// everything inherited
+		}
+
+		@Nested
+		@DisplayName("mixed input")
+		class ForMixedInput extends Source implements MixedTest {
+			// everything inherited
+		}
 	}
 
 	/**
@@ -401,7 +426,73 @@ class IndexCollectorFactoryTest {
 	 */
 	@Nested
 	class ForLimitedUnsortedSetBuilderShort {
-		//TODO
+
+		@Nested
+		class ForInvalidArguments implements IndexCollectorTest<LimitedUnsortedSetBuilderShort> {
+
+			/**
+			 * @see de.ims.icarus2.model.api.driver.indices.IndexCollectorTest#create()
+			 */
+			@Override
+			public LimitedUnsortedSetBuilderShort create() {
+				return new LimitedUnsortedSetBuilderShort(1, 1);
+			}
+
+			@Test
+			void testConstructor_invalidCapacity() {
+				assertModelException(GlobalErrorCode.INVALID_INPUT,
+						() -> new LimitedUnsortedSetBuilderShort(0, 1));
+			}
+
+			@Test
+			void testConstructor_invalidChunkSize() {
+				assertModelException(GlobalErrorCode.INVALID_INPUT,
+						() -> new LimitedUnsortedSetBuilderShort(1, 0));
+			}
+
+			@ParameterizedTest
+			@ValueSource(longs = {
+					Long.MAX_VALUE,
+					Integer.MAX_VALUE,
+					MAX_INTEGER_INDEX,
+					Short.MAX_VALUE+1,
+			})
+			void testSingleValueIndexOverflow(long value) {
+				assertModelException(GlobalErrorCode.INVALID_INPUT,
+						() -> new LimitedUnsortedSetBuilderShort(1, 1).add(value));
+			}
+		}
+
+		private class Source implements BuilderTest {
+
+			@Override
+			public IndexSetBuilder apply(TestParams params) {
+				return new LimitedUnsortedSetBuilderShort(params.bufferSize, params.chunkSize);
+			}
+
+			@Override
+			public IndexValueType[] supportedTypes() {
+				return new IndexValueType[] {IndexValueType.SHORT};
+			}
+		}
+
+		@Nested
+		@DisplayName("sorted input")
+		class ForSortedInput extends Source implements SortedTest {
+			// everything inherited
+		}
+
+		@Nested
+		@DisplayName("random input")
+		class ForRandomInput extends Source implements RandomTest {
+			// everything inherited
+		}
+
+		@Nested
+		@DisplayName("mixed input")
+		class ForMixedInput extends Source implements MixedTest {
+			// everything inherited
+		}
 	}
 
 	/**
@@ -412,7 +503,125 @@ class IndexCollectorFactoryTest {
 	 */
 	@Nested
 	class ForBucketSetBuilder {
-		//TODO
+
+		@Nested
+		class ForInvalidArguments implements IndexCollectorTest<BucketSetBuilder> {
+
+			/**
+			 * @see de.ims.icarus2.model.api.driver.indices.IndexCollectorTest#create()
+			 */
+			@Override
+			public BucketSetBuilder create() {
+				return new BucketSetBuilder(IndexValueType.INTEGER, 1);
+			}
+
+			@Test
+			void testConstructor_null() {
+				assertNPE(() -> new BucketSetBuilder(null, 1));
+			}
+
+			@Test
+			void testConstructor_invalidChunkSize() {
+				assertModelException(GlobalErrorCode.INVALID_INPUT,
+						() -> new BucketSetBuilder(IndexValueType.INTEGER, 0));
+			}
+		}
+
+		private class Source implements BuilderTest {
+
+			@Override
+			public IndexSetBuilder apply(TestParams params) {
+				return new BucketSetBuilder(params.valueType, params.chunkSize);
+			}
+		}
+
+		@Nested
+		@DisplayName("sorted input")
+		class ForSortedInput extends Source implements SortedTest {
+			// everything inherited
+		}
+
+		@Nested
+		@DisplayName("random input")
+		class ForRandomInput extends Source implements RandomTest {
+			// everything inherited
+		}
+
+		@Nested
+		@DisplayName("mixed input")
+		class ForMixedInput extends Source implements MixedTest {
+			// everything inherited
+		}
+	}
+
+	private interface BuilderTest extends Function<TestParams, IndexSetBuilder> {
+		default IndexValueType[] supportedTypes() {
+			return IndexValueType.values();
+		}
+	}
+
+	private interface RandomTest extends BuilderTest {
+
+		@Tag(RANDOMIZED)
+		@TestFactory
+		default Stream<DynamicNode> testSortedInputSingleCycle() {
+			return defaultCreateTests(supportedTypes(), 1, false, true, this);
+		}
+
+		@Tag(RANDOMIZED)
+		@Tag(SLOW)
+		@TestFactory
+		default Stream<DynamicNode> testSortedInputMultiCycle() {
+			return defaultCreateTests(supportedTypes(), RUNS, false, true, this);
+		}
+	}
+
+	private interface MixedTest extends BuilderTest {
+
+
+		@Tag(RANDOMIZED)
+		@TestFactory
+		default Stream<DynamicNode> testSortedInputSingleCycle() {
+			return defaultCreateTests(supportedTypes(), 1, true, true, this);
+		}
+
+		@Tag(RANDOMIZED)
+		@Tag(SLOW)
+		@TestFactory
+		default Stream<DynamicNode> testSortedInputMultiCycle() {
+			return defaultCreateTests(supportedTypes(), RUNS, true, true, this);
+		}
+	}
+
+	private interface SortedTest extends BuilderTest {
+
+
+		@Tag(RANDOMIZED)
+		@TestFactory
+		default Stream<DynamicNode> testSortedInputSingleCycle() {
+			return defaultCreateTests(supportedTypes(), 1, true, false, this);
+		}
+
+		@Tag(RANDOMIZED)
+		@Tag(SLOW)
+		@TestFactory
+		default Stream<DynamicNode> testSortedInputMultiCycle() {
+			return defaultCreateTests(supportedTypes(), RUNS, true, false, this);
+		}
+	}
+
+	private interface FixedSplitTest extends BuilderTest {
+		@TestFactory
+		default Stream<DynamicNode> testSortedInputFixedSplit() {
+			// 2 even chunks
+			return types()
+					.map(type -> new TestParams(type, 4, 2))
+					.map(params -> dynamicContainer(params.valueType.toString(),
+							config()
+							.explicit(span(1, 4))
+							.expected(span(1, 2), span(3, 4))
+							.createTests(() -> apply(params))));
+		}
 	}
 
 	/**
@@ -455,7 +664,25 @@ class IndexCollectorFactoryTest {
 			int maxStart = max - (cycles * size);
 			start = random(0, maxStart);
 		}
+
+		TestParams(IndexValueType valueType, int size, int chunkSize) {
+			checkArgument(size>0);
+			checkArgument(chunkSize>0);
+			this.valueType = requireNonNull(valueType);
+			this.size = size;
+			this.chunkSize = chunkSize;
+
+			cycles = 1;
+			bufferSize = size;
+			start = 0;
+		}
 	}
+
+//	private static class SPlit {
+//		final int bufferSize;
+//		final int chunkSize;
+//
+//	}
 
 	static TestConfig config() {
 		return new TestConfig();
@@ -469,7 +696,8 @@ class IndexCollectorFactoryTest {
 	 *
 	 */
 	private static class TestConfig {
-		private IndexSet explicit;
+		private IndexSet[] explicit;
+		private IndexSet[] expected;
 		private boolean random = false;
 		private boolean sorted = false;
 		private int size;
@@ -503,9 +731,15 @@ class IndexCollectorFactoryTest {
 			return this;
 		}
 
-		TestConfig explicit(IndexSet explicit) {
-			assumeTrue(explicit!=null, "Explicit index set must not be null");
+		TestConfig explicit(IndexSet...explicit) {
+			assumeTrue(explicit!=null && explicit.length!=0, "Explicit index set must not be empty");
 			this.explicit = explicit;
+			return this;
+		}
+
+		TestConfig expected(IndexSet...expected) {
+			assumeTrue(expected!=null && expected.length!=0, "Expected index set must not be empty");
+			this.expected = expected;
 			return this;
 		}
 
@@ -529,8 +763,8 @@ class IndexCollectorFactoryTest {
 
 				assertNotNull(builder);
 
-				LongSet input = new LongOpenHashSet(1<<16);
-				LongSet output = new LongOpenHashSet(1<<16);
+				LongSet input = new LongOpenHashSet(1<<20);
+				LongSet output = new LongOpenHashSet(1<<20);
 
 				for(int cycle = 0; cycle < cycles; cycle++) {
 					IndexSet indices = indicesGen.get();
@@ -566,12 +800,28 @@ class IndexCollectorFactoryTest {
 			assumeTrue(indexValueType!=null, "Index value type not set");
 		}
 
-		Stream<DynamicNode> createTests(Supplier<IndexSetBuilder> builderGen) {
+		List<DynamicNode> createTests(Supplier<IndexSetBuilder> builderGen) {
 			List<DynamicNode> tests = new ArrayList<>();
 
 			if(explicit!=null) {
-				tests.add(createTest("Explicit IndexSet ["+explicit.size()+"]",
-						builderGen, () -> explicit, cycles));
+				if(expected!=null) {
+					assumeTrue(count(explicit)==count(expected), "Faulty setup - index count mismatch");
+
+					tests.add(dynamicTest(String.format(
+							"Explicit IndexSet [%d] -> %d split sets expected",
+							_int(explicit.length), _int(expected.length)), () -> {
+						IndexSetBuilder builder = builderGen.get();
+
+						builder.add(explicit);
+
+						IndexSet[] actual = builder.build();
+
+						assertEquals(expected.length, actual.length, "Result size mismatch");
+						for (int i = 0; i < expected.length; i++) {
+							assertIndicesEqualsExact(expected[i], actual[i]);
+						}
+					}));
+				}
 			}
 
 			if(random) {
@@ -590,7 +840,7 @@ class IndexCollectorFactoryTest {
 
 			assumeFalse(tests.isEmpty(), "Config did not define any tests");
 
-			return tests.stream();
+			return tests;
 		}
 	}
 }

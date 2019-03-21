@@ -11,7 +11,7 @@ apply from: 'versions.gradle'
 
 allprojects {
 	apply plugin: 'eclipse'
-    apply plugin: 'jacoco'
+//    apply plugin: 'jacoco'
 	
   	group = 'icarus2'
   	version = '0.0.1'
@@ -37,7 +37,7 @@ subprojects {
   	apply plugin: 'java-library'
   	//apply plugin: 'maven-publish'
   	apply plugin: 'checkstyle'
-  	apply plugin: 'com.github.spotbugs'  	
+  	apply plugin: 'com.github.spotbugs'  		
 	apply plugin: 'com.github.hierynomus.license'
 	
   	sourceCompatibility = 1.8
@@ -46,6 +46,15 @@ subprojects {
   	repositories {
     	mavenCentral()
   	}  
+	
+	sourceSets {
+		jmh {
+			java.srcDirs = ['src/jmh/java']
+			resources.srcDirs = ['src/jmh/resources']
+//			compileClasspath += sourceSets.main.runtimeClasspath
+//			compileClasspath += configurations.jmhImplementation
+		}
+	}
 	  	
 	configurations {
 	
@@ -78,6 +87,10 @@ subprojects {
 	
 		// configuration for the test code artifact
 		tests.extendsFrom(testImplementation)
+		
+		// BENCHMARK ENVIRONMENT
+		jmh
+		jmhImplementation.extendsFrom(implementation, jmh)
 	}
 	  	
 	dependencies {
@@ -134,7 +147,18 @@ subprojects {
 	  
 		// https://mvnrepository.com/artifact/com.fasterxml.uuid/java-uuid-generator
 		uuid "com.fasterxml.uuid:java-uuid-generator:${versions.uuidVersion}"
+		
+		// https://mvnrepository.com/artifact/org.openjdk.jmh/jmh-core
+		jmh "org.openjdk.jmh:jmh-core:1.21"
+		// https://mvnrepository.com/artifact/org.openjdk.jmh/jmh-generator-annprocess
+		jmh "org.openjdk.jmh:jmh-generator-annprocess:${versions.jmhVersion}"
 	}
+	
+	task jmh(type: JavaExec, dependsOn: jmhClasses) {
+		main = 'org.openjdk.jmh.Main'
+		classpath = sourceSets.jmh.compileClasspath + sourceSets.jmh.runtimeClasspath
+	}
+	classes.finalizedBy(jmhClasses)
   	
   	tasks.withType(JavaCompile) {
   		options.encoding = 'UTF-8'
@@ -160,6 +184,7 @@ subprojects {
 	    options.encoding = 'UTF-8'
 	}
 	
+	// Automatic license analysis for dependencies
 	downloadLicenses {
 	    ext.apacheTwo = license('Apache License, Version 2.0', 'http://opensource.org/licenses/Apache-2.0')
 	    ext.bsd = license('BSD License', 'http://www.opensource.org/licenses/bsd-license.php')
@@ -174,6 +199,7 @@ subprojects {
 	    dependencyConfiguration = 'runtime'
 	}
 	
+	// License formatting for file headers
 	license {
 		ext.year = '2014-'+Calendar.getInstance().get(Calendar.YEAR)
 		ext.name = 'Markus Gärtner'
@@ -247,21 +273,21 @@ subprojects {
 	}
 }
 
-task codeCoverageReport(type: JacocoReport) {
-    executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
+//task codeCoverageReport(type: JacocoReport) {
+//    executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
+//
+//    subprojects.each {
+//        sourceSets it.sourceSets.main
+//    }
+//
+//    reports {
+//        xml.enabled true
+//        xml.destination "${buildDir}/reports/jacoco/report.xml" as File
+//        html.enabled false
+//        csv.enabled false
+//    }
+//}
 
-    subprojects.each {
-        sourceSets it.sourceSets.main
-    }
-
-    reports {
-        xml.enabled true
-        xml.destination "${buildDir}/reports/jacoco/report.xml" as File
-        html.enabled false
-        csv.enabled false
-    }
-}
-
-codeCoverageReport.dependsOn {
-    subprojects*.test
-}
+//codeCoverageReport.dependsOn {
+//    subprojects*.test
+//}

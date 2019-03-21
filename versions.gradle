@@ -18,4 +18,5 @@ ext {
 	versions.uuidVersion = '3.1.5'
 	versions.apiguardianVersion = '1.0.0'
 	versions.jsr305Version = '3.0.2'
+	versions.jmhVersion = '1.21'
 }

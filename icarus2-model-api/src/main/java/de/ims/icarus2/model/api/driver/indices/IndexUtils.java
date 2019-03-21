@@ -151,6 +151,11 @@ public class IndexUtils {
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Index array contains no actual index values"); //$NON-NLS-1$
 	}
 
+	public static void checkNotNegative(long index) {
+		if(index<0L)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Value is negative: "+index);
+	}
+
 	public static boolean isSorted(IndexSet[] indices) {
 
 		long previousMax = IcarusUtils.UNSET_LONG;
@@ -386,6 +391,10 @@ public class IndexUtils {
 		return index==IcarusUtils.UNSET_LONG ? EMPTY : new IndexSet[]{new SingletonIndexSet(index)};
 	}
 
+	public static IndexSet span(long from, long to) {
+		return new SpanIndexSet(from, to);
+	}
+
 	/**
 	 *
 	 *
@@ -396,7 +405,7 @@ public class IndexUtils {
 	 * @throws IllegalArgumentException if {@code from < 0} or {@code to < 0} or {@code to < from}
 	 */
 	public static IndexSet[] wrapSpan(long from, long to) {
-		return new IndexSet[]{new SpanIndexSet(from, to)};
+		return new IndexSet[]{span(from, to)};
 	}
 
 	public static IndexSet[] wrap(long...indices) {

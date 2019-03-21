@@ -16,9 +16,11 @@
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkNotNegative;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkSorted;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.IcarusUtils.MAX_INTEGER_INDEX;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.lang.Primitives._int;
@@ -56,7 +58,7 @@ import it.unimi.dsi.fastutil.shorts.ShortSet;
  * <p>
  * Implementation notes:<br>
  * When setting a {@link #chunkSizeLimit(int) chunk size limit}, keep in mind that
- * this only provides a guarantee for the maximum size of each individual {@link IndexSet}
+ * this only provides a guarantee for the <b>maximum</b> size of each individual {@link IndexSet}
  * returned from {@link IndexSetBuilder#build()}!
  *
  * @author Markus Gärtner
@@ -261,6 +263,10 @@ public class IndexCollectorFactory {
 					"Capacity must be positive: "+capacity);
 	}
 
+	private static int largestChunkSize(IndexValueType valueType) {
+		return (int) Math.min(MAX_INTEGER_INDEX, valueType.maxValue());
+	}
+
 	/**
 	 * Implements the {@link IndexSetBuilder} interface by wrapping around the
 	 * {@link IndexBuffer} class. It assumes every input to be sorted and arrive
@@ -303,6 +309,7 @@ public class IndexCollectorFactory {
 		 */
 		@Override
 		public void add(long index) {
+			checkNotNegative(index);
 			checkSorted(lastIndex, index);
 			buffer.add(index);
 			lastIndex = index;
@@ -375,6 +382,7 @@ public class IndexCollectorFactory {
 		 */
 		@Override
 		public void add(long index) {
+			checkNotNegative(index);
 			checkSorted(lastIndex, index);
 
 			buffer.add(index);
@@ -432,6 +440,7 @@ public class IndexCollectorFactory {
 		 */
 		@Override
 		public void add(long index) {
+			checkNotNegative(index);
 			buffer.add(index);
 		}
 
@@ -503,6 +512,7 @@ public class IndexCollectorFactory {
 		 */
 		@Override
 		public void add(long index) {
+			checkNotNegative(index);
 			buffer.add((int) TYPE.checkValue(index));
 		}
 
@@ -574,6 +584,7 @@ public class IndexCollectorFactory {
 		 */
 		@Override
 		public void add(long index) {
+			checkNotNegative(index);
 			buffer.add((short) TYPE.checkValue(index));
 		}
 
@@ -687,7 +698,7 @@ public class IndexCollectorFactory {
 
 		public BucketSetBuilder(IndexValueType valueType, int chunkSize, boolean useLastHitCache) {
 			requireNonNull(valueType);
-			checkArgument("chunk bucketCount must be positive", chunkSize > 0);
+			checkChunkSize(chunkSize);
 
 			checkDiscouragedValueType(valueType);
 
@@ -780,6 +791,7 @@ public class IndexCollectorFactory {
 		 */
 		@Override
 		public void add(long index) {
+			// No check against negative values here, we expect the Bucket to handle this
 			Bucket b = find(index);
 			add(b, index);
 		}
