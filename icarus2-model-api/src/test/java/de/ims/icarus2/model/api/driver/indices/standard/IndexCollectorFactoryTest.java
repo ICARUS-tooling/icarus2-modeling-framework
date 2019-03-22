@@ -6,6 +6,7 @@ package de.ims.icarus2.model.api.driver.indices.standard;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEqualsExact;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.randomIndices;
+import static de.ims.icarus2.model.api.ModelTestUtils.range;
 import static de.ims.icarus2.model.api.ModelTestUtils.sortedIndices;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.count;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.span;
@@ -571,6 +572,62 @@ class IndexCollectorFactoryTest {
 				@BeforeEach
 				void setUp() {
 					builder = new BucketSetBuilder(IndexValueType.INTEGER, 10, false);
+				}
+
+				@Test
+				void testNoSplit() {
+					builder.add(wrap(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
+					assertEquals(1, builder.getUsedBucketCount());
+					assertEquals(0, builder.getSplitCount());
+				}
+
+				@Test
+				void testSingleSplit() {
+					builder.add(wrap(1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12));
+					assertEquals(2, builder.getUsedBucketCount());
+					assertEquals(1, builder.getSplitCount());
+				}
+
+				@Test
+				void testSingleFringe() {
+					builder.add(range(0, 10));
+					assertEquals(2, builder.getCreatedBucketCount());
+					assertEquals(2, builder.getUsedBucketCount());
+					assertEquals(1, builder.getFringeCount());
+					assertEquals(1, builder.getClosingCount());
+				}
+
+				@Test
+				void testDoubleFringe() {
+					builder.add(range(1, 11));
+					assertEquals(3, builder.getCreatedBucketCount());
+					assertEquals(2, builder.getUsedBucketCount());
+					assertEquals(2, builder.getFringeCount());
+					assertEquals(1, builder.getClosingCount());
+				}
+
+				@Test
+				void testDoubleFringeRight() {
+					builder.add(range(0, 20));
+					assertEquals(3, builder.getUsedBucketCount());
+					assertEquals(2, builder.getFringeCount());
+					assertEquals(2, builder.getClosingCount());
+				}
+
+				@Test
+				void testDoubleFringeLeft() {
+					builder.add(range(20, 29));
+					assertEquals(1, builder.getCreatedBucketCount());
+					assertEquals(1, builder.getUsedBucketCount());
+					builder.add(range(10, 19));
+					assertEquals(3, builder.getCreatedBucketCount());
+					assertEquals(2, builder.getUsedBucketCount());
+					assertEquals(2, builder.getFringeCount());
+					builder.add(range(0, 9));
+					assertEquals(4, builder.getCreatedBucketCount());
+					assertEquals(3, builder.getUsedBucketCount());
+					assertEquals(3, builder.getFringeCount());
+					assertEquals(2, builder.getClosingCount());
 				}
 			}
 		}
