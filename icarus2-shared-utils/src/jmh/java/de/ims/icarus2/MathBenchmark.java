@@ -5,6 +5,8 @@ package de.ims.icarus2;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.function.IntSupplier;
+import java.util.function.LongSupplier;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -13,6 +15,7 @@ import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
@@ -33,24 +36,42 @@ public class MathBenchmark {
 /**
  * <pre>
 Benchmark                       Mode  Cnt   Score   Error  Units
-MathBenchmark.incrementInt      avgt   10   5.814 ▒ 0.553  ns/op
-MathBenchmark.incrementLong     avgt   10   5.927 ▒ 0.313  ns/op
-MathBenchmark.incrementShort    avgt   10   5.826 ▒ 0.196  ns/op
-MathBenchmark.noOp              avgt   10   0.781 ▒ 0.058  ns/op
-MathBenchmark.testIntAbs        avgt   10   5.774 ▒ 0.124  ns/op
-MathBenchmark.testLongAbs       avgt   10   6.539 ▒ 0.286  ns/op
-MathBenchmark.testRandomDouble  avgt   10  33.799 ▒ 4.010  ns/op
-MathBenchmark.testRandomFloat   avgt   10  16.300 ▒ 1.652  ns/op
-MathBenchmark.testRandomInt     avgt   10  16.346 ▒ 1.476  ns/op
-MathBenchmark.testRandomLong    avgt   10  32.511 ▒ 2.001  ns/op
+MathBenchmark.incrementInt      avgt   10   5.746 ▒ 0.211  ns/op
+MathBenchmark.incrementLong     avgt   10   5.894 ▒ 0.343  ns/op
+MathBenchmark.incrementShort    avgt   10   5.986 ▒ 0.426  ns/op
+MathBenchmark.noOp              avgt   10   0.779 ▒ 0.163  ns/op
+MathBenchmark.testIntAbs        avgt   10   5.803 ▒ 0.256  ns/op
+MathBenchmark.testIntGen        avgt   10  17.078 ▒ 1.708  ns/op
+MathBenchmark.testIntGenAbs     avgt   10  16.747 ▒ 1.480  ns/op
+MathBenchmark.testLongAbs       avgt   10   6.774 ▒ 0.373  ns/op
+MathBenchmark.testLongGen       avgt   10  31.606 ▒ 1.607  ns/op
+MathBenchmark.testLongGenAbs    avgt   10  31.400 ▒ 1.487  ns/op
+MathBenchmark.testRandomDouble  avgt   10  31.278 ▒ 0.613  ns/op
+MathBenchmark.testRandomFloat   avgt   10  16.110 ▒ 1.149  ns/op
+MathBenchmark.testRandomInt     avgt   10  15.632 ▒ 0.412  ns/op
+MathBenchmark.testRandomLong    avgt   10  30.988 ▒ 0.929  ns/op
  * </pre
  */
 
-	private long longValue = 0;
-	private int intValue = 0;
-	private short shortValue = 0;
+	private long longValue;
+	private int intValue;
+	private short shortValue;
 
-	private Random random = new Random(System.currentTimeMillis());
+	private Random random;
+
+	private LongSupplier longGen;
+	private IntSupplier intGen;
+
+	@Setup
+	public void init() {
+		longValue = 0L;
+		intValue = 0;
+		shortValue = 0;
+		random = new Random(System.currentTimeMillis());
+
+		longGen = () -> random.nextLong();
+		intGen = () -> random.nextInt();
+	}
 
 	@Benchmark
 	public void noOp() {
@@ -100,5 +121,25 @@ MathBenchmark.testRandomLong    avgt   10  32.511 ▒ 2.001  ns/op
 	@Benchmark
 	public int testIntAbs() {
 		return Math.abs(intValue++);
+	}
+
+	@Benchmark
+	public int testIntGen() {
+		return intGen.getAsInt();
+	}
+
+	@Benchmark
+	public long testLongGen() {
+		return longGen.getAsLong();
+	}
+
+	@Benchmark
+	public int testIntGenAbs() {
+		return Math.abs(intGen.getAsInt());
+	}
+
+	@Benchmark
+	public long testLongGenAbs() {
+		return Math.abs(longGen.getAsLong());
 	}
 }

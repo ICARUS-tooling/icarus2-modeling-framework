@@ -1,0 +1,15 @@
+Benchmark                       Mode  Cnt   Score   Error  Units
+MathBenchmark.incrementInt      avgt   10   5.746 ▒ 0.211  ns/op
+MathBenchmark.incrementLong     avgt   10   5.894 ▒ 0.343  ns/op
+MathBenchmark.incrementShort    avgt   10   5.986 ▒ 0.426  ns/op
+MathBenchmark.noOp              avgt   10   0.779 ▒ 0.163  ns/op
+MathBenchmark.testIntAbs        avgt   10   5.803 ▒ 0.256  ns/op
+MathBenchmark.testIntGen        avgt   10  17.078 ▒ 1.708  ns/op
+MathBenchmark.testIntGenAbs     avgt   10  16.747 ▒ 1.480  ns/op
+MathBenchmark.testLongAbs       avgt   10   6.774 ▒ 0.373  ns/op
+MathBenchmark.testLongGen       avgt   10  31.606 ▒ 1.607  ns/op
+MathBenchmark.testLongGenAbs    avgt   10  31.400 ▒ 1.487  ns/op
+MathBenchmark.testRandomDouble  avgt   10  31.278 ▒ 0.613  ns/op
+MathBenchmark.testRandomFloat   avgt   10  16.110 ▒ 1.149  ns/op
+MathBenchmark.testRandomInt     avgt   10  15.632 ▒ 0.412  ns/op
+MathBenchmark.testRandomLong    avgt   10  30.988 ▒ 0.929  ns/op
