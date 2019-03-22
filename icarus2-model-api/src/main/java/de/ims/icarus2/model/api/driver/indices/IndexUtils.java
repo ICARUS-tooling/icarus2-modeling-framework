@@ -329,12 +329,20 @@ public class IndexUtils {
 		return result;
 	}
 
+	private static long diff(long a, long b) {
+		return a>b ? a-b : b-a;
+	}
+
+	public static boolean isContinuous(long size, long min, long max) {
+		return size>0 && size-1 == max-min;
+	}
+
 	public static boolean isContinuous(IndexSet indices) {
-		return indices.isSorted() && indices.firstIndex()+indices.size()-1==indices.lastIndex();
+		return indices.isSorted() && diff(indices.lastIndex(), indices.firstIndex())==indices.size()-1;
 	}
 
 	public static boolean isContinuous(IndexSet indices, int from, int to) {
-		return indices.isSorted() && indices.indexAt(from)-indices.indexAt(to)==(to-from);
+		return indices.isSorted() && diff(indices.indexAt(from), indices.indexAt(to))==(to-from);
 	}
 
 	public static boolean isContinuous(IndexSet[] indices) {

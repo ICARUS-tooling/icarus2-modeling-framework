@@ -1,0 +1,3 @@
+Benchmark                       Mode  Cnt   Score   Error  Units
+MathBenchmark.incrementLong     avgt   25   5.658 ± 0.347  ns/op
+MathBenchmark.testCreateRandom  avgt   25  32.777 ± 2.372  ns/op

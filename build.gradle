@@ -4,6 +4,7 @@ plugins {
     id 'com.github.hierynomus.license' version '0.14.0' apply false
 	id 'com.github.spotbugs' version '1.6.4' apply false
 	id 'com.gradle.build-scan' version '2.2.1'
+	id 'me.champeau.gradle.jmh' version '0.4.8' apply false
 }
 
 // Load version definitions for dependencies. Info will be stored in 'versions' map
@@ -39,6 +40,7 @@ subprojects {
   	apply plugin: 'checkstyle'
   	apply plugin: 'com.github.spotbugs'  		
 	apply plugin: 'com.github.hierynomus.license'
+	apply plugin: 'me.champeau.gradle.jmh'
 	
   	sourceCompatibility = 1.8
   	targetCompatibility = 1.8
@@ -46,15 +48,6 @@ subprojects {
   	repositories {
     	mavenCentral()
   	}  
-	
-	sourceSets {
-		jmh {
-			java.srcDirs = ['src/jmh/java']
-			resources.srcDirs = ['src/jmh/resources']
-//			compileClasspath += sourceSets.main.runtimeClasspath
-//			compileClasspath += configurations.jmhImplementation
-		}
-	}
 	  	
 	configurations {
 	
@@ -87,10 +80,6 @@ subprojects {
 	
 		// configuration for the test code artifact
 		tests.extendsFrom(testImplementation)
-		
-		// BENCHMARK ENVIRONMENT
-		jmh
-		jmhImplementation.extendsFrom(implementation, jmh)
 	}
 	  	
 	dependencies {
@@ -106,7 +95,7 @@ subprojects {
 	    // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
 		slf4j "org.slf4j:slf4j-api:${versions.slf4jVersion}"
 	    // https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14
-		slf4j "org.slf4j:slf4j-jdk14:${versions.slf4jVersion}"
+//		slf4j "org.slf4j:slf4j-jdk14:${versions.slf4jVersion}"
 	
 	    // https://mvnrepository.com/artifact/com.google.guava/guava
 		guava "com.google.guava:guava:${versions.guavaVersion}"
@@ -148,22 +137,20 @@ subprojects {
 		// https://mvnrepository.com/artifact/com.fasterxml.uuid/java-uuid-generator
 		uuid "com.fasterxml.uuid:java-uuid-generator:${versions.uuidVersion}"
 		
-		// https://mvnrepository.com/artifact/org.openjdk.jmh/jmh-core
-		jmh "org.openjdk.jmh:jmh-core:1.21"
-		// https://mvnrepository.com/artifact/org.openjdk.jmh/jmh-generator-annprocess
+		jmh "org.openjdk.jmh:jmh-core:${versions.jmhVersion}"
 		jmh "org.openjdk.jmh:jmh-generator-annprocess:${versions.jmhVersion}"
 	}
-	
-	task jmh(type: JavaExec, dependsOn: jmhClasses) {
-		main = 'org.openjdk.jmh.Main'
-		classpath = sourceSets.jmh.compileClasspath + sourceSets.jmh.runtimeClasspath
-	}
-	classes.finalizedBy(jmhClasses)
   	
   	tasks.withType(JavaCompile) {
   		options.encoding = 'UTF-8'
     	options.fork = true
  	}
+	 
+	jmh {
+		jmhVersion = "${versions.jmhVersion}"
+		forceGC = true
+		jvmArgsPrepend = ["-Djmh.separateClasspathJAR=true"]
+	}
 		
 	test {
  		//useTestNG()

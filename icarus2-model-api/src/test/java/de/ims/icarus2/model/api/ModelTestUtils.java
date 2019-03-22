@@ -23,21 +23,24 @@ import static de.ims.icarus2.SharedTestUtils.mockSequence;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.RUNS_EXHAUSTIVE;
 import static de.ims.icarus2.test.TestUtils.assertMock;
+import static de.ims.icarus2.test.TestUtils.longRange;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.test.TestUtils.randomBytes;
 import static de.ims.icarus2.test.TestUtils.randomInts;
 import static de.ims.icarus2.test.TestUtils.randomLongs;
 import static de.ims.icarus2.test.TestUtils.randomShorts;
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
@@ -87,11 +90,11 @@ public class ModelTestUtils {
 	 * @return
 	 */
 	public static LongStream randomIndices() {
-		return random().longs(RUNS, UNSET_LONG, Long.MAX_VALUE);
+		return random().longs(RUNS, 0L, Long.MAX_VALUE);
 	}
 
 	public static LongStream exhaustiveRandomIndices() {
-		return random().longs(RUNS_EXHAUSTIVE, UNSET_LONG, Long.MAX_VALUE);
+		return random().longs(RUNS_EXHAUSTIVE, 0L, Long.MAX_VALUE);
 	}
 
 	@SuppressWarnings("boxing")
@@ -448,6 +451,65 @@ public class ModelTestUtils {
 		for (int i = 0; i < expected.size(); i++) {
 			assertEquals(expected.indexAt(i), actual.indexAt(i), "Mismatch at index "+i);
 		}
+	}
+
+	private static final long[] defaults = longRange(1, 10);
+	private static final IndexValueType defaultType = IndexValueType.LONG;
+
+	private static IndexSet basicSet() {
+		return mock(IndexSet.class, CALLS_REAL_METHODS);
+	}
+
+	@SuppressWarnings("boxing")
+	public static IndexSet set(IndexValueType valueType, long...indices) {
+		IndexSet set = basicSet();
+
+		when(set.size()).thenReturn(indices.length);
+		when(set.getIndexValueType()).thenReturn(valueType);
+		when(set.indexAt(anyInt())).thenAnswer(
+				inv -> Long.valueOf(indices[((Integer)inv.getArgument(0)).intValue()]));
+
+		return set;
+	}
+
+	public static IndexSet set(long...indices) {
+		return set(defaultType, indices);
+	}
+
+	@SuppressWarnings("boxing")
+	public static IndexSet sorted(IndexValueType valueType, long...indices) {
+		IndexSet set = set(valueType, indices);
+		when(set.isSorted()).thenReturn(Boolean.TRUE);
+
+		return set;
+	}
+
+	public static IndexSet sorted(long...indices) {
+		return sorted(defaultType, indices);
+	}
+
+	@SuppressWarnings("boxing")
+	public static IndexSet range(IndexValueType valueType, long from, long to) {
+		assumeTrue(from>=0L);
+		assumeTrue(to>=from);
+		IndexSet set = basicSet();
+
+		when(set.size()).thenReturn(Math.toIntExact(to-from+1));
+		when(set.isSorted()).thenReturn(Boolean.TRUE);
+		when(set.getIndexValueType()).thenReturn(valueType);
+		when(set.indexAt(anyInt())).thenAnswer(inv -> {
+			int index = ((Integer)inv.getArgument(0)).intValue();
+			long result = from+index;
+			if(result>to)
+				throw new IndexOutOfBoundsException();
+			return Long.valueOf(result);
+		});
+
+		return set;
+	}
+
+	public static IndexSet range(long from, long to) {
+		return range(defaultType, from, to);
 	}
 
 	public static LongSet asSet(IndexSet source) {

@@ -20,7 +20,6 @@ import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkNotNegativ
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkSorted;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
-import static de.ims.icarus2.util.IcarusUtils.MAX_INTEGER_INDEX;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.lang.Primitives._int;
@@ -261,10 +260,6 @@ public class IndexCollectorFactory {
 		if(capacity<1)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Capacity must be positive: "+capacity);
-	}
-
-	private static int largestChunkSize(IndexValueType valueType) {
-		return (int) Math.min(MAX_INTEGER_INDEX, valueType.maxValue());
 	}
 
 	/**
@@ -658,6 +653,7 @@ public class IndexCollectorFactory {
 				} else {
 					getSmaller().insert(b);
 				}
+				bucketCount++;
 			}
 			@Override
 			public String toString() {return "ROOT";}
@@ -687,6 +683,8 @@ public class IndexCollectorFactory {
 		private long insertions = 0L;
 		private long cacheMisses = 0L;
 		private long splits = 0L;
+		private long closings = 0L;
+		private long fringes = 0L;
 
 		private double averageSplitRatio = 0D;
 		private double minSplitRatio = 1D;
@@ -706,7 +704,7 @@ public class IndexCollectorFactory {
 			this.chunkSize = chunkSize;
 			this.useLastHitCache = useLastHitCache;
 
-			virtualRoot.setSmaller(createBucket());
+			virtualRoot.setSmaller(createBucket(UNSET_INT));
 		}
 
 		public long getInsertions() {
@@ -737,35 +735,39 @@ public class IndexCollectorFactory {
 			return bucketCount;
 		}
 
-		private Bucket getBucket() {
+		private Bucket getBucket(int capacity) {
 			Bucket b;
-			if(unusedBucket!=null) {
+			if(unusedBucket!=null && capacity(unusedBucket)>=capacity) {
 				b = unusedBucket;
 				unusedBucket = null;
 			} else {
-				b = createBucket();
+				b = createBucket(capacity);
 			}
 
 			return b;
 		}
 
-		private Bucket createBucket() {
+		private Bucket createBucket(int capacity) {
 			IndexStorage storage = null;
+
+			if(capacity==UNSET_INT) {
+				capacity = chunkSize;
+			}
 
 			switch (valueType) {
 
 			// No special case for BYTE
 			case BYTE:
 			case SHORT:
-				storage = new LimitedUnsortedSetBuilderShort(chunkSize, UNDEFINED_CHUNK_SIZE);
+				storage = new LimitedUnsortedSetBuilderShort(capacity, UNDEFINED_CHUNK_SIZE);
 				break;
 
 			case LONG:
-				storage = new LimitedUnsortedSetBuilderLong(chunkSize, UNDEFINED_CHUNK_SIZE);
+				storage = new LimitedUnsortedSetBuilderLong(capacity, UNDEFINED_CHUNK_SIZE);
 				break;
 
 			case INTEGER:
-				storage = new LimitedUnsortedSetBuilderInt(chunkSize, UNDEFINED_CHUNK_SIZE);
+				storage = new LimitedUnsortedSetBuilderInt(capacity, UNDEFINED_CHUNK_SIZE);
 				break;
 
 			default:
@@ -791,9 +793,15 @@ public class IndexCollectorFactory {
 		 */
 		@Override
 		public void add(long index) {
-			// No check against negative values here, we expect the Bucket to handle this
+			checkNotNegative(index);
 			Bucket b = find(index);
-			add(b, index);
+			/*
+			 *  Early escape check to prevent unnecessary splitting
+			 *  and containment checks.
+			 */
+			if(!b.isClosed()) {
+				add(b, index);
+			}
 		}
 
 		/**
@@ -865,7 +873,7 @@ public class IndexCollectorFactory {
 		 * the further search is forwarded to the {@link #find(Bucket, long)} method
 		 * which will do a binary tree search.
 		 */
-		private Bucket find(long v) {
+		Bucket find(long v) {
 			Bucket b = null;
 			if(useLastHitCache && lastInsertionCache!=null) {
 				if(lastInsertionCache.isLegalValue(v)) {
@@ -904,10 +912,16 @@ public class IndexCollectorFactory {
 			throw new IllegalStateException("No bucket for value: " + v);
 		}
 
+		/**
+		 * Bucket must not be closed!
+		 * @param b
+		 * @param v
+		 */
 		private void add(Bucket b, long v) {
 			int capacity = capacity(b);
 
-			if(capacity==0) {
+			if(capacity<1) {
+				// Redistribute space in the tree
 				split(b);
 				b = find(v);
 			}
@@ -918,6 +932,89 @@ public class IndexCollectorFactory {
 		}
 
 		private void split(Bucket b) {
+
+			/**
+			 * <pre>
+			 *              /        ELEMENTS IN BUCKET         \
+			 *   +---------+-------------------------------------+---------------+
+			 *   |         |                                     |               |
+			 * LEFT       MIN                                   MAX             RIGHT
+			 * </pre>
+			 *
+			 * Additional values:
+			 * CHUNKSIZE = upper bound on the number of elements in bucket
+			 *
+			 * Cases:
+			 * (MAX-MIN+1) == CHUNKSIZE :
+			 *        Bucket holds continuous sorted content, would be a waste to
+			 *        split it into multiple chunks => Keep bucket and "split off"
+			 *        the left and right areas if available
+			 */
+
+			if(b.isContinuous()) {
+				closeAndCutFringes(b);
+			} else {
+				splitAndRedistribute(b);
+			}
+		}
+
+		/**
+		 * Leaves the bucket {@code b} in the tree ({@link Bucket#close() closing} it)
+		 * and tries to cut off its fringes as new buckets if possible.
+		 * This will add a maximum of two new buckets to the tree and leave the
+		 * {@link #lastInsertionCache} untouched.
+		 *
+		 * @param b
+		 */
+		private void closeAndCutFringes(Bucket b) {
+			// In any case close b
+			b.close();
+			closings++;
+
+			boolean hasLeftFringe = b.getMin()>b.getLeft();
+			boolean hasRightFringe = b.getMax()<b.getRight();
+
+			// Consider left fringe
+			if(hasLeftFringe) {
+				long leftFringe = b.getMin()-b.getLeft(); // no +1 needed, as b.min is already covered
+				assert leftFringe>0L;
+				int capacity = leftFringe<chunkSize ? (int)leftFringe : UNSET_INT;
+
+				Bucket left = getBucket(capacity);
+				left.setLeft(b.getLeft());
+				left.setRight(b.getMin()-1);
+				b.setLeft(b.getMin());
+				virtualRoot.insert(left);
+
+				fringes++;
+			}
+
+			// Consider right fringe
+			if(hasRightFringe) {
+				long rightFringe = b.getRight()-b.getMax(); // no +1 needed, as b.max is already covered
+				assert rightFringe>0L;
+				int capacity = rightFringe<chunkSize ? (int)rightFringe : UNSET_INT;
+
+				Bucket right = getBucket(capacity);
+				right.setRight(b.getRight());
+				right.setLeft(b.getMax()+1);
+				b.setRight(b.getMax());
+				virtualRoot.insert(right);
+
+				fringes++;
+			}
+		}
+
+		/**
+		 * Divide given bucket {@code b} into 2 new buckets and redistribute values.
+		 * This will remove {@code b} from the tree and make it available for future
+		 * bucket reclamation.
+		 * <p>
+		 * This will also clear the {@link #lastInsertionCache} in case {@code b} was
+		 * marked as the last bucket participating in an insertion.
+		 * @param b
+		 */
+		private void splitAndRedistribute(Bucket b) {
 			if(lastInsertionCache==b) {
 				lastInsertionCache = null;
 			}
@@ -925,25 +1022,24 @@ public class IndexCollectorFactory {
 //			System.out.println("------------------------------------------------------------------");
 //			System.out.println("BEFORE  "+toString());
 //			System.out.println("SPLITTING "+b);
-			double totalCount = b.storage.size();
+			int totalCount = b.storage.size();
 
 			// Fetch 2 new/empty buckets
-			Bucket left = getBucket();
-			Bucket right = getBucket();
+			Bucket left = getBucket(UNSET_INT);
+			Bucket right = getBucket(UNSET_INT);
 
-			// Split content of old bucket into the enw ones
+			// Split content of old bucket into the new ones
 			distribute(b, left, right);
 
 			// Remove and recycle old bucket
 			b.remove();
 			destroy(b);
 
-			// Instead of some local magic we just use the default isnertion methods
+			// Instead of some local magic we just use the default insertion methods
 			virtualRoot.insert(left);
 			virtualRoot.insert(right);
 
 			// Collect some meta info
-			bucketCount++;
 			splits++;
 
 			double leftCount = left.storage.size();
@@ -955,6 +1051,12 @@ public class IndexCollectorFactory {
 //			System.out.println("AFTER  "+toString());
 		}
 
+		/**
+		 * Returns number of leftover slots in storage of given {@link Bucket},
+		 * i.e. {@code chunkSize - b.storage.size()}.
+		 * @param b
+		 * @return
+		 */
 		private int capacity(Bucket b) {
 			return chunkSize-b.storage.size();
 		}
@@ -969,6 +1071,16 @@ public class IndexCollectorFactory {
 			return b.min + ((b.max - b.min) >>> 1);
 		}
 
+		/**
+		 * Splits a bucket in two halves based on a pivot element. The {@code left}
+		 * bucket will hold all elements from {@code source} that are smaller or equal
+		 * to the chosen pivot and the {@code right} bucket will hold all the ones that
+		 * are greater.
+		 *
+		 * @param source
+		 * @param left
+		 * @param right
+		 */
 		private void distribute(Bucket source, Bucket left, Bucket right) {
 			long pivot = pivot(source);
 
@@ -1002,9 +1114,14 @@ public class IndexCollectorFactory {
 		}
 
 		public void printStats(PrintStream out) {
+			out.println("BUCKET COUNT:        "+StringUtil.formatDecimal(bucketCount));
+			out.println("BUCKET SIZE:         "+StringUtil.formatDecimal(chunkSize));
 			out.println("INSERTIONS:          "+StringUtil.formatDecimal(insertions));
+			out.println("CACHE ACTIVE:        "+String.valueOf(useLastHitCache));
 			out.println("CACHE MISSES:        "+StringUtil.formatDecimal(cacheMisses));
 			out.println("SPLITS:              "+StringUtil.formatDecimal(splits));
+			out.println("CLOSINGS:            "+StringUtil.formatDecimal(closings));
+			out.println("CUT OFF FRIGNES:     "+StringUtil.formatDecimal(fringes));
 			out.println("AVERAGE SPLIT RATIO: "+StringUtil.formatDecimal(averageSplitRatio));
 			out.println("MIN SPLIT RATIO:     "+StringUtil.formatDecimal(minSplitRatio));
 			out.println("MAX SPLIT RATIO:     "+StringUtil.formatDecimal(maxSplitRation));
@@ -1050,10 +1167,10 @@ public class IndexCollectorFactory {
 	 * @author Markus Gärtner
 	 *
 	 */
-	private static class Bucket implements Comparable<Bucket> {
+	static class Bucket implements Comparable<Bucket> {
 
-		private static final long DEFAULT_MIN = Long.MIN_VALUE;
-		private static final long DEFAULT_MAX = Long.MAX_VALUE;
+		private static final long DEFAULT_MIN = UNSET_LONG;
+		private static final long DEFAULT_MAX = UNSET_LONG;
 
 		Bucket(IndexStorage storage) {
 			this.storage = storage;
@@ -1062,8 +1179,6 @@ public class IndexCollectorFactory {
 		Bucket() {
 			this(null);
 		}
-
-//		private int balance = 0;
 
 		/**
 		 * Type specific storage storage
@@ -1082,14 +1197,14 @@ public class IndexCollectorFactory {
 		/**
 		 * Smallest allowed value for bucket
 		 */
-		private long left = DEFAULT_MIN;
+		private long left = 0L;
 		/**
 		 * Largest allowed value for bucket
 		 */
-		private long right = DEFAULT_MAX;
+		private long right = Long.MAX_VALUE;
 
 		/**
-		 * Uplink
+		 * Uplink to parent.
 		 */
 		private Bucket parent;
 		/**
@@ -1108,15 +1223,39 @@ public class IndexCollectorFactory {
 		 */
 		private int height = -1;
 
-		public void add(long v) {
-			storage.add(v);
+		/**
+		 * Flag to signal that a bucket has turned into a finalized storage
+		 * of continuous index values for its maximum capacity and adding further
+		 * values to it would have no effect and should therefore be prevented.
+		 */
+		private boolean closed = false;
 
+		/**
+		 * Adds the given value to this bucket and returns whether or not the internal
+		 * storage has changed as a result (i.e. the value has not been present previously).
+		 * @param v
+		 * @return
+		 */
+		public boolean add(long v) {
+			assert !closed;
+
+			int oldSize = storage.size();
+			storage.add(v);
+			int newSize = storage.size();
+
+			if(oldSize==newSize) {
+				return false;
+			}
+
+			// Refresh lower and upper extremes
 			if (min==DEFAULT_MIN || v < min) {
 				min = v;
 			}
 			if (max==DEFAULT_MAX || v > max) {
 				max = v;
 			}
+
+			return true;
 		}
 
 		private void checkNotRoot() {
@@ -1128,24 +1267,42 @@ public class IndexCollectorFactory {
 			return false;
 		}
 
+		public boolean isLeaf() {
+			return smaller==null || larger==null;
+		}
+
+		public boolean isClosed() {
+			return closed;
+		}
+
+		/**
+		 * Irrevocably switched the {@link #isClosed() closed} flag
+		 * to {@code true}.
+		 */
+		void close() {
+			closed = true;
+		}
+
 		public boolean isLegalValue(long v) {
 			return v>=left && v<=right;
 		}
 
-		@SuppressWarnings("unused")
+		/** Return smallest existing value in bucket */
 		public long getMin() {
 			return min;
 		}
 
-		@SuppressWarnings("unused")
+		/** Return largest existing value in bucket */
 		public long getMax() {
 			return max;
 		}
 
+		/** Return smallest allowed value in bucket */
 		public long getLeft() {
 			return left;
 		}
 
+		/** Return largest allowed value in bucket */
 		public long getRight() {
 			return right;
 		}
@@ -1164,11 +1321,19 @@ public class IndexCollectorFactory {
 			return parent.smaller==this;
 		}
 
-		@SuppressWarnings("unused")
 		public boolean isRightChild() {
 			checkNotRoot();
 
 			return parent.larger==this;
+		}
+
+		/**
+		 * Return {@code true} iff the values in this storage form
+		 * a continuous sequence.
+		 * @return
+		 */
+		public boolean isContinuous() {
+			return IndexUtils.isContinuous(storage.size(), min, max);
 		}
 
 		public Bucket getParent() {
@@ -1424,6 +1589,8 @@ public class IndexCollectorFactory {
 		}
 
 		private void reset() {
+			assert !closed;
+
 			parent = smaller = larger = null;
 			min = right = DEFAULT_MAX;
 			max = left = DEFAULT_MIN;

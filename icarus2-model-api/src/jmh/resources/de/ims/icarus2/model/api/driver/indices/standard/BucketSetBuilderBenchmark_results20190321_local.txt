@@ -1,0 +1,29 @@
+Benchmark                                           (chunkSize)  (useLastHitCache)  Mode  Cnt     Score       Error  Units
+BucketSetBuilderBenchmark.testAddSingleIncremental       100000               true  avgt   25    97.326 ±     8.797  ns/op
+BucketSetBuilderBenchmark.testAddSingleIncremental       100000              false  avgt   25   123.338 ±     9.114  ns/op
+BucketSetBuilderBenchmark.testAddSingleIncremental      1000000               true  avgt   25   124.091 ±    12.817  ns/op
+BucketSetBuilderBenchmark.testAddSingleIncremental      1000000              false  avgt   25   139.690 ±    14.424  ns/op
+BucketSetBuilderBenchmark.testAddSingleIncremental     10000000               true  avgt   25   136.159 ±    25.049  ns/op
+BucketSetBuilderBenchmark.testAddSingleIncremental     10000000              false  avgt   25   152.278 ±    25.305  ns/op
+BucketSetBuilderBenchmark.testAddSingleRandom            100000               true  avgt   25   372.588 ±   150.995  ns/op
+BucketSetBuilderBenchmark.testAddSingleRandom            100000              false  avgt   25   363.393 ±   136.793  ns/op
+BucketSetBuilderBenchmark.testAddSingleRandom           1000000               true  avgt   25   593.492 ±   743.573  ns/op
+BucketSetBuilderBenchmark.testAddSingleRandom           1000000              false  avgt   25   747.291 ±   873.780  ns/op
+BucketSetBuilderBenchmark.testAddSingleRandom          10000000               true  avgt   25  3271.425 ± 10392.563  ns/op
+BucketSetBuilderBenchmark.testAddSingleRandom          10000000              false  avgt   25   271.123 ±    92.885  ns/op
+
+
+Benchmark                                           (chunkSize)  (useLastHitCache)  Mode  Cnt     Score      Error  Units
+BucketSetBuilderBenchmark.testAddSingleIncremental       100000               true  avgt   25   101.391 ±    7.015  ns/op
+BucketSetBuilderBenchmark.testAddSingleIncremental       100000              false  avgt   25   130.043 ±   15.665  ns/op
+BucketSetBuilderBenchmark.testAddSingleIncremental      1000000               true  avgt   25   126.180 ±   12.422  ns/op
+BucketSetBuilderBenchmark.testAddSingleIncremental      1000000              false  avgt   25   153.146 ±   17.574  ns/op
+BucketSetBuilderBenchmark.testAddSingleIncremental     10000000               true  avgt   25   140.642 ±   17.668  ns/op
+BucketSetBuilderBenchmark.testAddSingleIncremental     10000000              false  avgt   25   152.743 ±   27.023  ns/op
+BucketSetBuilderBenchmark.testAddSingleRandom            100000               true  avgt   25   416.999 ±  225.627  ns/op
+BucketSetBuilderBenchmark.testAddSingleRandom            100000              false  avgt   25   418.564 ±  229.697  ns/op
+BucketSetBuilderBenchmark.testAddSingleRandom           1000000               true  avgt   25   355.626 ±  207.855  ns/op
+BucketSetBuilderBenchmark.testAddSingleRandom           1000000              false  avgt   25   527.292 ±  582.549  ns/op
+BucketSetBuilderBenchmark.testAddSingleRandom          10000000               true  avgt   25   473.366 ±  522.041  ns/op
+BucketSetBuilderBenchmark.testAddSingleRandom          10000000              false  avgt   25  1596.549 ± 4928.229  ns/op
+

@@ -37,6 +37,8 @@ import java.util.function.LongConsumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
@@ -551,6 +553,26 @@ class IndexCollectorFactoryTest {
 		@DisplayName("mixed input")
 		class ForMixedInput extends Source implements MixedTest {
 			// everything inherited
+		}
+
+		@Nested
+		@DisplayName("AVL/Bucket internals")
+		class Internals {
+			private BucketSetBuilder builder;
+
+			@AfterEach
+			void tearDown() {
+				builder = null;
+			}
+
+			@Nested
+			class Uncached {
+
+				@BeforeEach
+				void setUp() {
+					builder = new BucketSetBuilder(IndexValueType.INTEGER, 10, false);
+				}
+			}
 		}
 	}
 
