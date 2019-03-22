@@ -2,7 +2,7 @@ plugins {
 	id 'java-library'
 	//id 'com.github.jk1.dependency-license-report' version '1.2'
     id 'com.github.hierynomus.license' version '0.14.0' apply false
-	id 'com.github.spotbugs' version '1.6.4' apply false
+	id 'com.github.spotbugs' version '1.7.1' apply false
 	id 'com.gradle.build-scan' version '2.2.1'
 	id 'me.champeau.gradle.jmh' version '0.4.8' apply false
 }
