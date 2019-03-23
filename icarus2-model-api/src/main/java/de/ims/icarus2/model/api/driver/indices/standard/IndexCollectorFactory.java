@@ -111,7 +111,7 @@ public class IndexCollectorFactory {
 	}
 
 	public IndexCollectorFactory chunkSizeLimit(int chunkSizeLimit) {
-		checkArgument("Chunk bucketCount limit must be positive: "+chunkSizeLimit, chunkSizeLimit>0);
+		checkArgument("Chunk createdBuckets limit must be positive: "+chunkSizeLimit, chunkSizeLimit>0);
 		checkState(this.chunkSizeLimit == null);
 
 		this.chunkSizeLimit = Integer.valueOf(chunkSizeLimit);
@@ -253,7 +253,7 @@ public class IndexCollectorFactory {
 	private static void checkChunkSize(int chunkSize) {
 		if(chunkSize!=UNDEFINED_CHUNK_SIZE && chunkSize<1)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					"Chunk bucketCount must not be negative (unless -1 as UNDEFINED marker): "+chunkSize);
+					"Chunk createdBuckets must not be negative (unless -1 as UNDEFINED marker): "+chunkSize);
 	}
 
 	private static void checkCapacity(int capacity) {
@@ -638,7 +638,7 @@ public class IndexCollectorFactory {
 	 */
 	public static class BucketSetBuilder implements IndexSetBuilder {
 		private final IndexValueType valueType;
-		/** Size of individual chunks, used as buffer bucketCount of buckets */
+		/** Size of individual chunks, used as buffer createdBuckets of buckets */
 		private final int chunkSize;
 		/** Root node to make rotations easier */
 		private final Bucket virtualRoot = new Bucket(){
@@ -653,13 +653,16 @@ public class IndexCollectorFactory {
 				} else {
 					getSmaller().insert(b);
 				}
-				bucketCount++;
 			}
 			@Override
 			public String toString() {return "ROOT";}
 		};
+
 		/** Keeps track of growths */
-		private int bucketCount = 1;
+		private int createdBuckets = 0;
+
+		/** Keep track of actually used buckets */
+		private int usedBuckets = 0;
 
 		/**
 		 * When splitting a bucket we leave the source to be used again. Reduces
@@ -681,6 +684,7 @@ public class IndexCollectorFactory {
 
 		// RUNTIME STATS
 		private long insertions = 0L;
+		private long duplicates = 0L;
 		private long cacheMisses = 0L;
 		private long splits = 0L;
 		private long closings = 0L;
@@ -704,7 +708,7 @@ public class IndexCollectorFactory {
 			this.chunkSize = chunkSize;
 			this.useLastHitCache = useLastHitCache;
 
-			virtualRoot.setSmaller(createBucket(UNSET_INT));
+			virtualRoot.insert(createBucket(UNSET_INT));
 		}
 
 		public long getInsertions() {
@@ -719,6 +723,18 @@ public class IndexCollectorFactory {
 			return splits;
 		}
 
+		public long getClosingCount() {
+			return closings;
+		}
+
+		public long getDuplicates() {
+			return duplicates;
+		}
+
+		public long getFringeCount() {
+			return fringes;
+		}
+
 		public double getAverageSplitRatio() {
 			return averageSplitRatio;
 		}
@@ -731,8 +747,12 @@ public class IndexCollectorFactory {
 			return maxSplitRation;
 		}
 
-		public int getBucketCount() {
-			return bucketCount;
+		public int getUsedBucketCount() {
+			return usedBuckets;
+		}
+
+		public int getCreatedBucketCount() {
+			return createdBuckets;
 		}
 
 		private Bucket getBucket(int capacity) {
@@ -775,6 +795,8 @@ public class IndexCollectorFactory {
 						"Unsupported index value type: " + valueType);
 			}
 
+			createdBuckets = Math.incrementExact(createdBuckets);
+
 			return new Bucket(storage);
 		}
 
@@ -801,6 +823,8 @@ public class IndexCollectorFactory {
 			 */
 			if(!b.isClosed()) {
 				add(b, index);
+			} else {
+				duplicates++;
 			}
 		}
 
@@ -825,7 +849,7 @@ public class IndexCollectorFactory {
 		 */
 		@Override
 		public IndexSet[] build() {
-			IndexSet[] result = new IndexSet[bucketCount];
+			IndexSet[] result = new IndexSet[usedBuckets];
 
 			collectSets(root(), result, 0);
 
@@ -833,7 +857,7 @@ public class IndexCollectorFactory {
 		}
 
 		/**
-		 * Collect the content of buckets into a index set buffer. Does an
+		 * Collect the content of buckets into an index set buffer. Does an
 		 * in-order traversal of the tree denoted by the given bucket. The
 		 * return value is the index value to be used for further insertion into
 		 * the buffer AFTER this tree has been processed.
@@ -846,7 +870,9 @@ public class IndexCollectorFactory {
 				index = collectSets(b.getSmaller(), buffer, index);
 			}
 
-			buffer[index++] = b.storage.asSet();
+			if(b.storage.size()>0) {
+				buffer[index++] = b.storage.asSet();
+			}
 
 			if (b.getLarger() != null) {
 				index = collectSets(b.getLarger(), buffer, index);
@@ -918,6 +944,7 @@ public class IndexCollectorFactory {
 		 * @param v
 		 */
 		private void add(Bucket b, long v) {
+			assert !b.isClosed();
 			int capacity = capacity(b);
 
 			if(capacity<1) {
@@ -926,7 +953,13 @@ public class IndexCollectorFactory {
 				b = find(v);
 			}
 
-			b.add(v);
+			if(b.add(v)) {
+				if(b.storage.size()==1) {
+					usedBuckets = Math.incrementExact(usedBuckets);
+				}
+			} else {
+				duplicates++;
+			}
 			lastInsertionCache = b;
 			insertions++;
 		}
@@ -949,6 +982,11 @@ public class IndexCollectorFactory {
 			 *        Bucket holds continuous sorted content, would be a waste to
 			 *        split it into multiple chunks => Keep bucket and "split off"
 			 *        the left and right areas if available
+			 *
+			 * else :
+			 *        Bucket is just full of random numbers. We might want to further
+			 *        investigate how to best pick a pivot and splitting, but for now
+			 *        this scenario is solved in a rather naive fashion.
 			 */
 
 			if(b.isContinuous()) {
@@ -1030,9 +1068,11 @@ public class IndexCollectorFactory {
 
 			// Split content of old bucket into the new ones
 			distribute(b, left, right);
+			usedBuckets += 2;
 
 			// Remove and recycle old bucket
 			b.remove();
+			usedBuckets--;
 			destroy(b);
 
 			// Instead of some local magic we just use the default insertion methods
@@ -1069,6 +1109,17 @@ public class IndexCollectorFactory {
 		private long pivot(Bucket b) {
 			// TODO improve pivot estimation
 			return b.min + ((b.max - b.min) >>> 1);
+		}
+
+		private void drainInto(Bucket source, Bucket target) {
+			long pivot = pivot(source);
+
+			target.setLeft(pivot+1);
+			target.setRight(source.getRight());
+
+			source.setRight(pivot);
+
+
 		}
 
 		/**
@@ -1114,14 +1165,16 @@ public class IndexCollectorFactory {
 		}
 
 		public void printStats(PrintStream out) {
-			out.println("BUCKET COUNT:        "+StringUtil.formatDecimal(bucketCount));
-			out.println("BUCKET SIZE:         "+StringUtil.formatDecimal(chunkSize));
 			out.println("INSERTIONS:          "+StringUtil.formatDecimal(insertions));
+			out.println("DUPLICATES:          "+StringUtil.formatDecimal(duplicates));
+			out.println("CREATED BUCKETS:     "+StringUtil.formatDecimal(createdBuckets));
+			out.println("USED BUCKETS:        "+StringUtil.formatDecimal(usedBuckets));
+			out.println("BUCKET SIZE:         "+StringUtil.formatDecimal(chunkSize));
 			out.println("CACHE ACTIVE:        "+String.valueOf(useLastHitCache));
 			out.println("CACHE MISSES:        "+StringUtil.formatDecimal(cacheMisses));
 			out.println("SPLITS:              "+StringUtil.formatDecimal(splits));
 			out.println("CLOSINGS:            "+StringUtil.formatDecimal(closings));
-			out.println("CUT OFF FRIGNES:     "+StringUtil.formatDecimal(fringes));
+			out.println("CUT OFF FRINGES:     "+StringUtil.formatDecimal(fringes));
 			out.println("AVERAGE SPLIT RATIO: "+StringUtil.formatDecimal(averageSplitRatio));
 			out.println("MIN SPLIT RATIO:     "+StringUtil.formatDecimal(minSplitRatio));
 			out.println("MAX SPLIT RATIO:     "+StringUtil.formatDecimal(maxSplitRation));
@@ -1237,8 +1290,6 @@ public class IndexCollectorFactory {
 		 * @return
 		 */
 		public boolean add(long v) {
-			assert !closed;
-
 			int oldSize = storage.size();
 			storage.add(v);
 			int newSize = storage.size();
@@ -1279,7 +1330,7 @@ public class IndexCollectorFactory {
 		 * Irrevocably switched the {@link #isClosed() closed} flag
 		 * to {@code true}.
 		 */
-		void close() {
+		private void close() {
 			closed = true;
 		}
 

@@ -11,5 +11,6 @@ dependencies {
 }
 	 
 jmh {
-	jvmArgsAppend = ["-Xmx8g", "-Xms8g"]
+	jvmArgsAppend = ["-Xmx9g", "-Xms9g"]
+//	benchmarkParameters = [chunkSize : ['1000000'], useLastHitCache : ['true'], indexValueType : ['INTEGER']]
 }

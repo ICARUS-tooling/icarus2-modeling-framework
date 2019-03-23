@@ -1,0 +1,51 @@
+Benchmark                                                       (chunkSize)  (indexValueType)  (useLastHitCache)  Mode  Cnt           Score      Error  Units
+BucketSetBuilderBenchmark.testAddSingleIncremental                    10000           INTEGER               true  avgt    4          22.713 ▒   21.142  ns/op
+BucketSetBuilderBenchmark.testAddSingleIncremental:buckets            10000           INTEGER               true  avgt    4      268542.000                 #
+BucketSetBuilderBenchmark.testAddSingleIncremental:cacheMisses        10000           INTEGER               true  avgt    4      268538.000                 #
+BucketSetBuilderBenchmark.testAddSingleIncremental:duplicates         10000           INTEGER               true  avgt    4             ? 0                 #
+BucketSetBuilderBenchmark.testAddSingleIncremental:insertions         10000           INTEGER               true  avgt    4  2685403136.000                 #
+BucketSetBuilderBenchmark.testAddSingleIncremental                    24576           INTEGER               true  avgt    5          24.590 ▒    3.637  ns/op
+BucketSetBuilderBenchmark.testAddSingleIncremental:buckets            24576           INTEGER               true  avgt    5      130028.000                 #
+BucketSetBuilderBenchmark.testAddSingleIncremental:cacheMisses        24576           INTEGER               true  avgt    5      130023.000                 #
+BucketSetBuilderBenchmark.testAddSingleIncremental:duplicates         24576           INTEGER               true  avgt    5             ? 0                 #
+BucketSetBuilderBenchmark.testAddSingleIncremental:insertions         24576           INTEGER               true  avgt    5  3195535360.000                 #
+BucketSetBuilderBenchmark.testAddSingleIncremental                   100000           INTEGER               true  avgt    4          26.944 ▒    5.221  ns/op
+BucketSetBuilderBenchmark.testAddSingleIncremental:buckets           100000           INTEGER               true  avgt    4       22053.000                 #
+BucketSetBuilderBenchmark.testAddSingleIncremental:cacheMisses       100000           INTEGER               true  avgt    4       22049.000                 #
+BucketSetBuilderBenchmark.testAddSingleIncremental:duplicates        100000           INTEGER               true  avgt    4             ? 0                 #
+BucketSetBuilderBenchmark.testAddSingleIncremental:insertions        100000           INTEGER               true  avgt    4  2205155328.000                 #
+BucketSetBuilderBenchmark.testAddSingleIncremental                  1000000           INTEGER               true  avgt    5          38.999 ▒    5.288  ns/op
+BucketSetBuilderBenchmark.testAddSingleIncremental:buckets          1000000           INTEGER               true  avgt    5        1981.000                 #
+BucketSetBuilderBenchmark.testAddSingleIncremental:cacheMisses      1000000           INTEGER               true  avgt    5        1976.000                 #
+BucketSetBuilderBenchmark.testAddSingleIncremental:duplicates       1000000           INTEGER               true  avgt    5             ? 0                 #
+BucketSetBuilderBenchmark.testAddSingleIncremental:insertions       1000000           INTEGER               true  avgt    5  1977614336.000                 #
+BucketSetBuilderBenchmark.testAddSingleIncremental                 10000000           INTEGER               true  avgt    5          56.866 ▒   32.787  ns/op
+BucketSetBuilderBenchmark.testAddSingleIncremental:buckets         10000000           INTEGER               true  avgt    5         153.000                 #
+BucketSetBuilderBenchmark.testAddSingleIncremental:cacheMisses     10000000           INTEGER               true  avgt    5         148.000                 #
+BucketSetBuilderBenchmark.testAddSingleIncremental:duplicates      10000000           INTEGER               true  avgt    5             ? 0                 #
+BucketSetBuilderBenchmark.testAddSingleIncremental:insertions      10000000           INTEGER               true  avgt    5  1502609408.000                 #
+BucketSetBuilderBenchmark.testAddSingleRandom                         10000           INTEGER               true  avgt    5         302.192 ▒  177.335  ns/op
+BucketSetBuilderBenchmark.testAddSingleRandom:buckets                 10000           INTEGER               true  avgt    5       41334.000                 #
+BucketSetBuilderBenchmark.testAddSingleRandom:cacheMisses             10000           INTEGER               true  avgt    5   312653704.000                 #
+BucketSetBuilderBenchmark.testAddSingleRandom:duplicates              10000           INTEGER               true  avgt    5     4913653.000                 #
+BucketSetBuilderBenchmark.testAddSingleRandom:insertions              10000           INTEGER               true  avgt    5   312999936.000                 #
+BucketSetBuilderBenchmark.testAddSingleRandom                         24576           INTEGER               true  avgt    5         295.210 ▒  381.062  ns/op
+BucketSetBuilderBenchmark.testAddSingleRandom:buckets                 24576           INTEGER               true  avgt    5       20078.000                 #
+BucketSetBuilderBenchmark.testAddSingleRandom:cacheMisses             24576           INTEGER               true  avgt    5   340506369.000                 #
+BucketSetBuilderBenchmark.testAddSingleRandom:duplicates              24576           INTEGER               true  avgt    5     5700062.000                 #
+BucketSetBuilderBenchmark.testAddSingleRandom:insertions              24576           INTEGER               true  avgt    5   341311488.000                 #
+BucketSetBuilderBenchmark.testAddSingleRandom                        100000           INTEGER               true  avgt    5         208.597 ▒  120.829  ns/op
+BucketSetBuilderBenchmark.testAddSingleRandom:buckets                100000           INTEGER               true  avgt    5        5454.000                 #
+BucketSetBuilderBenchmark.testAddSingleRandom:cacheMisses            100000           INTEGER               true  avgt    5   419083047.000                 #
+BucketSetBuilderBenchmark.testAddSingleRandom:duplicates             100000           INTEGER               true  avgt    5     8619593.000                 #
+BucketSetBuilderBenchmark.testAddSingleRandom:insertions             100000           INTEGER               true  avgt    5   422051840.000                 #
+BucketSetBuilderBenchmark.testAddSingleRandom                       1000000           INTEGER               true  avgt    5         417.696 ▒ 2135.632  ns/op
+BucketSetBuilderBenchmark.testAddSingleRandom:buckets               1000000           INTEGER               true  avgt    5         747.000                 #
+BucketSetBuilderBenchmark.testAddSingleRandom:cacheMisses           1000000           INTEGER               true  avgt    5   525125509.000                 #
+BucketSetBuilderBenchmark.testAddSingleRandom:duplicates            1000000           INTEGER               true  avgt    5    14610326.000                 #
+BucketSetBuilderBenchmark.testAddSingleRandom:insertions            1000000           INTEGER               true  avgt    5   547356672.000                 #
+BucketSetBuilderBenchmark.testAddSingleRandom                      10000000           INTEGER               true  avgt    5         132.681 ▒   67.568  ns/op
+BucketSetBuilderBenchmark.testAddSingleRandom:buckets              10000000           INTEGER               true  avgt    5          81.000                 #
+BucketSetBuilderBenchmark.testAddSingleRandom:cacheMisses          10000000           INTEGER               true  avgt    5   500314776.000                 #
+BucketSetBuilderBenchmark.testAddSingleRandom:duplicates           10000000           INTEGER               true  avgt    5    19832133.000                 #
+BucketSetBuilderBenchmark.testAddSingleRandom:insertions           10000000           INTEGER               true  avgt    5   641728512.000                 #
