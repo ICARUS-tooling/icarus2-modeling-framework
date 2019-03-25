@@ -25,8 +25,10 @@ import java.util.PrimitiveIterator;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.function.IntBinaryOperator;
 import java.util.function.IntConsumer;
+import java.util.function.IntPredicate;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongConsumer;
+import java.util.function.LongPredicate;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
@@ -34,6 +36,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.function.LongBiPredicate;
 
 
 /**
@@ -223,11 +226,16 @@ public interface IndexSet {
 
 	// TRASVERSAL
 
+	/**
+	 * Applies {@code action} to each index value in this set.
+	 * @param action
+	 */
 	default void forEachIndex(LongConsumer action) {
 		forEachIndex(action, 0, size());
 	}
 
 	/**
+	 * Applies {@code action} to each index value in the specified region of this set.
 	 *
 	 * @param action
 	 * @param beginIndex position of first index to apply the given action to, inclusive
@@ -239,11 +247,22 @@ public interface IndexSet {
 		}
 	}
 
+	/**
+	 * Equivalent of {@link #forEachIndex(LongConsumer)} for sets that contain
+	 * only int-compatible values.
+	 *
+	 * @param action
+	 *
+	 * @see #forEachIndex(IntConsumer, int, int)
+	 * @see #forEachIndex(LongConsumer)
+	 */
 	default void forEachIndex(IntConsumer action) {
 		forEachIndex(action, 0, size());
 	}
 
 	/**
+	 * Equivalent of {@link #forEachIndex(LongConsumer, int, int)} for sets that contain
+	 * only int-compatible values.
 	 *
 	 * @param action
 	 * @param beginIndex position of first index to apply the given action to, inclusive
@@ -261,10 +280,20 @@ public interface IndexSet {
 		}
 	}
 
+	/**
+	 * Calls the specified {@code action} for each pair {@code <index,value_at_index>}
+	 * in this set.
+	 * @param action
+	 */
 	default void forEachEntry(LongBinaryOperator action) {
 		forEachEntry(action, 0, size());
 	}
 
+	/**
+	 * Calls the specified {@code action} for each pair {@code <index,value_at_index>}
+	 * in the specified region of this set.
+	 * @param action
+	 */
 	default void forEachEntry(LongBinaryOperator action, int beginIndex, int endIndex) {
 
 		for(int i=beginIndex; i<endIndex; i++) {
@@ -284,6 +313,82 @@ public interface IndexSet {
 		for(int i=beginIndex; i<endIndex; i++) {
 			action.applyAsInt(i, (int)indexAt(i));
 		}
+	}
+
+	// CHECKING
+
+	default boolean checkIndices(LongPredicate check) {
+		return checkIndices(check, 0, size());
+	}
+
+	/**
+	 *
+	 * @param check
+	 * @param beginIndex position of first index to apply the given action to, inclusive
+	 * @param endIndex position of last index to apply the given action to, exclusive
+	 * @return {@code true} iff the given {@code check} holds for all index values in the
+	 * specified region of this set.
+	 */
+	default boolean checkIndices(LongPredicate check, int beginIndex, int endIndex) {
+		for(int i=beginIndex; i<endIndex; i++) {
+			if(!check.test(indexAt(i))) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	default boolean checkIndices(IntPredicate check) {
+		return checkIndices(check, 0, size());
+	}
+
+	/**
+	 *
+	 * @param check
+	 * @param beginIndex position of first index to apply the given action to, inclusive
+	 * @param endIndex position of last index to apply the given action to, exclusive
+	 * @return {@code true} iff the given {@code check} holds for all index values in the
+	 * specified region of this set.
+	 */
+	default boolean checkIndices(IntPredicate check, int beginIndex, int endIndex) {
+		if(!IndexValueType.INTEGER.isValidSubstitute(getIndexValueType()))
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+					"Cannot serve IntPredicate - index set contains values beyond integer space");
+
+		for(int i=beginIndex; i<endIndex; i++) {
+			if(!check.test((int)indexAt(i))) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	default boolean checkConsecutiveIndices(LongBiPredicate check) {
+		return checkConsecutiveIndices(check, 0, size());
+	}
+
+	/**
+	 *
+	 * @param check
+	 * @param beginIndex position of first index to apply the given action to, inclusive
+	 * @param endIndex position of last index to apply the given action to, exclusive
+	 * @return {@code true} iff the given {@code check} holds for all consecutive index
+	 * values in the specified region of this set.
+	 */
+	default boolean checkConsecutiveIndices(LongBiPredicate check, int beginIndex, int endIndex) {
+		checkArgument("Begin index must be smaller than end index", beginIndex<endIndex);
+		long previous = indexAt(beginIndex);
+		for(int i=beginIndex+1; i<endIndex; i++) {
+			long index = indexAt(i);
+			if(!check.test(previous, index)) {
+				return false;
+			}
+			previous = index;
+		}
+
+		return true;
 	}
 
 	// TRANSFORMATION
@@ -312,7 +417,7 @@ public interface IndexSet {
 
 		if(chunks>IcarusUtils.MAX_INTEGER_INDEX)
 			throw new ModelException(GlobalErrorCode.INDEX_OVERFLOW,
-					"Cannot create array of size: "+chunks); //$NON-NLS-1$
+					"Cannot create array of size: "+chunks);
 
 		IndexSet[] result = new IndexSet[(int) chunks];
 

@@ -48,6 +48,7 @@ import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.function.LongBiPredicate;
 import de.ims.icarus2.util.stream.AbstractFencedSpliterator;
 
 /**
@@ -338,11 +339,24 @@ public class IndexUtils {
 	}
 
 	public static boolean isContinuous(IndexSet indices) {
-		return indices.isSorted() && diff(indices.lastIndex(), indices.firstIndex())==indices.size()-1;
+		return indices.isSorted() && !indices.isEmpty()
+				&& diff(indices.lastIndex(), indices.firstIndex())==indices.size()-1;
 	}
 
+	private static LongBiPredicate CONTINUITY_CHECK = (v1, v2) -> v2>v1 && v2==v1+1;
+
 	public static boolean isContinuous(IndexSet indices, int from, int to) {
-		return indices.isSorted() && diff(indices.indexAt(from), indices.indexAt(to))==(to-from);
+		if(indices.isEmpty()) {
+			return false;
+		}
+		boolean diffEqualsRegionSize = diff(indices.indexAt(from), indices.indexAt(to))==(to-from);
+		if(indices.isSorted()) {
+			return diffEqualsRegionSize;
+		} else if(diffEqualsRegionSize) {
+			return indices.checkConsecutiveIndices(CONTINUITY_CHECK, from, to+1);
+		} else {
+			return false;
+		}
 	}
 
 	public static boolean isContinuous(IndexSet[] indices) {

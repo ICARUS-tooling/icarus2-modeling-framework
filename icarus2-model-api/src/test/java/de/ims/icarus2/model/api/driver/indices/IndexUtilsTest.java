@@ -223,10 +223,27 @@ class IndexUtilsTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexUtils#isContinuous(de.ims.icarus2.model.api.driver.indices.IndexSet, int, int)}.
 		 */
-		@PostponedTest
-		@Test
-		void testIsContinuousIndexSetIntInt() {
-			fail("Not yet implemented"); // TODO
+		@TestFactory
+		List<DynamicTest> testIsContinuousIndexSetIntInt() {
+			return Arrays.asList(
+					dynamicTest("empty", () -> assertFalse(isContinuous(set(), 0, 0))),
+					// Ranges
+					dynamicTest("range [1] all", () -> assertTrue(isContinuous(range(1, 1), 0, 0))),
+					dynamicTest("range [1..10] all", () -> assertTrue(isContinuous(range(1, 10), 0, 9))),
+					dynamicTest("range [1..10] first 3", () -> assertTrue(isContinuous(range(1, 10), 0, 2))),
+					dynamicTest("range [1..10] last 3", () -> assertTrue(isContinuous(range(1, 10), 7, 9))),
+					dynamicTest("range [1..10] middle 4", () -> assertTrue(isContinuous(range(1, 10), 3, 6))),
+					dynamicTest("range [2..9] all", () -> assertTrue(isContinuous(range(2, 9), 0, 7))),
+					dynamicTest("range [2..9] middle", () -> assertTrue(isContinuous(range(2, 9), 4, 6))),
+					// Sorted sets
+					dynamicTest("sorted [1,3,5,10] all", () -> assertFalse(isContinuous(sorted(1,3,5,10), 0, 3))),
+					dynamicTest("sorted [2,3,4,9] all", () -> assertFalse(isContinuous(sorted(2,3,4,9), 0, 3))),
+					dynamicTest("sorted [2,3,4,9] first 3", () -> assertTrue(isContinuous(sorted(2,3,4,9), 0, 2))),
+					dynamicTest("sorted [2,3,4,9] middle 2", () -> assertTrue(isContinuous(sorted(2,3,4,9), 1, 2))),
+					// Unsorted sets
+					dynamicTest("unsorted [3,2,1] all", () -> assertFalse(isContinuous(set(3,2,1), 0, 2))),
+					dynamicTest("unsorted [9,2,7] all", () -> assertFalse(isContinuous(set(9,2,7), 0, 2)))
+			);
 		}
 
 		/**

@@ -74,6 +74,18 @@ import de.ims.icarus2.test.util.Pair;
  */
 public class TestUtils {
 
+	// Number apreviations
+
+	public static final int  K1   =           1_000;
+	public static final int  K10  =          10_000;
+	public static final int  K100 =         100_000;
+	public static final int  M1   =       1_000_000;
+	public static final int  M10  =      10_000_000;
+	public static final int  M100 =     100_000_000;
+	public static final int  G1   =   1_000_000_000;
+	public static final long G10  =  10_000_000_000L;
+	public static final long G100 = 100_000_000_000L;
+
 	/**
 	 * Number of repetitions for tests
 	 * that rely on randomized input.
