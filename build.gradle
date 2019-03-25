@@ -1,5 +1,6 @@
 plugins {
 	id 'java-library'
+	id 'com.github.johnrengelman.shadow' version '4.0.1' apply false
 	//id 'com.github.jk1.dependency-license-report' version '1.2'
     id 'com.github.hierynomus.license' version '0.14.0' apply false
 	id 'com.github.spotbugs' version '1.7.1' apply false
@@ -40,6 +41,7 @@ subprojects {
   	apply plugin: 'checkstyle'
   	apply plugin: 'com.github.spotbugs'  		
 	apply plugin: 'com.github.hierynomus.license'
+	apply plugin: 'com.github.johnrengelman.shadow'
 	apply plugin: 'me.champeau.gradle.jmh'
 	
   	sourceCompatibility = 1.8
@@ -47,7 +49,12 @@ subprojects {
 
   	repositories {
     	mavenCentral()
-  	}  
+  	}
+
+	// Was part of a workaround to make test classes available in compile step of jmh
+//	sourceSets {
+//		jmh.java.srcDirs += sourceSets.test.java.srcDirs
+//	}
 	  	
 	configurations {
 	
@@ -72,7 +79,7 @@ subprojects {
 			
 		// TEST ENVIRONMENT
 		junit
-		slf4jTest
+		slf4jTest // allows to add slf4j bindings only used during testing
 		mockito
 		uuid
 		// default testing functionality
@@ -141,6 +148,10 @@ subprojects {
 		
 		jmh "org.openjdk.jmh:jmh-core:${versions.jmhVersion}"
 		jmh "org.openjdk.jmh:jmh-generator-annprocess:${versions.jmhVersion}"
+		
+		afterEvaluate {
+			jmh configurations.testImplementation.allDependencies
+		}
 	}
   	
   	tasks.withType(JavaCompile) {
@@ -152,8 +163,19 @@ subprojects {
 		jmhVersion = "${versions.jmhVersion}"
 		forceGC = true
 		jvmArgsPrepend = ["-Djmh.separateClasspathJAR=true"]
+		resultFormat = 'CSV'
+		humanOutputFile = project.file("${project.buildDir}/reports/jmh/human.txt")
+		resultsFile = project.file("${project.buildDir}/reports/jmh/results.txt")
 	}
-		
+
+	jmhJar {
+		exclude 'LICENSE'
+	}
+	
+	shadowJar {
+		archiveClassifier = 'shadow'
+	}
+
 	test {
  		//useTestNG()
 	    useJUnitPlatform()

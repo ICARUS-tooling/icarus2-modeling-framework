@@ -19,7 +19,9 @@
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
-import java.util.Random;
+import static de.ims.icarus2.test.TestUtils.K100;
+import static de.ims.icarus2.test.TestUtils.randomLongs;
+
 import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.AuxCounters;
@@ -38,9 +40,8 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.runner.Runner;
-import org.openjdk.jmh.runner.RunnerException;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
+import org.openjdk.jmh.infra.BenchmarkParams;
+import org.openjdk.jmh.infra.Blackhole;
 
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.BucketSetBuilder;
@@ -51,23 +52,12 @@ import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.Bu
  */
 @State(Scope.Thread)
 @AuxCounters(Type.EVENTS)
-@BenchmarkMode(Mode.AverageTime)
-@Fork(value=1)
-@Warmup(iterations=5, time=2, timeUnit=TimeUnit.SECONDS)
-@Measurement(iterations=5, time=2, timeUnit=TimeUnit.SECONDS)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
+@Fork(1)
 public class BucketSetBuilderBenchmark {
 
-	public static void main(String[] args) throws RunnerException {
-		new Runner(new OptionsBuilder()
-				.include(BucketSetBuilderBenchmark.class.getName())
-				.jvmArgs("-Xms8g", "-Xmx8g")
-				.build()).run();
-	}
-
 	// Benchmark parameters
-
-	@Param({"10000", "24576", "100000", "1000000", "10000000"})
+	@Param({"10000", "100000"/*, "1000000", "10000000"*/})
 	private int chunkSize;
 
 	@Param({"true"})
@@ -77,40 +67,37 @@ public class BucketSetBuilderBenchmark {
 	private IndexValueType indexValueType;
 
 	// Utility
-	private long[] randomData;
-	private long offset;
-	private Random random;
-	private int randomOffsetRange;
-	private int randomOffset;
-
-	private static final int size = 1<<19;
+	private static long[] randomData;
+	private int index;
+	private int size;
 
 	// For benchmarking
 	private BucketSetBuilder builder;
 
 	@Setup(Level.Trial)
+	public void prepareData(BenchmarkParams params) {
+		size = Math.max(params.getMeasurement().getBatchSize(),
+				params.getWarmup().getBatchSize());
+		if(size<=1)
+			throw new IllegalStateException("Expecting batch size!!");
+
+		randomData = randomLongs(size, 0, indexValueType.maxValue());
+	}
+
+	@Setup(Level.Iteration)
 	public void setUp() {
 		builder = new BucketSetBuilder(indexValueType, chunkSize, useLastHitCache);
-		offset = 0;
-
-		random = new Random(System.currentTimeMillis());
-		randomOffsetRange = random.nextInt(Integer.MAX_VALUE/10);
-		randomData = new long[size];
-
-		int upperLimit = Integer.MAX_VALUE-randomOffsetRange;
-		for (int i = 0; i < size; i++) {
-			long value = random.nextInt(upperLimit);
-			randomData[i] = value;
-		}
-		randomOffset = random.nextInt(randomOffsetRange);
+		index = 0;
 	}
 
-	@TearDown(Level.Trial)
-	public void tearDown() {
-		builder.build();
-		System.out.println();
-		builder.printStats(System.out);
+	@TearDown(Level.Iteration)
+	public void tearDown(Blackhole bh) {
+		bh.consume(builder.build());
+//		System.out.println();
+//		builder.printStats(System.out);
 	}
+
+	// AUX COUNTERS
 
 	public long insertions() {
 		return builder.getInsertions();
@@ -128,21 +115,27 @@ public class BucketSetBuilderBenchmark {
 		return builder.getUsedBucketCount();
 	}
 
+	public int size() {
+		return size;
+	}
+
+	// END AUX COUNTERS
+
 	@Benchmark
-	@OperationsPerInvocation(size)
-	public void testAddSingleIncremental() {
-		for (int i = 0; i < size; i++) {
-			builder.add(i + offset);
-		}
-		offset += size;
+	@BenchmarkMode({Mode.SingleShotTime, Mode.AverageTime})
+	@Measurement(iterations = 5, batchSize = K100)
+	@Warmup(iterations = 5, batchSize = K100)
+	@OperationsPerInvocation(K100)
+	public void addSingleIncrement_100K() {
+		builder.add(index++);
 	}
 
 	@Benchmark
-	@OperationsPerInvocation(size)
-	public void testAddSingleRandom() {
-		for (int i = 0; i < size; i++) {
-			builder.add(randomData[i] + randomOffset);
-		}
-		randomOffset = random.nextInt(randomOffsetRange);
+	@BenchmarkMode({Mode.SingleShotTime, Mode.AverageTime})
+	@Measurement(iterations = 5, batchSize = K100)
+	@Warmup(iterations = 5, batchSize = K100)
+	@OperationsPerInvocation(K100)
+	public void addSingleRandom_100K() {
+		builder.add(randomData[index++]);
 	}
 }

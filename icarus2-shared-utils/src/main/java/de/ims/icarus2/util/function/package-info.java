@@ -1,7 +1,4 @@
 /**
- *
- */
-/**
  * Collection of additional functional interfaces
  *
  * @author Markus Gärtner
