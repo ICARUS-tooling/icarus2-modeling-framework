@@ -5,7 +5,7 @@ plugins {
     id 'com.github.hierynomus.license' version '0.14.0' apply false
 	id 'com.github.spotbugs' version '1.7.1' apply false
 	id 'com.gradle.build-scan' version '2.2.1'
-	id 'me.champeau.gradle.jmh' version '0.4.8' apply false
+	id 'net.ltgt.apt-eclipse' version "0.21"
 }
 
 // Load version definitions for dependencies. Info will be stored in 'versions' map
@@ -42,7 +42,7 @@ subprojects {
   	apply plugin: 'com.github.spotbugs'  		
 	apply plugin: 'com.github.hierynomus.license'
 	apply plugin: 'com.github.johnrengelman.shadow'
-	apply plugin: 'me.champeau.gradle.jmh'
+	apply plugin: 'net.ltgt.apt-eclipse'
 	
   	sourceCompatibility = 1.8
   	targetCompatibility = 1.8
@@ -51,11 +51,15 @@ subprojects {
     	mavenCentral()
   	}
 
-	// Was part of a workaround to make test classes available in compile step of jmh
-//	sourceSets {
-//		jmh.java.srcDirs += sourceSets.test.java.srcDirs
-//	}
-	  	
+	sourceSets {
+		jmh {
+//			java.srcDir 'src/jmh/java'
+//			resources.srcDir 'src/jmh/resources'
+//			compileClasspath += project.configurations.compileClasspath + main.output + test.output
+//			runtimeClasspath += project.configurations.runtimeClasspath + main.output + test.output
+		}
+	}
+
 	configurations {
 	
 		// COMPILE ENVIRONMENT
@@ -82,12 +86,15 @@ subprojects {
 		slf4jTest // allows to add slf4j bindings only used during testing
 		mockito
 		uuid
+		
 		// default testing functionality
 		testImplementation.extendsFrom(junit, slf4jTest, mockito)
-		//compileOnly.extendsFrom(junitLauncher)
 	
 		// configuration for the test code artifact
 		tests.extendsFrom(testImplementation)
+		
+		// ensure that benchmarking has access to all needed classes
+		jmhCompile.extendsFrom(implementation, testImplementation)
 	}
 	  	
 	dependencies {
@@ -146,32 +153,73 @@ subprojects {
 		// https://mvnrepository.com/artifact/com.fasterxml.uuid/java-uuid-generator
 		uuid "com.fasterxml.uuid:java-uuid-generator:${versions.uuidVersion}"
 		
-		jmh "org.openjdk.jmh:jmh-core:${versions.jmhVersion}"
-		jmh "org.openjdk.jmh:jmh-generator-annprocess:${versions.jmhVersion}"
-		
-		afterEvaluate {
-			jmh configurations.testImplementation.allDependencies
-		}
+		jmhCompile project
+		jmhCompile "org.openjdk.jmh:jmh-core:${versions.jmhVersion}"
+		jmhCompile "org.openjdk.jmh:jmh-generator-annprocess:${versions.jmhVersion}"
+		jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.20'
 	}
   	
   	tasks.withType(JavaCompile) {
   		options.encoding = 'UTF-8'
     	options.fork = true
  	}
+
+	eclipse {
+		classpath {
+			// Ensure the JMH configuration is on the eclipse classpath
+			plusConfigurations += [ project.configurations.jmhCompile ]
+
+			// Mark source folders in eclipse as "contains test files"
+			containers 'org.eclipse.buildship.core.gradleclasspathcontainer'
+			file {
+				whenMerged { classpath ->
+					entries.findAll {
+						it.kind == 'src' &&  it.path.startsWith('src/test/')
+					}.each {
+						it.entryAttributes['test'] = 'true'
+					}
+				}
+			}
+		}
+
+		// Annotation processing (folders and configuration)
+		jdt {
+			/*
+			 *  Run 
+			 *    gradle eclipseJdtApt eclipseFactorypath eclipseJdt 
+			 *  for any project that needs annotation processing turned on in eclipse
+			 */ 
+			apt {
+				// whether annotation processing is enabled in Eclipse
+				aptEnabled = compileJava.aptOptions.annotationProcessing
+				// where Eclipse will output the generated sources; values are interpreted as per project.file()
+				genSrcDir = file('.apt_generated')
+				genTestSrcDir = file('.apt_generated_tests')
+				// whether annotation processing is enabled in the editor
+				reconcileEnabled = true
+				// a map of annotation processor options; a null value will pass the argument as -Akey rather than -Akey=value
+				processorOptions = compileJava.aptOptions.processorArgs
+			}
+		}
+		
+		// Annotation processing (ensuring declared processors are forwarded to eclipse)
+		factorypath {
+			plusConfigurations = [ configurations.annotationProcessor, configurations.testAnnotationProcessor, configurations.jmhAnnotationProcessor ]
+			minusConfigurations = []
+		}
+	}
 	 
-	jmh {
-		jmhVersion = "${versions.jmhVersion}"
-		forceGC = true
-		jvmArgsPrepend = ["-Djmh.separateClasspathJAR=true"]
-		resultFormat = 'CSV'
-		humanOutputFile = project.file("${project.buildDir}/reports/jmh/human.txt")
-		resultsFile = project.file("${project.buildDir}/reports/jmh/results.txt")
+	task jmhJar(type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+		group = 'jmh'
+		dependsOn jmhClasses
+		archiveClassifier = 'jmh'
+		from sourceSets.jmh.output + sourceSets.main.output + sourceSets.test.output
+		configurations = [project.configurations.jmhRuntime]
+		manifest {
+			attributes 'Main-Class': 'org.openjdk.jmh.Main'
+		}
 	}
 
-	jmhJar {
-		exclude 'LICENSE'
-	}
-	
 	shadowJar {
 		archiveClassifier = 'shadow'
 	}

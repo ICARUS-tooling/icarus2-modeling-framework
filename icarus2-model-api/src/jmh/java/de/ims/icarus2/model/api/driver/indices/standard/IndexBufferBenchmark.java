@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
@@ -36,8 +35,12 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.TearDown;
+import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.BenchmarkParams;
+import org.openjdk.jmh.results.format.ResultFormatType;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 
@@ -46,13 +49,12 @@ import de.ims.icarus2.model.api.driver.indices.IndexValueType;
  *
  */
 @State(Scope.Thread)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(1)
 public class IndexBufferBenchmark {
 
 	private IndexBuffer buffer;
-	private int position;
 	private long[] values;
+
+	@Param({"1000000"})
 	private int size;
 
 	@Param({"INTEGER"})
@@ -60,27 +62,41 @@ public class IndexBufferBenchmark {
 
 	@Setup(Level.Trial)
 	public void initRandoms(BenchmarkParams params) {
-		size = Math.max(params.getMeasurement().getBatchSize(),
-				params.getWarmup().getBatchSize());
-		values = randomLongs(size+1, 0, indexValueType.maxValue());
+		values = randomLongs(size, 0, indexValueType.maxValue());
 	}
 
 	@Setup(Level.Iteration)
 	public void initBuffer() {
-		position = 0;
 		buffer = new IndexBuffer(indexValueType, size);
 	}
 
-	@TearDown(Level.Iteration)
-	public void cleanup() {
-		buffer.size();
+	@Benchmark
+	@Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
+	@Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
+	@OperationsPerInvocation(M1)
+	@BenchmarkMode(Mode.AverageTime)
+	@OutputTimeUnit(TimeUnit.NANOSECONDS)
+	public IndexBuffer testAddSingle_1M() {
+		for (int i = 0; i < values.length; i++) {
+			buffer.add(values[i]);
+		}
+		buffer.clear();
+		return buffer;
 	}
 
-	@Benchmark
-	@Measurement(iterations = 5, batchSize = M1)
-	@OperationsPerInvocation(M1)
-	@BenchmarkMode(Mode.SingleShotTime)
-	public void testAddSingle_1M() {
-		buffer.add(values[position++]);
+	public static void main(String[] args) throws RunnerException {
+		new Runner(new OptionsBuilder()
+				.include(IndexBufferBenchmark.class.getSimpleName())
+				.jvmArgsPrepend("-Djmh.separateClasspathJAR=true")
+				.resultFormat(ResultFormatType.LATEX)
+				.shouldDoGC(true)
+				.shouldFailOnError(true)
+				.forks(0)
+
+				.param("size", "1000000")
+				.param("indexValueType", "INTEGER")
+
+				.build())
+		.run();
 	}
 }

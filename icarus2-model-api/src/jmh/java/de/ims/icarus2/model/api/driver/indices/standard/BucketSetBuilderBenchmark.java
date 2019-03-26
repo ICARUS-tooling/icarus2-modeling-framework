@@ -42,6 +42,10 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.BenchmarkParams;
 import org.openjdk.jmh.infra.Blackhole;
+import org.openjdk.jmh.results.format.ResultFormatType;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.BucketSetBuilder;
@@ -57,7 +61,7 @@ import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.Bu
 public class BucketSetBuilderBenchmark {
 
 	// Benchmark parameters
-	@Param({"10000", "100000"/*, "1000000", "10000000"*/})
+	@Param({"100000"})
 	private int chunkSize;
 
 	@Param({"true"})
@@ -122,7 +126,7 @@ public class BucketSetBuilderBenchmark {
 	// END AUX COUNTERS
 
 	@Benchmark
-	@BenchmarkMode({Mode.SingleShotTime, Mode.AverageTime})
+	@BenchmarkMode({Mode.SingleShotTime})
 	@Measurement(iterations = 5, batchSize = K100)
 	@Warmup(iterations = 5, batchSize = K100)
 	@OperationsPerInvocation(K100)
@@ -131,11 +135,27 @@ public class BucketSetBuilderBenchmark {
 	}
 
 	@Benchmark
-	@BenchmarkMode({Mode.SingleShotTime, Mode.AverageTime})
+	@BenchmarkMode({Mode.SingleShotTime})
 	@Measurement(iterations = 5, batchSize = K100)
 	@Warmup(iterations = 5, batchSize = K100)
 	@OperationsPerInvocation(K100)
 	public void addSingleRandom_100K() {
 		builder.add(randomData[index++]);
+	}
+
+	public static void main(String[] args) throws RunnerException {
+		new Runner(new OptionsBuilder()
+				.include(BucketSetBuilderBenchmark.class.getSimpleName())
+				.jvmArgsPrepend("-Djmh.separateClasspathJAR=true", "-Xmx8g", "-Xms8g")
+				.resultFormat(ResultFormatType.LATEX)
+				.shouldDoGC(true)
+				.shouldFailOnError(true)
+
+				.param("chunkSize", "10000")
+				.param("useLastHitCache", "true")
+				.param("indexValueType", "INTEGER")
+
+				.build())
+		.run();
 	}
 }
