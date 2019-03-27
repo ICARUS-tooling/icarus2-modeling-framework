@@ -55,6 +55,8 @@ subprojects {
 		jmh {
 //			java.srcDir 'src/jmh/java'
 //			resources.srcDir 'src/jmh/resources'
+			compileClasspath += main.output + test.output
+			runtimeClasspath += main.output + test.output
 //			compileClasspath += project.configurations.compileClasspath + main.output + test.output
 //			runtimeClasspath += project.configurations.runtimeClasspath + main.output + test.output
 		}

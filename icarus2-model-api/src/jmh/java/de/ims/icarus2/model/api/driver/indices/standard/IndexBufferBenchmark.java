@@ -91,7 +91,6 @@ public class IndexBufferBenchmark {
 				.resultFormat(ResultFormatType.LATEX)
 				.shouldDoGC(true)
 				.shouldFailOnError(true)
-				.forks(0)
 
 				.param("size", "1000000")
 				.param("indexValueType", "INTEGER")
