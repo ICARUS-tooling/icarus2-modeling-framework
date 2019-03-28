@@ -20,6 +20,7 @@
 package de.ims.icarus2.model.api.driver.indices.standard;
 
 import static de.ims.icarus2.test.TestUtils.M1;
+import static de.ims.icarus2.test.TestUtils.jmhOptions;
 import static de.ims.icarus2.test.TestUtils.randomLongs;
 
 import java.util.concurrent.TimeUnit;
@@ -37,10 +38,8 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.BenchmarkParams;
-import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 
@@ -84,14 +83,23 @@ public class IndexBufferBenchmark {
 		return buffer;
 	}
 
+	/**
+# JMH version: 1.21
+# VM version: JDK 1.8.0_162, Java HotSpot(TM) 64-Bit Server VM, 25.162-b12
+# VM invoker: C:\Program Files\Java\jdk1.8.0_162\jre\bin\java.exe
+# VM options: -Djmh.separateClasspathJAR=true -Dfile.encoding=UTF-8
+# Warmup: 5 iterations, 1 s each
+# Measurement: 5 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: de.ims.icarus2.model.api.driver.indices.standard.IndexBufferBenchmark.testAddSingle_1M
+# Parameters: (indexValueType = INTEGER, size = 1000000)
+Benchmark                              (indexValueType)   (size)  Mode  Cnt  Score   Error  Units
+IndexBufferBenchmark.testAddSingle_1M           INTEGER  1000000  avgt   25  4.636 ± 0.210  ns/op
+	 */
 	public static void main(String[] args) throws RunnerException {
-		new Runner(new OptionsBuilder()
-				.include(IndexBufferBenchmark.class.getSimpleName())
-				.jvmArgsPrepend("-Djmh.separateClasspathJAR=true")
-				.resultFormat(ResultFormatType.LATEX)
-				.shouldDoGC(true)
-				.shouldFailOnError(true)
-
+		new Runner(jmhOptions(IndexBufferBenchmark.class)
 				.param("size", "1000000")
 				.param("indexValueType", "INTEGER")
 

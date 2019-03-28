@@ -60,6 +60,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.Mockito;
+import org.openjdk.jmh.results.format.ResultFormatType;
+import org.openjdk.jmh.runner.options.ChainedOptionsBuilder;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import de.ims.icarus2.test.DiffUtils.Trace;
 import de.ims.icarus2.test.func.TriConsumer;
@@ -1761,5 +1764,21 @@ public class TestUtils {
 			array[idx] = from+idx;
 		}
 		return array;
+	}
+
+	private static final String JMH_RESULT_FOLDER = "build/jmh-results/";
+	private static final String JMH_LOG = ".log";
+
+	// JMH SUPPORT
+	public static ChainedOptionsBuilder jmhOptions(Class<?> benchmarkClass) {
+		String name = benchmarkClass.getSimpleName();
+
+		return new OptionsBuilder()
+				.jvmArgsPrepend("-Djmh.separateClasspathJAR=true")
+				.resultFormat(ResultFormatType.CSV)
+				.shouldDoGC(true)
+				.shouldFailOnError(true)
+				.include(name)
+				.output(JMH_RESULT_FOLDER+name+JMH_LOG);
 	}
 }
