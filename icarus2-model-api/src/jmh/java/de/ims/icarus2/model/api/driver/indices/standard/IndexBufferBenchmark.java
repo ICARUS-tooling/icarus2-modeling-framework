@@ -38,6 +38,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.BenchmarkParams;
+import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 
@@ -99,9 +100,11 @@ Benchmark                              (indexValueType)   (size)  Mode  Cnt  Sco
 IndexBufferBenchmark.testAddSingle_1M           INTEGER  1000000  avgt   25  4.636 ± 0.210  ns/op
 	 */
 	public static void main(String[] args) throws RunnerException {
-		new Runner(jmhOptions(IndexBufferBenchmark.class)
+		new Runner(jmhOptions(IndexBufferBenchmark.class, true, ResultFormatType.CSV)
 				.param("size", "1000000")
 				.param("indexValueType", "INTEGER")
+
+				.resultFormat(ResultFormatType.CSV)
 
 				.build())
 		.run();

@@ -29,10 +29,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1769,6 +1773,17 @@ public class TestUtils {
 	private static final String JMH_RESULT_FOLDER = "build/jmh-results/";
 	private static final String JMH_LOG = ".log";
 
+	private static void ensureJmhResultFolder() {
+		try {
+			Path path = Paths.get(JMH_RESULT_FOLDER);
+			if(Files.notExists(path)) {
+				Files.createDirectories(path);
+			}
+		} catch(IOException e) {
+			throw new InternalError("Failed to ensure JMH result fodler: "+JMH_RESULT_FOLDER, e);
+		}
+	}
+
 	// JMH SUPPORT
 	public static ChainedOptionsBuilder jmhOptions(Class<?> benchmarkClass) {
 		String name = benchmarkClass.getSimpleName();
@@ -1778,7 +1793,26 @@ public class TestUtils {
 				.resultFormat(ResultFormatType.CSV)
 				.shouldDoGC(true)
 				.shouldFailOnError(true)
-				.include(name)
-				.output(JMH_RESULT_FOLDER+name+JMH_LOG);
+				.include(name);
+	}
+
+	public static ChainedOptionsBuilder jmhOptions(Class<?> benchmarkClass,
+			boolean writeToLog) {
+		String name = benchmarkClass.getSimpleName();
+		ChainedOptionsBuilder builder = jmhOptions(benchmarkClass);
+		if(writeToLog) {
+			ensureJmhResultFolder();
+			builder.output(JMH_RESULT_FOLDER+name+JMH_LOG);
+		}
+		return builder;
+	}
+
+	public static ChainedOptionsBuilder jmhOptions(Class<?> benchmarkClass,
+			boolean writeToLog, ResultFormatType resultFormatType) {
+		String name = benchmarkClass.getSimpleName();
+		ChainedOptionsBuilder builder = jmhOptions(benchmarkClass, writeToLog);
+		ensureJmhResultFolder();
+		builder.result(JMH_RESULT_FOLDER+name+'.'+resultFormatType.toString().toLowerCase());
+		return builder;
 	}
 }
