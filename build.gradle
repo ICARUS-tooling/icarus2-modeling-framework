@@ -85,6 +85,8 @@ subprojects {
 		mockito
 		uuid
 		
+		benchmark
+		
 		// default testing functionality
 		testImplementation.extendsFrom(junit, slf4jTest, mockito)
 	
@@ -92,7 +94,7 @@ subprojects {
 		tests.extendsFrom(testImplementation)
 		
 		// ensure that benchmarking has access to all needed classes
-		jmhCompile.extendsFrom(implementation, testImplementation)
+		jmhCompile.extendsFrom(implementation, testImplementation, benchmark)
 	}
 	  	
 	dependencies {
@@ -152,8 +154,8 @@ subprojects {
 		uuid "com.fasterxml.uuid:java-uuid-generator:${versions.uuidVersion}"
 		
 		jmhCompile project
-		jmhCompile "org.openjdk.jmh:jmh-core:${versions.jmhVersion}"
-		jmhCompile "org.openjdk.jmh:jmh-generator-annprocess:${versions.jmhVersion}"
+		benchmark "org.openjdk.jmh:jmh-core:${versions.jmhVersion}"
+		benchmark "org.openjdk.jmh:jmh-generator-annprocess:${versions.jmhVersion}"
 		jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.20'
 	}
   	
