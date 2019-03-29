@@ -24,7 +24,7 @@ description = 'ICARUS 2 framework root'
 // Gradle Wrapper
 wrapper { 
 	// to upgrade wrapper: ./gradlew wrapper --gradle-version <version> --distribution-type bin
-	gradleVersion = "5.2.1" 
+	gradleVersion = "5.3.1" 
 }
 
 // Build Scan publishing
