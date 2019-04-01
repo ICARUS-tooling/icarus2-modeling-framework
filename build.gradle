@@ -85,6 +85,7 @@ subprojects {
 		mockito
 		uuid
 		
+		// Benchmark environment (JMH)
 		benchmark
 		
 		// default testing functionality
@@ -208,9 +209,15 @@ subprojects {
 			minusConfigurations = []
 		}
 	}
-	 
+	
+//	task prepareApt {
+//		description = 'Shorthand task for preparing annotation processing in eclipse'
+//		dependsOn eclipseJdtApt eclipseFactorypath eclipseJdt
+//	}
+
 	task jmhJar(type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
 		group = 'jmh'
+		description = 'Create a benchmark jar with all dependencies included'
 		dependsOn jmhClasses
 		archiveClassifier = 'jmh'
 		from sourceSets.jmh.output + sourceSets.main.output + sourceSets.test.output

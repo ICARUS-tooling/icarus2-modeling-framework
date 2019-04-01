@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
+import static de.ims.icarus2.test.TestUtils.K10;
 import static de.ims.icarus2.test.TestUtils.M100;
 import static de.ims.icarus2.test.TestUtils.jmhOptions;
 import static de.ims.icarus2.test.TestUtils.randomLongs;
@@ -32,6 +33,7 @@ import org.openjdk.jmh.annotations.AuxCounters;
 import org.openjdk.jmh.annotations.AuxCounters.Type;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
@@ -59,18 +61,22 @@ import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.Bu
  */
 @State(Scope.Thread)
 @AuxCounters(Type.EVENTS)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@BenchmarkMode({Mode.SingleShotTime})
+@Warmup(iterations=5, batchSize=M100)
+@Measurement(iterations=5, batchSize=M100)
+@Fork(value=5,jvmArgsAppend={"-Xmx8g", "-Xms8g"})
 public class BucketSetBuilderBenchmark {
 
 	// Benchmark parameters
 
-	@Param({"100000"})
+	@Param({"10000","100000","1000000","10000000","100000000"})
 	private int chunkSize;
 
-	@Param({"true"})
+	@Param({"true", "false"})
 	private boolean useLastHitCache;
 
-	@Param({"INTEGER"})
+	@Param({"INTEGER", "LONG"})
 	private IndexValueType indexValueType;
 
 	// Utility
@@ -83,7 +89,8 @@ public class BucketSetBuilderBenchmark {
 
 	@Setup(Level.Trial)
 	public void prepareData(BenchmarkParams params) {
-		size = params.getOpsPerInvocation();
+		size = Math.max(params.getMeasurement().getBatchSize(),
+				params.getWarmup().getBatchSize());
 		if(size<=1)
 			throw new IllegalStateException("Expecting batch size!!");
 
@@ -126,29 +133,19 @@ public class BucketSetBuilderBenchmark {
 	// END AUX COUNTERS
 
 	@Benchmark
-	@BenchmarkMode({Mode.SingleShotTime})
-	@Measurement(iterations = 5)
-	@Warmup(iterations = 5)
 	public void addSingleIncrement(Blackhole bh) {
-		for (int i = 0; i < size; i++) {
-			builder.add(index++);
-		}
+		builder.add(index++);
 		bh.consume(builder);
 	}
 
 	@Benchmark
-	@BenchmarkMode({Mode.SingleShotTime})
-	@Measurement(iterations = 5)
-	@Warmup(iterations = 5)
 	public void addSingleRandom(Blackhole bh) {
-		for (int i = 0; i < size; i++) {
-			builder.add(randomData[index++]);
-		}
+		builder.add(randomData[index++]);
 		bh.consume(builder);
 	}
 
-	private static void prepareChunkSizes(ChainedOptionsBuilder builder, int max) {
-		int current = 10_000;
+	private static void prepareChunkSizes(ChainedOptionsBuilder builder, int start, int max) {
+		int current = start;
 		List<String> tmp = new ArrayList<>();
 		while(current>0 && current<=max) {
 			tmp.add(String.valueOf(current));
@@ -161,6 +158,32 @@ public class BucketSetBuilderBenchmark {
 		builder.param("chunkSize", tmp.toArray(new String[tmp.size()]));
 	}
 
+	/**
+	 * Run with 100m insertions
+Benchmark                                     (chunkSize)  (indexValueType)  (useLastHitCache)  Mode  Cnt      Score      Error  Units
+BucketSetBuilderBenchmark.addSingleIncrement        10000           INTEGER               true    ss    5   2458.245 ±  172.516  ms/op
+BucketSetBuilderBenchmark.addSingleIncrement       100000           INTEGER               true    ss    5   3168.540 ±  202.859  ms/op
+BucketSetBuilderBenchmark.addSingleIncrement      1000000           INTEGER               true    ss    5   4540.997 ±  175.992  ms/op
+BucketSetBuilderBenchmark.addSingleIncrement     10000000           INTEGER               true    ss    5   6446.320 ±  188.586  ms/op
+BucketSetBuilderBenchmark.addSingleIncrement    100000000           INTEGER               true    ss    5   7204.305 ± 1126.107  ms/op
+BucketSetBuilderBenchmark.addSingleRandom           10000           INTEGER               true    ss    5  40073.488 ± 2650.936  ms/op
+BucketSetBuilderBenchmark.addSingleRandom          100000           INTEGER               true    ss    5  20741.011 ± 4647.739  ms/op
+BucketSetBuilderBenchmark.addSingleRandom         1000000           INTEGER               true    ss    5  14793.947 ± 1042.352  ms/op
+BucketSetBuilderBenchmark.addSingleRandom        10000000           INTEGER               true    ss    5  13435.807 ±  518.237  ms/op
+BucketSetBuilderBenchmark.addSingleRandom       100000000           INTEGER               true    ss    5   8306.715 ±  421.758  ms/op
+
+Benchmark                                     (chunkSize)  (indexValueType)  (useLastHitCache)  Mode  Cnt      Score      Error  Units
+BucketSetBuilderBenchmark.addSingleIncrement        10000              LONG               true    ss    5   2644.238 ±  716.773  ms/op
+BucketSetBuilderBenchmark.addSingleIncrement       100000              LONG               true    ss    5   5263.409 ± 2629.355  ms/op
+BucketSetBuilderBenchmark.addSingleIncrement      1000000              LONG               true    ss    5   6246.867 ±  692.842  ms/op
+BucketSetBuilderBenchmark.addSingleIncrement     10000000              LONG               true    ss    5  10421.895 ± 9545.232  ms/op
+BucketSetBuilderBenchmark.addSingleIncrement    100000000              LONG               true    ss    5   9594.810 ±  475.333  ms/op
+BucketSetBuilderBenchmark.addSingleRandom           10000              LONG               true    ss    5  36706.231 ±  871.281  ms/op
+BucketSetBuilderBenchmark.addSingleRandom          100000              LONG               true    ss    5  21649.628 ±  464.815  ms/op
+BucketSetBuilderBenchmark.addSingleRandom         1000000              LONG               true    ss    5  17344.435 ± 1405.489  ms/op
+BucketSetBuilderBenchmark.addSingleRandom        10000000              LONG               true    ss    5  15773.119 ± 1697.045  ms/op
+BucketSetBuilderBenchmark.addSingleRandom       100000000              LONG               true    ss    5   9899.917 ±  441.925  ms/op
+	 */
 	public static void main(String[] args) throws RunnerException {
 		final int size = M100;
 
@@ -168,12 +191,20 @@ public class BucketSetBuilderBenchmark {
 				jmhOptions(BucketSetBuilderBenchmark.class, false, ResultFormatType.CSV)
 				.jvmArgsAppend("-Xmx8g", "-Xms8g")
 
-				.operationsPerInvocation(size)
+				.warmupBatchSize(size)
+				.warmupIterations(5)
+
+				.measurementBatchSize(size)
+				.measurementIterations(5)
+
+				.timeUnit(TimeUnit.MILLISECONDS)
+
+				.forks(1)
 
 				.param("useLastHitCache", "true")
-				.param("indexValueType", "INTEGER");
+				.param("indexValueType", "LONG");
 
-		prepareChunkSizes(builder, size);
+		prepareChunkSizes(builder, K10, size);
 
 
 		Collection<RunResult> results = new Runner(builder.build()).run();

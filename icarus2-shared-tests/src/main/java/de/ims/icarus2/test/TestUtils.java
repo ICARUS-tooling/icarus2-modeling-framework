@@ -348,6 +348,11 @@ public class TestUtils {
           + "0123456789"
           + "abcdefghijklmnopqrstuvxyz";
 
+	/**
+	 * Creates an alphanumerical random string of requested size.
+	 * @param len
+	 * @return
+	 */
 	public static String randomString(int len) {
 		char[] tmp = new char[len];
 		for(int i=0; i<len; i++) {

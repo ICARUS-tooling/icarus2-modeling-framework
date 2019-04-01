@@ -58,6 +58,10 @@ import de.ims.icarus2.util.strings.StringUtil;
  */
 public final class IOUtil {
 
+	public static final int KB = 1024;
+	public static final int MB = KB * 1024;
+	public static final int GB = MB * 1024;
+
 
 	private static final Logger log = LoggerFactory.getLogger(IOUtil.class);
 
