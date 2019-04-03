@@ -97,7 +97,7 @@ public class ReadBenchmark {
 
 		fillFile(file, Charset.forName(charset), sizeInMb);
 
-		System.out.println(file);
+//		System.out.println(file);
 	}
 
 	@TearDown(Level.Trial)
@@ -111,7 +111,7 @@ public class ReadBenchmark {
 	 */
 	private static void fillFile(Path file, Charset charset, int MB) throws IOException {
 
-		byte[] repeatableContent = createRandomData(charset, IOUtil.MB/10);
+		byte[] repeatableContent = createRandomData(charset, IOUtil.MB);
 		assumeTrue(repeatableContent.length>0, "Empty random data");
 		int remainingSize = IOUtil.MB * MB;
 
@@ -132,16 +132,19 @@ public class ReadBenchmark {
 
 		CharBuffer cb;
 		if(encoder.maxBytesPerChar()>1) {
+			// For UNICODE charsets we try to use complex dummy data
 			cb = CharBuffer.allocate(size);
 			String tmp = LOREM_IPSUM_CHINESE;
 			while(cb.remaining()>=tmp.length()) {
 				cb.put(tmp);
 			}
+			// Pad the remaining space with random alphanumeric strings
 			if(cb.hasRemaining()) {
 				cb.put(randomString(cb.remaining()));
 			}
 			cb.flip();
 		} else {
+			// ASCII style -> simply throw a long random alphanumerical string at it
 			cb = CharBuffer.wrap(randomString(size));
 		}
 
@@ -191,7 +194,7 @@ public class ReadBenchmark {
 	// Benchmark methods
 
 	@Benchmark
-	public void test_ChannelInputStream(Blackhole bh) throws IOException {
+	public void bytes_ChannelInputStream(Blackhole bh) throws IOException {
 		try(InputStream is = Files.newInputStream(file)) {
 			byte[] bb = new byte[IOUtil.MB];
 			int read;
@@ -202,7 +205,7 @@ public class ReadBenchmark {
 	}
 
 	@Benchmark
-	public void test_BufferedInputStream_ChannelInputStream(Blackhole bh) throws IOException {
+	public void bytes_BufferedInputStream_ChannelInputStream(Blackhole bh) throws IOException {
 		try(BufferedInputStream is = new BufferedInputStream(Files.newInputStream(file), bufferSize)) {
 			byte[] bb = new byte[IOUtil.MB];
 			int read;
@@ -213,7 +216,7 @@ public class ReadBenchmark {
 	}
 
 	@Benchmark
-	public void test_FileInputStream(Blackhole bh) throws FileNotFoundException, IOException {
+	public void bytes_FileInputStream(Blackhole bh) throws FileNotFoundException, IOException {
 		try(FileInputStream is = new FileInputStream(file.toFile())) {
 			byte[] bb = new byte[IOUtil.MB];
 			int read;
@@ -224,7 +227,7 @@ public class ReadBenchmark {
 	}
 
 	@Benchmark
-	public void test_BufferedInputStream_FileInputStream(Blackhole bh) throws IOException {
+	public void bytes_BufferedInputStream_FileInputStream(Blackhole bh) throws IOException {
 		try(BufferedInputStream is = new BufferedInputStream(new FileInputStream(file.toFile()), bufferSize)) {
 			byte[] bb = new byte[IOUtil.MB];
 			int read;
@@ -235,7 +238,7 @@ public class ReadBenchmark {
 	}
 
 	@Benchmark
-	public void test_ByteBuffer_ReadableByteChannel(Blackhole bh) throws IOException {
+	public void bytes_ByteBuffer_ReadableByteChannel(Blackhole bh) throws IOException {
 		try(SeekableByteChannel channel = Files.newByteChannel(file)) {
 			ByteBuffer bb = ByteBuffer.allocate(bufferSize);
 			while(channel.read(bb)>0) {
@@ -247,7 +250,7 @@ public class ReadBenchmark {
 	}
 
 	@Benchmark
-	public void test_directByteBuffer_ReadableByteChannel(Blackhole bh) throws IOException {
+	public void bytes_directByteBuffer_ReadableByteChannel(Blackhole bh) throws IOException {
 		try(SeekableByteChannel channel = Files.newByteChannel(file)) {
 			ByteBuffer bb = ByteBuffer.allocateDirect(bufferSize);
 			while(channel.read(bb)>0) {
@@ -259,7 +262,7 @@ public class ReadBenchmark {
 	}
 
 	@Benchmark
-	public void test_InputStreamReader_ChannelInputStream(Blackhole bh) throws UnsupportedEncodingException, IOException {
+	public void chars_InputStreamReader_ChannelInputStream(Blackhole bh) throws UnsupportedEncodingException, IOException {
 		try(InputStreamReader reader = new InputStreamReader(Files.newInputStream(file), charset)) {
 			char[] bb = new char[IOUtil.MB];
 			int read;
@@ -270,42 +273,42 @@ public class ReadBenchmark {
 	}
 
 	@Benchmark
-	public void test_BufferedReader_InputStreamReader_ChannelInputStream(Blackhole bh) throws UnsupportedEncodingException, IOException {
+	public void chars_BufferedReader_InputStreamReader_ChannelInputStream(Blackhole bh) throws UnsupportedEncodingException, IOException {
 		try(BufferedReader reader = new BufferedReader(new InputStreamReader(
 				Files.newInputStream(file), charset), bufferSize)) {
-			char[] bb = new char[IOUtil.MB];
+			char[] cb = new char[IOUtil.MB];
 			int read;
-			while((read = reader.read(bb))>0) {
+			while((read = reader.read(cb))>0) {
 				bh.consume(read);
 			}
 		}
 	}
 
 	@Benchmark
-	public void test_InputStreamReader_FileInputStream(Blackhole bh) throws UnsupportedEncodingException, FileNotFoundException, IOException {
+	public void chars_InputStreamReader_FileInputStream(Blackhole bh) throws UnsupportedEncodingException, FileNotFoundException, IOException {
 		try(InputStreamReader reader = new InputStreamReader(new FileInputStream(file.toFile()), charset)) {
-			char[] bb = new char[IOUtil.MB];
+			char[] cb = new char[IOUtil.MB];
 			int read;
-			while((read = reader.read(bb))>0) {
+			while((read = reader.read(cb))>0) {
 				bh.consume(read);
 			}
 		}
 	}
 
 	@Benchmark
-	public void test_BufferedReader_InputStreamReader_FileInputStream(Blackhole bh) throws UnsupportedEncodingException, FileNotFoundException, IOException {
+	public void chars_BufferedReader_InputStreamReader_FileInputStream(Blackhole bh) throws UnsupportedEncodingException, FileNotFoundException, IOException {
 		try(BufferedReader reader = new BufferedReader(new InputStreamReader(
 				new FileInputStream(file.toFile()), charset), bufferSize)) {
-			char[] bb = new char[IOUtil.MB];
+			char[] cb = new char[IOUtil.MB];
 			int read;
-			while((read = reader.read(bb))>0) {
+			while((read = reader.read(cb))>0) {
 				bh.consume(read);
 			}
 		}
 	}
 
 	@Benchmark
-	public void test_CharsetDecoder_ByteBuffer_SeekableByteChannel(Blackhole bh) throws IOException {
+	public void chars_CharsetDecoder_ByteBuffer_SeekableByteChannel(Blackhole bh) throws IOException {
 		try(SeekableByteChannel channel = Files.newByteChannel(file)) {
 		    CharsetDecoder decoder = Charset.forName(charset).newDecoder();
 			ByteBuffer bb = ByteBuffer.allocate(bufferSize);
@@ -316,7 +319,7 @@ public class ReadBenchmark {
 	}
 
 	@Benchmark
-	public void test_CharsetDecoder_directByteBuffer_SeekableByteChannel(Blackhole bh) throws IOException {
+	public void chars_CharsetDecoder_directByteBuffer_SeekableByteChannel(Blackhole bh) throws IOException {
 		try(SeekableByteChannel channel = Files.newByteChannel(file)) {
 		    CharsetDecoder decoder = Charset.forName(charset).newDecoder();
 			ByteBuffer bb = ByteBuffer.allocateDirect(bufferSize);
@@ -327,6 +330,13 @@ public class ReadBenchmark {
 	}
 
 
+	/**
+	 * ReadBenchmark -o ReadBenchmark.log -rf csv -rff ReadBenchmark.csv -f 1 -p sizeInMb=10 -p charset=UTF-8 -p bufferSize=8192
+	 *
+	 *
+	 * @param args
+	 * @throws RunnerException
+	 */
 	public static void main(String[] args) throws RunnerException {
 		ChainedOptionsBuilder builder = jmhOptions(ReadBenchmark.class,
 				false, ResultFormatType.CSV);
