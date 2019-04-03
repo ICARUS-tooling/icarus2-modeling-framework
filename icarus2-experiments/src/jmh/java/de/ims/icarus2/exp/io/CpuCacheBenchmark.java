@@ -49,7 +49,7 @@ public class CpuCacheBenchmark {
 	@SuppressWarnings("unused")
 	private static final int STEP_SIZE = 8192;
 
-	private static final long RUNS = 10_000_000_000L;
+	private static final long RUNS = 1_000_000_000L;
 
 	private byte[] array;
 	private byte value;
@@ -68,6 +68,24 @@ public class CpuCacheBenchmark {
 
 	/**
 	 * Runs {@value #RUNS} modifications on the internal byte array.
+	 */
+	@Benchmark
+	@OutputTimeUnit(TimeUnit.SECONDS)
+	@BenchmarkMode(Mode.SingleShotTime)
+	@Warmup(iterations=5)
+	@Measurement(iterations=5)
+	@Fork(1)
+	public void testAccess() {
+		long runs = RUNS;
+		while(runs>0) {
+	        for (int k = 0; k < cacheSize; k += 64) {
+	            array[k] = value;
+	            runs--;
+	        }
+		}
+	}
+
+	/**
 	 *
 	 * Results with RUNS = 10_000_000_000:
 	 *
@@ -88,23 +106,10 @@ CpuCacheBenchmark.testAccess       106496    ss    5  12.358 ± 0.346   s/op
 CpuCacheBenchmark.testAccess       114688    ss    5  12.611 ± 1.340   s/op
 CpuCacheBenchmark.testAccess       122880    ss    5  12.658 ± 0.773   s/op
 CpuCacheBenchmark.testAccess       131072    ss    5  12.544 ± 0.497   s/op
+	 *
+	 * @param args
+	 * @throws RunnerException
 	 */
-	@Benchmark
-	@OutputTimeUnit(TimeUnit.SECONDS)
-	@BenchmarkMode(Mode.SingleShotTime)
-	@Warmup(iterations=5)
-	@Measurement(iterations=5)
-	@Fork(1)
-	public void testAccess() {
-		long runs = RUNS;
-		while(runs>0) {
-	        for (int k = 0; k < cacheSize; k += 64) {
-	            array[k] = value;
-	            runs--;
-	        }
-		}
-	}
-
 	public static void main(String[] args) throws RunnerException {
 		ChainedOptionsBuilder builder = jmhOptions(CpuCacheBenchmark.class,
 				false, ResultFormatType.TEXT);

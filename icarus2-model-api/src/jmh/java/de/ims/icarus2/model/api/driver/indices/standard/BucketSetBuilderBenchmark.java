@@ -106,6 +106,7 @@ public class BucketSetBuilderBenchmark {
 	@TearDown(Level.Iteration)
 	public void tearDown(Blackhole bh) {
 		bh.consume(builder.build());
+		builder = null;
 	}
 
 	// AUX COUNTERS
@@ -144,6 +145,16 @@ public class BucketSetBuilderBenchmark {
 		bh.consume(builder);
 	}
 
+	/**
+	 * Prepares the {@code chunkSize} parameter for the given benchmark options by
+	 * moving from {@code start} to {@code max} by multiplying by {@code 10} for every
+	 * step. If the difference of {@code max-start} is not a multiple of {@code 10} the
+	 * {@code max} values is appended in the end.
+	 *
+	 * @param builder
+	 * @param start
+	 * @param max
+	 */
 	private static void prepareChunkSizes(ChainedOptionsBuilder builder, int start, int max) {
 		int current = start;
 		List<String> tmp = new ArrayList<>();
@@ -190,6 +201,7 @@ BucketSetBuilderBenchmark.addSingleRandom       100000000              LONG     
 		ChainedOptionsBuilder builder =
 				jmhOptions(BucketSetBuilderBenchmark.class, false, ResultFormatType.CSV)
 				.jvmArgsAppend("-Xmx8g", "-Xms8g")
+				.shouldDoGC(true)
 
 				.warmupBatchSize(size)
 				.warmupIterations(5)
@@ -206,9 +218,10 @@ BucketSetBuilderBenchmark.addSingleRandom       100000000              LONG     
 
 		prepareChunkSizes(builder, K10, size);
 
+		builder.addProfiler("hs_rt");
 
 		Collection<RunResult> results = new Runner(builder.build()).run();
 
-		System.out.println(results);
+//		System.out.println(results);
 	}
 }
