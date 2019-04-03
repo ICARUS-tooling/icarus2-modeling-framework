@@ -1796,7 +1796,7 @@ public class TestUtils {
 		return new OptionsBuilder()
 				.jvmArgsPrepend("-Djmh.separateClasspathJAR=true")
 				.resultFormat(ResultFormatType.CSV)
-				.shouldDoGC(true)
+//				.shouldDoGC(true)	//disabled for now, as we want to let each benchamrk decide individually
 				.shouldFailOnError(true)
 				.include(name);
 	}
