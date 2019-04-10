@@ -25,6 +25,10 @@ import de.ims.icarus2.util.Recyclable;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
+ * Provides a mechanism to decouple specialized storage solutions for
+ * certain {@link ContainerType container types} or situations from the
+ * general {@link DefaultContainer} implementation.
+ *
  * @author Markus Gärtner
  *
  */

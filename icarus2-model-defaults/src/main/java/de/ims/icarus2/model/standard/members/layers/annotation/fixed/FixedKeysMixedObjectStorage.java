@@ -198,6 +198,7 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 		return unwrapMutable(buffer[index]);
 	}
 
+	@SuppressWarnings("null")
 	@Override
 	public void setValue(Item item, String key, Object value) {
 		int index = checkKeyAndGetIndex(key);
@@ -206,6 +207,8 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 		if(buffer==null && value==null) {
 			return;
 		}
+
+		assert buffer!=null;
 
 		/*
 		 * Somewhat expensive strategy:

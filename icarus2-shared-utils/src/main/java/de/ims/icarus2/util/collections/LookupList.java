@@ -24,6 +24,8 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Link;
 import de.ims.icarus2.util.mem.Primitive;
@@ -85,7 +87,8 @@ public class LookupList<E extends Object> implements Iterable<E> {
 
 	public LookupList(int capacity) {
         if (capacity < 0)
-            throw new IllegalArgumentException("Illegal Capacity: "+capacity); //$NON-NLS-1$
+            throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT,
+            		"Illegal Capacity: "+capacity); //$NON-NLS-1$
 
         items = new Object[capacity];
 	}

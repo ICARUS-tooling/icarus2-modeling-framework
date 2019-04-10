@@ -50,6 +50,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureEditVerifier;
 import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.annotations.TestBuilder;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.test.util.Triple;
 import de.ims.icarus2.util.collections.seq.ArraySequence;
@@ -57,6 +58,7 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.seq.ListSequence;
 
 @SuppressWarnings("boxing")
+@TestBuilder(StructureEditVerifier.class)
 public class StructureEditVerifierTestBuilder {
 
 	public static final int ROOT = ModelTestUtils.ROOT;

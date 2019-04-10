@@ -39,6 +39,7 @@ import de.ims.icarus2.model.api.members.container.Container;
  */
 public class UnrestrictedContainerEditVerifierTest {
 
+	@SuppressWarnings("resource")
 	@TestFactory
 	Stream<DynamicTest> testNullArguments() {
 		Container container = mockContainer(0);
@@ -60,6 +61,7 @@ public class UnrestrictedContainerEditVerifierTest {
 		assertNull(verifier.getSource());
 	}
 
+	@SuppressWarnings("resource")
 	@TestFactory
 	Stream<DynamicTest> testEmptyContainer() {
 		return configureBuilderEmpty(new ContainerEditVerifierTestBuilder(
@@ -90,6 +92,7 @@ public class UnrestrictedContainerEditVerifierTest {
 				.swapSingleIllegal(longPair(0, 0), longPair(-1, 0), longPair(0, 1));
 	}
 
+	@SuppressWarnings("resource")
 	@TestFactory
 	Stream<DynamicTest> testSmallContainerSize10() {
 		return configureBuilder(new ContainerEditVerifierTestBuilder(
@@ -97,6 +100,7 @@ public class UnrestrictedContainerEditVerifierTest {
 				.createTests();
 	}
 
+	@SuppressWarnings("resource")
 	@TestFactory
 	Stream<DynamicTest> testLargeContainerLongMax() {
 		return configureBuilder(new ContainerEditVerifierTestBuilder(

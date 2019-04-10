@@ -23,8 +23,10 @@ import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -52,14 +54,15 @@ class ConstructorGuardian<T> extends Guardian<T> {
 	@Override
 	DynamicNode createTests(TestReporter testReporter) {
 		Constructor<?>[] constructors = targetClass.getConstructors();
-		String displayName = String.format("Constructors [%d]",
-				Integer.valueOf(constructors.length));
-
-		return dynamicContainer(displayName,
-				Stream.of(constructors)
+		List<DynamicNode> tests = Stream.of(constructors)
 				.filter(c -> c.getParameterCount()>0)
 				.map(this::createTestsForConstructor)
-				.collect(Collectors.toList()));
+				.collect(Collectors.toCollection(ArrayList::new));
+		String displayName = String.format("Constructors [%d/%d]",
+				Integer.valueOf(tests.size()),
+				Integer.valueOf(constructors.length));
+
+		return dynamicContainer(displayName, tests);
 	}
 
 	private DynamicNode createTestsForConstructor(Constructor<?> constructor) {

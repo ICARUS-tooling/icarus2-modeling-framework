@@ -41,7 +41,7 @@ public interface GenerationControl {
 	Stage getStage();
 
 	/**
-	 * Advances into the next generation stage and returns the new id.
+	 * Advances into the next generation stage and returns the new marker.
 	 *
 	 * @return
 	 */

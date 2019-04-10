@@ -278,7 +278,8 @@ class DefaultItemTest implements ItemTest<Item> {
 		 */
 		@Test
 		void testIsAlive() {
-			assertFlagGetter(instance, Boolean.FALSE, DefaultItem::isAlive, DefaultItem::setAlive);
+			assertFlagGetter(instance, Boolean.valueOf(Item.DEFAULT_ALIVE),
+					DefaultItem::isAlive, DefaultItem::setAlive);
 		}
 
 		/**
@@ -286,7 +287,8 @@ class DefaultItemTest implements ItemTest<Item> {
 		 */
 		@Test
 		void testIsLocked() {
-			assertFlagGetter(instance, Boolean.FALSE, DefaultItem::isLocked, DefaultItem::setLocked);
+			assertFlagGetter(instance, Boolean.valueOf(Item.DEFAULT_LOCKED),
+					DefaultItem::isLocked, DefaultItem::setLocked);
 		}
 
 		/**
@@ -294,7 +296,8 @@ class DefaultItemTest implements ItemTest<Item> {
 		 */
 		@Test
 		void testIsDirty() {
-			assertFlagGetter(instance, Boolean.FALSE, DefaultItem::isDirty, DefaultItem::setDirty);
+			assertFlagGetter(instance, Boolean.valueOf(Item.DEFAULT_DIRTY),
+					DefaultItem::isDirty, DefaultItem::setDirty);
 		}
 
 		/**

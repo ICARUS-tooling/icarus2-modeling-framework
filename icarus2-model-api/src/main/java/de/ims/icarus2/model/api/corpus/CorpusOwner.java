@@ -16,14 +16,13 @@
  */
 package de.ims.icarus2.model.api.corpus;
 
-import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
 import de.ims.icarus2.util.id.Identity;
 
 /**
- * Represents a single owner that can acquire partial ownership of a {@link PagedCorpusView}.
- * A corpus view will be prevented from being closed as long as at least one registered
+ * Represents a single owner that can acquire partial ownership of a {@link OwnableCorpusPart}.
+ * A corpus part will be prevented from being closed as long as at least one registered
  * owner still holds partial ownership of it. Note that each {@code CorpusOwner} can
- * only hold partial ownership to at most one corpus view object at any given time!
+ * only hold partial ownership to at most one corpus part object at any given time!
  *
  * @author Markus Gärtner
  *
@@ -31,7 +30,7 @@ import de.ims.icarus2.util.id.Identity;
 public interface CorpusOwner extends Identity {
 
 	/**
-	 * Attempts to release the owners's hold on the one single corpus view it currently owns.
+	 * Attempts to release the owners's hold on the one single corpus part it currently owns.
 	 * If the owner could successfully stop its current processing of the view and was
 	 * able to disconnect from it, this method returns {@code true}. A return
 	 * value of {@code false} indicates, that the owner was unable to release connected
@@ -41,6 +40,8 @@ public interface CorpusOwner extends Identity {
 	 * guarantee on a rather low upper bound for the blocking time.
 	 *
 	 * @return {@code true} if the owner released his hold on the corpus view it owned
+	 * @throws InterruptedException if the method was blocking and the waiting thread
+	 * got interrupted.
 	 */
 	boolean release() throws InterruptedException;
 }

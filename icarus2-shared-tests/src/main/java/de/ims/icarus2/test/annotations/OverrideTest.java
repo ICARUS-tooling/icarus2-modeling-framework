@@ -27,6 +27,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
+ * Marker to explicitly tell that a test method overriding an existing test method
+ * is changing the test logic.
+ *
  * @author Markus Gärtner
  *
  */

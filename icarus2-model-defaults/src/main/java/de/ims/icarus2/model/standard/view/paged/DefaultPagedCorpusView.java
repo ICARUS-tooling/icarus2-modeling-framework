@@ -70,7 +70,7 @@ public class DefaultPagedCorpusView extends AbstractCorpusView implements PagedC
 		return new PageIndexBuffer(indices, pageSize);
 	}
 
-	public PageControl createPageControl() {
+	protected PageControl createPageControl() {
 		PageControl pageControl = DefaultPageControl.newBuilder()
 			.indices(indices)
 			.itemLayerManager(itemLayerManager)

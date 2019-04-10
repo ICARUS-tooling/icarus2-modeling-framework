@@ -45,6 +45,7 @@ import de.ims.icarus2.model.standard.members.container.UnrestrictedContainerEdit
  * @author Markus Gärtner
  *
  */
+@SuppressWarnings("resource")
 public class UnrestrictedStructureEditVerifierTest {
 
 	@TestFactory
@@ -79,7 +80,6 @@ public class UnrestrictedStructureEditVerifierTest {
 	@Test
 	void testLifecycle() {
 		Structure structure = mockStructure(0, 0);
-		@SuppressWarnings("resource")
 		UnrestrictedStructureEditVerifier verifier = new UnrestrictedStructureEditVerifier(structure);
 
 		assertEquals(structure, verifier.getSource());

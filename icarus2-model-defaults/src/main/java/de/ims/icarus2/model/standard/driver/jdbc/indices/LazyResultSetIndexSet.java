@@ -91,15 +91,6 @@ public class LazyResultSetIndexSet implements IndexSet {
 			return rs.getInt(1);
 		} catch(SQLException e) {
 			throw new ModelException(GlobalErrorCode.DELEGATION_FAILED, "Failed to fetch required size of result set: "+query, e);
-		} finally {
-			//TODO not sure if we should revert to former version of manual closing to prevent the SQLException from leaking
-//			if(rs!=null) {
-//				try {
-//					rs.close();
-//				} catch (SQLException e) {
-//					throw new ModelException(GlobalErrorCode.DELEGATION_FAILED, "Unable to close result set", e);
-//				}
-//			}
 		}
 	}
 
@@ -161,27 +152,25 @@ public class LazyResultSetIndexSet implements IndexSet {
 			synchronized (this) {
 				if(buffer==null) {
 
-					ResultSet resultSet = null;
-					try {
-						resultSet = resultSetSupplier.get();
+					try(ResultSet resultSet = resultSetSupplier.get()) {
+						if(resultSet==null)
+							throw new ModelException(GlobalErrorCode.DELEGATION_FAILED, "Returned result set is null");
+
+						int size = estimatedSize;
+						if(size==-1) {
+							size = 100; //TODO prone to failure, as we're using a buffer with static capacity
+						}
+						buffer = new IndexBuffer(size);
+
+						try {
+							readResultSet(resultSet, buffer);
+						} catch (SQLException e) {
+							throw new ModelException(GlobalErrorCode.INTERNAL_ERROR, "Error while reading indices from result set", e);
+						}
 					} catch (SQLException e) {
 						throw new ModelException(GlobalErrorCode.DELEGATION_FAILED, "Error while acquiring result set", e);
 					}
 
-					if(resultSet==null)
-						throw new ModelException(GlobalErrorCode.DELEGATION_FAILED, "Returned result set is null");
-
-					int size = estimatedSize;
-					if(size==-1) {
-						size = 100;
-					}
-					buffer = new IndexBuffer(size);
-
-					try {
-						readResultSet(resultSet, buffer);
-					} catch (SQLException e) {
-						throw new ModelException(GlobalErrorCode.INTERNAL_ERROR, "Error while reading indices from result set", e);
-					}
 				}
 			}
 		}

@@ -16,10 +16,13 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.annotation.Nullable;
 
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
@@ -34,6 +37,10 @@ import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.seq.DataSequenceCollectionWrapper;
 import de.ims.icarus2.util.collections.seq.ListSequence;
+import de.ims.icarus2.util.mem.Link;
+import de.ims.icarus2.util.mem.Primitive;
+import de.ims.icarus2.util.mem.Reference;
+import de.ims.icarus2.util.mem.ReferenceType;
 
 /**
  * Implements a {@link ItemStorage} that is backed by a {@link LookupList}.
@@ -55,6 +62,7 @@ public class ListItemStorageInt implements ItemStorage {
 	/**
 	 * Local storage for items
 	 */
+	@Reference(ReferenceType.DOWNLINK)
 	protected final LookupList<Item> items;
 
 	/**
@@ -62,12 +70,14 @@ public class ListItemStorageInt implements ItemStorage {
 	 *
 	 *  @see #doStoreItemsForOffset
 	 */
+	@Link
 	protected Item beginItem, endItem;
 
 	/**
 	 * Flag to indicate whether or not we should store the items
 	 * for smallest and largest offset in this container.
 	 */
+	@Primitive
 	protected boolean doStoreItemsForOffset = false;
 
 	public ListItemStorageInt() {
@@ -82,8 +92,8 @@ public class ListItemStorageInt implements ItemStorage {
 	 * Creates a new {@link LookupList} instance to store future members
 	 * of this container. The list should have an initial capacity no
 	 * smaller than the specified {@code capacity} argument. If the
-	 * {@code capacity} parameter is negative, the method is to choose
-	 * an implementation specific value for it.
+	 * {@code capacity} parameter equals {@link IcarusUtils#UNSET_INT -1},
+	 * the method is to choose an implementation specific value for it.
 	 * <p>
 	 * The default implementation will use {@value #DEFAULT_CAPACITY} as
 	 * fallback in this case.
@@ -92,7 +102,7 @@ public class ListItemStorageInt implements ItemStorage {
 	 * @return
 	 */
 	protected LookupList<Item> createItemsBuffer(int capacity) {
-		if(capacity<0) {
+		if(capacity==UNSET_INT) {
 			capacity = DEFAULT_CAPACITY;
 		}
 
@@ -113,7 +123,8 @@ public class ListItemStorageInt implements ItemStorage {
 	 */
 	@Override
 	public void addNotify(Container context) {
-		doStoreItemsForOffset = context.getManifest().getLayerManifest()
+		doStoreItemsForOffset = context.getManifest()
+				.getLayerManifest()
 				.flatMap(ItemLayerManifestBase::getFoundationLayerManifest)
 				.isPresent();
 
@@ -125,7 +136,8 @@ public class ListItemStorageInt implements ItemStorage {
 	 */
 	@Override
 	public void removeNotify(Container context) {
-		// no-op
+		requireNonNull(context);
+		clear();
 	}
 
 	/**
@@ -140,7 +152,7 @@ public class ListItemStorageInt implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#getItemCount(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public long getItemCount(Container context) {
+	public long getItemCount(@Nullable Container context) {
 		return items.size();
 	}
 
@@ -148,7 +160,7 @@ public class ListItemStorageInt implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#getItemAt(de.ims.icarus2.model.api.members.container.Container, long)
 	 */
 	@Override
-	public Item getItemAt(Container context, long index) {
+	public Item getItemAt(@Nullable Container context, long index) {
 		return items.get(IcarusUtils.ensureIntegerValueRange(index));
 	}
 
@@ -156,7 +168,7 @@ public class ListItemStorageInt implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#indexOfItem(de.ims.icarus2.model.api.members.container.Container, de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
-	public long indexOfItem(Container context, Item item) {
+	public long indexOfItem(@Nullable Container context, Item item) {
 		requireNonNull(item);
 		return items.indexOf(item);
 	}
@@ -221,16 +233,17 @@ public class ListItemStorageInt implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addItem(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
-	public void addItem(Container context, long index, Item item) {
+	public void addItem(@Nullable Container context, long index, Item item) {
 		requireNonNull(item);
 		items.add(IcarusUtils.ensureIntegerValueRange(index), item);
+		tryRefrechOffsetItems(item);
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addItems(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
-	public void addItems(Container context, long index,
+	public void addItems(@Nullable Container context, long index,
 			DataSequence<? extends Item> items) {
 
 		requireNonNull(items);
@@ -245,7 +258,7 @@ public class ListItemStorageInt implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#removeItem(de.ims.icarus2.model.api.members.container.Container, long)
 	 */
 	@Override
-	public Item removeItem(Container context, long index) {
+	public Item removeItem(@Nullable Container context, long index) {
 		Item item = items.remove(IcarusUtils.ensureIntegerValueRange(index));
 
 		maybeClearOffsetItems(item);
@@ -257,7 +270,7 @@ public class ListItemStorageInt implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#removeItems(de.ims.icarus2.model.api.members.container.Container, long, long)
 	 */
 	@Override
-	public DataSequence<? extends Item> removeItems(Container context,
+	public DataSequence<? extends Item> removeItems(@Nullable Container context,
 			long index0, long index1) {
 		int idx0 = IcarusUtils.ensureIntegerValueRange(index0);
 		int idx1 = IcarusUtils.ensureIntegerValueRange(index1);
@@ -275,7 +288,7 @@ public class ListItemStorageInt implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#swapItems(de.ims.icarus2.model.api.members.container.Container, long, long)
 	 */
 	@Override
-	public void swapItems(Container context, long index0, long index1) {
+	public void swapItems(@Nullable Container context, long index0, long index1) {
 		int idx0 = IcarusUtils.ensureIntegerValueRange(index0);
 		int idx1 = IcarusUtils.ensureIntegerValueRange(index1);
 
@@ -286,7 +299,7 @@ public class ListItemStorageInt implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#getBeginOffset(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public long getBeginOffset(Container context) {
+	public long getBeginOffset(@Nullable Container context) {
 		if(beginItem==null && doStoreItemsForOffset) {
 			refreshOffsetItems();
 		}
@@ -298,7 +311,7 @@ public class ListItemStorageInt implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#getEndOffset(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public long getEndOffset(Container context) {
+	public long getEndOffset(@Nullable Container context) {
 		if(endItem==null && doStoreItemsForOffset) {
 			refreshOffsetItems();
 		}
@@ -344,11 +357,11 @@ public class ListItemStorageInt implements ItemStorage {
 		return endItem;
 	}
 
-	public void setBeginItem(Item beginItem) {
+	public void setBeginItem(@Nullable Item beginItem) {
 		this.beginItem = beginItem;
 	}
 
-	public void setEndItem(Item endItem) {
+	public void setEndItem(@Nullable Item endItem) {
 		this.endItem = endItem;
 	}
 
@@ -361,7 +374,7 @@ public class ListItemStorageInt implements ItemStorage {
 	}
 
 	@Override
-	public boolean isDirty(Container context) {
+	public boolean isDirty(@Nullable Container context) {
 		return false;
 	}
 }

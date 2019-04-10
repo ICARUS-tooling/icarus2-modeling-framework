@@ -38,6 +38,7 @@ import de.ims.icarus2.model.api.members.container.Container;
  */
 class SingletonContainerEditVerifierTest {
 
+	@SuppressWarnings("resource")
 	@TestFactory
 	Stream<DynamicTest> testNullArguments() {
 		Container container = mockContainer(0);
@@ -59,7 +60,7 @@ class SingletonContainerEditVerifierTest {
 		assertNull(verifier.getSource());
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "resource" })
 	@TestFactory
 	Stream<DynamicTest> testEmptyContainer() {
 		return new ContainerEditVerifierTestBuilder(
@@ -74,7 +75,7 @@ class SingletonContainerEditVerifierTest {
 			.createTests();
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "resource" })
 	@TestFactory
 	Stream<DynamicTest> testFullContainer() {
 		return new ContainerEditVerifierTestBuilder(

@@ -528,7 +528,7 @@ class DefaultContainerTest implements ContainerTest<Container> {
 		/**
 		 * Test method for {@link de.ims.icarus2.model.standard.members.container.DefaultContainer#createEditVerifier()}.
 		 */
-		@SuppressWarnings("boxing")
+		@SuppressWarnings({ "boxing", "resource" })
 		@Test
 		void testCreateEditVerifier() {
 			when(manifest.isContainerFlagSet(any())).thenReturn(false);

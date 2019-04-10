@@ -199,6 +199,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		return new RootContainer(layer);
 	}
 
+	@SuppressWarnings("resource")
 	protected ItemLookup createItemLookup() {
 		PagedCorpusView view = getView();
 		PageControl pageControl = view.getPageControl();
@@ -298,6 +299,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		return getView().isActive();
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public boolean isModelComplete() {
 		PagedCorpusView view = getView();

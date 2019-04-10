@@ -41,6 +41,7 @@ import de.ims.icarus2.model.standard.members.container.ImmutableContainerEditVer
  * @author Markus Gärtner
  *
  */
+@SuppressWarnings("resource")
 class ImmutableStructureEditVerifierTest {
 
 	private static final int ROOT = -1;
@@ -48,7 +49,6 @@ class ImmutableStructureEditVerifierTest {
 	@Test
 	void testIsAllowEdits() {
 		Structure structure = mockStructure(0, 0);
-		@SuppressWarnings("resource")
 		ImmutableStructureEditVerifier verifier = new ImmutableStructureEditVerifier(structure);
 
 		assertFalse(verifier.isAllowEdits());

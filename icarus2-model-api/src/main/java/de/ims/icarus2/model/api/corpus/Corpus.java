@@ -47,6 +47,7 @@ import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.api.view.ScopeBuilder;
 import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
+import de.ims.icarus2.model.api.view.streamed.StreamOption;
 import de.ims.icarus2.model.api.view.streamed.StreamedCorpusView;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
@@ -201,7 +202,8 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	 * @return
 	 * @throws InterruptedException
 	 */
-	StreamedCorpusView createStream(Scope scope, AccessMode accessMode, Options options)
+	StreamedCorpusView createStream(Scope scope, AccessMode accessMode,
+			Options options, StreamOption...streamOptions)
 			throws IcarusApiException, InterruptedException;
 
 	void forEachStream(Consumer<? super StreamedCorpusView> action);

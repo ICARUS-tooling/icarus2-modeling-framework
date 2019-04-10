@@ -23,7 +23,6 @@ import static de.ims.icarus2.SharedTestUtils.mockSequence;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.RUNS_EXHAUSTIVE;
 import static de.ims.icarus2.test.TestUtils.assertMock;
-import static de.ims.icarus2.test.TestUtils.longRange;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.test.TestUtils.randomBytes;
 import static de.ims.icarus2.test.TestUtils.randomInts;
@@ -453,7 +452,6 @@ public class ModelTestUtils {
 		}
 	}
 
-	private static final long[] defaults = longRange(1, 10);
 	private static final IndexValueType defaultType = IndexValueType.LONG;
 
 	private static IndexSet basicSet() {

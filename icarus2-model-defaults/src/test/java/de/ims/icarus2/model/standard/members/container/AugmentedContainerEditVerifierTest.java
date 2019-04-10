@@ -46,6 +46,7 @@ import de.ims.icarus2.util.IcarusUtils;
  */
 class AugmentedContainerEditVerifierTest {
 
+	@SuppressWarnings("resource")
 	@TestFactory
 	public Stream<DynamicTest> testNullArguments() {
 		Container container = mockContainer(0);
@@ -102,7 +103,7 @@ class AugmentedContainerEditVerifierTest {
 		return storage;
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "resource" })
 	@TestFactory
 	Stream<DynamicTest> testEmptyContainer() {
 		Container container = mockContainer(0);
@@ -119,7 +120,7 @@ class AugmentedContainerEditVerifierTest {
 			.createTests();
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "resource" })
 	@TestFactory
 	Stream<DynamicTest> testSmallContainerSize5Aug5() {
 		Container container = mockContainer(5);
@@ -141,7 +142,7 @@ class AugmentedContainerEditVerifierTest {
 			.createTests();
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "resource" })
 	@TestFactory
 	Stream<DynamicTest> testSmallContainerSize10NoAug() {
 		Container container = mockContainer(10);
@@ -158,7 +159,7 @@ class AugmentedContainerEditVerifierTest {
 			.createTests();
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "resource" })
 	@TestFactory
 	Stream<DynamicTest> testLargeContainerWithAugmentation() {
 		// Wrapped Size

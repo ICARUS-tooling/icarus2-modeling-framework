@@ -36,10 +36,12 @@ import de.ims.icarus2.model.api.ModelTestUtils;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.annotations.TestBuilder;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
 @SuppressWarnings("boxing")
+@TestBuilder(ContainerEditVerifier.class)
 public class ContainerEditVerifierTestBuilder {
 
 	private final ContainerEditVerifier verifier;

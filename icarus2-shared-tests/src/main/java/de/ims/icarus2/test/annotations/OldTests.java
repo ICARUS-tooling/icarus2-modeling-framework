@@ -28,7 +28,7 @@ import java.lang.annotation.Target;
 
 /**
  * Marker annotation to signal that a test case is to be considered
- * outdated wrt the current state of the test suite.
+ * outdated with respect to the current state of the test suite.
  *
  * @author Markus Gärtner
  *

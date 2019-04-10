@@ -99,9 +99,7 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 		Cache<Integer, IndexSet> indexSetCache = builder.getIndexSetCache();
 		if(indexSetCache==null) {
 			int indexSetCacheSize = builder.getIndexCacheSize();
-			if(indexSetCacheSize<=0) {
-				indexSetCache = null;
-			} else {
+			if(indexSetCacheSize>0) {
 				indexSetCache = CacheBuilder.newBuilder()
 						.maximumSize(indexSetCacheSize)
 						.weakValues()
@@ -427,7 +425,7 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 	protected static class PageLock {
 		private Reference<?> keyRef;
 
-		private Object getKey() {
+		private Object getKeyUnsafe() {
 			Object key = null;
 
 			if(keyRef!=null) {
@@ -444,13 +442,13 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 		}
 
 		public synchronized boolean isLocked() {
-			return getKey()!=null;
+			return getKeyUnsafe()!=null;
 		}
 
 		public synchronized void lock(Object key) {
 			requireNonNull(key);
 
-			Object currentKey = getKey();
+			Object currentKey = getKeyUnsafe();
 
 			if(currentKey==key) {
 				return;
@@ -463,7 +461,7 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 		public synchronized void unlock(Object key) {
 			requireNonNull(key);
 
-			Object currentKey = getKey();
+			Object currentKey = getKeyUnsafe();
 
 			if(currentKey==key) {
 				keyRef = null;

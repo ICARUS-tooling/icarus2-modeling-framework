@@ -24,6 +24,8 @@ import java.util.function.IntConsumer;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongConsumer;
 
+import javax.annotation.concurrent.ThreadSafe;
+
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 
@@ -33,6 +35,7 @@ import de.ims.icarus2.model.api.driver.indices.IndexValueType;
  * @author Markus Gärtner
  *
  */
+@ThreadSafe
 public class SynchronizedIndexSet implements IndexSet {
 
 	private final IndexSet source;

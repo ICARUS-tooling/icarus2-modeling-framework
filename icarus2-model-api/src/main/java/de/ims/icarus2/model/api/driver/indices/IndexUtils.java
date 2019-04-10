@@ -43,6 +43,7 @@ import de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
 import de.ims.icarus2.model.api.driver.indices.standard.SingletonIndexSet;
 import de.ims.icarus2.model.api.driver.indices.standard.SpanIndexSet;
+import de.ims.icarus2.model.api.driver.indices.standard.SynchronizedIndexSet;
 import de.ims.icarus2.model.api.driver.mapping.RequestHint;
 import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -142,6 +143,10 @@ public class IndexUtils {
 		}
 
 		return result;
+	}
+
+	public static IndexSet synchronizedSet(IndexSet source) {
+		return new SynchronizedIndexSet(source);
 	}
 
 	public static void checkNonEmpty(IndexSet[] indices) {

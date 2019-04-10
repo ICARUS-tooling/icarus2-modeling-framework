@@ -48,11 +48,7 @@ public class PriorityListMetadataPolicy<O extends Object> implements MetadataSto
 		requireNonNull(policies);
 		checkArgument(policies.length>0);
 
-		this.policies = new MetadataStoragePolicy[policies.length];
-
-		for(int i=0; i<policies.length; i++) {
-			this.policies[i] = (MetadataStoragePolicy<? extends O>) policies[i];
-		}
+		this.policies = policies.clone();
 	}
 
 	public PriorityListMetadataPolicy(List<MetadataStoragePolicy<? extends O>> policies) {
@@ -72,6 +68,7 @@ public class PriorityListMetadataPolicy<O extends Object> implements MetadataSto
 	 *
 	 * @see de.ims.icarus2.model.api.registry.MetadataStoragePolicy#registryFor(de.ims.icarus2.model.api.registry.CorpusManager, de.ims.icarus2.model.api.registry.MetadataRegistry, java.lang.Object)
 	 */
+	@SuppressWarnings("resource")
 	@Override
 	public MetadataRegistry registryFor(CorpusManager manager,
 			MetadataRegistry hostRegistry, O target) {

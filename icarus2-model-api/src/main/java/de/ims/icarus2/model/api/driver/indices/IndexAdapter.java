@@ -33,29 +33,4 @@ public class IndexAdapter implements IndexCollector {
 	public void add(long index) {
 		// no-op
 	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.driver.indices.IndexCollector#add(long, long)
-	 */
-	@Override
-	public void add(long fromIndex, long toIndex) {
-		// no-op
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.driver.indices.IndexCollector#add(de.ims.icarus2.model.api.driver.indices.IndexSet)
-	 */
-	@Override
-	public void add(IndexSet indices) {
-		// no-op
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.driver.indices.IndexCollector#add(de.ims.icarus2.model.api.driver.indices.IndexSet[])
-	 */
-	@Override
-	public void add(IndexSet[] indices) {
-		// no-op
-	}
-
 }

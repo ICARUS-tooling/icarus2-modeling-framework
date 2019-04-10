@@ -38,6 +38,9 @@ import java.util.function.Consumer;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.model.api.ModelErrorCode;
@@ -69,6 +72,7 @@ import de.ims.icarus2.model.api.registry.CorpusMemberFactory;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
+import de.ims.icarus2.model.api.view.streamed.StreamOption;
 import de.ims.icarus2.model.api.view.streamed.StreamedCorpusView;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
@@ -84,6 +88,7 @@ import de.ims.icarus2.model.standard.members.container.AbstractImmutableContaine
 import de.ims.icarus2.model.standard.members.container.ProxyContainer;
 import de.ims.icarus2.model.standard.registry.ContextFactory;
 import de.ims.icarus2.model.standard.view.paged.DefaultPagedCorpusView;
+import de.ims.icarus2.model.standard.view.streamed.DefaultStreamedCorpusView;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AccessMode;
@@ -135,6 +140,8 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
  */
 @TestableImplementation(Corpus.class)
 public class DefaultCorpus implements Corpus {
+
+	private static final Logger log = LoggerFactory.getLogger(DefaultCorpus.class);
 
 	public static Builder newBuilder() {
 		return new Builder();
@@ -299,18 +306,33 @@ public class DefaultCorpus implements Corpus {
 	}
 
 	/**
+	 * Creates a new stream that traverses the entirety of this corpus.
+	 * <p>
+	 * If no {@link StreamOption stream options} are defined, this implementation
+	 * will by default enable {@link StreamOption#ALLOW_MARK} and {@link StreamOption#ALLOW_SKIP}.
+	 *
 	 * @see de.ims.icarus2.model.api.corpus.Corpus#createStream(de.ims.icarus2.model.api.view.Scope, de.ims.icarus2.util.AccessMode, de.ims.icarus2.util.Options)
 	 */
 	@Override
-	public StreamedCorpusView createStream(Scope scope, AccessMode mode, Options options) throws InterruptedException {
+	public StreamedCorpusView createStream(Scope scope, AccessMode mode,
+			Options options, StreamOption...streamOptions) throws InterruptedException {
 
 		requireNonNull(scope);
 		requireNonNull(mode);
+		requireNonNull(streamOptions);
 
 		checkArgument("Scope refers to foreign corpus", scope.getCorpus()==this);
+		checkArgument("Mode must be readable", mode.isRead());
 
 		if(options==null) {
 			options = Options.NONE;
+		}
+
+		if(streamOptions.length==0) {
+			streamOptions = new StreamOption[] {
+					StreamOption.ALLOW_MARK,
+					StreamOption.ALLOW_SKIP,
+			};
 		}
 
 		ItemLayer primaryLayer = scope.getPrimaryLayer();
@@ -322,7 +344,12 @@ public class DefaultCorpus implements Corpus {
 						"Cannot open another subcorpus in mode: "+mode);
 
 			//TODO actually build the stream
-			StreamedCorpusView stream = null;
+			StreamedCorpusView stream = DefaultStreamedCorpusView.builder()
+					.accessMode(mode)
+					.scope(scope)
+					.streamOptions(streamOptions)
+					.itemLayerManager(driver)
+					.build();
 
 			corpusPartStorage.addPart(stream, mode);
 
@@ -425,61 +452,61 @@ public class DefaultCorpus implements Corpus {
 				throw new ModelException(this, GlobalErrorCode.ILLEGAL_STATE,
 						"Corpus already closing: "+getName(this));
 
-			// Ensure we wrap the entire corpus shutdown into a single metadata registry transaction
-			MetadataRegistry registry = getMetadataRegistry();
-			registry.beginUpdate();
-
 			AccumulatingException.Buffer buffer = new AccumulatingException.Buffer();
 
-			// Close open views and streams first
-			try {
-				corpusPartStorage.close();
-			} catch (AccumulatingException e) {
-				/*
-				 *  Anti-pattern: destroys info from the caught AccumulatingException itself.
-				 *  This is acceptable since this is the only code that uses the above close() method
-				 *  and we are only interested in the wrapped exceptions!
-				 */
-				buffer.addExceptionsFrom(e);
-			}
+			// Ensure we wrap the entire corpus shutdown into a single metadata registry transaction
+			try(MetadataRegistry registry = getMetadataRegistry()) {
+				registry.beginUpdate();
 
-			// Close virtual contexts and their drivers now
-			for(VirtualContext context : virtualContexts.values()) {
+				// Close open views and streams first
 				try {
-					context.removeNotify(this);
-				} catch (Exception e) {
+					corpusPartStorage.close();
+				} catch (AccumulatingException e) {
+					/*
+					 *  Anti-pattern: destroys info from the caught AccumulatingException itself.
+					 *  This is acceptable since this is the only code that uses the above close() method
+					 *  and we are only interested in the wrapped exceptions!
+					 */
+					buffer.addExceptionsFrom(e);
+				}
+
+				// Close virtual contexts and their drivers now
+				for(VirtualContext context : virtualContexts.values()) {
+					try {
+						context.removeNotify(this);
+					} catch (Exception e) {
+						buffer.addException(e);
+					}
+				}
+
+				// Close custom contexts and their drivers now
+				for(ContextProxy proxy : customContexts.values()) {
+					try {
+						proxy.close();
+					} catch (InterruptedException e) {
+						log.warn("Corpus shutdown  disrupted", e);
+					} catch (IcarusApiException e) {
+						buffer.addException(e);
+					}
+				}
+
+				// Close root contexts and their drivers now
+				for(ContextProxy proxy : rootContexts.values()) {
+					try {
+						proxy.close();
+					} catch (InterruptedException e) {
+						log.warn("Corpus shutdown  disrupted", e);
+					} catch (Exception e) {
+						buffer.addException(e);
+					}
+				}
+
+				// Now end the metadata transaction and ensure it gets saved
+				try {
+					registry.endUpdate();
+				} catch(Exception e) {
 					buffer.addException(e);
 				}
-			}
-
-			// Close custom contexts and their drivers now
-			for(ContextProxy proxy : customContexts.values()) {
-				try {
-					proxy.close();
-				} catch (InterruptedException e) {
-					throw e;
-				} catch (IcarusApiException e) {
-					buffer.addException(e);
-				}
-			}
-
-			// Close root contexts and their drivers now
-			for(ContextProxy proxy : rootContexts.values()) {
-				try {
-					proxy.close();
-				} catch (InterruptedException e) {
-					throw e;
-				} catch (Exception e) {
-					buffer.addException(e);
-				}
-			}
-
-			// Now end the metadata transaction and ensure it gets saved
-			try {
-				registry.endUpdate();
-				registry.close();
-			} catch(Exception e) {
-				buffer.addException(e);
 			}
 
 			if(!buffer.isEmpty()) {
@@ -899,6 +926,7 @@ public class DefaultCorpus implements Corpus {
 		 */
 		@Override
 		public void stateChanged(ChangeEvent e) {
+			@SuppressWarnings("resource")
 			PagedCorpusView view = (PagedCorpusView) e.getSource();
 			if(!view.isActive()) {
 				synchronized (this) {

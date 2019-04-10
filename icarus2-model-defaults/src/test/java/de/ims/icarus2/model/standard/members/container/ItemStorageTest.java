@@ -1,0 +1,128 @@
+/**
+ *
+ */
+package de.ims.icarus2.model.standard.members.container;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.model.api.members.container.Container;
+import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
+import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.ContainerType;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.test.ApiGuardedTest;
+import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.guard.ApiGuard;
+
+/**
+ * @author Markus Gärtner
+ *
+ */
+interface ItemStorageTest<S extends ItemStorage> extends ApiGuardedTest<S> {
+
+	@Provider
+	ContainerType getExpectedContainerType();
+
+	/**
+	 * Mocks a {@link Container} usable for testing the current {@link ItemStorage}.
+	 * The default implementation creates a mock with access to the underlying
+	 * {@link ContainerManifest} and the associated {@link ItemLayerManifest}.
+	 * The latter is configured to return {@link Optional#empty() empty} {@link Optional}
+	 * objects for every method that uses {@link Optional} as a return type.
+	 * <p>
+	 * Subclasses should override this method to either adjust the returned container
+	 * or provide an alternative construction.
+	 * @return
+	 */
+	default Container createContainer() {
+		ItemLayerManifest layerManifest = mock(ItemLayerManifest.class, inv -> {
+			if(inv.getMethod().getReturnType()==Optional.class) {
+				return Optional.empty();
+			}
+			return null;
+		});
+		ContainerManifest manifest = mock(ContainerManifest.class);
+		when(manifest.getLayerManifest()).thenReturn(Optional.of(layerManifest));
+		Container container = mock(Container.class);
+		when(container.getManifest()).then(inv -> manifest);
+
+		return container;
+	}
+
+	/**
+	 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
+	 */
+	@Override
+	default void configureApiGuard(ApiGuard<S> apiGuard) {
+		ApiGuardedTest.super.configureApiGuard(apiGuard);
+
+		apiGuard.detectUnmarkedMethods(true);
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.standard.members.container.ItemStorage#addNotify(de.ims.icarus2.model.api.members.container.Container)}.
+	 */
+	@Test
+	default void testAddNotify() {
+		S storage = create();
+		Container container = createContainer();
+		storage.addNotify(container);
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.standard.members.container.ItemStorage#removeNotify(de.ims.icarus2.model.api.members.container.Container)}.
+	 */
+	@Test
+	default void testRemoveNotify() {
+		S storage = create();
+		Container container = createContainer();
+		storage.addNotify(container);
+		storage.removeNotify(container);
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.standard.members.container.ItemStorage#getContainerType()}.
+	 */
+	@Test
+	default void testGetContainerType() {
+		assertEquals(getExpectedContainerType(), create().getContainerType());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.standard.members.container.ItemStorage#createEditVerifier(de.ims.icarus2.model.api.members.container.Container)}.
+	 */
+	@Test
+	default void testCreateEditVerifier() {
+		S storage = create();
+		Container container = createContainer();
+		storage.addNotify(container);
+
+		try(ContainerEditVerifier verifier = storage.createEditVerifier(container)) {
+			assertNotNull(verifier);
+			assertSame(container, verifier.getSource());
+		}
+
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.standard.members.container.ItemStorage#isDirty(de.ims.icarus2.model.api.members.container.Container)}.
+	 */
+	@Test
+	default void testIsDirty() {
+		S storage = create();
+		Container container = createContainer();
+		storage.addNotify(container);
+
+		assertFalse(storage.isDirty(container));
+	}
+
+}

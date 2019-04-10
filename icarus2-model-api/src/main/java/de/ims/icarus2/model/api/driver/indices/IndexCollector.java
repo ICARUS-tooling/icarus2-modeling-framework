@@ -38,6 +38,7 @@ import java.util.function.LongConsumer;
  * @author Markus Gärtner
  *
  */
+@FunctionalInterface
 public interface IndexCollector extends LongConsumer, IntConsumer, Consumer<IndexSet> {
 
 	/**

@@ -53,6 +53,12 @@ public interface IdManager extends AutoCloseable {
 	 */
 	long indexOfId(long id);
 
+	/**
+	 * @see java.lang.AutoCloseable#close()
+	 */
+	@Override
+	void close();
+
 	public static class IdentityIdManager implements IdManager {
 		private ItemLayerManifestBase<?> layerManifest;
 
@@ -72,7 +78,7 @@ public interface IdManager extends AutoCloseable {
 		 * @see java.lang.AutoCloseable#close()
 		 */
 		@Override
-		public void close() throws Exception {
+		public void close() {
 			layerManifest = null;
 		}
 

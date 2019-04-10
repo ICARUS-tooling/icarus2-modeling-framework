@@ -60,9 +60,10 @@ public interface IdManagerTest<M extends IdManager> extends GenericTest<M> {
 
 		ItemLayerManifestBase<?> manifest = mock(ItemLayerManifestBase.class);
 
-		M instance = createForManifest(manifest, settings());
+		try(M instance = createForManifest(manifest, settings())) {
+			assertSame(manifest, instance.getLayerManifest());
+		}
 
-		assertSame(manifest, instance.getLayerManifest());
 	}
 
 	public static class MappingConsistencyTester {

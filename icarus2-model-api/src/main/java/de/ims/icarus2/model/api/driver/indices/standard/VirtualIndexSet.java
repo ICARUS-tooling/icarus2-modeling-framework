@@ -70,7 +70,7 @@ public class VirtualIndexSet implements IndexSet {
 			int size, IndexValueType valueType,
 			LongBinaryOperator func, boolean sorted) {
 		checkArgument("Offset must be >= 0", offset>=0);
-		checkArgument(size==IndexSet.UNKNOWN_SIZE || size>=0);
+		checkArgument("Size must be >=0 || UNKNOWN_SIZE", size==IndexSet.UNKNOWN_SIZE || size>=0);
 
 		this.offset = offset;
 		this.start = start;
