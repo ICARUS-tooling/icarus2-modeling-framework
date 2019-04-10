@@ -33,7 +33,7 @@ public enum StreamOption {
 	 * option if frequent skips over large numbers of items are to be
 	 * expected.
 	 */
-	SKIP_SUPPORTED,
+	ALLOW_SKIP,
 
 	/**
 	 * If set, client code can put a mark on an item in the stream
@@ -43,6 +43,6 @@ public enum StreamOption {
 	 * of items between the mark and the current position in the
 	 * stream up to which the mark can be kept alive.
 	 */
-	MARK_SUPPORTED,
+	ALLOW_MARK,
 	;
 }

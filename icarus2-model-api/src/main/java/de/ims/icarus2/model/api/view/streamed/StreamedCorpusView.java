@@ -85,9 +85,25 @@ public interface StreamedCorpusView extends CorpusView, OwnableCorpusPart {
 	// Support part
 
 	/**
-	 *
+	 * Release any buffered data, discard the mark, but keep the stream alive
+	 * otherwise.
 	 */
 	void flush();
+
+	/**
+	 * Skips the next {@code n} items in this stream.
+	 * Returns {@code true} iff there are any more items available in this
+	 * stream after the skip operation has completed.
+	 * <p>
+	 * This method might discard the mark as a side effect.
+	 *
+	 * @param n
+	 * @return
+	 */
+	default boolean skip(long n) {
+		throw new ModelException(ModelErrorCode.STREAM_SKIP_NOT_SUPPORTED,
+				"Default implementation does not support skipping items");
+	}
 
 	/**
 	 * Tries to mark the currently active item so that a later call to
@@ -115,6 +131,19 @@ public interface StreamedCorpusView extends CorpusView, OwnableCorpusPart {
 	 * if the stream implementation does not support marks.
 	 */
 	default boolean clearMark() {
+		throw new ModelException(ModelErrorCode.STREAM_MARK_NOT_SUPPORTED,
+				"Default implemenattion does not support mark");
+	}
+
+	/**
+	 * Tells whether or not the mark is set.
+	 *
+	 * @return {@code true} iff a mark has been set to a valid item previously.
+	 *
+	 * @throws ModelException with {@link ModelErrorCode#STREAM_MARK_NOT_SUPPORTED}
+	 * if the stream implementation does not support marks.
+	 */
+	default boolean hasMark() {
 		throw new ModelException(ModelErrorCode.STREAM_MARK_NOT_SUPPORTED,
 				"Default implemenattion does not support mark");
 	}
@@ -156,5 +185,5 @@ public interface StreamedCorpusView extends CorpusView, OwnableCorpusPart {
 	 * @see java.lang.AutoCloseable#close()
 	 */
 	@Override
-	void close();
+	void close() throws InterruptedException;
 }
