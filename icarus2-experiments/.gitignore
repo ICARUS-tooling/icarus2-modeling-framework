@@ -1,5 +1,5 @@
 
-# Maven exclud
+# Maven exclude
 target/
 pom.xml.tag
 pom.xml.releaseBackup
@@ -96,3 +96,6 @@ gradle-app.setting
 # gradle/wrapper/gradle-wrapper.properties
 /.apt_generated/
 /.apt_generated_tests/
+
+# Exclude excel sheets we use for benchmark overviews
+*xlsx
