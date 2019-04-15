@@ -36,7 +36,7 @@ public final class TestTags {
 	/**
 	 * Marks tests that rely on randomly generated input.
 	 */
-	public static final String RANDOMIZED = "ranodmized";
+	public static final String RANDOMIZED = "randomized";
 
 	/**
 	 * Marks collections of tests that are generated completely
