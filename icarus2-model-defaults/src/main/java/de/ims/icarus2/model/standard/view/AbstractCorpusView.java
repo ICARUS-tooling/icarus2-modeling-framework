@@ -29,6 +29,9 @@ import java.util.Set;
 
 import javax.swing.event.ChangeListener;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
@@ -40,12 +43,14 @@ import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.AccessMode;
+import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.events.ChangeSource;
 import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Link;
 import de.ims.icarus2.util.mem.Reference;
 import de.ims.icarus2.util.mem.ReferenceType;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ReferenceSet;
 
 /**
  * @author Markus Gärtner
@@ -53,6 +58,8 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
  */
 @Assessable
 public abstract class AbstractCorpusView extends AbstractPart<Corpus> implements CorpusView, OwnableCorpusPart {
+
+	private static final Logger log = LoggerFactory.getLogger(AbstractCorpusView.class);
 
 	// Environment
 	@Link(type=ReferenceType.UPLINK,cache=true)
@@ -65,7 +72,7 @@ public abstract class AbstractCorpusView extends AbstractPart<Corpus> implements
 	protected final ChangeSource changeSource;
 
 	// Lifecycle states
-	protected final Set<CorpusOwner> owners;
+	protected final ReferenceSet<CorpusOwner> owners;
 	protected volatile boolean closed = false;
 	protected volatile boolean closing = false;
 
@@ -81,24 +88,46 @@ public abstract class AbstractCorpusView extends AbstractPart<Corpus> implements
 	}
 
 	/**
+	 * Asks all the still present owners to release this view and
+	 * throws {@link ModelException} of type {@link ModelErrorCode#VIEW_UNCLOSABLE}
+	 * if any of them fails to do so.
+	 *
+	 * @throws ModelException of type {@link ModelErrorCode#VIEW_UNCLOSABLE} if at least
+	 * one owner failed to {@link CorpusOwner#release()} this view
 	 *
 	 * @see java.lang.AutoCloseable#close()
 	 */
 	@Override
-	public void close() throws InterruptedException {
+	public void close() {
 		synchronized (owners) {
-			checkOpen();
+			// Always good to ensure the method is idempotent
+			if(closed || closing) {
+				return;
+			}
 
-			//TODO change policy so that we ask ALL owners before throwing on exception in case any of them failed to release the view!
+			LazyCollection<String> blockingOwners = LazyCollection.lazyList();
+
 			for(Iterator<CorpusOwner> it = owners.iterator(); it.hasNext();) {
 				CorpusOwner owner = it.next();
 
-				if(owner.release()) {
-					it.remove();
-				} else
-					throw new ModelException(getCorpus(), ModelErrorCode.VIEW_UNCLOSABLE,
-							"Unable to close view - could not release ownership of "+owner.getName()); //$NON-NLS-1$
+				String name = owner.getName().get();
+
+				try {
+					if(owner.release()) {
+						it.remove();
+					} else {
+						blockingOwners.add(name);
+					}
+				} catch (InterruptedException e) {
+					log.error("Owner '{}' interrupted while releasing view", name, e);
+					// treat it as regular fail
+					blockingOwners.add(name);
+				}
 			}
+
+			if(!blockingOwners.isEmpty())
+				throw new ModelException(getCorpus(), ModelErrorCode.VIEW_UNCLOSABLE,
+						"Unable to close view - could not release ownership of "+blockingOwners.toString()); //$NON-NLS-1$
 
 			closing = true;
 		}
@@ -107,6 +136,9 @@ public abstract class AbstractCorpusView extends AbstractPart<Corpus> implements
 		// Delegate release of resources to subclass now.
 		try {
 			closeImpl();
+		} catch (InterruptedException e) {
+			throw new ModelException(GlobalErrorCode.INTERRUPTED,
+					"Internal close method got itnerrupted", e);
 		} finally {
 			closed = true;
 			closing = false;
@@ -260,9 +292,17 @@ public abstract class AbstractCorpusView extends AbstractPart<Corpus> implements
 			requireNonNull(accessMode);
 			checkState(this.accessMode==null);
 
+			if(!isAccessModeSupported(accessMode))
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+						"Access mode not supported by this view: "+accessMode);
+
 			this.accessMode = accessMode;
 
 			return thisAsCast();
+		}
+
+		protected boolean isAccessModeSupported(AccessMode accessMode) {
+			return true;
 		}
 
 		public AccessMode getAccessMode() {

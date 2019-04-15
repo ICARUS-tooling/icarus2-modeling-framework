@@ -70,6 +70,23 @@ public interface ItemLayerManager {
 	}
 
 	/**
+	 * Signals that the specified layer has any items contained in it at all.
+	 * The motivation for having this method besides {@link #getItemCount(ItemLayer)}
+	 * is that implementations of this interface can have various forms of back-end
+	 * storage, and depending on the individual architectures it can be cheaper to
+	 * simply check if there are <i>any</i> items in a layer.
+	 * <p>
+	 * The default implementation simply checks if the reported {@link #getItemCount(ItemLayer) size}
+	 * of the layer is greater than {@code 0}.
+	 *
+	 * @param layer
+	 * @return
+	 */
+	default boolean hasItems(ItemLayer layer) {
+		return getItemCount(layer)>0;
+	}
+
+	/**
 	 * Accesses the internal cache for the specified layer and attempts to lookup the
 	 * item mapped to the given index value. If no item is stored for that index
 	 * this method returns {@code null}.

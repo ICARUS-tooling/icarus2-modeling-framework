@@ -41,6 +41,21 @@ public class SharedTestUtils {
 		assertEquals(errorCode, exception.getErrorCode(), msg);
 	}
 
+	public static void assertIcarusException(ErrorCode errorCode, Executable executable) {
+		IcarusRuntimeException exception = assertThrows(IcarusRuntimeException.class, executable);
+		assertEquals(errorCode, exception.getErrorCode());
+	}
+
+	public static void assertIcarusApiException(ErrorCode errorCode, Executable executable, String msg) {
+		IcarusApiException exception = assertThrows(IcarusApiException.class, executable, msg);
+		assertEquals(errorCode, exception.getErrorCode(), msg);
+	}
+
+	public static void assertIcarusApiException(ErrorCode errorCode, Executable executable) {
+		IcarusApiException exception = assertThrows(IcarusApiException.class, executable);
+		assertEquals(errorCode, exception.getErrorCode());
+	}
+
 	@SuppressWarnings("boxing")
 	public static <E extends Object> DataSequence<E> mockSequence(long size) {
 		DataSequence<E> sequence = mock(DataSequence.class);

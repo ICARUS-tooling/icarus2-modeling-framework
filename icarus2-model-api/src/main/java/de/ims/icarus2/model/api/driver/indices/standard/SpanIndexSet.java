@@ -120,4 +120,12 @@ public class SpanIndexSet implements IndexSet {
 	public boolean sort() {
 		return true;
 	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "["+valueType+":"+minValue+"-"+maxValue+"]";
+	}
 }

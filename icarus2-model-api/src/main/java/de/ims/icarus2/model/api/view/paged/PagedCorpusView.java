@@ -102,12 +102,11 @@ public interface PagedCorpusView extends CorpusView, OwnableCorpusPart {
 	 * corpus.
 	 *
 	 * @throws ModelException
-	 * @throws InterruptedException
 	 * @throws IllegalStateException in case there are still owners that could not be made to
 	 * 			release their partial ownership of this corpus view
 	 */
 	@Override
-	void close() throws InterruptedException;
+	void close();
 
 	// Page support
 

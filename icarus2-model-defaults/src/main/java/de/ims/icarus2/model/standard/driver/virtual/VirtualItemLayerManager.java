@@ -17,20 +17,22 @@
 package de.ims.icarus2.model.standard.driver.virtual;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.ObjLongConsumer;
 import java.util.function.Supplier;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.driver.ChunkInfo;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
-import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -54,6 +56,23 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 	private final List<Layer> layers = new ArrayList<>();
 	private final Int2ObjectMap<RootContainer> rootContainers = new Int2ObjectOpenHashMap<>();
 
+	private final ObjLongConsumer<ItemLayer> missingItemHandler;
+
+	public static final ObjLongConsumer<ItemLayer> IGNORE_MISSING_ITEMS =
+			(layer, index) -> { /* no-op */ };
+
+	public static final ObjLongConsumer<ItemLayer> REPORT_MISSING_ITEMS =
+			(layer, index) -> { throw new ModelException(
+					ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
+					"No item available for given index: "+index); };
+
+	public VirtualItemLayerManager() {
+		this(REPORT_MISSING_ITEMS);
+	}
+
+	public VirtualItemLayerManager(ObjLongConsumer<ItemLayer> missingItemHandler) {
+		this.missingItemHandler = requireNonNull(missingItemHandler);
+	}
 
 	@Override
 	public Collection<Layer> getItemLayers() {
@@ -86,6 +105,10 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 		return container;
 	}
 
+	private static int key(ItemLayer layer) {
+		return layer.getManifest().getUID();
+	}
+
 	public void addLayers(Context context) {
 		requireNonNull(context);
 
@@ -97,7 +120,7 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 	}
 
 	public void removeLayer(ItemLayer layer) {
-		if(rootContainers.remove(layer.getManifest().getUID()) == null)
+		if(rootContainers.remove(key(layer)) == null)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Layer not contained in manager: "+getName(layer));
 	}
@@ -105,7 +128,7 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 	public RootContainer getRootContainer(ItemLayer layer) {
 		requireNonNull(layer);
 
-		RootContainer result = rootContainers.get(layer.getManifest().getUID());
+		RootContainer result = rootContainers.get(key(layer));
 
 		if(result==null)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
@@ -120,6 +143,14 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 	@Override
 	public long getItemCount(ItemLayer layer) {
 		return getRootContainer(layer).getItemCount();
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#hasItems(de.ims.icarus2.model.api.layer.ItemLayer)
+	 */
+	@Override
+	public boolean hasItems(ItemLayer layer) {
+		return !getRootContainer(layer).isEmpty();
 	}
 
 	/**
@@ -177,14 +208,22 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 		requireNonNull(indices);
 		requireNonNull(layer);
 
-		long count = IndexUtils.count(indices);
+		long count = 0;
 		RootContainer rootContainer = getRootContainer(layer);
 		ChunkInfoBuilder infoBuilder = ChunkInfoBuilder.newBuilder(Math.min(200, (int)count)); // Somehow arbitrary capacity number
 
+		final long size = rootContainer.getItemCount();
 		for(IndexSet set : indices) {
 			for(int i=0; i<set.size(); i++) {
 				long index = set.indexAt(i);
+				// Make sure we adhere to what client code desired as policy for missing items
+				if(index==UNSET_LONG || index>=size) {
+					missingItemHandler.accept(layer, index);
+					// In any case do we skip the requested index
+					continue;
+				}
 				Item item = rootContainer.getItemAt(index);
+				count++;
 
 				// Just push all items into the chunk info and publish when buffer is full
 				if(action!=null && infoBuilder.addValid(index, item)) {
@@ -215,5 +254,6 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 			throws InterruptedException {
 		// no-op
 	}
+
 
 }

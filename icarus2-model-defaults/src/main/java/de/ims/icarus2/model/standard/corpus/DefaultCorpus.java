@@ -883,12 +883,9 @@ public class DefaultCorpus implements Corpus {
 
 			AccumulatingException.Buffer buffer = new AccumulatingException.Buffer();
 
-			for(@SuppressWarnings("resource") OwnableCorpusPart part : snapshot) {
+			for(OwnableCorpusPart part : snapshot) {
 				try {
 					part.close();
-				} catch(InterruptedException e) {
-					// Need to catch and re-throw here to allow the more general catch phrase below
-					throw e;
 				} catch(Exception e) {
 					buffer.addException(e);
 				} finally {

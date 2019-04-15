@@ -38,7 +38,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  *
  */
 @Assessable
-public class LookupList<E extends Object> implements Iterable<E> {
+public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 
 	/**
 	 * Size of internal array up to which lookup will be done via
@@ -293,6 +293,7 @@ public class LookupList<E extends Object> implements Iterable<E> {
 		addDirtyRegion(index0);
 	}
 
+	@Override
 	public void clear() {
         modCount++;
 

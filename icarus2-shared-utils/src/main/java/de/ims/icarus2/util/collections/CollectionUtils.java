@@ -446,7 +446,7 @@ public final class CollectionUtils {
 	}
 
 	public static String toString(Collection<?> collection, char delimiter, boolean brackets) {
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = new StringBuilder(collection.size()*10);
 
 		if(brackets) {
 			sb.append('{');

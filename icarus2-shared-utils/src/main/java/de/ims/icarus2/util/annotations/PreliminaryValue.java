@@ -24,8 +24,6 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-@Retention(SOURCE)
-@Target({ FIELD, PARAMETER, LOCAL_VARIABLE })
 /**
  * Marker annotation that indicates that a certain parameter, variable or field
  * has been assigned a preliminary default value. Evaluation of a running system
@@ -34,6 +32,8 @@ import java.lang.annotation.Target;
  * @author Markus Gärtner
  *
  */
+@Retention(SOURCE)
+@Target({ FIELD, PARAMETER, LOCAL_VARIABLE })
 public @interface PreliminaryValue {
 
 	// marker annotation to track locations

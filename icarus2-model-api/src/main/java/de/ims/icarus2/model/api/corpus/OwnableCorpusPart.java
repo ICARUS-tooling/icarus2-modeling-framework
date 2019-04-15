@@ -21,6 +21,8 @@ package de.ims.icarus2.model.api.corpus;
 
 import java.util.Set;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.util.Changeable;
 import de.ims.icarus2.util.Part;
@@ -40,7 +42,8 @@ public interface OwnableCorpusPart extends AutoCloseable, Changeable, Part<Corpu
 	 *
 	 * @param owner
 	 * @throws NullPointerException if the {@code owner} argument is {@code null}.
-	 * @throws ModelException if {@link #close()} has already been called on this
+	 * @throws ModelException of type {@link ModelErrorCode#VIEW_CLOSED}
+	 * 			if {@link #close()} has already been called on this
 	 * 			corpus part and it's in the process of releasing its data.
 	 */
 	void acquire(CorpusOwner owner);
@@ -52,10 +55,11 @@ public interface OwnableCorpusPart extends AutoCloseable, Changeable, Part<Corpu
 	 *
 	 * @param owner
 	 * @throws NullPointerException if the {@code owner} argument is {@code null}.
-	 * @throws ModelException if {@link #close()} has already been called on this
+	 * @throws ModelException of type {@link ModelErrorCode#VIEW_CLOSED}
+	 * 			if {@link #close()} has already been called on this
 	 * 			corpus part and it's in the process of releasing its data.
-	 * @throws IllegalArgumentException if the given owner does not hold shared ownership
-	 * 			of this corpus part.
+	 * @throws ModelException of type {@link GlobalErrorCode#INVALID_INPUT}
+	 * 			if the given owner does not hold shared ownership of this corpus part.
 	 */
 	void release(CorpusOwner owner);
 
@@ -80,4 +84,7 @@ public interface OwnableCorpusPart extends AutoCloseable, Changeable, Part<Corpu
 	 * @return
 	 */
 	boolean isActive();
+
+	@Override
+	void close();
 }

@@ -73,6 +73,14 @@ public interface StreamedCorpusView extends CorpusView, OwnableCorpusPart {
 	boolean advance();
 
 	/**
+	 * Returns {@code true} iff the stream currently has a valid active
+	 * item that can subsequently be fetched by {@link #currentItem()}.
+	 *
+	 * @return
+	 */
+	boolean hasItem();
+
+	/**
 	 * Returns the current item in this stream.
 	 *
 	 * @return
@@ -185,5 +193,5 @@ public interface StreamedCorpusView extends CorpusView, OwnableCorpusPart {
 	 * @see java.lang.AutoCloseable#close()
 	 */
 	@Override
-	void close() throws InterruptedException;
+	void close();
 }

@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.api.corpus;
 
+import java.util.Optional;
+
 import de.ims.icarus2.util.id.Identity;
 
 /**
@@ -28,6 +30,14 @@ import de.ims.icarus2.util.id.Identity;
  *
  */
 public interface CorpusOwner extends Identity {
+
+	/**
+	 * Implementations <b>must</b> provide a non-empty name!
+	 *
+	 * @see de.ims.icarus2.util.id.Identity#getName()
+	 */
+	@Override
+	Optional<String> getName();
 
 	/**
 	 * Attempts to release the owners's hold on the one single corpus part it currently owns.

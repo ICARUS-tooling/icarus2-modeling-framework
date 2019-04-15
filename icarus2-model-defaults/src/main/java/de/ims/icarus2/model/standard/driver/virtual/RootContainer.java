@@ -31,6 +31,7 @@ import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.standard.members.container.AbstractImmutableContainer;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.annotations.TestableImplementation;
+import de.ims.icarus2.util.collections.Clearable;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
 
@@ -242,12 +243,19 @@ public class RootContainer extends AbstractImmutableContainer {
 		return getItems().indexOfItem(item);
 	}
 
-	public DataSequence<? extends Item> clear() {
+	public void clear() {
 		if(items==null) {
-			return null;
+			return;
 		}
 
-		return getItems().removeAllItems();
+		ItemList list = getItems();
+		if(items instanceof Clearable) {
+			// If available, opt for the cheaper option
+			((Clearable)list).clear();
+		} else {
+			// Otherwise use the 'expensive' removal (this will create a DataSequence as return value)
+			list.removeAllItems();
+		}
 	}
 
 	@Override

@@ -21,6 +21,7 @@ import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
 import de.ims.icarus2.model.api.view.streamed.StreamOption;
 import de.ims.icarus2.model.api.view.streamed.StreamedCorpusView;
 import de.ims.icarus2.model.standard.view.AbstractCorpusView;
+import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
@@ -102,6 +103,11 @@ public class DefaultStreamedCorpusView extends AbstractCorpusView implements Str
 	@Override
 	public boolean advance() {
 		return buffer.advance();
+	}
+
+	@Override
+	public boolean hasItem() {
+		return buffer.hasItem();
 	}
 
 	@Override
@@ -210,6 +216,14 @@ public class DefaultStreamedCorpusView extends AbstractCorpusView implements Str
 			return bufferCapacity==null ? DEFAULT_BUFFER_CAPACITY : bufferCapacity.intValue();
 		}
 
+		/**
+		 * Configures this builder to use the specified {@link StreamOption} values.
+		 * If an option is not supported, this method will silently ignore it and send
+		 * an appropriate message to the underlying logs.
+		 *
+		 * @param options
+		 * @return
+		 */
 		public Builder streamOptions(StreamOption...options) {
 			requireNonNull(options);
 			checkArgument("Options must not be empty", options.length>0);
@@ -226,7 +240,8 @@ public class DefaultStreamedCorpusView extends AbstractCorpusView implements Str
 		}
 
 		/**
-		 * Short-hand
+		 * Configures this builder to have all available {@link StreamOption}
+		 * values set.
 		 * @return
 		 */
 		public Builder withAllOptions() {
@@ -246,6 +261,15 @@ public class DefaultStreamedCorpusView extends AbstractCorpusView implements Str
 
 		public Set<StreamOption> getStreamOptions() {
 			return Collections.unmodifiableSet(streamOptions);
+		}
+
+		/**
+		 * Streams <b>must</b> be created with read access!!!
+		 * @see de.ims.icarus2.model.standard.view.AbstractCorpusView.Builder#isAccessModeSupported(de.ims.icarus2.util.AccessMode)
+		 */
+		@Override
+		protected boolean isAccessModeSupported(AccessMode accessMode) {
+			return accessMode.isRead();
 		}
 
 		@Override

@@ -12,8 +12,10 @@ import static de.ims.icarus2.util.lang.Primitives._long;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.slf4j.Logger;
@@ -34,6 +36,9 @@ import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
 /**
  * Implements the actual buffering and streaming logic for
  * the {@link DefaultStreamedCorpusView}.
+ * <p>
+ * This implementation blocks the {@link #advance()} method whenever
+ * the current buffer is empty and reloading is required.
  *
  * @author Markus Gärtner
  *
@@ -43,6 +48,8 @@ public class ItemStreamBuffer {
 
 	private static final Logger log = LoggerFactory.getLogger(ItemStreamBuffer.class);
 
+	private static final int BROKEN_OR_EOS = -2;
+
 	private final List<Item> buffer;
 	private final ItemLayerManager itemLayerManager;
 	private final ItemLayer layer;
@@ -51,11 +58,8 @@ public class ItemStreamBuffer {
 	private IndexSet indices = null;
 
 	// state
-	private int cursor = 0;
+	private int cursor = UNSET_INT;
 	private int mark = UNSET_INT;
-
-	/** Used only for making sure we don't mess up loading new data */
-	private final Object lock = new Object();
 
 	public ItemStreamBuffer(ItemLayerManager itemLayerManager, ItemLayer layer, int capacity) {
 		requireNonNull(itemLayerManager);
@@ -68,12 +72,43 @@ public class ItemStreamBuffer {
 		buffer = new ArrayList<>(capacity);
 	}
 
+	ItemLayerManager getItemLayerManager() {
+		return itemLayerManager;
+	}
+
+	ItemLayer getLayer() {
+		return layer;
+	}
+
+	int getCapacity() {
+		return capacity;
+	}
+
 	private IndexSet nextIndices() {
 		long begin = indices==null ? 0 : indices.lastIndex()+1;
 		long end = begin+capacity-1;
+		return makeIndices(begin, end);
+	}
+
+	/**
+	 * Turns a span of indices into a proper {@link IndexSet} by also taking
+	 * the following restrictions into account:
+	 * <ul>
+	 * <li>If the {@code end} index is smaller than the
+	 * {@link ItemLayerManager#getItemCount(ItemLayer) size} of the primary layer,
+	 * that size will be used as upper bound</li>
+	 * <li>If after above refactoring the chunk would have an effective size of {@code 0},
+	 * {@code null} is returned</li>
+	 * <li>If {@code end >= begin}, creates a {@link IndexUtils#span(long, long) span}</li>
+	 * </ul>
+	 * @param begin
+	 * @param end
+	 * @return
+	 */
+	private @Nullable IndexSet makeIndices(long begin, long end) {
 		long max = itemLayerManager.getItemCount(layer);
 		if(max!=UNSET_LONG) {
-			end = Math.min(end, max);
+			end = Math.min(end, max-1);
 		}
 		if(end-begin+1 <=0) {
 			return null;
@@ -85,13 +120,14 @@ public class ItemStreamBuffer {
 	 * Clears all state and loads items denoted by {@link #indices} from driver
 	 */
 	private void reload() {
-		synchronized (lock) {
-			buffer.clear();
-			cursor = UNSET_INT;
-			mark = UNSET_INT;
+		buffer.clear();
+		cursor = BROKEN_OR_EOS; // this signals "stream broken" if anything goes bad
+		mark = UNSET_INT;
 
+		if(itemLayerManager.hasItems(layer)) {
 			try {
 				int expectedSize = indices.size();
+				// This implementation performs synchronous loading
 				itemLayerManager.load(IndexUtils.wrap(indices), layer, this::addItems);
 				int actualSize = buffer.size();
 
@@ -121,22 +157,36 @@ public class ItemStreamBuffer {
 		}
 	}
 
-	private boolean isEosOrBroken() {
-		return indices==null || cursor==UNSET_INT;
+	private void release(IndexSet...indices) {
+		try {
+			itemLayerManager.release(indices, layer);
+		} catch (InterruptedException | IcarusApiException e) {
+			throw new ModelException(ModelErrorCode.STREAM_ERROR,
+					String.format("Failed to release items: %s",
+							Arrays.toString(indices)), e);
+		}
 	}
 
 	public boolean advance() {
 		// EOS or stream broken
-		if(isEosOrBroken()) {
+		if(cursor==BROKEN_OR_EOS) {
 			return false;
 		}
 		// Advance cursor
 		cursor++;
+		assert cursor>UNSET_INT;
 		// End of buffer reached -> reload
-		if(cursor>=buffer.size()-1) {
+		if(cursor>buffer.size()-1) {
+			if(indices!=null) {
+				release(indices);
+			}
 			indices = nextIndices();
+			if(indices==null) {
+				cursor = BROKEN_OR_EOS;
+				return false;
+			}
 			reload();
-			if(cursor==UNSET_INT) {
+			if(cursor<0) {
 				return false;
 			}
 		}
@@ -145,7 +195,7 @@ public class ItemStreamBuffer {
 	}
 
 	public Item currentItem() {
-		return cursor==UNSET_INT ? null : buffer.get(cursor);
+		return cursor<0 ? null : buffer.get(cursor);
 	}
 
 	public boolean hasItem() {
@@ -172,7 +222,7 @@ public class ItemStreamBuffer {
 	}
 
 	public boolean wouldInvalidateMark() {
-		return cursor+1 >= buffer.size()-1;
+		return mark!=UNSET_INT && cursor+1 > buffer.size()-1;
 	}
 
 	/**
@@ -188,9 +238,22 @@ public class ItemStreamBuffer {
 
 		// Current item must be preserved when flushing!!!
 		if(item!=null) {
+			// Release everything around our current item
+			int size = indices.size();
+			if(cursor==0) {
+				release(indices.subSet(1, size-1));
+			} else if(cursor==size-1) {
+				release(indices.subSet(0, size-2));
+			} else {
+				release(indices.subSet(0, cursor-1),
+						indices.subSet(cursor+1, size-1));
+			}
+			// Now reset indices to the current cursor
 			indices = new SingletonIndexSet(indices.indexAt(cursor));
 			buffer.add(item);
 			cursor = 0;
+		} else {
+			release(indices);
 		}
 	}
 
@@ -201,11 +264,17 @@ public class ItemStreamBuffer {
 			// Lucky us, we can keep the current buffer AND the mark
 			cursor = (int) target;
 		} else {
+			if(indices!=null) {
+				release(indices);
+			}
 			/*
-			 *  Target outside current buffer, so discard mark and prepare to
-			 *  load a new chunk from driver.
+			 *  Target outside current buffer, so reload the chunk after that.
+			 *  We do a reload here since in case there are valid items after
+			 *  skipping is done, the current cursor has to point to the first
+			 *  valid one again.
 			 */
-			mark = UNSET_INT;
+			indices = makeIndices(target, target+capacity-1);
+			reload();
 		}
 	}
 

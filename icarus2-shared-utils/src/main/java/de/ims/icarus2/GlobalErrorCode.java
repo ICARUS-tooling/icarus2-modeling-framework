@@ -61,6 +61,9 @@ public enum GlobalErrorCode implements ErrorCode {
 	 * A method that performs a blocking operation but which did not signal
 	 * so by declaring {@link InterruptedException} to be thrown encountered
 	 * an active {@link Thread#interrupted() interruption} flag.
+	 * <p>
+	 * Also used to wrap {@link InterruptedException} when the enclosing method
+	 * does not declare {@link InterruptedException} to be thrown.
 	 */
 	INTERRUPTED(102),
 
