@@ -4,6 +4,7 @@
 package de.ims.icarus2.model.standard.view.streamed;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
+import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.lang.Primitives._int;
@@ -13,7 +14,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
@@ -27,6 +27,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.api.layer.ItemLayer;
@@ -283,10 +284,11 @@ class ItemStreamBufferTest implements ApiGuardedTest<ItemStreamBuffer> {
 			 * Test method for {@link de.ims.icarus2.model.standard.view.streamed.ItemStreamBuffer#reset()}.
 			 */
 			@RepeatedTest(value=RUNS)
+			@Tag(RANDOMIZED)
 			void testResetFull() {
 
 				// Go to random index
-				int markedIndex = random(0, size);
+				int markedIndex = random(0, size-1);
 				int index = 0;
 				while(index++<markedIndex) {
 					buffer.advance();
@@ -323,6 +325,7 @@ class ItemStreamBufferTest implements ApiGuardedTest<ItemStreamBuffer> {
 			 * Test method for {@link de.ims.icarus2.model.standard.view.streamed.ItemStreamBuffer#wouldInvalidateMark()}.
 			 */
 			@RepeatedTest(value=RUNS)
+			@Tag(RANDOMIZED)
 			void testWouldInvalidateMarkInitialFull() {
 				int markedIndex = random(0, capacity);
 				for (int i = 0; i < capacity; i++) {
@@ -343,6 +346,7 @@ class ItemStreamBufferTest implements ApiGuardedTest<ItemStreamBuffer> {
 			 * Test method for {@link de.ims.icarus2.model.standard.view.streamed.ItemStreamBuffer#flush()}.
 			 */
 			@RepeatedTest(value=RUNS)
+			@Tag(RANDOMIZED)
 			void testFlush() {
 				// Create random mark
 				int markedIndex = random(0, capacity);
@@ -372,9 +376,51 @@ class ItemStreamBufferTest implements ApiGuardedTest<ItemStreamBuffer> {
 			/**
 			 * Test method for {@link de.ims.icarus2.model.standard.view.streamed.ItemStreamBuffer#skip(long)}.
 			 */
-			@Test
-			void testSkip() {
-				fail("Not yet implemented"); // TODO
+			@RepeatedTest(value=RUNS)
+			@Tag(RANDOMIZED)
+			void testSkipWithoutLossOfMark() {
+				// Move to random spot
+				int initialSteps = random(capacity/4, capacity/2);
+				int markedIndex = random(0, capacity/4);
+				for (int i = 0; i < initialSteps; i++) {
+					buffer.advance();
+					if(i==markedIndex) {
+						buffer.mark();
+					}
+				}
+				assertTrue(buffer.hasMark());
+
+				// Now skip random number of items within current chunk
+				int distance = random(1, capacity-initialSteps);
+				buffer.skip(distance);
+
+				assertTrue(buffer.hasMark());
+				assertTrue(buffer.hasItem());
+			}
+
+			/**
+			 * Test method for {@link de.ims.icarus2.model.standard.view.streamed.ItemStreamBuffer#skip(long)}.
+			 */
+			@RepeatedTest(value=RUNS)
+			@Tag(RANDOMIZED)
+			void testSkipWithLossOfMark() {
+				// Move to random spot
+				int initialSteps = random(capacity/4, capacity/2);
+				int markedIndex = random(0, capacity/4);
+				for (int i = 0; i < initialSteps; i++) {
+					buffer.advance();
+					if(i==markedIndex) {
+						buffer.mark();
+					}
+				}
+				assertTrue(buffer.hasMark());
+
+				// Now skip random number of items within current chunk
+				int distance = random(capacity, size-initialSteps);
+				buffer.skip(distance);
+
+				assertFalse(buffer.hasMark());
+				assertTrue(buffer.hasItem());
 			}
 		}
 	}
