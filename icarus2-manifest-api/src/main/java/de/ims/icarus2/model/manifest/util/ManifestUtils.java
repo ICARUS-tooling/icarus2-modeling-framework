@@ -161,6 +161,8 @@ public class ManifestUtils {
 				if(manifest instanceof ContextManifest) {
 					return manifest;
 				}
+			} else {
+				break;
 			}
 		}
 		return null;
