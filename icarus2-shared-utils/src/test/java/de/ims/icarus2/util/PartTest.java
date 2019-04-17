@@ -19,9 +19,17 @@ import de.ims.icarus2.test.annotations.Provider;
  */
 public interface PartTest<O, P extends Part<O>> {
 
+	/**
+	 * Create a suitable environment for the part under test.
+	 * It is preferably if this environment is a mock, but it
+	 * can also be a live instance.
+	 */
 	@Provider
 	O createEnvironment();
 
+	/**
+	 * Create the {@link Part} under test.
+	 */
 	@Provider
 	P createPart();
 
@@ -53,7 +61,7 @@ public interface PartTest<O, P extends Part<O>> {
 		P part = createPart();
 
 		assertIcarusException(GlobalErrorCode.ILLEGAL_STATE,
-				() -> part.addNotify(createEnvironment()));
+				() -> part.removeNotify(createEnvironment()));
 	}
 
 	@Test

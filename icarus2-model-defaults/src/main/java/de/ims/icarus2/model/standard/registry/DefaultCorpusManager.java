@@ -453,6 +453,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	 * @return
 	 * @throws InterruptedException
 	 */
+	@SuppressWarnings("resource")
 	protected Corpus instantiate(CorpusManifest manifest) throws InterruptedException {
 
 		return DefaultCorpus.newBuilder()

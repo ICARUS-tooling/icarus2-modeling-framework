@@ -25,8 +25,11 @@ import java.util.regex.Pattern;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.Embedded;
+import de.ims.icarus2.model.manifest.api.ImplementationManifest;
+import de.ims.icarus2.model.manifest.api.ImplementationManifest.SourceType;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestFragment;
@@ -34,6 +37,7 @@ import de.ims.icarus2.model.manifest.api.ManifestOwner;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
+import de.ims.icarus2.model.manifest.standard.ImplementationManifestImpl;
 
 /**
  * @author Markus Gärtner
@@ -145,14 +149,35 @@ public class ManifestUtils {
 
 	//TODO methods for checking other types so we can use them as method references in lambdas
 
-	public static String getUniqueId(ManifestFragment manifest) {
-		if(manifest instanceof Embedded) {
-			StringBuilder sb = new StringBuilder();
-			buildUniqueId(sb, manifest);
-			return sb.toString();
-		} else {
-			return manifest.getId().orElseGet(() -> defaultCreateUnnamedId(manifest));
+	private static String getIdOrDefault(ManifestFragment manifest) {
+		return manifest.getId().orElseGet(() -> defaultCreateUnnamedId(manifest));
+	}
+
+	private static ManifestFragment getNamespaceCarrier(ManifestFragment manifest) {
+		while(manifest instanceof Embedded) {
+			Optional<TypedManifest> optHost = ((Embedded)manifest).getHost();
+			if(optHost.isPresent() && optHost.get() instanceof ManifestFragment) {
+				manifest = (ManifestFragment) optHost.get();
+				if(manifest instanceof ContextManifest) {
+					return manifest;
+				}
+			}
 		}
+		return null;
+	}
+
+	public static String getUniqueId(ManifestFragment manifest) {
+		String baseId = getIdOrDefault(manifest);
+
+		if(manifest instanceof Embedded && !(manifest instanceof ContextManifest)) {
+			ManifestFragment namespace = getNamespaceCarrier(manifest);
+			if(namespace!=null) {
+				String namespaceId = getIdOrDefault(namespace);
+				return namespaceId+ID_SEPARATOR+baseId;
+			}
+		}
+
+		return baseId;
 	}
 
 	private static String defaultCreateUnnamedId(ManifestFragment fragment) {
@@ -172,7 +197,7 @@ public class ManifestUtils {
 
 	/**
 	 * If the given {@code id} denotes a unique identifier with a host part
-	 * (i.e. it is of the form {@code host_id@element_id}), this method
+	 * (i.e. it is of the form {@code host_id::element_id}), this method
 	 * returns the {@code host_id} section. Otherwise the returned value
 	 * will be {@code null}.
 	 *
@@ -186,7 +211,7 @@ public class ManifestUtils {
 
 	/**
 	 * If the given {@code id} denotes a unique identifier with a host part
-	 * (i.e. it is of the form {@code host_id@element_id}), this method
+	 * (i.e. it is of the form {@code host_id::element_id}), this method
 	 * returns the {@code element_id} section. Otherwise the entire
 	 * {@code id} parameter is returned.
 	 *
@@ -195,7 +220,7 @@ public class ManifestUtils {
 	 */
 	public static String extractElementId(String id) {
 		int idx = id.indexOf(ID_SEPARATOR);
-		return idx==-1 ? id : id.substring(idx+1);
+		return idx==-1 ? id : id.substring(idx+ID_SEPARATOR.length());
 	}
 
 	/**
@@ -272,5 +297,12 @@ public class ManifestUtils {
 	public static String requireName(MemberManifest<?> manifest) {
 		return manifest.getName()
 				.orElseThrow(ManifestException.missing(manifest, "name"));
+	}
+
+	public static ImplementationManifest liveImplementation(
+			MemberManifest<?> host, Class<?> clazz) {
+		return new ImplementationManifestImpl(host)
+				.setSourceType(SourceType.DEFAULT)
+				.setClassname(clazz.getName());
 	}
 }

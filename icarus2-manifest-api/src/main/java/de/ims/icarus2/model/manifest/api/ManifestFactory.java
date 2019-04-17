@@ -58,6 +58,10 @@ public interface ManifestFactory {
 		return create(type, null, null);
 	}
 
+	default <M extends ManifestFragment> M create(Class<M> clazz) {
+		return create(ManifestType.forClass(clazz), null, null);
+	}
+
 	/**
 	 * @see #create(ManifestType, TypedManifest, Options)
 	 *

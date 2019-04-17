@@ -19,6 +19,13 @@ import de.ims.icarus2.util.AccessMode;
 public interface StreamedCorpusViewTest<V extends StreamedCorpusView>
 		extends OwnableCorpusPartTest<V>, CorpusViewTest<V> {
 
+	/**
+	 *
+	 * @param corpus the environment as created by {@link #createEnvironment()}
+	 * @param accessMode selected access mode
+	 * @param size either {@link }
+	 * @return
+	 */
 	@Provider
 	V createView(Corpus corpus, AccessMode accessMode, long size);
 
@@ -60,5 +67,10 @@ public interface StreamedCorpusViewTest<V extends StreamedCorpusView>
 	@Override
 	default V createNoArgs() {
 		throw new UnsupportedOperationException("Views are supposed to be created via builders");
+	}
+
+	@Override
+	default void testMandatoryConstructors() throws Exception {
+		throw new UnsupportedOperationException("No constructor testing - only builders");
 	}
 }

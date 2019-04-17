@@ -193,10 +193,17 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 		return getRootContainer(layer).removeItems(index0, index1);
 	}
 
+	/**
+	 *  Releases <b>all</b> internal data in this manager. This includes all stored items,
+	 *  {@link RootContainer root containers} and {@link #getItemLayers() layers}!
+	 */
 	public void clear() {
 		for(RootContainer rootContainer : rootContainers.values()) {
 			rootContainer.clear();
 		}
+
+		rootContainers.clear();
+		layers.clear();
 	}
 
 	/**

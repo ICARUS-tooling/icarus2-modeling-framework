@@ -6,13 +6,14 @@ package de.ims.icarus2.model.api.corpus;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.test.TestUtils.assertCollectionEmpty;
 import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
-import static de.ims.icarus2.test.TestUtils.assertMock;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +33,9 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	 * @return
 	 */
 	default CorpusOwner createBlockingOwner() {
-		return mock(CorpusOwner.class);
+		CorpusOwner owner = mock(CorpusOwner.class);
+		when(owner.getName()).thenReturn(Optional.of("test-owner"));
+		return owner;
 	}
 
 	/**
@@ -42,7 +45,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	@SuppressWarnings("boxing")
 	default CorpusOwner createNonBlockingOwner() {
 		CorpusOwner owner = mock(CorpusOwner.class);
-		assertMock(owner);
+		when(owner.getName()).thenReturn(Optional.of("test-owner"));
 		try {
 			when(owner.release()).thenReturn(Boolean.TRUE);
 		} catch (InterruptedException e) {
@@ -231,7 +234,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	default void testClosableWithOwners() {
 		try(P part = createPart()) {
 			part.acquire(createNonBlockingOwner());
-			assertTrue(part.closable());
+			assertFalse(part.closable());
 		}
 	}
 
@@ -241,8 +244,10 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	@Test
 	default void testClosableWithBlockingOwners() {
 		try(P part = createPart()) {
-			part.acquire(createBlockingOwner());
+			CorpusOwner owner = createBlockingOwner();
+			part.acquire(owner);
 			assertFalse(part.closable());
+			part.release(owner);
 		}
 	}
 
@@ -275,9 +280,11 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	@Test
 	default void testCloseWithBlockingOwners() throws InterruptedException {
 		try(P part = createPart()) {
-			part.acquire(createBlockingOwner());
+			CorpusOwner owner = createBlockingOwner();
+			part.acquire(owner);
 			assertModelException(ModelErrorCode.VIEW_UNCLOSABLE,
 					() -> part.close());
+			part.release(owner);
 		}
 	}
 
