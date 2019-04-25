@@ -11,11 +11,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
+import de.ims.icarus2.model.manifest.api.ImplementationManifest.SourceType;
 import de.ims.icarus2.model.manifest.api.ManifestFactory;
 import de.ims.icarus2.model.manifest.api.ManifestFragment;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.ModifiableIdentity;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
+import de.ims.icarus2.model.manifest.standard.ImplementationManifestImpl;
 
 /**
  * Utility class that wraps around a {@link ManifestFactory} and provides
@@ -127,7 +129,9 @@ public class ManifestBuilder implements AutoCloseable {
 	}
 
 	public ImplementationManifest live(Class<?> clazz) {
-		return ManifestUtils.liveImplementation(last(), clazz);
+		return new ImplementationManifestImpl(last())
+				.setSourceType(SourceType.DEFAULT)
+				.setClassname(clazz.getName());
 	}
 
 	@SuppressWarnings("unchecked")

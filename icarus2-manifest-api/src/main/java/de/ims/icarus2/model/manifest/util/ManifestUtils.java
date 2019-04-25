@@ -28,8 +28,6 @@ import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.Embedded;
-import de.ims.icarus2.model.manifest.api.ImplementationManifest;
-import de.ims.icarus2.model.manifest.api.ImplementationManifest.SourceType;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestFragment;
@@ -37,7 +35,6 @@ import de.ims.icarus2.model.manifest.api.ManifestOwner;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
-import de.ims.icarus2.model.manifest.standard.ImplementationManifestImpl;
 
 /**
  * @author Markus Gärtner
@@ -186,17 +183,6 @@ public class ManifestUtils {
 		return "unnamed@"+fragment.getClass().getName();
 	}
 
-	private static void buildUniqueId(StringBuilder sb, ManifestFragment manifest) {
-		if(manifest instanceof Embedded) {
-			Optional<TypedManifest> optHost = ((Embedded)manifest).getHost();
-			if(optHost.isPresent() && optHost.get() instanceof ManifestFragment) {
-				buildUniqueId(sb, (ManifestFragment)optHost.get());
-				sb.append(ID_SEPARATOR);
-			}
-		}
-		sb.append(manifest.getId().orElseGet(() -> defaultCreateUnnamedId(manifest)));
-	}
-
 	/**
 	 * If the given {@code id} denotes a unique identifier with a host part
 	 * (i.e. it is of the form {@code host_id::element_id}), this method
@@ -301,10 +287,20 @@ public class ManifestUtils {
 				.orElseThrow(ManifestException.missing(manifest, "name"));
 	}
 
-	public static ImplementationManifest liveImplementation(
-			MemberManifest<?> host, Class<?> clazz) {
-		return new ImplementationManifestImpl(host)
-				.setSourceType(SourceType.DEFAULT)
-				.setClassname(clazz.getName());
+	@SuppressWarnings("unchecked")
+	public static <M extends TypedManifest> M getHostOfType(
+			TypedManifest manifest, ManifestType type) {
+		requireNonNull(manifest);
+		requireNonNull(type);
+
+		while(manifest instanceof Embedded && ((Embedded)manifest).getHost().isPresent()) {
+			TypedManifest host = ((Embedded)manifest).getHost().get();
+			if(host.getManifestType()==type) {
+				return (M) host;
+			}
+			manifest = host;
+		}
+
+		return null;
 	}
 }
