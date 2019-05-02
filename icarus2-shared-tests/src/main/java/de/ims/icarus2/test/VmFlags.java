@@ -11,12 +11,14 @@ package de.ims.icarus2.test;
  */
 public class VmFlags {
 
-	public static final String PRINT_COMPILATION = "-XX:+PrintCompilation";
+	private static final String PREFIX = "-XX:+";
+
+	public static final String PRINT_COMPILATION = PREFIX+"PrintCompilation";
 
 	/**
 	 * Requires {@link #UNLOCK_DIAGNOSTIC}
 	 */
-	public static final String PRINT_INLINING = "-XX:+PrintInlining";
+	public static final String PRINT_INLINING = PREFIX+"PrintInlining";
 
-	public static final String UNLOCK_DIAGNOSTIC = "-XX:+UnlockDiagnosticVMOptions";
+	public static final String UNLOCK_DIAGNOSTIC = PREFIX+"UnlockDiagnosticVMOptions";
 }
