@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
@@ -30,7 +32,7 @@ public class SingletonIndexSet implements IndexSet {
 
 	public SingletonIndexSet(long index) {
 		if(index<0)
-			throw new IllegalArgumentException("Index is negative: "+index); //$NON-NLS-1$
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Negative index: "+index);
 
 		this.index = index;
 	}
