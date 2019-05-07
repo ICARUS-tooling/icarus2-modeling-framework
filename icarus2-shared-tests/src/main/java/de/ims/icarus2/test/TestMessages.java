@@ -32,6 +32,7 @@ class TestMessages {
 	static final String notHonoringValueChange2 = "not honoring second value change";
 
 	static final String expectedNPE = "expected NPE";
+	static final String expectedIAE = "expected IAE";
 
 	/**
 	 * Arguments: required number and then the supplied number

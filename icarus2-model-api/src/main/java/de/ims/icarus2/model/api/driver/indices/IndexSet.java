@@ -224,7 +224,7 @@ public interface IndexSet {
 		}
 	}
 
-	// TRASVERSAL
+	// TRAVERSAL
 
 	/**
 	 * Applies {@code action} to each index value in this set.
@@ -452,6 +452,10 @@ public interface IndexSet {
 	IndexSet externalize();
 
 	// FEATURE FLAGS
+
+	public enum Feature {
+		//TODO move all feature flags into enum constants!!!
+	}
 
 	/**
 	 * General hint that the implementation is able to sort its content.

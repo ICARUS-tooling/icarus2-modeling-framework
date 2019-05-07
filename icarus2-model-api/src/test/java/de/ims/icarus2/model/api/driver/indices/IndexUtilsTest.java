@@ -20,29 +20,52 @@
 package de.ims.icarus2.model.api.driver.indices;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
+import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.api.ModelTestUtils.range;
 import static de.ims.icarus2.model.api.ModelTestUtils.set;
 import static de.ims.icarus2.model.api.ModelTestUtils.sorted;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkNonEmpty;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkNotNegative;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.isContinuous;
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.span;
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.unwrap;
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrapSpan;
+import static de.ims.icarus2.test.TestTags.RANDOMIZED;
+import static de.ims.icarus2.test.TestUtils.K10;
+import static de.ims.icarus2.test.TestUtils.assertArrayEmpty;
+import static de.ims.icarus2.test.TestUtils.assertIAE;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
+import static de.ims.icarus2.test.TestUtils.random;
+import static de.ims.icarus2.test.TestUtils.randomBytes;
+import static de.ims.icarus2.test.TestUtils.randomInts;
+import static de.ims.icarus2.test.TestUtils.randomLongs;
+import static de.ims.icarus2.test.TestUtils.randomShorts;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.test.annotations.PostponedTest;
 
 /**
@@ -50,6 +73,70 @@ import de.ims.icarus2.test.annotations.PostponedTest;
  *
  */
 class IndexUtilsTest {
+
+	private static void assertIndices(IndexSet actual, long...expected) {
+		assertTrue(expected.length>0);
+		assertEquals(expected.length, actual.size());
+
+		for (int i = 0; i < expected.length; i++) {
+			assertEquals(expected[i], actual.indexAt(i));
+		}
+	}
+
+	private static void assertIndices(IndexSet[] actual, long...expected) {
+		assertTrue(expected.length>0);
+		assertEquals(1, actual.length);
+
+		assertIndices(actual[0], expected);
+	}
+
+	private static void assertIndices(IndexSet actual, int...expected) {
+		assertTrue(expected.length>0);
+		assertEquals(expected.length, actual.size());
+
+		for (int i = 0; i < expected.length; i++) {
+			assertEquals(expected[i], Math.toIntExact(actual.indexAt(i)));
+		}
+	}
+
+	private static void assertIndices(IndexSet[] actual, int...expected) {
+		assertTrue(expected.length>0);
+		assertEquals(1, actual.length);
+
+		assertIndices(actual[0], expected);
+	}
+
+	private static void assertIndices(IndexSet actual, short...expected) {
+		assertTrue(expected.length>0);
+		assertEquals(expected.length, actual.size());
+
+		for (int i = 0; i < expected.length; i++) {
+			assertEquals(expected[i], actual.indexAt(i)); //TODO add exact cast check
+		}
+	}
+
+	private static void assertIndices(IndexSet[] actual, short...expected) {
+		assertTrue(expected.length>0);
+		assertEquals(1, actual.length);
+
+		assertIndices(actual[0], expected);
+	}
+
+	private static void assertIndices(IndexSet actual, byte...expected) {
+		assertTrue(expected.length>0);
+		assertEquals(expected.length, actual.size());
+
+		for (int i = 0; i < expected.length; i++) {
+			assertEquals(expected[i], actual.indexAt(i)); //TODO add exact cast check
+		}
+	}
+
+	private static void assertIndices(IndexSet[] actual, byte...expected) {
+		assertTrue(expected.length>0);
+		assertEquals(1, actual.length);
+
+		assertIndices(actual[0], expected);
+	}
 
 	class DominantType {
 
@@ -286,38 +373,82 @@ class IndexUtilsTest {
 
 	}
 
+	@Nested
 	class Conversion {
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexUtils#toIndices(java.util.Collection, boolean)}.
 		 */
+		@SuppressWarnings("boxing")
 		@Test
+		@Tag(RANDOMIZED)
 		void testToIndices() {
-			fail("Not yet implemented"); // TODO
+			assertNPE(() -> IndexUtils.toIndices(null, false));
+			assertIAE(() -> IndexUtils.toIndices(Collections.emptyList(), false));
+
+			long[] indices = randomLongs(K10, 0, Long.MAX_VALUE);
+			Item[] items = new Item[indices.length];
+
+			for (int i = 0; i < items.length; i++) {
+				items[i] = mockItem();
+				when(items[i].getIndex()).thenReturn(indices[i]);
+			}
+
+			assertIndices(IndexUtils.toIndices(Arrays.asList(items), false), indices);
+
+			//TODO include tests for the 'forceSorted' flag?
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexUtils#wrap(long)}.
 		 */
-		@Test
-		void testWrapLong() {
-			fail("Not yet implemented"); // TODO
+		@TestFactory
+		Stream<DynamicTest> testWrapLong() {
+			return Stream.of(
+					dynamicTest("unset index", () -> assertArrayEmpty(wrap(UNSET_LONG))),
+					dynamicTest("0", () -> assertIndices(wrap(0), 0)),
+					dynamicTest("positive", () -> assertIndices(wrap(Long.MAX_VALUE/2), Long.MAX_VALUE/2))
+					);
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexUtils#span(long, long)}.
 		 */
-		@Test
-		void testSpan() {
-			fail("Not yet implemented"); // TODO
+		@TestFactory
+		List<DynamicTest> testSpan() {
+			return Arrays.asList(
+					// Invalid input
+					dynamicTest("negative begin", () -> assertModelException(
+							GlobalErrorCode.INVALID_INPUT, () -> span(-1, 1))),
+					dynamicTest("negative end", () -> assertModelException(
+							GlobalErrorCode.INVALID_INPUT, () -> span(1, -1))),
+					dynamicTest("begin > end", () -> assertModelException(
+							GlobalErrorCode.INVALID_INPUT, () -> span(2, 1))),
+					// Legal values,
+					dynamicTest("1-1", () -> assertIndices(span(1, 1), 1)),
+					dynamicTest("0-1", () -> assertIndices(span(0, 1), 0, 1)),
+					dynamicTest("1-3", () -> assertIndices(span(1, 3), 1, 2, 3))
+			);
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexUtils#wrapSpan(long, long)}.
 		 */
-		@Test
-		void testWrapSpan() {
-			fail("Not yet implemented"); // TODO
+		@TestFactory
+		List<DynamicTest> testWrapSpan() {
+			return Arrays.asList(
+					// Invalid input
+					dynamicTest("negative begin", () -> assertModelException(
+							GlobalErrorCode.INVALID_INPUT, () -> wrapSpan(-1, 1))),
+					dynamicTest("negative end", () -> assertModelException(
+							GlobalErrorCode.INVALID_INPUT, () -> wrapSpan(1, -1))),
+					dynamicTest("begin > end", () -> assertModelException(
+							GlobalErrorCode.INVALID_INPUT, () -> wrapSpan(2, 1))),
+					// Legal values,
+					dynamicTest("1-1", () -> assertIndices(wrapSpan(1, 1), 1)),
+					dynamicTest("0-1", () -> assertIndices(wrapSpan(0, 1), 0, 1)),
+					dynamicTest("1-3", () -> assertIndices(wrapSpan(1, 3), 1, 2, 3))
+			);
 		}
 
 		/**
@@ -325,7 +456,13 @@ class IndexUtilsTest {
 		 */
 		@Test
 		void testWrapLongArray() {
-			fail("Not yet implemented"); // TODO
+			assertNPE(() -> IndexUtils.wrap((long[])null));
+			assertIAE(() -> IndexUtils.wrap(new long[0]));
+
+			assertIndices(IndexUtils.wrap(new long[] {1}), 1);
+
+			long[] indices = randomLongs(K10, 0, Long.MAX_VALUE);
+			assertIndices(IndexUtils.wrap(indices), indices);
 		}
 
 		/**
@@ -333,7 +470,13 @@ class IndexUtilsTest {
 		 */
 		@Test
 		void testWrapIntArray() {
-			fail("Not yet implemented"); // TODO
+			assertNPE(() -> IndexUtils.wrap((int[])null));
+			assertIAE(() -> IndexUtils.wrap(new int[0]));
+
+			assertIndices(IndexUtils.wrap(new int[] {1}), 1);
+
+			int[] indices = randomInts(K10, 0, Integer.MAX_VALUE);
+			assertIndices(IndexUtils.wrap(indices), indices);
 		}
 
 		/**
@@ -341,7 +484,13 @@ class IndexUtilsTest {
 		 */
 		@Test
 		void testWrapShortArray() {
-			fail("Not yet implemented"); // TODO
+			assertNPE(() -> IndexUtils.wrap((short[])null));
+			assertIAE(() -> IndexUtils.wrap(new short[0]));
+
+			assertIndices(IndexUtils.wrap(new short[] {1}), 1);
+
+			short[] indices = randomShorts(K10, (short)0, Short.MAX_VALUE);
+			assertIndices(IndexUtils.wrap(indices), indices);
 		}
 
 		/**
@@ -349,7 +498,13 @@ class IndexUtilsTest {
 		 */
 		@Test
 		void testWrapByteArray() {
-			fail("Not yet implemented"); // TODO
+			assertNPE(() -> IndexUtils.wrap((byte[])null));
+			assertIAE(() -> IndexUtils.wrap(new byte[0]));
+
+			assertIndices(IndexUtils.wrap(new byte[] {1}), 1);
+
+			byte[] indices = randomBytes(100, (byte)0, Byte.MAX_VALUE);
+			assertIndices(IndexUtils.wrap(indices), indices);
 		}
 
 		/**
@@ -357,7 +512,11 @@ class IndexUtilsTest {
 		 */
 		@Test
 		void testWrapIndexSet() {
-			fail("Not yet implemented"); // TODO
+			assertArrayEmpty(IndexUtils.wrap((IndexSet)null));
+			assertArrayEmpty(IndexUtils.wrap(IndexUtils.EMPTY_SET));
+
+			IndexSet indices = span(2, 10);
+			assertArrayEquals(new Object[] {indices}, IndexUtils.wrap(indices));
 		}
 
 		/**
@@ -365,7 +524,7 @@ class IndexUtilsTest {
 		 */
 		@Test
 		void testUnwrap() {
-			fail("Not yet implemented"); // TODO
+			assertEquals(UNSET_LONG, unwrap(new IndexSet[0]));
 		}
 
 		/**
@@ -373,7 +532,19 @@ class IndexUtilsTest {
 		 */
 		@Test
 		void testExternalize() {
-			fail("Not yet implemented"); // TODO
+			assertArrayEmpty(IndexUtils.externalize());
+
+			int size = random(10, 20);
+			IndexSet[] sources = new IndexSet[size];
+			IndexSet[] targets = new IndexSet[size];
+			for (int i = 0; i < size; i++) {
+				sources[i] = mock(IndexSet.class);
+				targets[i] = mock(IndexSet.class);
+
+				when(sources[i].externalize()).thenReturn(targets[i]);
+			}
+
+			assertArrayEquals(targets, IndexUtils.externalize(sources));
 		}
 
 	}

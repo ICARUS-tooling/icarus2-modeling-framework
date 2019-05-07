@@ -509,8 +509,22 @@ public class TestUtils {
 		return assertMock(mock.orElse(null));
 	}
 
+	/**
+	 * Expects a {@link NullPointerException} for the given {@code executable}.
+	 *
+	 * @param executable
+	 */
 	public static void assertNPE(Executable executable) {
 		assertThrows(NullPointerException.class, executable, TestMessages.expectedNPE);
+	}
+
+	/**
+	 * Expects a {@link IllegalArgumentException} for the given {@code executable}.
+	 *
+	 * @param executable
+	 */
+	public static void assertIAE(Executable executable) {
+		assertThrows(IllegalArgumentException.class, executable, TestMessages.expectedIAE);
 	}
 
 	public static Executable npeAsserter(Executable executable) {
