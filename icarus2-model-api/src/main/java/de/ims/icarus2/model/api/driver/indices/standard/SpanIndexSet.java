@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.util.lang.ClassUtils;
@@ -31,11 +33,11 @@ public class SpanIndexSet implements IndexSet {
 
 	public SpanIndexSet(long minValue, long maxValue) {
 		if(minValue<0)
-			throw new IllegalArgumentException("Min value is negative: "+minValue); //$NON-NLS-1$
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Min value is negative: "+minValue); //$NON-NLS-1$
 		if(maxValue<0)
-			throw new IllegalArgumentException("Max value is negative: "+maxValue); //$NON-NLS-1$
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Max value is negative: "+maxValue); //$NON-NLS-1$
 		if(minValue>maxValue)
-			throw new IllegalArgumentException("Min value exceeds max value: "+maxValue); //$NON-NLS-1$
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Min value exceeds max value: "+maxValue); //$NON-NLS-1$
 
 		this.minValue = minValue;
 		this.maxValue = maxValue;
