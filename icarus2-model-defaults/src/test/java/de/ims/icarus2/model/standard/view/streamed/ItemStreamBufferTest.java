@@ -288,7 +288,7 @@ class ItemStreamBufferTest implements ApiGuardedTest<ItemStreamBuffer> {
 			void testResetFull() {
 
 				// Go to random index
-				int markedIndex = random(0, size-1);
+				int markedIndex = random(0, size/2);
 				int index = 0;
 				while(index++<markedIndex) {
 					buffer.advance();
