@@ -20,7 +20,6 @@ import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -42,7 +41,6 @@ import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingStorage;
 import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.meta.AnnotationValueDistribution;
 import de.ims.icarus2.model.api.meta.AnnotationValueSet;
@@ -59,8 +57,10 @@ import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.standard.members.DefaultLayerMemberFactory;
 import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.model.standard.members.structure.DefaultEdge;
+import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.Options;
+import de.ims.icarus2.util.collections.LazyCollection;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
@@ -156,6 +156,7 @@ public abstract class AbstractDriver implements Driver {
 	/**
 	 * @see de.ims.icarus2.model.api.driver.Driver#getIdManager(de.ims.icarus2.model.manifest.api.ItemLayerManifestBase<?>)
 	 */
+	@SuppressWarnings("resource")
 	@Override
 	public IdManager getIdManager(ItemLayerManifestBase<?> layer) {
 		int key = layer.getUID();
@@ -466,8 +467,14 @@ public abstract class AbstractDriver implements Driver {
 	 * @throws ModelException in case the driver is currently not connected to any live corpus
 	 */
 	@Override
-	public Collection<Layer> getItemLayers() {
-		return getContext().getLayers(ItemLayer.class);
+	public List<ItemLayer> getItemLayers() {
+		LazyCollection<ItemLayer> layers = LazyCollection.lazyList();
+		getContext().forEachLayer(l -> {
+			if(ModelUtils.isItemLayer(l)) {
+				layers.add((ItemLayer) l);
+			}
+		});
+		return layers.getAsList();
 	}
 
 	/**

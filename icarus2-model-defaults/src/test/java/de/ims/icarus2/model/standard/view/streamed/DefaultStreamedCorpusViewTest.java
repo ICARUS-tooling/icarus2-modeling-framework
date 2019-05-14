@@ -14,15 +14,19 @@ import static org.mockito.Mockito.when;
 
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.layer.ItemLayer;
+import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
 import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.api.registry.CorpusMemberFactory;
 import de.ims.icarus2.model.api.view.Scope;
+import de.ims.icarus2.model.api.view.streamed.StreamOption;
 import de.ims.icarus2.model.api.view.streamed.StreamedCorpusViewTest;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
@@ -46,12 +50,10 @@ import de.ims.icarus2.util.AccessMode;
 class DefaultStreamedCorpusViewTest implements StreamedCorpusViewTest<DefaultStreamedCorpusView> {
 
 	private CorpusManager corpusManager;
-	private CorpusMemberFactory corpusMemberFactory;
 	private CorpusManifest corpusManifest;
-	private Corpus corpus;
 	private VirtualItemLayerManager itemLayerManager;
 
-	@SuppressWarnings({ "resource", "boxing", "serial" })
+	@SuppressWarnings({ "boxing" })
 	@BeforeEach
 	void setUp() {
 		try(ManifestBuilder builder = new ManifestBuilder(MANIFEST_FACTORY)) {
@@ -69,48 +71,28 @@ class DefaultStreamedCorpusViewTest implements StreamedCorpusViewTest<DefaultStr
 			when(corpusManager.isCorpusConnected(eq(corpusManifest))).thenReturn(Boolean.TRUE);
 			when(corpusManager.isCorpusEnabled(eq(corpusManifest))).thenReturn(Boolean.TRUE);
 			when(corpusManager.getImplementationClassLoader(any())).thenReturn(getClass().getClassLoader());
-
-			itemLayerManager = new VirtualItemLayerManager();
-
-			VirtualDriver driver = VirtualDriver.newBuilder()
-					.itemLayerManager(itemLayerManager)
-					.manifest(builder.fetch("driver"))
-					.build();
-
-			DefaultImplementationLoader implementationLoader = new DefaultImplementationLoader(corpusManager) {
-				@SuppressWarnings("unchecked")
-				@Override
-				public <T> T instantiate(Class<T> resultClass) {
-					if(Driver.class.equals(resultClass)) {
-						return (T) driver;
-					}
-
-					return super.instantiate(resultClass);
-				}
-			};
-
-			corpusMemberFactory = new DefaultCorpusMemberFactory(corpusManager) {
-				@Override
-				public ImplementationLoader<?> newImplementationLoader() {
-					return implementationLoader;
-				}
-			};
-			when(corpusManager.newFactory()).thenReturn(corpusMemberFactory);
-
-			corpus = DefaultCorpus.newBuilder()
-					.manifest(corpusManifest)
-					.metadataRegistry(new VirtualMetadataRegistry())
-					.manager(corpusManager)
-					.build();
 		}
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.view.streamed.StreamedCorpusViewTest#getSupportedOptions()
+	 */
+	@Override
+	public Set<StreamOption> getSupportedOptions() {
+		return EnumSet.allOf(StreamOption.class);
 	}
 
 	/**
 	 * @see de.ims.icarus2.util.PartTest#createEnvironment()
 	 */
+	@SuppressWarnings("resource")
 	@Override
 	public Corpus createEnvironment() {
-		return corpus;
+		return DefaultCorpus.newBuilder()
+				.manifest(corpusManifest)
+				.metadataRegistry(new VirtualMetadataRegistry())
+				.manager(corpusManager)
+				.build();
 	}
 
 	/**
@@ -133,7 +115,36 @@ class DefaultStreamedCorpusViewTest implements StreamedCorpusViewTest<DefaultStr
 	 * @see de.ims.icarus2.model.api.view.streamed.StreamedCorpusViewTest#createView(de.ims.icarus2.model.api.corpus.Corpus, de.ims.icarus2.util.AccessMode, long)
 	 */
 	@Override
-	public DefaultStreamedCorpusView createView(Corpus corpus, AccessMode accessMode, long size) {
+	public DefaultStreamedCorpusView createView(Corpus corpus, AccessMode accessMode,
+			long size, int capacity) {
+
+		itemLayerManager = new VirtualItemLayerManager();
+
+		final DriverManifest driverManifest = corpusManifest.getContextManifest("context").
+				flatMap(ContextManifest::getDriverManifest)
+				.get();
+
+		CorpusMemberFactory corpusMemberFactory = new DefaultCorpusMemberFactory(corpusManager) {
+			@SuppressWarnings("serial")
+			@Override
+			public ImplementationLoader<?> newImplementationLoader() {
+				return new DefaultImplementationLoader(corpusManager) {
+					@Override
+					public <T> T instantiate(Class<T> resultClass) {
+						if(Driver.class.equals(resultClass)) {
+							return resultClass.cast(
+									VirtualDriver.newBuilder()
+									.itemLayerManager(itemLayerManager)
+									.manifest(driverManifest)
+									.build());
+						}
+
+						return super.instantiate(resultClass);
+					}
+				};
+			}
+		};
+		when(corpusManager.newFactory()).thenReturn(corpusMemberFactory);
 		Scope scope = corpus.createCompleteScope();
 		ItemLayer layer = scope.getPrimaryLayer();
 
@@ -146,11 +157,41 @@ class DefaultStreamedCorpusViewTest implements StreamedCorpusViewTest<DefaultStr
 			itemLayerManager.addItem(layer, mockItem());
 		}
 
+		if(capacity==UNSET_LONG) {
+			capacity = 100;
+		}
+		if(size==UNSET_LONG) {
+			size = 1000;
+		}
+		if(capacity>size) {
+			capacity = (int) (size/10);
+		}
+
 		return DefaultStreamedCorpusView.builder()
 				.accessMode(accessMode)
-				.bufferCapacity((int)Math.min(100, size==UNSET_LONG ? 100 : size/10))
+				.bufferCapacity(capacity)
 				.scope(scope)
 				.itemLayerManager(itemLayerManager)
+				.withAllOptions()
 				.build();
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.view.streamed.StreamedCorpusViewTest#getRawItemStream()
+	 */
+	@Override
+	public Stream<Item> getRawItemStream() {
+
+		ItemLayer layer = itemLayerManager.getItemLayers().get(0);
+
+		return itemLayerManager.getRootContainer(layer).elements();
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.view.streamed.StreamedCorpusViewTest#getItemLayerManager()
+	 */
+	@Override
+	public ItemLayerManager getItemLayerManager() {
+		return itemLayerManager;
 	}
 }

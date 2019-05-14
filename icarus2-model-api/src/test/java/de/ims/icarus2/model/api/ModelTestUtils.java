@@ -542,4 +542,9 @@ public class ModelTestUtils {
 		assertFalse(itExp.hasNext());
 		assertFalse(itAct.hasNext());
 	}
+
+	public static <T extends ModelException> Executable meAsserter(
+			ErrorCode code, Executable executable) {
+		return () -> assertModelException(code, executable);
+	}
 }

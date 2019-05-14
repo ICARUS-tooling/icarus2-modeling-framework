@@ -21,7 +21,6 @@ import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.ObjLongConsumer;
@@ -34,7 +33,6 @@ import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.driver.ChunkInfo;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
 import de.ims.icarus2.model.api.members.item.manager.ItemList;
@@ -53,7 +51,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 @TestableImplementation(ItemLayerManager.class)
 public class VirtualItemLayerManager implements ItemLayerManager {
 
-	private final List<Layer> layers = new ArrayList<>();
+	private final List<ItemLayer> layers = new ArrayList<>();
 	private final Int2ObjectMap<RootContainer> rootContainers = new Int2ObjectOpenHashMap<>();
 
 	private final ObjLongConsumer<ItemLayer> missingItemHandler;
@@ -75,7 +73,7 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 	}
 
 	@Override
-	public Collection<Layer> getItemLayers() {
+	public List<ItemLayer> getItemLayers() {
 		return CollectionUtils.getListProxy(layers);
 	}
 

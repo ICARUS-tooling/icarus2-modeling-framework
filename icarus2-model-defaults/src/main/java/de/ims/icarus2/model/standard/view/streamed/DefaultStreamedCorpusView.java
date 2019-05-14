@@ -112,6 +112,7 @@ public class DefaultStreamedCorpusView extends AbstractCorpusView implements Str
 
 	@Override
 	public Item currentItem() {
+		checkHasItem();
 		return buffer.currentItem();
 	}
 

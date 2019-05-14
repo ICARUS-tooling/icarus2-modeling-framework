@@ -1804,6 +1804,15 @@ public class TestUtils {
 	}
 
 	// JMH SUPPORT
+
+	/**
+	 * Creates {@link ChainedOptionsBuilder} to initiate benchmarks for the
+	 * given {@code benchmarkClass}.
+	 *
+	 *
+	 * @param benchmarkClass
+	 * @return
+	 */
 	public static ChainedOptionsBuilder jmhOptions(Class<?> benchmarkClass) {
 		String name = benchmarkClass.getSimpleName();
 
@@ -1815,6 +1824,18 @@ public class TestUtils {
 				.include(name);
 	}
 
+	/**
+	 * Creates {@link ChainedOptionsBuilder} to initiate benchmarks for the
+	 * given {@code benchmarkClass} that depending on the {@code writeToLog}
+	 * argument will write log data to a log file in the {@link #JMH_RESULT_FOLDER}
+	 * that is named according to the class under test.
+	 *
+	 * @param benchmarkClass
+	 * @param writeToLog
+	 * @return
+	 *
+	 * @see #jmhOptions(Class)
+	 */
 	public static ChainedOptionsBuilder jmhOptions(Class<?> benchmarkClass,
 			boolean writeToLog) {
 		String name = benchmarkClass.getSimpleName();
@@ -1826,11 +1847,22 @@ public class TestUtils {
 		return builder;
 	}
 
+	/**
+	 *
+	 * @param benchmarkClass
+	 * @param writeToLog
+	 * @param resultFormatType
+	 * @return
+	 *
+	 * @see #jmhOptions(Class, boolean)
+	 * @see #jmhOptions(Class)
+	 */
 	public static ChainedOptionsBuilder jmhOptions(Class<?> benchmarkClass,
 			boolean writeToLog, ResultFormatType resultFormatType) {
 		String name = benchmarkClass.getSimpleName();
 		ChainedOptionsBuilder builder = jmhOptions(benchmarkClass, writeToLog);
 		ensureJmhResultFolder();
+		builder.resultFormat(resultFormatType);
 		builder.result(JMH_RESULT_FOLDER+name+'.'+resultFormatType.toString().toLowerCase());
 		return builder;
 	}

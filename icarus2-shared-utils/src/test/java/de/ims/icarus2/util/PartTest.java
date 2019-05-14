@@ -5,8 +5,8 @@ package de.ims.icarus2.util;
 
 import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -23,6 +23,9 @@ public interface PartTest<O, P extends Part<O>> {
 	 * Create a suitable environment for the part under test.
 	 * It is preferably if this environment is a mock, but it
 	 * can also be a live instance.
+	 * <p>
+	 * Consecutive invocations of this method must yield different
+	 * instances!
 	 */
 	@Provider
 	O createEnvironment();
@@ -70,7 +73,7 @@ public interface PartTest<O, P extends Part<O>> {
 
 		O env1 = createEnvironment();
 		O env2 = createEnvironment();
-		assumeTrue(env1!=env2);
+		assertNotSame(env1, env2);
 
 		part.addNotify(env1);
 

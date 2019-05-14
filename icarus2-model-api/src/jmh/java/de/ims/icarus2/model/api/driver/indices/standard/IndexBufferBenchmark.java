@@ -104,8 +104,6 @@ IndexBufferBenchmark.testAddSingle_1M           INTEGER  1000000  avgt   25  4.6
 				.param("size", "1000000")
 				.param("indexValueType", "INTEGER")
 
-				.resultFormat(ResultFormatType.CSV)
-
 				.build())
 		.run();
 	}

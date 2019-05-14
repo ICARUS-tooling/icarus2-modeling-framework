@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.model.standard.members.item;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -24,7 +24,6 @@ import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.model.api.driver.ChunkInfo;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
 import de.ims.icarus2.util.annotations.TestableImplementation;
@@ -54,8 +53,8 @@ public class CompoundItemLayerManager implements ItemLayerManager {
 	 * @see de.ims.icarus2.model.api.members.item.manager.ItemLayerManager#getItemLayers()
 	 */
 	@Override
-	public Collection<Layer> getItemLayers() {
-		LazyCollection<Layer> result = LazyCollection.lazyList();
+	public List<ItemLayer> getItemLayers() {
+		LazyCollection<ItemLayer> result = LazyCollection.lazyList();
 
 		managerLookup.keySet().forEach(result);
 

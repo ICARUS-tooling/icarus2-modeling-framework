@@ -34,9 +34,19 @@ import de.ims.icarus2.util.AccessMode;
  */
 public interface CorpusViewTest<V extends CorpusView> extends GenericTest<V> {
 
+	/**
+	 * Create a view with specified {@link AccessMode} that is of arbitrary size.
+	 * @param accessMode
+	 * @return
+	 */
 	@Provider
 	V createForAccessMode(AccessMode accessMode);
 
+	/**
+	 * Create a view with read access that is of the given size.
+	 * @param size
+	 * @return
+	 */
 	@Provider
 	V createForSize(long size);
 

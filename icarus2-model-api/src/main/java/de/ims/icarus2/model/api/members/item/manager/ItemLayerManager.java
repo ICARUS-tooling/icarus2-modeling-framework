@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.model.api.members.item.manager;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.ObjLongConsumer;
 
@@ -26,7 +26,6 @@ import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.driver.ChunkInfo;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.util.IcarusUtils;
 
@@ -52,7 +51,7 @@ public interface ItemLayerManager {
 	 *
 	 * @return
 	 */
-	Collection<Layer> getItemLayers();
+	List<ItemLayer> getItemLayers();
 
 	/**
 	 * Attempts to fetch the number of elements stored in the top-level container for the given

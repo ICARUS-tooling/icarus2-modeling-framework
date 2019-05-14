@@ -24,6 +24,9 @@ import java.lang.reflect.Constructor;
 import de.ims.icarus2.util.Options;
 
 /**
+ * Utility class for loading actual implementations for individual
+ * components of the model framework. Intended for one-shot usage!
+ *
  * @author Markus Gärtner
  *
  */
