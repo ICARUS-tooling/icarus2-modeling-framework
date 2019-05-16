@@ -1111,17 +1111,6 @@ public class IndexCollectorFactory {
 			return b.min + ((b.max - b.min) >>> 1);
 		}
 
-		private void drainInto(Bucket source, Bucket target) {
-			long pivot = pivot(source);
-
-			target.setLeft(pivot+1);
-			target.setRight(source.getRight());
-
-			source.setRight(pivot);
-
-
-		}
-
 		/**
 		 * Splits a bucket in two halves based on a pivot element. The {@code left}
 		 * bucket will hold all elements from {@code source} that are smaller or equal
