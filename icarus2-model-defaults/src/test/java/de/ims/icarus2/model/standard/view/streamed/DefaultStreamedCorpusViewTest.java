@@ -22,6 +22,7 @@ package de.ims.icarus2.model.standard.view.streamed;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.MANIFEST_FACTORY;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.when;
 
 import java.util.EnumSet;
@@ -150,10 +151,9 @@ class DefaultStreamedCorpusViewTest implements StreamedCorpusViewTest<DefaultStr
 		itemLayerManager.addLayer(layer);
 
 		// Takes care of only filling the manager if size is positive and sensible
-		if(size<10_000) {
-			for (int i = 0; i < size; i++) {
-				itemLayerManager.addItem(layer, mockItem());
-			}
+		assumeTrue(size<=10_000, "Larger size would cause too many item mocks to be created");
+		for (int i = 0; i < size; i++) {
+			itemLayerManager.addItem(layer, mockItem());
 		}
 
 		if(capacity==UNSET_LONG) {
