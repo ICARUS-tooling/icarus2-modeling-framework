@@ -1866,4 +1866,16 @@ public class TestUtils {
 		builder.result(JMH_RESULT_FOLDER+name+'.'+resultFormatType.toString().toLowerCase());
 		return builder;
 	}
+
+	public static <E extends AutoCloseable> Executable tryWith(
+			Supplier<E> source, Consumer<E> task) {
+
+		return () -> {
+			try(E item = source.get()) {
+				task.accept(item);
+			} catch (Exception e) {
+				fail("Failed to auto-close", e);
+			}
+		};
+	}
 }
