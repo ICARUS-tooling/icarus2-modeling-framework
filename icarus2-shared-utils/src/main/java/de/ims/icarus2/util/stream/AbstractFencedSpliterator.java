@@ -18,6 +18,7 @@ package de.ims.icarus2.util.stream;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 
+import java.util.Comparator;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
@@ -167,6 +168,13 @@ public abstract class AbstractFencedSpliterator<T extends Object> implements Spl
 			return Integer.valueOf(currentInt());
 		}
 
+		/**
+		 * @see java.util.Spliterator#getComparator()
+		 */
+		@Override
+		public Comparator<? super Integer> getComparator() {
+			return Integer::compare;
+		}
 	}
 
 	public static abstract class OfLong extends AbstractFencedSpliterator<Long> implements Spliterator.OfLong {
@@ -213,6 +221,13 @@ public abstract class AbstractFencedSpliterator<T extends Object> implements Spl
 			return Long.valueOf(currentLong());
 		}
 
+		/**
+		 * @see java.util.Spliterator#getComparator()
+		 */
+		@Override
+		public Comparator<? super Long> getComparator() {
+			return Long::compare;
+		}
 	}
 
 	public static abstract class OfDouble extends AbstractFencedSpliterator<Double> implements Spliterator.OfDouble {
@@ -259,5 +274,12 @@ public abstract class AbstractFencedSpliterator<T extends Object> implements Spl
 			return Double.valueOf(currentDouble());
 		}
 
+		/**
+		 * @see java.util.Spliterator#getComparator()
+		 */
+		@Override
+		public Comparator<? super Double> getComparator() {
+			return Double::compare;
+		}
 	}
 }
