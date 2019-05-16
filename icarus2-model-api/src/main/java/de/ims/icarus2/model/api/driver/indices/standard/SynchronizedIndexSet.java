@@ -18,7 +18,10 @@ package de.ims.icarus2.model.api.driver.indices.standard;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.PrimitiveIterator.OfLong;
+import java.util.Set;
 import java.util.function.IntBinaryOperator;
 import java.util.function.IntConsumer;
 import java.util.function.LongBinaryOperator;
@@ -38,22 +41,29 @@ import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 @ThreadSafe
 public class SynchronizedIndexSet implements IndexSet {
 
+
 	private final IndexSet source;
+
+	private final Set<Feature> features;
 
 	public SynchronizedIndexSet(IndexSet source) {
 		requireNonNull(source);
 		this.source = source;
+
+		Set<Feature> rawFeatures = EnumSet.copyOf(source.getFeatures());
+		rawFeatures.add(Feature.THREAD_SAFE);
+		features = Collections.unmodifiableSet(rawFeatures);
 	}
 
 	/**
 	 * Grabs the wrapped index set's features set and adds the
-	 * {@link IndexSet#FEATURE_THREAD_SAFE} flag.
+	 * {@link Feature#THREAD_SAFE} flag.
 	 *
 	 * @see de.ims.icarus2.model.api.driver.indices.IndexSet#getFeatures()
 	 */
 	@Override
-	public synchronized int getFeatures() {
-		return source.getFeatures() |  FEATURE_THREAD_SAFE;
+	public synchronized Set<Feature> getFeatures() {
+		return features;
 	}
 
 	@Override

@@ -20,9 +20,13 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 
 import java.sql.ResultSet;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.PrimitiveIterator;
 import java.util.PrimitiveIterator.OfLong;
+import java.util.Set;
 import java.util.function.IntBinaryOperator;
 import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
@@ -36,6 +40,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.function.LongBiPredicate;
 
 
@@ -454,72 +459,85 @@ public interface IndexSet {
 	// FEATURE FLAGS
 
 	public enum Feature {
+
+		/**
+		 * General hint that the implementation is able to sort its content.
+		 * Note that this information is kind of redundant since the {@link #sort()} method
+		 * already expresses this information, but more in a post-condition kind of way.
+		 */
+		SORTABLE,
+
+		/**
+		 * Indicates whether or not the implementation supports exporting parts of it via any
+		 * of the following method:
+		 * <ul>
+		 * <li>{@link #split(int)}</li>
+		 * <li>{@link #subSet(int, int)}</li>
+		 * </ul>
+		 * Implementations are free to
+		 */
+		EXPORTABLE,
+
+		/**
+		 * Signals that this implementation is not able to provide information about the number
+		 * of entries it holds. This can be the case when the index set is a wrapper around some
+		 * foreign storage like the {@link ResultSet result} of a SQL query.
+		 */
+		INDETERMINATE_SIZE,
+
+		/**
+		 * Signals that client code cannot address entries in this set in a <i>random-access</i> pattern.
+		 * The exact semantics of <i>forward-only</i> are implementation specific, but the general contract
+		 * is that for any 2 consecutive calls to {@link #indexAt(int)} the {@code index} parameter passed
+		 * to the second call must be greater than the one passed to the first call.
+		 * Some implementations might require it to be exactly the next greater integer value, but that is
+		 * generally not required and implementations should implement an internal "skip" mechanism that
+		 * scrolls forward to the desired position, discarding any entries on the way.
+		 * <p>
+		 * Note that by declaring this feature active an implementation becomes effectively one-time usable only.
+		 */
+		CURSOR_FORWARD_ONLY,
+
+		/**
+		 * Signals that the implementation is thread-safe and it can be shared across multiple threads.
+		 * Per default implementations are <b>not</> required to implement synchronization measures to
+		 * improve performance.
+		 */
+		THREAD_SAFE,
+		;
 		//TODO move all feature flags into enum constants!!!
 	}
 
-	/**
-	 * General hint that the implementation is able to sort its content.
-	 * Note that this information is kind of redundant since the {@link #sort()} method
-	 * already expresses this information, but more in a post-condition kind of way.
-	 */
-	public static final int FEATURE_CAN_SORT = (1 << 0);
+	public static final Set<Feature> DEFAULT_FEATURES =
+			Collections.unmodifiableSet(EnumSet.of(
+					Feature.EXPORTABLE, Feature.SORTABLE));
 
-	/**
-	 * Indicates whether or not the implementation supports exporting parts of it via any
-	 * of the following method:
-	 * <ul>
-	 * <li>{@link #split(int)}</li>
-	 * <li>{@link #subSet(int, int)}</li>
-	 * </ul>
-	 * Implementations are free to
-	 */
-	public static final int FEATURE_CAN_EXPORT = (1 << 1);
-
-	/**
-	 * Signals that this implementation is not able to provide information about the number
-	 * of entries it holds. This can be the case when the index set is a wrapper around some
-	 * foreign storage like the {@link ResultSet result} of a SQL query.
-	 */
-	public static final int FEATURE_INDETERMINATE_SIZE = (1 << 2);
-
-	/**
-	 * Signals that client code cannot address entries in this set in a <i>random-access</i> pattern.
-	 * The exact semantics of <i>forward-only</i> are implementation specific, but the general contract
-	 * is that for any 2 consecutive calls to {@link #indexAt(int)} the {@code index} parameter passed
-	 * to the second call must be greater than the one passed to the first call.
-	 * Some implementations might require it to be exactly the next greater integer value, but that is
-	 * generally not required and implementations should implement an internal "skip" mechanism that
-	 * scrolls forward to the desired position, discarding any entries on the way.
-	 * <p>
-	 * Note that by declaring this feature active an implementation becomes effectively one-time usable only.
-	 */
-	public static final int FEATURE_CURSOR_FORWARD_ONLY = (1 << 3);
-
-	/**
-	 * Signals that the implementation is thread-safe and it can be shared across multiple threads.
-	 * Per default implementations are <b>not</> required to implement synchronization measures to
-	 * improve performance.
-	 */
-	public static final int FEATURE_THREAD_SAFE = (1 << 4);
-
-	public static final int DEFAULT_FEATURES =
-			FEATURE_CAN_SORT
-			| FEATURE_CAN_EXPORT;
-
-	default int getFeatures() {
+	default Set<Feature> getFeatures() {
 		return DEFAULT_FEATURES;
 	}
 
-	default boolean hasFeatures(int features) {
-		return (getFeatures() & features) == features;
+	default boolean hasFeatures(Feature...features) {
+		return getFeatures().containsAll(Arrays.asList(features));
 	}
 
-	default void checkHasFeatures(int features) {
-		if(!hasFeatures(features)) {
+	default boolean hasFeature(Feature feature) {
+		return getFeatures().contains(feature);
+	}
+
+	default void checkHasFeatures(Feature...features) {
+		LazyCollection<Feature> missingFeatures = LazyCollection.lazyList();
+		Set<Feature> presentFeatures = getFeatures();
+
+		for(Feature feature : features) {
+			if(!presentFeatures.contains(feature)) {
+				missingFeatures.add(feature);
+			}
+		}
+
+		if(!missingFeatures.isEmpty()) {
 			StringBuilder sb = new StringBuilder("Required features not available: ");
 
-			int pos = 0;
-			//TODO aggregate textual info of the missing features and use as error message!
+			sb.append(missingFeatures.toString());
 
 			throw new ModelException(GlobalErrorCode.NOT_IMPLEMENTED, sb.toString());
 		}

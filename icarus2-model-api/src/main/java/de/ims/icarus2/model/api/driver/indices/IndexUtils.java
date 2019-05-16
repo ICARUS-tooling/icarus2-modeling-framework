@@ -232,7 +232,7 @@ public class IndexUtils {
 
 	public static void ensureSorted(IndexSet indices) {
 		if(!indices.isSorted()) {
-			if(!indices.hasFeatures(IndexSet.FEATURE_CAN_SORT))
+			if(!indices.hasFeatures(IndexSet.Feature.SORTABLE))
 				throw new ModelException(ModelErrorCode.DRIVER_INDEX_SORT,
 						"Sorting not supported by index set");
 
