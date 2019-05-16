@@ -117,7 +117,11 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 	}
 
 	public LazyCollection<E> add(E item) {
-		if(item!=null) {
+		return add(true, item);
+	}
+
+	public LazyCollection<E> add(boolean condition, E item) {
+		if(condition && item!=null) {
 			ensureBuffer();
 
 			addExpectingBuffer(item);
@@ -127,16 +131,35 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 	}
 
 	/**
-	 * Directly adds the given colelction of items.
+	 * Directly adds the given collection of items.
 	 *
 	 * @param items
 	 * @return
 	 */
 	public LazyCollection<E> addAll(Collection<? extends E> items) {
-		if(items!=null && !items.isEmpty()) {
+		return addAll(true, items);
+	}
+
+	public LazyCollection<E> addAll(boolean condition, Collection<? extends E> items) {
+		if(condition && items!=null && !items.isEmpty()) {
 			ensureBuffer();
 
 			buffer.addAll(items);
+		}
+
+		return this;
+	}
+
+	public LazyCollection<E> addAll(@SuppressWarnings("unchecked") E...items) {
+		return addAll(true, items);
+	}
+
+	public LazyCollection<E> addAll(boolean condition,
+			@SuppressWarnings("unchecked") E...items) {
+		if(condition && items!=null && items.length>0) {
+			ensureBuffer();
+
+			Collections.addAll(buffer, items);
 		}
 
 		return this;
@@ -151,7 +174,12 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 	 * @return
 	 */
 	public <K extends Object> LazyCollection<E> addAll(Collection<? extends K> items, Function<K, E> transformer) {
-		if(items!=null && !items.isEmpty()) {
+		return addAll(true, items, transformer);
+	}
+
+	public <K extends Object> LazyCollection<E> addAll(boolean condition,
+			Collection<? extends K> items, Function<K, E> transformer) {
+		if(condition && items!=null && !items.isEmpty()) {
 			ensureBuffer();
 
 			items.forEach(val -> addExpectingBuffer(transformer.apply(val)));
