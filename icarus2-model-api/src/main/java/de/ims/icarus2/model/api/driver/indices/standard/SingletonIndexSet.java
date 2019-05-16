@@ -28,6 +28,10 @@ import de.ims.icarus2.model.api.driver.indices.IndexValueType;
  */
 public class SingletonIndexSet implements IndexSet {
 
+	public static SingletonIndexSet of(long index) {
+		return new SingletonIndexSet(index);
+	}
+
 	private final long index;
 
 	public SingletonIndexSet(long index) {

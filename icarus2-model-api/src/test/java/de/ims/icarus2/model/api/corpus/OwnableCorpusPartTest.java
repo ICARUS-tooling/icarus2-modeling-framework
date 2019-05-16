@@ -59,7 +59,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	 */
 	@Test
 	default void testAcquire() {
-		try(P part = createPart()) {
+		try(P part = create()) {
 			part.acquire(createNonBlockingOwner());
 		}
 	}
@@ -69,7 +69,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	 */
 	@Test
 	default void testAcquireAfterClose() {
-		try(P part = createPart()) {
+		try(P part = create()) {
 			part.close();
 
 			assertModelException(ModelErrorCode.VIEW_CLOSED, () -> part.acquire(createNonBlockingOwner()));
@@ -81,7 +81,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	 */
 	@Test
 	default void testAcquireWithNull() {
-		try(P part = createPart()) {
+		try(P part = create()) {
 			assertNPE(() -> part.acquire(null));
 		}
 	}
@@ -91,7 +91,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	 */
 	@Test
 	default void testAcquireRepeatedly() {
-		try(P part = createPart()) {
+		try(P part = create()) {
 			CorpusOwner owner = createNonBlockingOwner();
 			part.acquire(owner);
 			// Subsequent requests with same owner are supposed to cause no issues
@@ -105,7 +105,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	 */
 	@Test
 	default void testRelease() {
-		try(P part = createPart()) {
+		try(P part = create()) {
 			CorpusOwner owner = createNonBlockingOwner();
 			part.acquire(owner);
 			part.release(owner);
@@ -118,7 +118,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	 */
 	@Test
 	default void testReleaseAfterClose() throws InterruptedException {
-		try(P part = createPart()) {
+		try(P part = create()) {
 			CorpusOwner owner = createNonBlockingOwner();
 
 			part.acquire(owner);
@@ -133,7 +133,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	 */
 	@Test
 	default void testReleaseWithNull() {
-		try(P part = createPart()) {
+		try(P part = create()) {
 			part.acquire(createNonBlockingOwner());
 			assertNPE(() -> part.release(null));
 		}
@@ -144,7 +144,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	 */
 	@Test
 	default void testReleaseRepeatedly() {
-		try(P part = createPart()) {
+		try(P part = create()) {
 			CorpusOwner owner = createNonBlockingOwner();
 			part.acquire(owner);
 			part.release(owner);
@@ -158,7 +158,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	 */
 	@Test
 	default void testReleaseForeignOwner() {
-		try(P part = createPart()) {
+		try(P part = create()) {
 			CorpusOwner owner1 = createNonBlockingOwner();
 			CorpusOwner owner2 = createNonBlockingOwner();
 			assumeTrue(owner1!=owner2);
@@ -173,7 +173,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	 */
 	@Test
 	default void testGetOwnersEmpty() {
-		try(P part = createPart()) {
+		try(P part = create()) {
 			assertCollectionEmpty(part.getOwners());
 		}
 	}
@@ -183,7 +183,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	 */
 	@Test
 	default void testGetOwnersAfterAcquire() {
-		try(P part = createPart()) {
+		try(P part = create()) {
 			CorpusOwner owner1 = createNonBlockingOwner();
 			CorpusOwner owner2 = createNonBlockingOwner();
 			assumeTrue(owner1!=owner2);
@@ -201,7 +201,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	 */
 	@Test
 	default void testGetOwnersAfterRelease() {
-		try(P part = createPart()) {
+		try(P part = create()) {
 			CorpusOwner owner1 = createNonBlockingOwner();
 			CorpusOwner owner2 = createNonBlockingOwner();
 			assumeTrue(owner1!=owner2);
@@ -222,7 +222,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	 */
 	@Test
 	default void testClosableEmpty() {
-		try(P part = createPart()) {
+		try(P part = create()) {
 			assertTrue(part.closable());
 		}
 	}
@@ -232,7 +232,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	 */
 	@Test
 	default void testClosableWithOwners() {
-		try(P part = createPart()) {
+		try(P part = create()) {
 			part.acquire(createNonBlockingOwner());
 			assertFalse(part.closable());
 		}
@@ -243,7 +243,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	 */
 	@Test
 	default void testClosableWithBlockingOwners() {
-		try(P part = createPart()) {
+		try(P part = create()) {
 			CorpusOwner owner = createBlockingOwner();
 			part.acquire(owner);
 			assertFalse(part.closable());
@@ -256,7 +256,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	 */
 	@Test
 	default void testCloseWithoutOwners() {
-		try(P part = createPart()) {
+		try(P part = create()) {
 			part.close();
 		}
 	}
@@ -267,7 +267,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	 */
 	@Test
 	default void testCloseWithOwners() throws InterruptedException {
-		try(P part = createPart()) {
+		try(P part = create()) {
 			part.acquire(createNonBlockingOwner());
 			part.close();
 		}
@@ -279,7 +279,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	 */
 	@Test
 	default void testCloseWithBlockingOwners() throws InterruptedException {
-		try(P part = createPart()) {
+		try(P part = create()) {
 			CorpusOwner owner = createBlockingOwner();
 			part.acquire(owner);
 			assertModelException(ModelErrorCode.VIEW_UNCLOSABLE,
@@ -293,7 +293,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	 */
 	@Test
 	default void testIsActive() {
-		try(P part = createPart()) {
+		try(P part = create()) {
 			assertTrue(part.isActive());
 
 			part.close();

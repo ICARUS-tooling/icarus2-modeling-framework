@@ -510,6 +510,16 @@ public class ModelTestUtils {
 		return range(defaultType, from, to);
 	}
 
+	@SuppressWarnings("boxing")
+	public static IndexSet[] mockIndices(int...sizes) {
+		IndexSet[] sets = new IndexSet[sizes.length];
+		for (int i = 0; i < sets.length; i++) {
+			sets[i] = basicSet();
+			when(sets[i].size()).thenReturn(sizes[i]);
+		}
+		return sets;
+	}
+
 	public static LongSet asSet(IndexSet source) {
 		LongSet set = new LongOpenHashSet(source.size());
 		source.forEachIndex((LongConsumer)set::add);

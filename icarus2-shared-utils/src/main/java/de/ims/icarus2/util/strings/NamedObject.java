@@ -17,10 +17,19 @@
 package de.ims.icarus2.util.strings;
 
 /**
+ * Helper interface to model objects that have a defined and
+ * usually constant identifier or name. Avoids having to rely
+ * on the {@link Object#toString()} method for simple log texts
+ * or messages.
+ *
  * @author Markus Gärtner
  *
  */
 public interface NamedObject {
 
+	/**
+	 * Returns the {@code non-null} name or identifier of this object.
+	 * @return
+	 */
 	String getName();
 }
