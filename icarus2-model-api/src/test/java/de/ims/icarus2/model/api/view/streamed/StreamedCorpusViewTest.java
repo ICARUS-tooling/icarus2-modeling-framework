@@ -60,15 +60,6 @@ public interface StreamedCorpusViewTest<V extends StreamedCorpusView>
 	V createView(Corpus corpus, AccessMode accessMode, long size, int capacity);
 
 	/**
-	 * @see de.ims.icarus2.util.PartTest#create()
-	 */
-	@Provider
-	@Override
-	default V create() {
-		return createView(createEnvironment(), AccessMode.READ, UNSET_LONG, UNSET_INT);
-	}
-
-	/**
 	 * @see de.ims.icarus2.model.api.view.CorpusViewTest#createForAccessMode(de.ims.icarus2.util.AccessMode)
 	 */
 	@Provider
@@ -94,7 +85,7 @@ public interface StreamedCorpusViewTest<V extends StreamedCorpusView>
 	@Provider
 	@Override
 	default V createTestInstance(TestSettings settings) {
-		return settings.process(create());
+		return settings.process(createView(createEnvironment(), AccessMode.READ, UNSET_LONG, UNSET_INT));
 	}
 
 	/**

@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.api.driver.indices;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
 import static java.util.Objects.requireNonNull;
@@ -293,6 +294,62 @@ public class IndexUtils {
 		}
 
 		return result;
+	}
+
+	public static long min(IndexSet indices) {
+		if(indices.isEmpty()) {
+			return UNSET_LONG;
+		} else if(indices.isSorted()) {
+			return indices.firstIndex();
+		} else {
+			long min = UNSET_LONG;
+			for (int i = 0; i < indices.size(); i++) {
+				long value = indices.indexAt(i);
+				if(min==UNSET_LONG || value<min) {
+					min = value;
+				}
+			}
+			return min;
+		}
+	}
+
+	public static long min(IndexSet[] indices) {
+		long min = UNSET_LONG;
+		for(IndexSet set : indices) {
+			long localMin = min(set);
+			if(min==UNSET_LONG || localMin<min) {
+				min = localMin;
+			}
+		}
+		return min;
+	}
+
+	public static long max(IndexSet indices) {
+		if(indices.isEmpty()) {
+			return UNSET_LONG;
+		} else if(indices.isSorted()) {
+			return indices.lastIndex();
+		} else {
+			long max = UNSET_LONG;
+			for (int i = 0; i < indices.size(); i++) {
+				long value = indices.indexAt(i);
+				if(max==UNSET_LONG || value>max) {
+					max = value;
+				}
+			}
+			return max;
+		}
+	}
+
+	public static long max(IndexSet[] indices) {
+		long max = UNSET_LONG;
+		for(IndexSet set : indices) {
+			long localMax = max(set);
+			if(max==UNSET_LONG || localMax>max) {
+				max = localMax;
+			}
+		}
+		return max;
 	}
 
 	/**

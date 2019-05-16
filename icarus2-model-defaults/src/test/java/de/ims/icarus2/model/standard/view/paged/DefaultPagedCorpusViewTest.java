@@ -1,29 +1,27 @@
 /**
  *
  */
-package de.ims.icarus2.model.standard.view.streamed;
+package de.ims.icarus2.model.standard.view.paged;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.MANIFEST_FACTORY;
-import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import java.util.EnumSet;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.Driver;
+import de.ims.icarus2.model.api.driver.indices.IndexSet;
+import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
 import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.api.registry.CorpusMemberFactory;
 import de.ims.icarus2.model.api.view.Scope;
-import de.ims.icarus2.model.api.view.streamed.StreamOption;
-import de.ims.icarus2.model.api.view.streamed.StreamedCorpusViewTest;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusViewTest;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
@@ -41,7 +39,7 @@ import de.ims.icarus2.util.AccessMode;
  * @author Markus Gärtner
  *
  */
-class DefaultStreamedCorpusViewTest implements StreamedCorpusViewTest<DefaultStreamedCorpusView> {
+class DefaultPagedCorpusViewTest implements PagedCorpusViewTest<DefaultPagedCorpusView> {
 
 	private CorpusManager corpusManager;
 	private CorpusManifest corpusManifest;
@@ -57,11 +55,19 @@ class DefaultStreamedCorpusViewTest implements StreamedCorpusViewTest<DefaultStr
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.view.streamed.StreamedCorpusViewTest#getSupportedOptions()
+	 * @see de.ims.icarus2.model.api.view.CorpusViewTest#getSupportedAccessModes()
 	 */
 	@Override
-	public Set<StreamOption> getSupportedOptions() {
-		return EnumSet.allOf(StreamOption.class);
+	public Set<AccessMode> getSupportedAccessModes() {
+		return EnumSet.allOf(AccessMode.class);
+	}
+
+	/**
+	 * @see de.ims.icarus2.test.TargetedTest#getTestTargetClass()
+	 */
+	@Override
+	public Class<? extends DefaultPagedCorpusView> getTestTargetClass() {
+		return DefaultPagedCorpusView.class;
 	}
 
 	/**
@@ -78,27 +84,14 @@ class DefaultStreamedCorpusViewTest implements StreamedCorpusViewTest<DefaultStr
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.view.CorpusViewTest#getSupportedAccessModes()
+	 * @see de.ims.icarus2.model.api.view.paged.PagedCorpusViewTest#createView(de.ims.icarus2.model.api.corpus.Corpus, de.ims.icarus2.util.AccessMode, int, de.ims.icarus2.model.api.driver.indices.IndexSet[])
 	 */
 	@Override
-	public Set<AccessMode> getSupportedAccessModes() {
-		return EnumSet.of(AccessMode.READ, AccessMode.READ_WRITE);
-	}
+	public DefaultPagedCorpusView createView(Corpus corpus, AccessMode accessMode,
+			int pageSize, IndexSet... indices) {
+		assertTrue(indices.length>0, "Must define _some_ indices for testing");
 
-	/**
-	 * @see de.ims.icarus2.test.TargetedTest#getTestTargetClass()
-	 */
-	@Override
-	public Class<? extends DefaultStreamedCorpusView> getTestTargetClass() {
-		return DefaultStreamedCorpusView.class;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.view.streamed.StreamedCorpusViewTest#createView(de.ims.icarus2.model.api.corpus.Corpus, de.ims.icarus2.util.AccessMode, long)
-	 */
-	@Override
-	public DefaultStreamedCorpusView createView(Corpus corpus, AccessMode accessMode,
-			long size, int capacity) {
+		long size = IndexUtils.max(indices);
 
 		itemLayerManager = new VirtualItemLayerManager();
 
@@ -133,48 +126,20 @@ class DefaultStreamedCorpusViewTest implements StreamedCorpusViewTest<DefaultStr
 		itemLayerManager.clear();
 		itemLayerManager.addLayer(layer);
 
-		// Takes care of only filling the manager if size is positive and sensible
+		// Takes care of only filling the manager if size is positive
 		if(size<10_000) {
 			for (int i = 0; i < size; i++) {
 				itemLayerManager.addItem(layer, mockItem());
 			}
 		}
 
-		if(capacity==UNSET_LONG) {
-			capacity = 100;
-		}
-		if(size==UNSET_LONG) {
-			size = 1000;
-		}
-		if(capacity>size) {
-			capacity = (int) (size/10);
-		}
-
-		return DefaultStreamedCorpusView.builder()
+		return DefaultPagedCorpusView.newBuilder()
 				.accessMode(accessMode)
-				.bufferCapacity(capacity)
 				.scope(scope)
 				.itemLayerManager(itemLayerManager)
-				.withAllOptions()
+				.indices(indices)
+				.pageSize(pageSize)
 				.build();
 	}
 
-	/**
-	 * @see de.ims.icarus2.model.api.view.streamed.StreamedCorpusViewTest#getRawItemStream()
-	 */
-	@Override
-	public Stream<Item> getRawItemStream() {
-
-		ItemLayer layer = itemLayerManager.getItemLayers().get(0);
-
-		return itemLayerManager.getRootContainer(layer).elements();
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.view.streamed.StreamedCorpusViewTest#getItemLayerManager()
-	 */
-	@Override
-	public ItemLayerManager getItemLayerManager() {
-		return itemLayerManager;
-	}
 }

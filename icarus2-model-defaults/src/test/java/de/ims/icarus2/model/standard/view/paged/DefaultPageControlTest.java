@@ -8,8 +8,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.stream.Stream;
-
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.layer.ItemLayer;
@@ -50,19 +48,16 @@ class DefaultPageControlTest implements PageControlTest<DefaultPageControl> {
 	 */
 	@Override
 	public DefaultPageControl createFilled(PagedCorpusView view, int pageSize, IndexSet... indices) {
-		long max = Stream.of(indices)
-				.flatMapToLong(IndexUtils::asLongStream)
-				.max()
-				.getAsLong();
+		long size = IndexUtils.max(indices);
 
-		assumeTrue(max<100_000, "Requested size would cause too many mocked items to be created: "+max);
+		assumeTrue(size<100_000, "Requested size would cause too many mocked items to be created: "+size);
 
 		ItemLayer layer = view.getScope().getPrimaryLayer();
 
 		VirtualItemLayerManager itemLayerManager = new VirtualItemLayerManager();
 		itemLayerManager.addLayer(layer);
 
-		for (int i = 0; i < max+1; i++) {
+		for (int i = 0; i < size+1; i++) {
 			itemLayerManager.addItem(layer, mockItem());
 		}
 

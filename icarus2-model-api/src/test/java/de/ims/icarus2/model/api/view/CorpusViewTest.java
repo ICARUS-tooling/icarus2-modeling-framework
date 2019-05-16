@@ -151,7 +151,7 @@ public interface CorpusViewTest<V extends CorpusView> extends GenericTest<V> {
 	 * Test method for {@link de.ims.icarus2.model.api.view.CorpusView#getSize()}.
 	 */
 	@ParameterizedTest
-	@ValueSource(longs = {UNSET_LONG, 100, 100_000, 100_000_000, Long.MAX_VALUE/2})
+	@ValueSource(longs = {UNSET_LONG, 100, 10_000, 100_000, 100_000_000})
 	default void testGetSize(long size) {
 		long expectedSize = size==UNSET_LONG ? 0L : size;
 		assertEquals(expectedSize, createForSize(size).getSize());

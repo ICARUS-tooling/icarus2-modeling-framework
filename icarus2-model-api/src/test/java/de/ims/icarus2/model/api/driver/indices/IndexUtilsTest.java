@@ -787,6 +787,38 @@ class IndexUtilsTest {
 			fail("Not yet implemented"); // TODO
 		}
 
+		/**
+		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexUtils#min(IndexSet)}.
+		 */
+		@Test
+		void testMin() {
+			fail("Not yet implemented"); // TODO
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexUtils#max(IndexSet)}.
+		 */
+		@Test
+		void testMax() {
+			fail("Not yet implemented"); // TODO
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexUtils#min(IndexSet[])}.
+		 */
+		@Test
+		void testMinIndexSetArray() {
+			fail("Not yet implemented"); // TODO
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexUtils#max(IndexSet[])}.
+		 */
+		@Test
+		void testMaxIndexSetArrayx() {
+			fail("Not yet implemented"); // TODO
+		}
+
 	}
 
 }

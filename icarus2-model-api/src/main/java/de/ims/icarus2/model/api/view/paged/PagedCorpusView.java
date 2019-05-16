@@ -256,10 +256,4 @@ public interface PagedCorpusView extends CorpusView, OwnableCorpusPart {
 		void lock(NamedObject key) throws ModelException;
 		void unlock(NamedObject key) throws ModelException;
 	}
-
-	public enum ViewMode {
-		STREAM,
-		RANDOM_ACCESS,
-		;
-	}
 }
