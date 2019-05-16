@@ -9,15 +9,17 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.test.Testable;
 import de.ims.icarus2.test.annotations.Provider;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface PartTest<O, P extends Part<O>> {
+public interface PartTest<O, P extends Part<O>> extends Testable<P> {
 
 	/**
 	 * Create a suitable environment for the part under test.
@@ -31,14 +33,18 @@ public interface PartTest<O, P extends Part<O>> {
 	O createEnvironment();
 
 	/**
-	 * Create the {@link Part} under test.
+	 * Create a new part instance that has not yet been added to
+	 * an environment.
+	 * @return
 	 */
 	@Provider
-	P createPart();
+	default P createUnadded() {
+		return create();
+	}
 
 	@Test
 	default void testPartConsistency() {
-		P part = createPart();
+		P part = createUnadded();
 		O environment = createEnvironment();
 
 		assertFalse(part.isAdded());
@@ -48,28 +54,30 @@ public interface PartTest<O, P extends Part<O>> {
 		assertFalse(part.isAdded());
 	}
 
+	public static void assertAddRemoveError(Executable executable) {
+		assertIcarusException(GlobalErrorCode.ILLEGAL_STATE, executable);
+	}
+
 	@Test
-	default void testRpeatedAdd() {
-		P part = createPart();
+	default void testRepeatedAdd() {
+		P part = createUnadded();
 		O environment = createEnvironment();
 
 		part.addNotify(environment);
 
-		assertIcarusException(GlobalErrorCode.ILLEGAL_STATE,
-				() -> part.addNotify(environment));
+		assertAddRemoveError(() -> part.addNotify(environment));
 	}
 
 	@Test
 	default void testPrematureRemove() {
-		P part = createPart();
+		P part = createUnadded();
 
-		assertIcarusException(GlobalErrorCode.ILLEGAL_STATE,
-				() -> part.removeNotify(createEnvironment()));
+		assertAddRemoveError(() -> part.removeNotify(createEnvironment()));
 	}
 
 	@Test
 	default void testForeignRemove() {
-		P part = createPart();
+		P part = createUnadded();
 
 		O env1 = createEnvironment();
 		O env2 = createEnvironment();
@@ -77,7 +85,6 @@ public interface PartTest<O, P extends Part<O>> {
 
 		part.addNotify(env1);
 
-		assertIcarusException(GlobalErrorCode.ILLEGAL_STATE,
-				() -> part.addNotify(env2));
+		assertAddRemoveError(() -> part.addNotify(env2));
 	}
 }
