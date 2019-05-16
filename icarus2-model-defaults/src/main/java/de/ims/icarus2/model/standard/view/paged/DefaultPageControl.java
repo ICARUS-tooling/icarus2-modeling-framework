@@ -52,6 +52,7 @@ import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Link;
 import de.ims.icarus2.util.mem.ReferenceType;
+import de.ims.icarus2.util.strings.NamedObject;
 
 /**
  * @author Markus Gärtner
@@ -119,11 +120,13 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 	protected IndexSet loadIndices(int pageIndex) {
 		IndexSet indices = null;
 
+		final boolean isLoadingCache = LoadingCache.class.isInstance(indexSetCache);
+
 		if(indexSetCache!=null) {
 			// If our cache is set we have to distinguish between loading cache and
 			// a static one provided by client code.
 			// In case of a loading cache we have some additional error handling to do.
-			if(indexSetCache instanceof LoadingCache) {
+			if(isLoadingCache) {
 				try {
 					indices = ((LoadingCache<Integer, IndexSet>)indexSetCache).get(_int(pageIndex));
 				} catch (ExecutionException e) {
@@ -135,9 +138,13 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 		}
 
 		if(indices==null) {
+			// Manually crate the page
 			indices = pageBuffer.createPage(pageIndex);
 
-			//TODO should we check for a non loading cache and insert the new IndexSet?
+			// Insert page into cache if one is available and it's not a LoadingCache
+			if(!isLoadingCache && indexSetCache!=null && indices!=null) {
+				indexSetCache.put(_int(pageIndex), indices);
+			}
 		}
 
 		return indices;
@@ -163,7 +170,7 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 		if(pageIndex<0 || pageIndex>=pageBuffer.getPageCount())
 			throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
 					Messages.indexOutOfBounds("Page index out of bounds",
-							0, pageBuffer.getPageCount(), pageIndex));
+							0, pageBuffer.getPageCount()-1, pageIndex));
 	}
 
 	/**
@@ -209,7 +216,6 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 	@Override
 	public int getPageIndex() {
 		checkActiveView();
-		checkActivePage();
 		return currentPage.getPageIndex();
 	}
 
@@ -257,7 +263,7 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 		checkAdded();
 
 		// Only check for locks if the surrounding view is still active
-		if(!getView().isActive()) {
+		if(getView().isActive()) {
 			checkNotLocked();
 		}
 
@@ -350,6 +356,8 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 	 */
 	@Override
 	public void addPageListener(PageListener listener) {
+		requireNonNull(listener);
+
 		removePageListener(listener);
 		pageListeners.add(listener);
 	}
@@ -359,6 +367,8 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 	 */
 	@Override
 	public void removePageListener(PageListener listener) {
+		requireNonNull(listener);
+
 		pageListeners.remove(listener);
 	}
 
@@ -371,18 +381,18 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl#lock(java.lang.Object)
+	 * @see de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl#lock(NamedObject)
 	 */
 	@Override
-	public void lock(Object key) {
+	public void lock(NamedObject key) {
 		pageLock.lock(key);
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl#unlock(java.lang.Object)
+	 * @see de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl#unlock(NamedObject)
 	 */
 	@Override
-	public void unlock(Object key) {
+	public void unlock(NamedObject key) {
 		pageLock.unlock(key);
 	}
 
@@ -423,10 +433,10 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 	 *
 	 */
 	protected static class PageLock {
-		private Reference<?> keyRef;
+		private Reference<NamedObject> keyRef;
 
-		private Object getKeyUnsafe() {
-			Object key = null;
+		private NamedObject getKeyUnsafe() {
+			NamedObject key = null;
 
 			if(keyRef!=null) {
 				key = keyRef.get();
@@ -445,20 +455,20 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 			return getKeyUnsafe()!=null;
 		}
 
-		public synchronized void lock(Object key) {
+		public synchronized void lock(NamedObject key) {
 			requireNonNull(key);
 
-			Object currentKey = getKeyUnsafe();
+			NamedObject currentKey = getKeyUnsafe();
 
 			if(currentKey==key) {
 				return;
 			} else if(currentKey==null) {
-				keyRef = new WeakReference<Object>(key);
+				keyRef = new WeakReference<>(key);
 			} else
-				throw new ModelException(ModelErrorCode.VIEW_LOCKED, "Page already locked by key: "+currentKey);
+				throw new ModelException(ModelErrorCode.VIEW_LOCKED, "Page already locked by key: "+currentKey.getName());
 		}
 
-		public synchronized void unlock(Object key) {
+		public synchronized void unlock(NamedObject key) {
 			requireNonNull(key);
 
 			Object currentKey = getKeyUnsafe();
@@ -466,7 +476,7 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 			if(currentKey==key) {
 				keyRef = null;
 			} else
-				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Page currently not locked by key: "+key);
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Page currently not locked by key: "+key.getName());
 		}
 
 		public synchronized void clearLock() {
@@ -576,7 +586,7 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 		}
 	}
 
-	public static class Builder extends AbstractBuilder<Builder, PageControl> {
+	public static class Builder extends AbstractBuilder<Builder, DefaultPageControl> {
 		private PageIndexBuffer pageIndexBuffer;
 		private IndexSet[] indices;
 		private ItemLayerManager itemLayerManager;
