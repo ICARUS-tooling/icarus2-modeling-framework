@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.util.events;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Arrays;
 
 import javax.swing.event.ChangeEvent;
@@ -47,11 +49,13 @@ public class ChangeSource implements Changeable, AutoCloseable {
 
 	@Override
 	public void addChangeListener(ChangeListener listener) {
+		requireNonNull(listener);
 		listenerList.add(ChangeListener.class, listener);
 	}
 
 	@Override
 	public void removeChangeListener(ChangeListener listener) {
+		requireNonNull(listener);
 		listenerList.remove(ChangeListener.class, listener);
 	}
 
