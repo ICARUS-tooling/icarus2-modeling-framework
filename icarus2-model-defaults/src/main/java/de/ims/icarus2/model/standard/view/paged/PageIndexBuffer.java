@@ -87,7 +87,7 @@ public class PageIndexBuffer {
 		if(pageSize<=0)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Page size must not be zero or negative: "+pageSize);
 
-		this.indices = indices;
+		this.indices = indices.clone(); // defensive copying
 		this.pageSize = pageSize;
 
 		offsets = new long[indices.length];
@@ -107,7 +107,7 @@ public class PageIndexBuffer {
 			pageCount++;
 		}
 
-		this.pageCount = (int)pageCount;
+		this.pageCount = Math.toIntExact(pageCount);
 	}
 
 	public int getPageSize() {
@@ -186,7 +186,7 @@ public class PageIndexBuffer {
 			IndexSet set = indices[firstSetIndex];
 			buffer.add(set,
 					(int)(firstOffset-offsets[firstSetIndex]),
-					(int)(lastOffset-offsets[firstSetIndex]+1));
+					(int)(lastOffset-offsets[firstSetIndex]));
 
 		} else {
 
@@ -202,10 +202,10 @@ public class PageIndexBuffer {
 
 			// Add part of last set
 			IndexSet lastSet = indices[lastSetIndex];
-			buffer.add(lastSet, 0, (int)(lastOffset-offsets[lastSetIndex]+1));
+			buffer.add(lastSet, 0, (int)(lastOffset-offsets[lastSetIndex]));
 		}
 
-		//TODO maybe add sanity check comparing buffer's size with calculated size of the requested page?
+		assert buffer.size()<=pageSize;
 
 		return buffer;
 	}
