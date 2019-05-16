@@ -7,9 +7,6 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.MANIFEST_FACTORY;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.EnumSet;
@@ -32,8 +29,6 @@ import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
-import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.util.ManifestBuilder;
 import de.ims.icarus2.model.standard.corpus.DefaultCorpus;
 import de.ims.icarus2.model.standard.driver.virtual.VirtualDriver;
@@ -53,24 +48,12 @@ class DefaultStreamedCorpusViewTest implements StreamedCorpusViewTest<DefaultStr
 	private CorpusManifest corpusManifest;
 	private VirtualItemLayerManager itemLayerManager;
 
-	@SuppressWarnings({ "boxing" })
 	@BeforeEach
 	void setUp() {
 		try(ManifestBuilder builder = new ManifestBuilder(MANIFEST_FACTORY)) {
-			corpusManifest = builder.create(CorpusManifest.class, "corpus")
-					.addRootContextManifest(builder.create(ContextManifest.class, "context", "corpus")
-							.setPrimaryLayerId("tokens")
-							.setDriverManifest(builder.create(DriverManifest.class, "driver", "context")
-									.setImplementationManifest(builder.live(VirtualDriver.class)))
-							.addLayerGroup(builder.create(LayerGroupManifest.class, "group", "context")
-									.setPrimaryLayerId("tokens")
-									.setIndependent(true)
-									.addLayerManifest(builder.create(ItemLayerManifest.class, "tokens", "group"))));
+			corpusManifest = createDefaultCorpusManifest();
 
-			corpusManager = mock(CorpusManager.class);
-			when(corpusManager.isCorpusConnected(eq(corpusManifest))).thenReturn(Boolean.TRUE);
-			when(corpusManager.isCorpusEnabled(eq(corpusManifest))).thenReturn(Boolean.TRUE);
-			when(corpusManager.getImplementationClassLoader(any())).thenReturn(getClass().getClassLoader());
+			corpusManager = createDefaultCorpusManager(corpusManifest);
 		}
 	}
 
@@ -152,7 +135,7 @@ class DefaultStreamedCorpusViewTest implements StreamedCorpusViewTest<DefaultStr
 		itemLayerManager.addLayer(layer);
 
 		// Takes care of only filling the manager if size is positive
-		assumeTrue(size<10_000_000); // guard against creating giant amounts of mocks
+		assumeTrue(size<100_000); // guard against creating giant amounts of mocks
 		for (int i = 0; i < size; i++) {
 			itemLayerManager.addItem(layer, mockItem());
 		}

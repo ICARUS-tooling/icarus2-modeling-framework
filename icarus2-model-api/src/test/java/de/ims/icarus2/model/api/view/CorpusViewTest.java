@@ -4,6 +4,7 @@
 package de.ims.icarus2.model.api.view;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.MANIFEST_FACTORY;
 import static de.ims.icarus2.test.TestUtils.assertCollectionNotEmpty;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -11,6 +12,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.Set;
 import java.util.stream.Stream;
@@ -23,7 +28,15 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.corpus.Context;
+import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.layer.Layer;
+import de.ims.icarus2.model.api.registry.CorpusManager;
+import de.ims.icarus2.model.manifest.api.ContextManifest;
+import de.ims.icarus2.model.manifest.api.CorpusManifest;
+import de.ims.icarus2.model.manifest.api.DriverManifest;
+import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
+import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
+import de.ims.icarus2.model.manifest.util.ManifestBuilder;
 import de.ims.icarus2.test.GenericTest;
 import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.util.AccessMode;
@@ -51,6 +64,43 @@ public interface CorpusViewTest<V extends CorpusView> extends GenericTest<V> {
 	V createForSize(long size);
 
 	Set<AccessMode> getSupportedAccessModes();
+
+	/**
+	 * Creates a flat corpus with a single item layer.
+	 * @return
+	 */
+	default CorpusManifest createDefaultCorpusManifest() {
+
+		try(ManifestBuilder builder = new ManifestBuilder(MANIFEST_FACTORY)) {
+			return builder.create(CorpusManifest.class, "corpus")
+					.addRootContextManifest(builder.create(ContextManifest.class, "context", "corpus")
+							.setPrimaryLayerId("tokens")
+							.setDriverManifest(builder.create(DriverManifest.class, "driver", "context")
+									.setImplementationManifest(builder.live(Driver.class)))
+							.addLayerGroup(builder.create(LayerGroupManifest.class, "group", "context")
+									.setPrimaryLayerId("tokens")
+									.setIndependent(true)
+									.addLayerManifest(builder.create(ItemLayerManifest.class, "tokens", "group"))));
+		}
+	}
+
+	/**
+	 * Constructs a mock of {@link CorpusManager} that allows testing creation of live corpora
+	 * based on the specified {@link CorpusManifest}.
+	 *
+	 * @param corpusManifest
+	 * @return
+	 */
+	@SuppressWarnings("boxing")
+	default CorpusManager createDefaultCorpusManager(CorpusManifest corpusManifest) {
+
+		CorpusManager corpusManager = mock(CorpusManager.class);
+		when(corpusManager.isCorpusConnected(eq(corpusManifest))).thenReturn(Boolean.TRUE);
+		when(corpusManager.isCorpusEnabled(eq(corpusManifest))).thenReturn(Boolean.TRUE);
+		when(corpusManager.getImplementationClassLoader(any())).thenReturn(getClass().getClassLoader());
+
+		return corpusManager;
+	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.CorpusView#getCorpus()}.

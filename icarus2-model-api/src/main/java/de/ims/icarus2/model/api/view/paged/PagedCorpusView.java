@@ -31,6 +31,7 @@ import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.Changeable;
 import de.ims.icarus2.util.Part;
+import de.ims.icarus2.util.strings.NamedObject;
 
 /**
  * A filtered view on a corpus resource.
@@ -137,7 +138,7 @@ public interface PagedCorpusView extends CorpusView, OwnableCorpusPart {
 	 * this restriction only applies to external attempts to call those methods! When a corpus view
 	 * is closing down for whatever reasons, it will close the page control and thereby also the
 	 * active page, regardless of its lock state. To prevent data corruption or other negative side effects
-	 * of a still locked page control any client code that attempts to {@link #lock(Object) lock} a
+	 * of a still locked page control any client code that attempts to {@link #lock(de.ims.icarus2.util.strings.NamedObject) lock} a
 	 * control should always make sure to also register with the surrounding corpus to receive
 	 * {@link CorpusListener#corpusPartDestroyed(de.ims.icarus2.model.api.events.CorpusEvent)} events,
 	 * which are sent <b>after</b> a view got closed, and release all data still associated with that view.
@@ -252,8 +253,8 @@ public interface PagedCorpusView extends CorpusView, OwnableCorpusPart {
 		void removePageListener(PageListener listener);
 
 		boolean isLocked();
-		void lock(Object key) throws ModelException;
-		void unlock(Object key) throws ModelException;
+		void lock(NamedObject key) throws ModelException;
+		void unlock(NamedObject key) throws ModelException;
 	}
 
 	public enum ViewMode {
