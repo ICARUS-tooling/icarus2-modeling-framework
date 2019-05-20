@@ -20,7 +20,7 @@
 package de.ims.icarus2.model.manifest.types;
 
 /**
- * Generic wrapper for "linking" annotation values.
+ * Generic wrapper for "pointer" annotation values.
  * Annotations of type {@link ValueType#REF} can be used to
  * {@code point} to other parts of a corpus.
  * <p>
@@ -28,8 +28,8 @@ package de.ims.icarus2.model.manifest.types;
  * the metadata level and therefore does not "know" about the
  * content model parts described in the higher-level frameworks.
  * As a direct result, this interface is generic and the individual
- * layer interfaces will define adequate sub-interfaces for modelling
- * the type of linking they suppport.
+ * layer interfaces will define adequate sub-interfaces for modeling
+ * the type of linking they support.
  *
  * @author Markus Gärtner
  *
