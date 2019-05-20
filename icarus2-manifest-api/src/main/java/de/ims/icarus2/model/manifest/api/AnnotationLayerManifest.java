@@ -35,23 +35,6 @@ import de.ims.icarus2.util.collections.LazyCollection;
  * Describes a layer that adds <i>content</i> in the form of annotations to
  * another item, structure or fragment layer.
  *
- * In addition it defines whether or not a layer can be
- * accessed for searching and if so, whether it can be indexed to speed up a
- * search operation. Note that those two flags are fixed properties of the
- * layer manifest and therefore not modifiable by the user. Not being able to
- * search a layer does however {@code not} imply it can't be used by the user at
- * all. It simply means the possible interactions besides looking at the visualized
- * form are restricted to manual operations like annotating or exploring it without
- * the help of the search engine.
- * <p>
- * Side note on indexing:
- * <br>
- * For an actual index to be constructed for a given layer, itself and <b>all</b> the layers
- * it depends on (even indirectly) have to be indexable. For the simple case of indexing
- * an annotation layer this is trivial, since most annotations will refer to basic
- * item or structure layers which are always indexable. Therefore the annotation layer
- * makes the choice regarding the option of indexing being available.
- *
  * @author Markus Gärtner
  *
  */
