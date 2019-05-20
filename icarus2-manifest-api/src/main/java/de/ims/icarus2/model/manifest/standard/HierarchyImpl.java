@@ -70,20 +70,24 @@ public class HierarchyImpl<E extends Object> extends AbstractLockable implements
 	 * @see de.ims.icarus2.model.manifest.api.Hierarchy#add(java.lang.Object)
 	 */
 	@Override
-	public void add(E item) {
+	public Hierarchy<E> add(E item) {
 		checkNotLocked();
 
 		insert0(item, -1, true);
+
+		return this;
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.Hierarchy#remove(java.lang.Object)
 	 */
 	@Override
-	public void remove(E item) {
+	public Hierarchy<E> remove(E item) {
 		checkNotLocked();
 
 		remove0(item);
+
+		return this;
 	}
 
 	protected void remove0(E item) {
@@ -98,10 +102,12 @@ public class HierarchyImpl<E extends Object> extends AbstractLockable implements
 	 * @see de.ims.icarus2.model.manifest.api.Hierarchy#insert(java.lang.Object, int)
 	 */
 	@Override
-	public void insert(E item, int index) {
+	public Hierarchy<E> insert(E item, int index) {
 		checkNotLocked();
 
 		insert0(item, index, false);
+
+		return this;
 	}
 
 	protected void insert0(E item, int index, boolean adjustIndex) {

@@ -60,11 +60,11 @@ public interface Hierarchy<E extends Object> extends Lockable, Iterable<E> {
 		return Optional.empty();
 	}
 
-	void add(E item);
+	Hierarchy<E> add(E item);
 
-	void remove(E item);
+	Hierarchy<E> remove(E item);
 
-	void insert(E item, int index);
+	Hierarchy<E> insert(E item, int index);
 
 	/**
 	 * Returns the level of specified {@code item} or {@code -1}
@@ -138,18 +138,21 @@ public interface Hierarchy<E extends Object> extends Lockable, Iterable<E> {
 		}
 
 		@Override
-		public void add(Object item) {
+		public Hierarchy<Object> add(Object item) {
 			// no-op
+			return this;
 		}
 
 		@Override
-		public void remove(Object item) {
+		public Hierarchy<Object> remove(Object item) {
 			// no-op
+			return this;
 		}
 
 		@Override
-		public void insert(Object item, int index) {
+		public Hierarchy<Object> insert(Object item, int index) {
 			// no-op
+			return this;
 		}
 
 		@Override
