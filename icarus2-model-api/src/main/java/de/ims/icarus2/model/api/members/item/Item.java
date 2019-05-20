@@ -114,7 +114,7 @@ import de.ims.icarus2.util.access.AccessRestriction;
  * <p>
  * Make sure to check the documentation on the flag related methods in subclasses, as they might impose additional
  * conditions that influence the actual state of the flag. For example the {@link Edge} contract requires that
- * a {@link Edge#isAlive() live} edge instance requires bot its terminals to be set to {@code non-null} values!
+ * a {@link Edge#isAlive() live} edge instance requires both its terminals to be set to {@code non-null} values!
  *
  * @author Markus Gärtner
  *
