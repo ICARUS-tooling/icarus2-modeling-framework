@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.access.AccessControl;
@@ -34,6 +35,13 @@ import de.ims.icarus2.util.collections.LazyCollection;
 /**
  * Describes a layer that adds <i>content</i> in the form of annotations to
  * another item, structure or fragment layer.
+ * <p>
+ * In the most simple form, such layers contain only {@code value} annotations,
+ * such as {@link ValueType#STRING strings} or {@link ValueType#INTEGER numeric values}.
+ * Additionally the special type {@link ValueType#REF} exists that allows {@code pointer}
+ * annotations that link items to other items without them being part of a common structure.
+ * The {@link #getReferenceLayerManifests() reference layers} associated with a
+ * {@link AnnotationLayerManifest} define the legal targets for such pointers.
  *
  * @author Markus Gärtner
  *
