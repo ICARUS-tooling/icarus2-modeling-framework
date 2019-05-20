@@ -26,6 +26,8 @@ import static java.util.Objects.requireNonNull;
 import java.util.HashMap;
 import java.util.Map;
 
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
+import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest.SourceType;
 import de.ims.icarus2.model.manifest.api.ManifestFactory;
@@ -33,6 +35,7 @@ import de.ims.icarus2.model.manifest.api.ManifestFragment;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.ModifiableIdentity;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
+import de.ims.icarus2.model.manifest.standard.HierarchyImpl;
 import de.ims.icarus2.model.manifest.standard.ImplementationManifestImpl;
 
 /**
@@ -144,10 +147,35 @@ public class ManifestBuilder implements AutoCloseable {
 		return markLast(clazz.cast(manifest));
 	}
 
+	/**
+	 * Creates a manifest without an explicit id but with a host identified by
+	 * {@code hostId}.
+	 *
+	 * @param clazz
+	 * @param hostId
+	 * @throws IllegalStateException iff the given {@code hostId} is not mapped to
+	 * a valid manifest.
+	 * @return
+	 */
+	public <M extends ManifestFragment> M createInternal(Class<M> clazz, String hostId) {
+		requireNonNull(clazz);
+		requireNonNull(hostId);
+
+		TypedManifest host = fetch(hostId);
+
+		ManifestFragment manifest = factory.create(ManifestType.forClass(clazz), host);
+
+		return markLast(clazz.cast(manifest));
+	}
+
 	public ImplementationManifest live(Class<?> clazz) {
 		return new ImplementationManifestImpl(last())
 				.setSourceType(SourceType.DEFAULT)
 				.setClassname(clazz.getName());
+	}
+
+	public Hierarchy<ContainerManifestBase<?>> containers() {
+		return new HierarchyImpl<>();
 	}
 
 	@SuppressWarnings("unchecked")
