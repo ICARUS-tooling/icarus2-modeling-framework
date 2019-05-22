@@ -21,6 +21,7 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
+import java.io.Closeable;
 import java.util.function.Consumer;
 import java.util.function.ObjLongConsumer;
 
@@ -100,9 +101,6 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	@Primitive
 	protected final boolean readable;
 
-	@Reference(ReferenceType.DOWNLINK)
-	protected final ChangeSource changeSource;
-
 	/**
 	 * Listener added to the host corpus responsible for cleaning
 	 * up the model once the surrounding view gets closed
@@ -124,6 +122,12 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	protected final ItemLayerManager itemLayerManager;
 
 	/**
+	 * Optional external handler for the changes nade through this model.
+	 */
+	@Reference(ReferenceType.DOWNLINK)
+	protected final Consumer<AtomicChange> changeHandler;
+
+	/**
 	 * Proxy for storing the filtered items in an efficient lookup structure.
 	 * Created lazily with a default implementation based on
 	 * {@link LookupList}.
@@ -131,7 +135,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	 * @see BufferedItemLookup
 	 */
 	@Reference(ReferenceType.DOWNLINK)
-	protected final Lazy<ItemLookup> itemLookup;
+	protected final Lazy<BufferedItemLookup> itemLookup;
 
 	private static final Logger log = LoggerFactory.getLogger(DefaultCorpusModel.class);
 
@@ -146,7 +150,28 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		itemLookup = Lazy.create(this::createItemLookup, true);
 		rootContainer = Lazy.create(this::createRootContainer, true);
 
-		changeSource = new ChangeSource(this);
+		Consumer<AtomicChange> changeHandler = builder.getChangeHandler();
+		if(changeHandler==null) {
+			/**
+			 * Default strategy: Grab the enclosing corpus' edit manager.
+			 * If there is no edit manager present on the corpus then the change
+			 * will be executed directly.
+			 */
+			changeHandler = change -> {
+				CorpusEditManager editModel = getCorpus().getEditManager();
+
+				if(editModel==null) {
+					change.execute();
+				} else {
+					editModel.execute(change);
+				}
+			};
+		} else {
+			log.info("Using custom change handler - if modifications to the corpus are "
+					+ "not reflected properly, this might be the cause!");
+		}
+
+		this.changeHandler = changeHandler;
 	}
 
 	//---------------------------------------------
@@ -176,17 +201,16 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		IcarusUtils.close(viewObserver, log, "view observer");
 		IcarusUtils.close(rootContainer, log, "root container");
 		IcarusUtils.close(itemLookup, log, "item lookup");
-		IcarusUtils.close(changeSource, log, "change source");
 	}
 
 	@Override
 	public void addChangeListener(ChangeListener listener) {
-		changeSource.addChangeListener(listener);
+		itemLookup.value().addChangeListener(listener);
 	}
 
 	@Override
 	public void removeChangeListener(ChangeListener listener) {
-		changeSource.removeChangeListener(listener);
+		itemLookup.value().removeChangeListener(listener);
 	}
 
 	protected CorpusListener createViewObserver() {
@@ -200,11 +224,11 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	}
 
 	@SuppressWarnings("resource")
-	protected ItemLookup createItemLookup() {
+	protected BufferedItemLookup createItemLookup() {
 		PagedCorpusView view = getView();
 		PageControl pageControl = view.getPageControl();
 
-		BufferedItemLookup itemLookup = new BufferedItemLookup(itemLayerManager, pageControl);
+		BufferedItemLookup itemLookup = new BufferedItemLookup(this, itemLayerManager, pageControl);
 
 		// Make sure that the new item lookup is up2date wrt the current page state!
 		if(pageControl.isPageLoaded()) {
@@ -281,7 +305,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	protected static <E extends Object> E ensureNotNull(E obj) {
 		if(obj==null)
-			throw new IllegalStateException("Null data encountered");
+			throw new ModelException(ModelErrorCode.MODEL_CORRUPTED_STATE, "Null data encountered");
 		return obj;
 	}
 
@@ -342,19 +366,11 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	@Override
 	public Container getRootContainer(ItemLayer layer) {
 		checkReadAccess();
-		checkLayerContained(layer);
 		checkActivePage();
+		checkLayerContained(layer);
 		checkPrimaryLayer(layer);
 
 		return rootContainer.value();
-	}
-
-	@Override
-	public Item getItem(ItemLayer layer, long index) {
-		checkReadAccess();
-		checkLayerContained(layer);
-
-		return itemLayerManager.getItem(layer, index);
 	}
 
 
@@ -932,25 +948,15 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	/**
 	 * Helper method to check whether or not the enclosing corpus is editable
-	 * and to forward an atomic change to the edit model.
-	 * <p>
-	 * If there is no {@link Corpus#getEditManager() edit model} present on the
-	 * {@link CorpusModel#getCorpus() corpus} then the {@code change} will be
-	 * {@link AtomicChange#execute() executed} directly.
+	 * and to forward an atomic change to the change handler.
 	 *
 	 * @param change the atomic change to be executed
-	 * @throws UnsupportedOperationException if the corpus is not editable
+	 * @throws ModelException if the corpus is not editable
 	 */
 	protected void executeChange(AtomicChange change) {
 		checkWriteAccess();
 
-		CorpusEditManager editModel = getCorpus().getEditManager();
-
-		if(editModel==null) {
-			change.execute();
-		} else {
-			editModel.execute(change);
-		}
+		changeHandler.accept(change);
 	}
 
 	//TODO forward destruction/reload of internal resources according to page changes
@@ -965,7 +971,8 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	}
 
-	protected static class BufferedItemLookup implements ItemLookup, PageListener, ObjLongConsumer<Item>, AutoCloseable {
+	protected static class BufferedItemLookup extends ChangeSource
+			implements ItemLookup, PageListener, ObjLongConsumer<Item>, Closeable {
 
 		private boolean dataLocked = false;
 
@@ -973,7 +980,8 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		private final LookupList<Item> items;
 		private final ItemLayerManager itemLayerManager;
 
-		public BufferedItemLookup(ItemLayerManager itemLayerManager, PageControl pageControl) {
+		public BufferedItemLookup(Object source, ItemLayerManager itemLayerManager, PageControl pageControl) {
+			super(source);
 			requireNonNull(itemLayerManager);
 			requireNonNull(pageControl);
 
@@ -991,8 +999,11 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		}
 
 		protected synchronized void clear() {
-			items.clear();
-			dataLocked = false;
+			try {
+				items.clear();
+			} finally {
+				dataLocked = false;
+			}
 		}
 
 		protected synchronized void reload() throws InterruptedException {
@@ -1001,6 +1012,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 				ItemLayer layer = pageControl.getView().getScope().getPrimaryLayer();
 				itemLayerManager.forItems(layer, IndexUtils.wrap(indices), this);
 			} catch (ModelException e) {
+				// In case of problems clear storage and re-throw
 				items.clear();
 				throw e;
 			} finally {
@@ -1043,6 +1055,8 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 			checkPageControl(source);
 
 			clear();
+
+			fireStateChanged();
 		}
 
 		/**
@@ -1064,6 +1078,8 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 			try {
 				reload();
+
+				fireStateChanged();
 			} catch (InterruptedException e) {
 				log.error("Loading of page was interrupted", e);
 			}
@@ -1077,6 +1093,8 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 			checkPageControl(source);
 
 			clear();
+
+			fireStateChanged();
 		}
 
 		/**
@@ -1113,7 +1131,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		 * @see java.lang.AutoCloseable#close()
 		 */
 		@Override
-		public void close() throws Exception {
+		public void close() {
 			pageControl.removePageListener(this);
 		}
 
@@ -1260,13 +1278,43 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		}
 	}
 
-	public static class Builder extends AbstractBuilder<Builder, CorpusModel> {
+	public static class Builder extends AbstractBuilder<Builder, DefaultCorpusModel> {
 
 		private AccessMode accessMode;
 		private ItemLayerManager itemLayerManager;
+		private Consumer<AtomicChange> changeHandler;
 
 		protected Builder() {
 			// no-op
+		}
+
+		/**
+		 * Allows to override the way new {@link AtomicChange changes} to the
+		 * underlying corpus data are handled:
+		 * <p>
+		 * Each write operation on the corpus data is internally wrapped into
+		 * an appropriate instance of {@link AtomicChange} by this model. The
+		 * resulting {@code change} objects are then (by default) delivered
+		 * to the corpus' {@link Corpus#getEditManager() edit manager} for
+		 * further handling, execution and, if configured, storage.
+		 * <p>
+		 * If a custom {@code changeHandler} is set by this method, it will
+		 * be used instead of above mentioned strategy.
+		 *
+		 * @param changeHandler
+		 * @return
+		 */
+		public Builder changeHandler(Consumer<AtomicChange> changeHandler) {
+			requireNonNull(changeHandler);
+			checkState(this.changeHandler==null);
+
+			this.changeHandler = changeHandler;
+
+			return thisAsCast();
+		}
+
+		public Consumer<AtomicChange> getChangeHandler() {
+			return changeHandler;
 		}
 
 

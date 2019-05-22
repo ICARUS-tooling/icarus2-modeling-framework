@@ -176,23 +176,6 @@ public interface CorpusModel extends Part<PagedCorpusView>, Changeable {
 		return getRootContainer(getView().fetchPrimaryLayer());
 	}
 
-	/**
-	 * Fetches the {@link Driver} responsible for the specified layer and attempts to fetch
-	 * the top level item at the given {@code index}.
-	 * <p>
-	 * Note that the given {@code index} is supposed to refer to the basic index space of the
-	 * layer (i.e. the returned item's {@link Item#getIndex() internal index} must be the same
-	 * as the {@code index} argument).
-	 *
-	 * @param layer
-	 * @param index
-	 * @return
-	 *
-	 * @throws ModelException if the {@code layer} is not part of this model's enclosing view
-	 * or the {@code index} is invalid (violates the size of that layer's size).
-	 */
-	Item getItem(ItemLayer layer, long index);
-
 	//---------------------------------------------
 	//			ITEM METHODS
 	//---------------------------------------------
