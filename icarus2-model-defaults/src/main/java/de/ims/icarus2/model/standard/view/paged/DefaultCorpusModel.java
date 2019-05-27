@@ -258,6 +258,33 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 			throw new ModelException(getCorpus(), ModelErrorCode.MODEL_READ_ONLY, "Underlying corpus view is read only");
 	}
 
+	protected final void checkAlive(Item item) {
+		if(!item.isAlive())
+			throw new ModelException(ModelErrorCode.MODEL_CORRUPTED_STATE, "Item is dead: "+getName(item));
+	}
+
+	protected final void checkClean(Item item) {
+		if(!item.isDirty())
+			throw new ModelException(ModelErrorCode.MODEL_CORRUPTED_STATE, "Item is dirty: "+getName(item));
+	}
+
+	protected final void checkUnlocked(Item item) {
+		if(!item.isLocked())
+			throw new ModelException(ModelErrorCode.MODEL_CORRUPTED_STATE, "Item is locked: "+getName(item));
+	}
+
+	private void checkReadItem(Item target) {
+		checkReadAccess();
+		checkAlive(target);
+		checkClean(target);
+	}
+
+	private void checkWriteItem(Item target) {
+		checkWriteAccess();
+		checkAlive(target);
+		checkUnlocked(target);
+	}
+
 	protected final void checkActivePage() {
 		if(!getView().getPageControl().isPageLoaded())
 			throw new ModelException(getCorpus(), ModelErrorCode.VIEW_EMPTY, "Current page of corpus view is empty");
@@ -380,42 +407,42 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	@Override
 	public Container getContainer(Item item) {
-		checkReadAccess();
+		checkReadItem(item);
 
 		return item.getContainer();
 	}
 
 	@Override
 	public ItemLayer getLayer(Item item) {
-		checkReadAccess();
+		checkReadItem(item);
 
 		return ensureNotNull(item.getLayer());
 	}
 
 	@Override
 	public long getIndex(Item item) {
-		checkReadAccess();
+		checkReadItem(item);
 
 		return item.getIndex();
 	}
 
 	@Override
 	public long getBeginOffset(Item item) {
-		checkReadAccess();
+		checkReadItem(item);
 
 		return item.getBeginOffset();
 	}
 
 	@Override
 	public long getEndOffset(Item item) {
-		checkReadAccess();
+		checkReadItem(item);
 
 		return item.getEndOffset();
 	}
 
 	@Override
 	public boolean isVirtual(Item item) {
-		checkReadAccess();
+		checkReadItem(item);
 
 		return ModelUtils.isVirtual(item);
 	}
@@ -427,42 +454,42 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	@Override
 	public ContainerType getContainerType(Container container) {
-		checkReadAccess();
+		checkReadItem(container);
 
 		return ensureNotNull(container.getContainerType());
 	}
 
 	@Override
 	public DataSet<Container> getBaseContainers(Container container) {
-		checkReadAccess();
+		checkReadItem(container);
 
 		return ensureNotNull(container.getBaseContainers());
 	}
 
 	@Override
 	public Container getBoundaryContainer(Container container) {
-		checkReadAccess();
+		checkReadItem(container);
 
 		return container.getBoundaryContainer();
 	}
 
 	@Override
 	public long getItemCount(Container container) {
-		checkReadAccess();
+		checkReadItem(container);
 
 		return container.getItemCount();
 	}
 
 	@Override
 	public Item getItemAt(Container container, long index) {
-		checkReadAccess();
+		checkReadItem(container);
 
 		return ensureNotNull(container.getItemAt(index));
 	}
 
 	@Override
 	public long indexOfItem(Container container, Item item) {
-		checkReadAccess();
+		checkReadItem(container);
 
 		return container.indexOfItem(item);
 	}
@@ -474,7 +501,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	@Override
 	public void addItem(Container container, Item item) {
-		checkWriteAccess();
+		checkWriteItem(container);
 		long index = container.getItemCount();
 
 		addItem(container, index, item);
@@ -482,7 +509,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	@Override
 	public void addItem(Container container, long index, Item item) {
-		checkWriteAccess();
+		checkWriteItem(container);
 		checkIndexForAdd(index, container.getItemCount());
 
 		executeChange(new SerializableAtomicModelChange.ItemChange(container, item, container.getItemCount(), index, true));
@@ -491,7 +518,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	@Override
 	public void addItems(Container container, long index,
 			DataSequence<? extends Item> items) {
-		checkWriteAccess();
+		checkWriteItem(container);
 		checkIndexForAdd(index, container.getItemCount());
 
 		executeChange(new SerializableAtomicModelChange.ItemSequenceChange(container, container.getItemCount(), index, items));
@@ -499,7 +526,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	@Override
 	public Item removeItem(Container container, long index) {
-		checkWriteAccess();
+		checkWriteItem(container);
 		checkIndexForRemove(index, container.getItemCount());
 
 		Item item = container.getItemAt(index);
@@ -511,6 +538,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	@Override
 	public boolean removeItem(Container c, Item item) {
+		checkWriteItem(c);
 		long index = c.indexOfItem(item);
 
 		if(index==IcarusUtils.UNSET_LONG) {
@@ -524,7 +552,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	@Override
 	public void removeItems(Container container, long index0, long index1) {
-		checkWriteAccess();
+		checkWriteItem(container);
 		checkIndexForRemove(index0, container.getItemCount());
 		checkIndexForRemove(index1, container.getItemCount());
 		checkArgument(index0<=index1);
@@ -534,7 +562,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	@Override
 	public void moveItem(Container container, long index0, long index1) {
-		checkWriteAccess();
+		checkWriteItem(container);
 		checkIndexForRemove(index0, container.getItemCount());
 		checkIndexForRemove(index1, container.getItemCount());
 
@@ -551,119 +579,119 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	@Override
 	public StructureType getStructureType(Structure structure) {
-		checkReadAccess();
+		checkReadItem(structure);
 
 		return ensureNotNull(structure.getStructureType());
 	}
 
 	@Override
 	public long getEdgeCount(Structure structure) {
-		checkReadAccess();
+		checkReadItem(structure);
 
 		return structure.getEdgeCount();
 	}
 
 	@Override
 	public Edge getEdgeAt(Structure structure, long index) {
-		checkReadAccess();
+		checkReadItem(structure);
 
 		return ensureNotNull(structure.getEdgeAt(index));
 	}
 
 	@Override
 	public long indexOfEdge(Structure structure, Edge edge) {
-		checkReadAccess();
+		checkReadItem(structure);
 
 		return structure.indexOfEdge(edge);
 	}
 
 	@Override
 	public boolean containsEdge(Structure structure, Edge edge) {
-		checkReadAccess();
+		checkReadItem(structure);
 
 		return structure.indexOfEdge(edge)!=-1L;
 	}
 
 	@Override
 	public long getEdgeCount(Structure structure, Item node) {
-		checkReadAccess();
+		checkReadItem(structure);
 
 		return structure.getEdgeCount(node);
 	}
 
 	@Override
 	public long getEdgeCount(Structure structure, Item node, boolean isSource) {
-		checkReadAccess();
+		checkReadItem(structure);
 
 		return structure.getEdgeCount(node, isSource);
 	}
 
 	@Override
 	public Edge getEdgeAt(Structure structure, Item node, long index, boolean isSource) {
-		checkReadAccess();
+		checkReadItem(structure);
 
 		return ensureNotNull(structure.getEdgeAt(node, index, isSource));
 	}
 
 	@Override
 	public Item getVirtualRoot(Structure structure) {
-		checkReadAccess();
+		checkReadItem(structure);
 
 		return ensureNotNull(structure.getVirtualRoot());
 	}
 
 	@Override
 	public boolean isRoot(Structure structure, Item node) {
-		checkReadAccess();
+		checkReadItem(structure);
 
 		return structure.isRoot(node);
 	}
 
 	@Override
 	public Item getParent(Structure structure, Item node) {
-		checkReadAccess();
+		checkReadItem(structure);
 
 		return structure.getParent(node);
 	}
 
 	@Override
 	public long indexOfChild(Structure structure, Item child) {
-		checkReadAccess();
+		checkReadItem(structure);
 
 		return structure.indexOfChild(child);
 	}
 
 	@Override
 	public Item getSiblingAt(Structure structure, Item child, long offset) {
-		checkReadAccess();
+		checkReadItem(structure);
 
 		return structure.getSiblingAt(child, offset);
 	}
 
 	@Override
 	public long getHeight(Structure structure, Item node) {
-		checkReadAccess();
+		checkReadItem(structure);
 
 		return structure.getHeight(node);
 	}
 
 	@Override
 	public long getDepth(Structure structure, Item node) {
-		checkReadAccess();
+		checkReadItem(structure);
 
 		return structure.getDepth(node);
 	}
 
 	@Override
 	public long getDescendantCount(Structure structure, Item parent) {
-		checkReadAccess();
+		checkReadItem(structure);
 
 		return structure.getDescendantCount(parent);
 	}
 
 	@Override
 	public void addEdge(Structure structure, Edge edge) {
-		checkWriteAccess();
+		checkWriteItem(structure);
 
 		long index = structure.getEdgeCount();
 
@@ -672,7 +700,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	@Override
 	public void addEdge(Structure structure, long index, Edge edge) {
-		checkWriteAccess();
+		checkWriteItem(structure);
 		checkIndexForAdd(index, structure.getEdgeCount());
 
 		executeChange(new SerializableAtomicModelChange.EdgeChange(structure, edge, structure.getEdgeCount(), index, true));
@@ -681,7 +709,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	@Override
 	public void addEdges(Structure structure, long index,
 			DataSequence<? extends Edge> edges) {
-		checkWriteAccess();
+		checkWriteItem(structure);
 		checkIndexForAdd(index, structure.getEdgeCount());
 
 		executeChange(new SerializableAtomicModelChange.EdgeSequenceChange(structure, structure.getEdgeCount(), index, edges));
@@ -689,7 +717,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	@Override
 	public Edge removeEdge(Structure structure, long index) {
-		checkWriteAccess();
+		checkWriteItem(structure);
 		checkIndexForRemove(index, structure.getEdgeCount());
 
 		Edge edge = structure.getEdgeAt(index);
@@ -701,6 +729,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	@Override
 	public boolean removeEdge(Structure structure, Edge edge) {
+		checkWriteItem(structure);
 		long index = structure.indexOfEdge(edge);
 
 		if(index==IcarusUtils.UNSET_LONG) {
@@ -714,7 +743,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	@Override
 	public void removeEdges(Structure structure, long index0, long index1) {
-		checkWriteAccess();
+		checkWriteItem(structure);
 		checkIndexForRemove(index0, structure.getEdgeCount());
 		checkIndexForRemove(index1, structure.getEdgeCount());
 		checkArgument(index0<=index1);
@@ -724,7 +753,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	@Override
 	public void moveEdge(Structure structure, long index0, long index1) {
-		checkWriteAccess();
+		checkWriteItem(structure);
 		checkIndexForRemove(index0, structure.getEdgeCount());
 		checkIndexForRemove(index1, structure.getEdgeCount());
 
@@ -737,6 +766,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	@Override
 	public Item setTerminal(Structure structure, Edge edge, Item item,
 			boolean isSource) {
+		checkWriteItem(structure);
 		Item oldTerminal = edge.getTerminal(isSource);
 
 		executeChange(new SerializableAtomicModelChange.TerminalChange(structure, edge, isSource, item, oldTerminal));
@@ -751,21 +781,21 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	@Override
 	public Structure getStructure(Edge edge) {
-		checkReadAccess();
+		checkReadItem(edge);
 
 		return ensureNotNull(edge.getStructure());
 	}
 
 	@Override
 	public Item getSource(Edge edge) {
-		checkReadAccess();
+		checkReadItem(edge);
 
 		return ensureNotNull(edge.getSource());
 	}
 
 	@Override
 	public Item getTarget(Edge edge) {
-		checkReadAccess();
+		checkReadItem(edge);
 
 		return ensureNotNull(edge.getTarget());
 	}
@@ -777,27 +807,28 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	@Override
 	public Item getItem(Fragment fragment) {
-		checkReadAccess();
+		checkReadItem(fragment);
 
 		return ensureNotNull(fragment.getItem());
 	}
 
 	@Override
 	public Position getFragmentBegin(Fragment fragment) {
-		checkReadAccess();
+		checkReadItem(fragment);
 
 		return ensureNotNull(fragment.getFragmentBegin());
 	}
 
 	@Override
 	public Position getFragmentEnd(Fragment fragment) {
-		checkReadAccess();
+		checkReadItem(fragment);
 
 		return ensureNotNull(fragment.getFragmentEnd());
 	}
 
 	@Override
 	public Position setFragmentBegin(Fragment fragment, Position position) {
+		checkWriteItem(fragment);
 		Position oldPosition = ensureNotNull(fragment.getFragmentBegin());
 
 		executeChange(new SerializableAtomicModelChange.PositionChange(fragment, true, position));
@@ -807,6 +838,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	@Override
 	public Position setFragmentEnd(Fragment fragment, Position position) {
+		checkWriteItem(fragment);
 		Position oldPosition = ensureNotNull(fragment.getFragmentEnd());
 
 		executeChange(new SerializableAtomicModelChange.PositionChange(fragment, false, position));
@@ -816,55 +848,55 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 
 	//---------------------------------------------
-	//			VALUE_MANIFEST METHODS
+	//			ANNOTATION METHODS
 	//---------------------------------------------
 
 	@Override
 	public boolean collectKeys(AnnotationLayer layer, Item item,
 			Consumer<String> action) {
-		checkReadAccess();
+		checkReadItem(item);
 
 		return layer.getAnnotationStorage().collectKeys(item, action);
 	}
 
 	@Override
 	public Object getValue(AnnotationLayer layer, Item item, String key) {
-		checkReadAccess();
+		checkReadItem(item);
 
 		return layer.getAnnotationStorage().getValue(item, key);
 	}
 
 	@Override
 	public int getIntegerValue(AnnotationLayer layer, Item item, String key) {
-		checkReadAccess();
+		checkReadItem(item);
 
 		return layer.getAnnotationStorage().getIntegerValue(item, key);
 	}
 
 	@Override
 	public long getLongValue(AnnotationLayer layer, Item item, String key) {
-		checkReadAccess();
+		checkReadItem(item);
 
 		return layer.getAnnotationStorage().getLongValue(item, key);
 	}
 
 	@Override
 	public float getFloatValue(AnnotationLayer layer, Item item, String key) {
-		checkReadAccess();
+		checkReadItem(item);
 
 		return layer.getAnnotationStorage().getFloatValue(item, key);
 	}
 
 	@Override
 	public double getDoubleValue(AnnotationLayer layer, Item item, String key) {
-		checkReadAccess();
+		checkReadItem(item);
 
 		return layer.getAnnotationStorage().getDoubleValue(item, key);
 	}
 
 	@Override
 	public boolean getBooleanValue(AnnotationLayer layer, Item item, String key) {
-		checkReadAccess();
+		checkReadItem(item);
 
 		return layer.getAnnotationStorage().getBooleanValue(item, key);
 	}
@@ -872,6 +904,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	@Override
 	public Object setValue(AnnotationLayer layer, Item item, String key,
 			Object value) {
+		checkWriteItem(item);
 		Object oldValue = layer.getAnnotationStorage().getValue(item, key);
 		ValueType valueType = layer.getManifest().getAnnotationManifest(key)
 				.map(AnnotationManifest::getValueType)
@@ -885,6 +918,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	@Override
 	public int setIntegerValue(AnnotationLayer layer, Item item, String key,
 			int value) {
+		checkWriteItem(item);
 		int oldValue = layer.getAnnotationStorage().getIntegerValue(item, key);
 
 		executeChange(new SerializableAtomicModelChange.IntegerValueChange(layer, item, key, value, oldValue));
@@ -895,6 +929,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	@Override
 	public long setLongValue(AnnotationLayer layer, Item item, String key,
 			long value) {
+		checkWriteItem(item);
 		long oldValue = layer.getAnnotationStorage().getLongValue(item, key);
 
 		executeChange(new SerializableAtomicModelChange.LongValueChange(layer, item, key, value, oldValue));
@@ -905,6 +940,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	@Override
 	public float setFloatValue(AnnotationLayer layer, Item item, String key,
 			float value) {
+		checkWriteItem(item);
 		float oldValue = layer.getAnnotationStorage().getFloatValue(item, key);
 
 		executeChange(new SerializableAtomicModelChange.FloatValueChange(layer, item, key, value, oldValue));
@@ -915,6 +951,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	@Override
 	public double setDoubleValue(AnnotationLayer layer, Item item, String key,
 			double value) {
+		checkWriteItem(item);
 		double oldValue = layer.getAnnotationStorage().getDoubleValue(item, key);
 
 		executeChange(new SerializableAtomicModelChange.DoubleValueChange(layer, item, key, value, oldValue));
@@ -925,6 +962,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	@Override
 	public boolean setBooleanValue(AnnotationLayer layer, Item item,
 			String key, boolean value) {
+		checkWriteItem(item);
 		boolean oldValue = layer.getAnnotationStorage().getBooleanValue(item, key);
 
 		executeChange(new SerializableAtomicModelChange.BooleanValueChange(layer, item, key, value, oldValue));
@@ -941,7 +979,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	@Override
 	public boolean hasAnnotations(AnnotationLayer layer, Item item) {
-		checkReadAccess();
+		checkReadItem(item);
 
 		return layer.getAnnotationStorage().hasAnnotations(item);
 	}
