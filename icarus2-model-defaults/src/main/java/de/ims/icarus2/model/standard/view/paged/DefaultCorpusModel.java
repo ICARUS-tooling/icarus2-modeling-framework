@@ -496,7 +496,9 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 	@Override
 	public boolean containsItem(Container container, Item item) {
-		return indexOfItem(container, item)!=IcarusUtils.UNSET_LONG;
+		checkReadItem(container);
+
+		return container.containsItem(item);
 	}
 
 	@Override

@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.model.util;
 
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
@@ -180,7 +181,7 @@ public final class ModelUtils {
 	}
 
 	public static boolean isVirtual(Item item) {
-		return item.getBeginOffset()==-1 || item.getEndOffset()==-1;
+		return item.getBeginOffset()==UNSET_LONG || item.getEndOffset()==UNSET_LONG;
 	}
 
 	public static boolean isOverlayContainer(Container container) {

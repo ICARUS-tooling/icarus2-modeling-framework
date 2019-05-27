@@ -62,6 +62,7 @@ import de.ims.icarus2.model.api.driver.indices.standard.VirtualIndexSet;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
+import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.raster.Metric;
@@ -107,8 +108,27 @@ public class ModelTestUtils {
 		return item;
 	}
 
+	@SuppressWarnings("boxing")
+	public static <I extends Item> I stubFlags(I item, boolean alive, boolean dirty, boolean locked) {
+		when(item.isAlive()).thenReturn(alive);
+		when(item.isDirty()).thenReturn(dirty);
+		when(item.isLocked()).thenReturn(locked);
+		return item;
+	}
+
+	@SuppressWarnings("boxing")
+	public static Item stubOffsets(Item item, long beginOffset, long endOffset) {
+		when(item.getBeginOffset()).thenReturn(beginOffset);
+		when(item.getEndOffset()).thenReturn(endOffset);
+		return item;
+	}
+
 	public static Item mockItem() {
 		return stubType(mock(Item.class), MemberType.ITEM);
+	}
+
+	public static Item mockUsableItem() {
+		return stubFlags(stubType(mock(Item.class), MemberType.ITEM), true, true, true);
 	}
 
 	public static Item mockItem(Container host) {
@@ -128,6 +148,10 @@ public class ModelTestUtils {
 
 	public static Edge mockEdge() {
 		return stubHost(stubType(mock(Edge.class), MemberType.EDGE), STRUCTURE);
+	}
+
+	public static Edge mockUsableEdge() {
+		return stubFlags(mockEdge(), true, true, true);
 	}
 
 	public static Edge mockEdge(Structure structure) {
@@ -158,6 +182,14 @@ public class ModelTestUtils {
 		Position position = mock(Position.class);
 		stubValues(position, values);
 		return position;
+	}
+
+	public static Fragment mockFragment() {
+		return mock(Fragment.class);
+	}
+
+	public static Fragment mockUsableFragment() {
+		return stubFlags(mockFragment(), true, true, true);
 	}
 
 	@SuppressWarnings("boxing")
@@ -208,6 +240,10 @@ public class ModelTestUtils {
 
 	public static Container mockContainer() {
 		return mock(Container.class);
+	}
+
+	public static Container mockUsableContainer() {
+		return stubFlags(mock(Container.class), true, true, true);
 	}
 
 	public static Container mockContainer(long itemCount) {
@@ -278,6 +314,10 @@ public class ModelTestUtils {
 		when(structure.getVirtualRoot()).thenReturn(root);
 
 		return structure;
+	}
+
+	public static Structure mockUsableStructure() {
+		return stubFlags(mockStructure(), true, true, true);
 	}
 
 	@SuppressWarnings("boxing")

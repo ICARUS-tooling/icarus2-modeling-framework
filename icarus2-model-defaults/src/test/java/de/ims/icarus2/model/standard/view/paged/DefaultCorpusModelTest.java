@@ -19,9 +19,33 @@
  */
 package de.ims.icarus2.model.standard.view.paged;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.EnumSet;
+import java.util.Set;
+import java.util.function.Consumer;
+
+import de.ims.icarus2.model.api.corpus.Corpus;
+import de.ims.icarus2.model.api.driver.Driver;
+import de.ims.icarus2.model.api.driver.indices.IndexSet;
+import de.ims.icarus2.model.api.edit.change.AtomicChange;
+import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
+import de.ims.icarus2.model.api.registry.CorpusManager;
+import de.ims.icarus2.model.api.registry.CorpusMemberFactory;
 import de.ims.icarus2.model.api.view.paged.CorpusModelTest;
 import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
-import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl;
+import de.ims.icarus2.model.manifest.api.ContextManifest;
+import de.ims.icarus2.model.manifest.api.CorpusManifest;
+import de.ims.icarus2.model.manifest.api.DriverManifest;
+import de.ims.icarus2.model.manifest.api.ImplementationLoader;
+import de.ims.icarus2.model.standard.corpus.DefaultCorpus;
+import de.ims.icarus2.model.standard.driver.virtual.VirtualDriver;
+import de.ims.icarus2.model.standard.registry.DefaultCorpusMemberFactory;
+import de.ims.icarus2.model.standard.registry.metadata.VirtualMetadataRegistry;
+import de.ims.icarus2.model.standard.util.DefaultImplementationLoader;
+import de.ims.icarus2.util.AccessMode;
 
 /**
  * @author Markus Gärtner
@@ -30,30 +54,114 @@ import de.ims.icarus2.test.TestSettings;
 class DefaultCorpusModelTest implements CorpusModelTest<DefaultCorpusModel> {
 
 	/**
-	 * @see de.ims.icarus2.util.PartTest#createEnvironment()
-	 */
-	@Override
-	public PagedCorpusView createEnvironment() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
-	 */
-	@Override
-	public DefaultCorpusModel createTestInstance(TestSettings settings) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
+	 * Causes the underlying {@link PageControl} to either load or close the
+	 * current page to invoke publication of a change event on this model.
+	 *
 	 * @see de.ims.icarus2.util.ChangeableTest#invokeChange(de.ims.icarus2.util.Changeable)
 	 */
 	@Override
-	public void invokeChange(DefaultCorpusModel instance) {
-		// TODO Auto-generated method stub
-
+	public void invokeChange(DefaultCorpusModel model) {
+		PageControl control = model.getView().getPageControl();
+		if(control.isPageLoaded()) {
+			try {
+				control.closePage();
+			} catch (InterruptedException e) {
+				throw new AssertionError("not supposed to happen!", e);
+			}
+		} else {
+			try {
+				control.load();
+			} catch (InterruptedException e) {
+				throw new AssertionError("not supposed to happen!", e);
+			}
+		}
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.api.view.paged.CorpusModelTest#getSupportedAccessModes()
+	 */
+	@Override
+	public Set<AccessMode> getSupportedAccessModes() {
+		return EnumSet.allOf(AccessMode.class);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.view.paged.CorpusModelTest#createView(de.ims.icarus2.util.AccessMode, de.ims.icarus2.model.api.members.item.manager.ItemLayerManager, int)
+	 */
+	@SuppressWarnings("resource")
+	@Override
+	public PagedCorpusView createView(AccessMode accessMode,
+			ItemLayerManager itemLayerManager, int pageSize, IndexSet...indices) {
+
+
+		CorpusManifest corpusManifest = createDefaultCorpusManifest();
+		CorpusManager corpusManager = createDefaultCorpusManager(corpusManifest);
+
+		Corpus corpus = DefaultCorpus.newBuilder()
+				.manager(corpusManager)
+				.metadataRegistry(new VirtualMetadataRegistry())
+				.manifest(corpusManifest)
+				.build();
+
+		final DriverManifest driverManifest = corpusManifest.getContextManifest("context").
+				flatMap(ContextManifest::getDriverManifest)
+				.get();
+
+		CorpusMemberFactory corpusMemberFactory = new DefaultCorpusMemberFactory(corpusManager) {
+			@SuppressWarnings("serial")
+			@Override
+			public ImplementationLoader<?> newImplementationLoader() {
+				return new DefaultImplementationLoader(corpusManager) {
+					@Override
+					public <T> T instantiate(Class<T> resultClass) {
+						if(Driver.class.equals(resultClass)) {
+							return resultClass.cast(
+									VirtualDriver.newBuilder()
+									.itemLayerManager(itemLayerManager)
+									.manifest(driverManifest)
+									.build());
+						}
+
+						return super.instantiate(resultClass);
+					}
+				};
+			}
+		};
+		when(corpusManager.newFactory()).thenReturn(corpusMemberFactory);
+
+		return DefaultPagedCorpusView.newBuilder()
+				.accessMode(accessMode)
+				.indices(indices)
+				.itemLayerManager(itemLayerManager)
+				.scope(corpus.createCompleteScope())
+				.pageSize(pageSize)
+				.build();
+	}
+
+	@Override
+	public DefaultCorpusModel createModel(PagedCorpusView view,
+			ItemLayerManager itemLayerManager, Consumer<AtomicChange> changeHandler) {
+
+		DefaultCorpusModel model = DefaultCorpusModel.newBuilder()
+				.accessMode(view.getAccessMode())
+				.itemLayerManager(itemLayerManager)
+				.changeHandler(changeHandler)
+				.build();
+
+		model.addNotify(view);
+
+		return model;
+	}
+
+	/**
+	 * @see de.ims.icarus2.util.PartTest#createUnadded()
+	 */
+	@Override
+	public DefaultCorpusModel createUnadded() {
+
+		return DefaultCorpusModel.newBuilder()
+				.accessMode(AccessMode.READ_WRITE)
+				.itemLayerManager(mock(ItemLayerManager.class))
+				.build();
+	}
 }
