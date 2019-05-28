@@ -158,7 +158,7 @@ public class ModelTestUtils {
 		return stubHost(mock(Edge.class), structure);
 	}
 
-	private static Edge stubHost(Edge edge, Structure structure) {
+	public static Edge stubHost(Edge edge, Structure structure) {
 		when(edge.getStructure()).thenReturn(structure);
 		return edge;
 	}

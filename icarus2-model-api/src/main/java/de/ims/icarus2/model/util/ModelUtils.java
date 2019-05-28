@@ -514,7 +514,9 @@ public final class ModelUtils {
 	/**
 	 * Validates that the given {@code begin} and {@code end} positions are valid wrt the
 	 * rasterization used for the given {@code fragment}.
-	 *
+	 * <p>
+	 * Note that this method will always abort without an exception for fragments that
+	 * are <b>not</b> embedded in an actual layer.
 	 *
 	 * @param fragment
 	 * @param begin
@@ -537,6 +539,11 @@ public final class ModelUtils {
 
 		Item item = fragment.getItem();
 		FragmentLayer layer = fragment.getLayer();
+
+		if(layer==null) {
+			return;
+		}
+
 		Rasterizer rasterizer = layer.getRasterizer();
 		int dimensionality = rasterizer.getAxisCount();
 

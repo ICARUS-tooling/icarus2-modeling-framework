@@ -22,6 +22,7 @@ import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import java.io.Closeable;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.ObjLongConsumer;
 
@@ -514,7 +515,8 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		checkWriteItem(container);
 		checkIndexForAdd(index, container.getItemCount());
 
-		executeChange(new SerializableAtomicModelChange.ItemChange(container, item, container.getItemCount(), index, true));
+		executeChange(new SerializableAtomicModelChange.ItemChange(
+				container, item, container.getItemCount(), index, true));
 	}
 
 	@Override
@@ -523,7 +525,8 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		checkWriteItem(container);
 		checkIndexForAdd(index, container.getItemCount());
 
-		executeChange(new SerializableAtomicModelChange.ItemSequenceChange(container, container.getItemCount(), index, items));
+		executeChange(new SerializableAtomicModelChange.ItemSequenceChange(
+				container, container.getItemCount(), index, items));
 	}
 
 	@Override
@@ -533,7 +536,8 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 		Item item = container.getItemAt(index);
 
-		executeChange(new SerializableAtomicModelChange.ItemChange(container, item, container.getItemCount(), index, false));
+		executeChange(new SerializableAtomicModelChange.ItemChange(
+				container, item, container.getItemCount(), index, false));
 
 		return item;
 	}
@@ -547,7 +551,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 			return false;
 		}
 
-		removeItem(c, item);
+		removeItem(c, index);
 
 		return true;
 	}
@@ -559,11 +563,12 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		checkIndexForRemove(index1, container.getItemCount());
 		checkArgument(index0<=index1);
 
-		executeChange(new SerializableAtomicModelChange.ItemSequenceChange(container, container.getItemCount(), index0, index1));
+		executeChange(new SerializableAtomicModelChange.ItemSequenceChange(
+				container, container.getItemCount(), index0, index1));
 	}
 
 	@Override
-	public void moveItem(Container container, long index0, long index1) {
+	public void swapItems(Container container, long index0, long index1) {
 		checkWriteItem(container);
 		checkIndexForRemove(index0, container.getItemCount());
 		checkIndexForRemove(index1, container.getItemCount());
@@ -571,7 +576,8 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		Item item0 = container.getItemAt(index0);
 		Item item1 = container.getItemAt(index1);
 
-		executeChange(new SerializableAtomicModelChange.ItemMoveChange(container, container.getItemCount(), index0, index1, item0, item1));
+		executeChange(new SerializableAtomicModelChange.ItemMoveChange(
+				container, container.getItemCount(), index0, index1, item0, item1));
 	}
 
 
@@ -705,7 +711,8 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		checkWriteItem(structure);
 		checkIndexForAdd(index, structure.getEdgeCount());
 
-		executeChange(new SerializableAtomicModelChange.EdgeChange(structure, edge, structure.getEdgeCount(), index, true));
+		executeChange(new SerializableAtomicModelChange.EdgeChange(
+				structure, edge, structure.getEdgeCount(), index, true));
 	}
 
 	@Override
@@ -714,7 +721,8 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		checkWriteItem(structure);
 		checkIndexForAdd(index, structure.getEdgeCount());
 
-		executeChange(new SerializableAtomicModelChange.EdgeSequenceChange(structure, structure.getEdgeCount(), index, edges));
+		executeChange(new SerializableAtomicModelChange.EdgeSequenceChange(
+				structure, structure.getEdgeCount(), index, edges));
 	}
 
 	@Override
@@ -724,7 +732,8 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 
 		Edge edge = structure.getEdgeAt(index);
 
-		executeChange(new SerializableAtomicModelChange.EdgeChange(structure, edge, structure.getEdgeCount(), index, false));
+		executeChange(new SerializableAtomicModelChange.EdgeChange(
+				structure, edge, structure.getEdgeCount(), index, false));
 
 		return edge;
 	}
@@ -750,11 +759,12 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		checkIndexForRemove(index1, structure.getEdgeCount());
 		checkArgument(index0<=index1);
 
-		executeChange(new SerializableAtomicModelChange.EdgeSequenceChange(structure, structure.getEdgeCount(), index0, index1));
+		executeChange(new SerializableAtomicModelChange.EdgeSequenceChange(
+				structure, structure.getEdgeCount(), index0, index1));
 	}
 
 	@Override
-	public void moveEdge(Structure structure, long index0, long index1) {
+	public void swapEdges(Structure structure, long index0, long index1) {
 		checkWriteItem(structure);
 		checkIndexForRemove(index0, structure.getEdgeCount());
 		checkIndexForRemove(index1, structure.getEdgeCount());
@@ -762,7 +772,8 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		Edge edge0 = structure.getEdgeAt(index0);
 		Edge edge1 = structure.getEdgeAt(index1);
 
-		executeChange(new SerializableAtomicModelChange.EdgeMoveChange(structure, structure.getEdgeCount(), index0, index1, edge0, edge1));
+		executeChange(new SerializableAtomicModelChange.EdgeMoveChange(
+				structure, structure.getEdgeCount(), index0, index1, edge0, edge1));
 	}
 
 	@Override
@@ -771,7 +782,8 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		checkWriteItem(structure);
 		Item oldTerminal = edge.getTerminal(isSource);
 
-		executeChange(new SerializableAtomicModelChange.TerminalChange(structure, edge, isSource, item, oldTerminal));
+		executeChange(new SerializableAtomicModelChange.TerminalChange(
+				structure, edge, isSource, item, oldTerminal));
 
 		return oldTerminal;
 	}
@@ -908,11 +920,13 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 			Object value) {
 		checkWriteItem(item);
 		Object oldValue = layer.getAnnotationStorage().getValue(item, key);
-		ValueType valueType = layer.getManifest().getAnnotationManifest(key)
+		ValueType valueType = Optional.ofNullable(layer.getManifest())
+				.flatMap(m -> m.getAnnotationManifest(key))
 				.map(AnnotationManifest::getValueType)
-				.get();
+				.orElse(ValueType.DEFAULT_VALUE_TYPE); //TODO not pretty
 
-		executeChange(new SerializableAtomicModelChange.ValueChange(layer, valueType, item, key, value, oldValue));
+		executeChange(new SerializableAtomicModelChange.ValueChange(
+				layer, valueType, item, key, value, oldValue));
 
 		return oldValue;
 	}
@@ -923,7 +937,8 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		checkWriteItem(item);
 		int oldValue = layer.getAnnotationStorage().getIntegerValue(item, key);
 
-		executeChange(new SerializableAtomicModelChange.IntegerValueChange(layer, item, key, value, oldValue));
+		executeChange(new SerializableAtomicModelChange.IntegerValueChange(
+				layer, item, key, value, oldValue));
 
 		return oldValue;
 	}
@@ -934,7 +949,8 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		checkWriteItem(item);
 		long oldValue = layer.getAnnotationStorage().getLongValue(item, key);
 
-		executeChange(new SerializableAtomicModelChange.LongValueChange(layer, item, key, value, oldValue));
+		executeChange(new SerializableAtomicModelChange.LongValueChange(
+				layer, item, key, value, oldValue));
 
 		return oldValue;
 	}
@@ -945,7 +961,8 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		checkWriteItem(item);
 		float oldValue = layer.getAnnotationStorage().getFloatValue(item, key);
 
-		executeChange(new SerializableAtomicModelChange.FloatValueChange(layer, item, key, value, oldValue));
+		executeChange(new SerializableAtomicModelChange.FloatValueChange(
+				layer, item, key, value, oldValue));
 
 		return oldValue;
 	}
@@ -956,7 +973,8 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		checkWriteItem(item);
 		double oldValue = layer.getAnnotationStorage().getDoubleValue(item, key);
 
-		executeChange(new SerializableAtomicModelChange.DoubleValueChange(layer, item, key, value, oldValue));
+		executeChange(new SerializableAtomicModelChange.DoubleValueChange(
+				layer, item, key, value, oldValue));
 
 		return oldValue;
 	}
@@ -967,7 +985,8 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		checkWriteItem(item);
 		boolean oldValue = layer.getAnnotationStorage().getBooleanValue(item, key);
 
-		executeChange(new SerializableAtomicModelChange.BooleanValueChange(layer, item, key, value, oldValue));
+		executeChange(new SerializableAtomicModelChange.BooleanValueChange(
+				layer, item, key, value, oldValue));
 
 		return oldValue;
 	}

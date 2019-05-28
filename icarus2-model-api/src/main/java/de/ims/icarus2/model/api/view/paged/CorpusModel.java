@@ -468,7 +468,7 @@ public interface CorpusModel extends Part<PagedCorpusView>, Changeable {
 	 * @throws UnsupportedOperationException if the corpus
 	 * is not editable or the operation is not supported by the implementation
 	 */
-	void moveItem(Container container, long index0, long index1);
+	void swapItems(Container container, long index0, long index1);
 
 //	/**
 //	 * Shorthand method for moving a given item object.
@@ -767,7 +767,7 @@ public interface CorpusModel extends Part<PagedCorpusView>, Changeable {
 	 * @throws UnsupportedOperationException if the corpus
 	 * is not editable or the operation is not supported by the implementation
 	 */
-	void moveEdge(Structure structure, long index0, long index1);
+	void swapEdges(Structure structure, long index0, long index1);
 
 //	/**
 //	 * Shorthand method for moving a given edge object.
@@ -807,14 +807,6 @@ public interface CorpusModel extends Part<PagedCorpusView>, Changeable {
 	Item getSource(Edge edge);
 
 	Item getTarget(Edge edge);
-
-	default Item setSource(Edge edge, Item item) {
-		return setTerminal(edge.getStructure(), edge, item, true);
-	}
-
-	default Item setTarget(Edge edge, Item item) {
-		return setTerminal(edge.getStructure(), edge, item, false);
-	}
 
 	//---------------------------------------------
 	//			FRAGMENT METHODS

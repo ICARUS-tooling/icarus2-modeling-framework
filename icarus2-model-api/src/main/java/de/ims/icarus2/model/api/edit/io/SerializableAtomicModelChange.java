@@ -168,11 +168,11 @@ public class SerializableAtomicModelChange {
 	}
 
 	/**
-	 * Models the {@link CorpusModel#moveItem(Container, long, long)} change.
+	 * Models the {@link CorpusModel#swapItems(Container, long, long)} change.
 	 *
 	 * @author Markus Gärtner
 	 *
-	 * @see CorpusModel#moveItem(Container, long, long)
+	 * @see CorpusModel#swapItems(Container, long, long)
 	 */
 	public static class ItemMoveChange implements SerializableAtomicChange, AtomicMoveChange<Item, Container> {
 
@@ -480,11 +480,11 @@ public class SerializableAtomicModelChange {
 	}
 
 	/**
-	 * Models the {@link CorpusModel#moveEdge(Structure, long, long)} change.
+	 * Models the {@link CorpusModel#swapEdges(Structure, long, long)} change.
 	 *
 	 * @author Markus Gärtner
 	 *
-	 * @see CorpusModel#moveEdge(Structure, long, long)
+	 * @see CorpusModel#swapEdges(Structure, long, long)
 	 */
 	public static class EdgeMoveChange implements SerializableAtomicChange, AtomicMoveChange<Edge, Structure> {
 

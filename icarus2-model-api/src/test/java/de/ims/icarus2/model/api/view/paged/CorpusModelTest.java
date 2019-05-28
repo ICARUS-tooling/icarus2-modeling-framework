@@ -19,10 +19,12 @@
  */
 package de.ims.icarus2.model.api.view.paged;
 
+import static de.ims.icarus2.SharedTestUtils.mockSequence;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockEdge;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
+import static de.ims.icarus2.model.api.ModelTestUtils.mockPosition;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockStructure;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockUsableContainer;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockUsableEdge;
@@ -30,7 +32,9 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockUsableFragment;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockUsableItem;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockUsableStructure;
 import static de.ims.icarus2.model.api.ModelTestUtils.range;
+import static de.ims.icarus2.model.api.ModelTestUtils.stubEdgeCount;
 import static de.ims.icarus2.model.api.ModelTestUtils.stubFlags;
+import static de.ims.icarus2.model.api.ModelTestUtils.stubItemCount;
 import static de.ims.icarus2.model.api.ModelTestUtils.stubOffsets;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.MANIFEST_FACTORY;
@@ -47,7 +51,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -107,6 +110,7 @@ import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.ChangeableTest;
 import de.ims.icarus2.util.Mutable.MutableObject;
 import de.ims.icarus2.util.PartTest;
+import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
@@ -1106,7 +1110,9 @@ public interface CorpusModelTest<M extends CorpusModel>
 				.setup(t -> t.changeHandler(change::set))
 				.action((t, c) -> {
 					t.model().addItem(c, item);
-					verify(container).addItem(item);
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(container).addItem(0L, item); // addItem(item) redirects to addItem(index, item)
 				})
 				.testSuccess(container)
 				.testNotWritableError()
@@ -1118,49 +1124,168 @@ public interface CorpusModelTest<M extends CorpusModel>
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#addItem(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.model.api.members.item.Item)}.
 	 */
-	@Test
-	default void testAddItemContainerLongItem() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	default List<DynamicTest> testAddItemContainerLongItem() {
+		Item item = mockItem();
+		long size = random(0, Long.MAX_VALUE);
+		long index = random(0, size);
+		Container container = mockUsableContainer();
+		stubItemCount(container, size);
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Container.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, c) -> {
+					t.model().addItem(c, index, item);
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(container).addItem(index, item);
+				})
+				.testSuccess(container)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#addItems(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.util.collections.seq.DataSequence)}.
 	 */
-	@Test
-	default void testAddItems() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	default List<DynamicTest> testAddItems() {
+		long itemCount = random(0, Long.MAX_VALUE/2);
+		long index = random(0, itemCount);
+		long size = random(1, Long.MAX_VALUE-itemCount);
+		DataSequence<Item> items = mockSequence(size);
+		Container container = mockUsableContainer();
+		stubItemCount(container, itemCount);
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Container.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, c) -> {
+					t.model().addItems(c, index, items);
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(container).addItems(index, items);
+				})
+				.testSuccess(container)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#removeItem(de.ims.icarus2.model.api.members.container.Container, long)}.
 	 */
-	@Test
-	default void testRemoveItemContainerLong() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	default List<DynamicTest> testRemoveItemContainerLong() {
+		long itemCount = random(10, Long.MAX_VALUE/2);
+		long index = random(0, itemCount);
+		Container container = mockUsableContainer();
+		stubItemCount(container, itemCount);
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Container.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, c) -> {
+					t.model().removeItem(c, index);
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(container).removeItem(index);
+				})
+				.testSuccess(container)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#removeItem(de.ims.icarus2.model.api.members.container.Container, de.ims.icarus2.model.api.members.item.Item)}.
 	 */
-	@Test
-	default void testRemoveItemContainerItem() {
-		fail("Not yet implemented"); // TODO
+	@SuppressWarnings("boxing")
+	@TestFactory
+	default List<DynamicTest> testRemoveItemContainerItem() {
+		long itemCount = random(10, Long.MAX_VALUE/2);
+		long index = random(0, itemCount);
+		Item item = mockItem();
+		Container container = mockUsableContainer();
+		when(container.indexOfItem(item)).thenReturn(index);
+		stubItemCount(container, itemCount);
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Container.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, c) -> {
+					t.model().removeItem(c, item);
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(container).removeItem(index); // item-based removal redirects to index-based
+				})
+				.testSuccess(container)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#removeItems(de.ims.icarus2.model.api.members.container.Container, long, long)}.
 	 */
-	@Test
-	default void testRemoveItems() {
-		fail("Not yet implemented"); // TODO
+	@SuppressWarnings("unchecked")
+	@TestFactory
+	default List<DynamicTest> testRemoveItems() {
+		long itemCount = random(10, Long.MAX_VALUE/2);
+		long index0 = random(0, itemCount/2);
+		long index1 = random(index0, itemCount);
+		Container container = mockUsableContainer();
+		stubItemCount(container, itemCount);
+		DataSequence<Item> items = mockSequence(index1-index0+1);
+		when((DataSequence<Item>)container.removeItems(index0, index1)).thenReturn(items);
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Container.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, c) -> {
+					t.model().removeItems(c, index0, index1);
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(container).removeItems(index0, index1);
+				})
+				.testSuccess(container)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#moveItem(de.ims.icarus2.model.api.members.container.Container, long, long)}.
+	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#swapItems(de.ims.icarus2.model.api.members.container.Container, long, long)}.
 	 */
-	@Test
-	default void testMoveItem() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	default List<DynamicTest> testSwapItems() {
+		long itemCount = random(10, Long.MAX_VALUE/2);
+		long index0 = random(0, itemCount/2);
+		long index1 = random(index0, itemCount);
+		Container container = mockUsableContainer();
+		stubItemCount(container, itemCount);
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Container.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, c) -> {
+					t.model().swapItems(c, index0, index1);
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(container).swapItems(index0, index1);
+				})
+				.testSuccess(container)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
@@ -1527,65 +1652,220 @@ public interface CorpusModelTest<M extends CorpusModel>
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#addEdge(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Edge)}.
 	 */
-	@Test
-	default void testAddEdgeStructureEdge() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	default List<DynamicTest> testAddEdgeStructureEdge() {
+		Edge edge = mockEdge();
+		Structure structure = mockUsableStructure();
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Structure.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, s) -> {
+					t.model().addEdge(s, edge);
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(structure).addEdge(0L, edge); // addEdge(item) redirects to addEdge(index, item)
+				})
+				.testSuccess(structure)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#addEdge(de.ims.icarus2.model.api.members.structure.Structure, long, de.ims.icarus2.model.api.members.item.Edge)}.
 	 */
-	@Test
-	default void testAddEdgeStructureLongEdge() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	default List<DynamicTest> testAddEdgeStructureLongEdge() {
+		Edge edge = mockEdge();
+		long edgeCount = random(0, Long.MAX_VALUE);
+		long index = random(0, edgeCount);
+		Structure structure = mockUsableStructure();
+		stubEdgeCount(structure, edgeCount);
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Structure.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, s) -> {
+					t.model().addEdge(s, index, edge);
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(structure).addEdge(index, edge);
+				})
+				.testSuccess(structure)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#addEdges(de.ims.icarus2.model.api.members.structure.Structure, long, de.ims.icarus2.util.collections.seq.DataSequence)}.
 	 */
-	@Test
-	default void testAddEdges() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	default List<DynamicTest> testAddEdges() {
+		long edgeCount = random(0, Long.MAX_VALUE/2);
+		long index = random(0, edgeCount);
+		long size = random(1, Long.MAX_VALUE-edgeCount);
+		DataSequence<Edge> edges = mockSequence(size);
+		Structure structure = mockUsableStructure();
+		stubEdgeCount(structure, edgeCount);
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Structure.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, s) -> {
+					t.model().addEdges(s, index, edges);
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(structure).addEdges(index, edges);
+				})
+				.testSuccess(structure)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#removeEdge(de.ims.icarus2.model.api.members.structure.Structure, long)}.
 	 */
-	@Test
-	default void testRemoveEdgeStructureLong() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	default List<DynamicTest> testRemoveEdgeStructureLong() {
+		long edgeCount = random(10, Long.MAX_VALUE);
+		long index = random(0, edgeCount);
+		Edge edge = mockEdge();
+		Structure structure = mockUsableStructure();
+		stubEdgeCount(structure, edgeCount);
+		when(structure.getEdgeAt(index)).thenReturn(edge);
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Structure.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, s) -> {
+					assertSame(edge, t.model().removeEdge(s, index));
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(structure).removeEdge(index);
+				})
+				.testSuccess(structure)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#removeEdge(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Edge)}.
 	 */
-	@Test
-	default void testRemoveEdgeStructureEdge() {
-		fail("Not yet implemented"); // TODO
+	@SuppressWarnings("boxing")
+	@TestFactory
+	default List<DynamicTest> testRemoveEdgeStructureEdge() {
+		long edgeCount = random(10, Long.MAX_VALUE);
+		long index = random(0, edgeCount);
+		Edge edge = mockEdge();
+		Structure structure = mockUsableStructure();
+		stubEdgeCount(structure, edgeCount);
+		when(structure.indexOfEdge(edge)).thenReturn(index);
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Structure.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, s) -> {
+					assertTrue(t.model().removeEdge(s, edge));
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(structure).removeEdge(index); // expected to delegate
+				})
+				.testSuccess(structure)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#removeEdges(de.ims.icarus2.model.api.members.structure.Structure, long, long)}.
 	 */
-	@Test
-	default void testRemoveEdges() {
-		fail("Not yet implemented"); // TODO
+	@SuppressWarnings("unchecked")
+	@TestFactory
+	default List<DynamicTest> testRemoveEdges() {
+		long edgeCount = random(10, Long.MAX_VALUE);
+		long index0 = random(0, edgeCount/2);
+		long index1 = random(index0, edgeCount);
+		DataSequence<Edge> edges = mockSequence(index1-index0+1);
+		Structure structure = mockUsableStructure();
+		stubEdgeCount(structure, edgeCount);
+		when((DataSequence<Edge>)structure.removeEdges(index0, index1)).thenReturn(edges);
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Structure.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, s) -> {
+					t.model().removeEdges(s, index0, index1);
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(structure).removeEdges(index0, index1);
+				})
+				.testSuccess(structure)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#moveEdge(de.ims.icarus2.model.api.members.structure.Structure, long, long)}.
+	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#swapEdges(de.ims.icarus2.model.api.members.structure.Structure, long, long)}.
 	 */
-	@Test
-	default void testMoveEdge() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	default List<DynamicTest> testSwapEdges() {
+		long edgeCount = random(10, Long.MAX_VALUE);
+		long index0 = random(0, edgeCount/2);
+		long index1 = random(index0, edgeCount);
+		Structure structure = mockUsableStructure();
+		stubEdgeCount(structure, edgeCount);
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Structure.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, s) -> {
+					t.model().swapEdges(s, index0, index1);
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(structure).swapEdges(index0, index1);
+				})
+				.testSuccess(structure)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#setTerminal(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Edge, de.ims.icarus2.model.api.members.item.Item, boolean)}.
 	 */
-	@Test
-	default void testSetTerminal() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	default List<DynamicTest> testSetTerminal() {
+		Structure structure = mockUsableStructure();
+		Edge edge = mockEdge(structure);
+		Item terminal = mockItem();
+		boolean isSource = random().nextBoolean();
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Structure.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, s) -> {
+					t.model().setTerminal(s, edge, terminal, isSource);
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(structure).setTerminal(edge, terminal, isSource);
+				})
+				.testSuccess(structure)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
@@ -1649,22 +1929,6 @@ public interface CorpusModelTest<M extends CorpusModel>
 				.testDeadItemError()
 				.testDirtyItemError()
 				.tests();
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#setSource(de.ims.icarus2.model.api.members.item.Edge, de.ims.icarus2.model.api.members.item.Item)}.
-	 */
-	@Test
-	default void testSetSource() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#setTarget(de.ims.icarus2.model.api.members.item.Edge, de.ims.icarus2.model.api.members.item.Item)}.
-	 */
-	@Test
-	default void testSetTarget() {
-		fail("Not yet implemented"); // TODO
 	}
 
 	/**
@@ -1733,17 +1997,53 @@ public interface CorpusModelTest<M extends CorpusModel>
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#setFragmentBegin(de.ims.icarus2.model.api.members.item.Fragment, de.ims.icarus2.model.api.raster.Position)}.
 	 */
-	@Test
-	default void testSetFragmentBegin() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	default List<DynamicTest> testSetFragmentBegin() {
+		Fragment fragment = mockUsableFragment();
+		Position oldPosition = mockPosition(0);
+		Position newPosition = mockPosition(1);
+		when(fragment.getFragmentBegin()).thenReturn(oldPosition);
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Fragment.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, f) -> {
+					assertSame(oldPosition, t.model().setFragmentBegin(f, newPosition));
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(fragment).setFragmentBegin(newPosition);
+				})
+				.testSuccess(fragment)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#setFragmentEnd(de.ims.icarus2.model.api.members.item.Fragment, de.ims.icarus2.model.api.raster.Position)}.
 	 */
-	@Test
-	default void testSetFragmentEnd() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	default List<DynamicTest> testSetFragmentEnd() {
+		Fragment fragment = mockUsableFragment();
+		Position oldPosition = mockPosition(0);
+		Position newPosition = mockPosition(1);
+		when(fragment.getFragmentEnd()).thenReturn(oldPosition);
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Fragment.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, f) -> {
+					assertSame(oldPosition, t.model().setFragmentEnd(f, newPosition));
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(fragment).setFragmentEnd(newPosition);
+				})
+				.testSuccess(fragment)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
@@ -1929,49 +2229,186 @@ public interface CorpusModelTest<M extends CorpusModel>
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#setValue(de.ims.icarus2.model.api.layer.AnnotationLayer, de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.Object)}.
 	 */
-	@Test
-	default void testSetValue() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	default List<DynamicTest> testSetValue() {
+		AnnotationLayer layer = mock(AnnotationLayer.class);
+		AnnotationStorage storage = mock(AnnotationStorage.class);
+		when(layer.getAnnotationStorage()).thenReturn(storage);
+		Item item = mockUsableItem();
+		Object oldValue = mock(Object.class);
+		Object newValue = mock(Object.class);
+		String key = "key";
+		when(storage.getValue(item, key)).thenReturn(oldValue);
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Item.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, i) -> {
+					assertSame(oldValue, t.model().setValue(layer, i, key, newValue));
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(storage).setValue(item, key, newValue);
+				})
+				.testSuccess(item)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#setIntegerValue(de.ims.icarus2.model.api.layer.AnnotationLayer, de.ims.icarus2.model.api.members.item.Item, java.lang.String, int)}.
 	 */
-	@Test
-	default void testSetIntegerValue() {
-		fail("Not yet implemented"); // TODO
+	@SuppressWarnings("boxing")
+	@TestFactory
+	default List<DynamicTest> testSetIntegerValue() {
+		AnnotationLayer layer = mock(AnnotationLayer.class);
+		AnnotationStorage storage = mock(AnnotationStorage.class);
+		when(layer.getAnnotationStorage()).thenReturn(storage);
+		Item item = mockUsableItem();
+		int oldValue = random().nextInt();
+		int newValue = random().nextInt();
+		String key = "key";
+		when(storage.getIntegerValue(item, key)).thenReturn(oldValue);
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Item.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, i) -> {
+					assertEquals(oldValue, t.model().setIntegerValue(layer, i, key, newValue));
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(storage).setIntegerValue(item, key, newValue);
+				})
+				.testSuccess(item)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#setLongValue(de.ims.icarus2.model.api.layer.AnnotationLayer, de.ims.icarus2.model.api.members.item.Item, java.lang.String, long)}.
 	 */
-	@Test
-	default void testSetLongValue() {
-		fail("Not yet implemented"); // TODO
+	@SuppressWarnings("boxing")
+	@TestFactory
+	default List<DynamicTest> testSetLongValue() {
+		AnnotationLayer layer = mock(AnnotationLayer.class);
+		AnnotationStorage storage = mock(AnnotationStorage.class);
+		when(layer.getAnnotationStorage()).thenReturn(storage);
+		Item item = mockUsableItem();
+		long oldValue = random().nextLong();
+		long newValue = random().nextLong();
+		String key = "key";
+		when(storage.getLongValue(item, key)).thenReturn(oldValue);
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Item.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, i) -> {
+					assertEquals(oldValue, t.model().setLongValue(layer, i, key, newValue));
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(storage).setLongValue(item, key, newValue);
+				})
+				.testSuccess(item)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#setFloatValue(de.ims.icarus2.model.api.layer.AnnotationLayer, de.ims.icarus2.model.api.members.item.Item, java.lang.String, float)}.
 	 */
-	@Test
-	default void testSetFloatValue() {
-		fail("Not yet implemented"); // TODO
+	@SuppressWarnings("boxing")
+	@TestFactory
+	default List<DynamicTest> testSetFloatValue() {
+		AnnotationLayer layer = mock(AnnotationLayer.class);
+		AnnotationStorage storage = mock(AnnotationStorage.class);
+		when(layer.getAnnotationStorage()).thenReturn(storage);
+		Item item = mockUsableItem();
+		float oldValue = random().nextFloat();
+		float newValue = random().nextFloat();
+		String key = "key";
+		when(storage.getFloatValue(item, key)).thenReturn(oldValue);
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Item.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, i) -> {
+					assertEquals(oldValue, t.model().setFloatValue(layer, i, key, newValue));
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(storage).setFloatValue(item, key, newValue);
+				})
+				.testSuccess(item)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#setDoubleValue(de.ims.icarus2.model.api.layer.AnnotationLayer, de.ims.icarus2.model.api.members.item.Item, java.lang.String, double)}.
 	 */
-	@Test
-	default void testSetDoubleValue() {
-		fail("Not yet implemented"); // TODO
+	@SuppressWarnings("boxing")
+	@TestFactory
+	default List<DynamicTest> testSetDoubleValue() {
+		AnnotationLayer layer = mock(AnnotationLayer.class);
+		AnnotationStorage storage = mock(AnnotationStorage.class);
+		when(layer.getAnnotationStorage()).thenReturn(storage);
+		Item item = mockUsableItem();
+		double oldValue = random().nextDouble();
+		double newValue = random().nextDouble();
+		String key = "key";
+		when(storage.getDoubleValue(item, key)).thenReturn(oldValue);
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Item.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, i) -> {
+					assertEquals(oldValue, t.model().setDoubleValue(layer, i, key, newValue));
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(storage).setDoubleValue(item, key, newValue);
+				})
+				.testSuccess(item)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#setBooleanValue(de.ims.icarus2.model.api.layer.AnnotationLayer, de.ims.icarus2.model.api.members.item.Item, java.lang.String, boolean)}.
 	 */
-	@Test
-	default void testSetBooleanValue() {
-		fail("Not yet implemented"); // TODO
+	@SuppressWarnings("boxing")
+	@TestFactory
+	default List<DynamicTest> testSetBooleanValue() {
+		AnnotationLayer layer = mock(AnnotationLayer.class);
+		AnnotationStorage storage = mock(AnnotationStorage.class);
+		when(layer.getAnnotationStorage()).thenReturn(storage);
+		Item item = mockUsableItem();
+		boolean oldValue = random().nextBoolean();
+		boolean newValue = random().nextBoolean();
+		String key = "key";
+		when(storage.getBooleanValue(item, key)).thenReturn(oldValue);
+		MutableObject<AtomicChange> change = new MutableObject<>();
+
+		return new ModelTest<>(this, Item.class)
+				.setup(t -> t.changeHandler(change::set))
+				.action((t, i) -> {
+					assertEquals(oldValue, t.model().setBooleanValue(layer, i, key, newValue));
+					assertFalse(change.isEmpty());
+					change.get().execute();
+					verify(storage).setBooleanValue(item, key, newValue);
+				})
+				.testSuccess(item)
+				.testNotWritableError()
+				.testDeadItemError()
+				.testLockedItemError()
+				.tests();
 	}
 
 	/**
