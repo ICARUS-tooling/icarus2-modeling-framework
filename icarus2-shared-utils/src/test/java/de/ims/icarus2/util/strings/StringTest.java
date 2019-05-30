@@ -241,11 +241,10 @@ interface StringTest<S extends AbstractString> extends CharSequenceTest<S> {
 	 * Test method for {@link de.ims.icarus2.util.strings.AbstractString#contains(java.lang.CharSequence)}.
 	 */
 	@Test
-	@PostponedTest
 	default void testContains() {
 		S empty = createEmptyString();
 		if(empty!=null) {
-			assertFalse(empty.contains(""));
+			assertTrue(empty.contains(""));
 			assertFalse(empty.contains("x"));
 			cleanup(empty);
 		}
@@ -257,7 +256,8 @@ interface StringTest<S extends AbstractString> extends CharSequenceTest<S> {
 			assertTrue(fromSource.contains("123"));
 			assertTrue(fromSource.contains(s));
 			assertTrue(fromSource.contains(fromSource));
-			assertFalse(fromSource.contains(""));
+			assertTrue(fromSource.contains(""));
+			assertFalse(fromSource.contains("x"));
 			cleanup(fromSource);
 		}
 	}
