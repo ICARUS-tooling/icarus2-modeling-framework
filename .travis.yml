@@ -6,7 +6,7 @@ jdk:
 before_install:
   - chmod a+x gradlew
 
-sccript: 
+script: 
   - ./gradlew check
   - ./gradlew codeCoverageReport
   
