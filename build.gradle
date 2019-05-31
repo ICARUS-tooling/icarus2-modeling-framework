@@ -1,9 +1,10 @@
 plugins {
 	id 'java-library'
+	id 'jacoco'
 	id 'com.github.johnrengelman.shadow' version '4.0.1' apply false
 	//id 'com.github.jk1.dependency-license-report' version '1.2'
     id 'com.github.hierynomus.license' version '0.14.0' apply false
-	id 'com.github.spotbugs' version '1.7.1' apply false
+	id 'com.github.spotbugs' version '2.0.0' apply false
 	id 'com.gradle.build-scan' version '2.2.1'
 	id 'net.ltgt.apt-eclipse' version "0.21"
 }
@@ -13,7 +14,7 @@ apply from: 'versions.gradle'
 
 allprojects {
 	apply plugin: 'eclipse'
-//    apply plugin: 'jacoco'
+    apply plugin: 'jacoco'
 	
   	group = 'icarus2'
   	version = '0.0.1'
@@ -339,21 +340,22 @@ subprojects {
 	}
 }
 
-//task codeCoverageReport(type: JacocoReport) {
-//    executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
-//
-//    subprojects.each {
-//        sourceSets it.sourceSets.main
-//    }
-//
-//    reports {
-//        xml.enabled true
-//        xml.destination "${buildDir}/reports/jacoco/report.xml" as File
-//        html.enabled false
-//        csv.enabled false
-//    }
-//}
 
-//codeCoverageReport.dependsOn {
-//    subprojects*.test
-//}
+task codeCoverageReport(type: JacocoReport) {
+    executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
+
+    subprojects.each {
+        sourceSets it.sourceSets.main
+    }
+
+    reports {
+        xml.enabled true
+        xml.destination file("${buildDir}/reports/jacoco/report.xml")
+        html.enabled false
+        csv.enabled false
+    }
+}
+
+codeCoverageReport.dependsOn {
+    subprojects*.test
+}
