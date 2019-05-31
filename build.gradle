@@ -18,6 +18,10 @@ allprojects {
 	
   	group = 'icarus2'
   	version = '0.0.1'
+
+  	repositories {
+    	mavenCentral()
+  	}
 }
 
 description = 'ICARUS 2 framework root'
@@ -47,10 +51,6 @@ subprojects {
 	
   	sourceCompatibility = 1.8
   	targetCompatibility = 1.8
-
-  	repositories {
-    	mavenCentral()
-  	}
 
 	sourceSets {
 		jmh {
