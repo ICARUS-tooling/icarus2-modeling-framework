@@ -2,7 +2,7 @@
 
 ## Overview
 
-The manifest framework provides the foundation for all other members of the ICARUS2 project. Manifests are formal descriptions of the structure, inner composition and outer dependencies of (parts) of a corpus resource. Corpora are consist of a hierarchy of different components which all describe different aspects of a corpus.
+The manifest framework provides the foundation for all other members of the ICARUS2 project. Manifests are formal descriptions of the structure, inner composition and outer dependencies of (parts) of a corpus resource. Corpora consist of a hierarchy of different components which all describe different aspects of a corpus.
 TODO  
 
 ## Creating Manifests
@@ -54,6 +54,36 @@ group.addLayerManifest(annoLayer);
 ```
 
 Above code will create 3 layers representing tokens, sentences and surface form annotations and group them into a context. For a proper specification a lot of additional information is needed, such as value types for annotations or tagsets, etc. Since this can be quite cumbersome via code, and since corpus resources typically change much wrt their structure, the preferred way of obtaining manifests for a resource is to read its accompanying manifest file as explained in the next section.
+
+The same result can be achieved by using the `de.ims.icarus2.model.manifest.util.ManifestBuilder` and chaining all the construction calls to generate a more compact code block:
+
+```java
+// Set up the factory
+ManifestRegistry registry = new DefaultManifestRegistry();
+ManifestLocation location = ManifestLocation.newBuilder().virtual().build();
+ManifestFactory factory = new DefaultManifestFactory(location, registry);
+
+ContextManifest contextManifest;
+
+try(ManifestBuilder builder = new ManifestBuilder(factory)) {
+	// Start creating and assembling manifests
+	contextManifest = builder.create(ContextManifest.class, "myContext")
+			.addLayerGroup(builder.create(LayerGroupManifest.class, "myGroup", "myContext")
+					.addLayerManifest(builder.create(ItemLayerManifest.class, "tokens", "myGroup"))
+					.addLayerManifest(builder.create(ItemLayerManifest.class, "sentences", "myGroup")
+							.setFoundationLayerId("tokens", DO_NOTHING)
+							.addBaseLayerId("tokens", DO_NOTHING))
+					.addLayerManifest(builder.create(AnnotationLayerManifest.class, "surface", "myGroup")
+							.addBaseLayerId("tokens", DO_NOTHING)
+							.addAnnotationManifest(builder.create(AnnotationManifest.class, "forms", "surface")
+									.setKey("forms")
+									.setValueType(ValueType.STRING)
+									.setAllowUnknownValues(true))
+							.setDefaultKey("forms")));
+}
+```
+
+The `ManifestBuilder` utility makes it easier to directly link manifest at their time of creation. It also allows for easy lookups of any manifest that has been created by it with an id.
 
 ## Reading Manifests
 
