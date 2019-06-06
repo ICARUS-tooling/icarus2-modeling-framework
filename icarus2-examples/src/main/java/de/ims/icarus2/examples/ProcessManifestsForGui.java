@@ -46,7 +46,7 @@ import de.ims.icarus2.model.manifest.util.ManifestBuilder;
  * @author Markus Gärtner
  *
  */
-public class ProcessManifests {
+public class ProcessManifestsForGui {
 
 	public static void main(String[] args) {
 
@@ -84,7 +84,7 @@ public class ProcessManifests {
 
 	private static void initAndShowGui(AnnotationManifest annotationManifest) {
 
-		JFrame frame = new JFrame("ICARUS2 Example - "+ProcessManifests.class.getSimpleName());
+		JFrame frame = new JFrame("ICARUS2 Example - "+ProcessManifestsForGui.class.getSimpleName());
 
 		//TODO build gui
 
