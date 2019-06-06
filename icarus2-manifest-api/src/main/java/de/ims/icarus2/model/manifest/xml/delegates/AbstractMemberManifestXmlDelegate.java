@@ -85,8 +85,7 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 	protected boolean isEmpty(M instance) {
 		return super.isEmpty(instance)
 				&& XmlUtils.isLegalAttribute(instance.getName())
-				&& XmlUtils.isLegalAttribute(instance.getDescription())
-				&& XmlUtils.isLegalAttribute(ManifestXmlUtils.serializeIcon(instance.getIcon().orElse(null)));
+				&& XmlUtils.isLegalAttribute(instance.getDescription());
 	}
 
 	private DocumentationXmlDelegate getDocumentationXmlDelegate() {
@@ -117,8 +116,6 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 		// IMPORTANT: we must not write the ID field again, since super implementation took care of that!
 		serializer.writeAttribute(ManifestXmlAttributes.NAME, manifest.getName());
 		serializer.writeAttribute(ManifestXmlAttributes.DESCRIPTION, manifest.getDescription());
-		serializer.writeAttribute(ManifestXmlAttributes.ICON,
-				ManifestXmlUtils.serializeIcon(manifest.getIcon().orElse(null)));
 	}
 
 	/**
@@ -231,8 +228,7 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 		switch (localName) {
 
 		case ManifestXmlTags.NAME:
-		case ManifestXmlTags.DESCRIPTION:
-		case ManifestXmlTags.ICON: {
+		case ManifestXmlTags.DESCRIPTION: {
 			handler = this;
 		} break;
 
@@ -304,11 +300,6 @@ public abstract class AbstractMemberManifestXmlDelegate<M extends MemberManifest
 
 		case ManifestXmlTags.DESCRIPTION: {
 			getInstance().setDescription(text);
-			handler = this;
-		} break;
-
-		case ManifestXmlTags.ICON: {
-			ManifestXmlUtils.iconValue(text, true).ifPresent(getInstance()::setIcon);
 			handler = this;
 		} break;
 

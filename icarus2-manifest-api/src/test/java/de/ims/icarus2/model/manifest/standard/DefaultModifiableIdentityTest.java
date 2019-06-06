@@ -19,8 +19,6 @@
  */
 package de.ims.icarus2.model.manifest.standard;
 
-import javax.swing.Icon;
-
 import de.ims.icarus2.model.manifest.api.ModifiableIdentityTest;
 import de.ims.icarus2.test.TestSettings;
 
@@ -36,8 +34,8 @@ class DefaultModifiableIdentityTest implements ModifiableIdentityTest<DefaultMod
 	 * @see de.ims.icarus2.model.manifest.api.ModifiableIdentityTest#createFromIdentity(java.lang.String, java.lang.String, java.lang.String, javax.swing.Icon)
 	 */
 	@Override
-	public DefaultModifiableIdentity<?> createFromIdentity(String id, String name, String description, Icon icon) {
-		return new DefaultModifiableIdentity<>(id, name, description, icon);
+	public DefaultModifiableIdentity<?> createFromIdentity(String id, String name, String description) {
+		return new DefaultModifiableIdentity<>(id, name, description);
 	}
 
 	/**

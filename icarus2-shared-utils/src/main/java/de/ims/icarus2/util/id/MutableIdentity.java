@@ -16,8 +16,6 @@
  */
 package de.ims.icarus2.util.id;
 
-import javax.swing.Icon;
-
 /**
  * Defines an {@code Identity} whose "appearance" fields can be changed
  * by foreign code. Note that the defining properties of an identity (i.e.
@@ -33,6 +31,4 @@ public interface MutableIdentity extends Identity {
 	void setName(String name);
 
 	void setDescription(String name);
-
-	void setIdon(Icon icon);
 }

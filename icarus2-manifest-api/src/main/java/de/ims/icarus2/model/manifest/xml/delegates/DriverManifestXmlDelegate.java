@@ -345,9 +345,9 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 			} break;
 
 			case ManifestXmlTags.NAME:
-			case ManifestXmlTags.DESCRIPTION:
-			case ManifestXmlTags.ICON:
-				break;
+			case ManifestXmlTags.DESCRIPTION: {
+				// no-op
+			} break;
 
 			case ManifestXmlTags.DOCUMENTATION: {
 				handler = getDocumentationXmlDelegate().reset(new DocumentationImpl());
@@ -401,10 +401,6 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 
 			case ManifestXmlTags.DESCRIPTION: {
 				getInstance().setDescription(text);
-			} break;
-
-			case ManifestXmlTags.ICON: {
-				getInstance().setIcon(ManifestXmlUtils.iconValue(text, true).get());
 			} break;
 
 			default:

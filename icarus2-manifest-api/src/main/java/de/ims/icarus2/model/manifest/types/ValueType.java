@@ -351,7 +351,7 @@ public class ValueType implements StringResource, NamedObject {
 		@Override
 		public Object persist(Object data) {
 			return data.toString();
-		};
+		}
 
 		/**
 		 * Returns a comparator that mimics {@link String#compareTo(String)}.

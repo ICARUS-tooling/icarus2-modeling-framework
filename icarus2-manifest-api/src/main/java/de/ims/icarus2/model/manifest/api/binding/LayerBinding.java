@@ -796,7 +796,7 @@ public final class LayerBinding implements Bindable, Serializable {
 			String sourceDesc = (String)in.readObject();
 
 			if(sourceId!=null) {
-				source(new StaticIdentity(sourceId, sourceName, sourceDesc, null));
+				source(new StaticIdentity(sourceId, sourceName, sourceDesc));
 			}
 
 			int expectedMappings = in.readInt();

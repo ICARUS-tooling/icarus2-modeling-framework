@@ -21,7 +21,6 @@ import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 
 import javax.annotation.Nullable;
-import javax.swing.Icon;
 
 import de.ims.icarus2.model.manifest.api.ModifiableIdentity;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
@@ -37,27 +36,20 @@ public class DefaultModifiableIdentity<I extends ModifiableIdentity>
 	private Optional<String> id = Optional.empty();
 	private Optional<String> name = Optional.empty();
 	private Optional<String> description = Optional.empty();
-	private Optional<Icon> icon = Optional.empty();
 
 	public DefaultModifiableIdentity() {
 		// default constructor
 	}
 
 	public DefaultModifiableIdentity(String id, @Nullable String name,
-			@Nullable String description, @Nullable Icon icon) {
+			@Nullable String description) {
 		setId(id);
 		setName(name);
 		setDescription(description);
-		setIcon(icon);
-	}
-
-	public DefaultModifiableIdentity(String id, @Nullable String description,
-			@Nullable Icon icon) {
-		this(id, null, description, icon);
 	}
 
 	public DefaultModifiableIdentity(String id, @Nullable String description) {
-		this(id, null, description, null);
+		this(id, null, description);
 	}
 
 	protected final I thisAsCast() {
@@ -88,14 +80,6 @@ public class DefaultModifiableIdentity<I extends ModifiableIdentity>
 	@Override
 	public Optional<String> getDescription() {
 		return description;
-	}
-
-	/**
-	 * @return the icon
-	 */
-	@Override
-	public Optional<Icon> getIcon() {
-		return icon;
 	}
 
 	/**
@@ -148,22 +132,6 @@ public class DefaultModifiableIdentity<I extends ModifiableIdentity>
 
 	protected void setDescription0(String description) {
 		this.description = Optional.ofNullable(description);
-	}
-
-	/**
-	 * @param icon the icon to set
-	 */
-	@Override
-	public I setIcon(@Nullable Icon icon) {
-		checkNotLocked();
-
-		setIcon0(icon);
-
-		return thisAsCast();
-	}
-
-	protected void setIcon0(Icon icon) {
-		this.icon = Optional.ofNullable(icon);
 	}
 
 	/**

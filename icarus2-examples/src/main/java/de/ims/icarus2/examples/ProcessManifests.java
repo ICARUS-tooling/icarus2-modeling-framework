@@ -26,12 +26,21 @@ import java.awt.Component;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFrame;
 import javax.swing.JList;
+import javax.swing.SwingUtilities;
 
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
+import de.ims.icarus2.model.manifest.api.ManifestFactory;
+import de.ims.icarus2.model.manifest.api.ManifestLocation;
+import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ValueManifest;
 import de.ims.icarus2.model.manifest.api.ValueRange;
 import de.ims.icarus2.model.manifest.api.ValueSet;
+import de.ims.icarus2.model.manifest.standard.DefaultManifestFactory;
+import de.ims.icarus2.model.manifest.standard.DefaultManifestRegistry;
+import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.manifest.util.ManifestBuilder;
 
 /**
  * @author Markus Gärtner
@@ -41,6 +50,47 @@ public class ProcessManifests {
 
 	public static void main(String[] args) {
 
+		// Set up the factory
+		ManifestRegistry registry = new DefaultManifestRegistry();
+		ManifestLocation location = ManifestLocation.newBuilder().virtual().build();
+		ManifestFactory factory = new DefaultManifestFactory(location, registry);
+
+		AnnotationManifest annotationManifest;
+
+		// Create example manifest
+		try(ManifestBuilder builder = new ManifestBuilder(factory)) {
+			annotationManifest = builder.create(AnnotationManifest.class, "anno")
+					.setKey("forms")
+					.setValueType(ValueType.STRING)
+					.setValueSet(builder.create(ValueSet.class)
+							.addValue(builder.create(ValueManifest.class)
+									.setValue("xyz")
+									.setName("value1")
+									.setDescription("a specific value"))
+							.addValue(builder.create(ValueManifest.class)
+									.setValue("foo")
+									.setName("value2")
+									.setDescription("another cool value"))
+							.addValue(builder.create(ValueManifest.class)
+									.setValue("bar")
+									.setName("value3")
+									.setDescription("the most awesome value of them all ^^")))
+					.setAllowUnknownValues(true);
+		}
+
+		// Show a simple GUI
+		SwingUtilities.invokeLater(() -> initAndShowGui(annotationManifest));
+	}
+
+	private static void initAndShowGui(AnnotationManifest annotationManifest) {
+
+		JFrame frame = new JFrame("ICARUS2 Example - "+ProcessManifests.class.getSimpleName());
+
+		//TODO build gui
+
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.pack();
+		frame.setVisible(true);
 	}
 
 	class AnnotationValuePicker {
@@ -67,7 +117,7 @@ public class ProcessManifests {
 			manifest.getNoEntryValue().ifPresent(comboBox::setSelectedItem);
 			comboBox.setRenderer(new ValueRenderer());
 
-			addUIElement(comboBox);
+			container.add(comboBox);
 		}
 
 		void addRange(ValueRange valueRange) {
@@ -91,7 +141,6 @@ public class ProcessManifests {
 				ValueManifest vm = (ValueManifest) value;
 				vm.getName().ifPresent(this::setText);
 				vm.getDescription().ifPresent(this::setToolTipText);
-				vm.getIcon().ifPresent(this::setIcon);
 			}
 
 			return this;

@@ -21,8 +21,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 
-import javax.swing.Icon;
-
 import de.ims.icarus2.util.lang.ClassUtils;
 import it.unimi.dsi.fastutil.Hash.Strategy;
 
@@ -70,13 +68,6 @@ public interface Identity {
 	 * @return
 	 */
 	Optional<String> getDescription();
-
-	/**
-	 * Returns the optional graphical representation of this
-	 * identity
-	 * @return
-	 */
-	Optional<Icon> getIcon();
 
 	/**
 	 * Prioritizing comparator that uses names if available for bot identities
@@ -162,7 +153,6 @@ public interface Identity {
 	public static boolean defaultEquals(Identity id1, Identity id2) {
 		return ClassUtils.equals(id1.getId(), id2.getId())
 				&& ClassUtils.equals(id1.getName(), id2.getName())
-				&& ClassUtils.equals(id1.getDescription(), id2.getDescription())
-				&& ClassUtils.equals(id1.getIcon(), id2.getIcon());
+				&& ClassUtils.equals(id1.getDescription(), id2.getDescription());
 	}
 }

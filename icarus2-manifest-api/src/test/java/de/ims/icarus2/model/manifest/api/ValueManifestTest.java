@@ -29,8 +29,6 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import javax.swing.Icon;
-
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
@@ -71,12 +69,11 @@ public interface ValueManifestTest extends DocumentableTest<ValueManifest>,
 	 */
 	@Override
 	@Provider
-	default ValueManifest createFromIdentity(String id, String name, String description, Icon icon) {
+	default ValueManifest createFromIdentity(String id, String name, String description) {
 		ValueManifest manifest = createWithType(settings(), ValueType.STRING);
 		manifest.setId(id);
 		manifest.setName(name);
 		manifest.setDescription(description);
-		manifest.setIcon(icon);
 		return manifest;
 	}
 

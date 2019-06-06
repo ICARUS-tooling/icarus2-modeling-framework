@@ -84,8 +84,7 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 		} break;
 
 		case ManifestXmlTags.NAME:
-		case ManifestXmlTags.DESCRIPTION:
-		case ManifestXmlTags.ICON: {
+		case ManifestXmlTags.DESCRIPTION: {
 			// no-op
 		} break;
 
@@ -125,10 +124,6 @@ public class DocumentationXmlDelegate extends AbstractXmlDelegate<Documentation>
 
 		case ManifestXmlTags.DESCRIPTION: {
 			resource.setDescription(text);
-		} break;
-
-		case ManifestXmlTags.ICON: {
-			ManifestXmlUtils.iconValue(text, true).ifPresent(resource::setIcon);
 		} break;
 
 		case ManifestXmlTags.CONTENT: {

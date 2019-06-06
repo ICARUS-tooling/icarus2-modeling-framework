@@ -21,7 +21,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
-import javax.swing.Icon;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.OptionsManifest.Option;
@@ -198,8 +197,6 @@ public interface MemberManifest<M extends MemberManifest<M>>
 	M setName(@Nullable String name);
 	@Override
 	M setDescription(@Nullable String description);
-	@Override
-	M setIcon(@Nullable Icon icon);
 
 	// Extension of Categorizable
 

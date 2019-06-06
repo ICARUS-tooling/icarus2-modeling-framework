@@ -18,8 +18,6 @@ package de.ims.icarus2.util;
 
 import java.util.Optional;
 
-import javax.swing.Icon;
-
 import de.ims.icarus2.util.id.Identity;
 
 /**
@@ -100,13 +98,5 @@ public enum EditOperation implements Identity {
 	@Override
 	public Optional<String> getDescription() {
 		return description;
-	}
-
-	/**
-	 * @see de.ims.icarus2.util.id.Identity#getIcon()
-	 */
-	@Override
-	public Optional<Icon> getIcon() {
-		return Optional.empty();
 	}
 }

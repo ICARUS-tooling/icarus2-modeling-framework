@@ -21,9 +21,6 @@ import static java.util.Objects.requireNonNull;
 import java.net.URL;
 import java.util.Optional;
 
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-
 /**
  * @author Markus Gärtner
  *
@@ -34,7 +31,6 @@ public class StaticIdentity implements Identity {
 	protected Optional<String> name = Optional.empty();
 	protected Optional<String> description = Optional.empty();
 	protected URL iconLocation;
-	protected Optional<Icon> icon = Optional.empty();
 
 	public StaticIdentity(Identity source) {
 		requireNonNull(source);
@@ -42,24 +38,21 @@ public class StaticIdentity implements Identity {
 		id = source.getId();
 		name = source.getName();
 		description = source.getDescription();
-		icon = source.getIcon();
 	}
 
 	public StaticIdentity(String id) {
 		setId(id);
 	}
 
-	public StaticIdentity(String id, String description, Icon icon) {
+	public StaticIdentity(String id, String description) {
 		setId(id);
 		setDescription(description);
-		setIcon(icon);
 	}
 
-	public StaticIdentity(String id, String name, String description, Icon icon) {
+	public StaticIdentity(String id, String name, String description) {
 		setId(id);
 		setName(name);
 		setDescription(description);
-		setIcon(icon);
 	}
 
 	/**
@@ -84,20 +77,6 @@ public class StaticIdentity implements Identity {
 	@Override
 	public Optional<String> getDescription() {
 		return description;
-	}
-
-	/**
-	 * @see de.ims.icarus2.util.id.Identity#getIcon()
-	 */
-	@Override
-	public Optional<Icon> getIcon() {
-		Optional<Icon> icon = this.icon;
-
-		if(!icon.isPresent() && iconLocation!=null) {
-			icon = Optional.of(new ImageIcon(iconLocation));
-		}
-
-		return icon;
 	}
 
 	/**
@@ -152,13 +131,6 @@ public class StaticIdentity implements Identity {
 	 */
 	public void setIconLocation(URL iconLocation) {
 		this.iconLocation = iconLocation;
-	}
-
-	/**
-	 * @param icon the icon to set
-	 */
-	public void setIcon(Icon icon) {
-		this.icon = Optional.ofNullable(icon);
 	}
 
 	/**

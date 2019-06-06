@@ -22,8 +22,6 @@ package de.ims.icarus2.model.manifest.standard;
 import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.settings;
 
-import javax.swing.Icon;
-
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.api.CategoryTest;
@@ -40,12 +38,11 @@ class DefaultCategoryTest implements CategoryTest<DefaultCategory>, LockableTest
 	 * @see de.ims.icarus2.model.manifest.api.IdentityTest#createFromIdentity(java.lang.String, java.lang.String, java.lang.String, javax.swing.Icon)
 	 */
 	@Override
-	public DefaultCategory createFromIdentity(String id, String name, String description, Icon icon) {
+	public DefaultCategory createFromIdentity(String id, String name, String description) {
 		DefaultCategory category = new DefaultCategory();
 		category.setId(id);
 		category.setName(name);
 		category.setDescription(description);
-		category.setIcon(icon);
 		return category;
 	}
 

@@ -20,6 +20,8 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.manifest.types.ValueType;
 
 
@@ -63,4 +65,13 @@ public interface ValueManifest extends Documentable<ValueManifest>, ModifiableId
 	// Modification methods
 
 	ValueManifest setValue(Object value);
+
+	@Override
+	ValueManifest setId(String id);
+
+	@Override
+	ValueManifest setName(@Nullable String name);
+
+	@Override
+	ValueManifest setDescription(@Nullable String description);
 }

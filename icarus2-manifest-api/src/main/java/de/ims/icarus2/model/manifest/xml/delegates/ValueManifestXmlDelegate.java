@@ -111,9 +111,9 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 		switch (localName) {
 
 		case ManifestXmlTags.NAME:
-		case ManifestXmlTags.DESCRIPTION:
-		case ManifestXmlTags.ICON:
-			break;
+		case ManifestXmlTags.DESCRIPTION: {
+			// no-op
+		} break;
 
 		case ManifestXmlTags.VALUE: {
 			readAttributes(attributes, manifestLocation);
@@ -151,10 +151,6 @@ public class ValueManifestXmlDelegate extends AbstractXmlDelegate<ValueManifest>
 
 		case ManifestXmlTags.DESCRIPTION: {
 			getInstance().setDescription(text);
-		} break;
-
-		case ManifestXmlTags.ICON: {
-			ManifestXmlUtils.iconValue(text, true).ifPresent(getInstance()::setIcon);
 		} break;
 
 		case ManifestXmlTags.VALUE: {

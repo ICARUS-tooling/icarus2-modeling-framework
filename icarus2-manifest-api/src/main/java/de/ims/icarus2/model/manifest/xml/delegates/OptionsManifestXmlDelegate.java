@@ -217,8 +217,7 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 		} break;
 
 		case ManifestXmlTags.NAME:
-		case ManifestXmlTags.DESCRIPTION:
-		case ManifestXmlTags.ICON: {
+		case ManifestXmlTags.DESCRIPTION: {
 			// no-op
 		} break;
 
@@ -270,10 +269,6 @@ public class OptionsManifestXmlDelegate extends AbstractManifestXmlDelegate<Opti
 
 		case ManifestXmlTags.DESCRIPTION: {
 			group.setDescription(text);
-		} break;
-
-		case ManifestXmlTags.ICON: {
-			ManifestXmlUtils.iconValue(text, true).ifPresent(group::setIcon);
 		} break;
 
 		case ManifestXmlTags.OPTION: {

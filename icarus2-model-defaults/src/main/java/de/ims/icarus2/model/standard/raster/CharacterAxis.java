@@ -21,7 +21,6 @@ import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 
 import javax.annotation.Nullable;
-import javax.swing.Icon;
 
 import de.ims.icarus2.model.api.layer.FragmentLayer;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -63,14 +62,6 @@ public class CharacterAxis implements RasterAxis {
 	@Override
 	public Optional<String> getDescription() {
 		return Optional.of(description);
-	}
-
-	/**
-	 * @see de.ims.icarus2.util.id.Identity#getIcon()
-	 */
-	@Override
-	public Optional<Icon> getIcon() {
-		return Optional.empty();
 	}
 
 	/**

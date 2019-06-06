@@ -21,9 +21,6 @@ package de.ims.icarus2.model.manifest.api;
 
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
-import static org.mockito.Mockito.mock;
-
-import javax.swing.Icon;
 
 import org.junit.jupiter.api.Test;
 
@@ -37,12 +34,11 @@ public interface ModifiableIdentityTest<M extends ModifiableIdentity> extends Id
 
 	@Override
 	@Provider
-	default M createFromIdentity(String id, String name, String description, Icon icon) {
+	default M createFromIdentity(String id, String name, String description) {
 		M identity = createEmpty();
 		identity.setId(id);
 		identity.setName(name);
 		identity.setDescription(description);
-		identity.setIcon(icon);
 		return identity;
 	}
 
@@ -59,8 +55,7 @@ public interface ModifiableIdentityTest<M extends ModifiableIdentity> extends Id
 			assertOptionalEquals("myId", empty.getId());
 		}
 
-		Icon icon = mock(Icon.class);
-		M fromIdentity = createFromIdentity("myId", "name", "description", icon);
+		M fromIdentity = createFromIdentity("myId", "name", "description");
 		if(fromIdentity!=null) {
 			fromIdentity.setId("myId");
 			assertOptionalEquals("myId", fromIdentity.getId());
@@ -78,8 +73,7 @@ public interface ModifiableIdentityTest<M extends ModifiableIdentity> extends Id
 			assertOptionalEquals("name", empty.getName());
 		}
 
-		Icon icon = mock(Icon.class);
-		M fromIdentity = createFromIdentity("myId", "name", "description", icon);
+		M fromIdentity = createFromIdentity("myId", "name", "description");
 		if(fromIdentity!=null) {
 			fromIdentity.setName("name");
 			assertOptionalEquals("name", fromIdentity.getName());
@@ -97,32 +91,10 @@ public interface ModifiableIdentityTest<M extends ModifiableIdentity> extends Id
 			assertOptionalEquals("description", empty.getDescription());
 		}
 
-		Icon icon = mock(Icon.class);
-		M fromIdentity = createFromIdentity("myId", "name", "description", icon);
+		M fromIdentity = createFromIdentity("myId", "name", "description");
 		if(fromIdentity!=null) {
 			fromIdentity.setDescription("description");
 			assertOptionalEquals("description", fromIdentity.getDescription());
-		}
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ModifiableIdentity#setIcon(javax.swing.Icon)}.
-	 */
-	@Test
-	default void testSetIcon() {
-		Icon icon = mock(Icon.class);
-
-		M empty = createEmpty();
-		if(empty!=null) {
-			empty.setIcon(icon);
-			assertOptionalEquals(icon, empty.getIcon());
-		}
-
-		Icon icon2 = mock(Icon.class);
-		M fromIdentity = createFromIdentity("myId", "name", "description", icon);
-		if(fromIdentity!=null) {
-			fromIdentity.setIcon(icon2);
-			assertOptionalEquals(icon2, fromIdentity.getIcon());
 		}
 	}
 

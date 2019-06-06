@@ -110,7 +110,6 @@ public class ContextManifestResolver {
 			return;
 		}
 
-		source.getIcon().ifPresent(target::setIcon);
 		source.getId().ifPresent(target::setId);
 		source.getName().ifPresent(target::setName);
 		source.getDescription().ifPresent(target::setDescription);

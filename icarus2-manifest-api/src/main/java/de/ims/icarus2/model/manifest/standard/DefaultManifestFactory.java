@@ -57,7 +57,7 @@ public class DefaultManifestFactory implements ManifestFactory {
 	private final ManifestLocation manifestLocation;
 	private final ManifestRegistry registry;
 
-	private static class ManifestFragmentInfo {
+	private static class ManifestTypeInfo {
 		public final boolean skipProvenanceInfo;
 
 		public final Class<?> implementingClass;
@@ -66,7 +66,7 @@ public class DefaultManifestFactory implements ManifestFactory {
 		public final Constructor<?> baseConstructor;
 		public final Constructor<?> hostConstructor;
 
-		public ManifestFragmentInfo(Class<?> implementingClass,
+		public ManifestTypeInfo(Class<?> implementingClass,
 				Class<?> hostClass, boolean skipProvenanceInfo) throws NoSuchMethodException, SecurityException {
 			requireNonNull(implementingClass);
 
@@ -96,7 +96,7 @@ public class DefaultManifestFactory implements ManifestFactory {
 		}
 	}
 
-	private static final Map<ManifestType, ManifestFragmentInfo> _info = new Object2ObjectOpenHashMap<>();
+	private static final Map<ManifestType, ManifestTypeInfo> _info = new Object2ObjectOpenHashMap<>();
 
 	protected static void registerInfo(ManifestType manifestType, Class<?> implementingClass,
 			Class<?> hostClass) {
@@ -110,7 +110,7 @@ public class DefaultManifestFactory implements ManifestFactory {
 			throw new IllegalStateException("Duplicate implementation for "+manifestType);
 
 		try {
-			_info.put(manifestType, new ManifestFragmentInfo(implementingClass, hostClass, skipProvenanceInfo));
+			_info.put(manifestType, new ManifestTypeInfo(implementingClass, hostClass, skipProvenanceInfo));
 		} catch (NoSuchMethodException | SecurityException e) {
 			throw new ManifestException(ManifestErrorCode.IMPLEMENTATION_ERROR,
 					"Failed to compute implementation info for type: "+manifestType, e);
@@ -147,8 +147,8 @@ public class DefaultManifestFactory implements ManifestFactory {
 		return Collections.unmodifiableSet(_info.keySet());
 	}
 
-	protected static ManifestFragmentInfo getInfo(ManifestType type) {
-		ManifestFragmentInfo info = _info.get(type);
+	protected static ManifestTypeInfo getInfo(ManifestType type) {
+		ManifestTypeInfo info = _info.get(type);
 
 		if(info==null)
 			throw new ManifestException(GlobalErrorCode.UNSUPPORTED_OPERATION,
@@ -170,11 +170,11 @@ public class DefaultManifestFactory implements ManifestFactory {
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public <M extends ManifestFragment> M create(ManifestType type,
+	public <M extends TypedManifest> M create(ManifestType type,
 			TypedManifest host, Options options) {
 		requireNonNull(type);
 
-		ManifestFragmentInfo info = getInfo(type);
+		ManifestTypeInfo info = getInfo(type);
 
 		ManifestFragment result = null;
 

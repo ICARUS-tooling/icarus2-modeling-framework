@@ -24,8 +24,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.Icon;
-
 import de.ims.icarus2.model.api.highlight.HighlightInfo;
 import de.ims.icarus2.model.api.highlight.HighlightInfo.AnnotationLink;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
@@ -47,7 +45,6 @@ public class HighlightInfoBuilder {
 
 	// Identity builder part
 	private String id, name, description;
-	private Icon icon;
 
 	// Fixed identity
 	private Identity identity;
@@ -112,10 +109,6 @@ public class HighlightInfoBuilder {
 		return description;
 	}
 
-	public Icon getIcon() {
-		return icon;
-	}
-
 	public Identity getIdentity() {
 		return identity;
 	}
@@ -142,12 +135,6 @@ public class HighlightInfoBuilder {
 
 	public HighlightInfoBuilder description(String description) {
 		this.description = description;
-
-		return this;
-	}
-
-	public HighlightInfoBuilder icon(Icon icon) {
-		this.icon = icon;
 
 		return this;
 	}
@@ -255,7 +242,6 @@ public class HighlightInfoBuilder {
 
 	public HighlightInfoBuilder clearRawIdentity() {
 		id = name = description = null;
-		icon = null;
 
 		return this;
 	}
@@ -276,7 +262,7 @@ public class HighlightInfoBuilder {
 		Identity identity = this.identity;
 
 		if(identity==null) {
-			identity = new StaticIdentity(id, name, description, icon);
+			identity = new StaticIdentity(id, name, description);
 		}
 
 		return identity;

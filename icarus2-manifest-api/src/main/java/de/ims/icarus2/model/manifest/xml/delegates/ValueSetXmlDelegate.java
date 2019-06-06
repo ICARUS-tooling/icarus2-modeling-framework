@@ -162,7 +162,7 @@ public class ValueSetXmlDelegate extends AbstractXmlDelegate<ValueSet> {
 		Object value = manifest;
 
 		if(IcarusUtils.nonePresent(manifest.getId(), manifest.getName(),
-				manifest.getDescription(), manifest.getIcon())) {
+				manifest.getDescription())) {
 			value = manifest.getValue()
 					.orElseThrow(ManifestException.error("value not set"));
 		}

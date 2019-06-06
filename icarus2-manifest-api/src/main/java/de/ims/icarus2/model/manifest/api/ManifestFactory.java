@@ -50,15 +50,15 @@ public interface ManifestFactory {
 	 * @param type
 	 * @return
 	 */
-	default <M extends ManifestFragment> M create(ManifestType type) {
+	default <M extends TypedManifest> M create(ManifestType type) {
 		return create(type, null, null);
 	}
 
-	default <M extends ManifestFragment> M create(ManifestType type, Class<M> clazz) {
+	default <M extends TypedManifest> M create(ManifestType type, Class<M> clazz) {
 		return create(type, null, null);
 	}
 
-	default <M extends ManifestFragment> M create(Class<M> clazz) {
+	default <M extends TypedManifest> M create(Class<M> clazz) {
 		return create(ManifestType.forClass(clazz), null, null);
 	}
 
@@ -69,7 +69,7 @@ public interface ManifestFactory {
 	 * @param host
 	 * @return
 	 */
-	default <M extends ManifestFragment> M create(ManifestType type, TypedManifest host) {
+	default <M extends TypedManifest> M create(ManifestType type, TypedManifest host) {
 		return create(type, host, null);
 	}
 
@@ -84,7 +84,7 @@ public interface ManifestFactory {
 	 * @param options
 	 * @return
 	 */
-	<M extends ManifestFragment> M create(ManifestType type, @Nullable TypedManifest host, @Nullable Options options);
+	<M extends TypedManifest> M create(ManifestType type, @Nullable TypedManifest host, @Nullable Options options);
 
 	/**
 	 * Returns the {@link ManifestLocation location} that manifest objects instantiated

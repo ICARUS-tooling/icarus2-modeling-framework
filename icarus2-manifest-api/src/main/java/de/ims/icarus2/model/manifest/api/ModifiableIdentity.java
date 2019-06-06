@@ -19,7 +19,6 @@ package de.ims.icarus2.model.manifest.api;
 import java.util.Optional;
 
 import javax.annotation.Nullable;
-import javax.swing.Icon;
 
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
@@ -46,10 +45,6 @@ public interface ModifiableIdentity extends Identity {
 	@AccessRestriction(AccessMode.READ)
 	Optional<String> getDescription();
 
-	@Override
-	@AccessRestriction(AccessMode.READ)
-	Optional<Icon> getIcon();
-
 	// Modification methods
 
 	/**
@@ -63,6 +58,4 @@ public interface ModifiableIdentity extends Identity {
 	ModifiableIdentity setName(@Nullable String name);
 
 	ModifiableIdentity setDescription(@Nullable String description);
-
-	ModifiableIdentity setIcon(@Nullable Icon icon);
 }

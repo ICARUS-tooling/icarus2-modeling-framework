@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import javax.swing.Icon;
-
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
@@ -135,6 +133,4 @@ public interface LayerGroupManifest extends ModifiableIdentity, ManifestFragment
 	LayerGroupManifest setName(String name);
 	@Override
 	LayerGroupManifest setId(String id);
-	@Override
-	LayerGroupManifest setIcon(Icon icon);
 }

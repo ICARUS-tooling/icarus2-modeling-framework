@@ -29,8 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.swing.Icon;
-
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.events.Events;
@@ -422,14 +420,6 @@ public final class ContentTypeRegistry {
 		@Override
 		public Optional<String> getDescription() {
 			return Optional.of(contentClass.getName());
-		}
-
-		/**
-		 * @see de.ims.icarus2.util.id.Identity#getIcon()
-		 */
-		@Override
-		public Optional<Icon> getIcon() {
-			return Optional.empty();
 		}
 
 		/**

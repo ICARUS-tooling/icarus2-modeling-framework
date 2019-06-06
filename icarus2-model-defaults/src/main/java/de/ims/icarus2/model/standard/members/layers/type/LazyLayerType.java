@@ -21,7 +21,6 @@ import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 
 import javax.annotation.Nullable;
-import javax.swing.Icon;
 
 import de.ims.icarus2.model.manifest.api.Category;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
@@ -40,7 +39,6 @@ public class LazyLayerType implements LayerType {
 	private Optional<String> name = Optional.empty();
 	private Optional<String> namespace = Optional.empty();
 	private Optional<String> description = Optional.empty();
-	private Optional<Icon> icon = Optional.empty();
 
 	private Optional<String> layerId = Optional.empty();
 	private Optional<LayerManifest<?>> sharedManifest = Optional.empty();
@@ -66,7 +64,6 @@ public class LazyLayerType implements LayerType {
 		namespace = category.getNamespace();
 		name = category.getName();
 		description = category.getDescription();
-		icon = category.getIcon();
 
 		this.layerId = Optional.of(layerId);
 	}
@@ -104,14 +101,6 @@ public class LazyLayerType implements LayerType {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.id.Identity#getIcon()
-	 */
-	@Override
-	public Optional<Icon> getIcon() {
-		return icon;
-	}
-
-	/**
 	 * @see de.ims.icarus2.model.manifest.api.LayerType#getSharedManifest()
 	 */
 	@Override
@@ -142,13 +131,6 @@ public class LazyLayerType implements LayerType {
 	 */
 	public void setDescription(@Nullable String description) {
 		this.description = Optional.ofNullable(description);
-	}
-
-	/**
-	 * @param icon the icon to set
-	 */
-	public void setIcon(@Nullable Icon icon) {
-		this.icon = Optional.ofNullable(icon);
 	}
 
 	/**

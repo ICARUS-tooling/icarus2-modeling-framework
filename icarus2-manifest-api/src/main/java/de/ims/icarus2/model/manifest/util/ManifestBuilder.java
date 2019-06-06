@@ -52,7 +52,7 @@ public class ManifestBuilder implements AutoCloseable {
 
 	private final Map<String, ManifestFragment> lookup;
 
-	private ManifestFragment lastManifest;
+	private TypedManifest lastManifest;
 
 	public ManifestBuilder(ManifestFactory factory) {
 		this.factory = requireNonNull(factory);
@@ -76,19 +76,19 @@ public class ManifestBuilder implements AutoCloseable {
 	 *
 	 * @see ManifestFactory#create(Class)
 	 */
-	public <M extends ManifestFragment> M create(Class<M> clazz) {
+	public <M extends TypedManifest> M create(Class<M> clazz) {
 		requireNonNull(clazz);
 		return markLast(factory.create(clazz));
 	}
 
-	private void assignId(ManifestFragment manifest, String id) {
+	private void assignId(TypedManifest manifest, String id) {
 		if(manifest instanceof ModifiableIdentity) {
 			((ModifiableIdentity)manifest).setId(id);
 		} else
-			throw new InternalError("CLass needs to be handled: "+manifest.getClass());
+			throw new InternalError("Class needs to be handled: "+manifest.getClass());
 	}
 
-	private <M extends ManifestFragment> M markLast(M manifest) {
+	private <M extends TypedManifest> M markLast(M manifest) {
 		lastManifest = manifest;
 		return manifest;
 	}
@@ -104,16 +104,18 @@ public class ManifestBuilder implements AutoCloseable {
 	 * for another manifest.
 	 * @return
 	 */
-	public <M extends ManifestFragment> M create(Class<M> clazz, String id) {
+	public <M extends TypedManifest> M create(Class<M> clazz, String id) {
 		requireNonNull(clazz);
 		requireNonNull(id);
 
+		checkArgument("Not a proper manifest fragment type: "+clazz,
+				ManifestFragment.class.isAssignableFrom(clazz));
 		checkArgument("Duplicate id: "+id, !lookup.containsKey(id));
 
-		ManifestFragment manifest = factory.create(clazz);
+		TypedManifest manifest = factory.create(clazz);
 		assignId(manifest, id);
 
-		lookup.put(id, manifest);
+		lookup.put(id, (ManifestFragment) manifest);
 
 		return markLast(clazz.cast(manifest));
 	}
@@ -131,11 +133,13 @@ public class ManifestBuilder implements AutoCloseable {
 	 * a valid manifest.
 	 * @return
 	 */
-	public <M extends ManifestFragment> M create(Class<M> clazz, String id, String hostId) {
+	public <M extends TypedManifest> M create(Class<M> clazz, String id, String hostId) {
 		requireNonNull(clazz);
 		requireNonNull(id);
 		requireNonNull(hostId);
 
+		checkArgument("Not a proper manifest fragment type: "+clazz,
+				ManifestFragment.class.isAssignableFrom(clazz));
 		checkArgument("Duplicate id: "+id, !lookup.containsKey(id));
 
 		TypedManifest host = fetch(hostId);
@@ -157,7 +161,7 @@ public class ManifestBuilder implements AutoCloseable {
 	 * a valid manifest.
 	 * @return
 	 */
-	public <M extends ManifestFragment> M createInternal(Class<M> clazz, String hostId) {
+	public <M extends TypedManifest> M createInternal(Class<M> clazz, String hostId) {
 		requireNonNull(clazz);
 		requireNonNull(hostId);
 
@@ -187,7 +191,7 @@ public class ManifestBuilder implements AutoCloseable {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <M extends ManifestFragment> M last() {
+	public <M extends TypedManifest> M last() {
 		checkState("No last manifest set", lastManifest!=null);
 		return (M)lastManifest;
 	}

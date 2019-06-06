@@ -115,7 +115,7 @@ Assuming the file at path `myCorpus.imf.xml` contains the following XML data, we
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<imf:manifest  xmlns:imf="http://www.ims.uni-stuttgart.de/icarus/xml/manifest"
+<imf:manifest xmlns:imf="http://www.ims.uni-stuttgart.de/icarus/xml/manifest"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.ims.uni-stuttgart.de/icarus/xml/manifest http://www.ims.uni-stuttgart.de/icarus/xml/manifest/corpus.xsd">
 	<imf:templates>

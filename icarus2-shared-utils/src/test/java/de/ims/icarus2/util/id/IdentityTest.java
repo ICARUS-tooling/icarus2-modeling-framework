@@ -58,12 +58,4 @@ public interface IdentityTest<I extends Identity> extends GenericTest<I> {
 		assertNotNull(create().getDescription());
 	}
 
-	/**
-	 * Test method for {@link de.ims.icarus2.util.id.Identity#getIcon()}.
-	 */
-	@Test
-	default void testGetIcon() {
-		assertNotNull(create().getIcon());
-	}
-
 }

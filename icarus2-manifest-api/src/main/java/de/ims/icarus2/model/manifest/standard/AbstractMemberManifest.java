@@ -28,7 +28,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import javax.annotation.Nullable;
-import javax.swing.Icon;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
@@ -65,7 +64,6 @@ public abstract class AbstractMemberManifest<M extends MemberManifest<M>, H exte
 
 	private Optional<String> name = Optional.empty();
 	private Optional<String> description = Optional.empty();
-	private Optional<Icon> icon = Optional.empty();
 	private final Optional<H> host;
 
 	private final Set<Category> categories = new ObjectOpenCustomHashSet<>(Category.HASH_STRATEGY);
@@ -455,24 +453,6 @@ public abstract class AbstractMemberManifest<M extends MemberManifest<M>, H exte
 
 	protected void setDescription0(String description) {
 		this.description = Optional.ofNullable(description);
-	}
-
-	@Override
-	public Optional<Icon> getIcon() {
-		return getDerivable(icon, Identity::getIcon);
-	}
-
-	@Override
-	public M setIcon(Icon icon) {
-		checkNotLocked();
-
-		setIcon0(icon);
-
-		return thisAsCast();
-	}
-
-	protected void setIcon0(Icon icon) {
-		this.icon = Optional.ofNullable(icon);
 	}
 
 	@Override

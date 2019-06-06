@@ -90,19 +90,20 @@ public class ManifestXmlWriter extends ManifestXmlProcessor {
 	public ManifestXmlWriter writeAll() throws Exception {
 		synchronized (manifests) {
 			if(!manifests.isEmpty()) {
-				XmlSerializer serializer = newSerializer(manifestLocation.getOutput());
+				try(XmlSerializer serializer = newSerializer(manifestLocation.getOutput())) {
 
-				String rootTag = manifestLocation.isTemplate() ? ManifestXmlTags.TEMPLATES : ManifestXmlTags.CORPORA;
+					String rootTag = manifestLocation.isTemplate() ? ManifestXmlTags.TEMPLATES : ManifestXmlTags.CORPORA;
 
-				serializer.startDocument();
-				serializer.startElement(rootTag);
+					serializer.startDocument();
+					serializer.startElement(rootTag);
 
-				ManifestXmlUtils.writeDefaultXsiInfo(serializer);
+					ManifestXmlUtils.writeDefaultXsiInfo(serializer);
 
-				writeInline(serializer);
+					writeInline(serializer);
 
-				serializer.endElement(rootTag);
-				serializer.endDocument();
+					serializer.endElement(rootTag);
+					serializer.endDocument();
+				}
 			}
 		}
 		return this;

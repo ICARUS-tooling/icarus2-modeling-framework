@@ -118,7 +118,6 @@ public final class ManifestXmlUtils {
 		serializer.writeAttribute(ManifestXmlAttributes.ID, identity.getId());
 		serializer.writeAttribute(ManifestXmlAttributes.NAME, identity.getName());
 		serializer.writeAttribute(ManifestXmlAttributes.DESCRIPTION, identity.getDescription());
-		serializer.writeAttribute(ManifestXmlAttributes.ICON, serialize(identity.getIcon()));
 	}
 
 	public static void writeCategoryAttributes(XmlSerializer serializer, Category category) throws XMLStreamException {
@@ -181,10 +180,8 @@ public final class ManifestXmlUtils {
 
 	public static void writeIdentityElement(XmlSerializer serializer,
 			String name, Identity identity) throws XMLStreamException {
-		String iconString = identity.getIcon().flatMap(ManifestXmlUtils::serialize).orElse(null);
 		boolean empty = XmlUtils.isLegalAttribute(identity.getName())
-				&& XmlUtils.isLegalAttribute(identity.getDescription())
-				&& (iconString==null || !XmlUtils.hasIllegalAttributeSymbols(iconString));
+				&& XmlUtils.isLegalAttribute(identity.getDescription());
 
 		serializer.startElement(name, empty);
 		writeIdentityAttributes(serializer, identity);
@@ -196,11 +193,10 @@ public final class ManifestXmlUtils {
 		boolean elementsWritten = false;
 		elementsWritten |= maybeWriteElement(serializer, ManifestXmlTags.NAME, identity.getName());
 		elementsWritten |= maybeWriteElement(serializer, ManifestXmlTags.DESCRIPTION, identity.getDescription());
-		elementsWritten |= maybeWriteElement(serializer, ManifestXmlTags.ICON, serializeIcon(identity.getIcon().orElse(null)));
 		return elementsWritten;
 	}
 
-	public static void writeIdentityFieldElements(XmlSerializer serializer, String name, String description, Icon icon) throws XMLStreamException {
+	public static void writeIdentityFieldElements(XmlSerializer serializer, String name, String description) throws XMLStreamException {
 
 
 		// Nest identity information if needed
@@ -210,14 +206,6 @@ public final class ManifestXmlUtils {
 
 		if(description!=null && XmlUtils.hasIllegalAttributeSymbols(description)) {
 			writeElement(serializer, ManifestXmlTags.DESCRIPTION, description);
-		}
-
-		if(icon!=null) {
-			String iconString = ManifestXmlUtils.serialize(icon).orElse(null);
-			if(iconString==null || XmlUtils.hasIllegalAttributeSymbols(iconString)) {
-				iconString = ImageSerializer.icon2String(icon);
-				writeElement(serializer, ManifestXmlTags.ICON, iconString);
-			}
 		}
 	}
 
@@ -352,7 +340,6 @@ public final class ManifestXmlUtils {
 		normalize(attr, ManifestXmlAttributes.ID).ifPresent(identity::setId);
 		normalize(attr, ManifestXmlAttributes.NAME).ifPresent(identity::setName);
 		normalize(attr, ManifestXmlAttributes.DESCRIPTION).ifPresent(identity::setDescription);
-		normalize(attr, ManifestXmlAttributes.ICON).flatMap(ManifestXmlUtils::iconValue).ifPresent(identity::setIcon);
 	}
 
 	public static Category readCategory(Attributes attr) {

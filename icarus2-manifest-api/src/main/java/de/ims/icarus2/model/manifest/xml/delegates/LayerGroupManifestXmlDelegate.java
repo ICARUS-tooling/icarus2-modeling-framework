@@ -145,15 +145,14 @@ public class LayerGroupManifestXmlDelegate extends AbstractXmlDelegate<LayerGrou
 			ManifestXmlUtils.readIdentityAttributes(attributes, manifest);
 
 			readFlag(attributes, ManifestXmlAttributes.INDEPENDENT, LayerGroupManifest.DEFAULT_INDEPENDENT_VALUE)
-				.ifPresent(manifest::setIndependent);;
+				.ifPresent(manifest::setIndependent);
 
 			ManifestXmlUtils.normalize(attributes, ManifestXmlAttributes.PRIMARY_LAYER)
 				.ifPresent(manifest::setPrimaryLayerId);
 		} break;
 
 		case ManifestXmlTags.NAME:
-		case ManifestXmlTags.DESCRIPTION:
-		case ManifestXmlTags.ICON: {
+		case ManifestXmlTags.DESCRIPTION: {
 			handler = this;
 		} break;
 
@@ -208,11 +207,6 @@ public class LayerGroupManifestXmlDelegate extends AbstractXmlDelegate<LayerGrou
 
 		case ManifestXmlTags.DESCRIPTION: {
 			getInstance().setDescription(text);
-			handler = this;
-		} break;
-
-		case ManifestXmlTags.ICON: {
-			ManifestXmlUtils.iconValue(text, true).ifPresent(getInstance()::setIcon);
 			handler = this;
 		} break;
 

@@ -20,8 +20,6 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Optional;
 
-import javax.swing.Icon;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,14 +108,6 @@ public class LayerTypeWrapper implements LayerType {
 	@Override
 	public Optional<String> getDescription() {
 		return getProxy().getDescription();
-	}
-
-	/**
-	 * @see de.ims.icarus2.util.id.Identity#getIcon()
-	 */
-	@Override
-	public Optional<Icon> getIcon() {
-		return getProxy().getIcon();
 	}
 
 	/**

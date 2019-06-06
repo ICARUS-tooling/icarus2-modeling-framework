@@ -18,8 +18,6 @@ package de.ims.icarus2.util.id;
 
 import java.util.Optional;
 
-import javax.swing.Icon;
-
 /**
  * @author Markus Gärtner
  *
@@ -67,14 +65,5 @@ public class ProxyIdentity implements Identity {
 	@Override
 	public Optional<String> getDescription() {
 		return identity.getDescription();
-	}
-
-	/**
-	 * @return
-	 * @see de.ims.icarus2.util.id.Identity#getIcon()
-	 */
-	@Override
-	public Optional<Icon> getIcon() {
-		return identity.getIcon();
 	}
 }
