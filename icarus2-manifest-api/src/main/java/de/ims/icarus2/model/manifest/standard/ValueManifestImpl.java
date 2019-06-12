@@ -104,4 +104,15 @@ public class ValueManifestImpl extends DefaultModifiableIdentity<ValueManifest> 
 		this.value = Optional.of(value);
 	}
 
+	/**
+	 * As this class is mainly a wrapper around an actual value, we should
+	 * also honor the original value's {@link Object#toString() toString()}
+	 * method if it is set.
+	 *
+	 * @see de.ims.icarus2.model.manifest.standard.DefaultModifiableIdentity#toString()
+	 */
+	@Override
+	public String toString() {
+		return value.orElse("<null>").toString();
+	}
 }

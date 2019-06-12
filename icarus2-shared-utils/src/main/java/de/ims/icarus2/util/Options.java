@@ -61,6 +61,10 @@ public class Options extends HashMap<String, Object> {
 		}
 	};
 
+	public static Options of(String key, Object value) {
+		return new Options().set(key, value);
+	}
+
 	public Options() {
 		// no-op
 	}
@@ -86,6 +90,11 @@ public class Options extends HashMap<String, Object> {
 	public Object getOptional(String key, Object defaultValue) {
 		Object value = get(key);
 		return value==null ? defaultValue : value;
+	}
+
+	public Options set(String key, Object value) {
+		put(key, value);
+		return this;
 	}
 
 	@Override

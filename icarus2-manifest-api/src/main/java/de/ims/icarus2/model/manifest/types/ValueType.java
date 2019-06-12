@@ -49,6 +49,7 @@ import de.ims.icarus2.apiguard.EnumType;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.Messages;
+import de.ims.icarus2.util.Wrapper;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.eval.Expression;
@@ -555,7 +556,14 @@ public class ValueType implements StringResource, NamedObject {
 	public static ValueType DEFAULT_VALUE_TYPE = STRING;
 
 	protected static Class<?> extractClass(Object value) {
+		// Unpack wrapped data
+		if(value instanceof Wrapper) {
+			value = ((Wrapper<?>)value).get();
+		}
+
 		Class<?> type = value.getClass();
+
+		// Honor possibility of dedicated return types for expressions
 		if(Expression.class.isAssignableFrom(type)) {
 			type = ((Expression)value).getReturnType();
 

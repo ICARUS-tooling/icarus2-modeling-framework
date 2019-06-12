@@ -19,16 +19,29 @@
  */
 package de.ims.icarus2.examples;
 
-import static java.util.Objects.requireNonNull;
+import static de.ims.icarus2.util.Conditions.checkArgument;
 
+import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.List;
 
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.JSpinner;
+import javax.swing.JTextArea;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestFactory;
@@ -41,6 +54,7 @@ import de.ims.icarus2.model.manifest.standard.DefaultManifestFactory;
 import de.ims.icarus2.model.manifest.standard.DefaultManifestRegistry;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.ManifestBuilder;
+import de.ims.icarus2.util.Options;
 
 /**
  * @author Markus Gärtner
@@ -55,12 +69,13 @@ public class ProcessManifestsForGui {
 		ManifestLocation location = ManifestLocation.newBuilder().virtual().build();
 		ManifestFactory factory = new DefaultManifestFactory(location, registry);
 
-		AnnotationManifest annotationManifest;
+		List<AnnotationManifest> annotationManifests = new ArrayList<>();
 
 		// Create example manifest
 		try(ManifestBuilder builder = new ManifestBuilder(factory)) {
-			annotationManifest = builder.create(AnnotationManifest.class, "anno")
-					.setKey("forms")
+			annotationManifests.add(builder.create(AnnotationManifest.class, "anno1",
+						Options.of(ManifestFactory.OPTION_VALUE_TYPE, ValueType.STRING))
+					.setKey("stringValues")
 					.setValueType(ValueType.STRING)
 					.setValueSet(builder.create(ValueSet.class)
 							.addValue(builder.create(ValueManifest.class)
@@ -75,61 +90,135 @@ public class ProcessManifestsForGui {
 									.setValue("bar")
 									.setName("value3")
 									.setDescription("the most awesome value of them all ^^")))
-					.setAllowUnknownValues(true);
+					.setAllowUnknownValues(true));
+			annotationManifests.add(builder.create(AnnotationManifest.class, "anno2",
+						Options.of(ManifestFactory.OPTION_VALUE_TYPE, ValueType.INTEGER))
+					.setKey("intValues")
+					.setValueRange(builder.create(ValueRange.class,
+								Options.of(ManifestFactory.OPTION_VALUE_TYPE, ValueType.INTEGER))
+							.setLowerBound(Integer.valueOf(10))
+							.setUpperBound(Integer.valueOf(100))
+							.setStepSize(Integer.valueOf(5)))
+					.setAllowUnknownValues(true));
 		}
 
 		// Show a simple GUI
-		SwingUtilities.invokeLater(() -> initAndShowGui(annotationManifest));
+		SwingUtilities.invokeLater(() -> initAndShowGui(annotationManifests));
 	}
 
-	private static void initAndShowGui(AnnotationManifest annotationManifest) {
+	private static void initAndShowGui(List<AnnotationManifest> annotationManifests) {
 
 		JFrame frame = new JFrame("ICARUS2 Example - "+ProcessManifestsForGui.class.getSimpleName());
 
-		//TODO build gui
+		frame.add(new AnnotationValuePicker(annotationManifests));
 
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.pack();
+		frame.setLocationRelativeTo(null);
 		frame.setVisible(true);
 	}
 
-	class AnnotationValuePicker {
+	static class AnnotationValuePicker extends JPanel implements ActionListener, ChangeListener {
+		private static final long serialVersionUID = -8569680717430416493L;
 
-		private final AnnotationManifest manifest;
-		private final JComponent container;
+		private final JTextArea textArea;
+		private final JPanel contentPanel;
 
-		public AnnotationValuePicker(JComponent container, AnnotationManifest manifest) {
-			this.container = requireNonNull(container);
-			this.manifest = requireNonNull(manifest);
+		private final Object MANIFEST_KEY = "manifest";
 
-			// Build components
-			manifest.getValueSet().ifPresent(this::addChoice);
+		public AnnotationValuePicker(List<AnnotationManifest> annotationManifests) {
+			super(new BorderLayout());
+
+			textArea = new JTextArea(10, 50);
+
+			contentPanel = new JPanel();
+			contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.X_AXIS));
+
+			for(AnnotationManifest annotationManifest : annotationManifests) {
+				JPanel panel = new JPanel();
+				panel.setBorder(BorderFactory.createTitledBorder(
+						annotationManifest.getName().orElse("unnamed")));
+				annotationManifest.getDescription().ifPresent(panel::setToolTipText);
+				panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+				annotationManifest.getValueSet().ifPresent(
+						set -> addChoice(annotationManifest, set, panel));
+				annotationManifest.getValueRange().ifPresent(
+						range -> addRange(annotationManifest, range, panel));
+
+				if(panel.getComponentCount()==0) {
+					addFreeText(annotationManifest, panel);
+				}
+
+				contentPanel.add(panel);
+			}
+
+			add(contentPanel, BorderLayout.CENTER);
+			add(textArea, BorderLayout.SOUTH);
 		}
 
-		void addUIElement(JComponent component) {
-			// Add the given component to this UI
-			container.add(component);
-		}
-
-		void addChoice(ValueSet valueSet) {
+		private void addChoice(AnnotationManifest manifest, ValueSet valueSet, JComponent container) {
 			JComboBox<Object> comboBox = new JComboBox<>(valueSet.getValues());
 			comboBox.setEditable(manifest.isAllowUnknownValues());
 			manifest.getNoEntryValue().ifPresent(comboBox::setSelectedItem);
 			comboBox.setRenderer(new ValueRenderer());
+			comboBox.addActionListener(this);
+			comboBox.putClientProperty(MANIFEST_KEY, manifest);
 
 			container.add(comboBox);
 		}
 
-		void addRange(ValueRange valueRange) {
+		private void addRange(AnnotationManifest manifest, ValueRange valueRange, JComponent container) {
+			checkArgument("Value type must be a number",
+					Number.class.isAssignableFrom(valueRange.getValueType().getBaseClass()));
 
+			SpinnerNumberModel model = new SpinnerNumberModel();
+			valueRange.<Comparable<?>>getLowerBound().ifPresent(model::setMinimum);
+			valueRange.<Comparable<?>>getUpperBound().ifPresent(model::setMaximum);
+			valueRange.<Number>getStepSize().ifPresent(model::setStepSize);
+
+			JSpinner spinner = new JSpinner(model);
+			manifest.getNoEntryValue().ifPresent(spinner::setValue);
+			spinner.addChangeListener(this);
+			spinner.putClientProperty(MANIFEST_KEY, manifest);
+
+			container.add(spinner);
 		}
 
-		void addFreeText() {
+		private void addFreeText(AnnotationManifest manifest, JComponent container) {
+			//TODO
+		}
 
+		private void displayValue(JComponent source, Object value) {
+			AnnotationManifest manifest = (AnnotationManifest) source.getClientProperty(MANIFEST_KEY);
+			String text = String.format("%s -> %s%n",
+					manifest.getName(), String.valueOf(value));
+
+			textArea.append(text);
+		}
+
+		/**
+		 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+		 */
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			JComboBox<?> source = (JComboBox<?>) e.getSource();
+			displayValue(source, source.getSelectedItem());
+		}
+
+		/**
+		 * @see javax.swing.event.ChangeListener#stateChanged(javax.swing.event.ChangeEvent)
+		 */
+		@Override
+		public void stateChanged(ChangeEvent e) {
+			JSpinner source = (JSpinner) e.getSource();
+			displayValue(source, source.getValue());
 		}
 	}
 
-	class ValueRenderer extends DefaultListCellRenderer {
+	static class ValueRenderer extends DefaultListCellRenderer {
+
+		private static final long serialVersionUID = 1302077701744189734L;
 
 		@Override
 		public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,

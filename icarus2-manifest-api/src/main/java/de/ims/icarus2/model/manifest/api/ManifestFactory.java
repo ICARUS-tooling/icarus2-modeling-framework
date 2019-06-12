@@ -21,6 +21,7 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.util.Options;
 
 /**
@@ -31,6 +32,12 @@ import de.ims.icarus2.util.Options;
  *
  */
 public interface ManifestFactory {
+
+	/**
+	 * Key for storing a {@link ValueType} in the options for
+	 * creation of a manifest.
+	 */
+	public static final String OPTION_VALUE_TYPE = "valueType";
 
 	/**
 	 * Returns all the {@link ManifestType types} this factory can instantiate.
@@ -60,6 +67,10 @@ public interface ManifestFactory {
 
 	default <M extends TypedManifest> M create(Class<M> clazz) {
 		return create(ManifestType.forClass(clazz), null, null);
+	}
+
+	default <M extends TypedManifest> M create(Class<M> clazz, Options options) {
+		return create(ManifestType.forClass(clazz), null, options);
 	}
 
 	/**

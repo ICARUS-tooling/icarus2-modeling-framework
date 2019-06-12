@@ -62,7 +62,7 @@ public interface ManifestFactoryTest {
 				continue;
 			}
 
-			ManifestFragment manifest = factory.create(type);
+			TypedManifest manifest = factory.create(type);
 
 			assertNotNull(manifest);
 			assertEquals(type, manifest.getManifestType());
@@ -85,7 +85,7 @@ public interface ManifestFactoryTest {
 
 			for(ManifestType hostType : type.getRequiredEnvironment()) {
 				TypedManifest host = ManifestTestUtils.mockTypedManifest(hostType);
-				ManifestFragment manifest = factory.create(type, host);
+				TypedManifest manifest = factory.create(type, host);
 
 				assertNotNull(manifest);
 				assertEquals(type, manifest.getManifestType());

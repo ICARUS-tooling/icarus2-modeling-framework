@@ -37,6 +37,7 @@ import de.ims.icarus2.model.manifest.api.ModifiableIdentity;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.standard.HierarchyImpl;
 import de.ims.icarus2.model.manifest.standard.ImplementationManifestImpl;
+import de.ims.icarus2.util.Options;
 
 /**
  * Utility class that wraps around a {@link ManifestFactory} and provides
@@ -77,8 +78,20 @@ public class ManifestBuilder implements AutoCloseable {
 	 * @see ManifestFactory#create(Class)
 	 */
 	public <M extends TypedManifest> M create(Class<M> clazz) {
+		return create(clazz, Options.NONE);
+	}
+
+	/**
+	 * Creates an anonymous manifest without storing it.
+	 *
+	 * @param clazz
+	 * @return
+	 *
+	 * @see ManifestFactory#create(Class)
+	 */
+	public <M extends TypedManifest> M create(Class<M> clazz, Options options) {
 		requireNonNull(clazz);
-		return markLast(factory.create(clazz));
+		return markLast(factory.create(clazz, options));
 	}
 
 	private void assignId(TypedManifest manifest, String id) {
@@ -105,6 +118,21 @@ public class ManifestBuilder implements AutoCloseable {
 	 * @return
 	 */
 	public <M extends TypedManifest> M create(Class<M> clazz, String id) {
+		return create(clazz, id, Options.NONE);
+	}
+
+	/**
+	 * Creates a manifest with an explicit {@code id} and stores it for further
+	 * lookups.
+	 * The manifest will not be assigned a host.
+	 *
+	 * @param clazz
+	 * @param id
+	 * @throws IllegalStateException iff the given {@code id} has already been used
+	 * for another manifest.
+	 * @return
+	 */
+	public <M extends TypedManifest> M create(Class<M> clazz, String id, Options options) {
 		requireNonNull(clazz);
 		requireNonNull(id);
 
@@ -112,7 +140,7 @@ public class ManifestBuilder implements AutoCloseable {
 				ManifestFragment.class.isAssignableFrom(clazz));
 		checkArgument("Duplicate id: "+id, !lookup.containsKey(id));
 
-		TypedManifest manifest = factory.create(clazz);
+		TypedManifest manifest = factory.create(clazz, options);
 		assignId(manifest, id);
 
 		lookup.put(id, (ManifestFragment) manifest);

@@ -23,6 +23,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
@@ -45,6 +49,7 @@ import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.standard.DriverManifestImpl.ModuleManifestImpl;
 import de.ims.icarus2.model.manifest.standard.DriverManifestImpl.ModuleSpecImpl;
+import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.util.Options;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
@@ -54,10 +59,16 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  */
 public class DefaultManifestFactory implements ManifestFactory {
 
+	private static final Logger log = LoggerFactory.getLogger(DefaultManifestFactory.class);
+
 	private final ManifestLocation manifestLocation;
 	private final ManifestRegistry registry;
 
 	private static class ManifestTypeInfo {
+		/**
+		 * Flag to signal that a constructor should not receive explicit location and registry
+		 * information, but infer those from the host manifest.
+		 */
 		public final boolean skipProvenanceInfo;
 
 		public final Class<?> implementingClass;
@@ -66,9 +77,26 @@ public class DefaultManifestFactory implements ManifestFactory {
 		public final Constructor<?> baseConstructor;
 		public final Constructor<?> hostConstructor;
 
-		public ManifestTypeInfo(Class<?> implementingClass,
+		public final Function<Options, TypedManifest> creator;
+
+		ManifestTypeInfo(Class<?> implementingClass, Function<Options, TypedManifest> creator) {
+			requireNonNull(implementingClass);
+			requireNonNull(creator);
+
+			this.implementingClass = implementingClass;
+			this.creator = creator;
+
+			hostClass = null;
+			skipProvenanceInfo = false;
+			baseConstructor = null;
+			hostConstructor = null;
+		}
+
+		ManifestTypeInfo(Class<?> implementingClass,
 				Class<?> hostClass, boolean skipProvenanceInfo) throws NoSuchMethodException, SecurityException {
 			requireNonNull(implementingClass);
+
+			creator = null;
 
 			this.implementingClass = implementingClass;
 			this.hostClass = hostClass;
@@ -79,7 +107,8 @@ public class DefaultManifestFactory implements ManifestFactory {
 			try {
 				baseConstructor = implementingClass.getConstructor(ManifestLocation.class, ManifestRegistry.class);
 			} catch(NoSuchMethodException e) {
-				baseConstructor = null;
+				log.debug("Manifest class {} is missing default constructor ({}, {})",
+						implementingClass, ManifestLocation.class, ManifestRegistry.class);
 			}
 
 			this.baseConstructor = baseConstructor;
@@ -90,7 +119,8 @@ public class DefaultManifestFactory implements ManifestFactory {
 				if(skipProvenanceInfo) {
 					hostConstructor = implementingClass.getConstructor(hostClass);
 				} else {
-					hostConstructor = implementingClass.getConstructor(ManifestLocation.class, ManifestRegistry.class, hostClass);
+					hostConstructor = implementingClass.getConstructor(
+							ManifestLocation.class, ManifestRegistry.class, hostClass);
 				}
 			}
 		}
@@ -104,17 +134,50 @@ public class DefaultManifestFactory implements ManifestFactory {
 	}
 
 	protected static void registerInfo(ManifestType manifestType, Class<?> implementingClass,
-			Class<?> hostClass, boolean skipProvenanceInfo) {
+			Function<Options, TypedManifest> creator) {
+		registerInfo(manifestType, new ManifestTypeInfo(implementingClass, creator));
+	}
 
-		if(_info.containsKey(manifestType))
-			throw new IllegalStateException("Duplicate implementation for "+manifestType);
+	protected static void registerInfo(ManifestType manifestType, Class<?> implementingClass,
+			Class<?> hostClass, boolean skipProvenanceInfo) {
+		ManifestTypeInfo info;
 
 		try {
-			_info.put(manifestType, new ManifestTypeInfo(implementingClass, hostClass, skipProvenanceInfo));
+			info = new ManifestTypeInfo(implementingClass, hostClass, skipProvenanceInfo);
 		} catch (NoSuchMethodException | SecurityException e) {
 			throw new ManifestException(ManifestErrorCode.IMPLEMENTATION_ERROR,
 					"Failed to compute implementation info for type: "+manifestType, e);
 		}
+
+		registerInfo(manifestType, info);
+	}
+
+	protected static void registerInfo(ManifestType manifestType, ManifestTypeInfo info) {
+
+		if(_info.containsKey(manifestType))
+			throw new IllegalStateException("Duplicate implementation for "+manifestType);
+		_info.put(manifestType, info);
+	}
+
+	private static final Class<?> NO_HOST = null;
+
+	/**
+	 * Fetches from the given {@code options} the {@link ManifestFactory#OPTION_VALUE_TYPE}
+	 * and ensures that it is a valid {@link ValueType} object. If no such option is set
+	 * it returns {@link ValueType#DEFAULT_VALUE_TYPE}!
+	 */
+	private static ValueType extractOrDefaultValueType(Options options) {
+		requireNonNull(options);
+
+		Object valueType = options.get(OPTION_VALUE_TYPE);
+		if(valueType==null) {
+			return ValueType.DEFAULT_VALUE_TYPE;
+		}
+		if(!ValueType.class.isInstance(valueType))
+			throw new ManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_TYPE,
+					"Not a valid value type: "+valueType.getClass());
+
+		return (ValueType)valueType;
 	}
 
 	static {
@@ -122,14 +185,14 @@ public class DefaultManifestFactory implements ManifestFactory {
 		registerInfo(ManifestType.ANNOTATION_MANIFEST, AnnotationManifestImpl.class, AnnotationLayerManifest.class);
 		registerInfo(ManifestType.CONTAINER_MANIFEST, ContainerManifestImpl.class, ItemLayerManifestBase.class);
 		registerInfo(ManifestType.CONTEXT_MANIFEST, ContextManifestImpl.class, CorpusManifest.class);
-		registerInfo(ManifestType.CORPUS_MANIFEST, CorpusManifestImpl.class, null);
+		registerInfo(ManifestType.CORPUS_MANIFEST, CorpusManifestImpl.class, NO_HOST);
 		registerInfo(ManifestType.DRIVER_MANIFEST, DriverManifestImpl.class, ContextManifest.class);
 		registerInfo(ManifestType.FRAGMENT_LAYER_MANIFEST, FragmentLayerManifestImpl.class, LayerGroupManifest.class);
 		registerInfo(ManifestType.HIGHLIGHT_LAYER_MANIFEST, HighlightLayerManifestImpl.class, LayerGroupManifest.class);
 		registerInfo(ManifestType.IMPLEMENTATION_MANIFEST, ImplementationManifestImpl.class, MemberManifest.class);
 		registerInfo(ManifestType.ITEM_LAYER_MANIFEST, ItemLayerManifestImpl.class, LayerGroupManifest.class);
 		registerInfo(ManifestType.LAYER_GROUP_MANIFEST, LayerGroupManifestImpl.class, ContextManifest.class, true);
-		registerInfo(ManifestType.LOCATION_MANIFEST, LocationManifestImpl.class, null);
+		registerInfo(ManifestType.LOCATION_MANIFEST, LocationManifestImpl.class, NO_HOST);
 		registerInfo(ManifestType.MODULE_MANIFEST, ModuleManifestImpl.class, DriverManifest.class);
 		registerInfo(ManifestType.MODULE_SPEC, ModuleSpecImpl.class, DriverManifest.class, true);
 		registerInfo(ManifestType.OPTIONS_MANIFEST, OptionsManifestImpl.class, MemberManifest.class);
@@ -137,6 +200,18 @@ public class DefaultManifestFactory implements ManifestFactory {
 		registerInfo(ManifestType.RASTERIZER_MANIFEST, RasterizerManifestImpl.class, FragmentLayerManifest.class);
 		registerInfo(ManifestType.STRUCTURE_LAYER_MANIFEST, StructureLayerManifestImpl.class, LayerGroupManifest.class);
 		registerInfo(ManifestType.STRUCTURE_MANIFEST, StructureManifestImpl.class, StructureLayerManifest.class);
+
+		registerInfo(ManifestType.VALUE_MANIFEST, ValueManifestImpl.class, options -> {
+			return new ValueManifestImpl(extractOrDefaultValueType(options));
+		});
+
+		registerInfo(ManifestType.VALUE_RANGE, ValueRangeImpl.class, options -> {
+			return new ValueRangeImpl(extractOrDefaultValueType(options));
+		});
+
+		registerInfo(ManifestType.VALUE_SET, ValueSetImpl.class, options -> {
+			return new ValueSetImpl(extractOrDefaultValueType(options));
+		});
 	}
 
 	/**
@@ -174,11 +249,18 @@ public class DefaultManifestFactory implements ManifestFactory {
 			TypedManifest host, Options options) {
 		requireNonNull(type);
 
+		if(options==null) {
+			options = Options.NONE;
+		}
+
 		ManifestTypeInfo info = getInfo(type);
 
-		ManifestFragment result = null;
+		TypedManifest result = null;
 
-		if(host==null) {
+		if(info.creator!=null) {
+			// Easy-mode, delegate all checks and responsibilities
+			result = info.creator.apply(options);
+		} else if(host==null) {
 			if(info.baseConstructor==null)
 				throw new ManifestException(ManifestErrorCode.IMPLEMENTATION_FACTORY,
 						"Cannot instantiate manifest "+type+" without matching host environment: "+info.hostClass);

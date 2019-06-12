@@ -22,7 +22,9 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.util.Wrapper;
 
 
 /**
@@ -34,7 +36,8 @@ import de.ims.icarus2.model.manifest.types.ValueType;
  * @author Markus Gärtner
  *
  */
-public interface ValueManifest extends Documentable<ValueManifest>, ModifiableIdentity, TypedManifest {
+public interface ValueManifest extends Documentable<ValueManifest>,
+		ModifiableIdentity, TypedManifest, Wrapper<Object> {
 
 
 	public static final Set<ValueType> SUPPORTED_VALUE_TYPES =
@@ -51,6 +54,15 @@ public interface ValueManifest extends Documentable<ValueManifest>, ModifiableId
 	 * @return
 	 */
 	Optional<Object> getValue();
+
+	/**
+	 * @see de.ims.icarus2.util.Wrapper#get()
+	 */
+	@Override
+	default Object get() {
+		return getValue().orElseThrow(ManifestException.error(
+				GlobalErrorCode.ILLEGAL_STATE, "No value set"));
+	}
 
 	ValueType getValueType();
 
