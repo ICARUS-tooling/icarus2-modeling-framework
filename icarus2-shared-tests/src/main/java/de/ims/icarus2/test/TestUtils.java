@@ -974,7 +974,7 @@ public class TestUtils {
 
 	/**
 	 * Used to signal that no attempt should be made to assert any
-	 * return value.
+	 * default return value.
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")

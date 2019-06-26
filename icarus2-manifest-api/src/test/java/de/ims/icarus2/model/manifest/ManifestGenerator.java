@@ -174,9 +174,9 @@ public class ManifestGenerator {
 			TypedManifest host = mockTypedManifest(hostType, true);
 
 			return generator.build(type, host, config);
-		} else {
-			return generator.build(type, config);
 		}
+
+		return generator.build(type, config);
 	}
 
 	/**
@@ -237,9 +237,9 @@ public class ManifestGenerator {
 			TypedManifest host = mockTypedManifest(hostType, true);
 
 			return instantiate(type, host, config);
-		} else {
-			return instantiate(type, config);
 		}
+
+		return instantiate(type, config);
 	}
 
 	public <M extends TypedManifest> M generatePlainCopy(ManifestType type, M original, Config config) {
@@ -248,9 +248,9 @@ public class ManifestGenerator {
 			TypedManifest host = ((Embedded) original).getHost().get();
 
 			return instantiate(type, host, config);
-		} else {
-			return instantiate(type, config);
 		}
+
+		return instantiate(type, config);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -412,7 +412,6 @@ public class ManifestGenerator {
 
 		container.addFieldChange(identity::setDescription, "description", index("myDesc\nrandom stuff"));
 		container.addFieldChange(identity::setName, "name", index("myName"));
-		//TODO add Icon
 	}
 
 	private void prepareCategorizable(Categorizable<?> categorizable,
@@ -922,7 +921,7 @@ public class ManifestGenerator {
 
 		Object[] values = ManifestTestUtils.getTestValues(valueRange.getValueType());
 
-		valueRange.setLowerBound((Comparable<?>) values[0]);
+		valueRange.setLowerBound(values[0]);
 
 		container.addFieldChange(valueRange::setUpperBound, "upperBound", (Comparable<?>) values[1]);
 		container.addFieldChange(valueRange::setStepSize, "stepSize", (Comparable<?>) values[2]);

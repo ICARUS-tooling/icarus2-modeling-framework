@@ -82,9 +82,9 @@ public enum StandardPreparationSteps implements PreparationStep {
 						"Corrupted file count in metadata: expected {} - got {} as stored value",
 						_int(fileCount), _int(storedFileCount));
 				return false;
-			} else {
-				metadataRegistry.setIntValue(fileCountKey, fileCount);
 			}
+
+			metadataRegistry.setIntValue(fileCountKey, fileCount);
 
 			int invalidFiles = 0;
 

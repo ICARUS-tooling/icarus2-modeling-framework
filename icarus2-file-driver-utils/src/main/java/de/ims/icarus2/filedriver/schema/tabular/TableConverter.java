@@ -1484,9 +1484,9 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 			if(empty) {
 				return multiline ? ScanResult.PARTLY_MATCHED : ScanResult.MATCHED;
-			} else {
-				return ScanResult.FAILED;
 			}
+
+			return ScanResult.FAILED;
 		}
 
 		/**

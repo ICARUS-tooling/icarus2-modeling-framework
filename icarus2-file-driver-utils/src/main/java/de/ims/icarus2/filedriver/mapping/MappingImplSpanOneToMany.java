@@ -322,21 +322,21 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			// Optimized handling of monotonic coverage: use only first source index
 			if(coverage.isMonotonic()) {
 				return getBeginIndex(firstIndex(sourceIndices), null);
-			} else {
-				// Expensive alternative: traverse all indices
-				long result = Long.MAX_VALUE;
-
-				for(IndexSet indices : sourceIndices) {
-					checkInterrupted();
-
-					for(int i=0; i<indices.size(); i++) {
-						long sourceIndex = indices.indexAt(i);
-						result = Math.min(result, getBeginIndex(sourceIndex, null));
-					}
-				}
-
-				return result;
 			}
+
+			// Expensive alternative: traverse all indices
+			long result = Long.MAX_VALUE;
+
+			for(IndexSet indices : sourceIndices) {
+				checkInterrupted();
+
+				for(int i=0; i<indices.size(); i++) {
+					long sourceIndex = indices.indexAt(i);
+					result = Math.min(result, getBeginIndex(sourceIndex, null));
+				}
+			}
+
+			return result;
 		}
 
 		/**
@@ -352,21 +352,21 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			// Optimized handling of monotonic coverage: use only last source index
 			if(coverage.isMonotonic()) {
 				return getEndIndex(lastIndex(sourceIndices), null);
-			} else {
-				// Expensive alternative: traverse all indices
-				long result = Long.MIN_VALUE;
-
-				for(IndexSet indices : sourceIndices) {
-					checkInterrupted();
-
-					for(int i=0; i<indices.size(); i++) {
-						long sourceIndex = indices.indexAt(i);
-						result = Math.max(result, getBeginIndex(sourceIndex, null));
-					}
-				}
-
-				return result;
 			}
+
+			// Expensive alternative: traverse all indices
+			long result = Long.MIN_VALUE;
+
+			for(IndexSet indices : sourceIndices) {
+				checkInterrupted();
+
+				for(int i=0; i<indices.size(); i++) {
+					long sourceIndex = indices.indexAt(i);
+					result = Math.max(result, getBeginIndex(sourceIndex, null));
+				}
+			}
+
+			return result;
 		}
 
 		/**
@@ -519,79 +519,14 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 
 						if(sourceIndex>=toSource || getEndIndex(sourceIndex, null)>=targetEnd) {
 							return false;
-						} else {
-							// There has to be space left to map the remaining target indices, so
-							// reset interval begin to the next span after the current
-
-							idFrom = id(sourceIndex+1);
-							localFrom = localIndex(sourceIndex+1);
-
-							return true;
-						}
-					}
-				};
-
-				return forEachSpan(targetIndices, proc);
-			} else {
-
-				/*
-				 * Non-monotonic mapping means the only way of optimizing the search
-				 * is to shrink the source interval whenever we encounter spans that
-				 * overlap with the current end of the interval.
-				 */
-
-				SpanProcedure proc = new SpanProcedure() {
-
-					int idFrom = id(fromSource);
-					int idTo = id(toSource);
-					int localFrom = localIndex(fromSource);
-					int localTo = localIndex(toSource)+1;
-
-					long _fromSource = fromSource;
-					long _toSource = toSource;
-
-					@Override
-					public boolean process(long from, long to) {
-
-						while(from<=to) {
-							long sourceIndex = find(idFrom, idTo, localFrom, localTo, from);
-
-							if(sourceIndex==IcarusUtils.UNSET_LONG) {
-								// Continue through the search space when no match was found
-								from++;
-							} else {
-
-								collector.add(sourceIndex);
-
-								// Fetch end of span to prune some target indices
-								long spanEnd = getEndIndex(sourceIndex, null);
-
-								// Step forward to either the next target index or after
-								// the end of the found span, whichever is greater
-								from = Math.max(spanEnd, from)+1;
-
-								// Shrink search interval if possible
-								if(sourceIndex==_fromSource) {
-									_fromSource++;
-									idFrom = id(_fromSource);
-									localFrom = localIndex(_fromSource);
-								}
-								if(sourceIndex==_toSource) {
-									_toSource--;
-									idTo  = id(_toSource);
-									localTo = localIndex(_toSource)+1;
-								}
-							}
-
-							// Global state check of the search window
-							if(_toSource<_fromSource) {
-								// Search space exhausted, abort future processing
-								return false;
-							}
 						}
 
-						// Only way of finishing search is exhaustion of search space,
-						// so always allow to continue here
+						// There has to be space left to map the remaining target indices, so
+						// reset interval begin to the next span after the current
+
+						idFrom = id(sourceIndex+1);
+						localFrom = localIndex(sourceIndex+1);
+
 						return true;
 					}
 				};
@@ -599,6 +534,69 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 				return forEachSpan(targetIndices, proc);
 			}
 
+			/*
+			 * Non-monotonic mapping means the only way of optimizing the search
+			 * is to shrink the source interval whenever we encounter spans that
+			 * overlap with the current end of the interval.
+			 */
+
+			SpanProcedure proc = new SpanProcedure() {
+
+				int idFrom = id(fromSource);
+				int idTo = id(toSource);
+				int localFrom = localIndex(fromSource);
+				int localTo = localIndex(toSource)+1;
+
+				long _fromSource = fromSource;
+				long _toSource = toSource;
+
+				@Override
+				public boolean process(long from, long to) {
+
+					while(from<=to) {
+						long sourceIndex = find(idFrom, idTo, localFrom, localTo, from);
+
+						if(sourceIndex==IcarusUtils.UNSET_LONG) {
+							// Continue through the search space when no match was found
+							from++;
+						} else {
+
+							collector.add(sourceIndex);
+
+							// Fetch end of span to prune some target indices
+							long spanEnd = getEndIndex(sourceIndex, null);
+
+							// Step forward to either the next target index or after
+							// the end of the found span, whichever is greater
+							from = Math.max(spanEnd, from)+1;
+
+							// Shrink search interval if possible
+							if(sourceIndex==_fromSource) {
+								_fromSource++;
+								idFrom = id(_fromSource);
+								localFrom = localIndex(_fromSource);
+							}
+							if(sourceIndex==_toSource) {
+								_toSource--;
+								idTo  = id(_toSource);
+								localTo = localIndex(_toSource)+1;
+							}
+						}
+
+						// Global state check of the search window
+						if(_toSource<_fromSource) {
+							// Search space exhausted, abort future processing
+							return false;
+						}
+					}
+
+					// Only way of finishing search is exhaustion of search space,
+					// so always allow to continue here
+					return true;
+				}
+			};
+
+			return forEachSpan(targetIndices, proc);
 		}
 
 	}

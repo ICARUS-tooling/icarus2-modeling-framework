@@ -226,9 +226,8 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 			if(result!=IcarusUtils.UNSET_LONG) {
 				collector.add(result);
 				return true;
-			} else {
-				return false;
 			}
+			return false;
 		}
 
 		/**
@@ -360,19 +359,19 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 			// Optimized handling of monotonic inverseCoverage: use only first source index
 			if(inverseCoverage.isMonotonic()) {
 				return lookup0(firstIndex(sourceIndices));
-			} else {
-				// Expensive alternative: traverse all indices
-				long result = Long.MAX_VALUE;
-
-				for(IndexSet indices : sourceIndices) {
-					for(int i=0; i<indices.size(); i++) {
-						long sourceIndex = indices.indexAt(i);
-						result = Math.min(result, lookup0(sourceIndex));
-					}
-				}
-
-				return result;
 			}
+
+			// Expensive alternative: traverse all indices
+			long result = Long.MAX_VALUE;
+
+			for(IndexSet indices : sourceIndices) {
+				for(int i=0; i<indices.size(); i++) {
+					long sourceIndex = indices.indexAt(i);
+					result = Math.min(result, lookup0(sourceIndex));
+				}
+			}
+
+			return result;
 		}
 
 		/**
@@ -386,19 +385,19 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 			// Optimized handling of monotonic inverseCoverage: use only last source index
 			if(inverseCoverage.isMonotonic()) {
 				return lookup0(lastIndex(sourceIndices));
-			} else {
-				// Expensive alternative: traverse all indices
-				long result = Long.MIN_VALUE;
-
-				for(IndexSet indices : sourceIndices) {
-					for(int i=0; i<indices.size(); i++) {
-						long sourceIndex = indices.indexAt(i);
-						result = Math.max(result, lookup0(sourceIndex));
-					}
-				}
-
-				return result;
 			}
+
+			// Expensive alternative: traverse all indices
+			long result = Long.MIN_VALUE;
+
+			for(IndexSet indices : sourceIndices) {
+				for(int i=0; i<indices.size(); i++) {
+					long sourceIndex = indices.indexAt(i);
+					result = Math.max(result, lookup0(sourceIndex));
+				}
+			}
+
+			return result;
 		}
 
 		/**

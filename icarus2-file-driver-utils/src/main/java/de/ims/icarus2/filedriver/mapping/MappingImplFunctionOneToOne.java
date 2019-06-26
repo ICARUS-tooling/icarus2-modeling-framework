@@ -118,16 +118,16 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 		private IndexSet lookup0(IndexSet indices) {
 			if(batchFunction!=null) {
 				return batchFunction.apply(indices);
-			} else {
-				int size = indices.size();
-				IndexBuffer result = new IndexBuffer(size);
-
-				for(int i=0; i<size; i++) {
-					result.add(unaryFunction.applyAsLong(indices.indexAt(i)));
-				}
-
-				return result;
 			}
+
+			int size = indices.size();
+			IndexBuffer result = new IndexBuffer(size);
+
+			for(int i=0; i<size; i++) {
+				result.add(unaryFunction.applyAsLong(indices.indexAt(i)));
+			}
+
+			return result;
 		}
 
 		/**
@@ -140,10 +140,10 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 
 			if(index==IcarusUtils.UNSET_LONG) {
 				return false;
-			} else {
-				collector.add(index);
-				return true;
 			}
+
+			collector.add(index);
+			return true;
 		}
 
 		/**
@@ -196,11 +196,11 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 
 			if(coverage.isMonotonic()) {
 				return lookup0(IndexUtils.firstIndex(sourceIndices));
-			} else {
-				// Extremely inefficient!!!
-				IndexSet[] targetIndices = lookup(sourceIndices, null);
-				return IndexUtils.firstIndex(targetIndices);
 			}
+
+			// Extremely inefficient!!!
+			IndexSet[] targetIndices = lookup(sourceIndices, null);
+			return IndexUtils.firstIndex(targetIndices);
 		}
 
 		/**
@@ -212,11 +212,11 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 
 			if(coverage.isMonotonic()) {
 				return lookup0(IndexUtils.lastIndex(sourceIndices));
-			} else {
-				// Extremely inefficient!!!
-				IndexSet[] targetIndices = lookup(sourceIndices, null);
-				return IndexUtils.lastIndex(targetIndices);
 			}
+
+			// Extremely inefficient!!!
+			IndexSet[] targetIndices = lookup(sourceIndices, null);
+			return IndexUtils.lastIndex(targetIndices);
 		}
 
 		/**

@@ -278,21 +278,21 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 			// Optimized handling of monotonic coverage: use only first source index
 			if(coverage.isMonotonic()) {
 				return getBeginIndex(firstIndex(sourceIndices), null);
-			} else {
-				// Expensive alternative: traverse all indices
-				long result = Long.MAX_VALUE;
-
-				for(IndexSet indices : sourceIndices) {
-					checkInterrupted();
-
-					for(int i=0; i<indices.size(); i++) {
-						long sourceIndex = indices.indexAt(i);
-						result = Math.min(result, getBeginIndex(sourceIndex, null));
-					}
-				}
-
-				return result;
 			}
+
+			// Expensive alternative: traverse all indices
+			long result = Long.MAX_VALUE;
+
+			for(IndexSet indices : sourceIndices) {
+				checkInterrupted();
+
+				for(int i=0; i<indices.size(); i++) {
+					long sourceIndex = indices.indexAt(i);
+					result = Math.min(result, getBeginIndex(sourceIndex, null));
+				}
+			}
+
+			return result;
 		}
 
 		/**
@@ -308,21 +308,21 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 			// Optimized handling of monotonic coverage: use only last source index
 			if(coverage.isMonotonic()) {
 				return getEndIndex(lastIndex(sourceIndices), null);
-			} else {
-				// Expensive alternative: traverse all indices
-				long result = Long.MIN_VALUE;
-
-				for(IndexSet indices : sourceIndices) {
-					checkInterrupted();
-
-					for(int i=0; i<indices.size(); i++) {
-						long sourceIndex = indices.indexAt(i);
-						result = Math.max(result, getBeginIndex(sourceIndex, null));
-					}
-				}
-
-				return result;
 			}
+
+			// Expensive alternative: traverse all indices
+			long result = Long.MIN_VALUE;
+
+			for(IndexSet indices : sourceIndices) {
+				checkInterrupted();
+
+				for(int i=0; i<indices.size(); i++) {
+					long sourceIndex = indices.indexAt(i);
+					result = Math.max(result, getBeginIndex(sourceIndex, null));
+				}
+			}
+
+			return result;
 		}
 
 		/**

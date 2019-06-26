@@ -169,7 +169,8 @@ public class DefaultFileDriverFactory implements Factory {
 		//TODO
 	}
 
-	protected ResourceSet createResourceSet(Corpus corpus, ResourceProvider resourceProvider, List<LocationManifest> locationManifests) {
+	protected ResourceSet createResourceSet(Corpus corpus, ResourceProvider resourceProvider,
+			List<LocationManifest> locationManifests) {
 		List<ResourceSet> resourceSets = new ArrayList<>();
 
 		// Collect all resources
@@ -185,12 +186,14 @@ public class DefaultFileDriverFactory implements Factory {
 		}
 	}
 
-	protected ResourceSet toResourceSet(Corpus corpus, ResourceProvider resourceProvider, LocationManifest locationManifest) {
+	protected ResourceSet toResourceSet(Corpus corpus, ResourceProvider resourceProvider,
+			LocationManifest locationManifest) {
 
 
 		if(locationManifest.isInline()) {
 			// Special and easy case for inline data: just wrap it into a read-only resource
-			IOResource resource = new ReadOnlyStringResource(locationManifest.getInlineData().toString(), StandardCharsets.UTF_8); //TODO fetch correct encoding from manifest?
+			IOResource resource = new ReadOnlyStringResource(
+					locationManifest.getInlineData().toString(), StandardCharsets.UTF_8); //TODO fetch correct encoding from manifest?
 			return new SingletonResourceSet(resource);
 		} else {
 			PathType rootPathType = locationManifest.getRootPathType()
@@ -213,7 +216,8 @@ public class DefaultFileDriverFactory implements Factory {
 		}
 	}
 
-	protected PathResolver getResolverForLocation(Corpus corpus, ResourceProvider resourceProvider, LocationManifest locationManifest) {
+	protected PathResolver getResolverForLocation(Corpus corpus, ResourceProvider resourceProvider,
+			LocationManifest locationManifest) {
 		PathResolverManifest pathResolverManifest = locationManifest.getPathResolverManifest().orElse(null);
 		if(pathResolverManifest!=null) {
 			// If our location specifies a custom path resolver -> delegate instantiation
