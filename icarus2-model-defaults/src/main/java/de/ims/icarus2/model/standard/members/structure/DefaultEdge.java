@@ -106,7 +106,7 @@ public class DefaultEdge extends DefaultItem implements Edge, Recyclable {
 
 	@Override
 	public void setContainer(Container container) {
-		super.setContainer((Structure)container);
+		super.setContainer(container);
 	}
 
 	public void setStructure(Structure structure) {

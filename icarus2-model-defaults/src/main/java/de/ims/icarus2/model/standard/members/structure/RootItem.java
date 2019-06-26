@@ -60,9 +60,9 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 
 		if(manifest.isStructureFlagSet(StructureFlag.MULTI_ROOT)) {
 			return new RootItem.MultiEdgeRootItem<>();
-		} else {
-			return new RootItem.SingleEdgeRootItem<>();
 		}
+
+		return new RootItem.SingleEdgeRootItem<>();
 	}
 
 	@Reference(ReferenceType.UPLINK)

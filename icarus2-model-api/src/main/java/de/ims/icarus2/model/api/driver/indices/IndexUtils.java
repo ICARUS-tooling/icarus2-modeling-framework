@@ -273,7 +273,7 @@ public class IndexUtils {
 		long result = 0;
 
 		for(IndexSet indexSet : indices) {
-			result += (long)indexSet.size();
+			result += indexSet.size();
 		}
 
 		return result;
@@ -290,7 +290,7 @@ public class IndexUtils {
 		long result = 0;
 
 		for(IndexSet indexSet : indices) {
-			result += (long)indexSet.size();
+			result += indexSet.size();
 		}
 
 		return result;
@@ -671,53 +671,52 @@ public class IndexUtils {
 	public static boolean forEachSpan(IndexSet[] indices, SpanProcedure procedure) throws InterruptedException {
 		if(isContinuous(indices)) {
 			return procedure.process(firstIndex(indices), lastIndex(indices));
-		} else {
-
-			boolean result = false;
-
-			for(IndexSet set : indices) {
-				boolean b= forEachSpan(set, procedure);
-				result |= b;
-
-				if(!b) {
-					break;
-				}
-			}
-
-			return result;
 		}
+
+		boolean result = false;
+
+		for(IndexSet set : indices) {
+			boolean b= forEachSpan(set, procedure);
+			result |= b;
+
+			if(!b) {
+				break;
+			}
+		}
+
+		return result;
 	}
 
 	public static boolean forEachSpan(IndexSet indices, SpanProcedure procedure) throws InterruptedException {
 		if(isContinuous(indices)) {
 			return procedure.process(indices.firstIndex(), indices.lastIndex());
-		} else {
-			long from = indices.firstIndex();
-			long last = from;
+		}
 
-			boolean result = false;
+		long from = indices.firstIndex();
+		long last = from;
 
-			for(int i=1; i<indices.size(); i++) {
-				long val = indices.indexAt(i);
+		boolean result = false;
 
-				if(val>last+1) {
-					boolean b = procedure.process(from, last);
-					result |= b;
+		for(int i=1; i<indices.size(); i++) {
+			long val = indices.indexAt(i);
 
-					if(!b) {
-						break;
-					}
+			if(val>last+1) {
+				boolean b = procedure.process(from, last);
+				result |= b;
 
-					from = val;
+				if(!b) {
+					break;
 				}
 
-				last = val;
+				from = val;
 			}
 
-			result |= procedure.process(from, last);
-
-			return result;
+			last = val;
 		}
+
+		result |= procedure.process(from, last);
+
+		return result;
 	}
 
 	public static long forEachPair(IndexSet setA, IndexSet setB, LongBinaryOperator action) {
@@ -1067,9 +1066,9 @@ public class IndexUtils {
 
 		if(indices.length==1) {
 			return new OfLongImpl(indices[0]);
-		} else {
-			return new CompositeOfLongImpl(indices);
 		}
+
+		return new CompositeOfLongImpl(indices);
 	}
 
 	public static OfLong asIterator(IndexSet indices) {

@@ -181,9 +181,10 @@ public class DefaultGenerationControl implements GenerationControl, SimpleEventL
 			} finally {
 				lock.unlock();
 			}
-		} else
-			throw new ModelException(ModelErrorCode.EDIT_UNSYNCHRONIZED_ACCESS,
-					"Unable to increment generation stage - corpus lock held by foreign thread");
+		}
+
+		throw new ModelException(ModelErrorCode.EDIT_UNSYNCHRONIZED_ACCESS,
+				"Unable to increment generation stage - corpus lock held by foreign thread");
 	}
 
 	@Override
@@ -212,9 +213,10 @@ public class DefaultGenerationControl implements GenerationControl, SimpleEventL
 			} finally {
 				lock.unlock();
 			}
-		} else
-			throw new ModelException(ModelErrorCode.EDIT_UNSYNCHRONIZED_ACCESS,
-					"Unable to change generation stage - corpus lock held by foreign thread");
+		}
+
+		throw new ModelException(ModelErrorCode.EDIT_UNSYNCHRONIZED_ACCESS,
+				"Unable to change generation stage - corpus lock held by foreign thread");
 	}
 
 	/**

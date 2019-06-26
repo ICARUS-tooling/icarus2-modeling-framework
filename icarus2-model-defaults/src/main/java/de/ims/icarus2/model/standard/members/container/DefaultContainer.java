@@ -105,9 +105,9 @@ public class DefaultContainer extends DefaultItem implements Container, Recyclab
 	public ContainerEditVerifier createEditVerifier() {
 		if(!getManifest().isContainerFlagSet(ContainerFlag.NON_STATIC)) {
 			return new ImmutableContainerEditVerifier(this);
-		} else {
-			return itemStorage().createEditVerifier(this);
 		}
+
+		return itemStorage().createEditVerifier(this);
 	}
 
 	/**

@@ -87,8 +87,9 @@ public class ImmutableGenerationControl implements GenerationControl {
 	public Stage parseStage(String s) {
 		if(EmptyStage.LABEL.equals(s)) {
 			return stage;
-		} else
-			throw new ModelException(corpus, ModelErrorCode.MODEL_INVALID_REQUEST, "Not a valid serialized form of stage: "+s);
+		}
+
+		throw new ModelException(corpus, ModelErrorCode.MODEL_INVALID_REQUEST, "Not a valid serialized form of stage: "+s);
 	}
 
 	/**

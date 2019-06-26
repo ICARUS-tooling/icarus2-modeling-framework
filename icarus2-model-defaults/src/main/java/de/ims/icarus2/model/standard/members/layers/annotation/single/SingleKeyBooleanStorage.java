@@ -63,9 +63,9 @@ public class SingleKeyBooleanStorage extends AbstractSingleKeyStorage {
 		if(isWeakKeys()) {
 			//TODO expensive implementation, really use this one?
 			return new WeakHashSet<>(getInitialCapacity(layer));
-		} else {
-			return new ObjectOpenHashSet<>(getInitialCapacity(layer));
 		}
+
+		return new ObjectOpenHashSet<>(getInitialCapacity(layer));
 	}
 
 	@SuppressWarnings("boxing")

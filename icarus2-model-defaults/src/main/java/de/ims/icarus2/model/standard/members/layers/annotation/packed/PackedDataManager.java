@@ -346,7 +346,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	public boolean unregister(E item) {
 		requireNonNull(item);
 
-		boolean wasKnownItem = false;;
+		boolean wasKnownItem = false;
 
 		long stamp = lock.writeLock();
 		try {

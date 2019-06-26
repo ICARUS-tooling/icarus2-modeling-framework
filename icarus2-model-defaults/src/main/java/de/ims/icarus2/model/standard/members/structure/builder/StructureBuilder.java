@@ -154,7 +154,7 @@ public class StructureBuilder {
 		.append(" maxPutgoing=").append(edgeBuffer.getMaxOutgoing())
 		.append(']')
 		.toString();
-	};
+	}
 
 	List<Item> nodes() {
 		if(nodes==null) {

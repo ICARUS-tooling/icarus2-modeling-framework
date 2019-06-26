@@ -451,12 +451,12 @@ public final class ModelUtils {
 		if(type==MemberType.LAYER) {
 			Layer layer = (Layer)m;
 			return "[Layer: "+layer.getName()+"]"; //$NON-NLS-1$ //$NON-NLS-2$
-		} else {
-			Item item = (Item)m;
-			Layer layer = item.getLayer();
-			long index = item.getIndex();
-			return "["+layer.getName()+"_"+getTypePrefix(type)+"_"+index+"<"+item.getBeginOffset()+"-"+item.getEndOffset()+">]"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 		}
+
+		Item item = (Item)m;
+		Layer layer = item.getLayer();
+		long index = item.getIndex();
+		return "["+layer.getName()+"_"+getTypePrefix(type)+"_"+index+"<"+item.getBeginOffset()+"-"+item.getEndOffset()+">]"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 	}
 
 	public static int compare(Item m1, Item m2) {

@@ -237,8 +237,8 @@ public class JDKExpressionFactoryTest {
 		}
 
 		reporter.publishEntry(String.format("Raw time (%d runs): %.03fs\n",
-				runs, 0.001*(double)runtime_raw/runs));
+				runs, 0.001*runtime_raw/runs));
 		reporter.publishEntry(String.format("Compiled time (%d runs): %.03fs\n",
-				runs, 0.001*(double)runtime_exp/runs));
+				runs, 0.001*runtime_exp/runs));
 	}
 }

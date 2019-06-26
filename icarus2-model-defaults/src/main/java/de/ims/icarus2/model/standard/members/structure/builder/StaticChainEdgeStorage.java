@@ -261,15 +261,15 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public long getEdgeCount(Structure context, Item node, boolean isSource) {
 			if(node==root) {
 				return root.edgeCount(!isSource);
+			}
+
+			int data = chainData[localIndex(context, node)];
+			if(isSource && outgoing(data)>=0) {
+				return 1;
+			} else if(!isSource && incoming(data)>=0) {
+				return 1;
 			} else {
-				int data = chainData[localIndex(context, node)];
-				if(isSource && outgoing(data)>=0) {
-					return 1;
-				} else if(!isSource && incoming(data)>=0) {
-					return 1;
-				} else {
-					return 0;
-				}
+				return 0;
 			}
 		}
 
@@ -281,14 +281,14 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 				boolean isSource) {
 			if(node==root) {
 				return root.edgeAt(index, !isSource);
-			} else {
-				int data = chainData[localIndex(context, node)];
-				if(isSource) {
-					return getEdgeAt(context, outgoing(data));
-				} else {
-					return getEdgeAt(context, incoming(data));
-				}
 			}
+
+			int data = chainData[localIndex(context, node)];
+			if(isSource) {
+				return getEdgeAt(context, outgoing(data));
+			}
+
+			return getEdgeAt(context, incoming(data));
 		}
 
 		/**
@@ -298,10 +298,10 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public long getHeight(Structure context, Item node) {
 			if(node==root) {
 				return height(chainData[0]);
-			} else {
-				int data = chainData[localIndex(context, node)];
-				return height(data);
 			}
+
+			int data = chainData[localIndex(context, node)];
+			return height(data);
 		}
 
 		/**
@@ -311,10 +311,10 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public long getDepth(Structure context, Item node) {
 			if(node==root) {
 				return 0;
-			} else {
-				int data = chainData[localIndex(context, node)];
-				return depth(data);
 			}
+
+			int data = chainData[localIndex(context, node)];
+			return depth(data);
 		}
 
 		/**
@@ -324,10 +324,10 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public long getDescendantCount(Structure context, Item parent) {
 			if(parent==root) {
 				return descendants(chainData[0]);
-			} else {
-				int data = chainData[localIndex(context, parent)];
-				return descendants(data);
 			}
+
+			int data = chainData[localIndex(context, parent)];
+			return descendants(data);
 		}
 	}
 
@@ -456,15 +456,15 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public long getEdgeCount(Structure context, Item node, boolean isSource) {
 			if(node==root) {
 				return root.edgeCount(!isSource);
+			}
+
+			long data = chainData[localIndex(context, node)];
+			if(isSource && outgoing(data)>=0) {
+				return 1;
+			} else if(!isSource && incoming(data)>=0) {
+				return 1;
 			} else {
-				long data = chainData[localIndex(context, node)];
-				if(isSource && outgoing(data)>=0) {
-					return 1;
-				} else if(!isSource && incoming(data)>=0) {
-					return 1;
-				} else {
-					return 0;
-				}
+				return 0;
 			}
 		}
 
@@ -476,14 +476,14 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 				boolean isSource) {
 			if(node==root) {
 				return root.edgeAt(index, !isSource);
-			} else {
-				long data = chainData[localIndex(context, node)];
-				if(isSource) {
-					return getEdgeAt(context, outgoing(data));
-				} else {
-					return getEdgeAt(context, incoming(data));
-				}
 			}
+
+			long data = chainData[localIndex(context, node)];
+			if(isSource) {
+				return getEdgeAt(context, outgoing(data));
+			}
+
+			return getEdgeAt(context, incoming(data));
 		}
 
 		/**
@@ -493,10 +493,10 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public long getHeight(Structure context, Item node) {
 			if(node==root) {
 				return height(chainData[0]);
-			} else {
-				long data = chainData[localIndex(context, node)];
-				return height(data);
 			}
+
+			long data = chainData[localIndex(context, node)];
+			return height(data);
 		}
 
 		/**
@@ -506,10 +506,10 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public long getDepth(Structure context, Item node) {
 			if(node==root) {
 				return 0;
-			} else {
-				long data = chainData[localIndex(context, node)];
-				return depth(data);
 			}
+
+			long data = chainData[localIndex(context, node)];
+			return depth(data);
 		}
 
 		/**
@@ -519,10 +519,10 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public long getDescendantCount(Structure context, Item parent) {
 			if(parent==root) {
 				return descendants(chainData[0]);
-			} else {
-				long data = chainData[localIndex(context, parent)];
-				return descendants(data);
 			}
+
+			long data = chainData[localIndex(context, parent)];
+			return descendants(data);
 		}
 	}
 
@@ -575,7 +575,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 			}
 
 			long rootData = 0;
-			rootData |= ((long)edgeBuffer.getHeight(root));
+			rootData |= (edgeBuffer.getHeight(root));
 			rootData |= ((long)edgeBuffer.getDescendantsCount(root) << 32);
 
 			sizeData[0] = rootData;
@@ -643,15 +643,15 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public long getEdgeCount(Structure context, Item node, boolean isSource) {
 			if(node==root) {
 				return root.edgeCount(!isSource);
+			}
+
+			long data = linkData[localIndex(context, node)];
+			if(isSource && outgoing(data)>=0) {
+				return 1;
+			} else if(!isSource && incoming(data)>=0) {
+				return 1;
 			} else {
-				long data = linkData[localIndex(context, node)];
-				if(isSource && outgoing(data)>=0) {
-					return 1;
-				} else if(!isSource && incoming(data)>=0) {
-					return 1;
-				} else {
-					return 0;
-				}
+				return 0;
 			}
 		}
 
@@ -663,14 +663,14 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 				boolean isSource) {
 			if(node==root) {
 				return root.edgeAt(index, !isSource);
-			} else {
-				long data = linkData[localIndex(context, node)];
-				if(isSource) {
-					return getEdgeAt(context, outgoing(data));
-				} else {
-					return getEdgeAt(context, incoming(data));
-				}
 			}
+
+			long data = linkData[localIndex(context, node)];
+			if(isSource) {
+				return getEdgeAt(context, outgoing(data));
+			}
+
+			return getEdgeAt(context, incoming(data));
 		}
 
 		/**
@@ -680,10 +680,10 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public long getHeight(Structure context, Item node) {
 			if(node==root) {
 				return height(sizeData[0]);
-			} else {
-				long data = sizeData[localIndex(context, node)];
-				return height(data);
 			}
+
+			long data = sizeData[localIndex(context, node)];
+			return height(data);
 		}
 
 		/**
@@ -693,10 +693,10 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public long getDepth(Structure context, Item node) {
 			if(node==root) {
 				return 0;
-			} else {
-				long data = sizeData[localIndex(context, node)];
-				return depth(data);
 			}
+
+			long data = sizeData[localIndex(context, node)];
+			return depth(data);
 		}
 
 		/**
@@ -706,10 +706,10 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public long getDescendantCount(Structure context, Item parent) {
 			if(parent==root) {
 				return descendants(sizeData[0]);
-			} else {
-				long data = sizeData[localIndex(context, parent)];
-				return height(data);
 			}
+
+			long data = sizeData[localIndex(context, parent)];
+			return height(data);
 		}
 
 	}
@@ -803,15 +803,15 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public long getEdgeCount(Structure context, Item node, boolean isSource) {
 			if(node==root) {
 				return root.edgeCount(!isSource);
+			}
+
+			NodeInfo data = chainData[localIndex(context, node)];
+			if(isSource && data.outgoing>=0) {
+				return 1;
+			} else if(!isSource && data.incoming>=0) {
+				return 1;
 			} else {
-				NodeInfo data = chainData[localIndex(context, node)];
-				if(isSource && data.outgoing>=0) {
-					return 1;
-				} else if(!isSource && data.incoming>=0) {
-					return 1;
-				} else {
-					return 0;
-				}
+				return 0;
 			}
 		}
 
@@ -823,14 +823,14 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 				boolean isSource) {
 			if(node==root) {
 				return root.edgeAt(index, !isSource);
-			} else {
-				NodeInfo data = chainData[localIndex(context, node)];
-				if(isSource) {
-					return getEdgeAt(context, data.outgoing);
-				} else {
-					return getEdgeAt(context, data.incoming);
-				}
 			}
+
+			NodeInfo data = chainData[localIndex(context, node)];
+			if(isSource) {
+				return getEdgeAt(context, data.outgoing);
+			}
+
+			return getEdgeAt(context, data.incoming);
 		}
 
 		/**
@@ -840,9 +840,9 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public long getHeight(Structure context, Item node) {
 			if(node==root) {
 				return chainData[0].height;
-			} else {
-				return chainData[localIndex(context, node)].height;
 			}
+
+			return chainData[localIndex(context, node)].height;
 		}
 
 		/**
@@ -852,9 +852,9 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public long getDepth(Structure context, Item node) {
 			if(node==root) {
 				return 0;
-			} else {
-				return chainData[localIndex(context, node)].depth;
 			}
+
+			return chainData[localIndex(context, node)].depth;
 		}
 
 		/**
@@ -864,9 +864,9 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public long getDescendantCount(Structure context, Item parent) {
 			if(parent==root) {
 				return chainData[0].depth;
-			} else {
-				return chainData[localIndex(context, parent)].height;
 			}
+
+			return chainData[localIndex(context, parent)].height;
 		}
 
 	}

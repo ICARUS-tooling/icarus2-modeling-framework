@@ -123,10 +123,10 @@ public class DelegatingFilteredIndexSet implements IndexSet {
 
 		if(filter==null) {
 			return source.subSet(fromIndex, toIndex);
-		} else {
-			int[] subFilter = Arrays.copyOfRange(filter, fromIndex, toIndex+1);
-			return new DelegatingFilteredIndexSet(source, subFilter);
 		}
+
+		int[] subFilter = Arrays.copyOfRange(filter, fromIndex, toIndex+1);
+		return new DelegatingFilteredIndexSet(source, subFilter);
 	}
 
 	/**
@@ -136,9 +136,9 @@ public class DelegatingFilteredIndexSet implements IndexSet {
 	public IndexSet externalize() {
 		if(filter==null) {
 			return source.externalize();
-		} else {
-			return new DelegatingFilteredIndexSet(source, filter.clone());
 		}
+
+		return new DelegatingFilteredIndexSet(source, filter.clone());
 	}
 
 	/**

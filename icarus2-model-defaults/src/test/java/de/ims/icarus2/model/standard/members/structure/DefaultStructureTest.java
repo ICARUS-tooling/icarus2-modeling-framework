@@ -587,7 +587,7 @@ class DefaultStructureTest implements StructureTest<Structure> {
 		 */
 		@Test
 		void testClearEdgeStorage() {
-			instance.clearEdgeStorage();;
+			instance.clearEdgeStorage();
 
 			assertNull(instance.getEdgeStorage());
 

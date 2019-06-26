@@ -186,20 +186,20 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		 */
 		if(isCompleteChain()) {
 			return edges[IcarusUtils.ensureIntegerValueRange(index<<1)];
-		} else {
-			// Run a local iterative search for the edge
-			int remaining = IcarusUtils.ensureIntegerValueRange(index);
-			int idx = 0;
-			do {
-				if(edges[idx]!=null) {
-					remaining--;
-				}
-				if(remaining>=0) {
-					idx+=2;
-				}
-			} while(remaining>=0);
-			return edges[idx];
 		}
+
+		// Run a local iterative search for the edge
+		int remaining = IcarusUtils.ensureIntegerValueRange(index);
+		int idx = 0;
+		do {
+			if(edges[idx]!=null) {
+				remaining--;
+			}
+			if(remaining>=0) {
+				idx+=2;
+			}
+		} while(remaining>=0);
+		return edges[idx];
 	}
 
 	protected void invalidateHeightAndDepth() {
@@ -278,23 +278,23 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		if(isCompleteChain()) {
 			int index = IcarusUtils.ensureIntegerValueRange(context.indexOfItem(edge.getTarget()));
 			return edges[IcarusUtils.ensureIntegerValueRange(index<<1)]==edge ? index : IcarusUtils.UNSET_LONG;
-		} else {
-			// Run a local iterative search for the edge index
-			int remaining = edgeCount;
-			int idx = 0;
-			while(remaining>0) {
-				Edge current = edges[idx];
-				if(current!=null) {
-					if(current==edge) {
-						return idx>>>1;
-					} else {
-						remaining--;
-					}
-				}
-				idx += 2;
-			}
-			return IcarusUtils.UNSET_LONG;
 		}
+
+		// Run a local iterative search for the edge index
+		int remaining = edgeCount;
+		int idx = 0;
+		while(remaining>0) {
+			Edge current = edges[idx];
+			if(current!=null) {
+				if(current==edge) {
+					return idx>>>1;
+				}
+
+				remaining--;
+			}
+			idx += 2;
+		}
+		return IcarusUtils.UNSET_LONG;
 	}
 
 	/**
@@ -306,19 +306,19 @@ public class FixedSizeChainStorage implements EdgeStorage {
 
 		if(node==root) {
 			return root.getEdgeCount();
-		} else {
-			int index = localIndexForNode(context, node);
-
-			int count = 0;
-			if(edges[index]!=null) {
-				count++;
-			}
-			if(edges[index+1]!=null) {
-				count++;
-			}
-
-			return count;
 		}
+
+		int index = localIndexForNode(context, node);
+
+		int count = 0;
+		if(edges[index]!=null) {
+			count++;
+		}
+		if(edges[index+1]!=null) {
+			count++;
+		}
+
+		return count;
 	}
 
 	protected void setAsSource(Structure context, Item node, Edge edge) {
@@ -399,15 +399,15 @@ public class FixedSizeChainStorage implements EdgeStorage {
 
 		if(node==root) {
 			return isSource ? root.getEdgeCount() : 0;
-		} else {
-			int index = localIndexForNode(context, node);
-
-			if(isSource) {
-				index++;
-			}
-
-			return edges[index]==null ? 0L : 1L;
 		}
+
+		int index = localIndexForNode(context, node);
+
+		if(isSource) {
+			index++;
+		}
+
+		return edges[index]==null ? 0L : 1L;
 	}
 
 	/**
@@ -422,23 +422,24 @@ public class FixedSizeChainStorage implements EdgeStorage {
 		if(node==root) {
 			if(isSource) {
 				return root.getEdgeAt(idx);
-			} else
-				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-						"Virtual root node cannot have incoming edges");
-		} else {
-			int localIndex = localIndexForNode(context, node);
-			if(isSource) {
-				localIndex++;
 			}
 
-			Edge edge = edges[localIndex];
-
-			if(edge==null || index>0L)
-				throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
-						"Edge index out of bounds: "+index);
-
-			return edge;
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					"Virtual root node cannot have incoming edges");
 		}
+
+		int localIndex = localIndexForNode(context, node);
+		if(isSource) {
+			localIndex++;
+		}
+
+		Edge edge = edges[localIndex];
+
+		if(edge==null || index>0L)
+			throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
+					"Edge index out of bounds: "+index);
+
+		return edge;
 	}
 
 //	public boolean hasEdgeAt(Structure context, long index) {
@@ -485,9 +486,9 @@ public class FixedSizeChainStorage implements EdgeStorage {
 
 		if(parent==root) {
 			return root.indexOfEdge(edge);
-		} else {
-			return 0L;
 		}
+
+		return 0L;
 	}
 
 	/**
@@ -533,9 +534,9 @@ public class FixedSizeChainStorage implements EdgeStorage {
 //			checkChainConsistency();
 			// Easy job here: all nodes are descendants of the root node
 			return edgeCount;
-		} else {
-			return getHeight(context, parent);
 		}
+
+		return getHeight(context, parent);
 	}
 
 	// MODIFIER METHODS
@@ -717,18 +718,18 @@ public class FixedSizeChainStorage implements EdgeStorage {
 			if(terminal==root) {
 				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 						"Virtual root node cannot have incoming edges");
-			} else {
-				Edge existing = getAsTarget(context, terminal);
-				if(existing!=null && existing!=edge)
-					throw new ModelException(ModelErrorCode.MODEL_CORRUPTED_STATE,
-							"Desired target terminal for edge already has an incoming edge assigned: "+getName(existing));
-
-				Item oldTarget = edge.getTarget();
-				edge.setTarget(terminal);
-
-				setAsTarget(context, terminal, edge);
-				setAsTarget(context, oldTarget, null);
 			}
+
+			Edge existing = getAsTarget(context, terminal);
+			if(existing!=null && existing!=edge)
+				throw new ModelException(ModelErrorCode.MODEL_CORRUPTED_STATE,
+						"Desired target terminal for edge already has an incoming edge assigned: "+getName(existing));
+
+			Item oldTarget = edge.getTarget();
+			edge.setTarget(terminal);
+
+			setAsTarget(context, terminal, edge);
+			setAsTarget(context, oldTarget, null);
 		}
 	}
 

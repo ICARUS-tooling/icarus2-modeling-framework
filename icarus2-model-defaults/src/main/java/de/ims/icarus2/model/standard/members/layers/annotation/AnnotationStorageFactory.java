@@ -124,9 +124,9 @@ public class AnnotationStorageFactory {
 			ValueType valueType = valueTypes.iterator().next();
 
 			return buildFixedKeysStorage(layerManifest, valueType);
-		} else {
-			return buildUnboundStorage(layerManifest);
 		}
+
+		return buildUnboundStorage(layerManifest);
 	}
 
 	protected AnnotationStorage buildFixedKeysStorage(AnnotationLayerManifest layerManifest, ValueType valueType) {

@@ -56,9 +56,9 @@ public class ModelException extends IcarusRuntimeException {
 		Throwable cause = t.getCause();
 		if(cause instanceof ModelException) {
 			return (ModelException) cause;
-		} else {
-			return new ModelException(GlobalErrorCode.UNKNOWN_ERROR, "Unexpected foreign exception", cause);
 		}
+
+		return new ModelException(GlobalErrorCode.UNKNOWN_ERROR, "Unexpected foreign exception", cause);
 	}
 
 	private static final long serialVersionUID = -3508678907020081630L;

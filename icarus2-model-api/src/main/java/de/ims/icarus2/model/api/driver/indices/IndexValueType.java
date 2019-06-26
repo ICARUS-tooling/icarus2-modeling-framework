@@ -64,7 +64,7 @@ public enum IndexValueType implements StringResource {
 		@Override
 		public void copyTo(Object array, int srcPos, byte[] destArray,
 				int destPos, int length) {
-			System.arraycopy((byte[])array, srcPos, destArray, destPos, length);
+			System.arraycopy(array, srcPos, destArray, destPos, length);
 		}
 
 		@Override
@@ -88,7 +88,7 @@ public enum IndexValueType implements StringResource {
 		@Override
 		public void copyFrom(byte[] srcArray, int srcPos, Object array,
 				int destPos, int length) {
-			System.arraycopy(srcArray, srcPos, (byte[])array, destPos, length);
+			System.arraycopy(srcArray, srcPos, array, destPos, length);
 		}
 
 		@Override
@@ -192,7 +192,7 @@ public enum IndexValueType implements StringResource {
 		@Override
 		public void copyTo(Object array, int srcPos, short[] destArray,
 				int destPos, int length) {
-			System.arraycopy((short[])array, srcPos, destArray, destPos, length);
+			System.arraycopy(array, srcPos, destArray, destPos, length);
 		}
 
 		@Override
@@ -216,7 +216,7 @@ public enum IndexValueType implements StringResource {
 		@Override
 		public void copyFrom(short[] srcArray, int srcPos, Object array,
 				int destPos, int length) {
-			System.arraycopy(srcArray, srcPos, (short[])array, destPos, length);
+			System.arraycopy(srcArray, srcPos, array, destPos, length);
 		}
 
 		@Override
@@ -321,7 +321,7 @@ public enum IndexValueType implements StringResource {
 		@Override
 		public void copyTo(Object array, int srcPos, int[] destArray,
 				int destPos, int length) {
-			System.arraycopy((int[])array, srcPos, destArray, destPos, length);
+			System.arraycopy(array, srcPos, destArray, destPos, length);
 		}
 
 		@Override
@@ -345,7 +345,7 @@ public enum IndexValueType implements StringResource {
 		@Override
 		public void copyFrom(int[] srcArray, int srcPos, Object array,
 				int destPos, int length) {
-			System.arraycopy(srcArray, srcPos, (int[])array, destPos, length);
+			System.arraycopy(srcArray, srcPos, array, destPos, length);
 		}
 
 		@Override
@@ -473,7 +473,7 @@ public enum IndexValueType implements StringResource {
 		@Override
 		public void copyFrom(long[] srcArray, int srcPos, Object array,
 				int destPos, int length) {
-			System.arraycopy(srcArray, srcPos, (long[])array, destPos, length);
+			System.arraycopy(srcArray, srcPos, array, destPos, length);
 		}
 
 		@Override

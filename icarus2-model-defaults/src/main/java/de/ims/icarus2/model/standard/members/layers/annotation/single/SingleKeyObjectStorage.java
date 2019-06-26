@@ -54,10 +54,10 @@ public class SingleKeyObjectStorage extends AbstractSingleKeyStorage {
 
 		if(isWeakKeys()) {
 			return new WeakHashMap<>(getInitialCapacity(layer));
-		} else {
-			//TODO evaluate which map implementation to use!!!
-			return new Object2ObjectOpenHashMap<>(getInitialCapacity(layer));
 		}
+
+		//TODO evaluate which map implementation to use!!!
+		return new Object2ObjectOpenHashMap<>(getInitialCapacity(layer));
 	}
 
 	@Override

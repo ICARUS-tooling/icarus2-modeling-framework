@@ -663,7 +663,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 					reset();
 					setup();
 					assertModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
-							() -> action.accept(this, (E) mock(argumentClass)));
+							() -> action.accept(this, mock(argumentClass)));
 				}));
 				return this;
 			}
@@ -674,7 +674,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 					reset();
 					setup();
 					assertModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
-							() -> action.accept(this, (E) mock(argumentClass)));
+							() -> action.accept(this, mock(argumentClass)));
 				}));
 				return this;
 			}
@@ -686,7 +686,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 					accessMode = AccessMode.WRITE;
 					setup();
 					assertModelException(ModelErrorCode.MODEL_WRITE_ONLY,
-							() -> action.accept(this, (E) mock(argumentClass)));
+							() -> action.accept(this, mock(argumentClass)));
 				}));
 				return this;
 			}
@@ -698,7 +698,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 					accessMode = AccessMode.READ;
 					setup();
 					assertModelException(ModelErrorCode.MODEL_READ_ONLY,
-							() -> action.accept(this, (E) mock(argumentClass)));
+							() -> action.accept(this, mock(argumentClass)));
 				}));
 				return this;
 			}
@@ -710,7 +710,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 					preventLoad = true;
 					setup();
 					assertModelException(ModelErrorCode.VIEW_EMPTY,
-							() -> action.accept(this, (E) mock(argumentClass)));
+							() -> action.accept(this, mock(argumentClass)));
 				}));
 				return this;
 			}

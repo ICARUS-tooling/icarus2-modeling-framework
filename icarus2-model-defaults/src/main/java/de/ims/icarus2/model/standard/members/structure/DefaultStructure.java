@@ -386,9 +386,9 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 				}
 
 			};
-		} else {
-			// Forward verifier creation to the edge storage (the container edit verifier is a 'hint' only!)
-			return edgeStorage().createEditVerifier(this, containerEditVerifier);
 		}
+
+		// Forward verifier creation to the edge storage (the container edit verifier is a 'hint' only!)
+		return edgeStorage().createEditVerifier(this, containerEditVerifier);
 	}
 }

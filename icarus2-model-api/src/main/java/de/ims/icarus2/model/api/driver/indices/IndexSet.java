@@ -424,7 +424,7 @@ public interface IndexSet {
 			throw new ModelException(GlobalErrorCode.INDEX_OVERFLOW,
 					"Cannot create array of size: "+chunks);
 
-		IndexSet[] result = new IndexSet[(int) chunks];
+		IndexSet[] result = new IndexSet[chunks];
 
 		int fromIndex = 0;
 		int toIndex;

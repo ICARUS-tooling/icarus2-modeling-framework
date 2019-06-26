@@ -151,9 +151,9 @@ public class IndexSetMerger extends AbstractIndexSetProcessor {
 			OfLong right = buffer.get(1).iterator();
 
 			return new DualMergeOfLong(left, right);
-		} else {
-			return HeapMergeOfLong.fromIndices(buffer);
 		}
+
+		return HeapMergeOfLong.fromIndices(buffer);
 	}
 
 	/**

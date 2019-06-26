@@ -43,9 +43,9 @@ public abstract class AbstractObjectMapStorage<B extends Object> extends Abstrac
 
 		if(isWeakKeys()) {
 			return new WeakHashMap<>(getInitialCapacity(layer));
-		} else {
-			return new Object2ObjectOpenHashMap<>(getInitialCapacity(layer));
 		}
+
+		return new Object2ObjectOpenHashMap<>(getInitialCapacity(layer));
 	}
 
 	protected Map<Item, B> getAnnotations() {

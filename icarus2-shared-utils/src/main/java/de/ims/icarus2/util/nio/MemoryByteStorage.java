@@ -44,7 +44,7 @@ public class MemoryByteStorage implements AutoCloseable {
 
 	private byte[] buffer;
 
-	private static final long INT_LIMIT = (long) IcarusUtils.MAX_INTEGER_INDEX;
+	private static final long INT_LIMIT = IcarusUtils.MAX_INTEGER_INDEX;
 
 	private final Object bufferLock = new Object();
 	private int size = 0;
@@ -89,11 +89,11 @@ public class MemoryByteStorage implements AutoCloseable {
 		}
 	}
 
-	public int read(int position, ByteBuffer dst) throws IOException {
+	public int read(int position, ByteBuffer dst) {
 		return read0(position, dst, null);
 	}
 
-	private int read0(int position, ByteBuffer dst, AtomicInteger pointer) throws IOException {
+	private int read0(int position, ByteBuffer dst, AtomicInteger pointer) {
 		requireNonNull(dst);
 
 		synchronized (bufferLock) {
@@ -125,11 +125,11 @@ public class MemoryByteStorage implements AutoCloseable {
 		}
 	}
 
-	public int write(int position, ByteBuffer src) throws IOException {
+	public int write(int position, ByteBuffer src) {
 		return write0(position, src, null);
 	}
 
-	private int write0(int position, ByteBuffer src, AtomicInteger pointer) throws IOException {
+	private int write0(int position, ByteBuffer src, AtomicInteger pointer){
 		requireNonNull(src);
 
 		synchronized (bufferLock) {

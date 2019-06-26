@@ -142,7 +142,7 @@ public class Graph<E extends Object> {
 		corpus.forEachVirtualContext(collector);
 
 		Graph<LayerGroup> graph = new Graph<>(LayerGroup.class, TYPE_GROUP);
-		graph.fillWithMapper((Collection<LayerGroup>)roots.getAsSet(), groupMapper(graph, toLookup(dependencies)), filter);
+		graph.fillWithMapper(roots.getAsSet(), groupMapper(graph, toLookup(dependencies)), filter);
 		return graph;
 	}
 

@@ -133,7 +133,7 @@ public class MappingStorage {
 
 
 	public static long getKey(LayerManifest<?> source, LayerManifest<?> target) {
-		return (long)source.getUID() | ((long)target.getUID()<<32);
+		return source.getUID() | ((long)target.getUID()<<32);
 	}
 
 	public static class Builder {

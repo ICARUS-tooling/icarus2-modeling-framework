@@ -384,11 +384,11 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 					}
 				}
 				return null;
-			} else {
-				@SuppressWarnings("unchecked")
-				Map<String, Object> map = (Map<String, Object>)data;
-				return map.get(key);
 			}
+
+			@SuppressWarnings("unchecked")
+			Map<String, Object> map = (Map<String, Object>)data;
+			return map.get(key);
 		}
 
 		/**

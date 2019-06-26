@@ -130,9 +130,9 @@ public class AugmentedItemStorage extends WrappingItemStorage {
 		long wrappedCount = getWrappedItemCount(context);
 		if(index<wrappedCount) {
 			return super.getItemAt(context, index);
-		} else {
-			return augmentation.get(translateAndCheckEditIndex(context, index));
 		}
+
+		return augmentation.get(translateAndCheckEditIndex(context, index));
 	}
 
 	@Override
@@ -141,9 +141,9 @@ public class AugmentedItemStorage extends WrappingItemStorage {
 		int index = augmentation.indexOf(item);
 		if(index!=-1) {
 			return index + getWrappedItemCount(context);
-		} else {
-			return super.indexOfItem(context, item);
 		}
+
+		return super.indexOfItem(context, item);
 	}
 
 	/**

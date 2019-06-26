@@ -57,9 +57,9 @@ public class ChainNodeInfo implements NodeInfo {
 	public long edgeCount(boolean incoming) {
 		if((incoming && in!=null) || (!incoming && out!=null)) {
 			return 1;
-		} else {
-			return 0;
 		}
+
+		return 0;
 	}
 
 	/**
@@ -73,13 +73,13 @@ public class ChainNodeInfo implements NodeInfo {
 						"No incoming edge for index: "+index);
 
 			return in;
-		} else {
-			if(out==null || index!=0L)
-				throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
-						"No outgoing edge for index: "+index);
-
-			return out;
 		}
+
+		if(out==null || index!=0L)
+			throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
+					"No outgoing edge for index: "+index);
+
+		return out;
 	}
 
 	/**

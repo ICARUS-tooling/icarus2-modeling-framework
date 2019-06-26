@@ -294,9 +294,9 @@ public class IndexCollectorFactory {
 			if(chunkSize==UNDEFINED_CHUNK_SIZE
 					|| chunkSize>=buffer.size()) {
 				return IndexUtils.wrap(buffer);
-			} else {
-				return buffer.split(chunkSize);
 			}
+
+			return buffer.split(chunkSize);
 		}
 
 		/**
@@ -521,9 +521,9 @@ public class IndexCollectorFactory {
 			if (chunkSize == UNDEFINED_CHUNK_SIZE
 					|| indices.size() <= chunkSize) {
 				return IndexUtils.wrap(indices);
-			} else {
-				return indices.split(chunkSize);
 			}
+
+			return indices.split(chunkSize);
 		}
 
 		/**
@@ -593,9 +593,9 @@ public class IndexCollectorFactory {
 			if (chunkSize == UNDEFINED_CHUNK_SIZE
 					|| indices.size() <= chunkSize) {
 				return IndexUtils.wrap(indices);
-			} else {
-				return indices.split(chunkSize);
 			}
+
+			return indices.split(chunkSize);
 		}
 
 		/**

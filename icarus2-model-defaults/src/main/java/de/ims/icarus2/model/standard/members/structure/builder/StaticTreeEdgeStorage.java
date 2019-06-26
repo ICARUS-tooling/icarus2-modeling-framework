@@ -232,7 +232,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		}
 
 		private static int toInt(byte value) {
-			return (int)value+OFFSET;
+			return value+OFFSET;
 		}
 
 		/*
@@ -294,14 +294,14 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long getEdgeCount(Structure context, Item node, boolean isSource) {
 			if(node==root) {
 				return root.edgeCount(!isSource);
-			} else {
-				int data = treeData[localIndex(context, node)];
-				if(isSource) {
-					return outgoingCount(data);
-				} else {
-					return incoming(data)>=0 ? 1 : 0;
-				}
 			}
+
+			int data = treeData[localIndex(context, node)];
+			if(isSource) {
+				return outgoingCount(data);
+			}
+
+			return incoming(data)>=0 ? 1 : 0;
 		}
 
 		/**
@@ -312,14 +312,14 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 				boolean isSource) {
 			if(node==root) {
 				return root.edgeAt(index, !isSource);
-			} else {
-				int data = treeData[localIndex(context, node)];
-				if(isSource) {
-					return getEdgeAt(outgoing(data, IcarusUtils.ensureIntegerValueRange(index)));
-				} else {
-					return getEdgeAt(incoming(data));
-				}
 			}
+
+			int data = treeData[localIndex(context, node)];
+			if(isSource) {
+				return getEdgeAt(outgoing(data, IcarusUtils.ensureIntegerValueRange(index)));
+			}
+
+			return getEdgeAt(incoming(data));
 		}
 
 		/**
@@ -329,10 +329,10 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long getHeight(Structure context, Item node) {
 			if(node==root) {
 				return height(treeData[0]);
-			} else {
-				int data = treeData[localIndex(context, node)];
-				return height(data);
 			}
+
+			int data = treeData[localIndex(context, node)];
+			return height(data);
 		}
 
 		/**
@@ -342,10 +342,10 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long getDepth(Structure context, Item node) {
 			if(node==root) {
 				return 0;
-			} else {
-				int data = treeData[localIndex(context, node)];
-				return depth(data);
 			}
+
+			int data = treeData[localIndex(context, node)];
+			return depth(data);
 		}
 
 		/**
@@ -355,25 +355,25 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long getDescendantCount(Structure context, Item parent) {
 			if(parent==root) {
 				return descendants(treeData[0]);
-			} else {
-				int data = treeData[localIndex(context, parent)];
-				return descendants(data);
 			}
+
+			int data = treeData[localIndex(context, parent)];
+			return descendants(data);
 		}
 
 		private Edge incomingEdge(Structure context, Item node) {
 			if(node==root) {
 				return null;
-			} else {
-				int data = treeData[localIndex(context, node)];
-				int incoming = incoming(data);
-
-				if(incoming>=0) {
-					return getEdgeAt(incoming);
-				} else {
-					return null;
-				}
 			}
+
+			int data = treeData[localIndex(context, node)];
+			int incoming = incoming(data);
+
+			if(incoming>=0) {
+				return getEdgeAt(incoming);
+			}
+
+			return null;
 		}
 
 		/**
@@ -605,7 +605,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		}
 
 		private static int toInt(short value) {
-			return (int)value+OFFSET;
+			return value+OFFSET;
 		}
 
 		/*
@@ -667,14 +667,14 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long getEdgeCount(Structure context, Item node, boolean isSource) {
 			if(node==root) {
 				return root.edgeCount(!isSource);
-			} else {
-				long data = treeData[localIndex(context, node)];
-				if(isSource) {
-					return outgoingCount(data);
-				} else {
-					return incoming(data)>=0 ? 1 : 0;
-				}
 			}
+
+			long data = treeData[localIndex(context, node)];
+			if(isSource) {
+				return outgoingCount(data);
+			}
+
+			return incoming(data)>=0 ? 1 : 0;
 		}
 
 		/**
@@ -685,14 +685,14 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 				boolean isSource) {
 			if(node==root) {
 				return root.edgeAt(index, !isSource);
-			} else {
-				long data = treeData[localIndex(context, node)];
-				if(isSource) {
-					return getEdgeAt(outgoing(data, IcarusUtils.ensureIntegerValueRange(index)));
-				} else {
-					return getEdgeAt(incoming(data));
-				}
 			}
+
+			long data = treeData[localIndex(context, node)];
+			if(isSource) {
+				return getEdgeAt(outgoing(data, IcarusUtils.ensureIntegerValueRange(index)));
+			}
+
+			return getEdgeAt(incoming(data));
 		}
 
 		/**
@@ -702,10 +702,10 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long getHeight(Structure context, Item node) {
 			if(node==root) {
 				return height(treeData[0]);
-			} else {
-				long data = treeData[localIndex(context, node)];
-				return height(data);
 			}
+
+			long data = treeData[localIndex(context, node)];
+			return height(data);
 		}
 
 		/**
@@ -715,10 +715,10 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long getDepth(Structure context, Item node) {
 			if(node==root) {
 				return 0;
-			} else {
-				long data = treeData[localIndex(context, node)];
-				return depth(data);
 			}
+
+			long data = treeData[localIndex(context, node)];
+			return depth(data);
 		}
 
 		/**
@@ -728,25 +728,25 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long getDescendantCount(Structure context, Item parent) {
 			if(parent==root) {
 				return descendants(treeData[0]);
-			} else {
-				long data = treeData[localIndex(context, parent)];
-				return descendants(data);
 			}
+
+			long data = treeData[localIndex(context, parent)];
+			return descendants(data);
 		}
 
 		private Edge incomingEdge(Structure context, Item node) {
 			if(node==root) {
 				return null;
-			} else {
-				long data = treeData[localIndex(context, node)];
-				int incoming = incoming(data);
-
-				if(incoming>=0) {
-					return getEdgeAt(incoming);
-				} else {
-					return null;
-				}
 			}
+
+			long data = treeData[localIndex(context, node)];
+			int incoming = incoming(data);
+
+			if(incoming>=0) {
+				return getEdgeAt(incoming);
+			}
+
+			return null;
 		}
 
 		/**
@@ -872,14 +872,14 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long getEdgeCount(Structure context, Item node, boolean isSource) {
 			if(node==root) {
 				return root.edgeCount(!isSource);
-			} else {
-				Node data = getData(context, node);
-				if(data==null) {
-					return 0L;
-				}
-
-				return isSource ? data.outgoingEdgeCount() : data.incomingEdgeCount();
 			}
+
+			Node data = getData(context, node);
+			if(data==null) {
+				return 0L;
+			}
+
+			return isSource ? data.outgoingEdgeCount() : data.incomingEdgeCount();
 		}
 
 		/**
@@ -890,14 +890,14 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 				boolean isSource) {
 			if(node==root) {
 				return root.edgeAt(index, !isSource);
-			} else {
-				int idx = IcarusUtils.ensureIntegerValueRange(index);
-				Node data = getData(context, node);
-				if(data==null)
-					throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS, "No edge for index: "+idx);
-
-				return edges.get(isSource ? data.outgoingEdgeAt(idx) : data.incomingEdgeAt(idx));
 			}
+
+			int idx = IcarusUtils.ensureIntegerValueRange(index);
+			Node data = getData(context, node);
+			if(data==null)
+				throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS, "No edge for index: "+idx);
+
+			return edges.get(isSource ? data.outgoingEdgeAt(idx) : data.incomingEdgeAt(idx));
 		}
 
 		/**
@@ -907,10 +907,10 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long getHeight(Structure context, Item node) {
 			if(node==root) {
 				return treeData[0].height();
-			} else {
-				Node data = getData(context, node);
-				return data==null ? 0 : data.height();
 			}
+
+			Node data = getData(context, node);
+			return data==null ? 0 : data.height();
 		}
 
 		/**
@@ -920,10 +920,10 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long getDepth(Structure context, Item node) {
 			if(node==root) {
 				return 0;
-			} else {
-				Node data = getData(context, node);
-				return data==null ? NO_INDEX : data.depth();
 			}
+
+			Node data = getData(context, node);
+			return data==null ? NO_INDEX : data.depth();
 		}
 
 		/**
@@ -933,19 +933,19 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long getDescendantCount(Structure context, Item parent) {
 			if(parent==root) {
 				return treeData[0].descendants();
-			} else {
-				Node data = getData(context, parent);
-				return data==null ? 0 : data.descendants();
 			}
+
+			Node data = getData(context, parent);
+			return data==null ? 0 : data.descendants();
 		}
 
 		private int incomingEdge(Structure context, Item node) {
 			if(node==root) {
 				return NO_INDEX;
-			} else {
-				Node data = getData(context, node);
-				return (data==null || data.incomingEdgeCount()==0) ? NO_INDEX : data.incomingEdgeAt(0);
 			}
+
+			Node data = getData(context, node);
+			return (data==null || data.incomingEdgeCount()==0) ? NO_INDEX : data.incomingEdgeAt(0);
 		}
 
 		/**
@@ -978,9 +978,9 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 
 			if(edge.getSource()==root) {
 				return root.indexOfEdge(edge);
-			} else {
-				return indexOfEdge(context, edge.getSource(), edgeIndex);
 			}
+
+			return indexOfEdge(context, edge.getSource(), edgeIndex);
 		}
 
 		/**
@@ -1000,10 +1000,10 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			if(edge.getSource()==root) {
 				int index = root.indexOfEdge(edge);
 				return root.edgeAt(index+delta, false).getTarget();
-			} else {
-				int index = indexOfEdge(context, edge.getSource(), edgeIndex);
-				return getEdgeAt(context, edge.getSource(), index+delta, false).getTarget();
 			}
+
+			int index = indexOfEdge(context, edge.getSource(), edgeIndex);
+			return getEdgeAt(context, edge.getSource(), index+delta, false).getTarget();
 		}
 	}
 }

@@ -58,7 +58,7 @@ public class PriorityListMetadataPolicy<O extends Object> implements MetadataSto
 		this.policies = new MetadataStoragePolicy[policies.size()];
 
 		for(int i=0; i<policies.size(); i++) {
-			this.policies[i] = (MetadataStoragePolicy<? extends O>) policies.get(i);
+			this.policies[i] = policies.get(i);
 		}
 	}
 
@@ -68,7 +68,6 @@ public class PriorityListMetadataPolicy<O extends Object> implements MetadataSto
 	 *
 	 * @see de.ims.icarus2.model.api.registry.MetadataStoragePolicy#registryFor(de.ims.icarus2.model.api.registry.CorpusManager, de.ims.icarus2.model.api.registry.MetadataRegistry, java.lang.Object)
 	 */
-	@SuppressWarnings("resource")
 	@Override
 	public MetadataRegistry registryFor(CorpusManager manager,
 			MetadataRegistry hostRegistry, O target) {
@@ -78,7 +77,7 @@ public class PriorityListMetadataPolicy<O extends Object> implements MetadataSto
 		for(int i=0; i<policies.length; i++) {
 
 			@SuppressWarnings("unchecked")
-			MetadataStoragePolicy<O> policy = (MetadataStoragePolicy<O>) policies[i];
+			MetadataStoragePolicy<O> policy = policies[i];
 			result = policy.registryFor(manager, hostRegistry, target);
 
 			// Stop as soon as we get a valid registry

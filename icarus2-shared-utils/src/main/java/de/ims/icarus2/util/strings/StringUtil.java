@@ -494,7 +494,7 @@ public final class StringUtil {
         for (int i = sourceOffset + fromIndex; i <= max; i++) {
             /* Look for first character. */
             if (source.charAt(i) != first) {
-                while (++i <= max && source.charAt(i) != first);
+                while (++i <= max && source.charAt(i) != first) { /* no-op */}
             }
 
             /* Found first character, now look at the rest of v2 */
@@ -502,7 +502,7 @@ public final class StringUtil {
                 int j = i + 1;
                 int end = j + targetCount - 1;
                 for (int k = targetOffset + 1; j < end && source.charAt(j)
-                        == target.charAt(k); j++, k++);
+                        == target.charAt(k); j++, k++) { /* no-op */}
 
                 if (j == end) {
                     /* Found whole string. */

@@ -183,9 +183,9 @@ public class ArrayIndexSet implements IndexSet {
 	public IndexSet subSet(int fromIndex, int toIndex) {
 		if(sorted) {
 			return new ArrayIndexSet(valueType, indices, this.fromIndex+fromIndex, this.fromIndex+toIndex, true);
-		} else {
-			return copyOf(this, fromIndex, toIndex);
 		}
+
+		return copyOf(this, fromIndex, toIndex);
 	}
 
 	public static ArrayIndexSet copyOf(IndexSet set) {

@@ -219,7 +219,7 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 	}
 
 	public Collection<E> get() {
-		Collection<E> result = (Collection<E>) buffer;
+		Collection<E> result = buffer;
 
 		if(result==null) {
 			result = Collections.emptyList();

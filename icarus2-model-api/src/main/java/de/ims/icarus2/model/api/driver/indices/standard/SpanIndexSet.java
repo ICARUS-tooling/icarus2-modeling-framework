@@ -94,9 +94,9 @@ public class SpanIndexSet implements IndexSet {
 
 		if(fromIndex==0 && toIndex==size()-1) {
 			return this;
-		} else {
-			return new SpanIndexSet(minValue+fromIndex, minValue+toIndex);
 		}
+
+		return new SpanIndexSet(minValue+fromIndex, minValue+toIndex);
 	}
 
 	/**
