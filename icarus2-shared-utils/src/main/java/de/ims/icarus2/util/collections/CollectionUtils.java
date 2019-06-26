@@ -206,9 +206,9 @@ public final class CollectionUtils {
 		Object v = map.get(key);
 		if(v==null) {
 			return value==null;
-		} else {
-			return value.equals(v);
 		}
+
+		return value.equals(v);
 	}
 
 	public static <V extends Object> V get(Map<?, V> map, Object key) {
@@ -253,7 +253,7 @@ public final class CollectionUtils {
 			return;
 		}
 		for(T item : items) {
-			collection.add((T)item);
+			collection.add(item);
 		}
 	}
 
@@ -275,7 +275,7 @@ public final class CollectionUtils {
 			return;
 		}
 		for(int i=0; i<length; i++) {
-			collection.add((T)items[offset+i]);
+			collection.add(items[offset+i]);
 		}
 	}
 
@@ -421,13 +421,13 @@ public final class CollectionUtils {
 		return val==null ? defaultValue : Boolean.parseBoolean(val);
 	}
 
-	public static <E extends Object> List<E> list(E...items) {
+	public static <E extends Object> List<E> list(@SuppressWarnings("unchecked") E...items) {
 		ArrayList<E> list = new ArrayList<>();
 		feedItems(list, items);
 		return list;
 	}
 
-	public static <E extends Object> Set<E> set(E...items) {
+	public static <E extends Object> Set<E> set(@SuppressWarnings("unchecked") E...items) {
 		Set<E> set = new ObjectOpenHashSet<>();
 		Collections.addAll(set, items);
 		return set;

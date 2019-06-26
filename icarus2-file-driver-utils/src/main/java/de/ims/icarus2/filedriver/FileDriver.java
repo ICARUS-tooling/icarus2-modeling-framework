@@ -1330,57 +1330,55 @@ public class FileDriver extends AbstractDriver {
 		// If the driver supports chunking and has created a chunk index, then use the easy way
 		if(hasChunkIndex()) {
 			return loadChunks(layer, indices, action);
-		} else {
-			// No chunk index available, proceed with loading the respective files
-			int fileCount = dataFiles.getResourceCount();
-
-			if(fileCount==1) {
-				// Trivial situation: single file corpora mean we just have to read it in one go
-
-				return loadFile(0, action);
-
-			} else {
-				// Now actually access metadata to find out which files to load
-
-				long minIndex = IndexUtils.firstIndex(indices);
-				long maxIndex = IndexUtils.lastIndex(indices);
-
-				// Find first and last file to contain the indices
-
-				int firstFile = findFileForIndex(minIndex, layer.getManifest(), 0, fileCount);
-				if(firstFile<0)
-					throw new ModelException(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
-							"Could not find file index for item index "+minIndex+" in layer "+ModelUtils.getUniqueId(layer));
-				int lastFile = findFileForIndex(maxIndex, layer.getManifest(), firstFile, fileCount);
-				if(lastFile<0)
-					throw new ModelException(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
-							"Could not find file index for item index "+maxIndex+" in layer "+ModelUtils.getUniqueId(layer));
-
-				long loadedItems = 0L;
-
-				for(int fileIndex = firstFile; fileIndex<=lastFile; fileIndex++) {
-
-					FileInfo fileInfo = states.getFileInfo(fileIndex);
-					if(!fileInfo.isValid())
-						throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-								"Cannot attempt to load from invalid file at index "+fileIndex);
-
-					if(fileInfo.isFlagSet(ElementFlag.PARTIALLY_LOADED))
-						throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-								"Cannot attempt to completely load already partially loaded file at index "+fileIndex);
-
-					if(fileInfo.isFlagSet(ElementFlag.LOADED)) {
-						// Skip file entirely (no need to publish chunk info in this case either)
-						continue;
-					}
-
-					loadedItems += loadFile(fileIndex, action);
-				}
-
-
-				return loadedItems;
-			}
 		}
+
+		// No chunk index available, proceed with loading the respective files
+		int fileCount = dataFiles.getResourceCount();
+
+		if(fileCount==1) {
+			// Trivial situation: single file corpora mean we just have to read it in one go
+
+			return loadFile(0, action);
+		}
+
+		// Now actually access metadata to find out which files to load
+
+		long minIndex = IndexUtils.firstIndex(indices);
+		long maxIndex = IndexUtils.lastIndex(indices);
+
+		// Find first and last file to contain the indices
+
+		int firstFile = findFileForIndex(minIndex, layer.getManifest(), 0, fileCount);
+		if(firstFile<0)
+			throw new ModelException(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
+					"Could not find file index for item index "+minIndex+" in layer "+ModelUtils.getUniqueId(layer));
+		int lastFile = findFileForIndex(maxIndex, layer.getManifest(), firstFile, fileCount);
+		if(lastFile<0)
+			throw new ModelException(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
+					"Could not find file index for item index "+maxIndex+" in layer "+ModelUtils.getUniqueId(layer));
+
+		long loadedItems = 0L;
+
+		for(int fileIndex = firstFile; fileIndex<=lastFile; fileIndex++) {
+
+			FileInfo fileInfo = states.getFileInfo(fileIndex);
+			if(!fileInfo.isValid())
+				throw new ModelException(ModelErrorCode.DRIVER_ERROR,
+						"Cannot attempt to load from invalid file at index "+fileIndex);
+
+			if(fileInfo.isFlagSet(ElementFlag.PARTIALLY_LOADED))
+				throw new ModelException(ModelErrorCode.DRIVER_ERROR,
+						"Cannot attempt to completely load already partially loaded file at index "+fileIndex);
+
+			if(fileInfo.isFlagSet(ElementFlag.LOADED)) {
+				// Skip file entirely (no need to publish chunk info in this case either)
+				continue;
+			}
+
+			loadedItems += loadFile(fileIndex, action);
+		}
+
+		return loadedItems;
 	}
 
 	/**

@@ -104,9 +104,9 @@ public class DefaultChunkIndex implements ChunkIndex {
 		if(fileCount>1) {
 			IndexValueType fileValueType = IndexValueType.forValue(fileCount);
 			return ChunkArrays.createFileAdapter(valueType, fileValueType);
-		} else {
-			return ChunkArrays.createBasicAdapter(valueType);
 		}
+
+		return ChunkArrays.createBasicAdapter(valueType);
 	}
 
 	public BufferedIOResource getBufferedResource() {

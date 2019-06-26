@@ -189,8 +189,9 @@ public final class LayerBinding implements Bindable, Serializable {
 			}
 
 			return report;
-		} else
-			throw new ManifestException(GlobalErrorCode.ILLEGAL_STATE, "Mapping content already resolved");
+		}
+
+		throw new ManifestException(GlobalErrorCode.ILLEGAL_STATE, "Mapping content already resolved");
 	}
 
 	private void resolveEntry(String alias, Entry entry, CorpusManifest corpusManifest,

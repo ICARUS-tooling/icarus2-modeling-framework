@@ -204,17 +204,15 @@ public enum StructureType implements StringResource {
 	public StructureType[] getCompatibleTypes() {
 		if(ordinal()<1) {
 			return new StructureType[0];
-		} else {
-			return Arrays.copyOfRange(_values, 1, ordinal());
 		}
+		return Arrays.copyOfRange(_values, 1, ordinal());
 	}
 
 	public StructureType[] getIncompatibleTypes() {
 		if(ordinal()>=_values.length-1) {
 			return new StructureType[0];
-		} else {
-			return Arrays.copyOfRange(_values, ordinal()+1, _values.length);
 		}
+		return Arrays.copyOfRange(_values, ordinal()+1, _values.length);
 	}
 
 	public byte id() {

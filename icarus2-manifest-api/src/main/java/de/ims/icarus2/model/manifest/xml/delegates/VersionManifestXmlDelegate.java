@@ -59,8 +59,9 @@ public class VersionManifestXmlDelegate extends AbstractXmlDelegate<VersionManif
 				.ifPresent(getInstance()::setFormatId);
 
 			return Optional.of(this);
-		} else
-			throw new UnexpectedTagException(qName, true, ManifestXmlTags.VERSION);
+		}
+
+		throw new UnexpectedTagException(qName, true, ManifestXmlTags.VERSION);
 	}
 
 	/**
@@ -74,8 +75,9 @@ public class VersionManifestXmlDelegate extends AbstractXmlDelegate<VersionManif
 			getInstance().setVersionString(text);
 
 			return Optional.empty();
-		} else
-			throw new UnexpectedTagException(qName, false, ManifestXmlTags.VERSION);
+		}
+
+		throw new UnexpectedTagException(qName, false, ManifestXmlTags.VERSION);
 	}
 
 	/**

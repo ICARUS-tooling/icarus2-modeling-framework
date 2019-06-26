@@ -405,7 +405,7 @@ public class TestUtils {
 	public static short[] randomShorts(int size, short min, short max) {
 		short[] array = new short[size];
 		for (int i = 0; i < array.length; i++) {
-			array[i] = (short) (random().nextInt(min+(int)max)-min);
+			array[i] = (short) (random().nextInt(min+max)-min);
 		}
 		return array;
 	}
@@ -413,7 +413,7 @@ public class TestUtils {
 	public static byte[] randomBytes(int size, byte min, byte max) {
 		byte[] array = new byte[size];
 		for (int i = 0; i < array.length; i++) {
-			array[i] = (byte) (random().nextInt(min+(byte)max)-min);
+			array[i] = (byte) (random().nextInt(min+max)-min);
 		}
 		return array;
 	}
@@ -437,10 +437,10 @@ public class TestUtils {
 		if(source.size()==1) {
 			final T singleton = source.iterator().next();
 			return () -> singleton;
-		} else {
-			Randomizer<T> randomizer = Randomizer.from(source);
-			return randomizer::randomize;
 		}
+
+		Randomizer<T> randomizer = Randomizer.from(source);
+		return randomizer::randomize;
 	}
 
 	public static <T extends Object> Supplier<T> randomizer(
@@ -448,10 +448,10 @@ public class TestUtils {
 		requireNonNull(source);
 		if(source.length==1) {
 			return () -> source[0];
-		} else {
-			Randomizer<T> randomizer = Randomizer.from(source);
-			return randomizer::randomize;
 		}
+
+		Randomizer<T> randomizer = Randomizer.from(source);
+		return randomizer::randomize;
 	}
 
 	public static <T extends Object> T random(@SuppressWarnings("unchecked") T...source) {
@@ -1001,7 +1001,7 @@ public class TestUtils {
 	}
 
 	public static <K extends Object> K[] NO_ILLEGAL() {
-		return (K[]) null;
+		return null;
 	}
 
 	/**

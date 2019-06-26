@@ -208,9 +208,9 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	public boolean isIndependentContext() {
 		if(independent==null) {
 			return hasTemplate() ? getTemplate().isIndependentContext() : DEFAULT_INDEPENDENT_CONTEXT_VALUE;
-		} else {
-			return independent.booleanValue();
 		}
+
+		return independent.booleanValue();
 	}
 
 	/**
@@ -243,9 +243,9 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	public boolean isEditable() {
 		if(editable==null) {
 			return hasTemplate() ? getTemplate().isEditable() : DEFAULT_EDITABLE_VALUE;
-		} else {
-			return editable.booleanValue();
 		}
+
+		return editable.booleanValue();
 	}
 
 	/**

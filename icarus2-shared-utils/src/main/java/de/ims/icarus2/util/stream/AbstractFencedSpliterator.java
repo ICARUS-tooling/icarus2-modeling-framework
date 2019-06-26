@@ -70,9 +70,9 @@ public abstract class AbstractFencedSpliterator<T extends Object> implements Spl
 			action.accept(current());
 			pos++;
 			return true;
-		} else {
-			return false;
 		}
+
+		return false;
 	}
 
 	protected abstract T current();
@@ -89,10 +89,10 @@ public abstract class AbstractFencedSpliterator<T extends Object> implements Spl
 		if (lo < mid) { // split out left half
 			pos = mid; // reset this Spliterator's origin
 			return split(lo, mid);
-		} else {
-			// too small to split
-			return null;
 		}
+
+		// too small to split
+		return null;
 	}
 
 	protected abstract Spliterator<T> split(long pos, long fence);
@@ -147,9 +147,9 @@ public abstract class AbstractFencedSpliterator<T extends Object> implements Spl
 				action.accept(currentInt());
 				pos++;
 				return true;
-			} else {
-				return false;
 			}
+
+			return false;
 		}
 
 		@Override
@@ -200,9 +200,9 @@ public abstract class AbstractFencedSpliterator<T extends Object> implements Spl
 				action.accept(currentLong());
 				pos++;
 				return true;
-			} else {
-				return false;
 			}
+
+			return false;
 		}
 
 		@Override
@@ -253,9 +253,9 @@ public abstract class AbstractFencedSpliterator<T extends Object> implements Spl
 				action.accept(currentDouble());
 				pos++;
 				return true;
-			} else {
-				return false;
 			}
+
+			return false;
 		}
 
 		@Override

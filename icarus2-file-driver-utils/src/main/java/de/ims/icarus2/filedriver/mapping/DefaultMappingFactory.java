@@ -181,28 +181,28 @@ public class DefaultMappingFactory implements MappingFactory {
 		Coverage coverage = manifest.getCoverage().orElseThrow(ManifestException.missing(manifest, "coverage"));
 		if(coverage.isTotal() && coverage.isMonotonic()) {
 			return createIdentityMapping(manifest, options);
-		} else {
-			MappingImplOneToOne.Builder builder = new MappingImplOneToOne.Builder();
-
-			initStoredMappingBuilder(builder, manifest, options);
-
-			int blockPower = options.getInteger(FileDriverUtils.MappingProperty.BLOCK_POWER.key(), -1);
-			if(blockPower!=-1) {
-				builder.blockPower(blockPower);
-			}
-
-			return builder.build();
 		}
+
+		MappingImplOneToOne.Builder builder = new MappingImplOneToOne.Builder();
+
+		initStoredMappingBuilder(builder, manifest, options);
+
+		int blockPower = options.getInteger(FileDriverUtils.MappingProperty.BLOCK_POWER.key(), -1);
+		if(blockPower!=-1) {
+			builder.blockPower(blockPower);
+		}
+
+		return builder.build();
 	}
 
 	protected MappingImplIdentity createIdentityMapping(MappingManifest manifest, Options options) {
 		ContextManifest contextManifest = ManifestUtils.require(
 				driver.getManifest().getContextManifest(), driver.getManifest(), "contextManifest");
 
-		ItemLayerManifestBase<?> sourceLayer = (ItemLayerManifestBase<?>) manifest.getSourceLayerId()
+		ItemLayerManifestBase<?> sourceLayer = manifest.getSourceLayerId()
 				.flatMap(id -> contextManifest.<ItemLayerManifestBase<?>>getLayerManifest(id))
 				.orElseThrow(ManifestException.error("Failed to obtain source layer"));
-		ItemLayerManifestBase<?> targetLayer = (ItemLayerManifestBase<?>) manifest.getTargetLayerId()
+		ItemLayerManifestBase<?> targetLayer = manifest.getTargetLayerId()
 				.flatMap(id -> contextManifest.<ItemLayerManifestBase<?>>getLayerManifest(id))
 				.orElseThrow(ManifestException.error("Failed to obtain target layer"));
 
@@ -217,10 +217,10 @@ public class DefaultMappingFactory implements MappingFactory {
 				.getContextManifest()
 				.orElseThrow(ManifestException.error("Failed to obtain context manifest for lookup"));
 
-		ItemLayerManifestBase<?> sourceLayer = (ItemLayerManifestBase<?>) manifest.getSourceLayerId()
+		ItemLayerManifestBase<?> sourceLayer = manifest.getSourceLayerId()
 				.flatMap(id -> contextManifest.<ItemLayerManifestBase<?>>getLayerManifest(id))
 				.orElseThrow(ManifestException.error("Failed to obtain source layer"));
-		ItemLayerManifestBase<?> targetLayer = (ItemLayerManifestBase<?>) manifest.getTargetLayerId()
+		ItemLayerManifestBase<?> targetLayer = manifest.getTargetLayerId()
 				.flatMap(id -> contextManifest.<ItemLayerManifestBase<?>>getLayerManifest(id))
 				.orElseThrow(ManifestException.error("Failed to obtain target layer"));
 

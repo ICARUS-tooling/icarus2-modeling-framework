@@ -60,9 +60,9 @@ public class Pool<E extends Object> implements AutoCloseable {
 		synchronized (buffer) {
 			if(buffer.isEmpty()) {
 				return supplier.get();
-			} else {
-				return buffer.pop();
 			}
+
+			return buffer.pop();
 		}
 	}
 

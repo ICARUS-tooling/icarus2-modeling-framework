@@ -112,9 +112,9 @@ public class ByteCharMapper {
 		if(eof) {
 			decoder.reset();
 			return -1;
-		} else {
-			return chars.get(0);
 		}
+
+		return chars.get(0);
 	}
 
 	public int getByteCount() {

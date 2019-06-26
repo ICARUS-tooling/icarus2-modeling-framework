@@ -80,9 +80,9 @@ public class CompactProperties implements Cloneable, Serializable {
 					return table[i+1];
 
 			return null;
-		} else {
-			return ((Map<String, Object>) table).get(key);
 		}
+
+		return ((Map<String, Object>) table).get(key);
 	}
 
 	public int size() {
@@ -262,7 +262,7 @@ public class CompactProperties implements Cloneable, Serializable {
 		try {
 			clone = (CompactProperties) super.clone();
 		} catch (CloneNotSupportedException e) {
-			// ignore
+			throw new InternalError(e); // should never happen
 		}
 
 		// One layer deep cloning

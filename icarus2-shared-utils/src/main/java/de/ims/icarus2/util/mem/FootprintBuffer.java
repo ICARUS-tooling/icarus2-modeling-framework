@@ -505,9 +505,9 @@ public class FootprintBuffer implements MemoryFootprint {
 			sb.append(']');
 
 			return sb.toString();
-		} else {
-			return super.toString();
 		}
+
+		return super.toString();
 	}
 
 	private ClassInfo getClassInfo(Class<?> clazz) {

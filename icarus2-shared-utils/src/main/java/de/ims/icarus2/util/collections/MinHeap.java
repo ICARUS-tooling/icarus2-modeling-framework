@@ -82,9 +82,9 @@ public abstract class MinHeap {
 		if (rightChildIndex >= size) {
 			if (leftChildIndex >= size) {
 				return;
-			} else {
-				minIndex = leftChildIndex;
 			}
+
+			minIndex = leftChildIndex;
 		} else {
 			if (compareValuesAt(leftChildIndex, rightChildIndex)<=0) {
 				minIndex = leftChildIndex;

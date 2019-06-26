@@ -53,14 +53,6 @@ public class FragmentLayerManifestXmlDelegate extends AbstractItemLayerManifestB
 		setInstance(new FragmentLayerManifestImpl(groupManifest));
 	}
 
-	/**
-	 * @see de.ims.icarus2.model.manifest.xml.delegates.AbstractXmlDelegate#getInstance()
-	 */
-	@Override
-	public FragmentLayerManifest getInstance() {
-		return (FragmentLayerManifest) super.getInstance();
-	}
-
 	private RasterizerManifestXmlDelegate getRasterizerManifestXmLDelegate() {
 		if(rasterizerManifestXmlDelegate==null) {
 			rasterizerManifestXmlDelegate = new RasterizerManifestXmlDelegate();

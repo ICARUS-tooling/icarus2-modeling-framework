@@ -269,6 +269,7 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 		template = templateId==null ? null : new TemplateLink<>(templateId);
 	}
 
+	@SuppressWarnings("cast")
 	@Override
 	public T getTemplate() {
 		if(!hasTemplate())

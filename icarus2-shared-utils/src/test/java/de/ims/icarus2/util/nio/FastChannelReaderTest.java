@@ -62,7 +62,6 @@ public class FastChannelReaderTest {
 	}
 
 
-	@SuppressWarnings("resource")
 	private FastChannelReader prepare(Charset encoding, int bufferSize, boolean allocateDirect, String text) throws IOException {
 		ByteArrayChannel channel = new ByteArrayChannel(new byte[text.length()*4], false);
 

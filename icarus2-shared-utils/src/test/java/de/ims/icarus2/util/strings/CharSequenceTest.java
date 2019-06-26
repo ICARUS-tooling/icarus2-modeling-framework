@@ -142,6 +142,9 @@ public interface CharSequenceTest<S extends CharSequence> extends ObjectTest {
 		S empty = createEmptySequence();
 		if(empty!=null) {
 			assertThrows(IndexOutOfBoundsException.class, () -> empty.charAt(0));
+			assertThrows(IndexOutOfBoundsException.class, () -> empty.charAt(-1));
+			assertThrows(IndexOutOfBoundsException.class, () -> empty.charAt(Integer.MAX_VALUE));
+
 			cleanup(empty);
 		}
 
@@ -156,8 +159,8 @@ public interface CharSequenceTest<S extends CharSequence> extends ObjectTest {
 			assertEquals('2', fromSource.charAt(5));
 			assertEquals('3', fromSource.charAt(6));
 
-			assertThrows(IndexOutOfBoundsException.class, () -> empty.charAt(-1));
-			assertThrows(IndexOutOfBoundsException.class, () -> empty.charAt(Integer.MAX_VALUE));
+			assertThrows(IndexOutOfBoundsException.class, () -> fromSource.charAt(-1));
+			assertThrows(IndexOutOfBoundsException.class, () -> fromSource.charAt(Integer.MAX_VALUE));
 
 			cleanup(fromSource);
 		}

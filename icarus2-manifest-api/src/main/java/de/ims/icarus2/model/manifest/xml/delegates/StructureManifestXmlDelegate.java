@@ -60,14 +60,6 @@ public class StructureManifestXmlDelegate extends AbstractContainerManifestBaseX
 		return this;
 	}
 
-	/**
-	 * @see de.ims.icarus2.model.manifest.xml.delegates.AbstractXmlDelegate#getInstance()
-	 */
-	@Override
-	public StructureManifest getInstance() {
-		return (StructureManifest) super.getInstance();
-	}
-
 	@Override
 	protected void writeAttributes(XmlSerializer serializer) throws XMLStreamException {
 		super.writeAttributes(serializer);

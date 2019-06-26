@@ -116,8 +116,9 @@ public abstract class AbstractManifestXmlDelegate<M extends Manifest> extends Ab
 
 		if(localName.equals(xmlTag())) {
 			return Optional.empty();
-		} else
-			throw new UnexpectedTagException(qName, false, xmlTag());
+		}
+
+		throw new UnexpectedTagException(qName, false, xmlTag());
 	}
 
 	/**

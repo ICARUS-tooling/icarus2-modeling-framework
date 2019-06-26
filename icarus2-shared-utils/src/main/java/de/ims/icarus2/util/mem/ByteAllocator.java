@@ -413,14 +413,14 @@ public final class ByteAllocator {
 			if(isUsed(chunkIndex)) {
 				// If we encounter a chunk that's still in use we need to abort
 				break;
-			} else {
-				// Delete the trailing chunk
-				chunks.remove(chunkIndex);
-				// Adjust idGen
-				idGen.set(chunks.size()*getChunkSize());
-
-				couldTrim = true;
 			}
+
+			// Delete the trailing chunk
+			chunks.remove(chunkIndex);
+			// Adjust idGen
+			idGen.set(chunks.size()*getChunkSize());
+
+			couldTrim = true;
 		}
 
 		return couldTrim;

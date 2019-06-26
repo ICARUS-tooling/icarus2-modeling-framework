@@ -515,9 +515,9 @@ public class ValueType implements StringResource, NamedObject {
 		public CharSequence toChars(Object value) {
 			if(value instanceof IconWrapper) {
 				return ((IconWrapper)value).getStringValue();
-			} else {
-				return ImageSerializer.icon2String((Icon) value);
 			}
+
+			return ImageSerializer.icon2String((Icon) value);
 		}
 	};
 
@@ -889,9 +889,9 @@ public class ValueType implements StringResource, NamedObject {
 		private static String toXmlForm(ValueType componentType, int size) {
 			if(size==UNDEFINED_SIZE) {
 				return componentType.getStringValue()+SIZE_OPEN+WILDCARD_SIZE_CHARACTER+SIZE_CLOSE;
-			} else {
-				return componentType.getStringValue()+SIZE_OPEN+size+SIZE_CLOSE;
 			}
+
+			return componentType.getStringValue()+SIZE_OPEN+size+SIZE_CLOSE;
 		}
 
 		private VectorType(ValueType componentType, String xmlForm, int size) {

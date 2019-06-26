@@ -69,9 +69,9 @@ public class Lazy<V> implements Serializable {
 	public static <V> Lazy<V> create(Class<V> valueClass, boolean threadSafe) {
 		if (threadSafe) {
 			return new ThreadSafeLazy<V>(valueClass);
-		} else {
-			return new Lazy<V>(valueClass);
 		}
+
+		return new Lazy<V>(valueClass);
 	}
 
 	public static <V> Lazy<V> create(Class<V> valueClass) {
@@ -82,9 +82,9 @@ public class Lazy<V> implements Serializable {
 			boolean threadSafe) {
 		if (threadSafe) {
 			return new ThreadSafeLazy<V>(factoryMethod);
-		} else {
-			return new Lazy<V>(factoryMethod);
 		}
+
+		return new Lazy<V>(factoryMethod);
 	}
 
 	public static <V> Lazy<V> create(Supplier<V> factoryMethod) {

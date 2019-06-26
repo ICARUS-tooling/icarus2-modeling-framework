@@ -133,7 +133,7 @@ public class ManifestXmlTestUtils {
 		 *  allows templating (i.e. top-level standalone mode), then we might
 		 *  as well use validating parser mode here.
 		 */
-		if(allowValidation && instance instanceof TypedManifest) {
+		if(allowValidation) {
 			ManifestType type = ((TypedManifest) instance).getManifestType();
 			validate = type.isSupportTemplating();
 		}

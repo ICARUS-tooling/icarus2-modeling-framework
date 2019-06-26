@@ -142,12 +142,12 @@ abstract class Guardian<T> {
 					return ((Collection<?>)enums).iterator().next();
 				} else
 					throw new TestAbortedException("Unsupported return type of enum retreival method: "+methodName);
-			} else {
-				Object value = clazz.getMethod(methodName, String.class)
-						.invoke(null, key);
-				assertNotNull(value);
-				return value;
 			}
+
+			Object value = clazz.getMethod(methodName, String.class)
+					.invoke(null, key);
+			assertNotNull(value);
+			return value;
 
 		} catch (NoSuchMethodException | SecurityException
 				| IllegalAccessException | IllegalArgumentException

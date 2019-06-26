@@ -221,9 +221,9 @@ public class ManifestTestUtils {
 	public static Object getOrMockTestValue(ValueType type) {
 		if(hasTestValues(type)) {
 			return getTestValue(type);
-		} else {
-			return mock(type.getBaseClass());
 		}
+
+		return mock(type.getBaseClass());
 	}
 
 	public static Object[] getTestValues(ValueType type) {

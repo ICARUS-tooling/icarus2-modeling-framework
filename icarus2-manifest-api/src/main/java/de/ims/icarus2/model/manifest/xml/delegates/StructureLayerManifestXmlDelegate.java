@@ -55,14 +55,6 @@ public class StructureLayerManifestXmlDelegate extends AbstractItemLayerManifest
 		setInstance(new StructureLayerManifestImpl(groupManifest));
 	}
 
-	/**
-	 * @see de.ims.icarus2.model.manifest.xml.delegates.AbstractXmlDelegate#getInstance()
-	 */
-	@Override
-	public StructureLayerManifest getInstance() {
-		return (StructureLayerManifest) super.getInstance();
-	}
-
 	private StructureManifestXmlDelegate getStructureManifestXmlDelegate() {
 		if(structureManifestXmlDelegate==null) {
 			structureManifestXmlDelegate = new StructureManifestXmlDelegate();

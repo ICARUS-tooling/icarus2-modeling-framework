@@ -449,9 +449,9 @@ public class IndexCollectorFactory {
 			if (chunkSize == UNDEFINED_CHUNK_SIZE
 					|| indices.size() <= chunkSize) {
 				return IndexUtils.wrap(indices);
-			} else {
-				return indices.split(chunkSize);
 			}
+
+			return indices.split(chunkSize);
 		}
 
 		/**

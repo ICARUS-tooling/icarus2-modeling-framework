@@ -365,8 +365,7 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 			LayerGroupManifest groupManifest = assertMock(context.getLocalGroupManifests().get(groupIndex));
 
 			groupManifest.addLayerManifest(layer);
-			when((Optional<LayerManifest<?>>)groupManifest.getLayerManifest(layer.getId().get()))
-					.thenReturn(Optional.of(layer));
+			when(groupManifest.getLayerManifest(layer.getId().get())).thenReturn(Optional.of(layer));
 		};
 	}
 

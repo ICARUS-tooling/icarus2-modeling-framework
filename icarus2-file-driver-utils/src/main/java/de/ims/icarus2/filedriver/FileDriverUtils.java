@@ -231,10 +231,10 @@ public class FileDriverUtils {
 
 		ContextManifest contextManifest = ManifestUtils.requireGrandHost(mappingManifest);
 
-		ItemLayerManifestBase<?> source = (ItemLayerManifestBase<?>) mappingManifest.getSourceLayerId()
+		ItemLayerManifestBase<?> source = mappingManifest.getSourceLayerId()
 				.flatMap(id -> contextManifest.<ItemLayerManifestBase<?>>getLayerManifest(id))
 				.orElseThrow(ManifestException.missing(mappingManifest, "resolvable source layer"));
-		ItemLayerManifestBase<?> target = (ItemLayerManifestBase<?>) mappingManifest.getTargetLayerId()
+		ItemLayerManifestBase<?> target = mappingManifest.getTargetLayerId()
 				.flatMap(id -> contextManifest.<ItemLayerManifestBase<?>>getLayerManifest(id))
 				.orElseThrow(ManifestException.missing(mappingManifest, "resolvable target layer"));
 

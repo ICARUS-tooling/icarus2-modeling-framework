@@ -91,14 +91,6 @@ public class StructureManifestImpl extends AbstractContainerManifestBase<Structu
 		this.structureType = Optional.of(structureType);
 	}
 
-	/**
-	 * @see de.ims.icarus2.model.manifest.standard.AbstractManifest#getTemplate()
-	 */
-	@Override
-	public StructureManifest getTemplate() {
-		return (StructureManifest) super.getTemplate();
-	}
-
 	@Override
 	public boolean isStructureFlagSet(StructureFlag flag) {
 		return structureFlags.contains(flag) || (hasTemplate() && getTemplate().isStructureFlagSet(flag));

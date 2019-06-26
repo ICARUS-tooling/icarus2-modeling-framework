@@ -100,27 +100,27 @@ public abstract class Splitable extends AbstractString {
 	             ch > Character.MAX_LOW_SURROGATE))
 	        {
 	        	return split(ch, limit);
-	        } else {
-	        	resetSplits();
-
-	        	Matcher m = getCachedMatcher(regex.toString());
-	        	int off = 0;
-	        	while(m.find() && (limit==0 || splitCount<limit)) {
-	        		if(m.start()>off) {
-		        		addSplit(off, m.start());
-	        		}
-
-	        		off = m.end();
-	        	}
-
-	        	if(off<length() && (limit==0 || splitCount<limit)) {
-	        		addSplit(off, length());
-	        	}
-
-	        	recycleMatcher(m);
-
-	            return splitCount;
 	        }
+
+			resetSplits();
+
+			Matcher m = getCachedMatcher(regex.toString());
+			int off = 0;
+			while(m.find() && (limit==0 || splitCount<limit)) {
+				if(m.start()>off) {
+					addSplit(off, m.start());
+				}
+
+				off = m.end();
+			}
+
+			if(off<length() && (limit==0 || splitCount<limit)) {
+				addSplit(off, length());
+			}
+
+			recycleMatcher(m);
+
+			return splitCount;
 		}
 
 		public int split(CharSequence regex) {

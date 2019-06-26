@@ -81,15 +81,15 @@ public class DefaultFileDriverFactory implements Factory {
 	private Corpus getCorpus(ImplementationLoader<?> loader) {
 		if(loader instanceof DefaultImplementationLoader) {
 			return ((DefaultImplementationLoader)loader).getCorpus();
-		} else {
-			Object environment = loader.getEnvironment();
-
-			if(environment instanceof Corpus) {
-				return (Corpus) environment;
-			}
-
-			return null;
 		}
+
+		Object environment = loader.getEnvironment();
+
+		if(environment instanceof Corpus) {
+			return (Corpus) environment;
+		}
+
+		return null;
 	}
 
 	/**
@@ -181,9 +181,9 @@ public class DefaultFileDriverFactory implements Factory {
 		// Wrap collection of resources if needed
 		if(resourceSets.size()==1) {
 			return resourceSets.get(0);
-		} else {
-			return new CompoundResourceSet(resourceSets);
 		}
+
+		return new CompoundResourceSet(resourceSets);
 	}
 
 	protected ResourceSet toResourceSet(Corpus corpus, ResourceProvider resourceProvider,
@@ -195,24 +195,24 @@ public class DefaultFileDriverFactory implements Factory {
 			IOResource resource = new ReadOnlyStringResource(
 					locationManifest.getInlineData().toString(), StandardCharsets.UTF_8); //TODO fetch correct encoding from manifest?
 			return new SingletonResourceSet(resource);
-		} else {
-			PathType rootPathType = locationManifest.getRootPathType()
-					.orElseThrow(ManifestException.missing(locationManifest, "root path type"));
+		}
 
-			switch (rootPathType) {
-			case FILE:
-			case RESOURCE:
-			case FOLDER: {
-				PathResolver pathResolver = getResolverForLocation(corpus, resourceProvider, locationManifest);
+		PathType rootPathType = locationManifest.getRootPathType()
+				.orElseThrow(ManifestException.missing(locationManifest, "root path type"));
 
-				return new LazyResourceSet(pathResolver);
-			}
+		switch (rootPathType) {
+		case FILE:
+		case RESOURCE:
+		case FOLDER: {
+			PathResolver pathResolver = getResolverForLocation(corpus, resourceProvider, locationManifest);
 
-			default:
-				//TODO implement handling of other path types
-				throw new ModelException(corpus, GlobalErrorCode.NOT_IMPLEMENTED,
-						"Currently no root path types other than FILE, RESOURCE or FOLDER are being supported: "+rootPathType);
-			}
+			return new LazyResourceSet(pathResolver);
+		}
+
+		default:
+			//TODO implement handling of other path types
+			throw new ModelException(corpus, GlobalErrorCode.NOT_IMPLEMENTED,
+					"Currently no root path types other than FILE, RESOURCE or FOLDER are being supported: "+rootPathType);
 		}
 	}
 

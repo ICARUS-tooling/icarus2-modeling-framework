@@ -140,9 +140,9 @@ public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportB
 	protected Report<R> create() {
 		if(source==null && items.isEmpty()) {
 			return Report.emptyReport();
-		} else {
-			return new ReportImpl<>(this);
 		}
+
+		return new ReportImpl<>(this);
 	}
 
 	static class ReportImpl<R extends ReportItem> implements Report<R> {

@@ -65,13 +65,12 @@ public class CloseableThreadLocal<T> implements Closeable {
 			if (iv != null) {
 				set(iv);
 				return iv;
-			} else {
-				return null;
 			}
-		} else {
-			maybePurge();
-			return weakRef.get();
+			return null;
 		}
+
+		maybePurge();
+		return weakRef.get();
 	}
 
 	public void set(T object) {

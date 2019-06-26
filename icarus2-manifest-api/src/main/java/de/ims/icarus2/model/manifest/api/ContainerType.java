@@ -151,17 +151,17 @@ public enum ContainerType implements StringResource {
 	public ContainerType[] getCompatibleTypes() {
 		if(ordinal()<=1) {
 			return new ContainerType[0];
-		} else {
-			return Arrays.copyOfRange(_values, 1, ordinal());
 		}
+
+		return Arrays.copyOfRange(_values, 1, ordinal());
 	}
 
 	public ContainerType[] getIncompatibleTypes() {
 		if(ordinal()>=_values.length-1) {
 			return new ContainerType[0];
-		} else {
-			return Arrays.copyOfRange(_values, ordinal()+1, _values.length);
 		}
+
+		return Arrays.copyOfRange(_values, ordinal()+1, _values.length);
 	}
 
 	public byte id() {

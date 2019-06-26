@@ -143,7 +143,7 @@ public class DependencyStructureResolver implements BatchResolver {
 		if(dynamicBufferSize && index>=edges.length) {
 			int newSize = index<<1;
 			if(newSize<0) {
-				newSize = (int) IcarusUtils.MAX_INTEGER_INDEX;
+				newSize = IcarusUtils.MAX_INTEGER_INDEX;
 			}
 
 			edges = Arrays.copyOf(edges, newSize);

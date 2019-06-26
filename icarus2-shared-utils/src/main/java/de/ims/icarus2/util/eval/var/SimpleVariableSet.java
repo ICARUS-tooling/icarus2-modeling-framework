@@ -228,10 +228,10 @@ public class SimpleVariableSet implements VariableSet {
 		Mutable<?> storage = getStorage(name);
 		if(storage.isPrimitive()) {
 			return ((MutablePrimitive<?>)storage).intValue();
-		} else {
-			Object value = storage.get();
-			return (value instanceof Number) ? ((Number)value).intValue() : MutableInteger.DEFAULT_EMPTY_VALUE;
 		}
+
+		Object value = storage.get();
+		return (value instanceof Number) ? ((Number)value).intValue() : MutableInteger.DEFAULT_EMPTY_VALUE;
 	}
 
 	/**
@@ -242,10 +242,10 @@ public class SimpleVariableSet implements VariableSet {
 		Mutable<?> storage = getStorage(name);
 		if(storage.isPrimitive()) {
 			return ((MutablePrimitive<?>)storage).shortValue();
-		} else {
-			Object value = storage.get();
-			return (value instanceof Number) ? ((Number)value).shortValue() : MutableShort.DEFAULT_EMPTY_VALUE;
 		}
+
+		Object value = storage.get();
+		return (value instanceof Number) ? ((Number)value).shortValue() : MutableShort.DEFAULT_EMPTY_VALUE;
 	}
 
 	/**
@@ -256,10 +256,10 @@ public class SimpleVariableSet implements VariableSet {
 		Mutable<?> storage = getStorage(name);
 		if(storage.isPrimitive()) {
 			return ((MutablePrimitive<?>)storage).longValue();
-		} else {
-			Object value = storage.get();
-			return (value instanceof Number) ? ((Number)value).longValue() : MutableLong.DEFAULT_EMPTY_VALUE;
 		}
+
+		Object value = storage.get();
+		return (value instanceof Number) ? ((Number)value).longValue() : MutableLong.DEFAULT_EMPTY_VALUE;
 	}
 
 	/**
@@ -270,10 +270,10 @@ public class SimpleVariableSet implements VariableSet {
 		Mutable<?> storage = getStorage(name);
 		if(storage.isPrimitive()) {
 			return ((MutablePrimitive<?>)storage).byteValue();
-		} else {
-			Object value = storage.get();
-			return (value instanceof Number) ? ((Number)value).byteValue() : MutableByte.DEFAULT_EMPTY_VALUE;
 		}
+
+		Object value = storage.get();
+		return (value instanceof Number) ? ((Number)value).byteValue() : MutableByte.DEFAULT_EMPTY_VALUE;
 	}
 
 	/**
@@ -284,10 +284,10 @@ public class SimpleVariableSet implements VariableSet {
 		Mutable<?> storage = getStorage(name);
 		if(storage.isPrimitive()) {
 			return ((MutablePrimitive<?>)storage).charValue();
-		} else {
-			Object value = storage.get();
-			return (value instanceof Character) ? ((Character)value).charValue() : MutableChar.DEFAULT_EMPTY_VALUE;
 		}
+
+		Object value = storage.get();
+		return (value instanceof Character) ? ((Character)value).charValue() : MutableChar.DEFAULT_EMPTY_VALUE;
 	}
 
 	/**
@@ -298,10 +298,10 @@ public class SimpleVariableSet implements VariableSet {
 		Mutable<?> storage = getStorage(name);
 		if(storage.isPrimitive()) {
 			return ((MutablePrimitive<?>)storage).floatValue();
-		} else {
-			Object value = storage.get();
-			return (value instanceof Number) ? ((Number)value).floatValue() : MutableFloat.DEFAULT_EMPTY_VALUE;
 		}
+
+		Object value = storage.get();
+		return (value instanceof Number) ? ((Number)value).floatValue() : MutableFloat.DEFAULT_EMPTY_VALUE;
 	}
 
 	/**
@@ -312,10 +312,10 @@ public class SimpleVariableSet implements VariableSet {
 		Mutable<?> storage = getStorage(name);
 		if(storage.isPrimitive()) {
 			return ((MutablePrimitive<?>)storage).doubleValue();
-		} else {
-			Object value = storage.get();
-			return (value instanceof Number) ? ((Number)value).doubleValue() : MutableDouble.DEFAULT_EMPTY_VALUE;
 		}
+
+		Object value = storage.get();
+		return (value instanceof Number) ? ((Number)value).doubleValue() : MutableDouble.DEFAULT_EMPTY_VALUE;
 	}
 
 	/**
@@ -326,10 +326,10 @@ public class SimpleVariableSet implements VariableSet {
 		Mutable<?> storage = getStorage(name);
 		if(storage.isPrimitive()) {
 			return ((MutablePrimitive<?>)storage).booleanValue();
-		} else {
-			Object value = storage.get();
-			return (value instanceof Boolean) ? ((Boolean)value).booleanValue() : MutableBoolean.DEFAULT_EMPTY_VALUE;
 		}
+
+		Object value = storage.get();
+		return (value instanceof Boolean) ? ((Boolean)value).booleanValue() : MutableBoolean.DEFAULT_EMPTY_VALUE;
 	}
 
 	private static class Variable {

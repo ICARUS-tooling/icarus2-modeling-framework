@@ -97,8 +97,8 @@ public class LazyHighlightCursor extends AbstractHighlightCursor {
 			synchronized (highlightGenerator) {
 				if(highlightCache==null) {
 					highlightCache = new Object[concurrentHighlightCount];
-					cache = (Object[]) highlightCache;
 				}
+				cache = (Object[]) highlightCache;
 
 				if(cache[index]==null) { // Takes care of the out of bounds check
 					cache[index] = loadSequenceForIndex(index);
@@ -119,9 +119,9 @@ public class LazyHighlightCursor extends AbstractHighlightCursor {
 				throw new IndexOutOfBoundsException("Invalid index (only 0 allowed for singleton cache): "+index);
 
 			return getSingletonSequence();
-		} else {
-			return getSequenceAt(index);
 		}
+
+		return getSequenceAt(index);
 	}
 
 }

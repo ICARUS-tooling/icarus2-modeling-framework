@@ -453,21 +453,18 @@ public abstract class ManifestLocation {
 			if(virtual) {
 				if(input) {
 					return new VirtualManifestInputLocation(content, classLoader, template);
-				} else {
-					return new VirtualManifestOutputLocation(classLoader, template);
 				}
+				return new VirtualManifestOutputLocation(classLoader, template);
 			} else if(file!=null) {
 				if(charset!=null) {
 					return new FileManifestLocation(file, charset, classLoader, readOnly, template);
-				} else {
-					return new FileManifestLocation(file, classLoader, readOnly, template);
 				}
+				return new FileManifestLocation(file, classLoader, readOnly, template);
 			} else {
 				if(charset!=null) {
 					return new URLManifestLocation(url, charset, classLoader, readOnly, template);
-				} else {
-					return new URLManifestLocation(url, classLoader, readOnly, template);
 				}
+				return new URLManifestLocation(url, classLoader, readOnly, template);
 			}
 		}
 	}

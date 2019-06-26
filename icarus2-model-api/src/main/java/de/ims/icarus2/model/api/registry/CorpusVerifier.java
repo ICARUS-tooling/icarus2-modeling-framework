@@ -18,6 +18,7 @@ package de.ims.icarus2.model.api.registry;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
@@ -104,7 +105,7 @@ public class CorpusVerifier {
 		// Verify options/properties
 		OptionsManifest optionsManifest = manifest.getOptionsManifest().orElse(null);
 		Set<String> properties = manifest.getPropertyNames();
-		Set<String> options = optionsManifest==null ? null : optionsManifest.getOptionIds();
+		Set<String> options = optionsManifest==null ? Collections.emptySet() : optionsManifest.getOptionIds();
 		for(String property : properties) {
 			if(optionsManifest==null) {
 				// Check that options manifest is defined

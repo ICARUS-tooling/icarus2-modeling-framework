@@ -83,9 +83,9 @@ public class ImplementationManifestImpl extends AbstractMemberManifest<Implement
 	public boolean isUseFactory() {
 		if(useFactory==null) {
 			return hasTemplate() ? getTemplate().isUseFactory() : DEFAULT_USE_FACTORY_VALUE;
-		} else {
-			return useFactory.booleanValue();
 		}
+
+		return useFactory.booleanValue();
 	}
 
 	/**

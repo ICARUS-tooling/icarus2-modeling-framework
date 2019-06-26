@@ -81,9 +81,9 @@ public interface Identity {
 			Optional<String> name2 = i2.getName();
 			if(name1.isPresent() && name2.isPresent()) {
 				return name1.get().compareTo(name2.get());
-			} else {
-				return ID_COMPARATOR.compare(i1, i2);
 			}
+
+			return ID_COMPARATOR.compare(i1, i2);
 		}
 
 	};

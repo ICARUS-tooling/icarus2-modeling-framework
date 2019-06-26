@@ -83,10 +83,10 @@ public class WeakHashSet<E extends Object> extends AbstractSet<E> {
 	public boolean add(E e) {
 		if(store.containsKey(e)) {
 			return false;
-		} else {
-			store.put(e, dummy);
-			return true;
 		}
+
+		store.put(e, dummy);
+		return true;
 	}
 
 	@Override

@@ -269,7 +269,7 @@ public interface ManifestRegistry extends EventManager {
 	 */
 	default Collection<ContextManifest> getRootContextTemplates() {
 		return getTemplates(m -> m.getManifestType()==ManifestType.CONTEXT_MANIFEST
-				&& ((ContextManifest)m).isIndependentContext());
+				&& m.isIndependentContext());
 	}
 
 	Set<ManifestLocation> getTemplateSources();

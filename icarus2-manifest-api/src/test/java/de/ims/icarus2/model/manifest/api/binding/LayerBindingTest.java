@@ -57,8 +57,6 @@ public class LayerBindingTest implements BindableTest<LayerBinding> {
 
 	private static final String ALIAS_1 = "alias1";
 	private static final String ALIAS_2 = "alias2";
-	private static final String ALIAS_3 = "alias3";
-	private static final String ALIAS_4 = "alias4";
 
 	private static final String LAYER_TYPE_ID_1 = "layerTypeId1";
 	private static final String LAYER_TYPE_ID_2 = "layerTypeId2";

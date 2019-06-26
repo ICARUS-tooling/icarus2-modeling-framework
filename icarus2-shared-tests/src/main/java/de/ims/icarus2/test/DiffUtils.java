@@ -593,45 +593,45 @@ public final class DiffUtils {
 			if(a1.length!=a2.length) {
 				arrayLength(trace, a1, a2);
 				return false;
-			} else {
-				for(int i=0; i<a1.length; i++) {
-					Object item1 = a1[i];
-					Object item2 = a2[i];
+			}
 
-					boolean mismatch = false;
+			for(int i=0; i<a1.length; i++) {
+				Object item1 = a1[i];
+				Object item2 = a2[i];
 
-					if(item1==item2) {
-						continue;
-					} else if(item1==null && item2==null) {
-						continue;
-					} else if(item1==null) {
-						localNull(trace, item2, i);
-						mismatch = true;
-					} else if(item2==null) {
-						otherNull(trace, item1, i);
-						mismatch = true;
-					} else if(!item1.getClass().isAssignableFrom(item2.getClass())) {
-						differentClass(trace, item1, item2, i);
-						mismatch = true;
-					} else if(trace.visit(item1)) {
-						try {
-							if(!getChecker(item1.getClass()).equals(trace, item1, item2)) {
-								dif(trace, item1, item2, i);
-								mismatch = true;
-							}
-						} finally {
-							trace.leave(item1);
+				boolean mismatch = false;
+
+				if(item1==item2) {
+					continue;
+				} else if(item1==null && item2==null) {
+					continue;
+				} else if(item1==null) {
+					localNull(trace, item2, i);
+					mismatch = true;
+				} else if(item2==null) {
+					otherNull(trace, item1, i);
+					mismatch = true;
+				} else if(!item1.getClass().isAssignableFrom(item2.getClass())) {
+					differentClass(trace, item1, item2, i);
+					mismatch = true;
+				} else if(trace.visit(item1)) {
+					try {
+						if(!getChecker(item1.getClass()).equals(trace, item1, item2)) {
+							dif(trace, item1, item2, i);
+							mismatch = true;
 						}
-					}
-
-					// Break loop if we are only interested in checking the fact of difference
-					if(mismatch && !trace.doDiff) {
-						return false;
+					} finally {
+						trace.leave(item1);
 					}
 				}
 
-				return true;
+				// Break loop if we are only interested in checking the fact of difference
+				if(mismatch && !trace.doDiff) {
+					return false;
+				}
 			}
+
+			return true;
 		}
 
 	}

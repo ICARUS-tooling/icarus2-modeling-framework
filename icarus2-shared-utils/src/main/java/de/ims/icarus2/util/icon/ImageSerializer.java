@@ -91,16 +91,16 @@ public class ImageSerializer {
 
 			if(image instanceof BufferedImage) {
 				return (BufferedImage) image;
-			} else {
-				BufferedImage bimg = createBasicImage(icon);
-				paintImage(image, bimg);
-				return bimg;
 			}
-		} else {
-			BufferedImage image = createBasicImage(icon);
-			paintIconOnImage(image, icon);
-			return image;
+
+			BufferedImage bimg = createBasicImage(icon);
+			paintImage(image, bimg);
+			return bimg;
 		}
+
+		BufferedImage image = createBasicImage(icon);
+		paintIconOnImage(image, icon);
+		return image;
 	}
 
 	public static String icon2String(Icon icon) {

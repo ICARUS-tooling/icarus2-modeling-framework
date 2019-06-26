@@ -114,7 +114,7 @@ public interface ManifestRegistryTest
 	@SuppressWarnings("boxing")
 	public static Manifest mockTemplate(String id, Class<? extends Manifest> clazz) {
 		Manifest template = mockTypedManifest(clazz);
-		stubId((Manifest)template, id);
+		stubId(template, id);
 		when(template.isTemplate()).thenReturn(Boolean.TRUE);
 		when(template.getManifestType()).thenReturn(ManifestType.DUMMY_MANIFEST);
 		return template;

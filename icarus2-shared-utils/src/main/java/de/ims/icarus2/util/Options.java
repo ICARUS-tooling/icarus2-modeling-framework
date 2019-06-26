@@ -101,9 +101,9 @@ public class Options extends HashMap<String, Object> {
 	public Object put(String key, Object value) {
 		if(value==null) {
 			return remove(key);
-		} else {
-			return super.put(key, value);
 		}
+
+		return super.put(key, value);
 	}
 
 	public void putAll(Object... args) {

@@ -107,9 +107,8 @@ public class CharSequenceReader extends Reader {
 	public int read() throws IOException {
 		if(pos<source.length()) {
 			return source.charAt(pos++);
-		} else {
-			return -1;
 		}
+		return -1;
 	}
 
 	@Override

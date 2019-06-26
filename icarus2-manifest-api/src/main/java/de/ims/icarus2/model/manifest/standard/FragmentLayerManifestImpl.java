@@ -71,14 +71,6 @@ public class FragmentLayerManifestImpl extends AbstractItemLayerManifestBase<Fra
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.manifest.standard.AbstractManifest#getTemplate()
-	 */
-	@Override
-	public FragmentLayerManifest getTemplate() {
-		return (FragmentLayerManifest) super.getTemplate();
-	}
-
-	/**
 	 * @see de.ims.icarus2.model.manifest.api.FragmentLayerManifest#getValueLayerManifest()
 	 */
 	@Override

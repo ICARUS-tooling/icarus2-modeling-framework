@@ -43,7 +43,7 @@ class DefaultModifiableIdentityTest implements ModifiableIdentityTest<DefaultMod
 	 */
 	@Override
 	public Class<? extends DefaultModifiableIdentity> getTestTargetClass() {
-		return (Class<? extends DefaultModifiableIdentity>) DefaultModifiableIdentity.class;
+		return DefaultModifiableIdentity.class;
 	}
 
 	/**

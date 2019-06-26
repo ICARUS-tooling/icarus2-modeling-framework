@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
+import static de.ims.icarus2.model.util.ModelUtils.getName;
+
 import java.util.function.Consumer;
 
 import de.ims.icarus2.GlobalErrorCode;
@@ -198,14 +200,18 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 		return unwrapMutable(buffer[index]);
 	}
 
-	@SuppressWarnings("null")
 	@Override
 	public void setValue(Item item, String key, Object value) {
 		int index = checkKeyAndGetIndex(key);
 		Object[] buffer = getBuffer(item, value!=null);
 
-		if(buffer==null && value==null) {
-			return;
+		if(buffer==null) {
+			if(value==null) {
+				return;
+			}
+
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+					"Missing value buffer for item "+getName(item));
 		}
 
 		assert buffer!=null;

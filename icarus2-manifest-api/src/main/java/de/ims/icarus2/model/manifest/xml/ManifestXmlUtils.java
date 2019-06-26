@@ -365,10 +365,10 @@ public final class ManifestXmlUtils {
 		// Try icon name first (can occur if it contains illegal attribute symbols)
 		if(!allowSerializedForm || iconRegistry.hasIconInfo(text)) {
 			return Optional.of(new IconWrapper(text));
-		} else {
-			// Otherwise assume we have a serialized image here
-			return Optional.of(ImageSerializer.string2Icon(text));
 		}
+
+		// Otherwise assume we have a serialized image here
+		return Optional.of(ImageSerializer.string2Icon(text));
 	}
 
 	public static Optional<Icon> iconValue(@Nullable String iconName) {

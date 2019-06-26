@@ -306,12 +306,12 @@ public final class IOUtil {
 			} catch (java.net.MalformedURLException mfu) {
 				return false;
 			}
-		} else {
-			return false;
 		}
+
+		return false;
 	}
 
-	public static BufferedReader getReader(InputStream is, Charset cs) throws IOException {
+	public static BufferedReader getReader(InputStream is, Charset cs) {
 		return new BufferedReader(new InputStreamReader(is, cs));
 	}
 

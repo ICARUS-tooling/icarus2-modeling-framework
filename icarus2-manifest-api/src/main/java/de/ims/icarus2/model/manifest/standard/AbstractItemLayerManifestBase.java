@@ -211,10 +211,10 @@ public abstract class AbstractItemLayerManifestBase<M extends ItemLayerManifestB
 			ItemLayerManifestBase<?> layerManifest) {
 		if(layerManifest.hasLocalContainerHierarchy()) {
 			return layerManifest.getContainerHierarchy().get();
-		} else {
-			Hierarchy<ContainerManifestBase<?>> hierarchy = new HierarchyImpl<>();
-			layerManifest.setContainerHierarchy(hierarchy);
-			return hierarchy;
 		}
+
+		Hierarchy<ContainerManifestBase<?>> hierarchy = new HierarchyImpl<>();
+		layerManifest.setContainerHierarchy(hierarchy);
+		return hierarchy;
 	}
 }

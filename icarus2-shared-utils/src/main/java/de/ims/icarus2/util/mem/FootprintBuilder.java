@@ -143,9 +143,9 @@ public class FootprintBuilder {
 
 		if(isIgnored(obj)) {
 			return emptyCalculator;
-		} else {
-			return getCalculator(obj.getClass());
 		}
+
+		return getCalculator(obj.getClass());
 	}
 
 	private MemoryCalculator getCalculator(Class<?> clazz) {
@@ -187,9 +187,9 @@ public class FootprintBuilder {
 
 		if(assessable!=null) {
 			return new HeapMemberCalculator(clazz);
-		} else {
-			return new GeneralCalculator(clazz);
 		}
+
+		return new GeneralCalculator(clazz);
 	}
 
 	public FootprintBuilder() {
