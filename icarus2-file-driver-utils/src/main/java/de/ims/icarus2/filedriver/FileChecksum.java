@@ -73,7 +73,7 @@ public class FileChecksum implements Serializable {
 		this.uuid = uuid;
 	}
 
-	public FileChecksum(long timestamp, long size) {
+	private FileChecksum(long timestamp, long size) {
 		uuid = new UUID(timestamp, size);
 	}
 
