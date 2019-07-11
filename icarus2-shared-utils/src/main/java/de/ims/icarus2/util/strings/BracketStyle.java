@@ -17,7 +17,7 @@
 /**
  *
  */
-package de.ims.icarus2.util.tree;
+package de.ims.icarus2.util.strings;
 
 /**
  * @author Markus Gärtner
@@ -25,17 +25,21 @@ package de.ims.icarus2.util.tree;
  */
 public enum BracketStyle {
 
+	/** ( ) */
 	ROUND('(', ')'),
+	/** [] */
 	SQUARE('[', ']'),
+	/** {@code < >} */
 	ANGLE('<', '>'),
+	/** { } */
 	CURLY('{', '}'),
 	;
 
 	private BracketStyle(char openBracket, char closeBracket) {
-		this.openBracket = openBracket;
-		this.closeBracket = closeBracket;
+		this.openingBracket = openBracket;
+		this.closingBracket = closeBracket;
 	}
 
-	public final char openBracket;
-	public final char closeBracket;
+	public final char openingBracket;
+	public final char closingBracket;
 }

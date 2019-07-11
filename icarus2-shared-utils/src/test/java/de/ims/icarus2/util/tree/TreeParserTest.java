@@ -32,6 +32,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.util.strings.BracketStyle;
 
 /**
  * @author Markus Gärtner

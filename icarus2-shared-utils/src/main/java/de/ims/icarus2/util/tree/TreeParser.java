@@ -27,6 +27,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
+import de.ims.icarus2.util.strings.BracketStyle;
 
 /**
  * @author Markus Gärtner
@@ -96,7 +97,7 @@ public class TreeParser<T> {
 			char c = input.charAt(i);
 
 			// Start of a new node declaration
-			if(c==bracketStyle.openBracket) {
+			if(c==bracketStyle.openingBracket) {
 				handlePayload.accept(current);
 				if(depth>0) {
 					current = current.newChild();
@@ -104,7 +105,7 @@ public class TreeParser<T> {
 				depth++;
 			}
 			// End of current node declaration
-			else if(c==bracketStyle.closeBracket) {
+			else if(c==bracketStyle.closingBracket) {
 				handlePayload.accept(current);
 				current = current.parent();
 				depth--;

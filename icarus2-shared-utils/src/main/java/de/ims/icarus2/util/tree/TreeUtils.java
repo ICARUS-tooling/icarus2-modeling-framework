@@ -26,6 +26,8 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import de.ims.icarus2.util.strings.BracketStyle;
+
 /**
  * @author Markus Gärtner
  *
@@ -81,11 +83,11 @@ public class TreeUtils {
 			Function<T, String> labelGen) {
 		StringBuilder sb = new StringBuilder();
 		traverse(tree,
-				t -> sb.append(bracketStyle.openBracket)
+				t -> sb.append(bracketStyle.openingBracket)
 					.append(Optional.ofNullable(
 						labelGen.apply(t.getData()))
 						.orElse("")),
-				t -> sb.append(bracketStyle.closeBracket));
+				t -> sb.append(bracketStyle.closingBracket));
 		return sb.toString();
 	}
 
