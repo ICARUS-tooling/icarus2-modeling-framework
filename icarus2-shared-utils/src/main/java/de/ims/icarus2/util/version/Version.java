@@ -22,7 +22,7 @@ import static java.util.Objects.requireNonNull;
  * @author Markus Gärtner
  *
  */
-public class Version implements Cloneable {
+public abstract class Version implements Cloneable {
 
 	private final String versionString;
 	private final VersionFormat versionFormat;
@@ -71,6 +71,6 @@ public class Version implements Cloneable {
 
 	@Override
 	public String toString() {
-		return versionString;
+		return getVersionString();
 	}
 }
