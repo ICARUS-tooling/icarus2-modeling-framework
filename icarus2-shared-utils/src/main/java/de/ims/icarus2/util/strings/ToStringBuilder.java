@@ -1,0 +1,186 @@
+/*
+ * ICARUS2 Corpus Modeling Framework
+ * Copyright (C) 2014-2019 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ *
+ */
+package de.ims.icarus2.util.strings;
+
+import java.text.DecimalFormat;
+
+import javax.annotation.concurrent.NotThreadSafe;
+
+/**
+ * @author Markus Gärtner
+ *
+ */
+@NotThreadSafe
+public class ToStringBuilder {
+
+	/**
+	 * Per default, square brackets '[]' are used.
+	 */
+	public static final BracketStyle DEFAULT_BRACKET_STYLE = BracketStyle.SQUARE;
+
+	/**
+	 * Creates a fresh new builder that will leave all formatting
+	 * to the user code, except for adding commas as delimiters
+	 * between the output of field assignments.
+	 */
+	public static ToStringBuilder create() {
+		return new ToStringBuilder(null);
+	}
+
+	/**
+	 * Creates a fresh new builder that will automatically prepend
+	 * the given target's class name to the field list and also wrap
+	 * the field list into {@link #DEFAULT_BRACKET_STYLE brackets}.
+	 */
+	public static ToStringBuilder create(Object target) {
+		return new ToStringBuilder(DEFAULT_BRACKET_STYLE)
+				.add(DEFAULT_BRACKET_STYLE.openingBracket)
+				.add(target.getClass().getSimpleName());
+	}
+
+	/**
+	 * Creates a fresh new builder that will automatically prepend
+	 * the given target's class name to the field list and also wrap
+	 * the field list into brackets of the specified style.
+	 */
+	public static ToStringBuilder create(Object target, BracketStyle bracketStyle) {
+		return new ToStringBuilder(bracketStyle)
+				.add(target.getClass().getSimpleName())
+				.add(bracketStyle.openingBracket);
+	}
+
+	private final StringBuilder buffer;
+	private final BracketStyle bracketStyle;
+
+	private boolean closed;
+	private boolean needsDelimiter;
+
+
+	private DecimalFormat decimalFormat, fractionDecimalFormat;
+
+	private ToStringBuilder(BracketStyle bracketStyle) {
+		this.bracketStyle = bracketStyle;
+		buffer = new StringBuilder(50);
+	}
+
+	private String format(long value) {
+		if(decimalFormat==null) {
+			decimalFormat = new DecimalFormat("#,###");
+		}
+		return decimalFormat.format(value);
+	}
+
+	private String format(double value) {
+		if(fractionDecimalFormat==null) {
+			fractionDecimalFormat = new DecimalFormat("#,##0.00");
+		}
+		return fractionDecimalFormat.format(value);
+	}
+
+	public ToStringBuilder add(String s) {
+		buffer.append(s);
+		return this;
+	}
+
+	public ToStringBuilder add(char c) {
+		buffer.append(c);
+		return this;
+	}
+
+	public ToStringBuilder add(String name, String value) {
+		// Add field separator if needed
+		if(needsDelimiter) {
+			buffer.append(',');
+		}
+		// Add space if we have _any_ content
+		if(buffer.length()>1) { // >1 check to not add accidental space after initial bracket
+			buffer.append(' ');
+		}
+
+		buffer.append(name).append('=').append(value);
+		needsDelimiter = true;
+
+		return this;
+	}
+
+	public ToStringBuilder add(String name, Object value) {
+		return add(name, value==null ? "null" : value.toString());
+	}
+
+	public ToStringBuilder add(String name, byte value) {
+		return add(name, String.valueOf(value));
+	}
+
+	public ToStringBuilder add(String name, short value) {
+		return add(name, String.valueOf(value));
+	}
+
+	public ToStringBuilder addFormatted(String name, short value) {
+		return add(name, format(value));
+	}
+
+	public ToStringBuilder add(String name, int value) {
+		return add(name, String.valueOf(value));
+	}
+
+	public ToStringBuilder addFormatted(String name, int value) {
+		return add(name, format(value));
+	}
+
+	public ToStringBuilder add(String name, long value) {
+		return add(name, String.valueOf(value));
+	}
+
+	public ToStringBuilder addFormatted(String name, long value) {
+		return add(name, format(value));
+	}
+
+	public ToStringBuilder add(String name, float value) {
+		return add(name, String.valueOf(value));
+	}
+
+	public ToStringBuilder addFormatted(String name, float value) {
+		return add(name, format(value));
+	}
+
+	public ToStringBuilder append(String name, double value) {
+		return add(name, String.valueOf(value));
+	}
+
+	public ToStringBuilder addFormatted(String name, double value) {
+		return add(name, format(value));
+	}
+
+	public ToStringBuilder add(String name, boolean value) {
+		return add(name, String.valueOf(value));
+	}
+
+	public ToStringBuilder add(String name, char value) {
+		return add(name, String.valueOf(value));
+	}
+
+	public String build() {
+		if(!closed && bracketStyle!=null) {
+			buffer.append(bracketStyle.closingBracket);
+			closed = true;
+		}
+		return buffer.toString();
+	}
+}
