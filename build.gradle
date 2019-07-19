@@ -17,7 +17,9 @@ allprojects {
     apply plugin: 'jacoco'
 	
   	group = 'icarus2'
-  	version = '0.0.1'
+	  
+	// For now all projects follow the global pre-release version (this will change with 1.0.0 !!)
+  	version = '0.1.0'
 
   	repositories {
     	mavenCentral()
