@@ -40,8 +40,8 @@ import de.ims.icarus2.util.collections.LookupList;
  */
 public class StaticNodes {
 
-	private static final int NO_INDEX = (int) IcarusUtils.UNSET_LONG;
-	private static final int NO_DEPTH = -1;
+	private static final int NO_INDEX = IcarusUtils.UNSET_INT;
+	private static final int NO_DEPTH = IcarusUtils.UNSET_INT;
 
 	public static final Node EMPTY_NODE = new Node();
 
@@ -72,9 +72,11 @@ public class StaticNodes {
 	private static int[] _edges(NodeInfo info, LookupList<Edge> edges, int inCount, int outCount) {
 		int[] result = new int[inCount+outCount];
 
-		counter.setInt(0);
+		synchronized (counter) {
+			counter.setInt(0);
 
-		info.forEachEdge(e -> {result[counter.incrementAndGet()] = edges.indexOf(e);}, inCount>0, outCount>0);
+			info.forEachEdge(e -> {result[counter.incrementAndGet()] = edges.indexOf(e);}, inCount>0, outCount>0);
+		}
 
 		return result;
 	}

@@ -166,6 +166,7 @@ subprojects {
     	options.fork = true
  	}
 
+	 // Only relevant when developing with Eclipse IDE
 	eclipse {
 		classpath {
 			// Ensure the JMH configuration is on the eclipse classpath
@@ -227,6 +228,7 @@ subprojects {
 //		dependsOn eclipseJdtApt eclipseFactorypath eclipseJdt
 //	}
 
+	// Lets us create a ready-to-use jar for benchmarking on other machines
 	task jmhJar(type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
 		group = 'jmh'
 		description = 'Create a benchmark jar with all dependencies included'

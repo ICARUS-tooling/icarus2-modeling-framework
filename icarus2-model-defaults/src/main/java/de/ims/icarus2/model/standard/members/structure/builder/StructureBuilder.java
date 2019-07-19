@@ -49,6 +49,7 @@ import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.set.DataSet;
 import de.ims.icarus2.util.collections.set.DataSets;
 import de.ims.icarus2.util.collections.set.SingletonSet;
+import de.ims.icarus2.util.strings.ToStringBuilder;
 
 /**
  * <p>
@@ -135,25 +136,23 @@ public class StructureBuilder {
 
 	@Override
 	public String toString() {
-		return new StringBuilder()
-		.append("[StructureBuilder")
-		.append(" storeOffsets=").append(storeOffsets)
-		.append(" mayHaveMultiRoots=").append(mayHaveMultiRoots)
-		.append(" nodeCapacity=").append(nodeCapacity)
-		.append(" edgeCapacity=").append(edgeCapacity)
-		.append(" nodeSortType=").append(nodeSortType)
-		.append(" edgeSortType=").append(edgeSortType)
-		.append(" nodeCount=").append(nodes==null ? 0 : nodes.size())
-		.append(" edgeCount=").append(nodes==null ? 0 : edges.size())
-		.append(" maxHeight=").append(edgeBuffer.getMaxHeight())
-		.append(" maxDepth=").append(edgeBuffer.getMaxDepth())
-		.append(" maxDescendantCount=").append(edgeBuffer.getMaxDescendantsCount())
-		.append(" minIncoming=").append(edgeBuffer.getMinIncoming())
-		.append(" maxIncoming=").append(edgeBuffer.getMaxIncoming())
-		.append(" minOutgoing=").append(edgeBuffer.getMinOutgoing())
-		.append(" maxPutgoing=").append(edgeBuffer.getMaxOutgoing())
-		.append(']')
-		.toString();
+		return ToStringBuilder.create(this)
+			.add("storeOffsets", storeOffsets)
+			.add("mayHaveMultiRoots", mayHaveMultiRoots)
+			.add("nodeCapacity", nodeCapacity)
+			.add("edgeCapacity", edgeCapacity)
+			.add("nodeSortType", nodeSortType)
+			.add("edgeSortType", edgeSortType)
+			.add("nodeCount", nodes==null ? 0 : nodes.size())
+			.add("edgeCount", nodes==null ? 0 : edges.size())
+			.add("maxHeight", edgeBuffer.getMaxHeight())
+			.add("maxDepth", edgeBuffer.getMaxDepth())
+			.add("maxDescendantCount", edgeBuffer.getMaxDescendantsCount())
+			.add("minIncoming", edgeBuffer.getMinIncoming())
+			.add("maxIncoming", edgeBuffer.getMaxIncoming())
+			.add("minOutgoing", edgeBuffer.getMinOutgoing())
+			.add("maxPutgoing", edgeBuffer.getMaxOutgoing())
+			.build();
 	}
 
 	List<Item> nodes() {

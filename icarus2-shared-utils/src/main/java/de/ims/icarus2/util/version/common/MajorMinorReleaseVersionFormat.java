@@ -17,8 +17,6 @@
 package de.ims.icarus2.util.version.common;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.lang.Primitives._char;
-import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
@@ -176,15 +174,15 @@ public class MajorMinorReleaseVersionFormat implements VersionFormat, Serializab
 			return info;
 		}
 
-		/**
-		 * @see de.ims.icarus2.util.version.Version#toString()
-		 */
-		@Override
-		public String toString() {
-			return String.format("%d%s%d%s%d%s",
-					_int(major), _char(SEPARATOR), _int(minor), _char(SEPARATOR), _int(release),
-					info==null ? "" : " "+info);
-		}
+//		/**
+//		 * @see de.ims.icarus2.util.version.Version#toString()
+//		 */
+//		@Override
+//		public String toString() {
+//			return String.format("%d%s%d%s%d%s",
+//					_int(major), _char(SEPARATOR), _int(minor), _char(SEPARATOR), _int(release),
+//					info==null ? "" : " "+info);
+//		}
 
 		/**
 		 * @see de.ims.icarus2.util.version.Version#equals(java.lang.Object)

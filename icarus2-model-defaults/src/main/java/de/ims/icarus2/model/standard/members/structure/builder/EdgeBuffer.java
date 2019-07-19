@@ -32,6 +32,7 @@ import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.StructureType;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.ArrayUtils;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
@@ -44,8 +45,8 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  */
 public class EdgeBuffer {
 
-	private static final int UNSET_INT = -1;
-	private static final int VISITED_INT = -2;
+	private static final int UNSET_INT = IcarusUtils.UNSET_INT;
+	private static final int VISITED_INT = UNSET_INT-1;
 
 	private final Map<Item, NodeInfo> data = new Object2ObjectOpenHashMap<>(200);
 

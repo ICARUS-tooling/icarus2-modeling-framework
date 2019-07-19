@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.util.strings;
 
+import static java.util.Objects.requireNonNull;
+
 import java.text.DecimalFormat;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -47,23 +49,22 @@ public class ToStringBuilder {
 	/**
 	 * Creates a fresh new builder that will automatically prepend
 	 * the given target's class name to the field list and also wrap
-	 * the field list into {@link #DEFAULT_BRACKET_STYLE brackets}.
+	 * the entire output into {@link #DEFAULT_BRACKET_STYLE brackets}.
 	 */
 	public static ToStringBuilder create(Object target) {
-		return new ToStringBuilder(DEFAULT_BRACKET_STYLE)
-				.add(DEFAULT_BRACKET_STYLE.openingBracket)
-				.add(target.getClass().getSimpleName());
+		return create(target, DEFAULT_BRACKET_STYLE);
 	}
 
 	/**
 	 * Creates a fresh new builder that will automatically prepend
 	 * the given target's class name to the field list and also wrap
-	 * the field list into brackets of the specified style.
+	 * the entire output into brackets of the specified style.
 	 */
 	public static ToStringBuilder create(Object target, BracketStyle bracketStyle) {
 		return new ToStringBuilder(bracketStyle)
+				.add(bracketStyle.openingBracket)
 				.add(target.getClass().getSimpleName())
-				.add(bracketStyle.openingBracket);
+				.requireSpace();
 	}
 
 	private final StringBuilder buffer;
@@ -71,13 +72,18 @@ public class ToStringBuilder {
 
 	private boolean closed;
 	private boolean needsDelimiter;
-
+	private boolean needsSpace;
 
 	private DecimalFormat decimalFormat, fractionDecimalFormat;
 
 	private ToStringBuilder(BracketStyle bracketStyle) {
 		this.bracketStyle = bracketStyle;
 		buffer = new StringBuilder(50);
+	}
+
+	private ToStringBuilder requireSpace() {
+		needsSpace = true;
+		return this;
 	}
 
 	private String format(long value) {
@@ -94,24 +100,32 @@ public class ToStringBuilder {
 		return fractionDecimalFormat.format(value);
 	}
 
+	private void maybeAddSpace() {
+		if(needsSpace) {
+			buffer.append(' ');
+			needsSpace = false;
+		}
+	}
+
 	public ToStringBuilder add(String s) {
+		requireNonNull(s);
+		maybeAddSpace();
 		buffer.append(s);
 		return this;
 	}
 
 	public ToStringBuilder add(char c) {
+		maybeAddSpace();
 		buffer.append(c);
 		return this;
 	}
 
 	public ToStringBuilder add(String name, String value) {
+		maybeAddSpace();
+
 		// Add field separator if needed
 		if(needsDelimiter) {
-			buffer.append(',');
-		}
-		// Add space if we have _any_ content
-		if(buffer.length()>1) { // >1 check to not add accidental space after initial bracket
-			buffer.append(' ');
+			buffer.append(", ");
 		}
 
 		buffer.append(name).append('=').append(value);
@@ -121,7 +135,7 @@ public class ToStringBuilder {
 	}
 
 	public ToStringBuilder add(String name, Object value) {
-		return add(name, value==null ? "null" : value.toString());
+		return add(name, value==null ? null : value.toString());
 	}
 
 	public ToStringBuilder add(String name, byte value) {
@@ -160,7 +174,7 @@ public class ToStringBuilder {
 		return add(name, format(value));
 	}
 
-	public ToStringBuilder append(String name, double value) {
+	public ToStringBuilder add(String name, double value) {
 		return add(name, String.valueOf(value));
 	}
 

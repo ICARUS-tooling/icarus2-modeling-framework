@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import de.ims.icarus2.util.collections.CollectionUtils;
-import de.ims.icarus2.util.strings.StringUtil;
+import de.ims.icarus2.util.strings.ToStringBuilder;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
@@ -490,24 +490,17 @@ public class FootprintBuffer implements MemoryFootprint {
 	 */
 	@Override
 	public String toString() {
-		if(finished) {
-			StringBuilder sb = new StringBuilder();
-
-			sb.append('[');
-			sb.append("Memory Footprint: root=").append(rootObject) //$NON-NLS-1$
-				.append(" totalBytes=").append(StringUtil.formatDecimal(footprint)) //$NON-NLS-1$
-				.append(" references=").append(StringUtil.formatDecimal(referenceCount)) //$NON-NLS-1$
-				.append(" uplinks=").append(StringUtil.formatDecimal(uplinkCount)) //$NON-NLS-1$
-				.append(" downlinks=").append(StringUtil.formatDecimal(downlinkCount)) //$NON-NLS-1$
-				.append(" objects=").append(StringUtil.formatDecimal(objectCount)) //$NON-NLS-1$
-				.append(" primitives=").append(StringUtil.formatDecimal(primitivesCount)) //$NON-NLS-1$
-				.append(" arrays=").append(StringUtil.formatDecimal(arrayCount)); //$NON-NLS-1$
-			sb.append(']');
-
-			return sb.toString();
-		}
-
-		return super.toString();
+		return ToStringBuilder.create(this)
+			.add("finished", finished)
+			.add("root", rootObject)
+			.addFormatted("totalBytes", footprint)
+			.addFormatted("references", referenceCount)
+			.addFormatted("uplinks", uplinkCount)
+			.addFormatted("downlinks", downlinkCount)
+			.addFormatted("objects", objectCount)
+			.addFormatted("primitives", primitivesCount)
+			.addFormatted("arrays", arrayCount)
+			.build();
 	}
 
 	private ClassInfo getClassInfo(Class<?> clazz) {

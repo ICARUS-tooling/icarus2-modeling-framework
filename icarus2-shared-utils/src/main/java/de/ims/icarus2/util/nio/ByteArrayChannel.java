@@ -25,6 +25,7 @@ import java.nio.channels.SeekableByteChannel;
 import java.util.Arrays;
 
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.strings.ToStringBuilder;
 
 /**
  * @author Markus Gärtner
@@ -226,13 +227,11 @@ public class ByteArrayChannel implements SeekableByteChannel {
 	 */
 	@Override
 	public String toString() {
-		return new StringBuilder(getClass().getName())
-				.append("[")
-				.append("size=").append(size).append(", ")
-				.append("position=").append(position).append(", ")
-				.append("readOnly=").append(readOnly).append(", ")
-				.append("dataHash=").append(Arrays.hashCode(data))
-				.append("]")
-				.toString();
+		return ToStringBuilder.create(this)
+				.addFormatted("size", size)
+				.addFormatted("position", position)
+				.add("readOnly", readOnly)
+				.add("dataHash", Arrays.hashCode(data))
+				.build();
 	}
 }
