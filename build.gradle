@@ -30,7 +30,7 @@ description = 'ICARUS 2 framework root'
 	
 // Gradle Wrapper
 wrapper { 
-	// to upgrade wrapper: ./gradlew wrapper --gradle-version <version> --distribution-type bin
+	// to upgrade wrapper: ./gradlew wrapper --distribution-type bin --gradle-version <version>
 	gradleVersion = "5.3.1" 
 }
 
@@ -105,38 +105,38 @@ subprojects {
 	
 		// COMPILE ENVIRONMENT
 		
-		spotbugs "net.jcip:jcip-annotations:${versions.jcipVersion}"
-  		spotbugs "com.github.spotbugs:spotbugs:${versions.spotbugsVersion}"
-		spotbugs "com.github.spotbugs:spotbugs-annotations:${versions.spotbugsVersion}"
+		spotbugs "net.jcip:jcip-annotations:${versions.jcip}"
+  		spotbugs "com.github.spotbugs:spotbugs:${versions.spotbugs}"
+		spotbugs "com.github.spotbugs:spotbugs-annotations:${versions.spotbugs}"
 		
 		// RUNTIME ENVIRONMENT
 	
 	    // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-		slf4j "org.slf4j:slf4j-api:${versions.slf4jVersion}"
+		slf4j "org.slf4j:slf4j-api:${versions.slf4j}"
 	
 	    // https://mvnrepository.com/artifact/com.google.guava/guava
-		guava "com.google.guava:guava:${versions.guavaVersion}"
+		guava "com.google.guava:guava:${versions.guava}"
 	
 	    // https://mvnrepository.com/artifact/it.unimi.dsi/fastutil
-		fastutil "it.unimi.dsi:fastutil:${versions.fastutilVersion}"
+		fastutil "it.unimi.dsi:fastutil:${versions.fastutil}"
 	
 	    // https://mvnrepository.com/artifact/com.squareup/javapoet
-		javapoet "com.squareup:javapoet:${versions.javapoetVersion}"
+		javapoet "com.squareup:javapoet:${versions.javapoet}"
 	    
 	    // https://mvnrepository.com/artifact/xerces/xercesImpl
-		xerces "xerces:xercesImpl:${versions.xercesVersion}"
+		xerces "xerces:xercesImpl:${versions.xerces}"
 	  
 	  	// https://mvnrepository.com/artifact/org.apache.lucene/lucene-core
-		lucene "org.apache.lucene:lucene-core:${versions.luceneVersion}"
+		lucene "org.apache.lucene:lucene-core:${versions.lucene}"
 		
 		// https://github.com/apiguardian-team/apiguardian
-		apiguardian "org.apiguardian:apiguardian-api:${versions.apiguardianVersion}"		
+		apiguardian "org.apiguardian:apiguardian-api:${versions.apiguardian}"		
 		// https://github.com/apiguardian-team/apiguardian
-		apiguardian "com.google.code.findbugs:jsr305:${versions.jsr305Version}"
+		apiguardian "com.google.code.findbugs:jsr305:${versions.jsr305}"
 			
 		// TEST ENVIRONMENT
 		
-		junit platform("org.junit:junit-bom:${versions.junitVersion}")
+		junit platform("org.junit:junit-bom:${versions.junit}")
 		    
 	    // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
 		junit "org.junit.jupiter:junit-jupiter-api"
@@ -149,18 +149,18 @@ subprojects {
 		junit "org.junit.platform:junit-platform-launcher"
 		
 		// https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14
-		slf4jTest "org.slf4j:slf4j-jdk14:${versions.slf4jVersion}"
+		slf4jTest "org.slf4j:slf4j-jdk14:${versions.slf4j}"
 			
 	    // https://mvnrepository.com/artifact/org.mockito/mockito-core
-		mockito "org.mockito:mockito-core:${versions.mockitoVersion}"
+		mockito "org.mockito:mockito-core:${versions.mockito}"
 	  
 		// https://mvnrepository.com/artifact/com.fasterxml.uuid/java-uuid-generator
-		uuid "com.fasterxml.uuid:java-uuid-generator:${versions.uuidVersion}"
+		uuid "com.fasterxml.uuid:java-uuid-generator:${versions.uuid}"
 		
 		jmhCompile project
-		benchmark "org.openjdk.jmh:jmh-core:${versions.jmhVersion}"
-		benchmark "org.openjdk.jmh:jmh-generator-annprocess:${versions.jmhVersion}"
-		jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.20'
+		benchmark "org.openjdk.jmh:jmh-core:${versions.jmh}"
+		benchmark "org.openjdk.jmh:jmh-generator-annprocess:${versions.jmh}"
+		jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:${versions.jmhAp}'
 	}
   	
   	tasks.withType(JavaCompile) {
@@ -264,6 +264,7 @@ subprojects {
 	
 	javadoc {
 	    options.encoding = 'UTF-8'
+		failOnError = false
 	}
 	
 	// Automatic license analysis for dependencies
@@ -350,8 +351,20 @@ subprojects {
 	    from sourceSets.test.output
 	}
 	
+	// Create a jar with javadoc
+	task javadocJar(type: Jar) {
+		classifier = 'javadoc'
+		from javadoc
+	}
+
+	// Create a jar with soruces
+	task sourcesJar(type: Jar) {
+		classifier = 'sources'
+		from sourceSets.main.allSource
+	}
+	
 	artifacts {
-	    tests testJar
+	    tests jar, testJar, javadocJar, sourcesJar
 	}
 }
 
