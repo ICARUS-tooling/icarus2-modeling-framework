@@ -21,19 +21,18 @@ import java.util.EnumSet;
 import java.util.function.Predicate;
 
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.events.CorpusLifecycleListener;
 import de.ims.icarus2.model.api.io.FileManager;
 import de.ims.icarus2.model.api.io.resources.ResourceProvider;
-import de.ims.icarus2.model.api.members.CorpusMember;
 import de.ims.icarus2.model.api.view.paged.CorpusModel;
 import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
+import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.annotations.OptionalMethod;
 import de.ims.icarus2.util.id.Identity;
 
@@ -103,7 +102,7 @@ import de.ims.icarus2.util.id.Identity;
  *
  * @author Markus Gärtner
  *
- * @see CorpusRegistry
+ * @see ManifestRegistry
  */
 public interface CorpusManager {
 
@@ -224,14 +223,14 @@ public interface CorpusManager {
 	 * @throws InterruptedException
 	 * @throws ModelException if the specified {@code corpus} is not currently connected
 	 */
-	void disconnect(CorpusManifest corpus) throws InterruptedException;
+	void disconnect(CorpusManifest corpus) throws InterruptedException, AccumulatingException;
 
 	/**
 	 * Disconnects all currently connected corpora, in reverse to the order they were connected to.
 	 *
 	 * @throws InterruptedException
 	 */
-	void shutdown() throws InterruptedException;
+	void shutdown() throws InterruptedException, AccumulatingException;
 
 	/**
 	 * Returns {@code true} if the given {@code corpus} has been connected and is not yet
@@ -328,6 +327,11 @@ public interface CorpusManager {
 	 * Returns a collection of all {@code Corpus} instances this manager has created and
 	 * which are not yet completely disconnected. Note that only the manifests for
 	 * those corpora are returned!
+	 * <p>
+	 * The returned collection is for all practical purposes equal to the one returned by
+	 * {@link #getConnectedCorpora()}, but it is implementation specific, whether the latter
+	 * method is actually overridden to not use the default {@link #getCorpora(CorpusState)}
+	 * method in the background.
 	 *
 	 * @return
 	 */
@@ -357,20 +361,19 @@ public interface CorpusManager {
 		return getCorpora(CorpusState.DISABLED);
 	}
 
-	public static CorpusManager getManager(CorpusMember member) {
-		return member.getCorpus().getManager();
-	}
-
-	public static CorpusManager getManager(Context context) {
-		return context.getCorpus().getManager();
-	}
-
 	// Optional "plugin" mechanics
 
+	default boolean isSupportPlugins() {
+		return false;
+	}
+
+	@OptionalMethod
 	Collection<String> availableExtensions(String extensionPointUid);
 
+	@OptionalMethod
 	Class<?> resolveExtension(String extensionUid) throws ClassNotFoundException;
 
+	@OptionalMethod
 	ClassLoader getPluginClassLoader(String pluginUid);
 
 	default ClassLoader getImplementationClassLoader(ImplementationManifest manifest) {

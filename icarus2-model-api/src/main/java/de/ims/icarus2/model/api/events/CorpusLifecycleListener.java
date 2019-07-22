@@ -72,4 +72,26 @@ public interface CorpusLifecycleListener {
 	 * @param corpus the manifest of the corpus that got disabled
 	 */
 	void corpusDisabled(CorpusManager manager, CorpusManifest corpus);
+
+//	public enum LifecycleChange {
+//		/**
+//		 * The given {@code corpus} was connected successfully and can now be interacted with.
+//		 */
+//		CONNECTED,
+//		/**
+//		 * The specified {@code corpus} was disconnected successfully and is no longer available
+//		 * for interaction. All previously held references of the former live corpus should be
+//		 * discarded immediately, since their behavior might be unpredictable or unstable.
+//		 */
+//		DOSCONNECTED,
+//		/**
+//		 * The given {@code corpus} was previously disabled and now got enabled again.
+//		 */
+//		ENABLED,
+//		/**
+//		 * The given {@code corpus} was previously enabled and now got disabled by client code.
+//		 */
+//		DISABLED
+//		;
+//	}
 }

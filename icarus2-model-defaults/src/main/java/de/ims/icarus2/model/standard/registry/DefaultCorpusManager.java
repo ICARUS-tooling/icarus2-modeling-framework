@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -38,7 +39,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.StampedLock;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
 import de.ims.icarus2.GlobalErrorCode;
@@ -64,6 +65,7 @@ import de.ims.icarus2.model.standard.corpus.DefaultCorpus;
 import de.ims.icarus2.model.standard.io.DefaultFileManager;
 import de.ims.icarus2.model.standard.registry.metadata.VirtualMetadataRegistry;
 import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.id.Identity;
@@ -89,7 +91,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	private final FileManager fileManager;
 	private final ResourceProvider resourceProvider;
 
-	private final Function<CorpusManifest, Corpus> corpusProducer;
+	private final BiFunction<CorpusManager, CorpusManifest, Corpus> corpusProducer;
 
 	/**
 	 * Current state of corpora. Must never contain corpora that are 'only' enabled!
@@ -97,9 +99,11 @@ public class DefaultCorpusManager implements CorpusManager {
 	private final Map<CorpusManifest, CorpusManager.CorpusState> states = new HashMap<>();
 
 	/**
-	 * Mapping of corpora that are truly live (i.e. properly connected)
+	 * Mapping of corpora that are truly live (i.e. properly connected).
+	 * Chosen to be a linked map as we need the order in which corpora got connected
+	 * for the proper shutdown sequence.
 	 */
-	private final Map<CorpusManifest, Corpus> liveCorpora = new HashMap<>();
+	private final Map<CorpusManifest, Corpus> liveCorpora = new LinkedHashMap<>();
 
 	/**
 	 * Global lock to synchronize manipulation of corpora that are under control
@@ -127,26 +131,21 @@ public class DefaultCorpusManager implements CorpusManager {
 
 		corpusProducer = builder.getCorpusProducer();
 
-		Properties clientProperties = new Properties();
-
-		if(builder.getProperties()!=null) {
-			builder.getProperties().forEach(clientProperties::setProperty);
-		} else if(builder.getPropertiesFile()!=null) {
-			readProperties(clientProperties, builder.getPropertiesFile());
-		} else if(builder.getPropertiesUrl()!=null) {
-			readProperties(clientProperties, builder.getPropertiesUrl());
-		}
-
 		// Attempt to load default properties
-		properties = new Properties();
+		Properties defaultProperties = new Properties();
 		URL defaultPropertiesUrl = DefaultCorpusManager.class.getResource("default-properties.ini");
 		if(defaultPropertiesUrl==null)
 			throw new ModelException(GlobalErrorCode.INTERNAL_ERROR, "Unable to load default properties");
-		readProperties(properties, defaultPropertiesUrl);
+		readProperties(defaultProperties, defaultPropertiesUrl);
 
-		// Now override with client properties
-		if(!clientProperties.isEmpty()) {
-			properties.putAll(clientProperties);
+		properties = new Properties(defaultProperties);
+
+		if(builder.getProperties()!=null) {
+			builder.getProperties().forEach(properties::setProperty);
+		} else if(builder.getPropertiesFile()!=null) {
+			readProperties(properties, builder.getPropertiesFile());
+		} else if(builder.getPropertiesUrl()!=null) {
+			readProperties(properties, builder.getPropertiesUrl());
 		}
 	}
 
@@ -411,6 +410,7 @@ public class DefaultCorpusManager implements CorpusManager {
 
 			// Everything went smooth -> set live state and notify
 
+			liveCorpora.put(manifest, corpus);
 			setStateUnsafe(manifest, CorpusManager.CorpusState.CONNECTED);
 			fireCorpusConnected(corpus);
 
@@ -425,9 +425,9 @@ public class DefaultCorpusManager implements CorpusManager {
 
 		Corpus corpus = null;
 
-		Function<CorpusManifest, Corpus> corpusProducer = this.corpusProducer;
+		BiFunction<CorpusManager, CorpusManifest, Corpus> corpusProducer = this.corpusProducer;
 		if(corpusProducer!=null) {
-			corpus = corpusProducer.apply(manifest);
+			corpus = corpusProducer.apply(this, manifest);
 		} else {
 			corpus = instantiate(manifest);
 		}
@@ -453,7 +453,6 @@ public class DefaultCorpusManager implements CorpusManager {
 	 * @return
 	 * @throws InterruptedException
 	 */
-	@SuppressWarnings("resource")
 	protected Corpus instantiate(CorpusManifest manifest) throws InterruptedException {
 
 		return DefaultCorpus.newBuilder()
@@ -467,57 +466,102 @@ public class DefaultCorpusManager implements CorpusManager {
 	 * @see de.ims.icarus2.model.api.registry.CorpusManager#disconnect(de.ims.icarus2.model.manifest.api.CorpusManifest)
 	 */
 	@Override
-	public void disconnect(CorpusManifest manifest) throws InterruptedException {
+	public void disconnect(CorpusManifest manifest) throws InterruptedException, AccumulatingException {
 		requireNonNull(manifest);
 
 		long stamp = lock.writeLockInterruptibly();
 		try {
-			// For internal sanity checks
-			getStateUnsafe(manifest, false);
-
-			// First transition and notification
-			setStateUnsafe(manifest, CorpusManager.CorpusState.DISCONNECTING);
-			fireCorpusChanged(manifest);
-
-			// Now destroy corpus
-
-			Corpus corpus = liveCorpora.get(manifest);
-
-			try {
-				destroy(corpus);
-				// Reset to null is indicator for successful destruction
-				corpus = null;
-			} finally {
-
-				// Corpus not being null means destruction failed -> mark as bad and notify
-				if(corpus!=null) {
-					setStateUnsafe(manifest, CorpusManager.CorpusState.BAD);
-					fireCorpusChanged(manifest);
-				}
-			}
-
-			// Everything went smooth -> remove corpus, set state and notify
-
-			liveCorpora.remove(manifest);
-			setStateUnsafe(manifest, CorpusManager.CorpusState.ENABLED);
-			fireCorpusDisconnected(manifest);
-
+			disconnectUnsafe(manifest);
 		} finally {
 			lock.unlockWrite(stamp);
 		}
 	}
 
-	protected void destroy(Corpus corpus) throws InterruptedException {
-		//TODO close corpus
+	/**
+	 * Disconnects the given corpus, but does not acquire locks. This is the responsibility
+	 * of whatever code calls this method!!!
+	 *
+	 * @param manifest
+	 * @throws InterruptedException
+	 * @throws AccumulatingException
+	 */
+	private void disconnectUnsafe(CorpusManifest manifest) throws InterruptedException, AccumulatingException {
+		// For internal sanity checks
+		CorpusState oldState = getStateUnsafe(manifest, false);
+		if(oldState==CorpusState.DISCONNECTING) {
+			return;
+		}
+		if(oldState!=CorpusState.CONNECTED)
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+					String.format("Cannot dosconnect manifest %s in state %s",
+							getName(manifest), oldState));
+
+		// First transition and notification
+		setStateUnsafe(manifest, CorpusManager.CorpusState.DISCONNECTING);
+		fireCorpusChanged(manifest);
+
+		// Now destroy corpus
+		Corpus corpus = liveCorpora.get(manifest);
+		try {
+			destroy(corpus);
+			// Reset to null is indicator for successful destruction
+			corpus = null;
+		} finally {
+
+			// Corpus not being null means destruction failed -> mark as bad and notify
+			if(corpus!=null) {
+				setStateUnsafe(manifest, CorpusManager.CorpusState.BAD);
+				fireCorpusChanged(manifest);
+			}
+		}
+
+		// Everything went smooth -> remove corpus, set state and notify
+
+		liveCorpora.remove(manifest);
+		setStateUnsafe(manifest, CorpusManager.CorpusState.ENABLED);
+		fireCorpusDisconnected(manifest);
+
+	}
+
+	/**
+	 * Hook for subclasses to implement more elaborate shutdown procedures for
+	 * individual corpora. The default implementation simply calls
+	 * {@link Corpus#close()}.
+	 */
+	protected void destroy(Corpus corpus) throws InterruptedException, AccumulatingException {
+		corpus.close();
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.api.registry.CorpusManager#shutdown()
 	 */
 	@Override
-	public void shutdown() throws InterruptedException {
-		// TODO close down all corpora
+	public void shutdown() throws InterruptedException, AccumulatingException {
+		long stamp = lock.writeLockInterruptibly();
+		try {
+			List<CorpusManifest> pendingCorpora = new ArrayList<>(liveCorpora.keySet());
+			if(pendingCorpora.isEmpty()) {
+				return;
+			}
 
+			AccumulatingException.Buffer exceptionBuffer = new AccumulatingException.Buffer();
+			for(CorpusManifest manifest : pendingCorpora) {
+				try {
+					//TODO do we need to add measures for suppressing events at this stage?
+					disconnectUnsafe(manifest);
+				} catch (AccumulatingException e) {
+					exceptionBuffer.addExceptionsFrom(e);
+				}
+			}
+
+			// Throw all exceptions combined
+			if(!exceptionBuffer.isEmpty()) {
+				exceptionBuffer.setMessage("Failed to shutdown corpora");
+				throw exceptionBuffer.toException();
+			}
+		} finally {
+			lock.unlockWrite(stamp);
+		}
 	}
 
 	/**
@@ -763,6 +807,8 @@ public class DefaultCorpusManager implements CorpusManager {
 
 		long stamp = lock.readLock();
 		try {
+			//TODO currently we can't return 'enabled' manifests
+
 			Set<Entry<CorpusManifest, CorpusState>> entries = states.entrySet();
 
 			if(entries.isEmpty()) {
@@ -833,7 +879,7 @@ public class DefaultCorpusManager implements CorpusManager {
 		private FileManager fileManager;
 		private ResourceProvider resourceProvider;
 
-		private Function<CorpusManifest, Corpus> corpusProducer;
+		private BiFunction<CorpusManager, CorpusManifest, Corpus> corpusProducer;
 
 		private Map<String, String> properties;
 
@@ -864,7 +910,7 @@ public class DefaultCorpusManager implements CorpusManager {
 			return fileManager;
 		}
 
-		public Function<CorpusManifest, Corpus> getCorpusProducer() {
+		public BiFunction<CorpusManager, CorpusManifest, Corpus> getCorpusProducer() {
 			return corpusProducer;
 		}
 
@@ -940,7 +986,8 @@ public class DefaultCorpusManager implements CorpusManager {
 			return thisAsCast();
 		}
 
-		public Builder corpusProducer(Function<CorpusManifest, Corpus> corpusProducer) {
+		public Builder corpusProducer(
+				BiFunction<CorpusManager, CorpusManifest, Corpus> corpusProducer) {
 			requireNonNull(corpusProducer);
 			checkState("Corpus producer already set", this.corpusProducer==null);
 
