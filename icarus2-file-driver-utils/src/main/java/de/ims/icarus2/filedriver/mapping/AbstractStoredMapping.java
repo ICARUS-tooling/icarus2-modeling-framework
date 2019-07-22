@@ -34,9 +34,9 @@ import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
 import de.ims.icarus2.model.api.driver.mapping.WritableMapping;
 import de.ims.icarus2.model.api.io.SynchronizedAccessor;
-import de.ims.icarus2.model.api.io.resources.IOResource;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
+import de.ims.icarus2.util.io.resource.IOResource;
 
 /**
  * Abstract base class for {@code Mapping} implementations that store mapping data.

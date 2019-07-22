@@ -20,9 +20,9 @@ import static java.util.Objects.requireNonNull;
 
 import java.nio.file.Path;
 
-import de.ims.icarus2.model.api.io.resources.ResourceProvider;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.util.LazyStore;
+import de.ims.icarus2.util.io.resource.ResourceProvider;
 
 /**
  * Models access to resources associated to corpora or the

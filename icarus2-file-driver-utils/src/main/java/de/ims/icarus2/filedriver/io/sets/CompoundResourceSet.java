@@ -22,7 +22,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.Arrays;
 import java.util.List;
 
-import de.ims.icarus2.model.api.io.resources.IOResource;
+import de.ims.icarus2.util.io.resource.IOResource;
 
 /**
  * @author Markus Gärtner

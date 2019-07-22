@@ -21,13 +21,12 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.channels.Channels;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
-import java.util.WeakHashMap;
 import java.util.function.BiConsumer;
 
 import org.slf4j.Logger;
@@ -37,6 +36,8 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.util.annotations.TestableImplementation;
+import de.ims.icarus2.util.io.IOUtil;
+import de.ims.icarus2.util.io.resource.IOResource;
 
 /**
  * @author Markus Gärtner
@@ -60,50 +61,25 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 
 	private int changedEntryCount = 0;
 
-	private final Path file;
+	private final IOResource resource;
+	private final Charset encoding;
 
-	private static final Map<Path, PlainMetadataRegistry> instances = new WeakHashMap<>();
-
-	public static PlainMetadataRegistry getSharedRegistry(Path file) {
-		requireNonNull(file);
-
-		synchronized (instances) {
-			PlainMetadataRegistry registry = instances.get(file);
-
-			if(registry==null) {
-				registry = new PlainMetadataRegistry(file);
-				instances.put(file, registry);
-			}
-
-			return registry;
-		}
+	public PlainMetadataRegistry(IOResource resource) {
+		this(resource, StandardCharsets.UTF_8);
 	}
 
-	private static void shutdown(PlainMetadataRegistry storage) {
-		synchronized (instances) {
-			try {
-				// Ensure the data gets saved properly
-				storage.synchronize();
-			} finally {
-				// Finally discard storage
-				instances.remove(storage.getFile());
-			}
-		}
+	public PlainMetadataRegistry(IOResource resource, Charset encoding) {
+		this.resource = requireNonNull(resource);
+		this.encoding = requireNonNull(encoding);
 	}
 
-	private PlainMetadataRegistry(Path file) {
-		requireNonNull(file);
-
-		this.file = file;
-	}
-
-	public Path getFile() {
-		return file;
+	public IOResource getResource() {
+		return resource;
 	}
 
 	@Override
 	public synchronized void close() {
-		shutdown(this);
+		synchronize();
 	}
 
 	/**
@@ -114,7 +90,7 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 		try {
 			load();
 		} catch (IOException e) {
-			log.error("Failed to load value storage from file", e); //$NON-NLS-1$
+			log.error("Failed to load value storage", e);
 			//FIXME propagate error?
 		}
 	}
@@ -125,7 +101,7 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 			try {
 				saveNow();
 			} catch (IOException e) {
-				log.error("Failed to synchronize value storage to file", e); //$NON-NLS-1$
+				log.error("Failed to synchronize value storage", e);
 			}
 		}
 	}
@@ -142,8 +118,8 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 		Properties tmp = new Properties();
 		tmp.putAll(entries);
 
-		Writer writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8);
-		try {
+		try (Writer writer = Channels.newWriter(resource.getWriteChannel(),
+				encoding.newEncoder(), IOUtil.DEFAULT_BUFFER_SIZE)) {
 			tmp.store(writer, null);
 		} finally {
 			changedEntryCount -= tmp.size();
@@ -159,7 +135,7 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 			try {
 				load();
 			} catch (IOException e) {
-				log.error("Failed to load value storage: {}", getFile(), e); //$NON-NLS-1$
+				log.error("Failed to load value storage: {}", getResource(), e);
 			}
 
 			return !entries.isEmpty();
@@ -175,8 +151,10 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 	public void load() throws IOException {
 		Properties prop = new Properties();
 
-		Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8);
-		prop.load(reader);
+		try(Reader reader = Channels.newReader(resource.getReadChannel(),
+				encoding.newDecoder(), IOUtil.DEFAULT_BUFFER_SIZE)) {
+			prop.load(reader);
+		}
 
 		@SuppressWarnings("rawtypes")
 		Map tmp = prop;
@@ -242,9 +220,9 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 		entries.clear();
 
 		try {
-			Files.delete(file);
+			resource.delete();
 		} catch (IOException e) {
-			throw new ModelException(GlobalErrorCode.IO_ERROR, "Failed to delete registry file");
+			throw new ModelException(GlobalErrorCode.IO_ERROR, "Failed to delete registry resource");
 		}
 	}
 

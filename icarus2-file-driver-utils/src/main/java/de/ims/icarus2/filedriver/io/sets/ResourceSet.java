@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.ObjIntConsumer;
 
-import de.ims.icarus2.model.api.io.resources.IOResource;
+import de.ims.icarus2.util.io.resource.IOResource;
 
 /**
  * Stores a collection of (file) resources together with their respective checksums.

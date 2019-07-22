@@ -38,9 +38,9 @@ import de.ims.icarus2.filedriver.mapping.chunks.ChunkArrays.ArrayAdapter;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.io.SynchronizedAccessor;
-import de.ims.icarus2.model.api.io.resources.IOResource;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.io.resource.IOResource;
 
 /**
  *

@@ -25,7 +25,6 @@ import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.events.CorpusLifecycleListener;
 import de.ims.icarus2.model.api.io.FileManager;
-import de.ims.icarus2.model.api.io.resources.ResourceProvider;
 import de.ims.icarus2.model.api.view.paged.CorpusModel;
 import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
@@ -35,6 +34,7 @@ import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.annotations.OptionalMethod;
 import de.ims.icarus2.util.id.Identity;
+import de.ims.icarus2.util.io.resource.ResourceProvider;
 
 /**
  * The {@code CorpusManager} is responsible for creating and managing live {@link Corpus corpora}

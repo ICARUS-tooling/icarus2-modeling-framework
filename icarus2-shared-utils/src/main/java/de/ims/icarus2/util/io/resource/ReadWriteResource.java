@@ -14,12 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.ims.icarus2.model.api.io.resources;
+package de.ims.icarus2.util.io.resource;
 
 import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.AccessMode;
 
 /**
@@ -36,16 +36,16 @@ public abstract class ReadWriteResource implements IOResource {
 
 	protected void checkWriteAccess() {
 		if(!accessMode.isWrite())
-			throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "No write access specified for resource: "+this);
+			throw new IcarusRuntimeException(GlobalErrorCode.UNSUPPORTED_OPERATION, "No write access specified for resource: "+this);
 	}
 
 	protected void checkReadAccess() {
 		if(!accessMode.isRead())
-			throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "No read access specified for resource: "+this);
+			throw new IcarusRuntimeException(GlobalErrorCode.UNSUPPORTED_OPERATION, "No read access specified for resource: "+this);
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.io.resources.IOResource#getAccessMode()
+	 * @see de.ims.icarus2.util.io.resource.IOResource#getAccessMode()
 	 */
 	@Override
 	public AccessMode getAccessMode() {

@@ -14,13 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.ims.icarus2.model.api.io.resources;
+package de.ims.icarus2.util.io.resource;
 
 import java.io.IOException;
 import java.nio.channels.SeekableByteChannel;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.io.IOUtil;
@@ -57,7 +57,7 @@ public class VirtualIOResource extends ReadWriteResource {
 		super(accessMode);
 
 		if(capacity<0 || capacity>IcarusUtils.MAX_INTEGER_INDEX)
-			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT,
 					"Capacity must be 0<=capacity<=MAX_INDEX: "+capacity);
 
 		this.capacity = capacity;
@@ -70,12 +70,12 @@ public class VirtualIOResource extends ReadWriteResource {
 
 	private void checkOpen() {
 		if(buffer==null || !buffer.isOpen())
-			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE,
 					"Buffer not prepared");
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.io.resources.IOResource#getWriteChannel()
+	 * @see de.ims.icarus2.util.io.resource.IOResource#getWriteChannel()
 	 */
 	@Override
 	public SeekableByteChannel getWriteChannel() throws IOException {
@@ -86,7 +86,7 @@ public class VirtualIOResource extends ReadWriteResource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.io.resources.IOResource#getReadChannel()
+	 * @see de.ims.icarus2.util.io.resource.IOResource#getReadChannel()
 	 */
 	@Override
 	public SeekableByteChannel getReadChannel() throws IOException {
@@ -97,7 +97,7 @@ public class VirtualIOResource extends ReadWriteResource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.io.resources.IOResource#delete()
+	 * @see de.ims.icarus2.util.io.resource.IOResource#delete()
 	 */
 	@Override
 	public void delete() throws IOException {
@@ -110,7 +110,7 @@ public class VirtualIOResource extends ReadWriteResource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.io.resources.IOResource#prepare()
+	 * @see de.ims.icarus2.util.io.resource.IOResource#prepare()
 	 */
 	@Override
 	public void prepare() throws IOException {
@@ -122,7 +122,7 @@ public class VirtualIOResource extends ReadWriteResource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.io.resources.IOResource#size()
+	 * @see de.ims.icarus2.util.io.resource.IOResource#size()
 	 */
 	@Override
 	public long size() throws IOException {

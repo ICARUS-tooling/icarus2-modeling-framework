@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.ims.icarus2.model.api.io.resources;
+package de.ims.icarus2.util.io.resource;
 
 import java.util.regex.PatternSyntaxException;
 

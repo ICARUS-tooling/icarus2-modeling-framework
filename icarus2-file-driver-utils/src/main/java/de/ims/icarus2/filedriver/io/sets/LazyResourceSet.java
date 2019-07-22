@@ -27,9 +27,9 @@ import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.io.PathResolver;
 import de.ims.icarus2.model.api.io.ResourcePath;
-import de.ims.icarus2.model.api.io.resources.FileResource;
-import de.ims.icarus2.model.api.io.resources.IOResource;
-import de.ims.icarus2.model.api.io.resources.ReadOnlyURLResource;
+import de.ims.icarus2.util.io.resource.FileResource;
+import de.ims.icarus2.util.io.resource.IOResource;
+import de.ims.icarus2.util.io.resource.ReadOnlyURLResource;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 

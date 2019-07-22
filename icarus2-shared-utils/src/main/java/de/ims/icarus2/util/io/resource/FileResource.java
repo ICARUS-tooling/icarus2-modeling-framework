@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.ims.icarus2.model.api.io.resources;
+package de.ims.icarus2.util.io.resource;
 
 import static java.util.Objects.requireNonNull;
 
@@ -26,8 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.api.ModelErrorCode;
-import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.AccessMode;
 
 /**
@@ -57,7 +56,7 @@ public final class FileResource extends ReadWriteResource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.io.resources.IOResource#getWriteChannel()
+	 * @see de.ims.icarus2.util.io.resource.IOResource#getWriteChannel()
 	 */
 	@Override
 	public SeekableByteChannel getWriteChannel() throws IOException {
@@ -67,7 +66,7 @@ public final class FileResource extends ReadWriteResource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.io.resources.IOResource#getReadChannel()
+	 * @see de.ims.icarus2.util.io.resource.IOResource#getReadChannel()
 	 */
 	@Override
 	public SeekableByteChannel getReadChannel() throws IOException {
@@ -77,7 +76,7 @@ public final class FileResource extends ReadWriteResource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.io.resources.IOResource#delete()
+	 * @see de.ims.icarus2.util.io.resource.IOResource#delete()
 	 */
 	@Override
 	public void delete() throws IOException {
@@ -87,7 +86,7 @@ public final class FileResource extends ReadWriteResource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.io.resources.IOResource#prepare()
+	 * @see de.ims.icarus2.util.io.resource.IOResource#prepare()
 	 */
 	@Override
 	public void prepare() throws IOException {
@@ -98,18 +97,18 @@ public final class FileResource extends ReadWriteResource {
 			try {
 				Files.createFile(file);
 			} catch (IOException e) {
-				throw new ModelException(ModelErrorCode.DRIVER_INDEX_IO,
-						"Failed to open managed resource", e); //$NON-NLS-1$
+				throw new IcarusRuntimeException(GlobalErrorCode.IO_ERROR,
+						"Failed to open managed resource", e);
 			}
 		}
 
 		if(!Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS))
-			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
-					"Supplied file is not regular file: "+file); //$NON-NLS-1$
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE,
+					"Supplied file is not regular file: "+file);
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.io.resources.IOResource#size()
+	 * @see de.ims.icarus2.util.io.resource.IOResource#size()
 	 */
 	@Override
 	public long size() throws IOException {
@@ -119,7 +118,7 @@ public final class FileResource extends ReadWriteResource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.io.resources.IOResource#getLocalPath()
+	 * @see de.ims.icarus2.util.io.resource.IOResource#getLocalPath()
 	 */
 	@Override
 	public final Path getLocalPath() {

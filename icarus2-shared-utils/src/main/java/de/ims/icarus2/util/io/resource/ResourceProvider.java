@@ -17,7 +17,7 @@
 /**
  *
  */
-package de.ims.icarus2.model.api.io.resources;
+package de.ims.icarus2.util.io.resource;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.ims.icarus2.model.api.io.resources;
+package de.ims.icarus2.util.io.resource;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
@@ -26,7 +26,7 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.io.IOUtil;
 import de.ims.icarus2.util.nio.MemoryByteStorage;
@@ -56,7 +56,7 @@ public class ReadOnlyStringResource implements IOResource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.io.resources.IOResource#getAccessMode()
+	 * @see de.ims.icarus2.util.io.resource.IOResource#getAccessMode()
 	 */
 	@Override
 	public AccessMode getAccessMode() {
@@ -65,21 +65,21 @@ public class ReadOnlyStringResource implements IOResource {
 
 	private void checkOpen() {
 		if(buffer==null || source==null)
-			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE,
 					"Buffer not prepared or already deleted");
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.io.resources.IOResource#getWriteChannel()
+	 * @see de.ims.icarus2.util.io.resource.IOResource#getWriteChannel()
 	 */
 	@Override
 	public SeekableByteChannel getWriteChannel() throws IOException {
-		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
+		throw new IcarusRuntimeException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Read only implementation -  backed by constant source string");
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.io.resources.IOResource#getReadChannel()
+	 * @see de.ims.icarus2.util.io.resource.IOResource#getReadChannel()
 	 */
 	@Override
 	public SeekableByteChannel getReadChannel() throws IOException {
@@ -89,7 +89,7 @@ public class ReadOnlyStringResource implements IOResource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.io.resources.IOResource#delete()
+	 * @see de.ims.icarus2.util.io.resource.IOResource#delete()
 	 */
 	@Override
 	public void delete() throws IOException {
@@ -98,7 +98,7 @@ public class ReadOnlyStringResource implements IOResource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.io.resources.IOResource#prepare()
+	 * @see de.ims.icarus2.util.io.resource.IOResource#prepare()
 	 */
 	@Override
 	public void prepare() throws IOException {
@@ -107,7 +107,7 @@ public class ReadOnlyStringResource implements IOResource {
 		}
 
 		if(source==null)
-			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Resource already deleted");
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Resource already deleted");
 
 		buffer = new MemoryByteStorage(source.length());
 
@@ -118,7 +118,7 @@ public class ReadOnlyStringResource implements IOResource {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.io.resources.IOResource#size()
+	 * @see de.ims.icarus2.util.io.resource.IOResource#size()
 	 */
 	@Override
 	public long size() throws IOException {

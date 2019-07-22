@@ -17,7 +17,7 @@
 /**
  *
  */
-package de.ims.icarus2.model.api.io.resources;
+package de.ims.icarus2.util.io.resources;
 
 import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.random;
@@ -42,6 +42,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import de.ims.icarus2.util.AccessMode;
+import de.ims.icarus2.util.io.resource.FileResource;
 
 /**
  * @author Markus Gärtner
@@ -72,7 +73,7 @@ class FileResourceTest implements IOResourceTest<FileResource> {
 	class Constructors {
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.api.io.resources.FileResource#FileResource(java.nio.file.Path)}.
+		 * Test method for {@link de.ims.icarus2.util.io.resource.FileResource#FileResource(java.nio.file.Path)}.
 		 * @throws IOException
 		 */
 		@Test
@@ -82,7 +83,7 @@ class FileResourceTest implements IOResourceTest<FileResource> {
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.api.io.resources.FileResource#FileResource(java.nio.file.Path, de.ims.icarus2.util.AccessMode)}.
+		 * Test method for {@link de.ims.icarus2.util.io.resource.FileResource#FileResource(java.nio.file.Path, de.ims.icarus2.util.AccessMode)}.
 		 * @throws IOException
 		 */
 		@ParameterizedTest
@@ -96,7 +97,7 @@ class FileResourceTest implements IOResourceTest<FileResource> {
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.io.resources.FileResource#delete()}.
+	 * Test method for {@link de.ims.icarus2.util.io.resource.FileResource#delete()}.
 	 * @throws IOException
 	 */
 	@Test
@@ -113,7 +114,7 @@ class FileResourceTest implements IOResourceTest<FileResource> {
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.io.resources.FileResource#size()}.
+	 * Test method for {@link de.ims.icarus2.util.io.resource.FileResource#size()}.
 	 * @throws IOException
 	 */
 	@Test
@@ -122,7 +123,7 @@ class FileResourceTest implements IOResourceTest<FileResource> {
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.io.resources.FileResource#size()}.
+	 * Test method for {@link de.ims.icarus2.util.io.resource.FileResource#size()}.
 	 * @throws IOException
 	 */
 	@TestFactory

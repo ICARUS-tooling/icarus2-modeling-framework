@@ -29,6 +29,17 @@ import de.ims.icarus2.test.annotations.Provider;
  */
 public interface Testable<T extends Object> {
 
+	/**
+	 * Creates a fresh new test instance of type {@code T} for the
+	 * current test case.
+	 * <p>
+	 * Note that implementations <b>must</b> ensure to call
+	 * {@link TestSettings#process(Object)} on the created test
+	 * instance prior to returning it!
+	 *
+	 * @param settings
+	 * @return
+	 */
 	@Provider
 	T createTestInstance(TestSettings settings);
 

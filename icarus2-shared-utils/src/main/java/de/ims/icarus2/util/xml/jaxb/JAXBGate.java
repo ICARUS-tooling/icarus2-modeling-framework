@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.util.xml.jaxb;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.util.concurrent.ExecutionUtil;
+import de.ims.icarus2.util.io.resource.IOResource;
 
 /**
  * @author Markus Gärtner
@@ -39,7 +42,7 @@ public abstract class JAXBGate<B extends Object> {
 
 	private static final Logger log = LoggerFactory.getLogger(JAXBGate.class);
 
-	private final Path file;
+	private final IOResource resource;
 	private final Object fileLock = new Object();
 
 	private B pendingBuffer;
@@ -51,19 +54,16 @@ public abstract class JAXBGate<B extends Object> {
 
 	private final Class<B> bufferClass;
 
-	public JAXBGate(Path file, Class<B> bufferClass) {
-		if(file==null)
-			throw new NullPointerException("Invalid file"); //$NON-NLS-1$
-
-		this.file = file;
-		this.bufferClass = bufferClass;
+	public JAXBGate(IOResource resource, Class<B> bufferClass) {
+		this.resource = requireNonNull(resource);
+		this.bufferClass = requireNonNull(bufferClass);
 	}
 
 	/**
 	 * @return the file
 	 */
-	public final Path getFile() {
-		return file;
+	public final IOResource getResource() {
+		return resource;
 	}
 
 	protected abstract void readBuffer(B buffer) throws Exception;
@@ -75,7 +75,7 @@ public abstract class JAXBGate<B extends Object> {
 	}
 
 	public void delete() throws IOException {
-		Files.delete(file);
+		resource.delete();
 	}
 
 	@SuppressWarnings("unchecked")

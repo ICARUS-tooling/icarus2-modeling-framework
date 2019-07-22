@@ -7,7 +7,6 @@ import java.nio.file.Paths;
 import java.util.function.BiFunction;
 
 import de.ims.icarus2.model.api.corpus.Corpus;
-import de.ims.icarus2.model.api.io.resources.VirtualResourceProvider;
 import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.api.registry.CorpusManagerTest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
@@ -15,6 +14,7 @@ import de.ims.icarus2.model.manifest.standard.DefaultManifestRegistry;
 import de.ims.icarus2.model.standard.io.DefaultFileManager;
 import de.ims.icarus2.model.standard.registry.metadata.VirtualMetadataRegistry;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.util.io.resource.VirtualResourceProvider;
 
 /**
  * @author Markus Gärtner

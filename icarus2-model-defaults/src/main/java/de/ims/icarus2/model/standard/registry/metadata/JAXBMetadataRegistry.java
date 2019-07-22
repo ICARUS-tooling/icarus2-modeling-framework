@@ -20,10 +20,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
-import java.util.WeakHashMap;
 import java.util.function.BiConsumer;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -45,7 +43,8 @@ import de.ims.icarus2.util.xml.jaxb.JAXBGate;
  *
  */
 @TestableImplementation(MetadataRegistry.class)
-public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageBuffer> implements MetadataRegistry {
+public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageBuffer>
+		implements MetadataRegistry {
 
 	/**
 	 * The default file suffix used by the modeling framework for metadata registry storage
@@ -62,43 +61,13 @@ public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageB
 
 	private int useCount = 0;
 
-	private static final Map<Path, JAXBMetadataRegistry> instances = new WeakHashMap<>();
-
-	public static JAXBMetadataRegistry getSharedRegistry(Path file) {
-		if (file == null)
-			throw new NullPointerException("Invalid file"); //$NON-NLS-1$
-
-		synchronized (instances) {
-			JAXBMetadataRegistry storage = instances.get(file);
-
-			if(storage==null) {
-				storage = new JAXBMetadataRegistry(file);
-				instances.put(file, storage);
-			}
-
-			return storage;
-		}
-	}
-
-	private static void destroy(JAXBMetadataRegistry storage) {
-		synchronized (instances) {
-			try {
-				// Ensure the data gets saved properly
-				storage.synchronize();
-			} finally {
-				// Finally discard storage
-				instances.remove(storage.getFile());
-			}
-		}
-	}
-
-	private JAXBMetadataRegistry(Path file) {
+	public JAXBMetadataRegistry(Path file) {
 		super(file, StorageBuffer.class);
 	}
 
 	@Override
 	public synchronized void close() {
-		destroy(this);
+		synchronize();
 	}
 
 	/**

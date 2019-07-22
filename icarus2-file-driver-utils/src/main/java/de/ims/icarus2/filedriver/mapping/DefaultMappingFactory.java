@@ -33,8 +33,6 @@ import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
-import de.ims.icarus2.model.api.io.resources.IOResource;
-import de.ims.icarus2.model.api.io.resources.VirtualIOResource;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
@@ -45,6 +43,8 @@ import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.Options;
+import de.ims.icarus2.util.io.resource.IOResource;
+import de.ims.icarus2.util.io.resource.VirtualIOResource;
 import de.ims.icarus2.util.lang.ClassUtils;
 
 /**

@@ -88,7 +88,6 @@ class DefaultCorpusModelTest implements CorpusModelTest<DefaultCorpusModel> {
 	/**
 	 * @see de.ims.icarus2.model.api.view.paged.CorpusModelTest#createView(de.ims.icarus2.util.AccessMode, de.ims.icarus2.model.api.members.item.manager.ItemLayerManager, int)
 	 */
-	@SuppressWarnings("resource")
 	@Override
 	public PagedCorpusView createView(AccessMode accessMode,
 			ItemLayerManager itemLayerManager, int pageSize, IndexSet...indices) {

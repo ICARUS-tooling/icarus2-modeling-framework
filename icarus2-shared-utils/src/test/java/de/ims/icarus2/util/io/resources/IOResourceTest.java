@@ -17,7 +17,7 @@
 /**
  *
  */
-package de.ims.icarus2.model.api.io.resources;
+package de.ims.icarus2.util.io.resources;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -36,6 +36,7 @@ import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.util.AccessMode;
+import de.ims.icarus2.util.io.resource.IOResource;
 
 /**
  * @author Markus Gärtner
@@ -61,7 +62,7 @@ public interface IOResourceTest<R extends IOResource> extends ApiGuardedTest<R> 
 	R create(AccessMode accessMode) throws IOException;
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.io.resources.IOResource#getAccessMode()}.
+	 * Test method for {@link de.ims.icarus2.util.io.resource.IOResource#getAccessMode()}.
 	 * @throws IOException
 	 */
 	@ParameterizedTest
@@ -71,8 +72,8 @@ public interface IOResourceTest<R extends IOResource> extends ApiGuardedTest<R> 
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.io.resources.IOResource#getWriteChannel()}.
-	 * Test method for {@link de.ims.icarus2.model.api.io.resources.IOResource#getReadChannel()}.
+	 * Test method for {@link de.ims.icarus2.util.io.resource.IOResource#getWriteChannel()}.
+	 * Test method for {@link de.ims.icarus2.util.io.resource.IOResource#getReadChannel()}.
 	 */
 	@ParameterizedTest
 	@EnumSource(value=AccessMode.class)

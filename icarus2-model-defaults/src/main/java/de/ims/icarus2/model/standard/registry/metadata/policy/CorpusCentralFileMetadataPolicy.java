@@ -33,12 +33,13 @@ import de.ims.icarus2.model.standard.io.DefaultFileStructure;
 import de.ims.icarus2.model.standard.registry.metadata.JAXBMetadataRegistry;
 import de.ims.icarus2.model.standard.registry.metadata.PlainMetadataRegistry;
 import de.ims.icarus2.util.annotations.TestableImplementation;
+import de.ims.icarus2.util.io.resource.IOResource;
 
 /**
  * Implements a set of metadata policies that use a new file-based metadata registry for every target object.
  * <p>
  * The strategy is to create one folder below the root folder for every corpus. This folder will use the
- * {@link #CORPUS_PREFIX} and the corpus' {@link CorpusManifest#getId()} as name.
+ * {@link DefaultFileStructure#CORPUS_PREFIX} and the corpus' {@link CorpusManifest#getId()} as name.
  * <br>
  * Below this corpus-individual root folder there will be one metadata registry file for the corpus itself and
  * then one for every context/driver.
@@ -109,10 +110,10 @@ public abstract class CorpusCentralFileMetadataPolicy<O extends Object> implemen
 		return DefaultFileStructure.CONTEXT_PREFIX+manifest.getId()+format.getFileSuffix();
 	}
 
-	protected MetadataRegistry createRegistry(Path file) {
+	protected MetadataRegistry createRegistry(IOResource resource) {
 		switch (format) {
-		case PLAIN: return PlainMetadataRegistry.getSharedRegistry(file);
-		case XML: return JAXBMetadataRegistry.getSharedRegistry(file);
+		case PLAIN: return new PlainMetadataRegistry(resource);
+		case XML: return new JAXBMetadataRegistry(file);
 		default:
 			throw new ModelException(GlobalErrorCode.INTERNAL_ERROR, "Unknown format type: "+format);
 		}

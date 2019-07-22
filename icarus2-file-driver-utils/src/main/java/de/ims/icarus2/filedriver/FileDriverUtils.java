@@ -29,8 +29,6 @@ import de.ims.icarus2.filedriver.mapping.MappingFactory;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
-import de.ims.icarus2.model.api.io.resources.FileResource;
-import de.ims.icarus2.model.api.io.resources.IOResource;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
@@ -42,6 +40,8 @@ import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Options;
+import de.ims.icarus2.util.io.resource.FileResource;
+import de.ims.icarus2.util.io.resource.IOResource;
 
 /**
  * @author Markus Gärtner

@@ -263,16 +263,6 @@ public interface ManifestRegistryTest
 				mockLayerType("type1"),
 				NPE_CHECK, ManifestTestUtils.DUPLICATE_ID_CHECK,
 				mockLayerType("type1"));
-
-//		assertSetter(
-//				createTestInstance(settings()),
-//				ManifestRegistry::addLayerType,
-//				mockLayerType("type1"),
-//				NPE_CHECK, INVALID_ID_CHECK,
-//				mockLayerType(null),
-//				mockLayerType("§$%&/("),
-//				mockLayerType(""),
-//				mockLayerType("x"));
 	}
 
 	/**

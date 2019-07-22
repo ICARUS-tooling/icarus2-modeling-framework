@@ -84,7 +84,6 @@ class DefaultStreamedCorpusViewTest implements StreamedCorpusViewTest<DefaultStr
 	/**
 	 * @see de.ims.icarus2.util.PartTest#createEnvironment()
 	 */
-	@SuppressWarnings("resource")
 	@Override
 	public Corpus createEnvironment() {
 		return DefaultCorpus.newBuilder()

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.ims.icarus2.model.api.io.resources;
+package de.ims.icarus2.util.io.resource;
 
 import java.io.IOException;
 import java.net.URL;
@@ -22,7 +22,7 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.annotations.OptionalMethod;
 
@@ -55,7 +55,7 @@ public interface IOResource {
 	 *
 	 * @return
 	 * @throws IOException
-	 * @throws ModelException of type {@link GlobalErrorCode#UNSUPPORTED_OPERATION} if
+	 * @throws IcarusRuntimeException of type {@link GlobalErrorCode#UNSUPPORTED_OPERATION} if
 	 * the {@link #getAccessMode() access mode} does not allow write operations.
 	 */
 	SeekableByteChannel getWriteChannel() throws IOException;

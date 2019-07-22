@@ -18,6 +18,8 @@ package de.ims.icarus2.model.api.registry;
 
 import java.util.function.BiConsumer;
 
+import de.ims.icarus2.model.api.ModelException;
+
 /**
  * Models a storage for maintenance data of various framework members.
  *
@@ -193,6 +195,13 @@ public interface MetadataRegistry extends AutoCloseable {
 	 */
 	void delete();
 
+	/**
+	 *
+	 * @see java.lang.AutoCloseable#close()
+	 *
+	 * @throws ModelException in case an ongoing transaction hasn't been
+	 * properly {@link #endUpdate() ended}.
+	 */
 	//FIXME check if we should expand the method signature to throw a general Exception
 	@Override
 	void close();

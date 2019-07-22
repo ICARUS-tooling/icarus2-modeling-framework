@@ -47,8 +47,6 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.events.CorpusLifecycleListener;
 import de.ims.icarus2.model.api.io.FileManager;
-import de.ims.icarus2.model.api.io.resources.FileResourceProvider;
-import de.ims.icarus2.model.api.io.resources.ResourceProvider;
 import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.api.registry.CorpusMemberFactory;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
@@ -69,6 +67,8 @@ import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.id.Identity;
+import de.ims.icarus2.util.io.resource.FileResourceProvider;
+import de.ims.icarus2.util.io.resource.ResourceProvider;
 
 /**
  * Default implementation of the central management component.

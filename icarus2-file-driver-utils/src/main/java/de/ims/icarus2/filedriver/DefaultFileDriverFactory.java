@@ -33,9 +33,6 @@ import de.ims.icarus2.filedriver.resolver.DirectPathResolver;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.io.PathResolver;
-import de.ims.icarus2.model.api.io.resources.IOResource;
-import de.ims.icarus2.model.api.io.resources.ReadOnlyStringResource;
-import de.ims.icarus2.model.api.io.resources.ResourceProvider;
 import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.api.registry.SubRegistry;
@@ -50,6 +47,9 @@ import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.PathResolverManifest;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.standard.util.DefaultImplementationLoader;
+import de.ims.icarus2.util.io.resource.IOResource;
+import de.ims.icarus2.util.io.resource.ReadOnlyStringResource;
+import de.ims.icarus2.util.io.resource.ResourceProvider;
 
 /**
  * Wraps a factory implementation around a {@link Builder} to create a new
