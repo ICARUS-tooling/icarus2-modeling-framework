@@ -461,7 +461,7 @@ public class BufferedItemManager {
 				long index = ids.nextLong();
 				Item item = fetch(index);
 
-				if(trackItemUse && ((TrackedMember<?>)item).decrementUseCounter()<=0) {
+				if(trackItemUse && ((TrackedMember)item).decrementUseCounter()<=0) {
 					remove(index);
 
 					if(disposeItemAction!=null) {
@@ -495,7 +495,7 @@ public class BufferedItemManager {
 					missingItemAction.accept(index);
 				} else {
 					if(trackItemUse) {
-						((TrackedMember<?>)item).incrementUseCounter();
+						((TrackedMember)item).incrementUseCounter();
 					}
 					presentItemAction.accept(item, index);
 				}
