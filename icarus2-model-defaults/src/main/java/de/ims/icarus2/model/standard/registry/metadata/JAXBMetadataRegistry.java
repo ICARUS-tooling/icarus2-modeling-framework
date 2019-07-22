@@ -17,7 +17,8 @@
 package de.ims.icarus2.model.standard.registry.metadata;
 
 import java.io.IOException;
-import java.nio.file.Path;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -36,6 +37,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.util.annotations.TestableImplementation;
+import de.ims.icarus2.util.io.resource.IOResource;
 import de.ims.icarus2.util.xml.jaxb.JAXBGate;
 
 /**
@@ -61,8 +63,12 @@ public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageB
 
 	private int useCount = 0;
 
-	public JAXBMetadataRegistry(Path file) {
-		super(file, StorageBuffer.class);
+	public JAXBMetadataRegistry(IOResource resource) {
+		this(resource, StandardCharsets.UTF_8);
+	}
+
+	public JAXBMetadataRegistry(IOResource resource, Charset encoding) {
+		super(resource, encoding, StorageBuffer.class);
 	}
 
 	@Override
@@ -125,7 +131,7 @@ public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageB
 		// Only save to disc when actual new entries exist
 		if(!checkStorage()) {
 			try {
-				saveBufferNow();
+				saveBuffer(true);
 			} catch (Exception e) {
 				log.error("Failed to synchronize value storage to file", e); //$NON-NLS-1$
 			}
@@ -133,15 +139,11 @@ public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageB
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.xml.jaxb.JAXBGate#save(java.nio.file.Path, boolean)
+	 * @see de.ims.icarus2.util.xml.jaxb.JAXBGate#afterSave()
 	 */
 	@Override
-	public void save(Path file, boolean saveNow) throws Exception {
-		try {
-			super.save(file, saveNow);
-		} finally {
-			changedEntryCount = 0;
-		}
+	protected void afterSave() {
+		changedEntryCount = 0;
 	}
 
 	/**
@@ -153,7 +155,7 @@ public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageB
 			try {
 				loadBuffer();
 			} catch (Exception e) {
-				log.error("Failed to load value storage: "+getFile(), e); //$NON-NLS-1$
+				log.error("Failed to load value storage: "+getResource(), e); //$NON-NLS-1$
 			}
 
 			return !entries.isEmpty();

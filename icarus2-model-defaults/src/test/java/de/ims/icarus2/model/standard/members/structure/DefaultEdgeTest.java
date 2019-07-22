@@ -85,7 +85,7 @@ class DefaultEdgeTest implements EdgeTest<Edge> {
 		 */
 		@Test
 		void testDefaultEdge() {
-			new DefaultEdge();
+			assertNotNull(new DefaultEdge());
 		}
 
 		/**

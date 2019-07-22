@@ -101,12 +101,12 @@ class DefaultStructureTest implements StructureTest<Structure> {
 
 		@Test
 		void testNoArgsConstructor() {
-			new DefaultStructure();
+			assertNotNull(new DefaultStructure());
 		}
 
 		@Test
 		void testHostConstructor() {
-			new DefaultStructure(mockContainer());
+			assertNotNull(new DefaultStructure(mockContainer()));
 		}
 
 		@Test
@@ -119,7 +119,7 @@ class DefaultStructureTest implements StructureTest<Structure> {
 		 */
 		@Test
 		void testNullStorages() {
-			new DefaultStructure(mockContainer(), null, null);
+			assertNotNull(new DefaultStructure(mockContainer(), null, null));
 		}
 	}
 

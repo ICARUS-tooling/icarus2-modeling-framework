@@ -19,7 +19,7 @@
  */
 package de.ims.icarus2.util.io.resources;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
+import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
@@ -87,7 +87,7 @@ public interface IOResourceTest<R extends IOResource> extends ApiGuardedTest<R> 
 				assertNotNull(channel);
 			}
 		} else {
-			assertModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
+			assertIcarusException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 					() -> instance.getWriteChannel(), "Should not be writable");
 		}
 
@@ -96,7 +96,7 @@ public interface IOResourceTest<R extends IOResource> extends ApiGuardedTest<R> 
 				assertNotNull(channel);
 			}
 		} else {
-			assertModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
+			assertIcarusException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 					() -> instance.getReadChannel(), "Should not be readable");
 		}
 	}

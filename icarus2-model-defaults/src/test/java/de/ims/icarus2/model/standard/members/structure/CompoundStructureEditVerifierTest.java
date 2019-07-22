@@ -48,7 +48,6 @@ import de.ims.icarus2.model.standard.members.container.UnrestrictedContainerEdit
  * @author Markus Gärtner
  *
  */
-@SuppressWarnings("resource")
 class CompoundStructureEditVerifierTest {
 
 	private Structure structure;

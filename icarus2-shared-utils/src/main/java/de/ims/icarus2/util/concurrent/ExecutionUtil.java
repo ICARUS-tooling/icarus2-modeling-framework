@@ -26,8 +26,12 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ExecutionUtil {
 
+	private static final Logger log = LoggerFactory.getLogger(ExecutionUtil.class);
 
 	private static ExecutorService executorService;
 
@@ -47,7 +51,7 @@ public class ExecutionUtil {
 				@Override
 				public Thread newThread(final Runnable r) {
 					Thread thread = defaultFactory.newThread(r);
-					thread.setName("TaskManager-" + thread.getName()); //$NON-NLS-1$
+					thread.setName("ICARUS2-worker-" + thread.getName()); //$NON-NLS-1$
 					thread.setDaemon(true);
 					return thread;
 				}
@@ -64,6 +68,17 @@ public class ExecutionUtil {
 					maxThreadCount, 10L, TimeUnit.MINUTES,
 					new LinkedBlockingQueue<Runnable>(), threadFactory,
 					handler);
+
+			// Ensure that in case of a proper VM shutdown we also close the executor service
+			Runnable shutdownTask = () -> {
+				try {
+					close();
+				} catch (InterruptedException e) {
+					log.error("Failed to shutdown executor service", e);
+				}
+			};
+			Runtime.getRuntime().addShutdownHook(
+					new Thread(shutdownTask, "ICARUS2-executor-shutdown"));
 		}
 		return executorService;
 	}
@@ -80,7 +95,7 @@ public class ExecutionUtil {
 		return getExecutorService().submit(task);
 	}
 
-	public static void close() throws Exception {
+	public static void close() throws InterruptedException {
 		if(executorService==null) {
 			return;
 		}

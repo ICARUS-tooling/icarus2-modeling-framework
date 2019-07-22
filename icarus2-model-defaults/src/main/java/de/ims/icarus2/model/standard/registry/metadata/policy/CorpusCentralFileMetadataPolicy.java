@@ -18,6 +18,7 @@ package de.ims.icarus2.model.standard.registry.metadata.policy;
 
 import static java.util.Objects.requireNonNull;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
 import de.ims.icarus2.GlobalErrorCode;
@@ -113,7 +114,7 @@ public abstract class CorpusCentralFileMetadataPolicy<O extends Object> implemen
 	protected MetadataRegistry createRegistry(IOResource resource) {
 		switch (format) {
 		case PLAIN: return new PlainMetadataRegistry(resource);
-		case XML: return new JAXBMetadataRegistry(file);
+		case XML: return new JAXBMetadataRegistry(resource);
 		default:
 			throw new ModelException(GlobalErrorCode.INTERNAL_ERROR, "Unknown format type: "+format);
 		}
@@ -146,7 +147,15 @@ public abstract class CorpusCentralFileMetadataPolicy<O extends Object> implemen
 
 			Path metadataFile = corpusFolder.resolve(getMetadataFileName(manifest));
 
-			return createRegistry(metadataFile);
+			IOResource resource;
+			try {
+				resource = manager.getResourceProvider().getResource(metadataFile);
+			} catch (IOException e) {
+				throw new ModelException(GlobalErrorCode.IO_ERROR,
+						"Failed to fetch metadata resource: "+metadataFile, e);
+			}
+
+			return createRegistry(resource);
 		}
 	}
 
@@ -177,7 +186,15 @@ public abstract class CorpusCentralFileMetadataPolicy<O extends Object> implemen
 
 			Path metadataFile = corpusFolder.resolve(getMetadataFileName(manifest));
 
-			return createRegistry(metadataFile);
+			IOResource resource;
+			try {
+				resource = manager.getResourceProvider().getResource(metadataFile);
+			} catch (IOException e) {
+				throw new ModelException(GlobalErrorCode.IO_ERROR,
+						"Failed to fetch metadata resource: "+metadataFile, e);
+			}
+
+			return createRegistry(resource);
 		}
 	}
 }

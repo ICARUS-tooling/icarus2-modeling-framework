@@ -156,7 +156,6 @@ public abstract class AbstractDriver implements Driver {
 	/**
 	 * @see de.ims.icarus2.model.api.driver.Driver#getIdManager(de.ims.icarus2.model.manifest.api.ItemLayerManifestBase<?>)
 	 */
-	@SuppressWarnings("resource")
 	@Override
 	public IdManager getIdManager(ItemLayerManifestBase<?> layer) {
 		int key = layer.getUID();

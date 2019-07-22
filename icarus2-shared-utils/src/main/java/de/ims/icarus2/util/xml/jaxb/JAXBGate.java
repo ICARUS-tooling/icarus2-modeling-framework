@@ -19,8 +19,10 @@ package de.ims.icarus2.util.xml.jaxb;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.channels.Channels;
+import java.nio.charset.Charset;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.xml.bind.JAXBContext;
@@ -32,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.util.concurrent.ExecutionUtil;
+import de.ims.icarus2.util.io.IOUtil;
 import de.ims.icarus2.util.io.resource.IOResource;
 
 /**
@@ -43,6 +46,7 @@ public abstract class JAXBGate<B extends Object> {
 	private static final Logger log = LoggerFactory.getLogger(JAXBGate.class);
 
 	private final IOResource resource;
+	private final Charset encoding;
 	private final Object fileLock = new Object();
 
 	private B pendingBuffer;
@@ -54,8 +58,9 @@ public abstract class JAXBGate<B extends Object> {
 
 	private final Class<B> bufferClass;
 
-	public JAXBGate(IOResource resource, Class<B> bufferClass) {
+	public JAXBGate(IOResource resource, Charset encoding, Class<B> bufferClass) {
 		this.resource = requireNonNull(resource);
+		this.encoding = requireNonNull(encoding);
 		this.bufferClass = requireNonNull(bufferClass);
 	}
 
@@ -79,7 +84,7 @@ public abstract class JAXBGate<B extends Object> {
 	}
 
 	@SuppressWarnings("unchecked")
-	public void load(Path file) throws Exception {
+	public void loadBuffer() throws Exception {
 
 		B buffer = null;
 		synchronized (bufferLock) {
@@ -89,13 +94,17 @@ public abstract class JAXBGate<B extends Object> {
 		// Try to load new buffer
 		if(buffer==null) {
 			synchronized (fileLock) {
-				if(Files.notExists(file) || Files.size(file)==0) {
+				if(resource.size()==0L) {
 					return;
 				}
 
 				JAXBContext context = getJaxbContext();
 				Unmarshaller unmarshaller = context.createUnmarshaller();
-				buffer = (B) unmarshaller.unmarshal(Files.newInputStream(file));
+
+				try(Reader reader = Channels.newReader(resource.getReadChannel(),
+						encoding.newDecoder(), IOUtil.DEFAULT_BUFFER_SIZE)) {
+					buffer = (B) unmarshaller.unmarshal(reader);
+				}
 			}
 		}
 
@@ -108,13 +117,7 @@ public abstract class JAXBGate<B extends Object> {
 		}
 	}
 
-	public void loadBuffer() throws Exception {
-		load(getFile());
-	}
-
-	public void save(Path file, boolean saveNow) throws Exception {
-		if(!saveNow && !getFile().equals(file))
-			throw new IllegalArgumentException("Cannot schedule timed export to foreign location: "+file); //$NON-NLS-1$
+	public void saveBuffer(boolean saveNow) throws Exception {
 
 		B buffer = null;
 
@@ -128,21 +131,13 @@ public abstract class JAXBGate<B extends Object> {
 
 		synchronized (bufferLock) {
 			if(saveNow) {
-				save(buffer, file);
+				saveImpl(buffer);
 			} else {
 				pendingBuffer = buffer;
 
 				scheduleUpdate();
 			}
 		}
-	}
-
-	public void saveBuffer() throws Exception {
-		save(getFile(), false);
-	}
-
-	public void saveBufferNow() throws Exception {
-		save(getFile(), true);
 	}
 
 	private void scheduleUpdate() {
@@ -157,13 +152,22 @@ public abstract class JAXBGate<B extends Object> {
 		}
 	}
 
-	private void save(B buffer, Path file) throws Exception {
+	private void saveImpl(B buffer) throws Exception {
 		synchronized (fileLock) {
 			JAXBContext context = getJaxbContext();
 			Marshaller marshaller = context.createMarshaller();
 			marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-			marshaller.marshal(buffer, Files.newOutputStream(file));
+
+			try(Writer writer = Channels.newWriter(resource.getWriteChannel(),
+					encoding.newEncoder(), IOUtil.DEFAULT_BUFFER_SIZE)) {
+				marshaller.marshal(buffer, writer);
+			}
+			afterSave();
 		}
+	}
+
+	protected void afterSave() {
+		// hook for subclasses
 	}
 
 	private class SaveTask implements Runnable {
@@ -186,7 +190,7 @@ public abstract class JAXBGate<B extends Object> {
 			}
 
 			try {
-				save(buffer, getFile());
+				saveImpl(buffer);
 			} catch (Exception e) {
 				log.error("Failed to save buffer", e); //$NON-NLS-1$
 			}
