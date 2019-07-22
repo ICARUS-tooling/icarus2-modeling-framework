@@ -159,8 +159,8 @@ subprojects {
 		
 		jmhCompile project
 		benchmark "org.openjdk.jmh:jmh-core:${versions.jmh}"
-		benchmark "org.openjdk.jmh:jmh-generator-annprocess:${versions.jmh}"
-		jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:${versions.jmhAp}'
+		benchmark "org.openjdk.jmh:jmh-generator-annprocess:${versions.jmhAp}"
+		jmhAnnotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:${versions.jmhAp}"
 	}
   	
   	tasks.withType(JavaCompile) {
