@@ -23,6 +23,8 @@ import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
@@ -41,22 +43,17 @@ public class MemberPool<M extends Item> implements Consumer<M>, Supplier<M> {
 	private volatile ArrayList<M> pool;
 
 	@Primitive
-	private int poolSize;
+	private final int poolSize;
 
 	public MemberPool() {
 		this(1000);
 	}
 
 	public MemberPool(int poolSize) {
-		resizePool(poolSize);
-	}
-
-	public void resizePool(int poolSize) {
 		if (poolSize <= 0)
-			throw new IllegalArgumentException("Illegal pool-size (negative or zero): " //$NON-NLS-1$
-					+ poolSize);
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					"Illegal pool-size (negative or zero): " + poolSize);
 		this.poolSize = poolSize;
-		pool = null;
 	}
 
 	private ArrayList<M> ensurePool() {
@@ -130,7 +127,7 @@ public class MemberPool<M extends Item> implements Consumer<M>, Supplier<M> {
 		requireNonNull(members);
 		ArrayList<M> pool = ensurePool();
 
-		for(int i = IcarusUtils.limitToIntegerValueRange(members.entryCount()); i>=0; i--) {
+		for(int i = IcarusUtils.limitToIntegerValueRange(members.entryCount()-1); i>=0; i--) {
 			if(pool.size()>=poolSize) {
 				break;
 			}
