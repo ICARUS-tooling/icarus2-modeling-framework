@@ -65,36 +65,29 @@ public class MemberCache<M extends Item> {
 
 	public MemberCache(int initialCapacity, int limit, float loadFactor) {
 		if (initialCapacity <= 0)
-			throw new IllegalArgumentException("Illegal capacity (zero or less): " //$NON-NLS-1$
-					+ initialCapacity);
-		if (loadFactor <= 0)
-			throw new IllegalArgumentException("Illegal load-factor (zero or less): " + loadFactor); //$NON-NLS-1$
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					"Illegal capacity (zero or less): " + initialCapacity);
+		if (loadFactor <= 0f)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					"Illegal load-factor (zero or less): " + loadFactor);
 
 		this.loadFactor = loadFactor;
 		this.limit = limit;
 
-		resizeCache(initialCapacity);
+		cache = new Long2ObjectOpenHashMap<>(initialCapacity, loadFactor);
 	}
 
-	public void resizeCache(int cacheSize) {
-		if(cache!=null && cacheSize<=cache.size()) {
-			return;
-		}
-
-		Long2ObjectMap<M> oldCache = cache;
-
-		cache = new Long2ObjectOpenHashMap<>(cacheSize, loadFactor);
-
-		if(oldCache!=null && !oldCache.isEmpty()) {
-			cache.putAll(oldCache);
-		}
-	}
-
+	/**
+	 * Returns the currently used up size of this cache.
+	 */
 	@AccessRestriction(AccessMode.ALL)
 	public int size() {
 		return cache.size();
 	}
 
+	/**
+	 * Returns {@code true} iff there are no items cached.
+	 */
 	@AccessRestriction(AccessMode.ALL)
 	public boolean isEmpty() {
 		return cache.isEmpty();
@@ -122,6 +115,10 @@ public class MemberCache<M extends Item> {
 		return cache.containsKey(member.getIndex());
 	}
 
+	public boolean register(M member) {
+		return register(member.getIndex(), member);
+	}
+
 	/**
 	 * Creates a new entry to map the given key to the given member.
 	 *
@@ -137,7 +134,7 @@ public class MemberCache<M extends Item> {
 			return false;
 		}
 
-		if(cache.put(key, member)!=null)
+		if(cache.putIfAbsent(key, member) != cache.defaultReturnValue())
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Key already used for mapping: "+key);
 
 		return true;
@@ -170,6 +167,10 @@ public class MemberCache<M extends Item> {
 		cache.clear();
 	}
 
+	/**
+	 * {@link MemberPool#recycle(Item) recycles} all the elements currently
+	 * cached and then {@link #clear() clears} this cache.
+	 */
 	@AccessRestriction(AccessMode.MANAGE)
 	public void recycleTo(MemberPool<? super M> pool) {
 		if(isEmpty()) {

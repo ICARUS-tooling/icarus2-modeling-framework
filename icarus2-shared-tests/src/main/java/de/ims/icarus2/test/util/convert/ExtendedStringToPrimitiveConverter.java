@@ -79,13 +79,13 @@ public class ExtendedStringToPrimitiveConverter extends SimpleArgumentConverter 
 		converters.put(Float.TYPE, new Converter(Float::valueOf)
 				.map("max", Float.MAX_VALUE)
 				.map("Float.MAX_VALUE", Float.MAX_VALUE)
-				.map("min", Float.MIN_VALUE)
-				.map("Float.MIN_VALUE", Float.MIN_VALUE));
+				.map("min", Float.MAX_VALUE)
+				.map("-Float.MAX_VALUE", Float.MAX_VALUE));
 		converters.put(Double.TYPE, new Converter(Double::valueOf)
 				.map("max", Double.MAX_VALUE)
 				.map("Double.MAX_VALUE", Double.MAX_VALUE)
-				.map("min", Double.MIN_VALUE)
-				.map("Double.MIN_VALUE", Double.MIN_VALUE));
+				.map("min", -Double.MAX_VALUE)
+				.map("-Double.MAX_VALUE", Double.MAX_VALUE));
 		CONVERTERS = unmodifiableMap(converters);
 	}
 

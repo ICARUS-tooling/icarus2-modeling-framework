@@ -214,7 +214,7 @@ class ToStringBuilderTest {
 		 * Test method for {@link de.ims.icarus2.util.strings.ToStringBuilder#add(java.lang.String, float)}.
 		 */
 		@ParameterizedTest
-		@ValueSource(floats = {Float.MIN_VALUE, Float.MAX_VALUE, 0, 1, 2.5F})
+		@ValueSource(floats = {-Float.MAX_VALUE, Float.MAX_VALUE, 0, 1, 2.5F})
 		default void testAddStringFloat(float value) {
 			assertToString(builder().add("value", value), prefix(), "value="+value, suffix());
 		}
@@ -223,7 +223,7 @@ class ToStringBuilderTest {
 		 * Test method for {@link de.ims.icarus2.util.strings.ToStringBuilder#addFormatted(java.lang.String, float)}.
 		 */
 		@ParameterizedTest
-		@ValueSource(floats = {Float.MIN_VALUE, Float.MAX_VALUE, 0, 1, 2.5F})
+		@ValueSource(floats = {-Float.MAX_VALUE, Float.MAX_VALUE, 0, 1, 2.5F})
 		default void testAddFormattedStringFloat(float value) {
 			DecimalFormat format = new DecimalFormat("#,##0.00");
 			assertToString(builder().addFormatted("value", value), prefix(),
@@ -234,7 +234,7 @@ class ToStringBuilderTest {
 		 * Test method for {@link de.ims.icarus2.util.strings.ToStringBuilder#add(java.lang.String, double)}.
 		 */
 		@ParameterizedTest
-		@ValueSource(doubles = {Double.MIN_VALUE, Double.MAX_VALUE, 0, 1, -3.5D})
+		@ValueSource(doubles = {-Double.MAX_VALUE, Double.MAX_VALUE, 0, 1, -3.5D})
 		default void testAddStringDouble(double value) {
 			assertToString(builder().add("value", value), prefix(), "value="+value, suffix());
 		}
@@ -243,7 +243,7 @@ class ToStringBuilderTest {
 		 * Test method for {@link de.ims.icarus2.util.strings.ToStringBuilder#addFormatted(java.lang.String, double)}.
 		 */
 		@ParameterizedTest
-		@ValueSource(doubles = {Double.MIN_VALUE, Double.MAX_VALUE, 0, 1, -3.5D})
+		@ValueSource(doubles = {-Double.MAX_VALUE, Double.MAX_VALUE, 0, 1, -3.5D})
 		default void testAddFormattedStringDouble(double value) {
 			DecimalFormat format = new DecimalFormat("#,##0.00");
 			assertToString(builder().addFormatted("value", value), prefix(),

@@ -109,6 +109,13 @@ public class ModelTestUtils {
 	}
 
 	@SuppressWarnings("boxing")
+	public static <I extends Item> I stubIndex(I item, long index) {
+		assertMock(item);
+		when(item.getIndex()).thenReturn(index);
+		return item;
+	}
+
+	@SuppressWarnings("boxing")
 	public static <I extends Item> I stubFlags(I item, boolean alive, boolean dirty, boolean locked) {
 		when(item.isAlive()).thenReturn(alive);
 		when(item.isDirty()).thenReturn(dirty);

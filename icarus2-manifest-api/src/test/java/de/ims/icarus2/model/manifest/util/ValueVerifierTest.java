@@ -432,7 +432,7 @@ class ValueVerifierTest {
 		Stream<DynamicContainer> testEmpty() {
 			return config()
 					.expect(VerificationResult.VALID,
-							random().doubles(10, Float.MIN_VALUE, Float.MAX_VALUE)
+							random().doubles(10, -Float.MAX_VALUE, Float.MAX_VALUE)
 							.mapToObj(toFloat))
 					.createTests(FloatVerifier::new);
 		}
@@ -447,7 +447,7 @@ class ValueVerifierTest {
 							Stream.iterate(_float(1.5F), v -> _float(v.floatValue()+1.5F))
 							.limit(10)))
 					.expect(VerificationResult.VALUE_NOT_IN_SET,
-							DoubleStream.of(-1.1, 0.0, 1.4, 1.7, 3.5, 15.1, Float.MIN_VALUE, Float.MAX_VALUE)
+							DoubleStream.of(-1.1, 0.0, 1.4, 1.7, 3.5, 15.1, -Float.MAX_VALUE, Float.MAX_VALUE)
 							.mapToObj(toFloat))
 					.createTests(FloatVerifier::new);
 		}
@@ -462,7 +462,7 @@ class ValueVerifierTest {
 							Stream.iterate(_float(1.5F), v -> _float(v.floatValue()+2F))
 							.limit(5))
 					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
-							DoubleStream.of(-1, 0, 1.499, Float.MIN_VALUE).mapToObj(toFloat))
+							DoubleStream.of(-1, 0, 1.499, -Float.MAX_VALUE).mapToObj(toFloat))
 					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
 							DoubleStream.of(9.501, 12, Float.MAX_VALUE).mapToObj(toFloat))
 					.createTests(FloatVerifier::new);
@@ -479,7 +479,7 @@ class ValueVerifierTest {
 							Stream.iterate(_float(1.5F), v -> _float(v.floatValue()+2F))
 							.limit(5))
 					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
-							DoubleStream.of(-1, 0, 1.499, Float.MIN_VALUE).mapToObj(toFloat))
+							DoubleStream.of(-1, 0, 1.499, -Float.MAX_VALUE).mapToObj(toFloat))
 					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
 							DoubleStream.of(9.501, 12, Float.MAX_VALUE).mapToObj(toFloat))
 					.expect(VerificationResult.PRECISION_MISMATCH,
@@ -498,7 +498,7 @@ class ValueVerifierTest {
 							Stream.iterate(_float(3.5F), v -> _float(v.floatValue()+2F))
 							.limit(3))
 					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
-							DoubleStream.of(-1, 0, 1.5, Float.MIN_VALUE).mapToObj(toFloat))
+							DoubleStream.of(-1, 0, 1.5, -Float.MAX_VALUE).mapToObj(toFloat))
 					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
 							DoubleStream.of(9.5, 12, Float.MAX_VALUE).mapToObj(toFloat))
 					.createTests(FloatVerifier::new);
@@ -516,7 +516,7 @@ class ValueVerifierTest {
 							Stream.iterate(_float(3.5F), v -> _float(v.floatValue()+2F))
 							.limit(3))
 					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
-							DoubleStream.of(-1, 0, 1.5, Float.MIN_VALUE).mapToObj(toFloat))
+							DoubleStream.of(-1, 0, 1.5, -Float.MAX_VALUE).mapToObj(toFloat))
 					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
 							DoubleStream.of(9.5, 12, Float.MAX_VALUE).mapToObj(toFloat))
 					.expect(VerificationResult.PRECISION_MISMATCH,
@@ -599,9 +599,9 @@ class ValueVerifierTest {
 							Stream.iterate(_double(3.5), v -> _double(v.doubleValue()+2))
 							.limit(3))
 					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
-							DoubleStream.of(-1, 0, 1.5, Float.MIN_VALUE).boxed())
+							DoubleStream.of(-1, 0, 1.5, -Double.MAX_VALUE).boxed())
 					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
-							DoubleStream.of(9.5, 12, Float.MAX_VALUE).boxed())
+							DoubleStream.of(9.5, 12, Double.MAX_VALUE).boxed())
 					.createTests(DoubleVerifier::new);
 		}
 
@@ -617,9 +617,9 @@ class ValueVerifierTest {
 							Stream.iterate(_double(3.5), v -> _double(v.doubleValue()+2))
 							.limit(3))
 					.expect(VerificationResult.LOWER_BOUNDARY_VIOLATION,
-							DoubleStream.of(-1, 0, 1.5, Float.MIN_VALUE).boxed())
+							DoubleStream.of(-1, 0, 1.5, -Double.MAX_VALUE).boxed())
 					.expect(VerificationResult.UPPER_BOUNDARY_VIOLATION,
-							DoubleStream.of(9.5, 12, Float.MAX_VALUE).boxed())
+							DoubleStream.of(9.5, 12, Double.MAX_VALUE).boxed())
 					.expect(VerificationResult.PRECISION_MISMATCH,
 							DoubleStream.of(1.6, 2.9, 3.1, 9.499).boxed()) //TODO
 					.createTests(DoubleVerifier::new);
