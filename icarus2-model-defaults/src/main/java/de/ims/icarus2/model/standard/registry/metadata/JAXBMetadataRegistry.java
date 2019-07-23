@@ -143,7 +143,7 @@ public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageB
 	 */
 	@Override
 	protected void afterSave() {
-		changedEntryCount = 0;
+		changedEntryCount = 0; //TODO suboptimal, as in worst case we lose information about intermediate changes
 	}
 
 	/**
