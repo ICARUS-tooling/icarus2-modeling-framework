@@ -8,11 +8,18 @@ import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Set;
+import java.util.stream.Stream;
 
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.test.TestUtils;
@@ -53,6 +60,30 @@ class ReadOnlyStringResourceTest implements IOResourceTest<ReadOnlyStringResourc
 
 	public ReadOnlyStringResource create(String content) {
 		return new ReadOnlyStringResource(content);
+	}
+
+	public ReadOnlyStringResource create(String content, Charset encoding) {
+		return new ReadOnlyStringResource(content, encoding);
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.util.io.resource.ReadOnlyStringResource#getSource()}.
+	 */
+	@Test
+	void testGetSource() {
+		ReadOnlyStringResource resource = create(DEFAULT_CONTENT);
+		assertEquals(DEFAULT_CONTENT, resource.getSource());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.util.io.resource.ReadOnlyStringResource#getSource()}.
+	 */
+	@TestFactory
+	Stream<DynamicTest> testGetEncoding() {
+		return Stream.of(StandardCharsets.UTF_8, StandardCharsets.ISO_8859_1, StandardCharsets.US_ASCII)
+			.map(encoding -> dynamicTest(encoding.name(), () -> {
+				assertSame(encoding, create(DEFAULT_CONTENT, encoding).getEncoding());
+			}));
 	}
 
 	/**
