@@ -97,7 +97,7 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 
 	public synchronized void synchronize() {
 		// Only save to disc when actual new entries exist
-		if(!checkStorage()) {
+		if(checkStorage()) {
 			try {
 				saveNow();
 			} catch (IOException e) {
@@ -111,6 +111,8 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 	 * in the constructor using UTF-8 character encoding.
 	 */
 	public void saveNow() throws IOException {
+
+		int oldChangedEntryCount = changedEntryCount;
 		/*
 		 * Kinda expensive strategy, since we duplicate
 		 * the entire registry content
@@ -118,11 +120,12 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 		Properties tmp = new Properties();
 		tmp.putAll(entries);
 
+		resource.prepare();
 		try (Writer writer = Channels.newWriter(resource.getWriteChannel(),
 				encoding.newEncoder(), IOUtil.DEFAULT_BUFFER_SIZE)) {
 			tmp.store(writer, null);
 		} finally {
-			changedEntryCount -= tmp.size();
+			changedEntryCount -= oldChangedEntryCount;
 		}
 	}
 
@@ -151,6 +154,7 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 	public void load() throws IOException {
 		Properties prop = new Properties();
 
+		resource.prepare();
 		try(Reader reader = Channels.newReader(resource.getReadChannel(),
 				encoding.newDecoder(), IOUtil.DEFAULT_BUFFER_SIZE)) {
 			prop.load(reader);
@@ -242,7 +246,7 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 	public synchronized void forEachEntry(String prefix,
 			BiConsumer<? super String, ? super String> action) {
 
-		String lowerBound = prefix+Character.MIN_VALUE;
+		String lowerBound = prefix;
 		String upperBound = prefix+Character.MAX_VALUE;
 
 		entries.subMap(lowerBound, true, upperBound, true).forEach(action);

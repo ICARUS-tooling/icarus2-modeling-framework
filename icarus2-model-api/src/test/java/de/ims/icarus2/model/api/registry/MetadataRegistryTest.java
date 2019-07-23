@@ -98,7 +98,7 @@ public interface MetadataRegistryTest<R extends MetadataRegistry> extends Generi
 
 				assertEquals(expected, actual, String.format(
 						"Mismatch for value '%s' at index %d",
-						TestUtils.displayString(actual), i));
+						TestUtils.displayString(expected), i));
 			}
 		} finally {
 			copy.endUpdate();
