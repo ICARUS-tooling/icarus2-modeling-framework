@@ -17,7 +17,7 @@
 /**
  *
  */
-package de.ims.icarus2.util.io.resources;
+package de.ims.icarus2.util.io.resource;
 
 import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.random;
@@ -60,7 +60,7 @@ class FileResourceTest implements IOResourceTest<FileResource> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.io.resources.IOResourceTest#getSupportedAccessModes()
+	 * @see de.ims.icarus2.util.io.resource.IOResourceTest#getSupportedAccessModes()
 	 */
 	@Override
 	public Set<AccessMode> getSupportedAccessModes() {

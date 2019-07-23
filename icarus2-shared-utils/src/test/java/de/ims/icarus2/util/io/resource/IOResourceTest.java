@@ -17,7 +17,7 @@
 /**
  *
  */
-package de.ims.icarus2.util.io.resources;
+package de.ims.icarus2.util.io.resource;
 
 import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

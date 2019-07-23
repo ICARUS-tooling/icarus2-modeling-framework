@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Test;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.util.AccessMode;
-import de.ims.icarus2.util.io.resources.IOResourceTest;
 
 /**
  * @author Markus Gärtner
@@ -28,7 +27,7 @@ class ReadOnlyStringResourceTest implements IOResourceTest<ReadOnlyStringResourc
 	private static final String DEFAULT_CONTENT = TestUtils.LOREM_IPSUM_ASCII;
 
 	/**
-	 * @see de.ims.icarus2.util.io.resources.IOResourceTest#getSupportedAccessModes()
+	 * @see de.ims.icarus2.util.io.resource.IOResourceTest#getSupportedAccessModes()
 	 */
 	@Override
 	public Set<AccessMode> getSupportedAccessModes() {
@@ -44,7 +43,7 @@ class ReadOnlyStringResourceTest implements IOResourceTest<ReadOnlyStringResourc
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.io.resources.IOResourceTest#create(de.ims.icarus2.util.AccessMode)
+	 * @see de.ims.icarus2.util.io.resource.IOResourceTest#create(de.ims.icarus2.util.AccessMode)
 	 */
 	@Override
 	public ReadOnlyStringResource create(AccessMode accessMode) throws IOException {
