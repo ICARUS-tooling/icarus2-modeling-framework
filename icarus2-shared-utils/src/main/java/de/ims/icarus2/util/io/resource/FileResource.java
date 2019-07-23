@@ -40,6 +40,10 @@ public final class FileResource extends ReadWriteResource {
 
 	private final Path file;
 
+	/**
+	 * Creates a new file resource for {@link AccessMode#READ_WRITE} access.
+	 * @param file
+	 */
 	public FileResource(Path file) {
 		this(file, AccessMode.READ_WRITE);
 	}
@@ -54,7 +58,7 @@ public final class FileResource extends ReadWriteResource {
 
 	@Override
 	public String toString() {
-		return "FileResource[file="+file+"]";
+		return "[FileResource file="+file+"]";
 	}
 
 	/**
@@ -125,5 +129,26 @@ public final class FileResource extends ReadWriteResource {
 	@Override
 	public final Path getLocalPath() {
 		return file;
+	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if(obj == this) {
+			return true;
+		} else if(obj instanceof FileResource) {
+			return file.equals(((FileResource)obj).file);
+		}
+		return false;
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return file.hashCode();
 	}
 }

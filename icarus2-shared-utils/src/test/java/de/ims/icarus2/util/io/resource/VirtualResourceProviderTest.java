@@ -23,6 +23,14 @@ class VirtualResourceProviderTest implements ResourceProviderTest<VirtualResourc
 	}
 
 	/**
+	 * @see de.ims.icarus2.util.io.resource.ResourceProviderTest#cleanup(de.ims.icarus2.util.io.resource.ResourceProvider, java.nio.file.Path[])
+	 */
+	@Override
+	public void cleanup(VirtualResourceProvider provider, Path... paths) {
+		provider.clear();
+	}
+
+	/**
 	 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
 	@Override

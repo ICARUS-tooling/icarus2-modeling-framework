@@ -38,17 +38,25 @@ public interface ResourceProviderTest<P extends ResourceProvider> extends ApiGua
 		apiGuard.nullGuard(true);
 	}
 
+	void cleanup(P provider, Path...paths) throws IOException;
+
 	/** Provides a root folder for testing **/
-	Path createRoot();
+	Path createRoot() throws IOException;
 
 	/**
 	 * Test method for {@link de.ims.icarus2.util.io.resource.ResourceProvider#exists(java.nio.file.Path)}.
+	 * @throws IOException
 	 */
 	@Test
-	default void testExists() {
+	default void testExists() throws IOException {
 		P provider = create();
 		Path file = createRoot().resolve("test");
-		assertFalse(provider.exists(file));
+
+		try {
+			assertFalse(provider.exists(file));
+		} finally {
+			cleanup(provider, file);
+		}
 	}
 
 	/**
@@ -57,7 +65,13 @@ public interface ResourceProviderTest<P extends ResourceProvider> extends ApiGua
 	 */
 	@Test
 	default void testCreateFolder() throws IOException {
-		create().create(createRoot().resolve("folder"), true);
+		P provider = create();
+		Path folder = createRoot().resolve("folder");
+		try {
+			provider.create(folder, true);
+		} finally {
+			cleanup(provider, folder);
+		}
 	}
 
 	/**
@@ -66,7 +80,13 @@ public interface ResourceProviderTest<P extends ResourceProvider> extends ApiGua
 	 */
 	@Test
 	default void testCreateFile() throws IOException {
-		create().create(createRoot().resolve("file"), false);
+		P provider = create();
+		Path file = createRoot().resolve("file");
+		try {
+			provider.create(file, false);
+		} finally {
+			cleanup(provider, file);
+		}
 	}
 
 	/**
@@ -80,14 +100,18 @@ public interface ResourceProviderTest<P extends ResourceProvider> extends ApiGua
 		Path file = root.resolve("file");
 		Path folder = root.resolve("folder");
 
-		assertFalse(provider.isDirectory(file));
-		assertFalse(provider.isDirectory(folder));
+		try {
+			assertFalse(provider.isDirectory(file));
+			assertFalse(provider.isDirectory(folder));
 
-		provider.create(file, false);
-		provider.create(folder, true);
+			provider.create(file, false);
+			provider.create(folder, true);
 
-		assertFalse(provider.isDirectory(file));
-		assertTrue(provider.isDirectory(folder));
+			assertFalse(provider.isDirectory(file));
+			assertTrue(provider.isDirectory(folder));
+		} finally {
+			cleanup(provider, file, folder);
+		}
 	}
 
 	/**
@@ -96,7 +120,7 @@ public interface ResourceProviderTest<P extends ResourceProvider> extends ApiGua
 	@Test
 	default void testGetUnregisteredLock() {
 		assertIcarusException(GlobalErrorCode.INVALID_INPUT,
-				() -> create().getResource(createRoot().resolve("file")));
+				() -> create().getLock(createRoot().resolve("file")));
 	}
 
 	/**
@@ -109,8 +133,12 @@ public interface ResourceProviderTest<P extends ResourceProvider> extends ApiGua
 		Path folder = createRoot().resolve("folder");
 		provider.create(folder, true);
 
-		assertIcarusException(GlobalErrorCode.INVALID_INPUT,
-				() -> provider.getLock(folder));
+		try {
+			assertIcarusException(GlobalErrorCode.INVALID_INPUT,
+					() -> provider.getLock(folder));
+		} finally {
+			cleanup(provider, folder);
+		}
 	}
 
 	/**
@@ -121,16 +149,21 @@ public interface ResourceProviderTest<P extends ResourceProvider> extends ApiGua
 	default void testGetLock() throws IOException {
 		P provider = create();
 		Path file = createRoot().resolve("file");
-		provider.create(file, false);
 
-		Lock lock = provider.getLock(file);
-		assertNotNull(lock);
-
-		lock.lock();
 		try {
-			provider.getResource(file).prepare();
+			provider.create(file, false);
+
+			Lock lock = provider.getLock(file);
+			assertNotNull(lock);
+
+			lock.lock();
+			try {
+				provider.getResource(file).prepare();
+			} finally {
+				lock.unlock();
+			}
 		} finally {
-			lock.unlock();
+			cleanup(provider, file);
 		}
 	}
 
@@ -157,16 +190,21 @@ public interface ResourceProviderTest<P extends ResourceProvider> extends ApiGua
 		Path root = createRoot();
 		Path file1 = root.resolve("file1");
 		Path file2 = root.resolve("file2");
-		provider.create(file1, false);
-		provider.create(file2, false);
 
-		DirectoryStream<Path> stream = provider.children(root, "*");
-		assertNotNull(stream);
-		Iterator<Path> iterator = stream.iterator();
-		assertTrue(iterator.hasNext());
+		try {
+			provider.create(file1, false);
+			provider.create(file2, false);
 
-		Set<Path> children = CollectionUtils.<Path>aggregateAsSet(iterator::forEachRemaining);
-		assertCollectionEquals(children, file1, file2);
+			DirectoryStream<Path> stream = provider.children(root, "*");
+			assertNotNull(stream);
+			Iterator<Path> iterator = stream.iterator();
+			assertTrue(iterator.hasNext());
+
+			Set<Path> children = CollectionUtils.<Path>aggregateAsSet(iterator::forEachRemaining);
+			assertCollectionEquals(children, file1, file2);
+		} finally {
+			cleanup(provider, file1, file2);
+		}
 	}
 
 	/**
@@ -179,23 +217,29 @@ public interface ResourceProviderTest<P extends ResourceProvider> extends ApiGua
 		Path root = createRoot();
 		Path file1 = root.resolve("file1.txt");
 		Path file2 = root.resolve("file2.xml");
-		provider.create(file1, false);
-		provider.create(file2, false);
 
-		DirectoryStream<Path> stream = provider.children(root, "*.xml");
-		assertNotNull(stream);
-		Iterator<Path> iterator = stream.iterator();
-		assertTrue(iterator.hasNext());
+		try {
+			provider.create(file1, false);
+			provider.create(file2, false);
 
-		Set<Path> children = CollectionUtils.<Path>aggregateAsSet(iterator::forEachRemaining);
-		assertCollectionEquals(children, file2);
+			DirectoryStream<Path> stream = provider.children(root, "*.xml");
+			assertNotNull(stream);
+			Iterator<Path> iterator = stream.iterator();
+			assertTrue(iterator.hasNext());
+
+			Set<Path> children = CollectionUtils.<Path>aggregateAsSet(iterator::forEachRemaining);
+			assertCollectionEquals(children, file2);
+		} finally {
+			cleanup(provider, file1, file2);
+		}
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.util.io.resource.ResourceProvider#getResource(java.nio.file.Path)}.
+	 * @throws IOException
 	 */
 	@Test
-	default void testGetUnregisteredResource() {
+	default void testGetUnregisteredResource() throws IOException {
 		assertIcarusException(GlobalErrorCode.INVALID_INPUT,
 				() -> create().getResource(createRoot().resolve("file")));
 	}
@@ -208,10 +252,15 @@ public interface ResourceProviderTest<P extends ResourceProvider> extends ApiGua
 	default void testGetFolderResource() throws IOException {
 		P provider = create();
 		Path folder = createRoot().resolve("folder");
-		provider.create(folder, true);
 
-		assertIcarusException(GlobalErrorCode.INVALID_INPUT,
-				() -> provider.getResource(folder));
+		try {
+			provider.create(folder, true);
+
+			assertIcarusException(GlobalErrorCode.INVALID_INPUT,
+					() -> provider.getResource(folder));
+		} finally {
+			cleanup(provider, folder);
+		}
 	}
 
 	/**
@@ -222,9 +271,14 @@ public interface ResourceProviderTest<P extends ResourceProvider> extends ApiGua
 	default void testGetFileResource() throws IOException {
 		P provider = create();
 		Path file = createRoot().resolve("file");
-		provider.create(file, false);
 
-		assertNotNull(provider.getResource(file));
+		try {
+			provider.create(file, false);
+
+			assertNotNull(provider.getResource(file));
+		} finally {
+			cleanup(provider, file);
+		}
 	}
 
 }

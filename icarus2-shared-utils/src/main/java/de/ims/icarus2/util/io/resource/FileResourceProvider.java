@@ -101,7 +101,16 @@ public class FileResourceProvider implements ResourceProvider {
 	 */
 	@Override
 	public IOResource getResource(Path path) throws IOException {
+		checkFilePath(path);
 		return new FileResource(path);
+	}
+
+	private void checkFilePath(Path path) {
+		requireNonNull(path);
+		if(Files.isDirectory(path))
+			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT,
+					"Path is a directory: "+path);
+
 	}
 
 	/**
@@ -117,6 +126,7 @@ public class FileResourceProvider implements ResourceProvider {
 	 */
 	@Override
 	public boolean isDirectory(Path path) {
+		requireNonNull(path);
 		return Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS);
 	}
 
@@ -125,6 +135,10 @@ public class FileResourceProvider implements ResourceProvider {
 	 */
 	@Override
 	public Lock getLock(Path path) {
+		checkFilePath(path);
+		if(!exists(path))
+			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT,
+					"Cannot create lock for file - file does not exist: "+path);
 		synchronized (sharedLocks) {
 			FileLockWrapper lockWrapper = sharedLocks.get(path);
 			if(lockWrapper==null) {
