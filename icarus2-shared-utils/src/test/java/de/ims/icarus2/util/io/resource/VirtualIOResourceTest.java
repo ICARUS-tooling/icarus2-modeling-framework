@@ -86,6 +86,15 @@ class VirtualIOResourceTest implements IOResourceTest<VirtualIOResource> {
 	}
 
 	/**
+	 * Test method for {@link de.ims.icarus2.util.io.resource.VirtualIOResource#getLocalPath()}.
+	 * @throws IOException
+	 */
+	@Test
+	void testGetLocalPath() throws IOException {
+		assertNull(create().getLocalPath());
+	}
+
+	/**
 	 * Test method for {@link de.ims.icarus2.util.io.resource.VirtualIOResource#size()}.
 	 * @throws IOException
 	 */

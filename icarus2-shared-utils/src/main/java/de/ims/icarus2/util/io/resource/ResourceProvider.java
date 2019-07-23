@@ -26,7 +26,7 @@ import java.nio.file.Path;
 import java.util.concurrent.locks.Lock;
 
 /**
- * Models a highlevel view on
+ * Models a highlevel view on a file system.
  *
  * @author Markus Gärtner
  *

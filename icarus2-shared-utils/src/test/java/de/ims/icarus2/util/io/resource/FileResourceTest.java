@@ -44,7 +44,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import de.ims.icarus2.util.AccessMode;
-import de.ims.icarus2.util.io.resource.FileResource;
 
 /**
  * @author Markus Gärtner
@@ -88,6 +87,17 @@ class FileResourceTest implements IOResourceTest<FileResource> {
 	void testConstructorWithPath() throws IOException {
 		Path file = tempFile();
 		assertSame(file, new FileResource(file).getLocalPath());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.util.io.resource.FileResource#getLocalPath()}.
+	 * @throws IOException
+	 */
+	@Test
+	void testGetLocalPath() throws IOException {
+		Path file = tempFile();
+		FileResource resource = new FileResource(file, AccessMode.READ);
+		assertSame(file, resource.getLocalPath());
 	}
 
 	/**
