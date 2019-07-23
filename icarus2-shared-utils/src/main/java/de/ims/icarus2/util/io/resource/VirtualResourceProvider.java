@@ -20,6 +20,7 @@
 package de.ims.icarus2.util.io.resource;
 
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -40,6 +41,9 @@ import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusRuntimeException;
 
 /**
  * @author Markus Gärtner
@@ -72,6 +76,7 @@ public class VirtualResourceProvider implements ResourceProvider {
 	 */
 	@Override
 	public boolean create(Path path, boolean directory) throws IOException {
+		requireNonNull(path);
 		if(directory) {
 			return directories.add(path);
 		} else if(!resources.containsKey(path)) {
@@ -86,8 +91,15 @@ public class VirtualResourceProvider implements ResourceProvider {
 	 * @see bwfdm.replaydh.io.resources.ResourceProvider#getResource(java.nio.file.Path)
 	 */
 	@Override
-	public IOResource getResource(Path path) throws IOException {
-		checkState("No resoruce registered for path: "+path, resources.containsKey(path));
+	public IOResource getResource(Path path) {
+		requireNonNull(path);
+		if(directories.contains(path))
+			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT,
+					"Path is registered as a directory: "+path);
+		IOResource resource = resources.get(path);
+		if(resource==null)
+			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT,
+					"No resource registered for path: "+path);
 		return resources.get(path);
 	}
 
@@ -97,12 +109,13 @@ public class VirtualResourceProvider implements ResourceProvider {
 			try {
 				resource.delete();
 			} catch (IOException e) {
-				log.warn("Failed to delete  virtual resource for: {}", path, e);
+				log.warn("Failed to delete virtual resource for: {}", path, e);
 			}
 		});
 	}
 
 	public void addDirectory(Path path) {
+		requireNonNull(path);
 		directories.add(path);
 	}
 
@@ -119,6 +132,7 @@ public class VirtualResourceProvider implements ResourceProvider {
 	 */
 	@Override
 	public boolean isDirectory(Path path) {
+		requireNonNull(path);
 		return directories.contains(path);
 	}
 
@@ -127,6 +141,8 @@ public class VirtualResourceProvider implements ResourceProvider {
 	 */
 	@Override
 	public Lock getLock(Path path) {
+		requireNonNull(path);
+		getResource(path); // To make sure we only return locks for known non-folder paths
 		synchronized (locks) {
 			Lock lock = locks.get(path);
 			if(lock==null) {
@@ -142,6 +158,9 @@ public class VirtualResourceProvider implements ResourceProvider {
 	 */
 	@Override
 	public DirectoryStream<Path> children(Path folder, String glob) throws IOException {
+		requireNonNull(folder);
+		requireNonNull(glob);
+
 		VirtualDirectoryStream stream = new VirtualDirectoryStream();
 
 		Matcher matcher = null;
