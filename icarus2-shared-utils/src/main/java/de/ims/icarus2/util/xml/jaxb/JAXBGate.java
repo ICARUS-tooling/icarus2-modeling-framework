@@ -94,6 +94,8 @@ public abstract class JAXBGate<B extends Object> {
 		// Try to load new buffer
 		if(buffer==null) {
 			synchronized (fileLock) {
+				resource.prepare();
+
 				if(resource.size()==0L) {
 					return;
 				}
@@ -158,6 +160,7 @@ public abstract class JAXBGate<B extends Object> {
 			Marshaller marshaller = context.createMarshaller();
 			marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
 
+			resource.prepare();
 			try(Writer writer = Channels.newWriter(resource.getWriteChannel(),
 					encoding.newEncoder(), IOUtil.DEFAULT_BUFFER_SIZE)) {
 				marshaller.marshal(buffer, writer);

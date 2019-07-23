@@ -129,7 +129,7 @@ public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageB
 
 	public synchronized void synchronize() {
 		// Only save to disc when actual new entries exist
-		if(!checkStorage()) {
+		if(checkStorage()) {
 			try {
 				saveBuffer(true);
 			} catch (Exception e) {
@@ -246,7 +246,7 @@ public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageB
 	public synchronized void forEachEntry(String prefix,
 			BiConsumer<? super String, ? super String> action) {
 
-		String lowerBound = prefix+Character.MIN_VALUE;
+		String lowerBound = prefix;
 		String upperBound = prefix+Character.MAX_VALUE;
 
 		entries.subMap(lowerBound, true, upperBound, true).forEach(action);
