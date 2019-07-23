@@ -61,11 +61,13 @@ public class HighlightLayerManifestImpl extends AbstractLayerManifest<HighlightL
 
 	@Override
 	public boolean isHighlightFlagSet(HighlightFlag flag) {
+		requireNonNull(flag);
 		return highlightFlags.contains(flag) || (hasTemplate() && getTemplate().isHighlightFlagSet(flag));
 	}
 
 	@Override
 	public boolean isLocalHighlightFlagSet(HighlightFlag flag) {
+		requireNonNull(flag);
 		return highlightFlags.contains(flag);
 	}
 
@@ -119,7 +121,7 @@ public class HighlightLayerManifestImpl extends AbstractLayerManifest<HighlightL
 	 */
 	@Override
 	public HighlightLayerManifest setPrimaryLayerId(String primaryLayerId,
-			Consumer<? super TargetLayerManifest> action) {
+			@Nullable Consumer<? super TargetLayerManifest> action) {
 		checkNotLocked();
 		IcarusUtils.consumeIfAble(setPrimaryLayerId0(primaryLayerId), action);
 		return this;

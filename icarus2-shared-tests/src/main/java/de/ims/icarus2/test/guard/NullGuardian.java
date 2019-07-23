@@ -10,7 +10,9 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -35,6 +37,11 @@ public class NullGuardian<T> extends Guardian<T> {
 
 	private Supplier<? extends T> creator;
 
+	private static final Set<String> methodBlacklist = new HashSet<>();
+	static {
+		Collections.addAll(methodBlacklist, "equals");
+	}
+
 	public static final Predicate<? super Method> METHOD_FILTER = (m) -> {
 		boolean isStatic = Modifier.isStatic(m.getModifiers()); // must not be static
 		boolean isPublic = Modifier.isPublic(m.getModifiers());  // must be public
@@ -43,6 +50,10 @@ public class NullGuardian<T> extends Guardian<T> {
 
 		// Early filtering of unfit methods before we access the parameter array
 		if(isStatic || !isPublic || isObjMethod || hasNoParams) {
+			return false;
+		}
+
+		if(methodBlacklist.contains(m.getName())) {
 			return false;
 		}
 
@@ -69,7 +80,7 @@ public class NullGuardian<T> extends Guardian<T> {
 		classCache = ClassCache.<T>newBuilder()
 				.targetClass(targetClass)
 				.methodFilter(METHOD_FILTER)
-//				.log(System.out::println)
+				.log(System.out::println)
 				.build();
 	}
 
@@ -92,11 +103,13 @@ public class NullGuardian<T> extends Guardian<T> {
 
 	private DynamicNode createTestsForMethod(MethodCache methodCache) {
 		Method method = methodCache.getMethod();
-		Collection<ParamConfig> variations = variateNullParameter(null, method);
+		T instance = creator.get(); // we use the same instance for an entire sequence
+		Collection<ParamConfig> variations = variateNullParameter(instance, method, methodCache);
 		String baseLabel = RefUtils.toSimpleString(method);
 
 		if(variations.isEmpty()) {
-			return dynamicContainer(baseLabel+" - no null-guarded arguments", Collections.emptyList());
+			return dynamicContainer(baseLabel+" - no null-guarded arguments",
+					Collections.emptyList());
 		}
 
 		return dynamicContainer(
@@ -104,7 +117,6 @@ public class NullGuardian<T> extends Guardian<T> {
 				sourceUriFor(method),
 				variations.stream().map(config ->
 					createNullTest(config, args -> {
-						T instance = creator.get();
 						method.invoke(instance, args);
 					}))) ;
 	}

@@ -128,9 +128,8 @@ public class MethodCache {
 	}
 
 	public boolean hasParameterAnnotation(
-			Class<? extends Annotation> annotationClass) {
-		return parameterAnnotations.stream()
-				.anyMatch(map -> map.containsKey(annotationClass));
+			Class<? extends Annotation> annotationClass, int paramIndex) {
+		return parameterAnnotations.get(paramIndex).containsKey(annotationClass);
 	}
 
 	public List<Method> getMethodsForAnnotation(

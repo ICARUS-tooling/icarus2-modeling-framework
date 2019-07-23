@@ -93,6 +93,7 @@ public class StructureManifestImpl extends AbstractContainerManifestBase<Structu
 
 	@Override
 	public boolean isStructureFlagSet(StructureFlag flag) {
+		requireNonNull(flag);
 		return structureFlags.contains(flag) || (hasTemplate() && getTemplate().isStructureFlagSet(flag));
 	}
 

@@ -124,7 +124,8 @@ public class FragmentLayerManifestImpl extends AbstractItemLayerManifestBase<Fra
 	 * @see de.ims.icarus2.model.manifest.api.FragmentLayerManifest#setValueLayerId(java.lang.String, java.util.function.Consumer)
 	 */
 	@Override
-	public FragmentLayerManifest setValueLayerId(String valueLayerId, Consumer<? super TargetLayerManifest> action) {
+	public FragmentLayerManifest setValueLayerId(String valueLayerId,
+			@Nullable Consumer<? super TargetLayerManifest> action) {
 		checkNotLocked();
 		IcarusUtils.consumeIfAble(setValueLayerId0(valueLayerId), action);
 		return this;

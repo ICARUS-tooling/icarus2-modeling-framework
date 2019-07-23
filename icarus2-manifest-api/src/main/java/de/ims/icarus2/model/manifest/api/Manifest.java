@@ -19,6 +19,8 @@ package de.ims.icarus2.model.manifest.api;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.apiguard.Guarded;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
@@ -193,7 +195,7 @@ public interface Manifest extends ManifestFragment {
 	 *
 	 * @param templateId
 	 */
-	Manifest setTemplateId(String templateId);
+	Manifest setTemplateId(@Nullable String templateId);
 
 	/**
 	 * Returns the registry that is managing this manifest.

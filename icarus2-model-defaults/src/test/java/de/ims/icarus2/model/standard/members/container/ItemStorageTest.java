@@ -81,7 +81,8 @@ interface ItemStorageTest<S extends ItemStorage> extends ApiGuardedTest<S> {
 	default void configureApiGuard(ApiGuard<S> apiGuard) {
 		ApiGuardedTest.super.configureApiGuard(apiGuard);
 
-		apiGuard.detectUnmarkedMethods(true);
+		apiGuard.detectUnmarkedMethods(true)
+			.nullGuard(true);
 	}
 
 	/**

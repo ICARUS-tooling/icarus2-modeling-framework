@@ -96,6 +96,7 @@ public abstract class AbstractContainerManifestBase<M extends ContainerManifestB
 
 	@Override
 	public boolean isContainerFlagSet(ContainerFlag flag) {
+		requireNonNull(flag);
 		return containerFlags.contains(flag) || (hasTemplate() && getTemplate().isContainerFlagSet(flag));
 	}
 

@@ -313,7 +313,7 @@ public class LocationManifestImpl extends AbstractManifest<LocationManifest> imp
 	 * @see de.ims.icarus2.model.manifest.standard.AbstractManifest#setTemplateId(java.lang.String)
 	 */
 	@Override
-	public LocationManifest setTemplateId(String templateId) {
+	public LocationManifest setTemplateId(@Nullable String templateId) {
 		throw new ManifestException(ManifestErrorCode.MANIFEST_ILLEGAL_TEMPLATE_STATE,
 				"Location manifest does not support templates");
 	}

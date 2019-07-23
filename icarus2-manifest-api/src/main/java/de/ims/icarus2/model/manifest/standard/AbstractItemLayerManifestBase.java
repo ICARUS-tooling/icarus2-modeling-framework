@@ -21,6 +21,8 @@ import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
@@ -131,7 +133,8 @@ public abstract class AbstractItemLayerManifestBase<M extends ItemLayerManifestB
 	 * @see de.ims.icarus2.model.manifest.api.ItemLayerManifestBase#setBoundaryLayerId(java.lang.String, java.util.function.Consumer)
 	 */
 	@Override
-	public M setBoundaryLayerId(String boundaryLayerId, Consumer<? super TargetLayerManifest> action) {
+	public M setBoundaryLayerId(String boundaryLayerId,
+			@Nullable Consumer<? super TargetLayerManifest> action) {
 		checkNotLocked();
 
 		IcarusUtils.consumeIfAble(setBoundaryLayerId0(boundaryLayerId), action);
@@ -171,7 +174,7 @@ public abstract class AbstractItemLayerManifestBase<M extends ItemLayerManifestB
 	 */
 	@Override
 	public M setFoundationLayerId(String foundationLayerId,
-			Consumer<? super TargetLayerManifest> action) {
+			@Nullable Consumer<? super TargetLayerManifest> action) {
 		checkNotLocked();
 
 		IcarusUtils.consumeIfAble(setFoundationLayerId0(foundationLayerId), action);

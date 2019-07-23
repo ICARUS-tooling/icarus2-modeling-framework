@@ -49,6 +49,7 @@ public interface Hierarchy<E extends Object> extends Lockable, Iterable<E> {
 	}
 
 	default Optional<E> adjacent(E item, Direction direction) {
+		requireNonNull(direction);
 		int level = levelOf(item);
 		if(level != -1) {
 			level += direction==Direction.BELOW ? 1 : -1;

@@ -66,7 +66,7 @@ class ConstructorGuardian<T> extends Guardian<T> {
 	}
 
 	private DynamicNode createTestsForConstructor(Constructor<?> constructor) {
-		Collection<ParamConfig> variations = variateNullParameter(null, constructor);
+		Collection<ParamConfig> variations = variateNullParameter(null, constructor, null);
 		String baseLabel = RefUtils.toSimpleString(constructor);
 
 		if(variations.isEmpty()) {

@@ -24,6 +24,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.api.binding.Bindable;
 import de.ims.icarus2.model.manifest.api.binding.LayerPrerequisite;
@@ -163,6 +165,7 @@ public interface ContextManifest extends MemberManifest<ContextManifest>, Bindab
 	@SuppressWarnings("unchecked")
 	@AccessRestriction(AccessMode.READ)
 	default <L extends LayerManifest<?>> List<L> getLayerManifests(Predicate<? super LayerManifest<?>> p) {
+		requireNonNull(p);
 		LazyCollection<L> result = LazyCollection.lazyList();
 
 		forEachLayerManifest(m -> {
@@ -309,7 +312,8 @@ public interface ContextManifest extends MemberManifest<ContextManifest>, Bindab
 		return IcarusUtils.extractSupplied(action -> addPrerequisite(alias, action));
 	}
 
-	ContextManifest addPrerequisite(String alias, Consumer<? super PrerequisiteManifest> action);
+	ContextManifest addPrerequisite(String alias,
+			@Nullable Consumer<? super PrerequisiteManifest> action);
 
 	ContextManifest removePrerequisite(PrerequisiteManifest prerequisiteManifest);
 
@@ -401,9 +405,9 @@ public interface ContextManifest extends MemberManifest<ContextManifest>, Bindab
 
 		// Modification methods
 
-		void setDescription(String description);
-		void setLayerId(String layerId);
-		void setTypeId(String typeId);
-		void setContextId(String contextId);
+		void setDescription(@Nullable String description);
+		void setLayerId(@Nullable String layerId);
+		void setTypeId(@Nullable String typeId);
+		void setContextId(@Nullable String contextId);
 	}
 }

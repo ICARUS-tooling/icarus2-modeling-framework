@@ -260,7 +260,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 		MethodCache getterMethodCache = classCache.getMethodCache(config.getter);
 		MethodCache setterMethodCache = classCache.getMethodCache(config.setter);
 
-		boolean allowNullParam = setterMethodCache.hasParameterAnnotation(Nullable.class);
+		boolean allowNullParam = setterMethodCache.hasParameterAnnotation(Nullable.class, 0);
 
 		// Nullability of return value can be defined in two ways
 		boolean allowNullReturn = getterMethodCache.hasAnnotation(Nullable.class)

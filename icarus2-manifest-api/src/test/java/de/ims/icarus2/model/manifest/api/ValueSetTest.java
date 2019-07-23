@@ -42,6 +42,7 @@ import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.guard.ApiGuard;
 import de.ims.icarus2.util.collections.ArrayUtils;
 
 /**
@@ -50,6 +51,21 @@ import de.ims.icarus2.util.collections.ArrayUtils;
  */
 public interface ValueSetTest extends LockableTest<ValueSet>, TypedManifestTest<ValueSet> {
 
+	/**
+	 * @see de.ims.icarus2.model.manifest.ManifestApiTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
+	 */
+	@Override
+	default void configureApiGuard(ApiGuard<ValueSet> apiGuard) {
+		LockableTest.super.configureApiGuard(apiGuard);
+
+		/*
+		 *  For the addAll(Class) method we need to provide an actual
+		 *  enum class as the APiGuard can't mock final classes.
+		 *  We simply use the ManifestType enum here, which is as good
+		 *  as any other...
+		 */
+		apiGuard.parameterResolver(Class.class, set -> ManifestType.class);
+	}
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.TypedManifestTest#getExpectedType()
 	 */

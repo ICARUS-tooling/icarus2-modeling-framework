@@ -35,6 +35,7 @@ public interface ResourceProviderTest<P extends ResourceProvider> extends ApiGua
 	@Override
 	default void configureApiGuard(ApiGuard<P> apiGuard) {
 		ApiGuardedTest.super.configureApiGuard(apiGuard);
+
 		apiGuard.nullGuard(true);
 	}
 

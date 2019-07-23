@@ -30,6 +30,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -50,6 +51,7 @@ import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.opentest4j.TestAbortedException;
 
 import de.ims.icarus2.apiguard.EnumType;
+import de.ims.icarus2.test.reflect.MethodCache;
 
 /**
  * @author Markus Gärtner
@@ -161,6 +163,7 @@ abstract class Guardian<T> {
 	 * @return
 	 */
 	Object createParameter(Class<?> clazz) {
+
 		if(clazz.isEnum()) {
 			// Assumes that the enum actually has values defined
 			return clazz.getEnumConstants()[0];
@@ -172,6 +175,9 @@ abstract class Guardian<T> {
 		if(enumType!=null) {
 			return fetchEnumValue(clazz, enumType);
 		}
+
+		if(Modifier.isFinal(clazz.getModifiers()))
+			throw new GuardException("Cannot mock final class: "+clazz);
 
 		/*
 		 *  We could check for a no-args constructor and use it,
@@ -208,7 +214,7 @@ abstract class Guardian<T> {
 		return value;
 	}
 
-	private BitSet findNullableParameters(Executable executable) {
+	private BitSet findNullableParameters(Executable executable, MethodCache methodCache) {
 		Annotation[][] annotations = executable.getParameterAnnotations();
 
 		BitSet set = new BitSet(annotations.length);
@@ -216,6 +222,14 @@ abstract class Guardian<T> {
 		for (int i = 0; i < annotations.length; i++) {
 			for (int j = 0; j < annotations[i].length; j++) {
 				if(annotations[i][j].annotationType().equals(Nullable.class)) {
+					set.set(i);
+				}
+			}
+		}
+
+		if(methodCache!=null) {
+			for (int i = 0; i < executable.getParameterCount(); i++) {
+				if(!set.get(i) && methodCache.hasParameterAnnotation(Nullable.class, i)) {
 					set.set(i);
 				}
 			}
@@ -232,11 +246,12 @@ abstract class Guardian<T> {
 		return clazz.getSimpleName();
 	}
 
-	Collection<ParamConfig> variateNullParameter(T instance, Executable executable) {
+	Collection<ParamConfig> variateNullParameter(T instance,
+			Executable executable, MethodCache methodCache) {
 
 		final int paramCount = executable.getParameterCount();
 
-		final BitSet nullables = findNullableParameters(executable);
+		final BitSet nullables = findNullableParameters(executable, methodCache);
 
 		// In case all parameters are nullable we don't really have anything to do
 		if(nullables.cardinality()==paramCount) {

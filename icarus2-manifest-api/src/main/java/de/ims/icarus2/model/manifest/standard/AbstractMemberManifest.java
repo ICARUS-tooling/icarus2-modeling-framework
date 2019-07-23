@@ -339,7 +339,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest<M>, H exte
 	}
 
 	@Override
-	public M setPropertyValue(String name, Object value) {
+	public M setPropertyValue(String name, @Nullable Object value) {
 		checkNotLocked();
 
 		setPropertyValue0(name, value);
@@ -425,7 +425,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest<M>, H exte
 	}
 
 	@Override
-	public M setName(String name) {
+	public M setName(@Nullable String name) {
 		checkNotLocked();
 
 		setName0(name);
@@ -443,7 +443,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest<M>, H exte
 	}
 
 	@Override
-	public M setDescription(String description) {
+	public M setDescription(@Nullable String description) {
 		checkNotLocked();
 
 		setDescription0(description);

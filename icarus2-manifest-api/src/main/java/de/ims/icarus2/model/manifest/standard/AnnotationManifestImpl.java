@@ -323,7 +323,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	}
 
 	@Override
-	public AnnotationManifest setNoEntryValue(Object noEntryValue) {
+	public AnnotationManifest setNoEntryValue(@Nullable Object noEntryValue) {
 		checkNotLocked();
 
 		setNoEntryValue0(noEntryValue);
@@ -339,7 +339,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 * @param contentType the contentType to set
 	 */
 	@Override
-	public AnnotationManifest setContentType(ContentType contentType) {
+	public AnnotationManifest setContentType(@Nullable ContentType contentType) {
 		checkNotLocked();
 
 		setContentType0(contentType);
@@ -370,7 +370,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	}
 
 	@Override
-	public AnnotationManifest setValueSet(ValueSet values) {
+	public AnnotationManifest setValueSet(@Nullable ValueSet values) {
 		checkNotLocked();
 
 		setValueSet0(values);
@@ -386,7 +386,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 * @param valueRange the valueRange to set
 	 */
 	@Override
-	public AnnotationManifest setValueRange(ValueRange valueRange) {
+	public AnnotationManifest setValueRange(@Nullable ValueRange valueRange) {
 		checkNotLocked();
 
 		setValueRange0(valueRange);

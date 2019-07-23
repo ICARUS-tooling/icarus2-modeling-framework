@@ -436,7 +436,8 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	 * @see de.ims.icarus2.model.manifest.api.ContextManifest#addPrerequisite(java.lang.String, java.util.function.Consumer)
 	 */
 	@Override
-	public ContextManifest addPrerequisite(String alias, Consumer<? super PrerequisiteManifest> action) {
+	public ContextManifest addPrerequisite(String alias,
+			@Nullable Consumer<? super PrerequisiteManifest> action) {
 		checkNotLocked();
 
 		IcarusUtils.consumeIfAble(addPrerequisite0(alias), action);
@@ -628,7 +629,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 		 * @param description the description to set
 		 */
 		@Override
-		public void setDescription(String description) {
+		public void setDescription(@Nullable String description) {
 			checkNotLocked();
 //			getContextManifest().checkNotLive();
 
@@ -687,7 +688,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 		 * @param layerId the layerId to set
 		 */
 		@Override
-		public void setLayerId(String layerId) {
+		public void setLayerId(@Nullable String layerId) {
 			checkNotLocked();
 //			getContextManifest().checkNotLive();
 
@@ -698,7 +699,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 		 * @param typeId the typeId to set
 		 */
 		@Override
-		public void setTypeId(String typeId) {
+		public void setTypeId(@Nullable String typeId) {
 			checkNotLocked();
 //			getContextManifest().checkNotLive();
 
@@ -709,7 +710,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 		 * @param contextId the contextId to set
 		 */
 		@Override
-		public void setContextId(String contextId) {
+		public void setContextId(@Nullable String contextId) {
 			checkNotLocked();
 //			getContextManifest().checkNotLive();
 

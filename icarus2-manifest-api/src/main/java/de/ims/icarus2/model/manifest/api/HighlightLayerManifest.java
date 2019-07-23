@@ -21,6 +21,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.access.AccessControl;
@@ -101,7 +103,8 @@ public interface HighlightLayerManifest extends LayerManifest<HighlightLayerMani
 		return IcarusUtils.extractSupplied(action -> setPrimaryLayerId(primaryLayerId, action));
 	}
 
-	HighlightLayerManifest setPrimaryLayerId(String primaryLayerId, Consumer<? super TargetLayerManifest> action);
+	HighlightLayerManifest setPrimaryLayerId(String primaryLayerId,
+			@Nullable Consumer<? super TargetLayerManifest> action);
 
 	HighlightLayerManifest setHighlightFlag(HighlightFlag flag, boolean active);
 }

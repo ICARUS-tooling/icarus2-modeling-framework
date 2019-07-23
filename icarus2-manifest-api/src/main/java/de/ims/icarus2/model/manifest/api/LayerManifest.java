@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.access.AccessControl;
@@ -110,7 +112,7 @@ public interface LayerManifest<L extends LayerManifest<L>> extends MemberManifes
 		return IcarusUtils.extractSupplied(action -> addBaseLayerId(baseLayerId, action));
 	}
 
-	L addBaseLayerId(String baseLayerId, Consumer<? super TargetLayerManifest> action);
+	L addBaseLayerId(String baseLayerId, @Nullable Consumer<? super TargetLayerManifest> action);
 
 	L removeBaseLayerId(String baseLayerId);
 

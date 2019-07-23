@@ -22,6 +22,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
@@ -205,7 +207,8 @@ public interface AnnotationLayerManifest extends LayerManifest<AnnotationLayerMa
 		return IcarusUtils.extractSupplied(action -> addReferenceLayerId(referenceLayerId, action));
 	}
 
-	AnnotationLayerManifest addReferenceLayerId(String referenceLayerId, Consumer<? super TargetLayerManifest> action);
+	AnnotationLayerManifest addReferenceLayerId(String referenceLayerId,
+			@Nullable Consumer<? super TargetLayerManifest> action);
 
 	AnnotationLayerManifest removeReferenceLayerId(String referenceLayerId);
 }

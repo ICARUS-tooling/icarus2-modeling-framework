@@ -22,6 +22,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.Manifest;
@@ -255,7 +257,7 @@ public abstract class AbstractManifest<T extends Manifest> extends AbstractLocka
 	 * @see de.ims.icarus2.model.manifest.api.Manifest#setTemplateId(java.lang.String)
 	 */
 	@Override
-	public T setTemplateId(String templateId) {
+	public T setTemplateId(@Nullable String templateId) {
 		checkNotLocked();
 
 		setTemplateId0(templateId);

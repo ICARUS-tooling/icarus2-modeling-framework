@@ -25,6 +25,8 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
@@ -147,7 +149,8 @@ public abstract class AbstractLayerManifest<L extends LayerManifest<L>>
 	 * @see de.ims.icarus2.model.manifest.api.LayerManifest#addBaseLayerId(java.lang.String, java.util.function.Consumer)
 	 */
 	@Override
-	public L addBaseLayerId(String baseLayerId, Consumer<? super TargetLayerManifest> action) {
+	public L addBaseLayerId(String baseLayerId,
+			@Nullable Consumer<? super TargetLayerManifest> action) {
 		checkNotLocked();
 
 		IcarusUtils.consumeIfAble(addBaseLayerId0(baseLayerId), action);

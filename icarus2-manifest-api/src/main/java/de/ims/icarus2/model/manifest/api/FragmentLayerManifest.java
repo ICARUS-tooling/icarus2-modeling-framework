@@ -19,6 +19,8 @@ package de.ims.icarus2.model.manifest.api;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
@@ -72,7 +74,8 @@ public interface FragmentLayerManifest extends ItemLayerManifestBase<FragmentLay
 		return IcarusUtils.extractSupplied(action -> setValueLayerId(valueLayerId, action));
 	}
 
-	FragmentLayerManifest setValueLayerId(String valueLayerId, Consumer<? super TargetLayerManifest> action);
+	FragmentLayerManifest setValueLayerId(String valueLayerId,
+			@Nullable Consumer<? super TargetLayerManifest> action);
 
 	FragmentLayerManifest setAnnotationKey(String key);
 

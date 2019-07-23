@@ -19,6 +19,8 @@ package de.ims.icarus2.model.manifest.api;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessMode;
@@ -101,11 +103,13 @@ public interface ItemLayerManifestBase<M extends ItemLayerManifestBase<M>> exten
 		return IcarusUtils.extractSupplied(action -> setBoundaryLayerId(boundaryLayerId, action));
 	}
 
-	M setBoundaryLayerId(String boundaryLayerId, Consumer<? super TargetLayerManifest> action);
+	M setBoundaryLayerId(String boundaryLayerId,
+			@Nullable Consumer<? super TargetLayerManifest> action);
 
 	default TargetLayerManifest setAndGetFoundationLayer(String foundationLayerId) {
 		return IcarusUtils.extractSupplied(action -> setFoundationLayerId(foundationLayerId, action));
 	}
 
-	M setFoundationLayerId(String foundationLayerId, Consumer<? super TargetLayerManifest> action);
+	M setFoundationLayerId(String foundationLayerId,
+			@Nullable Consumer<? super TargetLayerManifest> action);
 }

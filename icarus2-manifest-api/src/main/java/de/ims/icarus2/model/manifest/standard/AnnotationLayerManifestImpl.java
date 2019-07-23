@@ -200,7 +200,7 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 
 	@Override
 	public AnnotationLayerManifest addReferenceLayerId(String referenceLayerId,
-			Consumer<? super TargetLayerManifest> action) {
+			@Nullable Consumer<? super TargetLayerManifest> action) {
 		checkNotLocked();
 
 		IcarusUtils.consumeIfAble(addReferenceLayerId0(referenceLayerId), action);
@@ -248,6 +248,7 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 
 	@Override
 	public boolean isAnnotationFlagSet(AnnotationFlag flag) {
+		requireNonNull(flag);
 		return annotationFlags.contains(flag) || (hasTemplate() && getTemplate().isAnnotationFlagSet(flag));
 	}
 
@@ -256,6 +257,7 @@ public class AnnotationLayerManifestImpl extends AbstractLayerManifest<Annotatio
 	 */
 	@Override
 	public boolean isLocalAnnotationFlagSet(AnnotationFlag flag) {
+		requireNonNull(flag);
 		return annotationFlags.contains(flag);
 	}
 
