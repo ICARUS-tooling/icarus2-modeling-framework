@@ -48,6 +48,13 @@ public class ReadOnlyURLResource implements IOResource {
 	}
 
 	/**
+	 * @return the source
+	 */
+	public URL getSource() {
+		return source;
+	}
+
+	/**
 	 * @see de.ims.icarus2.util.io.resource.IOResource#getAccessMode()
 	 */
 	@Override
