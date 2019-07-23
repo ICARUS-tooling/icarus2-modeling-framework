@@ -165,7 +165,7 @@ public interface ResourceProviderTest<P extends ResourceProvider> extends ApiGua
 		Iterator<Path> iterator = stream.iterator();
 		assertTrue(iterator.hasNext());
 
-		Set<Path> children = CollectionUtils.aggregateAsSet(iterator::forEachRemaining);
+		Set<Path> children = CollectionUtils.<Path>aggregateAsSet(iterator::forEachRemaining);
 		assertCollectionEquals(children, file1, file2);
 	}
 
@@ -187,7 +187,7 @@ public interface ResourceProviderTest<P extends ResourceProvider> extends ApiGua
 		Iterator<Path> iterator = stream.iterator();
 		assertTrue(iterator.hasNext());
 
-		Set<Path> children = CollectionUtils.aggregateAsSet(iterator::forEachRemaining);
+		Set<Path> children = CollectionUtils.<Path>aggregateAsSet(iterator::forEachRemaining);
 		assertCollectionEquals(children, file2);
 	}
 

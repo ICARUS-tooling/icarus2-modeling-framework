@@ -44,7 +44,6 @@ public class ReadOnlyStringResource implements IOResource {
 
 	/**
 	 * @param source
-	 * @param encoding
 	 */
 	public ReadOnlyStringResource(String source) {
 		this(source, StandardCharsets.UTF_8);

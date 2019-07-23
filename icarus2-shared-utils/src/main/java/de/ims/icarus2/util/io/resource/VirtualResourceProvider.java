@@ -63,17 +63,11 @@ public class VirtualResourceProvider implements ResourceProvider {
 		return new VirtualIOResource();
 	}
 
-	/**
-	 * @see bwfdm.replaydh.io.resources.ResourceProvider#exists(java.nio.file.Path)
-	 */
 	@Override
 	public boolean exists(Path path) {
 		return resources.containsKey(path) || isDirectory(path);
 	}
 
-	/**
-	 * @see bwfdm.replaydh.io.resources.ResourceProvider#create(java.nio.file.Path)
-	 */
 	@Override
 	public boolean create(Path path, boolean directory) throws IOException {
 		requireNonNull(path);
@@ -87,9 +81,6 @@ public class VirtualResourceProvider implements ResourceProvider {
 		return false;
 	}
 
-	/**
-	 * @see bwfdm.replaydh.io.resources.ResourceProvider#getResource(java.nio.file.Path)
-	 */
 	@Override
 	public IOResource getResource(Path path) {
 		requireNonNull(path);
@@ -127,18 +118,12 @@ public class VirtualResourceProvider implements ResourceProvider {
 		return Collections.unmodifiableSet(resources.keySet());
 	}
 
-	/**
-	 * @see bwfdm.replaydh.io.resources.ResourceProvider#isDirectory(java.nio.file.Path)
-	 */
 	@Override
 	public boolean isDirectory(Path path) {
 		requireNonNull(path);
 		return directories.contains(path);
 	}
 
-	/**
-	 * @see bwfdm.replaydh.io.resources.ResourceProvider#getLock(java.nio.file.Path)
-	 */
 	@Override
 	public Lock getLock(Path path) {
 		requireNonNull(path);
@@ -153,9 +138,6 @@ public class VirtualResourceProvider implements ResourceProvider {
 		}
 	}
 
-	/**
-	 * @see bwfdm.replaydh.io.resources.ResourceProvider#children(java.nio.file.Path)
-	 */
 	@Override
 	public DirectoryStream<Path> children(Path folder, String glob) throws IOException {
 		requireNonNull(folder);
