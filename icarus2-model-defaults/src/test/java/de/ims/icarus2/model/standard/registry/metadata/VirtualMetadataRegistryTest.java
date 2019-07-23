@@ -28,4 +28,11 @@ class VirtualMetadataRegistryTest implements MetadataRegistryTest<VirtualMetadat
 		return settings.process(new VirtualMetadataRegistry());
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.api.registry.MetadataRegistryTest#createReadingCopy(de.ims.icarus2.model.api.registry.MetadataRegistry)
+	 */
+	@Override
+	public VirtualMetadataRegistry createReadingCopy(VirtualMetadataRegistry original) {
+		return original;
+	}
 }

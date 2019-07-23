@@ -93,7 +93,7 @@ public class VirtualMetadataRegistry implements MetadataRegistry {
 	public synchronized void forEachEntry(String prefix,
 			BiConsumer<? super String, ? super String> action) {
 
-		String lowerBound = prefix+Character.MIN_VALUE;
+		String lowerBound = prefix;
 		String upperBound = prefix+Character.MAX_VALUE;
 
 		entries.subMap(lowerBound, true, upperBound, true).forEach(action);
