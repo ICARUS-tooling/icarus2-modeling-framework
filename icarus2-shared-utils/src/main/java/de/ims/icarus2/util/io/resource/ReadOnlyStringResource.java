@@ -16,7 +16,6 @@
  */
 package de.ims.icarus2.util.io.resource;
 
-import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
@@ -24,6 +23,7 @@ import java.io.Writer;
 import java.nio.channels.Channels;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
@@ -46,13 +46,31 @@ public class ReadOnlyStringResource implements IOResource {
 	 * @param source
 	 * @param encoding
 	 */
-	public ReadOnlyStringResource(String source, Charset encoding) {
-		requireNonNull(source);
-		requireNonNull(encoding);
-		checkArgument("Source string must not be empty", !source.isEmpty());
+	public ReadOnlyStringResource(String source) {
+		this(source, StandardCharsets.UTF_8);
+	}
 
-		this.source = source;
-		this.encoding = encoding;
+	/**
+	 * @param source
+	 * @param encoding
+	 */
+	public ReadOnlyStringResource(String source, Charset encoding) {
+		this.source = requireNonNull(source);
+		this.encoding = requireNonNull(encoding);
+	}
+
+	/**
+	 * @return the source
+	 */
+	public String getSource() {
+		return source;
+	}
+
+	/**
+	 * @return the encoding
+	 */
+	public Charset getEncoding() {
+		return encoding;
 	}
 
 	/**

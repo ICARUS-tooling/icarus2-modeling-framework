@@ -22,13 +22,16 @@ package de.ims.icarus2.util.io.resources;
 import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
+import java.util.Set;
+import java.util.stream.Stream;
 
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.TestFactory;
 import org.opentest4j.TestAbortedException;
 
 import de.ims.icarus2.GlobalErrorCode;
@@ -65,40 +68,47 @@ public interface IOResourceTest<R extends IOResource> extends ApiGuardedTest<R> 
 	 * Test method for {@link de.ims.icarus2.util.io.resource.IOResource#getAccessMode()}.
 	 * @throws IOException
 	 */
-	@ParameterizedTest
-	@EnumSource(value=AccessMode.class)
-	default void expectAccessModeNotNull(AccessMode accessMode) throws IOException {
-		assertSame(accessMode, create(accessMode).getAccessMode());
+	@TestFactory
+	default Stream<DynamicTest> expectAccessModeNotNull() throws IOException {
+		return getSupportedAccessModes().stream()
+				.map(accessMode -> dynamicTest(accessMode.name(), () -> {
+					assertSame(accessMode, create(accessMode).getAccessMode());
+				}));
 	}
+
+	Set<AccessMode> getSupportedAccessModes();
 
 	/**
 	 * Test method for {@link de.ims.icarus2.util.io.resource.IOResource#getWriteChannel()}.
 	 * Test method for {@link de.ims.icarus2.util.io.resource.IOResource#getReadChannel()}.
 	 */
-	@ParameterizedTest
-	@EnumSource(value=AccessMode.class)
-	default void verifyAccessModeConsistencyWithChannels(AccessMode accessMode) throws IOException {
-		R instance = create(accessMode);
+	@TestFactory
+	default Stream<DynamicTest> verifyAccessModeConsistencyWithChannels() {
+		return getSupportedAccessModes().stream()
+				.map(accessMode -> dynamicTest(accessMode.name(), () -> {
+					R instance = create(accessMode);
 
-		instance.prepare();
+					instance.prepare();
 
-		if(accessMode.isWrite()) {
-			try(SeekableByteChannel channel = instance.getWriteChannel()) {
-				assertNotNull(channel);
-			}
-		} else {
-			assertIcarusException(GlobalErrorCode.UNSUPPORTED_OPERATION,
-					() -> instance.getWriteChannel(), "Should not be writable");
-		}
+					if(accessMode.isWrite()) {
+						try(SeekableByteChannel channel = instance.getWriteChannel()) {
+							assertNotNull(channel);
+						}
+					} else {
+						assertIcarusException(GlobalErrorCode.UNSUPPORTED_OPERATION,
+								() -> instance.getWriteChannel(), "Should not be writable");
+					}
 
-		if(accessMode.isRead()) {
-			try(SeekableByteChannel channel = instance.getReadChannel()) {
-				assertNotNull(channel);
-			}
-		} else {
-			assertIcarusException(GlobalErrorCode.UNSUPPORTED_OPERATION,
-					() -> instance.getReadChannel(), "Should not be readable");
-		}
+					if(accessMode.isRead()) {
+						try(SeekableByteChannel channel = instance.getReadChannel()) {
+							assertNotNull(channel);
+						}
+					} else {
+						assertIcarusException(GlobalErrorCode.UNSUPPORTED_OPERATION,
+								() -> instance.getReadChannel(), "Should not be readable");
+					}
+				}));
+
 	}
 
 	default byte[] read(IOResource resource) throws IOException {

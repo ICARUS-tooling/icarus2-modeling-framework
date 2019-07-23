@@ -21,6 +21,7 @@ package de.ims.icarus2.util.io.resources;
 
 import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.random;
+import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -31,6 +32,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicTest;
@@ -57,6 +59,14 @@ class FileResourceTest implements IOResourceTest<FileResource> {
 		return Files.createTempFile(tempFolder, "fileResourceTest", ".tmp");
 	}
 
+	/**
+	 * @see de.ims.icarus2.util.io.resources.IOResourceTest#getSupportedAccessModes()
+	 */
+	@Override
+	public Set<AccessMode> getSupportedAccessModes() {
+		return set(AccessMode.values());
+	}
+
 	@Override
 	public FileResource create(AccessMode accessMode) throws IOException {
 		return new FileResource(tempFile(), accessMode);
@@ -70,30 +80,27 @@ class FileResourceTest implements IOResourceTest<FileResource> {
 		return FileResource.class;
 	}
 
-	class Constructors {
+	/**
+	 * Test method for {@link de.ims.icarus2.util.io.resource.FileResource#FileResource(java.nio.file.Path)}.
+	 * @throws IOException
+	 */
+	@Test
+	void testConstructorWithPath() throws IOException {
+		Path file = tempFile();
+		assertSame(file, new FileResource(file).getLocalPath());
+	}
 
-		/**
-		 * Test method for {@link de.ims.icarus2.util.io.resource.FileResource#FileResource(java.nio.file.Path)}.
-		 * @throws IOException
-		 */
-		@Test
-		void testFileResourcePath() throws IOException {
-			Path file = tempFile();
-			assertSame(file, new FileResource(file).getLocalPath());
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.util.io.resource.FileResource#FileResource(java.nio.file.Path, de.ims.icarus2.util.AccessMode)}.
-		 * @throws IOException
-		 */
-		@ParameterizedTest
-		@EnumSource(value=AccessMode.class)
-		void testFileResourcePathAccessMode(AccessMode accessMode) throws IOException {
-			Path file = tempFile();
-			FileResource resource = new FileResource(file, accessMode);
-			assertSame(file, resource.getLocalPath());
-			assertSame(accessMode, resource.getAccessMode());
-		}
+	/**
+	 * Test method for {@link de.ims.icarus2.util.io.resource.FileResource#FileResource(java.nio.file.Path, de.ims.icarus2.util.AccessMode)}.
+	 * @throws IOException
+	 */
+	@ParameterizedTest
+	@EnumSource(value=AccessMode.class)
+	void testConstructorWithAccessMode(AccessMode accessMode) throws IOException {
+		Path file = tempFile();
+		FileResource resource = new FileResource(file, accessMode);
+		assertSame(file, resource.getLocalPath());
+		assertSame(accessMode, resource.getAccessMode());
 	}
 
 	/**
