@@ -28,7 +28,6 @@ import static org.mockito.Mockito.mock;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
@@ -285,10 +284,10 @@ abstract class Guardian<T> {
 		return result;
 	}
 
-	URI sourceUriFor(Constructor<?> constructor) {
+	URI sourceUriFor(Executable executable) {
 //		try {
 //			String s = "classpath:///";
-//			s += constructor.getDeclaringClass().getSimpleName().replace('.', '/');
+//			s += executable.getDeclaringClass().getSimpleName().replace('.', '/');
 //			return new URI(s);
 //		} catch (URISyntaxException e) {
 //			throw new TestAbortedException("Failed to create test source URI", e);

@@ -68,6 +68,13 @@ public class ApiGuard<T> {
 	private Boolean testProperties;
 
 	/**
+	 * Signals that a blanket test should be run to guard every
+	 * method with non-primitive arguments against passing
+	 * {@code null} values.
+	 */
+	private Boolean nullGuard;
+
+	/**
 	 * Signals that a Guardian responsible for testing property
 	 * methods should automatically detect the methods to be tested.
 	 */
@@ -123,6 +130,12 @@ public class ApiGuard<T> {
 	public ApiGuard<T> testProperties(boolean testProperties) {
 		assertNull(this.testProperties, "testProperties already set");
 		this.testProperties = Boolean.valueOf(testProperties);
+		return self();
+	}
+
+	public ApiGuard<T> nullGuard(boolean nullGuard) {
+		assertNull(this.nullGuard, "nullGuard already set");
+		this.nullGuard = Boolean.valueOf(nullGuard);
 		return self();
 	}
 
@@ -212,6 +225,10 @@ public class ApiGuard<T> {
 		return testProperties!=null && testProperties.booleanValue();
 	}
 
+	public boolean isNullGuard() {
+		return nullGuard!=null && nullGuard.booleanValue();
+	}
+
 	public boolean isDetectUnmarkedMethods() {
 		return detectUnmarkedMethods!=null && detectUnmarkedMethods.booleanValue();
 	}
@@ -264,6 +281,10 @@ public class ApiGuard<T> {
 
 		if(isTestProperties()) {
 			guardians.add(new PropertyGuardian<>(this));
+		}
+
+		if(isNullGuard()) {
+			guardians.add(new NullGuardian<>(this));
 		}
 
 		return guardians.stream()

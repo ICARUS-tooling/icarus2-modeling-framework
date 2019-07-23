@@ -173,7 +173,8 @@ public class ClassCache<T> {
 			return Objects.hash(m.getName(),
 //					m.getReturnType(),
 					Integer.valueOf(Arrays.hashCode(m.getParameterTypes())
-					^ Arrays.hashCode(m.getExceptionTypes())));
+//					^ Arrays.hashCode(m.getExceptionTypes())
+					));
 		}
 
 		@Override
@@ -187,7 +188,9 @@ public class ClassCache<T> {
 					&& (m1.getReturnType().isAssignableFrom(m2.getReturnType())
 							|| m2.getReturnType().isAssignableFrom(m1.getReturnType()))
 					&& Arrays.equals(m1.getParameterTypes(), m2.getParameterTypes())
-					&& Arrays.equals(m1.getExceptionTypes(), m2.getExceptionTypes()));
+					// Ignore exceptions in signature, as
+//					&& Arrays.equals(m1.getExceptionTypes(), m2.getExceptionTypes())
+					);
 
 //			if(result)
 //			System.out.printf("%b - %s vs. %s%n",result, m1, m2);
