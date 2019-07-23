@@ -53,12 +53,16 @@ public class VirtualIOResource extends ReadWriteResource {
 		this(capacity, AccessMode.READ_WRITE);
 	}
 
+	public VirtualIOResource(AccessMode accessMode) {
+		this(IOUtil.DEFAULT_BUFFER_SIZE, accessMode);
+	}
+
 	public VirtualIOResource(int capacity, AccessMode accessMode) {
 		super(accessMode);
 
-		if(capacity<0 || capacity>IcarusUtils.MAX_INTEGER_INDEX)
+		if(capacity<=0 || capacity>IcarusUtils.MAX_INTEGER_INDEX)
 			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT,
-					"Capacity must be 0<=capacity<=MAX_INDEX: "+capacity);
+					"Capacity must be 0<capacity<=MAX_INDEX: "+capacity);
 
 		this.capacity = capacity;
 	}
@@ -122,10 +126,18 @@ public class VirtualIOResource extends ReadWriteResource {
 	}
 
 	/**
+	 * @return the buffer
+	 */
+	public MemoryByteStorage getBuffer() {
+		return buffer;
+	}
+
+	/**
 	 * @see de.ims.icarus2.util.io.resource.IOResource#size()
 	 */
 	@Override
 	public long size() throws IOException {
+		checkOpen();
 		return buffer.size();
 	}
 }
