@@ -40,11 +40,13 @@ import java.util.concurrent.locks.Lock;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(ResourceProvider.class)
 public class FileResourceProvider implements ResourceProvider {
 
 	private volatile static FileResourceProvider instance;

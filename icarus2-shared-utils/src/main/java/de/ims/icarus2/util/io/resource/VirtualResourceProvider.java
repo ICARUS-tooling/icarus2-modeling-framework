@@ -44,11 +44,13 @@ import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(ResourceProvider.class)
 public class VirtualResourceProvider implements ResourceProvider {
 
 	private static final Logger log = LoggerFactory.getLogger(VirtualResourceProvider.class);

@@ -27,6 +27,7 @@ import java.nio.channels.SeekableByteChannel;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.AccessMode;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.io.IOUtil;
 import de.ims.icarus2.util.nio.MemoryByteStorage;
 
@@ -34,6 +35,7 @@ import de.ims.icarus2.util.nio.MemoryByteStorage;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(IOResource.class)
 public class ReadOnlyURLResource implements IOResource {
 
 	private URL source;

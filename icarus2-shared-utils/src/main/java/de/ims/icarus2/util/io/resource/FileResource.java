@@ -28,11 +28,13 @@ import java.nio.file.StandardOpenOption;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.AccessMode;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(IOResource.class)
 public final class FileResource extends ReadWriteResource {
 
 
