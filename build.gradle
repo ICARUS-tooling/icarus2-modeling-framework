@@ -259,12 +259,6 @@ subprojects {
 		}
 	}
 	
-	javadoc {
-	    options.encoding = 'UTF-8'
-		options.addBooleanOption('Xdoclint:none', true)
-		failOnError = false
-	}
-	
 	// Automatic license analysis for dependencies
 	downloadLicenses {
 	    ext.apacheTwo = license('Apache License, Version 2.0', 'http://opensource.org/licenses/Apache-2.0')
@@ -304,6 +298,20 @@ subprojects {
 		useDefaultMappings = true
 		dryRun = false
 		strictCheck = true
+	}
+	
+	javadoc {
+	    options.encoding = 'UTF-8'
+		failOnError = false
+		logging.captureStandardError LogLevel.INFO
+		logging.captureStandardOutput LogLevel.INFO // suppress "## warnings" message
+	}
+    
+    // Switch checkstyle reporting to be html only
+    tasks.withType(Javadoc) {
+	    classpath = sourceSets.main.compileClasspath
+		options.addBooleanOption('Xdoclint:none', true)
+//		options.addStringOption('Xdoclint:none', '-quiet')
 	}
 	
 	spotbugs {
