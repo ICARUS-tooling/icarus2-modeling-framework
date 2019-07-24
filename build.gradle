@@ -254,7 +254,7 @@ subprojects {
 	    useJUnitPlatform()
 		
 		minHeapSize = "256m"
-		maxHeapSize = "1g"
+		maxHeapSize = "2g"
 		
 		systemProperties.'junit.jupiter.execution.parallel.enabled' = !isCI
 		systemProperties.'junit.jupiter.execution.parallel.mode.default' = 'same_thread'
