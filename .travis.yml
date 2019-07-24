@@ -7,7 +7,7 @@ before_install:
   - chmod a+x gradlew
 
 script: 
-  - ./gradlew test --debug
+  - ./gradlew test --info
   - ./gradlew codeCoverageReport
   
 after_success:
