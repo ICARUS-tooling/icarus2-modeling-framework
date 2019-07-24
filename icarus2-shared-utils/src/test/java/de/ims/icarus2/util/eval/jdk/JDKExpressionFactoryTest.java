@@ -17,7 +17,6 @@
 package de.ims.icarus2.util.eval.jdk;
 
 import static de.ims.icarus2.test.TestTags.RANDOMIZED;
-import static de.ims.icarus2.test.TestTags.SLOW;
 import static de.ims.icarus2.test.TestUtils.EMOJI;
 import static de.ims.icarus2.test.TestUtils.LOREM_IPSUM_ASCII;
 import static de.ims.icarus2.test.TestUtils.LOREM_IPSUM_CHINESE;
@@ -41,6 +40,7 @@ import org.junit.jupiter.api.TestReporter;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import de.ims.icarus2.test.annotations.TestLocalOnly;
 import de.ims.icarus2.util.eval.Expression;
 
 /**
@@ -177,7 +177,7 @@ public class JDKExpressionFactoryTest {
 	}
 
 	@Test
-	@Tag(SLOW)
+	@TestLocalOnly
 	@Tag(RANDOMIZED)
 	public void testExpressionPerformance(TestReporter reporter) throws Exception {
 		JDKExpressionFactory factory = new JDKExpressionFactory();

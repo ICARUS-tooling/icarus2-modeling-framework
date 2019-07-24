@@ -34,6 +34,16 @@ public final class TestTags {
 	public static final String SLOW = "slow";
 
 	/**
+	 * Marks tests that are meant to only be run on the CI server.
+	 */
+	public static final String CI = "ci";
+
+	/**
+	 * Marks tests that are meant to <b>not</b> be run on the CI server.
+	 */
+	public static final String LOCAL = "local";
+
+	/**
 	 * Marks tests that rely on randomly generated input.
 	 */
 	public static final String RANDOMIZED = "randomized";

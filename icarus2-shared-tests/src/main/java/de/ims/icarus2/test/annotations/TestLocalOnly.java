@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.test.annotations;
 
+import static de.ims.icarus2.test.TestTags.LOCAL;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
@@ -26,6 +27,7 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
@@ -40,6 +42,7 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 @Retention(RUNTIME)
 @Target(METHOD)
 @Test
+@Tag(LOCAL)
 @DisabledIfEnvironmentVariable(named = "CI", matches = "true")
 public @interface TestLocalOnly {
 	// marker interface

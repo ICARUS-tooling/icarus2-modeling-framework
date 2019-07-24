@@ -21,7 +21,6 @@ package de.ims.icarus2.util.mem;
 
 import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestTags.SHUFFLE;
-import static de.ims.icarus2.test.TestTags.SLOW;
 import static de.ims.icarus2.test.TestTags.STANDALONE;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.random;
@@ -56,6 +55,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.ims.icarus2.test.annotations.TestLocalOnly;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.io.Bits;
 import de.ims.icarus2.util.mem.ByteAllocator.Cursor;
@@ -148,7 +148,7 @@ class ByteAllocatorTest {
 
 	@SuppressWarnings("boxing")
 	@Test
-	@Tag(SLOW)
+	@TestLocalOnly
 	@Tag(RANDOMIZED)
 	void testAllocationConsistency() {
 		final int SIZE = 1_000_000;
