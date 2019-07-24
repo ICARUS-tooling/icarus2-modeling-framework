@@ -261,8 +261,10 @@ subprojects {
 		systemProperties.'junit.jupiter.execution.parallel.mode.classes.default' = 'concurrent'
 		 
 		testLogging {
-//			events "failed" //, "passed", "skipped" 
+			events "failed" //, "passed", "skipped" 
 			exceptionFormat = 'full'
+			
+			info.events = ["failed", "skipped"]
 		}
 	}
 	
