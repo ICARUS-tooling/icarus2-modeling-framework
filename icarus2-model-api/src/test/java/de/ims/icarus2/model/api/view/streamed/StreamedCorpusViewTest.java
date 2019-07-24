@@ -347,7 +347,7 @@ public interface StreamedCorpusViewTest<V extends StreamedCorpusView>
 		try(V view = createForSize(size)) {
 
 			// Go to random index
-			int markedIndex = random(50, size-1);
+			int markedIndex = random(50, size-2);
 			int index = 0;
 			while(index++<markedIndex) {
 				view.advance();
