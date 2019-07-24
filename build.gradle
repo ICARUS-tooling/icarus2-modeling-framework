@@ -249,13 +249,19 @@ subprojects {
 
 	test {
 	    useJUnitPlatform()
-	    
-	  	minHeapSize = "512m"
-	 	maxHeapSize = "1g"
+		
+		minHeapSize = "256m"
+		maxHeapSize = "1g"
+		 
+		testLogging {
+			events "failed" //, "passed", "skipped"
+			exceptionFormat "full"
+		}
 	}
 	
 	javadoc {
 	    options.encoding = 'UTF-8'
+		options.addBooleanOption('Xdoclint:none', true)
 		failOnError = false
 	}
 	
@@ -303,9 +309,10 @@ subprojects {
 	spotbugs {
 	    toolVersion = "3.1.6"
 	    ignoreFailures = true
-	    effort = "max"
+	    effort = "min"
 	    showProgress = false
 	    reportLevel = "medium"
+		sourceSets = [sourceSets.main]
 	}
 	
 	// Switch spotbugs reporting to be html only
@@ -327,6 +334,7 @@ subprojects {
     checkstyle {
 	    ignoreFailures = true
 	    showViolations = false
+		sourceSets = [sourceSets.main, sourceSets.test]
     }
     
     // Switch checkstyle reporting to be html only
