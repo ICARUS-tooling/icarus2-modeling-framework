@@ -49,11 +49,10 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.TestReporter;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.test.annotations.TestLocalOnly;
 import de.ims.icarus2.util.IcarusUtils;
@@ -65,8 +64,6 @@ import de.ims.icarus2.util.mem.ByteAllocator.Cursor;
  *
  */
 class ByteAllocatorTest {
-
-	private static final Logger log = LoggerFactory.getLogger(ByteAllocatorTest.class);
 
 	/** Object under test **/
 	private ByteAllocator allocator;
@@ -150,7 +147,7 @@ class ByteAllocatorTest {
 	@Test
 	@TestLocalOnly
 	@Tag(RANDOMIZED)
-	void testAllocationConsistency() {
+	void testAllocationConsistency(TestReporter testReporter) {
 		final int SIZE = 1_000_000;
 		final int RUNS = SIZE * 100;
 
@@ -181,7 +178,8 @@ class ByteAllocatorTest {
 
 		Instant t_init = Instant.now();
 
-		log.info("Prepared heap with {} slots after {}", SIZE, Duration.between(t_start, t_init));
+		testReporter.publishEntry(String.format("Prepared heap with %d slots after %s",
+				SIZE, Duration.between(t_start, t_init)));
 
 		/*
 		 *  Now simulate some usage scenario:
@@ -213,13 +211,14 @@ class ByteAllocatorTest {
 				alive--;
 				freed++;
 			} else
-			// Modify with a 25% chance (after chance of deletion)
+			// Modify with a 25% chance
 			if(c < 30) {
 				long newData = random().nextLong();
 				allocator.setLong(id, offset, newData);
 				stored[id] = newData;
 				changed++;
 			} else
+			// Repopulate a previously released slot with a 5% chance
 			if(c < 35 && alive<SIZE) {
 				int newId = allocator.alloc();
 				assertTrue(newId!=IcarusUtils.UNSET_INT);
@@ -235,9 +234,10 @@ class ByteAllocatorTest {
 
 		Instant t_sim = Instant.now();
 
-		log.info("Simulation of {} rounds done after {} [alive={},changed={},freed={},allocated={},misses={}]",
+		testReporter.publishEntry(String.format(
+				"Simulation of %d rounds done after %d [alive=%d,changed=%d,freed=%d,allocated=%d,misses=%d]",
 				RUNS, Duration.between(t_init, t_sim),
-				alive, changed, freed, allocated, misses);
+				alive, changed, freed, allocated, misses));
 
 		// Finally do one run to check that the overall state matches our expectations
 		for (int id = 0; id < SIZE; id++) {
@@ -252,7 +252,8 @@ class ByteAllocatorTest {
 
 		Instant t_end = Instant.now();
 
-		log.info("Finished testing allocation consistency after {}", Duration.between(t_start, t_end));
+		testReporter.publishEntry(String.format(
+				"Finished testing allocation consistency after %d", Duration.between(t_start, t_end)));
 	}
 
 	/**

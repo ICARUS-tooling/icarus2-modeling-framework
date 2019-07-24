@@ -262,9 +262,7 @@ subprojects {
 		 
 		testLogging {
 			events "failed" //, "passed", "skipped" 
-			exceptionFormat = 'full'
-			
-			info.events = ["failed", "skipped"]
+			exceptionFormat "full"
 		}
 	}
 	
