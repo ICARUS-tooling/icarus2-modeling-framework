@@ -25,6 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.DynamicTest.dynamicTest;
+import static org.junit.jupiter.api.DynamicTest.stream;
 import static org.mockito.Mockito.mock;
 
 import java.util.Arrays;
@@ -82,7 +84,7 @@ class ValueTypeTest {
 		return ValueType.serializableValueTypes()
 				.stream()
 				.filter(ManifestTestUtils::hasTestValues)
-				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> dynamicTest(valueType.getName(), () -> {
 					Object value = ManifestTestUtils.getTestValue(valueType);
 					assertNotNull(valueType.toChars(value));
 				}));
@@ -96,7 +98,7 @@ class ValueTypeTest {
 		return ValueType.serializableValueTypes()
 				.stream()
 				.filter(ManifestTestUtils::hasTestValues)
-				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> dynamicTest(valueType.getName(), () -> {
 					Object value = ManifestTestUtils.getTestValue(valueType);
 					CharSequence serializedForm = valueType.toChars(value);
 					Object parsedValue = valueType.parse(serializedForm, valueType.getClass().getClassLoader());
@@ -113,7 +115,7 @@ class ValueTypeTest {
 		return ValueType.serializableValueTypes()
 				.stream()
 				.filter(ManifestTestUtils::hasTestValues)
-				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> dynamicTest(valueType.getName(), () -> {
 					Object value = ManifestTestUtils.getTestValue(valueType);
 					assertEquals(value, valueType.persist(value));
 				}));
@@ -127,7 +129,7 @@ class ValueTypeTest {
 		return ValueType.serializableValueTypes()
 				.stream()
 				.filter(ManifestTestUtils::hasTestValues)
-				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
+				.map(valueType -> dynamicTest(valueType.getName(), () -> {
 					Object value = ManifestTestUtils.getTestValue(valueType);
 					Object reparsedValue = valueType.parseAndPersist(valueType.toChars(value), valueType.getClass().getClassLoader());
 					assertEquals(value, reparsedValue);
@@ -151,7 +153,7 @@ class ValueTypeTest {
 	 */
 	@TestFactory
 	Stream<DynamicTest> testGetName() {
-		return DynamicTest.stream(ValueType.valueTypes().iterator(),
+		return stream(ValueType.valueTypes().iterator(),
 				valueType -> valueType.getClass().getName(),
 				valueType -> assertNotNull(valueType.getName()));
 	}
@@ -161,7 +163,7 @@ class ValueTypeTest {
 	 */
 	@TestFactory
 	Stream<DynamicTest> testGetBaseClass() {
-		return DynamicTest.stream(ValueType.valueTypes().iterator(),
+		return stream(ValueType.valueTypes().iterator(),
 				valueType -> valueType.getClass().getName(),
 				valueType -> assertNotNull(valueType.getBaseClass()));
 	}
@@ -171,7 +173,7 @@ class ValueTypeTest {
 	 */
 	@TestFactory
 	Stream<DynamicTest> testIsValidValue() {
-		return DynamicTest.stream(ValueType.valueTypes().iterator(),
+		return stream(ValueType.valueTypes().iterator(),
 				ValueType::getName,
 				valueType -> {
 					Object value = ManifestTestUtils.getOrMockTestValue(valueType);
@@ -189,7 +191,7 @@ class ValueTypeTest {
 	 */
 	@TestFactory
 	Stream<DynamicTest> testIsValidType() {
-		return DynamicTest.stream(ValueType.valueTypes().iterator(),
+		return stream(ValueType.valueTypes().iterator(),
 				ValueType::getName,
 				valueType -> {
 					assertTrue(valueType.isValidType(valueType.getBaseClass()));
@@ -239,7 +241,7 @@ class ValueTypeTest {
 	 */
 	@TestFactory
 	Stream<DynamicTest> testCheckValue() {
-		return DynamicTest.stream(ValueType.valueTypes().iterator(),
+		return stream(ValueType.valueTypes().iterator(),
 				ValueType::getName,
 				valueType -> {
 					Object validValue = ManifestTestUtils.getOrMockTestValue(valueType);
@@ -259,7 +261,7 @@ class ValueTypeTest {
 	 */
 	@TestFactory
 	Stream<DynamicTest> testCheckValuesCollectionOfQ() {
-		return DynamicTest.stream(ValueType.valueTypes().iterator(),
+		return stream(ValueType.valueTypes().iterator(),
 				ValueType::getName,
 				valueType -> {
 					Object validValue = ManifestTestUtils.getOrMockTestValue(valueType);
@@ -290,7 +292,7 @@ class ValueTypeTest {
 	 */
 	@TestFactory
 	Stream<DynamicTest> testCheckValuesObjectArray() {
-		return DynamicTest.stream(ValueType.valueTypes().iterator(),
+		return stream(ValueType.valueTypes().iterator(),
 				ValueType::getName,
 				valueType -> {
 					Object validValue = ManifestTestUtils.getOrMockTestValue(valueType);
