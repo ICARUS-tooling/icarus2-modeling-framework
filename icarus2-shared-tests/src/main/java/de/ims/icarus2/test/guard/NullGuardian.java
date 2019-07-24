@@ -96,7 +96,7 @@ public class NullGuardian<T> extends Guardian<T> {
 		classCache = ClassCache.<T>newBuilder()
 				.targetClass(targetClass)
 				.methodFilter(METHOD_FILTER)
-				.log(System.out::println)
+//				.log(System.out::println)
 				.build();
 	}
 
