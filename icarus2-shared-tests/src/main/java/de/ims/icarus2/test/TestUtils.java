@@ -332,6 +332,11 @@ public class TestUtils {
 		return RANDOM;
 	}
 
+	/** Random non-negative id (without loss of generality, Long.MAX_VALUE is excluded) */
+	public static long randomId() {
+		return random(0, Long.MAX_VALUE);
+	}
+
 	// RANDOM PAIRS
 
 	public static Pair<Long, Long> randomLongPair(long lowerInc, long upperEx) {

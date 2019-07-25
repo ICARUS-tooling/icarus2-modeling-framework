@@ -21,13 +21,20 @@ package de.ims.icarus2;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Set;
+
 import org.junit.jupiter.api.function.Executable;
 
+import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
+import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
  * @author Markus Gärtner
@@ -58,7 +65,7 @@ public class SharedTestUtils {
 
 	@SuppressWarnings("boxing")
 	public static <E extends Object> DataSequence<E> mockSequence(long size) {
-		DataSequence<E> sequence = mock(DataSequence.class);
+		DataSequence<E> sequence = mock(DataSequence.class, CALLS_REAL_METHODS);
 		when(sequence.entryCount()).thenReturn(size);
 		return sequence;
 	}
@@ -90,5 +97,32 @@ public class SharedTestUtils {
 		});
 
 		return sequence;
+	}
+
+	@SuppressWarnings("boxing")
+	public static <E extends Object> DataSet<E> mockSet(int size) {
+		DataSet<E> set = mock(DataSet.class, CALLS_REAL_METHODS);
+		when(set.entryCount()).thenReturn(size);
+		return set;
+	}
+
+	@SuppressWarnings("boxing")
+	@SafeVarargs
+	public static <E extends Object> DataSet<E> mockSet(E...elements) {
+		DataSet<E> set = mockSet(elements.length);
+
+		Set<E> backup = CollectionUtils.set(elements);
+
+		when(set.entryAt(anyInt())).then(invocation -> {
+			int index = invocation.getArgument(0);
+			if(index<0 || index>=elements.length)
+				throw new IndexOutOfBoundsException();
+			return elements[index];
+		});
+
+		when(set.contains(any())).thenAnswer(invocation ->
+				backup.contains(invocation.getArgument(0)));
+
+		return set;
 	}
 }
