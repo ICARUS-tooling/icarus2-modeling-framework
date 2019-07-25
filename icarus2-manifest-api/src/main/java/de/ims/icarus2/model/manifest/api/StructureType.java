@@ -199,7 +199,7 @@ public enum StructureType implements StringResource {
 		if(ordinal()<1) {
 			return new StructureType[0];
 		}
-		return Arrays.copyOfRange(_values, 1, ordinal());
+		return Arrays.copyOfRange(_values, 0, ordinal());
 	}
 
 	public StructureType[] getIncompatibleTypes() {

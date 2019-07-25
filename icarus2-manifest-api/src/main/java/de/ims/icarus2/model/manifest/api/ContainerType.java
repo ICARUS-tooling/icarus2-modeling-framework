@@ -149,11 +149,11 @@ public enum ContainerType implements StringResource {
 	private static final ContainerType[] _values = values();
 
 	public ContainerType[] getCompatibleTypes() {
-		if(ordinal()<=1) {
+		if(ordinal()<1) {
 			return new ContainerType[0];
 		}
 
-		return Arrays.copyOfRange(_values, 1, ordinal());
+		return Arrays.copyOfRange(_values, 0, ordinal());
 	}
 
 	public ContainerType[] getIncompatibleTypes() {
