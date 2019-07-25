@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.api.registry;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Fragment;
@@ -25,6 +27,7 @@ import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.api.raster.Rasterizer;
 import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
+import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
  * A factory for creating {@link Item items}, {@link Edge edges} and
@@ -46,12 +49,18 @@ public interface LayerMemberFactory {
 	 * returned type will be an implementation suitable for being a {@link Item#isTopLevel() top-level}
 	 * member.
 	 *
-	 * @param manifest
-	 * @param host
-	 * @param id
-	 * @return
+	 * @param manifest manifest describing the container to be created
+	 * @param host container that should own the new container
+	 * @param baseContainers optional set of containers the newly created
+	 * container should rely on
+	 * @param boundaryContainer optional container that provides the ultimate
+	 * bounds for any legal item that can be part of the newly created container
+	 * @param id {@link Item#getId() id} of the new container
+	 * @return a new container suitable for the specification from the given manifest
 	 */
-	Container newContainer(ContainerManifestBase<?> manifest, Container host, long id);
+	Container newContainer(ContainerManifestBase<?> manifest, Container host,
+			@Nullable DataSet<Container> baseContainers,
+			@Nullable Container boundaryContainer, long id);
 
 	/**
 	 * Creates a new general structure that is linked to the given {@code host} container
@@ -60,12 +69,18 @@ public interface LayerMemberFactory {
 	 * returned type will be an implementation suitable for being a {@link Item#isTopLevel() top-level}
 	 * member.
 	 *
-	 * @param manifest
-	 * @param host
-	 * @param id
-	 * @return
+	 * @param manifest manifest describing the structure to be created
+	 * @param host container that should own the new structure
+	 * @param baseContainers optional set of containers the newly created
+	 * structure should rely on (for recruiting nodes)
+	 * @param boundaryContainer optional container that provides the ultimate
+	 * bounds for any legal item that can be part of the newly created structure
+	 * @param id {@link Item#getId() id} of the new structure
+	 * @return a new structure suitable for the specification from the given manifest
 	 */
-	Structure newStructure(StructureManifest manifest, Container host, long id);
+	Structure newStructure(StructureManifest manifest, Container host,
+			@Nullable DataSet<Container> baseContainers,
+			@Nullable Container boundaryContainer, long id);
 
 	/**
 	 * Creates a new general item that is linked to the given {@code host} container.
@@ -88,7 +103,7 @@ public interface LayerMemberFactory {
 	 */
 	Edge newEdge(Structure host, long id);
 
-	default Edge newEdge(Structure host, long id, Item source, Item target) {
+	default Edge newEdge(Structure host, long id, @Nullable Item source, @Nullable Item target) {
 		Edge edge = newEdge(host, id);
 		edge.setSource(source);
 		edge.setTarget(target);
