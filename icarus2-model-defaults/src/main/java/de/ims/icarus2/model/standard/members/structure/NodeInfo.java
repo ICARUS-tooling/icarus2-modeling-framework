@@ -33,4 +33,20 @@ public interface NodeInfo {
 	void addEdge(Edge edge, boolean incoming);
 
 	void removeEdge(Edge edge, boolean incoming);
+
+	Type getType();
+
+	public enum Type {
+		/** Only outgoing edges */
+		ROOT,
+		/** Up to 1 incoming and outgoing edge each */
+		CHAIN,
+		/** Up to 1 incoming edge and arbitrary number of outgoing edges */
+		TREE,
+		/** No limits whatsoever */
+		GRAPH,
+		/** Exactly one incoming edge */
+		LEAF,
+		;
+	}
 }

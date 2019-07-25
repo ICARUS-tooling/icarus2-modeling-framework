@@ -41,7 +41,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.ArgumentMatchers.any;
@@ -75,9 +74,10 @@ import de.ims.icarus2.model.api.members.container.ContainerTest;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerFlag;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ContainerType;
-import de.ims.icarus2.model.standard.members.structure.DefaultStructure;
 import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.guard.ApiGuard;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
@@ -88,6 +88,17 @@ import de.ims.icarus2.util.collections.set.DataSet;
  *
  */
 class DefaultContainerTest implements ContainerTest<Container> {
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.container.ContainerTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
+	 */
+	@Override
+	public void configureApiGuard(ApiGuard<Container> apiGuard) {
+		ContainerTest.super.configureApiGuard(apiGuard);
+
+		apiGuard.parameterResolver(ContainerManifestBase.class,
+				instance -> mock(ContainerManifest.class));
+	}
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
@@ -105,7 +116,7 @@ class DefaultContainerTest implements ContainerTest<Container> {
 		 */
 		@Test
 		void testDefaultContainer() {
-			new DefaultContainer();
+			assertNotNull(new DefaultContainer());
 		}
 	}
 
@@ -131,14 +142,6 @@ class DefaultContainerTest implements ContainerTest<Container> {
 		@Test
 		void testGetMemberType() {
 			assertEquals(MemberType.CONTAINER, instance.getMemberType());
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.container.DefaultContainer#getManifest()}.
-		 */
-		@Test
-		void testGetManifestIllegalState() {
-			assertThrows(IllegalStateException.class, () -> instance.getManifest());
 		}
 
 		/**
@@ -326,7 +329,8 @@ class DefaultContainerTest implements ContainerTest<Container> {
 		 */
 		@Test
 		void testRecycle() {
-			instance = new DefaultStructure();
+			instance = new DefaultContainer();
+			instance.setManifest(manifest);
 			instance.setContainer(host);
 
 			DataSet<Container> baseContainers = mock(DataSet.class);
@@ -350,7 +354,8 @@ class DefaultContainerTest implements ContainerTest<Container> {
 		 */
 		@Test
 		void testGetItemStorage() {
-			instance = new DefaultStructure();
+			instance = new DefaultContainer();
+			instance.setManifest(manifest);
 			instance.setContainer(host);
 
 			ItemStorage storage1 = mock(ItemStorage.class);
@@ -379,7 +384,8 @@ class DefaultContainerTest implements ContainerTest<Container> {
 									String.format("manifest=%s, storage=%s",
 											typeFromManifest, typeFromStorage), () -> {
 
-								instance = new DefaultStructure();
+								instance = new DefaultContainer();
+								instance.setManifest(manifest);
 								instance.setContainer(host);
 
 								when(manifest.getContainerType()).thenReturn(typeFromManifest);
@@ -402,7 +408,8 @@ class DefaultContainerTest implements ContainerTest<Container> {
 									String.format("manifest=%s, storage=%s",
 											typeFromManifest, typeFromStorage), () -> {
 
-								instance = new DefaultStructure();
+								instance = new DefaultContainer();
+								instance.setManifest(manifest);
 								instance.setContainer(host);
 
 								when(manifest.getContainerType()).thenReturn(typeFromManifest);
@@ -417,7 +424,8 @@ class DefaultContainerTest implements ContainerTest<Container> {
 		 */
 		@Test
 		void testSetItemStorage() {
-			instance = new DefaultStructure();
+			instance = new DefaultContainer();
+			instance.setManifest(manifest);
 			instance.setContainer(host);
 
 			assertSetter(instance, DefaultContainer::setItemStorage, itemStorage, NO_NPE_CHECK, NO_CHECK);
@@ -441,7 +449,8 @@ class DefaultContainerTest implements ContainerTest<Container> {
 			long id = Math.max(1L, TestUtils.random().nextLong());
 			long index = Math.max(1L, TestUtils.random().nextLong());
 
-			instance = new DefaultStructure();
+			instance = new DefaultContainer();
+			instance.setManifest(manifest);
 			instance.setContainer(host);
 			instance.setId(id);
 
@@ -466,7 +475,8 @@ class DefaultContainerTest implements ContainerTest<Container> {
 		@BeforeEach
 		void setUp() {
 			super.setUp();
-			instance = new DefaultStructure();
+			instance = new DefaultContainer();
+			instance.setManifest(manifest);
 			instance.setContainer(host);
 			instance.setItemStorage(itemStorage);
 		}
@@ -500,7 +510,7 @@ class DefaultContainerTest implements ContainerTest<Container> {
 		/**
 		 * Test method for {@link de.ims.icarus2.model.standard.members.container.DefaultContainer#createEditVerifier()}.
 		 */
-		@SuppressWarnings({ "boxing", "resource" })
+		@SuppressWarnings({ "boxing" })
 		@Test
 		void testCreateEditVerifier() {
 			when(manifest.isContainerFlagSet(any())).thenReturn(false);

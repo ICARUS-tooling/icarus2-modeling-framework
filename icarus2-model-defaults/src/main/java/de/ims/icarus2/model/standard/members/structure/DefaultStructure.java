@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.ModelErrorCode;
@@ -152,7 +154,7 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 	 * @see de.ims.icarus2.model.api.members.structure.Structure#getManifest()
 	 */
 	@Override
-	public StructureManifest getManifest() {
+	public @Nullable StructureManifest getManifest() {
 		return (StructureManifest) super.getManifest();
 	}
 

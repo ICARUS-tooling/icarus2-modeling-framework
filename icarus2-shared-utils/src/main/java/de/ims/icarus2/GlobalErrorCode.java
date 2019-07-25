@@ -122,6 +122,13 @@ public enum GlobalErrorCode implements ErrorCode {
 	DELEGATION_FAILED(130),
 
 	/**
+	 * A given enum constant is unknown to the code using it in a switch
+	 * statement or similar construct. This error type is exclusively
+	 * intended to signal that an enum has received a new constant.
+	 */
+	UNKNOWN_ENUM(131),
+
+	/**
 	 * A feature only provided by the JDK is required.
 	 */
 	VM_JDK_REQUIRED(140),

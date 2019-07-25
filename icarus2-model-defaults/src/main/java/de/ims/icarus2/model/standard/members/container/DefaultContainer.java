@@ -150,7 +150,7 @@ public class DefaultContainer extends DefaultItem implements Container, Recyclab
 	 * @see de.ims.icarus2.model.api.members.container.Container#getManifest()
 	 */
 	@Override
-	public ContainerManifestBase<?> getManifest() {
+	public @Nullable ContainerManifestBase<?> getManifest() {
 		return manifest;
 	}
 

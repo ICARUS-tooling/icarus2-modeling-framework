@@ -32,7 +32,6 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.StructureFlag;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
-import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Reference;
@@ -74,6 +73,14 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 
 	public RootItem() {
 		// no-op
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.standard.members.structure.NodeInfo#getType()
+	 */
+	@Override
+	public Type getType() {
+		return Type.ROOT;
 	}
 
 	public void setStructure(Structure structure) {
@@ -242,8 +249,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		 */
 		@Override
 		public E getEdgeAt(int index) {
-			throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
-					"No root edge available for index: "+index);
+			throw Nodes.noEdgeForIndex(false, index);
 		}
 
 		/**
@@ -315,8 +321,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		public E getEdgeAt(int index) {
 			E edge = this.edge;
 			if(edge==null || index!=0)
-				throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
-						"No root edge available for index: "+index);
+				throw Nodes.noEdgeForIndex(false, index);
 
 			return edge;
 		}
@@ -329,7 +334,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 			requireNonNull(edge);
 
 			if(this.edge!=null)
-				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Singleton edge already set - cannot add "+ModelUtils.getName(edge));
+				throw Nodes.edgeAlreadySet(false, this.edge);
 
 			this.edge = edge;
 		}
@@ -342,7 +347,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 			requireNonNull(edge);
 
 			if(edge!=this.edge)
-				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Unknown edge - cannot remove "+ModelUtils.getName(edge));
+				throw Nodes.unknownEdge(false, edge);
 
 			this.edge = null;
 		}
@@ -437,7 +442,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		public void addEdge(E edge) {
 			requireNonNull(edge);
 			if(edges.contains(edge))
-				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Edge already present: "+ModelUtils.getName(edge));
+				throw Nodes.edgeAlreadyPresent(false, edge);
 
 			edges.add(edge);
 		}
@@ -449,7 +454,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		public void removeEdge(E edge) {
 			requireNonNull(edge);
 			if(!edges.remove(edge))
-				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Cannot remove unknown edge: "+ModelUtils.getName(edge));
+				throw Nodes.unknownEdge(false, edge);
 		}
 
 		@Override

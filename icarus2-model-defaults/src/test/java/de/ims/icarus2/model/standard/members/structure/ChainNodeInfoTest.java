@@ -61,6 +61,14 @@ class ChainNodeInfoTest {
 	}
 
 	/**
+	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.ChainNodeInfo#getType()}.
+	 */
+	@Test
+	void testGetType() {
+		assertEquals(NodeInfo.Type.CHAIN, instance.getType());
+	}
+
+	/**
 	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.ChainNodeInfo#setIn(de.ims.icarus2.model.api.members.item.Edge)}.
 	 */
 	@Test
@@ -194,9 +202,9 @@ class ChainNodeInfoTest {
 			assertNPE(() -> instance.removeEdge(null, true));
 			assertNPE(() -> instance.removeEdge(null, false));
 
-			assertModelException(ModelErrorCode.MODEL_INVALID_REQUEST,
+			assertModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
 					() -> instance.removeEdge(incoming, true));
-			assertModelException(ModelErrorCode.MODEL_INVALID_REQUEST,
+			assertModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
 					() -> instance.removeEdge(outgoing, false));
 
 			instance.addEdge(incoming, true);

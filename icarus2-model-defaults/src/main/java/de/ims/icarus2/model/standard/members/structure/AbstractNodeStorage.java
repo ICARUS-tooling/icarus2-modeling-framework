@@ -58,6 +58,10 @@ public abstract class AbstractNodeStorage<N extends NodeInfo, E extends Edge> im
 	protected final LookupList<E> edges;
 	protected final Map<Item, N> nodesData;
 
+	public AbstractNodeStorage() {
+		this(DEFAULT_CAPACITY);
+	}
+
 	public AbstractNodeStorage(int capacity) {
 		edges = createEdgesLookup(capacity);
 		nodesData = createNodesDataMap(capacity);
@@ -96,10 +100,27 @@ public abstract class AbstractNodeStorage<N extends NodeInfo, E extends Edge> im
 				&& context.getItemCount()!=nodesData.size();
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#isRoot(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item)
+	 */
+	@Override
+	public boolean isRoot(Structure context, Item node) {
+		return node==root;
+	}
+
+	/**
+	 * Empty and delete the root item, clear edge list
+	 * and node data lookup.
+	 *
+	 * @see de.ims.icarus2.util.Recyclable#recycle()
+	 */
 	@Override
 	public void recycle() {
-		// TODO Auto-generated method stub
-
+		root.removeAllEdges();
+		root = null;
+		//TODO theoretically we have a problem here, as both storages below only ever grow
+		edges.clear();
+		nodesData.clear();
 	}
 
 	@Override
@@ -115,6 +136,7 @@ public abstract class AbstractNodeStorage<N extends NodeInfo, E extends Edge> im
 
 	@Override
 	public void removeNotify(Structure context) {
+		root.removeAllEdges();
 		root = null;
 	}
 

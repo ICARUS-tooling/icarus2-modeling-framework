@@ -179,7 +179,8 @@ public class EmptyEdgeStorage extends AbstractImmutableEdgeStorage {
 	 */
 	@Override
 	public void recycle() {
-		// no-op
+		// just to make sure
+		root = null;
 	}
 
 	/**

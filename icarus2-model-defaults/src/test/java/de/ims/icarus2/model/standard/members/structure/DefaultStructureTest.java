@@ -39,7 +39,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.ArgumentMatchers.any;
@@ -72,11 +71,13 @@ import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureEditVerifier;
 import de.ims.icarus2.model.api.members.structure.StructureTest;
 import de.ims.icarus2.model.manifest.api.ContainerFlag;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.StructureFlag;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.standard.members.container.ItemStorage;
+import de.ims.icarus2.test.guard.ApiGuard;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
@@ -86,6 +87,17 @@ import de.ims.icarus2.util.collections.set.DataSet;
  *
  */
 class DefaultStructureTest implements StructureTest<Structure> {
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.structure.StructureTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
+	 */
+	@Override
+	public void configureApiGuard(ApiGuard<Structure> apiGuard) {
+		StructureTest.super.configureApiGuard(apiGuard);
+
+		apiGuard.parameterResolver(ContainerManifestBase.class,
+				instance -> mock(StructureManifest.class));
+	}
 
 	/**
 	 * @see de.ims.icarus2.test.GenericTest#getTestTargetClass()
@@ -121,19 +133,11 @@ class DefaultStructureTest implements StructureTest<Structure> {
 		}
 
 		/**
-		 * TEst method for {@link DefaultStructure#getMemberType()}
+		 * Test method for {@link DefaultStructure#getMemberType()}
 		 */
 		@Test
 		void testGetMemberType() {
 			assertEquals(MemberType.STRUCTURE, instance.getMemberType());
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.structure.DefaultStructure#getManifest()}.
-		 */
-		@Test
-		void testGetManifestIllegalState() {
-			assertThrows(IllegalStateException.class, () -> instance.getManifest());
 		}
 
 		/**
@@ -425,6 +429,7 @@ class DefaultStructureTest implements StructureTest<Structure> {
 		@Test
 		void testRecycle() {
 			instance = new DefaultStructure();
+			instance.setManifest(manifest);
 			instance.setContainer(host);
 
 			DataSet<Container> baseContainers = mock(DataSet.class);
@@ -452,6 +457,7 @@ class DefaultStructureTest implements StructureTest<Structure> {
 		@Test
 		void testSetEdgeStorage() {
 			instance = new DefaultStructure();
+			instance.setManifest(manifest);
 			instance.setContainer(host);
 
 			assertSetter(instance, DefaultStructure::setEdgeStorage, edgeStorage, NO_NPE_CHECK, NO_CHECK);
@@ -471,6 +477,7 @@ class DefaultStructureTest implements StructureTest<Structure> {
 											typeFromManifest, typeFromStorage), () -> {
 
 								instance = new DefaultStructure();
+								instance.setManifest(manifest);
 								instance.setContainer(host);
 
 								when(manifest.getStructureType()).thenReturn(typeFromManifest);
@@ -489,6 +496,7 @@ class DefaultStructureTest implements StructureTest<Structure> {
 		void setUp() {
 			super.setUp();
 			instance = new DefaultStructure();
+			instance.setManifest(manifest);
 			instance.setContainer(host);
 			instance.setItemStorage(itemStorage);
 			instance.setEdgeStorage(edgeStorage);

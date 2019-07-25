@@ -477,9 +477,9 @@ class RootItemTest {
 			instance.addEdge(mockEdge()); //TODO should we also use the delegate method?
 
 			// Singleton root item can't handle more than 1 edge
-			assertModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
+			assertModelException(ModelErrorCode.MODEL_INVALID_REQUEST,
 					() -> instance.addEdge(mockEdge()));
-			assertModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
+			assertModelException(ModelErrorCode.MODEL_INVALID_REQUEST,
 					() -> instance.addEdge(mockEdge(), false));
 		}
 

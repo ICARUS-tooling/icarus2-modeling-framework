@@ -16,13 +16,11 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
-import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static java.util.Objects.requireNonNull;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
-import de.ims.icarus2.model.api.ModelException;
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.api.members.item.Edge;
-import de.ims.icarus2.model.manifest.util.Messages;
 
 /**
  * @author Markus Gärtner
@@ -30,7 +28,15 @@ import de.ims.icarus2.model.manifest.util.Messages;
  */
 public class ChainNodeInfo implements NodeInfo {
 
-	protected Edge in, out;
+	private Edge in, out;
+
+	/**
+	 * @see de.ims.icarus2.model.standard.members.structure.NodeInfo#getType()
+	 */
+	@Override
+	public Type getType() {
+		return Type.CHAIN;
+	}
 
 	/**
 	 * @see de.ims.icarus2.model.standard.members.structure.NodeInfo#edgeCount()
@@ -69,15 +75,13 @@ public class ChainNodeInfo implements NodeInfo {
 	public Edge edgeAt(long index, boolean incoming) {
 		if(incoming) {
 			if(in==null || index!=0L)
-				throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
-						"No incoming edge for index: "+index);
+				throw Nodes.noEdgeForIndex(true, index);
 
 			return in;
 		}
 
 		if(out==null || index!=0L)
-			throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
-					"No outgoing edge for index: "+index);
+			throw Nodes.noEdgeForIndex(false, index);
 
 		return out;
 	}
@@ -91,13 +95,11 @@ public class ChainNodeInfo implements NodeInfo {
 
 		if(incoming) {
 			if(in!=null)
-				throw new ModelException(ModelErrorCode.MODEL_INVALID_REQUEST,
-						"Incoming edge already present: "+getName(in));
+				throw Nodes.edgeAlreadySet(true, in);
 			in = edge;
 		} else {
 			if(out!=null)
-				throw new ModelException(ModelErrorCode.MODEL_INVALID_REQUEST,
-						"Outgoing edge already present: "+getName(in));
+				throw Nodes.edgeAlreadySet(false, out);
 			out = edge;
 		}
 	}
@@ -111,19 +113,16 @@ public class ChainNodeInfo implements NodeInfo {
 
 		if(incoming) {
 			if(in==null)
-				throw new ModelException(ModelErrorCode.MODEL_INVALID_REQUEST,
-						"No incoming edge defined - cannot remove "+getName(edge));
+				throw Nodes.noEdgeDefined(true, edge);
 			if(in!=edge)
-				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
-						Messages.mismatch("Unknown incoming edge", getName(in), getName(edge)));
+				throw Nodes.unknownEdge(true, edge);
 			in = null;
 		} else {
 			if(out==null)
-				throw new ModelException(ModelErrorCode.MODEL_INVALID_REQUEST,
-						"No outgoing edge defined - cannot remove "+getName(edge));
+				throw Nodes.noEdgeDefined(false, edge);
+
 			if(out!=edge)
-				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
-						Messages.mismatch("Unknown outgoing edge", getName(out), getName(edge)));
+				throw Nodes.unknownEdge(false, edge);
 			out = null;
 		}
 	}
@@ -141,7 +140,7 @@ public class ChainNodeInfo implements NodeInfo {
 	 *
 	 * @param in
 	 */
-	public void setIn(Edge in) {
+	public void setIn(@Nullable Edge in) {
 		this.in = in;
 	}
 
@@ -150,7 +149,7 @@ public class ChainNodeInfo implements NodeInfo {
 	 *
 	 * @param out
 	 */
-	public void setOut(Edge out) {
+	public void setOut(@Nullable Edge out) {
 		this.out = out;
 	}
 

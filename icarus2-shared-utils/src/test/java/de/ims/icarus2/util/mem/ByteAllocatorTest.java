@@ -235,7 +235,7 @@ class ByteAllocatorTest {
 		Instant t_sim = Instant.now();
 
 		testReporter.publishEntry(String.format(
-				"Simulation of %d rounds done after %d [alive=%d,changed=%d,freed=%d,allocated=%d,misses=%d]",
+				"Simulation of %d rounds done after %s [alive=%d,changed=%d,freed=%d,allocated=%d,misses=%d]",
 				RUNS, Duration.between(t_init, t_sim),
 				alive, changed, freed, allocated, misses));
 
@@ -253,7 +253,7 @@ class ByteAllocatorTest {
 		Instant t_end = Instant.now();
 
 		testReporter.publishEntry(String.format(
-				"Finished testing allocation consistency after %d", Duration.between(t_start, t_end)));
+				"Finished testing allocation consistency after %s", Duration.between(t_start, t_end)));
 	}
 
 	/**
