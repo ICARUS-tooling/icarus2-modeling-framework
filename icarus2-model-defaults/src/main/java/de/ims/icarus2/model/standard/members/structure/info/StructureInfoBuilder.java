@@ -121,7 +121,7 @@ public class StructureInfoBuilder {
 
 		try {
 			final StructureType type = structure.getStructureType();
-			final boolean isGraph = type == StructureType.GRAPH || type == StructureType.DIRECTED_GRAPH;
+			final boolean isGraph = type == StructureType.GRAPH;
 
 			for (StructureInfoField field : _fields) {
 				if (field.isTypeSupported(type)) {

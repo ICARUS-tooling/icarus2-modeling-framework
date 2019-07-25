@@ -38,14 +38,14 @@ public enum StructureType implements StringResource {
 	 * by any edges. This is by far the most basic type of
 	 * structure.
 	 */
-	SET("set", false, 0, 0, 0), //$NON-NLS-1$
+	SET("set", false, 0, 0, 0),
 
 	/**
 	 * An ordered sequence of nodes, each with at most one
 	 * predecessor and successor. Edges in this structure are
 	 * expected to be {@code directed} only!
 	 */
-	CHAIN("chain", true, 1, 1, 1), //$NON-NLS-1$
+	CHAIN("chain", true, 1, 1, 1),
 
 	/**
 	 * A hierarchically ordered collection of nodes where each node
@@ -53,21 +53,15 @@ public enum StructureType implements StringResource {
 	 * number of children. All edges are {@code directed} from a parent
 	 * down to the child node itself.
 	 */
-	TREE("tree", true, -1, 1, 1), //$NON-NLS-1$
+	TREE("tree", true, -1, 1, 1),
 
 	//TODO Add FOREST as a means to model N-best tree lists? or move that to a kind of "parallel" structure meta-type?
-
-	/**
-	 * A general graph with the only restriction that edges have to be
-	 * directed.
-	 */
-	DIRECTED_GRAPH("directed-graph", true, -1, -1, 0), //$NON-NLS-1$
 
 	/**
 	 * Being the most unbounded and therefore most complex type a {@code GRAPH}
 	 * does not pose any restrictions on nodes or edges.
 	 */
-	GRAPH("graph", false, -1, -1, 0); //$NON-NLS-1$
+	GRAPH("graph", false, -1, -1, 0);
 
 	private final int outgoingEdgeLimit;
 	private final int incomingEdgeLimit;

@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.standard.members;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -31,12 +33,20 @@ import de.ims.icarus2.model.standard.driver.cache.TrackedMember.TrackedItem;
 import de.ims.icarus2.model.standard.driver.cache.TrackedMember.TrackedStructure;
 import de.ims.icarus2.model.standard.members.container.DefaultContainer;
 import de.ims.icarus2.model.standard.members.container.ItemStorage;
+import de.ims.icarus2.model.standard.members.container.ListItemStorageInt;
+import de.ims.icarus2.model.standard.members.container.SingletonItemStorage;
+import de.ims.icarus2.model.standard.members.container.SpanItemStorage;
 import de.ims.icarus2.model.standard.members.item.DefaultFragment;
 import de.ims.icarus2.model.standard.members.item.DefaultItem;
+import de.ims.icarus2.model.standard.members.structure.ChainEdgeStorage;
 import de.ims.icarus2.model.standard.members.structure.DefaultEdge;
 import de.ims.icarus2.model.standard.members.structure.DefaultStructure;
 import de.ims.icarus2.model.standard.members.structure.EdgeStorage;
+import de.ims.icarus2.model.standard.members.structure.EmptyEdgeStorage;
+import de.ims.icarus2.model.standard.members.structure.GraphEdgeStorage;
+import de.ims.icarus2.model.standard.members.structure.TreeEdgeStorage;
 import de.ims.icarus2.util.annotations.TestableImplementation;
+import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
  * @author Markus Gärtner
@@ -81,14 +91,30 @@ public class DefaultLayerMemberFactory implements LayerMemberFactory {
 		return fragment;
 	}
 
+	private <C extends DefaultContainer> void applyOptionalFeatures(C container,
+			DataSet<Container> baseContainers, Container boundaryContainer) {
+
+		if(baseContainers!=null) {
+			container.setBaseContainers(baseContainers);
+		}
+
+		if(boundaryContainer!=null) {
+			container.setBoundaryContainer(boundaryContainer);
+		}
+	}
+
 	/**
 	 * @see de.ims.icarus2.model.api.registry.LayerMemberFactory#newContainer(ContainerManifestBase, Container, long)
 	 */
 	@Override
-	public Container newContainer(ContainerManifestBase<?> manifest, Container host, long id) {
+	public Container newContainer(ContainerManifestBase<?> manifest, Container host,
+			@Nullable DataSet<Container> baseContainers,
+			@Nullable Container boundaryContainer, long id) {
 		ItemStorage itemStorage = createItemStorage(manifest);
 
 		DefaultContainer container = host.isProxy() ? new TrackedContainer() : new DefaultContainer();
+		container.setManifest(manifest);
+		applyOptionalFeatures(container, baseContainers, boundaryContainer);
 		container.setId(id);
 		container.setContainer(host);
 		container.setItemStorage(itemStorage);
@@ -97,19 +123,35 @@ public class DefaultLayerMemberFactory implements LayerMemberFactory {
 	}
 
 	protected ItemStorage createItemStorage(ContainerManifestBase<?> manifest) {
-		//TODO implement
-		throw new ModelException(GlobalErrorCode.NOT_IMPLEMENTED, "TODO");
+		switch (manifest.getContainerType()) {
+		case SINGLETON:
+			return new SingletonItemStorage();
+
+		case LIST:
+			return new ListItemStorageInt();
+
+		case SPAN:
+			return new SpanItemStorage();
+
+		default:
+			throw new ModelException(GlobalErrorCode.UNKNOWN_ENUM,
+					"Unknown container type: "+manifest.getContainerType());
+		}
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.api.registry.LayerMemberFactory#newStructure(de.ims.icarus2.model.manifest.api.StructureManifest, de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public Structure newStructure(StructureManifest manifest, Container host, long id) {
+	public Structure newStructure(StructureManifest manifest, Container host,
+			@Nullable DataSet<Container> baseContainers,
+			@Nullable Container boundaryContainer, long id) {
 		ItemStorage itemStorage = createItemStorage(manifest);
 		EdgeStorage edgeStorage = createEdgeStorage(manifest);
 
 		DefaultStructure structure = host.isProxy() ? new TrackedStructure() : new DefaultStructure();
+		structure.setManifest(manifest);
+		applyOptionalFeatures(structure, baseContainers, boundaryContainer);
 		structure.setId(id);
 		structure.setContainer(host);
 		structure.setItemStorage(itemStorage);
@@ -119,7 +161,15 @@ public class DefaultLayerMemberFactory implements LayerMemberFactory {
 	}
 
 	protected EdgeStorage createEdgeStorage(StructureManifest manifest) {
-		//TODO implement
-		throw new ModelException(GlobalErrorCode.NOT_IMPLEMENTED, "TODO");
+		switch (manifest.getStructureType()) {
+		case CHAIN: return new ChainEdgeStorage();
+		case TREE: return new TreeEdgeStorage();
+		case SET: return new EmptyEdgeStorage();
+		case GRAPH: return new GraphEdgeStorage();
+
+		default:
+			throw new ModelException(GlobalErrorCode.UNKNOWN_ENUM,
+					"Unknown container type: "+manifest.getContainerType());
+		}
 	}
 }
