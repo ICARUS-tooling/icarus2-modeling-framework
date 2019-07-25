@@ -279,10 +279,12 @@ public interface ComponentSupplier extends AutoCloseable {
 			switch (componentType) {
 			case CONTAINER:
 				return memberFactory.newContainer(manifest.getRootContainerManifest()
-						.orElseThrow(ManifestException.missing(manifest, "root container")), host, id);
+						.orElseThrow(ManifestException.missing(manifest, "root container")),
+						host, null, null, id); //TODO for now we ignore base and boundary containers!!!
 			case STRUCTURE:
 				return memberFactory.newStructure(((StructureLayerManifest)manifest).getRootStructureManifest()
-						.orElseThrow(ManifestException.missing(manifest, "root structure")), host, id);
+						.orElseThrow(ManifestException.missing(manifest, "root structure")),
+						host, null, null, id); //TODO for now we ignore base and boundary containers!!!
 			case ITEM:
 				return memberFactory.newItem(host, id);
 

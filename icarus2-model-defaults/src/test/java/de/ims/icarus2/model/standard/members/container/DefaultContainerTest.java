@@ -76,6 +76,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerFlag;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
+import de.ims.icarus2.model.standard.members.structure.DefaultStructure;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.IcarusUtils;
@@ -105,43 +106,6 @@ class DefaultContainerTest implements ContainerTest<Container> {
 		@Test
 		void testDefaultContainer() {
 			new DefaultContainer();
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.container.DefaultContainer#DefaultContainer(Container)
-		 */
-		@Test
-		void testDefaultContainerContainer() {
-			Container host = mockContainer();
-			DefaultContainer container = new DefaultContainer(host);
-			assertSame(host, container.getContainer());
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.container.DefaultContainer#DefaultContainer(Container, ItemStorage)
-		 */
-		@TestFactory
-		Stream<DynamicTest> testDefaultContainerContainerItemStorage() {
-
-			return Stream.of(ContainerType.values())
-					.flatMap(typeFromManifest -> Stream.of(typeFromManifest.getCompatibleTypes())
-							.map(typeFromStorage -> DynamicTest.dynamicTest(
-									String.format("manifest=%s, storage=%s",
-											typeFromManifest, typeFromStorage), () -> {
-								ContainerManifest manifest = mock(ContainerManifest.class);
-								when(manifest.getContainerType()).thenReturn(typeFromManifest);
-
-								ItemStorage itemStorage = mock(ItemStorage.class);
-								when(itemStorage.getContainerType()).thenReturn(typeFromStorage);
-
-								Container host = mockContainer();
-								when((ContainerManifest)host.getManifest()).thenReturn(manifest);
-
-								DefaultContainer container = new DefaultContainer(host, itemStorage);
-
-								assertSame(host, container.getContainer());
-								assertSame(itemStorage, container.getItemStorage());
-							})));
 		}
 	}
 
@@ -362,7 +326,8 @@ class DefaultContainerTest implements ContainerTest<Container> {
 		 */
 		@Test
 		void testRecycle() {
-			instance = new DefaultContainer(host);
+			instance = new DefaultStructure();
+			instance.setContainer(host);
 
 			DataSet<Container> baseContainers = mock(DataSet.class);
 
@@ -385,7 +350,8 @@ class DefaultContainerTest implements ContainerTest<Container> {
 		 */
 		@Test
 		void testGetItemStorage() {
-			instance = new DefaultContainer(host);
+			instance = new DefaultStructure();
+			instance.setContainer(host);
 
 			ItemStorage storage1 = mock(ItemStorage.class);
 			when(storage1.getContainerType()).thenReturn(ContainerType.LIST);
@@ -413,7 +379,8 @@ class DefaultContainerTest implements ContainerTest<Container> {
 									String.format("manifest=%s, storage=%s",
 											typeFromManifest, typeFromStorage), () -> {
 
-								instance = new DefaultContainer(host);
+								instance = new DefaultStructure();
+								instance.setContainer(host);
 
 								when(manifest.getContainerType()).thenReturn(typeFromManifest);
 								when(itemStorage.getContainerType()).thenReturn(typeFromStorage);
@@ -435,7 +402,8 @@ class DefaultContainerTest implements ContainerTest<Container> {
 									String.format("manifest=%s, storage=%s",
 											typeFromManifest, typeFromStorage), () -> {
 
-								instance = new DefaultContainer(host);
+								instance = new DefaultStructure();
+								instance.setContainer(host);
 
 								when(manifest.getContainerType()).thenReturn(typeFromManifest);
 								when(itemStorage.getContainerType()).thenReturn(typeFromStorage);
@@ -449,7 +417,8 @@ class DefaultContainerTest implements ContainerTest<Container> {
 		 */
 		@Test
 		void testSetItemStorage() {
-			instance = new DefaultContainer(host);
+			instance = new DefaultStructure();
+			instance.setContainer(host);
 
 			assertSetter(instance, DefaultContainer::setItemStorage, itemStorage, NO_NPE_CHECK, NO_CHECK);
 
@@ -472,7 +441,8 @@ class DefaultContainerTest implements ContainerTest<Container> {
 			long id = Math.max(1L, TestUtils.random().nextLong());
 			long index = Math.max(1L, TestUtils.random().nextLong());
 
-			instance = new DefaultContainer(host);
+			instance = new DefaultStructure();
+			instance.setContainer(host);
 			instance.setId(id);
 
 			when(idManager.indexOfId(anyLong())).thenReturn(IcarusUtils.UNSET_LONG);
@@ -496,7 +466,9 @@ class DefaultContainerTest implements ContainerTest<Container> {
 		@BeforeEach
 		void setUp() {
 			super.setUp();
-			instance = new DefaultContainer(host, itemStorage);
+			instance = new DefaultStructure();
+			instance.setContainer(host);
+			instance.setItemStorage(itemStorage);
 		}
 
 		/**

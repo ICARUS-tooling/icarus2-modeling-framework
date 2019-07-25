@@ -54,6 +54,12 @@ public interface Container extends Item, ManifestOwner<ContainerManifestBase<?>>
 	 */
 	ContainerType getContainerType();
 
+	/**
+	 * Returns {@code true} iff this container is merely a proxy between
+	 * a layer and the top-level elements of that layer.
+	 * <p>
+	 * The default implementation returns {@code false}.
+	 */
 	default boolean isProxy() {
 		return false;
 	}

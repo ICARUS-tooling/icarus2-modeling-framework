@@ -16,7 +16,6 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
-import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import javax.annotation.Nullable;
@@ -53,25 +52,19 @@ import de.ims.icarus2.util.mem.Reference;
 public class DefaultContainer extends DefaultItem implements Container, Recyclable {
 
 	@Link
-	protected ItemStorage itemStorage;
+	private ItemStorage itemStorage;
 
 	@Reference
-	protected Container boundaryContainer;
+	private Container boundaryContainer;
 
 	@Link
-	protected DataSet<Container> baseContainers = DataSet.emptySet();
+	private DataSet<Container> baseContainers = DataSet.emptySet();
+
+	@Link
+	private ContainerManifestBase<?> manifest;
 
 	public DefaultContainer() {
 		// no-op
-	}
-
-	public DefaultContainer(Container container) {
-		super(container);
-	}
-
-	public DefaultContainer(Container container, @Nullable ItemStorage itemStorage) {
-		this(container);
-		setItemStorage(itemStorage);
 	}
 
 	/**
@@ -158,8 +151,7 @@ public class DefaultContainer extends DefaultItem implements Container, Recyclab
 	 */
 	@Override
 	public ContainerManifestBase<?> getManifest() {
-		checkState("Need access to a host container for fetching manifest", getContainer()!=null);
-		return getContainer().getManifest();
+		return manifest;
 	}
 
 	/**
@@ -287,6 +279,25 @@ public class DefaultContainer extends DefaultItem implements Container, Recyclab
 		}
 
 		itemStorage = null;
+	}
+
+	protected void setManifest0(ContainerManifestBase<?> manifest) {
+		this.manifest = requireNonNull(manifest);
+	}
+
+	protected void checkManifest(ContainerManifestBase<?> manifest) {
+		if(!ContainerManifest.class.isInstance(manifest))
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, Messages.mismatch(
+					"Invalid manifest type", ContainerManifest.class, manifest.getClass()));
+	}
+
+	/**
+	 * @param manifest the manifest to set
+	 */
+	public void setManifest(ContainerManifestBase<?> manifest) {
+		requireNonNull(manifest);
+		checkManifest(manifest);
+		this.manifest = manifest;
 	}
 
 	public void setBoundaryContainer(@Nullable Container boundary) {

@@ -21,20 +21,19 @@ import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.MemberType;
-import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureEditVerifier;
 import de.ims.icarus2.model.api.members.structure.StructureInfo;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.StructureFlag;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.MemberFlags;
 import de.ims.icarus2.model.standard.members.container.DefaultContainer;
-import de.ims.icarus2.model.standard.members.container.ItemStorage;
 import de.ims.icarus2.model.standard.members.structure.info.StructureInfoBuilder;
 import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.seq.DataSequence;
@@ -52,14 +51,11 @@ public class DefaultStructure extends DefaultContainer implements Structure {
 		// no-op
 	}
 
-	public DefaultStructure(Container container) {
-		super(container);
-	}
-
-	public DefaultStructure(Container container, ItemStorage itemStorage, EdgeStorage edgeStorage) {
-		super(container, itemStorage);
-
-		setEdgeStorage(edgeStorage);
+	@Override
+	protected void checkManifest(ContainerManifestBase<?> manifest) {
+		if(!StructureManifest.class.isInstance(manifest))
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, Messages.mismatch(
+					"Invalid manifest type", StructureManifest.class, manifest.getClass()));
 	}
 
 	/**

@@ -29,7 +29,6 @@ import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.NO_NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertFlagGetter;
-import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
 import static de.ims.icarus2.test.TestUtils.filledArray;
 import static de.ims.icarus2.test.TestUtils.random;
@@ -102,24 +101,6 @@ class DefaultStructureTest implements StructureTest<Structure> {
 		@Test
 		void testNoArgsConstructor() {
 			assertNotNull(new DefaultStructure());
-		}
-
-		@Test
-		void testHostConstructor() {
-			assertNotNull(new DefaultStructure(mockContainer()));
-		}
-
-		@Test
-		void testHostConstructorNull() {
-			assertNPE(() -> new DefaultStructure(null));
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.structure.DefaultStructure#DefaultStructure(de.ims.icarus2.model.standard.members.container.ItemStorage, de.ims.icarus2.model.standard.members.structure.EdgeStorage)}.
-		 */
-		@Test
-		void testNullStorages() {
-			assertNotNull(new DefaultStructure(mockContainer(), null, null));
 		}
 	}
 
@@ -443,7 +424,8 @@ class DefaultStructureTest implements StructureTest<Structure> {
 		 */
 		@Test
 		void testRecycle() {
-			instance = new DefaultStructure(host);
+			instance = new DefaultStructure();
+			instance.setContainer(host);
 
 			DataSet<Container> baseContainers = mock(DataSet.class);
 
@@ -469,7 +451,8 @@ class DefaultStructureTest implements StructureTest<Structure> {
 		 */
 		@Test
 		void testSetEdgeStorage() {
-			instance = new DefaultStructure(host);
+			instance = new DefaultStructure();
+			instance.setContainer(host);
 
 			assertSetter(instance, DefaultStructure::setEdgeStorage, edgeStorage, NO_NPE_CHECK, NO_CHECK);
 
@@ -487,7 +470,8 @@ class DefaultStructureTest implements StructureTest<Structure> {
 									String.format("manifest=%s, storage=%s",
 											typeFromManifest, typeFromStorage), () -> {
 
-								instance = new DefaultStructure(host);
+								instance = new DefaultStructure();
+								instance.setContainer(host);
 
 								when(manifest.getStructureType()).thenReturn(typeFromManifest);
 								when(edgeStorage.getStructureType()).thenReturn(typeFromStorage);
@@ -504,7 +488,10 @@ class DefaultStructureTest implements StructureTest<Structure> {
 		@BeforeEach
 		void setUp() {
 			super.setUp();
-			instance = new DefaultStructure(host, itemStorage, edgeStorage);
+			instance = new DefaultStructure();
+			instance.setContainer(host);
+			instance.setItemStorage(itemStorage);
+			instance.setEdgeStorage(edgeStorage);
 		}
 
 		/**
