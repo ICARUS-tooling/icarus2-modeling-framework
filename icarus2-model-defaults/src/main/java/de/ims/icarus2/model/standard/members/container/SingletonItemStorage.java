@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
+import static java.util.Objects.requireNonNull;
+
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
@@ -57,7 +61,7 @@ public class SingletonItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addNotify(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public void addNotify(Container context) {
+	public void addNotify(@Nullable Container context) {
 		// no-op
 	}
 
@@ -65,7 +69,7 @@ public class SingletonItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#removeNotify(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public void removeNotify(Container context) {
+	public void removeNotify(@Nullable Container context) {
 		// no-op
 	}
 
@@ -82,6 +86,7 @@ public class SingletonItemStorage implements ItemStorage {
 	 */
 	@Override
 	public long getItemCount(Container context) {
+		requireNonNull(context);
 		return singleton==null ? 0L : 1L;
 	}
 
@@ -91,28 +96,28 @@ public class SingletonItemStorage implements ItemStorage {
 					"Singleton container storage can only accept 0 as index value - got "+index);
 	}
 
-	protected final void checkNonEmpty() {
+	protected final void checkNonEmpty(ModelErrorCode errorCode) {
 		if(isEmpty())
-			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+			throw new ModelException(errorCode,
 					"Singletong container storage is empty");
 	}
 
-	protected final void checkEmpty() {
+	protected final void checkEmpty(ModelErrorCode errorCode) {
 		if(!isEmpty())
-			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+			throw new ModelException(errorCode,
 					"Singletong container storage is not empty");
 	}
 
 	public boolean isEmpty() {
-		return singleton!=null;
+		return singleton==null;
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#getItemAt(de.ims.icarus2.model.api.members.container.Container, long)
 	 */
 	@Override
-	public Item getItemAt(Container context, long index) {
-		checkNonEmpty();
+	public Item getItemAt(@Nullable Container context, long index) {
+		checkNonEmpty(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS);
 		checkIndex(index);
 
 		return singleton;
@@ -122,7 +127,8 @@ public class SingletonItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#indexOfItem(de.ims.icarus2.model.api.members.container.Container, de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
-	public long indexOfItem(Container context, Item item) {
+	public long indexOfItem(@Nullable Container context, Item item) {
+		requireNonNull(item);
 		return (singleton!=null && singleton==item) ? 0L : IcarusUtils.UNSET_LONG;
 	}
 
@@ -130,8 +136,9 @@ public class SingletonItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addItem(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
-	public void addItem(Container context, long index, Item item) {
-		checkEmpty();
+	public void addItem(@Nullable Container context, long index, Item item) {
+		requireNonNull(item);
+		checkEmpty(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS);
 		checkIndex(index);
 
 		singleton = item;
@@ -141,12 +148,13 @@ public class SingletonItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addItems(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
-	public void addItems(Container context, long index,
+	public void addItems(@Nullable Container context, long index,
 			DataSequence<? extends Item> items) {
-		checkEmpty();
+		requireNonNull(items);
+		checkEmpty(ModelErrorCode.MODEL_INVALID_REQUEST);
 		if(items.entryCount()>1)
-			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					"Cannot add mroe than 1 element - attempted to add "+items.entryCount());
+			throw new ModelException(ModelErrorCode.MODEL_INVALID_REQUEST,
+					"Cannot add more than 1 element - attempted to add "+items.entryCount());
 		checkIndex(index);
 
 		singleton = items.elementAt(0L);
@@ -156,8 +164,8 @@ public class SingletonItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#removeItem(de.ims.icarus2.model.api.members.container.Container, long)
 	 */
 	@Override
-	public Item removeItem(Container context, long index) {
-		checkNonEmpty();
+	public Item removeItem(@Nullable Container context, long index) {
+		checkNonEmpty(ModelErrorCode.MODEL_INVALID_REQUEST);
 		checkIndex(index);
 
 		Item result = singleton;
@@ -170,10 +178,13 @@ public class SingletonItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#removeItems(de.ims.icarus2.model.api.members.container.Container, long, long)
 	 */
 	@Override
-	public DataSequence<? extends Item> removeItems(Container context,
+	public DataSequence<? extends Item> removeItems(@Nullable Container context,
 			long index0, long index1) {
+		checkNonEmpty(ModelErrorCode.MODEL_INVALID_REQUEST);
+		checkIndex(index0);
+		checkIndex(index1);
 		if(index1-index0>0)
-			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+			throw new ModelException(ModelErrorCode.MODEL_INVALID_REQUEST,
 					"Cannot remove more than 1 element from singletong container storage");
 
 		return new SingletonSequence<>(removeItem(context, 0L));
@@ -183,7 +194,7 @@ public class SingletonItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#swapItems(de.ims.icarus2.model.api.members.container.Container, long, long)
 	 */
 	@Override
-	public void swapItems(Container context, long index0, long index1) {
+	public void swapItems(@Nullable Container context, long index0, long index1) {
 		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Cannot move items in singletong container storage");
 	}
@@ -192,7 +203,7 @@ public class SingletonItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#getBeginOffset(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public long getBeginOffset(Container context) {
+	public long getBeginOffset(@Nullable Container context) {
 		return isEmpty() ? IcarusUtils.UNSET_LONG : singleton.getBeginOffset();
 	}
 
@@ -200,7 +211,7 @@ public class SingletonItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#getEndOffset(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public long getEndOffset(Container context) {
+	public long getEndOffset(@Nullable Container context) {
 		return isEmpty() ? IcarusUtils.UNSET_LONG : singleton.getEndOffset();
 	}
 
@@ -213,7 +224,7 @@ public class SingletonItemStorage implements ItemStorage {
 	}
 
 	@Override
-	public boolean isDirty(Container context) {
+	public boolean isDirty(@Nullable Container context) {
 		return false;
 	}
 }
