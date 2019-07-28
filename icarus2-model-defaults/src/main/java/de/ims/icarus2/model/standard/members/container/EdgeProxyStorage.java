@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
+import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.MemberType;
@@ -36,11 +38,10 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
 @TestableImplementation(ItemStorage.class)
 public class EdgeProxyStorage implements ItemStorage {
 
-	private final Structure structure;
+	private Structure structure;
 
 	public EdgeProxyStorage(Structure structure) {
-		if (structure == null)
-			throw new NullPointerException("Invalid structure");
+		requireNonNull(structure);
 
 		//TODO maybe check for 'edges-static' flag in manifest?
 
@@ -52,15 +53,19 @@ public class EdgeProxyStorage implements ItemStorage {
 	 */
 	@Override
 	public void recycle() {
-		// no-op
+		structure = null;
 	}
 
 	/**
+	 * This implementation is a wrapper around a live {@link Structure}.
+	 * Since we have no mechanism in place to reassign a new structure
+	 * after revival, this method will always return {@code false}.
+	 *
 	 * @see de.ims.icarus2.util.Recyclable#revive()
 	 */
 	@Override
 	public boolean revive() {
-		return true;
+		return false;
 	}
 
 	/**
