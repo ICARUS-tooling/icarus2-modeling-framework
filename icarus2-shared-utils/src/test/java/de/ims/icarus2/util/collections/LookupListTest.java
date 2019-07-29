@@ -50,23 +50,23 @@ import de.ims.icarus2.test.guard.ApiGuard;
  * @author Markus Gärtner
  *
  */
+@SuppressWarnings("rawtypes")
 @Tag(RANDOMIZED)
-class LookupListTest implements ApiGuardedTest<LookupList<?>> {
+class LookupListTest implements ApiGuardedTest<LookupList> {
 
 	/**
 	 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
 	 */
 	@Override
-	public void configureApiGuard(ApiGuard<LookupList<?>> apiGuard) {
+	public void configureApiGuard(ApiGuard<LookupList> apiGuard) {
 		ApiGuardedTest.super.configureApiGuard(apiGuard);
 
 		apiGuard.nullGuard(true);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	public Class<? extends LookupList<?>> getTestTargetClass() {
-		return (Class<? extends LookupList<?>>) LookupList.class;
+	public Class<LookupList> getTestTargetClass() {
+		return LookupList.class;
 	}
 
 	@Override
@@ -93,11 +93,13 @@ class LookupListTest implements ApiGuardedTest<LookupList<?>> {
 				.toArray();
 	}
 
-	private <T> void fill(LookupList<T> list, T...items) {
+	@SafeVarargs
+	private final <T> void fill(LookupList<T> list, T...items) {
 		list.addAll(items);
 	}
 
-	private <T> void assertItems(LookupList<T> list, T...items) {
+	@SafeVarargs
+	private final <T> void assertItems(LookupList<T> list, T...items) {
 		assertEquals(items.length, list.size());
 		for (int i = 0; i < items.length; i++) {
 			assertSame(items[i], list.get(i), "Mismatch for item on index "+i);
