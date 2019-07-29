@@ -26,8 +26,10 @@ import static org.mockito.Mockito.verify;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
@@ -45,6 +47,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.guard.ApiGuard;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 
 /**
  * @author Markus Gärtner
@@ -159,42 +162,6 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 
 	}
 
-	class Internals {
-
-		/**
-		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#rangeCheck(int)}.
-		 */
-		@Test
-		void testRangeCheck() {
-			fail("Not yet implemented"); // TODO
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#rangeCheckForAdd(int)}.
-		 */
-		@Test
-		void testRangeCheckForAdd() {
-			fail("Not yet implemented"); // TODO
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#ensureCapacity(int)}.
-		 */
-		@Test
-		void testEnsureCapacity() {
-			fail("Not yet implemented"); // TODO
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#createLookup(int)}.
-		 */
-		@Test
-		void testCreateLookup() {
-			fail("Not yet implemented"); // TODO
-		}
-
-	}
-
 	@Nested
 	class WithInstance {
 
@@ -224,7 +191,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 		@Disabled("covered by testGet()")
 		@Test
 		void testAddE() {
-			fail("Not yet implemented"); // TODO
+			fail("Not yet implemented");
 		}
 
 		/**
@@ -257,6 +224,222 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 			}
 
 			assertItems(instance, list);
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#set(java.lang.Object, int)}.
+		 */
+		@ParameterizedTest
+		@ValueSource(ints = {0, -1, 1})
+		void testSetEIntEmptyInvalidIndex(int index) {
+			assertThrows(IndexOutOfBoundsException.class,
+					() -> instance.set(new Object(), index));
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#remove(int)}.
+		 */
+		@ParameterizedTest
+		@ValueSource(ints = {0, -1, 1})
+		void testRemoveIntEmptyInvalidIndex(int index) {
+			assertThrows(IndexOutOfBoundsException.class,
+					() -> instance.remove(index));
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#removeAll(int, int, java.util.function.Consumer)}.
+		 */
+		@ParameterizedTest
+		@ValueSource(ints = {0, -1, 1})
+		void testRemoveAllInvalidIndices(int index) {
+			// Only tests the first index, as the list is empty and we cannot produce an invalid 2nd argument
+			assertThrows(IndexOutOfBoundsException.class,
+					() -> instance.removeAll(index, 0, DO_NOTHING()));
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#remove(java.lang.Object)}.
+		 */
+		@Test
+		void testRemoveE() {
+			assertFalse(instance.remove(new Object()));
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#clear()}.
+		 */
+		@Test
+		void testClear() {
+			instance.clear();
+			assertTrue(instance.isEmpty());
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#contains(java.lang.Object)}.
+		 */
+		@Test
+		void testContains() {
+			assertFalse(instance.contains(new Object()));
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#indexOf(java.lang.Object)}.
+		 */
+		@Test
+		void testIndexOf() {
+			assertEquals(UNSET_INT, instance.indexOf(new Object()));
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#isEmpty()}.
+		 */
+		@Test
+		void testIsEmpty() {
+			assertTrue(instance.isEmpty());
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#toArray()}.
+		 */
+		@Test
+		void testToArray() {
+			assertArrayEmpty(instance.toArray());
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#set(java.lang.Object[])}.
+		 */
+		@Test
+		void testSetObjectArray() {
+			Object[] items = randomItems();
+			instance.set(items);
+			assertItems(instance, items);
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#sort(java.util.Comparator)}.
+		 */
+		@Test
+		void testSort() {
+			Comparator<Object> comp = mock(Comparator.class);
+			instance.sort(comp);
+			verify(comp, never()).compare(any(), any());
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#iterator()}.
+		 */
+		@Test
+		void testIterator() {
+			Iterator<Object> iterator = instance.iterator();
+			assertNotNull(iterator);
+			assertFalse(iterator.hasNext());
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#remove(java.lang.Object)}.
+		 */
+		@Test
+		void testRemoveENull() {
+			fill(instance, new Object(), null, new Object());
+			assertEquals(3, instance.size());
+			assertTrue(instance.remove(null));
+			assertEquals(2, instance.size());
+		}
+
+		@Nested
+		class Internals {
+
+			/**
+			 * Test method for {@link de.ims.icarus2.util.collections.LookupList#rangeCheck(int)}.
+			 */
+			@Test
+			void testRangeCheckEmpty() {
+				assertThrows(IndexOutOfBoundsException.class,
+						() -> instance.rangeCheck(0));
+			}
+
+			/**
+			 * Test method for {@link de.ims.icarus2.util.collections.LookupList#rangeCheck(int)}.
+			 */
+			@RepeatedTest(RUNS)
+			void testRangeCheckFilled() {
+				int size = randomSize();
+				fill(instance, randomItems(size));
+				for (int i = 0; i < size; i++) {
+					instance.rangeCheck(i);
+				}
+
+				IntStream.of(-1, size, size+1)
+					.forEach(index -> assertThrows(IndexOutOfBoundsException.class,
+						() -> instance.rangeCheck(index)));
+			}
+
+			/**
+			 * Test method for {@link de.ims.icarus2.util.collections.LookupList#rangeCheckForAdd(int)}.
+			 */
+			@Test
+			void testRangeCheckForAddEmpty() {
+				instance.rangeCheckForAdd(0);
+
+				assertThrows(IndexOutOfBoundsException.class,
+						() -> instance.rangeCheck(1));
+			}
+
+			/**
+			 * Test method for {@link de.ims.icarus2.util.collections.LookupList#rangeCheckForAdd(int)}.
+			 */
+			@RepeatedTest(RUNS)
+			void testRangeCheckForAddFilled() {
+				int size = randomSize();
+				fill(instance, randomItems(size));
+				for (int i = 0; i <= size; i++) {
+					instance.rangeCheckForAdd(i);
+				}
+
+				IntStream.of(-1, size+1)
+					.forEach(index -> assertThrows(IndexOutOfBoundsException.class,
+						() -> instance.rangeCheckForAdd(index)));
+			}
+
+			/**
+			 * Test method for {@link de.ims.icarus2.util.collections.LookupList#ensureCapacity(int)}.
+			 */
+			@ParameterizedTest
+			@ValueSource(ints = {15, 101, 100_000})
+			void testEnsureCapacity(int capacity) {
+				instance.ensureCapacity(capacity);
+				assertTrue(instance.capacity()>=capacity);
+			}
+
+			/**
+			 * Test method for {@link de.ims.icarus2.util.collections.LookupList#createLookup(int)}.
+			 */
+			@ParameterizedTest
+			@ValueSource(ints = {10, 100, 100_000})
+			void testCreateLookup(int capacity) {
+				Object2IntMap<Object> lookup = instance.createLookup(capacity);
+				assertNotNull(lookup);
+				assertEquals(UNSET_INT, lookup.defaultReturnValue());
+			}
+
+			/**
+			 * Test method for {@link de.ims.icarus2.util.collections.LookupList#createLookup(int)}.
+			 */
+			@RepeatedTest(RUNS)
+			void testCreateLookupAutomatically() {
+				fill(instance, randomItems());
+
+				// Create new random data (including null) to overwrite existing list
+				Object[] items = randomItems(instance.size());
+				items[random(0, items.length)] = null;
+
+				for (int i = 0; i < items.length; i++) {
+					instance.set(items[i], i);
+					assertEquals(i, instance.indexOf(items[i]), "Mismatch on index "+i+" for "+items[i]);
+				}
+			}
+
 		}
 
 		@Nested
@@ -406,6 +589,18 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 			}
 
 			/**
+			 * Test method for {@link de.ims.icarus2.util.collections.LookupList#removeAll(int, int, java.util.function.Consumer)}.
+			 */
+			@RepeatedTest(RUNS)
+			void testRemoveAllInvalidIndices() {
+				int index1 = random(0, items.length/2);
+				int index0 = random(index1+1, items.length);
+
+				assertThrows(IllegalArgumentException.class,
+						() -> instance.removeAll(index0, index1, mock(Consumer.class)));
+			}
+
+			/**
 			 * Test method for {@link de.ims.icarus2.util.collections.LookupList#remove(java.lang.Object)}.
 			 */
 			@RepeatedTest(RUNS)
@@ -422,6 +617,14 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 				}
 
 				assertFalse(instance.remove(new Object()));
+			}
+
+			/**
+			 * Test method for {@link de.ims.icarus2.util.collections.LookupList#remove(java.lang.Object)}.
+			 */
+			@Test
+			void testRemoveENull() {
+				assertFalse(instance.remove(null));
 			}
 
 			/**
@@ -462,134 +665,98 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 
 				assertEquals(UNSET_INT, instance.indexOf(new Object()));
 			}
-		}
 
-		/**
-		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#set(java.lang.Object, int)}.
-		 */
-		@ParameterizedTest
-		@ValueSource(ints = {0, -1, 1})
-		void testSetEIntEmptyInvalidIndex(int index) {
-			assertThrows(IndexOutOfBoundsException.class,
-					() -> instance.set(new Object(), index));
-		}
+			/**
+			 * Test method for {@link de.ims.icarus2.util.collections.LookupList#isEmpty()}.
+			 */
+			@Test
+			void testIsEmpty() {
+				assertFalse(instance.isEmpty());
+			}
 
-		/**
-		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#remove(int)}.
-		 */
-		@ParameterizedTest
-		@ValueSource(ints = {0, -1, 1})
-		void testRemoveIntEmptyInvalidIndex(int index) {
-			assertThrows(IndexOutOfBoundsException.class,
-					() -> instance.remove(index));
-		}
+			@Nested
+			class ForIterator {
+				private Iterator<Object> iterator;
 
-		/**
-		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#removeAll(int, int, java.util.function.Consumer)}.
-		 */
-		@ParameterizedTest
-		@ValueSource(ints = {0, -1, 1})
-		void testRemoveAllInvalidIndices(int index) {
-			// Only tests the first index, as the list is empty and we cannot produce an invalid 2nd argument
-			assertThrows(IndexOutOfBoundsException.class,
-					() -> instance.removeAll(index, 0, DO_NOTHING()));
-		}
+				@BeforeEach
+				void setUp() {
+					iterator = instance.iterator();
+				}
 
-		/**
-		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#remove(java.lang.Object)}.
-		 */
-		@Test
-		void testRemoveE() {
-			assertFalse(instance.remove(new Object()));
-		}
+				@AfterEach
+				void tearDown() {
+					iterator = null;
+				}
 
-		/**
-		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#clear()}.
-		 */
-		@Test
-		void testClear() {
-			instance.clear();
-			assertTrue(instance.isEmpty());
-		}
+				/**
+				 * Test method for {@link de.ims.icarus2.util.collections.LookupList.Itr#hasNext()}.
+				 */
+				@RepeatedTest(RUNS)
+				void testHasNext() {
+					for (int i = 0; i < items.length; i++) {
+						assertTrue(iterator.hasNext());
+					}
+				}
 
-		/**
-		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#contains(java.lang.Object)}.
-		 */
-		@Test
-		void testContains() {
-			assertFalse(instance.contains(new Object()));
-		}
+				/**
+				 * Test method for {@link de.ims.icarus2.util.collections.LookupList.Itr#next()}.
+				 */
+				@RepeatedTest(RUNS)
+				void testNext() {
+					for (int i = 0; i < items.length; i++) {
+						assertSame(items[i], iterator.next());
+					}
 
-		/**
-		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#indexOf(java.lang.Object)}.
-		 */
-		@Test
-		void testIndexOf() {
-			assertEquals(UNSET_INT, instance.indexOf(new Object()));
-		}
+					assertThrows(NoSuchElementException.class, () -> iterator.next());
+				}
 
-		/**
-		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#isEmpty()}.
-		 */
-		@Test
-		void testIsEmpty() {
-			assertTrue(instance.isEmpty());
-		}
+				/**
+				 * Test method for {@link de.ims.icarus2.util.collections.LookupList.Itr#next()}.
+				 */
+				@Test
+				void testNextConcurrentModification() {
+					instance.remove(0);
+					assertThrows(ConcurrentModificationException.class,
+							() -> iterator.next());
+				}
 
-		/**
-		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#toArray()}.
-		 */
-		@Test
-		void testToArray() {
-			assertArrayEmpty(instance.toArray());
-		}
+				/**
+				 * Test method for {@link de.ims.icarus2.util.collections.LookupList.Itr#remove()}.
+				 */
+				@RepeatedTest(RUNS)
+				void testRemove() {
+					int removalIndex = random(1, items.length);
+					Object item = instance.get(removalIndex);
+					assertEquals(removalIndex, instance.indexOf(item));
 
-		/**
-		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#set(java.lang.Object[])}.
-		 */
-		@Test
-		void testSetObjectArray() {
-			Object[] items = randomItems();
-			instance.set(items);
-			assertItems(instance, items);
-		}
+					for (int i = 0; i <= removalIndex; i++) {
+						iterator.next();
+					}
 
-		/**
-		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#first()}.
-		 */
-		@Test
-		void testFirst() {
-			assertThrows(IndexOutOfBoundsException.class,
-					() -> instance.first());
-		}
+					iterator.remove();
+					assertEquals(UNSET_INT, instance.indexOf(item));
+				}
 
-		/**
-		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#last()}.
-		 */
-		@Test
-		void testLast() {
-			assertThrows(IndexOutOfBoundsException.class,
-					() -> instance.last());
-		}
+				/**
+				 * Test method for {@link de.ims.icarus2.util.collections.LookupList.Itr#remove()}.
+				 */
+				@Test
+				void testRemoveConcurrentModification() {
+					iterator.next();
+					instance.remove(0);
+					assertThrows(ConcurrentModificationException.class,
+							() -> iterator.remove());
+				}
 
-		/**
-		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#sort(java.util.Comparator)}.
-		 */
-		@Test
-		void testSort() {
-			Comparator<Object> comp = mock(Comparator.class);
-			instance.sort(comp);
-			verify(comp, never()).compare(any(), any());
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#iterator()}.
-		 */
-		@Test
-		void testIterator() {
-			Iterator<Object> iterator = instance.iterator();
-			assertNotNull(iterator);
-			assertFalse(iterator.hasNext());
+				/**
+				 * Test method for {@link de.ims.icarus2.util.collections.LookupList.Itr#remove()}.
+				 */
+				@Test
+				void testRemoveInitial() {
+					assertThrows(IllegalStateException.class,
+							() -> iterator.remove());
+				}
+			}
 		}
 	}
 

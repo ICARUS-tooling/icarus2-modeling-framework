@@ -327,16 +327,6 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 		// dirty index doesn't change
 	}
 
-	@SuppressWarnings("unchecked")
-	public E first() {
-		return (E) items[0];
-	}
-
-	@SuppressWarnings("unchecked")
-	public E last() {
-		return (E) items[size-1];
-	}
-
 	public void sort(Comparator<? super E> comparator) {
 		requireNonNull(comparator);
 		@SuppressWarnings("unchecked")
@@ -474,13 +464,11 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
      * @param index
      */
     private void map(E item, int index) {
-    	if(item!=null) {
-    		if(lookup!=null) {
-    			lookup.put(item, index);
-    		} else {
-    			addDirtyRegion(index);
-    		}
-    	}
+		if(lookup!=null) {
+			lookup.put(item, index);
+		} else {
+			addDirtyRegion(index);
+		}
     }
 
     /**
@@ -541,7 +529,6 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
                 throw new ConcurrentModificationException();
             cursor = i + 1;
             return (E) items[lastRet = i];
-//            return (E) items[i];
 		}
 
 		/**
@@ -561,7 +548,6 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
             } catch (IndexOutOfBoundsException ex) {
                 throw new ConcurrentModificationException();
             }
-//			throw new UnsupportedOperationException("Remove not supported"); //$NON-NLS-1$
 		}
 
         final void checkForComodification() {
