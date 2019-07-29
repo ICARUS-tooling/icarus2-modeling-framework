@@ -16,6 +16,9 @@
  */
 package de.ims.icarus2.util.collections;
 
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static java.util.Objects.requireNonNull;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
@@ -24,8 +27,11 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Link;
 import de.ims.icarus2.util.mem.Primitive;
@@ -34,6 +40,9 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
+ * A list-like data structure with accumulated constant lookup
+ * cost. This implementation allows {@code null} values!
+ *
  * @author Markus Gärtner
  *
  */
@@ -49,7 +58,7 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
     private static final Object[] EMPTY_ITEMS = {};
 
     /**
-     * Actual list of items
+     * Actual list of items, never {@code null}.
      */
     @Link
 	private Object[] items;
@@ -86,16 +95,17 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 	}
 
 	public LookupList(int capacity) {
-        if (capacity < 0)
+        if (capacity <= 0)
             throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT,
-            		"Illegal Capacity: "+capacity); //$NON-NLS-1$
+            		"Illegal Capacity: "+capacity);
 
         items = new Object[capacity];
 	}
 
 	public LookupList(Collection<? extends E> c) {
 
-        items = new Object[c.size()];
+        size = c.size();
+        items = new Object[size];
         c.toArray(items);
 
         addDirtyRegion(0);
@@ -115,6 +125,15 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
         return "Index: "+index+", Size: "+size; //$NON-NLS-1$ //$NON-NLS-2$
     }
 
+	/**
+	 * Returns the current capacity of the list, i.e. the number of elements
+	 * it can store before needing to extend the internal storage.
+	 * @return
+	 */
+	public int capacity() {
+		return items.length;
+	}
+
 	public int size() {
 		return size;
 	}
@@ -125,7 +144,7 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 		return (E) items[index];
 	}
 
-	public void add(E item) {
+	public void add(@Nullable E item) {
         ensureCapacity(size + 1);  // Increments modCount!!
 
 		int index = size;
@@ -133,7 +152,7 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
         addDirtyRegion(index);
 	}
 
-	public void add(int index, E item) {
+	public void add(int index, @Nullable E item) {
         rangeCheckForAdd(index);
 
         ensureCapacity(size + 1);  // Increments modCount!!
@@ -145,9 +164,6 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 	}
 
 	public void addAll(Collection<? extends E> elements) {
-		if (elements == null)
-			throw new NullPointerException("Invalid elements");  //$NON-NLS-1$
-
 		ensureCapacity(size + elements.size()); // Increments modCount!!
 		int firstIndex = size;
 		for(E item : elements) {
@@ -157,9 +173,7 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 	}
 
 	public void addAll(int index, Collection<? extends E> elements) {
-		if (elements == null)
-			throw new NullPointerException("Invalid elements");  //$NON-NLS-1$
-
+		requireNonNull(elements);
 
         rangeCheckForAdd(index);
 		int addCount = elements.size();
@@ -168,38 +182,17 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
         System.arraycopy(items, index, items, index + addCount,
                 size - index);
 
+        int insertionPoint = index;
+		for(E item : elements) {
+			items[insertionPoint++] = item;
+		}
+
 		size += addCount;
 		addDirtyRegion(index);
 	}
 
-	public void addAll(Iterable<? extends E> elements, int elementCount) {
-		if (elements == null)
-			throw new NullPointerException("Invalid elements");  //$NON-NLS-1$
-
-		ensureCapacity(size + elementCount); // Increments modCount!!
-		int firstIndex = size;
-		for(E item : elements) {
-			items[size++] = item;
-		}
-		addDirtyRegion(firstIndex);
-	}
-
-	public void addAll(Iterator<? extends E> elements, int elementCount) {
-		if (elements == null)
-			throw new NullPointerException("Invalid elements");  //$NON-NLS-1$
-
-		ensureCapacity(size + elementCount); // Increments modCount!!
-		int firstIndex = size;
-		for(;elements.hasNext();) {
-			E item = elements.next();
-			items[size++] = item;
-		}
-		addDirtyRegion(firstIndex);
-	}
-
 	public void addAll(@SuppressWarnings("unchecked") E...elements) {
-		if (elements == null)
-			throw new NullPointerException("Invalid elements");  //$NON-NLS-1$
+		requireNonNull(elements);
 
 		ensureCapacity(size + elements.length); // Increments modCount!!
 		int firstIndex = size;
@@ -209,7 +202,7 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 		addDirtyRegion(firstIndex);
 	}
 
-	public E set(E item, int index) {
+	public E set(@Nullable E item, int index) {
         rangeCheck(index);
 
         @SuppressWarnings("unchecked")
@@ -242,6 +235,7 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 	 * @param c action to be performed on each removed item
 	 */
 	public void removeAll(int index0, int index1, Consumer<? super E> c) {
+		requireNonNull(c);
 		rangeCheck(index0);
 		rangeCheck(index1);
 
@@ -251,7 +245,7 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 		fastRemove(index0, index1, c);
 	}
 
-	public boolean remove(E item) {
+	public boolean remove(@Nullable E item) {
         if (item == null) {
             for (int index = 0; index < size; index++)
                 if (items[index] == null) {
@@ -266,31 +260,6 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
            }
         }
         return false;
-	}
-
-	public void move(int index0, int index1) {
-		if(index0==index1) {
-			return;
-		}
-
-		rangeCheck(index1);
-		rangeCheck(index0);
-
-		modCount++;
-
-		if(index0>index1) {
-			int tmp = index0;
-			index0 = index1;
-			index1 = tmp;
-		}
-
-		Object item = items[index0];
-
-		System.arraycopy(items, index0+1, items, index0, index1-index0);
-
-		items[index1] = item;
-
-		addDirtyRegion(index0);
 	}
 
 	@Override
@@ -309,11 +278,11 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
         size = 0;
 	}
 
-	public boolean contains(E item) {
+	public boolean contains(@Nullable E item) {
 		return indexOf(item)!=-1;
 	}
 
-	public int indexOf(E item) {
+	public int indexOf(@Nullable E item) {
 		// If lookup table is active make sure it's up2date and then use it
 		if(checkRequiresLookup()) {
 			return lookup.getInt(item);
@@ -321,8 +290,7 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 
 		// For small list sizes just traverse the items
         for (int i = 0; i < size; i++) {
-        	//TODO why do we use equals(o) method instea dof identity?
-            if(item.equals(items[i])) {
+            if(items[i] == item) {
             	return i;
             }
         }
@@ -339,9 +307,6 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 	}
 
 	public void set(Object[] elements) {
-		if (elements == null)
-			throw new NullPointerException("Invalid elements"); //$NON-NLS-1$
-
 		ensureCapacity(elements.length);
 
 		System.arraycopy(elements, 0, items, 0, elements.length);
@@ -372,9 +337,10 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 		return (E) items[size-1];
 	}
 
-	public synchronized void sort(Comparator<? super E> comparator) {
+	public void sort(Comparator<? super E> comparator) {
+		requireNonNull(comparator);
 		@SuppressWarnings("unchecked")
-		Comparator<Object> comp =(Comparator<Object>)comparator;
+		Comparator<Object> comp = (Comparator<Object>)comparator;
 		Arrays.sort(items, 0, size, comp);
 
 		addDirtyRegion(0);
@@ -410,23 +376,23 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 
         int numRemoved = index1-index0+1;
 
-        // Shift the next block of items into the "empty" space and unmap all the former inhabitants
+        /*
+         * |-unchanged-|-removed-|-shifted-|-cleared-|
+         */
+
+        // Unmap all the former inhabitants and send to consumer
         for(int index=index0; index<=index1; index++) {
         	@SuppressWarnings("unchecked")
 			E item = (E) items[index];
         	c.accept(item);
         	unmap(item);
-        	items[index] = items[index+numRemoved];
         }
 
-        // Shift the remaining items
-        int remaining = size-index1-1-numRemoved;
-        if(remaining>0) {
-        	System.arraycopy(items, index0+numRemoved, items, index0, numRemoved);
-        }
+        // Shift buffer content into empty space
+    	System.arraycopy(items, index1+1, items, index0, size-index1-1);
 
         // Clear last entries to let GC do its work
-        Arrays.fill(items, size-numRemoved-1, size, null);
+        Arrays.fill(items, size-numRemoved, size, null);
 
         size -= numRemoved;
         addDirtyRegion(index0);
@@ -459,16 +425,22 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
     /**
      * Creates the {@link Object2IntMap} to be used for lookup
      * purposes.
-     *
+     * <p>
      * Subclasses can override this method if they need to
      * add a custom {@link Strategy hash strategy} or perform
      * other special customizations.
+     * <p>
+     * In any case the returned map <b>must</b> be configured to
+     * return {@value IcarusUtils#UNSET_INT} as default value for
+     * missing mappings!
      *
      * @param capacity
      * @return
      */
     protected Object2IntMap<E> createLookup(int capacity) {
-    	return new Object2IntOpenHashMap<>(size);
+    	Object2IntOpenHashMap<E> map = new Object2IntOpenHashMap<>(size);
+    	map.defaultReturnValue(UNSET_INT);
+    	return map;
     }
 
     @SuppressWarnings("unchecked")
