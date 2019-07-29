@@ -131,6 +131,14 @@ interface ItemStorageTest<S extends ItemStorage> extends ApiGuardedTest<S> {
 	}
 
 	/**
+	 * Test method for {@link de.ims.icarus2.model.standard.members.container.ItemStorage#recycle()}.
+	 */
+	@Test
+	default void testRecycle() {
+		create().recycle();
+	}
+
+	/**
 	 * Test method for {@link de.ims.icarus2.model.standard.members.container.ItemStorage#isDirty(de.ims.icarus2.model.api.members.container.Container)}.
 	 */
 	@Test

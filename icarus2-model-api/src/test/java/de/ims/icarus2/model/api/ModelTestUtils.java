@@ -142,6 +142,14 @@ public class ModelTestUtils {
 		return stubHost(mockItem(), host);
 	}
 
+	public static Item[] mockItems(int count) {
+		Item[] items = new Item[count];
+		while (--count >= 0) {
+			items[count] = mockItem();
+		}
+		return items;
+	}
+
 	private static Item stubHost(Item item, Container container) {
 		when(item.getContainer()).thenReturn(container);
 		return item;

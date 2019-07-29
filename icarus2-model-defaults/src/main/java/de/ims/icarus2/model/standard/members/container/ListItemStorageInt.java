@@ -80,10 +80,20 @@ public class ListItemStorageInt implements ItemStorage {
 	@Primitive
 	protected boolean doStoreItemsForOffset = false;
 
+	/**
+	 * Creates an instance using a default capacity.
+	 */
 	public ListItemStorageInt() {
 		this(-1);
 	}
 
+	/**
+	 * Creates an instance using the provided initial capacity.
+	 * A value of {@code -1} will cause a default capacity to
+	 * be used instead.
+	 *
+	 * @param initialCapacity
+	 */
 	public ListItemStorageInt(int initialCapacity) {
 		items = createItemsBuffer(initialCapacity);
 	}
@@ -132,12 +142,19 @@ public class ListItemStorageInt implements ItemStorage {
 	}
 
 	/**
+	 * @return the doStoreItemsForOffset
+	 */
+	protected boolean isDoStoreItemsForOffset() {
+		return doStoreItemsForOffset;
+	}
+
+	/**
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#removeNotify(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
 	public void removeNotify(Container context) {
 		requireNonNull(context);
-		clear();
+		clearOffsetItems();
 	}
 
 	/**
@@ -184,7 +201,7 @@ public class ListItemStorageInt implements ItemStorage {
 			return;
 		}
 
-		items.forEach(this::tryRefrechOffsetItems);
+		items.forEach(this::tryRefreshOffsetItems);
 	}
 
 	/**
@@ -194,7 +211,7 @@ public class ListItemStorageInt implements ItemStorage {
 	 * <p>
 	 * Does nothing if storing of boundary markers is not active.
 	 */
-	protected void tryRefrechOffsetItems(Item item) {
+	protected void tryRefreshOffsetItems(Item item) {
 		if(!doStoreItemsForOffset) {
 			return;
 		}
@@ -236,7 +253,7 @@ public class ListItemStorageInt implements ItemStorage {
 	public void addItem(@Nullable Container context, long index, Item item) {
 		requireNonNull(item);
 		items.add(IcarusUtils.ensureIntegerValueRange(index), item);
-		tryRefrechOffsetItems(item);
+		tryRefreshOffsetItems(item);
 	}
 
 	/**
@@ -292,7 +309,10 @@ public class ListItemStorageInt implements ItemStorage {
 		int idx0 = IcarusUtils.ensureIntegerValueRange(index0);
 		int idx1 = IcarusUtils.ensureIntegerValueRange(index1);
 
-		items.move(idx0, idx1);
+		Item item0 = items.get(idx0);
+		Item item1 = items.get(idx1);
+		items.set(item0, idx1);
+		items.set(item1, idx0);
 	}
 
 	/**

@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.standard.driver.virtual;
 
+import static de.ims.icarus2.util.IcarusUtils.ensureIntegerValueRange;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -93,7 +95,12 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	 */
 	@Override
 	public void swapItems(long index0, long index1) {
-		move(IcarusUtils.ensureIntegerValueRange(index0), IcarusUtils.ensureIntegerValueRange(index1));
+		int idx0 = ensureIntegerValueRange(index0);
+		int idx1 = ensureIntegerValueRange(index1);
+		Item item0 = get(idx0);
+		Item item1 = get(idx1);
+		set(item0, idx0);
+		set(item1, idx1);
 	}
 
 	/**
