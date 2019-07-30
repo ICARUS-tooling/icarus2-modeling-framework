@@ -45,6 +45,10 @@ import de.ims.icarus2.test.guard.ApiGuard;
  */
 interface ItemStorageTest<S extends ItemStorage> extends ApiGuardedTest<S> {
 
+	/**
+	 * Return expected container type or {@code null} if the implementation
+	 * isn't bound to a single specific container type.
+	 */
 	@Provider
 	ContainerType getExpectedContainerType();
 
@@ -111,7 +115,12 @@ interface ItemStorageTest<S extends ItemStorage> extends ApiGuardedTest<S> {
 	 */
 	@Test
 	default void testGetContainerType() {
-		assertEquals(getExpectedContainerType(), create().getContainerType());
+		ContainerType expectedType = getExpectedContainerType();
+		if(expectedType!=null) {
+			assertEquals(expectedType, create().getContainerType());
+		} else {
+			assertNotNull(create().getContainerType());
+		}
 	}
 
 	/**
