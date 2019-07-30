@@ -284,12 +284,4 @@ public class LazyCollection<E extends Object> implements Consumer<E> {
 
 		return CollectionUtils.toString(c);
 	}
-
-//	public static <E extends Object> Set<E> collectAsSet(Consumer<Consumer<? super E>> collector) {
-//		LazyCollection<E> result = LazyCollection.lazySet();
-//
-//		collector.accept(result);
-//
-//		return result.getAsSet();
-//	}
 }
