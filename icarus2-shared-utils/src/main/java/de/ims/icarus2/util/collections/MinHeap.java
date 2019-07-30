@@ -100,6 +100,12 @@ public abstract class MinHeap {
 
 	}
 
+	public abstract int capacity();
+
+	public int remaining() {
+		return capacity() - size;
+	}
+
 	protected abstract int compareValuesAt(int index0, int index1);
 	protected abstract void swapValues(int index0, int index1);
 
@@ -138,6 +144,11 @@ public abstract class MinHeap {
 
 		public IntMinHeap(int size) {
 			values = new int[size];
+		}
+
+		@Override
+		public int capacity() {
+			return values.length;
 		}
 
 		public int peekValue() {
@@ -204,6 +215,11 @@ public abstract class MinHeap {
 			values = new long[size];
 		}
 
+		@Override
+		public int capacity() {
+			return values.length;
+		}
+
 		public long peekValue() {
 			if(size<1)
 				throw new NoSuchElementException();
@@ -266,6 +282,11 @@ public abstract class MinHeap {
 
 		public DoubleMinHeap(int size) {
 			values = new double[size];
+		}
+
+		@Override
+		public int capacity() {
+			return values.length;
 		}
 
 		public double peekValue() {
@@ -340,6 +361,11 @@ public abstract class MinHeap {
 
 			values = new Object[size];
 			this.comparator = comparator;
+		}
+
+		@Override
+		public int capacity() {
+			return values.length;
 		}
 
 		@SuppressWarnings("unchecked")

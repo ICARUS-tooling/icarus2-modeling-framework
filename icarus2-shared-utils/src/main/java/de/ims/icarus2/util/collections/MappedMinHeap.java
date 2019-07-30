@@ -33,7 +33,7 @@ import java.util.function.ObjLongConsumer;
  *
  * @author Markus Gärtner
  *
- * @param <T> type of the values to which the heap nodes are mapped
+ * @param <T> type of the associated payload in the heap
  */
 public abstract class MappedMinHeap<T extends Object> extends MinHeap {
 
@@ -77,7 +77,7 @@ public abstract class MappedMinHeap<T extends Object> extends MinHeap {
 	 *
 	 * @author Markus Gärtner
 	 *
-	 * @param <T>
+	 * @param <T> type of the associated payload in the heap
 	 */
 	public static class MappedIntMinHeap<T extends Object> extends MappedMinHeap<T> implements ObjIntConsumer<T> {
 		private final int[] values;
@@ -86,6 +86,11 @@ public abstract class MappedMinHeap<T extends Object> extends MinHeap {
 			super(size);
 
 			values = new int[size];
+		}
+
+		@Override
+		public int capacity() {
+			return values.length;
 		}
 
 		public int peekValue() {
@@ -148,7 +153,7 @@ public abstract class MappedMinHeap<T extends Object> extends MinHeap {
 	 *
 	 * @author Markus Gärtner
 	 *
-	 * @param <T>
+	 * @param <T> type of the associated payload in the heap
 	 */
 	public static class MappedLongMinHeap<T extends Object> extends MappedMinHeap<T> implements ObjLongConsumer<T> {
 		private final long[] values;
@@ -157,6 +162,11 @@ public abstract class MappedMinHeap<T extends Object> extends MinHeap {
 			super(size);
 
 			values = new long[size];
+		}
+
+		@Override
+		public int capacity() {
+			return values.length;
 		}
 
 		public long peekValue() {
@@ -219,7 +229,7 @@ public abstract class MappedMinHeap<T extends Object> extends MinHeap {
 	 *
 	 * @author Markus Gärtner
 	 *
-	 * @param <T>
+	 * @param <T> type of the associated payload in the heap
 	 */
 	public static class MappedDoubleMinHeap<T extends Object> extends MappedMinHeap<T> implements ObjDoubleConsumer<T> {
 		private final double[] values;
@@ -228,6 +238,11 @@ public abstract class MappedMinHeap<T extends Object> extends MinHeap {
 			super(size);
 
 			values = new double[size];
+		}
+
+		@Override
+		public int capacity() {
+			return values.length;
 		}
 
 		public double peekValue() {
@@ -290,10 +305,11 @@ public abstract class MappedMinHeap<T extends Object> extends MinHeap {
 	 *
 	 * @author Markus Gärtner
 	 *
-	 * @param <T> type of the associated elements in the heap
+	 * @param <T> type of the associated payload in the heap
 	 * @param <E> type of the values in the heap
 	 */
 	public static class MappedObjectMinHeap<E extends Object, T extends Object> extends MappedMinHeap<T> implements BiConsumer<T, E> {
+		/** Values of type {@code V} */
 		private final Object[] values;
 		private final Comparator<? super E> comparator;
 
@@ -312,12 +328,17 @@ public abstract class MappedMinHeap<T extends Object> extends MinHeap {
 			this.comparator = comparator;
 		}
 
+		@Override
+		public int capacity() {
+			return values.length;
+		}
+
 		@SuppressWarnings("unchecked")
-		public T peekValue() {
+		public E peekValue() {
 			if(size<1)
 				throw new NoSuchElementException();
 
-			return (T) values[0];
+			return (E) values[0];
 		}
 
 		/**
