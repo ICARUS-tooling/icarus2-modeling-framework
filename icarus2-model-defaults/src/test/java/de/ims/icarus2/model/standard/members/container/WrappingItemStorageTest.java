@@ -49,7 +49,7 @@ class WrappingItemStorageTest implements ItemStorageTest<WrappingItemStorage> {
 
 	@Override
 	public WrappingItemStorage createTestInstance(TestSettings settings) {
-		return settings.process(new WrappingItemStorage(crateTargetContainer()));
+		return settings.process(new WrappingItemStorage(createTargetContainer()));
 	}
 
 	@Override
@@ -58,7 +58,7 @@ class WrappingItemStorageTest implements ItemStorageTest<WrappingItemStorage> {
 	}
 
 	@SuppressWarnings("boxing")
-	private Container crateTargetContainer() {
+	private static Container createTargetContainer() {
 		ContainerManifest manifest = mock(ContainerManifest.class);
 		when(manifest.isContainerFlagSet(ContainerFlag.NON_STATIC)).thenReturn(Boolean.FALSE);
 		Container container = mockContainer();
@@ -75,7 +75,7 @@ class WrappingItemStorageTest implements ItemStorageTest<WrappingItemStorage> {
 		 */
 		@Test
 		void testWrappingItemStorage() {
-			Container target = crateTargetContainer();
+			Container target = createTargetContainer();
 			WrappingItemStorage storage = new WrappingItemStorage(target);
 			assertSame(target, storage.getSourceContainer());
 		}
@@ -143,7 +143,7 @@ class WrappingItemStorageTest implements ItemStorageTest<WrappingItemStorage> {
 		@Test
 		void testReviveWithReset() {
 			storage.recycle();
-			storage.setSourceContainer(crateTargetContainer());
+			storage.setSourceContainer(createTargetContainer());
 			assertTrue(storage.revive());
 		}
 
@@ -153,8 +153,8 @@ class WrappingItemStorageTest implements ItemStorageTest<WrappingItemStorage> {
 		@Test
 		void testGetSourceContainer() {
 			assertGetter(create(),
-					crateTargetContainer(),
-					crateTargetContainer(),
+					createTargetContainer(),
+					createTargetContainer(),
 					IGNORE_DEFAULT(),
 					WrappingItemStorage::getSourceContainer,
 					WrappingItemStorage::setSourceContainer);
@@ -167,7 +167,7 @@ class WrappingItemStorageTest implements ItemStorageTest<WrappingItemStorage> {
 		void testSetSourceContainer() {
 			assertSetter(create(),
 					WrappingItemStorage::setSourceContainer,
-					crateTargetContainer(),
+					createTargetContainer(),
 					NPE_CHECK,
 					NO_CHECK);
 		}
@@ -180,7 +180,7 @@ class WrappingItemStorageTest implements ItemStorageTest<WrappingItemStorage> {
 
 		@BeforeEach
 		void setUp() {
-			source = crateTargetContainer();
+			source = createTargetContainer();
 			storage = new WrappingItemStorage(source);
 		}
 
