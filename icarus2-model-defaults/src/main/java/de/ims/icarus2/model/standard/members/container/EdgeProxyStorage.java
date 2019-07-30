@@ -18,6 +18,8 @@ package de.ims.icarus2.model.standard.members.container;
 
 import static java.util.Objects.requireNonNull;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.MemberType;
@@ -49,6 +51,13 @@ public class EdgeProxyStorage implements ItemStorage {
 	}
 
 	/**
+	 * @return the structure
+	 */
+	public Structure getStructure() {
+		return structure;
+	}
+
+	/**
 	 * @see de.ims.icarus2.util.Recyclable#recycle()
 	 */
 	@Override
@@ -72,7 +81,7 @@ public class EdgeProxyStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addNotify(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public void addNotify(Container context) throws ModelException {
+	public void addNotify(@Nullable Container context) throws ModelException {
 		// no-op
 	}
 
@@ -80,7 +89,7 @@ public class EdgeProxyStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#removeNotify(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public void removeNotify(Container context) throws ModelException {
+	public void removeNotify(@Nullable Container context) throws ModelException {
 		// no-op
 	}
 
@@ -96,7 +105,7 @@ public class EdgeProxyStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#getItemCount(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public long getItemCount(Container context) {
+	public long getItemCount(@Nullable Container context) {
 		return structure.getEdgeCount();
 	}
 
@@ -104,7 +113,7 @@ public class EdgeProxyStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#getItemAt(de.ims.icarus2.model.api.members.container.Container, long)
 	 */
 	@Override
-	public Edge getItemAt(Container context, long index) {
+	public Edge getItemAt(@Nullable Container context, long index) {
 		return structure.getEdgeAt(index);
 	}
 
@@ -112,7 +121,7 @@ public class EdgeProxyStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#indexOfItem(de.ims.icarus2.model.api.members.container.Container, de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
-	public long indexOfItem(Container context, Item item) {
+	public long indexOfItem(@Nullable Container context, Item item) {
 		return item.getMemberType()==MemberType.EDGE ?
 				structure.indexOfEdge((Edge) item) : IcarusUtils.UNSET_LONG;
 	}
@@ -123,7 +132,7 @@ public class EdgeProxyStorage implements ItemStorage {
 	 * structure all modifying methods are bound to fail.
 	 */
 	private <T extends Object> T signalUnsupportedOperation(Container context) {
-		throw new ModelException(context.getCorpus(), GlobalErrorCode.UNSUPPORTED_OPERATION,
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Edge proxy storage cannot modify underlying structure");
 	}
 
@@ -131,7 +140,7 @@ public class EdgeProxyStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addItem(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
-	public void addItem(Container context, long index, Item item) {
+	public void addItem(@Nullable Container context, long index, @Nullable Item item) {
 		signalUnsupportedOperation(context);
 	}
 
@@ -139,8 +148,8 @@ public class EdgeProxyStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addItems(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
-	public void addItems(Container context, long index,
-			DataSequence<? extends Item> items) {
+	public void addItems(@Nullable Container context, long index,
+			@Nullable DataSequence<? extends Item> items) {
 		signalUnsupportedOperation(context);
 	}
 
@@ -148,7 +157,7 @@ public class EdgeProxyStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#removeItem(de.ims.icarus2.model.api.members.container.Container, long)
 	 */
 	@Override
-	public Item removeItem(Container context, long index) {
+	public Item removeItem(@Nullable Container context, long index) {
 		return signalUnsupportedOperation(context);
 	}
 
@@ -156,7 +165,8 @@ public class EdgeProxyStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#removeItems(de.ims.icarus2.model.api.members.container.Container, long, long)
 	 */
 	@Override
-	public DataSequence<? extends Item> removeItems(Container context,
+	public DataSequence<? extends Item> removeItems(
+			@Nullable Container context,
 			long index0, long index1) {
 		return signalUnsupportedOperation(context);
 	}
@@ -165,7 +175,7 @@ public class EdgeProxyStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#swapItems(de.ims.icarus2.model.api.members.container.Container, long, long)
 	 */
 	@Override
-	public void swapItems(Container context, long index0, long index1) {
+	public void swapItems(@Nullable Container context, long index0, long index1) {
 		signalUnsupportedOperation(context);
 	}
 
@@ -173,7 +183,7 @@ public class EdgeProxyStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#getBeginOffset(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public long getBeginOffset(Container context) {
+	public long getBeginOffset(@Nullable Container context) {
 		return IcarusUtils.UNSET_LONG;
 	}
 
@@ -181,7 +191,7 @@ public class EdgeProxyStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#getEndOffset(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public long getEndOffset(Container context) {
+	public long getEndOffset(@Nullable Container context) {
 		return IcarusUtils.UNSET_LONG;
 	}
 
@@ -194,7 +204,7 @@ public class EdgeProxyStorage implements ItemStorage {
 	}
 
 	@Override
-	public boolean isDirty(Container context) {
+	public boolean isDirty(@Nullable Container context) {
 		return structure.isDirty();
 	}
 
