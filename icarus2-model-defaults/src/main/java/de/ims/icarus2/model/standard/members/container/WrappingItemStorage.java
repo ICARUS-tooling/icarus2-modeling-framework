@@ -18,8 +18,9 @@ package de.ims.icarus2.model.standard.members.container;
 
 import static java.util.Objects.requireNonNull;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.MemberUtils;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -38,9 +39,6 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
  */
 @TestableImplementation(ItemStorage.class)
 public class WrappingItemStorage implements ItemStorage {
-
-	private static final String UNGUARDED_REASON
-			= "@Nullable semantics defined by source container!";
 
 	protected Container sourceContainer;
 
@@ -81,8 +79,7 @@ public class WrappingItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addNotify(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	@Unguarded(reason = UNGUARDED_REASON)
-	public void addNotify(Container context) throws ModelException {
+	public void addNotify(@Nullable Container context) throws ModelException {
 		// no-op
 	}
 
@@ -90,8 +87,7 @@ public class WrappingItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#removeNotify(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	@Unguarded(reason = UNGUARDED_REASON)
-	public void removeNotify(Container context) throws ModelException {
+	public void removeNotify(@Nullable Container context) throws ModelException {
 		// no-op
 	}
 
@@ -107,8 +103,7 @@ public class WrappingItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#getItemCount(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	@Unguarded(reason = UNGUARDED_REASON)
-	public long getItemCount(Container context) {
+	public long getItemCount(@Nullable Container context) {
 		return sourceContainer.getItemCount();
 	}
 
@@ -116,8 +111,7 @@ public class WrappingItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#getItemAt(de.ims.icarus2.model.api.members.container.Container, long)
 	 */
 	@Override
-	@Unguarded(reason = UNGUARDED_REASON)
-	public Item getItemAt(Container context, long index) {
+	public Item getItemAt(@Nullable Container context, long index) {
 		return sourceContainer.getItemAt(index);
 	}
 
@@ -125,8 +119,7 @@ public class WrappingItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#indexOfItem(de.ims.icarus2.model.api.members.container.Container, de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
-	@Unguarded(reason = UNGUARDED_REASON)
-	public long indexOfItem(Container context, Item item) {
+	public long indexOfItem(@Nullable Container context, Item item) {
 		return sourceContainer.indexOfItem(item);
 	}
 
@@ -134,8 +127,7 @@ public class WrappingItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addItem(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
-	@Unguarded(reason = UNGUARDED_REASON)
-	public void addItem(Container context, long index, Item item) {
+	public void addItem(@Nullable Container context, long index, Item item) {
 		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot add item to static source container");
 	}
 
@@ -143,8 +135,7 @@ public class WrappingItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addItems(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
-	@Unguarded(reason = UNGUARDED_REASON)
-	public void addItems(Container context, long index,
+	public void addItems(@Nullable Container context, long index,
 			DataSequence<? extends Item> items) {
 		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot add items to static source container");
 	}
@@ -153,8 +144,7 @@ public class WrappingItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#removeItem(de.ims.icarus2.model.api.members.container.Container, long)
 	 */
 	@Override
-	@Unguarded(reason = UNGUARDED_REASON)
-	public Item removeItem(Container context, long index) {
+	public Item removeItem(@Nullable Container context, long index) {
 		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot remove item from static source container");
 	}
 
@@ -162,8 +152,8 @@ public class WrappingItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#removeItems(de.ims.icarus2.model.api.members.container.Container, long, long)
 	 */
 	@Override
-	@Unguarded(reason = UNGUARDED_REASON)
-	public DataSequence<? extends Item> removeItems(Container context,
+	public DataSequence<? extends Item> removeItems(
+			@Nullable Container context,
 			long index0, long index1) {
 		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot remove items from static source container");
 	}
@@ -172,8 +162,7 @@ public class WrappingItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#swapItems(de.ims.icarus2.model.api.members.container.Container, long, long)
 	 */
 	@Override
-	@Unguarded(reason = UNGUARDED_REASON)
-	public void swapItems(Container context, long index0, long index1) {
+	public void swapItems(@Nullable Container context, long index0, long index1) {
 		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot move items in static source container");
 	}
 
@@ -181,8 +170,7 @@ public class WrappingItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#getBeginOffset(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	@Unguarded(reason = UNGUARDED_REASON)
-	public long getBeginOffset(Container context) {
+	public long getBeginOffset(@Nullable Container context) {
 		return sourceContainer.getBeginOffset();
 	}
 
@@ -190,8 +178,7 @@ public class WrappingItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#getEndOffset(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	@Unguarded(reason = UNGUARDED_REASON)
-	public long getEndOffset(Container context) {
+	public long getEndOffset(@Nullable Container context) {
 		return sourceContainer.getEndOffset();
 	}
 
@@ -199,14 +186,12 @@ public class WrappingItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#createEditVerifier(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	@Unguarded(reason = UNGUARDED_REASON)
 	public ContainerEditVerifier createEditVerifier(Container context) {
 		return new ImmutableContainerEditVerifier(context);
 	}
 
 	@Override
-	@Unguarded(reason = UNGUARDED_REASON)
-	public boolean isDirty(Container context) {
+	public boolean isDirty(@Nullable Container context) {
 		return sourceContainer.isDirty();
 	}
 
