@@ -16,8 +16,13 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static java.util.Objects.requireNonNull;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.annotation.Nullable;
 
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
@@ -84,7 +89,7 @@ public class AugmentedItemStorage extends WrappingItemStorage {
 	 * @return
 	 */
 	protected LookupList<Item> createAugmentationBuffer(int capacity) {
-		if(capacity<0) {
+		if(capacity==UNSET_INT) {
 			capacity = DEFAULT_CAPACITY;
 		}
 
@@ -128,7 +133,7 @@ public class AugmentedItemStorage extends WrappingItemStorage {
 	public Item getItemAt(Container context, long index) {
 
 		long wrappedCount = getWrappedItemCount(context);
-		if(index<wrappedCount) {
+		if(index>=0 && index<wrappedCount) {
 			return super.getItemAt(context, index);
 		}
 
@@ -136,7 +141,8 @@ public class AugmentedItemStorage extends WrappingItemStorage {
 	}
 
 	@Override
-	public long indexOfItem(Container context, Item item) {
+	public long indexOfItem(@Nullable Container context, Item item) {
+		requireNonNull(item);
 
 		int index = augmentation.indexOf(item);
 		if(index!=-1) {
@@ -153,6 +159,9 @@ public class AugmentedItemStorage extends WrappingItemStorage {
 	 * @param context
 	 * @param index
 	 * @return
+	 *
+	 * @throws ModelException of type {@link ModelErrorCode#MODEL_INDEX_OUT_OF_BOUNDS}
+	 * if the index lies within the wrapped part of this storage.
 	 */
 	protected int translateAndCheckEditIndex(Container context, long index) {
 		long wrappedCount = getWrappedItemCount(context);
@@ -165,25 +174,27 @@ public class AugmentedItemStorage extends WrappingItemStorage {
 
 	/**
 	 * Returns whether the given {@code index} lies within the wrapped part of
-	 * the container or
+	 * the container.
 	 * @param context
 	 * @param index
 	 * @return
 	 */
-	public boolean isWrappedIndex(Container context, long index) {
+	public boolean isWrappedIndex(@Nullable Container context, long index) {
 		long wrappedCount = getWrappedItemCount(context);
 		return index<wrappedCount;
 	}
 
 	@Override
 	public void addItem(Container context, long index, Item item) {
+		requireNonNull(item);
 		augmentation.add(translateAndCheckEditIndex(context, index), item);
 	}
 
 	@Override
 	public void addItems(Container context, long index,
 			DataSequence<? extends Item> items) {
-		augmentation.addAll(IcarusUtils.ensureIntegerValueRange(index),
+		requireNonNull(items);
+		augmentation.addAll(translateAndCheckEditIndex(context, index),
 				new DataSequenceCollectionWrapper<>(items));
 	}
 
@@ -209,6 +220,10 @@ public class AugmentedItemStorage extends WrappingItemStorage {
 	public void swapItems(Container context, long index0, long index1) {
 		int idx0 = translateAndCheckEditIndex(context, index0);
 		int idx1 = translateAndCheckEditIndex(context, index1);
+
+		if(idx0==idx1)
+			throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
+					"Indices must be different for swapping items: "+idx0);
 
 		Item item0 = augmentation.get(idx0);
 		Item item1 = augmentation.get(idx1);
