@@ -172,7 +172,7 @@ public class Scope {
 	 * base-layer is also a part of that scope.</li>
 	 * <li><b>{@link ItemLayer}</b>s below the primary layer will be guaranteed to get
 	 * their content loaded in blocks that are covered by the members in the primary layer</li>
-	 * <li><b>{@link ItemLayer}</b>s above the primary layer will only be loaded partially unlike
+	 * <li><b>{@link ItemLayer}</b>s above the primary layer will only be loaded partially unless
 	 * specifically requested</li>
 	 * <li>The behavior of <b>{@link ItemLayer}</b>s that are not linked to the primary
 	 * layer in any way is not specified.</li>
