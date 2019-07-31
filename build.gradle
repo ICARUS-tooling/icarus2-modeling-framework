@@ -2,6 +2,7 @@
 plugins {
 	id 'java-library'
 	id 'jacoco'
+	id 'com.github.kt3k.coveralls' version '2.8.4'
 	id 'com.github.johnrengelman.shadow' version '4.0.1' apply false
 	//id 'com.github.jk1.dependency-license-report' version '1.2'
     id 'com.github.hierynomus.license' version '0.14.0' apply false
@@ -28,8 +29,6 @@ allprojects {
 }
 
 description = 'ICARUS 2 framework root'
-
-ext.isCI = "true".equals(System.getenv("CI"))
 	
 // Gradle Wrapper
 wrapper { 
@@ -256,13 +255,21 @@ subprojects {
 		minHeapSize = "256m"
 		maxHeapSize = "2g"
 		
-		systemProperties.'junit.jupiter.execution.parallel.enabled' = !isCI
+		systemProperties.'junit.jupiter.execution.parallel.enabled' = !System.env.'CI'
 		systemProperties.'junit.jupiter.execution.parallel.mode.default' = 'same_thread'
 		systemProperties.'junit.jupiter.execution.parallel.mode.classes.default' = 'concurrent'
 		 
 		testLogging {
 			events "failed" //, "passed", "skipped" 
 			exceptionFormat "full"
+		}
+	}
+	
+	jacocoTestReport {
+		reports {
+			html.enabled = true
+			xml.enabled = true
+			csv.enabled = false
 		}
 	}
 	
@@ -408,4 +415,17 @@ task jacocoRootReport(type: JacocoReport, group: 'verification') {
 		html.enabled = true // human readable
 		xml.enabled = true // required by codecov
 	}
+}
+
+coveralls {
+	sourceDirs = publishedProjects.sourceSets.main.allSource.srcDirs.flatten()
+	jacocoReportPath = "${buildDir}/reports/jacoco/jacocoRootReport/jacocoRootReport.xml"
+}
+
+tasks.coveralls {
+	group = 'Coverage reports'
+	description = 'Uploads the aggregated coverage report to Coveralls'
+
+	dependsOn jacocoRootReport
+	onlyIf { System.env.'CI' }
 }
