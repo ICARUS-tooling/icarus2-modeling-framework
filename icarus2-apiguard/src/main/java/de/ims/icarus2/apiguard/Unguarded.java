@@ -42,4 +42,11 @@ import java.lang.annotation.Target;
 @Target({ TYPE, METHOD, CONSTRUCTOR })
 public @interface Unguarded {
 	String reason();
+
+	/**
+	 * A usable reason for marking methods to be excluded from automatic
+	 * argument testing due to them not being supported in the implementation
+	 * under test.
+	 */
+	public static final String UNSUPPORTED = "Method not supported";
 }

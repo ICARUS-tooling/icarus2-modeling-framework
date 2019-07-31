@@ -41,13 +41,15 @@ import de.ims.icarus2.util.collections.set.DataSet;
  */
 public class MemberUtils {
 
-	public static void checkSingleBaseContainer(Container container) {
+	public static Container checkSingleBaseContainer(Container container) {
 		requireNonNull(container);
 		DataSet<Container> baseContainers = container.getBaseContainers();
 
-		if(baseContainers.entryCount()>1)
+		if(baseContainers.entryCount()!=1)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					"Container must not have more than one base container: "+getName(container));
+					"Container must have exactly one base container: "+getName(container));
+
+		return baseContainers.entryAt(0);
 	}
 
 	public static void checkContainerFlagsSet(Container container, ContainerFlag...flags) {

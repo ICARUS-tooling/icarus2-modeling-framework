@@ -278,7 +278,8 @@ public abstract class AbstractDriver implements Driver {
 	 * For proper nesting of method calls a subclass should make sure to call {@code super.doConnect()}
 	 * <b>before</b> any setup work.
 	 *
-	 * @throws InterruptedException
+	 * @throws InterruptedException when the connection process gets cancelled in an orderly manner
+	 * @throws IcarusApiException if an error prevents the connection process
 	 */
 	protected void doConnect() throws InterruptedException, IcarusApiException {
 		setContext(createContext());
@@ -389,6 +390,10 @@ public abstract class AbstractDriver implements Driver {
 		}
 	}
 
+	/**
+	 * @throws InterruptedException if the hook gets cancelled in an orderly manner
+	 * @throws IcarusApiException if a fatal error occurs
+	 */
 	protected void beforeDisconnect() throws InterruptedException, IcarusApiException {
 		// no-op
 	}
@@ -403,7 +408,8 @@ public abstract class AbstractDriver implements Driver {
 	 * For proper nesting of method calls a subclass should make sure to call {@code super.doConnect()}
 	 * <b>after</b> any cleanup work.
 	 *
-	 * @throws InterruptedException
+	 * @throws InterruptedException if the disconnection process gets cancelled
+	 * @throws IcarusApiException  if an error prevents orderly disconnection
 	 */
 	protected void doDisconnect() throws InterruptedException, IcarusApiException {
 		closeMappings();

@@ -86,7 +86,7 @@ class DefaultItemTest implements ItemTest<Item> {
 		 */
 		@Test
 		void testDefaultItem() {
-			new DefaultItem();
+			assertNotNull(new DefaultItem());
 		}
 
 		/**
@@ -94,7 +94,7 @@ class DefaultItemTest implements ItemTest<Item> {
 		 */
 		@Test
 		void testDefaultItemContainer() {
-			new DefaultItem(mockContainer());
+			assertNotNull(new DefaultItem(mockContainer()));
 		}
 
 		/**
@@ -111,7 +111,7 @@ class DefaultItemTest implements ItemTest<Item> {
 		@ParameterizedTest
 		@ValueSource(longs = {IcarusUtils.UNSET_LONG, 0, 1, Long.MAX_VALUE})
 		void testDefaultItemContainerLong(long id) {
-			new DefaultItem(mockContainer(), id);
+			assertNotNull(new DefaultItem(mockContainer(), id));
 		}
 
 		/**
@@ -129,7 +129,7 @@ class DefaultItemTest implements ItemTest<Item> {
 		@ParameterizedTest
 		@ValueSource(longs = {IcarusUtils.UNSET_LONG, 0, 1, Long.MAX_VALUE})
 		void testDefaultItemLong(long id) {
-			new DefaultItem(id);
+			assertNotNull(new DefaultItem(id));
 		}
 
 		/**

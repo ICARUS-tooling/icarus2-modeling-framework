@@ -21,6 +21,7 @@ import static de.ims.icarus2.model.util.ModelUtils.getUniqueId;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
@@ -874,6 +875,10 @@ public class DefaultCorpus implements Corpus {
 			return snapshot.getAsSet();
 		}
 
+		/**
+		 * @throws InterruptedException if the process got cancelled
+		 * @throws AccumulatingException if closing of at least one corpus part failed
+		 */
 		private void close() throws InterruptedException, AccumulatingException {
 			Set<OwnableCorpusPart> snapshot = getParts();
 
@@ -895,7 +900,8 @@ public class DefaultCorpus implements Corpus {
 			}
 
 			if(!buffer.isEmpty()) {
-				buffer.setFormattedMessage("Failed to close %d parts");
+				buffer.setFormattedMessage("Failed to close %d parts",
+						_int(buffer.getExceptionCount()));
 				throw new AccumulatingException(buffer);
 			}
 		}
@@ -923,7 +929,6 @@ public class DefaultCorpus implements Corpus {
 		 */
 		@Override
 		public void stateChanged(ChangeEvent e) {
-			@SuppressWarnings("resource")
 			PagedCorpusView view = (PagedCorpusView) e.getSource();
 			if(!view.isActive()) {
 				synchronized (this) {

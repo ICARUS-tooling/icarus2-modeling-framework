@@ -16,8 +16,6 @@
  */
 package de.ims.icarus2.util;
 
-import static de.ims.icarus2.util.lang.Primitives._int;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -125,7 +123,7 @@ public class AccumulatingException extends Exception {
 		 * @param format
 		 */
 		public void setFormattedMessage(String format, Object... args) {
-			this.message = String.format(format, _int(getExceptionCount()), args);
+			this.message = String.format(format, args);
 		}
 
 		public boolean isEmpty() {

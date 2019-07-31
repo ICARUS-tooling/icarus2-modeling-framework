@@ -37,6 +37,7 @@ import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -93,7 +94,7 @@ class DefaultFragmentTest implements ItemTest<Fragment> {
 	class Constructors {
 		@Test
 		void testDefaultFragment() {
-			new DefaultFragment();
+			assertNotNull(new DefaultFragment());
 		}
 
 		//TODO many more to test now
