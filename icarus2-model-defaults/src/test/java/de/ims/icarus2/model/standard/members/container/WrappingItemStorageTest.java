@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -64,6 +65,9 @@ class WrappingItemStorageTest implements ItemStorageTest<WrappingItemStorage> {
 		Container container = mockContainer();
 		when((ContainerManifest)container.getManifest()).thenReturn(manifest);
 		when(container.getContainerType()).thenReturn(ContainerType.LIST);
+
+		when(container.indexOfItem(eq(null))).thenThrow(new NullPointerException());
+
 		return container;
 	}
 
