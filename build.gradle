@@ -383,22 +383,29 @@ subprojects {
 	}
 }
 
+// Filter coverage reports 
+def publishedProjects = subprojects.findAll { true } //TODO add filter pattern for subprojects
 
-task codeCoverageReport(type: JacocoReport) {
-    executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
-
-    subprojects.each {
-        sourceSets it.sourceSets.main
-    }
-
-    reports {
-        xml.enabled true
-        xml.destination file("${buildDir}/reports/jacoco/report.xml")
-        html.enabled false
-        csv.enabled false
-    }
+task jacocoMerge(type: JacocoMerge) {
+	publishedProjects.each { subproject ->
+		executionData subproject.tasks.withType(Test)
+	}
+	doFirst {
+		executionData = files(executionData.findAll { it.exists() })
+	}
 }
 
-codeCoverageReport.dependsOn {
-    subprojects*.test
+task jacocoRootReport(type: JacocoReport, group: 'verification') {
+	description = 'Generates an aggregate coverage report from all subprojects'
+	dependsOn publishedProjects.test, jacocoMerge
+
+	additionalSourceDirs.from = files(publishedProjects.sourceSets.main.allSource.srcDirs)
+	sourceDirectories.from = files(publishedProjects.sourceSets.main.allSource.srcDirs)
+	classDirectories.from = files(publishedProjects.sourceSets.main.output)
+	executionData jacocoMerge.destinationFile
+
+	reports {
+		html.enabled = true // human readable
+		xml.enabled = true // required by codecov
+	}
 }

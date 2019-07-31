@@ -8,7 +8,7 @@ before_install:
 
 script: 
   - ./gradlew test
-  - ./gradlew codeCoverageReport
+  - ./gradlew jacocoRootReport
   
 after_success:
   - bash <(curl -s https://codecov.io/bash)
