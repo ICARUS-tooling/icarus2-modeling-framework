@@ -16,7 +16,10 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
+import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.MemberUtils;
@@ -29,7 +32,6 @@ import de.ims.icarus2.model.util.SpanSequence;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.seq.DataSequence;
-import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
  * A storage implementation for {@value ContainerType#SPAN} containers that assumes the underlying
@@ -63,10 +65,7 @@ public class SpanItemStorage implements ItemStorage {
 
 	@Override
 	public void addNotify(Container context) {
-		MemberUtils.checkSingleBaseContainer(context);
-
-		DataSet<Container> baseContainers = context.getBaseContainers();
-		Container target = baseContainers.entryAt(0);
+		Container target = MemberUtils.checkSingleBaseContainer(context);
 
 		MemberUtils.checkStaticContainer(target);
 	}
@@ -76,7 +75,7 @@ public class SpanItemStorage implements ItemStorage {
 	 */
 	@Override
 	public void removeNotify(Container context) {
-		// no-op
+		requireNonNull(context);
 	}
 
 	protected Container target(Container context) {
@@ -122,6 +121,7 @@ public class SpanItemStorage implements ItemStorage {
 	 */
 	@Override
 	public long getItemCount(Container context) {
+		requireNonNull(context);
 		return isEmpty() ? 0 : (endIndex-beginIndex+1);
 	}
 
@@ -143,6 +143,8 @@ public class SpanItemStorage implements ItemStorage {
 	 */
 	@Override
 	public long indexOfItem(Container context, Item item) {
+		requireNonNull(context);
+		requireNonNull(item);
 
 		if(isEmpty()) {
 			return IcarusUtils.UNSET_LONG;
@@ -174,6 +176,9 @@ public class SpanItemStorage implements ItemStorage {
 	 */
 	@Override
 	public void addItem(Container context, long index, Item item) {
+		requireNonNull(context);
+		requireNonNull(item);
+
 		Container target = target(context);
 
 		if(isEmpty()) {
@@ -212,6 +217,8 @@ public class SpanItemStorage implements ItemStorage {
 	 */
 	@Override
 	public void addItems(Container context, long index, DataSequence<? extends Item> items) {
+		requireNonNull(context);
+		requireNonNull(items);
 
 		long size = getItemCount(context);
 		// Begin and end of the span expressed in the target containers space
@@ -282,6 +289,8 @@ public class SpanItemStorage implements ItemStorage {
 	 */
 	@Override
 	public Item removeItem(Container context, long index) {
+		requireNonNull(context);
+
 		if(isEmpty())
 			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Span is empty - cannot remove item at index: "+index);
@@ -311,6 +320,8 @@ public class SpanItemStorage implements ItemStorage {
 	 */
 	@Override
 	public DataSequence<? extends Item> removeItems(Container context, long index0, long index1) {
+		requireNonNull(context);
+
 		if(isEmpty())
 			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Span is empty - cannot remove items");
@@ -344,6 +355,7 @@ public class SpanItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#moveItem(long, long)
 	 */
 	@Override
+	@Unguarded(reason = Unguarded.UNSUPPORTED)
 	public void swapItems(Container context, long index0, long index1) {
 		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Cannot move items within a span");
