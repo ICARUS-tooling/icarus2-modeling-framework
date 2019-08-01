@@ -19,6 +19,7 @@ package de.ims.icarus2.model.standard.members.structure.builder;
 import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -42,6 +43,12 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
+ * An immutable structure implementation.
+ * Instances of this class are expected to be constructed by
+ * a {@link StructureBuilder}, as the relevant setters for internal
+ * fields are package private and so members of this class cannot
+ * be properly initialized by code outside this package.
+ *
  * @author Markus Gärtner
  *
  */
@@ -88,7 +95,7 @@ public class StaticStructure extends DefaultItem implements Structure {
 	}
 
 	private <T extends Object> T signalUnsupportedOperation() {
-		throw new ModelException(getCorpus(), GlobalErrorCode.UNSUPPORTED_OPERATION,
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Structure is immutable");
 	}
 
@@ -159,9 +166,28 @@ public class StaticStructure extends DefaultItem implements Structure {
 	}
 
 	/**
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemList#removeItem(de.ims.icarus2.model.api.members.item.Item)
+	 */
+	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
+	public void removeItem(Item item) {
+		signalUnsupportedOperation();
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemList#addItem(de.ims.icarus2.model.api.members.item.Item)
+	 */
+	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
+	public void addItem(Item item) {
+		signalUnsupportedOperation();
+	}
+
+	/**
 	 * @see de.ims.icarus2.model.api.members.container.Container#addItem(long, de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public void addItem(long index, Item item) {
 		signalUnsupportedOperation();
 	}
@@ -170,14 +196,24 @@ public class StaticStructure extends DefaultItem implements Structure {
 	 * @see de.ims.icarus2.model.api.members.container.Container#addItems(long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public void addItems(long index, DataSequence<? extends Item> items) {
 		signalUnsupportedOperation();
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.item.manager.ItemList#removeAllItems()
+	 */
+	@Override
+	public DataSequence<? extends Item> removeAllItems() {
+		return signalUnsupportedOperation();
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.api.members.container.Container#removeItem(long)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public Item removeItem(long index) {
 		return signalUnsupportedOperation();
 	}
@@ -186,6 +222,7 @@ public class StaticStructure extends DefaultItem implements Structure {
 	 * @see de.ims.icarus2.model.api.members.container.Container#removeItems(long, long)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public DataSequence<? extends Item> removeItems(long index0, long index1) {
 		return signalUnsupportedOperation();
 	}
@@ -194,6 +231,7 @@ public class StaticStructure extends DefaultItem implements Structure {
 	 * @see de.ims.icarus2.model.api.members.container.Container#swapItems(long, long)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public void swapItems(long index0, long index1) {
 		signalUnsupportedOperation();
 	}
@@ -371,7 +409,18 @@ public class StaticStructure extends DefaultItem implements Structure {
 	 */
 	@SuppressWarnings("boxing")
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public long addEdge(long index, Edge edge) {
+		return signalUnsupportedOperation();
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.structure.Structure#addEdge(de.ims.icarus2.model.api.members.item.Edge)
+	 */
+	@SuppressWarnings("boxing")
+	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
+	public long addEdge(Edge edge) {
 		return signalUnsupportedOperation();
 	}
 
@@ -379,7 +428,17 @@ public class StaticStructure extends DefaultItem implements Structure {
 	 * @see de.ims.icarus2.model.api.members.structure.Structure#addEdges(long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public void addEdges(long index, DataSequence<? extends Edge> edges) {
+		signalUnsupportedOperation();
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.structure.Structure#addEdges(de.ims.icarus2.util.collections.seq.DataSequence)
+	 */
+	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
+	public void addEdges(DataSequence<? extends Edge> edges) {
 		signalUnsupportedOperation();
 	}
 
@@ -387,6 +446,7 @@ public class StaticStructure extends DefaultItem implements Structure {
 	 * @see de.ims.icarus2.model.api.members.structure.Structure#removeEdge(long)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public Edge removeEdge(long index) {
 		return signalUnsupportedOperation();
 	}
@@ -395,6 +455,7 @@ public class StaticStructure extends DefaultItem implements Structure {
 	 * @see de.ims.icarus2.model.api.members.structure.Structure#removeEdges(long, long)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public DataSequence<? extends Edge> removeEdges(long index0, long index1) {
 		return signalUnsupportedOperation();
 	}
@@ -403,6 +464,7 @@ public class StaticStructure extends DefaultItem implements Structure {
 	 * @see de.ims.icarus2.model.api.members.structure.Structure#swapEdges(long, long)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public void swapEdges(long index0, long index1) {
 		signalUnsupportedOperation();
 	}
@@ -411,6 +473,7 @@ public class StaticStructure extends DefaultItem implements Structure {
 	 * @see de.ims.icarus2.model.api.members.structure.Structure#setTerminal(de.ims.icarus2.model.api.members.item.Edge, de.ims.icarus2.model.api.members.item.Item, boolean)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public void setTerminal(Edge edge, Item item, boolean isSource) {
 		signalUnsupportedOperation();
 	}
@@ -419,6 +482,7 @@ public class StaticStructure extends DefaultItem implements Structure {
 	 * @see de.ims.icarus2.model.api.members.structure.Structure#newEdge(de.ims.icarus2.model.api.members.item.Item, de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public Edge newEdge(Item source, Item target) {
 		return signalUnsupportedOperation();
 	}
