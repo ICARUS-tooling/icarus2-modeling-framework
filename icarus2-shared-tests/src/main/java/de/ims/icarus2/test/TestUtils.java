@@ -757,6 +757,20 @@ public class TestUtils {
 		}
 	}
 
+	@SuppressWarnings("boxing")
+	public static <E, L> void assertListEquals(
+			L list,
+			Function<L, Integer> size,
+			BiFunction<L, Integer, E> itemAt,
+			@SuppressWarnings("unchecked") E...expected) {
+		assertEquals(expected.length, size.apply(list));
+
+		for(int i=0; i<expected.length; i++) {
+			assertEquals(expected[i], itemAt.apply(list, i),
+					"Mismatch at index "+i+": expected "+expected[i]+" - got "+itemAt.apply(list, i));
+		}
+	}
+
 	public static <E extends Object> void assertArrayEmpty(E[] array) {
 		assertNotNull(array);
 		assertTrue(array.length==0);

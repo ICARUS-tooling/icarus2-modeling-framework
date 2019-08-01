@@ -52,6 +52,12 @@ public @interface Unguarded {
 	 * A usable reason for marking methods to be excluded from automatic
 	 * argument testing due to them not being supported in the implementation
 	 * under test.
+	 * <p>
+	 * The basic assumption is that (optional) methods which aren't supported
+	 * in an implementation will not perform any parameter validation, but
+	 * instead simply throw the appropriate exception to indicate that they
+	 * are not supported. We leave the specifics of that exception contract
+	 * to the respective test suites.
 	 */
 	public static final String UNSUPPORTED = "Method not supported";
 }
