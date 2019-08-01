@@ -43,7 +43,7 @@ import de.ims.icarus2.test.guard.ApiGuard;
  * @author Markus Gärtner
  *
  */
-interface ItemStorageTest<S extends ItemStorage> extends ApiGuardedTest<S> {
+public interface ItemStorageTest<S extends ItemStorage> extends ApiGuardedTest<S> {
 
 	/**
 	 * Return expected container type or {@code null} if the implementation

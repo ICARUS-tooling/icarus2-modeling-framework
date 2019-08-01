@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.standard.members.structure;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
@@ -51,6 +52,7 @@ public abstract class AbstractImmutableEdgeStorage implements EdgeStorage {
 	 */
 	@SuppressWarnings("boxing")
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public long addEdge(Structure context, long index, Edge edge) {
 		return signalUnsupportedOperation(context);
 	}
@@ -59,6 +61,7 @@ public abstract class AbstractImmutableEdgeStorage implements EdgeStorage {
 	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#addEdges(de.ims.icarus2.model.api.members.structure.Structure, long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public void addEdges(Structure context, long index,
 			DataSequence<? extends Edge> edges) {
 		signalUnsupportedOperation(context);
@@ -68,6 +71,7 @@ public abstract class AbstractImmutableEdgeStorage implements EdgeStorage {
 	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#removeEdge(de.ims.icarus2.model.api.members.structure.Structure, long)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public Edge removeEdge(Structure context, long index) {
 		return signalUnsupportedOperation(context);
 	}
@@ -76,6 +80,7 @@ public abstract class AbstractImmutableEdgeStorage implements EdgeStorage {
 	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#removeEdges(de.ims.icarus2.model.api.members.structure.Structure, long, long)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public DataSequence<? extends Edge> removeEdges(Structure context,
 			long index0, long index1) {
 		return signalUnsupportedOperation(context);
@@ -85,6 +90,7 @@ public abstract class AbstractImmutableEdgeStorage implements EdgeStorage {
 	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#swapEdges(de.ims.icarus2.model.api.members.structure.Structure, long, long)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public void swapEdges(Structure context, long index0, long index1) {
 		signalUnsupportedOperation(context);
 	}
@@ -93,6 +99,7 @@ public abstract class AbstractImmutableEdgeStorage implements EdgeStorage {
 	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#setTerminal(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Edge, de.ims.icarus2.model.api.members.item.Item, boolean)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public void setTerminal(Structure context, Edge edge, Item item,
 			boolean isSource) {
 		signalUnsupportedOperation(context);
@@ -102,6 +109,7 @@ public abstract class AbstractImmutableEdgeStorage implements EdgeStorage {
 	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#newEdge(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item, de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public Edge newEdge(Structure context, Item source, Item target) {
 		return signalUnsupportedOperation(context);
 	}

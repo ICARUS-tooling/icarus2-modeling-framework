@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.standard.members.structure;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.item.Edge;
@@ -49,36 +50,43 @@ public abstract class AbstractImmutableStructure extends AbstractImmutableContai
 
 	@SuppressWarnings("boxing")
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public long addEdge(long index, Edge edge) {
 		return signalUnsupportedOperation();
 	}
 
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public void addEdges(long index, DataSequence<? extends Edge> edges) {
 		signalUnsupportedOperation();
 	}
 
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public Edge removeEdge(long index) {
 		return signalUnsupportedOperation();
 	}
 
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public DataSequence<? extends Edge> removeEdges(long index0, long index1) {
 		return signalUnsupportedOperation();
 	}
 
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public void swapEdges(long index0, long index1) {
 		signalUnsupportedOperation();
 	}
 
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public void setTerminal(Edge edge, Item item, boolean isSource) {
 		signalUnsupportedOperation();
 	}
 
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public Edge newEdge(Item source, Item target) {
 		return signalUnsupportedOperation();
 	}

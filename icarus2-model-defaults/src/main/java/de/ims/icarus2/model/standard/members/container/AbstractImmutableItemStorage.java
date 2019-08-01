@@ -16,7 +16,10 @@
  */
 package de.ims.icarus2.model.standard.members.container;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
@@ -30,7 +33,7 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
 public abstract class AbstractImmutableItemStorage implements ItemStorage {
 
 	private <T extends Object> T signalUnsupportedOperation(Container context) {
-		throw new ModelException(context.getCorpus(), GlobalErrorCode.UNSUPPORTED_OPERATION,
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Item storage is immutable");
 	}
 
@@ -38,6 +41,7 @@ public abstract class AbstractImmutableItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addItem(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public void addItem(Container context, long index, Item item) {
 		signalUnsupportedOperation(context);
 	}
@@ -46,6 +50,7 @@ public abstract class AbstractImmutableItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addItems(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public void addItems(Container context, long index,
 			DataSequence<? extends Item> items) {
 		signalUnsupportedOperation(context);
@@ -55,6 +60,7 @@ public abstract class AbstractImmutableItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#removeItem(de.ims.icarus2.model.api.members.container.Container, long)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public Item removeItem(Container context, long index) {
 		return signalUnsupportedOperation(context);
 	}
@@ -63,6 +69,7 @@ public abstract class AbstractImmutableItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#removeItems(de.ims.icarus2.model.api.members.container.Container, long, long)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public DataSequence<? extends Item> removeItems(Container context,
 			long index0, long index1) {
 		return signalUnsupportedOperation(context);
@@ -72,6 +79,7 @@ public abstract class AbstractImmutableItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#swapItems(de.ims.icarus2.model.api.members.container.Container, long, long)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public void swapItems(Container context, long index0, long index1) {
 		signalUnsupportedOperation(context);
 	}
@@ -88,7 +96,7 @@ public abstract class AbstractImmutableItemStorage implements ItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#isDirty(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public boolean isDirty(Container context) {
+	public boolean isDirty(@Nullable Container context) {
 		return false;
 	}
 

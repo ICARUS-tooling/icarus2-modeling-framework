@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.standard.members.container;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -55,6 +56,7 @@ public abstract class AbstractImmutableContainer implements Container {
 	 * @see de.ims.icarus2.model.api.members.container.Container#addItem(long, de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public void addItem(long index, Item item) {
 		signalUnsupportedOperation();
 	}
@@ -63,6 +65,7 @@ public abstract class AbstractImmutableContainer implements Container {
 	 * @see de.ims.icarus2.model.api.members.container.Container#addItems(long, de.ims.icarus2.util.collections.seq.DataSequence)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public void addItems(long index, DataSequence<? extends Item> items) {
 		signalUnsupportedOperation();
 	}
@@ -71,6 +74,7 @@ public abstract class AbstractImmutableContainer implements Container {
 	 * @see de.ims.icarus2.model.api.members.container.Container#removeItem(long)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public Item removeItem(long index) {
 		return signalUnsupportedOperation();
 	}
@@ -79,6 +83,7 @@ public abstract class AbstractImmutableContainer implements Container {
 	 * @see de.ims.icarus2.model.api.members.container.Container#removeItems(long, long)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public DataSequence<? extends Item> removeItems(long index0, long index1) {
 		return signalUnsupportedOperation();
 	}
@@ -87,6 +92,7 @@ public abstract class AbstractImmutableContainer implements Container {
 	 * @see de.ims.icarus2.model.api.members.container.Container#swapItems(long, long)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public void swapItems(long index0, long index1) {
 		signalUnsupportedOperation();
 	}

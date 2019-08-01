@@ -477,6 +477,10 @@ public class ModelTestUtils {
 		assertEquals(errorCode, exception.getErrorCode());
 	}
 
+	public static void assertUnsupportedOperation(Executable executable) {
+		assertModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, executable);
+	}
+
 	public static IndexSet sortedIndices(int size, long start) {
 		return new VirtualIndexSet(start, size, IndexValueType.forValue(start+size),
 				(offset, i) -> offset+i, true);
