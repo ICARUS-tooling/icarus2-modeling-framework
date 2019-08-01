@@ -88,7 +88,7 @@ public class DefaultContainer extends DefaultItem implements Container, Recyclab
 	 *
 	 * @see de.ims.icarus2.model.standard.members.item.DefaultItem#isDirty()
 	 */
-	@Unguarded(reason = "Requires access to a valid ItemStorage instance")
+	@Unguarded("Requires access to a valid ItemStorage instance")
 	@Override
 	public boolean isDirty() {
 		return super.isDirty() || itemStorage().isDirty(this);
@@ -260,7 +260,7 @@ public class DefaultContainer extends DefaultItem implements Container, Recyclab
 					Messages.mismatch("Incompatible container types", requiredType, givenType));
 	}
 
-	@Unguarded(reason = "Requires access to a manifest")
+	@Unguarded("Requires access to a manifest")
 	public void setItemStorage(@Nullable ItemStorage itemStorage) {
 		checkItemStorage(itemStorage);
 

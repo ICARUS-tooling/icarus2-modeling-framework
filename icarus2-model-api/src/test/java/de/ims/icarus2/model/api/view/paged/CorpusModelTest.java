@@ -268,7 +268,6 @@ public interface CorpusModelTest<M extends CorpusModel>
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#isModelComplete()}.
 	 */
-	@SuppressWarnings("resource")
 	@TestFactory
 	default List<DynamicTest> testIsModelComplete() {
 		return Arrays.asList(
@@ -302,7 +301,6 @@ public interface CorpusModelTest<M extends CorpusModel>
 	@SuppressWarnings("boxing")
 	@Test
 	default void testIsModelActive() {
-		@SuppressWarnings("resource")
 		PagedCorpusView view = mock(PagedCorpusView.class);
 		when(view.getAccessMode()).thenReturn(AccessMode.READ_WRITE);
 		Corpus corpus = mock(Corpus.class); // needed for listener registration

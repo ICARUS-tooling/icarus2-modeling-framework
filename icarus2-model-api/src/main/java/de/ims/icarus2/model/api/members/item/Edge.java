@@ -50,7 +50,7 @@ public interface Edge extends Item {
 	 *
 	 * @see de.ims.icarus2.model.api.members.item.Item#isAlive()
 	 */
-	@Unguarded(reason = "Liveness depends on the values of terminals")
+	@Unguarded("Liveness depends on the values of terminals")
 	@Override
 	boolean isAlive();
 
@@ -64,7 +64,7 @@ public interface Edge extends Item {
 	 *
 	 * @see de.ims.icarus2.model.api.members.item.Item#isLocked()
 	 */
-	@Unguarded(reason = "Edges are never locked, so return value is constant")
+	@Unguarded("Edges are never locked, so return value is constant")
 	@Override
 	boolean isLocked();
 
@@ -76,7 +76,7 @@ public interface Edge extends Item {
 	 *
 	 * @see de.ims.icarus2.model.api.members.item.Item#isDirty()
 	 */
-	@Unguarded(reason = "Dirtyness depends on the values of terminals")
+	@Unguarded("Dirtyness depends on the values of terminals")
 	@Override
 	boolean isDirty();
 

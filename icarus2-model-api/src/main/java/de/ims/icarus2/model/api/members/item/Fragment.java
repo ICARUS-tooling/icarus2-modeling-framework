@@ -84,7 +84,7 @@ public interface Fragment extends Item {
 	 *
 	 * @see ModelUtils#checkFragmentPositions(Fragment, Position, Position)
 	 */
-	@Unguarded(reason="Complex environment needed to evaluate position argument")
+	@Unguarded("Complex environment needed to evaluate position argument")
 	void setFragmentBegin(Position position);
 
 	/**
@@ -96,6 +96,6 @@ public interface Fragment extends Item {
 	 *
 	 * @see ModelUtils#checkFragmentPositions(Fragment, Position, Position)
 	 */
-	@Unguarded(reason="Complex environment needed to evaluate position argument")
+	@Unguarded("Complex environment needed to evaluate position argument")
 	void setFragmentEnd(Position position);
 }

@@ -41,7 +41,12 @@ import java.lang.annotation.Target;
 @Retention(RUNTIME)
 @Target({ TYPE, METHOD, CONSTRUCTOR })
 public @interface Unguarded {
-	String reason();
+
+	/**
+	 * Returns the reason for marking the type, method or constructor
+	 * as unguarded.
+	 */
+	String value();
 
 	/**
 	 * A usable reason for marking methods to be excluded from automatic

@@ -68,7 +68,7 @@ public interface LocationManifest extends Manifest {
 	 * @throws ManifestException in case the manifest is {@link #isInline() not declared}
 	 * to host inline data.
 	 */
-	@Unguarded(reason="Method depends on 'isInline' flag")
+	@Unguarded("Method depends on 'isInline' flag")
 	Optional<CharSequence> getInlineData();
 
 	/**
@@ -117,7 +117,7 @@ public interface LocationManifest extends Manifest {
 
 	LocationManifest setIsInline(boolean value);
 
-	@Unguarded(reason="Method depends on 'isInline' flag")
+	@Unguarded("Method depends on 'isInline' flag")
 	LocationManifest setInlineData(CharSequence data);
 
 	LocationManifest setRootPath(String path);
