@@ -16,10 +16,16 @@
  */
 package de.ims.icarus2.model.standard.members.structure.builder;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 
+import javax.annotation.Nullable;
+
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerType;
@@ -31,6 +37,12 @@ import de.ims.icarus2.util.annotations.TestableImplementation;
 /**
  * Array based sorted storage for small containers using binary search for the
  * {@link #indexOfItem(Container, Item) index lookup} method.
+ * <p>
+ * <b>Important implementation note:</b><br>
+ * This implementation is only usable for cases where the desired order
+ * of the items stored is directly reflected in the begin and end offsets
+ * covered by those items. The items provided to instances of this class
+ * will be sorted according to this criterion at construction time.
  *
  * @author Markus Gärtner
  *
@@ -61,6 +73,24 @@ public class StaticArrayItemStorage extends AbstractImmutableItemStorage {
 	private final Item[] items;
 
 	/**
+	 * Constructs a new {@link StaticArrayItemStorage} that directly uses the
+	 * supplied array of items. This constructor should only be used by driver
+	 * implementations.
+	 * <p>
+	 * Note that the given array will be sorted!
+	 *
+	 * @param items
+	 */
+	public StaticArrayItemStorage(Item[] items) {
+		requireNonNull(items);
+		if(items.length>MAX_SIZE)
+			throw new IllegalArgumentException("Buffer size not supported: "+items.length);
+		this.items = items;
+
+		Arrays.sort(this.items, sorter);
+	}
+
+	/**
 	 * Constructs a new {@code StaticArrayItemStorage} containing the given collection
 	 * of items.
 	 * <p>
@@ -81,7 +111,7 @@ public class StaticArrayItemStorage extends AbstractImmutableItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#addNotify(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public void addNotify(Container context) {
+	public void addNotify(@Nullable Container context) {
 		// no-op
 	}
 
@@ -89,7 +119,7 @@ public class StaticArrayItemStorage extends AbstractImmutableItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#removeNotify(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public void removeNotify(Container context) {
+	public void removeNotify(@Nullable Container context) {
 		// no-op
 	}
 
@@ -105,7 +135,7 @@ public class StaticArrayItemStorage extends AbstractImmutableItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#getItemCount(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public long getItemCount(Container context) {
+	public long getItemCount(@Nullable Container context) {
 		return items.length;
 	}
 
@@ -113,7 +143,7 @@ public class StaticArrayItemStorage extends AbstractImmutableItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#getItemAt(de.ims.icarus2.model.api.members.container.Container, long)
 	 */
 	@Override
-	public Item getItemAt(Container context, long index) {
+	public Item getItemAt(@Nullable Container context, long index) {
 		return items[IcarusUtils.ensureIntegerValueRange(index)];
 	}
 
@@ -121,7 +151,7 @@ public class StaticArrayItemStorage extends AbstractImmutableItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#indexOfItem(de.ims.icarus2.model.api.members.container.Container, de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
-	public long indexOfItem(Container context, Item item) {
+	public long indexOfItem(@Nullable Container context, Item item) {
 		int index = Arrays.binarySearch(items, item, sorter);
 
 		return index < 0 ? IcarusUtils.UNSET_LONG : index;
@@ -131,7 +161,7 @@ public class StaticArrayItemStorage extends AbstractImmutableItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#getBeginOffset(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public long getBeginOffset(Container context) {
+	public long getBeginOffset(@Nullable Container context) {
 		return items[0].getBeginOffset();
 	}
 
@@ -139,7 +169,7 @@ public class StaticArrayItemStorage extends AbstractImmutableItemStorage {
 	 * @see de.ims.icarus2.model.standard.members.container.ItemStorage#getEndOffset(de.ims.icarus2.model.api.members.container.Container)
 	 */
 	@Override
-	public long getEndOffset(Container context) {
+	public long getEndOffset(@Nullable Container context) {
 		return items[items.length-1].getEndOffset();
 	}
 
@@ -148,7 +178,8 @@ public class StaticArrayItemStorage extends AbstractImmutableItemStorage {
 	 */
 	@Override
 	public void recycle() {
-		throw new UnsupportedOperationException("Cannot recycle final item storage");
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
+				"Cannot recycle final item storage");
 	}
 
 	/**
