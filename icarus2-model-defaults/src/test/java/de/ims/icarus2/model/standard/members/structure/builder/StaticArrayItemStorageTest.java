@@ -7,6 +7,7 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockItems;
 import static de.ims.icarus2.test.TestUtils.assertListEquals;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+import static de.ims.icarus2.util.IcarusUtils.ensureIntegerValueRange;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -62,7 +63,7 @@ class StaticArrayItemStorageTest implements ImmutableItemStorageTest<StaticArray
 	void testStaticArrayItemStorageCollectionOfItem() {
 		StaticArrayItemStorage storage = new StaticArrayItemStorage(list(items));
 		assertListEquals(storage,
-				s -> (int)s.getItemCount(null),
+				s -> ensureIntegerValueRange(s.getItemCount(null)),
 				(s, i) -> s.getItemAt(null, i),
 				items);
 	}
@@ -75,7 +76,7 @@ class StaticArrayItemStorageTest implements ImmutableItemStorageTest<StaticArray
 	void testStaticArrayItemStorageArrayOfItem() {
 		StaticArrayItemStorage storage = new StaticArrayItemStorage(items);
 		assertListEquals(storage,
-				s -> (int)s.getItemCount(null),
+				s -> ensureIntegerValueRange(s.getItemCount(null)),
 				(s, i) -> s.getItemAt(null, i),
 				items);
 	}
@@ -95,7 +96,7 @@ class StaticArrayItemStorageTest implements ImmutableItemStorageTest<StaticArray
 	@Test
 	void testGetItemAt() {
 		assertListEquals(create(),
-				s -> (int)s.getItemCount(null),
+				s -> ensureIntegerValueRange(s.getItemCount(null)),
 				(s, i) -> s.getItemAt(null, i),
 				items);
 	}

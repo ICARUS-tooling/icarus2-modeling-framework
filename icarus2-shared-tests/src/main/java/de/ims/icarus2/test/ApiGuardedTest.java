@@ -41,7 +41,7 @@ import de.ims.icarus2.test.guard.ApiGuard;
  */
 public interface ApiGuardedTest<T extends Object> extends TargetedTest<T> {
 
-	public static final String TAG = "apiGuarded";
+	public static final String API_GUARDED = "apiGuarded";
 
 	/**
 	 * Hook to configure the {@link ApiGuard} that is used in the {@link #guardApi(TestReporter)}
@@ -67,7 +67,7 @@ public interface ApiGuardedTest<T extends Object> extends TargetedTest<T> {
 	@SuppressWarnings("unchecked")
 	@TestFactory
 	@Tag(AUTOMATIC)
-	@Tag(TAG)
+	@Tag(API_GUARDED)
 	@DisplayName("ApiGuard")
 	default Stream<DynamicNode> guardApi(TestReporter testReporter) {
 		ApiGuard<T> apiGuard = new ApiGuard<T>((Class<T>)getTestTargetClass());

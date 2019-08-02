@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.ModelErrorCode;
@@ -43,7 +45,7 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
 public abstract class AbstractImmutableEdgeStorage implements EdgeStorage {
 
 	protected <T extends Object> T signalUnsupportedOperation(Structure context) {
-		throw new ModelException(context.getCorpus(), GlobalErrorCode.UNSUPPORTED_OPERATION,
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Edge storage is immutable");
 	}
 
@@ -119,7 +121,7 @@ public abstract class AbstractImmutableEdgeStorage implements EdgeStorage {
 	 */
 	@Override
 	public StructureEditVerifier createEditVerifier(Structure context,
-			ContainerEditVerifier containerEditVerifier) {
+			@Nullable ContainerEditVerifier containerEditVerifier) {
 		return new ImmutableStructureEditVerifier(context);
 	}
 
@@ -127,7 +129,7 @@ public abstract class AbstractImmutableEdgeStorage implements EdgeStorage {
 	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#isDirty(de.ims.icarus2.model.api.members.structure.Structure)
 	 */
 	@Override
-	public boolean isDirty(Structure context) {
+	public boolean isDirty(@Nullable Structure context) {
 		return false;
 	}
 }

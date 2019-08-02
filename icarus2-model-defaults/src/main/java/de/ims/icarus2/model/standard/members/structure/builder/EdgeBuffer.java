@@ -20,6 +20,7 @@ import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkState;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -33,7 +34,6 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.util.IcarusUtils;
-import de.ims.icarus2.util.collections.ArrayUtils;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
@@ -104,8 +104,7 @@ public class EdgeBuffer {
 	}
 
 	public void setRoot(Item root) {
-		if(this.root!=null)
-			throw new IllegalStateException("Root already set");
+		checkState("Root already set", this.root==null);
 
 		this.root = root;
 	}
@@ -161,82 +160,75 @@ public class EdgeBuffer {
 		}
 	}
 
+	private void checkMetadataComputed() {
+		checkState("Metadata not computed yet", metadataComputed);
+	}
+
 	public int getHeight(Item node) {
-		if(!metadataComputed)
-			throw new IllegalStateException();
+		checkMetadataComputed();
 
 		NodeInfo info = getInfo(node, false);
 		return info==null ? UNSET_INT : info.height;
 	}
 
 	public int getDepth(Item node) {
-		if(!metadataComputed)
-			throw new IllegalStateException();
+		checkMetadataComputed();
 
 		NodeInfo info = getInfo(node, false);
 		return info==null ? UNSET_INT : info.depth;
 	}
 
 	public int getDescendantsCount(Item node) {
-		if(!metadataComputed)
-			throw new IllegalStateException();
+		checkMetadataComputed();
 
 		NodeInfo info = getInfo(node, false);
 		return info==null ? UNSET_INT : info.descendants;
 	}
 
 	public int getMaxHeight() {
-		if(!metadataComputed)
-			throw new IllegalStateException();
+		checkMetadataComputed();
 
 		return maxHeight;
 	}
 
 	public int getMaxDepth() {
-		if(!metadataComputed)
-			throw new IllegalStateException();
+		checkMetadataComputed();
 
 		return maxDepth;
 	}
 
 	public int getMaxDescendantsCount() {
-		if(!metadataComputed)
-			throw new IllegalStateException();
+		checkMetadataComputed();
 
 		return maxDescendants;
 	}
 
 	public int getMaxIncoming() {
-		if(!metadataComputed)
-			throw new IllegalStateException();
+		checkMetadataComputed();
 
 		return maxIncoming;
 	}
 
 	public int getMinIncoming() {
-		if(!metadataComputed)
-			throw new IllegalStateException();
+		checkMetadataComputed();
 
 		return minIncoming;
 	}
 
 	public int getMaxOutgoing() {
-		if(!metadataComputed)
-			throw new IllegalStateException();
+		checkMetadataComputed();
 
 		return maxOutgoing;
 	}
 
 	public int getMinOutgoing() {
-		if(!metadataComputed)
-			throw new IllegalStateException();
+		checkMetadataComputed();
 
 		return minOutgoing;
 	}
 
 	public StructureType getStructureType() {
-		if(!metadataComputed)
-			throw new IllegalStateException();
+		checkMetadataComputed();
 
 		if(maxIncoming==0 && maxOutgoing==0) {
 			return StructureType.SET;
@@ -265,7 +257,7 @@ public class EdgeBuffer {
 	}
 
 	public void computeMetaData(Item...rootCandidates) {
-		computeMetaData(ArrayUtils.asList(rootCandidates));
+		computeMetaData(Arrays.asList(rootCandidates));
 	}
 
 	/**
@@ -311,10 +303,8 @@ public class EdgeBuffer {
 
 	private NodeInfo visitAndCompute(Item node, int depth) {
 		NodeInfo info = getInfo(node, false);
-		if(info==null)
-			throw new IllegalStateException("Missing info for node: "+node);
-		if(info.depth!=UNSET_INT)
-			throw new IllegalStateException("Cycle detected at node: "+node);
+		checkState("Missing info for node: "+node, node!=null);
+		checkState("Cycle detected at node: "+node, info.depth==UNSET_INT);
 
 		List<Edge> edges = info.outgoing;
 

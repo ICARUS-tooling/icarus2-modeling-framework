@@ -29,7 +29,6 @@ import static de.ims.icarus2.test.TestUtils.randomInts;
 import static de.ims.icarus2.test.TestUtils.randomLongs;
 import static de.ims.icarus2.test.TestUtils.randomShorts;
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -179,8 +178,8 @@ public class ModelTestUtils {
 	}
 
 	public static Edge mockEdge(Item source, Item target) {
-		requireNonNull(source);
-		requireNonNull(target);
+		if(source==null && target==null)
+			throw new AssertionError("One of source or target has to be non-null");
 
 		Edge edge = mockEdge();
 		when(edge.getSource()).thenReturn(source);

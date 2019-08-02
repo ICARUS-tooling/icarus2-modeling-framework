@@ -45,8 +45,6 @@ public class StaticNodes {
 
 	public static final Node EMPTY_NODE = new Node();
 
-	private static final MutableInteger counter = new MutableInteger();
-
 	private static int _parent(Item item, EdgeBuffer edgeBuffer, LookupList<Edge> edges) {
 		int inCount = edgeBuffer.getEdgeCount(item, false);
 		if(inCount>1)
@@ -71,17 +69,14 @@ public class StaticNodes {
 
 	private static int[] _edges(NodeInfo info, LookupList<Edge> edges, int inCount, int outCount) {
 		int[] result = new int[inCount+outCount];
-
-		synchronized (counter) {
-			counter.setInt(0);
-
-			info.forEachEdge(e -> {result[counter.incrementAndGet()] = edges.indexOf(e);}, inCount>0, outCount>0);
-		}
+		MutableInteger counter = new MutableInteger(0);
+		info.forEachEdge(e -> {result[counter.incrementAndGet()] = edges.indexOf(e);}, inCount>0, outCount>0);
 
 		return result;
 	}
 
-	public static Node createNode(Item item, EdgeBuffer edgeBuffer, LookupList<Edge> edges, boolean forceTreeProperties) {
+	public static Node createNode(Item item, EdgeBuffer edgeBuffer, LookupList<Edge> edges,
+			boolean forceTreeProperties) {
 		NodeInfo info = edgeBuffer.getInfo(item);
 
 		if(info==null || !info.hasEdges()) {

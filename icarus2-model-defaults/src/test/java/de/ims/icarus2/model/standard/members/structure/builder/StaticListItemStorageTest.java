@@ -9,6 +9,7 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockItems;
 import static de.ims.icarus2.test.TestUtils.assertListEquals;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+import static de.ims.icarus2.util.IcarusUtils.ensureIntegerValueRange;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.never;
@@ -74,7 +75,7 @@ class StaticListItemStorageTest implements ImmutableItemStorageTest<StaticListIt
 			StaticListItemStorage storage = new StaticListItemStorage(list(items), beginItem, endItem);
 
 			assertListEquals(storage,
-					s -> (int)s.getItemCount(null),
+					s -> ensureIntegerValueRange(s.getItemCount(null)),
 					(s, i) -> s.getItemAt(null, i),
 					items);
 
@@ -144,7 +145,7 @@ class StaticListItemStorageTest implements ImmutableItemStorageTest<StaticListIt
 	@Test
 	void testGetItemAt() {
 		assertListEquals(create(),
-				s -> (int)s.getItemCount(null),
+				s -> ensureIntegerValueRange(s.getItemCount(null)),
 				(s, i) -> s.getItemAt(null, i),
 				items);
 	}

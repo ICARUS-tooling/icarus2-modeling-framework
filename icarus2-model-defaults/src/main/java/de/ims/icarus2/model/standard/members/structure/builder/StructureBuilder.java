@@ -574,8 +574,7 @@ public class StructureBuilder {
 	//**********************************
 
 	public void reset() {
-		nodes().clear();
-		edges().clear();
+		clear();
 
 		edgeBuffer.reset();
 
@@ -679,7 +678,8 @@ public class StructureBuilder {
 		return itemStorage;
 	}
 
-	private void prepareEdgeBuffer() {
+	/** package-private for testing purposes */
+	void prepareEdgeBuffer() {
 
 		RootItem<?> root = getRoot();
 

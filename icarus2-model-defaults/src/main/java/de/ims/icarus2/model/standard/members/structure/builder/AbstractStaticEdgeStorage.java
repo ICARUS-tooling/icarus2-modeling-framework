@@ -18,11 +18,15 @@ package de.ims.icarus2.model.standard.members.structure.builder;
 
 import static java.util.Objects.requireNonNull;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
+import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.structure.AbstractImmutableEdgeStorage;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.LookupList;
@@ -54,38 +58,42 @@ public abstract class AbstractStaticEdgeStorage<R extends Item> extends Abstract
 
 	@Override
 	public boolean revive() {
-		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot revive static edge storage");
+		return false;
 	}
 
 	@Override
-	public void addNotify(Structure context) {
+	public void addNotify(@Nullable Structure context) {
 		// no-op
 	}
 
 	@Override
-	public void removeNotify(Structure context) {
+	public void removeNotify(@Nullable Structure context) {
 		// no-op
 	}
 
 	@Override
-	public Item getVirtualRoot(Structure context) {
+	public Item getVirtualRoot(@Nullable Structure context) {
 		return root;
 	}
 
 	@Override
 	public boolean isRoot(Structure context, Item node) {
-		return getParent(context, node)==root;
+		requireNonNull(node);
+		return node!= getVirtualRoot(context) && getParent(context, node)==root;
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#getEdgeCount(de.ims.icarus2.model.api.members.structure.Structure)
 	 */
 	@Override
-	public long getEdgeCount(Structure context) {
+	public long getEdgeCount(@Nullable Structure context) {
 		return edges.size();
 	}
 
 	protected Edge getEdgeAt(int index) {
+		if(index<0 || index>=edges.size())
+			throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
+					Messages.outOfBounds("Invalid index", index, 0, edges.size()-1));
 		return edges.get(index);
 	}
 
@@ -93,11 +101,12 @@ public abstract class AbstractStaticEdgeStorage<R extends Item> extends Abstract
 	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#getEdgeAt(de.ims.icarus2.model.api.members.structure.Structure, long)
 	 */
 	@Override
-	public Edge getEdgeAt(Structure context, long index) {
+	public Edge getEdgeAt(@Nullable Structure context, long index) {
 		return getEdgeAt(IcarusUtils.ensureIntegerValueRange(index));
 	}
 
 	protected int indexOfEdge(Edge edge) {
+		requireNonNull(edge);
 		return edges.indexOf(edge);
 	}
 
@@ -105,7 +114,7 @@ public abstract class AbstractStaticEdgeStorage<R extends Item> extends Abstract
 	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#indexOfEdge(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Edge)
 	 */
 	@Override
-	public long indexOfEdge(Structure context, Edge edge) {
+	public long indexOfEdge(@Nullable Structure context, Edge edge) {
 		return indexOfEdge(edge);
 	}
 
@@ -114,6 +123,7 @@ public abstract class AbstractStaticEdgeStorage<R extends Item> extends Abstract
 	 */
 	@Override
 	public long getEdgeCount(Structure context, Item node) {
+		requireNonNull(node);
 		return getEdgeCount(context, node, true) + getEdgeCount(context, node, false);
 	}
 
