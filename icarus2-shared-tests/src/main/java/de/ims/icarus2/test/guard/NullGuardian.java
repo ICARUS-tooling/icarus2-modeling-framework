@@ -108,6 +108,7 @@ public class NullGuardian<T> extends Guardian<T> {
 		Collection<MethodCache> methodCaches = classCache.getMethodCaches();
 		List<DynamicNode> tests = methodCaches.stream()
 				.filter(c -> !c.hasAnnotation(Unguarded.class))
+				.sorted((m1, m2) -> m1.getMethod().getName().compareTo(m2.getMethod().getName()))
 				.map(this::createTestsForMethod)
 				.collect(Collectors.toCollection(ArrayList::new));
 		String displayName = String.format("Parameter-Guard [%d/%d]",
