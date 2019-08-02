@@ -19,6 +19,7 @@ package de.ims.icarus2.model.standard.members.structure.builder;
 import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -109,8 +110,10 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 	 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#getSiblingAt(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item, long)
 	 */
 	@Override
+	@Unguarded(Unguarded.UNSUPPORTED)
 	public Item getSiblingAt(Structure context, Item child, long offset) {
-		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Nodes in CHAIN structure can't have siblings");
+		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
+				"Nodes in CHAIN structure can't have siblings");
 	}
 
 	/**
@@ -133,6 +136,19 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 			return 0;
 		}
 		return IcarusUtils.UNSET_LONG;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.standard.members.structure.builder.AbstractStaticEdgeStorage#getEdgeCount(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item)
+	 */
+	@Override
+	public long getEdgeCount(Structure context, Item node) {
+		requireNonNull(node);
+		if(node==getVirtualRoot(context)) {
+			return getEdgeCount(context, node, true);
+		}
+
+		return super.getEdgeCount(context, node);
 	}
 
 	/**
@@ -179,18 +195,18 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 
 				int data = 0;
 				data |= (incoming);
-				data |= (outgoing << 8);
-				data |= (height <<16);
-				data |= (depth <<24);
+				data |= (outgoing << OFFSET_OUTGOING);
+				data |= (height << OFFSET_HEIGHT);
+				data |= (depth << OFFSET_DEPTH);
 
-				chainData[i+1] = data;
+				chainData[i] = data;
 			}
 
 			int rootData = 0;
-			rootData |= (edgeBuffer.getHeight(root) << 16);
-			rootData |= (edgeBuffer.getDescendantsCount(root) << 24);
+			rootData |= (edgeBuffer.getHeight(root) << OFFSET_HEIGHT);
+			rootData |= (edgeBuffer.getDescendantsCount(root) << OFFSET_DEPTH);
 
-			chainData[0] = rootData;
+			chainData[chainData.length-1] = rootData;
 
 			return new CompactChainEdgeStorageInt(root, edges, chainData);
 		}
@@ -227,13 +243,15 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 			return extract(data, OFFSET_HEIGHT);
 		}
 
-		/*
+		/**
 		 *  8 Bits for incoming, outgoing, height and depth each
 		 *
 		 *  bits 00 - 07	index of incoming edge +1 or 0 if no incoming edge
 		 *  bits 08 - 15	index of outgoing edge +1 or 0 if no incoming edge
 		 *  bits 16 - 23	height of node
 		 *  bits 24 - 31	depth of node +1 or 0 if node not connected to virtual root
+		 *
+		 * Last entry is the data for the virtual root node.
 		 */
 		private final int[] chainData;
 
@@ -244,14 +262,15 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		CompactChainEdgeStorageInt(RootItem<Edge> root, LookupList<Edge> edges, int[] chainData) {
 			super(root, edges);
 
-			if (chainData == null)
-				throw new NullPointerException("Invalid chainData");
-
-			this.chainData = chainData;
+			this.chainData = requireNonNull(chainData);
 		}
 
 		private int localIndex(Structure context, Item node) {
-			return IcarusUtils.ensureIntegerValueRange(context.indexOfItem(node))+1;
+			return IcarusUtils.ensureIntegerValueRange(context.indexOfItem(node));
+		}
+
+		private int rootIndex() {
+			return chainData.length-1;
 		}
 
 		/**
@@ -259,6 +278,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		 */
 		@Override
 		public long getEdgeCount(Structure context, Item node, boolean isSource) {
+			requireNonNull(node);
 			if(node==root) {
 				return root.edgeCount(!isSource);
 			}
@@ -279,6 +299,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		@Override
 		public Edge getEdgeAt(Structure context, Item node, long index,
 				boolean isSource) {
+			requireNonNull(node);
 			if(node==root) {
 				return root.edgeAt(index, !isSource);
 			}
@@ -296,8 +317,9 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		 */
 		@Override
 		public long getHeight(Structure context, Item node) {
+			requireNonNull(node);
 			if(node==root) {
-				return height(chainData[0]);
+				return height(chainData[rootIndex()]);
 			}
 
 			int data = chainData[localIndex(context, node)];
@@ -309,6 +331,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		 */
 		@Override
 		public long getDepth(Structure context, Item node) {
+			requireNonNull(node);
 			if(node==root) {
 				return 0;
 			}
@@ -322,8 +345,9 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		 */
 		@Override
 		public long getDescendantCount(Structure context, Item parent) {
+			requireNonNull(parent);
 			if(parent==root) {
-				return descendants(chainData[0]);
+				return descendants(chainData[rootIndex()]);
 			}
 
 			int data = chainData[localIndex(context, parent)];
@@ -375,18 +399,18 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 
 				long data = 0;
 				data |= (incoming);
-				data |= (outgoing << 16);
-				data |= (height << 32);
-				data |= (depth << 48);
+				data |= (outgoing << OFFSET_OUTGOING);
+				data |= (height << OFFSET_HEIGHT);
+				data |= (depth << OFFSET_DEPTH);
 
-				chainData[i+1] = data;
+				chainData[i] = data;
 			}
 
 			long rootData = 0;
-			rootData |= ((long)edgeBuffer.getHeight(root) << 32);
-			rootData |= ((long)edgeBuffer.getDescendantsCount(root) << 48);
+			rootData |= ((long)edgeBuffer.getHeight(root) << OFFSET_HEIGHT);
+			rootData |= ((long)edgeBuffer.getDescendantsCount(root) << OFFSET_DEPTH);
 
-			chainData[0] = rootData;
+			chainData[chainData.length-1] = rootData;
 
 			return new CompactChainEdgeStorageLong(root, edges, chainData);
 		}
@@ -423,13 +447,15 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 			return extract(data, OFFSET_HEIGHT);
 		}
 
-		/*
+		/**
 		 *  16 Bits for incoming, outgoing, height and depth each
 		 *
 		 *  bits 00 - 15	index of incoming edge +1 or 0 if no incoming edge
 		 *  bits 16 - 31	index of outgoing edge +1 or 0 if no incoming edge
 		 *  bits 32 - 47	height of node
 		 *  bits 48 - 63	depth of node +1 or 0 if node not connected to virtual root
+		 *
+		 * Last entry is the data for the virtual root node.
 		 */
 		private final long[] chainData;
 
@@ -446,7 +472,11 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		}
 
 		private int localIndex(Structure context, Item node) {
-			return IcarusUtils.ensureIntegerValueRange(context.indexOfItem(node))+1;
+			return IcarusUtils.ensureIntegerValueRange(context.indexOfItem(node));
+		}
+
+		private int rootIndex() {
+			return chainData.length-1;
 		}
 
 		/**
@@ -492,7 +522,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		@Override
 		public long getHeight(Structure context, Item node) {
 			if(node==root) {
-				return height(chainData[0]);
+				return height(chainData[rootIndex()]);
 			}
 
 			long data = chainData[localIndex(context, node)];
@@ -518,7 +548,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		@Override
 		public long getDescendantCount(Structure context, Item parent) {
 			if(parent==root) {
-				return descendants(chainData[0]);
+				return descendants(chainData[rootIndex()]);
 			}
 
 			long data = chainData[localIndex(context, parent)];
