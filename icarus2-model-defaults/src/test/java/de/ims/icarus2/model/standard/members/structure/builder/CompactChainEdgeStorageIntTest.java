@@ -3,16 +3,16 @@
  */
 package de.ims.icarus2.model.standard.members.structure.builder;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.mockEdge;
-import static de.ims.icarus2.model.api.ModelTestUtils.mockStructure;
-import static java.util.Objects.requireNonNull;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
+import static de.ims.icarus2.test.TestUtils.random;
+import static de.ims.icarus2.util.Conditions.checkArgument;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.PrimitiveIterator;
 import java.util.stream.Stream;
 
 import de.ims.icarus2.model.api.members.item.Edge;
-import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorage.CompactChainEdgeStorageInt;
 
 /**
@@ -28,60 +28,80 @@ class CompactChainEdgeStorageIntTest implements StaticChainEdgeStorageTest<Compa
 
 	@Override
 	public Config createDefaultTestConfiguration(int size) {
-		return fullSingleChain(size);
+		return singleChain(size, 1.0);
 	}
 
-	private static Edge makeEdge(Item source, Item target) {
-		requireNonNull(target);
+	private void fillChain(Config config, PrimitiveIterator.OfInt nodes,
+			int offset, int size, int rootIndex) {
+		assertTrue(size>0);
+		assertNull(config.edges[offset]);
 
-		Edge edge = mockEdge(source, target);
-		if(source==null) {
-			doReturn("root->"+target).when(edge).toString();
-		} else {
-			doReturn(source+"->"+target).when(edge).toString();
+		// SPecial treatment of "head" of the chain
+		int previous = nodes.nextInt();
+		config.edges[offset] = makeEdge(null, config.nodes[previous]);
+		config.rootEdges[rootIndex] = config.edges[offset];
+		config.incoming[previous] = config.edges[offset];
+		config.depths[previous] = 1;
+		config.heights[previous] = config.descendants[previous] = size-1;
+
+		// Now randomize the next size-1 elements
+		for (int i = 1; i < size; i++) {
+			assertNull(config.edges[offset+i]);
+
+			int next = nodes.nextInt();
+			Edge edge = makeEdge(config.nodes[previous], config.nodes[next]);
+			config.edges[offset+i] = edge;
+			config.outgoing[previous] = edge;
+			config.incoming[next] = edge;
+
+			config.heights[next] = config.descendants[next] = size-i-1;
+			config.depths[next] = i+1;
+
+			previous = next;
 		}
-		return edge;
 	}
 
-	@SuppressWarnings("boxing")
-	private Config fullSingleChain(int size) {
+	private Config singleChain(int size, double fraction) {
+		checkArgument(fraction<=1.0);
+
 		Config config = Config.basic(size);
 		config.label = "single chain - full";
 
-		config.structure = mockStructure();
+		int part = (int) (size * fraction);
+		config.defaultStructure();
+		config.edges = new Edge[part];
+		config.rootEdges = new Edge[1];
 
-		config.edges = new Edge[size];
-		config.edges[0] = makeEdge(null, config.nodes[0]);
-		config.rootEdges = new Edge[] {config.edges[0]};
-		config.depths[0] = 1;
-		config.heights[0] = config.descendants[0] = size-1;
-
-		for (int i = 1; i < size; i++) {
-			Edge edge = makeEdge(config.nodes[i-1], config.nodes[i]);
-			config.edges[i] = edge;
-			config.outgoing[i-1] = edge;
-
-			config.heights[i] = config.descendants[i] = size-i-1;
-			config.depths[i] = i+1;
-
-			when(config.structure.indexOfItem(config.nodes[i])).thenReturn(Long.valueOf(i));
-		}
-
-		System.arraycopy(config.edges, 0, config.incoming, 0, size);
+		fillChain(config, randomIndices(size, part), 0, part, 0);
 
 		return config;
 	}
 
-	private Config fullMultiChain(int size) {
+	private Config multiChain(int size, double fraction) {
+		checkArgument(fraction<=1.0);
 
-	}
+		Config config = Config.basic(size);
+		config.label = "multi chain - full";
 
-	private Config partialMultiChain(int size) {
+		int part = (int) (size * fraction);
+		int chainCount = random(2, 6);
 
-	}
+		config.defaultStructure();
+		config.multiRoot = true;
+		config.edges = new Edge[part];
+		config.rootEdges = new Edge[chainCount];
 
-	private Config partialSingleChain(int size) {
+		PrimitiveIterator.OfInt nodes = randomIndices(size, part);
 
+		int remaining = part;
+		for (int i = 0; i < chainCount; i++) {
+			int chainSize = i==chainCount-1 ? remaining : random(1, remaining-chainCount+i+1);
+			fillChain(config, nodes, part-remaining, chainSize, i);
+			remaining -= chainSize;
+		}
+		assertEquals(0, remaining);
+
+		return config;
 	}
 
 	/**
@@ -90,10 +110,10 @@ class CompactChainEdgeStorageIntTest implements StaticChainEdgeStorageTest<Compa
 	@Override
 	public Stream<Config> createTestConfigurations() {
 		return Stream.of(
-				fullSingleChain(randomSize())//,
-//				partialSingleChain(randomSize()),
-//				fullMultiChain(randomSize()),
-//				partialMultiChain(randomSize())
+				singleChain(randomSize(), 1.0),
+				multiChain(randomSize(), 1.0),
+				singleChain(randomSize(), 0.25),
+				multiChain(randomSize(), 0.25)
 				);
 	}
 

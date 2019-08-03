@@ -7,21 +7,28 @@ import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertUnsupportedOperation;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockEdge;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
+import static de.ims.icarus2.model.api.ModelTestUtils.mockStructure;
 import static de.ims.icarus2.model.api.ModelTestUtils.stubId;
 import static de.ims.icarus2.model.api.ModelTestUtils.stubIndex;
-import static de.ims.icarus2.test.TestUtils.assertListEquals;
+import static de.ims.icarus2.test.TestUtils.assertCollectionEmpty;
 import static de.ims.icarus2.test.TestUtils.assertMock;
+import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
-import static de.ims.icarus2.util.IcarusUtils.ensureIntegerValueRange;
+import static de.ims.icarus2.util.collections.CollectionUtils.set;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
+import java.util.PrimitiveIterator;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -36,11 +43,13 @@ import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.ContainerType;
+import de.ims.icarus2.model.manifest.api.StructureFlag;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.standard.members.structure.ImmutableEdgeStorageTest;
 import de.ims.icarus2.model.standard.members.structure.RootItem;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.annotations.Provider;
 
 /**
@@ -75,17 +84,21 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 	 * <li>{@link Structure#getStructureType() structure type}</li>
 	 * </ul>
 	 */
-	default StructureManifest createManifest() {
+	@SuppressWarnings("boxing")
+	default StructureManifest createManifest(Config config) {
 		StructureManifest manifest = mock(StructureManifest.class);
 		when(manifest.getContainerType()).thenReturn(ContainerType.LIST);
 		when(manifest.getStructureType()).thenReturn(StructureType.CHAIN);
+
+		when(manifest.isStructureFlagSet(StructureFlag.MULTI_ROOT)).thenReturn(config.multiRoot);
+
 		return manifest;
 	}
 
 	@SuppressWarnings("unchecked")
 	default StructureBuilder toBuilder(Config config) {
 		config.validate();
-		StructureBuilder builder = StructureBuilder.newBuilder(createManifest());
+		StructureBuilder builder = StructureBuilder.newBuilder(createManifest(config));
 
 		// Adjust source terminal of all root edges to the virtual root node
 		@SuppressWarnings("rawtypes")
@@ -141,11 +154,15 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 						Edge edge = config.incoming[i];
 						Item parent = chain.getParent(config.structure, node);
 						if(edge==null) {
-							assertNull(parent);
+							assertNull(parent, "Unexpected parent for "+node);
 						} else {
 							assertSame(edge.getSource(), parent);
 						}
 					}
+
+					// Root has no parent
+					assertNull(chain.getParent(config.structure,
+							chain.getVirtualRoot(config.structure)));
 				}));
 
 	}
@@ -169,6 +186,10 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 							assertEquals(0L, index);
 						}
 					}
+
+					// Root is not a child of any node
+					assertEquals(UNSET_LONG, chain.indexOfChild(config.structure,
+							chain.getVirtualRoot(config.structure)));
 				}));
 	}
 
@@ -208,16 +229,17 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 	/**
 	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.AbstractStaticEdgeStorage#getEdgeAt(de.ims.icarus2.model.api.members.structure.Structure, long)}.
 	 */
-	@SuppressWarnings("boxing")
 	@TestFactory
 	default Stream<DynamicTest> testGetEdgeAtStructureLong() {
 		return createTestConfigurations()
 				.map(config -> dynamicTest(config.label, () -> {
 					C chain = createFromBuilder(toBuilder(config));
-					assertListEquals(chain,
-							c -> ensureIntegerValueRange(c.getEdgeCount(config.structure)),
-							(c, i) -> c.getEdgeAt(config.structure, i),
-							config.edges);
+					// We're not expecting a predetermined order of the edges
+					Set<Edge> edges = set(config.edges);
+					for (int i = 0; i < chain.getEdgeCount(config.structure); i++) {
+						assertTrue(edges.remove(chain.getEdgeAt(config.structure, i)));
+					}
+					assertCollectionEmpty(edges);
 				}));
 	}
 
@@ -231,7 +253,8 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 					C chain = createFromBuilder(toBuilder(config));
 
 					for (int i = 0; i < config.edges.length; i++) {
-						assertEquals(i, chain.indexOfEdge(config.structure, config.edges[i]));
+						Edge edge = chain.getEdgeAt(i);
+						assertEquals(i, chain.indexOfEdge(config.structure, edge));
 					}
 
 					// Ensure that foreign edges aren't recognized
@@ -258,6 +281,7 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 						assertEquals(expected, count, "Edge count mismatch at index "+i);
 					}
 
+					// Verify number of root edges
 					Item root = chain.getVirtualRoot(config.structure);
 					assertEquals(config.rootEdges.length, chain.getEdgeCount(config.structure, root));
 				}));
@@ -420,7 +444,8 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 					C chain = createFromBuilder(toBuilder(config));
 					for (int i = 0; i < config.nodes.length; i++) {
 						assertEquals(config.descendants[i],
-								chain.getDescendantCount(config.structure, config.nodes[i]));
+								chain.getDescendantCount(config.structure, config.nodes[i]),
+								"Descendants count mismatch for "+config.nodes[i]);
 					}
 				}));
 	}
@@ -435,12 +460,41 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 					C chain = createFromBuilder(toBuilder(config));
 
 					Item root = chain.getVirtualRoot(config.structure);
-					assertEquals(config.nodes.length, chain.getDescendantCount(config.structure, root));
+					// 1 descendant per edge in a chain
+					assertEquals(config.edges.length, chain.getDescendantCount(config.structure, root));
 				}));
 	}
 
 	default int randomSize() {
-		return 4; //random(10, 20);
+		return random(50, 100);
+	}
+
+	default Edge makeEdge(Item source, Item target) {
+		requireNonNull(target);
+
+		Edge edge = mockEdge(source, target);
+		if(source==null) {
+			doReturn("root->"+target).when(edge).toString();
+		} else {
+			doReturn(source+"->"+target).when(edge).toString();
+		}
+		return edge;
+	}
+
+	default PrimitiveIterator.OfInt randomIndices(int spectrum, int size) {
+		int[] source = new int[spectrum];
+		for (int i = 0; i < source.length; i++) {
+			source[i] = i;
+		}
+
+		for (int i = 0; i < source.length; i++) {
+			int x = TestUtils.random(0, spectrum);
+			int tmp = source[i];
+			source[i] = source[x];
+			source[x] = tmp;
+		}
+
+		return IntStream.of(source).limit(size).iterator();
 	}
 
 	static class Config {
@@ -469,6 +523,8 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 		/** Optional structure to be used for calls on the storage under test */
 		Structure structure = null;
 
+		boolean multiRoot = false;
+
 		private Config validate() {
 			assertNotNull(label);
 			assertNotNull(nodes);
@@ -479,6 +535,14 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 			return this;
 		}
 
+		@SuppressWarnings("boxing")
+		void defaultStructure() {
+			structure = mockStructure();
+			for (int i = 0; i < nodes.length; i++) {
+				when(structure.indexOfItem(nodes[i])).thenReturn(Long.valueOf(i));
+			}
+		}
+
 		static Config basic(int size) {
 			Config config = new Config();
 			config.nodes = IntStream.range(0, size)
@@ -486,9 +550,15 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 					.toArray(Item[]::new);
 			config.incoming = new Edge[size];
 			config.outgoing = new Edge[size];
+
 			config.heights = new int[size];
 			config.depths = new int[size];
 			config.descendants = new int[size];
+
+			Arrays.fill(config.heights, UNSET_INT);
+			Arrays.fill(config.depths, UNSET_INT);
+			Arrays.fill(config.descendants, UNSET_INT);
+
 			return config;
 		}
 	}

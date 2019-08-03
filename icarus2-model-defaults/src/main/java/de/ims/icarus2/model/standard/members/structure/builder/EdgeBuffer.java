@@ -269,7 +269,7 @@ public class EdgeBuffer {
 	 * @param rootCandidates
 	 */
 	public void computeMetaData(Collection<? extends Item> rootCandidates) {
-		checkState(!metadataComputed);
+		checkState("Metadata already computed", !metadataComputed);
 		checkState("Missing virtual root node", root!=null);
 
 		if(rootCandidates==null || rootCandidates.isEmpty()) {
