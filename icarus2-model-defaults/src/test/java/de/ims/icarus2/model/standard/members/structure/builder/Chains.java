@@ -89,11 +89,12 @@ public class Chains {
 		}
 	}
 
+	@SuppressWarnings("boxing")
 	static Config singleChain(int size, double fraction) {
 		checkArgument(fraction<=1.0);
 
 		Config config = Config.basic(size);
-		config.label = "single chain - full";
+		config.label = String.format("single chain - %.2f%% full", fraction*100);
 
 		int part = (int) (size * fraction);
 		config.defaultStructure();
@@ -105,11 +106,12 @@ public class Chains {
 		return config;
 	}
 
+	@SuppressWarnings("boxing")
 	static Config multiChain(int size, double fraction) {
 		checkArgument(fraction<=1.0);
 
 		Config config = Config.basic(size);
-		config.label = "multi chain - full";
+		config.label = String.format("multi chain - %.2f%% full", fraction*100);
 
 		int part = (int) (size * fraction);
 		int chainCount = random(2, 6);

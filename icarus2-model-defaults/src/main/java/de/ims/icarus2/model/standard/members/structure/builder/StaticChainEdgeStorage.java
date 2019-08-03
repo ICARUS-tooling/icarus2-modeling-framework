@@ -200,15 +200,14 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 					outgoing = edges.indexOf(edgeBuffer.getEdgeAt(node, 0, true))+1;
 				}
 
-				int data = 0;
 				if(incoming>0 || outgoing>0) {
+					int data = 0;
 					data |= (incoming);
 					data |= (outgoing << OFFSET_OUTGOING);
 					data |= (height << OFFSET_HEIGHT);
 					data |= (depth << OFFSET_DEPTH);
+					chainData[i] = data;
 				}
-
-				chainData[i] = data;
 			}
 
 			int rootData = 0;
@@ -411,15 +410,14 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 					outgoing = edges.indexOf(edgeBuffer.getEdgeAt(node, 0, true))+1;
 				}
 
-				long data = 0;
 				if(incoming>0 || outgoing>0) {
+					long data = 0;
 					data |= (incoming);
 					data |= (outgoing << OFFSET_OUTGOING);
 					data |= (height << OFFSET_HEIGHT);
 					data |= (depth << OFFSET_DEPTH);
+					chainData[i] = data;
 				}
-
-				chainData[i] = data;
 			}
 
 			long rootData = 0;
@@ -609,29 +607,31 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 				long outgoing = 0;
 
 				if(edgeBuffer.getEdgeCount(node, false)>0) {
-					incoming = edges.indexOf(edgeBuffer.getEdgeAt(node, 0, false));
+					incoming = edges.indexOf(edgeBuffer.getEdgeAt(node, 0, false))+1;
 				}
 
 				if(edgeBuffer.getEdgeCount(node, true)>0) {
-					outgoing = edges.indexOf(edgeBuffer.getEdgeAt(node, 0, true));
+					outgoing = edges.indexOf(edgeBuffer.getEdgeAt(node, 0, true))+1;
 				}
 
-				long data = 0;
-				data |= (incoming);
-				data |= (outgoing << 32);
+				if(incoming>0 || outgoing>0) {
+					long data = 0;
+					data |= (incoming);
+					data |= (outgoing << OFFSET_OUTGOING);
 
-				linkData[i+1] = data;
+					linkData[i+1] = data;
 
-				data = 0;
-				data |= (height);
-				data |= (depth << 32);
+					data = 0;
+					data |= (height);
+					data |= (depth << OFFSET_DEPTH);
 
-				sizeData[i+1] = data;
+					sizeData[i+1] = data;
+				}
 			}
 
 			long rootData = 0;
 			rootData |= (edgeBuffer.getHeight(root));
-			rootData |= ((long)edgeBuffer.getDescendantsCount(root) << 32);
+			rootData |= ((long)edgeBuffer.getDescendantsCount(root) << OFFSET_DEPTH);
 
 			sizeData[0] = rootData;
 
@@ -642,11 +642,11 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		private static final int OFFSET_DEPTH = 32;
 
 		private static int incoming(long data) {
-			return (int) (data);
+			return (int) (data) -1;
 		}
 
 		private static int outgoing(long data) {
-			return (int) (data >>> OFFSET_OUTGOING);
+			return (int) (data >>> OFFSET_OUTGOING) -1;
 		}
 
 		private static int height(long data) {
@@ -654,11 +654,11 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		}
 
 		private static int depth(long data) {
-			return (int) (data >>> OFFSET_DEPTH);
+			return (int) (data >>> OFFSET_DEPTH) - 1;
 		}
 
 		private static int descendants(long data) {
-			return (int) (data >>> OFFSET_DEPTH);
+			return (int) (data);
 		}
 
 		/*
@@ -696,11 +696,16 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		 */
 		@Override
 		public long getEdgeCount(Structure context, Item node, boolean isSource) {
+			requireNonNull(node);
 			if(node==root) {
 				return root.edgeCount(!isSource);
 			}
 
 			long data = linkData[localIndex(context, node)];
+			if(data==0L) {
+				return 0;
+			}
+
 			if(isSource && outgoing(data)>=0) {
 				return 1;
 			} else if(!isSource && incoming(data)>=0) {
@@ -716,6 +721,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		@Override
 		public Edge getEdgeAt(Structure context, Item node, long index,
 				boolean isSource) {
+			requireNonNull(node);
 			if(node==root) {
 				return root.edgeAt(index, !isSource);
 			}
@@ -733,12 +739,13 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		 */
 		@Override
 		public long getHeight(Structure context, Item node) {
+			requireNonNull(node);
 			if(node==root) {
 				return height(sizeData[0]);
 			}
 
 			long data = sizeData[localIndex(context, node)];
-			return height(data);
+			return data==0L ? UNSET_LONG : height(data);
 		}
 
 		/**
@@ -746,12 +753,13 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		 */
 		@Override
 		public long getDepth(Structure context, Item node) {
+			requireNonNull(node);
 			if(node==root) {
 				return 0;
 			}
 
 			long data = sizeData[localIndex(context, node)];
-			return depth(data);
+			return data==0L ? UNSET_LONG : depth(data);
 		}
 
 		/**
@@ -759,12 +767,13 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		 */
 		@Override
 		public long getDescendantCount(Structure context, Item parent) {
+			requireNonNull(parent);
 			if(parent==root) {
-				return descendants(sizeData[0]);
+				return depth(sizeData[0])+1;
 			}
 
 			long data = sizeData[localIndex(context, parent)];
-			return height(data);
+			return data==0L ? UNSET_LONG : descendants(data);
 		}
 
 	}
