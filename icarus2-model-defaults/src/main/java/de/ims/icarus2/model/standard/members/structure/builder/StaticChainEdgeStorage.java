@@ -500,6 +500,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		 */
 		@Override
 		public long getEdgeCount(Structure context, Item node, boolean isSource) {
+			requireNonNull(node);
 			if(node==root) {
 				return root.edgeCount(!isSource);
 			}
@@ -524,6 +525,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		@Override
 		public Edge getEdgeAt(Structure context, Item node, long index,
 				boolean isSource) {
+			requireNonNull(node);
 			if(node==root) {
 				return root.edgeAt(index, !isSource);
 			}
@@ -541,6 +543,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		 */
 		@Override
 		public long getHeight(Structure context, Item node) {
+			requireNonNull(node);
 			if(node==root) {
 				return height(chainData[rootIndex()]);
 			}
@@ -554,6 +557,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		 */
 		@Override
 		public long getDepth(Structure context, Item node) {
+			requireNonNull(node);
 			if(node==root) {
 				return 0;
 			}
@@ -567,6 +571,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		 */
 		@Override
 		public long getDescendantCount(Structure context, Item parent) {
+			requireNonNull(parent);
 			if(parent==root) {
 				return depth(chainData[rootIndex()])+1;
 			}

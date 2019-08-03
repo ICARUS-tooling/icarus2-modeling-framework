@@ -12,23 +12,19 @@ import static de.ims.icarus2.model.api.ModelTestUtils.stubId;
 import static de.ims.icarus2.model.api.ModelTestUtils.stubIndex;
 import static de.ims.icarus2.test.TestUtils.assertCollectionEmpty;
 import static de.ims.icarus2.test.TestUtils.assertMock;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
-import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
-import java.util.PrimitiveIterator;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -49,7 +45,6 @@ import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.standard.members.structure.ImmutableEdgeStorageTest;
 import de.ims.icarus2.model.standard.members.structure.RootItem;
 import de.ims.icarus2.test.TestSettings;
-import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.annotations.Provider;
 
 /**
@@ -70,7 +65,7 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 	 * returns {@link #createDefaultTestConfiguration()}.
 	 */
 	default Stream<Config> createTestConfigurations() {
-		return Stream.of(createDefaultTestConfiguration(randomSize()));
+		return Stream.of(createDefaultTestConfiguration(Chains.randomSize()));
 	}
 
 	@Provider
@@ -463,38 +458,6 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 					// 1 descendant per edge in a chain
 					assertEquals(config.edges.length, chain.getDescendantCount(config.structure, root));
 				}));
-	}
-
-	default int randomSize() {
-		return random(50, 100);
-	}
-
-	default Edge makeEdge(Item source, Item target) {
-		requireNonNull(target);
-
-		Edge edge = mockEdge(source, target);
-		if(source==null) {
-			doReturn("root->"+target).when(edge).toString();
-		} else {
-			doReturn(source+"->"+target).when(edge).toString();
-		}
-		return edge;
-	}
-
-	default PrimitiveIterator.OfInt randomIndices(int spectrum, int size) {
-		int[] source = new int[spectrum];
-		for (int i = 0; i < source.length; i++) {
-			source[i] = i;
-		}
-
-		for (int i = 0; i < source.length; i++) {
-			int x = TestUtils.random(0, spectrum);
-			int tmp = source[i];
-			source[i] = source[x];
-			source[x] = tmp;
-		}
-
-		return IntStream.of(source).limit(size).iterator();
 	}
 
 	static class Config {
