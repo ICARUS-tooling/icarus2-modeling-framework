@@ -3,9 +3,18 @@
  */
 package de.ims.icarus2.model.standard.members.structure.builder;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
 import de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorage.CompactChainEdgeStorageLong;
+import de.ims.icarus2.test.annotations.TestLocalOnly;
 
 /**
  * @author Markus Gärtner
@@ -53,4 +62,25 @@ class CompactChainEdgeStorageLongTest implements StaticChainEdgeStorageTest<Comp
 		return CompactChainEdgeStorageLong.fromBuilder(builder);
 	}
 
+	@Nested
+	class EdgeCases {
+
+		@Test
+		@TestLocalOnly
+		void testMaxChainSize() {
+			int size = CompactChainEdgeStorageLong.MAX_NODE_COUNT;
+			Config config = Chains.singleChain(size, 1.0);
+			CompactChainEdgeStorageLong chain = createFromBuilder(toBuilder(config));
+			assertEquals(size, chain.getEdgeCount(config.structure));
+		}
+
+		@SuppressWarnings("boxing")
+		@Test
+		void testOverflowChainSize() {
+			StructureBuilder builder = mock(StructureBuilder.class);
+			when(builder.getNodeCount()).thenReturn(CompactChainEdgeStorageLong.MAX_NODE_COUNT+1);
+			assertThrows(IllegalArgumentException.class,
+					() -> createFromBuilder(builder));
+		}
+	}
 }

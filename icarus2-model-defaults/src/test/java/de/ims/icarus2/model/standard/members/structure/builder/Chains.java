@@ -3,20 +3,16 @@
  */
 package de.ims.icarus2.model.standard.members.structure.builder;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.mockEdge;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.doReturn;
 
 import java.util.PrimitiveIterator;
 import java.util.stream.IntStream;
 
 import de.ims.icarus2.model.api.members.item.Edge;
-import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorageTest.Config;
 import de.ims.icarus2.test.TestUtils;
 
@@ -29,18 +25,6 @@ public class Chains {
 
 	static int randomSize() {
 		return random(50, 100);
-	}
-
-	static Edge makeEdge(Item source, Item target) {
-		requireNonNull(target);
-
-		Edge edge = mockEdge(source, target);
-		if(source==null) {
-			doReturn("root->"+target).when(edge).toString();
-		} else {
-			doReturn(source+"->"+target).when(edge).toString();
-		}
-		return edge;
 	}
 
 	static PrimitiveIterator.OfInt randomIndices(int spectrum, int size) {
@@ -66,7 +50,7 @@ public class Chains {
 
 		// SPecial treatment of "head" of the chain
 		int previous = nodes.nextInt();
-		config.edges[offset] = makeEdge(null, config.nodes[previous]);
+		config.edges[offset] = config.edge(null, config.nodes[previous]);
 		config.rootEdges[rootIndex] = config.edges[offset];
 		config.incoming[previous] = config.edges[offset];
 		config.depths[previous] = 1;
@@ -77,7 +61,7 @@ public class Chains {
 			assertNull(config.edges[offset+i]);
 
 			int next = nodes.nextInt();
-			Edge edge = makeEdge(config.nodes[previous], config.nodes[next]);
+			Edge edge = config.edge(config.nodes[previous], config.nodes[next]);
 			config.edges[offset+i] = edge;
 			config.outgoing[previous] = edge;
 			config.incoming[next] = edge;

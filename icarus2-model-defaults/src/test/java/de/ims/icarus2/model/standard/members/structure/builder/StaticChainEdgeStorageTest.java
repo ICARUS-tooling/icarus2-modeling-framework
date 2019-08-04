@@ -15,12 +15,14 @@ import static de.ims.icarus2.test.TestUtils.assertMock;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -42,6 +44,10 @@ import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.StructureFlag;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
+import de.ims.icarus2.model.standard.members.container.ItemStorage;
+import de.ims.icarus2.model.standard.members.item.DefaultItem;
+import de.ims.icarus2.model.standard.members.structure.DefaultEdge;
+import de.ims.icarus2.model.standard.members.structure.DefaultStructure;
 import de.ims.icarus2.model.standard.members.structure.ImmutableEdgeStorageTest;
 import de.ims.icarus2.model.standard.members.structure.RootItem;
 import de.ims.icarus2.test.TestSettings;
@@ -90,20 +96,12 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 		return manifest;
 	}
 
-	@SuppressWarnings("unchecked")
 	default StructureBuilder toBuilder(Config config) {
 		config.validate();
 		StructureBuilder builder = StructureBuilder.newBuilder(createManifest(config));
 
 		// Adjust source terminal of all root edges to the virtual root node
-		@SuppressWarnings("rawtypes")
-		RootItem root = builder.getRoot();
-		for(int i = 0; i<config.rootEdges.length; i++) {
-			Edge rootEdge = config.rootEdges[i];
-			assertMock(rootEdge);
-			when(rootEdge.getSource()).thenReturn(root);
-			root.addEdge(rootEdge);
-		}
+		config.finalizeRootEdges(builder.getRoot());
 
 		builder.addNodes(config.nodes);
 		builder.addEdges(config.edges);
@@ -460,6 +458,8 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 				}));
 	}
 
+	static final int MAX_STUBBED_SIZE = 100;
+
 	static class Config {
 		/** Human readable label for displaying the created test */
 		String label;
@@ -488,6 +488,12 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 
 		boolean multiRoot = false;
 
+		private final int size;
+
+		public Config(int size) {
+			this.size = size;
+		}
+
 		private Config validate() {
 			assertNotNull(label);
 			assertNotNull(nodes);
@@ -498,18 +504,78 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 			return this;
 		}
 
-		@SuppressWarnings("boxing")
-		void defaultStructure() {
-			structure = mockStructure();
-			for (int i = 0; i < nodes.length; i++) {
-				when(structure.indexOfItem(nodes[i])).thenReturn(Long.valueOf(i));
+		@SuppressWarnings("unchecked")
+		void finalizeRootEdges(@SuppressWarnings("rawtypes") RootItem root) {
+
+			for(int i = 0; i<rootEdges.length; i++) {
+				Edge rootEdge = rootEdges[i];
+				if(size<=MAX_STUBBED_SIZE) {
+					assertMock(rootEdge);
+					when(rootEdge.getSource()).thenReturn(root);
+				} else {
+					rootEdge.setTerminal(root, true);
+				}
+				root.addEdge(rootEdge);
 			}
 		}
 
+		@SuppressWarnings("boxing")
+		void defaultStructure() {
+			if(size<=MAX_STUBBED_SIZE) {
+				structure = mockStructure();
+				for (int i = 0; i < nodes.length; i++) {
+					when(structure.indexOfItem(nodes[i])).thenReturn(Long.valueOf(i));
+				}
+			} else {
+				ItemStorage itemStorage = new StaticListItemStorage(
+						Arrays.asList(nodes), null, null);
+				DefaultStructure structure = new DefaultStructure();
+				StructureManifest manifest = mock(StructureManifest.class);
+				when(manifest.getContainerType()).thenReturn(ContainerType.LIST);
+				structure.setManifest(manifest);
+				structure.setItemStorage(itemStorage);
+				this.structure = structure;
+			}
+		}
+
+		Item item(int index) {
+			if(size<=MAX_STUBBED_SIZE) {
+				return stubId(stubIndex(mockItem(), index), index);
+			}
+
+			return new DefaultItem() {
+				@Override
+				public String toString() { return "item_"+index; }
+				@Override
+				public long getId() { return index; }
+				@Override
+				public long getIndex() { return index; }
+			};
+		}
+
+		Edge edge(Item source, Item target) {
+			requireNonNull(target);
+
+			if(size<=MAX_STUBBED_SIZE) {
+				Edge edge = mockEdge(source, target);
+				if(source==null) {
+					doReturn("root->"+target).when(edge).toString();
+				} else {
+					doReturn(source+"->"+target).when(edge).toString();
+				}
+				return edge;
+			}
+
+			DefaultEdge edge = new DefaultEdge();
+			edge.setTerminal(source, true);
+			edge.setTerminal(target, false);
+			return edge;
+		}
+
 		static Config basic(int size) {
-			Config config = new Config();
+			Config config = new Config(size);
 			config.nodes = IntStream.range(0, size)
-					.mapToObj(i -> stubId(stubIndex(mockItem(), i), i))
+					.mapToObj(config::item)
 					.toArray(Item[]::new);
 			config.incoming = new Edge[size];
 			config.outgoing = new Edge[size];

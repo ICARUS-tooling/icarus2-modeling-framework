@@ -735,10 +735,12 @@ public class StructureBuilder {
 		} break;
 
 		case CHAIN: {
+			prepareEdgeBuffer();
 			edgeStorage = StaticChainEdgeStorage.fromBuilder(this);
 		} break;
 
 		case TREE: {
+			prepareEdgeBuffer();
 			edgeStorage = StaticTreeEdgeStorage.fromBuilder(this);
 		} break;
 
