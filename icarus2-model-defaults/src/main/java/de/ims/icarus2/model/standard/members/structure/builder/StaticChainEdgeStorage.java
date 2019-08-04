@@ -44,7 +44,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 	 * take up the same amount of memory. Below that threshold the sparse version is
 	 * more efficient.
 	 */
-	private static double LOAD_THRESHOLD = -1;
+	static double LOAD_THRESHOLD = -1;
 
 	static boolean isSparse(StructureBuilder builder) {
 		if(LOAD_THRESHOLD<0) {
@@ -807,7 +807,8 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public static LargeSparseChainEdgeStorage fromBuilder(StructureBuilder builder) {
 			int nodeCount = builder.getNodeCount();
 			if(nodeCount>MAX_NODE_COUNT)
-				throw new IllegalArgumentException("Builder contains too many nodes for this implementation: "+nodeCount);
+				throw new IllegalArgumentException(
+						"Builder contains too many nodes for this implementation: "+nodeCount);
 
 			final EdgeBuffer edgeBuffer = builder.edgeBuffer();
 
@@ -841,14 +842,16 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 				chainData[i+1] = new NodeInfo(incoming, outgoing, height, depth);
 			}
 
-			chainData[0] = new NodeInfo(-1, -1, edgeBuffer.getHeight(root), edgeBuffer.getDescendantsCount(root));
+			chainData[0] = new NodeInfo(-1, -1, edgeBuffer.getHeight(root),
+					edgeBuffer.getDescendantsCount(root));
 
 			return new LargeSparseChainEdgeStorage(root, edges, chainData);
 		}
 
 		private final NodeInfo[] chainData;
 
-		LargeSparseChainEdgeStorage(RootItem<Edge> root, LookupList<Edge> edges, NodeInfo[] chainData) {
+		LargeSparseChainEdgeStorage(RootItem<Edge> root, LookupList<Edge> edges,
+				NodeInfo[] chainData) {
 			super(root, edges);
 
 			requireNonNull(chainData);
@@ -865,6 +868,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		 */
 		@Override
 		public long getEdgeCount(Structure context, Item node, boolean isSource) {
+			requireNonNull(node);
 			if(node==root) {
 				return root.edgeCount(!isSource);
 			}
@@ -885,6 +889,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		@Override
 		public Edge getEdgeAt(Structure context, Item node, long index,
 				boolean isSource) {
+			requireNonNull(node);
 			if(node==root) {
 				return root.edgeAt(index, !isSource);
 			}
@@ -902,6 +907,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		 */
 		@Override
 		public long getHeight(Structure context, Item node) {
+			requireNonNull(node);
 			if(node==root) {
 				return chainData[0].height;
 			}
@@ -914,6 +920,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		 */
 		@Override
 		public long getDepth(Structure context, Item node) {
+			requireNonNull(node);
 			if(node==root) {
 				return 0;
 			}
@@ -926,6 +933,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		 */
 		@Override
 		public long getDescendantCount(Structure context, Item parent) {
+			requireNonNull(parent);
 			if(parent==root) {
 				return chainData[0].depth;
 			}
