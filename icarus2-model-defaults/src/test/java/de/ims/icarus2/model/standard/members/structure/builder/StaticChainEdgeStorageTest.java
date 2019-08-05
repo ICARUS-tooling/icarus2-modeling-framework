@@ -63,14 +63,14 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 	 * Create a configurations for testing the basic
 	 * structure methods common to all chain implementations.
 	 */
-	Config createDefaultTestConfiguration(int size);
+	ChainConfig createDefaultTestConfiguration(int size);
 
 	/**
 	 * Creates a variety of configurations to be tested.
 	 * Returned stream must not be empty. Default implementation
 	 * returns {@link #createDefaultTestConfiguration()}.
 	 */
-	default Stream<Config> createTestConfigurations() {
+	default Stream<ChainConfig> createTestConfigurations() {
 		return Stream.of(createDefaultTestConfiguration(Chains.randomSize()));
 	}
 
@@ -86,25 +86,25 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 	 * </ul>
 	 */
 	@SuppressWarnings("boxing")
-	default StructureManifest createManifest(Config config) {
+	default StructureManifest createManifest(ChainConfig chainConfig) {
 		StructureManifest manifest = mock(StructureManifest.class);
 		when(manifest.getContainerType()).thenReturn(ContainerType.LIST);
 		when(manifest.getStructureType()).thenReturn(StructureType.CHAIN);
 
-		when(manifest.isStructureFlagSet(StructureFlag.MULTI_ROOT)).thenReturn(config.multiRoot);
+		when(manifest.isStructureFlagSet(StructureFlag.MULTI_ROOT)).thenReturn(chainConfig.multiRoot);
 
 		return manifest;
 	}
 
-	default StructureBuilder toBuilder(Config config) {
-		config.validate();
-		StructureBuilder builder = StructureBuilder.newBuilder(createManifest(config));
+	default StructureBuilder toBuilder(ChainConfig chainConfig) {
+		chainConfig.validate();
+		StructureBuilder builder = StructureBuilder.newBuilder(createManifest(chainConfig));
 
 		// Adjust source terminal of all root edges to the virtual root node
-		config.finalizeRootEdges(builder.getRoot());
+		chainConfig.finalizeRootEdges(builder.getRoot());
 
-		builder.addNodes(config.nodes);
-		builder.addEdges(config.edges);
+		builder.addNodes(chainConfig.nodes);
+		builder.addEdges(chainConfig.edges);
 
 		return builder;
 	}
@@ -114,8 +114,8 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 	 */
 	@Override
 	default C createTestInstance(TestSettings settings) {
-		Config config = createDefaultTestConfiguration(10);
-		return settings.process(createFromBuilder(toBuilder(config)));
+		ChainConfig chainConfig = createDefaultTestConfiguration(10);
+		return settings.process(createFromBuilder(toBuilder(chainConfig)));
 	}
 
 	/**
@@ -460,7 +460,7 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 
 	static final int MAX_STUBBED_SIZE = 100;
 
-	static class Config {
+	static class ChainConfig {
 		/** Human readable label for displaying the created test */
 		String label;
 		/** All nodes */
@@ -490,11 +490,11 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 
 		private final int size;
 
-		public Config(int size) {
+		public ChainConfig(int size) {
 			this.size = size;
 		}
 
-		private Config validate() {
+		private ChainConfig validate() {
 			assertNotNull(label);
 			assertNotNull(nodes);
 			assertNotNull(rootEdges);
@@ -572,23 +572,23 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage> extends I
 			return edge;
 		}
 
-		static Config basic(int size) {
-			Config config = new Config(size);
-			config.nodes = IntStream.range(0, size)
-					.mapToObj(config::item)
+		static ChainConfig basic(int size) {
+			ChainConfig chainConfig = new ChainConfig(size);
+			chainConfig.nodes = IntStream.range(0, size)
+					.mapToObj(chainConfig::item)
 					.toArray(Item[]::new);
-			config.incoming = new Edge[size];
-			config.outgoing = new Edge[size];
+			chainConfig.incoming = new Edge[size];
+			chainConfig.outgoing = new Edge[size];
 
-			config.heights = new int[size];
-			config.depths = new int[size];
-			config.descendants = new int[size];
+			chainConfig.heights = new int[size];
+			chainConfig.depths = new int[size];
+			chainConfig.descendants = new int[size];
 
-			Arrays.fill(config.heights, UNSET_INT);
-			Arrays.fill(config.depths, UNSET_INT);
-			Arrays.fill(config.descendants, UNSET_INT);
+			Arrays.fill(chainConfig.heights, UNSET_INT);
+			Arrays.fill(chainConfig.depths, UNSET_INT);
+			Arrays.fill(chainConfig.descendants, UNSET_INT);
 
-			return config;
+			return chainConfig;
 		}
 	}
 }

@@ -25,7 +25,7 @@ class LargeCompleteChainEdgeStorageTest implements StaticChainEdgeStorageTest<La
 	 * @see de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorageTest#createDefaultTestConfiguration(int)
 	 */
 	@Override
-	public Config createDefaultTestConfiguration(int size) {
+	public ChainConfig createDefaultTestConfiguration(int size) {
 		return Chains.singleChain(size, 1.0);
 	}
 
@@ -33,7 +33,7 @@ class LargeCompleteChainEdgeStorageTest implements StaticChainEdgeStorageTest<La
 	 * @see de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorageTest#createTestConfigurations()
 	 */
 	@Override
-	public Stream<Config> createTestConfigurations() {
+	public Stream<ChainConfig> createTestConfigurations() {
 		return Stream.of(
 				Chains.singleChain(Chains.randomSize(), 1.0),
 				Chains.multiChain(Chains.randomSize(), 1.0),

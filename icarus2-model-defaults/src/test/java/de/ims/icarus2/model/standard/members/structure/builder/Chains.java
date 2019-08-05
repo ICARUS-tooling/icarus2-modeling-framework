@@ -13,7 +13,7 @@ import java.util.PrimitiveIterator;
 import java.util.stream.IntStream;
 
 import de.ims.icarus2.model.api.members.item.Edge;
-import de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorageTest.Config;
+import de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorageTest.ChainConfig;
 import de.ims.icarus2.test.TestUtils;
 
 /**
@@ -43,78 +43,78 @@ public class Chains {
 		return IntStream.of(source).limit(size).iterator();
 	}
 
-	private static void fillChain(Config config, PrimitiveIterator.OfInt nodes,
+	private static void fillChain(ChainConfig chainConfig, PrimitiveIterator.OfInt nodes,
 			int offset, int size, int rootIndex) {
 		assertTrue(size>0);
-		assertNull(config.edges[offset]);
+		assertNull(chainConfig.edges[offset]);
 
 		// SPecial treatment of "head" of the chain
 		int previous = nodes.nextInt();
-		config.edges[offset] = config.edge(null, config.nodes[previous]);
-		config.rootEdges[rootIndex] = config.edges[offset];
-		config.incoming[previous] = config.edges[offset];
-		config.depths[previous] = 1;
-		config.heights[previous] = config.descendants[previous] = size-1;
+		chainConfig.edges[offset] = chainConfig.edge(null, chainConfig.nodes[previous]);
+		chainConfig.rootEdges[rootIndex] = chainConfig.edges[offset];
+		chainConfig.incoming[previous] = chainConfig.edges[offset];
+		chainConfig.depths[previous] = 1;
+		chainConfig.heights[previous] = chainConfig.descendants[previous] = size-1;
 
 		// Now randomize the next size-1 elements
 		for (int i = 1; i < size; i++) {
-			assertNull(config.edges[offset+i]);
+			assertNull(chainConfig.edges[offset+i]);
 
 			int next = nodes.nextInt();
-			Edge edge = config.edge(config.nodes[previous], config.nodes[next]);
-			config.edges[offset+i] = edge;
-			config.outgoing[previous] = edge;
-			config.incoming[next] = edge;
+			Edge edge = chainConfig.edge(chainConfig.nodes[previous], chainConfig.nodes[next]);
+			chainConfig.edges[offset+i] = edge;
+			chainConfig.outgoing[previous] = edge;
+			chainConfig.incoming[next] = edge;
 
-			config.heights[next] = config.descendants[next] = size-i-1;
-			config.depths[next] = i+1;
+			chainConfig.heights[next] = chainConfig.descendants[next] = size-i-1;
+			chainConfig.depths[next] = i+1;
 
 			previous = next;
 		}
 	}
 
 	@SuppressWarnings("boxing")
-	static Config singleChain(int size, double fraction) {
+	static ChainConfig singleChain(int size, double fraction) {
 		checkArgument(fraction<=1.0);
 
-		Config config = Config.basic(size);
-		config.label = String.format("single chain - %.0f%% full", fraction*100);
+		ChainConfig chainConfig = ChainConfig.basic(size);
+		chainConfig.label = String.format("single chain - %.0f%% full", fraction*100);
 
 		int part = (int) (size * fraction);
-		config.defaultStructure();
-		config.edges = new Edge[part];
-		config.rootEdges = new Edge[1];
+		chainConfig.defaultStructure();
+		chainConfig.edges = new Edge[part];
+		chainConfig.rootEdges = new Edge[1];
 
-		fillChain(config, randomIndices(size, part), 0, part, 0);
+		fillChain(chainConfig, randomIndices(size, part), 0, part, 0);
 
-		return config;
+		return chainConfig;
 	}
 
 	@SuppressWarnings("boxing")
-	static Config multiChain(int size, double fraction) {
+	static ChainConfig multiChain(int size, double fraction) {
 		checkArgument(fraction<=1.0);
 
-		Config config = Config.basic(size);
-		config.label = String.format("multi chain - %.0f%% full", fraction*100);
+		ChainConfig chainConfig = ChainConfig.basic(size);
+		chainConfig.label = String.format("multi chain - %.0f%% full", fraction*100);
 
 		int part = (int) (size * fraction);
 		int chainCount = random(2, 6);
 
-		config.defaultStructure();
-		config.multiRoot = true;
-		config.edges = new Edge[part];
-		config.rootEdges = new Edge[chainCount];
+		chainConfig.defaultStructure();
+		chainConfig.multiRoot = true;
+		chainConfig.edges = new Edge[part];
+		chainConfig.rootEdges = new Edge[chainCount];
 
 		PrimitiveIterator.OfInt nodes = randomIndices(size, part);
 
 		int remaining = part;
 		for (int i = 0; i < chainCount; i++) {
 			int chainSize = i==chainCount-1 ? remaining : random(1, remaining-chainCount+i+1);
-			fillChain(config, nodes, part-remaining, chainSize, i);
+			fillChain(chainConfig, nodes, part-remaining, chainSize, i);
 			remaining -= chainSize;
 		}
 		assertEquals(0, remaining);
 
-		return config;
+		return chainConfig;
 	}
 }
