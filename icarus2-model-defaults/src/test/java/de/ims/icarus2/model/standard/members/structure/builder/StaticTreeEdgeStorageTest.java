@@ -44,26 +44,25 @@ import de.ims.icarus2.test.annotations.Provider;
  * @author Markus Gärtner
  *
  */
-interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage>
-		extends ImmutableEdgeStorageTest<C> {
+interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends ImmutableEdgeStorageTest<T> {
 
 	/**
 	 * Create a configurations for testing the basic
-	 * structure methods common to all chain implementations.
+	 * structure methods common to all tree implementations.
 	 */
-	ChainsAndTrees.ChainConfig createDefaultTestConfiguration(int size);
+	ChainsAndTrees.TreeConfig createDefaultTestConfiguration(int size);
 
 	/**
 	 * Creates a variety of configurations to be tested.
 	 * Returned stream must not be empty. Default implementation
 	 * returns {@link #createDefaultTestConfiguration()}.
 	 */
-	default Stream<ChainsAndTrees.ChainConfig> createTestConfigurations() {
+	default Stream<ChainsAndTrees.TreeConfig> createTestConfigurations() {
 		return Stream.of(createDefaultTestConfiguration(ChainsAndTrees.randomSize()));
 	}
 
 	@Provider
-	C createFromBuilder(StructureBuilder builder);
+	T createFromBuilder(StructureBuilder builder);
 
 	/**
 	 * Create a manifest usable for testing, which should provide the following
@@ -74,25 +73,25 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage>
 	 * </ul>
 	 */
 	@SuppressWarnings("boxing")
-	default StructureManifest createManifest(ChainsAndTrees.ChainConfig chainConfig) {
+	default StructureManifest createManifest(ChainsAndTrees.TreeConfig treeConfig) {
 		StructureManifest manifest = mock(StructureManifest.class);
 		when(manifest.getContainerType()).thenReturn(ContainerType.LIST);
-		when(manifest.getStructureType()).thenReturn(StructureType.CHAIN);
+		when(manifest.getStructureType()).thenReturn(StructureType.TREE);
 
-		when(manifest.isStructureFlagSet(StructureFlag.MULTI_ROOT)).thenReturn(chainConfig.multiRoot);
+		when(manifest.isStructureFlagSet(StructureFlag.MULTI_ROOT)).thenReturn(treeConfig.multiRoot);
 
 		return manifest;
 	}
 
-	default StructureBuilder toBuilder(ChainsAndTrees.ChainConfig chainConfig) {
-		chainConfig.validate();
-		StructureBuilder builder = StructureBuilder.newBuilder(createManifest(chainConfig));
+	default StructureBuilder toBuilder(ChainsAndTrees.TreeConfig treeConfig) {
+		treeConfig.validate();
+		StructureBuilder builder = StructureBuilder.newBuilder(createManifest(treeConfig));
 
 		// Adjust source terminal of all root edges to the virtual root node
-		chainConfig.finalizeRootEdges(builder.getRoot());
+		treeConfig.finalizeRootEdges(builder.getRoot());
 
-		builder.addNodes(chainConfig.nodes);
-		builder.addEdges(chainConfig.edges);
+		builder.addNodes(treeConfig.nodes);
+		builder.addEdges(treeConfig.edges);
 
 		return builder;
 	}
@@ -101,9 +100,9 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage>
 	 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
 	@Override
-	default C createTestInstance(TestSettings settings) {
-		ChainsAndTrees.ChainConfig chainConfig = createDefaultTestConfiguration(10);
-		return settings.process(createFromBuilder(toBuilder(chainConfig)));
+	default T createTestInstance(TestSettings settings) {
+		ChainsAndTrees.TreeConfig treeConfig = createDefaultTestConfiguration(10);
+		return settings.process(createFromBuilder(toBuilder(treeConfig)));
 	}
 
 	/**
@@ -111,11 +110,11 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage>
 	 */
 	@Override
 	default StructureType getExpectedStructureType() {
-		return StructureType.CHAIN;
+		return StructureType.TREE;
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorage#getSiblingAt(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item, long)}.
+	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorage#getSiblingAt(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item, long)}.
 	 */
 	@Test
 	default void testGetSiblingAt() {
@@ -123,17 +122,17 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage>
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorage#getParent(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item)}.
+	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorage#getParent(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@TestFactory
 	default Stream<DynamicTest> testGetParent() {
 		return createTestConfigurations()
 				.map(config -> dynamicTest(config.label, () -> {
-					C chain = createFromBuilder(toBuilder(config));
+					T tree = createFromBuilder(toBuilder(config));
 					for (int i = 0; i < config.nodes.length; i++) {
 						Item node = config.nodes[i];
 						Edge edge = config.incoming[i];
-						Item parent = chain.getParent(config.structure, node);
+						Item parent = tree.getParent(config.structure, node);
 						if(edge==null) {
 							assertNull(parent, "Unexpected parent for "+node);
 						} else {
@@ -142,25 +141,25 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage>
 					}
 
 					// Root has no parent
-					assertNull(chain.getParent(config.structure,
-							chain.getVirtualRoot(config.structure)));
+					assertNull(tree.getParent(config.structure,
+							tree.getVirtualRoot(config.structure)));
 				}));
 
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorage#indexOfChild(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item)}.
+	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorage#indexOfChild(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@TestFactory
 	default Stream<DynamicTest> testIndexOfChild() {
 		return createTestConfigurations()
 				.map(config -> dynamicTest(config.label, () -> {
-					C chain = createFromBuilder(toBuilder(config));
+					T tree = createFromBuilder(toBuilder(config));
 
 					for (int i = 0; i < config.nodes.length; i++) {
 						Item node = config.nodes[i];
 						Edge edge = config.incoming[i];
-						long index = chain.indexOfChild(config.structure, node);
+						long index = tree.indexOfChild(config.structure, node);
 						if(edge==null) {
 							assertEquals(UNSET_LONG, index);
 						} else {
@@ -169,8 +168,8 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage>
 					}
 
 					// Root is not a child of any node
-					assertEquals(UNSET_LONG, chain.indexOfChild(config.structure,
-							chain.getVirtualRoot(config.structure)));
+					assertEquals(UNSET_LONG, tree.indexOfChild(config.structure,
+							tree.getVirtualRoot(config.structure)));
 				}));
 	}
 
@@ -182,7 +181,7 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage>
 	default Stream<DynamicTest> testIsRootOnNodes() {
 		return createTestConfigurations()
 				.map(config -> dynamicTest(config.label, () -> {
-					C chain = createFromBuilder(toBuilder(config));
+					T tree = createFromBuilder(toBuilder(config));
 
 					Set<Item> roots = Stream.of(config.rootEdges)
 							.map(Edge::getTarget)
@@ -190,7 +189,7 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage>
 
 					for (int i = 0; i < config.nodes.length; i++) {
 						Item node = config.nodes[i];
-						assertEquals(roots.contains(node), chain.isRoot(config.structure, node));
+						assertEquals(roots.contains(node), tree.isRoot(config.structure, node));
 					}
 				}));
 	}
@@ -202,8 +201,8 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage>
 	default Stream<DynamicTest> testGetEdgeCountStructure() {
 		return createTestConfigurations()
 				.map(config -> dynamicTest(config.label, () -> {
-					C chain = createFromBuilder(toBuilder(config));
-					assertEquals(config.edges.length, chain.getEdgeCount(config.structure));
+					T tree = createFromBuilder(toBuilder(config));
+					assertEquals(config.edges.length, tree.getEdgeCount(config.structure));
 				}));
 	}
 
@@ -214,11 +213,11 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage>
 	default Stream<DynamicTest> testGetEdgeAtStructureLong() {
 		return createTestConfigurations()
 				.map(config -> dynamicTest(config.label, () -> {
-					C chain = createFromBuilder(toBuilder(config));
+					T tree = createFromBuilder(toBuilder(config));
 					// We're not expecting a predetermined order of the edges
 					Set<Edge> edges = set(config.edges);
-					for (int i = 0; i < chain.getEdgeCount(config.structure); i++) {
-						assertTrue(edges.remove(chain.getEdgeAt(config.structure, i)));
+					for (int i = 0; i < tree.getEdgeCount(config.structure); i++) {
+						assertTrue(edges.remove(tree.getEdgeAt(config.structure, i)));
 					}
 					assertCollectionEmpty(edges);
 				}));
@@ -231,15 +230,15 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage>
 	default Stream<DynamicTest> testIndexOfEdgeStructureEdge() {
 		return createTestConfigurations()
 				.map(config -> dynamicTest(config.label, () -> {
-					C chain = createFromBuilder(toBuilder(config));
+					T tree = createFromBuilder(toBuilder(config));
 
 					for (int i = 0; i < config.edges.length; i++) {
-						Edge edge = chain.getEdgeAt(i);
-						assertEquals(i, chain.indexOfEdge(config.structure, edge));
+						Edge edge = tree.getEdgeAt(i);
+						assertEquals(i, tree.indexOfEdge(config.structure, edge));
 					}
 
 					// Ensure that foreign edges aren't recognized
-					assertEquals(UNSET_LONG, chain.indexOfEdge(config.structure, mockEdge()));
+					assertEquals(UNSET_LONG, tree.indexOfEdge(config.structure, mockEdge()));
 				}));
 	}
 
@@ -250,7 +249,7 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage>
 	default Stream<DynamicTest> testGetEdgeCountStructureItem() {
 		return createTestConfigurations()
 				.map(config -> dynamicTest(config.label, () -> {
-					C chain = createFromBuilder(toBuilder(config));
+					T tree = createFromBuilder(toBuilder(config));
 
 					for (int i = 0; i < config.nodes.length; i++) {
 						Item node = config.nodes[i];
@@ -258,60 +257,60 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage>
 						if(config.incoming[i]!=null) expected++;
 						if(config.outgoing[i]!=null) expected++;
 
-						long count = chain.getEdgeCount(config.structure, node);
+						long count = tree.getEdgeCount(config.structure, node);
 						assertEquals(expected, count, "Edge count mismatch at index "+i);
 					}
 
 					// Verify number of root edges
-					Item root = chain.getVirtualRoot(config.structure);
-					assertEquals(config.rootEdges.length, chain.getEdgeCount(config.structure, root));
+					Item root = tree.getVirtualRoot(config.structure);
+					assertEquals(config.rootEdges.length, tree.getEdgeCount(config.structure, root));
 				}));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorage.CompactChainEdgeStorageInt#getEdgeCount(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item, boolean)}.
+	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorage#getEdgeCount(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item, boolean)}.
 	 */
 	@TestFactory
 	default Stream<DynamicTest> testGetEdgeCountStructureItemBoolean() {
 		return createTestConfigurations()
 				.map(config -> dynamicTest(config.label, () -> {
-					C chain = createFromBuilder(toBuilder(config));
+					T tree = createFromBuilder(toBuilder(config));
 
 					for (int i = 0; i < config.nodes.length; i++) {
 						Item node = config.nodes[i];
 
 						assertEquals(config.outgoing[i]==null ? 0 : 1,
-								chain.getEdgeCount(config.structure, node, true),
+								tree.getEdgeCount(config.structure, node, true),
 								"Outgoing edge count mismatch at index "+i);
 						assertEquals(config.incoming[i]==null ? 0 : 1,
-								chain.getEdgeCount(config.structure, node, false),
+								tree.getEdgeCount(config.structure, node, false),
 								"Incoming edge count mismatch at index "+i);
 					}
 				}));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorage.CompactChainEdgeStorageInt#getEdgeCount(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item, boolean)}.
+	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorage(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item, boolean)}.
 	 */
 	@TestFactory
 	default Stream<DynamicTest> testGetEdgeCountStructureItemBooleanRoot() {
 		return createTestConfigurations()
 				.map(config -> dynamicTest(config.label, () -> {
-					C chain = createFromBuilder(toBuilder(config));
+					T tree = createFromBuilder(toBuilder(config));
 
-					Item root = chain.getVirtualRoot(config.structure);
-					assertEquals(config.rootEdges.length, chain.getEdgeCount(config.structure, root, true));
+					Item root = tree.getVirtualRoot(config.structure);
+					assertEquals(config.rootEdges.length, tree.getEdgeCount(config.structure, root, true));
 				}));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorage.CompactChainEdgeStorageInt#getEdgeAt(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item, long, boolean)}.
+	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorage#getEdgeAt(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item, long, boolean)}.
 	 */
 	@TestFactory
 	default Stream<DynamicTest> testGetEdgeAtStructureItemLongBoolean() {
 		return createTestConfigurations()
 				.map(config -> dynamicTest(config.label, () -> {
-					C chain = createFromBuilder(toBuilder(config));
+					T tree = createFromBuilder(toBuilder(config));
 
 					for (int i = 0; i < config.nodes.length; i++) {
 						Item node = config.nodes[i];
@@ -319,130 +318,130 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage>
 						Edge outgoing = config.outgoing[i];
 
 						if(incoming!=null) {
-							assertSame(incoming, chain.getEdgeAt(config.structure, node, 0, false));
+							assertSame(incoming, tree.getEdgeAt(config.structure, node, 0, false));
 						} else {
 							assertModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
-									() -> chain.getEdgeAt(config.structure, node, 0, false));
+									() -> tree.getEdgeAt(config.structure, node, 0, false));
 						}
 
 						if(outgoing!=null) {
-							assertSame(outgoing, chain.getEdgeAt(config.structure, node, 0, true));
+							assertSame(outgoing, tree.getEdgeAt(config.structure, node, 0, true));
 						} else {
 							assertModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
-									() -> chain.getEdgeAt(config.structure, node, 0, true));
+									() -> tree.getEdgeAt(config.structure, node, 0, true));
 						}
 					}
 				}));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorage.CompactChainEdgeStorageInt#getEdgeAt(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item, long, boolean)}.
+	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorage#getEdgeAt(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item, long, boolean)}.
 	 */
 	@TestFactory
 	default Stream<DynamicTest> testGetEdgeAtStructureItemLongBooleanRoot() {
 		return createTestConfigurations()
 				.map(config -> dynamicTest(config.label, () -> {
-					C chain = createFromBuilder(toBuilder(config));
+					T tree = createFromBuilder(toBuilder(config));
 
-					Item root = chain.getVirtualRoot(config.structure);
+					Item root = tree.getVirtualRoot(config.structure);
 					for (int i = 0; i < config.rootEdges.length; i++) {
-						assertSame(config.rootEdges[i], chain.getEdgeAt(config.structure, root, i, true));
+						assertSame(config.rootEdges[i], tree.getEdgeAt(config.structure, root, i, true));
 					}
 				}));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorage.CompactChainEdgeStorageInt#getHeight(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item)}.
+	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorage#getHeight(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@TestFactory
 	default Stream<DynamicTest> testGetHeight() {
 		return createTestConfigurations()
 				.map(config -> dynamicTest(config.label, () -> {
-					C chain = createFromBuilder(toBuilder(config));
+					T tree = createFromBuilder(toBuilder(config));
 					for (int i = 0; i < config.nodes.length; i++) {
 						assertEquals(config.heights[i],
-								chain.getHeight(config.structure, config.nodes[i]));
+								tree.getHeight(config.structure, config.nodes[i]));
 					}
 				}));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorage.CompactChainEdgeStorageInt#getHeight(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item)}.
+	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorage#getHeight(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@TestFactory
 	default Stream<DynamicTest> testGetHeightRoot() {
 		return createTestConfigurations()
 				.map(config -> dynamicTest(config.label, () -> {
-					C chain = createFromBuilder(toBuilder(config));
+					T tree = createFromBuilder(toBuilder(config));
 
 					long height = IntStream.of(config.heights).max().orElse(UNSET_INT);
 					if(height!=UNSET_LONG) {
 						height++;
 					}
 
-					Item root = chain.getVirtualRoot(config.structure);
-					assertEquals(height, chain.getHeight(config.structure, root));
+					Item root = tree.getVirtualRoot(config.structure);
+					assertEquals(height, tree.getHeight(config.structure, root));
 				}));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorage.CompactChainEdgeStorageInt#getDepth(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item)}.
+	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorage#getDepth(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@TestFactory
 	default Stream<DynamicTest> testGetDepth() {
 		return createTestConfigurations()
 				.map(config -> dynamicTest(config.label, () -> {
-					C chain = createFromBuilder(toBuilder(config));
+					T tree = createFromBuilder(toBuilder(config));
 					for (int i = 0; i < config.nodes.length; i++) {
 						assertEquals(config.depths[i],
-								chain.getDepth(config.structure, config.nodes[i]),
+								tree.getDepth(config.structure, config.nodes[i]),
 								"Mismatch on depths for index "+i);
 					}
 				}));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorage.CompactChainEdgeStorageInt#getDepth(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item)}.
+	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorage#getDepth(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@TestFactory
 	default Stream<DynamicTest> testGetDepthRoot() {
 		return createTestConfigurations()
 				.map(config -> dynamicTest(config.label, () -> {
-					C chain = createFromBuilder(toBuilder(config));
+					T tree = createFromBuilder(toBuilder(config));
 
-					Item root = chain.getVirtualRoot(config.structure);
-					assertEquals(0L, chain.getDepth(config.structure, root));
+					Item root = tree.getVirtualRoot(config.structure);
+					assertEquals(0L, tree.getDepth(config.structure, root));
 				}));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorage.CompactChainEdgeStorageInt#getDescendantCount(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item)}.
+	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorage#getDescendantCount(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@TestFactory
 	default Stream<DynamicTest> testGetDescendantCount() {
 		return createTestConfigurations()
 				.map(config -> dynamicTest(config.label, () -> {
-					C chain = createFromBuilder(toBuilder(config));
+					T tree = createFromBuilder(toBuilder(config));
 					for (int i = 0; i < config.nodes.length; i++) {
 						assertEquals(config.descendants[i],
-								chain.getDescendantCount(config.structure, config.nodes[i]),
+								tree.getDescendantCount(config.structure, config.nodes[i]),
 								"Descendants count mismatch for "+config.nodes[i]);
 					}
 				}));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorage.CompactChainEdgeStorageInt#getDescendantCount(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item)}.
+	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorage#getDescendantCount(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@TestFactory
 	default Stream<DynamicTest> testGetDescendantCountRoot() {
 		return createTestConfigurations()
 				.map(config -> dynamicTest(config.label, () -> {
-					C chain = createFromBuilder(toBuilder(config));
+					T tree = createFromBuilder(toBuilder(config));
 
-					Item root = chain.getVirtualRoot(config.structure);
-					// 1 descendant per edge in a chain
-					assertEquals(config.edges.length, chain.getDescendantCount(config.structure, root));
+					Item root = tree.getVirtualRoot(config.structure);
+					// 1 descendant per edge in a tree
+					assertEquals(config.edges.length, tree.getDescendantCount(config.structure, root));
 				}));
 	}
 }

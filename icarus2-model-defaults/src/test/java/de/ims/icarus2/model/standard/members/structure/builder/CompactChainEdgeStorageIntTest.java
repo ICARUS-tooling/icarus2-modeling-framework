@@ -28,20 +28,20 @@ class CompactChainEdgeStorageIntTest implements StaticChainEdgeStorageTest<Compa
 	}
 
 	@Override
-	public ChainConfig createDefaultTestConfiguration(int size) {
-		return Chains.singleChain(size, 1.0);
+	public ChainsAndTrees.ChainConfig createDefaultTestConfiguration(int size) {
+		return ChainsAndTrees.singleChain(size, 1.0);
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorageTest#createTestConfigurations()
 	 */
 	@Override
-	public Stream<ChainConfig> createTestConfigurations() {
+	public Stream<ChainsAndTrees.ChainConfig> createTestConfigurations() {
 		return Stream.of(
-				Chains.singleChain(Chains.randomSize(), 1.0),
-				Chains.multiChain(Chains.randomSize(), 1.0),
-				Chains.singleChain(Chains.randomSize(), 0.25),
-				Chains.multiChain(Chains.randomSize(), 0.25)
+				ChainsAndTrees.singleChain(ChainsAndTrees.randomSize(), 1.0),
+				ChainsAndTrees.multiChain(ChainsAndTrees.randomSize(), 1.0),
+				ChainsAndTrees.singleChain(ChainsAndTrees.randomSize(), 0.25),
+				ChainsAndTrees.multiChain(ChainsAndTrees.randomSize(), 0.25)
 				);
 	}
 
@@ -57,7 +57,7 @@ class CompactChainEdgeStorageIntTest implements StaticChainEdgeStorageTest<Compa
 		@TestLocalOnly
 		void testMaxChainSize() {
 			int size = CompactChainEdgeStorageInt.MAX_NODE_COUNT;
-			ChainConfig chainConfig = Chains.singleChain(size, 1.0);
+			ChainsAndTrees.ChainConfig chainConfig = ChainsAndTrees.singleChain(size, 1.0);
 			CompactChainEdgeStorageInt chain = createFromBuilder(toBuilder(chainConfig));
 			assertEquals(size, chain.getEdgeCount(chainConfig.structure));
 		}

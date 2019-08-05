@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.standard.members.structure.builder;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 
 import java.util.Arrays;
 
@@ -41,6 +42,7 @@ import de.ims.icarus2.util.collections.LookupList;
 public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<RootItem<?>> {
 
 	public static StaticTreeEdgeStorage fromBuilder(StructureBuilder builder) {
+		builder.prepareEdgeBuffer();
 		EdgeBuffer edgeBuffer = builder.edgeBuffer();
 
 		if(edgeBuffer.getMaxIncoming()>1)
@@ -121,6 +123,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		}
 
 		public static CompactTreeEdgeStorageInt fromBuilder(StructureBuilder builder) {
+			builder.prepareEdgeBuffer();
 			int nodeCount = builder.getNodeCount();
 			if(nodeCount>MAX_NODE_COUNT)
 				throw new IllegalArgumentException("Builder contains too many nodes for this implementation: "+nodeCount);
@@ -197,32 +200,40 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		}
 
 		private static int merge(int pointer, int height, int depth, int descendants) {
-			return (pointer) | (height << 10) | (depth << 17) | (descendants << 24);
+			return (pointer)
+					| (height << OFFSET_HEIGHT)
+					| (depth << OFFSET_DEPTH)
+					| (descendants << OFFSET_DESCENDANTS);
 		}
 
-		// 7,8 and 10 bit masks
+		// 7, 8 and 10 bit masks
 		private static final int MASK_7 = 0x7F;
 		private static final int MASK_8 = 0xFF;
 		private static final int MASK_10 = 0x3FF;
+
+		private static final int OFFSET_POINTER = 0;
+		private static final int OFFSET_HEIGHT = 10;
+		private static final int OFFSET_DEPTH = 17;
+		private static final int OFFSET_DESCENDANTS = 24;
 
 		private static int extract(int data, int shifts, int mask) {
 			return (data >>> shifts) & mask;
 		}
 
 		private static int pointer(int data) {
-			return extract(data, 0, MASK_10);
+			return extract(data, OFFSET_POINTER, MASK_10);
 		}
 
 		private static int height(int data) {
-			return extract(data, 10, MASK_7);
+			return extract(data, OFFSET_HEIGHT, MASK_7);
 		}
 
 		private static int depth(int data) {
-			return extract(data, 17, MASK_7)-1;
+			return extract(data, OFFSET_DEPTH, MASK_7)-1;
 		}
 
 		private static int descendants(int data) {
-			return extract(data, 24, MASK_8);
+			return extract(data, OFFSET_DESCENDANTS, MASK_8);
 		}
 
 		private static final byte OFFSET = Byte.MAX_VALUE;
@@ -494,6 +505,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		}
 
 		public static CompactTreeEdgeStorageLong fromBuilder(StructureBuilder builder) {
+			builder.prepareEdgeBuffer();
 			int nodeCount = builder.getNodeCount();
 			if(nodeCount>MAX_NODE_COUNT)
 				throw new IllegalArgumentException("Builder contains too many nodes for this implementation: "+nodeCount);
@@ -570,32 +582,40 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		}
 
 		private static long merge(long pointer, long height, long depth, long descendants) {
-			return (pointer) | (height << 18) | (depth << 33) | (descendants << 48);
+			return (pointer)
+					| (height << OFFSET_HEIGHT)
+					| (depth << OFFSET_DEPTH)
+					| (descendants << OFFSET_DESCENDANTS);
 		}
 
-		// 15,16 and 18 bit masks
+		// 15, 16 and 18 bit masks
 		private static final long MASK_15 = 0x7FFF;
 		private static final long MASK_16 = 0xFFFF;
 		private static final long MASK_18 = 0x3FFFF;
+
+		private static final int OFFSET_POINTER = 0;
+		private static final int OFFSET_HEIGHT = 18;
+		private static final int OFFSET_DEPTH = 33;
+		private static final int OFFSET_DESCENDANTS = 48;
 
 		private static int extract(long data, int shifts, long mask) {
 			return (int)((data >>> shifts) & mask);
 		}
 
 		private static int pointer(long data) {
-			return extract(data, 0, MASK_18);
+			return extract(data, OFFSET_POINTER, MASK_18);
 		}
 
 		private static int height(long data) {
-			return extract(data, 18, MASK_15);
+			return extract(data, OFFSET_HEIGHT, MASK_15);
 		}
 
 		private static int depth(long data) {
-			return extract(data, 33, MASK_15)-1;
+			return extract(data, OFFSET_DEPTH, MASK_15)-1;
 		}
 
 		private static int descendants(long data) {
-			return extract(data, 48, MASK_16);
+			return extract(data, OFFSET_DESCENDANTS, MASK_16);
 		}
 
 		private static final short OFFSET = Short.MAX_VALUE;
@@ -818,9 +838,8 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 	@TestableImplementation(EdgeStorage.class)
 	public static class LargeTreeEdgeStorage extends StaticTreeEdgeStorage {
 
-		private static int NO_INDEX = (int) IcarusUtils.UNSET_LONG;
-
 		public static LargeTreeEdgeStorage fromBuilder(StructureBuilder builder) {
+			builder.prepareEdgeBuffer();
 			final EdgeBuffer edgeBuffer = builder.edgeBuffer();
 			final RootItem<Edge> root = builder.getRoot();
 			final LookupList<Edge> edges = new LookupList<>(builder.edges());
@@ -855,7 +874,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 
 		private int localIndex(Structure context, Item node) {
 			long index = context.indexOfItem(node);
-			if(index==NO_INDEX)
+			if(index==UNSET_INT)
 				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Given node is not a member of this tree: "+getName(node));
 
 			return IcarusUtils.ensureIntegerValueRange(index)+1;
@@ -895,7 +914,8 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			int idx = IcarusUtils.ensureIntegerValueRange(index);
 			Node data = getData(context, node);
 			if(data==null)
-				throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS, "No edge for index: "+idx);
+				throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
+						"No edge for index: "+idx);
 
 			return edges.get(isSource ? data.outgoingEdgeAt(idx) : data.incomingEdgeAt(idx));
 		}
@@ -923,7 +943,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			}
 
 			Node data = getData(context, node);
-			return data==null ? NO_INDEX : data.depth();
+			return data==null ? UNSET_INT : data.depth();
 		}
 
 		/**
@@ -941,11 +961,11 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 
 		private int incomingEdge(Structure context, Item node) {
 			if(node==root) {
-				return NO_INDEX;
+				return UNSET_INT;
 			}
 
 			Node data = getData(context, node);
-			return (data==null || data.incomingEdgeCount()==0) ? NO_INDEX : data.incomingEdgeAt(0);
+			return (data==null || data.incomingEdgeCount()==0) ? UNSET_INT : data.incomingEdgeAt(0);
 		}
 
 		/**
@@ -954,7 +974,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		@Override
 		public Item getParent(Structure context, Item node) {
 			int edgeIndex = incomingEdge(context, node);
-			return edgeIndex==NO_INDEX ? null : edges.get(edgeIndex).getSource();
+			return edgeIndex==UNSET_INT ? null : edges.get(edgeIndex).getSource();
 		}
 
 		private int indexOfEdge(Structure context, Item parent, int edgeIndex) {
@@ -970,8 +990,8 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long indexOfChild(Structure context, Item child) {
 			int edgeIndex = incomingEdge(context, child);
 
-			if(edgeIndex==NO_INDEX) {
-				return NO_INDEX;
+			if(edgeIndex==UNSET_INT) {
+				return UNSET_INT;
 			}
 
 			Edge edge = edges.get(edgeIndex);
@@ -991,7 +1011,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			int delta = IcarusUtils.ensureIntegerValueRange(offset);
 			int edgeIndex = incomingEdge(context, child);
 
-			if(edgeIndex==NO_INDEX) {
+			if(edgeIndex==UNSET_INT) {
 				return null;
 			}
 
