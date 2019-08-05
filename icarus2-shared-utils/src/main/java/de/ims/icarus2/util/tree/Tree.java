@@ -63,6 +63,14 @@ public class Tree<T> {
 		return children==null ? 0 : children.size();
 	}
 
+	public Tree<T> firstChild() {
+		return children.get(0);
+	}
+
+	public Tree<T> lastChild() {
+		return children.get(children.size()-1);
+	}
+
 	public boolean isEmpty() {
 		return children==null || children.isEmpty();
 	}
@@ -86,6 +94,10 @@ public class Tree<T> {
 		Tree<T> child = new Tree<>(this);
 		addChild(child);
 		return child;
+	}
+
+	public Tree<T> newChild(T data) {
+		return newChild().setData(data);
 	}
 
 	public Tree<T> forEachChild(Consumer<? super Tree<T>> action) {

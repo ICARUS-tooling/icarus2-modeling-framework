@@ -19,7 +19,14 @@
  */
 package de.ims.icarus2.util.tree;
 
+import static de.ims.icarus2.test.TestUtils.assertListEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -82,6 +89,112 @@ class TreeUtilsTest {
 				root.newChild().setData("y");
 				root.newChild().setData("z");
 				assertEquals("[x[y][z]]", TreeUtils.toString(root));
+			}
+		}
+	}
+
+	@Nested
+	class Traversal {
+
+		@Nested
+		class Preorder {
+
+			@Test
+			void whenEmpty() {
+				Consumer<Tree<String>> action = mock(Consumer.class);
+				Tree<String> tree = Tree.root();
+
+				TreeUtils.traversePreOrder(tree, action);
+
+				verify(action).accept(tree);
+			}
+
+			@Test
+			void withPayloadFlat() {
+				List<String> buffer = new ArrayList<>();
+
+				Tree<String> tree = Tree.<String>root().setData("root")
+						.newChild("1").parent()
+						.newChild("2").parent();
+
+				TreeUtils.traversePreOrder(tree, node -> buffer.add(node.getData()));
+
+				assertListEquals(buffer, "root", "1", "2");
+			}
+
+			@Test
+			void withPayloadDeep() {
+				List<String> buffer = new ArrayList<>();
+
+				Tree<String> tree = Tree.<String>root().setData("root")
+						.newChild("1")
+							.newChild("1.1").parent()
+							.newChild("1.2").parent()
+							.parent()
+						.newChild("2")
+							.newChild("2.1")
+								.newChild("2.1.1").parent()
+								.newChild("2.1.2").parent()
+								.newChild("2.1.3").parent()
+								.parent()
+							.newChild("2.2").parent()
+							.parent();
+
+				TreeUtils.traversePreOrder(tree, node -> buffer.add(node.getData()));
+
+				assertListEquals(buffer, "root", "1", "1.1", "1.2", "2", "2.1", "2.1.1", "2.1.2",
+						"2.1.3", "2.2");
+			}
+		}
+
+		@Nested
+		class Postorder {
+
+			@Test
+			void whenEmpty() {
+				Consumer<Tree<String>> action = mock(Consumer.class);
+				Tree<String> tree = Tree.root();
+
+				TreeUtils.traversePostOrder(tree, action);
+
+				verify(action).accept(tree);
+			}
+
+			@Test
+			void withPayloadFlat() {
+				List<String> buffer = new ArrayList<>();
+
+				Tree<String> tree = Tree.<String>root().setData("root")
+						.newChild("1").parent()
+						.newChild("2").parent();
+
+				TreeUtils.traversePostOrder(tree, node -> buffer.add(node.getData()));
+
+				assertListEquals(buffer, "1", "2", "root");
+			}
+
+			@Test
+			void withPayloadDeep() {
+				List<String> buffer = new ArrayList<>();
+
+				Tree<String> tree = Tree.<String>root().setData("root")
+						.newChild("1")
+							.newChild("1.1").parent()
+							.newChild("1.2").parent()
+							.parent()
+						.newChild("2")
+							.newChild("2.1")
+								.newChild("2.1.1").parent()
+								.newChild("2.1.2").parent()
+								.newChild("2.1.3").parent()
+								.parent()
+							.newChild("2.2").parent()
+							.parent();
+
+				TreeUtils.traversePostOrder(tree, node -> buffer.add(node.getData()));
+
+				assertListEquals(buffer, "1.1", "1.2", "1", "2.1.1", "2.1.2",
+						"2.1.3", "2.1", "2.2", "2", "root");
 			}
 		}
 	}
