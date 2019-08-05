@@ -47,9 +47,6 @@ class LargeCompleteChainEdgeStorageTest implements StaticChainEdgeStorageTest<La
 	 */
 	@Override
 	public LargeCompleteChainEdgeStorage createFromBuilder(StructureBuilder builder) {
-
-		builder.prepareEdgeBuffer();
-
 		return LargeCompleteChainEdgeStorage.fromBuilder(builder);
 	}
 

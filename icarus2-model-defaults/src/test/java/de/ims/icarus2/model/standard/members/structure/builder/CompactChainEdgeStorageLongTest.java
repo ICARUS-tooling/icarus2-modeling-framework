@@ -56,9 +56,6 @@ class CompactChainEdgeStorageLongTest implements StaticChainEdgeStorageTest<Comp
 	 */
 	@Override
 	public CompactChainEdgeStorageLong createFromBuilder(StructureBuilder builder) {
-
-		builder.prepareEdgeBuffer();
-
 		return CompactChainEdgeStorageLong.fromBuilder(builder);
 	}
 

@@ -127,6 +127,7 @@ public class StructureBuilder {
 	private RootItem<?> root;
 
 	private final EdgeBuffer edgeBuffer;
+	private boolean edgeBufferPrepared = false;
 
 	private StaticStructure currentStructure;
 
@@ -489,6 +490,7 @@ public class StructureBuilder {
 	public void clear() {
 		clearEdges();
 		clearNodes();
+		edgeBufferPrepared = false;
 	}
 
 	/**
@@ -680,6 +682,9 @@ public class StructureBuilder {
 
 	/** package-private for testing purposes */
 	void prepareEdgeBuffer() {
+		if(edgeBufferPrepared) {
+			return;
+		}
 
 		RootItem<?> root = getRoot();
 
@@ -730,12 +735,10 @@ public class StructureBuilder {
 		} break;
 
 		case CHAIN: {
-			prepareEdgeBuffer();
 			edgeStorage = StaticChainEdgeStorage.fromBuilder(this);
 		} break;
 
 		case TREE: {
-			prepareEdgeBuffer();
 			edgeStorage = StaticTreeEdgeStorage.fromBuilder(this);
 		} break;
 

@@ -47,9 +47,6 @@ class CompactChainEdgeStorageIntTest implements StaticChainEdgeStorageTest<Compa
 
 	@Override
 	public CompactChainEdgeStorageInt createFromBuilder(StructureBuilder builder) {
-
-		builder.prepareEdgeBuffer();
-
 		return CompactChainEdgeStorageInt.fromBuilder(builder);
 	}
 

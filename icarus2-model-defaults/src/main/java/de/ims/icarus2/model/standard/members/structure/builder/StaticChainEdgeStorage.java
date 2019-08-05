@@ -73,6 +73,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 	}
 
 	public static StaticChainEdgeStorage fromBuilder(StructureBuilder builder) {
+		builder.prepareEdgeBuffer();
 		EdgeBuffer edgeBuffer = builder.edgeBuffer();
 
 		if(edgeBuffer.getMaxIncoming()>1)
@@ -172,6 +173,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public static final int MAX_NODE_COUNT = (1 << 8)-1;
 
 		public static CompactChainEdgeStorageInt fromBuilder(StructureBuilder builder) {
+			builder.prepareEdgeBuffer();
 			int nodeCount = builder.getNodeCount();
 			if(nodeCount>MAX_NODE_COUNT)
 				throw new IllegalArgumentException("Builder contains too many nodes for this implementation: "+nodeCount);
@@ -382,6 +384,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public static final int MAX_NODE_COUNT = (1 << 16)-1;
 
 		public static CompactChainEdgeStorageLong fromBuilder(StructureBuilder builder) {
+			builder.prepareEdgeBuffer();
 			int nodeCount = builder.getNodeCount();
 			if(nodeCount>MAX_NODE_COUNT)
 				throw new IllegalArgumentException("Builder contains too many nodes for this implementation: "+nodeCount);
@@ -587,6 +590,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public static final int ENTRY_SIZE = 2*Long.BYTES;
 
 		public static LargeCompleteChainEdgeStorage fromBuilder(StructureBuilder builder) {
+			builder.prepareEdgeBuffer();
 			int nodeCount = builder.getNodeCount();
 
 			final EdgeBuffer edgeBuffer = builder.edgeBuffer();
@@ -805,6 +809,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public static final int MAX_NODE_COUNT = (1 << 8)-1;
 
 		public static LargeSparseChainEdgeStorage fromBuilder(StructureBuilder builder) {
+			builder.prepareEdgeBuffer();
 			int nodeCount = builder.getNodeCount();
 			if(nodeCount>MAX_NODE_COUNT)
 				throw new IllegalArgumentException(
