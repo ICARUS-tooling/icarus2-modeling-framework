@@ -686,13 +686,7 @@ public class StructureBuilder {
 		edgeBuffer.setRoot(root);
 		edgeBuffer.add(edges);
 
-		Collection<Item> roots = null;
-
-		if(!mayHaveMultiRoots) {
-			roots = Collections.singleton(root);
-		}
-
-		edgeBuffer.computeMetaData(roots);
+		edgeBuffer.computeMetaData();
 	}
 
 	private EdgeStorage createEdgeStorage(ItemStorage itemStorage) {
@@ -731,6 +725,7 @@ public class StructureBuilder {
 		switch (declaredType) {
 
 		case SET: {
+			// No need to compute metadata for his one
 			edgeStorage = new EmptyEdgeStorage();
 		} break;
 

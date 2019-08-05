@@ -78,7 +78,7 @@ public class Chains {
 		checkArgument(fraction<=1.0);
 
 		Config config = Config.basic(size);
-		config.label = String.format("single chain - %.2f%% full", fraction*100);
+		config.label = String.format("single chain - %.0f%% full", fraction*100);
 
 		int part = (int) (size * fraction);
 		config.defaultStructure();
@@ -95,7 +95,7 @@ public class Chains {
 		checkArgument(fraction<=1.0);
 
 		Config config = Config.basic(size);
-		config.label = String.format("multi chain - %.2f%% full", fraction*100);
+		config.label = String.format("multi chain - %.0f%% full", fraction*100);
 
 		int part = (int) (size * fraction);
 		int chainCount = random(2, 6);

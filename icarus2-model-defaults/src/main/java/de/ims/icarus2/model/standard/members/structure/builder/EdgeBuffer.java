@@ -19,14 +19,14 @@ package de.ims.icarus2.model.standard.members.structure.builder;
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkState;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
+import java.util.Queue;
 import java.util.function.Consumer;
 
 import de.ims.icarus2.model.api.members.item.Edge;
@@ -34,7 +34,9 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.util.IcarusUtils;
+import it.unimi.dsi.fastutil.Stack;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 /**
  * Buffer implementation for the construction of {@link Structure} instances.
@@ -46,7 +48,6 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 public class EdgeBuffer {
 
 	private static final int UNSET_INT = IcarusUtils.UNSET_INT;
-	private static final int VISITED_INT = UNSET_INT-1;
 
 	private final Map<Item, NodeInfo> data = new Object2ObjectOpenHashMap<>(200);
 
@@ -61,7 +62,7 @@ public class EdgeBuffer {
 
 	private boolean metadataComputed = false;
 
-	private final Stack<NodeInfo> pool = new Stack<>();
+	private final Stack<NodeInfo> pool = new ObjectArrayList<>();
 
 	private Item root;
 
@@ -252,14 +253,6 @@ public class EdgeBuffer {
 		}
 	}
 
-	public void computeMetaData(Item rootCandidate) {
-		computeMetaData(Collections.singleton(rootCandidate));
-	}
-
-	public void computeMetaData(Item...rootCandidates) {
-		computeMetaData(Arrays.asList(rootCandidates));
-	}
-
 	/**
 	 * Computes meta data information for the structure represented by this buffer using
 	 * the given collection of root candidates to start with. If the collection is {@code null}
@@ -268,17 +261,9 @@ public class EdgeBuffer {
 	 *
 	 * @param rootCandidates
 	 */
-	public void computeMetaData(Collection<? extends Item> rootCandidates) {
+	public void computeMetaData() {
 		checkState("Metadata already computed", !metadataComputed);
 		checkState("Missing virtual root node", root!=null);
-
-		if(rootCandidates==null || rootCandidates.isEmpty()) {
-			rootCandidates = data.keySet();
-		}
-
-		maxHeight = 0;
-		maxDescendants = 0;
-		maxDepth = 0;
 
 		maxIncoming = 0;
 		maxOutgoing = 0;
@@ -286,72 +271,127 @@ public class EdgeBuffer {
 		minIncoming = Integer.MAX_VALUE;
 		maxIncoming = Integer.MIN_VALUE;
 
-		for(Item root : rootCandidates) {
-			NodeInfo info = getInfo(root, false);
-			if(info==null || !info.incoming.isEmpty()) {
+		// Only relevant if we do not have a graph structure
+		maxHeight = 0;
+		maxDescendants = 0;
+		maxDepth = 0;
+
+		/*
+		 * Reworked 2-path strategy:
+		 *
+		 * First path computes top-down the depth values of each node
+		 * and also marks all the leaves.
+		 * The second path then bottom-up computed heights and the
+		 * descendants count for nodes (IFF we have a tree/chain structure only!!).
+		 *
+		 * As structure complexity easily can exceed stacksize limits
+		 * we need to do this without recursion!
+		 */
+
+		// Nodes that are yet to be processed and marked
+		Queue<Item> pendingNodes = new ArrayDeque<>();
+		pendingNodes.offer(root);
+
+		// Nodes that have been found to be leaf candidates for second path
+		List<Item> leaves = new ArrayList<>();
+
+		// Now do the first path of top-down calculations and detect leaves
+		while(!pendingNodes.isEmpty()) {
+			Item node = pendingNodes.poll();
+			NodeInfo info = getInfo(node, false);
+
+			if(info.visited) {
 				continue;
 			}
 
-			info = visitAndCompute(root, root==this.root ? 0 : -1);
+			if(node!=root) {
+				int intCount = info.incoming.size();
+				int outCount = info.outgoing.size();
 
-			maxHeight = Math.max(maxHeight, info.height);
-			maxDescendants = Math.max(maxDescendants, info.descendants);
+				if(intCount!=0) {
+					maxIncoming = Math.max(maxIncoming, intCount);
+					minIncoming = Math.min(minIncoming, intCount);
+				}
+
+				if(outCount!=0) {
+					maxOutgoing = Math.max(maxOutgoing, outCount);
+					minIncoming = Math.min(minIncoming, outCount);
+				}
+			} else {
+				// Initialize root depth
+				info.depth = 0;
+			}
+
+			List<Edge> edges = info.outgoing;
+
+			info.descendants = edges.size();
+
+			if(edges.size()>0) {
+				for(Edge edge : edges) {
+					// Downwards propagation of depth values
+					Item target = edge.getTarget();
+					NodeInfo targetInfo = getInfo(target, false);
+					targetInfo.depth = info.depth+1;
+					pendingNodes.offer(target);
+				}
+			} else {
+				// Initialize leaf height
+				info.height = 0;
+				leaves.add(node);
+			}
+
+			info.visited = true;
+		}
+
+
+		/*
+		 *  Second path only if structure satisfies chain and/or tree properties.
+		 *  We subsequently can stop calculating heights, depths and descendant
+		 *  counts otherwise, as those properties cannot be collected for graphs.
+		 */
+		if(maxIncoming==1) {
+			// Begin with leave nodes
+			pendingNodes.addAll(leaves);
+			leaves.clear();
+
+			while(!pendingNodes.isEmpty()) {
+				Item node = pendingNodes.poll();
+				if(node==root) {
+					continue;
+				}
+
+				NodeInfo info = getInfo(node, false);
+				// Shouldn't happen, but we won't abort due to broken structures
+				if(info.incoming.isEmpty()) {
+					continue;
+				}
+
+				Item parent = info.incomingAt(0).getSource();
+				NodeInfo parentInfo = getInfo(parent, false);
+
+				parentInfo.descendants += info.descendants;
+				parentInfo.height = Math.max(parentInfo.height, info.height+1);
+				parentInfo.processedChildren++;
+
+				// Only schedule parent for processing if all its children are done
+				if(parentInfo.processedChildren>=parentInfo.outgoingCount()) {
+					pendingNodes.offer(parent);
+				}
+			}
 		}
 
 		metadataComputed = true;
 	}
 
-	private NodeInfo visitAndCompute(Item node, int depth) {
-		NodeInfo info = getInfo(node, false);
-		checkState("Missing info for node: "+node, node!=null);
-		checkState("Cycle detected at node: "+node, info.depth==UNSET_INT);
-
-		List<Edge> edges = info.outgoing;
-
-		info.depth = depth;
-
-		int height = 0;
-		int descendants = edges.size();
-
-		if(!edges.isEmpty()) {
-
-			for(Edge edge : edges) {
-				NodeInfo targetInfo = visitAndCompute(edge.getTarget(), depth==-1 ? -1 : depth+1);
-				descendants += targetInfo.descendants;
-				height = Math.max(height, targetInfo.height);
-			}
-
-			// Include own level in maxHeight value
-			height++;
-		} else if(depth!=-1) {
-			maxDepth = Math.max(maxDepth, depth);
-		}
-
-		info.descendants = descendants;
-		info.height = height;
-
-		if(node!=root) {
-			//TODO maybe merge some of the minmaxing with above loop?
-			int intCount = info.incoming.size();
-			int outCount = info.outgoing.size();
-
-			if(intCount!=0) {
-				maxIncoming = Math.max(maxIncoming, intCount);
-				minIncoming = Math.min(minIncoming, intCount);
-			}
-
-			if(outCount!=0) {
-				maxOutgoing = Math.max(maxOutgoing, outCount);
-				minIncoming = Math.min(minIncoming, outCount);
-			}
-		}
-
-		return info;
-	}
-
 	public static class NodeInfo {
 		private final List<Edge> outgoing = new ArrayList<>();
 		private final List<Edge> incoming = new ArrayList<>();
+
+		/** Flag for the first path */
+		private boolean visited = false;
+
+		/** Hint for the second path */
+		private int processedChildren = 0;
 
 		/**
 		 * Number of hops in the longest path from this node down to a leaf.
@@ -373,6 +413,8 @@ public class EdgeBuffer {
 		private void reset() {
 			outgoing.clear();
 			incoming.clear();
+			visited = false;
+			processedChildren = 0;
 			height = UNSET_INT;
 			depth = UNSET_INT;
 			descendants = UNSET_INT;
