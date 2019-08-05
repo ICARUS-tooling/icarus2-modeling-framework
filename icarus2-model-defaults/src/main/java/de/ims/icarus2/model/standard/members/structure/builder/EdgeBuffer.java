@@ -369,6 +369,8 @@ public class EdgeBuffer {
 				Item parent = info.incomingAt(0).getSource();
 				NodeInfo parentInfo = getInfo(parent, false);
 
+				maxDescendants = Math.max(maxDescendants, info.descendants);
+
 				parentInfo.descendants += info.descendants;
 				parentInfo.height = Math.max(parentInfo.height, info.height+1);
 				parentInfo.processedChildren++;
@@ -378,6 +380,10 @@ public class EdgeBuffer {
 					pendingNodes.offer(parent);
 				}
 			}
+
+			NodeInfo rootInfo = getInfo(root, false);
+			maxDepth = rootInfo.height;
+			maxHeight = rootInfo.height-1;
 		}
 
 		metadataComputed = true;
