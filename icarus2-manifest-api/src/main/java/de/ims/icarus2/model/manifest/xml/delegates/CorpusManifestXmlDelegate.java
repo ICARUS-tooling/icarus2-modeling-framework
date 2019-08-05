@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.model.manifest.xml.delegates;
 
-import java.text.ParseException;
+import java.time.format.DateTimeParseException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -178,7 +178,7 @@ public class CorpusManifestXmlDelegate extends AbstractMemberManifestXmlDelegate
 					.orElseThrow(ManifestXmlHandler.error("Missing date for note"));
 			try {
 				note.setModificationDate(DateUtils.parseDate(date));
-			} catch (ParseException e) {
+			} catch (DateTimeParseException e) {
 				throw new SAXException("Invalid modification date string: "+date, e); //$NON-NLS-1$
 			}
 		} break;

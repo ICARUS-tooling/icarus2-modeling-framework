@@ -16,10 +16,10 @@
  */
 package de.ims.icarus2.util.date;
 
-import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAccessor;
 import java.util.Optional;
 
@@ -94,7 +94,7 @@ public class DateUtils {
 		return Optional.of(sb.length()==0 ? "<1S" : sb.toString());
 	}
 
-	public static LocalDateTime parseDate(String s) throws ParseException {
+	public static LocalDateTime parseDate(String s) throws DateTimeParseException {
 		synchronized (dateInFormat) {
 			return dateInFormat.parse(s, LocalDateTime::from);
 		}
