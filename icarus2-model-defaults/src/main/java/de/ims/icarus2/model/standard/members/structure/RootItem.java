@@ -76,6 +76,14 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 	}
 
 	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "root";
+	}
+
+	/**
 	 * @see de.ims.icarus2.model.standard.members.structure.NodeInfo#getType()
 	 */
 	@Override
