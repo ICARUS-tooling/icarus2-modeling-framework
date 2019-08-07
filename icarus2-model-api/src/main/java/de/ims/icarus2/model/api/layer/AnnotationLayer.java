@@ -20,7 +20,6 @@ import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.Annotation;
@@ -164,42 +163,6 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 		double getDoubleValue(Item item, String key);
 		long getLongValue(Item item, String key);
 		boolean getBooleanValue(Item item, String key);
-
-		/**
-		 * Deletes all annotations in this layer
-		 * <p>
-		 * Note that this does include all annotations for all keys,
-		 * not only those declared for the default annotation.
-		 *
-		 * @throws UnsupportedOperationException if the corpus
-		 * is not editable
-		 *
-		 * @see #removeAllValues(String)
-		 * @deprecated see {@link #removeAllValues(String)}
-		 */
-		@Deprecated
-		default void removeAllValues() {
-			throw new ModelException(GlobalErrorCode.DEPRECATED, "To be removed in future build - don't use");
-		}
-
-		/**
-		 * Deletes in this layer all annotations for
-		 * the given {@code key}.
-		 *
-		 * @param key The key for which annotations should be
-		 * deleted
-		 * @throws UnsupportedOperationException if this layer does not allow multiple keys
-		 * @throws UnsupportedOperationException if the corpus
-		 * is not editable
-		 *
-		 * @deprecated this method defies the idea of light-weight
-		 * annotation storage due to it requiring access to the entire
-		 * data contained in the underlying storage.
-		 */
-		@Deprecated
-		default void removeAllValues(String key) {
-			throw new ModelException(GlobalErrorCode.DEPRECATED, "To be removed in future build - don't use");
-		}
 
 		/**
 		 * Removes from this annotation storage all annotations for
