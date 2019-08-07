@@ -692,6 +692,8 @@ public class StructureBuilder {
 		edgeBuffer.add(edges);
 
 		edgeBuffer.computeMetaData();
+
+		edgeBufferPrepared = true;
 	}
 
 	private EdgeStorage createEdgeStorage(ItemStorage itemStorage) {
