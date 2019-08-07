@@ -22,6 +22,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.ItemLayer;
@@ -256,8 +257,8 @@ public interface Structure extends Container {
 	 * @param node the node whose parent is to be returned
 	 * @return the node's parent or {@code null} if the node has no defined parent
 	 *
-	 * @throws UnsupportedOperationException in case the structure type does not support
-	 * the optional tree methods
+	 * @throws ModelException of type {@link GlobalErrorCode#UNSUPPORTED_OPERATION}
+	 * in case the structure type does not support the optional tree methods.
 	 */
 	@OptionalMethod
 	Item getParent(Item node);
@@ -273,14 +274,16 @@ public interface Structure extends Container {
 	 * @param child
 	 * @return
 	 *
-	 * @throws UnsupportedOperationException in case the structure type does not support
-	 * the optional tree methods
+	 * @throws ModelException of type {@link GlobalErrorCode#UNSUPPORTED_OPERATION}
+	 * in case the structure type does not support the optional tree methods.
 	 */
 	@OptionalMethod
 	long indexOfChild(Item child);
 
 	/**
-	 * Returns the
+	 * Returns the sibling that is {@code offset} positions before or after this node
+	 * in the {@link #getParent(Item) parent's} list of child nodes. An {@code offset}
+	 * of {@code 0} will return the given {@code child} node itself.
 	 * <p>
 	 * This is an optional method and only to be expected when the type of
 	 * this structure is neither {@value StructureType#SET} nor {@value StructureType#GRAPH}.
@@ -289,18 +292,22 @@ public interface Structure extends Container {
 	 * @param offset
 	 * @return
 	 *
-	 * @throws ModelException if the {@code offset} parameter is {@code 0} or exceeds the
-	 * number of siblings of the specified {@code child} node in the direction defined
-	 * by the parameter's algebraic sign.
-	 * @throws UnsupportedOperationException in case the structure type does not support
-	 * the optional tree methods
+	 * @throws ModelException of type {@link ModelErrorCode#MODEL_INDEX_OUT_OF_BOUNDS}
+	 * if the {@code offset} parameter exceeds the number of siblings of the specified
+	 * {@code child} node in the direction defined by the parameter's algebraic sign.
+	 * @throws ModelException of type {@link GlobalErrorCode#INVALID_INPUT} if the given
+	 * {@code child} does not have a parent node.
+	 * @throws ModelException of type {@link GlobalErrorCode#UNSUPPORTED_OPERATION}
+	 * in case the structure type does not support the optional tree methods.
 	 */
 	@OptionalMethod
 	Item getSiblingAt(Item child, long offset);
 
 	/**
 	 * Returns the length of the longest path to a leaf node in the tree whose root the given
-	 * item is. If the given {@code node} is a leaf itself the method returns {@code 0}.
+	 * item is. If the given {@code node} is a leaf itself the method returns {@code 0}. Note
+	 * that an item's height is always equal to the {@link #getDepth(Item) depth} of its farthest
+	 * descendant minus {@code 1} (as long as the node itself isn't a leaf)!
 	 * <p>
 	 * This is an optional method. If a structure does not support this kind of information
 	 * it should simply return {@code -1};

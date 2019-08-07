@@ -4,14 +4,13 @@
 package de.ims.icarus2.model.standard.members.structure.builder;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
-import static de.ims.icarus2.model.api.ModelTestUtils.assertUnsupportedOperation;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockEdge;
-import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.test.TestUtils.assertCollectionEmpty;
-import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -25,9 +24,9 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -37,8 +36,11 @@ import de.ims.icarus2.model.manifest.api.StructureFlag;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.standard.members.structure.ImmutableEdgeStorageTest;
+import de.ims.icarus2.model.standard.members.structure.builder.ChainsAndTrees.Payload;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.util.tree.Tree;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * @author Markus Gärtner
@@ -116,9 +118,62 @@ interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends Imm
 	/**
 	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorage#getSiblingAt(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item, long)}.
 	 */
-	@Test
-	default void testGetSiblingAt() {
-		assertUnsupportedOperation(() -> create().getSiblingAt(null, mockItem(), 0L));
+	@TestFactory
+	default Stream<DynamicTest> testGetSiblingAt() {
+		return createTestConfigurations()
+				.map(config -> dynamicTest(config.label, () -> {
+					T tree = createFromBuilder(toBuilder(config));
+					for (int i = 0; i < config.nodes.length; i++) {
+						Item node = config.nodes[i];
+						Tree<Payload> parent = config.node(node)
+								.map(Tree::parent)
+								.orElse(null);
+
+						if(parent==null) {
+							assertModelException(GlobalErrorCode.INVALID_INPUT,
+									() -> tree.getSiblingAt(config.structure, node, 0L));
+						} else {
+							assertFalse(parent.isChildless());
+							int nodeCount = parent.childCount();
+
+							// Cache all siblings (in order of appearance)
+							Item[] nodes = new Item[nodeCount];
+							for (int j = 0; j < nodes.length; j++) {
+								nodes[j] = tree.getEdgeAt(config.structure,
+										parent.getData().node, j, true).getTarget();
+							}
+							int ownIndex = IntStream.range(0, nodes.length)
+									.filter(idx -> nodes[idx]==node)
+									.findFirst()
+									.orElseThrow(AssertionError::new);
+
+							// Check boundary violations
+							assertModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
+									() -> tree.getSiblingAt(config.structure, node, -ownIndex-1));
+							assertModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
+									() -> tree.getSiblingAt(config.structure, node, nodeCount-ownIndex));
+
+							// Ensure the node itself can be obtained
+							assertSame(node, tree.getSiblingAt(config.structure, node, 0L));
+
+							// Check left area
+							for (int offset = 1; offset <= ownIndex; offset++) {
+								assertSame(nodes[ownIndex-offset],
+										tree.getSiblingAt(config.structure, node, -offset));
+							}
+
+							// Check right area
+							for (int offset = 1; offset < nodeCount-ownIndex; offset++) {
+								assertSame(nodes[ownIndex+offset],
+										tree.getSiblingAt(config.structure, node, offset));
+							}
+						}
+					}
+
+					// Root has no parent
+					assertNull(tree.getParent(config.structure,
+							tree.getVirtualRoot(config.structure)));
+				}));
 	}
 
 	/**
@@ -131,12 +186,16 @@ interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends Imm
 					T tree = createFromBuilder(toBuilder(config));
 					for (int i = 0; i < config.nodes.length; i++) {
 						Item node = config.nodes[i];
-						Edge edge = config.incoming[i];
+						Item expected = config.node(node)
+								.map(Tree::parent)
+								.map(Tree::getData)
+								.map(p -> p.node)
+								.orElse(null);
 						Item parent = tree.getParent(config.structure, node);
-						if(edge==null) {
+						if(expected==null) {
 							assertNull(parent, "Unexpected parent for "+node);
 						} else {
-							assertSame(edge.getSource(), parent);
+							assertSame(expected, parent);
 						}
 					}
 
@@ -144,7 +203,6 @@ interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends Imm
 					assertNull(tree.getParent(config.structure,
 							tree.getVirtualRoot(config.structure)));
 				}));
-
 	}
 
 	/**
@@ -158,18 +216,40 @@ interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends Imm
 
 					for (int i = 0; i < config.nodes.length; i++) {
 						Item node = config.nodes[i];
-						Edge edge = config.incoming[i];
-						long index = tree.indexOfChild(config.structure, node);
-						if(edge==null) {
-							assertEquals(UNSET_LONG, index);
+						Item parent = config.node(node)
+								.map(Tree::parent)
+								.map(Tree::getData)
+								.map(p -> p.node)
+								.orElse(null);
+
+						if(parent==null) {
+							assertModelException(GlobalErrorCode.INVALID_INPUT,
+									() -> tree.indexOfChild(config.structure, node));
 						} else {
-							assertEquals(0L, index);
+							long index = tree.indexOfChild(config.structure, node);
+							assertTrue(index != UNSET_LONG);
+
+							assertSame(node, tree.getEdgeAt(
+									config.structure, parent, index, true).getTarget());
 						}
 					}
+				}));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorage#indexOfChild(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item)}.
+	 */
+	@TestFactory
+	default Stream<DynamicTest> testIndexOfChildRoot() {
+		return createTestConfigurations()
+				.map(config -> dynamicTest(config.label, () -> {
+					T tree = createFromBuilder(toBuilder(config));
+
+					Item root = tree.getVirtualRoot(config.structure);
 
 					// Root is not a child of any node
-					assertEquals(UNSET_LONG, tree.indexOfChild(config.structure,
-							tree.getVirtualRoot(config.structure)));
+					assertModelException(GlobalErrorCode.INVALID_INPUT,
+							() -> tree.indexOfChild(config.structure, root));
 				}));
 	}
 
@@ -253,9 +333,14 @@ interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends Imm
 
 					for (int i = 0; i < config.nodes.length; i++) {
 						Item node = config.nodes[i];
+						Tree<Payload> t = config.node(node).orElse(null);
 						long expected = 0;
-						if(config.incoming[i]!=null) expected++;
-						if(config.outgoing[i]!=null) expected++;
+						if(t!=null) {
+							expected += t.childCount();
+							if(t.parent()!=null) {
+								expected ++;
+							}
+						}
 
 						long count = tree.getEdgeCount(config.structure, node);
 						assertEquals(expected, count, "Edge count mismatch at index "+i);
@@ -278,11 +363,12 @@ interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends Imm
 
 					for (int i = 0; i < config.nodes.length; i++) {
 						Item node = config.nodes[i];
+						Tree<Payload> t = config.node(node).orElse(null);
 
-						assertEquals(config.outgoing[i]==null ? 0 : 1,
+						assertEquals(t==null ? 0 : t.childCount(),
 								tree.getEdgeCount(config.structure, node, true),
 								"Outgoing edge count mismatch at index "+i);
-						assertEquals(config.incoming[i]==null ? 0 : 1,
+						assertEquals(t==null || t.parent()==null ? 0 : 1,
 								tree.getEdgeCount(config.structure, node, false),
 								"Incoming edge count mismatch at index "+i);
 					}
@@ -314,18 +400,32 @@ interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends Imm
 
 					for (int i = 0; i < config.nodes.length; i++) {
 						Item node = config.nodes[i];
-						Edge incoming = config.incoming[i];
-						Edge outgoing = config.outgoing[i];
+						Tree<Payload> t = config.node(node).orElse(null);
 
-						if(incoming!=null) {
+						// Verify incoming edge
+						if(t!=null && t.parent()!=null) {
+							Edge incoming = config.edges[t.getData().edgeIndex];
 							assertSame(incoming, tree.getEdgeAt(config.structure, node, 0, false));
 						} else {
 							assertModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
 									() -> tree.getEdgeAt(config.structure, node, 0, false));
 						}
 
-						if(outgoing!=null) {
-							assertSame(outgoing, tree.getEdgeAt(config.structure, node, 0, true));
+						// Verify outgoing edges
+						if(t!=null && !t.isChildless()) {
+							int childCount = t.childCount();
+							// Cache all expected edges
+							Set<Edge> edges = new ObjectOpenHashSet<>();
+							for (int j = 0; j < childCount; j++) {
+								edges.add(config.edges[t.childAt(j).getData().edgeIndex]);
+							}
+
+							for (int j = 0; j < childCount; j++) {
+								Edge edge = tree.getEdgeAt(config.structure, node, j, true);
+								assertNotNull(edge);
+								assertTrue(edges.contains(edge),
+										"Unexpected edge for node "+node+": "+edge);
+							}
 						} else {
 							assertModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
 									() -> tree.getEdgeAt(config.structure, node, 0, true));
@@ -344,8 +444,9 @@ interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends Imm
 					T tree = createFromBuilder(toBuilder(config));
 
 					Item root = tree.getVirtualRoot(config.structure);
+					Set<Edge> edges = set(config.rootEdges);
 					for (int i = 0; i < config.rootEdges.length; i++) {
-						assertSame(config.rootEdges[i], tree.getEdgeAt(config.structure, root, i, true));
+						assertTrue(edges.contains(tree.getEdgeAt(config.structure, root, i, true)));
 					}
 				}));
 	}
@@ -359,8 +460,14 @@ interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends Imm
 				.map(config -> dynamicTest(config.label, () -> {
 					T tree = createFromBuilder(toBuilder(config));
 					for (int i = 0; i < config.nodes.length; i++) {
-						assertEquals(config.heights[i],
-								tree.getHeight(config.structure, config.nodes[i]));
+						Item item = config.nodes[i];
+						Payload payload = config.payload(item);
+						long height = tree.getHeight(config.structure, config.nodes[i]);
+						if(payload==null) {
+							assertEquals(UNSET_LONG, height, "Unexpected hieght for index "+i);
+						} else {
+							assertEquals(payload.height, height, "Mismatch on height for index "+i);
+						}
 					}
 				}));
 	}
@@ -374,13 +481,8 @@ interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends Imm
 				.map(config -> dynamicTest(config.label, () -> {
 					T tree = createFromBuilder(toBuilder(config));
 
-					long height = IntStream.of(config.heights).max().orElse(UNSET_INT);
-					if(height!=UNSET_LONG) {
-						height++;
-					}
-
 					Item root = tree.getVirtualRoot(config.structure);
-					assertEquals(height, tree.getHeight(config.structure, root));
+					assertEquals(config.payload(root).height, tree.getHeight(config.structure, root));
 				}));
 	}
 
@@ -393,9 +495,14 @@ interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends Imm
 				.map(config -> dynamicTest(config.label, () -> {
 					T tree = createFromBuilder(toBuilder(config));
 					for (int i = 0; i < config.nodes.length; i++) {
-						assertEquals(config.depths[i],
-								tree.getDepth(config.structure, config.nodes[i]),
-								"Mismatch on depths for index "+i);
+						Item item = config.nodes[i];
+						Payload payload = config.payload(item);
+						long depth = tree.getDepth(config.structure, config.nodes[i]);
+						if(payload==null) {
+							assertEquals(UNSET_LONG, depth, "Unexpected depth for index "+i);
+						} else {
+							assertEquals(payload.depth, depth, "Mismatch on depths for index "+i);
+						}
 					}
 				}));
 	}
@@ -423,9 +530,14 @@ interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends Imm
 				.map(config -> dynamicTest(config.label, () -> {
 					T tree = createFromBuilder(toBuilder(config));
 					for (int i = 0; i < config.nodes.length; i++) {
-						assertEquals(config.descendants[i],
-								tree.getDescendantCount(config.structure, config.nodes[i]),
-								"Descendants count mismatch for "+config.nodes[i]);
+						Item item = config.nodes[i];
+						Payload payload = config.payload(item);
+						long count = tree.getDescendantCount(config.structure, config.nodes[i]);
+						if(payload==null) {
+							assertEquals(UNSET_LONG, count, "Unexpected descendant count for index "+i);
+						} else {
+							assertEquals(payload.descendants, count, "Mismatch on descendant count for index "+i);
+						}
 					}
 				}));
 	}

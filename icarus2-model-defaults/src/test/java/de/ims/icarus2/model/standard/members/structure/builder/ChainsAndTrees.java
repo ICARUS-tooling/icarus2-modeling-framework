@@ -9,6 +9,7 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockStructure;
 import static de.ims.icarus2.model.api.ModelTestUtils.stubId;
 import static de.ims.icarus2.model.api.ModelTestUtils.stubIndex;
 import static de.ims.icarus2.test.TestUtils.assertMock;
+import static de.ims.icarus2.test.TestUtils.displayString;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
@@ -21,7 +22,11 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.PrimitiveIterator;
 import java.util.stream.IntStream;
 
@@ -36,7 +41,10 @@ import de.ims.icarus2.model.standard.members.structure.DefaultEdge;
 import de.ims.icarus2.model.standard.members.structure.DefaultStructure;
 import de.ims.icarus2.model.standard.members.structure.RootItem;
 import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.tree.Tree;
+import de.ims.icarus2.util.tree.TreeUtils;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner
@@ -44,9 +52,14 @@ import de.ims.icarus2.util.tree.Tree;
  */
 public class ChainsAndTrees {
 
-
+	/** Produce a random value for total size of a structure */
 	static int randomSize() {
 		return random(50, 100);
+	}
+
+	/** Produce a suitable random value for number of parallel structrues */
+	static int randomMulti(int size) {
+		return random(2, Math.min(size, 6));
 	}
 
 	static PrimitiveIterator.OfInt randomIndices(int spectrum, int size) {
@@ -113,7 +126,7 @@ public class ChainsAndTrees {
 	static ChainConfig multiChain(int size, double fraction) {
 		checkArgument(fraction<=1.0);
 		int part = (int) (size * fraction);
-		int chainCount = random(2, 6);
+		int chainCount = randomMulti(part);
 
 		ChainConfig chainConfig = ChainConfig.basic(size, part, chainCount);
 		chainConfig.label = String.format("multi chain - %.0f%% full", fraction*100);
@@ -135,15 +148,17 @@ public class ChainsAndTrees {
 		return chainConfig;
 	}
 
-	private static class Payload {
+	static class Payload {
 		Item node = null;
+		int edgeIndex = UNSET_INT; // Index of edge from parent in edge array of config
 		int height = UNSET_INT;
 		int depth = UNSET_INT;
 		int descendants = UNSET_INT;
 
-		public Payload(Item node, int height, int descendants) {
+		public Payload(Item node, int height, int depth, int descendants) {
 			this.node = requireNonNull(node);
 			this.height = height;
+			this.depth = depth;
 			this.descendants = descendants;
 		}
 	}
@@ -155,47 +170,95 @@ public class ChainsAndTrees {
 	 */
 
 	private static void fillTree(TreeConfig config, PrimitiveIterator.OfInt nodes,
-			int offset, int nodeCount, int rootIndex) {
+			int offset, int nodeCount, int rootIndex,
+			int maxHeight, int maxBranching) {
 		assertTrue(nodeCount>0);
-		assertNull(config.edges[offset]);
 
-		// Special treatment of "head" of the chain
-		int previous = nodes.nextInt();
-		config.edges[offset] = config.edge(null, config.nodes[previous]);
-		config.rootEdges[rootIndex] = config.edges[offset];
-		config.incoming[previous] = config.edges[offset];
-		config.depths[previous] = 1;
-		config.heights[previous] = config.descendants[previous] = nodeCount-1;
+		// Nodes that haven't violated the maxBranching and maxHeight (inverse) constraints yet
+		List<Tree<Payload>> legalParents = new ArrayList<>();
 
-		// Now randomize the next size-1 elements
+		// Random root first, as it needs to be connected to the existing "master root" in config
+		Tree<Payload> root = config.tree.newChild(new Payload(
+				config.nodes[nodes.nextInt()], UNSET_INT, 1, UNSET_INT)); // depth=1, since we're below the root node
+		legalParents.add(root);
+
 		for (int i = 1; i < nodeCount; i++) {
-			assertNull(config.edges[offset+i]);
+			// Pick random node
+			Item item = config.nodes[nodes.nextInt()];
 
-			int next = nodes.nextInt();
-			Edge edge = config.edge(config.nodes[previous], config.nodes[next]);
-			config.edges[offset+i] = edge;
-			config.outgoing[previous] = edge;
-			config.incoming[next] = edge;
+			// Pick random parent
+			int parentIndex = random(0, legalParents.size());
+			Tree<Payload> parent = legalParents.get(parentIndex);
 
-			config.heights[next] = config.descendants[next] = nodeCount-i-1;
-			config.depths[next] = i+1;
+			// Attach new node to parent
+			Tree<Payload> node = parent.newChild(new Payload(
+					item, UNSET_INT, parent.getData().depth+1, UNSET_INT));
 
-			previous = next;
+			// Honor constraints
+			if((maxBranching!=UNSET_INT && parent.childCount()>=maxBranching) ||
+					(maxHeight!=UNSET_INT && node.getData().depth>maxHeight)) {
+				legalParents.remove(parentIndex);
+			}
+
+			// Add only after we maybe removed a node to potentially prevent growing the list
+			legalParents.add(node);
 		}
+
+		// Now finalize metadata and put nodes into config array
+		createEdges(config, root, offset, rootIndex);
+	}
+
+	private static void createEdges(TreeConfig config, Tree<Payload> root,
+			int offset, int rootIndex) {
+
+		MutableInteger index = new MutableInteger(offset);
+
+		/*
+		 *  We only run a post-order traversal to bottom-up propagate
+		 *  the descendants count and height values.
+		 */
+		TreeUtils.traversePostOrder(root, node -> {
+			Payload payload = node.getData();
+			if(node.isChildless()) {
+				payload.height = payload.descendants = 0; // Leaf node
+			} else {
+				payload.descendants = node.childCount();
+				for (int i = 0; i < node.childCount(); i++) {
+					Payload p = node.childAt(i).getData();
+					payload.descendants += p.descendants;
+					payload.height = Math.max(payload.height, p.height+1);
+				}
+			}
+
+			int idx = index.getAndIncrement();
+			config.treeNodes.put(payload.node, node);
+
+			Payload p = node.parent().getData();
+			Edge edge;
+			if(p==null) {
+				edge = config.edge(null, payload.node);
+				config.rootEdges[rootIndex] = edge;
+			} else {
+				edge = config.edge(p.node, payload.node);
+			}
+			config.edges[offset+idx] = edge;
+			payload.edgeIndex = offset+idx;
+		});
 	}
 
 	@SuppressWarnings("boxing")
 	static TreeConfig singleTree(int size, double fraction, int maxHeight,
-			int maxBranching, boolean allowVirtualNodes) {
+			int maxBranching) {
 		checkArgument(fraction<=1.0);
 		int part = (int) (size * fraction);
 
 		TreeConfig treeConfig = TreeConfig.basic(size, part, 1);
-		treeConfig.label = String.format("single tree - %.0f%% full", fraction*100);
+		treeConfig.label = String.format("single tree - %s nodes, %s edges, %.0f%% filled",
+				displayString(size), displayString(part), fraction*100);
 		treeConfig.defaultStructure();
-		treeConfig.virtualNodes = new Item[0];
 
-		fillTree(treeConfig, randomIndices(size, part), 0, part, 0);
+		fillTree(treeConfig, randomIndices(size, part), 0, part, 0,
+				maxHeight, maxBranching);
 
 		return treeConfig;
 	}
@@ -217,7 +280,6 @@ public class ChainsAndTrees {
 		 * source terminals for all these root edges!
 		 */
 		Edge[] rootEdges;
-
 		/** Optional structure to be used for calls on the storage under test */
 		Structure structure = null;
 
@@ -235,26 +297,11 @@ public class ChainsAndTrees {
 		}
 
 		C validate() {
-			assertNotNull(label);
-			assertNotNull(nodes);
 			assertNotNull(edges);
 			assertNotNull(rootEdges);
+			assertNotNull(label);
+			assertNotNull(nodes);
 			return thisAsCast();
-		}
-
-		@SuppressWarnings("unchecked")
-		void finalizeRootEdges(@SuppressWarnings("rawtypes") RootItem root) {
-
-			for(int i = 0; i<rootEdges.length; i++) {
-				Edge rootEdge = rootEdges[i];
-				if(size<=MAX_STUBBED_SIZE) {
-					assertMock(rootEdge);
-					when(rootEdge.getSource()).thenReturn(root);
-				} else {
-					rootEdge.setTerminal(root, true);
-				}
-				root.addEdge(rootEdge);
-			}
 		}
 
 		@SuppressWarnings("boxing")
@@ -310,6 +357,21 @@ public class ChainsAndTrees {
 			return edge;
 		}
 
+		@SuppressWarnings("unchecked")
+		void finalizeRootEdges(@SuppressWarnings("rawtypes") RootItem root) {
+
+			for(int i = 0; i<rootEdges.length; i++) {
+				Edge rootEdge = rootEdges[i];
+				if(size<=MAX_STUBBED_SIZE) {
+					assertMock(rootEdge);
+					when(rootEdge.getSource()).thenReturn(root);
+				} else {
+					rootEdge.setTerminal(root, true);
+				}
+				root.addEdge(rootEdge);
+			}
+		}
+
 		protected void initDefault(int nodeCount, int edgeCount, int rootEdgeCount) {
 			nodes = IntStream.range(0, nodeCount)
 					.mapToObj(this::item)
@@ -329,7 +391,6 @@ public class ChainsAndTrees {
 		int[] heights;
 		int[] depths;
 		int[] descendants;
-
 		public ChainConfig(int size) {
 			super(size);
 		}
@@ -368,13 +429,8 @@ public class ChainsAndTrees {
 
 		/**
 		 * Wrappers for all the nodes (normal and virtual).
-		 * Normal nodes are first, then followed by optional
-		 * virtual nodes i nthe array.
 		 */
-		Tree<Payload>[] treeNodes;
-
-		/** Optional virtual nodes */
-		Item[] virtualNodes;
+		Map<Item,Tree<Payload>> treeNodes;
 
 		public TreeConfig(int size) {
 			super(size);
@@ -387,13 +443,38 @@ public class ChainsAndTrees {
 			return this;
 		}
 
-		@SuppressWarnings("unchecked")
+		@Override
+		void finalizeRootEdges(RootItem root) {
+			super.finalizeRootEdges(root);
+
+			// Adjust root info
+			Payload p = new Payload(root, UNSET_INT, 0, tree.childCount());
+
+			for (int i = 0; i < tree.childCount(); i++) {
+				Tree<Payload> child = tree.childAt(i);
+				p.descendants += child.getData().descendants;
+				p.height = Math.max(p.height, child.getData().height+1);
+			}
+
+			tree.setData(p);
+			treeNodes.put(root, tree);
+		}
+
+		Payload payload(Item item) {
+			Tree<Payload> node = treeNodes.get(item);
+			return node==null ? null : node.getData();
+		}
+
+		Optional<Tree<Payload>> node(Item item) {
+			return Optional.ofNullable(treeNodes.get(item));
+		}
+
 		static TreeConfig basic(int nodeCount, int edgeCount, int rootEdgeCount) {
 			TreeConfig treeConfig = new TreeConfig(nodeCount);
 			treeConfig.initDefault(nodeCount, edgeCount, rootEdgeCount);
 
-			treeConfig.tree = Tree.root();
-			treeConfig.treeNodes = new Tree[edgeCount];
+			treeConfig.tree = Tree.newRoot();
+			treeConfig.treeNodes = new Object2ObjectOpenHashMap<>(edgeCount);
 
 			return treeConfig;
 		}

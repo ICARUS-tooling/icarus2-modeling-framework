@@ -18,9 +18,11 @@ package de.ims.icarus2.model.standard.members.structure.builder;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.item.Edge;
@@ -145,65 +147,65 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			final LookupList<Edge> edges = new LookupList<>(builder.edges());
 
 			final int[] treeData = new int[nodeCount+1];
-			final byte[] edgeData = new byte[2*nodeCount+edgeCount];
+			final byte[] edgeData = new byte[3*edgeCount];
 
-			int pointer = 0;
+			int movingPointer = 0;
 
 			for(int i=0; i<nodeCount; i++) {
 				Item node = builder.getNodeAt(i);
 
-				// Tree treeData
 				int height = edgeBuffer.getHeight(node);
-				int depth = edgeBuffer.getDepth(node)+1;
+				int depth = edgeBuffer.getDepth(node);
 				int descendants = edgeBuffer.getDescendantsCount(node);
 
-				int data = merge(pointer, height, depth, descendants);
-
-				treeData[i+1] = data;
-
-				// Edge treeData
-
-				int incoming = -1;
+				int incoming = UNSET_INT;
 
 				if(edgeBuffer.getEdgeCount(node, false)>0) {
-					incoming = edges.indexOf(edgeBuffer.getEdgeAt(node, 0, false))+1;
+					incoming = edges.indexOf(edgeBuffer.getEdgeAt(node, 0, false));
 				}
 
-				edgeData[pointer] = toByte(incoming);
-
 				int outgoingCount = edgeBuffer.getEdgeCount(node, true);
+
+				int pointer = movingPointer;
+
+				// Invalidate pointer if we have no edges at all!
+				if(incoming==UNSET_INT && outgoingCount==0) {
+					pointer = UNSET_INT;
+				}
+
+				treeData[i+1] = merge(pointer+1, height, depth+1, descendants);
+
+				// Only store edge information for nodes that actually _have_ edges
+				if(pointer==UNSET_INT) {
+					continue;
+				}
+
+				edgeData[pointer] = toByte(incoming+1);
 
 				edgeData[pointer+1] = toByte(outgoingCount);
 
 				if(outgoingCount>0) {
 					for(int idx = 0; idx<outgoingCount; idx++) {
-						int outgoing = edges.indexOf(edgeBuffer.getEdgeAt(node, 0, true));
-						edgeData[pointer+1+idx] = toByte(outgoing);
+						int outgoing = edges.indexOf(edgeBuffer.getEdgeAt(node, idx, true));
+						edgeData[pointer+2+idx] = toByte(outgoing);
 					}
 
-					/*
-					 * TODO maybe take 1 bit from the treeData entry and convert it to a 'sorted' flag,
-					 * allowing to sort lazily when actually needed? Problem with this idea would be that
-					 * the order reported by getEdgeAt() might be inconsistent over time.
-					 */
 					Arrays.sort(edgeData, pointer+2, pointer+2+outgoingCount);
 				}
 
-				pointer += 2+outgoingCount;
+				movingPointer += 2+outgoingCount;
 			}
 
-			int rootData = merge(0, edgeBuffer.getHeight(root), 0, edgeBuffer.getDescendantsCount(root));
-
-			treeData[0] = rootData;
+			treeData[0] = merge(0, edgeBuffer.getHeight(root), 0, edgeBuffer.getDescendantsCount(root));
 
 			return new CompactTreeEdgeStorageInt(root, edges, treeData, edgeData);
 		}
 
 		private static int merge(int pointer, int height, int depth, int descendants) {
-			return (pointer)
-					| (height << OFFSET_HEIGHT)
-					| (depth << OFFSET_DEPTH)
-					| (descendants << OFFSET_DESCENDANTS);
+			return (pointer & MASK_10)
+					| ((height & MASK_7) << OFFSET_HEIGHT)
+					| ((depth & MASK_7) << OFFSET_DEPTH)
+					| ((descendants & MASK_8) << OFFSET_DESCENDANTS);
 		}
 
 		// 7, 8 and 10 bit masks
@@ -221,7 +223,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		}
 
 		private static int pointer(int data) {
-			return extract(data, OFFSET_POINTER, MASK_10);
+			return extract(data, OFFSET_POINTER, MASK_10)-1;
 		}
 
 		private static int height(int data) {
@@ -250,7 +252,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 *  10 Bits for section pointer, 7 bits for height and depth each
 		 *  and 8 bits for descendants count
 		 *
-		 *  bits 00 - 09	index of section in edge array -1 or 0 if no edges
+		 *  bits 00 - 09	index of section in edge array-1 or 0 if no edges
 		 *  bits 10 - 16	height of node
 		 *  bits 17 - 23	depth of node -1 or 0 if node not connected to virtual root
 		 *  bits 24 - 31	descendant count of node
@@ -258,12 +260,12 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		private final int[] treeData;
 
 		/*
-		 * (2*n)+m bytes where n is the number of nodes not including the virtual root node
-		 * and m the number of edges in the structure.
-		 * Each node has a section of 2+x elements where x is the number of outgoing edges.
-		 * The first element holds the index of the incoming edge +1 or 0 if the node has no
-		 * incoming edge, the second element the number of edges that follow and the other
-		 * elements each store the index of the respective edge in the global edge list.
+		 * 3*m bytes where m is the number of edges in the structure.
+		 * Each node with at least 1 edge has a section of 2+x elements
+		 * where x is the number of outgoing edges. The first element holds the index of
+		 * the incoming edge incremented by 1 or 0 if the node is headless,
+		 * the second element the number of edges that follow and the other
+		 * elements each store the raw index of the respective edge in the global edge list.
 		 */
 		private final byte[] edgeData;
 
@@ -283,9 +285,10 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			int pointer = pointer(data);
 			int count = toInt(edgeData[pointer+1]);
 			if(index<0 || index>=count)
-				throw new IndexOutOfBoundsException(Messages.indexOutOfBounds(null, 0, count-1, index));
+				throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
+						Messages.indexOutOfBounds(null, 0, count-1, index));
 
-			return toInt(edgeData[pointer+1+index]);
+			return toInt(edgeData[pointer+2+index]);
 		}
 
 		private int outgoingCount(int data) {
@@ -303,8 +306,9 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public long getEdgeCount(Structure context, Item node, boolean isSource) {
+			requireNonNull(node);
 			if(node==root) {
-				return root.edgeCount(!isSource);
+				return isSource ? root.edgeCount(false) : 0L;
 			}
 
 			int data = treeData[localIndex(context, node)];
@@ -321,6 +325,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		@Override
 		public Edge getEdgeAt(Structure context, Item node, long index,
 				boolean isSource) {
+			requireNonNull(node);
 			if(node==root) {
 				return root.edgeAt(index, !isSource);
 			}
@@ -338,6 +343,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public long getHeight(Structure context, Item node) {
+			requireNonNull(node);
 			if(node==root) {
 				return height(treeData[0]);
 			}
@@ -351,6 +357,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public long getDepth(Structure context, Item node) {
+			requireNonNull(node);
 			if(node==root) {
 				return 0;
 			}
@@ -364,6 +371,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public long getDescendantCount(Structure context, Item parent) {
+			requireNonNull(parent);
 			if(parent==root) {
 				return descendants(treeData[0]);
 			}
@@ -392,6 +400,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public Item getParent(Structure context, Item node) {
+			requireNonNull(node);
 			Edge incomingEdge = incomingEdge(context, node);
 			return incomingEdge==null ? null : incomingEdge.getSource();
 		}
@@ -409,7 +418,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 				throw new ModelException(ModelErrorCode.MODEL_CORRUPTED_STATE,
 						"Edge not present in edge storage of source node: "+getName(edge));
 
-			return index;
+			return index-fromIndex;
 		}
 
 		/**
@@ -417,14 +426,18 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public long indexOfChild(Structure context, Item child) {
+			requireNonNull(child);
 			Edge incomingEdge = incomingEdge(context, child);
 			if(incomingEdge==null) {
-				return IcarusUtils.UNSET_LONG;
-			} else if(incomingEdge.getSource()==root) {
-				return root.indexOfEdge(incomingEdge);
-			} else {
-				return indexOfEdge(context, incomingEdge.getSource(), incomingEdge);
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+						"Not a proper child: "+getName(child));
 			}
+
+			if(incomingEdge.getSource()==root) {
+				return root.indexOfEdge(incomingEdge);
+			}
+
+			return indexOfEdge(context, incomingEdge.getSource(), incomingEdge);
 		}
 
 		/**
@@ -432,20 +445,24 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public Item getSiblingAt(Structure context, Item child, long offset) {
+			requireNonNull(context);
+			requireNonNull(child);
 			int delta = IcarusUtils.ensureIntegerValueRange(offset);
 
 			Edge incomingEdge = incomingEdge(context, child);
 			if(incomingEdge==null) {
-				return null;
-			} else if(incomingEdge.getSource()==root) {
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+						"Not a proper child: "+getName(child));
+			}
+
+			if(incomingEdge.getSource()==root) {
 				int index = root.indexOfEdge(incomingEdge);
 				return root.edgeAt(index+delta, false).getTarget();
-			} else {
-				int index = indexOfEdge(context, incomingEdge.getSource(), incomingEdge);
-				return getEdgeAt(context, incomingEdge.getSource(), index+delta, false).getTarget();
 			}
-		}
 
+			int index = indexOfEdge(context, incomingEdge.getSource(), incomingEdge);
+			return getEdgeAt(context, incomingEdge.getSource(), index+delta, true).getTarget();
+		}
 	}
 
 	/**
@@ -527,65 +544,65 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			final LookupList<Edge> edges = new LookupList<>(builder.edges());
 
 			final long[] treeData = new long[nodeCount+1];
-			final short[] edgeData = new short[2*nodeCount+edgeCount];
+			final short[] edgeData = new short[3*edgeCount];
 
-			int pointer = 0;
+			int movingPointer = 0;
 
 			for(int i=0; i<nodeCount; i++) {
 				Item node = builder.getNodeAt(i);
 
-				// Tree treeData
-				long height = edgeBuffer.getHeight(node);
-				long depth = edgeBuffer.getDepth(node)+1;
-				long descendants = edgeBuffer.getDescendantsCount(node);
+				int height = edgeBuffer.getHeight(node);
+				int depth = edgeBuffer.getDepth(node);
+				int descendants = edgeBuffer.getDescendantsCount(node);
 
-				long data = merge(pointer, height, depth, descendants);
-
-				treeData[i+1] = data;
-
-				// Edge treeData
-
-				int incoming = -1;
+				int incoming = UNSET_INT;
 
 				if(edgeBuffer.getEdgeCount(node, false)>0) {
-					incoming = edges.indexOf(edgeBuffer.getEdgeAt(node, 0, false))+1;
+					incoming = edges.indexOf(edgeBuffer.getEdgeAt(node, 0, false));
 				}
 
-				edgeData[pointer] = toShort(incoming);
-
 				int outgoingCount = edgeBuffer.getEdgeCount(node, true);
+
+				int pointer = movingPointer;
+
+				// Invalidate pointer if we have no edges at all!
+				if(incoming==UNSET_INT && outgoingCount==0) {
+					pointer = UNSET_INT;
+				}
+
+				treeData[i+1] = merge(pointer+1, height, depth+1, descendants);
+
+				// Only store edge information for nodes that actually _have_ edges
+				if(pointer==UNSET_INT) {
+					continue;
+				}
+
+				edgeData[pointer] = toShort(incoming+1);
 
 				edgeData[pointer+1] = toShort(outgoingCount);
 
 				if(outgoingCount>0) {
 					for(int idx = 0; idx<outgoingCount; idx++) {
-						int outgoing = edges.indexOf(edgeBuffer.getEdgeAt(node, 0, true));
-						edgeData[pointer+1+idx] = toShort(outgoing);
+						int outgoing = edges.indexOf(edgeBuffer.getEdgeAt(node, idx, true));
+						edgeData[pointer+2+idx] = toShort(outgoing);
 					}
 
-					/*
-					 * TODO maybe take 1 bit from the treeData entry and convert it to a 'sorted' flag,
-					 * allowing to sort lazily when actually needed? Problem with this idea would be that
-					 * the order reported by getEdgeAt() might be inconsistent over time.
-					 */
 					Arrays.sort(edgeData, pointer+2, pointer+2+outgoingCount);
 				}
 
-				pointer += 2+outgoingCount;
+				movingPointer += 2+outgoingCount;
 			}
 
-			long rootData = merge(0L, edgeBuffer.getHeight(root), 0L, edgeBuffer.getDescendantsCount(root));
-
-			treeData[0] = rootData;
+			treeData[0] = merge(0L, edgeBuffer.getHeight(root), 0L, edgeBuffer.getDescendantsCount(root));
 
 			return new CompactTreeEdgeStorageLong(root, edges, treeData, edgeData);
 		}
 
 		private static long merge(long pointer, long height, long depth, long descendants) {
-			return (pointer)
-					| (height << OFFSET_HEIGHT)
-					| (depth << OFFSET_DEPTH)
-					| (descendants << OFFSET_DESCENDANTS);
+			return (pointer & MASK_18)
+					| ((height & MASK_15) << OFFSET_HEIGHT)
+					| ((depth & MASK_15) << OFFSET_DEPTH)
+					| ((descendants & MASK_16) << OFFSET_DESCENDANTS);
 		}
 
 		// 15, 16 and 18 bit masks
@@ -603,7 +620,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		}
 
 		private static int pointer(long data) {
-			return extract(data, OFFSET_POINTER, MASK_18);
+			return extract(data, OFFSET_POINTER, MASK_18)-1;
 		}
 
 		private static int height(long data) {
@@ -640,8 +657,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		private final long[] treeData;
 
 		/*
-		 * (2*n)+m short where n is the number of nodes not including the virtual root node
-		 * and m the number of edges in the structure.
+		 * 3*m short where m is the number of edges in the structure.
 		 * Each node has a section of 2+x elements where x is the number of outgoing edges.
 		 * The first element holds the index of the incoming edge +1 or 0 if the node has no
 		 * incoming edge, the second element the number of edges that follow and the other
@@ -665,9 +681,10 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			int pointer = pointer(data);
 			int count = toInt(edgeData[pointer+1]);
 			if(index<0 || index>=count)
-				throw new IndexOutOfBoundsException(Messages.indexOutOfBounds(null, 0, count-1, index));
+				throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
+						Messages.indexOutOfBounds(null, 0, count-1, index));
 
-			return toInt(edgeData[pointer+1+index]);
+			return toInt(edgeData[pointer+2+index]);
 		}
 
 		private int outgoingCount(long data) {
@@ -685,8 +702,9 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public long getEdgeCount(Structure context, Item node, boolean isSource) {
+			requireNonNull(node);
 			if(node==root) {
-				return root.edgeCount(!isSource);
+				return isSource ? root.edgeCount(false) : 0L;
 			}
 
 			long data = treeData[localIndex(context, node)];
@@ -703,6 +721,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		@Override
 		public Edge getEdgeAt(Structure context, Item node, long index,
 				boolean isSource) {
+			requireNonNull(node);
 			if(node==root) {
 				return root.edgeAt(index, !isSource);
 			}
@@ -720,6 +739,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public long getHeight(Structure context, Item node) {
+			requireNonNull(node);
 			if(node==root) {
 				return height(treeData[0]);
 			}
@@ -733,6 +753,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public long getDepth(Structure context, Item node) {
+			requireNonNull(node);
 			if(node==root) {
 				return 0;
 			}
@@ -746,6 +767,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public long getDescendantCount(Structure context, Item parent) {
+			requireNonNull(parent);
 			if(parent==root) {
 				return descendants(treeData[0]);
 			}
@@ -774,6 +796,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public Item getParent(Structure context, Item node) {
+			requireNonNull(node);
 			Edge incomingEdge = incomingEdge(context, node);
 			return incomingEdge==null ? null : incomingEdge.getSource();
 		}
@@ -791,7 +814,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 				throw new ModelException(ModelErrorCode.MODEL_CORRUPTED_STATE,
 						"Edge not present in edge storage of source node: "+getName(edge));
 
-			return index;
+			return index-fromIndex;
 		}
 
 		/**
@@ -799,14 +822,18 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public long indexOfChild(Structure context, Item child) {
+			requireNonNull(child);
 			Edge incomingEdge = incomingEdge(context, child);
 			if(incomingEdge==null) {
-				return IcarusUtils.UNSET_LONG;
-			} else if(incomingEdge.getSource()==root) {
-				return root.indexOfEdge(incomingEdge);
-			} else {
-				return indexOfEdge(context, incomingEdge.getSource(), incomingEdge);
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+						"Not a proper child: "+getName(child));
 			}
+
+			if(incomingEdge.getSource()==root) {
+				return root.indexOfEdge(incomingEdge);
+			}
+
+			return indexOfEdge(context, incomingEdge.getSource(), incomingEdge);
 		}
 
 		/**
@@ -814,18 +841,23 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public Item getSiblingAt(Structure context, Item child, long offset) {
+			requireNonNull(context);
+			requireNonNull(child);
 			int delta = IcarusUtils.ensureIntegerValueRange(offset);
 
 			Edge incomingEdge = incomingEdge(context, child);
 			if(incomingEdge==null) {
-				return null;
-			} else if(incomingEdge.getSource()==root) {
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+						"Not a proper child: "+getName(child));
+			}
+
+			if(incomingEdge.getSource()==root) {
 				int index = root.indexOfEdge(incomingEdge);
 				return root.edgeAt(index+delta, false).getTarget();
-			} else {
-				int index = indexOfEdge(context, incomingEdge.getSource(), incomingEdge);
-				return getEdgeAt(context, incomingEdge.getSource(), index+delta, false).getTarget();
 			}
+
+			int index = indexOfEdge(context, incomingEdge.getSource(), incomingEdge);
+			return getEdgeAt(context, incomingEdge.getSource(), index+delta, true).getTarget();
 		}
 
 	}

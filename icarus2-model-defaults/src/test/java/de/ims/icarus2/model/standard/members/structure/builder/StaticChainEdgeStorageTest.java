@@ -301,6 +301,8 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage>
 
 					Item root = chain.getVirtualRoot(config.structure);
 					assertEquals(config.rootEdges.length, chain.getEdgeCount(config.structure, root, true));
+
+					assertEquals(0L, chain.getEdgeCount(config.structure, root, false));
 				}));
 	}
 

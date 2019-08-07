@@ -290,7 +290,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public long getEdgeCount(Structure context, Item node, boolean isSource) {
 			requireNonNull(node);
 			if(node==root) {
-				return root.edgeCount(!isSource);
+				return isSource ? root.edgeCount(false) : 0L;
 			}
 
 			int data = chainData[localIndex(context, node)];
@@ -503,7 +503,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public long getEdgeCount(Structure context, Item node, boolean isSource) {
 			requireNonNull(node);
 			if(node==root) {
-				return root.edgeCount(!isSource);
+				return isSource ? root.edgeCount(false) : 0L;
 			}
 
 			long data = chainData[localIndex(context, node)];
@@ -702,7 +702,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public long getEdgeCount(Structure context, Item node, boolean isSource) {
 			requireNonNull(node);
 			if(node==root) {
-				return root.edgeCount(!isSource);
+				return isSource ? root.edgeCount(false) : 0L;
 			}
 
 			long data = linkData[localIndex(context, node)];
@@ -875,7 +875,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 		public long getEdgeCount(Structure context, Item node, boolean isSource) {
 			requireNonNull(node);
 			if(node==root) {
-				return root.edgeCount(!isSource);
+				return isSource ? root.edgeCount(false) : 0L;
 			}
 
 			NodeInfo data = chainData[localIndex(context, node)];
