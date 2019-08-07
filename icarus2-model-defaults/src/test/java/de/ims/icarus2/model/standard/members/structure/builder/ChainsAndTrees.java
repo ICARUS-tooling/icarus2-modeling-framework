@@ -55,7 +55,7 @@ public class ChainsAndTrees {
 
 	/** Produce a random value for total size of a structure */
 	static int randomSize() {
-		return 6; //random(50, 100);
+		return random(50, 100);
 	}
 
 	/** Produce a suitable random value for number of parallel structrues */

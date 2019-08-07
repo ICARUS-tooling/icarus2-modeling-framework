@@ -18,6 +18,7 @@ package de.ims.icarus2.model.standard.members.structure.builder;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
@@ -168,17 +169,12 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 
 				int pointer = movingPointer;
 
-				// Invalidate pointer if we have no edges at all!
+				// Only store edge information for nodes that actually _have_ edges
 				if(incoming==UNSET_INT && outgoingCount==0) {
-					pointer = UNSET_INT;
+					continue;
 				}
 
 				treeData[i+1] = merge(pointer+1, height, depth+1, descendants);
-
-				// Only store edge information for nodes that actually _have_ edges
-				if(pointer==UNSET_INT) {
-					continue;
-				}
 
 				edgeData[pointer] = toByte(incoming+1);
 
@@ -312,6 +308,10 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			}
 
 			int data = treeData[localIndex(context, node)];
+			if(data==0) {
+				return 0L;
+			}
+
 			if(isSource) {
 				return outgoingCount(data);
 			}
@@ -331,6 +331,10 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			}
 
 			int data = treeData[localIndex(context, node)];
+			if(data==0)
+				throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
+						"Node has no edges: "+getName(node));
+
 			if(isSource) {
 				return getEdgeAt(outgoing(data, IcarusUtils.ensureIntegerValueRange(index)));
 			}
@@ -386,6 +390,9 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			}
 
 			int data = treeData[localIndex(context, node)];
+			if(data==0) {
+				return null;
+			}
 			int incoming = incoming(data);
 
 			if(incoming>=0) {
@@ -563,17 +570,12 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 
 				int pointer = movingPointer;
 
-				// Invalidate pointer if we have no edges at all!
+				// Only store edge information for nodes that actually _have_ edges
 				if(incoming==UNSET_INT && outgoingCount==0) {
-					pointer = UNSET_INT;
+					continue;
 				}
 
 				treeData[i+1] = merge(pointer+1, height, depth+1, descendants);
-
-				// Only store edge information for nodes that actually _have_ edges
-				if(pointer==UNSET_INT) {
-					continue;
-				}
 
 				edgeData[pointer] = toShort(incoming+1);
 
@@ -706,6 +708,10 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			}
 
 			long data = treeData[localIndex(context, node)];
+			if(data==0L) {
+				return 0L;
+			}
+
 			if(isSource) {
 				return outgoingCount(data);
 			}
@@ -725,6 +731,10 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			}
 
 			long data = treeData[localIndex(context, node)];
+			if(data==0L)
+				throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
+						"Node has no edges: "+getName(node));
+
 			if(isSource) {
 				return getEdgeAt(outgoing(data, IcarusUtils.ensureIntegerValueRange(index)));
 			}
@@ -780,6 +790,9 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			}
 
 			long data = treeData[localIndex(context, node)];
+			if(data==0) {
+				return null;
+			}
 			int incoming = incoming(data);
 
 			if(incoming>=0) {
@@ -985,7 +998,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			}
 
 			Node data = getData(context, node);
-			return data==null ? UNSET_INT : data.depth();
+			return data==null ? UNSET_LONG : data.depth();
 		}
 
 		/**
@@ -1059,9 +1072,9 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			int delta = IcarusUtils.ensureIntegerValueRange(offset);
 			int edgeIndex = incomingEdge(context, child);
 
-			if(edgeIndex==UNSET_INT) {
-				return null;
-			}
+			if(edgeIndex==UNSET_INT)
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+						"Not a proper child: "+getName(child));
 
 			Edge edge = edges.get(edgeIndex);
 

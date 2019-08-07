@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.model.standard.members.structure.builder;
 
+import static de.ims.icarus2.util.IcarusUtils.MAX_INTEGER_INDEX;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 
@@ -806,7 +807,7 @@ public abstract class StaticChainEdgeStorage extends AbstractStaticEdgeStorage<R
 			USED_ENTRY_SIZE = size + pointerSize;
 		}
 
-		public static final int MAX_NODE_COUNT = (1 << 8)-1;
+		public static final int MAX_NODE_COUNT = MAX_INTEGER_INDEX;
 
 		public static LargeSparseChainEdgeStorage fromBuilder(StructureBuilder builder) {
 			builder.prepareEdgeBuffer();

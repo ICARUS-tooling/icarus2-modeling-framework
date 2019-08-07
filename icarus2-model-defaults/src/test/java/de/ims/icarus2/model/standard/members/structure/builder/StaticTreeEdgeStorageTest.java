@@ -6,6 +6,7 @@ package de.ims.icarus2.model.standard.members.structure.builder;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockEdge;
 import static de.ims.icarus2.test.TestUtils.assertCollectionEmpty;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -52,7 +53,9 @@ interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends Imm
 	 * Create a configurations for testing the basic
 	 * structure methods common to all tree implementations.
 	 */
-	ChainsAndTrees.TreeConfig createDefaultTestConfiguration(int size);
+	default ChainsAndTrees.TreeConfig createDefaultTestConfiguration(int size) {
+		return ChainsAndTrees.singleTree(size, 1.0, size/3, UNSET_INT);
+	}
 
 	/**
 	 * Creates a variety of configurations to be tested.
@@ -60,7 +63,12 @@ interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends Imm
 	 * returns {@link #createDefaultTestConfiguration()}.
 	 */
 	default Stream<ChainsAndTrees.TreeConfig> createTestConfigurations() {
-		return Stream.of(createDefaultTestConfiguration(ChainsAndTrees.randomSize()));
+		return Stream.of(
+				ChainsAndTrees.singleTree(ChainsAndTrees.randomSize(), 1.0, 1, UNSET_INT), // full chain
+				ChainsAndTrees.singleTree(ChainsAndTrees.randomSize(), 1.0, 2, UNSET_INT), // binary tree
+				ChainsAndTrees.singleTree(ChainsAndTrees.randomSize(), 1.0, UNSET_INT, UNSET_INT), // full random tree
+				ChainsAndTrees.singleTree(ChainsAndTrees.randomSize(), 0.5, UNSET_INT, UNSET_INT) // sparse random tree
+		);
 	}
 
 	@Provider
@@ -465,7 +473,7 @@ interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends Imm
 						Payload payload = config.payload(item);
 						long height = tree.getHeight(config.structure, config.nodes[i]);
 						if(payload==null) {
-							assertEquals(UNSET_LONG, height, "Unexpected hieght for index "+i);
+							assertEquals(0, height, "Unexpected height for index "+i);
 						} else {
 							assertEquals(payload.height, height, "Mismatch on height for index "+i);
 						}
@@ -535,7 +543,7 @@ interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends Imm
 						Payload payload = config.payload(item);
 						long count = tree.getDescendantCount(config.structure, config.nodes[i]);
 						if(payload==null) {
-							assertEquals(UNSET_LONG, count, "Unexpected descendant count for index "+i);
+							assertEquals(0, count, "Unexpected descendant count for index "+i);
 						} else {
 							assertEquals(payload.descendants, count, "Mismatch on descendant count for index "+i);
 						}
