@@ -427,7 +427,7 @@ public class EdgeBuffer {
 		}
 
 		public boolean hasEdges() {
-			return !incoming.isEmpty() && !outgoing.isEmpty();
+			return !incoming.isEmpty() || !outgoing.isEmpty();
 		}
 
 		public int getHeight() {

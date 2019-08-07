@@ -307,8 +307,8 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		@Override
 		public long getEdgeCount(Structure context, Item node, boolean isSource) {
 			requireNonNull(node);
-			if(node==root) {
-				return isSource ? root.edgeCount(false) : 0L;
+			if(node==virtualRoot) {
+				return isSource ? virtualRoot.edgeCount(false) : 0L;
 			}
 
 			int data = treeData[localIndex(context, node)];
@@ -326,8 +326,8 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public Edge getEdgeAt(Structure context, Item node, long index,
 				boolean isSource) {
 			requireNonNull(node);
-			if(node==root) {
-				return root.edgeAt(index, !isSource);
+			if(node==virtualRoot) {
+				return virtualRoot.edgeAt(index, !isSource);
 			}
 
 			int data = treeData[localIndex(context, node)];
@@ -344,7 +344,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		@Override
 		public long getHeight(Structure context, Item node) {
 			requireNonNull(node);
-			if(node==root) {
+			if(node==virtualRoot) {
 				return height(treeData[0]);
 			}
 
@@ -358,7 +358,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		@Override
 		public long getDepth(Structure context, Item node) {
 			requireNonNull(node);
-			if(node==root) {
+			if(node==virtualRoot) {
 				return 0;
 			}
 
@@ -372,7 +372,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		@Override
 		public long getDescendantCount(Structure context, Item parent) {
 			requireNonNull(parent);
-			if(parent==root) {
+			if(parent==virtualRoot) {
 				return descendants(treeData[0]);
 			}
 
@@ -381,7 +381,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		}
 
 		private Edge incomingEdge(Structure context, Item node) {
-			if(node==root) {
+			if(node==virtualRoot) {
 				return null;
 			}
 
@@ -428,13 +428,12 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long indexOfChild(Structure context, Item child) {
 			requireNonNull(child);
 			Edge incomingEdge = incomingEdge(context, child);
-			if(incomingEdge==null) {
+			if(incomingEdge==null)
 				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 						"Not a proper child: "+getName(child));
-			}
 
-			if(incomingEdge.getSource()==root) {
-				return root.indexOfEdge(incomingEdge);
+			if(incomingEdge.getSource()==virtualRoot) {
+				return virtualRoot.indexOfEdge(incomingEdge);
 			}
 
 			return indexOfEdge(context, incomingEdge.getSource(), incomingEdge);
@@ -450,14 +449,13 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			int delta = IcarusUtils.ensureIntegerValueRange(offset);
 
 			Edge incomingEdge = incomingEdge(context, child);
-			if(incomingEdge==null) {
+			if(incomingEdge==null)
 				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 						"Not a proper child: "+getName(child));
-			}
 
-			if(incomingEdge.getSource()==root) {
-				int index = root.indexOfEdge(incomingEdge);
-				return root.edgeAt(index+delta, false).getTarget();
+			if(incomingEdge.getSource()==virtualRoot) {
+				int index = virtualRoot.indexOfEdge(incomingEdge);
+				return virtualRoot.edgeAt(index+delta, false).getTarget();
 			}
 
 			int index = indexOfEdge(context, incomingEdge.getSource(), incomingEdge);
@@ -703,8 +701,8 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		@Override
 		public long getEdgeCount(Structure context, Item node, boolean isSource) {
 			requireNonNull(node);
-			if(node==root) {
-				return isSource ? root.edgeCount(false) : 0L;
+			if(node==virtualRoot) {
+				return isSource ? virtualRoot.edgeCount(false) : 0L;
 			}
 
 			long data = treeData[localIndex(context, node)];
@@ -722,8 +720,8 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public Edge getEdgeAt(Structure context, Item node, long index,
 				boolean isSource) {
 			requireNonNull(node);
-			if(node==root) {
-				return root.edgeAt(index, !isSource);
+			if(node==virtualRoot) {
+				return virtualRoot.edgeAt(index, !isSource);
 			}
 
 			long data = treeData[localIndex(context, node)];
@@ -740,7 +738,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		@Override
 		public long getHeight(Structure context, Item node) {
 			requireNonNull(node);
-			if(node==root) {
+			if(node==virtualRoot) {
 				return height(treeData[0]);
 			}
 
@@ -754,7 +752,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		@Override
 		public long getDepth(Structure context, Item node) {
 			requireNonNull(node);
-			if(node==root) {
+			if(node==virtualRoot) {
 				return 0;
 			}
 
@@ -768,7 +766,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		@Override
 		public long getDescendantCount(Structure context, Item parent) {
 			requireNonNull(parent);
-			if(parent==root) {
+			if(parent==virtualRoot) {
 				return descendants(treeData[0]);
 			}
 
@@ -777,7 +775,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		}
 
 		private Edge incomingEdge(Structure context, Item node) {
-			if(node==root) {
+			if(node==virtualRoot) {
 				return null;
 			}
 
@@ -824,13 +822,12 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long indexOfChild(Structure context, Item child) {
 			requireNonNull(child);
 			Edge incomingEdge = incomingEdge(context, child);
-			if(incomingEdge==null) {
+			if(incomingEdge==null)
 				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 						"Not a proper child: "+getName(child));
-			}
 
-			if(incomingEdge.getSource()==root) {
-				return root.indexOfEdge(incomingEdge);
+			if(incomingEdge.getSource()==virtualRoot) {
+				return virtualRoot.indexOfEdge(incomingEdge);
 			}
 
 			return indexOfEdge(context, incomingEdge.getSource(), incomingEdge);
@@ -846,14 +843,13 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			int delta = IcarusUtils.ensureIntegerValueRange(offset);
 
 			Edge incomingEdge = incomingEdge(context, child);
-			if(incomingEdge==null) {
+			if(incomingEdge==null)
 				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 						"Not a proper child: "+getName(child));
-			}
 
-			if(incomingEdge.getSource()==root) {
-				int index = root.indexOfEdge(incomingEdge);
-				return root.edgeAt(index+delta, false).getTarget();
+			if(incomingEdge.getSource()==virtualRoot) {
+				int index = virtualRoot.indexOfEdge(incomingEdge);
+				return virtualRoot.edgeAt(index+delta, false).getTarget();
 			}
 
 			int index = indexOfEdge(context, incomingEdge.getSource(), incomingEdge);
@@ -882,7 +878,14 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			for(int i=0; i<nodeCount; i++) {
 				Item node = builder.getNodeAt(i);
 
-				treeData[i+1] = StaticNodes.createNode(node, edgeBuffer, edges, true);
+				Node wrapper = StaticNodes.createNode(node, edgeBuffer, edges, true);
+
+				// Effectively ignore nodes that have no edges
+				if(wrapper==null) {
+					continue;
+				}
+
+				treeData[i+1] = wrapper;
 			}
 
 			treeData[0] = new StaticNodes.RootNode(
@@ -907,7 +910,8 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		private int localIndex(Structure context, Item node) {
 			long index = context.indexOfItem(node);
 			if(index==UNSET_INT)
-				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, "Given node is not a member of this tree: "+getName(node));
+				throw new ModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
+						"Given node is not a member of this tree: "+getName(node));
 
 			return IcarusUtils.ensureIntegerValueRange(index)+1;
 		}
@@ -921,8 +925,9 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public long getEdgeCount(Structure context, Item node, boolean isSource) {
-			if(node==root) {
-				return root.edgeCount(!isSource);
+			requireNonNull(node);
+			if(node==virtualRoot) {
+				return isSource ? virtualRoot.edgeCount(false) : 0L;
 			}
 
 			Node data = getData(context, node);
@@ -939,8 +944,11 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		@Override
 		public Edge getEdgeAt(Structure context, Item node, long index,
 				boolean isSource) {
-			if(node==root) {
-				return root.edgeAt(index, !isSource);
+			requireNonNull(context);
+			requireNonNull(node);
+
+			if(node==virtualRoot) {
+				return virtualRoot.edgeAt(index, !isSource);
 			}
 
 			int idx = IcarusUtils.ensureIntegerValueRange(index);
@@ -957,7 +965,8 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public long getHeight(Structure context, Item node) {
-			if(node==root) {
+			requireNonNull(node);
+			if(node==virtualRoot) {
 				return treeData[0].height();
 			}
 
@@ -970,7 +979,8 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public long getDepth(Structure context, Item node) {
-			if(node==root) {
+			requireNonNull(node);
+			if(node==virtualRoot) {
 				return 0;
 			}
 
@@ -983,7 +993,8 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public long getDescendantCount(Structure context, Item parent) {
-			if(parent==root) {
+			requireNonNull(parent);
+			if(parent==virtualRoot) {
 				return treeData[0].descendants();
 			}
 
@@ -992,7 +1003,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		}
 
 		private int incomingEdge(Structure context, Item node) {
-			if(node==root) {
+			if(node==virtualRoot) {
 				return UNSET_INT;
 			}
 
@@ -1005,6 +1016,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public Item getParent(Structure context, Item node) {
+			requireNonNull(node);
 			int edgeIndex = incomingEdge(context, node);
 			return edgeIndex==UNSET_INT ? null : edges.get(edgeIndex).getSource();
 		}
@@ -1020,16 +1032,17 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public long indexOfChild(Structure context, Item child) {
+			requireNonNull(child);
 			int edgeIndex = incomingEdge(context, child);
 
-			if(edgeIndex==UNSET_INT) {
-				return UNSET_INT;
-			}
+			if(edgeIndex==UNSET_INT)
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+						"Not a proper child: "+getName(child));
 
 			Edge edge = edges.get(edgeIndex);
 
-			if(edge.getSource()==root) {
-				return root.indexOfEdge(edge);
+			if(edge.getSource()==virtualRoot) {
+				return virtualRoot.indexOfEdge(edge);
 			}
 
 			return indexOfEdge(context, edge.getSource(), edgeIndex);
@@ -1040,6 +1053,9 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 */
 		@Override
 		public Item getSiblingAt(Structure context, Item child, long offset) {
+			requireNonNull(context);
+			requireNonNull(child);
+
 			int delta = IcarusUtils.ensureIntegerValueRange(offset);
 			int edgeIndex = incomingEdge(context, child);
 
@@ -1049,13 +1065,13 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 
 			Edge edge = edges.get(edgeIndex);
 
-			if(edge.getSource()==root) {
-				int index = root.indexOfEdge(edge);
-				return root.edgeAt(index+delta, false).getTarget();
+			if(edge.getSource()==virtualRoot) {
+				int index = virtualRoot.indexOfEdge(edge);
+				return virtualRoot.edgeAt(index+delta, false).getTarget();
 			}
 
 			int index = indexOfEdge(context, edge.getSource(), edgeIndex);
-			return getEdgeAt(context, edge.getSource(), index+delta, false).getTarget();
+			return getEdgeAt(context, edge.getSource(), index+delta, true).getTarget();
 		}
 	}
 }

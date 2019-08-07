@@ -39,7 +39,7 @@ import de.ims.icarus2.util.collections.LookupList;
  */
 public abstract class AbstractStaticEdgeStorage<R extends Item> extends AbstractImmutableEdgeStorage {
 
-	protected final R root;
+	protected final R virtualRoot;
 
 	protected final LookupList<Edge> edges;
 
@@ -47,7 +47,7 @@ public abstract class AbstractStaticEdgeStorage<R extends Item> extends Abstract
 		requireNonNull(root);
 		requireNonNull(edges);
 
-		this.root = root;
+		this.virtualRoot = root;
 		this.edges = edges;
 	}
 
@@ -73,13 +73,13 @@ public abstract class AbstractStaticEdgeStorage<R extends Item> extends Abstract
 
 	@Override
 	public Item getVirtualRoot(@Nullable Structure context) {
-		return root;
+		return virtualRoot;
 	}
 
 	@Override
 	public boolean isRoot(Structure context, Item node) {
 		requireNonNull(node);
-		return node!= getVirtualRoot(context) && getParent(context, node)==root;
+		return node != virtualRoot && getParent(context, node)==virtualRoot;
 	}
 
 	/**

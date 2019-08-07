@@ -42,6 +42,7 @@ import de.ims.icarus2.model.standard.members.structure.DefaultStructure;
 import de.ims.icarus2.model.standard.members.structure.RootItem;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
+import de.ims.icarus2.util.strings.BracketStyle;
 import de.ims.icarus2.util.tree.Tree;
 import de.ims.icarus2.util.tree.TreeUtils;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -54,12 +55,12 @@ public class ChainsAndTrees {
 
 	/** Produce a random value for total size of a structure */
 	static int randomSize() {
-		return random(50, 100);
+		return 6; //random(50, 100);
 	}
 
 	/** Produce a suitable random value for number of parallel structrues */
 	static int randomMulti(int size) {
-		return random(2, Math.min(size, 6));
+		return size <=2 ? 1 : random(2, Math.min(size, 6));
 	}
 
 	static PrimitiveIterator.OfInt randomIndices(int spectrum, int size) {
@@ -467,6 +468,11 @@ public class ChainsAndTrees {
 
 		Optional<Tree<Payload>> node(Item item) {
 			return Optional.ofNullable(treeNodes.get(item));
+		}
+
+		void dump(String msg) {
+			System.out.println(msg+": "+TreeUtils.toString(tree, BracketStyle.SQUARE,
+					p -> p.node.toString()));
 		}
 
 		static TreeConfig basic(int nodeCount, int edgeCount, int rootEdgeCount) {

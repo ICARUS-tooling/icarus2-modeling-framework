@@ -184,6 +184,7 @@ interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends Imm
 		return createTestConfigurations()
 				.map(config -> dynamicTest(config.label, () -> {
 					T tree = createFromBuilder(toBuilder(config));
+
 					for (int i = 0; i < config.nodes.length; i++) {
 						Item node = config.nodes[i];
 						Item expected = config.node(node)

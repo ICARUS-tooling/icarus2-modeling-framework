@@ -18,6 +18,7 @@ package de.ims.icarus2.model.standard.members.structure.builder;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 
 import java.util.Arrays;
 
@@ -25,8 +26,8 @@ import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.structure.builder.EdgeBuffer.NodeInfo;
-import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.collections.LookupList;
 
@@ -40,9 +41,6 @@ import de.ims.icarus2.util.collections.LookupList;
  */
 public class StaticNodes {
 
-	private static final int NO_INDEX = IcarusUtils.UNSET_INT;
-	private static final int NO_DEPTH = IcarusUtils.UNSET_INT;
-
 	public static final Node EMPTY_NODE = new Node();
 
 	private static int _parent(Item item, EdgeBuffer edgeBuffer, LookupList<Edge> edges) {
@@ -50,7 +48,7 @@ public class StaticNodes {
 		if(inCount>1)
 			throw new IllegalArgumentException("Given node has too many incoming edges for a tree: "+getName(item));
 
-		int parent = NO_INDEX;
+		int parent = UNSET_INT;
 
 		if(inCount>0) {
 			parent = edges.indexOf(edgeBuffer.getEdgeAt(item, 0, false));
@@ -70,7 +68,7 @@ public class StaticNodes {
 	private static int[] _edges(NodeInfo info, LookupList<Edge> edges, int inCount, int outCount) {
 		int[] result = new int[inCount+outCount];
 		MutableInteger counter = new MutableInteger(0);
-		info.forEachEdge(e -> {result[counter.incrementAndGet()] = edges.indexOf(e);}, inCount>0, outCount>0);
+		info.forEachEdge(e -> {result[counter.getAndIncrement()] = edges.indexOf(e);}, inCount>0, outCount>0);
 
 		return result;
 	}
@@ -85,10 +83,10 @@ public class StaticNodes {
 		}
 
 		final int inCount = edgeBuffer.getEdgeCount(item, false);
-		if(inCount==0) {
-			//TODO maybe throw an error indicating that we have an illegal root node?
-			return null;
-		}
+//		if(inCount==0) {
+//			//TODO maybe throw an error indicating that we have an illegal root node?
+//			return null;
+//		}
 		if(inCount>1 && forceTreeProperties)
 			throw new IllegalArgumentException("Given node has too many incoming edges for a tree: "+getName(item));
 
@@ -100,7 +98,7 @@ public class StaticNodes {
 
 		Node node = null;
 
-		if(inCount==1) {
+		if(inCount<=1) {
 			// GENERAL TREE STYLE NODES
 
 			switch (outCount) {
@@ -154,11 +152,11 @@ public class StaticNodes {
 		}
 
 		public int indexOfIncomingEdge(int edge) {
-			return NO_INDEX;
+			return UNSET_INT;
 		}
 
 		public int indexOfOutgoingEdge(int edge) {
-			return NO_INDEX;
+			return UNSET_INT;
 		}
 
 		public int incomingEdgeAt(int index) {
@@ -174,7 +172,7 @@ public class StaticNodes {
 		}
 
 		public int depth() {
-			return NO_DEPTH;
+			return UNSET_INT;
 		}
 
 		public int descendants() {
@@ -191,22 +189,24 @@ public class StaticNodes {
 		}
 
 		@Override
+		public int incomingEdgeCount() {
+			return parent==UNSET_INT ? 0 : 1;
+		}
+
+		@Override
 		public int indexOfIncomingEdge(int edge) {
-			return (parent!=NO_INDEX && edge==parent) ? 0 : NO_INDEX;
+			return (parent!=UNSET_INT && edge==parent) ? 0 : UNSET_INT;
 		}
 
 		@Override
 		public int incomingEdgeAt(int index) {
-			if(parent==NO_INDEX)
+			if(parent==UNSET_INT)
 				throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS, "No incoming edges");
 			if(index!=0)
 				throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS, "Only one incoming edge - invalid index: "+index);
 			return parent;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.standard.members.structure.builder.StaticNodes.Node#depth()
-		 */
 		@Override
 		public int depth() {
 			return depth;
@@ -275,7 +275,7 @@ public class StaticNodes {
 
 		@Override
 		public int indexOfOutgoingEdge(int edge) {
-			return edge==child ? 0 : NO_INDEX;
+			return edge==child ? 0 : UNSET_INT;
 		}
 
 		@Override
@@ -316,7 +316,7 @@ public class StaticNodes {
 			} else if(edge==right) {
 				return 1;
 			} else {
-				return NO_INDEX;
+				return UNSET_INT;
 			}
 		}
 
@@ -349,11 +349,15 @@ public class StaticNodes {
 		@Override
 		public int indexOfOutgoingEdge(int edge) {
 			int index = Arrays.binarySearch(edges, edge);
-			return index<0 ? NO_INDEX : index;
+			return index<0 ? UNSET_INT : index;
 		}
 
 		@Override
 		public int outgoingEdgeAt(int index) {
+			if(index<0 || index>=edges.length)
+				throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
+						Messages.indexOutOfBounds(null, 0, edges.length-1, index));
+
 			return edges[index];
 		}
 	}
@@ -385,13 +389,13 @@ public class StaticNodes {
 		@Override
 		public int indexOfIncomingEdge(int edge) {
 			int index = Arrays.binarySearch(edges, 0, inCount, edge);
-			return index<0 ? NO_INDEX : index;
+			return index<0 ? UNSET_INT : index;
 		}
 
 		@Override
 		public int indexOfOutgoingEdge(int edge) {
 			int index = Arrays.binarySearch(edges, inCount, edges.length, edge);
-			return index<0 ? NO_INDEX : index;
+			return index<0 ? UNSET_INT : index;
 		}
 
 		@Override
