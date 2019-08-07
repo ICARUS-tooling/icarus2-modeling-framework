@@ -34,11 +34,18 @@ public class Tree<T> {
 	/**
 	 * Creates a new root node.
 	 */
-	public static <T> Tree<T> root() {
+	public static <T> Tree<T> newRoot() {
 		return new Tree<>(null);
 	}
 
-	private final Tree<T> parent;
+	/**
+	 * Creates a new (potential root) node with the given payload
+	 */
+	public static <T> Tree<T> newNode(T data) {
+		return new Tree<T>(null).setData(data);
+	}
+
+	private Tree<T> parent;
 	private List<Tree<T>> children;
 
 	private T data;
@@ -53,6 +60,14 @@ public class Tree<T> {
 
 	public Tree<T> parent() {
 		return parent;
+	}
+
+	public Tree<T> root() {
+		Tree<T> root = parent;
+		while(root!=null && root.parent!=null) {
+			root = root.parent;
+		}
+		return root;
 	}
 
 	public Tree<T> childAt(int index) {
@@ -71,7 +86,7 @@ public class Tree<T> {
 		return children.get(children.size()-1);
 	}
 
-	public boolean isEmpty() {
+	public boolean isChildless() {
 		return children==null || children.isEmpty();
 	}
 
@@ -80,6 +95,7 @@ public class Tree<T> {
 			children = new ArrayList<>(4);
 		}
 		children.add(child);
+		child.parent = this;
 		return self();
 	}
 
@@ -114,5 +130,13 @@ public class Tree<T> {
 	public Tree<T> setData(T data) {
 		this.data = data;
 		return self();
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "Tree@"+hashCode()+ (data==null ? "" : "["+data+"]");
 	}
 }

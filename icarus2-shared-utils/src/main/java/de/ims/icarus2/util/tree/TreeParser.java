@@ -74,7 +74,7 @@ public class TreeParser<T> {
 
 		checkArgument("Input string must not be empty", !input.isEmpty());
 
-		final Tree<T> root = Tree.root();
+		final Tree<T> root = Tree.newRoot();
 
 		final StringBuilder buffer = new StringBuilder();
 		Tree<T> current = root;
@@ -85,7 +85,7 @@ public class TreeParser<T> {
 			 *  Payload can also only occur before first child, so any
 			 *  node with children cannot receive any payload data anymore
 			 */
-			if(tree.isEmpty()) {
+			if(tree.isChildless()) {
 				String payload = buffer.toString().trim();
 				tree.setData(payloadParser.apply(payload));
 			}

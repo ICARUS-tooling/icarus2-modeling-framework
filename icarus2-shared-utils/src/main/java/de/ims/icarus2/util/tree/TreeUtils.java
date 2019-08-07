@@ -52,7 +52,7 @@ public class TreeUtils {
 			Tree<T> node = stack.pop();
 			action.accept(node);
 
-			if(!node.isEmpty()) {
+			if(!node.isChildless()) {
 				for (int i = node.childCount()-1; i >= 0 ; i--) {
 					stack.push(node.childAt(i));
 				}
@@ -79,7 +79,7 @@ public class TreeUtils {
 		while(!stack.isEmpty()) {
 			Tree<T> node = stack.pop();
 
-			if(node.isEmpty()) {
+			if(node.isChildless()) {
 				// Leaf detected
 				action.accept(node);
 				last = node;
@@ -98,6 +98,28 @@ public class TreeUtils {
 
 		// Finally apply action on the root
 		action.accept(tree);
+	}
+
+	/**
+	 * Traverses the given tree, applying the specified {@code visitor} to each node.
+	 * This implementation uses no recursion and therefore is suitable for very large trees.
+	 * Note however that there is no guarantee on the roder in which nodes will be visited!
+	 *
+	 * @param tree
+	 * @param visitor
+	 */
+	public static <T> void traverse(Tree<T> tree, Consumer<Tree<T>> action) {
+		Stack<Tree<T>> stack = new ObjectArrayList<>();
+		stack.push(tree);
+
+		while(!stack.isEmpty()) {
+			Tree<T> node = stack.pop();
+			action.accept(node);
+
+			if(!node.isChildless()) {
+				node.forEachChild(stack::push);
+			}
+		}
 	}
 
 	/**

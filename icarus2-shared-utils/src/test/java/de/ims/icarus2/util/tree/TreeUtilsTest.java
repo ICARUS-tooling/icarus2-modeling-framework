@@ -45,39 +45,39 @@ class TreeUtilsTest {
 
 			@Test
 			void whenEmpty() {
-				assertEquals("[]", TreeUtils.toString(Tree.root()));
+				assertEquals("[]", TreeUtils.toString(Tree.newRoot()));
 			}
 
 			@Test
 			void withPayload() {
 				assertEquals("[x]", TreeUtils.toString(
-						Tree.<String>root().setData("x")));
+						Tree.<String>newRoot().setData("x")));
 			}
 
 			@Test
 			void whenNested() {
-				Tree<String> root = Tree.root();
+				Tree<String> root = Tree.newRoot();
 				root.newChild();
 				assertEquals("[[]]", TreeUtils.toString(root));
 			}
 
 			@Test
 			void whenDeeplyNested() {
-				Tree<String> root = Tree.root();
+				Tree<String> root = Tree.newRoot();
 				root.newChild().newChild();
 				assertEquals("[[[]]]", TreeUtils.toString(root));
 			}
 
 			@Test
 			void whenNestedWithPayload() {
-				Tree<String> root = Tree.<String>root().setData("x");
+				Tree<String> root = Tree.<String>newRoot().setData("x");
 				root.newChild().setData("y");
 				assertEquals("[x[y]]", TreeUtils.toString(root));
 			}
 
 			@Test
 			void asSiblings() {
-				Tree<String> root = Tree.root();
+				Tree<String> root = Tree.newRoot();
 				root.newChild();
 				root.newChild();
 				assertEquals("[[][]]", TreeUtils.toString(root));
@@ -85,7 +85,7 @@ class TreeUtilsTest {
 
 			@Test
 			void asSiblingsWithPayload() {
-				Tree<String> root = Tree.<String>root().setData("x");
+				Tree<String> root = Tree.<String>newRoot().setData("x");
 				root.newChild().setData("y");
 				root.newChild().setData("z");
 				assertEquals("[x[y][z]]", TreeUtils.toString(root));
@@ -102,7 +102,7 @@ class TreeUtilsTest {
 			@Test
 			void whenEmpty() {
 				Consumer<Tree<String>> action = mock(Consumer.class);
-				Tree<String> tree = Tree.root();
+				Tree<String> tree = Tree.newRoot();
 
 				TreeUtils.traversePreOrder(tree, action);
 
@@ -113,7 +113,7 @@ class TreeUtilsTest {
 			void withPayloadFlat() {
 				List<String> buffer = new ArrayList<>();
 
-				Tree<String> tree = Tree.<String>root().setData("root")
+				Tree<String> tree = Tree.<String>newRoot().setData("root")
 						.newChild("1").parent()
 						.newChild("2").parent();
 
@@ -126,7 +126,7 @@ class TreeUtilsTest {
 			void withPayloadDeep() {
 				List<String> buffer = new ArrayList<>();
 
-				Tree<String> tree = Tree.<String>root().setData("root")
+				Tree<String> tree = Tree.<String>newRoot().setData("root")
 						.newChild("1")
 							.newChild("1.1").parent()
 							.newChild("1.2").parent()
@@ -153,7 +153,7 @@ class TreeUtilsTest {
 			@Test
 			void whenEmpty() {
 				Consumer<Tree<String>> action = mock(Consumer.class);
-				Tree<String> tree = Tree.root();
+				Tree<String> tree = Tree.newRoot();
 
 				TreeUtils.traversePostOrder(tree, action);
 
@@ -164,7 +164,7 @@ class TreeUtilsTest {
 			void withPayloadFlat() {
 				List<String> buffer = new ArrayList<>();
 
-				Tree<String> tree = Tree.<String>root().setData("root")
+				Tree<String> tree = Tree.<String>newRoot().setData("root")
 						.newChild("1").parent()
 						.newChild("2").parent();
 
@@ -177,7 +177,7 @@ class TreeUtilsTest {
 			void withPayloadDeep() {
 				List<String> buffer = new ArrayList<>();
 
-				Tree<String> tree = Tree.<String>root().setData("root")
+				Tree<String> tree = Tree.<String>newRoot().setData("root")
 						.newChild("1")
 							.newChild("1.1").parent()
 							.newChild("1.2").parent()

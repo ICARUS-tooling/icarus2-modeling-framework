@@ -111,7 +111,7 @@ class TreeParserTest implements ApiGuardedTest<TreeParser> {
 				"[\n]",
 		})
 		void whenEmpty(String input) {
-			assertTreeEquals(Tree.root(), parser.parseTree(input));
+			assertTreeEquals(Tree.newRoot(), parser.parseTree(input));
 		}
 
 		@ParameterizedTest
@@ -124,7 +124,7 @@ class TreeParserTest implements ApiGuardedTest<TreeParser> {
 				"[\nx ]",
 		})
 		void withPayload(String input) {
-			assertTreeEquals(Tree.<String>root().setData("x"), parser.parseTree(input));
+			assertTreeEquals(Tree.<String>newRoot().setData("x"), parser.parseTree(input));
 		}
 
 		@ParameterizedTest
@@ -140,7 +140,7 @@ class TreeParserTest implements ApiGuardedTest<TreeParser> {
 				" [\n \t[\n\t] \n]",
 		})
 		void whenNested(String input) {
-			Tree<String> root = Tree.root();
+			Tree<String> root = Tree.newRoot();
 			root.newChild();
 			assertTreeEquals(root, parser.parseTree(input));
 		}
@@ -155,14 +155,14 @@ class TreeParserTest implements ApiGuardedTest<TreeParser> {
 				"[ x\n\t[\n\ty\n\t]]",
 		})
 		void whenNestedWithPayload(String input) {
-			Tree<String> root = Tree.<String>root().setData("x");
+			Tree<String> root = Tree.<String>newRoot().setData("x");
 			root.newChild().setData("y");
 			assertTreeEquals(root, parser.parseTree(input));
 		}
 
 		@Test
 		void withSiblings() {
-			Tree<String> root = Tree.root();
+			Tree<String> root = Tree.newRoot();
 			root.newChild();
 			root.newChild();
 			assertTreeEquals(root, parser.parseTree("[[][]]"));
@@ -180,7 +180,7 @@ class TreeParserTest implements ApiGuardedTest<TreeParser> {
 				"[\nx\n\t[\n\ty\n\t]\n\t[z]]",
 		})
 		void withSiblingsAndPayload(String input) {
-			Tree<String> root = Tree.<String>root().setData("x");
+			Tree<String> root = Tree.<String>newRoot().setData("x");
 			root.newChild().setData("y");
 			root.newChild().setData("z");
 			assertTreeEquals(root, parser.parseTree(input));
