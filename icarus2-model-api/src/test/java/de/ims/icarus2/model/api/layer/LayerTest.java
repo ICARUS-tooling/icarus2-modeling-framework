@@ -1,0 +1,128 @@
+/**
+ *
+ */
+package de.ims.icarus2.model.api.layer;
+
+import static de.ims.icarus2.SharedTestUtils.mockSet;
+import static de.ims.icarus2.test.TestUtils.randomString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
+import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.model.manifest.api.Manifest;
+import de.ims.icarus2.test.ApiGuardedTest;
+import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.util.PartTest;
+import de.ims.icarus2.util.collections.set.DataSet;
+
+/**
+ * @author Markus Gärtner
+ *
+ */
+public interface LayerTest<L extends Layer, M extends Manifest> extends PartTest<LayerGroup, L>,
+		ApiGuardedTest<L> {
+
+	@Provider
+	L createForManifest(M manifest);
+
+	@Provider
+	M createManifest(String name);
+
+	@Provider
+	default L createForGroup(LayerGroup group) {
+		L layer = createForManifest(createManifest("test"));
+		layer.addNotify(group);
+		return layer;
+	}
+
+	/**
+	 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
+	 */
+	@Override
+	default L createTestInstance(TestSettings settings) {
+		return settings.process(createForManifest(createManifest("test")));
+	}
+
+	@Override
+	default LayerGroup createEnvironment() {
+		return mock(LayerGroup.class);
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.Layer#getName()}.
+	 */
+	@Test
+	default void testGetName() {
+		String name = randomString(20);
+		M manifest = createManifest(name);
+		L layer = createForManifest(manifest);
+		assertEquals(name, layer.getName());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.Layer#getItemProxy()}.
+	 */
+	@Test
+	default void testGetItemProxy() {
+		assertNotNull(create().getItemProxy());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.Layer#getContext()}.
+	 */
+	@Test
+	default void testGetContext() {
+		LayerGroup group = createEnvironment();
+		L layer = createForGroup(group);
+		layer.getContext();
+		verify(group).getContext();
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.Layer#getLayerGroup()}.
+	 */
+	@Test
+	default void testGetLayerGroup() {
+		LayerGroup group = createEnvironment();
+		L layer = createForGroup(group);
+		assertSame(group, layer.getLayerGroup());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.Layer#getBaseLayers()}.
+	 */
+	@Test
+	default void testGetBaseLayers() {
+		assertTrue(create().getBaseLayers().isEmpty());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.Layer#getManifest()}.
+	 */
+	@Test
+	default void testGetManifest() {
+		M manifest = createManifest("test");
+		L layer = createForManifest(manifest);
+		assertSame(manifest, layer.getManifest());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.Layer#setBaseLayers(de.ims.icarus2.util.collections.set.DataSet)}.
+	 */
+	@Test
+	default void testSetBaseLayers() {
+		L layer = create();
+		DataSet<ItemLayer> baseLayers = mockSet(mock(ItemLayer.class));
+
+		layer.setBaseLayers(baseLayers);
+
+		assertSame(baseLayers, layer.getBaseLayers());
+	}
+
+}

@@ -38,10 +38,8 @@ public class DefaultAnnotationLayer extends AbstractLayer<AnnotationLayerManifes
 	 * @param manifest
 	 * @param group
 	 */
-	public DefaultAnnotationLayer(AnnotationLayerManifest manifest, AnnotationStorage storage) {
+	public DefaultAnnotationLayer(AnnotationLayerManifest manifest) {
 		super(manifest);
-
-		setAnnotationStorage(storage);
 	}
 
 	/**

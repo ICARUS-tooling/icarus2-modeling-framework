@@ -112,7 +112,10 @@ public class DefaultCorpusMemberFactory implements CorpusMemberFactory {
 			storage = new AnnotationStorageFactory(manifest, options).buildStorage();
 		}
 
-		return new DefaultAnnotationLayer(manifest, storage);
+		AnnotationLayer layer = new DefaultAnnotationLayer(manifest);
+		layer.setAnnotationStorage(storage);
+
+		return layer;
 	}
 
 	/**
