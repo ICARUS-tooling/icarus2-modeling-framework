@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.function.Consumer;
 
 import de.ims.icarus2.GlobalErrorCode;
@@ -82,54 +84,76 @@ public abstract class AbstractAnnotationStorage implements ManagedAnnotationStor
 		return false;
 	}
 
+	private static ModelException forUnsupportedGetter(String type, String key) {
+		requireNonNull(key);
+		return new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
+				"Annotation value is not an "+type+" for key: "+key);
+	}
+
+	@Override
+	public String getString(Item item, String key) {
+		throw forUnsupportedGetter("string", key);
+	}
+
 	@Override
 	public int getIntegerValue(Item item, String key) {
-		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Annotation value is not an integer for key: "+key);
+		throw forUnsupportedGetter("integer", key);
 	}
 
 	@Override
 	public float getFloatValue(Item item, String key) {
-		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Annotation value is not a float for key: "+key);
+		throw forUnsupportedGetter("float", key);
 	}
 
 	@Override
 	public double getDoubleValue(Item item, String key) {
-		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Annotation value is not a double for key: "+key);
+		throw forUnsupportedGetter("double", key);
 	}
 
 	@Override
 	public long getLongValue(Item item, String key) {
-		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Annotation value is not a long for key: "+key);
+		throw forUnsupportedGetter("long", key);
 	}
 
 	@Override
 	public boolean getBooleanValue(Item item, String key) {
-		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Annotation value is not a boolean for key: "+key);
+		throw forUnsupportedGetter("boolean", key);
+	}
+
+	private static ModelException forUnsupportedSetter(String type, String key) {
+		requireNonNull(key);
+		return new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
+				"Cannot set "+type+" value for key: "+key);
+	}
+
+	@Override
+	public void setString(Item item, String key, String value) {
+		throw forUnsupportedSetter("string", key);
 	}
 
 	@Override
 	public void setIntegerValue(Item item, String key, int value) {
-		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot set integer value for key: "+key);
+		throw forUnsupportedSetter("integer", key);
 	}
 
 	@Override
 	public void setLongValue(Item item, String key, long value) {
-		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot set long value for key: "+key);
+		throw forUnsupportedSetter("long", key);
 	}
 
 	@Override
 	public void setFloatValue(Item item, String key, float value) {
-		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot set float value for key: "+key);
+		throw forUnsupportedSetter("float", key);
 	}
 
 	@Override
 	public void setDoubleValue(Item item, String key, double value) {
-		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot set double value for key: "+key);
+		throw forUnsupportedSetter("double", key);
 	}
 
 	@Override
 	public void setBooleanValue(Item item, String key, boolean value) {
-		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cannot set boolean value for key: "+key);
+		throw forUnsupportedSetter("boolean", key);
 	}
 
 	@Override

@@ -45,6 +45,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.PrimitiveIterator;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -397,6 +398,49 @@ public class TestUtils {
 	 */
 	public static long random(long minInclusive, long maxExclusive) {
 		return randomLongs(1, minInclusive, maxExclusive)[0];
+	}
+
+	// RANDOM ITERATORS (with filter)
+
+	public static PrimitiveIterator.OfInt randomIndices(int spectrum, int size) {
+		return randomIntStream(spectrum).limit(size).iterator();
+	}
+
+	public static IntStream randomIntStream(int spectrum) {
+		int[] source = new int[spectrum];
+		for (int i = 0; i < source.length; i++) {
+			source[i] = i;
+		}
+
+		for (int i = 0; i < source.length; i++) {
+			int x = random(0, spectrum);
+			int tmp = source[i];
+			source[i] = source[x];
+			source[x] = tmp;
+		}
+
+		return IntStream.of(source);
+	}
+
+	/**
+	 * Creates a series of non-empty sublists of the given {@code source}.
+	 * The number of created sublists is defined by applying the specified
+	 * {@code fraction} to the {@link List#size() size} of the soruce list.
+	 *
+	 * @param source
+	 * @param fraction
+	 * @return
+	 */
+	public static <T> Stream<List<T>> randomSubLists(List<T> source, double fraction) {
+		assertFalse(source.isEmpty());
+		assertTrue(fraction>0.0 && fraction<=1.0);
+
+		int part = Math.max(1, (int) (source.size() * fraction));
+
+		return randomIntStream(source.size())
+				.filter(i -> i>0)
+				.limit(part)
+				.mapToObj(i -> source.subList(0, i));
 	}
 
 	// RANDOM ARRAYS

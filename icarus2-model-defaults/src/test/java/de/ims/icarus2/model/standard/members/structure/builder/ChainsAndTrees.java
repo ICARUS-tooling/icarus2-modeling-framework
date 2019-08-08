@@ -63,22 +63,6 @@ public class ChainsAndTrees {
 		return size <=2 ? 1 : random(2, Math.min(size, 6));
 	}
 
-	static PrimitiveIterator.OfInt randomIndices(int spectrum, int size) {
-		int[] source = new int[spectrum];
-		for (int i = 0; i < source.length; i++) {
-			source[i] = i;
-		}
-
-		for (int i = 0; i < source.length; i++) {
-			int x = TestUtils.random(0, spectrum);
-			int tmp = source[i];
-			source[i] = source[x];
-			source[x] = tmp;
-		}
-
-		return IntStream.of(source).limit(size).iterator();
-	}
-
 	private static void fillChain(ChainConfig config, PrimitiveIterator.OfInt nodes,
 			int offset, int nodeCount, int rootIndex) {
 		assertTrue(nodeCount>0);
@@ -118,7 +102,7 @@ public class ChainsAndTrees {
 		chainConfig.label = String.format("single chain - %.0f%% full", fraction*100);
 		chainConfig.defaultStructure();
 
-		fillChain(chainConfig, randomIndices(size, part), 0, part, 0);
+		fillChain(chainConfig, TestUtils.randomIndices(size, part), 0, part, 0);
 
 		return chainConfig;
 	}
@@ -136,7 +120,7 @@ public class ChainsAndTrees {
 		chainConfig.defaultStructure();
 		chainConfig.multiRoot = true;
 
-		PrimitiveIterator.OfInt nodes = randomIndices(size, part);
+		PrimitiveIterator.OfInt nodes = TestUtils.randomIndices(size, part);
 
 		int remaining = part;
 		for (int i = 0; i < chainCount; i++) {
@@ -258,7 +242,7 @@ public class ChainsAndTrees {
 				displayString(size), displayString(part), fraction*100);
 		treeConfig.defaultStructure();
 
-		fillTree(treeConfig, randomIndices(size, part), 0, part, 0,
+		fillTree(treeConfig, TestUtils.randomIndices(size, part), 0, part, 0,
 				maxHeight, maxBranching);
 
 		return treeConfig;
