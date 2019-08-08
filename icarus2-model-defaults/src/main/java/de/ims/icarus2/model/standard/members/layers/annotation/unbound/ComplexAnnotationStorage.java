@@ -157,57 +157,57 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 	}
 
 	@Override
-	public int getIntegerValue(Item item, String key) {
+	public int getInteger(Item item, String key) {
 		MutablePrimitive<?> primitive = getPrimitive(item, key);
 		return primitive==null ? 0 : primitive.intValue();
 	}
 
 	@Override
-	public float getFloatValue(Item item, String key) {
+	public float getFloat(Item item, String key) {
 		MutablePrimitive<?> primitive = getPrimitive(item, key);
 		return primitive==null ? 0F : primitive.floatValue();
 	}
 
 	@Override
-	public double getDoubleValue(Item item, String key) {
+	public double getDouble(Item item, String key) {
 		MutablePrimitive<?> primitive = getPrimitive(item, key);
 		return primitive==null ? 0D : primitive.doubleValue();
 	}
 
 	@Override
-	public long getLongValue(Item item, String key) {
+	public long getLong(Item item, String key) {
 		MutablePrimitive<?> primitive = getPrimitive(item, key);
 		return primitive==null ? 0L : primitive.longValue();
 	}
 
 	@Override
-	public boolean getBooleanValue(Item item, String key) {
+	public boolean getBoolean(Item item, String key) {
 		MutablePrimitive<?> primitive = getPrimitive(item, key);
 		return primitive==null ? false : primitive.booleanValue();
 	}
 
 	@Override
-	public void setIntegerValue(Item item, String key, int value) {
+	public void setInteger(Item item, String key, int value) {
 		ensurePrimitive(item, key).setInt(value);
 	}
 
 	@Override
-	public void setLongValue(Item item, String key, long value) {
+	public void setLong(Item item, String key, long value) {
 		ensurePrimitive(item, key).setLong(value);
 	}
 
 	@Override
-	public void setFloatValue(Item item, String key, float value) {
+	public void setFloat(Item item, String key, float value) {
 		ensurePrimitive(item, key).setFloat(value);
 	}
 
 	@Override
-	public void setDoubleValue(Item item, String key, double value) {
+	public void setDouble(Item item, String key, double value) {
 		ensurePrimitive(item, key).setDouble(value);
 	}
 
 	@Override
-	public void setBooleanValue(Item item, String key, boolean value) {
+	public void setBoolean(Item item, String key, boolean value) {
 		ensurePrimitive(item, key).setBoolean(value);
 	}
 

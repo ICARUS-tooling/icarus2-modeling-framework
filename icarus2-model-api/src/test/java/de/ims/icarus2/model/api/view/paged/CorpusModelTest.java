@@ -473,6 +473,14 @@ public interface CorpusModelTest<M extends CorpusModel>
 				}));
 	}
 
+	/**
+	 * Utility class for producing the actual tests for various
+	 * common situations in a CorpusModel.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @param <E> argument type for the method under test
+	 */
 	class ModelTest<E> {
 			private final CorpusModelTest<?> source;
 
@@ -2106,12 +2114,12 @@ public interface CorpusModelTest<M extends CorpusModel>
 		Item item = mockUsableItem();
 		int value = random(0, Integer.MAX_VALUE);
 		String key = "key";
-		when(storage.getIntegerValue(item, key)).thenReturn(value);
+		when(storage.getInteger(item, key)).thenReturn(value);
 
 		return new ModelTest<>(this, Item.class)
 				.action((t, i) -> {
 					assertEquals(value, t.model().getIntegerValue(layer, i, key));
-					verify(storage).getIntegerValue(item, key);
+					verify(storage).getInteger(item, key);
 				})
 				.testSuccess(item)
 				.testNotReadableError()
@@ -2132,12 +2140,12 @@ public interface CorpusModelTest<M extends CorpusModel>
 		Item item = mockUsableItem();
 		long value = random(0, Long.MAX_VALUE);
 		String key = "key";
-		when(storage.getLongValue(item, key)).thenReturn(value);
+		when(storage.getLong(item, key)).thenReturn(value);
 
 		return new ModelTest<>(this, Item.class)
 				.action((t, i) -> {
 					assertEquals(value, t.model().getLongValue(layer, i, key));
-					verify(storage).getLongValue(item, key);
+					verify(storage).getLong(item, key);
 				})
 				.testSuccess(item)
 				.testNotReadableError()
@@ -2158,12 +2166,12 @@ public interface CorpusModelTest<M extends CorpusModel>
 		Item item = mockUsableItem();
 		float value = random().nextFloat();
 		String key = "key";
-		when(storage.getFloatValue(item, key)).thenReturn(value);
+		when(storage.getFloat(item, key)).thenReturn(value);
 
 		return new ModelTest<>(this, Item.class)
 				.action((t, i) -> {
 					assertEquals(value, t.model().getFloatValue(layer, i, key));
-					verify(storage).getFloatValue(item, key);
+					verify(storage).getFloat(item, key);
 				})
 				.testSuccess(item)
 				.testNotReadableError()
@@ -2184,12 +2192,12 @@ public interface CorpusModelTest<M extends CorpusModel>
 		Item item = mockUsableItem();
 		double value = random().nextDouble();
 		String key = "key";
-		when(storage.getDoubleValue(item, key)).thenReturn(value);
+		when(storage.getDouble(item, key)).thenReturn(value);
 
 		return new ModelTest<>(this, Item.class)
 				.action((t, i) -> {
 					assertEquals(value, t.model().getDoubleValue(layer, i, key));
-					verify(storage).getDoubleValue(item, key);
+					verify(storage).getDouble(item, key);
 				})
 				.testSuccess(item)
 				.testNotReadableError()
@@ -2210,12 +2218,12 @@ public interface CorpusModelTest<M extends CorpusModel>
 		Item item = mockUsableItem();
 		boolean value = random().nextBoolean();
 		String key = "key";
-		when(storage.getBooleanValue(item, key)).thenReturn(value);
+		when(storage.getBoolean(item, key)).thenReturn(value);
 
 		return new ModelTest<>(this, Item.class)
 				.action((t, i) -> {
 					assertEquals(value, t.model().getBooleanValue(layer, i, key));
-					verify(storage).getBooleanValue(item, key);
+					verify(storage).getBoolean(item, key);
 				})
 				.testSuccess(item)
 				.testNotReadableError()
@@ -2267,7 +2275,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 		int oldValue = random().nextInt();
 		int newValue = random().nextInt();
 		String key = "key";
-		when(storage.getIntegerValue(item, key)).thenReturn(oldValue);
+		when(storage.getInteger(item, key)).thenReturn(oldValue);
 		MutableObject<AtomicChange> change = new MutableObject<>();
 
 		return new ModelTest<>(this, Item.class)
@@ -2276,7 +2284,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 					assertEquals(oldValue, t.model().setIntegerValue(layer, i, key, newValue));
 					assertFalse(change.isEmpty());
 					change.get().execute();
-					verify(storage).setIntegerValue(item, key, newValue);
+					verify(storage).setInteger(item, key, newValue);
 				})
 				.testSuccess(item)
 				.testNotWritableError()
@@ -2298,7 +2306,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 		long oldValue = random().nextLong();
 		long newValue = random().nextLong();
 		String key = "key";
-		when(storage.getLongValue(item, key)).thenReturn(oldValue);
+		when(storage.getLong(item, key)).thenReturn(oldValue);
 		MutableObject<AtomicChange> change = new MutableObject<>();
 
 		return new ModelTest<>(this, Item.class)
@@ -2307,7 +2315,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 					assertEquals(oldValue, t.model().setLongValue(layer, i, key, newValue));
 					assertFalse(change.isEmpty());
 					change.get().execute();
-					verify(storage).setLongValue(item, key, newValue);
+					verify(storage).setLong(item, key, newValue);
 				})
 				.testSuccess(item)
 				.testNotWritableError()
@@ -2329,7 +2337,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 		float oldValue = random().nextFloat();
 		float newValue = random().nextFloat();
 		String key = "key";
-		when(storage.getFloatValue(item, key)).thenReturn(oldValue);
+		when(storage.getFloat(item, key)).thenReturn(oldValue);
 		MutableObject<AtomicChange> change = new MutableObject<>();
 
 		return new ModelTest<>(this, Item.class)
@@ -2338,7 +2346,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 					assertEquals(oldValue, t.model().setFloatValue(layer, i, key, newValue));
 					assertFalse(change.isEmpty());
 					change.get().execute();
-					verify(storage).setFloatValue(item, key, newValue);
+					verify(storage).setFloat(item, key, newValue);
 				})
 				.testSuccess(item)
 				.testNotWritableError()
@@ -2360,7 +2368,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 		double oldValue = random().nextDouble();
 		double newValue = random().nextDouble();
 		String key = "key";
-		when(storage.getDoubleValue(item, key)).thenReturn(oldValue);
+		when(storage.getDouble(item, key)).thenReturn(oldValue);
 		MutableObject<AtomicChange> change = new MutableObject<>();
 
 		return new ModelTest<>(this, Item.class)
@@ -2369,7 +2377,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 					assertEquals(oldValue, t.model().setDoubleValue(layer, i, key, newValue));
 					assertFalse(change.isEmpty());
 					change.get().execute();
-					verify(storage).setDoubleValue(item, key, newValue);
+					verify(storage).setDouble(item, key, newValue);
 				})
 				.testSuccess(item)
 				.testNotWritableError()
@@ -2391,7 +2399,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 		boolean oldValue = random().nextBoolean();
 		boolean newValue = random().nextBoolean();
 		String key = "key";
-		when(storage.getBooleanValue(item, key)).thenReturn(oldValue);
+		when(storage.getBoolean(item, key)).thenReturn(oldValue);
 		MutableObject<AtomicChange> change = new MutableObject<>();
 
 		return new ModelTest<>(this, Item.class)
@@ -2400,7 +2408,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 					assertEquals(oldValue, t.model().setBooleanValue(layer, i, key, newValue));
 					assertFalse(change.isEmpty());
 					change.get().execute();
-					verify(storage).setBooleanValue(item, key, newValue);
+					verify(storage).setBoolean(item, key, newValue);
 				})
 				.testSuccess(item)
 				.testNotWritableError()

@@ -133,42 +133,42 @@ public class PackedAnnotationStorage implements ManagedAnnotationStorage {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getIntegerValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getInteger(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
 	 */
 	@Override
-	public int getIntegerValue(Item item, String key) {
+	public int getInteger(Item item, String key) {
 		return dataManager().getInteger(item, handleForKey(key));
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getFloatValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getFloat(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
 	 */
 	@Override
-	public float getFloatValue(Item item, String key) {
+	public float getFloat(Item item, String key) {
 		return dataManager().getFloat(item, handleForKey(key));
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getDoubleValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getDouble(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
 	 */
 	@Override
-	public double getDoubleValue(Item item, String key) {
+	public double getDouble(Item item, String key) {
 		return dataManager().getDouble(item, handleForKey(key));
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getLongValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getLong(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
 	 */
 	@Override
-	public long getLongValue(Item item, String key) {
+	public long getLong(Item item, String key) {
 		return dataManager().getLong(item, handleForKey(key));
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getBooleanValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getBoolean(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
 	 */
 	@Override
-	public boolean getBooleanValue(Item item, String key) {
+	public boolean getBoolean(Item item, String key) {
 		return dataManager().getBoolean(item, handleForKey(key));
 	}
 
@@ -189,42 +189,42 @@ public class PackedAnnotationStorage implements ManagedAnnotationStorage {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setIntegerValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, int)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setInteger(de.ims.icarus2.model.api.members.item.Item, java.lang.String, int)
 	 */
 	@Override
-	public void setIntegerValue(Item item, String key, int value) {
+	public void setInteger(Item item, String key, int value) {
 		dataManager().setInteger(item, handleForKey(key), value);
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setLongValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, long)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setLong(de.ims.icarus2.model.api.members.item.Item, java.lang.String, long)
 	 */
 	@Override
-	public void setLongValue(Item item, String key, long value) {
+	public void setLong(Item item, String key, long value) {
 		dataManager().setLong(item, handleForKey(key), value);
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setFloatValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, float)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setFloat(de.ims.icarus2.model.api.members.item.Item, java.lang.String, float)
 	 */
 	@Override
-	public void setFloatValue(Item item, String key, float value) {
+	public void setFloat(Item item, String key, float value) {
 		dataManager().setFloat(item, handleForKey(key), value);
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setDoubleValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, double)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setDouble(de.ims.icarus2.model.api.members.item.Item, java.lang.String, double)
 	 */
 	@Override
-	public void setDoubleValue(Item item, String key, double value) {
+	public void setDouble(Item item, String key, double value) {
 		dataManager().setDouble(item, handleForKey(key), value);
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setBooleanValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, boolean)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setBoolean(de.ims.icarus2.model.api.members.item.Item, java.lang.String, boolean)
 	 */
 	@Override
-	public void setBooleanValue(Item item, String key, boolean value) {
+	public void setBoolean(Item item, String key, boolean value) {
 		dataManager().setBoolean(item, handleForKey(key), value);
 	}
 

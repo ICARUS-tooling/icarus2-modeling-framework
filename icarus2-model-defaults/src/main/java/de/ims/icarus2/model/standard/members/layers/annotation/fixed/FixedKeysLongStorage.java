@@ -95,7 +95,7 @@ public class FixedKeysLongStorage extends AbstractFixedKeysStorage<long[]> {
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
-		return Long.valueOf(getLongValue(item, key));
+		return Long.valueOf(getLong(item, key));
 	}
 
 	/**
@@ -103,26 +103,26 @@ public class FixedKeysLongStorage extends AbstractFixedKeysStorage<long[]> {
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		setLongValue(item, key, ((Number) value).longValue());
+		setLong(item, key, ((Number) value).longValue());
 	}
 
 	@Override
-	public int getIntegerValue(Item item, String key) {
-		return (int) getLongValue(item, key);
+	public int getInteger(Item item, String key) {
+		return (int) getLong(item, key);
 	}
 
 	@Override
-	public float getFloatValue(Item item, String key) {
-		return getLongValue(item, key);
+	public float getFloat(Item item, String key) {
+		return getLong(item, key);
 	}
 
 	@Override
-	public double getDoubleValue(Item item, String key) {
-		return getLongValue(item, key);
+	public double getDouble(Item item, String key) {
+		return getLong(item, key);
 	}
 
 	@Override
-	public long getLongValue(Item item, String key) {
+	public long getLong(Item item, String key) {
 		int index = checkKeyAndGetIndex(key);
 		long[] buffer = getBuffer(item);
 
@@ -134,12 +134,12 @@ public class FixedKeysLongStorage extends AbstractFixedKeysStorage<long[]> {
 	}
 
 	@Override
-	public void setIntegerValue(Item item, String key, int value) {
-		setLongValue(item, key, value);
+	public void setInteger(Item item, String key, int value) {
+		setLong(item, key, value);
 	}
 
 	@Override
-	public void setLongValue(Item item, String key, long value) {
+	public void setLong(Item item, String key, long value) {
 		int index = checkKeyAndGetIndex(key);
 		long[] buffer = getBuffer(item, true);
 

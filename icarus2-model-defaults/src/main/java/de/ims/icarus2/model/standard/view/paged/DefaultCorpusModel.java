@@ -882,35 +882,35 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	public int getIntegerValue(AnnotationLayer layer, Item item, String key) {
 		checkReadItem(item);
 
-		return layer.getAnnotationStorage().getIntegerValue(item, key);
+		return layer.getAnnotationStorage().getInteger(item, key);
 	}
 
 	@Override
 	public long getLongValue(AnnotationLayer layer, Item item, String key) {
 		checkReadItem(item);
 
-		return layer.getAnnotationStorage().getLongValue(item, key);
+		return layer.getAnnotationStorage().getLong(item, key);
 	}
 
 	@Override
 	public float getFloatValue(AnnotationLayer layer, Item item, String key) {
 		checkReadItem(item);
 
-		return layer.getAnnotationStorage().getFloatValue(item, key);
+		return layer.getAnnotationStorage().getFloat(item, key);
 	}
 
 	@Override
 	public double getDoubleValue(AnnotationLayer layer, Item item, String key) {
 		checkReadItem(item);
 
-		return layer.getAnnotationStorage().getDoubleValue(item, key);
+		return layer.getAnnotationStorage().getDouble(item, key);
 	}
 
 	@Override
 	public boolean getBooleanValue(AnnotationLayer layer, Item item, String key) {
 		checkReadItem(item);
 
-		return layer.getAnnotationStorage().getBooleanValue(item, key);
+		return layer.getAnnotationStorage().getBoolean(item, key);
 	}
 
 	@Override
@@ -933,7 +933,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	public int setIntegerValue(AnnotationLayer layer, Item item, String key,
 			int value) {
 		checkWriteItem(item);
-		int oldValue = layer.getAnnotationStorage().getIntegerValue(item, key);
+		int oldValue = layer.getAnnotationStorage().getInteger(item, key);
 
 		executeChange(new SerializableAtomicModelChange.IntegerValueChange(
 				layer, item, key, value, oldValue));
@@ -945,7 +945,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	public long setLongValue(AnnotationLayer layer, Item item, String key,
 			long value) {
 		checkWriteItem(item);
-		long oldValue = layer.getAnnotationStorage().getLongValue(item, key);
+		long oldValue = layer.getAnnotationStorage().getLong(item, key);
 
 		executeChange(new SerializableAtomicModelChange.LongValueChange(
 				layer, item, key, value, oldValue));
@@ -957,7 +957,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	public float setFloatValue(AnnotationLayer layer, Item item, String key,
 			float value) {
 		checkWriteItem(item);
-		float oldValue = layer.getAnnotationStorage().getFloatValue(item, key);
+		float oldValue = layer.getAnnotationStorage().getFloat(item, key);
 
 		executeChange(new SerializableAtomicModelChange.FloatValueChange(
 				layer, item, key, value, oldValue));
@@ -969,7 +969,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	public double setDoubleValue(AnnotationLayer layer, Item item, String key,
 			double value) {
 		checkWriteItem(item);
-		double oldValue = layer.getAnnotationStorage().getDoubleValue(item, key);
+		double oldValue = layer.getAnnotationStorage().getDouble(item, key);
 
 		executeChange(new SerializableAtomicModelChange.DoubleValueChange(
 				layer, item, key, value, oldValue));
@@ -981,7 +981,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	public boolean setBooleanValue(AnnotationLayer layer, Item item,
 			String key, boolean value) {
 		checkWriteItem(item);
-		boolean oldValue = layer.getAnnotationStorage().getBooleanValue(item, key);
+		boolean oldValue = layer.getAnnotationStorage().getBoolean(item, key);
 
 		executeChange(new SerializableAtomicModelChange.BooleanValueChange(
 				layer, item, key, value, oldValue));

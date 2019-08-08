@@ -141,7 +141,7 @@ public class FixedKeysBoolean31BitStorage extends AbstractFixedKeysBooleanStorag
 	}
 
 	@Override
-	public boolean getBooleanValue(Item item, String key) {
+	public boolean getBoolean(Item item, String key) {
 		int index = checkKeyAndGetIndex(key);
 		int b = annotations.getInt(item);
 
@@ -153,7 +153,7 @@ public class FixedKeysBoolean31BitStorage extends AbstractFixedKeysBooleanStorag
 	}
 
 	@Override
-	public void setBooleanValue(Item item, String key, boolean value) {
+	public void setBoolean(Item item, String key, boolean value) {
 		int index = checkKeyAndGetIndex(key);
 		int b = annotations.getInt(item);
 

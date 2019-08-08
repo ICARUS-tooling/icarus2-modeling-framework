@@ -97,7 +97,7 @@ public class SingleKeyIntegerStorage extends AbstractSingleKeyStorage {
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
-		return Integer.valueOf(getIntegerValue(item, key));
+		return Integer.valueOf(getInteger(item, key));
 	}
 
 	/**
@@ -105,33 +105,33 @@ public class SingleKeyIntegerStorage extends AbstractSingleKeyStorage {
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		setIntegerValue(item, key, ((Number) value).intValue());
+		setInteger(item, key, ((Number) value).intValue());
 	}
 
 	@Override
-	public int getIntegerValue(Item item, String key) {
+	public int getInteger(Item item, String key) {
 		checkKey(key);
 
 		return annotations.getInt(item);
 	}
 
 	@Override
-	public float getFloatValue(Item item, String key) {
-		return getIntegerValue(item, key);
+	public float getFloat(Item item, String key) {
+		return getInteger(item, key);
 	}
 
 	@Override
-	public double getDoubleValue(Item item, String key) {
-		return getIntegerValue(item, key);
+	public double getDouble(Item item, String key) {
+		return getInteger(item, key);
 	}
 
 	@Override
-	public long getLongValue(Item item, String key) {
-		return getIntegerValue(item, key);
+	public long getLong(Item item, String key) {
+		return getInteger(item, key);
 	}
 
 	@Override
-	public void setIntegerValue(Item item, String key, int value) {
+	public void setInteger(Item item, String key, int value) {
 		checkKey(key);
 
 		if(value==noEntryValue) {
@@ -142,8 +142,8 @@ public class SingleKeyIntegerStorage extends AbstractSingleKeyStorage {
 	}
 
 	@Override
-	public void setLongValue(Item item, String key, long value) {
-		setIntegerValue(item, key, IcarusUtils.ensureIntegerValueRange(value));
+	public void setLong(Item item, String key, long value) {
+		setInteger(item, key, IcarusUtils.ensureIntegerValueRange(value));
 	}
 
 	/**

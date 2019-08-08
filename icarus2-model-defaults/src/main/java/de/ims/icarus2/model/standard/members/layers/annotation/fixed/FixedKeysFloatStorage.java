@@ -96,7 +96,7 @@ public class FixedKeysFloatStorage extends AbstractFixedKeysStorage<float[]> {
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
-		return Float.valueOf(getFloatValue(item, key));
+		return Float.valueOf(getFloat(item, key));
 	}
 
 	/**
@@ -104,11 +104,11 @@ public class FixedKeysFloatStorage extends AbstractFixedKeysStorage<float[]> {
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		setFloatValue(item, key, ((Number) value).floatValue());
+		setFloat(item, key, ((Number) value).floatValue());
 	}
 
 	@Override
-	public float getFloatValue(Item item, String key) {
+	public float getFloat(Item item, String key) {
 		int index = checkKeyAndGetIndex(key);
 		float[] buffer = getBuffer(item);
 
@@ -120,12 +120,12 @@ public class FixedKeysFloatStorage extends AbstractFixedKeysStorage<float[]> {
 	}
 
 	@Override
-	public double getDoubleValue(Item item, String key) {
-		return getFloatValue(item, key);
+	public double getDouble(Item item, String key) {
+		return getFloat(item, key);
 	}
 
 	@Override
-	public void setFloatValue(Item item, String key, float value) {
+	public void setFloat(Item item, String key, float value) {
 		int index = checkKeyAndGetIndex(key);
 		float[] buffer = getBuffer(item, true);
 

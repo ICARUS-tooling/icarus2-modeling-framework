@@ -80,15 +80,15 @@ public abstract class BasicAnnotationResolver<E extends Object> implements Resol
 
 		switch (valueType.getName()) {
 		case ValueType.INTEGER_TYPE_LABEL: return new IntAnnotationResolver(
-				annotationStorage::setIntegerValue, annotationManifest, annotationKey);
+				annotationStorage::setInteger, annotationManifest, annotationKey);
 		case ValueType.LONG_TYPE_LABEL: return new LongAnnotationResolver(
-				annotationStorage::setLongValue, annotationManifest, annotationKey);
+				annotationStorage::setLong, annotationManifest, annotationKey);
 		case ValueType.FLOAT_TYPE_LABEL: return new FloatAnnotationResolver(
-				annotationStorage::setFloatValue, annotationManifest, annotationKey);
+				annotationStorage::setFloat, annotationManifest, annotationKey);
 		case ValueType.DOUBLE_TYPE_LABEL: return new DoubleAnnotationResolver(
-				annotationStorage::setDoubleValue, annotationManifest, annotationKey);
+				annotationStorage::setDouble, annotationManifest, annotationKey);
 		case ValueType.BOOLEAN_TYPE_LABEL: return new BooleanAnnotationResolver(
-				annotationStorage::setBooleanValue, annotationManifest, annotationKey);
+				annotationStorage::setBoolean, annotationManifest, annotationKey);
 
 		default:
 			return new ObjectAnnotationResolver(annotationStorage::setValue, annotationManifest, annotationKey);

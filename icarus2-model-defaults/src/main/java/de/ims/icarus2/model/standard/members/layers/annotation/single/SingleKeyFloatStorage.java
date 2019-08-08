@@ -97,7 +97,7 @@ public class SingleKeyFloatStorage extends AbstractSingleKeyStorage {
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
-		return Float.valueOf(getFloatValue(item, key));
+		return Float.valueOf(getFloat(item, key));
 	}
 
 	/**
@@ -105,23 +105,23 @@ public class SingleKeyFloatStorage extends AbstractSingleKeyStorage {
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		setFloatValue(item, key, ((Number) value).floatValue());
+		setFloat(item, key, ((Number) value).floatValue());
 	}
 
 	@Override
-	public float getFloatValue(Item item, String key) {
+	public float getFloat(Item item, String key) {
 		checkKey(key);
 
 		return annotations.getFloat(item);
 	}
 
 	@Override
-	public double getDoubleValue(Item item, String key) {
-		return getFloatValue(item, key);
+	public double getDouble(Item item, String key) {
+		return getFloat(item, key);
 	}
 
 	@Override
-	public void setFloatValue(Item item, String key, float value) {
+	public void setFloat(Item item, String key, float value) {
 		checkKey(key);
 
 		if(Float.compare(value, noEntryValue)==0) {

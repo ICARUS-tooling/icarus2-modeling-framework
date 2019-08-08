@@ -75,7 +75,7 @@ public abstract class AbstractFixedKeysBooleanStorage extends AbstractAnnotation
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
-		return Boolean.valueOf(getBooleanValue(item, key));
+		return Boolean.valueOf(getBoolean(item, key));
 	}
 
 	protected abstract boolean getNoEntryValue(String key);
@@ -88,6 +88,6 @@ public abstract class AbstractFixedKeysBooleanStorage extends AbstractAnnotation
 		if(value==null) {
 			value = _boolean(getNoEntryValue(key));
 		}
-		setBooleanValue(item, key, ((Boolean) value).booleanValue());
+		setBoolean(item, key, ((Boolean) value).booleanValue());
 	}
 }

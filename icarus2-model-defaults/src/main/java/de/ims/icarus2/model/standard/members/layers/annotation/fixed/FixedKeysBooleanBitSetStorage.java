@@ -92,7 +92,7 @@ public class FixedKeysBooleanBitSetStorage extends AbstractFixedKeysStorage<BitS
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
-		return Boolean.valueOf(getBooleanValue(item, key));
+		return Boolean.valueOf(getBoolean(item, key));
 	}
 
 	/**
@@ -100,11 +100,11 @@ public class FixedKeysBooleanBitSetStorage extends AbstractFixedKeysStorage<BitS
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		setBooleanValue(item, key, ((Boolean) value).booleanValue());
+		setBoolean(item, key, ((Boolean) value).booleanValue());
 	}
 
 	@Override
-	public boolean getBooleanValue(Item item, String key) {
+	public boolean getBoolean(Item item, String key) {
 		int index = checkKeyAndGetIndex(key);
 		BitSet buffer = getBuffer(item);
 
@@ -116,7 +116,7 @@ public class FixedKeysBooleanBitSetStorage extends AbstractFixedKeysStorage<BitS
 	}
 
 	@Override
-	public void setBooleanValue(Item item, String key, boolean value) {
+	public void setBoolean(Item item, String key, boolean value) {
 		int index = checkKeyAndGetIndex(key);
 		BitSet buffer = getBuffer(item, true);
 

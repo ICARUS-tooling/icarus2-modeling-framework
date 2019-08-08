@@ -939,13 +939,13 @@ public class SerializableAtomicModelChange {
 		 */
 		@Override
 		public void execute() {
-			int oldValue = layer.getAnnotationStorage().getIntegerValue(item, key);
+			int oldValue = layer.getAnnotationStorage().getInteger(item, key);
 
 			if(oldValue!=expectedValue)
 				throw new ModelException(layer.getCorpus(), ModelErrorCode.MODEL_CORRUPTED_EDIT,
 						"Expected value "+expectedValue+" - got "+oldValue);
 
-			layer.getAnnotationStorage().setIntegerValue(item, key, value);
+			layer.getAnnotationStorage().setInteger(item, key, value);
 
 			expectedValue = value;
 			value = oldValue;
@@ -1000,13 +1000,13 @@ public class SerializableAtomicModelChange {
 		 */
 		@Override
 		public void execute() {
-			long oldValue = layer.getAnnotationStorage().getLongValue(item, key);
+			long oldValue = layer.getAnnotationStorage().getLong(item, key);
 
 			if(oldValue!=expectedValue)
 				throw new ModelException(layer.getCorpus(), ModelErrorCode.MODEL_CORRUPTED_EDIT,
 						"Expected value "+expectedValue+" - got "+oldValue);
 
-			layer.getAnnotationStorage().setLongValue(item, key, value);
+			layer.getAnnotationStorage().setLong(item, key, value);
 
 			expectedValue = value;
 			value = oldValue;
@@ -1061,13 +1061,13 @@ public class SerializableAtomicModelChange {
 		 */
 		@Override
 		public void execute() {
-			float oldValue = layer.getAnnotationStorage().getFloatValue(item, key);
+			float oldValue = layer.getAnnotationStorage().getFloat(item, key);
 
 			if(Float.compare(oldValue, expectedValue)!=0)
 				throw new ModelException(layer.getCorpus(), ModelErrorCode.MODEL_CORRUPTED_EDIT,
 						"Expected value "+expectedValue+" - got "+oldValue);
 
-			layer.getAnnotationStorage().setFloatValue(item, key, value);
+			layer.getAnnotationStorage().setFloat(item, key, value);
 
 			expectedValue = value;
 			value = oldValue;
@@ -1122,13 +1122,13 @@ public class SerializableAtomicModelChange {
 		 */
 		@Override
 		public void execute() {
-			double oldValue = layer.getAnnotationStorage().getDoubleValue(item, key);
+			double oldValue = layer.getAnnotationStorage().getDouble(item, key);
 
 			if(Double.compare(oldValue, expectedValue)!=0)
 				throw new ModelException(layer.getCorpus(), ModelErrorCode.MODEL_CORRUPTED_EDIT,
 						"Expected value "+expectedValue+" - got "+oldValue);
 
-			layer.getAnnotationStorage().setDoubleValue(item, key, value);
+			layer.getAnnotationStorage().setDouble(item, key, value);
 
 			expectedValue = value;
 			value = oldValue;
@@ -1183,13 +1183,13 @@ public class SerializableAtomicModelChange {
 		 */
 		@Override
 		public void execute() {
-			boolean oldValue = layer.getAnnotationStorage().getBooleanValue(item, key);
+			boolean oldValue = layer.getAnnotationStorage().getBoolean(item, key);
 
 			if(oldValue!=expectedValue)
 				throw new ModelException(layer.getCorpus(), ModelErrorCode.MODEL_CORRUPTED_EDIT,
 						"Expected value "+expectedValue+" - got "+oldValue);
 
-			layer.getAnnotationStorage().setBooleanValue(item, key, value);
+			layer.getAnnotationStorage().setBoolean(item, key, value);
 
 			expectedValue = value;
 			value = oldValue;

@@ -165,7 +165,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getIntegerValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getInteger(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
 	 */
 	@Test
 	default void testGetIntegerValue() {
@@ -173,7 +173,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getFloatValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getFloat(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
 	 */
 	@Test
 	default void testGetFloatValue() {
@@ -181,7 +181,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getDoubleValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getDouble(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
 	 */
 	@Test
 	default void testGetDoubleValue() {
@@ -189,7 +189,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getLongValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getLong(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
 	 */
 	@Test
 	default void testGetLongValue() {
@@ -197,7 +197,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getBooleanValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getBoolean(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
 	 */
 	@Test
 	default void testGetBooleanValue() {
@@ -237,7 +237,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setIntegerValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, int)}.
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setInteger(de.ims.icarus2.model.api.members.item.Item, java.lang.String, int)}.
 	 */
 	@Test
 	default void testSetIntegerValue() {
@@ -245,7 +245,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setLongValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, long)}.
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setLong(de.ims.icarus2.model.api.members.item.Item, java.lang.String, long)}.
 	 */
 	@Test
 	default void testSetLongValue() {
@@ -253,7 +253,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setFloatValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, float)}.
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setFloat(de.ims.icarus2.model.api.members.item.Item, java.lang.String, float)}.
 	 */
 	@Test
 	default void testSetFloatValue() {
@@ -261,7 +261,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setDoubleValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, double)}.
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setDouble(de.ims.icarus2.model.api.members.item.Item, java.lang.String, double)}.
 	 */
 	@Test
 	default void testSetDoubleValue() {
@@ -269,7 +269,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setBooleanValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, boolean)}.
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setBoolean(de.ims.icarus2.model.api.members.item.Item, java.lang.String, boolean)}.
 	 */
 	@Test
 	default void testSetBooleanValue() {

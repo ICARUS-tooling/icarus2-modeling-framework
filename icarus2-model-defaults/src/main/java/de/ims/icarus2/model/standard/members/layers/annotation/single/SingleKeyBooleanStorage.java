@@ -103,7 +103,7 @@ public class SingleKeyBooleanStorage extends AbstractSingleKeyStorage {
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
-		return _boolean(getBooleanValue(item, key));
+		return _boolean(getBoolean(item, key));
 	}
 
 	/**
@@ -111,11 +111,11 @@ public class SingleKeyBooleanStorage extends AbstractSingleKeyStorage {
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		setBooleanValue(item, key, cast((Boolean)value));
+		setBoolean(item, key, cast((Boolean)value));
 	}
 
 	@Override
-	public boolean getBooleanValue(Item item, String key) {
+	public boolean getBoolean(Item item, String key) {
 		checkKey(key);
 
 		boolean result = annotations.contains(item);
@@ -128,7 +128,7 @@ public class SingleKeyBooleanStorage extends AbstractSingleKeyStorage {
 	}
 
 	@Override
-	public void setBooleanValue(Item item, String key, boolean value) {
+	public void setBoolean(Item item, String key, boolean value) {
 		checkKey(key);
 
 		if(!value || (noEntryValueSet && value==noEntryValue)) {

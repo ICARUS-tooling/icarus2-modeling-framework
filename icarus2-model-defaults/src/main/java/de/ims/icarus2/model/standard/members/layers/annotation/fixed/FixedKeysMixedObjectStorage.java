@@ -250,27 +250,27 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 	}
 
 	@Override
-	public int getIntegerValue(Item item, String key) {
+	public int getInteger(Item item, String key) {
 		return getPrimitive(item, key).intValue();
 	}
 
 	@Override
-	public float getFloatValue(Item item, String key) {
+	public float getFloat(Item item, String key) {
 		return getPrimitive(item, key).floatValue();
 	}
 
 	@Override
-	public double getDoubleValue(Item item, String key) {
+	public double getDouble(Item item, String key) {
 		return getPrimitive(item, key).doubleValue();
 	}
 
 	@Override
-	public long getLongValue(Item item, String key) {
+	public long getLong(Item item, String key) {
 		return getPrimitive(item, key).longValue();
 	}
 
 	@Override
-	public boolean getBooleanValue(Item item, String key) {
+	public boolean getBoolean(Item item, String key) {
 		return getPrimitive(item, key).booleanValue();
 	}
 
@@ -316,27 +316,27 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 	}
 
 	@Override
-	public void setIntegerValue(Item item, String key, int value) {
+	public void setInteger(Item item, String key, int value) {
 		ensureAndGetPrimitive(item, key, MutableInteger.class).setInt(value);
 	}
 
 	@Override
-	public void setLongValue(Item item, String key, long value) {
+	public void setLong(Item item, String key, long value) {
 		ensureAndGetPrimitive(item, key, MutableLong.class).setLong(value);
 	}
 
 	@Override
-	public void setFloatValue(Item item, String key, float value) {
+	public void setFloat(Item item, String key, float value) {
 		ensureAndGetPrimitive(item, key, MutableFloat.class).setFloat(value);
 	}
 
 	@Override
-	public void setDoubleValue(Item item, String key, double value) {
+	public void setDouble(Item item, String key, double value) {
 		ensureAndGetPrimitive(item, key, MutableDouble.class).setDouble(value);
 	}
 
 	@Override
-	public void setBooleanValue(Item item, String key, boolean value) {
+	public void setBoolean(Item item, String key, boolean value) {
 		ensureAndGetPrimitive(item, key, MutableBoolean.class).setBoolean(value);
 	}
 

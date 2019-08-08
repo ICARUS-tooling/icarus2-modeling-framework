@@ -158,11 +158,11 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 			return (String) getValue(item, key);
 		}
 
-		int getIntegerValue(Item item, String key);
-		float getFloatValue(Item item, String key);
-		double getDoubleValue(Item item, String key);
-		long getLongValue(Item item, String key);
-		boolean getBooleanValue(Item item, String key);
+		int getInteger(Item item, String key);
+		float getFloat(Item item, String key);
+		double getDouble(Item item, String key);
+		long getLong(Item item, String key);
+		boolean getBoolean(Item item, String key);
 
 		/**
 		 * Removes from this annotation storage all annotations for
@@ -217,11 +217,11 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 			setValue(item, key, value);
 		}
 
-		void setIntegerValue(Item item, String key, int value);
-		void setLongValue(Item item, String key, long value);
-		void setFloatValue(Item item, String key, float value);
-		void setDoubleValue(Item item, String key, double value);
-		void setBooleanValue(Item item, String key, boolean value);
+		void setInteger(Item item, String key, int value);
+		void setLong(Item item, String key, long value);
+		void setFloat(Item item, String key, float value);
+		void setDouble(Item item, String key, double value);
+		void setBoolean(Item item, String key, boolean value);
 
 		/**
 		 * Tells whether or not there are any annotations available for this storage.

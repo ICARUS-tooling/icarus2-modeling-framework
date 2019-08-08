@@ -95,7 +95,7 @@ public class FixedKeysDoubleStorage extends AbstractFixedKeysStorage<double[]> {
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
-		return Double.valueOf(getDoubleValue(item, key));
+		return Double.valueOf(getDouble(item, key));
 	}
 
 	/**
@@ -103,26 +103,26 @@ public class FixedKeysDoubleStorage extends AbstractFixedKeysStorage<double[]> {
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		setDoubleValue(item, key, ((Number) value).doubleValue());
+		setDouble(item, key, ((Number) value).doubleValue());
 	}
 
 	@Override
-	public float getFloatValue(Item item, String key) {
-		return (float) getDoubleValue(item, key);
+	public float getFloat(Item item, String key) {
+		return (float) getDouble(item, key);
 	}
 
 	@Override
-	public int getIntegerValue(Item item, String key) {
-		return (int) getDoubleValue(item, key);
+	public int getInteger(Item item, String key) {
+		return (int) getDouble(item, key);
 	}
 
 	@Override
-	public long getLongValue(Item item, String key) {
-		return (long) getDoubleValue(item, key);
+	public long getLong(Item item, String key) {
+		return (long) getDouble(item, key);
 	}
 
 	@Override
-	public double getDoubleValue(Item item, String key) {
+	public double getDouble(Item item, String key) {
 		int index = checkKeyAndGetIndex(key);
 		double[] buffer = getBuffer(item);
 
@@ -134,7 +134,7 @@ public class FixedKeysDoubleStorage extends AbstractFixedKeysStorage<double[]> {
 	}
 
 	@Override
-	public void setDoubleValue(Item item, String key, double value) {
+	public void setDouble(Item item, String key, double value) {
 		int index = checkKeyAndGetIndex(key);
 		double[] buffer = getBuffer(item, true);
 
