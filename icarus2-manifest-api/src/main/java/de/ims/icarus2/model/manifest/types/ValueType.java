@@ -158,6 +158,7 @@ public class ValueType implements StringResource, NamedObject {
 	 *
 	 * @param value
 	 * @return
+	 * @throws ValueConversionException if conversion of the given {@code value} failed
 	 */
 	public CharSequence toChars(Object value) throws ValueConversionException {
 		if(!isSerializable())
@@ -178,11 +179,12 @@ public class ValueType implements StringResource, NamedObject {
 	 * @param s
 	 * @param classLoader
 	 * @return
+	 * @throws ValueConversionException if parsing the given string failed
 	 */
 	public Object parse(CharSequence s, ClassLoader classLoader) throws ValueConversionException {
 		throw new IllegalStateException("Cannot parse data of type '"+getStringValue()+"'");
 
-		//TODO make marker interface for setting a "parse" method (stati) for custom types?
+		//TODO make marker interface for setting a "parse" method (static) for custom types?
 	}
 
 	/**

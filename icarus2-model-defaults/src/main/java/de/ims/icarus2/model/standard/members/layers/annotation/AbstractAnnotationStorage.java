@@ -16,11 +16,14 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation;
 
-import static java.util.Objects.requireNonNull;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -38,6 +41,10 @@ public abstract class AbstractAnnotationStorage implements ManagedAnnotationStor
 	private final int initialCapacity;
 
 	public AbstractAnnotationStorage(boolean weakKeys, int initialCapacity) {
+		if(initialCapacity<=0 && initialCapacity!=UNSET_INT)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					"Capacity must be positive or -1: "+initialCapacity);
+
 		this.weakKeys = weakKeys;
 		this.initialCapacity = initialCapacity;
 	}
@@ -68,11 +75,11 @@ public abstract class AbstractAnnotationStorage implements ManagedAnnotationStor
 		return 1000;
 	}
 
-	public int getInitialCapacity(AnnotationLayer layer) {
+	protected int getInitialCapacity(AnnotationLayer layer) {
 
 		int initialCapacity = this.initialCapacity;
 
-		if(initialCapacity<0) {
+		if(initialCapacity==UNSET_INT) {
 			initialCapacity = estimateRequiredCapacity(layer);
 		}
 
@@ -85,72 +92,82 @@ public abstract class AbstractAnnotationStorage implements ManagedAnnotationStor
 	}
 
 	private static ModelException forUnsupportedGetter(String type, String key) {
-		requireNonNull(key);
 		return new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Annotation value is not an "+type+" for key: "+key);
 	}
 
+	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public String getString(Item item, String key) {
 		throw forUnsupportedGetter("string", key);
 	}
 
+	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public int getInteger(Item item, String key) {
 		throw forUnsupportedGetter("integer", key);
 	}
 
+	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public float getFloat(Item item, String key) {
 		throw forUnsupportedGetter("float", key);
 	}
 
+	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public double getDouble(Item item, String key) {
 		throw forUnsupportedGetter("double", key);
 	}
 
+	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public long getLong(Item item, String key) {
 		throw forUnsupportedGetter("long", key);
 	}
 
+	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public boolean getBoolean(Item item, String key) {
 		throw forUnsupportedGetter("boolean", key);
 	}
 
 	private static ModelException forUnsupportedSetter(String type, String key) {
-		requireNonNull(key);
 		return new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Cannot set "+type+" value for key: "+key);
 	}
 
+	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public void setString(Item item, String key, String value) {
 		throw forUnsupportedSetter("string", key);
 	}
 
+	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public void setInteger(Item item, String key, int value) {
 		throw forUnsupportedSetter("integer", key);
 	}
 
+	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public void setLong(Item item, String key, long value) {
 		throw forUnsupportedSetter("long", key);
 	}
 
+	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public void setFloat(Item item, String key, float value) {
 		throw forUnsupportedSetter("float", key);
 	}
 
+	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public void setDouble(Item item, String key, double value) {
 		throw forUnsupportedSetter("double", key);
 	}
 
+	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public void setBoolean(Item item, String key, boolean value) {
 		throw forUnsupportedSetter("boolean", key);
@@ -185,7 +202,7 @@ public abstract class AbstractAnnotationStorage implements ManagedAnnotationStor
 	 * @see de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorage#addItem(de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
-	public boolean addItem(Item item) {
+	public boolean addItem(@Nullable Item item) {
 		return false;
 	}
 
@@ -193,7 +210,7 @@ public abstract class AbstractAnnotationStorage implements ManagedAnnotationStor
 	 * @see de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorage#removeItem(de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
-	public boolean removeItem(Item item) {
+	public boolean removeItem(@Nullable Item item) {
 		return true;
 	}
 

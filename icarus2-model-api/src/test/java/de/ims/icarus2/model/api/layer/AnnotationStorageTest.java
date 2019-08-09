@@ -6,28 +6,33 @@ package de.ims.icarus2.model.api.layer;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.getTestValue;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
+import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.model.api.ModelTestUtils;
 import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
@@ -35,6 +40,9 @@ import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.guard.ApiGuard;
+import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * @author Markus Gärtner
@@ -43,17 +51,27 @@ import de.ims.icarus2.test.TestSettings;
 public interface AnnotationStorageTest<S extends AnnotationStorage>
 		extends ApiGuardedTest<S> {
 
+	/**
+	 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
+	 */
+	@Override
+	default void configureApiGuard(ApiGuard<S> apiGuard) {
+		ApiGuardedTest.super.configureApiGuard(apiGuard);
+
+		apiGuard.nullGuard(true);
+	}
+
 	/** The main value type for the storage under test */
-	ValueType getValueType();
+//	ValueType getValueType();
+
+	static final Set<ValueType> ALL_TYPES = Collections.unmodifiableSet(
+			new ObjectOpenHashSet<>(ValueType.valueTypes()));
 
 	/** Types supported for setting values on the storage */
 	Set<ValueType> typesForSetters();
 
 	/** Types supported when fetching values from the storage */
 	Set<ValueType> typesForGetters();
-
-	/** Creates a list of distinct keys */
-	List<String> keys();
 
 	default String key() {
 		return "test";
@@ -63,9 +81,12 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		return null;
 	}
 
+	Object testValue(String key);
+
 	default AnnotationLayerManifest createManifest(String key) {
 		AnnotationLayerManifest manifest = mockTypedManifest(AnnotationLayerManifest.class);
 		when(manifest.getAvailableKeys()).thenReturn(singleton(key));
+		when(manifest.getDefaultKey()).thenReturn(Optional.of(key));
 
 		AnnotationManifest annotationManifest = mock(AnnotationManifest.class);
 		when(annotationManifest.getKey()).thenReturn(Optional.of(key));
@@ -125,7 +146,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		String key = key();
 		S storage = createForLayer(createLayer(createManifest(key)));
 		Item item = mockItem();
-		Object value = getTestValue(getValueType());
+		Object value = testValue(key);
 
 		storage.setValue(item, key, value);
 
@@ -158,7 +179,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		Item item = mockItem();
 
 		if(typesForGetters().contains(ValueType.STRING)) {
-
+			storage.getString(item, key);
 		} else {
 			assertUnsupportedType(() -> storage.getString(item, key));
 		}
@@ -168,40 +189,80 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getInteger(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
 	 */
 	@Test
-	default void testGetIntegerValue() {
-		fail("Not yet implemented"); // TODO
+	default void testGetIntegerEmpty() {
+		String key = key();
+		S storage = createForLayer(createLayer(createManifest(key)));
+		Item item = mockItem();
+
+		if(typesForGetters().contains(ValueType.INTEGER)) {
+			storage.getInteger(item, key);
+		} else {
+			assertUnsupportedType(() -> storage.getInteger(item, key));
+		}
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getFloat(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
 	 */
 	@Test
-	default void testGetFloatValue() {
-		fail("Not yet implemented"); // TODO
+	default void testGetFloatEmpty() {
+		String key = key();
+		S storage = createForLayer(createLayer(createManifest(key)));
+		Item item = mockItem();
+
+		if(typesForGetters().contains(ValueType.FLOAT)) {
+			storage.getFloat(item, key);
+		} else {
+			assertUnsupportedType(() -> storage.getFloat(item, key));
+		}
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getDouble(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
 	 */
 	@Test
-	default void testGetDoubleValue() {
-		fail("Not yet implemented"); // TODO
+	default void testGetDoubleEmpty() {
+		String key = key();
+		S storage = createForLayer(createLayer(createManifest(key)));
+		Item item = mockItem();
+
+		if(typesForGetters().contains(ValueType.DOUBLE)) {
+			storage.getDouble(item, key);
+		} else {
+			assertUnsupportedType(() -> storage.getDouble(item, key));
+		}
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getLong(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
 	 */
 	@Test
-	default void testGetLongValue() {
-		fail("Not yet implemented"); // TODO
+	default void testGetLongEmpty() {
+		String key = key();
+		S storage = createForLayer(createLayer(createManifest(key)));
+		Item item = mockItem();
+
+		if(typesForGetters().contains(ValueType.LONG)) {
+			storage.getLong(item, key);
+		} else {
+			assertUnsupportedType(() -> storage.getLong(item, key));
+		}
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getBoolean(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
 	 */
 	@Test
-	default void testGetBooleanValue() {
-		fail("Not yet implemented"); // TODO
+	default void testGetBooleanEmpty() {
+		String key = key();
+		S storage = createForLayer(createLayer(createManifest(key)));
+		Item item = mockItem();
+
+		if(typesForGetters().contains(ValueType.BOOLEAN)) {
+			storage.getBoolean(item, key);
+		} else {
+			assertUnsupportedType(() -> storage.getBoolean(item, key));
+		}
 	}
 
 	/**
@@ -209,7 +270,34 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	 */
 	@Test
 	default void testRemoveAllValuesSupplierOfQextendsItem() {
-		fail("Not yet implemented"); // TODO
+		String key = key();
+		S storage = createForLayer(createLayer(createManifest(key)));
+		Item[] items = Stream.generate(ModelTestUtils::mockItem)
+				.limit(random(12, 20))
+				.toArray(Item[]::new);
+
+		for (Item item : items) {
+			storage.setValue(item, key, testValue(key));
+		}
+
+		int from = random(3, items.length/2);
+		int to = random(items.length/2 + 1, items.length-3);
+
+		MutableInteger pointer = new MutableInteger(from);
+		Supplier<? extends Item> supplier = () -> {
+			int index = pointer.getAndIncrement();
+			return index<=to ? items[index] : null;
+		};
+
+		storage.removeAllValues(supplier);
+
+		for (int i = 0; i < items.length; i++) {
+			if(i<from || i>to) {
+				assertTrue(storage.hasAnnotations(items[i]), "Missing annotation for item at index "+i);
+			} else {
+				assertFalse(storage.hasAnnotations(items[i]), "Annotation still present for item at index "+i);
+			}
+		}
 	}
 
 	/**
@@ -217,7 +305,31 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	 */
 	@Test
 	default void testRemoveAllValuesIteratorOfQextendsItem() {
-		fail("Not yet implemented"); // TODO
+		String key = key();
+		S storage = createForLayer(createLayer(createManifest(key)));
+		Item[] items = Stream.generate(ModelTestUtils::mockItem)
+				.limit(random(12, 20))
+				.toArray(Item[]::new);
+
+		for (Item item : items) {
+			storage.setValue(item, key, testValue(key));
+		}
+
+		int from = random(3, items.length/2);
+		int to = random(items.length/2 + 1, items.length-3);
+
+		Iterator<? extends Item> iterator =
+				Arrays.asList(items).subList(from, to+1).iterator();
+
+		storage.removeAllValues(iterator);
+
+		for (int i = 0; i < items.length; i++) {
+			if(i<from || i>to) {
+				assertTrue(storage.hasAnnotations(items[i]), "Missing annotation for item at index "+i);
+			} else {
+				assertFalse(storage.hasAnnotations(items[i]), "Annotation still present for item at index "+i);
+			}
+		}
 	}
 
 	/**
@@ -225,7 +337,14 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	 */
 	@Test
 	default void testSetValue() {
-		fail("Not yet implemented"); // TODO
+		String key = key();
+		S storage = createForLayer(createLayer(createManifest(key)));
+		Item item = mockItem();
+		Object value = testValue(key);
+
+		storage.setValue(item, key, value);
+
+		assertEquals(value, storage.getValue(item, key));
 	}
 
 	/**
@@ -233,47 +352,117 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	 */
 	@Test
 	default void testSetString() {
-		fail("Not yet implemented"); // TODO
+		String key = key();
+		S storage = createForLayer(createLayer(createManifest(key)));
+		Item item = mockItem();
+		String value = (String) getTestValue(ValueType.STRING);
+
+		if(typesForSetters().contains(ValueType.STRING)) {
+			storage.setString(item, key, value);
+			assertEquals(value, storage.getString(item, key));
+		} else {
+			assertUnsupportedType(() -> storage.setString(item, key, value));
+		}
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setInteger(de.ims.icarus2.model.api.members.item.Item, java.lang.String, int)}.
 	 */
 	@Test
-	default void testSetIntegerValue() {
-		fail("Not yet implemented"); // TODO
+	default void testSetInteger() {
+		String key = key();
+		S storage = createForLayer(createLayer(createManifest(key)));
+		Item item = mockItem();
+		int value = ((Integer) getTestValue(ValueType.INTEGER)).intValue();
+
+		if(typesForSetters().contains(ValueType.INTEGER)) {
+			storage.setInteger(item, key, value);
+			assertEquals(value, storage.getInteger(item, key));
+		} else {
+			assertUnsupportedType(() -> storage.setInteger(item, key, value));
+		}
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setLong(de.ims.icarus2.model.api.members.item.Item, java.lang.String, long)}.
 	 */
 	@Test
-	default void testSetLongValue() {
-		fail("Not yet implemented"); // TODO
+	default void testSetLong() {
+		String key = key();
+		S storage = createForLayer(createLayer(createManifest(key)));
+		Item item = mockItem();
+		long value = ((Long) getTestValue(ValueType.LONG)).longValue();
+
+		if(typesForSetters().contains(ValueType.LONG)) {
+			storage.setLong(item, key, value);
+			assertEquals(value, storage.getLong(item, key));
+		} else {
+			assertUnsupportedType(() -> storage.setLong(item, key, value));
+		}
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setFloat(de.ims.icarus2.model.api.members.item.Item, java.lang.String, float)}.
 	 */
 	@Test
-	default void testSetFloatValue() {
-		fail("Not yet implemented"); // TODO
+	default void testSetFloat() {
+		String key = key();
+		S storage = createForLayer(createLayer(createManifest(key)));
+		Item item = mockItem();
+		float value = ((Float) getTestValue(ValueType.FLOAT)).floatValue();
+
+		if(typesForSetters().contains(ValueType.FLOAT)) {
+			storage.setFloat(item, key, value);
+			assertEquals(value, storage.getFloat(item, key));
+		} else {
+			assertUnsupportedType(() -> storage.setFloat(item, key, value));
+		}
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setDouble(de.ims.icarus2.model.api.members.item.Item, java.lang.String, double)}.
 	 */
 	@Test
-	default void testSetDoubleValue() {
-		fail("Not yet implemented"); // TODO
+	default void testSetDouble() {
+		String key = key();
+		S storage = createForLayer(createLayer(createManifest(key)));
+		Item item = mockItem();
+		double value = ((Double) getTestValue(ValueType.DOUBLE)).doubleValue();
+
+		if(typesForSetters().contains(ValueType.DOUBLE)) {
+			storage.setDouble(item, key, value);
+			assertEquals(value, storage.getDouble(item, key));
+		} else {
+			assertUnsupportedType(() -> storage.setDouble(item, key, value));
+		}
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setBoolean(de.ims.icarus2.model.api.members.item.Item, java.lang.String, boolean)}.
 	 */
+	@SuppressWarnings("boxing")
 	@Test
-	default void testSetBooleanValue() {
-		fail("Not yet implemented"); // TODO
+	default void testSetBoolean() {
+		String key = key();
+		S storage = createForLayer(createLayer(createManifest(key)));
+		Item item = mockItem();
+		boolean value = ((Boolean) getTestValue(ValueType.BOOLEAN)).booleanValue();
+
+		if(typesForSetters().contains(ValueType.BOOLEAN)) {
+			storage.setBoolean(item, key, value);
+			assertEquals(value, storage.getBoolean(item, key));
+		} else {
+			assertUnsupportedType(() -> storage.setBoolean(item, key, value));
+		}
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#hasAnnotations()}.
+	 */
+	@Test
+	default void testHasAnnotationsEmpty() {
+		S storage = createForLayer(createLayer(createManifest(key())));
+		assertFalse(storage.hasAnnotations());
 	}
 
 	/**
@@ -281,7 +470,23 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	 */
 	@Test
 	default void testHasAnnotations() {
-		fail("Not yet implemented"); // TODO
+		String key = key();
+		S storage = createForLayer(createLayer(createManifest(key)));
+		Item item = mockItem();
+		Object value = testValue(key);
+
+		storage.setValue(item, key, value);
+
+		assertTrue(storage.hasAnnotations());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#hasAnnotations(de.ims.icarus2.model.api.members.item.Item)}.
+	 */
+	@Test
+	default void testHasAnnotationsItemEmpty() {
+		S storage = createForLayer(createLayer(createManifest(key())));
+		assertFalse(storage.hasAnnotations(mockItem()));
 	}
 
 	/**
@@ -289,7 +494,15 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	 */
 	@Test
 	default void testHasAnnotationsItem() {
-		fail("Not yet implemented"); // TODO
+		String key = key();
+		S storage = createForLayer(createLayer(createManifest(key)));
+		Item item = mockItem();
+		Object value = testValue(key);
+
+		storage.setValue(item, key, value);
+
+		assertTrue(storage.hasAnnotations(item));
+		assertFalse(storage.hasAnnotations(mockItem()));
 	}
 
 }

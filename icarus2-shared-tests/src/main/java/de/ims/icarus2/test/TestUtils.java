@@ -107,6 +107,13 @@ public class TestUtils {
 	 */
 	public static final int RUNS_EXHAUSTIVE = 100;
 
+	public static final int[] CAPACITIES = {
+			1,
+			10,
+			100,
+			10_000,
+	};
+
 	public static final String LOREM_IPSUM_ASCII =
 			"0f73n 51m1l4r c0mm4ndz @R j00, 4r3 Wh0 4cc355 k0n"
     		+ "t@kt da. 0u7 (0py 3x4|\\/|3|\\|3d 1F, |7 No+ p@g3"

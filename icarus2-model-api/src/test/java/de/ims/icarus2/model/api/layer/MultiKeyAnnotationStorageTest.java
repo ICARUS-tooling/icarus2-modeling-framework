@@ -28,7 +28,6 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 		extends AnnotationStorageTest<S> {
 
 	/** Creates a list of distinct keys */
-	@Override
 	List<String> keys();
 
 	default AnnotationLayerManifest createManifest(List<String> keys) {
