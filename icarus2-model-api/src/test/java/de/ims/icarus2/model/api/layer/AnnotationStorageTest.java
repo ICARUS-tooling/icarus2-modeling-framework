@@ -104,6 +104,10 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		return layer;
 	}
 
+	default S createForKey(String key) {
+		return createForLayer(createLayer(createManifest(key)));
+	}
+
 	S createForLayer(AnnotationLayer layer);
 
 	static void assertUnsupportedType(Executable executable) {
@@ -130,7 +134,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	@Test
 	default void testCollectKeysEmpty() {
 		String key = key();
-		S storage = createForLayer(createLayer(createManifest(key)));
+		S storage = createForKey(key);
 
 		Consumer<String> collector = mock(Consumer.class);
 		assertFalse(storage.collectKeys(mockItem(), collector));
@@ -144,7 +148,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	@Test
 	default void testCollectKeysSingular() {
 		String key = key();
-		S storage = createForLayer(createLayer(createManifest(key)));
+		S storage = createForKey(key);
 		Item item = mockItem();
 		Object value = testValue(key);
 
@@ -163,7 +167,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	@Test
 	default void testGetValueEmpty() {
 		String key = key();
-		S storage = createForLayer(createLayer(createManifest(key)));
+		S storage = createForKey(key);
 		Item item = mockItem();
 
 		assertEquals(noEntryValue(key), storage.getValue(item, key));
@@ -175,7 +179,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	@Test
 	default void testGetStringEmpty() {
 		String key = key();
-		S storage = createForLayer(createLayer(createManifest(key)));
+		S storage = createForKey(key);
 		Item item = mockItem();
 
 		if(typesForGetters().contains(ValueType.STRING)) {
@@ -191,7 +195,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	@Test
 	default void testGetIntegerEmpty() {
 		String key = key();
-		S storage = createForLayer(createLayer(createManifest(key)));
+		S storage = createForKey(key);
 		Item item = mockItem();
 
 		if(typesForGetters().contains(ValueType.INTEGER)) {
@@ -207,7 +211,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	@Test
 	default void testGetFloatEmpty() {
 		String key = key();
-		S storage = createForLayer(createLayer(createManifest(key)));
+		S storage = createForKey(key);
 		Item item = mockItem();
 
 		if(typesForGetters().contains(ValueType.FLOAT)) {
@@ -223,7 +227,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	@Test
 	default void testGetDoubleEmpty() {
 		String key = key();
-		S storage = createForLayer(createLayer(createManifest(key)));
+		S storage = createForKey(key);
 		Item item = mockItem();
 
 		if(typesForGetters().contains(ValueType.DOUBLE)) {
@@ -239,7 +243,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	@Test
 	default void testGetLongEmpty() {
 		String key = key();
-		S storage = createForLayer(createLayer(createManifest(key)));
+		S storage = createForKey(key);
 		Item item = mockItem();
 
 		if(typesForGetters().contains(ValueType.LONG)) {
@@ -255,7 +259,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	@Test
 	default void testGetBooleanEmpty() {
 		String key = key();
-		S storage = createForLayer(createLayer(createManifest(key)));
+		S storage = createForKey(key);
 		Item item = mockItem();
 
 		if(typesForGetters().contains(ValueType.BOOLEAN)) {
@@ -271,7 +275,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	@Test
 	default void testRemoveAllValuesSupplierOfQextendsItem() {
 		String key = key();
-		S storage = createForLayer(createLayer(createManifest(key)));
+		S storage = createForKey(key);
 		Item[] items = Stream.generate(ModelTestUtils::mockItem)
 				.limit(random(12, 20))
 				.toArray(Item[]::new);
@@ -306,7 +310,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	@Test
 	default void testRemoveAllValuesIteratorOfQextendsItem() {
 		String key = key();
-		S storage = createForLayer(createLayer(createManifest(key)));
+		S storage = createForKey(key);
 		Item[] items = Stream.generate(ModelTestUtils::mockItem)
 				.limit(random(12, 20))
 				.toArray(Item[]::new);
@@ -338,7 +342,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	@Test
 	default void testSetValue() {
 		String key = key();
-		S storage = createForLayer(createLayer(createManifest(key)));
+		S storage = createForKey(key);
 		Item item = mockItem();
 		Object value = testValue(key);
 
@@ -353,7 +357,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	@Test
 	default void testSetString() {
 		String key = key();
-		S storage = createForLayer(createLayer(createManifest(key)));
+		S storage = createForKey(key);
 		Item item = mockItem();
 		String value = (String) getTestValue(ValueType.STRING);
 
@@ -371,7 +375,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	@Test
 	default void testSetInteger() {
 		String key = key();
-		S storage = createForLayer(createLayer(createManifest(key)));
+		S storage = createForKey(key);
 		Item item = mockItem();
 		int value = ((Integer) getTestValue(ValueType.INTEGER)).intValue();
 
@@ -389,7 +393,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	@Test
 	default void testSetLong() {
 		String key = key();
-		S storage = createForLayer(createLayer(createManifest(key)));
+		S storage = createForKey(key);
 		Item item = mockItem();
 		long value = ((Long) getTestValue(ValueType.LONG)).longValue();
 
@@ -407,7 +411,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	@Test
 	default void testSetFloat() {
 		String key = key();
-		S storage = createForLayer(createLayer(createManifest(key)));
+		S storage = createForKey(key);
 		Item item = mockItem();
 		float value = ((Float) getTestValue(ValueType.FLOAT)).floatValue();
 
@@ -425,7 +429,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	@Test
 	default void testSetDouble() {
 		String key = key();
-		S storage = createForLayer(createLayer(createManifest(key)));
+		S storage = createForKey(key);
 		Item item = mockItem();
 		double value = ((Double) getTestValue(ValueType.DOUBLE)).doubleValue();
 
@@ -444,7 +448,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	@Test
 	default void testSetBoolean() {
 		String key = key();
-		S storage = createForLayer(createLayer(createManifest(key)));
+		S storage = createForKey(key);
 		Item item = mockItem();
 		boolean value = ((Boolean) getTestValue(ValueType.BOOLEAN)).booleanValue();
 
@@ -461,7 +465,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	 */
 	@Test
 	default void testHasAnnotationsEmpty() {
-		S storage = createForLayer(createLayer(createManifest(key())));
+		S storage = create();
 		assertFalse(storage.hasAnnotations());
 	}
 
@@ -471,7 +475,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	@Test
 	default void testHasAnnotations() {
 		String key = key();
-		S storage = createForLayer(createLayer(createManifest(key)));
+		S storage = createForKey(key);
 		Item item = mockItem();
 		Object value = testValue(key);
 
@@ -485,7 +489,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	 */
 	@Test
 	default void testHasAnnotationsItemEmpty() {
-		S storage = createForLayer(createLayer(createManifest(key())));
+		S storage = create();
 		assertFalse(storage.hasAnnotations(mockItem()));
 	}
 
@@ -495,7 +499,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	@Test
 	default void testHasAnnotationsItem() {
 		String key = key();
-		S storage = createForLayer(createLayer(createManifest(key)));
+		S storage = createForKey(key);
 		Item item = mockItem();
 		Object value = testValue(key);
 

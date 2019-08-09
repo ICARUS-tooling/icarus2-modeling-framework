@@ -33,6 +33,7 @@ import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorage;
 import de.ims.icarus2.model.standard.members.layers.annotation.packed.PackedDataManager.PackageHandle;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.Part;
 import de.ims.icarus2.util.annotations.TestableImplementation;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -42,7 +43,8 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  *
  */
 @TestableImplementation(AnnotationStorage.class)
-public class PackedAnnotationStorage implements ManagedAnnotationStorage {
+public class PackedAnnotationStorage extends AbstractPart<AnnotationLayer>
+		implements ManagedAnnotationStorage {
 
 	/**
 	 * The (potentially shared) storage for our annotations.
@@ -84,6 +86,7 @@ public class PackedAnnotationStorage implements ManagedAnnotationStorage {
 	 */
 	@Override
 	public void addNotify(AnnotationLayer layer) {
+		super.addNotify(layer);
 
 		// Register with manager
 		PackedDataManager<Item,AnnotationStorage> dataManager = dataManager();
@@ -110,6 +113,8 @@ public class PackedAnnotationStorage implements ManagedAnnotationStorage {
 	 */
 	@Override
 	public void removeNotify(AnnotationLayer layer) {
+		super.removeNotify(layer);
+
 		dataManager().removeNotify(this);
 		handles.clear();
 	}

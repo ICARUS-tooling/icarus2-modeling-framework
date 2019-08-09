@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.util;
 
+import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
 
@@ -42,6 +44,7 @@ public class AbstractPart<O extends Object> implements Part<O> {
 	 */
 	@Override
 	public void addNotify(O owner) {
+		requireNonNull(owner);
 		if(this.owner!=null)
 			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE,
 					"Owner of part already set");
@@ -54,6 +57,7 @@ public class AbstractPart<O extends Object> implements Part<O> {
 	 */
 	@Override
 	public void removeNotify(O owner) {
+		requireNonNull(owner);
 		if(this.owner==null)
 			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE,
 					"Owner of part not yet set");

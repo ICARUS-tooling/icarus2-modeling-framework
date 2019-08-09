@@ -240,6 +240,9 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 		 *
 		 * @return {@code true} iff this layer holds at least one valid annotation object
 		 * for the given {@code Item}.
+		 * Note that this method does not differentiate between actual annotation values
+		 * or marker values (cf. {@link AnnotationManifest#getNoEntryValue()}) signaling
+		 * items that effectively have "no" annotation.
 		 */
 		boolean hasAnnotations(Item item);
 	}

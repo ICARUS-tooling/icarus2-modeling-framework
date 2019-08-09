@@ -17,14 +17,14 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
-import de.ims.icarus2.model.api.layer.AnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorageTest;
 
 /**
  * @author Markus Gärtner
  *
  */
-class SingleKeyObjectStorageTest implements AnnotationStorageTest<SingleKeyObjectStorage> {
+class SingleKeyObjectStorageTest implements ManagedAnnotationStorageTest<SingleKeyObjectStorage> {
 
 	@Override
 	public Class<? extends SingleKeyObjectStorage> getTestTargetClass() {
@@ -48,9 +48,7 @@ class SingleKeyObjectStorageTest implements AnnotationStorageTest<SingleKeyObjec
 
 	@Override
 	public SingleKeyObjectStorage createForLayer(AnnotationLayer layer) {
-		SingleKeyObjectStorage storage = new SingleKeyObjectStorage();
-		storage.addNotify(layer);
-		return storage;
+		return new SingleKeyObjectStorage();
 	}
 
 	@Nested

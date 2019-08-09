@@ -40,6 +40,9 @@ public class SingleKeyObjectStorage extends AbstractSingleKeyStorage {
 	private Map<Item, Object> annotations;
 	private Object noEntryValue;
 
+	/** Placeholder for the addItem() method to reserve storage */
+	private static final Object DUMMY = new Object();
+
 	public SingleKeyObjectStorage() {
 		this(-1);
 	}
@@ -91,7 +94,7 @@ public class SingleKeyObjectStorage extends AbstractSingleKeyStorage {
 
 		Object value = annotations.get(item);
 
-		if(value==null) {
+		if(value==null || value==DUMMY) {
 			value = noEntryValue;
 		}
 
@@ -136,6 +139,16 @@ public class SingleKeyObjectStorage extends AbstractSingleKeyStorage {
 	@Override
 	public boolean removeItem(Item item) {
 		return annotations.remove(item)!=null;
+	}
+
+	@Override
+	public boolean addItem(Item item) {
+		return annotations.putIfAbsent(item, DUMMY)==null;
+	}
+
+	@Override
+	public boolean containsItem(Item item) {
+		return annotations.containsKey(item);
 	}
 
 	public Object getNoEntryValue() {

@@ -30,12 +30,14 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.util.AbstractPart;
 
 /**
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractAnnotationStorage implements ManagedAnnotationStorage {
+public abstract class AbstractAnnotationStorage extends AbstractPart<AnnotationLayer>
+		implements ManagedAnnotationStorage {
 
 	private final boolean weakKeys;
 	private final int initialCapacity;
@@ -181,16 +183,6 @@ public abstract class AbstractAnnotationStorage implements ManagedAnnotationStor
 	@Override
 	public boolean hasAnnotations(Item item) {
 		return false;
-	}
-
-	@Override
-	public void addNotify(AnnotationLayer layer) {
-		// no-op
-	}
-
-	@Override
-	public void removeNotify(AnnotationLayer layer) {
-		// no-op
 	}
 
 	@Override

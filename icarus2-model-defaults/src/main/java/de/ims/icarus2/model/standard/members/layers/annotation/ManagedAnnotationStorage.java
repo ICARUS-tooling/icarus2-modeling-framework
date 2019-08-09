@@ -19,6 +19,7 @@ package de.ims.icarus2.model.standard.members.layers.annotation;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.util.Part;
 import de.ims.icarus2.util.annotations.OptionalMethod;
 
 /**
@@ -35,10 +36,7 @@ import de.ims.icarus2.util.annotations.OptionalMethod;
  * @author Markus Gärtner
  *
  */
-public interface ManagedAnnotationStorage extends AnnotationStorage {
-
-	void addNotify(AnnotationLayer layer);
-	void removeNotify(AnnotationLayer layer);
+public interface ManagedAnnotationStorage extends AnnotationStorage, Part<AnnotationLayer> {
 
 	/**
 	 * Returns {@code true} if the specified item is present in this storage.
