@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.function.Supplier;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -73,7 +75,7 @@ public class SingleKeyObjectStorage extends AbstractSingleKeyStorage {
 	}
 
 	@Override
-	public void removeNotify(AnnotationLayer layer) {
+	public void removeNotify(@Nullable AnnotationLayer layer) {
 		super.removeNotify(layer);
 
 		noEntryValue = null;
