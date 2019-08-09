@@ -60,4 +60,12 @@ public @interface Unguarded {
 	 * to the respective test suites.
 	 */
 	public static final String UNSUPPORTED = "Method not supported";
+
+	/**
+	 * A usable reason for marking methods to be excluded from automatic
+	 * argument testing due to them delegating raw or only slightly changed
+	 * arguments to another method which in turn is expected to be
+	 * guarded against null arguments.
+	 */
+	public static final String DELEGATE = "Method is a delegate";
 }

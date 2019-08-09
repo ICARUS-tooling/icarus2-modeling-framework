@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
+import org.opentest4j.TestAbortedException;
 
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.AnnotationStorageTest;
@@ -57,6 +58,10 @@ public interface ManagedAnnotationStorageTest<S extends ManagedAnnotationStorage
 		return createForLayer(createEnvironment());
 	}
 
+	default boolean supportsItemManagement() {
+		return true;
+	}
+
 	/**
 	 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorage#containsItem(de.ims.icarus2.model.api.members.item.Item)}.
 	 */
@@ -80,6 +85,9 @@ public interface ManagedAnnotationStorageTest<S extends ManagedAnnotationStorage
 	 */
 	@Test
 	default void testAddItem() {
+		if(!supportsItemManagement())
+			throw new TestAbortedException("Implementation does not support item management");
+
 		S storage = create();
 		Item item = mockItem();
 
@@ -92,6 +100,9 @@ public interface ManagedAnnotationStorageTest<S extends ManagedAnnotationStorage
 	 */
 	@Test
 	default void testAddItemRepeated() {
+		if(!supportsItemManagement())
+			throw new TestAbortedException("Implementation does not support item management");
+
 		S storage = create();
 		Item item = mockItem();
 
@@ -105,6 +116,9 @@ public interface ManagedAnnotationStorageTest<S extends ManagedAnnotationStorage
 	 */
 	@Test
 	default void testRemoveItem() {
+		if(!supportsItemManagement())
+			throw new TestAbortedException("Implementation does not support item management");
+
 		S storage = create();
 		Item item = mockItem();
 
@@ -117,6 +131,9 @@ public interface ManagedAnnotationStorageTest<S extends ManagedAnnotationStorage
 	 */
 	@Test
 	default void testRemoveItemForeign() {
+		if(!supportsItemManagement())
+			throw new TestAbortedException("Implementation does not support item management");
+
 		S storage = create();
 
 		storage.addItem(mockItem());
@@ -128,6 +145,9 @@ public interface ManagedAnnotationStorageTest<S extends ManagedAnnotationStorage
 	 */
 	@Test
 	default void testRemoveItemEmpty() {
+		if(!supportsItemManagement())
+			throw new TestAbortedException("Implementation does not support item management");
+
 		assertFalse(create().removeItem(mockItem()));
 	}
 

@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
@@ -109,6 +110,7 @@ public class SingleKeyBooleanStorage extends AbstractSingleKeyStorage {
 	/**
 	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.Object)
 	 */
+	@Unguarded(Unguarded.DELEGATE)
 	@Override
 	public void setValue(Item item, String key, Object value) {
 		setBoolean(item, key, cast((Boolean)value));
