@@ -381,7 +381,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		String key = key();
 		S storage = createForKey(key);
 		Item item = mockItem();
-		int value = ((Integer) getTestValue(ValueType.INTEGER)).intValue();
+		int value = ((Number) testValue(key)).intValue();
 
 		if(typesForSetters().contains(ValueType.INTEGER)) {
 			storage.setInteger(item, key, value);
@@ -399,7 +399,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		String key = key();
 		S storage = createForKey(key);
 		Item item = mockItem();
-		long value = ((Long) getTestValue(ValueType.LONG)).longValue();
+		long value = ((Number) testValue(key)).longValue();
 
 		if(typesForSetters().contains(ValueType.LONG)) {
 			storage.setLong(item, key, value);
@@ -417,7 +417,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		String key = key();
 		S storage = createForKey(key);
 		Item item = mockItem();
-		float value = ((Float) getTestValue(ValueType.FLOAT)).floatValue();
+		float value = ((Number) testValue(key)).floatValue();
 
 		if(typesForSetters().contains(ValueType.FLOAT)) {
 			storage.setFloat(item, key, value);
@@ -435,7 +435,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		String key = key();
 		S storage = createForKey(key);
 		Item item = mockItem();
-		double value = ((Double) getTestValue(ValueType.DOUBLE)).doubleValue();
+		double value = ((Number) testValue(key)).doubleValue();
 
 		if(typesForSetters().contains(ValueType.DOUBLE)) {
 			storage.setDouble(item, key, value);

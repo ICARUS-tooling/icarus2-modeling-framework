@@ -21,6 +21,9 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Unguarded;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -103,6 +106,7 @@ public class SingleKeyFloatStorage extends AbstractSingleKeyStorage {
 	/**
 	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.Object)
 	 */
+	@Unguarded(Unguarded.DELEGATE)
 	@Override
 	public void setValue(Item item, String key, Object value) {
 		setFloat(item, key, ((Number) value).floatValue());
@@ -121,6 +125,16 @@ public class SingleKeyFloatStorage extends AbstractSingleKeyStorage {
 	}
 
 	@Override
+	public int getInteger(Item item, String key) {
+		return (int) getFloat(item, key);
+	}
+
+	@Override
+	public long getLong(Item item, String key) {
+		return (long) getFloat(item, key);
+	}
+
+	@Override
 	public void setFloat(Item item, String key, float value) {
 		checkKey(key);
 
@@ -129,6 +143,26 @@ public class SingleKeyFloatStorage extends AbstractSingleKeyStorage {
 		} else {
 			annotations.put(item, value);
 		}
+	}
+
+	@Override
+	public void setDouble(Item item, String key, double value) {
+		if(Double.compare(value, Float.MAX_VALUE) > 0
+				|| Double.compare(value, -Float.MAX_VALUE) < 0)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					"Double value exceeds float limits: "+value);
+
+		setFloat(item, key, (float) value);
+	}
+
+	@Override
+	public void setInteger(Item item, String key, int value) {
+		setFloat(item, key, value);
+	}
+
+	@Override
+	public void setLong(Item item, String key, long value) {
+		setFloat(item, key, value);
 	}
 
 	/**
@@ -154,7 +188,22 @@ public class SingleKeyFloatStorage extends AbstractSingleKeyStorage {
 
 	@Override
 	public boolean removeItem(Item item) {
-		return Float.compare(annotations.removeFloat(item), noEntryValue)!=0;
+		if(annotations.containsKey(item)) {
+			annotations.removeFloat(item);
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public boolean addItem(Item item) {
+		if(!annotations.containsKey(item)) {
+			annotations.put(item, noEntryValue);
+			return true;
+		}
+
+		return false;
 	}
 
 	public float getNoEntryValue() {
