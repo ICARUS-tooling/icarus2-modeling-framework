@@ -3,7 +3,9 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.single;
 
+import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
+import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -78,6 +80,21 @@ class SingleKeyFloatStorageTest implements ManagedAnnotationStorageTest<SingleKe
 					() -> new SingleKeyFloatStorage(false, capacity));
 		}
 
+	}
+
+	@Nested
+	class Overflows {
+
+		/**
+		 * Test method for {@link SingleKeyFloatStorage#setDouble(de.ims.icarus2.model.api.members.item.Item, String, double)}.
+		 */
+		@ParameterizedTest
+		@ValueSource(doubles = {Double.MAX_VALUE, -Double.MAX_VALUE,
+				-Float.MAX_VALUE-1, Float.MAX_VALUE+1})
+		void testFloatOverflow(double value) {
+			assertIcarusException(GlobalErrorCode.VALUE_OVERFLOW,
+					() -> create().setDouble(mockItem(), key(), value));
+		}
 	}
 
 	/**

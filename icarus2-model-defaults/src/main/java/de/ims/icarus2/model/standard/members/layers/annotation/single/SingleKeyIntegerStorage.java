@@ -21,7 +21,9 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.apiguard.Unguarded;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -145,7 +147,10 @@ public class SingleKeyIntegerStorage extends AbstractSingleKeyStorage {
 
 	@Override
 	public void setLong(Item item, String key, long value) {
-		setInteger(item, key, IcarusUtils.ensureIntegerValueRange(value));
+		if(value<Integer.MIN_VALUE || value >Integer.MAX_VALUE)
+			throw new ModelException(GlobalErrorCode.VALUE_OVERFLOW,
+					"Long value exceeds integer space: "+value);
+		setInteger(item, key, (int) value);
 	}
 
 	/**

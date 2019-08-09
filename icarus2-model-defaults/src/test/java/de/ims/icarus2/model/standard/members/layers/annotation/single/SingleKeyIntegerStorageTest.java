@@ -3,7 +3,9 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.single;
 
+import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
+import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
@@ -79,6 +81,21 @@ class SingleKeyIntegerStorageTest implements ManagedAnnotationStorageTest<Single
 					() -> new SingleKeyIntegerStorage(false, capacity));
 		}
 
+	}
+
+	@Nested
+	class Overflows {
+
+		/**
+		 * Test method for {@link SingleKeyIntegerStorage#setLong(de.ims.icarus2.model.api.members.item.Item, String, long)}.
+		 */
+		@ParameterizedTest
+		@ValueSource(longs = {Long.MAX_VALUE, Long.MIN_VALUE,
+				Integer.MIN_VALUE-1L, Integer.MAX_VALUE+1L})
+		void testIntegerOverflow(long value) {
+			assertIcarusException(GlobalErrorCode.VALUE_OVERFLOW,
+					() -> create().setLong(mockItem(), key(), value));
+		}
 	}
 
 	/**
