@@ -147,8 +147,7 @@ public class SingleKeyFloatStorage extends AbstractSingleKeyStorage {
 
 	@Override
 	public void setDouble(Item item, String key, double value) {
-		if(Double.compare(value, Float.MAX_VALUE) > 0
-				|| Double.compare(value, -Float.MAX_VALUE) < 0)
+		if(value > Float.MAX_VALUE || value < -Float.MAX_VALUE)
 			throw new ModelException(GlobalErrorCode.VALUE_OVERFLOW,
 					"Double value exceeds float limits: "+value);
 

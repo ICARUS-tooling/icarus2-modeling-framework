@@ -4,9 +4,9 @@
 package de.ims.icarus2.model.api.layer;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
-import static de.ims.icarus2.model.manifest.ManifestTestUtils.getTestValue;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.test.TestUtils.random;
+import static de.ims.icarus2.test.TestUtils.randomString;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -363,13 +363,13 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		String key = key();
 		S storage = createForKey(key);
 		Item item = mockItem();
-		String value = (String) getTestValue(ValueType.STRING);
 
 		if(typesForSetters().contains(ValueType.STRING)) {
+			String value = (String) testValue(key);
 			storage.setString(item, key, value);
 			assertEquals(value, storage.getString(item, key));
 		} else {
-			assertUnsupportedType(() -> storage.setString(item, key, value));
+			assertUnsupportedType(() -> storage.setString(item, key, randomString(10)));
 		}
 	}
 
@@ -381,13 +381,13 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		String key = key();
 		S storage = createForKey(key);
 		Item item = mockItem();
-		int value = ((Number) testValue(key)).intValue();
 
 		if(typesForSetters().contains(ValueType.INTEGER)) {
+			int value = ((Number) testValue(key)).intValue();
 			storage.setInteger(item, key, value);
 			assertEquals(value, storage.getInteger(item, key));
 		} else {
-			assertUnsupportedType(() -> storage.setInteger(item, key, value));
+			assertUnsupportedType(() -> storage.setInteger(item, key, random().nextInt()));
 		}
 	}
 
@@ -399,13 +399,13 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		String key = key();
 		S storage = createForKey(key);
 		Item item = mockItem();
-		long value = ((Number) testValue(key)).longValue();
 
 		if(typesForSetters().contains(ValueType.LONG)) {
+			long value = ((Number) testValue(key)).longValue();
 			storage.setLong(item, key, value);
 			assertEquals(value, storage.getLong(item, key));
 		} else {
-			assertUnsupportedType(() -> storage.setLong(item, key, value));
+			assertUnsupportedType(() -> storage.setLong(item, key, random().nextLong()));
 		}
 	}
 
@@ -417,13 +417,13 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		String key = key();
 		S storage = createForKey(key);
 		Item item = mockItem();
-		float value = ((Number) testValue(key)).floatValue();
 
 		if(typesForSetters().contains(ValueType.FLOAT)) {
+			float value = ((Number) testValue(key)).floatValue();
 			storage.setFloat(item, key, value);
 			assertEquals(value, storage.getFloat(item, key));
 		} else {
-			assertUnsupportedType(() -> storage.setFloat(item, key, value));
+			assertUnsupportedType(() -> storage.setFloat(item, key,  random().nextFloat()));
 		}
 	}
 
@@ -435,13 +435,13 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		String key = key();
 		S storage = createForKey(key);
 		Item item = mockItem();
-		double value = ((Number) testValue(key)).doubleValue();
 
 		if(typesForSetters().contains(ValueType.DOUBLE)) {
+			double value = ((Number) testValue(key)).doubleValue();
 			storage.setDouble(item, key, value);
 			assertEquals(value, storage.getDouble(item, key));
 		} else {
-			assertUnsupportedType(() -> storage.setDouble(item, key, value));
+			assertUnsupportedType(() -> storage.setDouble(item, key,  random().nextDouble()));
 		}
 	}
 
@@ -454,13 +454,13 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		String key = key();
 		S storage = createForKey(key);
 		Item item = mockItem();
-		boolean value = ((Boolean) getTestValue(ValueType.BOOLEAN)).booleanValue();
 
 		if(typesForSetters().contains(ValueType.BOOLEAN)) {
+			boolean value = ((Boolean) testValue(key)).booleanValue();
 			storage.setBoolean(item, key, value);
 			assertEquals(value, storage.getBoolean(item, key));
 		} else {
-			assertUnsupportedType(() -> storage.setBoolean(item, key, value));
+			assertUnsupportedType(() -> storage.setBoolean(item, key,  random().nextBoolean()));
 		}
 	}
 

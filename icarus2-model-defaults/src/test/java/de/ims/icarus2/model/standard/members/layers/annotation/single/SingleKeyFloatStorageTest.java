@@ -90,7 +90,7 @@ class SingleKeyFloatStorageTest implements ManagedAnnotationStorageTest<SingleKe
 		 */
 		@ParameterizedTest
 		@ValueSource(doubles = {Double.MAX_VALUE, -Double.MAX_VALUE,
-				-Float.MAX_VALUE-1, Float.MAX_VALUE+1})
+				-Float.MAX_VALUE*1.1, Float.MAX_VALUE*1.1})
 		void testFloatOverflow(double value) {
 			assertIcarusException(GlobalErrorCode.VALUE_OVERFLOW,
 					() -> create().setDouble(mockItem(), key(), value));
