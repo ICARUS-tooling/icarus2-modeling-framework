@@ -153,18 +153,18 @@ public final class IcarusUtils {
 
 	/**
 	 * Checks if the provided {@code value} exceeds {@link #MAX_INTEGER_INDEX}.
-	 * Throws {@link IcarusRuntimeException} with code {@link GlobalErrorCode#INDEX_OVERFLOW}
+	 * Throws {@link IcarusRuntimeException} with code {@link GlobalErrorCode#VALUE_OVERFLOW}
 	 * if that's the case and otherwise returns the supplied value.
 	 *
 	 * @param value
 	 * @return
 	 *
-	 * @throws IcarusRuntimeException of type {@link GlobalErrorCode#INDEX_OVERFLOW} if
+	 * @throws IcarusRuntimeException of type {@link GlobalErrorCode#VALUE_OVERFLOW} if
 	 * the supplied {@code long} value exceeds the {@code int} value space.
 	 */
 	public static int ensureIntegerValueRange(long value) {
 		if(value>MAX_INTEGER_INDEX)
-			throw new IcarusRuntimeException(GlobalErrorCode.INDEX_OVERFLOW,
+			throw new IcarusRuntimeException(GlobalErrorCode.VALUE_OVERFLOW,
 					"Not a legal value in integer range: "+value);
 
 		return (int) value;

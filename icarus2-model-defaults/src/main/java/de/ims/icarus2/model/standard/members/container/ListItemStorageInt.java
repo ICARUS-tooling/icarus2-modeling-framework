@@ -48,7 +48,7 @@ import de.ims.icarus2.util.mem.ReferenceType;
  * elements. It is guaranteed that all methods that return an index value declared to
  * be in the positive value space of {@value Long#MAX_VALUE}} do instead return values limited
  * to the smaller integer space. Similarly methods that take long index values as arguments
- * will fail with a {@link ModelException} of type {@link ModelErrorCode#INDEX_OVERFLOW} when
+ * will fail with a {@link ModelException} of type {@link ModelErrorCode#VALUE_OVERFLOW} when
  * provided with values that exceed the integer space.
  *
  * @author Markus Gärtner

@@ -559,7 +559,7 @@ public class IndexUtils {
 		}
 
 		if(size>IcarusUtils.MAX_INTEGER_INDEX)
-			throw new ModelException(GlobalErrorCode.INDEX_OVERFLOW,
+			throw new ModelException(GlobalErrorCode.VALUE_OVERFLOW,
 					Messages.outOfBounds(null, size, 0, IcarusUtils.MAX_INTEGER_INDEX));
 
 		IndexValueType valueType = getDominantType(indices);
@@ -598,7 +598,7 @@ public class IndexUtils {
 		}
 
 		if(size>IcarusUtils.MAX_INTEGER_INDEX)
-			throw new ModelException(GlobalErrorCode.INDEX_OVERFLOW,
+			throw new ModelException(GlobalErrorCode.VALUE_OVERFLOW,
 					Messages.outOfBounds(null, size, 0, IcarusUtils.MAX_INTEGER_INDEX));
 
 		IndexValueType valueType = getDominantType(indices);

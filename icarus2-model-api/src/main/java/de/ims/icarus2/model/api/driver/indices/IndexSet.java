@@ -421,7 +421,7 @@ public interface IndexSet {
 		int chunks = (int)Math.ceil((double)size/chunkSize);
 
 		if(chunks>IcarusUtils.MAX_INTEGER_INDEX)
-			throw new ModelException(GlobalErrorCode.INDEX_OVERFLOW,
+			throw new ModelException(GlobalErrorCode.VALUE_OVERFLOW,
 					"Cannot create array of size: "+chunks);
 
 		IndexSet[] result = new IndexSet[chunks];

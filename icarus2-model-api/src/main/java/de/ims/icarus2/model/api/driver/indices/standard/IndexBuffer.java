@@ -74,7 +74,7 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Buffer size must not be less than 1: "+bufferSize);
 		if(bufferSize>IcarusUtils.MAX_INTEGER_INDEX)
-			throw new ModelException(GlobalErrorCode.INDEX_OVERFLOW,
+			throw new ModelException(GlobalErrorCode.VALUE_OVERFLOW,
 					"Buffer size exceeds allowed limit for integer index values: "+bufferSize);
 
 		this.valueType = valueType;
@@ -124,7 +124,7 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 	protected void checkCapacity(int requiredSlots) {
 		int capacity = Array.getLength(buffer);
 		if(capacity-size < requiredSlots)
-			throw new ModelException(GlobalErrorCode.INDEX_OVERFLOW,
+			throw new ModelException(GlobalErrorCode.VALUE_OVERFLOW,
 					"Unable to fit in "+requiredSlots+" more slots - max size: "+capacity);
 	}
 

@@ -109,11 +109,10 @@ public enum GlobalErrorCode implements ErrorCode {
 	CANCELLED(117),
 
 	/**
-	 * A given long index exceeds the {@value Integer#MAX_VALUE} limit or
-	 * a buffer structure couldn't be enlarged due to the size overflowing
-	 * integer value space.
+	 * A given value exceeds the value space of a more limited type or a
+	 * buffer structure reached the upper limit of its supported size.
 	 */
-	INDEX_OVERFLOW(120),
+	VALUE_OVERFLOW(120),
 
 	/**
 	 * Delegating an operation to another class failed and the exception
@@ -124,7 +123,8 @@ public enum GlobalErrorCode implements ErrorCode {
 	/**
 	 * A given enum constant is unknown to the code using it in a switch
 	 * statement or similar construct. This error type is exclusively
-	 * intended to signal that an enum has received a new constant.
+	 * intended to signal that an enum has received a new constant and the
+	 * code in question hasn't been updated to properly handle the change.
 	 */
 	UNKNOWN_ENUM(131),
 
