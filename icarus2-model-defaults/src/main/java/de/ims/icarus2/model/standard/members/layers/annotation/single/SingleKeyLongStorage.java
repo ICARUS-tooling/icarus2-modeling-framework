@@ -21,6 +21,7 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -103,6 +104,7 @@ public class SingleKeyLongStorage extends AbstractSingleKeyStorage {
 	/**
 	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.Object)
 	 */
+	@Unguarded(Unguarded.DELEGATE)
 	@Override
 	public void setValue(Item item, String key, Object value) {
 		setLong(item, key, ((Number) value).longValue());
@@ -169,7 +171,22 @@ public class SingleKeyLongStorage extends AbstractSingleKeyStorage {
 
 	@Override
 	public boolean removeItem(Item item) {
-		return annotations.removeLong(item)!=noEntryValue;
+		if(annotations.containsKey(item)) {
+			annotations.removeLong(item);
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public boolean addItem(Item item) {
+		if(!annotations.containsKey(item)) {
+			annotations.put(item, noEntryValue);
+			return true;
+		}
+
+		return false;
 	}
 
 	public long getNoEntryValue() {
