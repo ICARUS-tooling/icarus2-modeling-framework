@@ -7,6 +7,7 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.getTestValue;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.test.TestUtils.random;
+import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -66,6 +67,9 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 
 	static final Set<ValueType> ALL_TYPES = Collections.unmodifiableSet(
 			new ObjectOpenHashSet<>(ValueType.valueTypes()));
+
+	static final Set<ValueType> NUMBER_TYPES = Collections.unmodifiableSet(set(
+			ValueType.INTEGER, ValueType.LONG, ValueType.FLOAT, ValueType.DOUBLE));
 
 	/** Types supported for setting values on the storage */
 	Set<ValueType> typesForSetters();

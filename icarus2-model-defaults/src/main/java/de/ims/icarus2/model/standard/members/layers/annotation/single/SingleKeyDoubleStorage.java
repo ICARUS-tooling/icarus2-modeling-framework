@@ -21,6 +21,7 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -103,9 +104,10 @@ public class SingleKeyDoubleStorage extends AbstractSingleKeyStorage {
 	/**
 	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.Object)
 	 */
+	@Unguarded(Unguarded.DELEGATE)
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		setFloat(item, key, ((Number) value).floatValue());
+		setDouble(item, key, ((Number) value).doubleValue());
 	}
 
 	@Override
@@ -141,6 +143,21 @@ public class SingleKeyDoubleStorage extends AbstractSingleKeyStorage {
 		}
 	}
 
+	@Override
+	public void setFloat(Item item, String key, float value) {
+		setDouble(item, key, value);
+	}
+
+	@Override
+	public void setInteger(Item item, String key, int value) {
+		setDouble(item, key, value);
+	}
+
+	@Override
+	public void setLong(Item item, String key, long value) {
+		setDouble(item, key, value);
+	}
+
 	/**
 	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#removeAllValues(java.util.function.Supplier)
 	 */
@@ -164,7 +181,22 @@ public class SingleKeyDoubleStorage extends AbstractSingleKeyStorage {
 
 	@Override
 	public boolean removeItem(Item item) {
-		return Double.compare(annotations.removeDouble(item), noEntryValue)!=0;
+		if(annotations.containsKey(item)) {
+			annotations.removeDouble(item);
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public boolean addItem(Item item) {
+		if(!annotations.containsKey(item)) {
+			annotations.put(item, noEntryValue);
+			return true;
+		}
+
+		return false;
 	}
 
 	public double getNoEntryValue() {
