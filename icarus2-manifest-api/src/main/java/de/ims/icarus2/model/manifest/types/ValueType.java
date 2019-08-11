@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.manifest.types;
 
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.lang.Primitives._boolean;
 import static de.ims.icarus2.util.lang.Primitives._double;
 import static de.ims.icarus2.util.lang.Primitives._float;
@@ -77,6 +78,7 @@ import de.ims.icarus2.util.strings.StringUtil;
 public class ValueType implements StringResource, NamedObject {
 
 	private final Class<?> baseClass;
+	private final Class<?> primitiveClass;
 	private final String xmlForm;
 	private final boolean serializable;
 	private final boolean basic;
@@ -145,6 +147,9 @@ public class ValueType implements StringResource, NamedObject {
 		this.xmlForm = xmlForm;
 		this.serializable = serializable;
 		this.basic = basic;
+
+		Class<?> unwrappedClass = Primitives.unwrap(baseClass);
+		this.primitiveClass = unwrappedClass==baseClass ? null : unwrappedClass;
 
 		if(canCache) {
 			xmlLookup.put(xmlForm, this);
@@ -232,6 +237,10 @@ public class ValueType implements StringResource, NamedObject {
 		return basic;
 	}
 
+	public final boolean isPrimitiveType() {
+		return primitiveClass!=null;
+	}
+
 	/**
 	 * @see de.ims.icarus2.model.util.StringResource.XmlResource#getStringValue()
 	 */
@@ -247,6 +256,10 @@ public class ValueType implements StringResource, NamedObject {
 
 	public final Class<?> getBaseClass() {
 		return baseClass;
+	}
+
+	public final Class<?> getPrimitiveClass() {
+		return primitiveClass;
 	}
 
 	/**
@@ -582,7 +595,8 @@ public class ValueType implements StringResource, NamedObject {
 	}
 
 	public boolean isValidType(Class<?> type) {
-		return baseClass.isAssignableFrom(type);
+		return baseClass.isAssignableFrom(type)
+				|| primitiveClass!=null && primitiveClass.isAssignableFrom(type);
 	}
 
 	/**
@@ -688,11 +702,22 @@ public class ValueType implements StringResource, NamedObject {
 	public Class<?> checkValue(Object value) {
 		Class<?> type = extractClass(value);
 
-		if(!isValidType(type))
-			throw new ManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
-					"Incompatible value type "+type.getName()+" for value-type "+xmlForm+" - expected "+baseClass.getName()); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		checkType(type);
 
 		return type;
+	}
+
+	/**
+	 *
+	 * @param type
+	 * @return
+	 *
+	 * @throws ManifestException with type {@link ManifestErrorCode#MANIFEST_TYPE_CAST} if the type check fails
+	 */
+	public void checkType(Class<?> type) {
+		if(!isValidType(type))
+			throw new ManifestException(ManifestErrorCode.MANIFEST_TYPE_CAST,
+					"Incompatible value type "+type.getName()+" for value-type "+xmlForm+" - expected "+baseClass.getName());
 	}
 
 	public void checkValues(Collection<?> values) {
@@ -881,7 +906,7 @@ public class ValueType implements StringResource, NamedObject {
 		static final char WILDCARD_SIZE_CHARACTER = 'x';
 		static final String WILDCARD_SIZE_STRING = "x";
 
-		private static final int UNDEFINED_SIZE = -1;
+		private static final int UNDEFINED_SIZE = UNSET_INT;
 
 		private final int size;
 		private final ValueType componentType;

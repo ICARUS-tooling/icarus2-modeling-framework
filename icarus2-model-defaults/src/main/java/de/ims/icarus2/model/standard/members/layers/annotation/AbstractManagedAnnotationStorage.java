@@ -31,19 +31,20 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.util.AbstractPart;
 
 /**
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractAnnotationStorage extends AbstractPart<AnnotationLayer>
+public abstract class AbstractManagedAnnotationStorage extends AbstractPart<AnnotationLayer>
 		implements ManagedAnnotationStorage {
 
 	private final boolean weakKeys;
 	private final int initialCapacity;
 
-	public AbstractAnnotationStorage(boolean weakKeys, int initialCapacity) {
+	public AbstractManagedAnnotationStorage(boolean weakKeys, int initialCapacity) {
 		if(initialCapacity<=0 && initialCapacity!=UNSET_INT)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"Capacity must be positive or -1: "+initialCapacity);
@@ -94,48 +95,48 @@ public abstract class AbstractAnnotationStorage extends AbstractPart<AnnotationL
 		return false;
 	}
 
-	private static ModelException forUnsupportedGetter(String type, String key) {
+	protected final static ModelException forUnsupportedGetter(ValueType type, String key) {
 		return new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
-				"Annotation value is not an "+type+" for key: "+key);
+				"Annotation value is not of required type "+type+" for key: "+key);
 	}
 
 	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public String getString(Item item, String key) {
-		throw forUnsupportedGetter("string", key);
+		throw forUnsupportedGetter(ValueType.STRING, key);
 	}
 
 	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public int getInteger(Item item, String key) {
-		throw forUnsupportedGetter("integer", key);
+		throw forUnsupportedGetter(ValueType.INTEGER, key);
 	}
 
 	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public float getFloat(Item item, String key) {
-		throw forUnsupportedGetter("float", key);
+		throw forUnsupportedGetter(ValueType.FLOAT, key);
 	}
 
 	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public double getDouble(Item item, String key) {
-		throw forUnsupportedGetter("double", key);
+		throw forUnsupportedGetter(ValueType.DOUBLE, key);
 	}
 
 	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public long getLong(Item item, String key) {
-		throw forUnsupportedGetter("long", key);
+		throw forUnsupportedGetter(ValueType.LONG, key);
 	}
 
 	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public boolean getBoolean(Item item, String key) {
-		throw forUnsupportedGetter("boolean", key);
+		throw forUnsupportedGetter(ValueType.BOOLEAN, key);
 	}
 
-	private static ModelException forUnsupportedSetter(String type, String key) {
+	protected final static ModelException forUnsupportedSetter(ValueType type, String key) {
 		return new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
 				"Cannot set "+type+" value for key: "+key);
 	}
@@ -143,37 +144,37 @@ public abstract class AbstractAnnotationStorage extends AbstractPart<AnnotationL
 	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public void setString(Item item, String key, String value) {
-		throw forUnsupportedSetter("string", key);
+		throw forUnsupportedSetter(ValueType.STRING, key);
 	}
 
 	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public void setInteger(Item item, String key, int value) {
-		throw forUnsupportedSetter("integer", key);
+		throw forUnsupportedSetter(ValueType.INTEGER, key);
 	}
 
 	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public void setLong(Item item, String key, long value) {
-		throw forUnsupportedSetter("long", key);
+		throw forUnsupportedSetter(ValueType.LONG, key);
 	}
 
 	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public void setFloat(Item item, String key, float value) {
-		throw forUnsupportedSetter("float", key);
+		throw forUnsupportedSetter(ValueType.FLOAT, key);
 	}
 
 	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public void setDouble(Item item, String key, double value) {
-		throw forUnsupportedSetter("double", key);
+		throw forUnsupportedSetter(ValueType.DOUBLE, key);
 	}
 
 	@Unguarded(Unguarded.UNSUPPORTED)
 	@Override
 	public void setBoolean(Item item, String key, boolean value) {
-		throw forUnsupportedSetter("boolean", key);
+		throw forUnsupportedSetter(ValueType.BOOLEAN, key);
 	}
 
 	@Override

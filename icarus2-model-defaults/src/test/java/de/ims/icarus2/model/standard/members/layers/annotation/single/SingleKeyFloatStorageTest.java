@@ -98,18 +98,18 @@ class SingleKeyFloatStorageTest implements ManagedAnnotationStorageTest<SingleKe
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#typesForSetters()
+	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#typesForSetters(String)
 	 */
 	@Override
-	public Set<ValueType> typesForSetters() {
+	public Set<ValueType> typesForSetters(String key) {
 		return NUMBER_TYPES;
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#typesForGetters()
+	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#typesForGetters(String)
 	 */
 	@Override
-	public Set<ValueType> typesForGetters() {
+	public Set<ValueType> typesForGetters(String key) {
 		return NUMBER_TYPES;
 	}
 
@@ -119,6 +119,14 @@ class SingleKeyFloatStorageTest implements ManagedAnnotationStorageTest<SingleKe
 	@Override
 	public Object testValue(String key) {
 		return Float.valueOf(random().nextFloat());
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#valueType(java.lang.String)
+	 */
+	@Override
+	public ValueType valueType(String key) {
+		return ValueType.FLOAT;
 	}
 
 	/**

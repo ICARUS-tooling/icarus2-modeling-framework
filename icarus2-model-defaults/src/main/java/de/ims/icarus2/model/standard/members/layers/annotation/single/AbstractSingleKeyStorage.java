@@ -25,13 +25,13 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.Messages;
-import de.ims.icarus2.model.standard.members.layers.annotation.AbstractAnnotationStorage;
+import de.ims.icarus2.model.standard.members.layers.annotation.AbstractManagedAnnotationStorage;
 
 /**
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractSingleKeyStorage extends AbstractAnnotationStorage {
+public abstract class AbstractSingleKeyStorage extends AbstractManagedAnnotationStorage {
 
 	/**
 	 * @param weakKeys

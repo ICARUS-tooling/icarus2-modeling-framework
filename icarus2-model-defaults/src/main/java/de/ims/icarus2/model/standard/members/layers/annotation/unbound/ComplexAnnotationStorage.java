@@ -20,17 +20,22 @@ import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.api.AnnotationFlag;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.standard.members.layers.annotation.AbstractObjectMapStorage;
 import de.ims.icarus2.util.MutablePrimitives.GenericTypeAwareMutablePrimitive;
 import de.ims.icarus2.util.MutablePrimitives.MutablePrimitive;
@@ -47,10 +52,22 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 @TestableImplementation(AnnotationStorage.class)
 public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAnnotationStorage.AnnotationBundle> {
 
-	// Factory for creating annotation bundles (constructor assigns default implementation)
-	private Supplier<AnnotationBundle> bundleFactory;
+	public static ComplexAnnotationStorage forManifest(AnnotationLayerManifest manifest) {
+		int keyCount = manifest.getAvailableKeys().size();
+		boolean unbound = manifest.isAnnotationFlagSet(AnnotationFlag.UNKNOWN_KEYS);
 
-	private AnnotationBundle noEntryValues; //FIXME use this
+		Supplier<AnnotationBundle> bundleFactory = GROWING_BUNDLE_FACTORY;
+
+		if(!unbound) {
+			if(keyCount<=CompactAnnotationBundle.DEFAULT_CAPACITY) {
+				bundleFactory = COMPACT_BUNDLE_FACTORY;
+			} else {
+				bundleFactory = LARGE_BUNDLE_FACTORY;
+			}
+		}
+
+		return new ComplexAnnotationStorage(bundleFactory);
+	}
 
 	/** Produces {@link Map}-based bundles for arbitrarily large amounts of annotations */
 	public static final Supplier<AnnotationBundle> LARGE_BUNDLE_FACTORY = LargeAnnotationBundle::new;
@@ -63,6 +80,17 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 	 */
 	public static final Supplier<AnnotationBundle> GROWING_BUNDLE_FACTORY = GrowingAnnotationBundle::new;
 
+
+	/** Factory for creating annotation bundles (constructor assigns default implementation) */
+	private Supplier<AnnotationBundle> bundleFactory;
+
+	/** Fallback bundle for items without a mapped entry */
+	private AnnotationBundle noEntryValues;
+
+	/** Lookup to check when setting object values */
+	private Map<String, ValueType> valueTypes;
+
+	private boolean allowUnknownKeys;
 
 	/**
 	 * Creates a new {@link ComplexAnnotationStorage} that does not use weak keys,
@@ -114,20 +142,27 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 	public void addNotify(AnnotationLayer layer) {
 		super.addNotify(layer);
 
-		AnnotationLayerManifest manifest = layer.getManifest();
+		// Read manifest to construct bundle of noEntryValues and our type lookup
 
+		valueTypes = new Object2ObjectOpenHashMap<>();
+
+		AnnotationLayerManifest manifest = layer.getManifest();
 		AnnotationBundle noEntryValues = createBuffer();
 
 		for(AnnotationManifest annotationManifest : manifest.getAnnotationManifests()) {
+			String key = annotationManifest.getKey().orElseThrow(
+					ManifestException.error("Missing key"));
+
+			// Needs to happen first, as our internal sanity checks depend on it!
+			valueTypes.put(key, annotationManifest.getValueType());
+
 			annotationManifest.getNoEntryValue().ifPresent(
-					value -> setValuePrimitiveAware(
-							noEntryValues,
-							annotationManifest.getKey().orElseThrow(
-									ManifestException.error("Missing valeu type")),
-							value));
+					value -> setValuePrimitiveAware(noEntryValues, key, value));
 		}
 
 		this.noEntryValues = noEntryValues;
+
+		allowUnknownKeys = manifest.isAnnotationFlagSet(AnnotationFlag.UNKNOWN_KEYS);
 	}
 
 	/**
@@ -138,6 +173,9 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		super.removeNotify(layer);
 
 		noEntryValues = null;
+		valueTypes.clear();
+		valueTypes = null;
+		allowUnknownKeys = false;
 	}
 
 	@Override
@@ -153,9 +191,52 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		return noEntryValues;
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractManagedAnnotationStorage#collectKeys(de.ims.icarus2.model.api.members.item.Item, java.util.function.Consumer)
+	 */
+	@Override
+	public boolean collectKeys(Item item, Consumer<String> action) {
+		AnnotationBundle bundle = getBuffer(item, false);
+
+		if(bundle==null || bundle==noEntryValues) {
+			return false;
+		}
+
+		return bundle.collectKeys(action);
+	}
+
+	private ValueType checkKey(String key) {
+		requireNonNull(key);
+		ValueType type = valueTypes.get(key);
+		if(type==null && !allowUnknownKeys)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Key not supported "+key);
+		return type;
+	}
+
+	private void checkKeyAndValue(String key, Object value) {
+		requireNonNull(key);
+		ValueType type = valueTypes.get(key);
+		if(type!=null) {
+			type.checkValue(value);
+		} else if(!allowUnknownKeys)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Key not supported "+key);
+
+	}
+
+	private void checkKeyAndType(String key, Class<?> clazz) {
+		requireNonNull(key);
+		ValueType type = valueTypes.get(key);
+		if(type!=null) {
+			type.checkType(clazz);
+		} else if(!allowUnknownKeys)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Key not supported "+key);
+
+	}
+
 	@Override
 	public Object getValue(Item item, String key) {
 		AnnotationBundle bundle = getBuffer(item);
+		checkKey(key);
 		Object value = bundle.getValue(key);
 
 		if(value instanceof Wrapper) {
@@ -165,8 +246,29 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		return value;
 	}
 
-	private static final Supplier<MutablePrimitive<?>> DEFAULT_STORAGE_FACTORY
-			= GenericTypeAwareMutablePrimitive::new;
+	/**
+	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractManagedAnnotationStorage#getString(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 */
+	@Override
+	public String getString(Item item, String key) {
+		return (String) getValue(item, key);
+	}
+
+	private final Function<String, MutablePrimitive<?>> DEFAULT_STORAGE_FACTORY = key -> {
+		ValueType type = checkKey(key);
+		GenericTypeAwareMutablePrimitive primitive = new GenericTypeAwareMutablePrimitive();
+
+		if(type!=null) {
+			if(!type.isPrimitiveType())
+				throw new ModelException(ManifestErrorCode.MANIFEST_TYPE_CAST,
+						"Key "+key+" does not support primitive values: "+type);
+
+			primitive.setType(GenericTypeAwareMutablePrimitive.typeOf(type.getBaseClass()));
+		}
+
+		return primitive;
+	};
+
 
 	private void setValuePrimitiveAware(AnnotationBundle bundle, String key, Object value) {
 
@@ -203,85 +305,95 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 
 		if(value==null) {
 			AnnotationBundle bundle = getBuffer(item);
-			if(bundle!=null) {
+			if(bundle!=null && bundle!=noEntryValues) {
 				bundle.setValue(key, null);
 			}
 		} else {
+			checkKeyAndValue(key, value);
 			AnnotationBundle bundle = getBuffer(item, true);
 			setValuePrimitiveAware(bundle, key, value);
 		}
 	}
 
 	/**
-	 * Fetch current value for given item and key and cast to
-	 * {@link MutablePrimitive} if present.
+	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractManagedAnnotationStorage#setString(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.String)
 	 */
-	private MutablePrimitive<?> getPrimitive(Item item, String key) {
-		AnnotationBundle bundle = getBuffer(item);
-		return bundle==null ? null : (MutablePrimitive<?>)bundle.getValue(key);
+	@Override
+	public void setString(Item item, String key, String value) {
+		setValue(item, key, value);
 	}
 
 	/**
 	 * Fetch current value for given item and key and cast to
 	 * {@link MutablePrimitive} if present.
 	 */
-	private MutablePrimitive<?> ensurePrimitive(Item item, String key) {
+	private MutablePrimitive<?> getPrimitive(Item item, String key, ValueType type) {
+		AnnotationBundle bundle = getBuffer(item);
+		checkKey(key);
+		MutablePrimitive<?> primitive = bundle==null ? null
+				: (MutablePrimitive<?>)bundle.getValue(key);
+		if(primitive==null)
+			throw forUnsupportedGetter(type, key);
+		return primitive;
+	}
+
+	/**
+	 * Fetch current value for given item and key and cast to
+	 * {@link MutablePrimitive} if present.
+	 */
+	private MutablePrimitive<?> ensurePrimitive(Item item, String key, ValueType type) {
+		checkKey(key);
 		return getBuffer(item, true).getValue(key, DEFAULT_STORAGE_FACTORY);
 	}
 
 	@Override
 	public int getInteger(Item item, String key) {
-		MutablePrimitive<?> primitive = getPrimitive(item, key);
-		return primitive==null ? 0 : primitive.intValue();
+		return getPrimitive(item, key, ValueType.INTEGER).intValue();
 	}
 
 	@Override
 	public float getFloat(Item item, String key) {
-		MutablePrimitive<?> primitive = getPrimitive(item, key);
-		return primitive==null ? 0F : primitive.floatValue();
+		return getPrimitive(item, key, ValueType.FLOAT).floatValue();
 	}
 
 	@Override
 	public double getDouble(Item item, String key) {
-		MutablePrimitive<?> primitive = getPrimitive(item, key);
-		return primitive==null ? 0D : primitive.doubleValue();
+		return getPrimitive(item, key, ValueType.DOUBLE).doubleValue();
 	}
 
 	@Override
 	public long getLong(Item item, String key) {
-		MutablePrimitive<?> primitive = getPrimitive(item, key);
-		return primitive==null ? 0L : primitive.longValue();
+		return getPrimitive(item, key, ValueType.LONG).longValue();
 	}
 
 	@Override
 	public boolean getBoolean(Item item, String key) {
-		MutablePrimitive<?> primitive = getPrimitive(item, key);
-		return primitive==null ? false : primitive.booleanValue();
+		return getPrimitive(item, key, ValueType.BOOLEAN).booleanValue();
 	}
 
 	@Override
 	public void setInteger(Item item, String key, int value) {
-		ensurePrimitive(item, key).setInt(value);
+		ensurePrimitive(item, key, ValueType.INTEGER).setInt(value);
 	}
 
 	@Override
 	public void setLong(Item item, String key, long value) {
-		ensurePrimitive(item, key).setLong(value);
+		ensurePrimitive(item, key, ValueType.LONG).setLong(value);
 	}
 
 	@Override
 	public void setFloat(Item item, String key, float value) {
-		ensurePrimitive(item, key).setFloat(value);
+		ensurePrimitive(item, key, ValueType.FLOAT).setFloat(value);
 	}
 
 	@Override
 	public void setDouble(Item item, String key, double value) {
-		ensurePrimitive(item, key).setDouble(value);
+		ensurePrimitive(item, key, ValueType.DOUBLE).setDouble(value);
 	}
 
 	@Override
 	public void setBoolean(Item item, String key, boolean value) {
-		ensurePrimitive(item, key).setBoolean(value);
+		ensurePrimitive(item, key, ValueType.BOOLEAN).setBoolean(value);
 	}
 
 	/**
@@ -293,10 +405,10 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 	public interface AnnotationBundle {
 
 		@SuppressWarnings("unchecked")
-		default <T extends Object> T getValue(String key, Supplier<T> defaultValue) {
+		default <T extends Object> T getValue(String key, Function<String,T> defaultValue) {
 			T value = (T) getValue(key);
 			if(value==null) {
-				value = defaultValue.get();
+				value = defaultValue.apply(key);
 				setValue(key, value);
 			}
 
@@ -327,14 +439,14 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 
 		/**
 		 * Collects and sends all the currently used keys in this
-		 * bundle to the external {@code buffer} collection.
+		 * bundle to the external {@code buffer} consumer.
 		 *
 		 * @param buffer
 		 */
-		void collectKeys(Consumer<String> buffer);
+		boolean collectKeys(Consumer<String> buffer);
 	}
 
-	public static class LargeAnnotationBundle extends HashMap<String, Object> implements AnnotationBundle {
+	public static class LargeAnnotationBundle extends Object2ObjectOpenHashMap<String, Object> implements AnnotationBundle {
 
 		private static final long serialVersionUID = -3058615796981616593L;
 
@@ -359,8 +471,9 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#collectKeys(java.util.Collection)
 		 */
 		@Override
-		public void collectKeys(Consumer<String> buffer) {
+		public boolean collectKeys(Consumer<String> buffer) {
 			keySet().forEach(buffer);
+			return !isEmpty();
 		}
 	}
 
@@ -416,12 +529,15 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#collectKeys(java.util.Collection)
 		 */
 		@Override
-		public void collectKeys(Consumer<String> buffer) {
+		public boolean collectKeys(Consumer<String> buffer) {
+			boolean result = false;
 			for(int i=0; i<data.length-1; i+=2) {
 				if(data[i]!=null) {
+					result = true;
 					buffer.accept((String) data[i]);
 				}
 			}
+			return result;
 		}
 	}
 
@@ -451,7 +567,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		public Object getValue(String key) {
 			if(data instanceof Object[]) {
 				Object[] arary = (Object[]) data;
-				for(int i=1; i<arary.length-1; i+=2) {
+				for(int i=0; i<arary.length-1; i+=2) {
 					if(arary[i]!=null && arary[i].equals(key)) {
 						return arary[i+1];
 					}
@@ -532,6 +648,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 			Map<String, Object> map = (Map<String, Object>)data;
 
 			checkState(map.size()>ARRAY_THRESHOLD);
+			//TODO
 		}
 
 		private void doMapOp(String key, Object value) {
@@ -550,19 +667,23 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#collectKeys(java.util.Collection)
 		 */
 		@Override
-		public void collectKeys(Consumer<String> buffer) {
+		public boolean collectKeys(Consumer<String> buffer) {
 			if(data instanceof Object[]) {
 				Object[] arary = (Object[]) data;
+				boolean result = false;
 				for(int i=0; i<arary.length-1; i+=2) {
 					if(arary[i]!=null) {
+						result = true;
 						buffer.accept((String) arary[i]);
 					}
 				}
-			} else {
-				@SuppressWarnings("unchecked")
-				Map<String, Object> map = (Map<String, Object>)data;
-				map.keySet().forEach(buffer);
+				return result;
 			}
+
+			@SuppressWarnings("unchecked")
+			Map<String, Object> map = (Map<String, Object>)data;
+			map.keySet().forEach(buffer);
+			return !map.isEmpty();
 		}
 	}
 }

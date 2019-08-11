@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.function.Supplier;
@@ -28,7 +30,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractObjectMapStorage<B extends Object> extends AbstractAnnotationStorage {
+public abstract class AbstractObjectMapStorage<B extends Object> extends AbstractManagedAnnotationStorage {
 
 	/**
 	 * Maps items to their respective buffer of annotation values.
@@ -71,6 +73,7 @@ public abstract class AbstractObjectMapStorage<B extends Object> extends Abstrac
 	}
 
 	protected B getBuffer(Item item) {
+		requireNonNull(item);
 		B buffer = annotations.get(item);
 		if(buffer==null) {
 			buffer = getFallbackBuffer();
@@ -128,6 +131,7 @@ public abstract class AbstractObjectMapStorage<B extends Object> extends Abstrac
 			B buffer = createBuffer();
 			if(buffer!=null) {
 				annotations.put(item, buffer);
+				return true;
 			}
 		}
 

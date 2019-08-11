@@ -36,13 +36,21 @@ class SingleKeyObjectStorageTest implements ManagedAnnotationStorageTest<SingleK
 		return new Object();
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#valueType(java.lang.String)
+	 */
 	@Override
-	public Set<ValueType> typesForSetters() {
+	public ValueType valueType(String key) {
+		return ValueType.CUSTOM;
+	}
+
+	@Override
+	public Set<ValueType> typesForSetters(String key) {
 		return set(ValueType.UNKNOWN);
 	}
 
 	@Override
-	public Set<ValueType> typesForGetters() {
+	public Set<ValueType> typesForGetters(String key) {
 		return set(ValueType.UNKNOWN);
 	}
 

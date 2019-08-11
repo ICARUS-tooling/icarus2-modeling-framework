@@ -23,13 +23,13 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.util.Messages;
-import de.ims.icarus2.model.standard.members.layers.annotation.AbstractAnnotationStorage;
+import de.ims.icarus2.model.standard.members.layers.annotation.AbstractManagedAnnotationStorage;
 
 /**
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractFixedKeysBooleanStorage extends AbstractAnnotationStorage {
+public abstract class AbstractFixedKeysBooleanStorage extends AbstractManagedAnnotationStorage {
 
 	private IndexLookup indexLookup;
 

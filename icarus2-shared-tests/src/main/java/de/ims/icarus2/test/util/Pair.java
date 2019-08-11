@@ -22,6 +22,8 @@ package de.ims.icarus2.test.util;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Objects;
+
 import de.ims.icarus2.test.TestUtils;
 
 public class Pair<E_1 extends Object, E_2 extends Object> {
@@ -79,5 +81,28 @@ public class Pair<E_1 extends Object, E_2 extends Object> {
 	@Override
 	public String toString() {
 		return TestUtils.displayString("<%s,%s>", first, second);
+	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if(obj==this) {
+			return true;
+		} else if(obj instanceof Pair) {
+			Pair<?,?> other = (Pair<?, ?>) obj;
+			return first.equals(other.first)
+					&& second.equals(other.second);
+		}
+		return false;
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(first, second);
 	}
 }

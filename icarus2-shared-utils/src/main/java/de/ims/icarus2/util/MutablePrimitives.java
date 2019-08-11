@@ -29,6 +29,7 @@ import static de.ims.icarus2.util.lang.Primitives._short;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
+import de.ims.icarus2.util.strings.StringUtil;
 
 
 /**
@@ -2009,21 +2010,82 @@ public class MutablePrimitives {
 		}
 	}
 
+	/**
+	 * Provides a mutable storage for primitives that remembers the first
+	 * type used in any of the {@code setXXX} methods.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public static final class GenericTypeAwareMutablePrimitive implements MutablePrimitive<Object> {
 
 		public static final long DEFAULT_EMPTY_VALUE = 0L;
 
-		private long storage = 0L;
-		private byte type = NULL;
-
 		public static final byte NULL = 0x0;
+
 		public static final byte BOOLEAN = 0x1;
-		public static final byte BYTE = 0x2;
-		public static final byte SHORT = 0x3;
-		public static final byte INTEGER = 0x4;
-		public static final byte LONG = 0x5;
-		public static final byte FLOAT = 0x6;
-		public static final byte DOUBLE = 0x7;
+
+		public static final byte BYTE = 0x1 << 1;
+		public static final byte SHORT = 0x1 << 2;
+		public static final byte INTEGER = 0x1 << 3;
+		public static final byte LONG = 0x1 << 4;
+
+		public static final byte FLOAT = 0x1 << 5;
+		public static final byte DOUBLE = 0x1 << 6;
+
+		public static byte typeOf(Class<?> clazz) {
+			switch (clazz.getSimpleName()) {
+			case "Boolean": return BOOLEAN;
+			case "Byte": return BYTE;
+			case "Short": return SHORT;
+			case "Integer": return INTEGER;
+			case "Character": return LONG;
+			case "Long": return LONG;
+			case "Float": return FLOAT;
+			case "Double": return DOUBLE;
+
+			default:
+				return NULL;
+			}
+		}
+
+		private static final byte intTypes = BYTE | SHORT | INTEGER | LONG;
+		private static final byte floatTypes = FLOAT | DOUBLE;
+		private static final byte numberTypes = intTypes | floatTypes;
+
+		private static String mask2Label(byte mask) {
+			if(mask==0x0) {
+				return "[NULL]";
+			}
+
+			StringBuilder sb = new StringBuilder();
+			sb.append('[');
+			if((mask & BOOLEAN) != 0) {
+				sb.append("BOOLEAN ");
+			}
+			if((mask & BYTE) != 0) {
+				sb.append("BYTE ");
+			}
+			if((mask & SHORT) != 0) {
+				sb.append("SHORT ");
+			}
+			if((mask & INTEGER) != 0) {
+				sb.append("INTEGER ");
+			}
+			if((mask & LONG) != 0) {
+				sb.append("LONG ");
+			}
+			if((mask & FLOAT) != 0) {
+				sb.append("FLOAT ");
+			}
+			if((mask & DOUBLE) != 0) {
+				sb.append("DOUBLE ");
+			}
+			StringUtil.trim(sb);
+			sb.append(']');
+
+			return sb.toString();
+		}
 
 		private static String type2Label(byte type) {
 			switch (type) {
@@ -2041,6 +2103,9 @@ public class MutablePrimitives {
 						"Not a valid type: "+String.valueOf(type));
 			}
 		}
+
+		private long storage = 0L;
+		private byte type = NULL;
 
 		public GenericTypeAwareMutablePrimitive() {
 			// no-op
@@ -2095,9 +2160,43 @@ public class MutablePrimitives {
 			setNull();
 		}
 
-		protected void checkNotNull() {
+		private void checkNotNull() {
 			if(type==NULL)
 				throw new NullPointerException();
+		}
+
+		private void expectType(byte type) {
+			if((this.type & type) != type)
+				throw new ClassCastException(
+						"Current type "+type2Label(this.type)+" doesn't satisfy mask "+mask2Label(type));
+		}
+
+		private void checkAndMaybeSetType(byte expected, byte type) {
+			if(this.type==NULL) {
+				setType(type);
+				return;
+			}
+
+			if((this.type & expected) == 0)
+				throw new ClassCastException(
+						"Current type "+type2Label(this.type)+" doesn't satisfy mask "+mask2Label(expected));
+		}
+
+		private ClassCastException forIncompatibleType(byte desired) {
+			return new ClassCastException(
+					"Required "+type2Label(desired)+" compatible type but current type is "+type2Label(type));
+		}
+
+		private boolean isIntType() {
+			return (type & intTypes) != 0;
+		}
+
+		private boolean isFloatType() {
+			return (type & floatTypes) != 0;
+		}
+
+		private boolean isNumberType() {
+			return (type & numberTypes) != 0;
 		}
 
 		/**
@@ -2105,7 +2204,18 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public int intValue() {
-			return (int)longValue();
+			switch (type) {
+			case BYTE:
+			case SHORT:
+			case INTEGER:
+			case LONG: return (int) storage;
+
+			case FLOAT:
+			case DOUBLE: return (int) doubleValue0();
+
+			default:
+				throw forIncompatibleType(INTEGER);
+			}
 		}
 
 		/**
@@ -2113,8 +2223,18 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public long longValue() {
-			checkNotNull();
-			return storage;
+			switch (type) {
+			case BYTE:
+			case SHORT:
+			case INTEGER:
+			case LONG: return storage;
+
+			case FLOAT:
+			case DOUBLE: return (long) doubleValue0();
+
+			default:
+				throw forIncompatibleType(LONG);
+			}
 		}
 
 		/**
@@ -2122,7 +2242,18 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public float floatValue() {
-			return (float) doubleValue();
+			switch (type) {
+			case BYTE:
+			case SHORT:
+			case INTEGER:
+			case LONG: return storage;
+
+			case FLOAT:
+			case DOUBLE: return (float) doubleValue0();
+
+			default:
+				throw forIncompatibleType(FLOAT);
+			}
 		}
 
 		/**
@@ -2130,7 +2261,21 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public double doubleValue() {
-			checkNotNull();
+			switch (type) {
+			case BYTE:
+			case SHORT:
+			case INTEGER:
+			case LONG: return storage;
+
+			case FLOAT:
+			case DOUBLE: return doubleValue0();
+
+			default:
+				throw forIncompatibleType(DOUBLE);
+			}
+		}
+
+		private double doubleValue0() {
 			return Double.longBitsToDouble(storage);
 		}
 
@@ -2139,7 +2284,18 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public short shortValue() {
-			return (short)longValue();
+			switch (type) {
+			case BYTE:
+			case SHORT:
+			case INTEGER:
+			case LONG: return (short) storage;
+
+			case FLOAT:
+			case DOUBLE: return (short) doubleValue0();
+
+			default:
+				throw forIncompatibleType(SHORT);
+			}
 		}
 
 		/**
@@ -2147,7 +2303,18 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public byte byteValue() {
-			return (byte) longValue();
+			switch (type) {
+			case BYTE:
+			case SHORT:
+			case INTEGER:
+			case LONG: return (byte) storage;
+
+			case FLOAT:
+			case DOUBLE: return (byte) doubleValue0();
+
+			default:
+				throw forIncompatibleType(BYTE);
+			}
 		}
 
 		/**
@@ -2155,7 +2322,8 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public boolean booleanValue() {
-			return longValue()!=DEFAULT_EMPTY_VALUE;
+			expectType(BOOLEAN);
+			return storage!=DEFAULT_EMPTY_VALUE;
 		}
 
 		/**
@@ -2184,13 +2352,34 @@ public class MutablePrimitives {
 			setType(NULL);
 		}
 
+		private void setNumeric(byte newType, long value) {
+			if(type==NULL) {
+				type = newType;
+			} else if(isIntType()) {
+				storage = value;
+			} else if(isFloatType()) {
+				storage = Double.doubleToLongBits(value);
+			} else
+				throw new ClassCastException("Current type doesn't allow numeric assignment: "+type2Label(type));
+		}
+
+		private void setNumeric(byte newType, double value) {
+			if(type==NULL) {
+				type = newType;
+			} else if(isIntType()) {
+				storage = (long) value;
+			} else if(isFloatType()) {
+				storage = Double.doubleToLongBits(value);
+			} else
+				throw new ClassCastException("Current type doesn't allow numeric assignment: "+type2Label(type));
+		}
+
 		/**
 		 * @see de.ims.icarus2.util.MutablePrimitives.MutablePrimitive#setInt(int)
 		 */
 		@Override
 		public void setInt(int value) {
-			setLong0(value);
-			setType(INTEGER);
+			setNumeric(INTEGER, value);
 		}
 
 		/**
@@ -2198,12 +2387,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public void setLong(long value) {
-			setLong0(value);
-			setType(LONG);
-		}
-
-		private void setLong0(long value) {
-			storage = value;
+			setNumeric(LONG, value);
 		}
 
 		/**
@@ -2211,8 +2395,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public void setFloat(float value) {
-			setDoubleg0(value);
-			setType(FLOAT);
+			setNumeric(FLOAT, value);
 		}
 
 		/**
@@ -2220,12 +2403,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public void setDouble(double value) {
-			setDoubleg0(value);
-			setType(DOUBLE);
-		}
-
-		private void setDoubleg0(double value) {
-			storage = Double.doubleToRawLongBits(value);
+			setNumeric(DOUBLE, value);
 		}
 
 		/**
@@ -2233,8 +2411,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public void setShort(short value) {
-			setLong0(value);
-			setType(SHORT);
+			setNumeric(SHORT, value);
 		}
 
 		/**
@@ -2242,8 +2419,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public void setByte(byte value) {
-			setLong0(value);
-			setType(BYTE);
+			setNumeric(BYTE, value);
 		}
 
 		/**
@@ -2251,8 +2427,12 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public void setBoolean(boolean value) {
-			setLong0(value ? 1L : 0L);
-			setType(BOOLEAN);
+			if(type==NULL) {
+				type = BOOLEAN;
+			} else if(isNumberType())
+				throw new ClassCastException("Current type doesn't allow boolean assignment: "+type2Label(type));
+
+			storage = value ? 1L : DEFAULT_EMPTY_VALUE;
 		}
 
 		/**
@@ -2281,37 +2461,14 @@ public class MutablePrimitives {
 				//TODO maybe check for "Mutable" type?
 
 				switch (wrapper.getClass().getSimpleName()) {
-				case "Boolean":
-					setBoolean(((Boolean)wrapper).booleanValue());
-					break;
-
-				case "Byte":
-					setByte(((Byte)wrapper).byteValue());
-					break;
-
-				case "Short":
-					setShort(((Short)wrapper).shortValue());
-					break;
-
-				case "Integer":
-					setInt(((Integer)wrapper).intValue());
-					break;
-
-				case "Character":
-					setLong(((Character)wrapper).charValue());
-					break;
-
-				case "Long":
-					setLong(((Long)wrapper).longValue());
-					break;
-
-				case "Float":
-					setFloat(((Float)wrapper).floatValue());
-					break;
-
-				case "Double":
-					setDouble(((Double)wrapper).doubleValue());
-					break;
+				case "Boolean": setBoolean(((Boolean)wrapper).booleanValue()); break;
+				case "Byte": setByte(((Byte)wrapper).byteValue()); break;
+				case "Short": setShort(((Short)wrapper).shortValue()); break;
+				case "Integer": setInt(((Integer)wrapper).intValue()); break;
+				case "Character": setLong(((Character)wrapper).charValue()); break;
+				case "Long": setLong(((Long)wrapper).longValue()); break;
+				case "Float": setFloat(((Float)wrapper).floatValue()); break;
+				case "Double": setDouble(((Double)wrapper).doubleValue()); break;
 
 				default:
 					setNull();

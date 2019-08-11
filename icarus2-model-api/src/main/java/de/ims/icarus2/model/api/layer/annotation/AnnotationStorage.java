@@ -135,6 +135,9 @@ public interface AnnotationStorage {
 	 * Note that this method does not differentiate between actual annotation values
 	 * or marker values (cf. {@link AnnotationManifest#getNoEntryValue()}) signaling
 	 * items that effectively have "no" annotation.
+	 * <p>
+	 * So effectively this method is there to check if the given {@code item} is at
+	 * least "known" to the storage.
 	 */
 	boolean hasAnnotations(Item item);
 }

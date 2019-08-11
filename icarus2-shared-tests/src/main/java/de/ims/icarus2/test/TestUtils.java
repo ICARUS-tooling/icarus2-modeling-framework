@@ -450,6 +450,42 @@ public class TestUtils {
 				.mapToObj(i -> source.subList(0, i));
 	}
 
+	private static final <T> Pair<Integer, Integer> bounds(List<T> source,
+			@SuppressWarnings("unchecked") T...sentinels) {
+		int min = Integer.MAX_VALUE;
+		int max = Integer.MIN_VALUE;
+		for(T sentinel : sentinels) {
+			int index = source.indexOf(sentinel);
+			assertTrue(index>-1);
+			min = Math.min(min, index);
+			max = Math.max(max, index);
+		}
+		assertTrue(min!=Integer.MAX_VALUE);
+		assertTrue(max!=Integer.MIN_VALUE);
+
+		return Pair.intPair(min, max);
+	}
+
+	@SuppressWarnings("boxing")
+	public static <T> Stream<List<T>> randomSubLists(List<T> source, double fraction,
+			@SuppressWarnings("unchecked") T...sentinels) {
+		assertFalse(source.isEmpty());
+		assertTrue(fraction>0.0 && fraction<=1.0);
+		assertTrue(sentinels.length>0);
+
+		// Bounds that need to be covered
+		Pair<Integer, Integer> bounds = bounds(source, sentinels);
+		assertTrue(bounds.first<=bounds.second);
+
+		int part = Math.max(1, (int) (source.size() * fraction));
+
+		return IntStream.generate(() -> random(0, bounds.first+1))
+				.mapToObj(i -> Pair.intPair(i, random(bounds.second, source.size())))
+				.distinct()
+				.limit(part)
+				.map(b -> source.subList(b.first, b.second+1));
+	}
+
 	// RANDOM ARRAYS
 
 	public static long[] randomLongs(int size, long min, long max) {

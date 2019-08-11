@@ -98,18 +98,18 @@ class SingleKeyBooleanStorageTest implements ManagedAnnotationStorageTest<Single
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#typesForSetters()
+	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#typesForSetters(String)
 	 */
 	@Override
-	public Set<ValueType> typesForSetters() {
+	public Set<ValueType> typesForSetters(String key) {
 		return set(ValueType.BOOLEAN);
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#typesForGetters()
+	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#typesForGetters(String)
 	 */
 	@Override
-	public Set<ValueType> typesForGetters() {
+	public Set<ValueType> typesForGetters(String key) {
 		return set(ValueType.BOOLEAN);
 	}
 
@@ -119,6 +119,14 @@ class SingleKeyBooleanStorageTest implements ManagedAnnotationStorageTest<Single
 	@Override
 	public Object testValue(String key) {
 		return Boolean.TRUE;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#valueType(java.lang.String)
+	 */
+	@Override
+	public ValueType valueType(String key) {
+		return ValueType.BOOLEAN;
 	}
 
 	/**

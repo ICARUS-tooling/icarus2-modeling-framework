@@ -64,6 +64,15 @@ public interface ManagedAnnotationStorageTest<S extends ManagedAnnotationStorage
 	}
 
 	/**
+	 * Signals if the implementation under test is able to automatically remove
+	 * any entries that do not differ from the designated {@code noEntryValue}.
+	 * @return
+	 */
+	default boolean supportsAutoRemoval() {
+		return true;
+	}
+
+	/**
 	 * Test method for {@link de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage#containsItem(de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@Test
@@ -125,6 +134,25 @@ public interface ManagedAnnotationStorageTest<S extends ManagedAnnotationStorage
 
 		storage.addItem(item);
 		assertTrue(storage.removeItem(item));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage#removeItem(de.ims.icarus2.model.api.members.item.Item)}.
+	 */
+	@Test
+	default void testRemoveByNoEntryValue() {
+		if(!supportsItemManagement() || !supportsAutoRemoval())
+			throw new TestAbortedException("Implementation does not support automatic removal");
+
+		String key = key();
+		S storage = createForKey(key);
+		Item item = mockItem();
+
+		storage.setValue(item, key, testValue(key));
+		assertTrue(storage.containsItem(item));
+
+		storage.setValue(item, key, noEntryValue(key));
+		assertFalse(storage.containsItem(item));
 	}
 
 	/**
