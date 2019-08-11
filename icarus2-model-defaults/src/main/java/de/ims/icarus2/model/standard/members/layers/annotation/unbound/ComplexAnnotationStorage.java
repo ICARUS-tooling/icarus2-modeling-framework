@@ -25,8 +25,12 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
+import de.ims.icarus2.model.manifest.api.AnnotationManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.standard.members.layers.annotation.AbstractObjectMapStorage;
 import de.ims.icarus2.util.MutablePrimitives.GenericTypeAwareMutablePrimitive;
 import de.ims.icarus2.util.MutablePrimitives.MutablePrimitive;
@@ -48,15 +52,41 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 
 	private AnnotationBundle noEntryValues; //FIXME use this
 
+	/** Produces {@link Map}-based bundles for arbitrarily large amounts of annotations */
 	public static final Supplier<AnnotationBundle> LARGE_BUNDLE_FACTORY = LargeAnnotationBundle::new;
+	/** Produces array-based bundles for small numbers of annotations */
 	public static final Supplier<AnnotationBundle> COMPACT_BUNDLE_FACTORY = CompactAnnotationBundle::new;
+	/**
+	 * Produces special wrapper bundles that start out as as array-based,
+	 * but grow into (or subsequently shrink from) {@link Map}-based storage
+	 * depending on the number of annotation entries they hold.
+	 */
 	public static final Supplier<AnnotationBundle> GROWING_BUNDLE_FACTORY = GrowingAnnotationBundle::new;
 
 
+	/**
+	 * Creates a new {@link ComplexAnnotationStorage} that does not use weak keys,
+	 * defaults to an internally determined initial capacity and uses the
+	 * {@link #GROWING_BUNDLE_FACTORY} factory to create new annotation bundles.
+	 */
+	public ComplexAnnotationStorage() {
+		this(false, -1, GROWING_BUNDLE_FACTORY);
+	}
+
+	/**
+	 * Creates a new {@link ComplexAnnotationStorage} that does not use weak keys,
+	 * defaults to an internally determined initial capacity and uses the
+	 * specified factory to create new annotation bundles.
+	 */
 	public ComplexAnnotationStorage(Supplier<AnnotationBundle> bundleFactory) {
 		this(false, -1, bundleFactory);
 	}
 
+	/**
+	 * Creates a new {@link ComplexAnnotationStorage} that does not use weak keys,
+	 * uses the given initial capacity and uses the
+	 * specified factory to create new annotation bundles.
+	 */
 	public ComplexAnnotationStorage(int initialCapacity, Supplier<AnnotationBundle> bundleFactory) {
 		this(false, initialCapacity, bundleFactory);
 	}
@@ -64,9 +94,10 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 	/**
 	 * @param weakKeys
 	 * @param initialCapacity
-	 * @param bundleFactory the factory that creates new {@link AnnotationBundle} instances for this storage. Note that unlike
-	 * the general {@link Supplier} contract it is required that the given factory creates a <b>new</b> bundle instance for
-	 * each invocation of {@link Supplier#get()}!
+	 * @param bundleFactory the factory that creates new {@link AnnotationBundle} instances for
+	 * this storage. Note that unlike the general {@link Supplier} contract it is required that
+	 * the given factory creates a <b>new</b> bundle instance for each invocation
+	 * of {@link Supplier#get()} and never returns {@code null}!
 	 */
 	public ComplexAnnotationStorage(boolean weakKeys, int initialCapacity, Supplier<AnnotationBundle> bundleFactory) {
 		super(weakKeys, initialCapacity);
@@ -76,18 +107,55 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		this.bundleFactory = bundleFactory;
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractObjectMapStorage#addNotify(de.ims.icarus2.model.api.layer.AnnotationLayer)
+	 */
+	@Override
+	public void addNotify(AnnotationLayer layer) {
+		super.addNotify(layer);
+
+		AnnotationLayerManifest manifest = layer.getManifest();
+
+		AnnotationBundle noEntryValues = createBuffer();
+
+		for(AnnotationManifest annotationManifest : manifest.getAnnotationManifests()) {
+			annotationManifest.getNoEntryValue().ifPresent(
+					value -> setValuePrimitiveAware(
+							noEntryValues,
+							annotationManifest.getKey().orElseThrow(
+									ManifestException.error("Missing valeu type")),
+							value));
+		}
+
+		this.noEntryValues = noEntryValues;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractObjectMapStorage#removeNotify(de.ims.icarus2.model.api.layer.AnnotationLayer)
+	 */
+	@Override
+	public void removeNotify(AnnotationLayer layer) {
+		super.removeNotify(layer);
+
+		noEntryValues = null;
+	}
+
 	@Override
 	protected AnnotationBundle createBuffer() {
 		return bundleFactory.get();
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractObjectMapStorage#getFallbackBuffer()
+	 */
+	@Override
+	protected AnnotationBundle getFallbackBuffer() {
+		return noEntryValues;
+	}
+
 	@Override
 	public Object getValue(Item item, String key) {
 		AnnotationBundle bundle = getBuffer(item);
-		if(bundle==null) {
-			return null;
-		}
-
 		Object value = bundle.getValue(key);
 
 		if(value instanceof Wrapper) {
@@ -97,7 +165,21 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		return value;
 	}
 
-	private static final Supplier<MutablePrimitive<?>> DEFAULT_STORAGE_FACTORY = GenericTypeAwareMutablePrimitive::new;
+	private static final Supplier<MutablePrimitive<?>> DEFAULT_STORAGE_FACTORY
+			= GenericTypeAwareMutablePrimitive::new;
+
+	private void setValuePrimitiveAware(AnnotationBundle bundle, String key, Object value) {
+
+		if(Primitives.isPrimitiveWrapperClass(value.getClass())) {
+			// Will fail with ClassCastException in case previous mappings didn't use correct wrapper!
+			MutablePrimitive<?> current = bundle.getValue(key, DEFAULT_STORAGE_FACTORY);
+			// Let storage implementation handle primitive conversion
+			current.fromWrapper(value);
+		} else {
+			// Covers both general classes and MutablePrimitive instances
+			bundle.setValue(key, value);
+		}
+	}
 
 	/**
 	 * Assigns {@code value} as the mapping for {@code key} on the given {@code item}.
@@ -126,16 +208,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 			}
 		} else {
 			AnnotationBundle bundle = getBuffer(item, true);
-
-			if(Primitives.isPrimitiveWrapperClass(value.getClass())) {
-				// Will fail with ClassCastException in case previous mappings didn't use correct wrapper!
-				MutablePrimitive<?> current = bundle.getValue(key, DEFAULT_STORAGE_FACTORY);
-				// Let storage implementation handle primitive conversion
-				current.fromWrapper(value);
-			} else {
-				// Covers both general classes and MutablePrimitive instances
-				bundle.setValue(key, value);
-			}
+			setValuePrimitiveAware(bundle, key, value);
 		}
 	}
 
