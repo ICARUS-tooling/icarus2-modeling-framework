@@ -15,10 +15,9 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
-import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
+import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
-import de.ims.icarus2.test.TestSettings;
 
 /**
  * @author Markus Gärtner
@@ -52,25 +51,17 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 		return manifest;
 	}
 
-	@Override
-	default AnnotationLayer createLayer(AnnotationLayerManifest manifest) {
-		AnnotationLayer layer = mock(AnnotationLayer.class);
-		when(layer.getManifest()).thenReturn(manifest);
-		return layer;
-	}
-
 	/**
-	 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#createManifest()
 	 */
 	@Override
-	default S createTestInstance(TestSettings settings) {
-		return settings.process(createForLayer(createLayer(createManifest(keys()))));
+	default AnnotationLayerManifest createManifest() {
+		return createManifest(keys());
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#collectKeys(de.ims.icarus2.model.api.members.item.Item, java.util.function.Consumer)}.
 	 */
-	@Override
 	@Test
 	default void testCollectKeys() {
 		fail("Not yet implemented"); // TODO
@@ -79,7 +70,6 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
 	 */
-	@Override
 	@Test
 	default void testGetValue() {
 		fail("Not yet implemented"); // TODO
@@ -88,7 +78,6 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getString(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
 	 */
-	@Override
 	@Test
 	default void testGetString() {
 		fail("Not yet implemented"); // TODO
@@ -97,45 +86,40 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getInteger(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
 	 */
-	@Override
 	@Test
-	default void testGetIntegerValue() {
+	default void testGetInteger() {
 		fail("Not yet implemented"); // TODO
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getFloat(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
 	 */
-	@Override
 	@Test
-	default void testGetFloatValue() {
+	default void testGetFloat() {
 		fail("Not yet implemented"); // TODO
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getDouble(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
 	 */
-	@Override
 	@Test
-	default void testGetDoubleValue() {
+	default void testGetDouble() {
 		fail("Not yet implemented"); // TODO
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getLong(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
 	 */
-	@Override
 	@Test
-	default void testGetLongValue() {
+	default void testGetLong() {
 		fail("Not yet implemented"); // TODO
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getBoolean(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
 	 */
-	@Override
 	@Test
-	default void testGetBooleanValue() {
+	default void testGetBoolean() {
 		fail("Not yet implemented"); // TODO
 	}
 
@@ -180,7 +164,7 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 	 */
 	@Override
 	@Test
-	default void testSetIntegerValue() {
+	default void testSetInteger() {
 		fail("Not yet implemented"); // TODO
 	}
 
@@ -189,7 +173,7 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 	 */
 	@Override
 	@Test
-	default void testSetLongValue() {
+	default void testSetLong() {
 		fail("Not yet implemented"); // TODO
 	}
 
@@ -198,7 +182,7 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 	 */
 	@Override
 	@Test
-	default void testSetFloatValue() {
+	default void testSetFloat() {
 		fail("Not yet implemented"); // TODO
 	}
 
@@ -207,7 +191,7 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 	 */
 	@Override
 	@Test
-	default void testSetDoubleValue() {
+	default void testSetDouble() {
 		fail("Not yet implemented"); // TODO
 	}
 
@@ -216,7 +200,7 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 	 */
 	@Override
 	@Test
-	default void testSetBooleanValue() {
+	default void testSetBoolean() {
 		fail("Not yet implemented"); // TODO
 	}
 
@@ -237,5 +221,4 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 	default void testHasAnnotationsItem() {
 		fail("Not yet implemented"); // TODO
 	}
-
 }

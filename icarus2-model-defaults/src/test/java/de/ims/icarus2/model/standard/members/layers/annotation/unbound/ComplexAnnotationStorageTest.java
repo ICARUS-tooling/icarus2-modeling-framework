@@ -5,28 +5,38 @@ package de.ims.icarus2.model.standard.members.layers.annotation.unbound;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
-import de.ims.icarus2.model.api.layer.AnnotationStorageTest;
+import de.ims.icarus2.model.api.layer.ManagedAnnotationStorageTest;
+import de.ims.icarus2.model.api.layer.MultiKeyAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 
 /**
  * @author Markus Gärtner
  *
  */
-class ComplexAnnotationStorageTest implements AnnotationStorageTest<ComplexAnnotationStorage> {
+class ComplexAnnotationStorageTest implements ManagedAnnotationStorageTest<ComplexAnnotationStorage>,
+		MultiKeyAnnotationStorageTest<ComplexAnnotationStorage> {
+
+	@Override
+	public Object testValue(String key) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<String> keys() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 	@Override
 	public Class<? extends ComplexAnnotationStorage> getTestTargetClass() {
 		return ComplexAnnotationStorage.class;
-	}
-
-	@Override
-	public ValueType getValueType() {
-		return ValueType.UNKNOWN;
 	}
 
 	@Override
@@ -41,7 +51,7 @@ class ComplexAnnotationStorageTest implements AnnotationStorageTest<ComplexAnnot
 
 	@Override
 	public ComplexAnnotationStorage createForLayer(AnnotationLayer layer) {
-		return new ComplexAnnotationStorage(ComplexAnnotationStorage.LARGE_BUNDLE_FACTORY);
+		return new ComplexAnnotationStorage();
 	}
 
 	class Constructors {

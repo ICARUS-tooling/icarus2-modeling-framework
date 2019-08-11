@@ -14,10 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.ims.icarus2.model.standard.members.layers.annotation;
+package de.ims.icarus2.model.api.layer.annotation;
 
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
-import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.util.Part;
 import de.ims.icarus2.util.annotations.OptionalMethod;

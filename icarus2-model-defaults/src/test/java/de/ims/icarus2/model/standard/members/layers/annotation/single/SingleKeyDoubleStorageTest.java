@@ -17,8 +17,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
+import de.ims.icarus2.model.api.layer.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorageTest;
 
 /**
  * @author Markus Gärtner

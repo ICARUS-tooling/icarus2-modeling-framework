@@ -9,8 +9,9 @@ import static org.mockito.Mockito.verify;
 
 import org.junit.jupiter.api.Test;
 
-import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
 import de.ims.icarus2.model.api.layer.AnnotationLayerTest;
+import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
+import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 
 /**

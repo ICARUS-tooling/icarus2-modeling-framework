@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 import javax.annotation.Nullable;
 
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
-import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
+import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;

@@ -27,10 +27,10 @@ import java.util.function.Supplier;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
-import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
+import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
+import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
-import de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorage;
 import de.ims.icarus2.model.standard.members.layers.annotation.packed.PackedDataManager.PackageHandle;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractPart;
@@ -82,7 +82,7 @@ public class PackedAnnotationStorage extends AbstractPart<AnnotationLayer>
 	 * the {@link PackedDataManager#lookupHandles(Set) mapping} in
 	 * the manager.
 	 *
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorage#addNotify(de.ims.icarus2.model.api.layer.AnnotationLayer)
+	 * @see de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage#addNotify(de.ims.icarus2.model.api.layer.AnnotationLayer)
 	 */
 	@Override
 	public void addNotify(AnnotationLayer layer) {
@@ -109,7 +109,7 @@ public class PackedAnnotationStorage extends AbstractPart<AnnotationLayer>
 	 * the {@link Part#removeNotify(Object)} method and resets the
 	 * internal lookup for {@link PackageHandle} objects.
 	 *
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorage#removeNotify(de.ims.icarus2.model.api.layer.AnnotationLayer)
+	 * @see de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage#removeNotify(de.ims.icarus2.model.api.layer.AnnotationLayer)
 	 */
 	@Override
 	public void removeNotify(AnnotationLayer layer) {

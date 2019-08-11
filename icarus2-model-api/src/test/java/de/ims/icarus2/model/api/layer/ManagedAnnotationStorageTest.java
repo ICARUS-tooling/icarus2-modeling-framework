@@ -1,7 +1,7 @@
 /**
  *
  */
-package de.ims.icarus2.model.standard.members.layers.annotation;
+package de.ims.icarus2.model.api.layer;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -10,10 +10,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.TestAbortedException;
 
-import de.ims.icarus2.model.api.layer.AnnotationLayer;
-import de.ims.icarus2.model.api.layer.AnnotationStorageTest;
+import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.util.PartTest;
 
 /**
@@ -23,25 +23,12 @@ import de.ims.icarus2.util.PartTest;
 public interface ManagedAnnotationStorageTest<S extends ManagedAnnotationStorage>
 		extends AnnotationStorageTest<S>, PartTest<AnnotationLayer, S> {
 
-	/**
-	 * @see de.ims.icarus2.util.PartTest#createEnvironment()
-	 */
 	@Override
 	default AnnotationLayer createEnvironment() {
 		return createLayer(createManifest(key()));
 	}
 
-	/**
-	 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
-	 */
-	@Override
-	default S createTestInstance(TestSettings settings) {
-		AnnotationLayer layer = createEnvironment();
-		S storage = createForLayer(layer);
-		storage.addNotify(layer);
-		return settings.process(storage);
-	}
-
+	@Provider
 	@Override
 	default S createForKey(String key) {
 		AnnotationLayer layer = createLayer(createManifest(key));
@@ -51,19 +38,33 @@ public interface ManagedAnnotationStorageTest<S extends ManagedAnnotationStorage
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.PartTest#createUnadded()
+	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
+	@Override
+	default S createTestInstance(TestSettings settings) {
+		AnnotationLayer layer = createLayer(createManifest());
+		S storage = createForLayer(layer);
+		storage.addNotify(layer);
+		return settings.process(storage);
+	}
+
+	@Provider
 	@Override
 	default S createUnadded() {
 		return createForLayer(createEnvironment());
 	}
 
+	/**
+	 * Signals whether or not the implementation under test is expected
+	 * to honor the contracts for {@link ManagedAnnotationStorage#addItem(Item)}
+	 * and {@link ManagedAnnotationStorage#removeItem(Item)}.
+	 */
 	default boolean supportsItemManagement() {
 		return true;
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorage#containsItem(de.ims.icarus2.model.api.members.item.Item)}.
+	 * Test method for {@link de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage#containsItem(de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@Test
 	default void testContainsItemEmpty() {
@@ -71,7 +72,7 @@ public interface ManagedAnnotationStorageTest<S extends ManagedAnnotationStorage
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorage#containsItem(de.ims.icarus2.model.api.members.item.Item)}.
+	 * Test method for {@link de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage#containsItem(de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@Test
 	default void testContainsItemForeign() {
@@ -81,7 +82,7 @@ public interface ManagedAnnotationStorageTest<S extends ManagedAnnotationStorage
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorage#addItem(de.ims.icarus2.model.api.members.item.Item)}.
+	 * Test method for {@link de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage#addItem(de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@Test
 	default void testAddItem() {
@@ -96,7 +97,7 @@ public interface ManagedAnnotationStorageTest<S extends ManagedAnnotationStorage
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorage#addItem(de.ims.icarus2.model.api.members.item.Item)}.
+	 * Test method for {@link de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage#addItem(de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@Test
 	default void testAddItemRepeated() {
@@ -112,7 +113,7 @@ public interface ManagedAnnotationStorageTest<S extends ManagedAnnotationStorage
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorage#removeItem(de.ims.icarus2.model.api.members.item.Item)}.
+	 * Test method for {@link de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage#removeItem(de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@Test
 	default void testRemoveItem() {
@@ -127,7 +128,7 @@ public interface ManagedAnnotationStorageTest<S extends ManagedAnnotationStorage
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorage#removeItem(de.ims.icarus2.model.api.members.item.Item)}.
+	 * Test method for {@link de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage#removeItem(de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@Test
 	default void testRemoveItemForeign() {
@@ -141,7 +142,7 @@ public interface ManagedAnnotationStorageTest<S extends ManagedAnnotationStorage
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorage#removeItem(de.ims.icarus2.model.api.members.item.Item)}.
+	 * Test method for {@link de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage#removeItem(de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@Test
 	default void testRemoveItemEmpty() {

@@ -19,7 +19,7 @@ package de.ims.icarus2.model.standard.members.layers.annotation;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
+import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.manifest.api.AnnotationFlag;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;

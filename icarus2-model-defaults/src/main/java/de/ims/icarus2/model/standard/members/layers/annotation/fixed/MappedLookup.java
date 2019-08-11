@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
@@ -26,8 +28,6 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  */
 public class MappedLookup extends IndexLookup {
 
-	public static final int NO_KEY_VALUE = -1;
-
 	protected final Object2IntMap<String> map;
 
 	/**
@@ -37,7 +37,7 @@ public class MappedLookup extends IndexLookup {
 		super(keys);
 
 		map = new Object2IntOpenHashMap<>(keys.length<<1);
-		map.defaultReturnValue(NO_KEY_VALUE);
+		map.defaultReturnValue(UNSET_INT);
 
 		for(int i=0; i<keyCount(); i++) {
 			map.put(keyAt(i), i);

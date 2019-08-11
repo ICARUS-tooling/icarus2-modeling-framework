@@ -34,13 +34,15 @@ import org.junit.jupiter.api.function.Executable;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.ModelTestUtils;
-import de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage;
+import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
+import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.test.guard.ApiGuard;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -61,9 +63,6 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 
 		apiGuard.nullGuard(true);
 	}
-
-	/** The main value type for the storage under test */
-//	ValueType getValueType();
 
 	static final Set<ValueType> ALL_TYPES = Collections.unmodifiableSet(
 			new ObjectOpenHashSet<>(ValueType.valueTypes()));
@@ -102,16 +101,27 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		return manifest;
 	}
 
+	default AnnotationLayerManifest createManifest() {
+		return createManifest(key());
+	}
+
 	default AnnotationLayer createLayer(AnnotationLayerManifest manifest) {
 		AnnotationLayer layer = mock(AnnotationLayer.class);
 		when(layer.getManifest()).thenReturn(manifest);
 		return layer;
 	}
 
+	@Provider
 	default S createForKey(String key) {
-		return createForLayer(createLayer(createManifest(key)));
+		AnnotationLayer layer = createLayer(createManifest(key));
+		S storage = createForLayer(layer);
+		if(storage instanceof ManagedAnnotationStorage) {
+			((ManagedAnnotationStorage)storage).addNotify(layer);
+		}
+		return storage;
 	}
 
+	@Provider
 	S createForLayer(AnnotationLayer layer);
 
 	static void assertUnsupportedType(Executable executable) {
@@ -129,7 +139,12 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	 */
 	@Override
 	default S createTestInstance(TestSettings settings) {
-		return settings.process(createForLayer(createLayer(createManifest(key()))));
+		AnnotationLayer layer = createLayer(createManifest());
+		S storage = createForLayer(layer);
+		if(storage instanceof ManagedAnnotationStorage) {
+			((ManagedAnnotationStorage)storage).addNotify(layer);
+		}
+		return settings.process(storage);
 	}
 
 	/**

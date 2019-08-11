@@ -26,6 +26,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
+import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
@@ -191,7 +192,7 @@ public abstract class AbstractAnnotationStorage extends AbstractPart<AnnotationL
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorage#addItem(de.ims.icarus2.model.api.members.item.Item)
+	 * @see de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage#addItem(de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
 	public boolean addItem(@Nullable Item item) {
@@ -199,7 +200,7 @@ public abstract class AbstractAnnotationStorage extends AbstractPart<AnnotationL
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.ManagedAnnotationStorage#removeItem(de.ims.icarus2.model.api.members.item.Item)
+	 * @see de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage#removeItem(de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
 	public boolean removeItem(@Nullable Item item) {
