@@ -66,16 +66,28 @@ public abstract class AbstractObjectMapStorage<B extends Object> extends Abstrac
 		annotations = null;
 	}
 
+	protected B getFallbackBuffer() {
+		return null;
+	}
+
 	protected B getBuffer(Item item) {
-		return annotations.get(item);
+		B buffer = annotations.get(item);
+		if(buffer==null) {
+			buffer = getFallbackBuffer();
+		}
+		return buffer;
 	}
 
 	protected B getBuffer(Item item, boolean createIfMissing) {
 		B buffer = annotations.get(item);
 
 		if(buffer==null) {
-			buffer = createBuffer();
-			annotations.put(item, buffer);
+			if(createIfMissing) {
+				buffer = createBuffer();
+				annotations.put(item, buffer);
+			} else {
+				buffer = getFallbackBuffer();
+			}
 		}
 
 		return buffer;
