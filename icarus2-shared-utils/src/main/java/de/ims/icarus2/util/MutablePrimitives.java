@@ -38,6 +38,10 @@ import de.ims.icarus2.util.strings.StringUtil;
  */
 public class MutablePrimitives {
 
+	private static ClassCastException forIncompatibleType(Class<?> clazz) {
+		return new ClassCastException("Not compatible with "+clazz.getSimpleName());
+	}
+
 	public interface Primitive<O extends Object> extends Wrapper<O>, Cloneable {
 		int intValue();
 		long longValue();
@@ -157,7 +161,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public int intValue() {
-			return value ? 1 : 0;
+			throw forIncompatibleType(int.class);
 		}
 
 		/**
@@ -165,7 +169,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public long longValue() {
-			return value ? 1L : 0L;
+			throw forIncompatibleType(long.class);
 		}
 
 		/**
@@ -173,7 +177,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public float floatValue() {
-			return value ? 1F : 0F;
+			throw forIncompatibleType(float.class);
 		}
 
 		/**
@@ -181,7 +185,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public double doubleValue() {
-			return value ? 1D : 0D;
+			throw forIncompatibleType(double.class);
 		}
 
 		/**
@@ -189,7 +193,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public short shortValue() {
-			return (short) intValue();
+			throw forIncompatibleType(short.class);
 		}
 
 		/**
@@ -197,7 +201,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public byte byteValue() {
-			return (byte) intValue();
+			throw forIncompatibleType(byte.class);
 		}
 
 		/**
@@ -205,7 +209,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public void setInt(int value) {
-			this.value = value!=0;
+			throw forIncompatibleType(int.class);
 		}
 
 		/**
@@ -213,7 +217,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public void setLong(long value) {
-			this.value = value!=0L;
+			throw forIncompatibleType(long.class);
 		}
 
 		/**
@@ -221,7 +225,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public void setFloat(float value) {
-			this.value = Float.compare(0F, value)!=0;
+			throw forIncompatibleType(float.class);
 		}
 
 		/**
@@ -229,7 +233,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public void setDouble(double value) {
-			this.value = Double.compare(0D, value)!=0;
+			throw forIncompatibleType(double.class);
 		}
 
 		/**
@@ -237,7 +241,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public void setShort(short value) {
-			setInt(value);
+			throw forIncompatibleType(short.class);
 		}
 
 		/**
@@ -245,7 +249,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public void setByte(byte value) {
-			setInt(value);
+			throw forIncompatibleType(byte.class);
 		}
 
 		@Override
@@ -425,7 +429,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public boolean booleanValue() {
-			return value!=0;
+			throw forIncompatibleType(boolean.class);
 		}
 
 		/**
@@ -473,7 +477,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public void setBoolean(boolean value) {
-			this.value = value ? 1 : 0;
+			throw forIncompatibleType(boolean.class);
 		}
 
 		@Override
@@ -615,7 +619,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public boolean booleanValue() {
-			return Float.compare(0F, value)!=0;
+			throw forIncompatibleType(boolean.class);
 		}
 
 		/**
@@ -663,7 +667,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public void setBoolean(boolean value) {
-			this.value = value ? 1F : 0F;
+			throw forIncompatibleType(boolean.class);
 		}
 
 		@Override
@@ -805,7 +809,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public boolean booleanValue() {
-			return Double.compare(0D, value)!=0;
+			throw forIncompatibleType(boolean.class);
 		}
 
 		/**
@@ -854,7 +858,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public void setBoolean(boolean value) {
-			this.value = value ? 1D : 0D;
+			throw forIncompatibleType(boolean.class);
 		}
 
 		@Override
@@ -1034,7 +1038,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public boolean booleanValue() {
-			return value!=0L;
+			throw forIncompatibleType(boolean.class);
 		}
 
 		/**
@@ -1082,7 +1086,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public void setBoolean(boolean value) {
-			this.value = value ? 1L : 0L;
+			throw forIncompatibleType(boolean.class);
 		}
 
 		@Override
@@ -1242,7 +1246,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public boolean booleanValue() {
-			return value!=(short)0;
+			throw forIncompatibleType(boolean.class);
 		}
 
 		/**
@@ -1290,7 +1294,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public void setBoolean(boolean value) {
-			this.value = (short) (value ? 1 : 0);
+			throw forIncompatibleType(boolean.class);
 		}
 
 		@Override
@@ -1449,7 +1453,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public boolean booleanValue() {
-			return value!=(short)0;
+			throw forIncompatibleType(boolean.class);
 		}
 
 		/**
@@ -1497,7 +1501,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public void setBoolean(boolean value) {
-			this.value = (char) (value ? 1 : 0);
+			throw forIncompatibleType(boolean.class);
 		}
 
 		@Override
@@ -1686,7 +1690,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public boolean booleanValue() {
-			return value!=(byte)0;
+			throw forIncompatibleType(boolean.class);
 		}
 
 		/**
@@ -1734,7 +1738,7 @@ public class MutablePrimitives {
 		 */
 		@Override
 		public void setBoolean(boolean value) {
-			this.value = (byte) (value ? 1 : 0);
+			throw forIncompatibleType(boolean.class);
 		}
 
 		@Override

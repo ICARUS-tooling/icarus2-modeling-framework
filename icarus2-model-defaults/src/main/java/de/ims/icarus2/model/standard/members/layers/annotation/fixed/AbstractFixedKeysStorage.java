@@ -55,6 +55,11 @@ public abstract class AbstractFixedKeysStorage<B extends Object> extends Abstrac
 		noEntryValues = null;
 	}
 
+	@Override
+	protected B getFallbackBuffer() {
+		return noEntryValues;
+	}
+
 	protected B getNoEntryValues() {
 		return noEntryValues;
 	}

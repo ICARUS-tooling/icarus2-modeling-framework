@@ -150,21 +150,22 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	}
 
 	static void assertUnsupportedType(Executable executable) {
-		assertUnsupportedType(null, executable);
+		assertUnsupportedType(executable, null);
 	}
 
 	/**
 	 * Expects a {@link ClassCastException} or {@link ModelException}
 	 * of type {@link GlobalErrorCode#UNSUPPORTED_OPERATION} when executing.
 	 */
-	static void assertUnsupportedType(String msg, Executable executable) {
+	static void assertUnsupportedType(Executable executable, String msg) {
 		RuntimeException ex = assertThrows(RuntimeException.class, executable, msg);
 
 		if(ex instanceof IcarusRuntimeException) {
 			ErrorCode errorCode = ((IcarusRuntimeException)ex).getErrorCode();
 
 			assertTrue(errorCode == GlobalErrorCode.UNSUPPORTED_OPERATION
-					|| errorCode == ManifestErrorCode.MANIFEST_TYPE_CAST);
+					|| errorCode == ManifestErrorCode.MANIFEST_TYPE_CAST,
+					"unexpected error code: "+errorCode);
 		} else {
 			assertEquals(ClassCastException.class, ex.getClass());
 		}

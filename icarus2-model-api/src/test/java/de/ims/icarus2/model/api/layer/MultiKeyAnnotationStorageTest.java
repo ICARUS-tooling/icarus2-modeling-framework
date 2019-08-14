@@ -160,7 +160,8 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 				if(typesForGetters(key).contains(ValueType.STRING)) {
 					assertEquals(noEntryValue(key), storage.getString(item, key));
 				} else {
-					assertUnsupportedType(() -> storage.getString(item, key));
+					assertUnsupportedType(() -> storage.getString(item, key),
+							"Fetching string from "+valueType(key));
 				}
 			}
 		}));
@@ -180,7 +181,8 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 					assertEquals(((Number)noEntryValue(key)).intValue(), storage.getInteger(item, key),
 							"Mismatch for key "+key+" of type "+valueType(key));
 				} else {
-					assertUnsupportedType(() -> storage.getInteger(item, key));
+					assertUnsupportedType(() -> storage.getInteger(item, key),
+							"Fetching int from "+valueType(key));
 				}
 			}
 		}));
@@ -200,7 +202,8 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 					assertEquals(((Number)noEntryValue(key)).floatValue(), storage.getFloat(item, key),
 							"Mismatch for key "+key+" of type "+valueType(key));
 				} else {
-					assertUnsupportedType(() -> storage.getFloat(item, key));
+					assertUnsupportedType(() -> storage.getFloat(item, key),
+							"Fetching float from "+valueType(key));
 				}
 			}
 		}));
@@ -220,7 +223,8 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 					assertEquals(((Number)noEntryValue(key)).doubleValue(), storage.getDouble(item, key),
 							"Mismatch for key "+key+" of type "+valueType(key));
 				} else {
-					assertUnsupportedType(() -> storage.getDouble(item, key));
+					assertUnsupportedType(() -> storage.getDouble(item, key),
+							"Fetching double from "+valueType(key));
 				}
 			}
 		}));
@@ -240,7 +244,8 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 					assertEquals(((Number)noEntryValue(key)).longValue(), storage.getLong(item, key),
 							"Mismatch for key "+key+" of type "+valueType(key));
 				} else {
-					assertUnsupportedType(() -> storage.getLong(item, key));
+					assertUnsupportedType(() -> storage.getLong(item, key),
+							"Fetching long from "+valueType(key));
 				}
 			}
 		}));
@@ -261,7 +266,8 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 					assertEquals(noEntryValue(key), storage.getBoolean(item, key),
 							"Mismatch for key "+key+" of type "+valueType(key));
 				} else {
-					assertUnsupportedType(() -> storage.getBoolean(item, key));
+					assertUnsupportedType(() -> storage.getBoolean(item, key),
+							"Fetching boolean from "+valueType(key));
 				}
 			}
 		}));
@@ -326,8 +332,8 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 					storage.setInteger(item, key, value);
 					assertEquals(value, storage.getInteger(item, key));
 				} else {
-					assertUnsupportedType("Expecting error when setting int on "+valueType(key),
-							() -> storage.setInteger(item, key, random().nextInt()));
+					assertUnsupportedType(() -> storage.setInteger(item, key, random().nextInt()),
+							"Expecting error when setting int on "+valueType(key));
 				}
 			}
 		}));
@@ -348,8 +354,8 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 					storage.setLong(item, key, value);
 					assertEquals(value, storage.getLong(item, key));
 				} else {
-					assertUnsupportedType("Expecting error when setting long on "+valueType(key),
-							() -> storage.setLong(item, key, random().nextLong()));
+					assertUnsupportedType(() -> storage.setLong(item, key, random().nextLong()),
+							"Expecting error when setting long on "+valueType(key));
 				}
 			}
 		}));
@@ -370,8 +376,8 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 					storage.setFloat(item, key, value);
 					assertEquals(value, storage.getFloat(item, key));
 				} else {
-					assertUnsupportedType("Expecting error when setting float on "+valueType(key),
-							() -> storage.setFloat(item, key, random().nextFloat()));
+					assertUnsupportedType(() -> storage.setFloat(item, key, random().nextFloat()),
+							"Expecting error when setting float on "+valueType(key));
 				}
 			}
 		}));
@@ -392,8 +398,8 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 					storage.setDouble(item, key, value);
 					assertEquals(value, storage.getDouble(item, key));
 				} else {
-					assertUnsupportedType("Expecting error when setting double on "+valueType(key),
-							() -> storage.setDouble(item, key, random().nextDouble()));
+					assertUnsupportedType(() -> storage.setDouble(item, key, random().nextDouble()),
+							"Expecting error when setting double on "+valueType(key));
 				}
 			}
 		}));
@@ -415,8 +421,8 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 					storage.setBoolean(item, key, value);
 					assertEquals(value, storage.getBoolean(item, key));
 				} else {
-					assertUnsupportedType("Expecting error when setting boolean on "+valueType(key),
-							() -> storage.setBoolean(item, key, random().nextBoolean()));
+					assertUnsupportedType(() -> storage.setBoolean(item, key, random().nextBoolean()),
+							"Expecting error when setting boolean on "+valueType(key));
 				}
 			}
 		}));

@@ -17,19 +17,20 @@
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.util.MutablePrimitives;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
 import de.ims.icarus2.util.MutablePrimitives.MutableFloat;
@@ -38,7 +39,6 @@ import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.MutablePrimitives.MutablePrimitive;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
 import de.ims.icarus2.util.annotations.TestableImplementation;
-import de.ims.icarus2.util.lang.Primitives;
 
 /**
  * @author Markus Gärtner
@@ -47,10 +47,11 @@ import de.ims.icarus2.util.lang.Primitives;
 @TestableImplementation(AnnotationStorage.class)
 public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object[]> {
 
-	private boolean[] primitivesMask;
+	private ValueType[] valueTypes;
+	private Supplier<MutablePrimitive<?>>[] wrappers;
 
 	public FixedKeysMixedObjectStorage() {
-		this(-1);
+		this(UNSET_INT);
 	}
 
 	public FixedKeysMixedObjectStorage(int initialCapacity) {
@@ -62,37 +63,21 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 	}
 
 	@Override
-	public void addNotify(AnnotationLayer layer) {
-		super.addNotify(layer);
-
-		primitivesMask = createPrimitivesMask();
-	}
-
-	@Override
 	public void removeNotify(AnnotationLayer layer) {
 		super.removeNotify(layer);
 
-		primitivesMask = null;
+		valueTypes = null;
 	}
 
-	protected boolean[] createPrimitivesMask() {
-		IndexLookup indexLookup = getIndexLookup();
-
-		boolean[] mask = new boolean[indexLookup.keyCount()];
-		Object[] noEntryValues = getNoEntryValues();
-
-		for(int i=0; i<mask.length; i++) {
-			mask[i] = isPrimitiveWrapper(noEntryValues[i]);
-		}
-
-		return mask;
-	}
-
+	@SuppressWarnings("unchecked")
 	@Override
 	protected Object[] createNoEntryValues(AnnotationLayer layer,
 			IndexLookup indexLookup) {
 
 		AnnotationLayerManifest layerManifest = layer.getManifest();
+
+		valueTypes = new ValueType[indexLookup.keyCount()];
+		wrappers = new Supplier[indexLookup.keyCount()];
 
 		// Create and populate 'default' values
 		Object[] noEntryValues = new Object[indexLookup.keyCount()];
@@ -100,12 +85,20 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 			String key = indexLookup.keyAt(i);
 			AnnotationManifest annotationManifest = requireAnnotationsManifest(layerManifest, key);
 
+			ValueType valueType = annotationManifest.getValueType();
+
+			valueTypes[i] = valueType;
+			Supplier< MutablePrimitive<?>> wrapper = wrapper(valueType);
+			wrappers[i] = wrapper;
+
 			final int index = i;
 			annotationManifest.getNoEntryValue().ifPresent(noEntryValue -> {
-				ValueType valueType = annotationManifest.getValueType();
-
-				//TODO maybe ensure a kind of 'default' noEntryValue if manifest misses to declare one?
-				noEntryValues[index] = wrapMutable(noEntryValue, valueType);
+				if(wrapper!=null) {
+					MutablePrimitive<?> primitive = wrapper.get();
+					primitive.set(noEntryValue);
+					noEntryValue = primitive;
+				}
+				noEntryValues[index] = noEntryValue;
 			});
 		}
 
@@ -113,46 +106,28 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 	}
 
 	protected boolean isPrimitive(int keyIndex) {
-		return primitivesMask[keyIndex];
+		return valueTypes[keyIndex].isPrimitiveType();
 	}
 
-	protected Object wrapMutable(Object value, ValueType valueType) {
+	private Supplier<MutablePrimitive<?>> wrapper(ValueType valueType) {
 		if(valueType==ValueType.INTEGER) {
-			value = new MutablePrimitives.MutableInteger(((Number) value).intValue());
+			return MutableInteger::new;
 		} else if(valueType==ValueType.LONG) {
-			value = new MutablePrimitives.MutableLong(((Number) value).longValue());
+			return MutableLong::new;
 		} else if(valueType==ValueType.FLOAT) {
-			value = new MutablePrimitives.MutableFloat(((Number) value).floatValue());
+			return MutableFloat::new;
 		} else if(valueType==ValueType.DOUBLE) {
-			value = new MutablePrimitives.MutableDouble(((Number) value).doubleValue());
+			return MutableDouble::new;
 		} else if(valueType==ValueType.BOOLEAN) {
-			value = new MutablePrimitives.MutableBoolean(((Boolean) value).booleanValue());
-		}
+			return MutableBoolean::new;
+		} else if(valueType.isPrimitiveType())
+			throw new ModelException(ManifestErrorCode.MANIFEST_UNKNOWN_TYPE,
+					"Unknown primitive value type: "+valueType);
 
-		return value;
+		return null;
 	}
 
-	protected MutablePrimitive<?> wrapMutable(Object value) {
-		Class<?> clazz = value.getClass();
-
-		if(clazz==Integer.class || clazz==Short.class || clazz==Byte.class) {
-			value = new MutablePrimitives.MutableInteger(((Number) value).intValue());
-		} else if(clazz==Long.class) {
-			value = new MutablePrimitives.MutableLong(((Number) value).longValue());
-		} else if(clazz==Float.class) {
-			value = new MutablePrimitives.MutableFloat(((Number) value).floatValue());
-		} else if(clazz==Double.class) {
-			value = new MutablePrimitives.MutableDouble(((Number) value).doubleValue());
-		} else if(clazz==Boolean.class) {
-			value = new MutablePrimitives.MutableBoolean(((Boolean) value).booleanValue());
-		} else if(clazz==Void.class) {
-			value = null;
-		}
-
-		return (MutablePrimitive<?>) value;
-	}
-
-	protected Object unwrapMutable(Object value) {
+	private Object unwrapMutable(Object value) {
 		if(value instanceof Primitive) {
 			value = ((Primitive<?>)value).get();
 		}
@@ -191,13 +166,12 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 	@Override
 	public Object getValue(Item item, String key) {
 		int index = checkKeyAndGetIndex(key);
-		Object[] buffer = getBuffer(item);
+		return unwrapMutable(getBuffer(item)[index]);
+	}
 
-		if(buffer==null) {
-			buffer = getNoEntryValues();
-		}
-
-		return unwrapMutable(buffer[index]);
+	@Override
+	public String getString(Item item, String key) {
+		return (String) getValue(item, key);
 	}
 
 	@Override
@@ -205,7 +179,7 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 		int index = checkKeyAndGetIndex(key);
 		Object[] buffer = getBuffer(item, value!=null);
 
-		if(buffer==null) {
+		if(buffer==null || buffer==getNoEntryValues()) {
 			if(value==null) {
 				return;
 			}
@@ -216,36 +190,28 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 
 		assert buffer!=null;
 
-		/*
-		 * Somewhat expensive strategy:
-		 *
-		 * If key is declared to map to primitive values, we need to either make
-		 * sure the given value already is a valid primitive wrapper or that we
-		 * can properly wrap it in such.
-		 *
-		 * Note that in case the given value is the Void wrapper, the value
-		 * will be treated as 'null'.
-		 */
-		if(value!=null && isPrimitive(index) && !isPrimitiveWrapper(value)) {
-			if(Primitives.isPrimitiveWrapperClass(value.getClass())) {
-				MutablePrimitive<?> wrapper = (MutablePrimitive<?>) buffer[index];
+		ValueType valueType = valueTypes[index];
 
-				if(wrapper==null) {
-					wrapper = wrapMutable(value);
-				} else {
-					wrapper.fromWrapper(value);
-				}
+		if(valueType.isPrimitiveType()) {
+			MutablePrimitive<?> wrapper = (MutablePrimitive<?>) buffer[index];
 
-				value = wrapper;
-			} else
-				throw new ModelException(ModelErrorCode.MODEL_INVALID_REQUEST,
-						"Key "+key+" is declared to map to primitive values - got: "+value);
+			if(wrapper==null) {
+				wrapper = wrappers[index].get();
+			}
+
+			wrapper.fromWrapper(value);
+			value = wrapper;
 		}
 
 		buffer[index] = value;
 	}
 
-	protected boolean isPrimitiveWrapper(Object value) {
+	@Override
+	public void setString(Item item, String key, String value) {
+		setValue(item, key, value);
+	}
+
+	private boolean isPrimitiveWrapper(Object value) {
 		return MutablePrimitive.class.isInstance(value);
 	}
 
@@ -274,13 +240,14 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 		return getPrimitive(item, key).booleanValue();
 	}
 
-	protected MutablePrimitive<?> getPrimitive(Item item, String key) {
-
-		Object value = getValue(item, key);
+	private MutablePrimitive<?> getPrimitive(Item item, String key) {
+		int index = checkKeyAndGetIndex(key);
+		Object value = getBuffer(item)[index];
 
 		if(value==null)
-			throw new ModelException(ModelErrorCode.MODEL_INVALID_REQUEST,
-					"Given key is not declared to map to primitive values or a 'noEntryValue' declraration is missing from the manifest: "+key);
+			throw new ModelException(ManifestErrorCode.MANIFEST_TYPE_CAST,
+					"Given key is not declared to map to primitive values or"
+					+ " a 'noEntryValue' declaration is missing from the manifest: "+key);
 
 		return (MutablePrimitive<?>) value;
 	}
@@ -295,49 +262,44 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 	 * @param clazz
 	 * @return
 	 */
-	@SuppressWarnings("unchecked")
-	protected <T extends MutablePrimitive<?>> T ensureAndGetPrimitive(Item item, String key, Class<T> clazz) {
+	private <T extends MutablePrimitive<?>> MutablePrimitive<?> ensureAndGetPrimitive(
+			Item item, String key) {
 		int index = checkKeyAndGetIndex(key);
 		Object[] buffer = getBuffer(item);
 
 		Object value = buffer[index];
 
 		if(value==null) {
-			try {
-				value = clazz.newInstance();
-			} catch (InstantiationException | IllegalAccessException e) {
-				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Unable to instantiate primitive buffer object");
-			}
-
+			value = wrappers[index].get();
 			buffer[index] = value;
 		}
 
-		return (T)value;
+		return (MutablePrimitive<?>)value;
 	}
 
 	@Override
 	public void setInteger(Item item, String key, int value) {
-		ensureAndGetPrimitive(item, key, MutableInteger.class).setInt(value);
+		ensureAndGetPrimitive(item, key).setInt(value);
 	}
 
 	@Override
 	public void setLong(Item item, String key, long value) {
-		ensureAndGetPrimitive(item, key, MutableLong.class).setLong(value);
+		ensureAndGetPrimitive(item, key).setLong(value);
 	}
 
 	@Override
 	public void setFloat(Item item, String key, float value) {
-		ensureAndGetPrimitive(item, key, MutableFloat.class).setFloat(value);
+		ensureAndGetPrimitive(item, key).setFloat(value);
 	}
 
 	@Override
 	public void setDouble(Item item, String key, double value) {
-		ensureAndGetPrimitive(item, key, MutableDouble.class).setDouble(value);
+		ensureAndGetPrimitive(item, key).setDouble(value);
 	}
 
 	@Override
 	public void setBoolean(Item item, String key, boolean value) {
-		ensureAndGetPrimitive(item, key, MutableBoolean.class).setBoolean(value);
+		ensureAndGetPrimitive(item, key).setBoolean(value);
 	}
 
 	/**
@@ -352,7 +314,7 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 	public boolean hasAnnotations(Item item) {
 		Object[] buffer = getBuffer(item);
 
-		if(buffer==null) {
+		if(buffer==null || buffer==getNoEntryValues()) {
 			return false;
 		}
 
