@@ -3,7 +3,7 @@
  */
 package de.ims.icarus2.misc;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import org.junit.jupiter.api.Test;
 
@@ -17,6 +17,6 @@ class LangTest {
 
 	@Test
 	void testAssignmentCompatibility() {
-		assertTrue(Long.class.isAssignableFrom(Integer.TYPE));
+		assertFalse(Long.class.isAssignableFrom(Integer.TYPE));
 	}
 }
