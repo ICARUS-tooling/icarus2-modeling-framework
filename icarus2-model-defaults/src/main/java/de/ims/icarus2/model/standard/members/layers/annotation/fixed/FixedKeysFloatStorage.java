@@ -20,6 +20,9 @@ import static de.ims.icarus2.util.lang.Primitives._float;
 
 import java.util.function.Consumer;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Unguarded;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -102,6 +105,7 @@ public class FixedKeysFloatStorage extends AbstractFixedKeysStorage<float[]> {
 	/**
 	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.Object)
 	 */
+	@Unguarded(Unguarded.DELEGATE)
 	@Override
 	public void setValue(Item item, String key, Object value) {
 		setFloat(item, key, ((Number) value).floatValue());
@@ -124,12 +128,55 @@ public class FixedKeysFloatStorage extends AbstractFixedKeysStorage<float[]> {
 		return getFloat(item, key);
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractManagedAnnotationStorage#getInteger(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 */
+	@Override
+	public int getInteger(Item item, String key) {
+		return (int) getFloat(item, key);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractManagedAnnotationStorage#getLong(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 */
+	@Override
+	public long getLong(Item item, String key) {
+		return (long) getFloat(item, key);
+	}
+
 	@Override
 	public void setFloat(Item item, String key, float value) {
 		int index = checkKeyAndGetIndex(key);
 		float[] buffer = getBuffer(item, true);
 
 		buffer[index] = value;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractManagedAnnotationStorage#setDouble(de.ims.icarus2.model.api.members.item.Item, java.lang.String, double)
+	 */
+	@Override
+	public void setDouble(Item item, String key, double value) {
+		if(value > Float.MAX_VALUE || value < -Float.MAX_VALUE)
+			throw new ModelException(GlobalErrorCode.VALUE_OVERFLOW,
+					"Double value exceeds float limits: "+value);
+		setFloat(item, key, (float) value);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractManagedAnnotationStorage#setInteger(de.ims.icarus2.model.api.members.item.Item, java.lang.String, int)
+	 */
+	@Override
+	public void setInteger(Item item, String key, int value) {
+		setFloat(item, key, value);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractManagedAnnotationStorage#setLong(de.ims.icarus2.model.api.members.item.Item, java.lang.String, long)
+	 */
+	@Override
+	public void setLong(Item item, String key, long value) {
+		setFloat(item, key, value);
 	}
 
 	/**
