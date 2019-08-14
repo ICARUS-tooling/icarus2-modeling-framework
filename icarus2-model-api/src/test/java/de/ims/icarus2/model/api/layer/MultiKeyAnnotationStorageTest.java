@@ -13,7 +13,6 @@ import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -33,10 +32,12 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
+import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.test.annotations.Provider;
 
 /**
  * @author Markus Gärtner
@@ -73,6 +74,16 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 	@Override
 	default AnnotationLayerManifest createManifest() {
 		return createManifest(keys());
+	}
+
+	@Provider
+	default S createForKeys(List<String> keys) {
+		AnnotationLayer layer = createLayer(createManifest(keys));
+		S storage = createForLayer(layer);
+		if(storage instanceof ManagedAnnotationStorage) {
+			((ManagedAnnotationStorage)storage).addNotify(layer);
+		}
+		return storage;
 	}
 
 	/** Allows the test class to produce multiple alternate instances to be tested */
@@ -253,30 +264,6 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 					assertUnsupportedType(() -> storage.getBoolean(item, key));
 				}
 			}
-		}));
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#removeAllValues(java.util.function.Supplier)}.
-	 */
-	@TestFactory
-	default Stream<DynamicTest> testRemoveAllValuesSupplierOfQextendsItemMulti() {
-		fail("Not yet implemented"); // TODO
-		return Config.expand(this).map(config -> dynamicTest(config.label(), () -> {
-			S storage = config.storage();
-			Item item = mockItem();
-		}));
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#removeAllValues(java.util.Iterator)}.
-	 */
-	@TestFactory
-	default Stream<DynamicTest> testRemoveAllValuesIteratorOfQextendsItemMulti() {
-		fail("Not yet implemented"); // TODO
-		return Config.expand(this).map(config -> dynamicTest(config.label(), () -> {
-			S storage = config.storage();
-			Item item = mockItem();
 		}));
 	}
 
@@ -546,6 +533,7 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 				MultiKeyAnnotationStorageTest<S> test, ValueType...types) {
 			String[] sentinels = Stream.of(types)
 					.map(test::keyForType)
+					.distinct()
 					.toArray(String[]::new);
 
 			return test.createConfigurations()

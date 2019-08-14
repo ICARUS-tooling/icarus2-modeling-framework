@@ -68,6 +68,7 @@ import org.mockito.Mockito;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.options.ChainedOptionsBuilder;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
+import org.opentest4j.TestAbortedException;
 
 import de.ims.icarus2.test.DiffUtils.Trace;
 import de.ims.icarus2.test.func.TriConsumer;
@@ -81,6 +82,10 @@ import de.ims.icarus2.test.util.Pair;
  *
  */
 public class TestUtils {
+
+	public static void abort() {
+		throw new TestAbortedException();
+	}
 
 	// Number apreviations
 

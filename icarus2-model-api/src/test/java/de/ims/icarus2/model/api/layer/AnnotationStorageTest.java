@@ -3,8 +3,10 @@
  */
 package de.ims.icarus2.model.api.layer;
 
+import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
+import static de.ims.icarus2.test.TestUtils.abort;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.test.TestUtils.randomString;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
@@ -83,6 +85,10 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		return "test";
 	}
 
+	default String unknownKey() {
+		return "unknown_key";
+	}
+
 	default String keyForType(ValueType type) {
 		return key();
 	}
@@ -138,6 +144,10 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 
 	@Provider
 	S createForLayer(AnnotationLayer layer);
+
+	static void assertForeignKey(Executable executable) {
+		assertModelException(GlobalErrorCode.INVALID_INPUT, executable);
+	}
 
 	static void assertUnsupportedType(Executable executable) {
 		assertUnsupportedType(null, executable);
@@ -587,6 +597,221 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 
 		assertTrue(storage.hasAnnotations(item));
 		assertFalse(storage.hasAnnotations(mockItem()));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.Object)}.
+	 */
+	@Test
+	default void testSetValueForeignKey() {
+		String key = keyForType(ValueType.CUSTOM);
+
+		if(!typesForSetters(key).contains(ValueType.CUSTOM)) {
+			abort();
+		}
+
+		S storage = createForKey(key);
+		assertForeignKey(() -> storage.setValue(mockItem(), unknownKey(), testValue(key)));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setString(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.String)}.
+	 */
+	@Test
+	default void testSetStringForeignKey() {
+		String key = keyForType(ValueType.STRING);
+
+		if(!typesForSetters(key).contains(ValueType.STRING)) {
+			abort();
+		}
+
+		S storage = createForKey(key);
+		assertForeignKey(() -> storage.setString(mockItem(), unknownKey(), (String)testValue(key)));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setInteger(de.ims.icarus2.model.api.members.item.Item, java.lang.String, int)}.
+	 */
+	@Test
+	default void testSetIntegerForeignKey() {
+		String key = keyForType(ValueType.INTEGER);
+
+		if(!typesForSetters(key).contains(ValueType.INTEGER)) {
+			abort();
+		}
+
+		S storage = createForKey(key);
+		assertForeignKey(() -> storage.setInteger(mockItem(), unknownKey(),
+				((Number)testValue(key)).intValue()));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setLong(de.ims.icarus2.model.api.members.item.Item, java.lang.String, long)}.
+	 */
+	@Test
+	default void testSetLongForeignKey() {
+		String key = keyForType(ValueType.LONG);
+
+		if(!typesForSetters(key).contains(ValueType.LONG)) {
+			abort();
+		}
+
+		S storage = createForKey(key);
+		assertForeignKey(() -> storage.setLong(mockItem(), unknownKey(),
+					((Number)testValue(key)).longValue()));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setFloat(de.ims.icarus2.model.api.members.item.Item, java.lang.String, float)}.
+	 */
+	@Test
+	default void testSetFloatForeignKey() {
+		String key = keyForType(ValueType.FLOAT);
+
+		if(!typesForSetters(key).contains(ValueType.FLOAT)) {
+			abort();
+		}
+
+		S storage = createForKey(key);
+		assertForeignKey(() -> storage.setFloat(mockItem(), unknownKey(),
+				((Number)testValue(key)).floatValue()));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setDouble(de.ims.icarus2.model.api.members.item.Item, java.lang.String, double)}.
+	 */
+	@Test
+	default void testSetDoubleForeignKey() {
+		String key = keyForType(ValueType.DOUBLE);
+
+		if(!typesForSetters(key).contains(ValueType.DOUBLE)) {
+			abort();
+		}
+
+		S storage = createForKey(key);
+		assertForeignKey(() -> storage.setDouble(mockItem(), unknownKey(),
+				((Number)testValue(key)).doubleValue()));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setBoolean(de.ims.icarus2.model.api.members.item.Item, java.lang.String, boolean)}.
+	 */
+	@Test
+	default void testSetBooleanForeignKey() {
+		String key = keyForType(ValueType.BOOLEAN);
+
+		if(!typesForSetters(key).contains(ValueType.BOOLEAN)) {
+			abort();
+		}
+
+		S storage = createForKey(key);
+		assertForeignKey(() -> storage.setBoolean(mockItem(), unknownKey(),
+				((Boolean)testValue(key)).booleanValue()));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
+	 */
+	@Test
+	default void testGetValueForeignKey() {
+		String key = keyForType(ValueType.CUSTOM);
+
+		if(!typesForGetters(key).contains(ValueType.CUSTOM)) {
+			abort();
+		}
+
+		S storage = createForKey(key);
+		assertForeignKey(() -> storage.getValue(mockItem(), unknownKey()));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getString(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
+	 */
+	@Test
+	default void testGetStringForeignKey() {
+		String key = keyForType(ValueType.STRING);
+
+		if(!typesForGetters(key).contains(ValueType.STRING)) {
+			abort();
+		}
+
+		S storage = createForKey(key);
+		assertForeignKey(() -> storage.getString(mockItem(), unknownKey()));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getInteger(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
+	 */
+	@Test
+	default void testGetIntegerForeignKey() {
+		String key = keyForType(ValueType.INTEGER);
+
+		if(!typesForGetters(key).contains(ValueType.INTEGER)) {
+			abort();
+		}
+
+		S storage = createForKey(key);
+		assertForeignKey(() -> storage.getInteger(mockItem(), unknownKey()));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getFloat(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
+	 */
+	@Test
+	default void testGetFloatForeignKey() {
+		String key = keyForType(ValueType.FLOAT);
+
+		if(!typesForGetters(key).contains(ValueType.FLOAT)) {
+			abort();
+		}
+
+		S storage = createForKey(key);
+		assertForeignKey(() -> storage.getFloat(mockItem(), unknownKey()));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getDouble(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
+	 */
+	@Test
+	default void testGetDoubleForeignKey() {
+		String key = keyForType(ValueType.DOUBLE);
+
+		if(!typesForGetters(key).contains(ValueType.DOUBLE)) {
+			abort();
+		}
+
+		S storage = createForKey(key);
+		assertForeignKey(() -> storage.getDouble(mockItem(), unknownKey()));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getLong(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
+	 */
+	@Test
+	default void testGetLongForeignKey() {
+		String key = keyForType(ValueType.LONG);
+
+		if(!typesForGetters(key).contains(ValueType.LONG)) {
+			abort();
+		}
+
+		S storage = createForKey(key);
+		assertForeignKey(() -> storage.getLong(mockItem(), unknownKey()));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getBoolean(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
+	 */
+	@Test
+	default void testGetBooleanForeignKey() {
+		String key = keyForType(ValueType.BOOLEAN);
+
+		if(!typesForGetters(key).contains(ValueType.BOOLEAN)) {
+			abort();
+		}
+
+		S storage = createForKey(key);
+		assertForeignKey(() -> storage.getBoolean(mockItem(), unknownKey()));
 	}
 
 }

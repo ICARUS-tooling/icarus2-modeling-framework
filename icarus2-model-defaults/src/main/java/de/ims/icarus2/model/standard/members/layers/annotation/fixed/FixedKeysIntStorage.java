@@ -20,6 +20,7 @@ import static de.ims.icarus2.util.lang.Primitives._int;
 
 import java.util.function.Consumer;
 
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
@@ -99,6 +100,7 @@ public class FixedKeysIntStorage extends AbstractFixedKeysStorage<int[]> {
 	/**
 	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.Object)
 	 */
+	@Unguarded(Unguarded.DELEGATE)
 	@Override
 	public void setValue(Item item, String key, Object value) {
 		setInteger(item, key, ((Number) value).intValue());

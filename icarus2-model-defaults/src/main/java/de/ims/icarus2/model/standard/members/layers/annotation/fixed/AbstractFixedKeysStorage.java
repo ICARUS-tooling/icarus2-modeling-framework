@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
+import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
@@ -66,6 +68,7 @@ public abstract class AbstractFixedKeysStorage<B extends Object> extends Abstrac
 	}
 
 	protected int checkKeyAndGetIndex(String key) {
+		requireNonNull(key);
 		int index = indexLookup.indexOf(key);
 
 		if(index==-1)

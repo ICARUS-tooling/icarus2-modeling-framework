@@ -223,16 +223,6 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 
 	}
 
-	private void checkKeyAndType(String key, Class<?> clazz) {
-		requireNonNull(key);
-		ValueType type = valueTypes.get(key);
-		if(type!=null) {
-			type.checkType(clazz);
-		} else if(!allowUnknownKeys)
-			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Key not supported "+key);
-
-	}
-
 	@Override
 	public Object getValue(Item item, String key) {
 		AnnotationBundle bundle = getBuffer(item);
