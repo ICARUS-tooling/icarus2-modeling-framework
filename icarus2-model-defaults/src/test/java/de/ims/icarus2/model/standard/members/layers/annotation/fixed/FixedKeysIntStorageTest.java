@@ -3,9 +3,11 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
+import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.test.TestUtils.random;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,8 +15,12 @@ import java.util.Set;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.api.layer.MultiKeyAnnotationStorageTest;
@@ -117,6 +123,7 @@ class FixedKeysIntStorageTest implements MultiKeyAnnotationStorageTest<FixedKeys
 		return keys.get(0);
 	}
 
+	@Nested
 	class Constructors {
 
 		/**
@@ -124,23 +131,48 @@ class FixedKeysIntStorageTest implements MultiKeyAnnotationStorageTest<FixedKeys
 		 */
 		@Test
 		void testFixedKeysIntStorage() {
-			fail("Not yet implemented"); // TODO
+			assertNotNull(new FixedKeysIntStorage());
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysIntStorage#FixedKeysIntStorage(int)}.
 		 */
-		@Test
-		void testFixedKeysIntStorageInt() {
-			fail("Not yet implemented"); // TODO
+		@ParameterizedTest
+		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})
+		void testFixedKeysIntStorageInt(int capacity) {
+			assertNotNull(new FixedKeysIntStorage(capacity));
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysIntStorage#FixedKeysIntStorage(int)}.
+		 */
+		@ParameterizedTest
+		@ValueSource(ints = {0, -2})
+		void testFixedKeysIntStorageIntInvalidCapacity(int capacity) {
+			assertModelException(GlobalErrorCode.INVALID_INPUT,
+					() -> new FixedKeysIntStorage(capacity));
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysIntStorage#FixedKeysIntStorage(boolean, int)}.
 		 */
-		@Test
-		void testFixedKeysIntStorageBooleanInt() {
-			fail("Not yet implemented"); // TODO
+		@ParameterizedTest
+		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})
+		void testFixedKeysIntStorageBooleanInt(int capacity) {
+			assertNotNull(new FixedKeysIntStorage(true, capacity));
+			assertNotNull(new FixedKeysIntStorage(false, capacity));
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysIntStorage#FixedKeysIntStorage(boolean, int)}.
+		 */
+		@ParameterizedTest
+		@ValueSource(ints = {0, -2})
+		void testFixedKeysIntStorageBooleanIntInvalidCapacity(int capacity) {
+			assertModelException(GlobalErrorCode.INVALID_INPUT,
+					() -> new FixedKeysIntStorage(true, capacity));
+			assertModelException(GlobalErrorCode.INVALID_INPUT,
+					() -> new FixedKeysIntStorage(false, capacity));
 		}
 
 	}
