@@ -20,6 +20,7 @@ import static de.ims.icarus2.util.lang.Primitives._long;
 
 import java.util.function.Consumer;
 
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -101,6 +102,7 @@ public class FixedKeysLongStorage extends AbstractFixedKeysStorage<long[]> {
 	/**
 	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.Object)
 	 */
+	@Unguarded(Unguarded.DELEGATE)
 	@Override
 	public void setValue(Item item, String key, Object value) {
 		setLong(item, key, ((Number) value).longValue());
@@ -146,9 +148,16 @@ public class FixedKeysLongStorage extends AbstractFixedKeysStorage<long[]> {
 		buffer[index] = value;
 	}
 
-	/**
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractObjectMapStorage#createBuffer()
-	 */
+	@Override
+	public void setFloat(Item item, String key, float value) {
+		setLong(item, key, (long) value);
+	}
+
+	@Override
+	public void setDouble(Item item, String key, double value) {
+		setLong(item, key, (long) value);
+	}
+
 	@Override
 	protected long[] createBuffer() {
 		return new long[getKeyCount()];
