@@ -20,6 +20,7 @@ import static de.ims.icarus2.util.lang.Primitives._double;
 
 import java.util.function.Consumer;
 
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -101,6 +102,7 @@ public class FixedKeysDoubleStorage extends AbstractFixedKeysStorage<double[]> {
 	/**
 	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.Object)
 	 */
+	@Unguarded(Unguarded.DELEGATE)
 	@Override
 	public void setValue(Item item, String key, Object value) {
 		setDouble(item, key, ((Number) value).doubleValue());
@@ -139,6 +141,21 @@ public class FixedKeysDoubleStorage extends AbstractFixedKeysStorage<double[]> {
 		double[] buffer = getBuffer(item, true);
 
 		buffer[index] = value;
+	}
+
+	@Override
+	public void setFloat(Item item, String key, float value) {
+		setDouble(item, key, value);
+	}
+
+	@Override
+	public void setLong(Item item, String key, long value) {
+		setDouble(item, key, value);
+	}
+
+	@Override
+	public void setInteger(Item item, String key, int value) {
+		setDouble(item, key, value);
 	}
 
 	/**
