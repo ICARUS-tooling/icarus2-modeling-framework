@@ -1060,7 +1060,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static final class PackageHandle {
+	public static class PackageHandle {
 
 		/**
 		 * Annotation used for accessing this info

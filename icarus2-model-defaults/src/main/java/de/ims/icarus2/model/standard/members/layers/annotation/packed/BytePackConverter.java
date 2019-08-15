@@ -24,8 +24,8 @@ import java.util.function.ToIntFunction;
 
 import com.google.common.base.Objects;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.layers.annotation.packed.PackedDataManager.PackageHandle;
@@ -68,78 +68,69 @@ public abstract class BytePackConverter {
 		return null;
 	}
 
+	private ModelException forUnsupportedType(ValueType valueType) {
+		return new ModelException(ManifestErrorCode.MANIFEST_TYPE_CAST,
+				Messages.mismatch("Cannot convert", getValueType(), valueType.getName()));
+	}
+
 	// Read method
 
 	public boolean getBoolean(PackageHandle handle, Cursor cursor) {
-		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatch("Cannot convert", getValueType(), ValueType.BOOLEAN_TYPE_LABEL));
+		throw forUnsupportedType(ValueType.BOOLEAN);
 	}
 
 	public int getInteger(PackageHandle handle, Cursor cursor) {
-		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatch("Cannot convert", getValueType(), ValueType.INTEGER_TYPE_LABEL));
+		throw forUnsupportedType(ValueType.INTEGER);
 	}
 
 	public long getLong(PackageHandle handle, Cursor cursor) {
-		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatch("Cannot convert", getValueType(), ValueType.LONG_TYPE_LABEL));
+		throw forUnsupportedType(ValueType.LONG);
 	}
 
 	public float getFloat(PackageHandle handle, Cursor cursor) {
-		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatch("Cannot convert", getValueType(), ValueType.FLOAT_TYPE_LABEL));
+		throw forUnsupportedType(ValueType.FLOAT);
 	}
 
 	public double getDouble(PackageHandle handle, Cursor cursor) {
-		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatch("Cannot convert", getValueType(), ValueType.DOUBLE_TYPE_LABEL));
+		throw forUnsupportedType(ValueType.DOUBLE);
 	}
 
 	public Object getValue(PackageHandle handle, Cursor cursor) {
-		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatch("Cannot convert", getValueType(), ValueType.CUSTOM_TYPE_LABEL));
+		throw forUnsupportedType(ValueType.CUSTOM);
 	}
 
 	public String getString(PackageHandle handle, Cursor cursor) {
-		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatch("Cannot convert", getValueType(), ValueType.STRING_TYPE_LABEL));
+		throw forUnsupportedType(ValueType.STRING);
 	}
 
 	// Write methods
 
 	public void setBoolean(PackageHandle handle, Cursor cursor, boolean value) {
-		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatch("Cannot convert", getValueType(), ValueType.BOOLEAN_TYPE_LABEL));
+		throw forUnsupportedType(ValueType.BOOLEAN);
 	}
 
 	public void setInteger(PackageHandle handle, Cursor cursor, int value) {
-		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatch("Cannot convert", getValueType(), ValueType.INTEGER_TYPE_LABEL));
+		throw forUnsupportedType(ValueType.INTEGER);
 	}
 
 	public void setLong(PackageHandle handle, Cursor cursor, long value) {
-		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatch("Cannot convert", getValueType(), ValueType.LONG_TYPE_LABEL));
+		throw forUnsupportedType(ValueType.LONG);
 	}
 
 	public void setFloat(PackageHandle handle, Cursor cursor, float value) {
-		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatch("Cannot convert", getValueType(), ValueType.FLOAT_TYPE_LABEL));
+		throw forUnsupportedType(ValueType.FLOAT);
 	}
 
 	public void setDouble(PackageHandle handle, Cursor cursor, double value) {
-		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatch("Cannot convert", getValueType(), ValueType.DOUBLE_TYPE_LABEL));
+		throw forUnsupportedType(ValueType.DOUBLE);
 	}
 
 	public void setValue(PackageHandle handle, Cursor cursor, Object value) {
-		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatch("Cannot convert", getValueType(), ValueType.CUSTOM_TYPE_LABEL));
+		throw forUnsupportedType(ValueType.CUSTOM);
 	}
 
 	public void setString(PackageHandle handle, Cursor cursor, String value) {
-		throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH,
-				Messages.mismatch("Cannot convert", getValueType(), ValueType.STRING_TYPE_LABEL));
+		throw forUnsupportedType(ValueType.STRING);
 	}
 
 	// Utility
@@ -166,7 +157,7 @@ public abstract class BytePackConverter {
 		private final int bit;
 
 		public BitwiseBooleanConverter(int bit) {
-			checkArgument("Bit index must be between 0 and 7, inclusively.", bit>=0 && bit<=7);
+			checkArgument("Bit index must be between 0 and 7, inclusively: "+bit, bit>=0 && bit<=7);
 
 			this.bit = bit;
 			mask = (byte) ((1<<bit) & 0xFF);
@@ -463,6 +454,15 @@ public abstract class BytePackConverter {
 		}
 
 		/**
+		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getString(de.ims.icarus2.model.standard.members.layers.annotation.packed.PackedDataManager.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
+		 */
+		@Override
+		public String getString(PackageHandle handle, Cursor cursor) {
+			valueType.checkType(String.class);
+			return (String) getValue(handle, cursor);
+		}
+
+		/**
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.util.mem.ByteAllocator.Cursor, java.lang.Object)
 		 */
 		@Override
@@ -470,6 +470,15 @@ public abstract class BytePackConverter {
 			@SuppressWarnings("unchecked")
 			int index = substitution.applyAsInt((T) value);
 			cursor.setNBytes(handle.getOffset(), index, bytes);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#setString(de.ims.icarus2.model.standard.members.layers.annotation.packed.PackedDataManager.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, java.lang.String)
+		 */
+		@Override
+		public void setString(PackageHandle handle, Cursor cursor, String value) {
+			valueType.checkType(String.class);
+			setValue(handle, cursor, value);
 		}
 	}
 }

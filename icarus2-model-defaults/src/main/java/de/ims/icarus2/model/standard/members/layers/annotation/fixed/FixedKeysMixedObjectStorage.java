@@ -211,10 +211,6 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 		setValue(item, key, value);
 	}
 
-	private boolean isPrimitiveWrapper(Object value) {
-		return MutablePrimitive.class.isInstance(value);
-	}
-
 	@Override
 	public int getInteger(Item item, String key) {
 		return getPrimitive(item, key).intValue();
