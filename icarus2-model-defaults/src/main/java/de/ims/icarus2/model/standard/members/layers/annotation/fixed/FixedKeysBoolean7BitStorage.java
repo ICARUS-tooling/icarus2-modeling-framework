@@ -93,7 +93,7 @@ public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage
 
 			Optional<Object> declaredNoEntryValue = annotationManifest.getNoEntryValue();
 
-			if(!declaredNoEntryValue.isPresent() && ((Boolean)declaredNoEntryValue.get()).booleanValue()) {
+			if(declaredNoEntryValue.isPresent() && ((Boolean)declaredNoEntryValue.get()).booleanValue()) {
 				noEntryValues |= (1<<i);
 			}
 		}
@@ -121,14 +121,17 @@ public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage
 
 		IndexLookup indexLookup = getIndexLookup();
 
+		boolean result = false;
+
 		for(int i=0; i<indexLookup.keyCount(); i++) {
 			int mask = (1<<i);
 			if((data & mask) != (noEntryValues & mask)) {
+				result = true;
 				action.accept(indexLookup.keyAt(i));
 			}
 		}
 
-		return true;
+		return result;
 	}
 
 	/**
@@ -160,8 +163,11 @@ public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage
 		if(value) {
 			b |= (1<<index);
 		} else {
-			b &= (EMPTY_BUFFER | ~(1<<index));
+			b &= ~(1<<index);
 		}
+
+		// Clear the marker bit so we know the value has been set
+		b &= ~EMPTY_BUFFER;
 
 		annotations.put(item, b);
 	}
@@ -196,7 +202,7 @@ public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage
 	public boolean addItem(Item item) {
 		byte b = annotations.getByte(item);
 
-		if(b!=EMPTY_BUFFER) {
+		if(b==EMPTY_BUFFER) {
 			annotations.put(item, EMPTY_BUFFER);
 			return true;
 		}

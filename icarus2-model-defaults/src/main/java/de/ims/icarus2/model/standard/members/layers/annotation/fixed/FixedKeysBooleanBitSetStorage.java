@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+
 import java.util.BitSet;
 import java.util.function.Consumer;
 
@@ -34,7 +36,7 @@ import de.ims.icarus2.util.annotations.TestableImplementation;
 public class FixedKeysBooleanBitSetStorage extends AbstractFixedKeysStorage<BitSet> {
 
 	public FixedKeysBooleanBitSetStorage() {
-		this(-1);
+		this(UNSET_INT);
 	}
 
 	public FixedKeysBooleanBitSetStorage(int initialCapacity) {
