@@ -21,6 +21,7 @@ import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import java.util.BitSet;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -58,12 +59,9 @@ public class FixedKeysBooleanBitSetStorage extends AbstractFixedKeysStorage<BitS
 			String key = indexLookup.keyAt(i);
 			AnnotationManifest annotationManifest = requireAnnotationsManifest(layerManifest, key);
 
-			Object noEntryValue = annotationManifest.getNoEntryValue();
-			if(noEntryValue==null) {
-				continue;
-			}
-
-			noEntryValues.set(i, ((Boolean) noEntryValue).booleanValue());
+			int index = i;
+			annotationManifest.getNoEntryValue().ifPresent(noEntryValue ->
+					noEntryValues.set(index, ((Boolean) noEntryValue).booleanValue()));
 		}
 
 		return noEntryValues;
@@ -80,13 +78,16 @@ public class FixedKeysBooleanBitSetStorage extends AbstractFixedKeysStorage<BitS
 
 		IndexLookup indexLookup = getIndexLookup();
 
+		boolean result = false;
+
 		for(int i=0; i<indexLookup.keyCount(); i++) {
-			if(buffer.get(i)) {
+			if(buffer.get(i) != noEntryValues.get(i)) {
+				result = true;
 				action.accept(indexLookup.keyAt(i));
 			}
 		}
 
-		return true;
+		return result;
 	}
 
 	/**
@@ -100,6 +101,7 @@ public class FixedKeysBooleanBitSetStorage extends AbstractFixedKeysStorage<BitS
 	/**
 	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.Object)
 	 */
+	@Unguarded(Unguarded.DELEGATE)
 	@Override
 	public void setValue(Item item, String key, Object value) {
 		setBoolean(item, key, ((Boolean) value).booleanValue());
