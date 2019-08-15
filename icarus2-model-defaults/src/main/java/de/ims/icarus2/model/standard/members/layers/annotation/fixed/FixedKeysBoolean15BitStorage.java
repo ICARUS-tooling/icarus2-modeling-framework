@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -53,7 +55,7 @@ public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorag
 	private static final short EMPTY_BUFFER = (short) (0x1<<15);
 
 	public FixedKeysBoolean15BitStorage() {
-		this(-1);
+		this(UNSET_INT);
 	}
 
 	public FixedKeysBoolean15BitStorage(int initialCapacity) {
@@ -93,7 +95,7 @@ public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorag
 
 			Optional<Object> declaredNoEntryValue = annotationManifest.getNoEntryValue();
 
-			if(!declaredNoEntryValue.isPresent() && ((Boolean)declaredNoEntryValue.get()).booleanValue()) {
+			if(declaredNoEntryValue.isPresent() && ((Boolean)declaredNoEntryValue.get()).booleanValue()) {
 				noEntryValues |= (1<<i);
 			}
 		}
@@ -130,14 +132,17 @@ public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorag
 
 		IndexLookup indexLookup = getIndexLookup();
 
+		boolean result = false;
+
 		for(int i=0; i<indexLookup.keyCount(); i++) {
 			int mask = (1<<i);
 			if((data & mask) != (noEntryValues & mask)) {
+				result = true;
 				action.accept(indexLookup.keyAt(i));
 			}
 		}
 
-		return true;
+		return result;
 	}
 
 	@Override
@@ -160,8 +165,11 @@ public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorag
 		if(value) {
 			b |= (1<<index);
 		} else {
-			b &= (EMPTY_BUFFER | ~(1<<index));
+			b &= ~(1<<index);
 		}
+
+		// Clear the marker bit so we know the value has been set
+		b &= ~EMPTY_BUFFER;
 
 		annotations.put(item, b);
 	}
@@ -196,7 +204,7 @@ public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorag
 	public boolean addItem(Item item) {
 		short b = annotations.getShort(item);
 
-		if(b!=EMPTY_BUFFER) {
+		if(b==EMPTY_BUFFER) {
 			annotations.put(item, EMPTY_BUFFER);
 			return true;
 		}
