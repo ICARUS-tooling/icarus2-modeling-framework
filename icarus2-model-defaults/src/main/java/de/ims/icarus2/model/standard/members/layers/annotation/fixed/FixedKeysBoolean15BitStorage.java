@@ -52,7 +52,7 @@ public class FixedKeysBoolean15BitStorage extends AbstractFixedKeysBooleanStorag
 	private Object2ShortMap<Item> annotations;
 	private short noEntryValues;
 
-	private static final short EMPTY_BUFFER = (short) (0x1<<15);
+	private static final short EMPTY_BUFFER = (short) (0x1<<MAX_KEY_COUNT);
 
 	public FixedKeysBoolean15BitStorage() {
 		this(UNSET_INT);

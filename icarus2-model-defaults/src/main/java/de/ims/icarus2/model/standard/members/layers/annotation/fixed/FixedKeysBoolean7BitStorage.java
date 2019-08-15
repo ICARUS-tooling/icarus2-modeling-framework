@@ -50,7 +50,7 @@ public class FixedKeysBoolean7BitStorage extends AbstractFixedKeysBooleanStorage
 	private Object2ByteMap<Item> annotations;
 	private byte noEntryValues;
 
-	private static final byte EMPTY_BUFFER = (byte) (0x1<<7);
+	private static final byte EMPTY_BUFFER = (byte) (0x1<<MAX_KEY_COUNT);
 
 	public FixedKeysBoolean7BitStorage() {
 		this(-1);

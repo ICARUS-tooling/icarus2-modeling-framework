@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
 
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -50,10 +52,10 @@ public class FixedKeysBoolean31BitStorage extends AbstractFixedKeysBooleanStorag
 	private Object2IntMap<Item> annotations;
 	private int noEntryValues;
 
-	private static final int EMPTY_BUFFER = (0x1<<15);
+	private static final int EMPTY_BUFFER = (0x1<<MAX_KEY_COUNT);
 
 	public FixedKeysBoolean31BitStorage() {
-		this(-1);
+		this(UNSET_INT);
 	}
 
 	public FixedKeysBoolean31BitStorage(int initialCapacity) {
@@ -93,7 +95,7 @@ public class FixedKeysBoolean31BitStorage extends AbstractFixedKeysBooleanStorag
 
 			Optional<Object> declaredNoEntryValue = annotationManifest.getNoEntryValue();
 
-			if(!declaredNoEntryValue.isPresent() && ((Boolean)declaredNoEntryValue.get()).booleanValue()) {
+			if(declaredNoEntryValue.isPresent() && ((Boolean)declaredNoEntryValue.get()).booleanValue()) {
 				noEntryValues |= (1<<i);
 			}
 		}
@@ -121,14 +123,17 @@ public class FixedKeysBoolean31BitStorage extends AbstractFixedKeysBooleanStorag
 
 		IndexLookup indexLookup = getIndexLookup();
 
+		boolean result = false;
+
 		for(int i=0; i<indexLookup.keyCount(); i++) {
 			int mask = (1<<i);
 			if((data & mask) != (noEntryValues & mask)) {
+				result = true;
 				action.accept(indexLookup.keyAt(i));
 			}
 		}
 
-		return true;
+		return result;
 	}
 
 	/**
@@ -160,8 +165,10 @@ public class FixedKeysBoolean31BitStorage extends AbstractFixedKeysBooleanStorag
 		if(value) {
 			b |= (1<<index);
 		} else {
-			b &= (EMPTY_BUFFER | ~(1<<index));
+			b &= ~(1<<index);
 		}
+
+		b &= ~EMPTY_BUFFER;
 
 		annotations.put(item, b);
 	}
@@ -196,7 +203,7 @@ public class FixedKeysBoolean31BitStorage extends AbstractFixedKeysBooleanStorag
 	public boolean addItem(Item item) {
 		int b = annotations.getInt(item);
 
-		if(b!=EMPTY_BUFFER) {
+		if(b==EMPTY_BUFFER) {
 			annotations.put(item, EMPTY_BUFFER);
 			return true;
 		}
