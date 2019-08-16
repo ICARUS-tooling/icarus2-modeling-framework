@@ -25,6 +25,16 @@ import de.ims.icarus2.IcarusRuntimeException;
  */
 public class Conditions {
 
+	/*
+	 * Pragmatic decision:
+	 *
+	 * Instead of changing some of these checkXXX methods to use IcarusRuntimeException
+	 * we keep the "native" exception types so as too overly complicate the usage
+	 * and implementation chaos between the core utilities project and the shared-tests
+	 * helper project (the latter can't access IcarusRuntimeException, which would be
+	 * needed for most of the exception-based assertions there!
+	 */
+
 	/**
 	 * Utility method to ensure that certain fields get set at most once during
 	 * the lifetime of an object. In case the given {@code present} object is not

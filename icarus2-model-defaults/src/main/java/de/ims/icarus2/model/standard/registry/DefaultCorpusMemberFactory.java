@@ -102,6 +102,8 @@ public class DefaultCorpusMemberFactory implements CorpusMemberFactory {
 
 		AnnotationStorage storage = null;
 
+		//TODO check somehow if we can use packed annotations
+
 		Object declaredStorage = options.get(manifest.getId().orElseThrow(
 				Manifest.invalidId("Manifest does not declare an id")));
 		if(AnnotationStorage.class.isInstance(declaredStorage)) {
