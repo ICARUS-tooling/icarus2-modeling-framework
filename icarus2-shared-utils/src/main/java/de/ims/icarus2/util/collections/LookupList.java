@@ -164,6 +164,9 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 	}
 
 	public void addAll(Collection<? extends E> elements) {
+		if(elements.isEmpty()) {
+			return;
+		}
 		ensureCapacity(size + elements.size()); // Increments modCount!!
 		int firstIndex = size;
 		for(E item : elements) {
@@ -173,7 +176,9 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 	}
 
 	public void addAll(int index, Collection<? extends E> elements) {
-		requireNonNull(elements);
+		if(elements.isEmpty()) {
+			return;
+		}
 
         rangeCheckForAdd(index);
 		int addCount = elements.size();
@@ -192,7 +197,9 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 	}
 
 	public void addAll(@SuppressWarnings("unchecked") E...elements) {
-		requireNonNull(elements);
+		if(elements.length==0) {
+			return;
+		}
 
 		ensureCapacity(size + elements.length); // Increments modCount!!
 		int firstIndex = size;
