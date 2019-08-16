@@ -129,7 +129,7 @@ public class FixedKeysFloatStorage extends AbstractFixedKeysStorage<float[]> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractManagedAnnotationStorage#getInteger(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 * @see de.ims.icarus2.model.standard.members.layer.annotation.AbstractManagedAnnotationStorage#getInteger(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
 	 */
 	@Override
 	public int getInteger(Item item, String key) {
@@ -137,7 +137,7 @@ public class FixedKeysFloatStorage extends AbstractFixedKeysStorage<float[]> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractManagedAnnotationStorage#getLong(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 * @see de.ims.icarus2.model.standard.members.layer.annotation.AbstractManagedAnnotationStorage#getLong(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
 	 */
 	@Override
 	public long getLong(Item item, String key) {
@@ -153,7 +153,7 @@ public class FixedKeysFloatStorage extends AbstractFixedKeysStorage<float[]> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractManagedAnnotationStorage#setDouble(de.ims.icarus2.model.api.members.item.Item, java.lang.String, double)
+	 * @see de.ims.icarus2.model.standard.members.layer.annotation.AbstractManagedAnnotationStorage#setDouble(de.ims.icarus2.model.api.members.item.Item, java.lang.String, double)
 	 */
 	@Override
 	public void setDouble(Item item, String key, double value) {
@@ -164,7 +164,7 @@ public class FixedKeysFloatStorage extends AbstractFixedKeysStorage<float[]> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractManagedAnnotationStorage#setInteger(de.ims.icarus2.model.api.members.item.Item, java.lang.String, int)
+	 * @see de.ims.icarus2.model.standard.members.layer.annotation.AbstractManagedAnnotationStorage#setInteger(de.ims.icarus2.model.api.members.item.Item, java.lang.String, int)
 	 */
 	@Override
 	public void setInteger(Item item, String key, int value) {
@@ -172,7 +172,7 @@ public class FixedKeysFloatStorage extends AbstractFixedKeysStorage<float[]> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractManagedAnnotationStorage#setLong(de.ims.icarus2.model.api.members.item.Item, java.lang.String, long)
+	 * @see de.ims.icarus2.model.standard.members.layer.annotation.AbstractManagedAnnotationStorage#setLong(de.ims.icarus2.model.api.members.item.Item, java.lang.String, long)
 	 */
 	@Override
 	public void setLong(Item item, String key, long value) {
@@ -180,7 +180,7 @@ public class FixedKeysFloatStorage extends AbstractFixedKeysStorage<float[]> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractObjectMapStorage#createBuffer()
+	 * @see de.ims.icarus2.model.standard.members.layer.annotation.AbstractObjectMapStorage#createBuffer()
 	 */
 	@Override
 	protected float[] createBuffer() {

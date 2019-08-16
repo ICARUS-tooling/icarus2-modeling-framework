@@ -1,7 +1,7 @@
 /**
  *
  */
-package de.ims.icarus2.model.standard.members.layers.annotation;
+package de.ims.icarus2.model.standard.members.layer.annotation;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
@@ -13,6 +13,7 @@ import de.ims.icarus2.model.api.layer.AnnotationLayerTest;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
+import de.ims.icarus2.model.standard.members.layers.annotation.DefaultAnnotationLayer;
 
 /**
  * @author Markus Gärtner
@@ -31,7 +32,7 @@ class DefaultAnnotationLayerTest implements AnnotationLayerTest<DefaultAnnotatio
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.DefaultAnnotationLayer#DefaultAnnotationLayer(de.ims.icarus2.model.manifest.api.AnnotationLayerManifest)}.
+	 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.DefaultAnnotationLayer#DefaultAnnotationLayer(de.ims.icarus2.model.manifest.api.AnnotationLayerManifest)}.
 	 */
 	@Test
 	void testDefaultAnnotationLayer() {
@@ -41,7 +42,7 @@ class DefaultAnnotationLayerTest implements AnnotationLayerTest<DefaultAnnotatio
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.DefaultAnnotationLayer#setAnnotationStorage(de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage)}.
+	 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.DefaultAnnotationLayer#setAnnotationStorage(de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage)}.
 	 */
 	@Test
 	void testSetAnnotationStorageManaged() {

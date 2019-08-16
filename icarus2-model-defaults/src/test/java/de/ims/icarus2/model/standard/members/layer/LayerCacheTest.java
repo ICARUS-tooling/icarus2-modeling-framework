@@ -1,7 +1,7 @@
 /**
  *
  */
-package de.ims.icarus2.model.standard.members.layers;
+package de.ims.icarus2.model.standard.members.layer;
 
 import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
 import static de.ims.icarus2.test.TestUtils.random;
@@ -28,6 +28,7 @@ import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
+import de.ims.icarus2.model.standard.members.layers.LayerCache;
 import de.ims.icarus2.test.GenericTest;
 import de.ims.icarus2.test.TestSettings;
 
@@ -74,7 +75,7 @@ class LayerCacheTest implements GenericTest<LayerCache> {
 	class Factory {
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.LayerCache#fromLayers(de.ims.icarus2.model.api.layer.Layer[])}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.LayerCache#fromLayers(de.ims.icarus2.model.api.layer.Layer[])}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {1, 10, 100})
@@ -85,7 +86,7 @@ class LayerCacheTest implements GenericTest<LayerCache> {
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.LayerCache#fromCollection(java.util.Collection)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.LayerCache#fromCollection(java.util.Collection)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {1, 10, 100})
@@ -96,7 +97,7 @@ class LayerCacheTest implements GenericTest<LayerCache> {
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.LayerCache#fromScope(de.ims.icarus2.model.api.view.Scope)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.LayerCache#fromScope(de.ims.icarus2.model.api.view.Scope)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {1, 10, 100})
@@ -142,7 +143,7 @@ class LayerCacheTest implements GenericTest<LayerCache> {
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.LayerCache#getLayer(int)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.LayerCache#getLayer(int)}.
 		 */
 		@Test
 		void testGetLayer() {
@@ -152,7 +153,7 @@ class LayerCacheTest implements GenericTest<LayerCache> {
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.LayerCache#contains(de.ims.icarus2.model.api.layer.Layer)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.LayerCache#contains(de.ims.icarus2.model.api.layer.Layer)}.
 		 */
 		@Test
 		void testContains() {
@@ -162,7 +163,7 @@ class LayerCacheTest implements GenericTest<LayerCache> {
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.LayerCache#contains(de.ims.icarus2.model.api.layer.Layer)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.LayerCache#contains(de.ims.icarus2.model.api.layer.Layer)}.
 		 */
 		@Test
 		void testContainsForeign() {
@@ -170,7 +171,7 @@ class LayerCacheTest implements GenericTest<LayerCache> {
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.LayerCache#layerCollection()}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.LayerCache#layerCollection()}.
 		 */
 		@Test
 		void testLayerCollection() {
@@ -178,7 +179,7 @@ class LayerCacheTest implements GenericTest<LayerCache> {
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.LayerCache#layers()}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.LayerCache#layers()}.
 		 */
 		@Test
 		void testLayers() {

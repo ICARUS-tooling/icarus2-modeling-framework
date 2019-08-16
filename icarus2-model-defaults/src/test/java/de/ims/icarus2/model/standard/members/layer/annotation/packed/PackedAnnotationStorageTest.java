@@ -1,7 +1,7 @@
 /**
  *
  */
-package de.ims.icarus2.model.standard.members.layers.annotation.packed;
+package de.ims.icarus2.model.standard.members.layer.annotation.packed;
 
 import java.util.Set;
 
@@ -9,6 +9,7 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorageTest;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.standard.members.layers.annotation.packed.PackedAnnotationStorage;
 import de.ims.icarus2.test.annotations.PostponedTest;
 
 /**

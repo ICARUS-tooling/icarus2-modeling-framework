@@ -1,7 +1,7 @@
 /**
  *
  */
-package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
+package de.ims.icarus2.model.standard.members.layer.annotation.fixed;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.test.TestUtils.random;
@@ -25,6 +25,7 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysIntStorage;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
@@ -127,7 +128,7 @@ class FixedKeysIntStorageTest implements MultiKeyAnnotationStorageTest<FixedKeys
 	class Constructors {
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysIntStorage#FixedKeysIntStorage()}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.fixed.FixedKeysIntStorage#FixedKeysIntStorage()}.
 		 */
 		@Test
 		void testFixedKeysIntStorage() {
@@ -135,7 +136,7 @@ class FixedKeysIntStorageTest implements MultiKeyAnnotationStorageTest<FixedKeys
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysIntStorage#FixedKeysIntStorage(int)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.fixed.FixedKeysIntStorage#FixedKeysIntStorage(int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})

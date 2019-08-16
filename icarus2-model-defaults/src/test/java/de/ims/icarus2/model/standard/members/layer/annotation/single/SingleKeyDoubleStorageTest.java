@@ -1,12 +1,11 @@
 /**
  *
  */
-package de.ims.icarus2.model.standard.members.layers.annotation.single;
+package de.ims.icarus2.model.standard.members.layer.annotation.single;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
-import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.Set;
@@ -20,63 +19,64 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyDoubleStorage;
 
 /**
  * @author Markus Gärtner
  *
  */
-class SingleKeyLongStorageTest implements ManagedAnnotationStorageTest<SingleKeyLongStorage> {
+class SingleKeyDoubleStorageTest implements ManagedAnnotationStorageTest<SingleKeyDoubleStorage> {
 
 	@Nested
 	class Constructors {
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyLongStorage#SingleKeyLongStorage()}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyDoubleStorage#SingleKeyDoubleStorage()}.
 		 */
 		@Test
-		void testSingleKeyLongStorage() {
-			assertNotNull(new SingleKeyLongStorage());
+		void testSingleKeyDoubleStorage() {
+			assertNotNull(new SingleKeyDoubleStorage());
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyLongStorage#SingleKeyLongStorage(int)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyDoubleStorage#SingleKeyDoubleStorage(int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})
-		void testSingleKeyLongStorageInt(int capacity) {
-			assertNotNull(new SingleKeyLongStorage(capacity));
+		void testSingleKeyDoubleStorageInt(int capacity) {
+			assertNotNull(new SingleKeyDoubleStorage(capacity));
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyLongStorage#SingleKeyLongStorage(int)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyDoubleStorage#SingleKeyDoubleStorage(int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {0, -2})
-		void testSingleKeyLongStorageIntInvalidCapacity(int capacity) {
+		void testSingleKeyDoubleStorageIntInvalidCapacity(int capacity) {
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyLongStorage(capacity));
+					() -> new SingleKeyDoubleStorage(capacity));
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyLongStorage#SingleKeyLongStorage(boolean, int)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyDoubleStorage#SingleKeyDoubleStorage(boolean, int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})
-		void testSingleKeyLongStorageBooleanInt(int capacity) {
-			assertNotNull(new SingleKeyLongStorage(true, capacity));
-			assertNotNull(new SingleKeyLongStorage(false, capacity));
+		void testSingleKeyDoubleStorageBooleanInt(int capacity) {
+			assertNotNull(new SingleKeyDoubleStorage(true, capacity));
+			assertNotNull(new SingleKeyDoubleStorage(false, capacity));
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyLongStorage#SingleKeyLongStorage(boolean, int)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyDoubleStorage#SingleKeyDoubleStorage(boolean, int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {0, -2})
-		void testSingleKeyLongStorageBooleanIntInvalidCapacity(int capacity) {
+		void testSingleKeyDoubleStorageBooleanIntInvalidCapacity(int capacity) {
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyLongStorage(true, capacity));
+					() -> new SingleKeyDoubleStorage(true, capacity));
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyLongStorage(false, capacity));
+					() -> new SingleKeyDoubleStorage(false, capacity));
 		}
 
 	}
@@ -86,7 +86,7 @@ class SingleKeyLongStorageTest implements ManagedAnnotationStorageTest<SingleKey
 	 */
 	@Override
 	public Set<ValueType> typesForSetters(String key) {
-		return set(ValueType.INTEGER, ValueType.LONG);
+		return NUMBER_TYPES;
 	}
 
 	/**
@@ -102,7 +102,7 @@ class SingleKeyLongStorageTest implements ManagedAnnotationStorageTest<SingleKey
 	 */
 	@Override
 	public Object testValue(String key) {
-		return Long.valueOf(random().nextLong());
+		return Double.valueOf(random().nextDouble());
 	}
 
 	/**
@@ -110,23 +110,23 @@ class SingleKeyLongStorageTest implements ManagedAnnotationStorageTest<SingleKey
 	 */
 	@Override
 	public ValueType valueType(String key) {
-		return ValueType.LONG;
+		return ValueType.DOUBLE;
 	}
 
 	/**
 	 * @see de.ims.icarus2.model.api.layer.annotation.AnnotationStorageTest#createForLayer(de.ims.icarus2.model.api.layer.AnnotationLayer)
 	 */
 	@Override
-	public SingleKeyLongStorage createForLayer(AnnotationLayer layer) {
-		return new SingleKeyLongStorage();
+	public SingleKeyDoubleStorage createForLayer(AnnotationLayer layer) {
+		return new SingleKeyDoubleStorage();
 	}
 
 	/**
 	 * @see de.ims.icarus2.test.TargetedTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<? extends SingleKeyLongStorage> getTestTargetClass() {
-		return SingleKeyLongStorage.class;
+	public Class<? extends SingleKeyDoubleStorage> getTestTargetClass() {
+		return SingleKeyDoubleStorage.class;
 	}
 
 	/**
@@ -134,6 +134,6 @@ class SingleKeyLongStorageTest implements ManagedAnnotationStorageTest<SingleKey
 	 */
 	@Override
 	public Object noEntryValue(String key) {
-		return Long.valueOf(SingleKeyLongStorage.DEFAULT_NO_ENTRY_VALUE);
+		return Double.valueOf(SingleKeyDoubleStorage.DEFAULT_NO_ENTRY_VALUE);
 	}
 }

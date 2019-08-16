@@ -1,20 +1,13 @@
 /**
  *
  */
-package de.ims.icarus2.model.standard.members.layers.annotation.unbound;
+package de.ims.icarus2.model.standard.members.layer.annotation.fixed;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.test.TestUtils.randomString;
-import static de.ims.icarus2.test.util.Pair.pair;
-import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
 import static java.util.Objects.requireNonNull;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
-import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -23,34 +16,22 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.DynamicContainer;
-import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestFactory;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
-import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationStorage.AnnotationBundle;
-import de.ims.icarus2.test.util.Pair;
+import de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysMixedObjectStorage;
 
 /**
  * @author Markus Gärtner
  *
  */
-class ComplexAnnotationStorageTest implements ManagedAnnotationStorageTest<ComplexAnnotationStorage>,
-		MultiKeyAnnotationStorageTest<ComplexAnnotationStorage> {
+class FixedKeysMixedObjectStorageTest implements ManagedAnnotationStorageTest<FixedKeysMixedObjectStorage>,
+MultiKeyAnnotationStorageTest<FixedKeysMixedObjectStorage> {
 
 	private Map<String, KeyConfig<?>> setup = new LinkedHashMap<>();
 	private List<String> keys = new ArrayList<>();
@@ -145,8 +126,8 @@ class ComplexAnnotationStorageTest implements ManagedAnnotationStorageTest<Compl
 	}
 
 	@Override
-	public Class<? extends ComplexAnnotationStorage> getTestTargetClass() {
-		return ComplexAnnotationStorage.class;
+	public Class<? extends FixedKeysMixedObjectStorage> getTestTargetClass() {
+		return FixedKeysMixedObjectStorage.class;
 	}
 
 	@Override
@@ -160,8 +141,8 @@ class ComplexAnnotationStorageTest implements ManagedAnnotationStorageTest<Compl
 	}
 
 	@Override
-	public ComplexAnnotationStorage createForLayer(AnnotationLayer layer) {
-		return new ComplexAnnotationStorage();
+	public FixedKeysMixedObjectStorage createForLayer(AnnotationLayer layer) {
+		return new FixedKeysMixedObjectStorage();
 	}
 
 	/**
@@ -178,59 +159,6 @@ class ComplexAnnotationStorageTest implements ManagedAnnotationStorageTest<Compl
 	@Override
 	public boolean supportsAutoRemoveAnnotations() {
 		return false;
-	}
-
-	@Nested
-	class Constructors {
-
-		private Stream<Pair<String,Supplier<AnnotationBundle>>> bundleFactories() {
-			return Stream.of(
-					pair("compact", ComplexAnnotationStorage.COMPACT_BUNDLE_FACTORY),
-					pair("large", ComplexAnnotationStorage.LARGE_BUNDLE_FACTORY),
-					pair("growing", ComplexAnnotationStorage.GROWING_BUNDLE_FACTORY));
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationStorage#ComplexAnnotationStorage(java.util.function.Supplier)}.
-		 */
-		@TestFactory
-		Stream<DynamicTest> testComplexAnnotationStorageSupplierOfAnnotationBundle() {
-			return bundleFactories().map(info -> dynamicTest(
-					info.first,
-					() -> assertNotNull(new ComplexAnnotationStorage(info.second))));
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationStorage#ComplexAnnotationStorage(int, java.util.function.Supplier)}.
-		 */
-		@TestFactory
-		Stream<DynamicContainer> testComplexAnnotationStorageIntSupplierOfAnnotationBundle() {
-			return bundleFactories().map(info  -> dynamicContainer(info.first,
-					IntStream.of(UNSET_INT, 1, 10, 100, 10_000).mapToObj(capacity ->
-							dynamicTest(String.valueOf(capacity),
-									() -> assertNotNull(new ComplexAnnotationStorage(capacity, info.second))))));
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationStorage#ComplexAnnotationStorage(int, java.util.function.Supplier)}.
-		 */
-		@ParameterizedTest
-		@ValueSource(ints = {0, -2})
-		void testComplexAnnotationStorageIntSupplierOfAnnotationBundleInvalidCapacity(int capacity) {
-			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new ComplexAnnotationStorage(capacity,
-							ComplexAnnotationStorage.COMPACT_BUNDLE_FACTORY));
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationStorage#ComplexAnnotationStorage(boolean, int, java.util.function.Supplier)}.
-		 */
-		@Test
-		@Disabled("covered by testComplexAnnotationStorageIntSupplierOfAnnotationBundle")
-		void testComplexAnnotationStorageBooleanIntSupplierOfAnnotationBundle() {
-			fail("Not yet implemented");
-		}
-
 	}
 
 	private static final class KeyConfig<T> {
@@ -271,6 +199,11 @@ class ComplexAnnotationStorageTest implements ManagedAnnotationStorageTest<Compl
 			}
 
 			return singleton(valueType);
+		}
+
+		@Override
+		public String toString() {
+			return valueType+"["+String.valueOf(noEntryValue)+"]";
 		}
 	}
 }

@@ -304,7 +304,7 @@ public class FixedKeysMixedObjectStorage extends AbstractFixedKeysStorage<Object
 	 * Note that this check does not compare entries to their respective {@code noEntryValue}s
 	 * to only consider <i>real</i> annotation values.
 	 *
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractManagedAnnotationStorage#hasAnnotations(de.ims.icarus2.model.api.members.item.Item)
+	 * @see de.ims.icarus2.model.standard.members.layer.annotation.AbstractManagedAnnotationStorage#hasAnnotations(de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
 	public boolean hasAnnotations(Item item) {

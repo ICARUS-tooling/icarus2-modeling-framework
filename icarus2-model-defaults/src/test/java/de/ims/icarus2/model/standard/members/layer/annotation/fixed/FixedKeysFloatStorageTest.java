@@ -1,7 +1,7 @@
 /**
  *
  */
-package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
+package de.ims.icarus2.model.standard.members.layer.annotation.fixed;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.test.TestUtils.random;
@@ -25,25 +25,26 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import it.unimi.dsi.fastutil.objects.Object2LongMap;
-import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
+import de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysFloatStorage;
+import it.unimi.dsi.fastutil.objects.Object2FloatMap;
+import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
 
 /**
  * @author Markus Gärtner
  *
  */
-class FixedKeysLongStorageTest implements MultiKeyAnnotationStorageTest<FixedKeysLongStorage>,
-		ManagedAnnotationStorageTest<FixedKeysLongStorage> {
+class FixedKeysFloatStorageTest implements MultiKeyAnnotationStorageTest<FixedKeysFloatStorage>,
+		ManagedAnnotationStorageTest<FixedKeysFloatStorage> {
 
 	/** Maps keys to noEntryValues */
-	private Object2LongMap<String> setup = new Object2LongOpenHashMap<>();
+	private Object2FloatMap<String> setup = new Object2FloatOpenHashMap<>();
 	private List<String> keys = new ArrayList<>();
 
 	@BeforeEach
 	void setUp() {
 		for (int i = 0; i < 20; i++) {
 			String key = "key_" + i;
-			setup.put(key, random().nextLong());
+			setup.put(key, random().nextFloat());
 			keys.add(key);
 		}
 	}
@@ -66,12 +67,12 @@ class FixedKeysLongStorageTest implements MultiKeyAnnotationStorageTest<FixedKey
 
 	@Override
 	public Object testValue(String key) {
-		long noEntryValue = setup.getLong(key);
-		long value;
+		float noEntryValue = setup.getFloat(key);
+		float value;
 		do {
-			value = random().nextLong();
+			value = random().nextInt();
 		} while (value == noEntryValue);
-		return Long.valueOf(value);
+		return Float.valueOf(value);
 	}
 
 	/**
@@ -95,22 +96,22 @@ class FixedKeysLongStorageTest implements MultiKeyAnnotationStorageTest<FixedKey
 	 */
 	@Override
 	public Object noEntryValue(String key) {
-		return Long.valueOf(setup.getLong(key));
+		return Float.valueOf(setup.getFloat(key));
 	}
 
 	@Override
 	public ValueType valueType(String key) {
-		return ValueType.LONG;
+		return ValueType.FLOAT;
 	}
 
 	@Override
-	public FixedKeysLongStorage createForLayer(AnnotationLayer layer) {
-		return new FixedKeysLongStorage();
+	public FixedKeysFloatStorage createForLayer(AnnotationLayer layer) {
+		return new FixedKeysFloatStorage();
 	}
 
 	@Override
-	public Class<? extends FixedKeysLongStorage> getTestTargetClass() {
-		return FixedKeysLongStorage.class;
+	public Class<? extends FixedKeysFloatStorage> getTestTargetClass() {
+		return FixedKeysFloatStorage.class;
 	}
 
 	@Override
@@ -128,53 +129,53 @@ class FixedKeysLongStorageTest implements MultiKeyAnnotationStorageTest<FixedKey
 
 		/**
 		 * Test method for
-		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysLongStorage#FixedKeysLongStorage()}.
+		 * {@link de.ims.icarus2.model.standard.members.layer.annotation.fixed.FixedKeysFloatStorage#FixedKeysFloatStorage()}.
 		 */
 		@Test
-		void testFixedKeysLongStorage() {
-			assertNotNull(new FixedKeysLongStorage());
+		void testFixedKeysFloatStorage() {
+			assertNotNull(new FixedKeysFloatStorage());
 		}
 
 		/**
 		 * Test method for
-		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysLongStorage#FixedKeysLongStorage(int)}.
+		 * {@link de.ims.icarus2.model.standard.members.layer.annotation.fixed.FixedKeysFloatStorage#FixedKeysFloatStorage(int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = { UNSET_INT, 1, 10, 100, 10_000 })
-		void testFixedKeysLongStorageInt(int capacity) {
-			assertNotNull(new FixedKeysLongStorage(capacity));
+		void testFixedKeysFloatStorageInt(int capacity) {
+			assertNotNull(new FixedKeysFloatStorage(capacity));
 		}
 
 		/**
 		 * Test method for
-		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysLongStorage#FixedKeysLongStorage(int)}.
+		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysFloatStorage#FixedKeysFloatStorage(int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = { 0, -2 })
-		void testFixedKeysLongStorageIntInvalidCapacity(int capacity) {
-			assertModelException(GlobalErrorCode.INVALID_INPUT, () -> new FixedKeysLongStorage(capacity));
+		void testFixedKeysFloatStorageIntInvalidCapacity(int capacity) {
+			assertModelException(GlobalErrorCode.INVALID_INPUT, () -> new FixedKeysFloatStorage(capacity));
 		}
 
 		/**
 		 * Test method for
-		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysLongStorage#FixedKeysLongStorage(boolean, int)}.
+		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysFloatStorage#FixedKeysFloatStorage(boolean, int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = { UNSET_INT, 1, 10, 100, 10_000 })
-		void testFixedKeysLongStorageBooleanInt(int capacity) {
-			assertNotNull(new FixedKeysLongStorage(true, capacity));
-			assertNotNull(new FixedKeysLongStorage(false, capacity));
+		void testFixedKeysFloatStorageBooleanInt(int capacity) {
+			assertNotNull(new FixedKeysFloatStorage(true, capacity));
+			assertNotNull(new FixedKeysFloatStorage(false, capacity));
 		}
 
 		/**
 		 * Test method for
-		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysLongStorage#FixedKeysLongStorage(boolean, int)}.
+		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysFloatStorage#FixedKeysFloatStorage(boolean, int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = { 0, -2 })
-		void testFixedKeysLongStorageBooleanIntInvalidCapacity(int capacity) {
-			assertModelException(GlobalErrorCode.INVALID_INPUT, () -> new FixedKeysLongStorage(true, capacity));
-			assertModelException(GlobalErrorCode.INVALID_INPUT, () -> new FixedKeysLongStorage(false, capacity));
+		void testFixedKeysFloatStorageBooleanIntInvalidCapacity(int capacity) {
+			assertModelException(GlobalErrorCode.INVALID_INPUT, () -> new FixedKeysFloatStorage(true, capacity));
+			assertModelException(GlobalErrorCode.INVALID_INPUT, () -> new FixedKeysFloatStorage(false, capacity));
 		}
 
 	}

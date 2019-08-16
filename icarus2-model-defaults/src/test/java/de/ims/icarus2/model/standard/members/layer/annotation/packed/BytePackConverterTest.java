@@ -1,7 +1,7 @@
 /**
  *
  */
-package de.ims.icarus2.model.standard.members.layers.annotation.packed;
+package de.ims.icarus2.model.standard.members.layer.annotation.packed;
 
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.test.TestUtils.randomString;
@@ -30,6 +30,8 @@ import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter;
+import de.ims.icarus2.model.standard.members.layers.annotation.packed.PackageHandle;
 import de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter.BitwiseBooleanConverter;
 import de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter.BooleanConverter;
 import de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter.DoubleConverter;
@@ -82,7 +84,7 @@ class BytePackConverterTest {
 		abstract Stream<Pair<String, C>> instances();
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getValueType()}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getValueType()}.
 		 */
 		@TestFactory
 		Stream<DynamicTest> testGetValueType() {
@@ -347,7 +349,7 @@ class BytePackConverterTest {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverterTest.BaseTest#types()
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverterTest.BaseTest#types()
 		 */
 		@Override
 		Set<ValueType> types() {

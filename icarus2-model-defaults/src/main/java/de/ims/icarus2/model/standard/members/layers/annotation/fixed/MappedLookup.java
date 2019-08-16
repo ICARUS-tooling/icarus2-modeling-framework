@@ -45,7 +45,7 @@ public class MappedLookup extends IndexLookup {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.fixed.IndexLookup#indexOf(java.lang.String)
+	 * @see de.ims.icarus2.model.standard.members.layer.annotation.fixed.IndexLookup#indexOf(java.lang.String)
 	 */
 	@Override
 	public int indexOf(String key) {

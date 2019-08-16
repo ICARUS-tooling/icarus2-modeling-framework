@@ -187,7 +187,7 @@ public abstract class BytePackConverter {
 	public static final class BitwiseBooleanConverter extends BytePackConverter {
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getValueType()
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getValueType()
 		 */
 		@Override
 		public ValueType getValueType() {
@@ -195,7 +195,7 @@ public abstract class BytePackConverter {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#sizeInBytes()
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#sizeInBytes()
 		 */
 		@Override
 		public int sizeInBytes() {
@@ -203,7 +203,7 @@ public abstract class BytePackConverter {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#sizeInBits()
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#sizeInBits()
 		 */
 		@Override
 		public int sizeInBits() {
@@ -211,7 +211,7 @@ public abstract class BytePackConverter {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getBoolean(de.ims.icarus2.util.mem.ByteAllocator.Cursor)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getBoolean(de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
 		public boolean getBoolean(PackageHandle handle, Cursor cursor) {
@@ -220,7 +220,7 @@ public abstract class BytePackConverter {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#setBoolean(de.ims.icarus2.util.mem.ByteAllocator.Cursor, boolean)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setBoolean(de.ims.icarus2.util.mem.ByteAllocator.Cursor, boolean)
 		 */
 		@Override
 		public void setBoolean(PackageHandle handle, Cursor cursor, boolean value) {
@@ -469,7 +469,7 @@ public abstract class BytePackConverter {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getString(de.ims.icarus2.model.standard.members.layers.annotation.packed.PackedDataManager.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
+		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getString(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
 		public String getString(PackageHandle handle, Cursor cursor) {
@@ -488,7 +488,7 @@ public abstract class BytePackConverter {
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#setString(de.ims.icarus2.model.standard.members.layers.annotation.packed.PackedDataManager.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, java.lang.String)
+		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#setString(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, java.lang.String)
 		 */
 		@Override
 		public void setString(PackageHandle handle, Cursor cursor, String value) {

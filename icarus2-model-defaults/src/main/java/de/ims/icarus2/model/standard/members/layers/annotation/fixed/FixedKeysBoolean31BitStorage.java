@@ -137,7 +137,7 @@ public class FixedKeysBoolean31BitStorage extends AbstractFixedKeysBooleanStorag
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.fixed.AbstractFixedKeysBooleanStorage#getNoEntryValue(java.lang.String)
+	 * @see de.ims.icarus2.model.standard.members.layer.annotation.fixed.AbstractFixedKeysBooleanStorage#getNoEntryValue(java.lang.String)
 	 */
 	@Override
 	protected boolean getNoEntryValue(String key) {

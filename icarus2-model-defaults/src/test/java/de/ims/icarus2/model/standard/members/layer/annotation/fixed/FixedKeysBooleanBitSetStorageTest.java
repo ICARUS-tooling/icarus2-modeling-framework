@@ -1,7 +1,7 @@
 /**
  *
  */
-package de.ims.icarus2.model.standard.members.layers.annotation.fixed;
+package de.ims.icarus2.model.standard.members.layer.annotation.fixed;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.test.TestUtils.random;
@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,34 +25,31 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.util.collections.LookupList;
+import de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysBooleanBitSetStorage;
 
 /**
  * @author Markus Gärtner
  *
  */
-class FixedKeysBoolean15BitStorageTest implements MultiKeyAnnotationStorageTest<FixedKeysBoolean15BitStorage>,
-		ManagedAnnotationStorageTest<FixedKeysBoolean15BitStorage> {
+class FixedKeysBooleanBitSetStorageTest implements MultiKeyAnnotationStorageTest<FixedKeysBooleanBitSetStorage>,
+		ManagedAnnotationStorageTest<FixedKeysBooleanBitSetStorage> {
 
-	private static final LookupList<String> keys = new LookupList<>();
-	static {
-		IntStream.range(0, FixedKeysBoolean15BitStorage.MAX_KEY_COUNT)
-				.forEach(i -> keys.add("test_" + i));
-
-	}
-
+	private List<String> keys = new ArrayList<>();
 	private boolean[] noEntryValues;
 
 	@BeforeEach
 	void setUp() {
-		noEntryValues = new boolean[keys.size()];
-		for (int i = 0; i < keys.size(); i++) {
+		int size = random(5, 20);
+		noEntryValues = new boolean[size];
+		for (int i = 0; i < size; i++) {
 			noEntryValues[i] = random().nextBoolean();
+			keys.add("test_"+i);
 		}
 	}
 
 	@AfterEach
 	void tearDown() {
+		keys.clear();
 		noEntryValues = null;
 	}
 
@@ -110,20 +106,18 @@ class FixedKeysBoolean15BitStorageTest implements MultiKeyAnnotationStorageTest<
 	}
 
 	@Override
-	public FixedKeysBoolean15BitStorage createForLayer(AnnotationLayer layer) {
-		return new FixedKeysBoolean15BitStorage();
+	public FixedKeysBooleanBitSetStorage createForLayer(AnnotationLayer layer) {
+		return new FixedKeysBooleanBitSetStorage();
 	}
 
 	@Override
-	public Class<? extends FixedKeysBoolean15BitStorage> getTestTargetClass() {
-		return FixedKeysBoolean15BitStorage.class;
+	public Class<? extends FixedKeysBooleanBitSetStorage> getTestTargetClass() {
+		return FixedKeysBooleanBitSetStorage.class;
 	}
 
 	@Override
 	public List<String> keys() {
-		List<String> list = new ArrayList<>();
-		keys.forEach(list::add);
-		return list;
+		return keys;
 	}
 
 	@Override
@@ -136,53 +130,54 @@ class FixedKeysBoolean15BitStorageTest implements MultiKeyAnnotationStorageTest<
 
 		/**
 		 * Test method for
-		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysBoolean15BitStorage#FixedKeysBoolean15BitStorage()}.
+		 * {@link de.ims.icarus2.model.standard.members.layer.annotation.fixed.FixedKeysBooleanBitSetStorage#FixedKeysBooleanBitSetStorage()}.
 		 */
 		@Test
-		void testFixedKeysBoolean15BitStorage() {
-			assertNotNull(new FixedKeysBoolean15BitStorage());
+		void testFixedKeysBooleanBitSetStorage() {
+			assertNotNull(new FixedKeysBooleanBitSetStorage());
 		}
 
 		/**
 		 * Test method for
-		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysBoolean15BitStorage#FixedKeysBoolean15BitStorage(int)}.
+		 * {@link de.ims.icarus2.model.standard.members.layer.annotation.fixed.FixedKeysBooleanBitSetStorage#FixedKeysBooleanBitSetStorage(int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = { UNSET_INT, 1, 10, 100, 10_000 })
-		void testFixedKeysBoolean15BitStorageInt(int capacity) {
-			assertNotNull(new FixedKeysBoolean15BitStorage(capacity));
+		void testFixedKeysBooleanBitSetStorageInt(int capacity) {
+			assertNotNull(new FixedKeysBooleanBitSetStorage(capacity));
 		}
 
 		/**
 		 * Test method for
-		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysBoolean15BitStorage#FixedKeysBoolean15BitStorage(int)}.
+		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysBooleanBitSetStorage#FixedKeysBooleanBitSetStorage(int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = { 0, -2 })
-		void testFixedKeysBoolean15BitStorageIntInvalidCapacity(int capacity) {
-			assertModelException(GlobalErrorCode.INVALID_INPUT, () -> new FixedKeysBoolean15BitStorage(capacity));
+		void testFixedKeysBooleanBitSetStorageIntInvalidCapacity(int capacity) {
+			assertModelException(GlobalErrorCode.INVALID_INPUT, () -> new FixedKeysBooleanBitSetStorage(capacity));
 		}
 
 		/**
 		 * Test method for
-		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysBoolean15BitStorage#FixedKeysBoolean15BitStorage(boolean, int)}.
+		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysBooleanBitSetStorage#FixedKeysBooleanBitSetStorage(boolean, int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = { UNSET_INT, 1, 10, 100, 10_000 })
-		void testFixedKeysBoolean15BitStorageBooleanInt(int capacity) {
-			assertNotNull(new FixedKeysBoolean15BitStorage(true, capacity));
-			assertNotNull(new FixedKeysBoolean15BitStorage(false, capacity));
+		void testFixedKeysBooleanBitSetStorageBooleanInt(int capacity) {
+			assertNotNull(new FixedKeysBooleanBitSetStorage(true, capacity));
+			assertNotNull(new FixedKeysBooleanBitSetStorage(false, capacity));
 		}
 
 		/**
 		 * Test method for
-		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysBoolean15BitStorage#FixedKeysBoolean15BitStorage(boolean, int)}.
+		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysBooleanBitSetStorage#FixedKeysBooleanBitSetStorage(boolean, int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = { 0, -2 })
-		void testFixedKeysBoolean15BitStorageBooleanIntInvalidCapacity(int capacity) {
-			assertModelException(GlobalErrorCode.INVALID_INPUT, () -> new FixedKeysBoolean15BitStorage(true, capacity));
-			assertModelException(GlobalErrorCode.INVALID_INPUT, () -> new FixedKeysBoolean15BitStorage(false, capacity));
+		void testFixedKeysBooleanBitSetStorageBooleanIntInvalidCapacity(int capacity) {
+			assertModelException(GlobalErrorCode.INVALID_INPUT, () -> new FixedKeysBooleanBitSetStorage(true, capacity));
+			assertModelException(GlobalErrorCode.INVALID_INPUT,
+					() -> new FixedKeysBooleanBitSetStorage(false, capacity));
 		}
 
 	}

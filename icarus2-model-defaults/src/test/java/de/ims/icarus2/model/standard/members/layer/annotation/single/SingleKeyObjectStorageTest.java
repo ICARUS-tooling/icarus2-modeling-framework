@@ -1,7 +1,7 @@
 /**
  *
  */
-package de.ims.icarus2.model.standard.members.layers.annotation.single;
+package de.ims.icarus2.model.standard.members.layer.annotation.single;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
@@ -19,6 +19,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyObjectStorage;
 
 /**
  * @author Markus Gärtner
@@ -63,7 +64,7 @@ class SingleKeyObjectStorageTest implements ManagedAnnotationStorageTest<SingleK
 	class Constructors {
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyObjectStorage#SingleKeyObjectStorage()}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyObjectStorage#SingleKeyObjectStorage()}.
 		 */
 		@Test
 		void testSingleKeyObjectStorage() {
@@ -71,7 +72,7 @@ class SingleKeyObjectStorageTest implements ManagedAnnotationStorageTest<SingleK
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyObjectStorage#SingleKeyObjectStorage(int)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyObjectStorage#SingleKeyObjectStorage(int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})

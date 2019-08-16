@@ -1,7 +1,7 @@
 /**
  *
  */
-package de.ims.icarus2.model.standard.members.layers.annotation.single;
+package de.ims.icarus2.model.standard.members.layer.annotation.single;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
@@ -19,6 +19,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyBooleanStorage;
 
 /**
  * @author Markus Gärtner
@@ -31,7 +32,7 @@ class SingleKeyBooleanStorageTest implements ManagedAnnotationStorageTest<Single
 	class Constructors {
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyBooleanStorage#SingleKeyBooleanStorage()}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyBooleanStorage#SingleKeyBooleanStorage()}.
 		 */
 		@Test
 		void testSingleKeyBooleanStorage() {
@@ -39,7 +40,7 @@ class SingleKeyBooleanStorageTest implements ManagedAnnotationStorageTest<Single
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyBooleanStorage#SingleKeyBooleanStorage(int)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyBooleanStorage#SingleKeyBooleanStorage(int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})

@@ -136,7 +136,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractObjectMapStorage#addNotify(de.ims.icarus2.model.api.layer.AnnotationLayer)
+	 * @see de.ims.icarus2.model.standard.members.layer.annotation.AbstractObjectMapStorage#addNotify(de.ims.icarus2.model.api.layer.AnnotationLayer)
 	 */
 	@Override
 	public void addNotify(AnnotationLayer layer) {
@@ -166,7 +166,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractObjectMapStorage#removeNotify(de.ims.icarus2.model.api.layer.AnnotationLayer)
+	 * @see de.ims.icarus2.model.standard.members.layer.annotation.AbstractObjectMapStorage#removeNotify(de.ims.icarus2.model.api.layer.AnnotationLayer)
 	 */
 	@Override
 	public void removeNotify(AnnotationLayer layer) {
@@ -184,7 +184,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractObjectMapStorage#getFallbackBuffer()
+	 * @see de.ims.icarus2.model.standard.members.layer.annotation.AbstractObjectMapStorage#getFallbackBuffer()
 	 */
 	@Override
 	protected AnnotationBundle getFallbackBuffer() {
@@ -192,7 +192,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractManagedAnnotationStorage#collectKeys(de.ims.icarus2.model.api.members.item.Item, java.util.function.Consumer)
+	 * @see de.ims.icarus2.model.standard.members.layer.annotation.AbstractManagedAnnotationStorage#collectKeys(de.ims.icarus2.model.api.members.item.Item, java.util.function.Consumer)
 	 */
 	@Override
 	public boolean collectKeys(Item item, Consumer<String> action) {
@@ -237,7 +237,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractManagedAnnotationStorage#getString(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 * @see de.ims.icarus2.model.standard.members.layer.annotation.AbstractManagedAnnotationStorage#getString(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
 	 */
 	@Override
 	public String getString(Item item, String key) {
@@ -306,7 +306,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractManagedAnnotationStorage#setString(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.String)
+	 * @see de.ims.icarus2.model.standard.members.layer.annotation.AbstractManagedAnnotationStorage#setString(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.String)
 	 */
 	@Override
 	public void setString(Item item, String key, String value) {
@@ -441,7 +441,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		private static final long serialVersionUID = -3058615796981616593L;
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#getValue(java.lang.String)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#getValue(java.lang.String)
 		 */
 		@Override
 		public Object getValue(String key) {
@@ -449,7 +449,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#setByte(java.lang.String, java.lang.Object)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#setByte(java.lang.String, java.lang.Object)
 		 */
 		@Override
 		public boolean setValue(String key, Object value) {
@@ -458,7 +458,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#collectKeys(java.util.Collection)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#collectKeys(java.util.Collection)
 		 */
 		@Override
 		public boolean collectKeys(Consumer<String> buffer) {
@@ -486,7 +486,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#getValue(java.lang.String)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#getValue(java.lang.String)
 		 */
 		@Override
 		public Object getValue(String key) {
@@ -500,7 +500,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#setByte(java.lang.String, java.lang.Object)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#setByte(java.lang.String, java.lang.Object)
 		 */
 		@Override
 		public boolean setValue(String key, Object value) {
@@ -516,7 +516,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#collectKeys(java.util.Collection)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#collectKeys(java.util.Collection)
 		 */
 		@Override
 		public boolean collectKeys(Consumer<String> buffer) {
@@ -551,7 +551,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#getValue(java.lang.String)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#getValue(java.lang.String)
 		 */
 		@Override
 		public Object getValue(String key) {
@@ -571,7 +571,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#setByte(java.lang.String, java.lang.Object)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#setByte(java.lang.String, java.lang.Object)
 		 */
 		@Override
 		public boolean setValue(String key, Object value) {
@@ -654,7 +654,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#collectKeys(java.util.Collection)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#collectKeys(java.util.Collection)
 		 */
 		@Override
 		public boolean collectKeys(Consumer<String> buffer) {

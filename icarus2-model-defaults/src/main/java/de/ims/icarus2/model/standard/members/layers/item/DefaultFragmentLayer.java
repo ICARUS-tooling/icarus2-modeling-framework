@@ -100,7 +100,7 @@ public class DefaultFragmentLayer extends DefaultItemLayer implements FragmentLa
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.layers.AbstractLayer#getManifest()
+	 * @see de.ims.icarus2.model.standard.members.layer.AbstractLayer#getManifest()
 	 */
 	@Override
 	public FragmentLayerManifest getManifest() {

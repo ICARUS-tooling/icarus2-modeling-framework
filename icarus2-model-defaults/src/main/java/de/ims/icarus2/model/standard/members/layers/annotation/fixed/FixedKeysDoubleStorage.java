@@ -159,7 +159,7 @@ public class FixedKeysDoubleStorage extends AbstractFixedKeysStorage<double[]> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.standard.members.layers.annotation.AbstractObjectMapStorage#createBuffer()
+	 * @see de.ims.icarus2.model.standard.members.layer.annotation.AbstractObjectMapStorage#createBuffer()
 	 */
 	@Override
 	protected double[] createBuffer() {
