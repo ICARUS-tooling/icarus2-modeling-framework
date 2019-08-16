@@ -30,8 +30,8 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
-import de.ims.icarus2.model.standard.members.layers.annotation.packed.PackedDataManager.PackageHandle;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.Part;
@@ -71,7 +71,8 @@ public class PackedAnnotationStorage extends AbstractPart<AnnotationLayer>
 		requireNonNull(key);
 		PackageHandle handle = handles.get(key);
 		if(handle == null)
-			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Unable to obtain package handle - unknown annotation key: "+key);
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					"Unable to obtain package handle - unknown annotation key: "+key);
 		return handle;
 	}
 
@@ -97,10 +98,13 @@ public class PackedAnnotationStorage extends AbstractPart<AnnotationLayer>
 		Map<AnnotationManifest, PackageHandle> lookup = dataManager.lookupHandles(manifests);
 
 		for(AnnotationManifest manifest : manifests) {
+			String key = manifest.getKey().orElseThrow(
+					ModelException.create(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Missing key declaration"));
 			PackageHandle handle = lookup.get(manifest);
 			if(handle==null)
-				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Missing handle for annotation: "+ModelUtils.getName(manifest));
-			handles.put(manifest.getKey().get(), handle);
+				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+						"Missing handle for annotation: "+ModelUtils.getName(manifest));
+			handles.put(key, handle);
 		}
 	}
 
@@ -125,8 +129,8 @@ public class PackedAnnotationStorage extends AbstractPart<AnnotationLayer>
 	@Override
 	public boolean collectKeys(Item item, Consumer<String> action) {
 		// Just forwards the request with a customized action that translates handles into annotation keys
-		return dataManager().collectHandles(item, handles.values(),
-				handle -> action.accept(handle.getManifest().getKey().get()));
+		return dataManager().collectUsedHandles(item, handles.values(),
+				handle -> action.accept(((AnnotationManifest)handle.getSource()).getKey().get()));
 	}
 
 	/**
@@ -182,7 +186,8 @@ public class PackedAnnotationStorage extends AbstractPart<AnnotationLayer>
 	 */
 	@Override
 	public void removeAllValues(Supplier<? extends Item> source) {
-		throw new ModelException(GlobalErrorCode.DEPRECATED, "Can't clear buffered annotation storage");
+		PackageHandle[] handles = this.handles.values().toArray(new PackageHandle[0]);
+		dataManager().clear(source, handles);
 	}
 
 	/**

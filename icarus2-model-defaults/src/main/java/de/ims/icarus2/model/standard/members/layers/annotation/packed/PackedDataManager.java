@@ -18,9 +18,13 @@ package de.ims.icarus2.model.standard.members.layers.annotation.packed;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Deque;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,9 +37,9 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Part;
@@ -46,18 +50,19 @@ import de.ims.icarus2.util.mem.ByteAllocator;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * @author Markus Gärtner
  *
  * @param <E> type of elements that are used for mapping to byte chunks
- * @param <O> type of the owning context, such as an {@link AnnotationStorage}
+ * @param <O> type of the owning context
  */
 public class PackedDataManager<E extends Object, O extends Object> implements Part<O> {
 
 	private static final Logger log = LoggerFactory.getLogger(PackedDataManager.class);
 
-	private static final int NO_MAPPING_VALUE = IcarusUtils.UNSET_INT;
+	private static final int NO_MAPPING_VALUE = UNSET_INT;
 
 	/**
 	 * Flag to indicate whether or not the chunk addressing should
@@ -120,6 +125,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 */
 	private final StampedLock lock = new StampedLock();
 
+	/** Delegates construction of the storage construction */
 	private final IntFunction<ByteAllocator> storageSource;
 
 	/**
@@ -130,18 +136,18 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	protected PackedDataManager(Builder<E,O> builder) {
 		requireNonNull(builder);
 
-		//TODO populate fields
 		initialCapacity = builder.getInitialCapacity();
 		storageSource = builder.getStorageSource();
+		weakKeys = builder.isWeakKeys();
+		allowBitPacking = builder.isAllowBitPacking();
+		allowDynamicChunkComposition = builder.isAllowDynamicChunkComposition();
 
-		//TODO implement functionality and adjust
-		weakKeys = false;
-		allowBitPacking = true;
-		allowDynamicChunkComposition = false;
+		packageHandles.addAll(builder.getHandles());
 	}
 
 	public void registerHandles(Set<PackageHandle> handles) {
 		requireNonNull(handles);
+		checkState("", allowDynamicChunkComposition);
 		checkArgument("No handles to register", !handles.isEmpty());
 		checkState("Cannot register handles with a live storage", rawStorage!=null);
 
@@ -154,19 +160,19 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 	/**
 	 * Looks up the {@link PackageHandle handle} associated with the
-	 * given {@link AnnotationManifest manifest}.
+	 * given {@code source}.
 	 * <p>
-	 * If no handle is available for the manifest, this method will
+	 * If no handle is available for the source, this method will
 	 * return {@code null}.
 	 *
-	 * @param manifest
+	 * @param source
 	 * @return
 	 */
-	public PackageHandle lookupHandle(AnnotationManifest manifest) {
-		requireNonNull(manifest);
+	public PackageHandle lookupHandle(Object source) {
+		requireNonNull(source);
 
 		for(PackageHandle handle : packageHandles) {
-			if(manifest.equals(handle.manifest)) {
+			if(source.equals(handle.source)) {
 				return handle;
 			}
 		}
@@ -175,21 +181,22 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	}
 
 	/**
-	 * Looks up the {@link PackageHandle handles} associated with the specified
-	 * {@code manifests}.
+	 * Looks up all the {@link PackageHandle handles} associated with the specified
+	 * {@code sources}.
 	 *
-	 * @param manifests
+	 * @param sources
 	 * @return
 	 */
-	public Map<AnnotationManifest, PackageHandle> lookupHandles(Set<AnnotationManifest> manifests) {
-		requireNonNull(manifests);
-		checkArgument("Set of manifests to look up must not be empty", !manifests.isEmpty());
+	@SuppressWarnings("unchecked")
+	public <T> Map<T, PackageHandle> lookupHandles(Set<T> sources) {
+		requireNonNull(sources);
+		checkArgument("Set of manifests to look up must not be empty", !sources.isEmpty());
 
-		LazyMap<AnnotationManifest, PackageHandle> result = LazyMap.lazyHashMap(manifests.size());
+		LazyMap<T, PackageHandle> result = LazyMap.lazyHashMap(sources.size());
 
 		for(PackageHandle handle : packageHandles) {
-			if(manifests.contains(handle.manifest)) {
-				result.add(handle.manifest, handle);
+			if(sources.contains(handle.source)) {
+				result.add((T) handle.source, handle);
 			}
 		}
 
@@ -200,27 +207,62 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		return weakKeys;
 	}
 
-	private int getRequiredChunkSize() {
+	/**
+	 * Refresh the handles registered so far (set their indices, offsets
+	 * and bit addresses) and return the total size in bytes required per
+	 * slot.
+	 * @return
+	 */
+	private int updateHandles() {
 		// Required size in full bytes
 		int size = 0;
-		// Individual bits required for boolean data
-		int bits = 0;
 
-		for(PackageHandle handle : packageHandles) {
+		Deque<PackageHandle> bitHandles = new ArrayDeque<>();
+
+		int offset = 0;
+
+		for(int i=0; i<packageHandles.size(); i++) {
+			PackageHandle handle = packageHandles.get(i);
+			handle.setIndex(i);
+
 			BytePackConverter converter = handle.converter;
 
 			if(converter.sizeInBytes()==0) {
-				bits += converter.sizeInBits();
+				if(!allowBitPacking)
+					throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "No bit packing allowed");
+				bitHandles.add(handle);
 			} else {
 				size += converter.sizeInBytes();
+
+				handle.setOffset(offset);
+				offset += converter.sizeInBytes();
 			}
 		}
 
-		// Add sufficient bytes to hold all the individual bits for
-		// boolean data
-		// TODO should we actually block bit packing when flag isn't set?
-		if(bits>0) {
-			size += Math.ceil(bits/8D);
+		// Now package bit-based handles
+		if(!bitHandles.isEmpty()) {
+			// Total bytes used for bit-packaging
+			int bytes = 1;
+			// Bits within current byte already used for handles
+			int bits = 0;
+
+			while(!bitHandles.isEmpty()) {
+				PackageHandle handle = bitHandles.remove();
+				int bitSize = handle.converter.sizeInBits();
+				if(bits+bitSize<=Byte.SIZE) {
+					handle.setOffset(offset);
+					handle.setBit(bits);
+					bits += bitSize;
+				} else {
+					// Wait till we have space somewhere
+					bits = 0;
+					bytes++;
+					offset++;
+					bitHandles.offerLast(handle);
+				}
+			}
+
+			size += bytes;
 		}
 
 		return size;
@@ -246,7 +288,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 				chunkAddresses = buildMap();
 
 				// Initialize a new storage based on our current chunk size
-				rawStorage = storageSource.apply(getRequiredChunkSize());
+				rawStorage = storageSource.apply(updateHandles());
 
 				cursor = rawStorage.newCursor();
 			} finally {
@@ -260,7 +302,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	/**
 	 * Releases the mapping facility, the raw data storage and
 	 * the navigation cursor for that storage if this manager has
-	 * no more {@link AnnotationStorage} instances linked to it.
+	 * no more {@code owner} instances linked to it.
 	 *
 	 * @see de.ims.icarus2.util.Part#removeNotify(java.lang.Object)
 	 */
@@ -400,9 +442,13 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	public boolean isRegistered(E item) {
 		requireNonNull(item);
 
+		boolean registered = false;
+
 		// Try optimistically first
 		long stamp = lock.tryOptimisticRead();
-		boolean registered = chunkAddresses.containsKey(item);
+		if(stamp!=0L) {
+			registered = chunkAddresses.containsKey(item);
+		}
 
 		// Run a real lock if needed
 		if(!lock.validate(stamp)) {
@@ -415,6 +461,36 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		}
 
 		return registered;
+	}
+
+	/**
+	 * Clears (i.e. sets to the respective {@code noEntryValue})
+	 * all the annotations defined by the {@code handles} array
+	 * for as long as the specified supplier produces entries
+	 * that are different to {@code null}.
+	 * <p>
+	 * Ignores all provided items that are not mapped to an
+	 * actual chunk id in this manager.
+	 *
+	 * @param ids
+	 * @param handles
+	 */
+	public void clear(Supplier<? extends E> items, PackageHandle[] handles) {
+		requireNonNull(items);
+		requireNonNull(handles);
+		checkArgument("Empty handles array", handles.length>0);
+
+		long stamp = lock.writeLock();
+		try {
+			E item;
+			while((item = items.get()) != null) {
+				if(prepareCursor(item)) {
+					clearCurrent(handles);
+				}
+			}
+		} finally {
+			lock.unlockWrite(stamp);
+		}
 	}
 
 	/**
@@ -485,13 +561,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		int id = chunkAddresses.getInt(item);
 
 		/*
-		 *  SPECIAL NOTE: We shouldn't throw an exception here since
-		 *  it would break our optimistic locking:
-		 *
-		 *  TODO
+		 *  SPECIAL NOTE: We don't want to throw an exception here since
+		 *  it would break our optimistic locking!
 		 */
-
-
 //		if(id==NO_MAPPING_VALUE)
 //			throw new ModelException(ModelErrorCode.MODEL_INVALID_REQUEST,
 //					"Unregistered item: "+ModelUtils.toString(item));
@@ -536,9 +608,11 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		long stamp = lock.tryOptimisticRead();
 
-		// Try optimistically
-		if(prepareCursor(item)) {
-			result = handle.converter.getBoolean(handle, cursor);
+		if(stamp!=0L) {
+			// Try optimistically
+			if(prepareCursor(item)) {
+				result = handle.converter.getBoolean(handle, cursor);
+			}
 		}
 
 		// Do a real locking in case we encountered parallel modifications
@@ -574,9 +648,11 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		long stamp = lock.tryOptimisticRead();
 
-		// Try optimistically
-		if(prepareCursor(item)) {
-			result = handle.converter.getInteger(handle, cursor);
+		if(stamp!=0L) {
+			// Try optimistically
+			if(prepareCursor(item)) {
+				result = handle.converter.getInteger(handle, cursor);
+			}
 		}
 
 		// Do a real locking in case we encountered parallel modifications
@@ -612,9 +688,11 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		long stamp = lock.tryOptimisticRead();
 
-		// Try optimistically
-		if(prepareCursor(item)) {
-			result = handle.converter.getLong(handle, cursor);
+		if(stamp!=0L) {
+			// Try optimistically
+			if(prepareCursor(item)) {
+				result = handle.converter.getLong(handle, cursor);
+			}
 		}
 
 		// Do a real locking in case we encountered parallel modifications
@@ -650,9 +728,11 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		long stamp = lock.tryOptimisticRead();
 
-		// Try optimistically
-		if(prepareCursor(item)) {
-			result = handle.converter.getFloat(handle, cursor);
+		if(stamp!=0L) {
+			// Try optimistically
+			if(prepareCursor(item)) {
+				result = handle.converter.getFloat(handle, cursor);
+			}
 		}
 
 		// Do a real locking in case we encountered parallel modifications
@@ -688,9 +768,11 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		long stamp = lock.tryOptimisticRead();
 
-		// Try optimistically
-		if(prepareCursor(item)) {
-			result = handle.converter.getDouble(handle, cursor);
+		if(stamp!=0L) {
+			// Try optimistically
+			if(prepareCursor(item)) {
+				result = handle.converter.getDouble(handle, cursor);
+			}
 		}
 
 		// Do a real locking in case we encountered parallel modifications
@@ -726,9 +808,11 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		long stamp = lock.tryOptimisticRead();
 
-		// Try optimistically
-		if(prepareCursor(item)) {
-			result = handle.converter.getValue(handle, cursor);
+		if(stamp!=0L) {
+			// Try optimistically
+			if(prepareCursor(item)) {
+				result = handle.converter.getValue(handle, cursor);
+			}
 		}
 
 		// Do a real locking in case we encountered parallel modifications
@@ -764,9 +848,11 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		long stamp = lock.tryOptimisticRead();
 
-		// Try optimistically
-		if(prepareCursor(item)) {
-			handle.converter.setBoolean(handle, cursor, value);
+		if(stamp!=0L) {
+			// Try optimistically
+			if(prepareCursor(item)) {
+				handle.converter.setBoolean(handle, cursor, value);
+			}
 		}
 
 		// Do a real locking in case we encountered parallel modifications
@@ -798,9 +884,11 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		long stamp = lock.tryOptimisticRead();
 
-		// Try optimistically
-		if(prepareCursor(item)) {
-			handle.converter.setInteger(handle, cursor, value);
+		if(stamp!=0L) {
+			// Try optimistically
+			if(prepareCursor(item)) {
+				handle.converter.setInteger(handle, cursor, value);
+			}
 		}
 
 		// Do a real locking in case we encountered parallel modifications
@@ -832,9 +920,11 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		long stamp = lock.tryOptimisticRead();
 
-		// Try optimistically
-		if(prepareCursor(item)) {
-			handle.converter.setLong(handle, cursor, value);
+		if(stamp!=0L) {
+			// Try optimistically
+			if(prepareCursor(item)) {
+				handle.converter.setLong(handle, cursor, value);
+			}
 		}
 
 		// Do a real locking in case we encountered parallel modifications
@@ -866,9 +956,11 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		long stamp = lock.tryOptimisticRead();
 
-		// Try optimistically
-		if(prepareCursor(item)) {
-			handle.converter.setFloat(handle, cursor, value);
+		if(stamp!=0L) {
+			// Try optimistically
+			if(prepareCursor(item)) {
+				handle.converter.setFloat(handle, cursor, value);
+			}
 		}
 
 		// Do a real locking in case we encountered parallel modifications
@@ -900,9 +992,11 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		long stamp = lock.tryOptimisticRead();
 
-		// Try optimistically
-		if(prepareCursor(item)) {
-			handle.converter.setDouble(handle, cursor, value);
+		if(stamp!=0L) {
+			// Try optimistically
+			if(prepareCursor(item)) {
+				handle.converter.setDouble(handle, cursor, value);
+			}
 		}
 
 		// Do a real locking in case we encountered parallel modifications
@@ -932,15 +1026,17 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 */
 	public void setValue(E item, PackageHandle handle, Object value) {
 
-		long stamp = lock.tryOptimisticRead();
-
 		if(value==null) {
 			value = handle.noEntryValue;
 		}
 
-		// Try optimistically
-		if(prepareCursor(item)) {
-			handle.converter.setValue(handle, cursor, value);
+		long stamp = lock.tryOptimisticRead();
+
+		if(stamp!=0L) {
+			// Try optimistically
+			if(prepareCursor(item)) {
+				handle.converter.setValue(handle, cursor, value);
+			}
 		}
 
 		// Do a real locking in case we encountered parallel modifications
@@ -998,16 +1094,18 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @param action
 	 * @return
 	 */
-	public boolean collectHandles(E item, Collection<PackageHandle> handles, Consumer<? super PackageHandle> action) {
+	public boolean collectUsedHandles(E item, Collection<PackageHandle> handles, Consumer<? super PackageHandle> action) {
 
-		boolean result;
+		boolean result = false;
 
 		// Using lazy collection can prevent necessity of creating real buffer
 		LazyCollection<PackageHandle> buffer = LazyCollection.lazySet();
 
 		// Try to optimistically collect the information
 		long stamp = lock.tryOptimisticRead();
-		result = collectHandlesUnsafe(item, handles, buffer);
+		if(stamp!=0L) {
+			result = collectUsedHandlesUnsafe(item, handles, buffer);
+		}
 
 		// If we failed, go and properly lock before trying again
 		if(!lock.validate(stamp)) {
@@ -1015,7 +1113,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			try {
 				// Make sure the buffer doesn't hold duplicates or stale information
 				buffer.clear();
-				result = collectHandlesUnsafe(item, handles, buffer);
+				result = collectUsedHandlesUnsafe(item, handles, buffer);
 			} finally {
 				lock.unlockRead(stamp);
 			}
@@ -1029,7 +1127,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		return result;
 	}
 
-	private boolean collectHandlesUnsafe(E item, Collection<PackageHandle> handles, Consumer<? super PackageHandle> action) {
+	private boolean collectUsedHandlesUnsafe(E item, Collection<PackageHandle> handles, Consumer<? super PackageHandle> action) {
 		boolean result = false;
 
 		// Move to data chunk and then go through all the specified handles
@@ -1042,114 +1140,12 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 				// If current value is different to default, report it
 				if(!handle.converter.equal(value, noEntryValue)) {
 					result = true;
-					if(action!=null) {
-						action.accept(handle);
-					}
+					action.accept(handle);
 				}
 			}
 		}
 
 		return result;
-	}
-
-	/**
-	 * Bundles all the information needed by the {@link PackedDataManager} to map
-	 * annotation values for individual {@link Item items} to byte slots of a
-	 * {@link ByteAllocator}.
-	 *
-	 * @author Markus Gärtner
-	 *
-	 */
-	public static class PackageHandle {
-
-		/**
-		 * Annotation used for accessing this info
-		 */
-		private final AnnotationManifest manifest;
-
-		private final Object noEntryValue;
-
-		/**
-		 * The converter used to translate between raw byte data
-		 * and the actual annotation types in case of complex types.
-		 */
-		private final BytePackConverter converter;
-
-		/**
-		 * Utility objects used by the converter to
-		 * process raw byte data. Also used for synchronization
-		 * when present.
-		 * <p>
-		 * In case a converter does not {@link BytePackConverter#createContext() provide}
-		 * his own context, it is assumed to be stateless.
-		 */
-		private final Object converterContext;
-
-		/**
-		 * Position in the lookup table.
-		 */
-		private int index = IcarusUtils.UNSET_INT;
-
-		/**
-		 * Byte offset within chunk of raw data.
-		 */
-		private int offset = IcarusUtils.UNSET_INT;
-
-		/**
-		 * For packed boolean values this indicates the bit within a single
-		 * byte that is used for storing the annotation value for this handle.
-		 */
-		private int bit = IcarusUtils.UNSET_INT;
-
-		/**
-		 * @param key
-		 * @param index
-		 * @param converter
-		 */
-		private PackageHandle(AnnotationManifest manifest, BytePackConverter converter) {
-			this.manifest = requireNonNull(manifest);
-			this.converter = requireNonNull(converter);
-
-			converterContext = converter.createContext();
-
-			noEntryValue = manifest.getNoEntryValue();
-		}
-
-		public AnnotationManifest getManifest() {
-			return manifest;
-		}
-
-		public BytePackConverter getConverter() {
-			return converter;
-		}
-
-		public Object getConverterContext() {
-			return converterContext;
-		}
-
-		public int getIndex() {
-			return index;
-		}
-
-		public int getOffset() {
-			return offset;
-		}
-
-		public int getBit() {
-			return bit;
-		}
-
-		void setOffset(int offset) {
-			this.offset = offset;
-		}
-
-		void setIndex(int index) {
-			this.index = index;
-		}
-
-		void setBit(int bit) {
-			this.bit = bit;
-		}
 	}
 
 	/**
@@ -1162,7 +1158,15 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		private IntFunction<ByteAllocator> storageSource;
 
-		private int initialCapacity = 0;
+		private Integer initialCapacity;
+
+		private Boolean allowBitPacking;
+
+		private Boolean allowDynamicChunkComposition;
+
+		private Boolean weakKeys;
+
+		private Set<PackageHandle> handles = new ObjectOpenHashSet<>();
 
 		public Builder<E,O> storageSource(IntFunction<ByteAllocator> storageSource) {
 			requireNonNull(storageSource);
@@ -1179,15 +1183,68 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		public Builder<E,O> initialCapacity(int initialCapacity) {
 			checkArgument("Initial capacity must be greater than 0", initialCapacity>0);
-			checkState("Initial capacity already set", this.initialCapacity==0);
+			checkState("Initial capacity already set", this.initialCapacity==null);
 
-			this.initialCapacity = initialCapacity;
+			this.initialCapacity = Integer.valueOf(initialCapacity);
+
+			return thisAsCast();
+		}
+
+		public Builder<E,O> allowBitPacking(boolean allowBitPacking) {
+			checkState("Flag 'allowBitPacking' already set", this.allowBitPacking==null);
+
+			this.allowBitPacking = Boolean.valueOf(allowBitPacking);
+
+			return thisAsCast();
+		}
+
+		public Builder<E,O> allowDynamicChunkComposition(boolean allowDynamicChunkComposition) {
+			checkState("Flag 'allowDynamicChunkComposition' already set", this.allowDynamicChunkComposition==null);
+
+			this.allowDynamicChunkComposition = Boolean.valueOf(allowDynamicChunkComposition);
+
+			return thisAsCast();
+		}
+
+		public Builder<E,O> weakKeys(boolean weakKeys) {
+			checkState("Flag 'weakKeys' already set", this.weakKeys==null);
+
+			this.weakKeys = Boolean.valueOf(weakKeys);
 
 			return thisAsCast();
 		}
 
 		public int getInitialCapacity() {
-			return initialCapacity;
+			return initialCapacity==null ? 0 : initialCapacity.intValue();
+		}
+
+		public boolean isAllowBitPacking() {
+			return allowBitPacking==null ? false : allowBitPacking.booleanValue();
+		}
+
+		public boolean isAllowDynamicChunkComposition() {
+			return allowDynamicChunkComposition==null ? false : allowDynamicChunkComposition.booleanValue();
+		}
+
+		public Builder<E,O> addHandles(PackageHandle...handles) {
+			requireNonNull(handles);
+			checkArgument("Handles array must not be empty", handles.length>0);
+
+			for(PackageHandle handle : handles) {
+				if(!this.handles.add(handle))
+					throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+							"Duplicate handle for "+handle.getSource());
+			}
+
+			return thisAsCast();
+		}
+
+		public boolean isWeakKeys() {
+			return weakKeys==null ? false : weakKeys.booleanValue();
+		}
+
+		public Set<PackageHandle> getHandles() {
+			return Collections.unmodifiableSet(handles);
 		}
 
 		/**
@@ -1198,7 +1255,10 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			super.validate();
 
 			checkState("Missing storage source", storageSource!=null);
-			checkState("Missing initial capacity", initialCapacity>0);
+			checkState("Missing initial capacity", initialCapacity!=null);
+
+			checkState("Must either provide initial package handles or allow dynamic registration",
+					isAllowDynamicChunkComposition() || !handles.isEmpty());
 		}
 
 		/**

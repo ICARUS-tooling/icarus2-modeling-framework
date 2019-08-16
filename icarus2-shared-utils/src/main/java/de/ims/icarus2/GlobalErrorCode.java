@@ -125,6 +125,9 @@ public enum GlobalErrorCode implements ErrorCode {
 	 * statement or similar construct. This error type is exclusively
 	 * intended to signal that an enum has received a new constant and the
 	 * code in question hasn't been updated to properly handle the change.
+	 * <p>
+	 * Apart from pure enums it can also be used for any quasi static
+	 * collection of constants.
 	 */
 	UNKNOWN_ENUM(131),
 

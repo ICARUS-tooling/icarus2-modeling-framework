@@ -19,23 +19,58 @@ package de.ims.icarus2.model.standard.members.layers.annotation.packed;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.IntFunction;
 import java.util.function.ToIntFunction;
 
-import com.google.common.base.Objects;
-
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.Messages;
-import de.ims.icarus2.model.standard.members.layers.annotation.packed.PackedDataManager.PackageHandle;
 import de.ims.icarus2.util.mem.ByteAllocator.Cursor;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner
  *
  */
 public abstract class BytePackConverter {
+
+	private static final Map<ValueType, BytePackConverter> sharedConverters
+		= new Object2ObjectOpenHashMap<>();
+	static {
+		sharedConverters.put(ValueType.BOOLEAN, new BooleanConverter());
+		sharedConverters.put(ValueType.INTEGER, new IntConverter());
+		sharedConverters.put(ValueType.LONG, new LongConverter());
+		sharedConverters.put(ValueType.FLOAT, new FloatConverter());
+		sharedConverters.put(ValueType.DOUBLE, new DoubleConverter());
+	}
+
+	/**
+	 * Returns a (potentially shared) instance of a converter suitable for the
+	 * given {@link ValueType}.
+	 *
+	 * @param type
+	 * @param allowBitPacking
+	 * @return
+	 *
+	 * @throws ModelException if no suitable converter could be found
+	 */
+	public static BytePackConverter forPrimitiveType(ValueType type, boolean allowBitPacking) {
+		checkArgument("Must be a primitive value type: "+type, type.isPrimitiveType());
+
+		if(allowBitPacking && type==ValueType.BOOLEAN) {
+			return new BitwiseBooleanConverter();
+		}
+
+		BytePackConverter converter = sharedConverters.get(type);
+		if(converter==null)
+			throw new ModelException(GlobalErrorCode.UNKNOWN_ENUM, "Unknown primitive type: "+type);
+
+		return converter;
+	}
 
 	public abstract ValueType getValueType();
 
@@ -52,11 +87,14 @@ public abstract class BytePackConverter {
 	/**
 	 * Returns the total number of bits required to
 	 * represent the data this converter handles.
+	 * <p>
+	 * This method is only supported when {@link #sizeInBytes()}
+	 * returns {@code 0};
 	 *
 	 * @return
 	 */
 	public int sizeInBits() {
-		return sizeInBytes()<<3;
+		throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Not a bit-based converter!");
 	}
 
 	/**
@@ -143,35 +181,10 @@ public abstract class BytePackConverter {
 	 * @return
 	 */
 	public boolean equal(Object v1, Object v2) {
-		return Objects.equal(v1, v2);
+		return Objects.equals(v1, v2);
 	}
 
 	public static final class BitwiseBooleanConverter extends BytePackConverter {
-
-		private final byte mask;
-
-		/**
-		 * The bit slot within a storage byte, allowed
-		 * value {@code 0-7}.
-		 */
-		private final int bit;
-
-		public BitwiseBooleanConverter(int bit) {
-			checkArgument("Bit index must be between 0 and 7, inclusively: "+bit, bit>=0 && bit<=7);
-
-			this.bit = bit;
-			mask = (byte) ((1<<bit) & 0xFF);
-		}
-
-		/**
-		 * Returns the bit index within a single byte that this
-		 * converter is using.
-		 *
-		 * @return the bit
-		 */
-		public int getBit() {
-			return bit;
-		}
 
 		/**
 		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getValueType()
@@ -202,6 +215,7 @@ public abstract class BytePackConverter {
 		 */
 		@Override
 		public boolean getBoolean(PackageHandle handle, Cursor cursor) {
+			byte mask = (byte) ((1<<handle.getBit()) & 0xff);
 			return (cursor.getByte(handle.getOffset()) & mask) == mask;
 		}
 
@@ -213,6 +227,7 @@ public abstract class BytePackConverter {
 			int offset = handle.getOffset();
 			byte block = cursor.getByte(offset);
 
+			byte mask = (byte) ((1<<handle.getBit()) & 0xff);
 			if(value) {
 				block |= mask;
 			} else {

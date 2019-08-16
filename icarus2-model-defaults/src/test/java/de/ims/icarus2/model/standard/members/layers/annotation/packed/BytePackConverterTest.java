@@ -6,6 +6,7 @@ package de.ims.icarus2.model.standard.members.layers.annotation.packed;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.test.TestUtils.randomString;
 import static de.ims.icarus2.test.util.Pair.pair;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,7 +28,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.TestFactory;
 
-import de.ims.icarus2.model.api.layer.AnnotationStorageTest;
+import de.ims.icarus2.model.api.layer.annotation.AnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter.BitwiseBooleanConverter;
 import de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter.BooleanConverter;
@@ -36,7 +37,6 @@ import de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackCo
 import de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter.IntConverter;
 import de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter.LongConverter;
 import de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter.SubstitutingConverterInt;
-import de.ims.icarus2.model.standard.members.layers.annotation.packed.PackedDataManager.PackageHandle;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.mem.ByteAllocator;
@@ -50,9 +50,9 @@ class BytePackConverterTest {
 
 	abstract class BaseTest<C extends BytePackConverter> {
 
-		private ByteAllocator alloc;
-		private Cursor cursor;
-		private PackageHandle handle;
+		ByteAllocator alloc;
+		Cursor cursor;
+		PackageHandle handle;
 
 		@SuppressWarnings("boxing")
 		@BeforeEach
@@ -62,6 +62,7 @@ class BytePackConverterTest {
 			cursor.moveTo(alloc.alloc());
 			handle = mock(PackageHandle.class);
 			when(handle.getIndex()).thenReturn(0);
+			when(handle.getBit()).thenReturn(0);
 		}
 
 		@AfterEach
@@ -247,8 +248,23 @@ class BytePackConverterTest {
 
 		@Override
 		Stream<Pair<String, BitwiseBooleanConverter>> instances() {
+			return Stream.of(pair("default", new BitwiseBooleanConverter()));
+		}
+
+		@SuppressWarnings("boxing")
+		@TestFactory
+		Stream<DynamicTest> testBitOffset() {
 			return IntStream.range(0, 8)
-					.mapToObj(index -> pair("bit "+index, new BitwiseBooleanConverter(index)));
+					.mapToObj(bit -> dynamicTest("bit "+bit, () -> {
+						when(handle.getBit()).thenReturn(bit);
+						BitwiseBooleanConverter converter = new BitwiseBooleanConverter();
+
+						converter.setBoolean(handle, cursor, true);
+						assertTrue(converter.getBoolean(handle, cursor));
+
+						converter.setBoolean(handle, cursor, false);
+						assertFalse(converter.getBoolean(handle, cursor));
+					}));
 		}
 	}
 
@@ -346,8 +362,12 @@ class BytePackConverterTest {
 						return pair("bytes "+bytes,
 								new SubstitutingConverterInt<>(ValueType.CUSTOM, bytes,
 										value -> {
-											buffer.add(value);
-											return buffer.size()-1;
+											int index = buffer.indexOf(value);
+											if(index==UNSET_INT) {
+												index = buffer.size();
+												buffer.add(value);
+											}
+											return index;
 										},
 										buffer::get));
 					});
@@ -370,8 +390,12 @@ class BytePackConverterTest {
 						return pair("bytes "+bytes,
 								new SubstitutingConverterInt<>(ValueType.STRING, bytes,
 										value -> {
-											buffer.add(value);
-											return buffer.size()-1;
+											int index = buffer.indexOf(value);
+											if(index==UNSET_INT) {
+												index = buffer.size();
+												buffer.add(value);
+											}
+											return index;
 										},
 										buffer::get));
 					});
