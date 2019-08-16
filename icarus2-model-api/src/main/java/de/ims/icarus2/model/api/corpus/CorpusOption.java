@@ -16,9 +16,11 @@
  */
 package de.ims.icarus2.model.api.corpus;
 
+import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
 
 /**
+ * Collection of commonly used options available for corpora.
  *
  * @author Markus Gärtner
  *
@@ -26,7 +28,10 @@ import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
 public class CorpusOption {
 
 
-	public static final String PARAM_PREFIX = "icarus2.model.api.";
+	/**
+	 * The prefix common to all corpus-related options defied in this class.
+	 */
+	public static final String PARAM_PREFIX = "icarus2.model.api.corpus.";
 
 	/**
 	 * Key for fetching the {@code page size} to be used when creating a new {@link PagedCorpusView}.
@@ -39,9 +44,19 @@ public class CorpusOption {
 
 	/**
 	 * Default value for the page size of a new {@link PagedCorpusView}.
-	 * Implementations are encouraged to use this value if client code did not specify another one.
+	 * Implementations are encouraged to use this value if client code did
+	 * not explicitly specify one.
 	 *
 	 * @see #PARAM_VIEW_PAGE_SIZE
 	 */
 	public static final int DEFAULT_VIEW_PAGE_SIZE = 1000;
+
+	/**
+	 * Key for signaling that {@link AnnotationLayer} instances in a corpus
+	 * are encouraged to use storage implementations optimized for memory
+	 * efficiency.
+	 * <p>
+	 * The type of this property is {@code boolean}.
+	 */
+	public static final String PARAM_ANNOTATION_PACKAGING = PARAM_PREFIX+"annotationPackaging";
 }
