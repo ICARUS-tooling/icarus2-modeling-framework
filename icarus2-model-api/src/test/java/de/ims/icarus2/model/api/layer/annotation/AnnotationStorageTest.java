@@ -1,7 +1,7 @@
 /**
  *
  */
-package de.ims.icarus2.model.api.layer;
+package de.ims.icarus2.model.api.layer.annotation;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
@@ -38,6 +38,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.ModelTestUtils;
+import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;

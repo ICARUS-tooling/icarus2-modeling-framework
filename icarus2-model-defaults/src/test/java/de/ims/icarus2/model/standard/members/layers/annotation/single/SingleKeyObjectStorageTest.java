@@ -17,7 +17,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
-import de.ims.icarus2.model.api.layer.ManagedAnnotationStorageTest;
+import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 
 /**
@@ -37,7 +37,7 @@ class SingleKeyObjectStorageTest implements ManagedAnnotationStorageTest<SingleK
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#valueType(java.lang.String)
+	 * @see de.ims.icarus2.model.api.layer.annotation.AnnotationStorageTest#valueType(java.lang.String)
 	 */
 	@Override
 	public ValueType valueType(String key) {

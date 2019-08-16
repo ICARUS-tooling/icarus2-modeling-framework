@@ -1,7 +1,7 @@
 /**
  *
  */
-package de.ims.icarus2.model.api.layer;
+package de.ims.icarus2.model.api.layer.annotation;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.TestAbortedException;
 
+import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.test.TestSettings;
@@ -38,7 +39,7 @@ public interface ManagedAnnotationStorageTest<S extends ManagedAnnotationStorage
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#createTestInstance(de.ims.icarus2.test.TestSettings)
+	 * @see de.ims.icarus2.model.api.layer.annotation.AnnotationStorageTest#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
 	@Override
 	default S createTestInstance(TestSettings settings) {

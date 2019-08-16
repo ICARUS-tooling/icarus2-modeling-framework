@@ -1,10 +1,10 @@
 /**
  *
  */
-package de.ims.icarus2.model.api.layer;
+package de.ims.icarus2.model.api.layer.annotation;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
-import static de.ims.icarus2.model.api.layer.AnnotationStorageTest.assertUnsupportedType;
+import static de.ims.icarus2.model.api.layer.annotation.AnnotationStorageTest.assertUnsupportedType;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.test.TestUtils.randomString;
@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 
+import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -69,7 +70,7 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#createManifest()
+	 * @see de.ims.icarus2.model.api.layer.annotation.AnnotationStorageTest#createManifest()
 	 */
 	@Override
 	default AnnotationLayerManifest createManifest() {

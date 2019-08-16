@@ -23,8 +23,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
-import de.ims.icarus2.model.api.layer.ManagedAnnotationStorageTest;
-import de.ims.icarus2.model.api.layer.MultiKeyAnnotationStorageTest;
+import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
+import de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 
 /**
@@ -70,7 +70,7 @@ class FixedKeysBoolean7BitStorageTest implements MultiKeyAnnotationStorageTest<F
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.ManagedAnnotationStorageTest#supportsAutoRemoval()
+	 * @see de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest#supportsAutoRemoval()
 	 */
 	@Override
 	public boolean supportsAutoRemoval() {
@@ -78,7 +78,7 @@ class FixedKeysBoolean7BitStorageTest implements MultiKeyAnnotationStorageTest<F
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.MultiKeyAnnotationStorageTest#supportsAutoRemoveAnnotations()
+	 * @see de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest#supportsAutoRemoveAnnotations()
 	 */
 	@Override
 	public boolean supportsAutoRemoveAnnotations() {
@@ -86,7 +86,7 @@ class FixedKeysBoolean7BitStorageTest implements MultiKeyAnnotationStorageTest<F
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.ManagedAnnotationStorageTest#supportsItemManagement()
+	 * @see de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest#supportsItemManagement()
 	 */
 	@Override
 	public boolean supportsItemManagement() {
@@ -94,7 +94,7 @@ class FixedKeysBoolean7BitStorageTest implements MultiKeyAnnotationStorageTest<F
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#noEntryValue(java.lang.String)
+	 * @see de.ims.icarus2.model.api.layer.annotation.AnnotationStorageTest#noEntryValue(java.lang.String)
 	 */
 	@Override
 	public Object noEntryValue(String key) {

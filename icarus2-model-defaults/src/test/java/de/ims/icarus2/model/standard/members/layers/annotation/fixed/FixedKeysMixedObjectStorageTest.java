@@ -21,8 +21,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
-import de.ims.icarus2.model.api.layer.ManagedAnnotationStorageTest;
-import de.ims.icarus2.model.api.layer.MultiKeyAnnotationStorageTest;
+import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
+import de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 
 /**
@@ -81,7 +81,7 @@ MultiKeyAnnotationStorageTest<FixedKeysMixedObjectStorage> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#valueType(java.lang.String)
+	 * @see de.ims.icarus2.model.api.layer.annotation.AnnotationStorageTest#valueType(java.lang.String)
 	 */
 	@Override
 	public ValueType valueType(String key) {
@@ -99,7 +99,7 @@ MultiKeyAnnotationStorageTest<FixedKeysMixedObjectStorage> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#keyForType(de.ims.icarus2.model.manifest.types.ValueType)
+	 * @see de.ims.icarus2.model.api.layer.annotation.AnnotationStorageTest#keyForType(de.ims.icarus2.model.manifest.types.ValueType)
 	 */
 	@Override
 	public String keyForType(ValueType type) {
@@ -112,7 +112,7 @@ MultiKeyAnnotationStorageTest<FixedKeysMixedObjectStorage> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#key()
+	 * @see de.ims.icarus2.model.api.layer.annotation.AnnotationStorageTest#key()
 	 */
 	@Override
 	public String key() {
@@ -145,7 +145,7 @@ MultiKeyAnnotationStorageTest<FixedKeysMixedObjectStorage> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.ManagedAnnotationStorageTest#supportsAutoRemoval()
+	 * @see de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest#supportsAutoRemoval()
 	 */
 	@Override
 	public boolean supportsAutoRemoval() {
@@ -153,7 +153,7 @@ MultiKeyAnnotationStorageTest<FixedKeysMixedObjectStorage> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.MultiKeyAnnotationStorageTest#supportsAutoRemoveAnnotations()
+	 * @see de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest#supportsAutoRemoveAnnotations()
 	 */
 	@Override
 	public boolean supportsAutoRemoveAnnotations() {

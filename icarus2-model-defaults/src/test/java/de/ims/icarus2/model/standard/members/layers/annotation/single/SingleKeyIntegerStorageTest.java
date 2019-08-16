@@ -20,7 +20,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
-import de.ims.icarus2.model.api.layer.ManagedAnnotationStorageTest;
+import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 
 /**
@@ -99,7 +99,7 @@ class SingleKeyIntegerStorageTest implements ManagedAnnotationStorageTest<Single
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#typesForSetters(String)
+	 * @see de.ims.icarus2.model.api.layer.annotation.AnnotationStorageTest#typesForSetters(String)
 	 */
 	@Override
 	public Set<ValueType> typesForSetters(String key) {
@@ -107,7 +107,7 @@ class SingleKeyIntegerStorageTest implements ManagedAnnotationStorageTest<Single
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#typesForGetters(String)
+	 * @see de.ims.icarus2.model.api.layer.annotation.AnnotationStorageTest#typesForGetters(String)
 	 */
 	@Override
 	public Set<ValueType> typesForGetters(String key) {
@@ -115,7 +115,7 @@ class SingleKeyIntegerStorageTest implements ManagedAnnotationStorageTest<Single
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#testValue(java.lang.String)
+	 * @see de.ims.icarus2.model.api.layer.annotation.AnnotationStorageTest#testValue(java.lang.String)
 	 */
 	@Override
 	public Object testValue(String key) {
@@ -123,7 +123,7 @@ class SingleKeyIntegerStorageTest implements ManagedAnnotationStorageTest<Single
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#valueType(java.lang.String)
+	 * @see de.ims.icarus2.model.api.layer.annotation.AnnotationStorageTest#valueType(java.lang.String)
 	 */
 	@Override
 	public ValueType valueType(String key) {
@@ -131,7 +131,7 @@ class SingleKeyIntegerStorageTest implements ManagedAnnotationStorageTest<Single
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#createForLayer(de.ims.icarus2.model.api.layer.AnnotationLayer)
+	 * @see de.ims.icarus2.model.api.layer.annotation.AnnotationStorageTest#createForLayer(de.ims.icarus2.model.api.layer.AnnotationLayer)
 	 */
 	@Override
 	public SingleKeyIntegerStorage createForLayer(AnnotationLayer layer) {
@@ -147,7 +147,7 @@ class SingleKeyIntegerStorageTest implements ManagedAnnotationStorageTest<Single
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationStorageTest#noEntryValue(java.lang.String)
+	 * @see de.ims.icarus2.model.api.layer.annotation.AnnotationStorageTest#noEntryValue(java.lang.String)
 	 */
 	@Override
 	public Object noEntryValue(String key) {
