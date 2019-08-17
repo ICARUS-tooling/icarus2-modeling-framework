@@ -187,13 +187,13 @@ public class ContextFactory {
 
 		// Intermediate linking
 
-		// Set context wide primary layer (can only be a native layer!!!)
+		// Set context wide primary layer (can be a foreign one)
 		manifest.getPrimaryLayerManifest().ifPresent(m -> context.setPrimaryLayer(
-				(ItemLayer) context.getNativeLayer(ManifestUtils.requireId(m))));
+				(ItemLayer) context.getLayer(m.getLayerId())));
 
-		// Set context wide foundation layer (this one might be a foreign one)
+		// Set context wide foundation layer (can be a foreign one)
 		manifest.getFoundationLayerManifest().ifPresent(m -> context.setFoundationLayer(
-				(ItemLayer) context.getLayer(ManifestUtils.requireId(m))));
+				(ItemLayer) context.getLayer(m.getLayerId())));
 
 		// Second pass, link dependencies and attach groups
 		// This task is delegated to the linker implementations

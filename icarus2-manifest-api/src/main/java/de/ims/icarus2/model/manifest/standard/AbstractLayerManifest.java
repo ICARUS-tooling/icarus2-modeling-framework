@@ -37,6 +37,7 @@ import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
+import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.standard.Links.Link;
 import de.ims.icarus2.model.manifest.standard.Links.MemoryLink;
 import de.ims.icarus2.util.IcarusUtils;
@@ -206,7 +207,9 @@ public abstract class AbstractLayerManifest<L extends LayerManifest<L>>
 	}
 
 	protected TargetLayerManifest createTargetLayerManifest(String id, String linkType) {
-		return new TargetLayerManifestImpl(id, linkType);
+		return new TargetLayerManifestImpl(this,
+				createLayerLink(id, linkType),
+				createPrerequisiteLink(id));
 	}
 
 	protected class LayerTypeLink extends Link<LayerType> {
@@ -240,26 +243,17 @@ public abstract class AbstractLayerManifest<L extends LayerManifest<L>>
 
 		private final String linkType;
 
-		/**
-		 * @param id
-		 */
 		public GlobalLayerLink(String id, String linkType) {
 			super(id, true);
 
 			this.linkType = requireNonNull(linkType);
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#getMissingLinkDescription()
-		 */
 		@Override
 		protected String getMissingLinkDescription() {
 			return "No layer of type '"+linkType+"' for id: "+getId();
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#resolve()
-		 */
 		@Override
 		protected Optional<LayerManifest<?>> resolve() {
 			// This takes care of layer id resolution in terms of prerequisite aliases
@@ -297,22 +291,26 @@ public abstract class AbstractLayerManifest<L extends LayerManifest<L>>
 
 	}
 
-	public class TargetLayerManifestImpl implements TargetLayerManifest {
+	public static class TargetLayerManifestImpl implements TargetLayerManifest {
 
 		private Link<LayerManifest<?>> resolvedLayer;
 		private Link<PrerequisiteManifest> prerequisite;
+		private final MemberManifest<?> host;
 
-		public TargetLayerManifestImpl(String targetId, String linkType) {
-			resolvedLayer = createLayerLink(targetId, linkType);
-			prerequisite = createPrerequisiteLink(targetId);
+		public TargetLayerManifestImpl(MemberManifest<?> host,
+				Link<LayerManifest<?>> resolvedLayer,
+				Link<PrerequisiteManifest> prerequisite) {
+			this.host = requireNonNull(host);
+			this.resolvedLayer = requireNonNull(resolvedLayer);
+			this.prerequisite = requireNonNull(prerequisite);
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest#getLayerManifest()
+		 * @see de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest#getHostManifest()
 		 */
 		@Override
-		public LayerManifest<?> getLayerManifest() {
-			return AbstractLayerManifest.this;
+		public MemberManifest<?> getHostManifest() {
+			return host;
 		}
 
 		/**

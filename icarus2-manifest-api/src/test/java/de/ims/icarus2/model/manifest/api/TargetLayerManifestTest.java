@@ -39,7 +39,7 @@ public interface TargetLayerManifestTest {
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest#getLayerManifest()}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest#getHostManifest()}.
 	 */
 	@Test
 	default void testGetLayerManifest() {

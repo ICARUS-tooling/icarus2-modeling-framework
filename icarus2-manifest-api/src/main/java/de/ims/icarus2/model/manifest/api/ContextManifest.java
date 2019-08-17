@@ -223,7 +223,7 @@ public interface ContextManifest extends MemberManifest<ContextManifest>, Bindab
 	 * @see LayerGroupManifest#getPrimaryLayerManifest()
 	 */
 	@AccessRestriction(AccessMode.READ)
-	<L extends ItemLayerManifestBase<?>> Optional<L> getPrimaryLayerManifest();
+	Optional<TargetLayerManifest> getPrimaryLayerManifest();
 
 	boolean isLocalPrimaryLayerManifest();
 
@@ -235,7 +235,7 @@ public interface ContextManifest extends MemberManifest<ContextManifest>, Bindab
 	 * method must return an empty {@link Optional}!
 	 */
 	@AccessRestriction(AccessMode.READ)
-	<L extends ItemLayerManifestBase<?>> Optional<L> getFoundationLayerManifest();
+	Optional<TargetLayerManifest> getFoundationLayerManifest();
 
 	boolean isLocalFoundationLayerManifest();
 

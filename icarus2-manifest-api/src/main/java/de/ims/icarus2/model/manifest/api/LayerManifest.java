@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -95,6 +97,19 @@ public interface LayerManifest<L extends LayerManifest<L>> extends MemberManifes
 		return result.getAsList();
 	}
 
+	default boolean isBaseLayerManifest(ItemLayerManifestBase<?> layerManifest) {
+		requireNonNull(layerManifest);
+		for(TargetLayerManifest target : getBaseLayerManifests()) {
+			if(target.getResolvedLayerManifest()
+					.orElseThrow(ManifestException.error("Unresolvable base layer"))
+					.equals(layerManifest)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	@AccessRestriction(AccessMode.READ)
 	default List<TargetLayerManifest> getLocalBaseLayerManifests() {
 		LazyCollection<TargetLayerManifest> result = LazyCollection.lazyList();
@@ -137,12 +152,12 @@ public interface LayerManifest<L extends LayerManifest<L>> extends MemberManifes
 		String getLayerId();
 
 		/**
-		 * Returns the source layer manifest for the dependency this manifest describes
-		 * (that is the layer actually hosting a {@code TargetLayerManifest}).
+		 * Returns the source manifest for the dependency this manifest describes
+		 * (that is the layer or context actually hosting a {@code TargetLayerManifest}).
 		 *
 		 * @return
 		 */
-		LayerManifest<?> getLayerManifest();
+		MemberManifest<?> getHostManifest();
 
 		/**
 		 * @see de.ims.icarus2.model.manifest.api.Embedded#getHost()
@@ -150,7 +165,7 @@ public interface LayerManifest<L extends LayerManifest<L>> extends MemberManifes
 		@SuppressWarnings("unchecked")
 		@Override
 		default <M extends TypedManifest> Optional<M> getHost() {
-			return (Optional<M>) Optional.of(getLayerManifest());
+			return (Optional<M>) Optional.of(getHostManifest());
 		}
 
 		/**

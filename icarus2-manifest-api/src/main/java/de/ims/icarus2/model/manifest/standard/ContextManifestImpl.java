@@ -30,14 +30,15 @@ import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
+import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
+import de.ims.icarus2.model.manifest.standard.AbstractLayerManifest.TargetLayerManifestImpl;
 import de.ims.icarus2.model.manifest.standard.Links.Link;
 import de.ims.icarus2.model.manifest.standard.Links.MemoryLink;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
@@ -48,19 +49,16 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  * @author Markus Gärtner
  *
  */
-public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest, CorpusManifest> implements ContextManifest {
-
-	// Lookup structures
-//	private final List<LayerManifest> layerManifests = new ArrayList<>();
-//	private final Map<String, LayerManifest> layerManifestLookup = new HashMap<>();
+public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest, CorpusManifest>
+		implements ContextManifest {
 
 	// Main storage
 	private final List<PrerequisiteManifest> prerequisiteManifests = new ArrayList<>();
 	private final List<LayerGroupManifest> groupManifests = new ArrayList<>();
 	private final List<LocationManifest> locationManifests = new ArrayList<>();
 
-	private LayerLink primaryLayer;
-	private LayerLink foundationLayer;
+	private Optional<TargetLayerManifest> primaryLayer = Optional.empty();
+	private Optional<TargetLayerManifest> foundationLayer = Optional.empty();
 
 	private Boolean independent;
 	private Boolean editable;
@@ -337,11 +335,8 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	 * @see de.ims.icarus2.model.manifest.api.ContextManifest#getPrimaryLayerManifest()
 	 */
 	@Override
-	public <L extends ItemLayerManifestBase<?>> Optional<L> getPrimaryLayerManifest() {
-		@SuppressWarnings("unchecked")
-		Optional<L> result = Optional.ofNullable(
-				primaryLayer==null ? null : (L)primaryLayer.get());
-		return getDerivable(result, ContextManifest::getPrimaryLayerManifest);
+	public Optional<TargetLayerManifest> getPrimaryLayerManifest() {
+		return getDerivable(primaryLayer, ContextManifest::getPrimaryLayerManifest);
 	}
 
 	/**
@@ -349,7 +344,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	 */
 	@Override
 	public boolean isLocalPrimaryLayerManifest() {
-		return primaryLayer!=null;
+		return primaryLayer.isPresent();
 	}
 
 	/**
@@ -366,20 +361,16 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 
 	protected void setPrimaryLayerId0(String primaryLayerId) {
 		requireNonNull(primaryLayerId);
-//		checkNotLive();
 
-		primaryLayer = new LayerLink(primaryLayerId);
+		primaryLayer = Optional.of(createTargetLayerManifest(primaryLayerId, "primary layer"));
 	}
 
 	/**
 	 * @return the foundationLayerManifest
 	 */
 	@Override
-	public <L extends ItemLayerManifestBase<?>> Optional<L> getFoundationLayerManifest() {
-		@SuppressWarnings("unchecked")
-		Optional<L> result = Optional.ofNullable(
-				foundationLayer==null ? null : (L)foundationLayer.get());
-		return getDerivable(result, ContextManifest::getFoundationLayerManifest);
+	public Optional<TargetLayerManifest> getFoundationLayerManifest() {
+		return getDerivable(foundationLayer, ContextManifest::getFoundationLayerManifest);
 	}
 
 	/**
@@ -387,7 +378,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 	 */
 	@Override
 	public boolean isLocalFoundationLayerManifest() {
-		return foundationLayer!=null;
+		return foundationLayer.isPresent();
 	}
 
 	/**
@@ -404,9 +395,8 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 
 	protected void setFoundationLayerId0(String foundationLayerId) {
 		requireNonNull(foundationLayerId);
-//		checkNotLive();
 
-		foundationLayer = new LayerLink(foundationLayerId);
+		foundationLayer = Optional.of(createTargetLayerManifest(foundationLayerId, "foundation layer"));
 	}
 
 	/**
@@ -490,7 +480,6 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 
 	protected void addLayerGroup0(LayerGroupManifest groupManifest) {
 		requireNonNull(groupManifest);
-//		checkNotLive();
 
 		ContextManifest declaredHost = groupManifest.getContextManifest().orElse(null);
 		if(declaredHost!=null && declaredHost!=this)
@@ -502,8 +491,6 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 					"Layer group already present: "+groupManifest);
 
 		groupManifests.add(groupManifest);
-
-//		resetLookup();
 	}
 
 	@Override
@@ -517,13 +504,24 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 
 	protected void removeLayerGroup0(LayerGroupManifest groupManifest) {
 		requireNonNull(groupManifest);
-//		checkNotLive();
 
 		if(!groupManifests.remove(groupManifest))
 			throw new ManifestException(GlobalErrorCode.INVALID_INPUT,
 					"Layer group not present: "+groupManifest);
+	}
 
-//		resetLookup();
+	protected Link<LayerManifest<?>> createLayerLink(String id, String linkType) {
+		return new LayerLink(id, linkType);
+	}
+
+	protected Link<PrerequisiteManifest> createPrerequisiteLink(String id) {
+		return new PrerequisiteLink(this, id);
+	}
+
+	protected TargetLayerManifest createTargetLayerManifest(String id, String linkType) {
+		return new TargetLayerManifestImpl(this,
+				createLayerLink(id, linkType),
+				createPrerequisiteLink(id));
 	}
 
 	@Override
@@ -539,20 +537,22 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 		}
 	}
 
-	protected class LayerLink extends Link<ItemLayerManifestBase<?>> {
+	protected class LayerLink extends Link<LayerManifest<?>> {
 
-		/**
-		 * @param id
-		 */
-		public LayerLink(String id) {
-			super(id);
+		private final String linkType;
+
+		public LayerLink(String id, String linkType) {
+			super(id, true);
+
+			this.linkType = requireNonNull(linkType);
+		}
+		@Override
+		protected String getMissingLinkDescription() {
+			return "No layer of type '"+linkType+"' for id: "+getId();
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.manifest.standard.Links.Link#resolve()
-		 */
 		@Override
-		protected Optional<ItemLayerManifestBase<?>> resolve() {
+		protected Optional<LayerManifest<?>> resolve() {
 			return getLayerManifest(getId());
 		}
 

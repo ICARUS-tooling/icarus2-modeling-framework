@@ -89,6 +89,7 @@ import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
+import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
@@ -1462,8 +1463,9 @@ public class FileDriver extends AbstractDriver {
 			 * so we grab those values here and use it for consistency checking.
 			 */
 			long expectedItemCount = fileInfo.getItemCount(
-					getManifest().getContextManifest()
+					(ItemLayerManifestBase<?>) getManifest().getContextManifest()
 						.flatMap(ContextManifest::getPrimaryLayerManifest)
+						.flatMap(TargetLayerManifest::getResolvedLayerManifest)
 						.orElseThrow(ManifestException.missing(getManifest(), "resolvable primary layer")));
 
 			// Now start actual loading process

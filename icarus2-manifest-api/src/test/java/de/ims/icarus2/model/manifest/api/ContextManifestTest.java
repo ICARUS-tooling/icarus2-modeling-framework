@@ -525,11 +525,11 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 	@Test
 	default void testGetPrimaryLayerManifest() {
 		assertDerivativeOptGetter(settings().processor(processor_stubLayerGroup()),
-				LayerManifestTest.mockItemLayerManifest("layer1"),
-				LayerManifestTest.mockItemLayerManifest("layer2"),
+				"layer_1",
+				"layer_2",
 				IGNORE_DEFAULT(),
-				c -> c.getPrimaryLayerManifest(),
-				inject_addLayerManifestAndSetId(DEFAULT_GROUP, ContextManifest::setPrimaryLayerId));
+				c -> c.getPrimaryLayerManifest().map(TargetLayerManifest::getLayerId),
+				ContextManifest::setPrimaryLayerId);
 	}
 
 	/**
@@ -550,11 +550,11 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 	@Test
 	default void testGetFoundationLayerManifest() {
 		assertDerivativeOptGetter(settings().processor(processor_stubLayerGroup()),
-				LayerManifestTest.mockItemLayerManifest("layer1"),
-				LayerManifestTest.mockItemLayerManifest("layer2"),
+				"layer_1",
+				"layer_2",
 				IGNORE_DEFAULT(),
-				ContextManifest::getFoundationLayerManifest,
-				inject_addLayerManifestAndSetId(DEFAULT_GROUP, ContextManifest::setFoundationLayerId));
+				c -> c.getFoundationLayerManifest().map(TargetLayerManifest::getLayerId),
+				ContextManifest::setFoundationLayerId);
 	}
 
 	/**

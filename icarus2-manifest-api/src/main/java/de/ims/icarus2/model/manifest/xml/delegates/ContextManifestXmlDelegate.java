@@ -32,6 +32,7 @@ import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
+import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.standard.ContextManifestImpl;
@@ -39,7 +40,6 @@ import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlHandler;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlTags;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
-import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.xml.XmlSerializer;
 
 /**
@@ -134,13 +134,13 @@ public class ContextManifestXmlDelegate extends AbstractMemberManifestXmlDelegat
 		// Write primary layer
 		if(manifest.isLocalPrimaryLayerManifest()) {
 			serializer.writeAttribute(ManifestXmlAttributes.PRIMARY_LAYER,
-					manifest.getPrimaryLayerManifest().map(Identity::getId).get());
+					manifest.getPrimaryLayerManifest().map(TargetLayerManifest::getLayerId).get());
 		}
 
 		// Write foundation layer
 		if(manifest.isLocalFoundationLayerManifest()) {
 			serializer.writeAttribute(ManifestXmlAttributes.FOUNDATION_LAYER,
-					manifest.getFoundationLayerManifest().map(Identity::getId).get());
+					manifest.getFoundationLayerManifest().map(TargetLayerManifest::getLayerId).get());
 		}
 
 		// Write flags

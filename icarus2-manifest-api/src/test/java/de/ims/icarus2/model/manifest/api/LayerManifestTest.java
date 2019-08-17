@@ -211,7 +211,7 @@ public interface LayerManifestTest<M extends LayerManifest<?>> extends EmbeddedM
 			TargetLayerManifest targetLayerManifest = creator.apply(m, id);
 			assertNotNull(targetLayerManifest);
 			assertEquals(id, targetLayerManifest.getLayerId());
-			assertSame(m, targetLayerManifest.getLayerManifest());
+			assertSame(m, targetLayerManifest.getHostManifest());
 			assertOptionalEquals(m, targetLayerManifest.getHost());
 		};
 	}
@@ -236,7 +236,7 @@ public interface LayerManifestTest<M extends LayerManifest<?>> extends EmbeddedM
 					IcarusUtils.extractSupplied(action -> creator.accept(m, id, action));
 			assertNotNull(targetLayerManifest);
 			assertEquals(id, targetLayerManifest.getLayerId());
-			assertSame(m, targetLayerManifest.getLayerManifest());
+			assertSame(m, targetLayerManifest.getHostManifest());
 			assertOptionalEquals(m, targetLayerManifest.getHost());
 		};
 	}
