@@ -19,6 +19,7 @@ package de.ims.icarus2.model.standard.members.layers.annotation.packed;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
+import java.io.Closeable;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.IntFunction;
@@ -29,6 +30,7 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.Messages;
+import de.ims.icarus2.util.io.IOUtil;
 import de.ims.icarus2.util.mem.ByteAllocator.Cursor;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
@@ -36,7 +38,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  * @author Markus Gärtner
  *
  */
-public abstract class BytePackConverter {
+public abstract class BytePackConverter implements Closeable {
 
 	private static final Map<ValueType, BytePackConverter> sharedConverters
 		= new Object2ObjectOpenHashMap<>();
@@ -182,6 +184,16 @@ public abstract class BytePackConverter {
 	 */
 	public boolean equal(Object v1, Object v2) {
 		return Objects.equals(v1, v2);
+	}
+
+	/**
+	 * Default implementation does nothing.
+	 *
+	 * @see java.lang.AutoCloseable#close()
+	 */
+	@Override
+	public void close() {
+		// no-op
 	}
 
 	public static final class BitwiseBooleanConverter extends BytePackConverter {
@@ -494,6 +506,20 @@ public abstract class BytePackConverter {
 		public void setString(PackageHandle handle, Cursor cursor, String value) {
 			valueType.checkType(String.class);
 			setValue(handle, cursor, value);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#close()
+		 */
+		@Override
+		public void close() {
+			if(substitution instanceof Closeable) {
+				IOUtil.close((Closeable) substitution);
+			}
+
+			if(resubstitution instanceof Closeable) {
+				IOUtil.close((Closeable) resubstitution);
+			}
 		}
 	}
 }

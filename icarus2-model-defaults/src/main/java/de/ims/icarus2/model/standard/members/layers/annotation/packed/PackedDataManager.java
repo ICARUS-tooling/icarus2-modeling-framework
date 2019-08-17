@@ -129,7 +129,8 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	private final IntFunction<ByteAllocator> storageSource;
 
 	/**
-	 * The lookup structure for defining
+	 * The lookup structure for defining raw package handlers.
+	 * Order does not represent the actual position within packed data!!
 	 */
 	private LookupList<PackageHandle> packageHandles = new LookupList<>();
 
@@ -1226,6 +1227,10 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			return allowDynamicChunkComposition==null ? false : allowDynamicChunkComposition.booleanValue();
 		}
 
+		public boolean isWeakKeys() {
+			return weakKeys==null ? false : weakKeys.booleanValue();
+		}
+
 		public Builder<E,O> addHandles(PackageHandle...handles) {
 			requireNonNull(handles);
 			checkArgument("Handles array must not be empty", handles.length>0);
@@ -1239,8 +1244,17 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			return thisAsCast();
 		}
 
-		public boolean isWeakKeys() {
-			return weakKeys==null ? false : weakKeys.booleanValue();
+		public Builder<E,O> addHandles(Collection<PackageHandle> handles) {
+			requireNonNull(handles);
+			checkArgument("Handles array must not be empty", handles.size()>0);
+
+			for(PackageHandle handle : handles) {
+				if(!this.handles.add(handle))
+					throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+							"Duplicate handle for "+handle.getSource());
+			}
+
+			return thisAsCast();
 		}
 
 		public Set<PackageHandle> getHandles() {
