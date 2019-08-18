@@ -69,7 +69,7 @@ class ByteAllocatorTest {
 	private ByteAllocator allocator;
 
 	/** 12 **/
-	private static final int defaultSlotSize = ByteAllocator.MIN_SLOT_SIZE+4;
+	private static final int defaultSlotSize = ByteAllocator.MIN_SLOT_SIZE*2+4;
 	/** 7 **/
 	private static final int defaultChunkPower = ByteAllocator.MIN_CHUNK_POWER;
 
@@ -857,9 +857,202 @@ class ByteAllocatorTest {
 	}
 
 	@Nested
+	class WhenShrinking {
+
+		private static final int SIZE = 100;
+
+		private int newSlotSize;
+
+		@BeforeEach
+		void setUp() {
+			int oldSize = allocator.getSlotSize();
+			newSlotSize = random(oldSize/2, oldSize-1);
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getByte(int, int)}.
+		 */
+		@RepeatedTest(RUNS)
+		@Tag(RANDOMIZED)
+		void testForByte() {
+			final int offset = random().nextInt(allocator.getSlotSize());
+			byte[] array = new byte[SIZE]; // [id] = byte_stored
+
+			random().ints(SIZE, Byte.MIN_VALUE, Byte.MAX_VALUE)
+				.forEach(v -> {
+					int id = allocator.alloc();
+					allocator.setByte(id, offset, (byte)v);
+					array[id] = (byte) v;
+				});
+
+			allocator.adjustSlotSize(newSlotSize);
+
+			if(offset<newSlotSize) {
+				IntStream.range(0, array.length)
+					.forEach(id -> assertEquals(array[id], allocator.getByte(id, offset)));
+			} else {
+				IntStream.range(0, array.length)
+				.forEach(id -> assertThrows(IndexOutOfBoundsException.class,
+						() -> allocator.getByte(id, offset)));
+			}
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getNBytes(int, int, int)}.
+		 */
+		@RepeatedTest(RUNS)
+		@Tag(RANDOMIZED)
+		void testForNBytes() {
+			final int offset = random().nextInt(allocator.getSlotSize()-Long.BYTES);
+			long[] array = new long[SIZE]; // [id] = long_stored
+			int[] n_bytes = new int[SIZE]; // [id] = n
+
+			random().longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
+				.forEach(v -> {
+					int id = allocator.alloc();
+					int n = random().nextInt(Long.BYTES-2)+1;
+					allocator.setNBytes(id, offset, v, n);
+					array[id] = Bits.extractNBytes(v, n);
+					n_bytes[id] = n;
+				});
+
+			allocator.adjustSlotSize(newSlotSize);
+
+			IntStream.range(0, array.length)
+				.forEach(id -> {
+					if(offset+n_bytes[id]<=newSlotSize) {
+						assertEquals(array[id], allocator.getNBytes(
+							id, offset, n_bytes[id]));
+					} else {
+						assertThrows(IndexOutOfBoundsException.class,
+								() -> allocator.getNBytes(id, offset, n_bytes[id]));
+					}
+				});
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getShort(int, int)}.
+		 */
+		@RepeatedTest(RUNS)
+		@Tag(RANDOMIZED)
+		void testGetShort() {
+			final int offset = random().nextInt(allocator.getSlotSize()-Short.BYTES);
+			short[] array = new short[SIZE]; // [id] = short_stored
+
+			random().ints(SIZE, Short.MIN_VALUE, Short.MAX_VALUE)
+				.forEach(v -> {
+					int id = allocator.alloc();
+					allocator.setShort(id, offset, (short)v);
+					array[id] = (short) v;
+				});
+
+			allocator.adjustSlotSize(newSlotSize);
+
+			if(offset+Short.BYTES<=newSlotSize) {
+				IntStream.range(0, array.length)
+					.forEach(id -> assertEquals(array[id], allocator.getShort(id, offset)));
+			} else {
+				IntStream.range(0, array.length)
+				.forEach(id -> assertThrows(IndexOutOfBoundsException.class,
+						() -> allocator.getShort(id, offset)));
+			}
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getInt(int, int)}.
+		 */
+		@RepeatedTest(RUNS)
+		@Tag(RANDOMIZED)
+		void testGetInt() {
+			final int offset = random().nextInt(allocator.getSlotSize()-Integer.BYTES);
+			int[] array = new int[SIZE]; // [id] = int_stored
+
+			random().ints(SIZE, Integer.MIN_VALUE, Integer.MAX_VALUE)
+				.forEach(v -> {
+					int id = allocator.alloc();
+					allocator.setInt(id, offset, v);
+					array[id] = v;
+				});
+
+			allocator.adjustSlotSize(newSlotSize);
+
+			if(offset+Integer.BYTES<=newSlotSize) {
+				IntStream.range(0, array.length)
+					.forEach(id -> assertEquals(array[id], allocator.getInt(id, offset)));
+			} else {
+				IntStream.range(0, array.length)
+				.forEach(id -> assertThrows(IndexOutOfBoundsException.class,
+						() -> allocator.getInt(id, offset)));
+			}
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getLong(int, int)}.
+		 */
+		@RepeatedTest(RUNS)
+		@Tag(RANDOMIZED)
+		void testGetLong() {
+			final int offset = random().nextInt(allocator.getSlotSize()-Long.BYTES);
+			long[] array = new long[SIZE]; // [id] = long_stored
+
+			random().longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
+				.forEach(v -> {
+					int id = allocator.alloc();
+					allocator.setLong(id, offset, v);
+					array[id] = v;
+				});
+
+			allocator.adjustSlotSize(newSlotSize);
+
+			if(offset+Long.BYTES<=newSlotSize) {
+				IntStream.range(0, array.length)
+					.forEach(id -> assertEquals(array[id], allocator.getLong(id, offset)));
+			} else {
+				IntStream.range(0, array.length)
+				.forEach(id -> assertThrows(IndexOutOfBoundsException.class,
+						() -> allocator.getLong(id, offset)));
+			}
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#writeBytes(int, int, byte[], int)}.
+		 */
+		@RepeatedTest(RUNS)
+		@Tag(RANDOMIZED)
+		void testForBulk() {
+			final int offset = random().nextInt(allocator.getSlotSize()-Long.BYTES);
+			byte[][] array = new byte[SIZE][]; // [id] = bytes_stored
+
+			random().ints(SIZE, 1, defaultSlotSize-offset)
+				.forEach(n -> {
+					int id = allocator.alloc();
+					byte[] bytes = new byte[n];
+					random().nextBytes(bytes);
+					allocator.writeBytes(id, offset, bytes, n);
+					array[id] = bytes;
+				});
+
+			allocator.adjustSlotSize(newSlotSize);
+
+			IntStream.range(0, array.length)
+				.forEach(id -> {
+					byte[] expected = array[id];
+					byte[] actual = new byte[expected.length];
+					if(offset+expected.length<=newSlotSize) {
+						allocator.readBytes(id, offset, actual, actual.length);
+						assertArrayEquals(expected, actual);
+					} else {
+						assertThrows(IndexOutOfBoundsException.class,
+								() -> allocator.readBytes(id, offset, actual, actual.length));
+					}
+				});
+		}
+	}
+
+	@Nested
 	class WhenGrowing {
 
-		private static final int SIZE = 3;
+		private static final int SIZE = 100;
 
 		private int newSlotSize;
 
@@ -885,7 +1078,7 @@ class ByteAllocatorTest {
 					array[id] = (byte) v;
 				});
 
-			allocator.growSlotSize(newSlotSize);
+			allocator.adjustSlotSize(newSlotSize);
 
 			IntStream.range(0, array.length)
 				.forEach(id -> assertEquals(array[id], allocator.getByte(id, offset)));
@@ -910,7 +1103,7 @@ class ByteAllocatorTest {
 					n_bytes[id] = n;
 				});
 
-			allocator.growSlotSize(newSlotSize);
+			allocator.adjustSlotSize(newSlotSize);
 
 			IntStream.range(0, array.length)
 				.forEach(id -> assertEquals(array[id], allocator.getNBytes(id, offset, n_bytes[id])));
@@ -932,7 +1125,7 @@ class ByteAllocatorTest {
 					array[id] = (short) v;
 				});
 
-			allocator.growSlotSize(newSlotSize);
+			allocator.adjustSlotSize(newSlotSize);
 
 			IntStream.range(0, array.length)
 				.forEach(id -> assertEquals(array[id], allocator.getShort(id, offset)));
@@ -954,7 +1147,7 @@ class ByteAllocatorTest {
 					array[id] = v;
 				});
 
-			allocator.growSlotSize(newSlotSize);
+			allocator.adjustSlotSize(newSlotSize);
 
 			IntStream.range(0, array.length)
 				.forEach(id -> assertEquals(array[id], allocator.getInt(id, offset)));
@@ -976,7 +1169,7 @@ class ByteAllocatorTest {
 					array[id] = v;
 				});
 
-			allocator.growSlotSize(newSlotSize);
+			allocator.adjustSlotSize(newSlotSize);
 
 			IntStream.range(0, array.length)
 				.forEach(id -> assertEquals(array[id], allocator.getLong(id, offset)));
@@ -1000,7 +1193,7 @@ class ByteAllocatorTest {
 					array[id] = bytes;
 				});
 
-			allocator.growSlotSize(newSlotSize);
+			allocator.adjustSlotSize(newSlotSize);
 
 			IntStream.range(0, array.length)
 				.forEach(id -> {

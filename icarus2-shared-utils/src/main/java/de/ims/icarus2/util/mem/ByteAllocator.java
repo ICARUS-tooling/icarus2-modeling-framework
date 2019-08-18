@@ -438,10 +438,12 @@ public final class ByteAllocator {
 	 *
 	 * @param newSlotSize
 	 */
-	public void growSlotSize(int size) {
-		checkArgument(size>rawSlotSize);
+	public void adjustSlotSize(int size) {
+		checkArgument("Slot size must not be less than "+MIN_SLOT_SIZE, slotSize>=MIN_SLOT_SIZE);
 
 		//TODO guard against overflowing the address space
+
+		boolean grow = size>rawSlotSize;
 
 		int oldSlotSize = slotSize;
 		slotSize = size + SLOT_HEADER_SIZE; // so that createChunk() uses the right values!
@@ -458,6 +460,8 @@ public final class ByteAllocator {
 			return;
 		}
 
+		int copySlotSize = grow ? oldSlotSize : slotSize;
+
 		// Chunk by chunk adjust the content
 		for (int i = 0; i < chunks.size(); i++) {
 			byte[] oldChunk = chunks.get(i);
@@ -467,7 +471,7 @@ public final class ByteAllocator {
 			// Copy over chunk header
 			System.arraycopy(oldChunk, 0, newChunk, 0, CHUNK_HEADER_SIZE);
 
-			// If chunk had no data previously and we have no free-list, we can ignore
+			// If chunk had no data previously and we have no free-list, we can ignore it
 			if(freeSlot==UNSET_INT && Bits.readInt(newChunk, 0)<=0) {
 				continue;
 			}
@@ -479,7 +483,7 @@ public final class ByteAllocator {
 			for (int j = 0; j < chunkSize; j++) {
 				int header = Bits.readInt(oldChunk, idxOld);
 				if(header==SLOT_ALIVE) {
-					System.arraycopy(oldChunk, idxOld, newChunk, idxNew, oldSlotSize);
+					System.arraycopy(oldChunk, idxOld, newChunk, idxNew, copySlotSize);
 				} else if(header>0) {
 					Bits.writeInt(newChunk, idxNew, header);
 				}
