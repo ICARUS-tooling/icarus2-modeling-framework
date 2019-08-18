@@ -18,6 +18,7 @@ package de.ims.icarus2.util.mem;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
@@ -97,7 +98,7 @@ public final class ByteAllocator {
 	 * Raw value for bytes per slot as defined at constructor time.
 	 * This value does not include the {@link #SLOT_HEADER_SIZE slot header}.
 	 */
-	private final int rawSlotSize;
+	private int rawSlotSize;
 
 	/**
 	 * Constant size of individual slots that
@@ -106,7 +107,7 @@ public final class ByteAllocator {
 	 * Value is given as number of bytes, including the
 	 * {@link #SLOT_HEADER_SIZE slot header}.
 	 */
-	private final int slotSize;
+	private int slotSize;
 
 	/**
 	 * Constant size of collections of slots. Calculated as
@@ -116,6 +117,7 @@ public final class ByteAllocator {
 	 */
 	private final int chunkSize;
 
+	/** Exponent for chunk size calculation as given by client code */
 	private final int chunkPower;
 
 	/**
@@ -139,9 +141,11 @@ public final class ByteAllocator {
 	private int slots = 0;
 
 	/**
-	 * Head pointer of the free-list
+	 * Head pointer of the free-list.
+	 * Is either {@code -1} to signal an empty list or {@code id+1}
+	 * where id is the id of the first empty slot in the list.
 	 */
-	private int freeSlot = -1;
+	private int freeSlot = UNSET_INT;
 
 	/**
 	 * Creates a {@code ByteAllocator} whose chunks all contain
@@ -160,10 +164,11 @@ public final class ByteAllocator {
 
 		//TODO ensure that we can't get an int overflow with chunkSize*max_list_size
 
-		this.rawSlotSize = slotSize;
 		this.slotSize = slotSize+SLOT_HEADER_SIZE;
 		this.chunkPower = chunkPower;
-		this.chunkSize = 1<<chunkPower;
+
+		rawSlotSize = slotSize;
+		chunkSize = 1<<chunkPower;
 	}
 
 	/**
@@ -212,7 +217,7 @@ public final class ByteAllocator {
 	 */
 	private int rawSlotIndex(int id) {
 		// First slot begins after the chunk header
-		return CHUNK_HEADER_SIZE + ((id%chunkSize) * slotSize);
+		return CHUNK_HEADER_SIZE + ((id & (chunkSize-1)) * slotSize);
 	}
 
 	/**
@@ -235,7 +240,7 @@ public final class ByteAllocator {
 		 * Add new chunks till a given index can fit.
 		 * Note that this policy can introduce a lot of unused
 		 * chunks if trying to access high index values early on.
-		 * @deprecated current implementation will only append, never over-generate buffer chunks
+		 * @deprecated current implementation will only append, never over-generate buffer chunks!
 		 */
 		GROW_TO_FIT,
 		;
@@ -294,15 +299,15 @@ public final class ByteAllocator {
 	 * @throws IndexOutOfBoundsException if the heap space is exhausted
 	 */
 	public int alloc() {
-		int id = -1;
+		int id = UNSET_INT;
 
 		byte[] chunk;
 
 		int rawSlotIndex;
 
-		if(freeSlot!=-1) {
+		if(freeSlot!=UNSET_INT) {
 			// Allocate slot and re-route marker
-			id = freeSlot;
+			id = freeSlot-1;
 
 			// Chunk has been allocated before, so access must not fail
 			chunk = getChunk(chunkIndex(id), GrowthPolicy.NO_GROWTH);
@@ -350,7 +355,7 @@ public final class ByteAllocator {
 		// Keep link to previous "empty slot" intact
 		Bits.writeInt(chunk, rawSlotIndex(id), freeSlot);
 		// Simply mark supplied id as the next free slot
-		freeSlot = id;
+		freeSlot = id+1;
 
 		// Update live counter for chunk
 		int liveCount = Bits.readInt(chunk, 0);
@@ -367,7 +372,7 @@ public final class ByteAllocator {
 	 */
 	public void clear() {
 		chunks.clear();
-		freeSlot = -1;
+		freeSlot = UNSET_INT;
 		idGen.set(0);
 		slots = 0;
 	}
@@ -424,6 +429,65 @@ public final class ByteAllocator {
 		}
 
 		return couldTrim;
+	}
+
+	/**
+	 * Increases the space available for every slot in this storage
+	 * to {@code newSlotSize}.
+	 * Does nothing if there are no entries currently.
+	 *
+	 * @param newSlotSize
+	 */
+	public void growSlotSize(int size) {
+		checkArgument(size>rawSlotSize);
+
+		//TODO guard against overflowing the address space
+
+		int oldSlotSize = slotSize;
+		slotSize = size + SLOT_HEADER_SIZE; // so that createChunk() uses the right values!
+		rawSlotSize = size;
+
+		// Nothing in storage
+		if(chunks.isEmpty()) {
+			return;
+		}
+
+		// No live slots, so just erase current storage
+		if(slots<=0) {
+			clear();
+			return;
+		}
+
+		// Chunk by chunk adjust the content
+		for (int i = 0; i < chunks.size(); i++) {
+			byte[] oldChunk = chunks.get(i);
+			byte[] newChunk = createChunk();
+			chunks.set(i, newChunk);
+
+			// Copy over chunk header
+			System.arraycopy(oldChunk, 0, newChunk, 0, CHUNK_HEADER_SIZE);
+
+			// If chunk had no data previously and we have no free-list, we can ignore
+			if(freeSlot==UNSET_INT && Bits.readInt(newChunk, 0)<=0) {
+				continue;
+			}
+
+			int idxOld = CHUNK_HEADER_SIZE;
+			int idxNew = CHUNK_HEADER_SIZE;
+
+			// Now copy over all individual slots
+			for (int j = 0; j < chunkSize; j++) {
+				int header = Bits.readInt(oldChunk, idxOld);
+				if(header==SLOT_ALIVE) {
+					System.arraycopy(oldChunk, idxOld, newChunk, idxNew, oldSlotSize);
+				} else if(header>0) {
+					Bits.writeInt(newChunk, idxNew, header);
+				}
+
+				idxOld += oldSlotSize;
+				idxNew += slotSize;
+			}
+		}
 	}
 
 	/**
@@ -744,11 +808,11 @@ public final class ByteAllocator {
 		/**
 		 * Id of current slot or -1
 		 */
-		private int id = IcarusUtils.UNSET_INT;
+		private int id = UNSET_INT;
 		/**
 		 * Begin of payload section in current slot byte data
 		 */
-		private int slotIndex = IcarusUtils.UNSET_INT;
+		private int slotIndex = UNSET_INT;
 		/**
 		 * Buffer chunk to write into
 		 */
@@ -768,7 +832,7 @@ public final class ByteAllocator {
 		 * with an {@code id} argument of {@link IcarusUtils#UNSET_INT -1}.
 		 */
 		public void clear() {
-			moveTo(IcarusUtils.UNSET_INT);
+			moveTo(UNSET_INT);
 		}
 
 		/**
