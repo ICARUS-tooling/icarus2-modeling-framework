@@ -248,6 +248,22 @@ public abstract class BytePackConverter implements Closeable {
 
 			cursor.setByte(offset, block);
 		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.model.standard.members.layers.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, java.lang.Object)
+		 */
+		@Override
+		public void setValue(PackageHandle handle, Cursor cursor, Object value) {
+			setBoolean(handle, cursor, ((Boolean)value).booleanValue());
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getValue(de.ims.icarus2.model.standard.members.layers.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
+		 */
+		@Override
+		public Object getValue(PackageHandle handle, Cursor cursor) {
+			return Boolean.valueOf(getBoolean(handle, cursor));
+		}
 	}
 
 	public static final class BooleanConverter extends BytePackConverter {
@@ -287,6 +303,22 @@ public abstract class BytePackConverter implements Closeable {
 			byte flag = value ? TRUE : FALSE;
 			cursor.setByte(handle.getOffset(), flag);
 		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.model.standard.members.layers.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, java.lang.Object)
+		 */
+		@Override
+		public void setValue(PackageHandle handle, Cursor cursor, Object value) {
+			setBoolean(handle, cursor, ((Boolean)value).booleanValue());
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getValue(de.ims.icarus2.model.standard.members.layers.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
+		 */
+		@Override
+		public Object getValue(PackageHandle handle, Cursor cursor) {
+			return Boolean.valueOf(getBoolean(handle, cursor));
+		}
 	}
 
 	public static final class IntConverter extends BytePackConverter {
@@ -321,6 +353,22 @@ public abstract class BytePackConverter implements Closeable {
 		@Override
 		public void setInteger(PackageHandle handle, Cursor cursor, int value) {
 			cursor.setInt(handle.getOffset(), value);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.model.standard.members.layers.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, java.lang.Object)
+		 */
+		@Override
+		public void setValue(PackageHandle handle, Cursor cursor, Object value) {
+			setInteger(handle, cursor, ((Number)value).intValue());
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getValue(de.ims.icarus2.model.standard.members.layers.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
+		 */
+		@Override
+		public Object getValue(PackageHandle handle, Cursor cursor) {
+			return Integer.valueOf(getInteger(handle, cursor));
 		}
 	}
 
@@ -357,6 +405,22 @@ public abstract class BytePackConverter implements Closeable {
 		public void setLong(PackageHandle handle, Cursor cursor, long value) {
 			cursor.setLong(handle.getOffset(), value);
 		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.model.standard.members.layers.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, java.lang.Object)
+		 */
+		@Override
+		public void setValue(PackageHandle handle, Cursor cursor, Object value) {
+			setLong(handle, cursor, ((Number)value).longValue());
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getValue(de.ims.icarus2.model.standard.members.layers.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
+		 */
+		@Override
+		public Object getValue(PackageHandle handle, Cursor cursor) {
+			return Long.valueOf(getLong(handle, cursor));
+		}
 	}
 
 	public static final class FloatConverter extends BytePackConverter {
@@ -392,6 +456,22 @@ public abstract class BytePackConverter implements Closeable {
 		public void setFloat(PackageHandle handle, Cursor cursor, float value) {
 			cursor.setInt(handle.getOffset(), Float.floatToIntBits(value));
 		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.model.standard.members.layers.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, java.lang.Object)
+		 */
+		@Override
+		public void setValue(PackageHandle handle, Cursor cursor, Object value) {
+			setFloat(handle, cursor, ((Number)value).floatValue());
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getValue(de.ims.icarus2.model.standard.members.layers.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
+		 */
+		@Override
+		public Object getValue(PackageHandle handle, Cursor cursor) {
+			return Float.valueOf(getFloat(handle, cursor));
+		}
 	}
 
 	public static final class DoubleConverter extends BytePackConverter {
@@ -426,6 +506,22 @@ public abstract class BytePackConverter implements Closeable {
 		@Override
 		public void setDouble(PackageHandle handle, Cursor cursor, double value) {
 			cursor.setLong(handle.getOffset(), Double.doubleToLongBits(value));
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.model.standard.members.layers.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, java.lang.Object)
+		 */
+		@Override
+		public void setValue(PackageHandle handle, Cursor cursor, Object value) {
+			setDouble(handle, cursor, ((Number)value).doubleValue());
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter#getValue(de.ims.icarus2.model.standard.members.layers.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
+		 */
+		@Override
+		public Object getValue(PackageHandle handle, Cursor cursor) {
+			return Double.valueOf(getDouble(handle, cursor));
 		}
 	}
 

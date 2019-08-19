@@ -11,6 +11,7 @@ import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.mock;
@@ -103,6 +104,12 @@ class BytePackConverterTest {
 
 					converter.setBoolean(handle, cursor, false);
 					assertFalse(converter.getBoolean(handle, cursor));
+
+					converter.setValue(handle, cursor, Boolean.TRUE);
+					assertEquals(Boolean.TRUE, converter.getValue(handle, cursor));
+
+					converter.setValue(handle, cursor, Boolean.FALSE);
+					assertEquals(Boolean.FALSE, converter.getValue(handle, cursor));
 				} else {
 					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.setBoolean(handle, cursor, random().nextBoolean()));
@@ -123,6 +130,13 @@ class BytePackConverterTest {
 						.forEach(value -> {
 							converter.setInteger(handle, cursor, value);
 							assertEquals(value, converter.getInteger(handle, cursor));
+						});
+					IntStream.generate(random()::nextInt)
+						.limit(random(10, 20))
+						.forEach(value -> {
+							Integer wrapped = Integer.valueOf(value);
+							converter.setValue(handle, cursor, wrapped);
+							assertEquals(wrapped, converter.getValue(handle, cursor));
 						});
 				} else {
 					ManifestTestUtils.assertUnsupportedType(
@@ -145,6 +159,13 @@ class BytePackConverterTest {
 							converter.setLong(handle, cursor, value);
 							assertEquals(value, converter.getLong(handle, cursor));
 						});
+					LongStream.generate(random()::nextLong)
+						.limit(random(10, 20))
+						.forEach(value -> {
+							Long wrapped = Long.valueOf(value);
+							converter.setValue(handle, cursor, wrapped);
+							assertEquals(wrapped, converter.getValue(handle, cursor));
+						});
 				} else {
 					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.setLong(handle, cursor, random().nextLong()));
@@ -166,6 +187,13 @@ class BytePackConverterTest {
 							converter.setFloat(handle, cursor, (float) value);
 							assertEquals((float)value, converter.getFloat(handle, cursor));
 						});
+					DoubleStream.generate(random()::nextFloat)
+						.limit(random(10, 20))
+						.forEach(value -> {
+							Float wrapped = Float.valueOf((float)value);
+							converter.setValue(handle, cursor, wrapped);
+							assertEquals(wrapped, converter.getValue(handle, cursor));
+						});
 				} else {
 					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.setFloat(handle, cursor, random().nextFloat()));
@@ -186,6 +214,13 @@ class BytePackConverterTest {
 						.forEach(value -> {
 							converter.setDouble(handle, cursor, value);
 							assertEquals(value, converter.getDouble(handle, cursor));
+						});
+					DoubleStream.generate(random()::nextDouble)
+						.limit(random(10, 20))
+						.forEach(value -> {
+							Double wrapped = Double.valueOf(value);
+							converter.setValue(handle, cursor, wrapped);
+							assertEquals(wrapped, converter.getValue(handle, cursor));
 						});
 				} else {
 					ManifestTestUtils.assertUnsupportedType(
@@ -211,8 +246,7 @@ class BytePackConverterTest {
 				} else if(valueType().isPrimitiveType()) {
 					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.setValue(handle, cursor, new Object()));
-					ManifestTestUtils.assertUnsupportedType(
-							() -> converter.getValue(handle, cursor));
+					assertNotNull(converter.getValue(handle, cursor));
 				}
 			}));
 		}
