@@ -189,6 +189,10 @@ class PackedDataManagerTest {
 				owner = null;
 			}
 
+			//TODO add tests for actual incremental build of the udnerlying storage
+
+			//TODO add tests for add and remove owners
+
 			@Nested
 			class ForHandleLookups {
 

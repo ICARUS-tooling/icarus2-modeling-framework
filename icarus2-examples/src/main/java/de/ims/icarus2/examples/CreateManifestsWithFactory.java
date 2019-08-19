@@ -59,12 +59,12 @@ public class CreateManifestsWithFactory {
 		ItemLayerManifest sentenceLayer = factory
 				.<ItemLayerManifest>create(ManifestType.ITEM_LAYER_MANIFEST, group)
 				.setId("sentences")
-				.setFoundationLayerId("tokens", DO_NOTHING)
-				.addBaseLayerId("tokens", DO_NOTHING);
+				.setFoundationLayerId("tokens", DO_NOTHING())
+				.addBaseLayerId("tokens", DO_NOTHING());
 
 		AnnotationLayerManifest annoLayer = factory
 				.<AnnotationLayerManifest>create(ManifestType.ANNOTATION_LAYER_MANIFEST, group)
-				.addBaseLayerId("tokens", DO_NOTHING);
+				.addBaseLayerId("tokens", DO_NOTHING());
 
 		AnnotationManifest forms = factory
 				.<AnnotationManifest>create(ManifestType.ANNOTATION_MANIFEST, annoLayer)

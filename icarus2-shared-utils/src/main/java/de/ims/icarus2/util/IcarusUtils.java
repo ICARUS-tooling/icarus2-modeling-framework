@@ -41,7 +41,8 @@ public final class IcarusUtils {
 
 	public static final Runnable NO_OP = () -> {/* no-op */};
 
-	public static final Consumer<Object> DO_NOTHING = x -> { /* no-op */};
+	// Use the type-safe DO_NOTHING() method instead
+//	public static final Consumer<Object> DO_NOTHING = x -> { /* no-op */};
 
 	public static final <T> Consumer<T> DO_NOTHING() {
 		return x -> { /* no-op */};

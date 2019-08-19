@@ -41,7 +41,6 @@ import static de.ims.icarus2.model.manifest.ManifestTestUtils.MANIFEST_FACTORY;
 import static de.ims.icarus2.test.TestUtils.DO_NOTHING;
 import static de.ims.icarus2.test.TestUtils.assertCollectionNotEmpty;
 import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.util.IcarusUtils.DO_NOTHING;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
@@ -185,19 +184,19 @@ public interface CorpusModelTest<M extends CorpusModel>
 									.addLayerManifest(builder.create(ItemLayerManifest.class, "token", "group"))
 									.addLayerManifest(builder.create(ItemLayerManifest.class, "ref", "group"))
 									.addLayerManifest(builder.create(ItemLayerManifest.class, "sentence", "group")
-											.addBaseLayerId("token", DO_NOTHING)
+											.addBaseLayerId("token", DO_NOTHING())
 											.setContainerHierarchy(builder.containers()
 													.add(builder.createInternal(ContainerManifest.class, "sentence"))))
 									// Structure
 									.addLayerManifest(builder.create(StructureLayerManifest.class, "structure", "group")
-											.addBaseLayerId("token", DO_NOTHING)
-											.setBoundaryLayerId("sentence", DO_NOTHING)
+											.addBaseLayerId("token", DO_NOTHING())
+											.setBoundaryLayerId("sentence", DO_NOTHING())
 											.setContainerHierarchy(builder.containers()
 													.add(builder.createInternal(StructureManifest.class, "structure"))))
 									// Annotations
 									.addLayerManifest(builder.create(AnnotationLayerManifest.class, "annotation", "group")
-											.addBaseLayerId("token", DO_NOTHING)
-											.addReferenceLayerId("ref", DO_NOTHING)
+											.addBaseLayerId("token", DO_NOTHING())
+											.addReferenceLayerId("ref", DO_NOTHING())
 											.setDefaultKey("string")
 											// String
 											.addAnnotationManifest(builder.create(AnnotationManifest.class)
