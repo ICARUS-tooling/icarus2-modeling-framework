@@ -357,6 +357,30 @@ class PackedDataManagerTest {
 					return settings.process(manager);
 				}
 
+				@Override
+				public Class<?> getTestTargetClass() {
+					return PackedDataManager.class;
+				}
+
+				/**
+				 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
+				 */
+				@Override
+				public void configureApiGuard(ApiGuard<PackedDataManager<Object, Object>> apiGuard) {
+					ApiGuardedTest.super.configureApiGuard(apiGuard);
+
+					apiGuard.detectUnmarkedMethods(true)
+						.nullGuard(true);
+				}
+
+				/**
+				 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#isWeakKeys()}.
+				 */
+				@Test
+				void testIsWeakKeys() {
+					assertFalse(manager.isWeakKeys());
+				}
+
 				@Nested
 				class Empty {
 
@@ -1142,31 +1166,6 @@ class PackedDataManagerTest {
 						assertFalse(manager.isRegistered(item()));
 					}
 
-				}
-
-				@SuppressWarnings("unchecked")
-				@Override
-				public Class<? extends PackedDataManager<Object, Object>> getTestTargetClass() {
-					return (Class<? extends PackedDataManager<Object, Object>>) PackedDataManager.class;
-				}
-
-				/**
-				 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
-				 */
-				@Override
-				public void configureApiGuard(ApiGuard<PackedDataManager<Object, Object>> apiGuard) {
-					ApiGuardedTest.super.configureApiGuard(apiGuard);
-
-					apiGuard.detectUnmarkedMethods(true)
-						.nullGuard(true);
-				}
-
-				/**
-				 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#isWeakKeys()}.
-				 */
-				@Test
-				void testIsWeakKeys() {
-					assertFalse(manager.isWeakKeys());
 				}
 
 			}

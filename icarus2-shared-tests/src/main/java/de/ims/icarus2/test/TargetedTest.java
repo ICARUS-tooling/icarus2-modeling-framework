@@ -25,6 +25,6 @@ package de.ims.icarus2.test;
  */
 public interface TargetedTest<T extends Object> extends Testable<T> {
 
-	Class<? extends T> getTestTargetClass();
+	Class<?> getTestTargetClass();
 
 }

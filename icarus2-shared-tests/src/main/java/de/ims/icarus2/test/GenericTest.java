@@ -41,10 +41,11 @@ public interface GenericTest<T extends Object> extends TargetedTest<T> {
 	 * @return
 	 * @throws Exception
 	 */
+	@SuppressWarnings("unchecked")
 	@Provider
 	default T createNoArgs() {
 		try {
-			return getTestTargetClass().newInstance();
+			return (T) getTestTargetClass().newInstance();
 		} catch (InstantiationException | IllegalAccessException e) {
 			throw new TestAbortedException("Unable to call default no-args constructor", e);
 		}
@@ -59,13 +60,14 @@ public interface GenericTest<T extends Object> extends TargetedTest<T> {
 	 * @return
 	 * @throws Exception
 	 */
+	@SuppressWarnings("unchecked")
 	@Provider
 	default T create(Class<?>[] signature, Object...values) throws Exception {
-		Class<? extends T> clazz = getTestTargetClass();
+		Class<?> clazz = getTestTargetClass();
 
-		Constructor<? extends T> constructor = clazz.getConstructor(signature);
+		Constructor<?> constructor = clazz.getConstructor(signature);
 
-		return constructor.newInstance(values);
+		return (T) constructor.newInstance(values);
 	}
 
 	@Test

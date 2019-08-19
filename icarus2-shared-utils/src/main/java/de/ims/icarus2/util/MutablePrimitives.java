@@ -2175,17 +2175,6 @@ public class MutablePrimitives {
 						"Current type "+type2Label(this.type)+" doesn't satisfy mask "+mask2Label(type));
 		}
 
-		private void checkAndMaybeSetType(byte expected, byte type) {
-			if(this.type==NULL) {
-				setType(type);
-				return;
-			}
-
-			if((this.type & expected) == 0)
-				throw new ClassCastException(
-						"Current type "+type2Label(this.type)+" doesn't satisfy mask "+mask2Label(expected));
-		}
-
 		private ClassCastException forIncompatibleType(byte desired) {
 			return new ClassCastException(
 					"Required "+type2Label(desired)+" compatible type but current type is "+type2Label(type));
