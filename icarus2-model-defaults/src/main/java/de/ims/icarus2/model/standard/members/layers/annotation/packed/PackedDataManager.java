@@ -31,8 +31,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
-import java.util.function.IntSupplier;
 import java.util.function.Supplier;
+
+import javax.annotation.Nullable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +42,6 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.util.AbstractBuilder;
-import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Part;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.collections.LazyMap;
@@ -164,7 +164,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		packageHandles.addAll(builder.getHandles());
 	}
 
-	public void registerHandles(Set<PackageHandle> handles) {
+	public void registerHandles(Collection<PackageHandle> handles) {
 		requireNonNull(handles);
 		checkState("Manager does not allow dynamic chunk composition", allowDynamicChunkComposition);
 		checkArgument("No handles to register", !handles.isEmpty());
@@ -187,7 +187,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		// If no storage exists yet, we don't need to do anything
 	}
 
-	public void unregisterHandles(Set<PackageHandle> handles) {
+	public void unregisterHandles(Collection<PackageHandle> handles) {
 		requireNonNull(handles);
 		checkState("Manager does not allow dynamic chunk composition", allowDynamicChunkComposition);
 		checkArgument("No handles to unregister", !handles.isEmpty());
@@ -226,7 +226,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 	/**
 	 * Looks up the {@link PackageHandle handle} associated with the
-	 * given {@code source}.
+	 * given {@code source} (by reference identity).
 	 * <p>
 	 * If no handle is available for the source, this method will
 	 * return {@code null}.
@@ -238,7 +238,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		requireNonNull(source);
 
 		for(PackageHandle handle : packageHandles) {
-			if(source.equals(handle.source)) {
+			if(source == handle.source) {
 				return handle;
 			}
 		}
@@ -256,7 +256,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	@SuppressWarnings("unchecked")
 	public <T> Map<T, PackageHandle> lookupHandles(Set<T> sources) {
 		requireNonNull(sources);
-		checkArgument("Set of manifests to look up must not be empty", !sources.isEmpty());
+		checkArgument("Set of sources to look up must not be empty", !sources.isEmpty());
 
 		LazyMap<T, PackageHandle> result = LazyMap.lazyHashMap(sources.size());
 
@@ -350,7 +350,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see de.ims.icarus2.util.Part#addNotify(java.lang.Object)
 	 */
 	@Override
-	public void addNotify(O owner) {
+	public void addNotify(@Nullable O owner) {
 		if(useCounter.getAndIncrement()==0) {
 			long stamp = lock.writeLock();
 			try {
@@ -374,7 +374,8 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see de.ims.icarus2.util.Part#removeNotify(java.lang.Object)
 	 */
 	@Override
-	public void removeNotify(O owner) {
+	public void removeNotify(@Nullable O owner) {
+
 		if(useCounter.decrementAndGet()==0) {
 			long stamp = lock.writeLock();
 			try {
@@ -411,8 +412,6 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		return result;
 	}
 
-
-
 	// Item management
 
 	/**
@@ -436,7 +435,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			if(isNewItem) {
 				id = rawStorage.alloc();
 
-				chunkAddresses.put(item, -id-2);
+				chunkAddresses.put(item, toggleId(id));
 			}
 		} finally {
 			lock.unlockWrite(stamp);
@@ -462,7 +461,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			int id = chunkAddresses.removeInt(item);
 
 			if(id!=UNSET_INT) {
-				rawStorage.free(id);
+				rawStorage.free(asWriteId(id));
 				wasKnownItem = true;
 			}
 		} finally {
@@ -495,7 +494,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 				// If item had a valid address, deallocate and count
 				if(id!=UNSET_INT) {
-					rawStorage.free(id);
+					rawStorage.free(asWriteId(id));
 					removedItems++;
 				}
 			}
@@ -561,31 +560,31 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		}
 	}
 
-	/**
-	 * Clears (i.e. sets to the respective {@code noEntryValue})
-	 * all the annotations defined by the {@code handles} array
-	 * for as long as the specified supplier produces {@code ids}
-	 * that are different to {@link IcarusUtils#UNSET_INT -1}.
-	 *
-	 * @param ids
-	 * @param handles
-	 */
-	public void clear(IntSupplier ids, PackageHandle[] handles) {
-		requireNonNull(ids);
-		requireNonNull(handles);
-		checkArgument("Empty handles array", handles.length>0);
-
-		long stamp = lock.writeLock();
-		try {
-			int id;
-			while((id = ids.getAsInt()) != UNSET_INT) {
-				cursor.moveTo(id);
-				clearCurrent(handles);
-			}
-		} finally {
-			lock.unlockWrite(stamp);
-		}
-	}
+//	/**
+//	 * Clears (i.e. sets to the respective {@code noEntryValue})
+//	 * all the annotations defined by the {@code handles} array
+//	 * for as long as the specified supplier produces {@code ids}
+//	 * that are different to {@link IcarusUtils#UNSET_INT -1}.
+//	 *
+//	 * @param ids
+//	 * @param handles
+//	 */
+//	public void clear(IntSupplier ids, PackageHandle[] handles) {
+//		requireNonNull(ids);
+//		requireNonNull(handles);
+//		checkArgument("Empty handles array", handles.length>0);
+//
+//		long stamp = lock.writeLock();
+//		try {
+//			int id;
+//			while((id = ids.getAsInt()) != UNSET_INT) {
+//				cursor.moveTo(id);
+//				clearCurrent(handles);
+//			}
+//		} finally {
+//			lock.unlockWrite(stamp);
+//		}
+//	}
 
 	/**
 	 * Clears (i.e. sets to the respective {@code noEntryValue})
@@ -600,10 +599,12 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		long stamp = lock.writeLock();
 		try {
-
 			for(IntIterator it = chunkAddresses.values().iterator(); it.hasNext();) {
-				cursor.moveTo(it.nextInt());
-				clearCurrent(handles);
+				int id = it.nextInt();
+				if(id>UNSET_INT) {
+					cursor.moveTo(id);
+					clearCurrent(handles);
+				}
 			}
 		} finally {
 			lock.unlockWrite(stamp);
@@ -625,19 +626,25 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		}
 	}
 
+	private static int toggleId(int id) {
+		return -id-2;
+	}
+
+	private static int asWriteId(int id) {
+		return id<0 ? toggleId(id) : id;
+	}
+
 	private int chunkAddressForRead(E item) {
 		return chunkAddresses.getInt(item);
 	}
+
 	private int chunkAddressForWrite(E item) {
 		int id = chunkAddresses.getInt(item);
-		return id<0 ? -id-2 : id;
+		return asWriteId(id);
 	}
 
 	private void markUsed(E item, int id) {
-		if(id<0) {
-			id = -id-2;
-		}
-		chunkAddresses.put(item, id);
+		chunkAddresses.put(item, asWriteId(id));
 	}
 
 	/**
@@ -711,6 +718,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#getInteger(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 	 */
 	public int getInteger(E item, PackageHandle handle) {
+		requireNonNull(item);
 
 		int result = ((Integer)handle.noEntryValue).intValue();
 
@@ -751,6 +759,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#getLong(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 	 */
 	public long getLong(E item, PackageHandle handle) {
+		requireNonNull(item);
 
 		long result = ((Long)handle.noEntryValue).longValue();
 
@@ -791,6 +800,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#getFloat(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 	 */
 	public float getFloat(E item, PackageHandle handle) {
+		requireNonNull(item);
 
 		float result = ((Float)handle.noEntryValue).floatValue();
 
@@ -831,6 +841,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#getDouble(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 	 */
 	public double getDouble(E item, PackageHandle handle) {
+		requireNonNull(item);
 
 		double result = ((Double)handle.noEntryValue).doubleValue();
 
@@ -871,6 +882,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#getValue(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 	 */
 	public Object getValue(E item, PackageHandle handle) {
+		requireNonNull(item);
 
 		Object result = handle.noEntryValue;
 
@@ -911,6 +923,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#getValue(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 	 */
 	public String getString(E item, PackageHandle handle) {
+		requireNonNull(item);
 
 		String result = (String) handle.noEntryValue;
 
@@ -953,6 +966,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#setBoolean(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, boolean)
 	 */
 	public void setBoolean(E item, PackageHandle handle, boolean value) {
+		requireNonNull(item);
+		requireNonNull(handle);
+
 		long stamp = lock.writeLock();
 		try {
 			int id = chunkAddressForWrite(item);
@@ -978,6 +994,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#setInteger(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, int)
 	 */
 	public void setInteger(E item, PackageHandle handle, int value) {
+		requireNonNull(item);
+		requireNonNull(handle);
+
 		long stamp = lock.writeLock();
 		try {
 			int id = chunkAddressForWrite(item);
@@ -1003,6 +1022,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#setLong(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, long)
 	 */
 	public void setLong(E item, PackageHandle handle, long value) {
+		requireNonNull(item);
+		requireNonNull(handle);
+
 		long stamp = lock.writeLock();
 		try {
 			int id = chunkAddressForWrite(item);
@@ -1028,6 +1050,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#setFloat(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, float)
 	 */
 	public void setFloat(E item, PackageHandle handle, float value) {
+		requireNonNull(item);
+		requireNonNull(handle);
+
 		long stamp = lock.writeLock();
 		try {
 			int id = chunkAddressForWrite(item);
@@ -1053,6 +1078,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#setDouble(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, double)
 	 */
 	public void setDouble(E item, PackageHandle handle, double value) {
+		requireNonNull(item);
+		requireNonNull(handle);
+
 		long stamp = lock.writeLock();
 		try {
 			int id = chunkAddressForWrite(item);
@@ -1077,7 +1105,10 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 *
 	 * @see BytePackConverter#setValue(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, Object)
 	 */
-	public void setValue(E item, PackageHandle handle, Object value) {
+	public void setValue(E item, PackageHandle handle, @Nullable Object value) {
+		requireNonNull(item);
+		requireNonNull(handle);
+
 		if(value==null) {
 			value = handle.noEntryValue;
 		}
@@ -1106,7 +1137,10 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 *
 	 * @see BytePackConverter#setValue(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, Object)
 	 */
-	public void setString(E item, PackageHandle handle, String value) {
+	public void setString(E item, PackageHandle handle, @Nullable String value) {
+		requireNonNull(item);
+		requireNonNull(handle);
+
 		if(value==null) {
 			value = (String) handle.noEntryValue;
 		}
@@ -1165,17 +1199,31 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @param action
 	 * @return
 	 */
-	public boolean collectUsedHandles(E item, Collection<PackageHandle> handles, Consumer<? super PackageHandle> action) {
+	public boolean collectUsedHandles(E item, Collection<PackageHandle> handles,
+			@Nullable Consumer<? super PackageHandle> action) {
+		requireNonNull(item);
+		requireNonNull(handles);
 
 		boolean result = false;
 
-		// Using lazy collection can prevent necessity of creating real buffer
+		/*
+		 *  Using lazy collection can prevent necessity of creating real buffer.
+		 *
+		 *  IMPLEMENTATION NOTE:
+		 *  We need this buffering due to optimistic locking approach. If we
+		 *  optimistically call the original action callback and then realize
+		 *  acquisition of the lock happened halfway through, we need to run
+		 *  the same query again under a full read lock. This way we would
+		 *  incorrectly report outdated/duplicate data to the callback.
+		 */
 		LazyCollection<PackageHandle> buffer = LazyCollection.lazySet();
+
+		Consumer<PackageHandle> collector = action==null ? null : buffer;
 
 		// Try to optimistically collect the information
 		long stamp = lock.tryOptimisticRead();
 		if(stamp!=0L) {
-			result = collectUsedHandlesUnsafe(item, handles, buffer);
+			result = collectUsedHandlesUnsafe(item, handles, collector);
 		}
 
 		// If we failed, go and properly lock before trying again
@@ -1184,21 +1232,22 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			try {
 				// Make sure the buffer doesn't hold duplicates or stale information
 				buffer.clear();
-				result = collectUsedHandlesUnsafe(item, handles, buffer);
+				result = collectUsedHandlesUnsafe(item, handles, collector);
 			} finally {
 				lock.unlockRead(stamp);
 			}
 		}
 
 		// Don't forget to actually report the handles for which we found annotation values
-		if(result) {
+		if(result && action!=null) {
 			buffer.forEach(action);
 		}
 
 		return result;
 	}
 
-	private boolean collectUsedHandlesUnsafe(E item, Collection<PackageHandle> handles, Consumer<? super PackageHandle> action) {
+	private boolean collectUsedHandlesUnsafe(E item, Collection<PackageHandle> handles,
+			Consumer<? super PackageHandle> action) {
 		boolean result = false;
 
 		// Move to data chunk and then go through all the specified handles
@@ -1211,7 +1260,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 				// If current value is different to default, report it
 				if(!handle.converter.equal(value, noEntryValue)) {
 					result = true;
-					action.accept(handle);
+					if(action!=null) {
+						action.accept(handle);
+					}
 				}
 			}
 		}

@@ -43,6 +43,10 @@ public final class IcarusUtils {
 
 	public static final Consumer<Object> DO_NOTHING = x -> { /* no-op */};
 
+	public static final <T> Consumer<T> DO_NOTHING() {
+		return x -> { /* no-op */};
+	}
+
 	/**
 	 * Returns {@code true} if the JVM currently in use is reportedly
 	 * using a 64 bit architecture model.
