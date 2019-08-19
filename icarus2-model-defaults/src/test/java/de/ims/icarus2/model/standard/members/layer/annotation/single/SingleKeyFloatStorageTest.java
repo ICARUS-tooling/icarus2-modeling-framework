@@ -21,7 +21,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyFloatStorage;
+import de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyFloatStorage;
 
 /**
  * @author Markus Gärtner
@@ -50,7 +50,7 @@ class SingleKeyFloatStorageTest implements ManagedAnnotationStorageTest<SingleKe
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyFloatStorage#SingleKeyFloatStorage(int)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyFloatStorage#SingleKeyFloatStorage(int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {0, -2})
@@ -60,7 +60,7 @@ class SingleKeyFloatStorageTest implements ManagedAnnotationStorageTest<SingleKe
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyFloatStorage#SingleKeyFloatStorage(boolean, int)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyFloatStorage#SingleKeyFloatStorage(boolean, int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})
@@ -70,7 +70,7 @@ class SingleKeyFloatStorageTest implements ManagedAnnotationStorageTest<SingleKe
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyFloatStorage#SingleKeyFloatStorage(boolean, int)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyFloatStorage#SingleKeyFloatStorage(boolean, int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {0, -2})

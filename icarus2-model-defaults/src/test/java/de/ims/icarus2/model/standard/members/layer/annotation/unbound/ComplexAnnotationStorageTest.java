@@ -42,8 +42,8 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationStorage;
-import de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationStorage.AnnotationBundle;
+import de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationStorage;
+import de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationStorage.AnnotationBundle;
 import de.ims.icarus2.test.util.Pair;
 
 /**
@@ -213,7 +213,7 @@ class ComplexAnnotationStorageTest implements ManagedAnnotationStorageTest<Compl
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationStorage#ComplexAnnotationStorage(int, java.util.function.Supplier)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationStorage#ComplexAnnotationStorage(int, java.util.function.Supplier)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {0, -2})
@@ -224,7 +224,7 @@ class ComplexAnnotationStorageTest implements ManagedAnnotationStorageTest<Compl
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.unbound.ComplexAnnotationStorage#ComplexAnnotationStorage(boolean, int, java.util.function.Supplier)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationStorage#ComplexAnnotationStorage(boolean, int, java.util.function.Supplier)}.
 		 */
 		@Test
 		@Disabled("covered by testComplexAnnotationStorageIntSupplierOfAnnotationBundle")

@@ -52,7 +52,7 @@ import de.ims.icarus2.model.manifest.api.RasterizerManifest;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.standard.corpus.DefaultContext;
-import de.ims.icarus2.model.standard.members.layers.DefaultLayerGroup;
+import de.ims.icarus2.model.standard.members.layer.DefaultLayerGroup;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.collections.set.DataSets;

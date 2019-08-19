@@ -24,7 +24,7 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysMixedObjectStorage;
+import de.ims.icarus2.model.standard.members.layer.annotation.fixed.FixedKeysMixedObjectStorage;
 
 /**
  * @author Markus Gärtner

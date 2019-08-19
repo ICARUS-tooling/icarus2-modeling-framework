@@ -13,7 +13,7 @@ import de.ims.icarus2.model.api.layer.AnnotationLayerTest;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
-import de.ims.icarus2.model.standard.members.layers.annotation.DefaultAnnotationLayer;
+import de.ims.icarus2.model.standard.members.layer.annotation.DefaultAnnotationLayer;
 
 /**
  * @author Markus Gärtner

@@ -28,7 +28,7 @@ import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
-import de.ims.icarus2.model.standard.members.layers.LayerCache;
+import de.ims.icarus2.model.standard.members.layer.LayerCache;
 import de.ims.icarus2.test.GenericTest;
 import de.ims.icarus2.test.TestSettings;
 

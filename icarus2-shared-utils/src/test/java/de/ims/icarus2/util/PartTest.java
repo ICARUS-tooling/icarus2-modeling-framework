@@ -74,11 +74,17 @@ public interface PartTest<O, P extends Part<O>> extends Testable<P> {
 		assertIcarusException(GlobalErrorCode.ILLEGAL_STATE, executable);
 	}
 
+	/** Hook for subclasses to prepare the part under test for being added */
+	default void prepareAdd(P part, O environment) {
+		// no-op
+	}
+
 	@Test
 	default void testRepeatedAdd() {
 		P part = createUnadded();
 		O environment = createEnvironment();
 
+		prepareAdd(part, environment);
 		part.addNotify(environment);
 
 		assertAddRemoveError(() -> part.addNotify(environment));
@@ -99,8 +105,9 @@ public interface PartTest<O, P extends Part<O>> extends Testable<P> {
 		O env2 = createEnvironment();
 		assertNotSame(env1, env2);
 
+		prepareAdd(part, env1);
 		part.addNotify(env1);
 
-		assertAddRemoveError(() -> part.addNotify(env2));
+		assertAddRemoveError(() -> part.removeNotify(env2));
 	}
 }

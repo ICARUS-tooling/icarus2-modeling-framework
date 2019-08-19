@@ -14,7 +14,9 @@ import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -35,8 +37,6 @@ import org.junit.jupiter.api.function.Executable;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelTestUtils;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
-import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
-import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
@@ -106,6 +106,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		return annotationManifest;
 	}
 
+	@SuppressWarnings("unchecked")
 	default AnnotationLayerManifest createManifest(String key) {
 		AnnotationLayerManifest manifest = mockTypedManifest(AnnotationLayerManifest.class);
 		when(manifest.getAvailableKeys()).thenReturn(singleton(key));
@@ -115,6 +116,10 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		when(manifest.getAnnotationManifest(key)).thenReturn(Optional.of(annotationManifest));
 
 		when(manifest.getAnnotationManifests()).thenReturn(singleton(annotationManifest));
+		doAnswer(invoc -> {
+			((Consumer<? super AnnotationManifest>)invoc.getArgument(0)).accept(annotationManifest);
+			return null;
+		}).when(manifest).forEachAnnotationManifest(any());
 
 		return manifest;
 	}

@@ -25,7 +25,7 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysDoubleStorage;
+import de.ims.icarus2.model.standard.members.layer.annotation.fixed.FixedKeysDoubleStorage;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 
@@ -148,7 +148,7 @@ class FixedKeysDoubleStorageTest implements MultiKeyAnnotationStorageTest<FixedK
 
 		/**
 		 * Test method for
-		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysDoubleStorage#FixedKeysDoubleStorage(int)}.
+		 * {@link de.ims.icarus2.model.standard.members.layer.annotation.fixed.FixedKeysDoubleStorage#FixedKeysDoubleStorage(int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = { 0, -2 })
@@ -158,7 +158,7 @@ class FixedKeysDoubleStorageTest implements MultiKeyAnnotationStorageTest<FixedK
 
 		/**
 		 * Test method for
-		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysDoubleStorage#FixedKeysDoubleStorage(boolean, int)}.
+		 * {@link de.ims.icarus2.model.standard.members.layer.annotation.fixed.FixedKeysDoubleStorage#FixedKeysDoubleStorage(boolean, int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = { UNSET_INT, 1, 10, 100, 10_000 })
@@ -169,7 +169,7 @@ class FixedKeysDoubleStorageTest implements MultiKeyAnnotationStorageTest<FixedK
 
 		/**
 		 * Test method for
-		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysDoubleStorage#FixedKeysDoubleStorage(boolean, int)}.
+		 * {@link de.ims.icarus2.model.standard.members.layer.annotation.fixed.FixedKeysDoubleStorage#FixedKeysDoubleStorage(boolean, int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = { 0, -2 })

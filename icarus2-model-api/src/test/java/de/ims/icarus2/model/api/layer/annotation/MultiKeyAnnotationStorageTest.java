@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -48,6 +49,7 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 	/** Creates a list of distinct keys */
 	List<String> keys();
 
+	@SuppressWarnings("unchecked")
 	default AnnotationLayerManifest createManifest(List<String> keys) {
 		AnnotationLayerManifest manifest = mockTypedManifest(AnnotationLayerManifest.class);
 		when(manifest.getAvailableKeys()).thenReturn(new HashSet<>(keys));
@@ -63,6 +65,10 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 		}
 
 		when(manifest.getAnnotationManifests()).thenReturn(annotationManifests);
+		doAnswer(invoc -> {
+			annotationManifests.forEach((Consumer<? super AnnotationManifest>)invoc.getArgument(0));
+			return null;
+		}).when(manifest).forEachAnnotationManifest(any());
 
 		return manifest;
 	}

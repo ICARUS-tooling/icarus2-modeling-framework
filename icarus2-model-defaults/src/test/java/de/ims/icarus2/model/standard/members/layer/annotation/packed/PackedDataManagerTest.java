@@ -45,9 +45,9 @@ import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.standard.members.layers.annotation.packed.PackageHandle;
-import de.ims.icarus2.model.standard.members.layers.annotation.packed.PackedDataManager;
-import de.ims.icarus2.model.standard.members.layers.annotation.packed.PackedDataUtils;
+import de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle;
+import de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager;
+import de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataUtils;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.guard.ApiGuard;

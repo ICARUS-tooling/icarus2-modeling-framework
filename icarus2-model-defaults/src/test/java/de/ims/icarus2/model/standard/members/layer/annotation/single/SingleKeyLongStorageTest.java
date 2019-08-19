@@ -20,7 +20,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyLongStorage;
+import de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyLongStorage;
 
 /**
  * @author Markus Gärtner
@@ -49,7 +49,7 @@ class SingleKeyLongStorageTest implements ManagedAnnotationStorageTest<SingleKey
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyLongStorage#SingleKeyLongStorage(int)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyLongStorage#SingleKeyLongStorage(int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {0, -2})
@@ -59,7 +59,7 @@ class SingleKeyLongStorageTest implements ManagedAnnotationStorageTest<SingleKey
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyLongStorage#SingleKeyLongStorage(boolean, int)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyLongStorage#SingleKeyLongStorage(boolean, int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})
@@ -69,7 +69,7 @@ class SingleKeyLongStorageTest implements ManagedAnnotationStorageTest<SingleKey
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyLongStorage#SingleKeyLongStorage(boolean, int)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyLongStorage#SingleKeyLongStorage(boolean, int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {0, -2})

@@ -26,7 +26,7 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysBoolean15BitStorage;
+import de.ims.icarus2.model.standard.members.layer.annotation.fixed.FixedKeysBoolean15BitStorage;
 import de.ims.icarus2.util.collections.LookupList;
 
 /**
@@ -156,7 +156,7 @@ class FixedKeysBoolean15BitStorageTest implements MultiKeyAnnotationStorageTest<
 
 		/**
 		 * Test method for
-		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysBoolean15BitStorage#FixedKeysBoolean15BitStorage(int)}.
+		 * {@link de.ims.icarus2.model.standard.members.layer.annotation.fixed.FixedKeysBoolean15BitStorage#FixedKeysBoolean15BitStorage(int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = { 0, -2 })
@@ -166,7 +166,7 @@ class FixedKeysBoolean15BitStorageTest implements MultiKeyAnnotationStorageTest<
 
 		/**
 		 * Test method for
-		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysBoolean15BitStorage#FixedKeysBoolean15BitStorage(boolean, int)}.
+		 * {@link de.ims.icarus2.model.standard.members.layer.annotation.fixed.FixedKeysBoolean15BitStorage#FixedKeysBoolean15BitStorage(boolean, int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = { UNSET_INT, 1, 10, 100, 10_000 })
@@ -177,7 +177,7 @@ class FixedKeysBoolean15BitStorageTest implements MultiKeyAnnotationStorageTest<
 
 		/**
 		 * Test method for
-		 * {@link de.ims.icarus2.model.standard.members.layers.annotation.fixed.FixedKeysBoolean15BitStorage#FixedKeysBoolean15BitStorage(boolean, int)}.
+		 * {@link de.ims.icarus2.model.standard.members.layer.annotation.fixed.FixedKeysBoolean15BitStorage#FixedKeysBoolean15BitStorage(boolean, int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = { 0, -2 })

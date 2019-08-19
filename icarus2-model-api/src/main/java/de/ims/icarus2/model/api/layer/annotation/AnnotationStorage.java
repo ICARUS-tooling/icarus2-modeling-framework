@@ -7,6 +7,8 @@ import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
@@ -103,9 +105,9 @@ public interface AnnotationStorage {
 	 * This is only checked if the manifest actually defines such restrictions.
 	 * @throws UnsupportedOperationException if the corpus is not editable
 	 */
-	void setValue(Item item, String key, Object value);
+	void setValue(Item item, String key, @Nullable Object value);
 
-	default void setString(Item item, String key, String value) {
+	default void setString(Item item, String key, @Nullable String value) {
 		setValue(item, key, value);
 	}
 

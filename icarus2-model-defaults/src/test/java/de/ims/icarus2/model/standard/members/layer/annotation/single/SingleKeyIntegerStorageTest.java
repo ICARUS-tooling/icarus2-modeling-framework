@@ -22,7 +22,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyIntegerStorage;
+import de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyIntegerStorage;
 
 /**
  * @author Markus Gärtner
@@ -51,7 +51,7 @@ class SingleKeyIntegerStorageTest implements ManagedAnnotationStorageTest<Single
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyIntegerStorage#SingleKeyIntegerStorage(int)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyIntegerStorage#SingleKeyIntegerStorage(int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {0, -2})
@@ -61,7 +61,7 @@ class SingleKeyIntegerStorageTest implements ManagedAnnotationStorageTest<Single
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyIntegerStorage#SingleKeyIntegerStorage(boolean, int)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyIntegerStorage#SingleKeyIntegerStorage(boolean, int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})
@@ -71,7 +71,7 @@ class SingleKeyIntegerStorageTest implements ManagedAnnotationStorageTest<Single
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.standard.members.layers.annotation.single.SingleKeyIntegerStorage#SingleKeyIntegerStorage(boolean, int)}.
+		 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyIntegerStorage#SingleKeyIntegerStorage(boolean, int)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {0, -2})
