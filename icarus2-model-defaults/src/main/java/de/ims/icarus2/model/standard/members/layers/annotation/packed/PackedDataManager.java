@@ -357,7 +357,10 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 				chunkAddresses = buildMap();
 
 				// Initialize a new storage based on our current chunk size
-				rawStorage = storageSource.apply(updateHandles(0, 0));
+				int requiredSlotSize = updateHandles(0, 0);
+				// Make sure we honor the minimum slot size, even if this means wasting memory
+				requiredSlotSize = Math.max(requiredSlotSize, ByteAllocator.MIN_SLOT_SIZE);
+				rawStorage = storageSource.apply(requiredSlotSize);
 
 				cursor = rawStorage.newCursor();
 			} finally {
@@ -1367,7 +1370,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		public Builder<E,O> addHandles(Collection<PackageHandle> handles) {
 			requireNonNull(handles);
-			checkArgument("Handles array must not be empty", handles.size()>0);
+			checkArgument("Handles collection must not be empty", handles.size()>0);
 
 			for(PackageHandle handle : handles) {
 				if(!this.handles.add(handle))

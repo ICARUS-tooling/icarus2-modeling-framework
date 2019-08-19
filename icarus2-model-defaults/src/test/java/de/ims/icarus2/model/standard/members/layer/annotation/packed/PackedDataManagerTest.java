@@ -27,6 +27,7 @@ import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -107,7 +108,7 @@ class PackedDataManagerTest {
 		Object value;
 		do {
 			value = gen.get();
-		} while(value.equals(noEntryValue));
+		} while(Objects.equals(noEntryValue, value));
 		return value;
 	}
 

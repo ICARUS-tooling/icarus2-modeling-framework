@@ -57,7 +57,7 @@ public class PackedDataUtils {
 		return buffer.getAsSet();
 	}
 
-	public static Set<PackageHandle> createHandle(AnnotationLayerManifest manifest,
+	public static Set<PackageHandle> createHandles(AnnotationLayerManifest manifest,
 			boolean allowBitPacking) {
 		LazyCollection<PackageHandle> buffer = LazyCollection.lazySet();
 		manifest.forEachAnnotationManifest(annotationManifest ->
