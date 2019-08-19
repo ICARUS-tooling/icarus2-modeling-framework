@@ -25,6 +25,8 @@ package de.ims.icarus2.util;
  * The decision whether or not to expose the associated environment is left to the respective
  * implementation or derived interfaces.
  *
+ * @param <O> type of the owning context (environment)
+ *
  * @author Markus Gärtner
  *
  */

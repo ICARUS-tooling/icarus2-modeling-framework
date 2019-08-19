@@ -28,10 +28,9 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.TestFactory;
 
-import de.ims.icarus2.model.api.layer.annotation.AnnotationStorageTest;
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter;
-import de.ims.icarus2.model.standard.members.layers.annotation.packed.PackageHandle;
 import de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter.BitwiseBooleanConverter;
 import de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter.BooleanConverter;
 import de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter.DoubleConverter;
@@ -39,6 +38,7 @@ import de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackCo
 import de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter.IntConverter;
 import de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter.LongConverter;
 import de.ims.icarus2.model.standard.members.layers.annotation.packed.BytePackConverter.SubstitutingConverterInt;
+import de.ims.icarus2.model.standard.members.layers.annotation.packed.PackageHandle;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.mem.ByteAllocator;
@@ -104,9 +104,9 @@ class BytePackConverterTest {
 					converter.setBoolean(handle, cursor, false);
 					assertFalse(converter.getBoolean(handle, cursor));
 				} else {
-					AnnotationStorageTest.assertUnsupportedType(
+					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.setBoolean(handle, cursor, random().nextBoolean()));
-					AnnotationStorageTest.assertUnsupportedType(
+					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.getBoolean(handle, cursor));
 				}
 			}));
@@ -125,9 +125,9 @@ class BytePackConverterTest {
 							assertEquals(value, converter.getInteger(handle, cursor));
 						});
 				} else {
-					AnnotationStorageTest.assertUnsupportedType(
+					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.setInteger(handle, cursor, random().nextInt()));
-					AnnotationStorageTest.assertUnsupportedType(
+					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.getInteger(handle, cursor));
 				}
 			}));
@@ -146,9 +146,9 @@ class BytePackConverterTest {
 							assertEquals(value, converter.getLong(handle, cursor));
 						});
 				} else {
-					AnnotationStorageTest.assertUnsupportedType(
+					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.setLong(handle, cursor, random().nextLong()));
-					AnnotationStorageTest.assertUnsupportedType(
+					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.getLong(handle, cursor));
 				}
 			}));
@@ -167,9 +167,9 @@ class BytePackConverterTest {
 							assertEquals((float)value, converter.getFloat(handle, cursor));
 						});
 				} else {
-					AnnotationStorageTest.assertUnsupportedType(
+					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.setFloat(handle, cursor, random().nextFloat()));
-					AnnotationStorageTest.assertUnsupportedType(
+					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.getFloat(handle, cursor));
 				}
 			}));
@@ -188,9 +188,9 @@ class BytePackConverterTest {
 							assertEquals(value, converter.getDouble(handle, cursor));
 						});
 				} else {
-					AnnotationStorageTest.assertUnsupportedType(
+					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.setDouble(handle, cursor, random().nextDouble()));
-					AnnotationStorageTest.assertUnsupportedType(
+					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.getDouble(handle, cursor));
 				}
 			}));
@@ -209,9 +209,9 @@ class BytePackConverterTest {
 							assertEquals(value, converter.getValue(handle, cursor));
 						});
 				} else if(valueType().isPrimitiveType()) {
-					AnnotationStorageTest.assertUnsupportedType(
+					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.setValue(handle, cursor, new Object()));
-					AnnotationStorageTest.assertUnsupportedType(
+					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.getValue(handle, cursor));
 				}
 			}));
@@ -230,9 +230,9 @@ class BytePackConverterTest {
 							assertEquals(value, converter.getString(handle, cursor));
 						});
 				} else {
-					AnnotationStorageTest.assertUnsupportedType(
+					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.setString(handle, cursor, randomString(10)));
-					AnnotationStorageTest.assertUnsupportedType(
+					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.getString(handle, cursor));
 				}
 			}));
@@ -259,13 +259,13 @@ class BytePackConverterTest {
 			return IntStream.range(0, 8)
 					.mapToObj(bit -> dynamicTest("bit "+bit, () -> {
 						when(handle.getBit()).thenReturn(bit);
-						BitwiseBooleanConverter converter = new BitwiseBooleanConverter();
+						try(BitwiseBooleanConverter converter = new BitwiseBooleanConverter()) {
+							converter.setBoolean(handle, cursor, true);
+							assertTrue(converter.getBoolean(handle, cursor));
 
-						converter.setBoolean(handle, cursor, true);
-						assertTrue(converter.getBoolean(handle, cursor));
-
-						converter.setBoolean(handle, cursor, false);
-						assertFalse(converter.getBoolean(handle, cursor));
+							converter.setBoolean(handle, cursor, false);
+							assertFalse(converter.getBoolean(handle, cursor));
+						}
 					}));
 		}
 	}

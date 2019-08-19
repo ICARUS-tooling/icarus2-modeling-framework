@@ -33,8 +33,8 @@ import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.ManifestApiTest;
+import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.ManifestTestFeature;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.TestUtils;

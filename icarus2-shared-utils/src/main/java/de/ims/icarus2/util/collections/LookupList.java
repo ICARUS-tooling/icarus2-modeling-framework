@@ -252,6 +252,12 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 		fastRemove(index0, index1, c);
 	}
 
+	public void removeAll(Iterable<? extends E> items) {
+		for(E item : items) {
+			remove(item);
+		}
+	}
+
 	public boolean remove(@Nullable E item) {
         if (item == null) {
             for (int index = 0; index < size; index++)

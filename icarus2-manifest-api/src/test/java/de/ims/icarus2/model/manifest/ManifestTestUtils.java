@@ -43,6 +43,7 @@ import org.junit.jupiter.api.function.Executable;
 
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.model.manifest.api.Embedded;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
@@ -616,4 +617,26 @@ public class ManifestTestUtils {
 
 	public static final BiConsumer<Executable, String> UNKNOWN_ID_CHECK = (executable, msg) ->
 	assertManifestException(ManifestErrorCode.MANIFEST_UNKNOWN_ID, executable, msg);
+
+	public static void assertUnsupportedType(Executable executable) {
+		assertUnsupportedType(executable, null);
+	}
+
+	/**
+	 * Expects a {@link ClassCastException} or {@link IcarusRuntimeException}
+	 * of type {@link GlobalErrorCode#UNSUPPORTED_OPERATION} when executing.
+	 */
+	public static void assertUnsupportedType(Executable executable, String msg) {
+		RuntimeException ex = assertThrows(RuntimeException.class, executable, msg);
+
+		if(ex instanceof IcarusRuntimeException) {
+			ErrorCode errorCode = ((IcarusRuntimeException)ex).getErrorCode();
+
+			assertTrue(errorCode == GlobalErrorCode.UNSUPPORTED_OPERATION
+					|| errorCode == ManifestErrorCode.MANIFEST_TYPE_CAST,
+					"unexpected error code: "+errorCode);
+		} else {
+			assertEquals(ClassCastException.class, ex.getClass());
+		}
+	}
 }

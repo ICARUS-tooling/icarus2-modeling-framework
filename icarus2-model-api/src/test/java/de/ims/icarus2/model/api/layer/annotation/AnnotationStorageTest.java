@@ -13,7 +13,6 @@ import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -33,16 +32,13 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusRuntimeException;
-import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.ModelTestUtils;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.manifest.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
@@ -150,28 +146,6 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		assertModelException(GlobalErrorCode.INVALID_INPUT, executable);
 	}
 
-	static void assertUnsupportedType(Executable executable) {
-		assertUnsupportedType(executable, null);
-	}
-
-	/**
-	 * Expects a {@link ClassCastException} or {@link ModelException}
-	 * of type {@link GlobalErrorCode#UNSUPPORTED_OPERATION} when executing.
-	 */
-	static void assertUnsupportedType(Executable executable, String msg) {
-		RuntimeException ex = assertThrows(RuntimeException.class, executable, msg);
-
-		if(ex instanceof IcarusRuntimeException) {
-			ErrorCode errorCode = ((IcarusRuntimeException)ex).getErrorCode();
-
-			assertTrue(errorCode == GlobalErrorCode.UNSUPPORTED_OPERATION
-					|| errorCode == ManifestErrorCode.MANIFEST_TYPE_CAST,
-					"unexpected error code: "+errorCode);
-		} else {
-			assertEquals(ClassCastException.class, ex.getClass());
-		}
-	}
-
 	/**
 	 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
@@ -242,7 +216,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		if(typesForGetters(key).contains(ValueType.STRING)) {
 			assertEquals(noEntryValue(key), storage.getString(item, key));
 		} else {
-			assertUnsupportedType(() -> storage.getString(item, key));
+			ManifestTestUtils.assertUnsupportedType(() -> storage.getString(item, key));
 		}
 	}
 
@@ -258,7 +232,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		if(typesForGetters(key).contains(ValueType.INTEGER)) {
 			assertEquals(((Number)noEntryValue(key)).intValue(), storage.getInteger(item, key));
 		} else {
-			assertUnsupportedType(() -> storage.getInteger(item, key));
+			ManifestTestUtils.assertUnsupportedType(() -> storage.getInteger(item, key));
 		}
 	}
 
@@ -274,7 +248,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		if(typesForGetters(key).contains(ValueType.FLOAT)) {
 			assertEquals(((Number)noEntryValue(key)).floatValue(), storage.getFloat(item, key));
 		} else {
-			assertUnsupportedType(() -> storage.getFloat(item, key));
+			ManifestTestUtils.assertUnsupportedType(() -> storage.getFloat(item, key));
 		}
 	}
 
@@ -290,7 +264,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		if(typesForGetters(key).contains(ValueType.DOUBLE)) {
 			assertEquals(((Number)noEntryValue(key)).doubleValue(), storage.getDouble(item, key));
 		} else {
-			assertUnsupportedType(() -> storage.getDouble(item, key));
+			ManifestTestUtils.assertUnsupportedType(() -> storage.getDouble(item, key));
 		}
 	}
 
@@ -306,7 +280,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		if(typesForGetters(key).contains(ValueType.LONG)) {
 			assertEquals(((Number)noEntryValue(key)).longValue(), storage.getLong(item, key));
 		} else {
-			assertUnsupportedType(() -> storage.getLong(item, key));
+			ManifestTestUtils.assertUnsupportedType(() -> storage.getLong(item, key));
 		}
 	}
 
@@ -323,7 +297,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 		if(typesForGetters(key).contains(ValueType.BOOLEAN)) {
 			assertEquals(((Boolean)noEntryValue(key)).booleanValue(), storage.getBoolean(item, key));
 		} else {
-			assertUnsupportedType(() -> storage.getBoolean(item, key));
+			ManifestTestUtils.assertUnsupportedType(() -> storage.getBoolean(item, key));
 		}
 	}
 
@@ -440,7 +414,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 			storage.setString(item, key, value);
 			assertEquals(value, storage.getString(item, key));
 		} else {
-			assertUnsupportedType(() -> storage.setString(item, key, randomString(10)));
+			ManifestTestUtils.assertUnsupportedType(() -> storage.setString(item, key, randomString(10)));
 		}
 	}
 
@@ -457,7 +431,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 			storage.setString(item, key, null);
 			assertEquals(noEntryValue(key), storage.getString(item, key));
 		} else {
-			assertUnsupportedType(() -> storage.setString(item, key, null));
+			ManifestTestUtils.assertUnsupportedType(() -> storage.setString(item, key, null));
 		}
 	}
 
@@ -475,7 +449,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 			storage.setInteger(item, key, value);
 			assertEquals(value, storage.getInteger(item, key));
 		} else {
-			assertUnsupportedType(() -> storage.setInteger(item, key, random().nextInt()));
+			ManifestTestUtils.assertUnsupportedType(() -> storage.setInteger(item, key, random().nextInt()));
 		}
 	}
 
@@ -493,7 +467,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 			storage.setLong(item, key, value);
 			assertEquals(value, storage.getLong(item, key));
 		} else {
-			assertUnsupportedType(() -> storage.setLong(item, key, random().nextLong()));
+			ManifestTestUtils.assertUnsupportedType(() -> storage.setLong(item, key, random().nextLong()));
 		}
 	}
 
@@ -511,7 +485,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 			storage.setFloat(item, key, value);
 			assertEquals(value, storage.getFloat(item, key));
 		} else {
-			assertUnsupportedType(() -> storage.setFloat(item, key,  random().nextFloat()));
+			ManifestTestUtils.assertUnsupportedType(() -> storage.setFloat(item, key,  random().nextFloat()));
 		}
 	}
 
@@ -529,7 +503,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 			storage.setDouble(item, key, value);
 			assertEquals(value, storage.getDouble(item, key));
 		} else {
-			assertUnsupportedType(() -> storage.setDouble(item, key,  random().nextDouble()));
+			ManifestTestUtils.assertUnsupportedType(() -> storage.setDouble(item, key,  random().nextDouble()));
 		}
 	}
 
@@ -548,7 +522,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 			storage.setBoolean(item, key, value);
 			assertEquals(value, storage.getBoolean(item, key));
 		} else {
-			assertUnsupportedType(() -> storage.setBoolean(item, key,  random().nextBoolean()));
+			ManifestTestUtils.assertUnsupportedType(() -> storage.setBoolean(item, key,  random().nextBoolean()));
 		}
 	}
 

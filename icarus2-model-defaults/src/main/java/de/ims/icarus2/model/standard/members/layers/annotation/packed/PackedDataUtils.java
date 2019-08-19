@@ -42,7 +42,7 @@ public class PackedDataUtils {
 				.getResolvedLayerManifest()
 				.orElseThrow(ManifestException.missing(contextManifest, "resolved primary layer"));
 
-		LazyCollection<PackageHandle> buffer= LazyCollection.lazySet();
+		LazyCollection<PackageHandle> buffer = LazyCollection.lazySet();
 
 		contextManifest.getLayerManifests().stream()
 			.filter(ManifestUtils::isAnnotationLayerManifest)
@@ -57,7 +57,16 @@ public class PackedDataUtils {
 		return buffer.getAsSet();
 	}
 
-	private static PackageHandle createHandle(AnnotationManifest manifest, boolean allowBitPacking) {
+	public static Set<PackageHandle> createHandle(AnnotationLayerManifest manifest,
+			boolean allowBitPacking) {
+		LazyCollection<PackageHandle> buffer = LazyCollection.lazySet();
+		manifest.forEachAnnotationManifest(annotationManifest ->
+			buffer.add(createHandle(annotationManifest, allowBitPacking)));
+
+		return buffer.getAsSet();
+	}
+
+	public static PackageHandle createHandle(AnnotationManifest manifest, boolean allowBitPacking) {
 		ValueType valueType = manifest.getValueType();
 
 		// Easy mode for primitive values
