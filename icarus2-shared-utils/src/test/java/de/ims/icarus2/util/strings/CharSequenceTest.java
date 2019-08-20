@@ -19,9 +19,9 @@
  */
 package de.ims.icarus2.util.strings;
 
+import static de.ims.icarus2.test.TestUtils.assertIOOB;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
@@ -74,7 +74,7 @@ public interface CharSequenceTest<S extends CharSequence> extends ObjectTest {
 	default void testSubSequence() {
 		S empty = createEmptySequence();
 		if(empty!=null) {
-			assertThrows(IndexOutOfBoundsException.class, () -> empty.subSequence(0, 1));
+			assertIOOB(() -> empty.subSequence(0, 1));
 			cleanup(empty);
 		}
 
@@ -86,7 +86,7 @@ public interface CharSequenceTest<S extends CharSequence> extends ObjectTest {
 			assertEquals(withLength.toString(), ss.toString());
 			assertEquals(withLength.hashCode(), ss.hashCode());
 
-			assertThrows(IndexOutOfBoundsException.class, () -> withLength.subSequence(11, 12));
+			assertIOOB(() -> withLength.subSequence(11, 12));
 
 			cleanup(withLength);
 		}
@@ -103,7 +103,7 @@ public interface CharSequenceTest<S extends CharSequence> extends ObjectTest {
 			assertEquals('s', ss.charAt(2));
 			assertEquals('t', ss.charAt(3));
 
-			assertThrows(IndexOutOfBoundsException.class, () -> fromSource.subSequence(-1, 0));
+			assertIOOB(() -> fromSource.subSequence(-1, 0));
 
 			cleanup(fromSource);
 		}
@@ -141,9 +141,9 @@ public interface CharSequenceTest<S extends CharSequence> extends ObjectTest {
 	default void testCharAt() {
 		S empty = createEmptySequence();
 		if(empty!=null) {
-			assertThrows(IndexOutOfBoundsException.class, () -> empty.charAt(0));
-			assertThrows(IndexOutOfBoundsException.class, () -> empty.charAt(-1));
-			assertThrows(IndexOutOfBoundsException.class, () -> empty.charAt(Integer.MAX_VALUE));
+			assertIOOB(() -> empty.charAt(0));
+			assertIOOB(() -> empty.charAt(-1));
+			assertIOOB(() -> empty.charAt(Integer.MAX_VALUE));
 
 			cleanup(empty);
 		}
@@ -159,8 +159,8 @@ public interface CharSequenceTest<S extends CharSequence> extends ObjectTest {
 			assertEquals('2', fromSource.charAt(5));
 			assertEquals('3', fromSource.charAt(6));
 
-			assertThrows(IndexOutOfBoundsException.class, () -> fromSource.charAt(-1));
-			assertThrows(IndexOutOfBoundsException.class, () -> fromSource.charAt(Integer.MAX_VALUE));
+			assertIOOB(() -> fromSource.charAt(-1));
+			assertIOOB(() -> fromSource.charAt(Integer.MAX_VALUE));
 
 			cleanup(fromSource);
 		}

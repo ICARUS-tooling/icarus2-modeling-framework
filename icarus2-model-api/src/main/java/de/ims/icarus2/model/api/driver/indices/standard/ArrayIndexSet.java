@@ -158,21 +158,25 @@ public class ArrayIndexSet implements IndexSet {
 
 	@Override
 	public void export(int beginIndex, int endIndex, byte[] buffer, int offset) {
+		requireNonNull(buffer);
 		valueType.copyTo(indices, beginIndex, buffer, offset, endIndex-beginIndex);
 	}
 
 	@Override
 	public void export(int beginIndex, int endIndex, short[] buffer, int offset) {
+		requireNonNull(buffer);
 		valueType.copyTo(indices, beginIndex, buffer, offset, endIndex-beginIndex);
 	}
 
 	@Override
 	public void export(int beginIndex, int endIndex, int[] buffer, int offset) {
+		requireNonNull(buffer);
 		valueType.copyTo(indices, beginIndex, buffer, offset, endIndex-beginIndex);
 	}
 
 	@Override
 	public void export(int beginIndex, int endIndex, long[] buffer, int offset) {
+		requireNonNull(buffer);
 		valueType.copyTo(indices, beginIndex, buffer, offset, endIndex-beginIndex);
 	}
 

@@ -8,6 +8,7 @@ import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.DO_NOTHING;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertArrayEmpty;
+import static de.ims.icarus2.test.TestUtils.assertIOOB;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
@@ -232,8 +233,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 		@ParameterizedTest
 		@ValueSource(ints = {0, -1, 1})
 		void testSetEIntEmptyInvalidIndex(int index) {
-			assertThrows(IndexOutOfBoundsException.class,
-					() -> instance.set(new Object(), index));
+			assertIOOB(() -> instance.set(new Object(), index));
 		}
 
 		/**
@@ -242,8 +242,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 		@ParameterizedTest
 		@ValueSource(ints = {0, -1, 1})
 		void testRemoveIntEmptyInvalidIndex(int index) {
-			assertThrows(IndexOutOfBoundsException.class,
-					() -> instance.remove(index));
+			assertIOOB(() -> instance.remove(index));
 		}
 
 		/**
@@ -253,8 +252,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 		@ValueSource(ints = {0, -1, 1})
 		void testRemoveAllInvalidIndices(int index) {
 			// Only tests the first index, as the list is empty and we cannot produce an invalid 2nd argument
-			assertThrows(IndexOutOfBoundsException.class,
-					() -> instance.removeAll(index, 0, DO_NOTHING()));
+			assertIOOB(() -> instance.removeAll(index, 0, DO_NOTHING()));
 		}
 
 		/**
@@ -355,8 +353,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 			 */
 			@Test
 			void testRangeCheckEmpty() {
-				assertThrows(IndexOutOfBoundsException.class,
-						() -> instance.rangeCheck(0));
+				assertIOOB(() -> instance.rangeCheck(0));
 			}
 
 			/**
@@ -371,8 +368,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 				}
 
 				IntStream.of(-1, size, size+1)
-					.forEach(index -> assertThrows(IndexOutOfBoundsException.class,
-						() -> instance.rangeCheck(index)));
+					.forEach(index -> assertIOOB(() -> instance.rangeCheck(index)));
 			}
 
 			/**
@@ -382,8 +378,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 			void testRangeCheckForAddEmpty() {
 				instance.rangeCheckForAdd(0);
 
-				assertThrows(IndexOutOfBoundsException.class,
-						() -> instance.rangeCheck(1));
+				assertIOOB(() -> instance.rangeCheck(1));
 			}
 
 			/**
@@ -398,8 +393,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 				}
 
 				IntStream.of(-1, size+1)
-					.forEach(index -> assertThrows(IndexOutOfBoundsException.class,
-						() -> instance.rangeCheckForAdd(index)));
+					.forEach(index -> assertIOOB(() -> instance.rangeCheckForAdd(index)));
 			}
 
 			/**

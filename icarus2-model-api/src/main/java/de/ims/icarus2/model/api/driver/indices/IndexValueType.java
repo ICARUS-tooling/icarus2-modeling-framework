@@ -650,6 +650,7 @@ public enum IndexValueType implements StringResource {
 	public abstract void set(ByteBuffer buffer, long value);
 
 	// Copy methods
+
 	/**
 	 *
 	 * @param array source array

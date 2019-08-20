@@ -31,8 +31,9 @@ class TestMessages {
 	static final String notHonoringValueChange1 = "not honoring first value change";
 	static final String notHonoringValueChange2 = "not honoring second value change";
 
-	static final String expectedNPE = "expected NPE";
-	static final String expectedIAE = "expected IAE";
+	static final String expectedNPE = "expected "+NullPointerException.class.getSimpleName();
+	static final String expectedIAE = "expected "+IllegalArgumentException.class.getSimpleName();
+	static final String expectedIOOB = "expected "+IndexOutOfBoundsException.class.getSimpleName();
 
 	/**
 	 * Arguments: required number and then the supplied number

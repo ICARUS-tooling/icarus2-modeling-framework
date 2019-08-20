@@ -615,4 +615,14 @@ public class ModelTestUtils {
 			ErrorCode code, Executable executable) {
 		return () -> assertModelException(code, executable);
 	}
+
+	/**
+	 * Expects a {@link ModelException} with code {@link GlobalErrorCode#VALUE_OVERFLOW}
+	 *  for the given {@code executable}.
+	 *
+	 * @param executable
+	 */
+	public static void assertOverflow(Executable executable) {
+		assertModelException(GlobalErrorCode.VALUE_OVERFLOW, executable);
+	}
 }

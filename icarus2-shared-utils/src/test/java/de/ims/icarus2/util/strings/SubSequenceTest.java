@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.util.strings;
 
+import static de.ims.icarus2.test.TestUtils.assertIOOB;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -34,9 +35,9 @@ public class SubSequenceTest {
 	public void testConstructorFail() throws Exception {
 		assertThrows(NullPointerException.class, () -> new SubSequence(null, 0, 0));
 
-		assertThrows(IndexOutOfBoundsException.class, () -> new SubSequence("", 0, 0));
-		assertThrows(IndexOutOfBoundsException.class, () -> new SubSequence("x", -1, 0));
-		assertThrows(IndexOutOfBoundsException.class, () -> new SubSequence("x", 2, 0));
+		assertIOOB(() -> new SubSequence("", 0, 0));
+		assertIOOB(() -> new SubSequence("x", -1, 0));
+		assertIOOB(() -> new SubSequence("x", 2, 0));
 
 		assertThrows(IllegalArgumentException.class, () -> new SubSequence("x", 0, -1));
 		assertThrows(IllegalArgumentException.class, () -> new SubSequence("x", 0, 2));
@@ -52,7 +53,7 @@ public class SubSequenceTest {
 
 	@Test
 	public void testCharAt() throws Exception {
-		assertThrows(IndexOutOfBoundsException.class, () -> new SubSequence("x", 0, 0).charAt(1));
+		assertIOOB(() -> new SubSequence("x", 0, 0).charAt(1));
 		assertEquals('x', new SubSequence("x", 0, 1).charAt(0));
 		assertEquals('y', new SubSequence("xy", 1, 1).charAt(0));
 		assertEquals('y', new SubSequence("xy", 0, 2).charAt(1));

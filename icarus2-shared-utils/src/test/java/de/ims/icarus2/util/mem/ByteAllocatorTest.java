@@ -23,6 +23,7 @@ import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestTags.SHUFFLE;
 import static de.ims.icarus2.test.TestTags.STANDALONE;
 import static de.ims.icarus2.test.TestUtils.RUNS;
+import static de.ims.icarus2.test.TestUtils.assertIOOB;
 import static de.ims.icarus2.test.TestUtils.random;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -140,7 +141,7 @@ class ByteAllocatorTest {
 	@ParameterizedTest
 	@ValueSource(ints = {-1, 0, 1})
 	void testFreeIllegal(int id) {
-		assertThrows(IndexOutOfBoundsException.class, () -> allocator.free(id));
+		assertIOOB(() -> allocator.free(id));
 	}
 
 	@SuppressWarnings("boxing")
@@ -351,7 +352,7 @@ class ByteAllocatorTest {
 	class ForInvalidIdOnEmptySlot {
 
 		private void assertIdOutOfBounds(Executable executable) {
-			IndexOutOfBoundsException ex = assertThrows(IndexOutOfBoundsException.class, executable);
+			IndexOutOfBoundsException ex = assertIOOB(executable);
 			assertTrue(ex.getMessage().contains(" id "));
 		}
 
@@ -479,7 +480,7 @@ class ByteAllocatorTest {
 		}
 
 		private void assertOffsetOutOfBounds(Executable executable) {
-			IndexOutOfBoundsException ex = assertThrows(IndexOutOfBoundsException.class, executable);
+			IndexOutOfBoundsException ex = assertIOOB(executable);
 			assertTrue(ex.getMessage().toLowerCase().contains("offset "));
 		}
 
@@ -892,8 +893,7 @@ class ByteAllocatorTest {
 					.forEach(id -> assertEquals(array[id], allocator.getByte(id, offset)));
 			} else {
 				IntStream.range(0, array.length)
-				.forEach(id -> assertThrows(IndexOutOfBoundsException.class,
-						() -> allocator.getByte(id, offset)));
+				.forEach(id -> assertIOOB(() -> allocator.getByte(id, offset)));
 			}
 		}
 
@@ -924,8 +924,7 @@ class ByteAllocatorTest {
 						assertEquals(array[id], allocator.getNBytes(
 							id, offset, n_bytes[id]));
 					} else {
-						assertThrows(IndexOutOfBoundsException.class,
-								() -> allocator.getNBytes(id, offset, n_bytes[id]));
+						assertIOOB(() -> allocator.getNBytes(id, offset, n_bytes[id]));
 					}
 				});
 		}
@@ -953,8 +952,7 @@ class ByteAllocatorTest {
 					.forEach(id -> assertEquals(array[id], allocator.getShort(id, offset)));
 			} else {
 				IntStream.range(0, array.length)
-				.forEach(id -> assertThrows(IndexOutOfBoundsException.class,
-						() -> allocator.getShort(id, offset)));
+				.forEach(id -> assertIOOB(() -> allocator.getShort(id, offset)));
 			}
 		}
 
@@ -981,8 +979,7 @@ class ByteAllocatorTest {
 					.forEach(id -> assertEquals(array[id], allocator.getInt(id, offset)));
 			} else {
 				IntStream.range(0, array.length)
-				.forEach(id -> assertThrows(IndexOutOfBoundsException.class,
-						() -> allocator.getInt(id, offset)));
+				.forEach(id -> assertIOOB(() -> allocator.getInt(id, offset)));
 			}
 		}
 
@@ -1009,8 +1006,7 @@ class ByteAllocatorTest {
 					.forEach(id -> assertEquals(array[id], allocator.getLong(id, offset)));
 			} else {
 				IntStream.range(0, array.length)
-				.forEach(id -> assertThrows(IndexOutOfBoundsException.class,
-						() -> allocator.getLong(id, offset)));
+				.forEach(id -> assertIOOB(() -> allocator.getLong(id, offset)));
 			}
 		}
 
@@ -1042,8 +1038,7 @@ class ByteAllocatorTest {
 						allocator.readBytes(id, offset, actual, actual.length);
 						assertArrayEquals(expected, actual);
 					} else {
-						assertThrows(IndexOutOfBoundsException.class,
-								() -> allocator.readBytes(id, offset, actual, actual.length));
+						assertIOOB(() -> allocator.readBytes(id, offset, actual, actual.length));
 					}
 				});
 		}
@@ -1250,7 +1245,7 @@ class ByteAllocatorTest {
 		 */
 		@Test
 		void testMoveToEmpty() {
-			assertThrows(IndexOutOfBoundsException.class, () -> cursor.moveTo(0));
+			assertIOOB(() -> cursor.moveTo(0));
 		}
 
 		/**
@@ -1260,7 +1255,7 @@ class ByteAllocatorTest {
 		@ValueSource(ints = {-2, 10})
 		void testMoveToOutOfBounds(int id) {
 			fill(3);
-			assertThrows(IndexOutOfBoundsException.class, () -> cursor.moveTo(id));
+			assertIOOB(() -> cursor.moveTo(id));
 		}
 
 		/**
@@ -1650,7 +1645,7 @@ class ByteAllocatorTest {
 			}
 
 			private void assertOffsetOutOfBounds(Executable executable) {
-				IndexOutOfBoundsException ex = assertThrows(IndexOutOfBoundsException.class, executable);
+				IndexOutOfBoundsException ex = assertIOOB(executable);
 				assertTrue(ex.getMessage().toLowerCase().contains("offset"));
 			}
 

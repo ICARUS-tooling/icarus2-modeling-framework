@@ -18,6 +18,7 @@ package de.ims.icarus2.model.api.driver.indices;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.sql.ResultSet;
 import java.util.Arrays;
@@ -107,6 +108,13 @@ public interface IndexSet {
 	 */
 	int size();
 
+	/**
+	 * Returns whether or not this index set contains any values.
+	 * Note that for implementations that report the size to be
+	 * {@link Feature#INDETERMINATE_SIZE} the return value of this
+	 * method is only relevant if {@code true}.
+	 * @return
+	 */
 	default boolean isEmpty() {
 		return size()==0;
 	}
@@ -158,6 +166,7 @@ public interface IndexSet {
 	 * @param offset position of first insert into target buffer
 	 */
 	default void export(int beginIndex, int endIndex, byte[] buffer, int offset) {
+		requireNonNull(buffer);
 		for(int i=beginIndex; i<endIndex; i++) {
 			buffer[offset++] = (byte) indexAt(i);
 		}
@@ -180,6 +189,7 @@ public interface IndexSet {
 	 * @param offset position of first insert into target buffer
 	 */
 	default void export(int beginIndex, int endIndex, short[] buffer, int offset) {
+		requireNonNull(buffer);
 		for(int i=beginIndex; i<endIndex; i++) {
 			buffer[offset++] = (short) indexAt(i);
 		}
@@ -202,6 +212,7 @@ public interface IndexSet {
 	 * @param offset position of first insert into target buffer
 	 */
 	default void export(int beginIndex, int endIndex, int[] buffer, int offset) {
+		requireNonNull(buffer);
 		for(int i=beginIndex; i<endIndex; i++) {
 			buffer[offset++] = (int) indexAt(i);
 		}
@@ -224,6 +235,7 @@ public interface IndexSet {
 	 * @param offset position of first insert into target buffer
 	 */
 	default void export(int beginIndex, int endIndex, long[] buffer, int offset) {
+		requireNonNull(buffer);
 		for(int i=beginIndex; i<endIndex; i++) {
 			buffer[offset++] = indexAt(i);
 		}
@@ -247,6 +259,7 @@ public interface IndexSet {
 	 * @param endIndex position of last index to apply the given action to, exclusive
 	 */
 	default void forEachIndex(LongConsumer action, int beginIndex, int endIndex) {
+		requireNonNull(action);
 		for(int i=beginIndex; i<endIndex; i++) {
 			action.accept(indexAt(i));
 		}
@@ -276,6 +289,7 @@ public interface IndexSet {
 	 * @throws ModelException in case this set contains values that exceed integer space
 	 */
 	default void forEachIndex(IntConsumer action, int beginIndex, int endIndex) {
+		requireNonNull(action);
 		if(!IndexValueType.INTEGER.isValidSubstitute(getIndexValueType()))
 			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Cannot serve IntConsumer - index set contains values beyond integer space");
@@ -300,7 +314,7 @@ public interface IndexSet {
 	 * @param action
 	 */
 	default void forEachEntry(LongBinaryOperator action, int beginIndex, int endIndex) {
-
+		requireNonNull(action);
 		for(int i=beginIndex; i<endIndex; i++) {
 			action.applyAsLong(i, indexAt(i));
 		}
@@ -311,6 +325,7 @@ public interface IndexSet {
 	}
 
 	default void forEachEntry(IntBinaryOperator action, int beginIndex, int endIndex) {
+		requireNonNull(action);
 		if(!IndexValueType.INTEGER.isValidSubstitute(getIndexValueType()))
 			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Cannot serve IntConsumer - index set contains values beyond integer space");
@@ -335,6 +350,7 @@ public interface IndexSet {
 	 * specified region of this set.
 	 */
 	default boolean checkIndices(LongPredicate check, int beginIndex, int endIndex) {
+		requireNonNull(check);
 		for(int i=beginIndex; i<endIndex; i++) {
 			if(!check.test(indexAt(i))) {
 				return false;
@@ -357,6 +373,7 @@ public interface IndexSet {
 	 * specified region of this set.
 	 */
 	default boolean checkIndices(IntPredicate check, int beginIndex, int endIndex) {
+		requireNonNull(check);
 		if(!IndexValueType.INTEGER.isValidSubstitute(getIndexValueType()))
 			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Cannot serve IntPredicate - index set contains values beyond integer space");
@@ -383,6 +400,7 @@ public interface IndexSet {
 	 * values in the specified region of this set.
 	 */
 	default boolean checkConsecutiveIndices(LongBiPredicate check, int beginIndex, int endIndex) {
+		requireNonNull(check);
 		checkArgument("Begin index must be smaller than end index", beginIndex<endIndex);
 		long previous = indexAt(beginIndex);
 		for(int i=beginIndex+1; i<endIndex; i++) {
@@ -464,6 +482,9 @@ public interface IndexSet {
 		 * General hint that the implementation is able to sort its content.
 		 * Note that this information is kind of redundant since the {@link #sort()} method
 		 * already expresses this information, but more in a post-condition kind of way.
+		 * <p>
+		 * Also note that it is perfectly legal for an implementation to not support
+		 * sorting on demand but be already sorted!
 		 */
 		SORTABLE,
 
@@ -505,7 +526,6 @@ public interface IndexSet {
 		 */
 		THREAD_SAFE,
 		;
-		//TODO move all feature flags into enum constants!!!
 	}
 
 	public static final Set<Feature> DEFAULT_FEATURES =
@@ -521,7 +541,7 @@ public interface IndexSet {
 	}
 
 	default boolean hasFeature(Feature feature) {
-		return getFeatures().contains(feature);
+		return getFeatures().contains(requireNonNull(feature));
 	}
 
 	default void checkHasFeatures(Feature...features) {

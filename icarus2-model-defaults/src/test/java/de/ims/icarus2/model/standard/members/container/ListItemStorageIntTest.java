@@ -267,8 +267,7 @@ class ListItemStorageIntTest implements ItemStorageTest<ListItemStorageInt> {
 		@ValueSource(ints = {0, 1, -1})
 		void testSwapItems(int index) {
 			// Can only test the first index here
-			assertThrows(IndexOutOfBoundsException.class,
-					() -> storage.swapItems(null, index, 0));
+			assertIOOB(() -> storage.swapItems(null, index, 0));
 		}
 
 		@Nested

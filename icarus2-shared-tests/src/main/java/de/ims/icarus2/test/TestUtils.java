@@ -613,8 +613,8 @@ public class TestUtils {
 	 *
 	 * @param executable
 	 */
-	public static void assertNPE(Executable executable) {
-		assertThrows(NullPointerException.class, executable, TestMessages.expectedNPE);
+	public static NullPointerException assertNPE(Executable executable) {
+		return assertThrows(NullPointerException.class, executable, TestMessages.expectedNPE);
 	}
 
 	/**
@@ -622,8 +622,17 @@ public class TestUtils {
 	 *
 	 * @param executable
 	 */
-	public static void assertIAE(Executable executable) {
-		assertThrows(IllegalArgumentException.class, executable, TestMessages.expectedIAE);
+	public static IllegalArgumentException assertIAE(Executable executable) {
+		return assertThrows(IllegalArgumentException.class, executable, TestMessages.expectedIAE);
+	}
+
+	/**
+	 * Expects a {@link IndexOutOfBoundsException} for the given {@code executable}.
+	 *
+	 * @param executable
+	 */
+	public static IndexOutOfBoundsException assertIOOB(Executable executable) {
+		return assertThrows(IndexOutOfBoundsException.class, executable, TestMessages.expectedIOOB);
 	}
 
 	public static Executable npeAsserter(Executable executable) {

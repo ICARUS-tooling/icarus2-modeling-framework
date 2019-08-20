@@ -30,12 +30,14 @@ public enum GlobalErrorCode implements ErrorCode {
 	INFO(1),
 
 	/**
-	 * Hint that a certain implementation is missing mandatory functionality.
+	 * Hint that a certain implementation is missing mandatory/requested functionality.
 	 */
 	NOT_IMPLEMENTED(3),
 
 	/**
 	 * A method or certain usage of a method is deprecated.
+	 * This is a significantly stronger case of deprecation compared to the
+	 * {@code Deprecated} annotation.
 	 */
 	DEPRECATED(4),
 

@@ -25,6 +25,7 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockStructure;
 import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.MAX_INTEGER_INDEX;
 import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
+import static de.ims.icarus2.test.TestUtils.assertIOOB;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.assertRestrictedSetter;
 import static de.ims.icarus2.test.TestUtils.filledArray;
@@ -601,12 +602,10 @@ class RootItemTest {
 				assertEquals(edges[index], instance.edgeAt(index, false)));
 
 			IntStream.of(-1, RUNS+1).forEach(index ->
-					assertThrows(IndexOutOfBoundsException.class,
-							() -> instance.getEdgeAt(index)));
+				assertIOOB(() -> instance.getEdgeAt(index)));
 
 			IntStream.of(-1, RUNS+1).forEach(index ->
-					assertThrows(IndexOutOfBoundsException.class,
-							() -> instance.edgeAt(index, false)));
+				assertIOOB(() -> instance.edgeAt(index, false)));
 		}
 
 		/**
