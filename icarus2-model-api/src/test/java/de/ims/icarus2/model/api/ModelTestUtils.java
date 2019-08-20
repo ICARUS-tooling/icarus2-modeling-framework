@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.model.api;
 
+import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
 import static de.ims.icarus2.SharedTestUtils.mockSequence;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.RUNS_EXHAUSTIVE;
@@ -53,6 +54,7 @@ import org.mockito.internal.stubbing.answers.CallsRealMethods;
 
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
@@ -458,26 +460,28 @@ public class ModelTestUtils {
 	public static final Container CONTAINER = mockContainer(0);
 	public static final Structure STRUCTURE = mockStructure(0, 0);
 
-	public static void assertIllegalMember(Executable executable, String msg) {
-		assertModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, executable, msg);
+	public static ModelException assertIllegalMember(Executable executable, String msg) {
+		return assertModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, executable, msg);
 	}
 
-	public static void assertIllegalMember(Executable executable) {
-		assertModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, executable, null);
+	public static ModelException assertIllegalMember(Executable executable) {
+		return assertModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER, executable, null);
 	}
 
-	public static void assertModelException(ErrorCode errorCode, Executable executable, String msg) {
+	public static ModelException assertModelException(ErrorCode errorCode, Executable executable, String msg) {
 		ModelException exception = assertThrows(ModelException.class, executable, msg);
 		assertEquals(errorCode, exception.getErrorCode(), msg);
+		return exception;
 	}
 
-	public static void assertModelException(ErrorCode errorCode, Executable executable) {
+	public static ModelException assertModelException(ErrorCode errorCode, Executable executable) {
 		ModelException exception = assertThrows(ModelException.class, executable);
 		assertEquals(errorCode, exception.getErrorCode());
+		return exception;
 	}
 
-	public static void assertUnsupportedOperation(Executable executable) {
-		assertModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, executable);
+	public static ModelException assertUnsupportedOperation(Executable executable) {
+		return assertModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, executable);
 	}
 
 	public static IndexSet sortedIndices(int size, long start) {
@@ -622,7 +626,11 @@ public class ModelTestUtils {
 	 *
 	 * @param executable
 	 */
-	public static void assertOverflow(Executable executable) {
-		assertModelException(GlobalErrorCode.VALUE_OVERFLOW, executable);
+	public static IcarusRuntimeException assertOverflow(Executable executable) {
+		return assertIcarusException(GlobalErrorCode.VALUE_OVERFLOW, executable);
+	}
+
+	public static <T extends ModelException> Executable ioobAsserter(Executable executable) {
+		return () -> assertOverflow(executable);
 	}
 }

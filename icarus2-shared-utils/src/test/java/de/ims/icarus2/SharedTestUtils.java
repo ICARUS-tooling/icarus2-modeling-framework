@@ -43,24 +43,28 @@ import de.ims.icarus2.util.collections.set.DataSet;
 public class SharedTestUtils {
 
 
-	public static void assertIcarusException(ErrorCode errorCode, Executable executable, String msg) {
+	public static IcarusRuntimeException assertIcarusException(ErrorCode errorCode, Executable executable, String msg) {
 		IcarusRuntimeException exception = assertThrows(IcarusRuntimeException.class, executable, msg);
 		assertEquals(errorCode, exception.getErrorCode(), msg);
+		return exception;
 	}
 
-	public static void assertIcarusException(ErrorCode errorCode, Executable executable) {
+	public static IcarusRuntimeException assertIcarusException(ErrorCode errorCode, Executable executable) {
 		IcarusRuntimeException exception = assertThrows(IcarusRuntimeException.class, executable);
 		assertEquals(errorCode, exception.getErrorCode());
+		return exception;
 	}
 
-	public static void assertIcarusApiException(ErrorCode errorCode, Executable executable, String msg) {
+	public static IcarusApiException assertIcarusApiException(ErrorCode errorCode, Executable executable, String msg) {
 		IcarusApiException exception = assertThrows(IcarusApiException.class, executable, msg);
 		assertEquals(errorCode, exception.getErrorCode(), msg);
+		return exception;
 	}
 
-	public static void assertIcarusApiException(ErrorCode errorCode, Executable executable) {
+	public static IcarusApiException assertIcarusApiException(ErrorCode errorCode, Executable executable) {
 		IcarusApiException exception = assertThrows(IcarusApiException.class, executable);
 		assertEquals(errorCode, exception.getErrorCode());
+		return exception;
 	}
 
 	@SuppressWarnings("boxing")

@@ -370,7 +370,7 @@ public class ArrayUtils {
 
 	private static IcarusRuntimeException forOverflow(String type, long value) {
 		return new IcarusRuntimeException(GlobalErrorCode.VALUE_OVERFLOW,
-				String.format("Given value is overflowing %s space: %d", _long(value)));
+				String.format("Given value is overflowing %s space: %d", type, _long(value)));
 	}
 
 	private static byte strictToByte(short v) {
