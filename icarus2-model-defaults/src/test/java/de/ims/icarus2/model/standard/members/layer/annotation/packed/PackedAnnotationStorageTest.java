@@ -9,6 +9,7 @@ import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
 import static java.util.Objects.requireNonNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -27,10 +28,6 @@ import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle;
-import de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedAnnotationStorage;
-import de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager;
-import de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataUtils;
 
 /**
  * @author Markus Gärtner
@@ -128,8 +125,11 @@ class PackedAnnotationStorageTest implements MultiKeyAnnotationStorageTest<Packe
 	 */
 	@Override
 	public void prepareAdd(PackedAnnotationStorage storage, AnnotationLayer layer) {
-//		assertTrue(storage.da);
-		//TODO
+		PackedDataManager<Item, AnnotationStorage> manager = storage.dataManager();
+		assertTrue(manager.isAllowDynamicChunkComposition());
+
+		manager.registerHandles(PackedDataUtils.createHandles(layer.getManifest(),
+				manager.isAllowBitPacking()));
 	}
 
 	/**

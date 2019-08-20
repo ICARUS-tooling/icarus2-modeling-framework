@@ -173,6 +173,12 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		packageHandles.addAll(builder.getHandles());
 	}
 
+	public boolean isAllowBitPacking() { return allowBitPacking; }
+
+	public boolean isAllowDynamicChunkComposition() { return allowDynamicChunkComposition; }
+
+	public boolean isAutoRegister() { return autoRegister; }
+
 	public void registerHandles(Collection<PackageHandle> handles) {
 		requireNonNull(handles);
 		checkState("Manager does not allow dynamic chunk composition", allowDynamicChunkComposition);

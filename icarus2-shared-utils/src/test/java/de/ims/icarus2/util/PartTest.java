@@ -19,15 +19,18 @@
  */
 package de.ims.icarus2.util;
 
-import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
+import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.test.Testable;
 import de.ims.icarus2.test.annotations.Provider;
 
@@ -64,6 +67,7 @@ public interface PartTest<O, P extends Part<O>> extends Testable<P> {
 		O environment = createEnvironment();
 
 		assertFalse(part.isAdded());
+		prepareAdd(part, environment);
 		part.addNotify(environment);
 		assertTrue(part.isAdded());
 		part.removeNotify(environment);
@@ -71,7 +75,11 @@ public interface PartTest<O, P extends Part<O>> extends Testable<P> {
 	}
 
 	public static void assertAddRemoveError(Executable executable) {
-		assertIcarusException(GlobalErrorCode.ILLEGAL_STATE, executable);
+		IcarusRuntimeException ex = assertThrows(IcarusRuntimeException.class, executable);
+		ErrorCode errorCode = ex.getErrorCode();
+		assertNotNull(errorCode);
+		assertTrue(errorCode==GlobalErrorCode.ILLEGAL_STATE
+				|| errorCode==GlobalErrorCode.INVALID_INPUT);
 	}
 
 	/** Hook for subclasses to prepare the part under test for being added */
