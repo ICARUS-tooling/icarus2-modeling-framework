@@ -3,9 +3,11 @@
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
+import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.test.TestUtils.randomInts;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -21,16 +23,51 @@ import de.ims.icarus2.test.TestSettings;
  */
 class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 
+	private static Function<Config, IndexSet> constructor = config -> {
+		long[] indices = config.getIndices();
+		IndexValueType type = config.getValueType();
+		Object array = type.newArray(indices.length);
+		type.copyFrom(indices, 0, array, 0, indices.length);
+		if(config.isSorted()) {
+			return new ArrayIndexSet(type, array, 0, indices.length-1, true);
+		}
+
+		return new ArrayIndexSet(type, array);
+	};
+
+	private static int randomSize() {
+		return random(10, 100);
+	}
+
 	@Override
 	public Stream<Config> configurations() {
-		int[] indices = randomInts(100, 0, Integer.MAX_VALUE);
-		return Stream.of(new Config()
-				.label("default")
-				.indices(indices)
-				.sorted(false)
-				.valueType(IndexValueType.INTEGER)
-				.features(IndexSet.DEFAULT_FEATURES)
-				.set(new ArrayIndexSet(indices)));
+		Config base = new Config()
+				.features(IndexSet.DEFAULT_FEATURES);
+
+		return Stream.of(IndexValueType.values())
+				.map(type -> base.clone().valueType(type))
+				.flatMap(config -> Stream.of(
+						// Sorted version
+						config.clone()
+							.label(config.getValueType()+" sorted")
+							.sortedIndices(randomSize())
+							.sorted(true)
+							.set(constructor),
+						// Random version
+						config.clone()
+							.label(config.getValueType()+" random")
+							.randomIndices(randomSize())
+							.set(constructor)
+						));
+
+//		int[] indices = randomInts(100, 0, Integer.MAX_VALUE);
+//		return Stream.of(new Config()
+//				.label("default")
+//				.indices(indices)
+//				.sorted(false)
+//				.valueType(IndexValueType.INTEGER)
+//				.features(IndexSet.DEFAULT_FEATURES)
+//				.set(new ArrayIndexSet(indices)));
 	}
 
 	@Override

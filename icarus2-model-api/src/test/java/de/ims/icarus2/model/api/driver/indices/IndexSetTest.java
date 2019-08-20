@@ -5,6 +5,7 @@ package de.ims.icarus2.model.api.driver.indices;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
+import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.test.TestUtils.randomLongs;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,7 +17,7 @@ import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
-import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicTest;
@@ -26,6 +27,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.driver.indices.IndexSet.Feature;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.guard.ApiGuard;
+import de.ims.icarus2.util.collections.ArrayUtils;
 
 /**
  * @author Markus Gärtner
@@ -589,15 +591,24 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 
 		public Config label(String label) { this.label = label; return this; }
 		public Config set(IndexSet set) { this.set = set; return this; }
-		public Config set(BiFunction<IndexValueType, Object, IndexSet> constructor) {
+		public Config set(Function<Config, IndexSet> constructor) {
 			assertNotNull(valueType, "Value type missing");
 			assertNotNull(indices, "Indices missing");
-			this.set = constructor.apply(valueType, indices);
+			this.set = constructor.apply(this);
 			return this;
 		}
 		public Config randomIndices(int size) {
 			assertNotNull(valueType, "Value type missing");
 			indices = randomLongs(size, 0, valueType.maxValue());
+			indices[random(0, indices.length)] = valueType.maxValue();
+			return this;
+		}
+		public Config sortedIndices(int size) {
+			assertNotNull(valueType, "Value type missing");
+			assertTrue(size<=valueType.maxValue());
+			indices = new long[size];
+			ArrayUtils.fillAscending(indices);
+			indices[indices.length-1] = valueType.maxValue();
 			return this;
 		}
 		public Config indices(long...indices) { this.indices = indices; return this; }
@@ -642,5 +653,10 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 			assertNotNull(valueType, "Value type missing");
 			return this;
 		}
+
+		public String getLabel() { return label; }
+		public boolean isSorted() { return sorted; }
+		public IndexValueType getValueType() { return valueType; }
+		public long[] getIndices() { return indices; }
 	}
 }

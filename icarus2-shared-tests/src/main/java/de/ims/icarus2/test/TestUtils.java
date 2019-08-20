@@ -635,6 +635,10 @@ public class TestUtils {
 		return assertThrows(IndexOutOfBoundsException.class, executable, TestMessages.expectedIOOB);
 	}
 
+	public static Executable ioobAsserter(Executable executable) {
+		return () -> assertIOOB(executable);
+	}
+
 	public static Executable npeAsserter(Executable executable) {
 		return () -> assertNPE(executable);
 	}

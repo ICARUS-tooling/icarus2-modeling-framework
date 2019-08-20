@@ -630,7 +630,7 @@ public class ModelTestUtils {
 		return assertIcarusException(GlobalErrorCode.VALUE_OVERFLOW, executable);
 	}
 
-	public static <T extends ModelException> Executable ioobAsserter(Executable executable) {
+	public static Executable overflowAsserter(Executable executable) {
 		return () -> assertOverflow(executable);
 	}
 }

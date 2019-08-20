@@ -3,23 +3,23 @@
  */
 package de.ims.icarus2.model.api.driver.indices;
 
+import static de.ims.icarus2.model.api.ModelTestUtils.overflowAsserter;
+import static de.ims.icarus2.test.TestUtils.ioobAsserter;
+import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
-import org.junit.jupiter.api.function.Executable;
-
-import de.ims.icarus2.test.TestMessages;
-import de.ims.icarus2.test.icarusr;
 
 /**
  * @author Markus Gärtner
@@ -86,23 +86,181 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.map(config -> {
 					List<DynamicTest> tests = new ArrayList<>();
 					if(IndexValueType.BYTE.isValidSubstitute(config.valueType)) {
-
+						int size = config.indices.length;
+						// Make target buffer too small
+						tests.add(dynamicTest("too small", ioobAsserter(
+									() -> config.set.export(new byte[size/2], 0))));
+						// Normal match
+						tests.add(dynamicTest("fitting", () -> {
+							byte[] buffer = new byte[size];
+							config.set.export(buffer, 0);
+							assertEquals(size, buffer.length);
+							for (int i = 0; i < buffer.length; i++) {
+								assertEquals(config.indices[i], buffer[i]);
+							}
+						}));
+						// Buffer bigger than needed
+						tests.add(dynamicTest("spare room", () -> {
+							byte[] buffer = new byte[size*2];
+							Arrays.fill(buffer, (byte)-1);
+							int offset = random(0, size/2);
+							config.set.export(buffer, offset);
+							for (int i = 0; i < buffer.length; i++) {
+								if(i<offset || i>=offset+size) {
+									assertEquals(-1, buffer[i]);
+								} else {
+									assertEquals(config.indices[i-offset], buffer[i]);
+								}
+							}
+						}));
 					} else {
-						tests.add(dynamicTest("overflow", () -> ));
+						// Export to target type not supported
+						tests.add(dynamicTest("overflow", overflowAsserter(
+								() -> config.set.export(new byte[config.indices.length], 0))));
 					}
 
-					return dynamicContainer(config.label, Stream.of(
-							dynamicTest("too small", () -> assertThrows(IndexOutOfBoundsException.class,
-									() -> config.set.export(new byte[1], 0))),
-							dynamicTest("fitting", () -> {
-								byte[] buffer = new byte[config.set.size()];
-								config.set.export(buffer, 0);
-								assertEquals(config.indices.length, buffer.length);
-								for (int i = 0; i < buffer.length; i++) {
-									assertEquals(config.indices[i], buffer[i]);
+					return dynamicContainer(config.label, tests);
+				});
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#export(short[], int)}.
+	 */
+	@TestFactory
+	default Stream<DynamicNode> testExportShortArrayInt() {
+		return configurations()
+				.map(Config::validate)
+				.map(config -> {
+					List<DynamicTest> tests = new ArrayList<>();
+					if(IndexValueType.SHORT.isValidSubstitute(config.valueType)) {
+						int size = config.indices.length;
+						// Make target buffer too small
+						tests.add(dynamicTest("too small", ioobAsserter(
+									() -> config.set.export(new short[size/2], 0))));
+						// Normal match
+						tests.add(dynamicTest("fitting", () -> {
+							short[] buffer = new short[size];
+							config.set.export(buffer, 0);
+							assertEquals(size, buffer.length);
+							for (int i = 0; i < buffer.length; i++) {
+								assertEquals(config.indices[i], buffer[i]);
+							}
+						}));
+						// Buffer bigger than needed
+						tests.add(dynamicTest("spare room", () -> {
+							short[] buffer = new short[size*2];
+							Arrays.fill(buffer, (short)-1);
+							int offset = random(0, size/2);
+							config.set.export(buffer, offset);
+							for (int i = 0; i < buffer.length; i++) {
+								if(i<offset || i>=offset+size) {
+									assertEquals(-1, buffer[i]);
+								} else {
+									assertEquals(config.indices[i-offset], buffer[i]);
 								}
-							})
-					))
+							}
+						}));
+					} else {
+						// Export to target type not supported
+						tests.add(dynamicTest("overflow", overflowAsserter(
+								() -> config.set.export(new short[config.indices.length], 0))));
+					}
+
+					return dynamicContainer(config.label, tests);
+				});
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#export(int[], int)}.
+	 */
+	@TestFactory
+	default Stream<DynamicNode> testExportIntArrayInt() {
+		return configurations()
+				.map(Config::validate)
+				.map(config -> {
+					List<DynamicTest> tests = new ArrayList<>();
+					if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
+						int size = config.indices.length;
+						// Make target buffer too small
+						tests.add(dynamicTest("too small", ioobAsserter(
+									() -> config.set.export(new int[size/2], 0))));
+						// Normal match
+						tests.add(dynamicTest("fitting", () -> {
+							int[] buffer = new int[size];
+							config.set.export(buffer, 0);
+							assertEquals(size, buffer.length);
+							for (int i = 0; i < buffer.length; i++) {
+								assertEquals(config.indices[i], buffer[i]);
+							}
+						}));
+						// Buffer bigger than needed
+						tests.add(dynamicTest("spare room", () -> {
+							int[] buffer = new int[size*2];
+							Arrays.fill(buffer, -1);
+							int offset = random(0, size/2);
+							config.set.export(buffer, offset);
+							for (int i = 0; i < buffer.length; i++) {
+								if(i<offset || i>=offset+size) {
+									assertEquals(-1, buffer[i]);
+								} else {
+									assertEquals(config.indices[i-offset], buffer[i]);
+								}
+							}
+						}));
+					} else {
+						// Export to target type not supported
+						tests.add(dynamicTest("overflow", overflowAsserter(
+								() -> config.set.export(new int[config.indices.length], 0))));
+					}
+
+					return dynamicContainer(config.label, tests);
+				});
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#export(long[], int)}.
+	 */
+	@TestFactory
+	default Stream<DynamicNode> testExportLongArrayInt() {
+		return configurations()
+				.map(Config::validate)
+				.map(config -> {
+					List<DynamicTest> tests = new ArrayList<>();
+					if(IndexValueType.LONG.isValidSubstitute(config.valueType)) {
+						int size = config.indices.length;
+						// Make target buffer too small
+						tests.add(dynamicTest("too small", ioobAsserter(
+									() -> config.set.export(new long[size/2], 0))));
+						// Normal match
+						tests.add(dynamicTest("fitting", () -> {
+							long[] buffer = new long[size];
+							config.set.export(buffer, 0);
+							assertEquals(size, buffer.length);
+							for (int i = 0; i < buffer.length; i++) {
+								assertEquals(config.indices[i], buffer[i]);
+							}
+						}));
+						// Buffer bigger than needed
+						tests.add(dynamicTest("spare room", () -> {
+							long[] buffer = new long[size*2];
+							Arrays.fill(buffer, -1);
+							int offset = random(0, size/2);
+							config.set.export(buffer, offset);
+							for (int i = 0; i < buffer.length; i++) {
+								if(i<offset || i>=offset+size) {
+									assertEquals(-1, buffer[i]);
+								} else {
+									assertEquals(config.indices[i-offset], buffer[i]);
+								}
+							}
+						}));
+					} else {
+						// Export to target type not supported
+						tests.add(dynamicTest("overflow", overflowAsserter(
+								() -> config.set.export(new long[config.indices.length], 0))));
+					}
+
+					return dynamicContainer(config.label, tests);
 				});
 	}
 
@@ -110,20 +268,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#export(int, int, byte[], int)}.
 	 */
 	@TestFactory
-	default Stream<DynamicTest> testExportIntIntByteArrayInt() {
-		fail("Not yet implemented"); // TODO
-		return configurations()
-				.map(Config::validate)
-				.map(config -> dynamicTest(config.label, () -> {
-
-				}));
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#export(short[], int)}.
-	 */
-	@TestFactory
-	default Stream<DynamicTest> testExportShortArrayInt() {
+	default Stream<DynamicNode> testExportIntIntByteArrayInt() {
 		fail("Not yet implemented"); // TODO
 		return configurations()
 				.map(Config::validate)
@@ -136,20 +281,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#export(int, int, short[], int)}.
 	 */
 	@TestFactory
-	default Stream<DynamicTest> testExportIntIntShortArrayInt() {
-		fail("Not yet implemented"); // TODO
-		return configurations()
-				.map(Config::validate)
-				.map(config -> dynamicTest(config.label, () -> {
-
-				}));
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#export(int[], int)}.
-	 */
-	@TestFactory
-	default Stream<DynamicTest> testExportIntArrayInt() {
+	default Stream<DynamicNode> testExportIntIntShortArrayInt() {
 		fail("Not yet implemented"); // TODO
 		return configurations()
 				.map(Config::validate)
@@ -162,20 +294,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#export(int, int, int[], int)}.
 	 */
 	@TestFactory
-	default Stream<DynamicTest> testExportIntIntIntArrayInt() {
-		fail("Not yet implemented"); // TODO
-		return configurations()
-				.map(Config::validate)
-				.map(config -> dynamicTest(config.label, () -> {
-
-				}));
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#export(long[], int)}.
-	 */
-	@TestFactory
-	default Stream<DynamicTest> testExportLongArrayInt() {
+	default Stream<DynamicNode> testExportIntIntIntArrayInt() {
 		fail("Not yet implemented"); // TODO
 		return configurations()
 				.map(Config::validate)
@@ -188,7 +307,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#export(int, int, long[], int)}.
 	 */
 	@TestFactory
-	default Stream<DynamicTest> testExportIntIntLongArrayInt() {
+	default Stream<DynamicNode> testExportIntIntLongArrayInt() {
 		fail("Not yet implemented"); // TODO
 		return configurations()
 				.map(Config::validate)
