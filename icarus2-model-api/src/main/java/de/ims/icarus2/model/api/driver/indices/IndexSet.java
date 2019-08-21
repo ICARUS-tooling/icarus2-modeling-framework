@@ -18,6 +18,7 @@ package de.ims.icarus2.model.api.driver.indices;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
 
 import java.sql.ResultSet;
@@ -28,10 +29,8 @@ import java.util.EnumSet;
 import java.util.PrimitiveIterator;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.Set;
-import java.util.function.IntBinaryOperator;
 import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
-import java.util.function.LongBinaryOperator;
 import java.util.function.LongConsumer;
 import java.util.function.LongPredicate;
 import java.util.stream.IntStream;
@@ -42,6 +41,8 @@ import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
+import de.ims.icarus2.util.function.IntBiConsumer;
+import de.ims.icarus2.util.function.IntLongConsumer;
 import de.ims.icarus2.util.function.LongBiPredicate;
 
 
@@ -151,11 +152,14 @@ public interface IndexSet {
 
 	/**
 	 * Copies data from this {@code IndexSet} into a target {@code buffer} array.
+	 * @return the number of values copied
 	 *
 	 * @see #export(int, int, byte[], int)
 	 */
-	default void export(byte[] buffer, int offset) {
-		export(0, size(), buffer, offset);
+	default int export(byte[] buffer, int offset) {
+		int size = size();
+		export(0, size, buffer, offset);
+		return size;
 	}
 
 	/**
@@ -174,11 +178,14 @@ public interface IndexSet {
 
 	/**
 	 * Copies data from this {@code IndexSet} into a target {@code buffer} array.
+	 * @return the number of values copied
 	 *
 	 * @see #export(int, int, short[], int)
 	 */
-	default void export(short[] buffer, int offset) {
-		export(0, size(), buffer, offset);
+	default int export(short[] buffer, int offset) {
+		int size = size();
+		export(0, size, buffer, offset);
+		return size;
 	}
 
 	/**
@@ -197,11 +204,14 @@ public interface IndexSet {
 
 	/**
 	 * Copies data from this {@code IndexSet} into a target {@code buffer} array.
+	 * @return the number of values copied
 	 *
 	 * @see #export(int, int, int[], int)
 	 */
-	default void export(int[] buffer, int offset) {
-		export(0, size(), buffer, offset);
+	default int export(int[] buffer, int offset) {
+		int size = size();
+		export(0, size, buffer, offset);
+		return size;
 	}
 
 	/**
@@ -220,11 +230,14 @@ public interface IndexSet {
 
 	/**
 	 * Copies data from this {@code IndexSet} into a target {@code buffer} array.
+	 * @return the number of values copied
 	 *
 	 * @see #export(int, int, long[], int)
 	 */
-	default void export(long[] buffer, int offset) {
-		export(0, size(), buffer, offset);
+	default int export(long[] buffer, int offset) {
+		int size = size();
+		export(0, size, buffer, offset);
+		return size;
 	}
 
 	/**
@@ -286,16 +299,12 @@ public interface IndexSet {
 	 * @param beginIndex position of first index to apply the given action to, inclusive
 	 * @param endIndex position of last index to apply the given action to, exclusive
 	 *
-	 * @throws ModelException in case this set contains values that exceed integer space
+	 * @throws ModelException in case this set potentially contains values that exceed integer space
 	 */
 	default void forEachIndex(IntConsumer action, int beginIndex, int endIndex) {
 		requireNonNull(action);
-		if(!IndexValueType.INTEGER.isValidSubstitute(getIndexValueType()))
-			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
-					"Cannot serve IntConsumer - index set contains values beyond integer space");
-
 		for(int i=beginIndex; i<endIndex; i++) {
-			action.accept((int) indexAt(i));
+			action.accept(strictToInt(indexAt(i)));
 		}
 	}
 
@@ -304,7 +313,7 @@ public interface IndexSet {
 	 * in this set.
 	 * @param action
 	 */
-	default void forEachEntry(LongBinaryOperator action) {
+	default void forEachEntry(IntLongConsumer action) {
 		forEachEntry(action, 0, size());
 	}
 
@@ -313,25 +322,29 @@ public interface IndexSet {
 	 * in the specified region of this set.
 	 * @param action
 	 */
-	default void forEachEntry(LongBinaryOperator action, int beginIndex, int endIndex) {
+	default void forEachEntry(IntLongConsumer action, int beginIndex, int endIndex) {
 		requireNonNull(action);
 		for(int i=beginIndex; i<endIndex; i++) {
-			action.applyAsLong(i, indexAt(i));
+			action.accept(i, indexAt(i));
 		}
 	}
 
-	default void forEachEntry(IntBinaryOperator action) {
+	default void forEachEntry(IntBiConsumer action) {
 		forEachEntry(action, 0, size());
 	}
 
-	default void forEachEntry(IntBinaryOperator action, int beginIndex, int endIndex) {
+	/**
+	 *
+	 * @param action
+	 * @param beginIndex
+	 * @param endIndex
+	 * @throws ModelException of type {@link GlobalErrorCode#ILLEGAL_STATE} if the content of
+	 * this index set is not appropriate for an {@link IntBiConsumer}.
+	 */
+	default void forEachEntry(IntBiConsumer action, int beginIndex, int endIndex) {
 		requireNonNull(action);
-		if(!IndexValueType.INTEGER.isValidSubstitute(getIndexValueType()))
-			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
-					"Cannot serve IntConsumer - index set contains values beyond integer space");
-
 		for(int i=beginIndex; i<endIndex; i++) {
-			action.applyAsInt(i, (int)indexAt(i));
+			action.accept(i, strictToInt(indexAt(i)));
 		}
 	}
 
@@ -371,15 +384,13 @@ public interface IndexSet {
 	 * @param endIndex position of last index to apply the given action to, exclusive
 	 * @return {@code true} iff the given {@code check} holds for all index values in the
 	 * specified region of this set.
+	 * @throws ModelException of type {@link GlobalErrorCode#ILLEGAL_STATE} if the content of
+	 * this index set is not appropriate for an {@link IntPredicate}.
 	 */
 	default boolean checkIndices(IntPredicate check, int beginIndex, int endIndex) {
 		requireNonNull(check);
-		if(!IndexValueType.INTEGER.isValidSubstitute(getIndexValueType()))
-			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
-					"Cannot serve IntPredicate - index set contains values beyond integer space");
-
 		for(int i=beginIndex; i<endIndex; i++) {
-			if(!check.test((int)indexAt(i))) {
+			if(!check.test(strictToInt(indexAt(i)))) {
 				return false;
 			}
 		}
@@ -575,10 +586,21 @@ public interface IndexSet {
 		return IndexUtils.asIterator(this);
 	}
 
+	/**
+	 *
+	 * @param start first index for values returned from iterator
+	 * @return
+	 */
 	default OfLong iterator(int start) {
 		return IndexUtils.asIterator(this, start);
 	}
 
+	/**
+	 *
+	 * @param start begin of the section to iterate over, inclusive
+	 * @param end end of the sectio nto iterate over, exclusive
+	 * @return
+	 */
 	default OfLong iterator(int start, int end) {
 		return IndexUtils.asIterator(this, start, end);
 	}

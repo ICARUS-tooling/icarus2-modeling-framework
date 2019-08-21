@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.api.driver.indices.standard;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
@@ -34,6 +35,12 @@ import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.shorts.ShortList;
 
 /**
+ * Generic {@link IndexSet} implementation that uses primitive
+ * arrays as storage.
+ * <p>
+ * Note: all {@code fromIndex} and {@code toIndex} parameters in the
+ * constructors of this class are inclusive.
+ *
  * @author Markus Gärtner
  *
  */
@@ -46,15 +53,15 @@ public class ArrayIndexSet implements IndexSet {
 	private boolean sorted = false;
 
 	public ArrayIndexSet(Object indices) {
-		this(IndexValueType.forArray(indices), indices, 0, -1);
+		this(IndexValueType.forArray(indices), indices, 0, UNSET_INT);
 	}
 
 	public ArrayIndexSet(IndexValueType valueType, Object indices) {
-		this(valueType, indices, 0, -1);
+		this(valueType, indices, 0, UNSET_INT);
 	}
 
 	public ArrayIndexSet(IndexValueType valueType, Object indices, boolean isSorted) {
-		this(valueType, indices, 0, -1, isSorted);
+		this(valueType, indices, 0, UNSET_INT, isSorted);
 	}
 
 	public ArrayIndexSet(IndexValueType valueType, Object indices, int numIndices) {
@@ -77,7 +84,7 @@ public class ArrayIndexSet implements IndexSet {
 		checkArgument(fromIndex>=0);
 		checkArgument(toIndex<size);
 
-		if(toIndex<0) {
+		if(toIndex==UNSET_INT) {
 			toIndex = size-1;
 		}
 

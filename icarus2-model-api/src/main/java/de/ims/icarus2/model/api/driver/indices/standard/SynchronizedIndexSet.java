@@ -22,15 +22,15 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.Set;
-import java.util.function.IntBinaryOperator;
 import java.util.function.IntConsumer;
-import java.util.function.LongBinaryOperator;
 import java.util.function.LongConsumer;
 
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
+import de.ims.icarus2.util.function.IntBiConsumer;
+import de.ims.icarus2.util.function.IntLongConsumer;
 
 /**
  * Wrapper to make a given {@link IndexSet} thread-safe.
@@ -102,8 +102,8 @@ public class SynchronizedIndexSet implements IndexSet {
 	}
 
 	@Override
-	public synchronized void export(byte[] buffer, int offset) {
-		source.export(buffer, offset);
+	public synchronized int export(byte[] buffer, int offset) {
+		return source.export(buffer, offset);
 	}
 
 	@Override
@@ -113,8 +113,8 @@ public class SynchronizedIndexSet implements IndexSet {
 	}
 
 	@Override
-	public synchronized void export(short[] buffer, int offset) {
-		source.export(buffer, offset);
+	public synchronized int export(short[] buffer, int offset) {
+		return source.export(buffer, offset);
 	}
 
 	@Override
@@ -124,8 +124,8 @@ public class SynchronizedIndexSet implements IndexSet {
 	}
 
 	@Override
-	public synchronized void export(int[] buffer, int offset) {
-		source.export(buffer, offset);
+	public synchronized int export(int[] buffer, int offset) {
+		return source.export(buffer, offset);
 	}
 
 	@Override
@@ -135,8 +135,8 @@ public class SynchronizedIndexSet implements IndexSet {
 	}
 
 	@Override
-	public synchronized void export(long[] buffer, int offset) {
-		source.export(buffer, offset);
+	public synchronized int export(long[] buffer, int offset) {
+		return source.export(buffer, offset);
 	}
 
 	@Override
@@ -168,23 +168,23 @@ public class SynchronizedIndexSet implements IndexSet {
 	}
 
 	@Override
-	public synchronized void forEachEntry(LongBinaryOperator action) {
+	public synchronized void forEachEntry(IntLongConsumer action) {
 		source.forEachEntry(action);
 	}
 
 	@Override
-	public synchronized void forEachEntry(LongBinaryOperator action, int beginIndex,
+	public synchronized void forEachEntry(IntLongConsumer action, int beginIndex,
 			int endIndex) {
 		source.forEachEntry(action, beginIndex, endIndex);
 	}
 
 	@Override
-	public synchronized void forEachEntry(IntBinaryOperator action) {
+	public synchronized void forEachEntry(IntBiConsumer action) {
 		source.forEachEntry(action);
 	}
 
 	@Override
-	public synchronized void forEachEntry(IntBinaryOperator action, int beginIndex,
+	public synchronized void forEachEntry(IntBiConsumer action, int beginIndex,
 			int endIndex) {
 		source.forEachEntry(action, beginIndex, endIndex);
 	}

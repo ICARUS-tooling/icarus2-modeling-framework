@@ -761,6 +761,14 @@ public enum IndexValueType implements StringResource {
 	 */
 	public abstract void copyFrom(IntToLongFunction src, int srcPos, Object array, int destPos, int length);
 
+	public final IndexValueType smaller() {
+		return ordinal()== 0 ? null : _values[ordinal()-1];
+	}
+
+	public final IndexValueType larger() {
+		return ordinal()== _values.length-1 ? null : _values[ordinal()+1];
+	}
+
 	public static IndexValueType forValue(long value) {
 		if(value==IcarusUtils.UNSET_LONG) {
 			return null;

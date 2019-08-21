@@ -20,6 +20,7 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
+import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
@@ -973,7 +974,7 @@ public class IndexUtils {
 		}
 
 		private IndexSetIntSpliterator(IndexSet source, long pos, long fence) {
-			this(source, IcarusUtils.ensureIntegerValueRange(pos), IcarusUtils.ensureIntegerValueRange(fence));
+			this(source, strictToInt(pos), strictToInt(fence));
 		}
 
 		/**
@@ -981,7 +982,7 @@ public class IndexUtils {
 		 */
 		@Override
 		protected int currentInt() {
-			return IcarusUtils.ensureIntegerValueRange(source.indexAt((int) pos));
+			return strictToInt(source.indexAt((int) pos));
 		}
 
 		/**
