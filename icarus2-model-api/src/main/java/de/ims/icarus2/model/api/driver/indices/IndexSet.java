@@ -18,7 +18,9 @@ package de.ims.icarus2.model.api.driver.indices;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.lang.Primitives.strictToByte;
 import static de.ims.icarus2.util.lang.Primitives.strictToInt;
+import static de.ims.icarus2.util.lang.Primitives.strictToShort;
 import static java.util.Objects.requireNonNull;
 
 import java.sql.ResultSet;
@@ -172,7 +174,7 @@ public interface IndexSet {
 	default void export(int beginIndex, int endIndex, byte[] buffer, int offset) {
 		requireNonNull(buffer);
 		for(int i=beginIndex; i<endIndex; i++) {
-			buffer[offset++] = (byte) indexAt(i);
+			buffer[offset++] = strictToByte(indexAt(i));
 		}
 	}
 
@@ -198,7 +200,7 @@ public interface IndexSet {
 	default void export(int beginIndex, int endIndex, short[] buffer, int offset) {
 		requireNonNull(buffer);
 		for(int i=beginIndex; i<endIndex; i++) {
-			buffer[offset++] = (short) indexAt(i);
+			buffer[offset++] = strictToShort(indexAt(i));
 		}
 	}
 
@@ -224,7 +226,7 @@ public interface IndexSet {
 	default void export(int beginIndex, int endIndex, int[] buffer, int offset) {
 		requireNonNull(buffer);
 		for(int i=beginIndex; i<endIndex; i++) {
-			buffer[offset++] = (int) indexAt(i);
+			buffer[offset++] = strictToInt(indexAt(i));
 		}
 	}
 
@@ -413,6 +415,10 @@ public interface IndexSet {
 	default boolean checkConsecutiveIndices(LongBiPredicate check, int beginIndex, int endIndex) {
 		requireNonNull(check);
 		checkArgument("Begin index must be smaller than end index", beginIndex<endIndex);
+		if(beginIndex==endIndex-1) {
+			return false;
+		}
+
 		long previous = indexAt(beginIndex);
 		for(int i=beginIndex+1; i<endIndex; i++) {
 			long index = indexAt(i);
