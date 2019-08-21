@@ -16,12 +16,11 @@
  */
 package de.ims.icarus2.model.api.driver.indices.func;
 
+import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
 
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
-
-import de.ims.icarus2.util.IcarusUtils;
 
 /**
  * @author Markus Gärtner
@@ -42,6 +41,6 @@ public class Long2IntConverter implements LongConsumer {
 	 */
 	@Override
 	public void accept(long value) {
-		target.accept(IcarusUtils.ensureIntegerValueRange(value));
+		target.accept(strictToInt(value));
 	}
 }

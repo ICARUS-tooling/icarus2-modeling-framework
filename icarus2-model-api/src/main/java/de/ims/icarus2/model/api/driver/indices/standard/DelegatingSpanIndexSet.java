@@ -19,8 +19,11 @@ package de.ims.icarus2.model.api.driver.indices.standard;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
+import java.util.Set;
+
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
+import de.ims.icarus2.model.manifest.util.Messages;
 
 /**
  * Models a window to another index set (the {@code source}). The content of this index set
@@ -60,6 +63,7 @@ public class DelegatingSpanIndexSet implements IndexSet {
 
 	public void setSource(IndexSet source) {
 		requireNonNull(source);
+		//TODO check features of source? e.g. to make sure it supports random access
 
 		this.source = source;
 
@@ -91,7 +95,8 @@ public class DelegatingSpanIndexSet implements IndexSet {
 
 	protected void checkIndex(int index) {
 		if(index<0 || index>=size())
-			throw new IndexOutOfBoundsException();
+			throw new IndexOutOfBoundsException(
+					Messages.indexOutOfBounds(null, 0, size()-1, index));
 	}
 
 	/**
@@ -136,6 +141,11 @@ public class DelegatingSpanIndexSet implements IndexSet {
 	}
 
 	/**
+	 * Translates the given {@code beginIndex} and {@code toIndex}
+	 * by applying the current internal {@link #getBeginIndex()} and then
+	 * instantiates a new {@link DelegatingSpanIndexSet} to represent the
+	 * requested section of this index set.
+	 *
 	 * @see de.ims.icarus2.model.api.driver.indices.IndexSet#subSet(int, int)
 	 */
 	@Override
@@ -178,5 +188,13 @@ public class DelegatingSpanIndexSet implements IndexSet {
 	@Override
 	public boolean sort() {
 		return source.sort();
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.driver.indices.IndexSet#getFeatures()
+	 */
+	@Override
+	public Set<Feature> getFeatures() {
+		return source.getFeatures();
 	}
 }
