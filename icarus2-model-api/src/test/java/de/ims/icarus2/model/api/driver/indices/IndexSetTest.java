@@ -597,17 +597,23 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 			this.set = constructor.apply(this);
 			return this;
 		}
+		/** Produce random indices outside the next smaller type's value space */
 		public Config randomIndices(int size) {
 			assertNotNull(valueType, "Value type missing");
-			indices = randomLongs(size, 0, valueType.maxValue());
+			IndexValueType smaller = valueType.smaller();
+			long min = smaller==null ? 0L : smaller.maxValue()+1;
+			indices = randomLongs(size, min, valueType.maxValue());
 			indices[random(0, indices.length)] = valueType.maxValue();
 			return this;
 		}
+		/** Create sorted indices outside the next smaller type's value space */
 		public Config sortedIndices(int size) {
 			assertNotNull(valueType, "Value type missing");
 			assertTrue(size<=valueType.maxValue());
+			IndexValueType smaller = valueType.smaller();
+			long min = smaller==null ? 0L : smaller.maxValue()+1;
 			indices = new long[size];
-			ArrayUtils.fillAscending(indices);
+			ArrayUtils.fillAscending(indices, min);
 			indices[indices.length-1] = valueType.maxValue();
 			return this;
 		}

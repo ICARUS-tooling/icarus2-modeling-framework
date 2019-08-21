@@ -87,6 +87,10 @@ public class TestUtils {
 		throw new TestAbortedException();
 	}
 
+	public static void noOp() {
+		// no-op
+	}
+
 	// Number apreviations
 
 	public static final int  K1   =           1_000;
