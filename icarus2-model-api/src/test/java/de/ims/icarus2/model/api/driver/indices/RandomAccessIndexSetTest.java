@@ -820,12 +820,14 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						assertFalse(config.set.checkConsecutiveIndices((v0, v1) -> true, 0, 1));
 						assertFalse(config.set.checkConsecutiveIndices((v0, v1) -> false, 0, 1));
 					} else {
-						int from = random(0, size);
-						int to = random(from+1, size+1);
+						// Need a random span of at least size 2
+						int from = random(0, size-1);
+						int to = random(from+2, size+1);
 						MutableInteger index = new MutableInteger(from+1);
 						assertTrue(config.set.checkConsecutiveIndices((v0, v1)
 								-> config.indices[index.intValue()-1] == v0
-								&& config.indices[index.getAndIncrement()] == v1, from, to));
+								&& config.indices[index.getAndIncrement()] == v1, from, to),
+								() -> "from="+from+" to="+to+": "+Arrays.toString(config.indices));
 						assertEquals(to, index.get());
 
 						assertTrue(config.set.checkConsecutiveIndices((v0, v1) -> true));

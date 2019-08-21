@@ -660,7 +660,8 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 			assertNotNull(features, "Features missing");
 			assertNotNull(valueType, "Value type missing");
 
-			assertFalse(set.isEmpty(), "Set under test msut not be empty");
+			assertFalse(set.isEmpty(), "Set under test must not be empty");
+			assertFalse(features.isEmpty(), "Features not be empty");
 
 			return this;
 		}

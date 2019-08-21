@@ -42,7 +42,9 @@ public class SpanIndexSet implements IndexSet {
 		this.minValue = minValue;
 		this.maxValue = maxValue;
 
-		valueType = ClassUtils.max(IndexValueType.forValue(minValue), IndexValueType.forValue(maxValue));
+		valueType = ClassUtils.max(
+				IndexValueType.forValue(minValue),
+				IndexValueType.forValue(maxValue));
 	}
 
 	/**

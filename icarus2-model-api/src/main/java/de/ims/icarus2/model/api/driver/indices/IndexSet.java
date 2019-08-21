@@ -419,6 +419,7 @@ public interface IndexSet {
 			return false;
 		}
 
+		// We try to call indexAt(i) at most once for every index i
 		long previous = indexAt(beginIndex);
 		for(int i=beginIndex+1; i<endIndex; i++) {
 			long index = indexAt(i);
