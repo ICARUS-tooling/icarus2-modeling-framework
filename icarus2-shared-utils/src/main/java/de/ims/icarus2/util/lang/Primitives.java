@@ -19,6 +19,9 @@ package de.ims.icarus2.util.lang;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusRuntimeException;
+
 /**
  * @author Markus Gärtner
  *
@@ -152,6 +155,47 @@ public class Primitives {
 
 	public static Character _char(char value) {
 		return Character.valueOf(value);
+	}
+
+	private static IcarusRuntimeException forOverflow(String type, long value) {
+		return new IcarusRuntimeException(GlobalErrorCode.VALUE_OVERFLOW,
+				String.format("Given value is overflowing %s space: %d", type, _long(value)));
+	}
+
+	public static byte strictToByte(short v) {
+		if(v<Byte.MIN_VALUE || v>Byte.MAX_VALUE)
+			throw forOverflow("byte", v);
+		return (byte)v;
+	}
+
+	public static byte strictToByte(int v) {
+		if(v<Byte.MIN_VALUE || v>Byte.MAX_VALUE)
+			throw forOverflow("byte", v);
+		return (byte)v;
+	}
+
+	public static byte strictToByte(long v) {
+		if(v<Byte.MIN_VALUE || v>Byte.MAX_VALUE)
+			throw forOverflow("byte", v);
+		return (byte)v;
+	}
+
+	public static short strictToShort(int v) {
+		if(v<Short.MIN_VALUE || v>Short.MAX_VALUE)
+			throw forOverflow("short", v);
+		return (short)v;
+	}
+
+	public static short strictToShort(long v) {
+		if(v<Short.MIN_VALUE || v>Short.MAX_VALUE)
+			throw forOverflow("short", v);
+		return (short)v;
+	}
+
+	public static int strictToInt(long v) {
+		if(v<Integer.MIN_VALUE || v>Integer.MAX_VALUE)
+			throw forOverflow("int", v);
+		return (int)v;
 	}
 
 }

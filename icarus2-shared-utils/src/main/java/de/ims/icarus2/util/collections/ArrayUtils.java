@@ -17,7 +17,6 @@
 package de.ims.icarus2.util.collections;
 
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
-import static de.ims.icarus2.util.lang.Primitives._long;
 import static java.util.Objects.requireNonNull;
 
 import java.lang.reflect.Array;
@@ -34,8 +33,7 @@ import java.util.function.IntToLongFunction;
 import java.util.function.IntUnaryOperator;
 import java.util.function.LongBinaryOperator;
 
-import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusRuntimeException;
+import de.ims.icarus2.util.lang.Primitives;
 
 /**
  * @author Markus Gärtner
@@ -117,9 +115,23 @@ public class ArrayUtils {
 		return a;
 	}
 
+	public static int[] fillAscending(int[] a, int start) {
+		for(int i=0; i<a.length; i++)
+			a[i] = start+i;
+
+		return a;
+	}
+
 	public static long[] fillAscending(long[] a) {
 		for(int i=0; i<a.length; i++)
 			a[i] = i;
+
+		return a;
+	}
+
+	public static long[] fillAscending(long[] a, long start) {
+		for(int i=0; i<a.length; i++)
+			a[i] = start+i;
 
 		return a;
 	}
@@ -368,46 +380,7 @@ public class ArrayUtils {
 
 	// CONVERSION CHECKS
 
-	private static IcarusRuntimeException forOverflow(String type, long value) {
-		return new IcarusRuntimeException(GlobalErrorCode.VALUE_OVERFLOW,
-				String.format("Given value is overflowing %s space: %d", type, _long(value)));
-	}
 
-	private static byte strictToByte(short v) {
-		if(v<Byte.MIN_VALUE || v>Byte.MAX_VALUE)
-			throw forOverflow("byte", v);
-		return (byte)v;
-	}
-
-	private static byte strictToByte(int v) {
-		if(v<Byte.MIN_VALUE || v>Byte.MAX_VALUE)
-			throw forOverflow("byte", v);
-		return (byte)v;
-	}
-
-	private static byte strictToByte(long v) {
-		if(v<Byte.MIN_VALUE || v>Byte.MAX_VALUE)
-			throw forOverflow("byte", v);
-		return (byte)v;
-	}
-
-	private static short strictToShort(int v) {
-		if(v<Short.MIN_VALUE || v>Short.MAX_VALUE)
-			throw forOverflow("short", v);
-		return (short)v;
-	}
-
-	private static short strictToShort(long v) {
-		if(v<Short.MIN_VALUE || v>Short.MAX_VALUE)
-			throw forOverflow("short", v);
-		return (short)v;
-	}
-
-	private static int strictToInt(long v) {
-		if(v<Integer.MIN_VALUE || v>Integer.MAX_VALUE)
-			throw forOverflow("int", v);
-		return (int)v;
-	}
 
 	// ARRAY COPY BYTE
 
@@ -445,7 +418,7 @@ public class ArrayUtils {
 
 	public static void arrayCopy(short[] src, int srcPos, byte[] dest, int destPos, int length) {
 		for(int i=0; i<length; i++) {
-			dest[destPos+i] = strictToByte(src[srcPos+i]);
+			dest[destPos+i] = Primitives.strictToByte(src[srcPos+i]);
 		}
 	}
 
@@ -477,13 +450,13 @@ public class ArrayUtils {
 
 	public static void arrayCopy(int[] src, int srcPos, byte[] dest, int destPos, int length) {
 		for(int i=0; i<length; i++) {
-			dest[destPos+i] = strictToByte(src[srcPos+i]);
+			dest[destPos+i] = Primitives.strictToByte(src[srcPos+i]);
 		}
 	}
 
 	public static void arrayCopy(int[] src, int srcPos, short[] dest, int destPos, int length) {
 		for(int i=0; i<length; i++) {
-			dest[destPos+i] = strictToShort(src[srcPos+i]);
+			dest[destPos+i] = Primitives.strictToShort(src[srcPos+i]);
 		}
 	}
 
@@ -509,19 +482,19 @@ public class ArrayUtils {
 
 	public static void arrayCopy(long[] src, int srcPos, byte[] dest, int destPos, int length) {
 		for(int i=0; i<length; i++) {
-			dest[destPos+i] = strictToByte(src[srcPos+i]);
+			dest[destPos+i] = Primitives.strictToByte(src[srcPos+i]);
 		}
 	}
 
 	public static void arrayCopy(long[] src, int srcPos, short[] dest, int destPos, int length) {
 		for(int i=0; i<length; i++) {
-			dest[destPos+i] = strictToShort(src[srcPos+i]);
+			dest[destPos+i] = Primitives.strictToShort(src[srcPos+i]);
 		}
 	}
 
 	public static void arrayCopy(long[] src, int srcPos, int[] dest, int destPos, int length) {
 		for(int i=0; i<length; i++) {
-			dest[destPos+i] = strictToInt(src[srcPos+i]);
+			dest[destPos+i] = Primitives.strictToInt(src[srcPos+i]);
 		}
 	}
 
@@ -535,13 +508,13 @@ public class ArrayUtils {
 
 	public static void arrayCopy(IntUnaryOperator src, int srcPos, byte[] dest, int destPos, int length) {
 		for(int i=0; i<length; i++) {
-			dest[destPos+i] = strictToByte(src.applyAsInt(srcPos+i));
+			dest[destPos+i] = Primitives.strictToByte(src.applyAsInt(srcPos+i));
 		}
 	}
 
 	public static void arrayCopy(IntUnaryOperator src, int srcPos, short[] dest, int destPos, int length) {
 		for(int i=0; i<length; i++) {
-			dest[destPos+i] = strictToShort(src.applyAsInt(srcPos+i));
+			dest[destPos+i] = Primitives.strictToShort(src.applyAsInt(srcPos+i));
 		}
 	}
 
@@ -561,19 +534,19 @@ public class ArrayUtils {
 
 	public static void arrayCopy(IntToLongFunction src, int srcPos, byte[] dest, int destPos, int length) {
 		for(int i=0; i<length; i++) {
-			dest[destPos+i] = strictToByte(src.applyAsLong(srcPos+i));
+			dest[destPos+i] = Primitives.strictToByte(src.applyAsLong(srcPos+i));
 		}
 	}
 
 	public static void arrayCopy(IntToLongFunction src, int srcPos, short[] dest, int destPos, int length) {
 		for(int i=0; i<length; i++) {
-			dest[destPos+i] = strictToShort(src.applyAsLong(srcPos+i));
+			dest[destPos+i] = Primitives.strictToShort(src.applyAsLong(srcPos+i));
 		}
 	}
 
 	public static void arrayCopy(IntToLongFunction src, int srcPos, int[] dest, int destPos, int length) {
 		for(int i=0; i<length; i++) {
-			dest[destPos+i] = strictToInt(src.applyAsLong(srcPos+i));
+			dest[destPos+i] = Primitives.strictToInt(src.applyAsLong(srcPos+i));
 		}
 	}
 
