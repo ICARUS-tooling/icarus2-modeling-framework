@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
@@ -27,6 +31,14 @@ import de.ims.icarus2.model.api.driver.indices.IndexValueType;
  *
  */
 public class SingletonIndexSet implements IndexSet {
+
+	/** Package private for access by test code */
+	static final Set<Feature> features;
+	static {
+		Set<Feature> set = EnumSet.copyOf(IndexSet.DEFAULT_FEATURES);
+		set.add(Feature.THREAD_SAFE);
+		features = Collections.unmodifiableSet(set);
+	}
 
 	public static SingletonIndexSet of(long index) {
 		return new SingletonIndexSet(index);
@@ -130,4 +142,11 @@ public class SingletonIndexSet implements IndexSet {
 		return true;
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.api.driver.indices.IndexSet#getFeatures()
+	 */
+	@Override
+	public Set<Feature> getFeatures() {
+		return features;
+	}
 }
