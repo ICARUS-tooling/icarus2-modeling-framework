@@ -72,7 +72,7 @@ public class SynchronizedIndexSet implements IndexSet {
 	}
 
 	@Override
-	public long indexAt(int index) {
+	public synchronized long indexAt(int index) {
 		return source.indexAt(index);
 	}
 
