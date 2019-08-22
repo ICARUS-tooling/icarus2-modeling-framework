@@ -5,12 +5,24 @@ package de.ims.icarus2.model.api.driver.indices.standard;
 
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.test.TestUtils.randomInts;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
+import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.DynamicNode;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
@@ -59,15 +71,6 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 							.randomIndices(randomSize())
 							.set(constructor)
 						));
-
-//		int[] indices = randomInts(100, 0, Integer.MAX_VALUE);
-//		return Stream.of(new Config()
-//				.label("default")
-//				.indices(indices)
-//				.sorted(false)
-//				.valueType(IndexValueType.INTEGER)
-//				.features(IndexSet.DEFAULT_FEATURES)
-//				.set(new ArrayIndexSet(indices)));
 	}
 
 	@Override
@@ -80,54 +83,127 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 		return settings.process(new ArrayIndexSet(randomInts(10, 0, Integer.MAX_VALUE)));
 	}
 
+	@Nested
 	class Constructors {
+
+		private void assertIndexSet(ArrayIndexSet set, Object array,
+				int size, IndexValueType type) {
+			assertEquals(size, set.size());
+			assertSame(array, set.getIndices());
+			assertEquals(type, set.getIndexValueType());
+		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet#ArrayIndexSet(java.lang.Object)}.
 		 */
-		@Test
-		void testArrayIndexSetObject() {
-			fail("Not yet implemented"); // TODO
+		@ParameterizedTest
+		@EnumSource(IndexValueType.class)
+		void testArrayIndexSetObject(IndexValueType type) {
+			int size = randomSize();
+			Object array = type.newArray(size);
+			ArrayIndexSet set = new ArrayIndexSet(array);
+			assertIndexSet(set, array, size, type);
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet#ArrayIndexSet(de.ims.icarus2.model.api.driver.indices.IndexValueType, java.lang.Object)}.
 		 */
-		@Test
-		void testArrayIndexSetIndexValueTypeObject() {
-			fail("Not yet implemented"); // TODO
+		@ParameterizedTest
+		@EnumSource(IndexValueType.class)
+		void testArrayIndexSetIndexValueTypeObject(IndexValueType type) {
+			int size = randomSize();
+			Object array = type.newArray(size);
+			ArrayIndexSet set = new ArrayIndexSet(type, array);
+			assertIndexSet(set, array, size, type);
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet#ArrayIndexSet(de.ims.icarus2.model.api.driver.indices.IndexValueType, java.lang.Object, boolean)}.
 		 */
-		@Test
-		void testArrayIndexSetIndexValueTypeObjectBoolean() {
-			fail("Not yet implemented"); // TODO
+		@TestFactory
+		Stream<DynamicTest> testArrayIndexSetIndexValueTypeObjectBoolean() {
+			return Stream.of(IndexValueType.values())
+					.flatMap(type -> Stream.of(dynamicTest(type+" default", () -> {
+						int size = randomSize();
+						Object array = type.newArray(size);
+						ArrayIndexSet set = new ArrayIndexSet(type, array, true);
+						assertIndexSet(set, array, size, type);
+						assertTrue(set.isSorted());
+					}),
+						dynamicTest(type+" default", () -> {
+							int size = randomSize();
+							Object array = type.newArray(size);
+							ArrayIndexSet set = new ArrayIndexSet(type, array, false);
+							assertIndexSet(set, array, size, type);
+							assertFalse(set.isSorted());
+						})
+					));
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet#ArrayIndexSet(de.ims.icarus2.model.api.driver.indices.IndexValueType, java.lang.Object, int)}.
 		 */
-		@Test
-		void testArrayIndexSetIndexValueTypeObjectInt() {
-			fail("Not yet implemented"); // TODO
+		@TestFactory
+		Stream<DynamicNode> testArrayIndexSetIndexValueTypeObjectInt() {
+			return Stream.of(IndexValueType.values())
+					.map(type -> dynamicContainer(type.name(),
+							random().ints(1, 1000)
+								.limit(10)
+								.mapToObj(size -> dynamicTest(String.valueOf(size), () -> {
+									Object array = type.newArray(size);
+									int numIndices = random(1, size+1);
+									ArrayIndexSet set = new ArrayIndexSet(type, array, numIndices);
+									assertIndexSet(set, array, numIndices, type);
+								}))));
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet#ArrayIndexSet(de.ims.icarus2.model.api.driver.indices.IndexValueType, java.lang.Object, int, int)}.
 		 */
-		@Test
-		void testArrayIndexSetIndexValueTypeObjectIntInt() {
-			fail("Not yet implemented"); // TODO
+		@TestFactory
+		Stream<DynamicNode> testArrayIndexSetIndexValueTypeObjectIntInt() {
+			return Stream.of(IndexValueType.values())
+					.map(type -> dynamicContainer(type.name(),
+							random().ints(1, 1000)
+								.limit(10)
+								.mapToObj(size -> dynamicTest(String.valueOf(size), () -> {
+									Object array = type.newArray(size);
+									int from = random(0, size);
+									int to = random(from, size);
+									ArrayIndexSet set = new ArrayIndexSet(type, array, from, to);
+									assertIndexSet(set, array, to-from+1, type);
+								}))));
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet#ArrayIndexSet(de.ims.icarus2.model.api.driver.indices.IndexValueType, java.lang.Object, int, int, boolean)}.
 		 */
-		@Test
-		void testArrayIndexSetIndexValueTypeObjectIntIntBoolean() {
-			fail("Not yet implemented"); // TODO
+		@SuppressWarnings("boxing")
+		@TestFactory
+		Stream<DynamicNode> testArrayIndexSetIndexValueTypeObjectIntIntBoolean() {
+			return Stream.of(IndexValueType.values())
+					.map(type -> dynamicContainer(type.name(),
+							random().ints(1, 1000)
+								.limit(10)
+								.mapToObj(Integer::valueOf)
+								.flatMap(size -> Stream.of(
+										dynamicTest(String.valueOf(size), () -> {
+										Object array = type.newArray(size);
+										int from = random(0, size);
+										int to = random(from, size);
+										ArrayIndexSet set = new ArrayIndexSet(type, array, from, to, true);
+										assertIndexSet(set, array, to-from+1, type);
+										assertTrue(set.isSorted());
+										}),
+										dynamicTest(String.valueOf(size), () -> {
+										Object array = type.newArray(size);
+										int from = random(0, size);
+										int to = random(from, size);
+										ArrayIndexSet set = new ArrayIndexSet(type, array, from, to, false);
+										assertIndexSet(set, array, to-from+1, type);
+										assertFalse(set.isSorted());
+										})
+								))));
 		}
 
 	}

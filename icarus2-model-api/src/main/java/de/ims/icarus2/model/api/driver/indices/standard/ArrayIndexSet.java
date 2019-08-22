@@ -97,6 +97,11 @@ public class ArrayIndexSet implements IndexSet {
 		this.sorted = isSorted;
 	}
 
+	/** Package-private access to the internal indices array for testing */
+	Object getIndices() {
+		return indices;
+	}
+
 	@Override
 	public IndexValueType getIndexValueType() {
 		return valueType;
