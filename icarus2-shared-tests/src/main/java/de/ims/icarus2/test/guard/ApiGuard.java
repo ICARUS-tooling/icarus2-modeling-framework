@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -43,12 +42,13 @@ import org.opentest4j.TestAbortedException;
 
 import de.ims.icarus2.apiguard.Api;
 import de.ims.icarus2.apiguard.Unguarded;
+import de.ims.icarus2.test.util.DummyCache;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class ApiGuard<T> {
+public class ApiGuard<T> extends DummyCache<ApiGuard<T>, T> {
 
 	/**
 	 * Class for which we want guarding tests to be created for
@@ -91,8 +91,6 @@ public class ApiGuard<T> {
 
 	private final List<Guardian<T>> guardians = new ArrayList<>(3);
 
-	private final Map<Class<?>, Function<T, ?>> parameterResolvers = new HashMap<>();
-
 	private final Map<String, Object> defaultReturnValues = new HashMap<>();
 
 	public ApiGuard(Class<T> targetClass) {
@@ -110,6 +108,7 @@ public class ApiGuard<T> {
 		assertFalse(clazz.isPrimitive(), "Test class must not be primitive");
 	}
 
+	@Override
 	protected ApiGuard<T> self() {
 		return this;
 	}
@@ -148,16 +147,6 @@ public class ApiGuard<T> {
 	public ApiGuard<T> strictNameFilter(boolean strictNameFilter) {
 		assertNull(this.strictNameFilter, "strictNameFilter already set");
 		this.strictNameFilter = Boolean.valueOf(strictNameFilter);
-		return self();
-	}
-
-	public <V> ApiGuard<T> parameterResolver(Class<V> paramClass,
-			Function<T, V> resolver) {
-		requireNonNull(paramClass);
-		requireNonNull(resolver);
-
-		parameterResolvers.put(paramClass, resolver);
-
 		return self();
 	}
 
@@ -235,10 +224,6 @@ public class ApiGuard<T> {
 
 	public boolean isStrictNameFilter() {
 		return strictNameFilter!=null && strictNameFilter.booleanValue();
-	}
-
-	public Map<Class<?>, Function<T, ?>> getParameterResolvers() {
-		return Collections.unmodifiableMap(parameterResolvers);
 	}
 
 	public Map<String, Object> getDefaultReturnValues() {

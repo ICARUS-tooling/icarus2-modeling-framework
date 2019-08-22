@@ -24,23 +24,18 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
-import static org.mockito.Mockito.mock;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Array;
 import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 
 import javax.annotation.Nullable;
 
@@ -48,10 +43,9 @@ import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestReporter;
 import org.junit.jupiter.api.function.ThrowingConsumer;
-import org.opentest4j.TestAbortedException;
 
-import de.ims.icarus2.apiguard.EnumType;
 import de.ims.icarus2.test.reflect.MethodCache;
+import de.ims.icarus2.test.util.DummyCache;
 
 /**
  * @author Markus Gärtner
@@ -59,53 +53,15 @@ import de.ims.icarus2.test.reflect.MethodCache;
  */
 abstract class Guardian<T> {
 
-
-	private static final Map<Class<?>, Object> sharedDummies;
-
-	static {
-		Map<Class<?>, Object> map = new HashMap<>();
-
-		// Primitives and their wrappers
-
-		map.put(Byte.TYPE, Byte.valueOf(Byte.MAX_VALUE));
-		map.put(Byte.class, Byte.valueOf(Byte.MAX_VALUE));
-
-		map.put(Short.TYPE, Short.valueOf(Short.MAX_VALUE));
-		map.put(Short.class, Short.valueOf(Short.MAX_VALUE));
-
-		map.put(Integer.TYPE, Integer.valueOf(Integer.MAX_VALUE));
-		map.put(Integer.class, Integer.valueOf(Integer.MAX_VALUE));
-
-		map.put(Character.TYPE, Character.valueOf(Character.MAX_VALUE));
-		map.put(Character.class, Character.valueOf(Character.MAX_VALUE));
-
-		map.put(Long.TYPE, Long.valueOf(Long.MAX_VALUE));
-		map.put(Long.class, Long.valueOf(Long.MAX_VALUE));
-
-		map.put(Float.TYPE, Float.valueOf(Float.MAX_VALUE));
-		map.put(Float.class, Float.valueOf(Float.MAX_VALUE));
-
-		map.put(Double.TYPE, Double.valueOf(Double.MAX_VALUE));
-		map.put(Double.class, Double.valueOf(Double.MAX_VALUE));
-
-		map.put(Boolean.TYPE, Boolean.TRUE);
-		map.put(Boolean.class, Boolean.TRUE);
-
-		// Known final classes
-
-		map.put(String.class, "test");
-
-		sharedDummies = Collections.unmodifiableMap(map);
-	}
-
-	private final Map<Class<?>, Function<T, ?>> parameterResolvers;
+//	private final Map<Class<?>, Function<T, ?>> parameterResolvers;
 
 	private final Map<String, Object> defaultReturnValues;
+	private final DummyCache<?, T> dummyCache;
 
 	protected Guardian(ApiGuard<T> apiGuard) {
 		requireNonNull(apiGuard);
 
-		parameterResolvers = requireNonNull(apiGuard.getParameterResolvers());
+		dummyCache = apiGuard;
 		defaultReturnValues = requireNonNull(apiGuard.getDefaultReturnValues());
 	}
 
@@ -113,105 +69,6 @@ abstract class Guardian<T> {
 		return Optional.ofNullable(defaultReturnValues.get(property))
 				.orElseThrow(() -> new IllegalStateException(
 						"No valid default return value defined for property '"+property+"'"));
-	}
-
-	/**
-	 * Fetches and returns an entry from the map of default
-	 * values for parameter testing based on the given {@code class}.
-	 *
-	 * @param clazz
-	 * @return
-	 */
-	private Object getDefaultValue(Class<?> clazz) {
-		return sharedDummies.get(clazz);
-	}
-
-	private Object fetchEnumValue(Class<?> clazz, EnumType annotation) {
-		String methodName = annotation.method();
-		String key = annotation.key();
-
-		assertNotNull(methodName);
-
-		try {
-			if(key==null || key.isEmpty()) {
-				Object enums = clazz.getMethod(methodName).invoke(null);
-				assertNotNull(enums);
-
-				if(enums.getClass().isArray()) {
-					return Array.get(enums, 0);
-				} else if(enums instanceof Collection) {
-					return ((Collection<?>)enums).iterator().next();
-				} else
-					throw new TestAbortedException("Unsupported return type of enum retreival method: "+methodName);
-			}
-
-			Object value = clazz.getMethod(methodName, String.class)
-					.invoke(null, key);
-			assertNotNull(value);
-			return value;
-
-		} catch (NoSuchMethodException | SecurityException
-				| IllegalAccessException | IllegalArgumentException
-				| InvocationTargetException e) {
-			throw new TestAbortedException("Failed to obtain enum constants", e);
-		}
-	}
-
-	/**
-	 *
-	 * @param clazz
-	 * @return
-	 */
-	Object createParameter(Class<?> clazz) {
-
-		if(clazz.isEnum()) {
-			// Assumes that the enum actually has values defined
-			return clazz.getEnumConstants()[0];
-		} else if(clazz.isArray()) {
-			return Array.newInstance(clazz.getComponentType(), 0);
-		}
-
-		EnumType enumType = clazz.getAnnotation(EnumType.class);
-		if(enumType!=null) {
-			return fetchEnumValue(clazz, enumType);
-		}
-
-		if(Modifier.isFinal(clazz.getModifiers()))
-			throw new GuardException("Cannot mock final class: "+clazz);
-
-		/*
-		 *  We could check for a no-args constructor and use it,
-		 *  but most likely this would just be prone to injecting
-		 *  possible issues into test code where they are not expected.
-		 *
-		 *  So per default we will just mock every type that we
-		 *  cannot provide a simpler solution for...
-		 */
-
-		return mock(clazz);
-	}
-
-	/**
-	 * Resolves a non-null test value for the given {@code class}.
-	 *
-	 * @param clazz
-	 * @return
-	 */
-	Object resolveParameter(T instance, Class<?> clazz) {
-		Object value = null;
-
-		Function<T, ?> resolver = parameterResolvers.get(clazz);
-		if(resolver!=null) {
-			value = resolver.apply(instance);
-		}
-
-		if(value==null) {
-			value = getDefaultValue(clazz);
-		}
-		if(value==null) {
-			value = createParameter(clazz);
-		}
-		return value;
 	}
 
 	private BitSet findNullableParameters(Executable executable, MethodCache methodCache) {
@@ -244,6 +101,10 @@ abstract class Guardian<T> {
 
 	private String label(Class<?> clazz) {
 		return clazz.getSimpleName();
+	}
+
+	protected Object resolveParameter(T instance, Class<?> clazz) {
+		return dummyCache.createDummy(instance, clazz);
 	}
 
 	Collection<ParamConfig> variateNullParameter(T instance,

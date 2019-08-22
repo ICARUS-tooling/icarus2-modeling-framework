@@ -330,6 +330,17 @@ public class TestUtils {
 		return String.format(pattern, args);
 	}
 
+	public static String typeLabel(Class<?>...types) {
+		StringBuilder sb = new StringBuilder(types.length*15);
+
+		for (int i = 0; i < types.length; i++) {
+			if(i>0) sb.append(',');
+			sb.append(types[i].getSimpleName());
+		}
+
+		return sb.toString();
+	}
+
 	public static void println() {
 		if(out!=null)
 			out.println();
