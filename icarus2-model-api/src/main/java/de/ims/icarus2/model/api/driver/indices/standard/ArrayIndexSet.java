@@ -205,7 +205,7 @@ public class ArrayIndexSet implements IndexSet {
 	}
 
 	public static ArrayIndexSet copyOf(IndexSet set) {
-		return copyOf(set, 0, set.size());
+		return copyOf(set, 0, set.size()-1);
 	}
 
 	/**
@@ -239,7 +239,7 @@ public class ArrayIndexSet implements IndexSet {
 		requireNonNull(source);
 
 		IndexValueType valueType = IndexValueType.BYTE;
-		Object indices = source.toArray();
+		Object indices = source.toByteArray();
 
 		return new ArrayIndexSet(valueType, indices, false);
 	}
@@ -248,7 +248,7 @@ public class ArrayIndexSet implements IndexSet {
 		requireNonNull(source);
 
 		IndexValueType valueType = IndexValueType.SHORT;
-		Object indices = source.toArray();
+		Object indices = source.toShortArray();
 
 		return new ArrayIndexSet(valueType, indices, false);
 	}
@@ -257,7 +257,7 @@ public class ArrayIndexSet implements IndexSet {
 		requireNonNull(source);
 
 		IndexValueType valueType = IndexValueType.INTEGER;
-		Object indices = source.toArray();
+		Object indices = source.toIntArray();
 
 		return new ArrayIndexSet(valueType, indices, false);
 	}
@@ -266,7 +266,7 @@ public class ArrayIndexSet implements IndexSet {
 		requireNonNull(source);
 
 		IndexValueType valueType = IndexValueType.LONG;
-		Object indices = source.toArray();
+		Object indices = source.toLongArray();
 
 		return new ArrayIndexSet(valueType, indices, false);
 	}
@@ -288,7 +288,7 @@ public class ArrayIndexSet implements IndexSet {
 			previousValue = value;
 		}
 
-		return new ArrayIndexSet(IndexValueType.INTEGER, indices.toArray(), sorted);
+		return new ArrayIndexSet(IndexValueType.INTEGER, indices.toIntArray(), sorted);
 	}
 
 	public static ArrayIndexSet fromIterator(OfLong source) {
@@ -308,7 +308,7 @@ public class ArrayIndexSet implements IndexSet {
 			previousValue = value;
 		}
 
-		return new ArrayIndexSet(IndexValueType.LONG, indices.toArray(), sorted);
+		return new ArrayIndexSet(IndexValueType.LONG, indices.toLongArray(), sorted);
 	}
 
 	/**

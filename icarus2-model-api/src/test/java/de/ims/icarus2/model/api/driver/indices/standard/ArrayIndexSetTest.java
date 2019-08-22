@@ -3,13 +3,18 @@
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
+import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEqualsExact;
+import static de.ims.icarus2.model.api.ModelTestUtils.set;
+import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.random;
+import static de.ims.icarus2.test.TestUtils.randomBytes;
 import static de.ims.icarus2.test.TestUtils.randomInts;
+import static de.ims.icarus2.test.TestUtils.randomLongs;
+import static de.ims.icarus2.test.TestUtils.randomShorts;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
@@ -19,7 +24,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -28,6 +33,14 @@ import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.RandomAccessIndexSetTest;
 import de.ims.icarus2.test.TestSettings;
+import it.unimi.dsi.fastutil.bytes.ByteArrayList;
+import it.unimi.dsi.fastutil.bytes.ByteList;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongList;
+import it.unimi.dsi.fastutil.shorts.ShortArrayList;
+import it.unimi.dsi.fastutil.shorts.ShortList;
 
 /**
  * @author Markus Gärtner
@@ -208,70 +221,127 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 
 	}
 
+	@Nested
 	class FactoryMethods {
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet#copyOf(de.ims.icarus2.model.api.driver.indices.IndexSet)}.
 		 */
-		@Test
-		void testCopyOfIndexSet() {
-			fail("Not yet implemented"); // TODO
+		@TestFactory
+		Stream<DynamicTest> testCopyOfIndexSet() {
+			return Stream.of(IndexValueType.values())
+					.map(type -> dynamicTest(type.name(), () -> {
+						long[] indices = randomLongs(randomSize(), 0, type.maxValue());
+						IndexSet source = set(type, indices);
+						ArrayIndexSet set = ArrayIndexSet.copyOf(source);
+						assertIndicesEqualsExact(source, set);
+						assertEquals(type, set.getIndexValueType());
+					}));
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet#copyOf(de.ims.icarus2.model.api.driver.indices.IndexSet, int, int)}.
 		 */
-		@Test
-		void testCopyOfIndexSetIntInt() {
-			fail("Not yet implemented"); // TODO
+		@TestFactory
+		Stream<DynamicTest> testCopyOfIndexSetIntInt() {
+			return Stream.of(IndexValueType.values())
+					.map(type -> dynamicTest(type.name(), () -> {
+						int size = randomSize();
+						long[] indices = randomLongs(size, 0, type.maxValue());
+						IndexSet source = set(type, indices);
+						int from = random(0, size);
+						int to = random(from, size);
+						ArrayIndexSet set = ArrayIndexSet.copyOf(source, from, to);
+						assertEquals(to-from+1, set.size());
+						assertEquals(type, set.getIndexValueType());
+						for (int i = from; i <= to; i++) {
+							assertEquals(indices[i], set.indexAt(i-from));
+						}
+					}));
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet#copyOf(it.unimi.dsi.fastutil.bytes.ByteList)}.
 		 */
-		@Test
+		@RepeatedTest(RUNS)
 		void testCopyOfByteList() {
-			fail("Not yet implemented"); // TODO
+			ByteList list = new ByteArrayList(randomBytes(randomSize(), (byte)0, Byte.MAX_VALUE));
+			ArrayIndexSet set = ArrayIndexSet.copyOf(list);
+			assertEquals(list.size(), set.size());
+			assertEquals(IndexValueType.BYTE, set.getIndexValueType());
+			for (int i = 0; i < list.size(); i++) {
+				assertEquals(list.getByte(i), set.indexAt(i));
+			}
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet#copyOf(it.unimi.dsi.fastutil.shorts.ShortList)}.
 		 */
-		@Test
+		@RepeatedTest(RUNS)
 		void testCopyOfShortList() {
-			fail("Not yet implemented"); // TODO
+			ShortList list = new ShortArrayList(randomShorts(randomSize(), (short)0, Short.MAX_VALUE));
+			ArrayIndexSet set = ArrayIndexSet.copyOf(list);
+			assertEquals(list.size(), set.size());
+			assertEquals(IndexValueType.SHORT, set.getIndexValueType());
+			for (int i = 0; i < list.size(); i++) {
+				assertEquals(list.getShort(i), set.indexAt(i));
+			}
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet#copyOf(it.unimi.dsi.fastutil.ints.IntList)}.
 		 */
-		@Test
+		@RepeatedTest(RUNS)
 		void testCopyOfIntList() {
-			fail("Not yet implemented"); // TODO
+			IntList list = new IntArrayList(randomInts(randomSize(), 0, Integer.MAX_VALUE));
+			ArrayIndexSet set = ArrayIndexSet.copyOf(list);
+			assertEquals(list.size(), set.size());
+			assertEquals(IndexValueType.INTEGER, set.getIndexValueType());
+			for (int i = 0; i < list.size(); i++) {
+				assertEquals(list.getInt(i), set.indexAt(i));
+			}
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet#copyOf(it.unimi.dsi.fastutil.longs.LongList)}.
 		 */
-		@Test
+		@RepeatedTest(RUNS)
 		void testCopyOfLongList() {
-			fail("Not yet implemented"); // TODO
+			LongList list = new LongArrayList(randomLongs(randomSize(), 0L, Long.MAX_VALUE));
+			ArrayIndexSet set = ArrayIndexSet.copyOf(list);
+			assertEquals(list.size(), set.size());
+			assertEquals(IndexValueType.LONG, set.getIndexValueType());
+			for (int i = 0; i < list.size(); i++) {
+				assertEquals(list.getLong(i), set.indexAt(i));
+			}
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet#fromIterator(java.util.PrimitiveIterator.OfInt)}.
 		 */
-		@Test
+		@RepeatedTest(RUNS)
 		void testFromIteratorOfInt() {
-			fail("Not yet implemented"); // TODO
+			IntList list = new IntArrayList(randomInts(randomSize(), 0, Integer.MAX_VALUE));
+			ArrayIndexSet set = ArrayIndexSet.fromIterator(list.iterator());
+			assertEquals(list.size(), set.size());
+			assertEquals(IndexValueType.INTEGER, set.getIndexValueType());
+			for (int i = 0; i < list.size(); i++) {
+				assertEquals(list.getInt(i), set.indexAt(i));
+			}
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet#fromIterator(java.util.PrimitiveIterator.OfLong)}.
 		 */
-		@Test
+		@RepeatedTest(RUNS)
 		void testFromIteratorOfLong() {
-			fail("Not yet implemented"); // TODO
+			LongList list = new LongArrayList(randomLongs(randomSize(), 0L, Long.MAX_VALUE));
+			ArrayIndexSet set = ArrayIndexSet.fromIterator(list.iterator());
+			assertEquals(list.size(), set.size());
+			assertEquals(IndexValueType.LONG, set.getIndexValueType());
+			for (int i = 0; i < list.size(); i++) {
+				assertEquals(list.getLong(i), set.indexAt(i));
+			}
 		}
 
 	}
