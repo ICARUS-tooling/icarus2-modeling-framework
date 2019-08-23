@@ -57,6 +57,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.test.annotations.TestLocalOnly;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.collections.ArrayUtils;
 import de.ims.icarus2.util.io.Bits;
 import de.ims.icarus2.util.mem.ByteAllocator.Cursor;
 
@@ -1359,9 +1360,7 @@ class ByteAllocatorTest {
 			}
 
 			private void shuffleIds() {
-				for (int i = 0; i < ids.length; i++) {
-					ids[i] = ids[random().nextInt(ids.length)];
-				}
+				ArrayUtils.shuffle(ids);
 			}
 
 			/**

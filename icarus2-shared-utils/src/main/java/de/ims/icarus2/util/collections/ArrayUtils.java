@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.util.collections;
 
+import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
 
@@ -149,6 +150,18 @@ public class ArrayUtils {
 				return false;
 
 		return true;
+	}
+
+	public static void shuffle(int[] array) {
+		for (int i = 0; i < array.length; i++) {
+			array[i] = array[random().nextInt(array.length)];
+		}
+	}
+
+	public static void shuffle(long[] array) {
+		for (int i = 0; i < array.length; i++) {
+			array[i] = array[random().nextInt(array.length)];
+		}
 	}
 
 	public static void permutate(int[] a, int[] permutation) {
