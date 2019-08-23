@@ -63,6 +63,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testIndexAt() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					for (int i = 0; i < config.indices.length; i++) {
 						assertEquals(config.indices[i], config.set.indexAt(i));
@@ -77,6 +78,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testFirstIndex() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					if(config.indices.length==0) {
 						assertEquals(UNSET_LONG, config.set.firstIndex());
@@ -93,6 +95,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testLastIndex() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
 					if(size==0) {
@@ -110,6 +113,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicNode> testExportByteArrayInt() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> {
 					List<DynamicTest> tests = new ArrayList<>();
 					if(IndexValueType.BYTE.isValidSubstitute(config.valueType)) {
@@ -156,6 +160,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicNode> testExportShortArrayInt() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> {
 					List<DynamicTest> tests = new ArrayList<>();
 					if(IndexValueType.SHORT.isValidSubstitute(config.valueType)) {
@@ -202,6 +207,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicNode> testExportIntArrayInt() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> {
 					List<DynamicTest> tests = new ArrayList<>();
 					if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
@@ -248,6 +254,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicNode> testExportLongArrayInt() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> {
 					List<DynamicTest> tests = new ArrayList<>();
 					if(IndexValueType.LONG.isValidSubstitute(config.valueType)) {
@@ -294,6 +301,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicNode> testExportIntIntByteArrayInt() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> {
 					List<DynamicTest> tests = new ArrayList<>();
 					int size = config.indices.length;
@@ -356,6 +364,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicNode> testExportIntIntShortArrayInt() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> {
 					List<DynamicTest> tests = new ArrayList<>();
 					int size = config.indices.length;
@@ -418,6 +427,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicNode> testExportIntIntIntArrayInt() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> {
 					List<DynamicTest> tests = new ArrayList<>();
 					int size = config.indices.length;
@@ -480,6 +490,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicNode> testExportIntIntLongArrayInt() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> {
 					List<DynamicTest> tests = new ArrayList<>();
 					int size = config.indices.length;
@@ -542,6 +553,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testForEachIndexLongConsumer() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					LongList buffer = new LongArrayList();
 					config.set.forEachIndex((LongConsumer)buffer::add);
@@ -576,6 +588,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testForEachIndexIntConsumer() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
 						IntList buffer = new IntArrayList();
@@ -597,6 +610,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testForEachIndexIntConsumerIntInt() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
 					if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
@@ -621,6 +635,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testForEachEntryIntLongConsumer() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					LongList buffer = new LongArrayList();
 					config.set.forEachEntry((IntLongConsumer)buffer::add);
@@ -635,6 +650,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testForEachEntryIntLongConsumerIntInt() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
 					int from = random(0, size);
@@ -656,6 +672,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testForEachEntryIntBiConsumer() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
 						int size = config.indices.length;
@@ -678,6 +695,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testForEachEntryIntBiConsumerIntInt() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
 					if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
@@ -703,6 +721,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testCheckIndicesLongPredicate() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					MutableInteger index = new MutableInteger(0);
 					assertTrue(config.set.checkIndices((long val)
@@ -721,6 +740,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testCheckIndicesLongPredicateIntInt() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
 					int from = random(0, size);
@@ -742,6 +762,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testCheckIndicesIntPredicate() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
 						MutableInteger index = new MutableInteger(0);
@@ -764,6 +785,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testCheckIndicesIntPredicateIntInt() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
 					if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
@@ -789,6 +811,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testCheckConsecutiveIndicesLongBiPredicate() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
 					if(size==1) {
@@ -814,6 +837,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testCheckConsecutiveIndicesLongBiPredicateIntInt() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
 					if(size==1) {
@@ -843,6 +867,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicNode> testSplit() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> {
 					List<DynamicTest> tests = new ArrayList<>();
 					if(config.features.contains(Feature.EXPORTABLE)) {
@@ -887,6 +912,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicNode> testSubSet() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config ->  {
 					List<DynamicTest> tests = new ArrayList<>();
 					int size = config.indices.length;
@@ -930,6 +956,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testIterator() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					OfLong iterator = config.set.iterator();
 					for(long val : config.indices) {
@@ -947,6 +974,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testIteratorInt() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
 					int start = size==1 ? 0 : random(0, size-1);
@@ -966,6 +994,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testIteratorIntInt() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
 					int from = random(0, size);
@@ -986,6 +1015,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testIntStream() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
 						assertArrayEquals(config.indices,
@@ -1003,6 +1033,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testLongStream() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					assertArrayEquals(config.indices, config.set.longStream().toArray());
 				}));

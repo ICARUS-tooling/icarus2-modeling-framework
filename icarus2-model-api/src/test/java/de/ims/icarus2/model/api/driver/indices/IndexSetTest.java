@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
@@ -54,6 +55,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	default Stream<DynamicTest> testSize() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					if(config.features.contains(Feature.INDETERMINATE_SIZE)) {
 						assertEquals(UNSET_LONG, config.set.size());
@@ -70,6 +72,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	default Stream<DynamicTest> testIsEmpty() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					if(config.indices.length==0) {
 						assertTrue(config.set.isEmpty(), "Expecting to be empty");
@@ -86,6 +89,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	default Stream<DynamicTest> testGetIndexValueType() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					assertEquals(config.valueType, config.set.getIndexValueType());
 				}));
@@ -98,6 +102,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	default Stream<DynamicTest> testIsSorted() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					if(config.sorted) {
 						assertTrue(config.set.isSorted(), "Expected to be sorted");
@@ -114,6 +119,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	default Stream<DynamicTest> testSort() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					if(config.features.contains(Feature.SORTABLE)
 							&& !config.sorted) {
@@ -441,6 +447,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	default Stream<DynamicTest> testExternalize() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					if(config.features.contains(Feature.INDETERMINATE_SIZE)) {
 						assertModelException(GlobalErrorCode.NOT_IMPLEMENTED,
@@ -461,6 +468,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	default Stream<DynamicTest> testGetFeatures() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					assertCollectionEquals(config.features, config.set.getFeatures());
 				}));
@@ -473,6 +481,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	default Stream<DynamicTest> testHasFeatures() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					assertTrue(config.set.hasFeatures(config.features.toArray(new Feature[0])));
 
@@ -490,6 +499,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	default Stream<DynamicTest> testHasFeature() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					for(Feature feature : Feature.values()) {
 						if(config.features.contains(feature)) {
@@ -508,6 +518,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	default Stream<DynamicTest> testCheckHasFeatures() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					config.set.checkHasFeatures(config.features.toArray(new Feature[0]));
 
@@ -673,6 +684,23 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 			assertFalse(features.isEmpty(), "Features not be empty");
 
 			return this;
+		}
+
+		public Stream<Config> withSubSet() {
+			if(features.contains(Feature.EXPORTABLE)) {
+				long[] indices = getIndices();
+				int from = random(0, indices.length);
+				int to = random(from, indices.length);
+				long[] subs = Arrays.copyOfRange(indices, from, to+1);
+				IndexSet subSet = getSet().subSet(from, to);
+				return Stream.of(this,
+						clone()
+						.label(label+" sub ["+from+"-"+to+"]")
+						.indices(subs)
+						.set(subSet));
+			}
+
+			return Stream.of(this);
 		}
 
 		public String getLabel() { return label; }

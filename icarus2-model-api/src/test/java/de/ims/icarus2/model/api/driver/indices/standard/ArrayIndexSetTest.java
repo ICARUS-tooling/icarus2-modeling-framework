@@ -18,7 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
-import java.util.Arrays;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -61,18 +60,6 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 		return new ArrayIndexSet(type, array);
 	};
 
-	private static Config makeSubSet(Config config) {
-		long[] indices = config.getIndices();
-		int from = random(0, indices.length);
-		int to = random(from, indices.length);
-		long[] subs = Arrays.copyOfRange(indices, from, to+1);
-		IndexSet subSet = ((ArrayIndexSet)config.getSet()).subSet(from, to);
-		return config.clone()
-				.label(config.getLabel()+" sub ["+from+"-"+to+"]")
-				.indices(subs)
-				.set(subSet);
-	}
-
 	private static int randomSize() {
 		return random(10, 100);
 	}
@@ -94,8 +81,7 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 						config.clone()
 							.label(config.getValueType()+" random")
 							.randomIndices(randomSize())
-				))
-				.flatMap(config -> Stream.of(config, makeSubSet(config)));
+				));
 	}
 
 	@Override
