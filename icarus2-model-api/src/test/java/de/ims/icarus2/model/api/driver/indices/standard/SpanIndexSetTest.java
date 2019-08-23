@@ -11,7 +11,6 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.RandomAccessIndexSetTest;
 import de.ims.icarus2.test.TestSettings;
@@ -49,7 +48,7 @@ class SpanIndexSetTest implements RandomAccessIndexSetTest<SpanIndexSet> {
 					Config base = new Config()
 							.valueType(type)
 							.sorted(true)
-							.features(IndexSet.DEFAULT_FEATURES);
+							.defaultFeatures();
 
 					long singleton = random(type.maxValue()/2, type.maxValue());
 

@@ -633,4 +633,41 @@ public class ModelTestUtils {
 	public static Executable overflowAsserter(Executable executable) {
 		return () -> assertOverflow(executable);
 	}
+
+	/**
+	 * Expects a {@link IllegalArgumentException} or respective {@link ModelException}
+	 * for the given {@code executable}.
+	 *
+	 * @param executable
+	 */
+	public static RuntimeException assertAlternateIAE(Executable executable) {
+		RuntimeException ex = assertThrows(RuntimeException.class, executable);
+		if(ex instanceof ModelException) {
+			assertEquals(GlobalErrorCode.INVALID_INPUT, ((ModelException)ex).getErrorCode());
+		} else {
+			assertTrue(ex instanceof IllegalArgumentException);
+		}
+		return ex;
+	}
+
+	/**
+	 * Expects a {@link IndexOutOfBoundsException} or respective {@link ModelException}
+	 * for the given {@code executable}.
+	 *
+	 * @param executable
+	 */
+	public static RuntimeException assertAlternateIOOB(Executable executable) {
+		RuntimeException ex = assertThrows(RuntimeException.class, executable);
+		if(ex instanceof ModelException) {
+			assertEquals(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
+					((ModelException)ex).getErrorCode());
+		} else {
+			assertTrue(ex instanceof IndexOutOfBoundsException);
+		}
+		return ex;
+	}
+
+	public static Executable alternateIoobAsserter(Executable executable) {
+		return () -> assertAlternateIOOB(executable);
+	}
 }

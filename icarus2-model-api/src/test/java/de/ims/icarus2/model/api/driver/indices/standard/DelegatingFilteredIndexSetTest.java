@@ -93,7 +93,7 @@ class DelegatingFilteredIndexSetTest implements RandomAccessIndexSetTest<Delegat
 	@Override
 	public Stream<Config> configurations() {
 		Config base = new Config()
-				.features(IndexSet.DEFAULT_FEATURES);
+				.defaultFeatures();
 
 		return Stream.of(IndexValueType.values())
 				.map(type -> base.clone().valueType(type))

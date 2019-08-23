@@ -595,6 +595,26 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 //				}));
 //	}
 
+	public static long[] randomIndices(IndexValueType valueType, int size) {
+		assertTrue(size<=valueType.maxValue());
+		IndexValueType smaller = valueType.smaller();
+		long min = smaller==null ? 0L : smaller.maxValue()+1;
+		return random().longs(min, valueType.maxValue())
+				.distinct()
+				.limit(size)
+				.toArray();
+	}
+
+	public static long[] sortedIndices(IndexValueType valueType, int size, int offset) {
+		assertTrue(size<=valueType.maxValue());
+		IndexValueType smaller = valueType.smaller();
+		long min = smaller==null ? 0L : smaller.maxValue()+1;
+		assertTrue(min+offset+size<=valueType.maxValue(), "Value spac einsufficient: "+valueType.maxValue());
+		long[] indices = new long[size];
+		ArrayUtils.fillAscending(indices, min+offset);
+		return indices;
+	}
+
 	static final class Config implements Cloneable {
 		String label;
 		IndexSet set;
@@ -614,23 +634,18 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 		/** Produce random indices outside the next smaller type's value space */
 		public Config randomIndices(int size) {
 			assertNotNull(valueType, "Value type missing");
-			IndexValueType smaller = valueType.smaller();
-			long min = smaller==null ? 0L : smaller.maxValue()+1;
-			indices = random().longs(min, valueType.maxValue())
-					.distinct()
-					.limit(size)
-					.toArray();
+			indices = IndexSetTest.randomIndices(valueType, size);
 			indices[random(0, indices.length)] = valueType.maxValue();
 			return this;
 		}
 		/** Create sorted indices outside the next smaller type's value space */
 		public Config sortedIndices(int size) {
+			return sortedIndices(size, 0);
+		}
+		/** Create sorted indices outside the next smaller type's value space + offset*/
+		public Config sortedIndices(int size, int offset) {
 			assertNotNull(valueType, "Value type missing");
-			assertTrue(size<=valueType.maxValue());
-			IndexValueType smaller = valueType.smaller();
-			long min = smaller==null ? 0L : smaller.maxValue()+1;
-			indices = new long[size];
-			ArrayUtils.fillAscending(indices, min);
+			indices = IndexSetTest.sortedIndices(valueType, size, offset);
 			indices[indices.length-1] = valueType.maxValue();
 			return this;
 		}
@@ -647,6 +662,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 			this.indices = new long[indices.length];
 			for (int i = 0; i < indices.length; i++) this.indices[i] = indices[i];
 			return this; }
+		public Config defaultFeatures() { this.features.addAll(IndexSet.DEFAULT_FEATURES); return this; }
 		public Config features(Set<Feature> features) { this.features.addAll(features); return this; }
 		public Config features(Feature...features) { Collections.addAll(this.features, features); return this; }
 		public Config sorted(boolean sorted) { this.sorted = sorted; return this; }
@@ -681,7 +697,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 
 			assertTrue(indices.length>0, "Indices must not be empty");
 			assertFalse(set.isEmpty(), "Set under test must not be empty");
-			assertFalse(features.isEmpty(), "Features not be empty");
+			assertFalse(features.isEmpty(), "Features must not be empty");
 
 			return this;
 		}

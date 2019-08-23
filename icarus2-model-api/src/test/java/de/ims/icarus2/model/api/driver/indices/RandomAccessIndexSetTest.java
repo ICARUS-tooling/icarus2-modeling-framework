@@ -3,12 +3,13 @@
  */
 package de.ims.icarus2.model.api.driver.indices;
 
+import static de.ims.icarus2.model.api.ModelTestUtils.alternateIoobAsserter;
+import static de.ims.icarus2.model.api.ModelTestUtils.assertAlternateIOOB;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEquals;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertOverflow;
 import static de.ims.icarus2.model.api.ModelTestUtils.overflowAsserter;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
-import static de.ims.icarus2.test.TestUtils.ioobAsserter;
 import static de.ims.icarus2.test.TestUtils.noOp;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
@@ -72,6 +73,22 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	}
 
 	/**
+	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#indexAt(int)}.
+	 */
+	@TestFactory
+	default Stream<DynamicTest> testIndexAtInvalidIndices() {
+		return configurations()
+				.map(Config::validate)
+				.flatMap(Config::withSubSet)
+				.map(config -> dynamicTest(config.label, () -> {
+					assertAlternateIOOB(() -> config.set.indexAt(-1));
+					int size = config.indices.length;
+					assertAlternateIOOB(() -> config.set.indexAt(size));
+					assertAlternateIOOB(() -> config.set.indexAt(size+1));
+				}));
+	}
+
+	/**
 	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#firstIndex()}.
 	 */
 	@TestFactory
@@ -119,7 +136,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 					if(IndexValueType.BYTE.isValidSubstitute(config.valueType)) {
 						int size = config.indices.length;
 						// Make target buffer too small
-						tests.add(dynamicTest("too small", ioobAsserter(
+						tests.add(dynamicTest("too small", alternateIoobAsserter(
 									() -> config.set.export(new byte[size/2], 0))));
 						// Normal match
 						tests.add(dynamicTest("fitting", () -> {
@@ -166,7 +183,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 					if(IndexValueType.SHORT.isValidSubstitute(config.valueType)) {
 						int size = config.indices.length;
 						// Make target buffer too small
-						tests.add(dynamicTest("too small", ioobAsserter(
+						tests.add(dynamicTest("too small", alternateIoobAsserter(
 									() -> config.set.export(new short[size/2], 0))));
 						// Normal match
 						tests.add(dynamicTest("fitting", () -> {
@@ -213,7 +230,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 					if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
 						int size = config.indices.length;
 						// Make target buffer too small
-						tests.add(dynamicTest("too small", ioobAsserter(
+						tests.add(dynamicTest("too small", alternateIoobAsserter(
 									() -> config.set.export(new int[size/2], 0))));
 						// Normal match
 						tests.add(dynamicTest("fitting", () -> {
@@ -260,7 +277,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 					if(IndexValueType.LONG.isValidSubstitute(config.valueType)) {
 						int size = config.indices.length;
 						// Make target buffer too small
-						tests.add(dynamicTest("too small", ioobAsserter(
+						tests.add(dynamicTest("too small", alternateIoobAsserter(
 									() -> config.set.export(new long[size/2], 0))));
 						// Normal match
 						tests.add(dynamicTest("fitting", () -> {
@@ -307,9 +324,9 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 					int size = config.indices.length;
 					if(IndexValueType.BYTE.isValidSubstitute(config.valueType)) {
 						// Make target buffer too small
-						tests.add(dynamicTest("too small (full)", ioobAsserter(
+						tests.add(dynamicTest("too small (full)", alternateIoobAsserter(
 								() -> config.set.export(0, size, new byte[size/2], 0))));
-						tests.add(dynamicTest("too small (part)", ioobAsserter(() -> {
+						tests.add(dynamicTest("too small (part)", alternateIoobAsserter(() -> {
 							int from = random(0, size);
 							int to = random(from+1, size+1);
 							config.set.export(from, to, new byte[(to-from)/2], 0);
@@ -370,9 +387,9 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 					int size = config.indices.length;
 					if(IndexValueType.SHORT.isValidSubstitute(config.valueType)) {
 						// Make target buffer too small
-						tests.add(dynamicTest("too small (full)", ioobAsserter(
+						tests.add(dynamicTest("too small (full)", alternateIoobAsserter(
 								() -> config.set.export(0, size, new short[size/2], 0))));
-						tests.add(dynamicTest("too small (part)", ioobAsserter(() -> {
+						tests.add(dynamicTest("too small (part)", alternateIoobAsserter(() -> {
 							int from = random(0, size);
 							int to = random(from+1, size+1);
 							config.set.export(from, to, new short[(to-from)/2], 0);
@@ -433,9 +450,9 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 					int size = config.indices.length;
 					if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
 						// Make target buffer too small
-						tests.add(dynamicTest("too small (full)", ioobAsserter(
+						tests.add(dynamicTest("too small (full)", alternateIoobAsserter(
 								() -> config.set.export(0, size, new int[size/2], 0))));
-						tests.add(dynamicTest("too small (part)", ioobAsserter(() -> {
+						tests.add(dynamicTest("too small (part)", alternateIoobAsserter(() -> {
 							int from = random(0, size);
 							int to = random(from+1, size+1);
 							config.set.export(from, to, new int[(to-from)/2], 0);
@@ -496,9 +513,9 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 					int size = config.indices.length;
 					if(IndexValueType.LONG.isValidSubstitute(config.valueType)) {
 						// Make target buffer too small
-						tests.add(dynamicTest("too small (full)", ioobAsserter(
+						tests.add(dynamicTest("too small (full)", alternateIoobAsserter(
 								() -> config.set.export(0, size, new long[size/2], 0))));
-						tests.add(dynamicTest("too small (part)", ioobAsserter(() -> {
+						tests.add(dynamicTest("too small (part)", alternateIoobAsserter(() -> {
 							int from = random(0, size);
 							int to = random(from+1, size+1);
 							config.set.export(from, to, new long[(to-from)/2], 0);

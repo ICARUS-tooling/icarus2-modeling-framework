@@ -196,6 +196,11 @@ public class ArrayUtils {
 		System.arraycopy(tmp, 0, a, 0, permutation.length);
 	}
 
+	public static int[] reverse(int[] array) {
+		reverse(array, 0, array.length);
+		return array;
+	}
+
 	public static void reverse(int[] array, int offset, int length) {
 		requireNonNull(array);
 
@@ -205,6 +210,30 @@ public class ArrayUtils {
 		length = Math.min(length, array.length-offset);
 
 		int tmp, flipIndex;
+		int steps = length/2;
+		for(int i = 0; i<steps; i++) {
+			flipIndex = offset+length-i-1;
+			tmp = array[offset+i];
+			array[offset+i] = array[flipIndex];
+			array[flipIndex] = tmp;
+		}
+	}
+
+	public static long[] reverse(long[] array) {
+		reverse(array, 0, array.length);
+		return array;
+	}
+
+	public static void reverse(long[] array, int offset, int length) {
+		requireNonNull(array);
+
+		if(length==-1)
+			length = array.length;
+
+		length = Math.min(length, array.length-offset);
+
+		long tmp;
+		int flipIndex;
 		int steps = length/2;
 		for(int i = 0; i<steps; i++) {
 			flipIndex = offset+length-i-1;
