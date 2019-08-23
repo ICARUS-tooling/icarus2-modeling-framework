@@ -400,7 +400,7 @@ class IndexCollectorFactoryTest {
 					Integer.MAX_VALUE+1L,
 			})
 			void testSingleValueIndexOverflow(long value) {
-				assertModelException(GlobalErrorCode.INVALID_INPUT,
+				assertModelException(GlobalErrorCode.VALUE_OVERFLOW,
 						() -> new LimitedUnsortedSetBuilderInt(1, 1).add(value));
 			}
 		}
@@ -477,7 +477,7 @@ class IndexCollectorFactoryTest {
 					Short.MAX_VALUE+1,
 			})
 			void testSingleValueIndexOverflow(long value) {
-				assertModelException(GlobalErrorCode.INVALID_INPUT,
+				assertModelException(GlobalErrorCode.VALUE_OVERFLOW,
 						() -> new LimitedUnsortedSetBuilderShort(1, 1).add(value));
 			}
 		}
