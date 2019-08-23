@@ -70,19 +70,17 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 				.features(IndexSet.DEFAULT_FEATURES);
 
 		return Stream.of(IndexValueType.values())
-				.map(type -> base.clone().valueType(type))
+				.map(type -> base.clone().valueType(type).set(constructor))
 				.flatMap(config -> Stream.of(
 						// Sorted version
 						config.clone()
 							.label(config.getValueType()+" sorted")
 							.sortedIndices(randomSize())
-							.sorted(true)
-							.set(constructor),
+							.sorted(true),
 						// Random version
 						config.clone()
 							.label(config.getValueType()+" random")
 							.randomIndices(randomSize())
-							.set(constructor)
 						));
 	}
 

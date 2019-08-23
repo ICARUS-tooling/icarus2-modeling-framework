@@ -7,8 +7,8 @@ import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEquals;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
 import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomLongs;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -592,12 +592,12 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 		boolean sorted;
 		IndexValueType valueType;
 
+		private Function<Config, IndexSet> constructor;
+
 		public Config label(String label) { this.label = label; return this; }
 		public Config set(IndexSet set) { this.set = set; return this; }
 		public Config set(Function<Config, IndexSet> constructor) {
-			assertNotNull(valueType, "Value type missing");
-			assertNotNull(indices, "Indices missing");
-			this.set = constructor.apply(this);
+			this.constructor = requireNonNull(constructor);
 			return this;
 		}
 		/** Produce random indices outside the next smaller type's value space */
@@ -605,7 +605,10 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 			assertNotNull(valueType, "Value type missing");
 			IndexValueType smaller = valueType.smaller();
 			long min = smaller==null ? 0L : smaller.maxValue()+1;
-			indices = randomLongs(size, min, valueType.maxValue());
+			indices = random().longs(min, valueType.maxValue())
+					.distinct()
+					.limit(size)
+					.toArray();
 			indices[random(0, indices.length)] = valueType.maxValue();
 			return this;
 		}
@@ -647,19 +650,25 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 				throw new InternalError(e);
 			}
 
-			clone.features = EnumSet.copyOf(clone.features);
+			clone.features = EnumSet.copyOf(features);
 			clone.indices = indices==null ? null : indices.clone();
 
 			return clone;
 		}
 
 		public Config validate() {
-			assertNotNull(label, "Label missing");
-			assertNotNull(set, "IndexSet missing");
 			assertNotNull(indices, "Indices missing");
 			assertNotNull(features, "Features missing");
 			assertNotNull(valueType, "Value type missing");
+			assertNotNull(label, "Label missing");
 
+			if(constructor!=null) {
+				set = constructor.apply(this);
+			}
+
+			assertNotNull(set, "IndexSet missing");
+
+			assertTrue(indices.length>0, "Indices must not be empty");
 			assertFalse(set.isEmpty(), "Set under test must not be empty");
 			assertFalse(features.isEmpty(), "Features not be empty");
 

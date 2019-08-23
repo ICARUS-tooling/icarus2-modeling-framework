@@ -3,6 +3,7 @@
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
+import static de.ims.icarus2.model.api.ModelTestUtils.set;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertIAE;
 import static de.ims.icarus2.test.TestUtils.random;
@@ -90,7 +91,7 @@ class DelegatingSpanIndexSetTest implements RandomAccessIndexSetTest<DelegatingS
 	 */
 	@Override
 	public DelegatingSpanIndexSet createTestInstance(TestSettings settings) {
-		return settings.process(new DelegatingSpanIndexSet(mock(IndexSet.class)));
+		return settings.process(new DelegatingSpanIndexSet(set(0, 1, 2)));
 	}
 
 	@Nested

@@ -21,8 +21,11 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
+import de.ims.icarus2.util.collections.ArrayUtils;
 
 /**
  * Models a window to another index set (the {@code source}) that can be discontinuous.
@@ -34,12 +37,13 @@ public class DelegatingFilteredIndexSet implements IndexSet {
 
 	private IndexSet source;
 	private int[] filter;
+	private boolean filterSorted = false;
 
 	public DelegatingFilteredIndexSet(IndexSet source) {
 		setSource(source);
 	}
 
-	public DelegatingFilteredIndexSet(IndexSet source, int[] filter) {
+	public DelegatingFilteredIndexSet(IndexSet source, @Nullable int[] filter) {
 		setSource(source);
 		setFilter(filter);
 	}
@@ -48,12 +52,14 @@ public class DelegatingFilteredIndexSet implements IndexSet {
 		return source;
 	}
 
+	//TODO do we really want to allow this?
 	public int[] getFilter() {
 		return filter;
 	}
 
-	public void setFilter(int[] filter) {
+	public void setFilter(@Nullable int[] filter) {
 		this.filter = filter;
+		filterSorted = filter==null ? true : ArrayUtils.isSorted(filter, 0, filter.length);
 	}
 
 	public void setSource(IndexSet source) {
@@ -146,7 +152,7 @@ public class DelegatingFilteredIndexSet implements IndexSet {
 	 */
 	@Override
 	public boolean isSorted() {
-		return source.isSorted();
+		return source.isSorted() && filterSorted;
 	}
 
 	/**
@@ -154,6 +160,7 @@ public class DelegatingFilteredIndexSet implements IndexSet {
 	 */
 	@Override
 	public boolean sort() {
-		return source.sort();
+		// If filter isn't sorted or null, we don't need to bother with sortign at all
+		return filterSorted && source.sort();
 	}
 }
