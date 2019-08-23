@@ -863,7 +863,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						}));
 
 						tests.add(dynamicTest("random", () -> {
-							int chunkSize = size<4 ? 1 : random(3, size-3);
+							int chunkSize = size<=4 ? 1 : random(1, size-2);
 							IndexSet[] splits = config.set.split(chunkSize);
 							if(chunkSize>1 && size>1) {
 								assertTrue(splits.length>1);

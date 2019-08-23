@@ -171,25 +171,25 @@ public class ArrayIndexSet implements IndexSet {
 	@Override
 	public void export(int beginIndex, int endIndex, byte[] buffer, int offset) {
 		requireNonNull(buffer);
-		valueType.copyTo(indices, beginIndex, buffer, offset, endIndex-beginIndex);
+		valueType.copyTo(indices, fromIndex+beginIndex, buffer, offset, endIndex-beginIndex);
 	}
 
 	@Override
 	public void export(int beginIndex, int endIndex, short[] buffer, int offset) {
 		requireNonNull(buffer);
-		valueType.copyTo(indices, beginIndex, buffer, offset, endIndex-beginIndex);
+		valueType.copyTo(indices, fromIndex+beginIndex, buffer, offset, endIndex-beginIndex);
 	}
 
 	@Override
 	public void export(int beginIndex, int endIndex, int[] buffer, int offset) {
 		requireNonNull(buffer);
-		valueType.copyTo(indices, beginIndex, buffer, offset, endIndex-beginIndex);
+		valueType.copyTo(indices, fromIndex+beginIndex, buffer, offset, endIndex-beginIndex);
 	}
 
 	@Override
 	public void export(int beginIndex, int endIndex, long[] buffer, int offset) {
 		requireNonNull(buffer);
-		valueType.copyTo(indices, beginIndex, buffer, offset, endIndex-beginIndex);
+		valueType.copyTo(indices, fromIndex+beginIndex, buffer, offset, endIndex-beginIndex);
 	}
 
 	/**
@@ -197,10 +197,6 @@ public class ArrayIndexSet implements IndexSet {
 	 */
 	@Override
 	public IndexSet subSet(int fromIndex, int toIndex) {
-		if(sorted) {
-			return new ArrayIndexSet(valueType, indices, this.fromIndex+fromIndex, this.fromIndex+toIndex, true);
-		}
-
 		return copyOf(this, fromIndex, toIndex);
 	}
 
@@ -209,8 +205,10 @@ public class ArrayIndexSet implements IndexSet {
 	}
 
 	/**
-	 * Creates a copy of the specified range within the given target {@code IndexSet}. The copy is backed
-	 * by a new array.
+	 * Creates a copy of the specified range within the given target {@code IndexSet}.
+	 * The copy is backed by a new array. If the provided {@code set} is of type
+	 * {@link ArrayIndexSet} this method will return a new {@code ArrayIndexSet} that
+	 * uses the same backing array, but only covers the specified region.
 	 *
 	 * @param set
 	 * @param beginIndex first index position in the target index set to copy (inclusive)
@@ -222,6 +220,13 @@ public class ArrayIndexSet implements IndexSet {
 		checkArgument(beginIndex>=0);
 		checkArgument(beginIndex<=endIndex);
 		checkArgument(endIndex<set.size());
+
+		// Shortcut for efficiency if we copy another ArrayIndexSet
+		if(set instanceof ArrayIndexSet) {
+			ArrayIndexSet source = (ArrayIndexSet) set;
+			return new ArrayIndexSet(source.valueType, source.indices,
+					source.fromIndex+beginIndex, source.fromIndex+endIndex, source.sorted);
+		}
 
 		int size = endIndex-beginIndex+1;
 		IndexValueType valueType = set.getIndexValueType();

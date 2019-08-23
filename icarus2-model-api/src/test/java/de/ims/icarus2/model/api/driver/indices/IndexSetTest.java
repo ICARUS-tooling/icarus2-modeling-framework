@@ -662,7 +662,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 			assertNotNull(valueType, "Value type missing");
 			assertNotNull(label, "Label missing");
 
-			if(constructor!=null) {
+			if(set==null && constructor!=null) {
 				set = constructor.apply(this);
 			}
 
@@ -679,5 +679,11 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 		public boolean isSorted() { return sorted; }
 		public IndexValueType getValueType() { return valueType; }
 		public long[] getIndices() { return indices; }
+		public IndexSet getSet() {
+			if(set==null && constructor!=null) {
+				set = constructor.apply(this);
+			}
+			return set;
+		}
 	}
 }
