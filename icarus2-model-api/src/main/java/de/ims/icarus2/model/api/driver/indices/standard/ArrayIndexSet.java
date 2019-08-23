@@ -24,9 +24,11 @@ import java.util.Arrays;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.PrimitiveIterator.OfLong;
 
+import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
+import de.ims.icarus2.model.manifest.util.Messages;
 import it.unimi.dsi.fastutil.bytes.ByteList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -134,6 +136,9 @@ public class ArrayIndexSet implements IndexSet {
 	 */
 	@Override
 	public long indexAt(int index) {
+		if(index<0 || index>=size())
+			throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
+					Messages.indexOutOfBounds("Invalid index value", 0, size()-1, index));
 		return valueType.get(indices, fromIndex+index);
 	}
 
