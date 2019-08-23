@@ -29,6 +29,7 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.manifest.util.Messages;
+import de.ims.icarus2.util.function.LongIntOperator;
 
 /**
  * An {@link IndexSet} solely based on a {@link LongBinaryOperator} that is used
@@ -45,8 +46,11 @@ public class VirtualIndexSet implements IndexSet {
 	 * {@link #indexAt(int)} method before forwarding
 	 * to the {@link #func} instance.
 	 */
-	protected final long offset;
+	protected final int offset;
 
+	/**
+	 * THe index value to start the calculation from
+	 */
 	protected final long start;
 
 	/**
@@ -57,18 +61,18 @@ public class VirtualIndexSet implements IndexSet {
 
 	protected final boolean sorted;
 
-	protected final LongBinaryOperator func;
+	protected final LongIntOperator func;
 
 	protected final IndexValueType valueType;
 
 	public VirtualIndexSet(long start, int size, IndexValueType valueType,
-			LongBinaryOperator func, boolean sorted) {
-		this(start, 0L, size, valueType, func, sorted);
+			LongIntOperator func, boolean sorted) {
+		this(start, 0, size, valueType, func, sorted);
 	}
 
-	protected VirtualIndexSet(long start, long offset,
+	protected VirtualIndexSet(long start, int offset,
 			int size, IndexValueType valueType,
-			LongBinaryOperator func, boolean sorted) {
+			LongIntOperator func, boolean sorted) {
 		checkArgument("Offset must be >= 0", offset>=0);
 		checkArgument("Size must be >=0 || UNKNOWN_SIZE", size==IndexSet.UNKNOWN_SIZE || size>=0);
 
