@@ -6,6 +6,7 @@ package de.ims.icarus2.model.api.driver.indices.standard;
 import static de.ims.icarus2.model.api.ModelTestUtils.set;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.util.ArrayList;
@@ -54,6 +55,7 @@ class DelegatingFilteredIndexSetTest implements RandomAccessIndexSetTest<Delegat
 		if(sorted) {
 			Arrays.sort(filter);
 		}
+		assertEquals(size, filter.length);
 		return filter;
 	}
 

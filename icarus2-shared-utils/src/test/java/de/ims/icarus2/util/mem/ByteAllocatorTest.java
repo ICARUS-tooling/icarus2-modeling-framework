@@ -1360,7 +1360,7 @@ class ByteAllocatorTest {
 			}
 
 			private void shuffleIds() {
-				ArrayUtils.shuffle(ids);
+				ArrayUtils.shuffle(ids, random());
 			}
 
 			/**

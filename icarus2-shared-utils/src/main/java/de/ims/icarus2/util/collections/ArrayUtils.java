@@ -16,7 +16,6 @@
  */
 package de.ims.icarus2.util.collections;
 
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
 
@@ -27,6 +26,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.Stack;
 import java.util.function.IntBinaryOperator;
@@ -152,15 +152,15 @@ public class ArrayUtils {
 		return true;
 	}
 
-	public static void shuffle(int[] array) {
+	public static void shuffle(int[] array, Random random) {
 		for (int i = 0; i < array.length; i++) {
-			array[i] = array[random().nextInt(array.length)];
+			array[i] = array[random.nextInt(array.length)];
 		}
 	}
 
-	public static void shuffle(long[] array) {
+	public static void shuffle(long[] array, Random random) {
 		for (int i = 0; i < array.length; i++) {
-			array[i] = array[random().nextInt(array.length)];
+			array[i] = array[random.nextInt(array.length)];
 		}
 	}
 
