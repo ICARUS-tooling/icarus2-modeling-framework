@@ -24,7 +24,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.function.LongBinaryOperator;
 
-import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
@@ -98,7 +98,7 @@ public class VirtualIndexSet implements IndexSet {
 	@Override
 	public long indexAt(int index) {
 		if(index<0 || index>=size)
-			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+			throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
 					Messages.indexOutOfBounds("Invalid index value", 0, size-1, index));
 		return valueType.checkValue(func.applyAsLong(start, offset+index));
 	}
@@ -132,7 +132,9 @@ public class VirtualIndexSet implements IndexSet {
 	 */
 	@Override
 	public IndexSet subSet(int fromIndex, int toIndex) {
-		return new VirtualIndexSet(start, fromIndex, fromIndex-toIndex+1, valueType, func, sorted);
+		checkArgument(fromIndex<=toIndex);
+		return new VirtualIndexSet(start, offset+fromIndex, toIndex-fromIndex+1,
+				valueType, func, sorted);
 	}
 
 	/**
