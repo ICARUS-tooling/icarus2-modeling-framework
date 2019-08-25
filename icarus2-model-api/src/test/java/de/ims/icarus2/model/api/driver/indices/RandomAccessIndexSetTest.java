@@ -19,13 +19,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
+import static org.mockito.Mockito.mock;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.function.IntConsumer;
+import java.util.function.IntPredicate;
 import java.util.function.LongConsumer;
+import java.util.function.LongPredicate;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicNode;
@@ -37,6 +40,7 @@ import de.ims.icarus2.model.api.driver.indices.IndexSet.Feature;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.function.IntBiConsumer;
 import de.ims.icarus2.util.function.IntLongConsumer;
+import de.ims.icarus2.util.function.LongBiPredicate;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
@@ -133,8 +137,12 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.flatMap(Config::withSubSet)
 				.map(config -> {
 					List<DynamicTest> tests = new ArrayList<>();
-					if(IndexValueType.BYTE.isValidSubstitute(config.valueType)) {
-						int size = config.indices.length;
+					int size = config.indices.length;
+
+					if(size==0) {
+						tests.add(dynamicTest("out of bounds", alternateIoobAsserter(
+								() -> config.set.export(new byte[size], 0))));
+					} else if(IndexValueType.BYTE.isValidSubstitute(config.valueType)) {
 						// Make target buffer too small
 						tests.add(dynamicTest("too small", alternateIoobAsserter(
 									() -> config.set.export(new byte[size/2], 0))));
@@ -163,7 +171,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 					} else {
 						// Export to target type not supported
 						tests.add(dynamicTest("overflow", overflowAsserter(
-								() -> config.set.export(new byte[config.indices.length], 0))));
+								() -> config.set.export(new byte[size], 0))));
 					}
 
 					return dynamicContainer(config.label, tests);
@@ -180,8 +188,12 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.flatMap(Config::withSubSet)
 				.map(config -> {
 					List<DynamicTest> tests = new ArrayList<>();
-					if(IndexValueType.SHORT.isValidSubstitute(config.valueType)) {
-						int size = config.indices.length;
+					int size = config.indices.length;
+
+					if(size==0) {
+						tests.add(dynamicTest("out of bounds", alternateIoobAsserter(
+								() -> config.set.export(new short[size], 0))));
+					} else  if(IndexValueType.SHORT.isValidSubstitute(config.valueType)) {
 						// Make target buffer too small
 						tests.add(dynamicTest("too small", alternateIoobAsserter(
 									() -> config.set.export(new short[size/2], 0))));
@@ -210,7 +222,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 					} else {
 						// Export to target type not supported
 						tests.add(dynamicTest("overflow", overflowAsserter(
-								() -> config.set.export(new short[config.indices.length], 0))));
+								() -> config.set.export(new short[size], 0))));
 					}
 
 					return dynamicContainer(config.label, tests);
@@ -227,8 +239,12 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.flatMap(Config::withSubSet)
 				.map(config -> {
 					List<DynamicTest> tests = new ArrayList<>();
-					if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
-						int size = config.indices.length;
+					int size = config.indices.length;
+
+					if(size==0) {
+						tests.add(dynamicTest("out of bounds", alternateIoobAsserter(
+								() -> config.set.export(new int[size], 0))));
+					} else if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
 						// Make target buffer too small
 						tests.add(dynamicTest("too small", alternateIoobAsserter(
 									() -> config.set.export(new int[size/2], 0))));
@@ -257,7 +273,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 					} else {
 						// Export to target type not supported
 						tests.add(dynamicTest("overflow", overflowAsserter(
-								() -> config.set.export(new int[config.indices.length], 0))));
+								() -> config.set.export(new int[size], 0))));
 					}
 
 					return dynamicContainer(config.label, tests);
@@ -274,8 +290,12 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.flatMap(Config::withSubSet)
 				.map(config -> {
 					List<DynamicTest> tests = new ArrayList<>();
-					if(IndexValueType.LONG.isValidSubstitute(config.valueType)) {
-						int size = config.indices.length;
+					int size = config.indices.length;
+
+					if(size==0) {
+						tests.add(dynamicTest("out of bounds", alternateIoobAsserter(
+								() -> config.set.export(new long[size], 0))));
+					} else if(IndexValueType.LONG.isValidSubstitute(config.valueType)) {
 						// Make target buffer too small
 						tests.add(dynamicTest("too small", alternateIoobAsserter(
 									() -> config.set.export(new long[size/2], 0))));
@@ -304,7 +324,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 					} else {
 						// Export to target type not supported
 						tests.add(dynamicTest("overflow", overflowAsserter(
-								() -> config.set.export(new long[config.indices.length], 0))));
+								() -> config.set.export(new long[size], 0))));
 					}
 
 					return dynamicContainer(config.label, tests);
@@ -322,7 +342,11 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.map(config -> {
 					List<DynamicTest> tests = new ArrayList<>();
 					int size = config.indices.length;
-					if(IndexValueType.BYTE.isValidSubstitute(config.valueType)) {
+
+					if(size==0) {
+						tests.add(dynamicTest("out of bounds", alternateIoobAsserter(
+								() -> config.set.export(0, 0, new byte[size], 0))));
+					} else if(IndexValueType.BYTE.isValidSubstitute(config.valueType)) {
 						// Make target buffer too small
 						tests.add(dynamicTest("too small (full)", alternateIoobAsserter(
 								() -> config.set.export(0, size, new byte[size/2], 0))));
@@ -385,7 +409,11 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.map(config -> {
 					List<DynamicTest> tests = new ArrayList<>();
 					int size = config.indices.length;
-					if(IndexValueType.SHORT.isValidSubstitute(config.valueType)) {
+
+					if(size==0) {
+						tests.add(dynamicTest("out of bounds", alternateIoobAsserter(
+								() -> config.set.export(0, 0, new short[size], 0))));
+					} else if(IndexValueType.SHORT.isValidSubstitute(config.valueType)) {
 						// Make target buffer too small
 						tests.add(dynamicTest("too small (full)", alternateIoobAsserter(
 								() -> config.set.export(0, size, new short[size/2], 0))));
@@ -448,7 +476,11 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.map(config -> {
 					List<DynamicTest> tests = new ArrayList<>();
 					int size = config.indices.length;
-					if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
+
+					if(size==0) {
+						tests.add(dynamicTest("out of bounds", alternateIoobAsserter(
+								() -> config.set.export(0, 0, new int[size], 0))));
+					} else if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
 						// Make target buffer too small
 						tests.add(dynamicTest("too small (full)", alternateIoobAsserter(
 								() -> config.set.export(0, size, new int[size/2], 0))));
@@ -511,7 +543,11 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.map(config -> {
 					List<DynamicTest> tests = new ArrayList<>();
 					int size = config.indices.length;
-					if(IndexValueType.LONG.isValidSubstitute(config.valueType)) {
+
+					if(size==0) {
+						tests.add(dynamicTest("out of bounds", alternateIoobAsserter(
+								() -> config.set.export(0, 0, new long[size], 0))));
+					} else if(IndexValueType.LONG.isValidSubstitute(config.valueType)) {
 						// Make target buffer too small
 						tests.add(dynamicTest("too small (full)", alternateIoobAsserter(
 								() -> config.set.export(0, size, new long[size/2], 0))));
@@ -587,13 +623,19 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.map(Config::validate)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
-					int from = random(0, size);
-					int to = random(from+1, size+1);
-					LongList buffer = new LongArrayList();
-					config.set.forEachIndex((LongConsumer)buffer::add, from, to);
-					assertEquals(to-from, buffer.size());
-					for (int i = 0; i < buffer.size(); i++) {
-						assertEquals(config.indices[i+from], buffer.getLong(i));
+
+					if(size==0) {
+						assertAlternateIOOB(() -> config.set.forEachIndex(
+								mock(LongConsumer.class), 0, 0));
+					} else {
+						int from = random(0, size);
+						int to = random(from+1, size+1);
+						LongList buffer = new LongArrayList();
+						config.set.forEachIndex((LongConsumer)buffer::add, from, to);
+						assertEquals(to-from, buffer.size());
+						for (int i = 0; i < buffer.size(); i++) {
+							assertEquals(config.indices[i+from], buffer.getLong(i));
+						}
 					}
 				}));
 	}
@@ -630,7 +672,11 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
-					if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
+
+					if(size==0) {
+						assertAlternateIOOB(() -> config.set.forEachIndex(
+								mock(IntConsumer.class), 0, 0));
+					} else if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
 						int from = random(0, size);
 						int to = random(from+1, size+1);
 						LongList buffer = new LongArrayList();
@@ -670,14 +716,20 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
-					int from = random(0, size);
-					int to = random(from+1, size+1);
-					LongList buffer = new LongArrayList();
-					config.set.forEachEntry((int idx, long val)
-							-> buffer.add(idx-from, val), from, to);
-					assertEquals(to-from, buffer.size());
-					for (int i = 0; i < buffer.size(); i++) {
-						assertEquals(config.indices[i+from], buffer.getLong(i));
+
+					if(size==0) {
+						assertAlternateIOOB(() -> config.set.forEachEntry(
+								mock(IntLongConsumer.class), 0, 0));
+					} else {
+						int from = random(0, size);
+						int to = random(from+1, size+1);
+						LongList buffer = new LongArrayList();
+						config.set.forEachEntry((int idx, long val)
+								-> buffer.add(idx-from, val), from, to);
+						assertEquals(to-from, buffer.size());
+						for (int i = 0; i < buffer.size(); i++) {
+							assertEquals(config.indices[i+from], buffer.getLong(i));
+						}
 					}
 				}));
 	}
@@ -715,7 +767,11 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
-					if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
+
+					if(size==0) {
+						assertAlternateIOOB(() -> config.set.forEachEntry(
+								mock(IntBiConsumer.class), 0, 0));
+					} else if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
 						int from = random(0, size);
 						int to = random(from+1, size+1);
 						LongList buffer = new LongArrayList();
@@ -760,15 +816,21 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
-					int from = random(0, size);
-					int to = random(from+1, size+1);
-					MutableInteger index = new MutableInteger(from);
-					assertTrue(config.set.checkIndices((long val)
-							-> config.indices[index.getAndIncrement()] == val, from, to));
-					assertEquals(to, index.get());
 
-					assertTrue(config.set.checkIndices((long val) -> true, from, to));
-					assertFalse(config.set.checkIndices((long val) -> false, from, to));
+					if(size==0) {
+						assertAlternateIOOB(() -> config.set.checkIndices(
+								mock(LongPredicate.class), 0, 0));
+					} else {
+						int from = random(0, size);
+						int to = random(from+1, size+1);
+						MutableInteger index = new MutableInteger(from);
+						assertTrue(config.set.checkIndices((long val)
+								-> config.indices[index.getAndIncrement()] == val, from, to));
+						assertEquals(to, index.get());
+
+						assertTrue(config.set.checkIndices((long val) -> true, from, to));
+						assertFalse(config.set.checkIndices((long val) -> false, from, to));
+					}
 				}));
 	}
 
@@ -805,7 +867,11 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
-					if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
+
+					if(size==0) {
+						assertAlternateIOOB(() -> config.set.checkIndices(
+								mock(IntPredicate.class), 0, 0));
+					} else if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
 						int from = random(0, size);
 						int to = random(from+1, size+1);
 						MutableInteger index = new MutableInteger(from);
@@ -857,7 +923,11 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
-					if(size==1) {
+
+					if(size==0) {
+						assertAlternateIOOB(() -> config.set.checkConsecutiveIndices(
+								mock(LongBiPredicate.class), 0, 0));
+					} else if(size==1) {
 						assertFalse(config.set.checkConsecutiveIndices((v0, v1) -> true, 0, 1));
 						assertFalse(config.set.checkConsecutiveIndices((v0, v1) -> false, 0, 1));
 					} else {
@@ -933,7 +1003,10 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.map(config ->  {
 					List<DynamicTest> tests = new ArrayList<>();
 					int size = config.indices.length;
-					if(config.features.contains(Feature.EXPORTABLE)) {
+					if(size==0) {
+						tests.add(dynamicTest("out of bounds", alternateIoobAsserter(
+								() -> config.set.subSet(0, 0))));
+					} else if(config.features.contains(Feature.EXPORTABLE)) {
 
 						tests.add(dynamicTest("complete", () ->
 								assertIndicesEquals(config.set,
@@ -994,13 +1067,17 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
-					int start = size==1 ? 0 : random(0, size-1);
-					OfLong iterator = config.set.iterator(start);
-					for(int i = start; i<size; i++) {
-						assertTrue(iterator.hasNext());
-						assertEquals(config.indices[i], iterator.nextLong());
+					if(size==0) {
+						assertAlternateIOOB(() -> config.set.iterator(0));
+					} else  {
+						int start = size==1 ? 0 : random(0, size-1);
+						OfLong iterator = config.set.iterator(start);
+						for(int i = start; i<size; i++) {
+							assertTrue(iterator.hasNext());
+							assertEquals(config.indices[i], iterator.nextLong());
+						}
+						assertFalse(iterator.hasNext());
 					}
-					assertFalse(iterator.hasNext());
 				}));
 	}
 
@@ -1014,14 +1091,18 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
-					int from = random(0, size);
-					int to = random(from+1, size+1);
-					OfLong iterator = config.set.iterator(from, to);
-					for(int i = from; i<to; i++) {
-						assertTrue(iterator.hasNext());
-						assertEquals(config.indices[i], iterator.nextLong());
+					if(size==0) {
+						assertAlternateIOOB(() -> config.set.iterator(0, 0));
+					} else  {
+						int from = random(0, size);
+						int to = random(from+1, size+1);
+						OfLong iterator = config.set.iterator(from, to);
+						for(int i = from; i<to; i++) {
+							assertTrue(iterator.hasNext());
+							assertEquals(config.indices[i], iterator.nextLong());
+						}
+						assertFalse(iterator.hasNext());
 					}
-					assertFalse(iterator.hasNext());
 				}));
 	}
 

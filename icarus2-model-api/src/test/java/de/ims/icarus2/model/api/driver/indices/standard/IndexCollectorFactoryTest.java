@@ -207,7 +207,7 @@ class IndexCollectorFactoryTest {
 
 			@Test
 			void testConstructor_overflowBufferSize() {
-				assertModelException(GlobalErrorCode.VALUE_OVERFLOW,
+				assertModelException(GlobalErrorCode.INVALID_INPUT,
 						() -> new LimitedSortedSetBuilder(IndexValueType.INTEGER, MAX_INTEGER_INDEX+1, 1));
 			}
 
@@ -274,7 +274,7 @@ class IndexCollectorFactoryTest {
 
 			@Test
 			void testConstructor_overflow() {
-				assertModelException(GlobalErrorCode.VALUE_OVERFLOW,
+				assertModelException(GlobalErrorCode.INVALID_INPUT,
 						() -> new UnlimitedSortedSetBuilder(IndexValueType.INTEGER, MAX_INTEGER_INDEX+1));
 			}
 

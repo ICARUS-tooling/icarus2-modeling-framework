@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.test;
 
+import static de.ims.icarus2.test.TestUtils.abort;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.lang.reflect.Constructor;
@@ -88,6 +89,6 @@ public interface GenericTest<T extends Object> extends TargetedTest<T> {
 	 */
 	@Test
 	default void testMandatoryConstructors() throws Exception {
-		// no-op
+		abort();
 	}
 }
