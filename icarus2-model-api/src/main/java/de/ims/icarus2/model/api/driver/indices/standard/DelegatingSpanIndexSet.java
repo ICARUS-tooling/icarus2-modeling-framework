@@ -19,6 +19,7 @@ package de.ims.icarus2.model.api.driver.indices.standard;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkIndex;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkRangeInclusive;
 import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Set;
@@ -38,7 +39,7 @@ import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 public class DelegatingSpanIndexSet implements IndexSet {
 
 	private IndexSet source;
-	private int beginIndex, endIndex;
+	private int beginIndex = UNSET_INT, endIndex = UNSET_INT;
 
 	public DelegatingSpanIndexSet(IndexSet source) {
 		setSource(source);
@@ -74,7 +75,8 @@ public class DelegatingSpanIndexSet implements IndexSet {
 	public void setBeginIndex(int beginIndex) {
 		requireNonNull(source);
 		checkArgument(beginIndex>=0 && beginIndex<source.size());
-		checkArgument(beginIndex<=endIndex);
+		if(endIndex!=UNSET_INT)
+			checkArgument(beginIndex<=endIndex);
 
 		this.beginIndex = beginIndex;
 	}
@@ -82,7 +84,8 @@ public class DelegatingSpanIndexSet implements IndexSet {
 	public void setEndIndex(int endIndex) {
 		requireNonNull(source);
 		checkArgument(endIndex>=0 && endIndex<source.size());
-		checkArgument(endIndex>=beginIndex);
+		if(beginIndex!=UNSET_INT)
+			checkArgument(endIndex>=beginIndex);
 
 		this.endIndex = endIndex;
 	}
