@@ -38,7 +38,7 @@ class DelegatingFilteredIndexSetTest implements RandomAccessIndexSetTest<Delegat
 			type.copyFrom(indices, 0, array, 0, size);
 		} else {
 			type.fill(array, UNSET_LONG); // markers for unused values
-			for (int i = 0; i < indices.length; i++) {
+			for (int i = 0; i < filter.length; i++) {
 				// copy over all the "used" values
 				type.set(array, filter[i], indices[i]);
 			}
@@ -75,17 +75,30 @@ class DelegatingFilteredIndexSetTest implements RandomAccessIndexSetTest<Delegat
 		List<Config> buffer = new ArrayList<>();
 		int size = origin.getIndices().length;
 
+		// full unsorted
 		buffer.add(origin.clone()
 				.label(label(origin, true, null))
 				.set(makeSet(origin, size, null)));
 
+		// full sorted filter
 		buffer.add(origin.clone()
 				.label(label(origin, true, Boolean.TRUE))
 				.set(makeSet(origin, size, makeFilter(size, size, true))));
 
+		// full unsorted filter
 		buffer.add(origin.clone()
 				.label(label(origin, true, Boolean.FALSE))
 				.set(makeSet(origin, size, makeFilter(size, size, false))));
+
+		// partial sorted filter
+		buffer.add(origin.clone()
+				.label(label(origin, false, Boolean.TRUE))
+				.set(makeSet(origin, size*2, makeFilter(size, size, true))));
+
+		// partial unsorted filter
+		buffer.add(origin.clone()
+				.label(label(origin, false, Boolean.FALSE))
+				.set(makeSet(origin, size*2, makeFilter(size, size, false))));
 
 		return buffer.stream();
 	}
