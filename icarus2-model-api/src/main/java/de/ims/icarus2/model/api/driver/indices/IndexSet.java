@@ -269,6 +269,7 @@ public interface IndexSet {
 	 * @param action
 	 */
 	default void forEachIndex(LongConsumer action) {
+		requireNonNull(action);
 		if(!isEmpty()) {
 			forEachIndex(action, 0, size());
 		}
@@ -299,6 +300,7 @@ public interface IndexSet {
 	 * @see #forEachIndex(LongConsumer)
 	 */
 	default void forEachIndex(IntConsumer action) {
+		requireNonNull(action);
 		if(!isEmpty()) {
 			forEachIndex(action, 0, size());
 		}
@@ -328,6 +330,7 @@ public interface IndexSet {
 	 * @param action
 	 */
 	default void forEachEntry(IntLongConsumer action) {
+		requireNonNull(action);
 		if(!isEmpty()) {
 			forEachEntry(action, 0, size());
 		}
@@ -347,6 +350,7 @@ public interface IndexSet {
 	}
 
 	default void forEachEntry(IntBiConsumer action) {
+		requireNonNull(action);
 		if(!isEmpty()) {
 			forEachEntry(action, 0, size());
 		}
@@ -371,6 +375,7 @@ public interface IndexSet {
 	// CHECKING
 
 	default boolean checkIndices(LongPredicate check) {
+		requireNonNull(check);
 		return !isEmpty() && checkIndices(check, 0, size());
 	}
 
@@ -395,6 +400,7 @@ public interface IndexSet {
 	}
 
 	default boolean checkIndices(IntPredicate check) {
+		requireNonNull(check);
 		return !isEmpty() && checkIndices(check, 0, size());
 	}
 
@@ -421,6 +427,7 @@ public interface IndexSet {
 	}
 
 	default boolean checkConsecutiveIndices(LongBiPredicate check) {
+		requireNonNull(check);
 		return !isEmpty() && checkConsecutiveIndices(check, 0, size());
 	}
 
