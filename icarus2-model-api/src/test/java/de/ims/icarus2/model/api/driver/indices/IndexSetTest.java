@@ -452,6 +452,8 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 					if(config.features.contains(Feature.INDETERMINATE_SIZE)) {
 						assertModelException(GlobalErrorCode.NOT_IMPLEMENTED,
 								() -> config.set.externalize());
+					} else if(config.indices.length==0) {
+						assertTrue(config.set.externalize().isEmpty());
 					} else {
 						IndexSet set = config.set.externalize();
 						assertNotNull(set);
@@ -695,15 +697,15 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 
 			assertNotNull(set, "IndexSet missing");
 
-			assertTrue(indices.length>0, "Indices must not be empty");
-			assertFalse(set.isEmpty(), "Set under test must not be empty");
+//			assertTrue(indices.length>0, "Indices must not be empty");
+//			assertFalse(set.isEmpty(), "Set under test must not be empty");
 			assertFalse(features.isEmpty(), "Features must not be empty");
 
 			return this;
 		}
 
 		public Stream<Config> withSubSet() {
-			if(features.contains(Feature.EXPORTABLE)) {
+			if(getIndices().length>0 && features.contains(Feature.EXPORTABLE)) {
 				long[] indices = getIndices();
 				int from = random(0, indices.length);
 				int to = random(from, indices.length);

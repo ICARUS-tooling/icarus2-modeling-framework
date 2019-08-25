@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.api.driver.indices;
 
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkIndex;
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkRangeExlusive;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.lang.Primitives.strictToByte;
@@ -173,6 +175,7 @@ public interface IndexSet {
 	 */
 	default void export(int beginIndex, int endIndex, byte[] buffer, int offset) {
 		requireNonNull(buffer);
+		checkRangeExlusive(this, beginIndex, endIndex);
 		for(int i=beginIndex; i<endIndex; i++) {
 			buffer[offset++] = strictToByte(indexAt(i));
 		}
@@ -199,6 +202,7 @@ public interface IndexSet {
 	 */
 	default void export(int beginIndex, int endIndex, short[] buffer, int offset) {
 		requireNonNull(buffer);
+		checkRangeExlusive(this, beginIndex, endIndex);
 		for(int i=beginIndex; i<endIndex; i++) {
 			buffer[offset++] = strictToShort(indexAt(i));
 		}
@@ -225,6 +229,7 @@ public interface IndexSet {
 	 */
 	default void export(int beginIndex, int endIndex, int[] buffer, int offset) {
 		requireNonNull(buffer);
+		checkRangeExlusive(this, beginIndex, endIndex);
 		for(int i=beginIndex; i<endIndex; i++) {
 			buffer[offset++] = strictToInt(indexAt(i));
 		}
@@ -251,6 +256,7 @@ public interface IndexSet {
 	 */
 	default void export(int beginIndex, int endIndex, long[] buffer, int offset) {
 		requireNonNull(buffer);
+		checkRangeExlusive(this, beginIndex, endIndex);
 		for(int i=beginIndex; i<endIndex; i++) {
 			buffer[offset++] = indexAt(i);
 		}
@@ -263,7 +269,9 @@ public interface IndexSet {
 	 * @param action
 	 */
 	default void forEachIndex(LongConsumer action) {
-		forEachIndex(action, 0, size());
+		if(!isEmpty()) {
+			forEachIndex(action, 0, size());
+		}
 	}
 
 	/**
@@ -275,6 +283,7 @@ public interface IndexSet {
 	 */
 	default void forEachIndex(LongConsumer action, int beginIndex, int endIndex) {
 		requireNonNull(action);
+		checkRangeExlusive(this, beginIndex, endIndex);
 		for(int i=beginIndex; i<endIndex; i++) {
 			action.accept(indexAt(i));
 		}
@@ -290,7 +299,9 @@ public interface IndexSet {
 	 * @see #forEachIndex(LongConsumer)
 	 */
 	default void forEachIndex(IntConsumer action) {
-		forEachIndex(action, 0, size());
+		if(!isEmpty()) {
+			forEachIndex(action, 0, size());
+		}
 	}
 
 	/**
@@ -305,6 +316,7 @@ public interface IndexSet {
 	 */
 	default void forEachIndex(IntConsumer action, int beginIndex, int endIndex) {
 		requireNonNull(action);
+		checkRangeExlusive(this, beginIndex, endIndex);
 		for(int i=beginIndex; i<endIndex; i++) {
 			action.accept(strictToInt(indexAt(i)));
 		}
@@ -316,7 +328,9 @@ public interface IndexSet {
 	 * @param action
 	 */
 	default void forEachEntry(IntLongConsumer action) {
-		forEachEntry(action, 0, size());
+		if(!isEmpty()) {
+			forEachEntry(action, 0, size());
+		}
 	}
 
 	/**
@@ -326,13 +340,16 @@ public interface IndexSet {
 	 */
 	default void forEachEntry(IntLongConsumer action, int beginIndex, int endIndex) {
 		requireNonNull(action);
+		checkRangeExlusive(this, beginIndex, endIndex);
 		for(int i=beginIndex; i<endIndex; i++) {
 			action.accept(i, indexAt(i));
 		}
 	}
 
 	default void forEachEntry(IntBiConsumer action) {
-		forEachEntry(action, 0, size());
+		if(!isEmpty()) {
+			forEachEntry(action, 0, size());
+		}
 	}
 
 	/**
@@ -345,6 +362,7 @@ public interface IndexSet {
 	 */
 	default void forEachEntry(IntBiConsumer action, int beginIndex, int endIndex) {
 		requireNonNull(action);
+		checkRangeExlusive(this, beginIndex, endIndex);
 		for(int i=beginIndex; i<endIndex; i++) {
 			action.accept(i, strictToInt(indexAt(i)));
 		}
@@ -353,7 +371,7 @@ public interface IndexSet {
 	// CHECKING
 
 	default boolean checkIndices(LongPredicate check) {
-		return checkIndices(check, 0, size());
+		return !isEmpty() && checkIndices(check, 0, size());
 	}
 
 	/**
@@ -366,6 +384,7 @@ public interface IndexSet {
 	 */
 	default boolean checkIndices(LongPredicate check, int beginIndex, int endIndex) {
 		requireNonNull(check);
+		checkRangeExlusive(this, beginIndex, endIndex);
 		for(int i=beginIndex; i<endIndex; i++) {
 			if(!check.test(indexAt(i))) {
 				return false;
@@ -376,7 +395,7 @@ public interface IndexSet {
 	}
 
 	default boolean checkIndices(IntPredicate check) {
-		return checkIndices(check, 0, size());
+		return !isEmpty() && checkIndices(check, 0, size());
 	}
 
 	/**
@@ -391,6 +410,7 @@ public interface IndexSet {
 	 */
 	default boolean checkIndices(IntPredicate check, int beginIndex, int endIndex) {
 		requireNonNull(check);
+		checkRangeExlusive(this, beginIndex, endIndex);
 		for(int i=beginIndex; i<endIndex; i++) {
 			if(!check.test(strictToInt(indexAt(i)))) {
 				return false;
@@ -401,7 +421,7 @@ public interface IndexSet {
 	}
 
 	default boolean checkConsecutiveIndices(LongBiPredicate check) {
-		return checkConsecutiveIndices(check, 0, size());
+		return !isEmpty() && checkConsecutiveIndices(check, 0, size());
 	}
 
 	/**
@@ -414,7 +434,7 @@ public interface IndexSet {
 	 */
 	default boolean checkConsecutiveIndices(LongBiPredicate check, int beginIndex, int endIndex) {
 		requireNonNull(check);
-		checkArgument("Begin index must be smaller than end index", beginIndex<endIndex);
+		checkRangeExlusive(this, beginIndex, endIndex);
 		if(beginIndex==endIndex-1) {
 			return false;
 		}
@@ -599,16 +619,18 @@ public interface IndexSet {
 	 * @return
 	 */
 	default OfLong iterator(int start) {
+		checkIndex(this, start);
 		return IndexUtils.asIterator(this, start);
 	}
 
 	/**
 	 *
 	 * @param start begin of the section to iterate over, inclusive
-	 * @param end end of the sectio nto iterate over, exclusive
+	 * @param end end of the section to iterate over, exclusive
 	 * @return
 	 */
 	default OfLong iterator(int start, int end) {
+		checkRangeExlusive(this, start, end);
 		return IndexUtils.asIterator(this, start, end);
 	}
 

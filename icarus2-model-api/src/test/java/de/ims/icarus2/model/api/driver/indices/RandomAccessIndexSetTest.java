@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.mock;
@@ -621,6 +622,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 	default Stream<DynamicTest> testForEachIndexLongConsumerIntInt() {
 		return configurations()
 				.map(Config::validate)
+				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
 
@@ -649,11 +651,14 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.map(Config::validate)
 				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
-					if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
+					int size = config.indices.length;
+					if(size==0) {
+						config.set.forEachIndex((int i) -> fail("Empty set must not call consumer"));
+					} else if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
 						IntList buffer = new IntArrayList();
 						config.set.forEachIndex((IntConsumer)buffer::add);
-						assertEquals(config.indices.length, buffer.size());
-						for (int i = 0; i < config.indices.length; i++) {
+						assertEquals(size, buffer.size());
+						for (int i = 0; i < size; i++) {
 							assertEquals(config.indices[i], buffer.getInt(i));
 						}
 					} else {
@@ -743,8 +748,10 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.map(Config::validate)
 				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
-					if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
-						int size = config.indices.length;
+					int size = config.indices.length;
+					if(size==0) {
+						config.set.forEachEntry((int i, int j) -> fail("Empty set must not call consumer"));
+					} else if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
 						IntList buffer = new IntArrayList();
 						config.set.forEachEntry((IntBiConsumer)buffer::add);
 						assertEquals(size, buffer.size());
@@ -796,13 +803,21 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.map(Config::validate)
 				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
-					MutableInteger index = new MutableInteger(0);
-					assertTrue(config.set.checkIndices((long val)
-							-> config.indices[index.getAndIncrement()] == val));
-					assertEquals(config.indices.length, index.get());
+					int size = config.indices.length;
+					if(size==0) {
+						assertFalse(config.set.checkIndices((long val) -> {
+							fail("Empty set must not call predicate");
+							return true;
+						}));
+					} else {
+						MutableInteger index = new MutableInteger(0);
+						assertTrue(config.set.checkIndices((long val)
+								-> config.indices[index.getAndIncrement()] == val));
+						assertEquals(size, index.get());
 
-					assertTrue(config.set.checkIndices((long val) -> true));
-					assertFalse(config.set.checkIndices((long val) -> false));
+						assertTrue(config.set.checkIndices((long val) -> true));
+						assertFalse(config.set.checkIndices((long val) -> false));
+					}
 				}));
 	}
 
@@ -843,11 +858,17 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.map(Config::validate)
 				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
-					if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
+					int size = config.indices.length;
+					if(size==0) {
+						assertFalse(config.set.checkIndices((int val) -> {
+							fail("Empty set must not call predicate");
+							return true;
+						}));
+					} else if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
 						MutableInteger index = new MutableInteger(0);
 						assertTrue(config.set.checkIndices((int val)
 								-> config.indices[index.getAndIncrement()] == val));
-						assertEquals(config.indices.length, index.get());
+						assertEquals(size, index.get());
 
 						assertTrue(config.set.checkIndices((int val) -> true));
 						assertFalse(config.set.checkIndices((int val) -> false));
@@ -897,7 +918,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
 					int size = config.indices.length;
-					if(size==1) {
+					if(size<=1) {
 						assertFalse(config.set.checkConsecutiveIndices((v0, v1) -> true));
 						assertFalse(config.set.checkConsecutiveIndices((v0, v1) -> false));
 					} else {
@@ -957,9 +978,13 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.flatMap(Config::withSubSet)
 				.map(config -> {
 					List<DynamicTest> tests = new ArrayList<>();
-					if(config.features.contains(Feature.EXPORTABLE)) {
-						int size = config.indices.length;
-
+					int size = config.indices.length;
+					boolean exportable = config.features.contains(Feature.EXPORTABLE);
+					if(exportable && size==0) {
+						tests.add(dynamicTest("empty", () -> {
+							assertArrayEquals(IndexUtils.EMPTY, config.set.split(1));
+						}));
+					} else if(exportable) {
 						tests.add(dynamicTest("complete", () -> {
 							IndexSet[] splits = config.set.split(size);
 							assertEquals(1, splits.length);
@@ -1115,7 +1140,8 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 				.map(Config::validate)
 				.flatMap(Config::withSubSet)
 				.map(config -> dynamicTest(config.label, () -> {
-					if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
+					if(config.indices.length==0
+							|| IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
 						assertArrayEquals(config.indices,
 								config.set.intStream().asLongStream().toArray());
 					} else {

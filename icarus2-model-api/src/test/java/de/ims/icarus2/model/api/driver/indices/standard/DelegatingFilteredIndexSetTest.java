@@ -100,6 +100,12 @@ class DelegatingFilteredIndexSetTest implements RandomAccessIndexSetTest<Delegat
 				.label(label(origin, false, Boolean.FALSE))
 				.set(makeSet(origin, size*2, makeFilter(size, size, false))));
 
+		// empty
+		buffer.add(origin.clone()
+				.indices()
+				.label("empty")
+				.set(makeSet(origin, size, new int[0])));
+
 		return buffer.stream();
 	}
 

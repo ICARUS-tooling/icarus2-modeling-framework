@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkIndex;
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkRangeInclusive;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
@@ -23,7 +25,6 @@ import java.util.Set;
 
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
-import de.ims.icarus2.model.manifest.util.Messages;
 
 /**
  * Models a window to another index set (the {@code source}). The content of this index set
@@ -93,12 +94,6 @@ public class DelegatingSpanIndexSet implements IndexSet {
 		endIndex = source.size()-1;
 	}
 
-	protected void checkIndex(int index) {
-		if(index<0 || index>=size())
-			throw new IndexOutOfBoundsException(
-					Messages.indexOutOfBounds(null, 0, size()-1, index));
-	}
-
 	/**
 	 * @see de.ims.icarus2.model.api.driver.indices.IndexSet#size()
 	 */
@@ -112,7 +107,7 @@ public class DelegatingSpanIndexSet implements IndexSet {
 	 */
 	@Override
 	public long indexAt(int index) {
-		checkIndex(index);
+		checkIndex(this, index);
 		return source.indexAt(beginIndex+index);
 	}
 
@@ -150,9 +145,7 @@ public class DelegatingSpanIndexSet implements IndexSet {
 	 */
 	@Override
 	public IndexSet subSet(int fromIndex, int toIndex) {
-		checkArgument(fromIndex<=toIndex);
-		checkIndex(fromIndex);
-		checkIndex(toIndex);
+		checkRangeInclusive(this, fromIndex, toIndex);
 
 		// Translate indices, so we can use the original source index set!
 		fromIndex = beginIndex+fromIndex;

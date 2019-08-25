@@ -100,6 +100,32 @@ public class IndexUtils {
 		}
 	};
 
+	public static void checkIndex(IndexSet set, int index) {
+		if(index<0 || index>=set.size())
+			throw new IndexOutOfBoundsException(
+					Messages.indexOutOfBounds("Invalid index", 0, set.size()-1, index));
+	}
+
+	public static void checkRangeInclusive(IndexSet set, int fromIndex, int toIndex) {
+		int size = set.size();
+		if(toIndex<0 || toIndex>=size)
+			throw new IndexOutOfBoundsException(Messages.outOfBounds(
+					"Invalid upper bound", toIndex, 0, size-1));
+		if(fromIndex<0 || fromIndex>toIndex)
+			throw new IndexOutOfBoundsException(Messages.outOfBounds(
+					"Invalid lower bound", fromIndex, 0, size-1));
+	}
+
+	public static void checkRangeExlusive(IndexSet set, int fromIndex, int toIndex) {
+		int size = set.size();
+		if(toIndex<0 || toIndex>size)
+			throw new IndexOutOfBoundsException(Messages.outOfBounds(
+					"Invalid upper bound", toIndex, 0, size));
+		if(fromIndex<0 || fromIndex>=toIndex)
+			throw new IndexOutOfBoundsException(Messages.outOfBounds(
+					"Invalid lower bound", fromIndex, 0, size-1));
+	}
+
 	public static IndexValueType getDominantType(IndexSet[] indices) {
 		return getDominantType(indices, 0, indices.length);
 	}
@@ -946,10 +972,16 @@ public class IndexUtils {
 	}
 
 	public static IntStream asIntStream(IndexSet set) {
+		if(set.isEmpty()) {
+			return IntStream.empty();
+		}
 		return StreamSupport.intStream(new IndexSetIntSpliterator(set), false);
 	}
 
 	public static LongStream asLongStream(IndexSet set) {
+		if(set.isEmpty()) {
+			return LongStream.empty();
+		}
 		return StreamSupport.longStream(new IndexSetLongSpliterator(set), false);
 	}
 

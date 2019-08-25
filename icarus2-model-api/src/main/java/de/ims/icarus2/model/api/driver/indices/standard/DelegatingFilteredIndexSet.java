@@ -16,7 +16,9 @@
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
-import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkIndex;
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkRangeInclusive;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
@@ -68,17 +70,20 @@ public class DelegatingFilteredIndexSet implements IndexSet {
 		this.source = source;
 	}
 
-	protected void checkIndex(int index) {
-		if(index<0 || index>=size())
-			throw new IndexOutOfBoundsException();
-	}
-
 	/**
 	 * @see de.ims.icarus2.model.api.driver.indices.IndexSet#size()
 	 */
 	@Override
 	public int size() {
 		return filter==null ? source.size() : filter.length;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.driver.indices.IndexSet#isEmpty()
+	 */
+	@Override
+	public boolean isEmpty() {
+		return filter==null ? source.isEmpty() : filter.length==0;
 	}
 
 	private int translateIndex(int index) {
@@ -90,7 +95,7 @@ public class DelegatingFilteredIndexSet implements IndexSet {
 	 */
 	@Override
 	public long indexAt(int index) {
-		checkIndex(index);
+		checkIndex(this, index);
 		return source.indexAt(translateIndex(index));
 	}
 
@@ -99,7 +104,10 @@ public class DelegatingFilteredIndexSet implements IndexSet {
 	 */
 	@Override
 	public long firstIndex() {
-		return source.indexAt(translateIndex(0));
+		if(filter==null) {
+			return source.firstIndex();
+		}
+		return filter.length==0 ? UNSET_LONG : source.indexAt(translateIndex(0));
 	}
 
 	/**
@@ -107,7 +115,10 @@ public class DelegatingFilteredIndexSet implements IndexSet {
 	 */
 	@Override
 	public long lastIndex() {
-		return source.indexAt(translateIndex(size()-1));
+		if(filter==null) {
+			return source.lastIndex();
+		}
+		return filter.length==0 ? UNSET_LONG : source.indexAt(translateIndex(size()-1));
 	}
 
 	/**
@@ -123,9 +134,7 @@ public class DelegatingFilteredIndexSet implements IndexSet {
 	 */
 	@Override
 	public IndexSet subSet(int fromIndex, int toIndex) {
-		checkArgument(fromIndex<=toIndex);
-		checkIndex(fromIndex);
-		checkIndex(toIndex);
+		checkRangeInclusive(this, fromIndex, toIndex);
 
 		if(filter==null) {
 			return source.subSet(fromIndex, toIndex);
@@ -160,7 +169,7 @@ public class DelegatingFilteredIndexSet implements IndexSet {
 	 */
 	@Override
 	public boolean sort() {
-		// If filter isn't sorted or null, we don't need to bother with sortign at all
+		// If filter isn't sorted or null, we don't need to bother with sorting at all
 		return filterSorted && source.sort();
 	}
 }

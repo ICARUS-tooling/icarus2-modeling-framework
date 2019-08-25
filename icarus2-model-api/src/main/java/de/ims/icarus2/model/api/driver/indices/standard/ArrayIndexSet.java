@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkIndex;
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkRangeExlusive;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
@@ -24,11 +26,9 @@ import java.util.Arrays;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.PrimitiveIterator.OfLong;
 
-import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
-import de.ims.icarus2.model.manifest.util.Messages;
 import it.unimi.dsi.fastutil.bytes.ByteList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -136,9 +136,7 @@ public class ArrayIndexSet implements IndexSet {
 	 */
 	@Override
 	public long indexAt(int index) {
-		if(index<0 || index>=size())
-			throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
-					Messages.indexOutOfBounds("Invalid index value", 0, size()-1, index));
+		checkIndex(this, index);
 		return valueType.get(indices, fromIndex+index);
 	}
 
@@ -176,24 +174,28 @@ public class ArrayIndexSet implements IndexSet {
 	@Override
 	public void export(int beginIndex, int endIndex, byte[] buffer, int offset) {
 		requireNonNull(buffer);
+		checkRangeExlusive(this, beginIndex, endIndex);
 		valueType.copyTo(indices, fromIndex+beginIndex, buffer, offset, endIndex-beginIndex);
 	}
 
 	@Override
 	public void export(int beginIndex, int endIndex, short[] buffer, int offset) {
 		requireNonNull(buffer);
+		checkRangeExlusive(this, beginIndex, endIndex);
 		valueType.copyTo(indices, fromIndex+beginIndex, buffer, offset, endIndex-beginIndex);
 	}
 
 	@Override
 	public void export(int beginIndex, int endIndex, int[] buffer, int offset) {
 		requireNonNull(buffer);
+		checkRangeExlusive(this, beginIndex, endIndex);
 		valueType.copyTo(indices, fromIndex+beginIndex, buffer, offset, endIndex-beginIndex);
 	}
 
 	@Override
 	public void export(int beginIndex, int endIndex, long[] buffer, int offset) {
 		requireNonNull(buffer);
+		checkRangeExlusive(this, beginIndex, endIndex);
 		valueType.copyTo(indices, fromIndex+beginIndex, buffer, offset, endIndex-beginIndex);
 	}
 
