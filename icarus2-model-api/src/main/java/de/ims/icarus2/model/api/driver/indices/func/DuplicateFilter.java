@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.api.driver.indices.func;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.function.LongConsumer;
 
 import de.ims.icarus2.GlobalErrorCode;
@@ -37,7 +39,7 @@ public class DuplicateFilter implements LongConsumer {
 	private long lastReturnedValue = IcarusUtils.UNSET_LONG;
 
 	public DuplicateFilter(LongConsumer consumer) {
-		this.consumer = consumer;
+		this.consumer = requireNonNull(consumer);
 	}
 
 	/**
@@ -52,6 +54,6 @@ public class DuplicateFilter implements LongConsumer {
 			lastReturnedValue = value;
 			consumer.accept(lastReturnedValue);
 		} else if(value<lastReturnedValue)
-			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Index stream is not sorted");
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Index stream is not sorted");
 	}
 }
