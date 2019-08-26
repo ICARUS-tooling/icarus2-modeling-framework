@@ -25,11 +25,11 @@ import java.util.PrimitiveIterator.OfInt;
  * @author Markus Gärtner
  *
  */
-public class LongToIntIterator implements OfInt {
+public class Long2IntIterator implements OfInt {
 
 	private final OfLong source;
 
-	public LongToIntIterator(OfLong source) {
+	public Long2IntIterator(OfLong source) {
 		requireNonNull(source);
 
 		this.source = source;

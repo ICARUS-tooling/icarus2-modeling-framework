@@ -26,48 +26,48 @@ import org.junit.jupiter.params.provider.ValueSource;
  * @author Markus Gärtner
  *
  */
-class LongToIntIteratorTest {
+class Long2IntIteratorTest {
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.func.LongToIntIterator#LongToIntIterator(java.util.PrimitiveIterator.OfLong)}.
+	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.func.Long2IntIterator#LongToIntIterator(java.util.PrimitiveIterator.OfLong)}.
 	 */
 	@Test
 	void testLongToIntIterator() {
-		assertNotNull(new LongToIntIterator(mock(OfLong.class)));
+		assertNotNull(new Long2IntIterator(mock(OfLong.class)));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.func.LongToIntIterator#LongToIntIterator(java.util.PrimitiveIterator.OfLong)}.
+	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.func.Long2IntIterator#LongToIntIterator(java.util.PrimitiveIterator.OfLong)}.
 	 */
 	@Test
 	void testLongToIntIteratorNull() {
-		assertNPE(() -> new LongToIntIterator(null));
+		assertNPE(() -> new Long2IntIterator(null));
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.func.LongToIntIterator#hasNext()}.
+	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.func.Long2IntIterator#hasNext()}.
 	 */
 	@Test
 	void testHasNextEmpty() {
-		assertFalse(new LongToIntIterator(LongStream.empty().iterator()).hasNext());
+		assertFalse(new Long2IntIterator(LongStream.empty().iterator()).hasNext());
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.func.LongToIntIterator#hasNext()}.
+	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.func.Long2IntIterator#hasNext()}.
 	 */
 	@Test
 	void testHasNext() {
-		LongToIntIterator it = new LongToIntIterator(LongStream.of(random().nextLong()).iterator());
+		Long2IntIterator it = new Long2IntIterator(LongStream.of(random().nextLong()).iterator());
 		assertTrue(it.hasNext());
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.func.LongToIntIterator#nextInt()}.
+	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.func.Long2IntIterator#nextInt()}.
 	 */
 	@Test
 	void testNextInt() {
 		long[] values = randomLongs(random(10, 100), Integer.MIN_VALUE, Integer.MAX_VALUE);
-		LongToIntIterator it = new LongToIntIterator(LongStream.of(values).iterator());
+		Long2IntIterator it = new Long2IntIterator(LongStream.of(values).iterator());
 
 		for (int i = 0; i < values.length; i++) {
 			assertTrue(it.hasNext());
@@ -78,23 +78,23 @@ class LongToIntIteratorTest {
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.func.LongToIntIterator#nextInt()}.
+	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.func.Long2IntIterator#nextInt()}.
 	 */
 	@ParameterizedTest
 	@ValueSource(longs = {Integer.MAX_VALUE+1L, Long.MAX_VALUE, Long.MIN_VALUE})
 	void testNextIntOverflow(long value) {
-		LongToIntIterator it = new LongToIntIterator(LongStream.of(value).iterator());
+		Long2IntIterator it = new Long2IntIterator(LongStream.of(value).iterator());
 		assertTrue(it.hasNext());
 		assertOverflow(() -> it.nextInt());
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.func.LongToIntIterator#nextInt()}.
+	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.func.Long2IntIterator#nextInt()}.
 	 */
 	@Test
 	void testNextInt_NSE() {
 		assertThrows(NoSuchElementException.class,
-				() -> new LongToIntIterator(LongStream.empty().iterator()).nextInt());
+				() -> new Long2IntIterator(LongStream.empty().iterator()).nextInt());
 	}
 
 }
