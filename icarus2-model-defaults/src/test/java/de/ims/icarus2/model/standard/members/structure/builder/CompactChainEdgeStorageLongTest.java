@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorage.CompactChainEdgeStorageLong;
-import de.ims.icarus2.test.annotations.TestLocalOnly;
+import de.ims.icarus2.test.annotations.DisabledOnCi;
 
 /**
  * @author Markus Gärtner
@@ -79,7 +79,7 @@ class CompactChainEdgeStorageLongTest implements StaticChainEdgeStorageTest<Comp
 	class EdgeCases {
 
 		@Test
-		@TestLocalOnly
+		@DisabledOnCi
 		void testMaxChainSize() {
 			int size = CompactChainEdgeStorageLong.MAX_NODE_COUNT;
 			ChainsAndTrees.ChainConfig chainConfig = ChainsAndTrees.singleChain(size, 1.0);

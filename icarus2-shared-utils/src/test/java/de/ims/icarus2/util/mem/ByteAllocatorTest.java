@@ -55,7 +55,7 @@ import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import de.ims.icarus2.test.annotations.TestLocalOnly;
+import de.ims.icarus2.test.annotations.DisabledOnCi;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.ArrayUtils;
 import de.ims.icarus2.util.io.Bits;
@@ -147,7 +147,7 @@ class ByteAllocatorTest {
 
 	@SuppressWarnings("boxing")
 	@Test
-	@TestLocalOnly
+	@DisabledOnCi
 	@Tag(RANDOMIZED)
 	void testAllocationConsistency(TestReporter testReporter) {
 		final int SIZE = 1_000_000;

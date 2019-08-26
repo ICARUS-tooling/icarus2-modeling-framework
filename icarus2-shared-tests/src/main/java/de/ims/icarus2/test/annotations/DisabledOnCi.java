@@ -19,7 +19,7 @@
  */
 package de.ims.icarus2.test.annotations;
 
-import static de.ims.icarus2.test.TestTags.CI;
+import static de.ims.icarus2.test.TestTags.LOCAL;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
@@ -28,11 +28,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 /**
- * Marker interface to run a test only on the CI server.
+ * Marker interface to run a test only in the local
+ * environment and not on the CI server.
  *
  * @author Markus Gärtner
  *
@@ -40,9 +40,8 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 @Documented
 @Retention(RUNTIME)
 @Target(METHOD)
-@Test
-@Tag(CI)
-@EnabledIfEnvironmentVariable(named = "CI", matches = "true")
-public @interface TestCIOnly {
+@Tag(LOCAL)
+@DisabledIfEnvironmentVariable(named = "CI", matches = "true")
+public @interface DisabledOnCi {
 	// marker interface
 }

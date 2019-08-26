@@ -16,13 +16,16 @@
  */
 package de.ims.icarus2.model.api.driver.indices.func;
 
-import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 
 import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator;
 
 /**
+ * Merges two sorted {@link OfLong long iterators} into a single sorted
+ * one. Note that the behavior of this iterator is undefined if the
+ * supplied surce iterators are not sorted!
+ *
  * @author Markus Gärtner
  *
  */
@@ -31,6 +34,7 @@ public class DualMergeOfLong implements PrimitiveIterator.OfLong {
 	private final PrimitiveIterator.OfLong left, right;
 
 	private long leftVal, rightVal;
+	private boolean hasLeft, hasRight;
 
 	public DualMergeOfLong(PrimitiveIterator.OfLong left,
 			PrimitiveIterator.OfLong right) {
@@ -45,11 +49,17 @@ public class DualMergeOfLong implements PrimitiveIterator.OfLong {
 	}
 
 	private void nextLeft() {
-		leftVal = left.hasNext() ? left.nextLong() : UNSET_LONG;
+		hasLeft = left.hasNext();
+		if(hasLeft) {
+			leftVal = left.nextLong();
+		}
 	}
 
 	private void nextRight() {
-		rightVal = right.hasNext() ? right.nextLong() : UNSET_LONG;
+		hasRight = right.hasNext();
+		if(hasRight) {
+			rightVal = right.nextLong();
+		}
 	}
 
 	/**
@@ -57,20 +67,25 @@ public class DualMergeOfLong implements PrimitiveIterator.OfLong {
 	 */
 	@Override
 	public boolean hasNext() {
-		return leftVal!=UNSET_LONG || rightVal!=UNSET_LONG;
+		return hasLeft || hasRight;
 	}
 
 	/**
+	 * Returns the smallest of the two input iterator's heads.
+	 *
 	 * @see java.util.PrimitiveIterator.OfLong#nextLong()
+	 *
+	 * @throws NoSuchElementException if this iterator reached its
+	 * end and neither input iterator has any elements left.
 	 */
 	@Override
 	public long nextLong() {
 		long result;
 
-		if(leftVal!=UNSET_LONG && leftVal<rightVal) {
+		if(hasLeft && (!hasRight || leftVal<=rightVal)) {
 			result = leftVal;
 			nextLeft();
-		} else if(rightVal!=UNSET_LONG) {
+		} else if(hasRight && (!hasLeft || rightVal<leftVal)) {
 			result = rightVal;
 			nextRight();
 		} else

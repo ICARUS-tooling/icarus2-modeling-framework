@@ -138,6 +138,12 @@ public class IndexCollectorFactory {
 		return valueType == null ? IndexValueType.LONG : valueType;
 	}
 
+	/**
+	 * Applies all the specified settings and creates an instance of {@link IndexSetBuilder}
+	 * that best fits the desired characteristics.
+	 *
+	 * @return a new {@link IndexSetBuilder}, never {@code null}
+	 */
 	public IndexSetBuilder create() {
 
 		final IndexValueType valueType = getValueType();
@@ -185,12 +191,6 @@ public class IndexCollectorFactory {
 				builder = new BucketSetBuilder(valueType, chunkLimit);
 			}
 		}
-
-//		if (builder == null) {
-//			// FIXME for debug reasons we just default to some basic builder
-//			// with limited capacity
-//			builder = new UnlimitedSortedSetBuilder(IndexValueType.LONG, 1000);
-//		}
 
 		return builder;
 	}

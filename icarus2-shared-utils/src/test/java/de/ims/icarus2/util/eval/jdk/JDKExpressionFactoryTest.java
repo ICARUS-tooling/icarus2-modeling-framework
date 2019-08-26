@@ -40,7 +40,7 @@ import org.junit.jupiter.api.TestReporter;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import de.ims.icarus2.test.annotations.TestLocalOnly;
+import de.ims.icarus2.test.annotations.DisabledOnCi;
 import de.ims.icarus2.util.eval.Expression;
 
 /**
@@ -177,7 +177,7 @@ public class JDKExpressionFactoryTest {
 	}
 
 	@Test
-	@TestLocalOnly
+	@DisabledOnCi
 	@Tag(RANDOMIZED)
 	public void testExpressionPerformance(TestReporter reporter) throws Exception {
 		JDKExpressionFactory factory = new JDKExpressionFactory();
