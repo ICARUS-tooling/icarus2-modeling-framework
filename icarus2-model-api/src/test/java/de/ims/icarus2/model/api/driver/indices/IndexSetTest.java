@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicTest;
@@ -685,6 +686,15 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 		public Config features(Feature...features) { Collections.addAll(this.features, features); return this; }
 		public Config sorted(boolean sorted) { this.sorted = sorted; return this; }
 		public Config valueType(IndexValueType valueType) { this.valueType = valueType; return this; }
+
+		public Config limit(IndexValueType type) {
+			if(indices!=null) {
+				indices = LongStream.of(indices)
+						.filter(v -> v<=type.maxValue())
+						.toArray();
+			}
+			return this;
+		}
 
 		@Override
 		public Config clone() {

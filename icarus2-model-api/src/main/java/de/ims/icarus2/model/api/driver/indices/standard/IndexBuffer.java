@@ -18,6 +18,7 @@ package de.ims.icarus2.model.api.driver.indices.standard;
 
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkRangeExlusive;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkRangeInclusive;
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
@@ -114,6 +115,11 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		return this;
 	}
 
+	/**
+	 * Creates an {@link #externalize() externalized} copy of the current content
+	 * of this buffer or {@code null} if it is {@link #isEmpty() empty}.
+	 * @return
+	 */
 	public IndexSet snapshot() {
 
 		return isEmpty() ? null : subSet(0, size-1).externalize();
@@ -127,7 +133,7 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		int capacity = Array.getLength(buffer);
 		if(capacity-size < requiredSlots)
 			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
-					"Unable to fit in "+requiredSlots+" more slots - max size: "+capacity);
+					"Unable to fit "+requiredSlots+" more slots - max size: "+capacity);
 	}
 
 	/**
@@ -221,13 +227,12 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 
 	@Override
 	public void add(long from, long to) {
+		checkArgument(from<=to);
 		int length = IcarusUtils.ensureIntegerValueRange(to-from+1);
 		checkCapacity(length);
 
 		sorted = sorted && lastIndex()<=from;
 		valueType.copyFrom(i -> from+i, 0, buffer, size, length);
-
-		sorted = false;
 		size += length;
 	}
 
@@ -382,14 +387,15 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 	}
 
 	public void addFromItems(Supplier<? extends Item> supplier) {
-		Item item, previous = null;
+		Item item = null;
+//		Item previous = null;
 		while((item = supplier.get()) != null) {
-			if(previous!=null && item==previous) {
-				break;
-			}
+//			if(previous!=null && item==previous) {
+//				break;
+//			}
 
 			addFromItem(item);
-			previous = item;
+//			previous = item;
 		}
 	}
 
@@ -417,16 +423,8 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 	}
 
 	public void addFromItems(List<? extends Item> items) {
-		addFromItems(items, 0, items.size());
-	}
-
-	public void addFromItems(List<? extends Item> items, int beginIndex) {
-		addFromItems(items, beginIndex, items.size());
-	}
-
-	public void addFromItems(List<? extends Item> items, int beginIndex, int endIndex) {
 		requireNonNull(items);
-		int addCount = endIndex-beginIndex;
+		int addCount = items.size();
 		checkCapacity(addCount);
 
 		IntToLongFunction src;
@@ -439,7 +437,7 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 		} else {
 			src = i -> items.get(i).getIndex();
 		}
-		valueType.copyFrom(src, beginIndex, buffer, size, addCount);
+		valueType.copyFrom(src, 0, buffer, size, addCount);
 
 		size += addCount;
 	}
