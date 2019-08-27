@@ -16,7 +16,6 @@
  */
 package de.ims.icarus2.model.api.driver.indices.func;
 
-import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 
 import java.util.NoSuchElementException;
@@ -31,6 +30,7 @@ public class DualIntersectionOfLong implements PrimitiveIterator.OfLong {
 	private final PrimitiveIterator.OfLong left, right;
 
 	private long leftVal, rightVal;
+	private boolean hasLeft, hasRight, hasValue;
 	private long value;
 
 	public DualIntersectionOfLong(PrimitiveIterator.OfLong left,
@@ -43,16 +43,20 @@ public class DualIntersectionOfLong implements PrimitiveIterator.OfLong {
 
 		nextLeft();
 		nextRight();
-
-		value = UNSET_LONG;
 	}
 
 	private void nextLeft() {
-		leftVal = left.hasNext() ? left.nextLong() : UNSET_LONG;
+		hasLeft = left.hasNext();
+		if(hasLeft) {
+			leftVal = left.nextLong();
+		}
 	}
 
 	private void nextRight() {
-		rightVal = right.hasNext() ? right.nextLong() : UNSET_LONG;
+		hasRight = right.hasNext();
+		if(hasRight) {
+			rightVal = right.nextLong();
+		}
 	}
 
 	/**
@@ -62,8 +66,8 @@ public class DualIntersectionOfLong implements PrimitiveIterator.OfLong {
 	public boolean hasNext() {
 
 		// Check if either still at stream begin or if nextLong() has reset the value
-		if(value==UNSET_LONG) {
-			while(leftVal!=UNSET_LONG && rightVal!=UNSET_LONG) {
+		if(!hasValue) {
+			while(hasLeft && hasRight) {
 				if(leftVal<rightVal) {
 					nextLeft();
 				} else if(leftVal>rightVal) {
@@ -72,12 +76,13 @@ public class DualIntersectionOfLong implements PrimitiveIterator.OfLong {
 					value = leftVal;
 					nextLeft();
 					nextRight();
+					hasValue = true;
 					break;
 				}
 			}
 		}
 
-		return value!=UNSET_LONG;
+		return hasValue;
 	}
 
 	/**
@@ -86,13 +91,12 @@ public class DualIntersectionOfLong implements PrimitiveIterator.OfLong {
 	@Override
 	public long nextLong() {
 		// Not calling hasNext() since that is the client code's job
-		if(value==UNSET_LONG)
+		if(!hasValue)
 			throw new NoSuchElementException();
 
-		long result = value;
 		// Indicator for hasNext() to look for refresh next value
-		value = UNSET_LONG;
-		return result;
+		hasValue = false;
+		return value;
 	}
 
 }

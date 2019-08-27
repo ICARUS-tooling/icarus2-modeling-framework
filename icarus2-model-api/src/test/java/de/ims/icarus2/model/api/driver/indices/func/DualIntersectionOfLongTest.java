@@ -8,7 +8,6 @@ import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -33,32 +32,35 @@ import it.unimi.dsi.fastutil.longs.LongList;
  * @author Markus Gärtner
  *
  */
-class DualMergeOfLongTest {
+class DualIntersectionOfLongTest {
 
 	@Test
 	void constructor() {
-		assertNotNull(new DualMergeOfLong(mock(OfLong.class), mock(OfLong.class)));
+		assertNotNull(new DualIntersectionOfLong(mock(OfLong.class), mock(OfLong.class)));
 	}
 
 	@Test
 	void constructorNull() {
-		assertNPE(() -> new DualMergeOfLong(null, mock(OfLong.class)));
-		assertNPE(() -> new DualMergeOfLong(mock(OfLong.class), null));
+		assertNPE(() -> new DualIntersectionOfLong(null, mock(OfLong.class)));
+		assertNPE(() -> new DualIntersectionOfLong(mock(OfLong.class), null));
 	}
 
-	private long[] merge(LongStream left, LongStream right) {
+	private long[] intersect(LongStream left, LongStream right) {
 		LongList tmp = new LongArrayList();
-		DualMergeOfLong merger = new DualMergeOfLong(left.iterator(), right.iterator());
-		merger.forEachRemaining((LongConsumer)tmp::add);
-		assertFalse(merger.hasNext());
-		assertThrows(NoSuchElementException.class, () -> merger.nextLong());
+		DualIntersectionOfLong intersect = new DualIntersectionOfLong(
+				left.iterator(), right.iterator());
+		intersect.forEachRemaining((LongConsumer)tmp::add);
+		assertFalse(intersect.hasNext());
+		assertThrows(NoSuchElementException.class, () -> intersect.nextLong());
 		return tmp.toLongArray();
 	}
 
+	private static final long[] EMPTY = {};
+
 	@Test
 	void leftEmpty() {
-		assertArrayEquals(new long[] {1, 2, 3, 4, 5},
-				merge(
+		assertArrayEquals(EMPTY,
+				intersect(
 				LongStream.of(),
 				LongStream.of(1, 2, 3, 4, 5)
 		));
@@ -66,8 +68,8 @@ class DualMergeOfLongTest {
 
 	@Test
 	void rightEmpty() {
-		assertArrayEquals(new long[] {1, 2, 3, 4, 5},
-				merge(
+		assertArrayEquals(EMPTY,
+				intersect(
 				LongStream.of(1, 2, 3, 4, 5),
 				LongStream.of()
 		));
@@ -75,44 +77,36 @@ class DualMergeOfLongTest {
 
 	@Test
 	void empty() {
-		assertArrayEquals(new long[] {}, merge(
+		assertArrayEquals(EMPTY,
+				intersect(
 				LongStream.of(),
 				LongStream.of()));
 	}
 
 	@Test
-	void twoSplitMerge1() {
+	void twoIdentical() {
 		assertArrayEquals(new long[] {1, 2, 3, 4, 5},
-				merge(
-				LongStream.of(1, 2, 3),
-				LongStream.of(4, 5)
+				intersect(
+				LongStream.of(1, 2, 3, 4, 5),
+				LongStream.of(1, 2, 3, 4, 5)
 		));
 	}
 
 	@Test
-	void twoSplitMerge2() {
-		assertArrayEquals(new long[] {1, 2, 3, 4, 5},
-				merge(
-				LongStream.of(4, 5),
-				LongStream.of(1, 2, 3)
+	void oneIntersect() {
+		assertArrayEquals(new long[] {2, 3, 4},
+				intersect(
+				LongStream.of(1, 2, 3, 4, 5),
+				LongStream.of(2, 3, 4, 6)
 		));
 	}
 
 	@Test
-	void mixedMergeUnique() {
-		assertArrayEquals(new long[] {1, 2, 3, 4, 5},
-				merge(
+	void twoIntersect() {
+		assertArrayEquals(new long[] {1, 5},
+				intersect(
 				LongStream.of(1, 3, 5),
-				LongStream.of(2, 4)
-		));
-	}
-
-	@Test
-	void mixedMergeDoubles() {
-		assertArrayEquals(new long[] {1, 2, 3, 3, 4, 4, 5},
-				merge(
-				LongStream.of(1, 3, 4, 5),
-				LongStream.of(2, 3, 4)
+				LongStream.of(1, 2, 4, 5)
 		));
 	}
 
@@ -135,19 +129,18 @@ class DualMergeOfLongTest {
 		reporter.publishEntry(String.format("Streams constructed for %d and %d entries: %s",
 				_int(sizeLeft), _int(sizeRight), Duration.between(start, streamsDone)));
 
-		DualMergeOfLong merger = new DualMergeOfLong(left, right);
+		DualIntersectionOfLong intersect = new DualIntersectionOfLong(left, right);
 
 		int count = 0;
 		long previous = UNSET_LONG;
-		while(merger.hasNext()) {
-			long value = merger.nextLong();
+		while(intersect.hasNext()) {
+			long value = intersect.nextLong();
 			if(count>0) {
 				assertTrue(value>=previous);
 			}
 			previous = value;
 			count++;
 		}
-		assertEquals(sizeLeft+sizeRight, count);
 		Instant end = Instant.now();
 		reporter.publishEntry("Done after "+Duration.between(streamsDone, end));
 	}
@@ -155,8 +148,8 @@ class DualMergeOfLongTest {
 	@Test
 	void nextLongEmpty() {
 		assertThrows(NoSuchElementException.class,
-				() -> new DualMergeOfLong(LongStream.empty().iterator(),
+				() -> new DualIntersectionOfLong(
+						LongStream.empty().iterator(),
 						LongStream.empty().iterator()).nextLong());
 	}
-
 }
