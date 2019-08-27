@@ -57,7 +57,7 @@ public class IndexSetMerger extends AbstractIndexSetProcessor<IndexSetMerger> {
 	 * the estimated result size exceeds the limit of {@value IcarusUtils#MAX_INTEGER_INDEX}
 	 */
 	public IndexSet mergeAllToSingle() {
-		if(buffer.isEmpty()) {
+		if(buffer.isEmpty() || estimatedResultSize<=0) {
 			return IndexUtils.EMPTY_SET;
 		} else if(buffer.size()==1) {
 			return buffer.get(0);
