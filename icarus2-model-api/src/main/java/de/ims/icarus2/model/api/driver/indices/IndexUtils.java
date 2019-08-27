@@ -39,8 +39,8 @@ import java.util.stream.StreamSupport;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.driver.indices.func.IterativeIntersection;
 import de.ims.icarus2.model.api.driver.indices.func.IndexSetMerger;
+import de.ims.icarus2.model.api.driver.indices.func.IterativeIntersection;
 import de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
 import de.ims.icarus2.model.api.driver.indices.standard.SingletonIndexSet;
@@ -638,27 +638,27 @@ public class IndexUtils {
 	}
 
 	public static IndexSet merge(IndexSet...indices) {
-		return new IndexSetMerger(indices).mergeAllToSingle();
+		return new IndexSetMerger().add(indices).mergeAllToSingle();
 	}
 
 	public static IndexSet merge(Collection<? extends IndexSet> indices) {
-		return new IndexSetMerger(indices).mergeAllToSingle();
+		return new IndexSetMerger().add(indices).mergeAllToSingle();
 	}
 
 	public static IndexSet[] mergeToArray(IndexSet...indices) {
-		return new IndexSetMerger(indices).mergeAllToArray();
+		return new IndexSetMerger().add(indices).mergeAllToArray();
 	}
 
 	public static IndexSet[] mergeToArray(Collection<? extends IndexSet> indices) {
-		return new IndexSetMerger(indices).mergeAllToArray();
+		return new IndexSetMerger().add(indices).mergeAllToArray();
 	}
 
 	public static IndexSet intersect(IndexSet...indices) {
-		return new IterativeIntersection(indices).intersectAll();
+		return new IterativeIntersection().add(indices).intersectAll();
 	}
 
 	public static IndexSet intersect(Collection<? extends IndexSet> indices) {
-		return new IterativeIntersection(indices).intersectAll();
+		return new IterativeIntersection().add(indices).intersectAll();
 	}
 
 	public static IndexSet[] intersect(long from1, long to1, long from2, long to2) {
