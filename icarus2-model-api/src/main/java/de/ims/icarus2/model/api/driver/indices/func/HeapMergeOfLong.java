@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator;
+import java.util.stream.Stream;
 
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.util.collections.MappedMinHeap.MappedLongMinHeap;
@@ -42,46 +43,34 @@ public class HeapMergeOfLong implements PrimitiveIterator.OfLong {
 		requireNonNull(arrays);
 		checkArgument(arrays.length>2);
 
-		OfLong[] sources = new OfLong[arrays.length];
-
-		for(int i=0; i<arrays.length; i++) {
-			sources[i] = Arrays.stream(arrays[i]).iterator();
-		}
-
-		return new HeapMergeOfLong(sources);
+		return new HeapMergeOfLong(Stream.of(arrays)
+				.map(array -> Arrays.stream(array).iterator())
+				.toArray(OfLong[]::new));
 	}
 
 	public static HeapMergeOfLong fromIndices(IndexSet...indices) {
 		requireNonNull(indices);
 		checkArgument(indices.length>2);
 
-		OfLong[] sources = new OfLong[indices.length];
-
-		for(int i=0; i<indices.length; i++) {
-			sources[i] = indices[i].iterator();
-		}
-
-		return new HeapMergeOfLong(sources);
+		return new HeapMergeOfLong(Stream.of(indices)
+				.map(IndexSet::iterator)
+				.toArray(OfLong[]::new));
 	}
 
 	public static HeapMergeOfLong fromIndices(Collection<IndexSet> indices) {
 		requireNonNull(indices);
 		checkArgument(indices.size()>2);
 
-		OfLong[] sources = new OfLong[indices.size()];
-
-		int index = 0;
-		for(IndexSet set : indices) {
-			sources[index++] = set.iterator();
-		}
-
-		return new HeapMergeOfLong(sources);
+		return new HeapMergeOfLong(indices.stream()
+				.map(IndexSet::iterator)
+				.toArray(OfLong[]::new));
 	}
 
 	private final MappedLongMinHeap<PrimitiveIterator.OfLong> heap;
 
 	public HeapMergeOfLong(PrimitiveIterator.OfLong[] sources) {
 		requireNonNull(sources);
+		checkArgument(sources.length>2);
 
 		heap = new MappedLongMinHeap<>(sources.length);
 
