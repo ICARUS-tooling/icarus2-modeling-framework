@@ -26,7 +26,6 @@ import java.util.PrimitiveIterator;
 import java.util.stream.Stream;
 
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
-import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.MappedMinHeap.MappedLongMinHeap;
 
 /**
@@ -64,24 +63,30 @@ public class HeapIntersectionOfLong implements PrimitiveIterator.OfLong {
 				.toArray(OfLong[]::new));
 	}
 
-	// Min-heap of the last returned values of each stream
-	private final MappedLongMinHeap<PrimitiveIterator.OfLong> heap;
-	// Buffer for storing streams while checking for a common value
-	private final PrimitiveIterator.OfLong[] buffer;
+	/** Min-heap of the last returned values of each stream */
+	private final MappedLongMinHeap<Entry> heap;
+	/** Buffer for storing streams while checking for a common value */
+	private final Entry[] buffer;
 
-	private long value = IcarusUtils.UNSET_LONG;
+	/** Value to be returned on invocation of nextLong() */
+	private long value;
+	/** Flag to signal whether there's an actual value to be returned */
+	private boolean hasValue;
 
 	public HeapIntersectionOfLong(PrimitiveIterator.OfLong[] sources) {
 		requireNonNull(sources);
 		checkArgument(sources.length>2);
 
-		buffer = new PrimitiveIterator.OfLong[sources.length];
+		buffer = new Entry[sources.length];
 		heap = new MappedLongMinHeap<>(sources.length);
 
+		// Create the buffer structure, and only keep streams that are not empty
 		for(int i=0; i<sources.length; i++) {
 			OfLong source = sources[i];
-			if(source.hasNext()) {
-				heap.push(source, source.nextLong());
+			Entry entry = new Entry(source);
+			buffer[i] = entry;
+			if(entry.advance()) {
+				heap.push(entry, entry.head);
 			}
 		}
 	}
@@ -93,47 +98,56 @@ public class HeapIntersectionOfLong implements PrimitiveIterator.OfLong {
 	public boolean hasNext() {
 
 		// If required prepare next value to be returned
-		if(value==IcarusUtils.UNSET_LONG && !heap.isEmpty()) {
+		if(!hasValue && !heap.isEmpty()) {
 
-			boolean continueSearch = true;
+			boolean continueSearch = heap.size()==buffer.length;
+
+			boolean eos = false;
 
 			while(continueSearch) {
 				// Read and remember current min value
 				long val = heap.peekValue();
-				buffer[0] = heap.pop();
 
-				// Check whether all sources share that min value
-				int idx = 1;
+				// Check whether all other sources share that min value
+				int matchingStreams = 0;
+
 				while(!heap.isEmpty() && heap.peekValue()==val) {
-					buffer[idx++] = heap.pop();
+					Entry entry = heap.pop();
+					matchingStreams++;
+
+					if(entry.advance()) {
+						// Keep pushing new values into heap as long as we're still searching
+						heap.push(entry, entry.head);
+					} else {
+						/*
+						 * Stop global search, but still continue checking for the current
+						 * value. Mark end-of-stream being reached, so we can cleanup the
+						 * heap at end of search.
+						 */
+						continueSearch = false;
+						eos = true;
+					}
 				}
 
 				// All sources share same value -> save it and mark end of search
-				if(idx==buffer.length) {
+				if(matchingStreams==buffer.length) {
 					value = val;
 					continueSearch = false;
+					hasValue = true;
 				}
+			}
 
-				// Fill sources back into heap
-				for(int i=0; i<idx; i++) {
-					OfLong source = buffer[i];
-					if(source.hasNext()) {
-						heap.push(source, source.nextLong());
-					} else {
-						/*
-						 *  As soon as a source runs out of values, break entire operation:
-						 *
-						 *  Clearing the heap entirely will cause the outer check to always fall
-						 *  and therefore offers a cheap way out.
-						 */
-						heap.clear();
-						continueSearch = false;
-					}
-				}
+			/*
+			 *  If we encountered the end of at least one source stream,
+			 *  we can completely stop future checks, as there won't be
+			 *  any more common values.
+			 */
+			if(eos) {
+				heap.clear();
 			}
 		}
 
-		return value!=IcarusUtils.UNSET_LONG;
+		return hasValue;
 	}
 
 	/**
@@ -141,12 +155,41 @@ public class HeapIntersectionOfLong implements PrimitiveIterator.OfLong {
 	 */
 	@Override
 	public long nextLong() {
-		if (value==IcarusUtils.UNSET_LONG)
+		if (!hasValue)
 			throw new NoSuchElementException();
 
-		long result = value;
-		value = IcarusUtils.UNSET_LONG;
-		return result;
+		// Signal hasNext() to search for next value
+		hasValue = false;
+		return value;
 	}
 
+	private static class Entry {
+		private final OfLong source;
+		private long head;
+		private boolean hasHead;
+
+		private Entry(OfLong source) {
+			this.source = requireNonNull(source);
+		}
+
+		/**
+		 * Try to fetch the next value while also eliminating
+		 * duplicates.
+		 */
+		private boolean advance() {
+			boolean hadHead = hasHead;
+			long previousHead = head;
+			hasHead = false;
+
+			while(source.hasNext()) {
+				head = source.nextLong();
+				if(!hadHead || head!=previousHead) {
+					hasHead = true;
+					break;
+				}
+			}
+
+			return hasHead;
+		}
+	}
 }
