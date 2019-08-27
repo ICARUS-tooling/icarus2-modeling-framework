@@ -36,21 +36,11 @@ import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
  * @author Markus Gärtner
  *
  */
-public class IterativeIntersection extends AbstractIndexSetProcessor {
+public class IterativeIntersection extends AbstractIndexSetProcessor<IterativeIntersection> {
 
 	public IterativeIntersection() {
 		super(true);
 		estimatedResultSize = Long.MAX_VALUE;
-	}
-
-	public IterativeIntersection(IndexSet...indices) {
-		this();
-		add(indices);
-	}
-
-	public IterativeIntersection(Collection<? extends IndexSet> indices) {
-		this();
-		add(indices);
 	}
 
 	/**
@@ -68,7 +58,7 @@ public class IterativeIntersection extends AbstractIndexSetProcessor {
 	 * @return
 	 */
 	public IndexSet intersectAll() {
-		if(buffer.isEmpty()) {
+		if(buffer.isEmpty() || estimatedResultSize<=0) {
 			return IndexUtils.EMPTY_SET;
 		} else if(buffer.size()==1) {
 			return buffer.get(0);
@@ -92,6 +82,7 @@ public class IterativeIntersection extends AbstractIndexSetProcessor {
 		 *  if no intersection exists.
 		 */
 		buffer.sort(IndexSet.INDEX_SET_SIZE_SORTER);
+		assert buffer.get(0).size()<=buffer.get(buffer.size()-1).size();
 
 		// Intersect sets iteratively, using the result of previous intersection if possible
 		for(int i=1; i<buffer.size(); i++) {
@@ -132,6 +123,11 @@ public class IterativeIntersection extends AbstractIndexSetProcessor {
 		requireNonNull(set2);
 		requireNonNull(consumer);
 
+		assert set1!=set2;
+		assert set1!=consumer;
+		assert set2!=consumer;
+
+
 		long max1 = set1.lastIndex();
 		long max2 = set2.lastIndex();
 
@@ -158,7 +154,7 @@ public class IterativeIntersection extends AbstractIndexSetProcessor {
 
 			if(v1 < v2) {
 				i++;
-			} else if(v2 > v1) {
+			} else if(v2 < v1) {
 				j++;
 			} else {
 				consumer.accept(v1);

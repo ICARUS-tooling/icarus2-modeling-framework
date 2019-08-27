@@ -35,7 +35,7 @@ import de.ims.icarus2.model.api.driver.indices.IndexUtils;
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractIndexSetProcessor {
+public abstract class AbstractIndexSetProcessor<P extends AbstractIndexSetProcessor<P>> {
 
 	protected final List<IndexSet> buffer = new ArrayList<>();
 
@@ -48,6 +48,11 @@ public abstract class AbstractIndexSetProcessor {
 	 */
 	public AbstractIndexSetProcessor(boolean requiresSortedInput) {
 		this.requiresSortedInput = requiresSortedInput;
+	}
+
+	@SuppressWarnings("unchecked")
+	protected P self() {
+		return (P) this;
 	}
 
 	/**
@@ -74,27 +79,30 @@ public abstract class AbstractIndexSetProcessor {
 
 	protected void checkNewIndexSet(IndexSet set) {
 		if(set.size()==IndexSet.UNKNOWN_SIZE)
-			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Unable to process index set of unknown size");
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					"Unable to process index set of unknown size");
 
 		if(isRequiresSortedInput()) {
 			IndexUtils.checkSorted(set);
 		}
 	}
 
-	public void add(IndexSet...indices) {
+	public P add(IndexSet...indices) {
 		for(IndexSet set : indices) {
 			checkNewIndexSet(set);
 			buffer.add(set);
 			refreshEstimatedResultSize(set);
 		}
+		return self();
 	}
 
-	public void add(Collection<? extends IndexSet> indices) {
+	public P add(Collection<? extends IndexSet> indices) {
 		for(IndexSet set : indices) {
 			checkNewIndexSet(set);
 			buffer.add(set);
 			refreshEstimatedResultSize(set);
 		}
+		return self();
 	}
 
 	public long getEstimatedResultSize() {

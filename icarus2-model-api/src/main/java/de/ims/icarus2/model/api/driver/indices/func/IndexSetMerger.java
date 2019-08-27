@@ -16,7 +16,6 @@
  */
 package de.ims.icarus2.model.api.driver.indices.func;
 
-import java.util.Collection;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.function.LongConsumer;
 
@@ -36,21 +35,11 @@ import de.ims.icarus2.util.IcarusUtils;
  * @author Markus Gärtner
  *
  */
-public class IndexSetMerger extends AbstractIndexSetProcessor {
+public class IndexSetMerger extends AbstractIndexSetProcessor<IndexSetMerger> {
 
 	public IndexSetMerger() {
 		super(true);
 		estimatedResultSize = 0;
-	}
-
-	public IndexSetMerger(IndexSet...indices) {
-		this();
-		add(indices);
-	}
-
-	public IndexSetMerger(Collection<? extends IndexSet> indices) {
-		this();
-		add(indices);
 	}
 
 	@Override
@@ -69,7 +58,7 @@ public class IndexSetMerger extends AbstractIndexSetProcessor {
 	 */
 	public IndexSet mergeAllToSingle() {
 		if(buffer.isEmpty()) {
-			return null;
+			return IndexUtils.EMPTY_SET;
 		} else if(buffer.size()==1) {
 			return buffer.get(0);
 		}
@@ -97,7 +86,7 @@ public class IndexSetMerger extends AbstractIndexSetProcessor {
 
 	public IndexSet[] mergeAllToArray() {
 		if(buffer.isEmpty()) {
-			return null;
+			return IndexUtils.EMPTY;
 		} else if(buffer.size()==1) {
 			return IndexUtils.wrap(buffer.get(0));
 		}
