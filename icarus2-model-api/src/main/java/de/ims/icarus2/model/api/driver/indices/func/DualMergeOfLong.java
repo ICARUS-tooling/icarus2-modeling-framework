@@ -85,7 +85,7 @@ public class DualMergeOfLong implements PrimitiveIterator.OfLong {
 		if(hasLeft && (!hasRight || leftVal<=rightVal)) {
 			result = leftVal;
 			nextLeft();
-		} else if(hasRight && (!hasLeft || rightVal<leftVal)) {
+		} else if(hasRight && (!hasLeft || rightVal<=leftVal)) {
 			result = rightVal;
 			nextRight();
 		} else
