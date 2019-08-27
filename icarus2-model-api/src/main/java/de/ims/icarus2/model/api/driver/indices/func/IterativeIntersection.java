@@ -36,19 +36,19 @@ import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
  * @author Markus Gärtner
  *
  */
-public class IndexIterativeIntersection extends AbstractIndexSetProcessor {
+public class IterativeIntersection extends AbstractIndexSetProcessor {
 
-	public IndexIterativeIntersection() {
+	public IterativeIntersection() {
 		super(true);
 		estimatedResultSize = Long.MAX_VALUE;
 	}
 
-	public IndexIterativeIntersection(IndexSet...indices) {
+	public IterativeIntersection(IndexSet...indices) {
 		this();
 		add(indices);
 	}
 
-	public IndexIterativeIntersection(Collection<? extends IndexSet> indices) {
+	public IterativeIntersection(Collection<? extends IndexSet> indices) {
 		this();
 		add(indices);
 	}

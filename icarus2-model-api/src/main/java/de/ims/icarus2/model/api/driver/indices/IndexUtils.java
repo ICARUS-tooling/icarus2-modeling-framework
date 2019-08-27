@@ -39,7 +39,7 @@ import java.util.stream.StreamSupport;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.driver.indices.func.IndexIterativeIntersection;
+import de.ims.icarus2.model.api.driver.indices.func.IterativeIntersection;
 import de.ims.icarus2.model.api.driver.indices.func.IndexSetMerger;
 import de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
@@ -654,11 +654,11 @@ public class IndexUtils {
 	}
 
 	public static IndexSet intersect(IndexSet...indices) {
-		return new IndexIterativeIntersection(indices).intersectAll();
+		return new IterativeIntersection(indices).intersectAll();
 	}
 
 	public static IndexSet intersect(Collection<? extends IndexSet> indices) {
-		return new IndexIterativeIntersection(indices).intersectAll();
+		return new IterativeIntersection(indices).intersectAll();
 	}
 
 	public static IndexSet[] intersect(long from1, long to1, long from2, long to2) {

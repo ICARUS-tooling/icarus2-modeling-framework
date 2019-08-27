@@ -30,7 +30,7 @@ import de.ims.icarus2.model.api.driver.indices.IndexUtils;
  * instances and produces a result {@link IndexSet}.
  * The basic protocol for this is that client code provides index sets via the
  * various {@link #add(Collection)} methods and then calls the implementation
- * specific processing method (e.g. {@link IndexIterativeIntersection#intersectAll()}.
+ * specific processing method (e.g. {@link IterativeIntersection#intersectAll()}.
  *
  * @author Markus Gärtner
  *
