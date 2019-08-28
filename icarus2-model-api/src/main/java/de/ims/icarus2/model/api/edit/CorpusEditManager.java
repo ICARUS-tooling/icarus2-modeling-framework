@@ -21,9 +21,9 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
+
+import javax.annotation.Nullable;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
@@ -44,8 +44,8 @@ public class CorpusEditManager extends WeakEventSource {
 
 	private static final long serialVersionUID = -8320136116919999917L;
 
-	private AtomicInteger updateLevel = new AtomicInteger(0);
-	private AtomicBoolean endingUpdate = new AtomicBoolean(false);
+	private transient int updateLevel = 0;
+	private boolean endingUpdate = false;
 	private UndoableCorpusEdit currentEdit;
 
 	private final Corpus corpus;
@@ -60,18 +60,20 @@ public class CorpusEditManager extends WeakEventSource {
 		currentEdit = createUndoableEdit(null);
 	}
 
-	public void beginUpdate() {
-		fireEvent(new EventObject(CorpusEditEvents.BEGIN_UPDATE, "edit", currentEdit, "level", _int(updateLevel.incrementAndGet())));
+	public synchronized void beginUpdate() {
+		++updateLevel;
+		fireEvent(new EventObject(CorpusEditEvents.BEGIN_UPDATE, "edit", currentEdit, "level",
+				_int(updateLevel)));
 	}
 
-	public boolean hasActiveUpdate() {
-		return updateLevel.get()>0;
+	public synchronized boolean hasActiveUpdate() {
+		return updateLevel>0;
 	}
 
-	public void beginUpdate(String nameKey) {
+	public synchronized void beginUpdate(String nameKey) {
 		requireNonNull(nameKey);
 		if(hasActiveUpdate())
-			throw new IllegalStateException("Cannot start named edit '"+nameKey+"' while another edit is already in progress."); //$NON-NLS-1$ //$NON-NLS-2$
+			throw new IllegalStateException("Cannot start named edit '"+nameKey+"' while another edit is already in progress.");
 
 		currentEdit = createUndoableEdit(nameKey);
 
@@ -79,11 +81,16 @@ public class CorpusEditManager extends WeakEventSource {
 		beginUpdate();
 	}
 
-	public void endUpdate() {
-		int level = updateLevel.getAndDecrement();
+	public synchronized void endUpdate() {
+		int level = updateLevel--;
+		if(level<=0) {
+			updateLevel = 0;
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+					"Attempted to end update, but no matching beginUpdate() call was made previously");
+		}
 
-		if (!endingUpdate.get()) {
-			boolean end = endingUpdate.compareAndSet(false, level==1);
+		if (!endingUpdate) {
+			boolean end = level==1;
 			fireEvent(new EventObject(CorpusEditEvents.END_UPDATE, "edit", currentEdit, "level", _int(level)));
 
 			try {
@@ -115,16 +122,16 @@ public class CorpusEditManager extends WeakEventSource {
 					fireUndoableCorpusEdit(publishedEdit);
 				}
 			} finally {
-				endingUpdate.set(false);
+				endingUpdate = false;
 			}
 		}
 	}
 
-	protected void dispatchEdit(UndoableCorpusEdit edit) {
+	protected synchronized void dispatchEdit(UndoableCorpusEdit edit) {
 
 		// Only need to fire the event. A corpus' generation control will listen to the appropriate event time on its own
 
-		fireEvent(new EventObject(CorpusEditEvents.CHANGE, "edit", edit)); //$NON-NLS-1$
+		fireEvent(new EventObject(CorpusEditEvents.CHANGE, "edit", edit));
 	}
 
 	/**
@@ -140,7 +147,7 @@ public class CorpusEditManager extends WeakEventSource {
 	 *
 	 * @return
 	 */
-	public UndoableCorpusEdit createUndoableEdit(final String nameKey) {
+	public synchronized UndoableCorpusEdit createUndoableEdit(@Nullable final String nameKey) {
 		return new UndoableCorpusEdit(getCorpus(), nameKey) {
 
 			private static final long serialVersionUID = -471363052764925086L;
@@ -166,18 +173,19 @@ public class CorpusEditManager extends WeakEventSource {
 	}
 
 	public void addCorpusUndoListener(CorpusUndoListener listener) {
+		requireNonNull(listener);
 		if(!undoListeners.contains(listener)) 	{
 			undoListeners.add(listener);
 		}
 	}
 
 	public void removeCorpusUndoListener(CorpusUndoListener listener) {
+		requireNonNull(listener);
 		undoListeners.remove(listener);
 	}
 
 	protected void fireUndoableCorpusEdit(UndoableCorpusEdit edit) {
-		if(edit==null)
-			throw new NullPointerException("Invalid edit"); //$NON-NLS-1$
+		requireNonNull(edit);
 
 		if(undoListeners.isEmpty()) {
 			return;
@@ -210,7 +218,8 @@ public class CorpusEditManager extends WeakEventSource {
 	 * @param change
 	 * @throws ModelException if the corpus is not editable
 	 */
-	public void execute(AtomicChange change) {
+	public synchronized void execute(AtomicChange change) {
+		requireNonNull(change);
 
 		if(!getCorpus().getManifest().isEditable())
 			throw new ModelException(getCorpus(), GlobalErrorCode.UNSUPPORTED_OPERATION, "Corpus does not support modifications"); //$NON-NLS-1$
