@@ -939,17 +939,17 @@ public class DefaultCorpus implements Corpus {
 	}
 
 	private final class ContextProxy {
-		private final ContextManifest manifest;
+		private final ContextManifest contextManifest;
 		private Driver driver;
 
 		public ContextProxy(ContextManifest manifest) {
 			requireNonNull(manifest);
 
-			this.manifest = manifest;
+			this.contextManifest = manifest;
 		}
 
 		public ContextManifest getManifest() {
-			return manifest;
+			return contextManifest;
 		}
 
 		/**
@@ -983,7 +983,7 @@ public class DefaultCorpus implements Corpus {
 									.flatMap(DriverManifest::getImplementationManifest)
 									.get())
 							.environment(corpus)
-							.message("Driver for context '"+getName(manifest)+"'")
+							.message("Driver for context '"+getName(contextManifest)+"'")
 							.instantiate(Driver.class);
 
 					driver.connect(corpus);
@@ -991,10 +991,10 @@ public class DefaultCorpus implements Corpus {
 					corpusEventManager.fireContextAdded(driver.getContext());
 				} catch (InterruptedException e) {
 					throw new ModelException(corpus, ModelErrorCode.DRIVER_CONNECTION,
-							"Initalization of driver cancelled by user: "+getName(manifest), e);
+							"Initalization of driver cancelled by user: "+getName(contextManifest), e);
 				} catch (IcarusApiException e) {
 					throw new ModelException(corpus, ModelErrorCode.DRIVER_CONNECTION,
-							"Initalization of driver failed: "+getName(manifest), e);
+							"Initalization of driver failed: "+getName(contextManifest), e);
 				} finally {
 					lock.unlock();
 				}

@@ -83,7 +83,7 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 	private boolean reversible = true;
 
 	/**
-	 * Optional human readable textual representation of the edit oepration.
+	 * Optional human readable textual representation of the edit operation.
 	 */
 	private final String name;
 

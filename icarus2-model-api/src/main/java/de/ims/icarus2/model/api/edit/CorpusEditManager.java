@@ -73,7 +73,8 @@ public class CorpusEditManager extends WeakEventSource {
 	public synchronized void beginUpdate(String nameKey) {
 		requireNonNull(nameKey);
 		if(hasActiveUpdate())
-			throw new IllegalStateException("Cannot start named edit '"+nameKey+"' while another edit is already in progress.");
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+					"Cannot start named edit '"+nameKey+"' while another edit is already in progress.");
 
 		currentEdit = createUndoableEdit(nameKey);
 
@@ -82,16 +83,16 @@ public class CorpusEditManager extends WeakEventSource {
 	}
 
 	public synchronized void endUpdate() {
-		int level = updateLevel--;
-		if(level<=0) {
+		updateLevel--;
+		if(updateLevel<0) {
 			updateLevel = 0;
 			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Attempted to end update, but no matching beginUpdate() call was made previously");
 		}
 
 		if (!endingUpdate) {
-			boolean end = level==1;
-			fireEvent(new EventObject(CorpusEditEvents.END_UPDATE, "edit", currentEdit, "level", _int(level)));
+			boolean end = updateLevel==0;
+			fireEvent(new EventObject(CorpusEditEvents.END_UPDATE, "edit", currentEdit, "level", _int(updateLevel)));
 
 			try {
 				if (end && !currentEdit.isEmpty()) {

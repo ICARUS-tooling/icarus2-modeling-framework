@@ -473,8 +473,6 @@ public class IndexUtils {
 		boolean requiresSorting = false;
 		long lastIndex = IcarusUtils.UNSET_LONG;
 
-		//TODO iterate over items, add index values and check if sorting is required!
-
 		for(Item item : items) {
 			long index = item.getIndex();
 

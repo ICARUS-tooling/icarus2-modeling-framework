@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.annotation.Nullable;
 import javax.swing.SwingUtilities;
 
 
@@ -86,7 +87,7 @@ public class EventSource implements EventManager, Serializable {
 	/**
 	 *
 	 */
-	public void setEventSource(Object value) {
+	public void setEventSource(@Nullable Object value) {
 		this.eventSource = value;
 	}
 
@@ -119,7 +120,7 @@ public class EventSource implements EventManager, Serializable {
 	 * the listener is meant to receive all fired events
 	 */
 	@Override
-	public void addListener(SimpleEventListener listener, String eventName) {
+	public void addListener(SimpleEventListener listener, @Nullable String eventName) {
 		checkArgument("Event name cannot be empty", !"".equals(eventName));
 		requireNonNull(listener);
 
@@ -141,7 +142,7 @@ public class EventSource implements EventManager, Serializable {
 	 * @param eventName
 	 */
 	@Override
-	public void removeListener(SimpleEventListener listener, String eventName) {
+	public void removeListener(SimpleEventListener listener, @Nullable String eventName) {
 		requireNonNull(listener);
 		checkArgument("Event name cannot be empty", !"".equals(eventName));
 
@@ -168,16 +169,11 @@ public class EventSource implements EventManager, Serializable {
 	}
 
 	public void fireEventEDT(final EventObject event) {
+		requireNonNull(event);
 		if(SwingUtilities.isEventDispatchThread()) {
 			fireEvent(event, null);
 		} else {
-			SwingUtilities.invokeLater(new Runnable() {
-
-				@Override
-				public void run() {
-					fireEvent(event, null);
-				}
-			});
+			SwingUtilities.invokeLater(() -> fireEvent(event, null));
 		}
 	}
 
@@ -188,7 +184,8 @@ public class EventSource implements EventManager, Serializable {
 	 * @param event
 	 * @param sender
 	 */
-	public void fireEvent(EventObject event, Object sender) {
+	public void fireEvent(EventObject event, @Nullable Object sender) {
+		requireNonNull(event);
 		if (eventListeners != null && !eventListeners.isEmpty()
 				&& isEventsEnabled()) {
 
@@ -230,17 +227,13 @@ public class EventSource implements EventManager, Serializable {
 		deadListenerCount.set(0);
 	}
 
-	public void fireEventEDT(final EventObject event, final Object sender) {
+	public void fireEventEDT(final EventObject event, @Nullable final Object sender) {
+		requireNonNull(event);
+
 		if(SwingUtilities.isEventDispatchThread()) {
 			fireEvent(event, null);
 		} else {
-			SwingUtilities.invokeLater(new Runnable() {
-
-				@Override
-				public void run() {
-					fireEvent(event, sender);
-				}
-			});
+			SwingUtilities.invokeLater(() -> fireEvent(event, sender));
 		}
 	}
 
