@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.standard.driver.virtual;
 
 import static de.ims.icarus2.util.IcarusUtils.ensureIntegerValueRange;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -71,7 +72,7 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	 */
 	@Override
 	public long indexOfItem(Item item) {
-		return indexOf(item);
+		return indexOf(requireNonNull(item));
 	}
 
 	/**
@@ -87,6 +88,7 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	 */
 	@Override
 	public void addItem(long index, Item item) {
+		requireNonNull(item);
 		add(IcarusUtils.ensureIntegerValueRange(index), item);
 	}
 
@@ -108,6 +110,7 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 	 */
 	@Override
 	public void addItems(long index, DataSequence<? extends Item> items) {
+		requireNonNull(items);
 		addAll(IcarusUtils.ensureIntegerValueRange(index),
 				new DataSequenceCollectionWrapper<>(items));
 	}
