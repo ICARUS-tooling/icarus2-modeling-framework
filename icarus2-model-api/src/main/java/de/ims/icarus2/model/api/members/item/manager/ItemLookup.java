@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.api.members.item.manager;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.function.Consumer;
 import java.util.function.ObjLongConsumer;
 
@@ -43,9 +45,16 @@ public interface ItemLookup {
 
 	Item getItemAt(long index);
 
+	/**
+	 * Return the index of given {@code item} or {@code -1}
+	 * if the item is nor contained in this lookup.
+	 * @param item
+	 * @return
+	 */
 	long indexOfItem(Item item);
 
 	default void forEachItem(ObjLongConsumer<? super Item> action) {
+		requireNonNull(action);
 		long size = getItemCount();
 		for(long i = 0; i<size; i++) {
 			action.accept(getItemAt(i), i);
@@ -53,6 +62,7 @@ public interface ItemLookup {
 	}
 
 	default void forEachItem(Consumer<? super Item> action) {
+		requireNonNull(action);
 		long size = getItemCount();
 		for(long i = 0; i<size; i++) {
 			action.accept(getItemAt(i));
