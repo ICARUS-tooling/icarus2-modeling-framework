@@ -22,6 +22,8 @@ import javax.swing.event.UndoableEditEvent;
 import javax.swing.undo.UndoManager;
 import javax.swing.undo.UndoableEdit;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.events.CorpusAdapter;
 import de.ims.icarus2.model.api.events.CorpusEvent;
@@ -36,7 +38,7 @@ public class CorpusUndoManager extends UndoManager implements CorpusUndoListener
 
 	private final Corpus corpus;
 
-	private long savedGeneration = 0L;
+	private long savedId = 0L;
 
 	public CorpusUndoManager(Corpus corpus) {
 		requireNonNull(corpus);
@@ -45,9 +47,6 @@ public class CorpusUndoManager extends UndoManager implements CorpusUndoListener
 
 		corpus.addCorpusListener(new CorpusAdapter(){
 
-			/**
-			 * @see de.ims.icarus2.model.api.events.CorpusAdapter#corpusSaved(de.ims.icarus2.model.api.events.CorpusEvent)
-			 */
 			@Override
 			public void corpusSaved(CorpusEvent e) {
 				markSaved();
@@ -67,14 +66,14 @@ public class CorpusUndoManager extends UndoManager implements CorpusUndoListener
 
 	protected void markSaved() {
 		UndoableCorpusEdit edit = editToBeUndone();
-		savedGeneration = edit==null ? 0L : edit.getId();
+		savedId = edit==null ? 0L : edit.getId();
 	}
 
 	public boolean isSavedState() {
 		UndoableCorpusEdit edit = editToBeUndone();
 		long id = edit==null ? 0L : edit.getId();
 
-		return savedGeneration==id;
+		return savedId==id;
 	}
 
 	/**
@@ -98,10 +97,21 @@ public class CorpusUndoManager extends UndoManager implements CorpusUndoListener
 	 */
 	@Override
 	public synchronized boolean addEdit(UndoableEdit anEdit) {
+		requireNonNull(anEdit);
 		if(!(anEdit instanceof UndoableCorpusEdit))
-			throw new IllegalArgumentException("Can only handle corpus edits"); //$NON-NLS-1$
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					"Can only handle corpus edits");
 
 		return super.addEdit(anEdit);
+	}
+
+	/**
+	 * @see javax.swing.undo.AbstractUndoableEdit#replaceEdit(javax.swing.undo.UndoableEdit)
+	 */
+	@Override
+	public boolean replaceEdit(UndoableEdit anEdit) {
+		requireNonNull(anEdit);
+		return false;
 	}
 
 	/**
@@ -110,7 +120,7 @@ public class CorpusUndoManager extends UndoManager implements CorpusUndoListener
 	@Override
 	public synchronized void discardAllEdits() {
 		super.discardAllEdits();
-		savedGeneration = 0L;
+		savedId = 0L;
 	}
 
 	/**
@@ -126,7 +136,11 @@ public class CorpusUndoManager extends UndoManager implements CorpusUndoListener
 	 */
 	@Override
 	public void undoableEditHappened(UndoableEditEvent e) {
-		throw new UnsupportedOperationException(
-				"Use method in "+CorpusUndoListener.class.getSimpleName()+" interface"); //$NON-NLS-1$
+		UndoableEdit edit = e.getEdit();
+		if(edit instanceof UndoableCorpusEdit) {
+			undoableEditHappened((UndoableCorpusEdit) edit);
+		} else
+			throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
+					"Use method in "+CorpusUndoListener.class.getSimpleName()+" interface");
 	}
 }

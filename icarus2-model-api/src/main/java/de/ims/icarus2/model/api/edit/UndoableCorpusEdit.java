@@ -196,7 +196,8 @@ public class UndoableCorpusEdit extends AbstractUndoableEdit {
 
 	private boolean isGenerationInSync() {
 		return newGenerationStage!=null // ensures that the edit is complete
-				&& newGenerationStage.compareTo(getCorpus().getGenerationControl().getStage())==0; // ensures that this is the most up2date edit
+				&& newGenerationStage.compareTo(getCorpus().getGenerationControl()
+						.getStage())==0; // ensures that this is the most up2date edit
 	}
 
 	/**
