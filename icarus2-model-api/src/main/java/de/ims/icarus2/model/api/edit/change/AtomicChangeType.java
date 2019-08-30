@@ -27,9 +27,6 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  */
 public enum AtomicChangeType implements StringResource {
 
-	@Deprecated
-	ID_CHANGE("index"),
-
 	ITEM_CHANGE("item"),
 	ITEM_MOVE_CHANGE("item-move"),
 	ITEMS_CHANGE("items"),
