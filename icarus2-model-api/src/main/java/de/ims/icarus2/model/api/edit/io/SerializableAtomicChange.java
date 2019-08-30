@@ -16,7 +16,12 @@
  */
 package de.ims.icarus2.model.api.edit.io;
 
+import java.io.IOException;
+
+import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.edit.change.AtomicChange;
+import de.ims.icarus2.model.api.edit.change.AtomicChangeType;
 
 /**
  * @author Markus Gärtner
@@ -24,15 +29,23 @@ import de.ims.icarus2.model.api.edit.change.AtomicChange;
  */
 public interface SerializableAtomicChange extends AtomicChange {
 
+	AtomicChangeType getType();
 
 	/**
-	 * Optional method for creating a unified serializable representation of this
-	 * change. The change implementation is to create a blank new proxy and fill its
-	 * fields with the appropriate contextual information for the type of change it
-	 * models.
-	 *
-	 * @return a filled out {@link AtomicChangeProxy} instance containing all the information
-	 * required to reproduce this change or {@code null} if creating such a proxy is not supported.
+	 * Serialize the content of this change object to the specified {@link ChangeWriter writer}.
+	 * @param writer the writer to use, never {@code null}
+	 * @throws IOException in case an unrecoverable error happens during serialization.
+	 * @throws ModelException of type {@link ModelErrorCode#MODEL_CORRUPTED_STATE} iff the
+	 * internal state prevents serialization.
 	 */
-	AtomicChangeProxy toProxy();
+	void writeChange(ChangeWriter writer) throws IOException;
+
+	/**
+	 * Deserialize the content of this change fom the given [{@link ChangeReader reader}.
+	 * @param reader the reader to use, never {@code null}
+	 * @throws IOException in case an unrecoverable error happens during serialization.
+	 * @throws ModelException of type {@link ModelErrorCode#MODEL_CORRUPTED_STATE} iff
+	 * the state from the given reader is compromised.
+	 */
+	void readChange(ChangeReader reader) throws IOException;
 }

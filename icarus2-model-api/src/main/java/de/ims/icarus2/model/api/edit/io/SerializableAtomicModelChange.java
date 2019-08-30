@@ -16,17 +16,17 @@
  */
 package de.ims.icarus2.model.api.edit.io;
 
-import static java.util.Objects.requireNonNull;
+import java.io.IOException;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.edit.change.AtomicAddChange;
-import de.ims.icarus2.model.api.edit.change.AtomicChange;
 import de.ims.icarus2.model.api.edit.change.AtomicChangeType;
 import de.ims.icarus2.model.api.edit.change.AtomicMoveChange;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.CorpusMember;
+import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Fragment;
@@ -76,12 +76,12 @@ public class SerializableAtomicModelChange {
 	 */
 	public static class ItemChange implements SerializableAtomicChange, AtomicAddChange<Item, Container> {
 
-		protected final Container container;
-		protected final Item item;
-		protected final long index;
+		private Container container;
+		private Item item;
+		private long index;
 
-		protected boolean add;
-		protected long expectedSize;
+		private boolean add;
+		private long expectedSize;
 
 		public ItemChange(Container container, Item item, long expectedSize, long index, boolean add) {
 			this.container = container;
@@ -91,33 +91,35 @@ public class SerializableAtomicModelChange {
 			this.expectedSize = expectedSize;
 		}
 
-		protected ItemChange(AtomicChangeProxy proxy) {
-			container = proxy.getContainer();
-			index = proxy.getIndex1();
-			expectedSize = proxy.getExpectedSize();
-			add = proxy.getIsAdd();
-
-			item = add ? proxy.getItem1() : null;
+		protected ItemChange() {
+			// no-op
 		}
 
 		@Override
-		public AtomicChangeProxy toProxy() {
-			AtomicChangeProxy proxy = new AtomicChangeProxy(AtomicChangeType.ITEM_CHANGE)
-				.setContainer(container)
-				.setIndex1(index)
-				.setExpectedSize(expectedSize)
-				.setIsAdd(add);
-
-			if(add) {
-				proxy.setItem1(item);
-			}
-
-			return proxy;
+		public AtomicChangeType getType() {
+			return AtomicChangeType.ITEM_CHANGE;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
-		 */
+		@Override
+		public void writeChange(ChangeWriter writer) throws IOException {
+			writer.writeDefaultHeader(this);
+			writer.writeBoolean(add);
+			writer.writeMember(container);
+			writer.writeLong(expectedSize);
+			writer.writeLong(index);
+			writer.writeMember(item);
+		}
+
+		@Override
+		public void readChange(ChangeReader reader) throws IOException {
+			reader.readDefaultHeader(this);
+			add = reader.readBoolean();
+			container = reader.readMember(MemberType.CONTAINER);
+			expectedSize = reader.readLong();
+			index = reader.readLong();
+			item = reader.readMember(MemberType.ITEM);
+		}
+
 		@Override
 		public void execute() {
 			checkExpectedSize("Remove/Add failed", container.getItemCount(), expectedSize);
@@ -136,9 +138,6 @@ public class SerializableAtomicModelChange {
 			add = !add;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
-		 */
 		@Override
 		public CorpusMember getAffectedMember() {
 			return container;
@@ -163,8 +162,6 @@ public class SerializableAtomicModelChange {
 		public long getIndex() {
 			return index;
 		}
-
-
 	}
 
 	/**
@@ -176,11 +173,10 @@ public class SerializableAtomicModelChange {
 	 */
 	public static class ItemMoveChange implements SerializableAtomicChange, AtomicMoveChange<Item, Container> {
 
-		protected final Container container;
-
-		protected long index0, index1;
-		protected Item item0, item1;
-		protected long expectedSize;
+		private Container container;
+		private long index0, index1;
+		private Item item0, item1;
+		private long expectedSize;
 
 		public ItemMoveChange(Container container, long expectedSize, long index0, long index1, Item item0, Item item1) {
 			this.container = container;
@@ -191,24 +187,35 @@ public class SerializableAtomicModelChange {
 			this.expectedSize = expectedSize;
 		}
 
-		protected ItemMoveChange(AtomicChangeProxy proxy) {
-			this(proxy.getContainer(), proxy.getExpectedSize(), proxy.getIndex1(), proxy.getIndex2(), proxy.getItem1(), proxy.getItem2());
+		protected ItemMoveChange() {
+			// no-op
 		}
 
 		@Override
-		public AtomicChangeProxy toProxy() {
-			return new AtomicChangeProxy(AtomicChangeType.ITEM_MOVE_CHANGE)
-				.setContainer(container)
-				.setExpectedSize(expectedSize)
-				.setIndex1(index0)
-				.setIndex2(index1)
-				.setItem1(item0)
-				.setItem2(item1);
+		public AtomicChangeType getType() {
+			return AtomicChangeType.ITEM_MOVE_CHANGE;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
-		 */
+		@Override
+		public void writeChange(ChangeWriter writer) throws IOException {
+			writer.writeMember(container);
+			writer.writeLong(expectedSize);
+			writer.writeLong(index0);
+			writer.writeMember(item0);
+			writer.writeLong(index1);
+			writer.writeMember(item1);
+		}
+
+		@Override
+		public void readChange(ChangeReader reader) throws IOException {
+			container = reader.readMember(MemberType.CONTAINER);
+			expectedSize = reader.readLong();
+			index0 = reader.readLong();
+			item0 = reader.readMember(MemberType.ITEM);
+			index1 = reader.readLong();
+			item1 = reader.readMember(MemberType.ITEM);
+		}
+
 		@Override
 		public void execute() {
 			checkExpectedSize("Move failed", container.getItemCount(), expectedSize);
@@ -231,9 +238,6 @@ public class SerializableAtomicModelChange {
 			index1 = tmp;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
-		 */
 		@Override
 		public CorpusMember getAffectedMember() {
 			return container;
@@ -244,9 +248,6 @@ public class SerializableAtomicModelChange {
 			return item0;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicMoveChange#getTargetElement()
-		 */
 		@Override
 		public Item getTargetElement() {
 			return item1;
@@ -266,7 +267,6 @@ public class SerializableAtomicModelChange {
 		public long getTargetIndex() {
 			return index1;
 		}
-
 	}
 
 	/**
@@ -280,12 +280,12 @@ public class SerializableAtomicModelChange {
 	 */
 	public static class ItemSequenceChange implements SerializableAtomicChange {
 
-		protected final Container container;
-		protected final long index0, index1;
+		private Container container;
+		private long index0, index1;
 
-		protected DataSequence<? extends Item> items;
-		protected boolean add;
-		protected long expectedSize;
+		private DataSequence<? extends Item> items;
+		private boolean add;
+		private long expectedSize;
 
 		/**
 		 * Create a new change that models adding a sequence of items to a container
@@ -319,37 +319,35 @@ public class SerializableAtomicModelChange {
 			this.expectedSize = expectedSize;
 		}
 
-		protected ItemSequenceChange(AtomicChangeProxy proxy) {
-			container = proxy.getContainer();
-			index0 = proxy.getIndex1();
-			index1 = proxy.getIndex2();
-			expectedSize = proxy.getExpectedSize();
-
-			add = proxy.getIsAdd();
-			if(add) {
-				items = proxy.getItems();
-			}
+		protected ItemSequenceChange() {
+			// no-op
 		}
 
 		@Override
-		public AtomicChangeProxy toProxy() {
-			AtomicChangeProxy proxy = new AtomicChangeProxy(AtomicChangeType.ITEMS_CHANGE)
-				.setContainer(container)
-				.setIndex1(index0)
-				.setIndex2(index1)
-				.setIsAdd(add)
-				.setExpectedSize(expectedSize);
-
-			if(add) {
-				proxy.setItems(items);
-			}
-
-			return proxy;
+		public AtomicChangeType getType() {
+			return AtomicChangeType.ITEMS_CHANGE;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
-		 */
+		@Override
+		public void writeChange(ChangeWriter writer) throws IOException {
+			writer.writeBoolean(add);
+			writer.writeMember(container);
+			writer.writeLong(expectedSize);
+			writer.writeLong(index0);
+			writer.writeLong(index1);
+			writer.writeSequence(items);
+		}
+
+		@Override
+		public void readChange(ChangeReader reader) throws IOException {
+			add = reader.readBoolean();
+			container = reader.readMember(MemberType.CONTAINER);
+			expectedSize = reader.readLong();
+			index0 = reader.readLong();
+			index1 = reader.readLong();
+			items = reader.readSequence(MemberType.ITEM);
+		}
+
 		@Override
 		public void execute() {
 			checkExpectedSize("Batch Remove/Add failed", container.getItemCount(), expectedSize);
@@ -389,9 +387,9 @@ public class SerializableAtomicModelChange {
 	 */
 	public static class EdgeChange implements SerializableAtomicChange, AtomicAddChange<Edge, Structure> {
 
-		protected final Structure structure;
-		protected final Edge edge;
-		protected final long index;
+		protected Structure structure;
+		protected Edge edge;
+		protected long index;
 
 		protected boolean add;
 		protected long expectedSize;
@@ -404,33 +402,33 @@ public class SerializableAtomicModelChange {
 			this.expectedSize = expectedSize;
 		}
 
-		protected EdgeChange(AtomicChangeProxy proxy) {
-			structure = proxy.getStructure();
-			index = proxy.getIndex1();
-			expectedSize = proxy.getExpectedSize();
-			add = proxy.getIsAdd();
-
-			edge = add ? proxy.getEdge1() : null;
+		protected EdgeChange() {
+			// no-op
 		}
 
 		@Override
-		public AtomicChangeProxy toProxy() {
-			AtomicChangeProxy proxy = new AtomicChangeProxy(AtomicChangeType.ITEM_CHANGE)
-				.setStructure(structure)
-				.setIndex1(index)
-				.setExpectedSize(expectedSize)
-				.setIsAdd(add);
-
-			if(add) {
-				proxy.setEdge1(edge);
-			}
-
-			return proxy;
+		public AtomicChangeType getType() {
+			return AtomicChangeType.EDGE_CHANGE;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
-		 */
+		@Override
+		public void writeChange(ChangeWriter writer) throws IOException {
+			writer.writeBoolean(add);
+			writer.writeMember(structure);
+			writer.writeLong(expectedSize);
+			writer.writeLong(index);
+			writer.writeMember(edge);
+		}
+
+		@Override
+		public void readChange(ChangeReader reader) throws IOException {
+			add = reader.readBoolean();
+			structure = reader.readMember(MemberType.STRUCTURE);
+			expectedSize = reader.readLong();
+			index = reader.readLong();
+			edge = reader.readMember(MemberType.EDGE);
+		}
+
 		@Override
 		public void execute() {
 			checkExpectedSize("Remove/Add failed", structure.getEdgeCount(), expectedSize);
@@ -449,9 +447,6 @@ public class SerializableAtomicModelChange {
 			add = !add;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
-		 */
 		@Override
 		public CorpusMember getAffectedMember() {
 			return structure;
@@ -476,7 +471,6 @@ public class SerializableAtomicModelChange {
 		public long getIndex() {
 			return index;
 		}
-
 	}
 
 	/**
@@ -488,11 +482,11 @@ public class SerializableAtomicModelChange {
 	 */
 	public static class EdgeMoveChange implements SerializableAtomicChange, AtomicMoveChange<Edge, Structure> {
 
-		protected final Structure structure;
+		private Structure structure;
 
-		protected long index0, index1;
-		protected Edge edge0, edge1;
-		protected long expectedSize;
+		private long index0, index1;
+		private Edge edge0, edge1;
+		private long expectedSize;
 
 		public EdgeMoveChange(Structure structure, long expectedSize, long index0, long index1, Edge edge0, Edge edge1) {
 			this.structure = structure;
@@ -503,24 +497,36 @@ public class SerializableAtomicModelChange {
 			this.expectedSize = expectedSize;
 		}
 
-		protected EdgeMoveChange(AtomicChangeProxy proxy) {
-			this(proxy.getStructure(), proxy.getExpectedSize(), proxy.getIndex1(), proxy.getIndex2(), proxy.getEdge1(), proxy.getEdge2());
+		protected EdgeMoveChange() {
+			// no-op
 		}
 
 		@Override
-		public AtomicChangeProxy toProxy() {
-			return new AtomicChangeProxy(AtomicChangeType.EDGE_MOVE_CHANGE)
-				.setStructure(structure)
-				.setExpectedSize(expectedSize)
-				.setIndex1(index0)
-				.setIndex2(index1)
-				.setEdge1(edge0)
-				.setEdge2(edge1);
+		public AtomicChangeType getType() {
+			return AtomicChangeType.EDGE_MOVE_CHANGE;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
-		 */
+		@Override
+		public void writeChange(ChangeWriter writer) throws IOException {
+			writer.writeMember(structure);
+			writer.writeLong(expectedSize);
+			writer.writeLong(index0);
+			writer.writeMember(edge0);
+			writer.writeLong(index1);
+			writer.writeMember(edge1);
+		}
+
+		@Override
+		public void readChange(ChangeReader reader) throws IOException {
+			structure = reader.readMember(MemberType.STRUCTURE);
+			expectedSize = reader.readLong();
+			index0 = reader.readLong();
+			edge0 = reader.readMember(MemberType.EDGE);
+			index1 = reader.readLong();
+			edge1 = reader.readMember(MemberType.EDGE);
+		}
+
+
 		@Override
 		public void execute() {
 			checkExpectedSize("Move failed", structure.getEdgeCount(), expectedSize);
@@ -543,9 +549,6 @@ public class SerializableAtomicModelChange {
 			index1 = tmp;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
-		 */
 		@Override
 		public CorpusMember getAffectedMember() {
 			return structure;
@@ -575,7 +578,6 @@ public class SerializableAtomicModelChange {
 		public long getTargetIndex() {
 			return index1;
 		}
-
 	}
 
 	/**
@@ -589,12 +591,12 @@ public class SerializableAtomicModelChange {
 	 */
 	public static class EdgeSequenceChange implements SerializableAtomicChange {
 
-		protected final Structure structure;
-		protected final long index0, index1;
+		private Structure structure;
+		private long index0, index1;
 
-		protected DataSequence<? extends Edge> edges;
-		protected boolean add;
-		protected long expectedSize;
+		private DataSequence<? extends Edge> edges;
+		private boolean add;
+		private long expectedSize;
 
 		public EdgeSequenceChange(Structure structure, long expectedSize, long index, DataSequence<? extends Edge> edges) {
 			this.structure = structure;
@@ -614,37 +616,36 @@ public class SerializableAtomicModelChange {
 			this.expectedSize = expectedSize;
 		}
 
-		protected EdgeSequenceChange(AtomicChangeProxy proxy) {
-			structure = proxy.getStructure();
-			index0 = proxy.getIndex1();
-			index1 = proxy.getIndex2();
-			expectedSize = proxy.getExpectedSize();
-
-			add = proxy.getIsAdd();
-			if(add) {
-				edges = proxy.getEdges();
-			}
+		protected EdgeSequenceChange() {
+			// no-op
 		}
 
 		@Override
-		public AtomicChangeProxy toProxy() {
-			AtomicChangeProxy proxy = new AtomicChangeProxy(AtomicChangeType.EDGES_CHANGE)
-				.setStructure(structure)
-				.setIndex1(index0)
-				.setIndex2(index1)
-				.setIsAdd(add)
-				.setExpectedSize(expectedSize);
-
-			if(add) {
-				proxy.setEdges(edges);
-			}
-
-			return proxy;
+		public AtomicChangeType getType() {
+			return AtomicChangeType.EDGES_CHANGE;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
-		 */
+		@Override
+		public void writeChange(ChangeWriter writer) throws IOException {
+			writer.writeBoolean(add);
+			writer.writeMember(structure);
+			writer.writeLong(expectedSize);
+			writer.writeLong(index0);
+			writer.writeLong(index1);
+			writer.writeSequence(edges);
+		}
+
+		@Override
+		public void readChange(ChangeReader reader) throws IOException {
+			add = reader.readBoolean();
+			structure = reader.readMember(MemberType.STRUCTURE);
+			expectedSize = reader.readLong();
+			index0 = reader.readLong();
+			index1 = reader.readLong();
+			edges = reader.readSequence(MemberType.EDGE);
+
+		}
+
 		@Override
 		public void execute() {
 			checkExpectedSize("Batch Remove/Add failed", structure.getEdgeCount(), expectedSize);
@@ -663,14 +664,10 @@ public class SerializableAtomicModelChange {
 			add = !add;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
-		 */
 		@Override
 		public CorpusMember getAffectedMember() {
 			return structure;
 		}
-
 	}
 
 	/**
@@ -685,12 +682,12 @@ public class SerializableAtomicModelChange {
 	 */
 	public static class TerminalChange implements SerializableAtomicChange {
 
-		protected final Structure structure;
-		protected final Edge edge;
-		protected final boolean isSource;
+		private Structure structure;
+		private Edge edge;
+		private boolean isSource;
 
-		protected Item terminal;
-		protected Item expected;
+		private Item terminal;
+		private Item expected;
 
 		public TerminalChange(Structure structure, Edge edge, boolean isSource, Item terminal, Item expected) {
 			this.structure = structure;
@@ -701,23 +698,33 @@ public class SerializableAtomicModelChange {
 			this.expected = expected;
 		}
 
-		protected TerminalChange(AtomicChangeProxy proxy) {
-			this(proxy.getStructure(), proxy.getEdge1(), proxy.getIsSource(), proxy.getItem1(), proxy.getItem2());
+		protected TerminalChange() {
+			// no-op
 		}
 
 		@Override
-		public AtomicChangeProxy toProxy() {
-			return new AtomicChangeProxy(AtomicChangeType.TERMINAL_CHANGE)
-				.setStructure(structure)
-				.setEdge1(edge)
-				.setIsSource(isSource)
-				.setItem1(terminal)
-				.setItem2(expected);
+		public AtomicChangeType getType() {
+			return AtomicChangeType.TERMINAL_CHANGE;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
-		 */
+		@Override
+		public void writeChange(ChangeWriter writer) throws IOException {
+			writer.writeMember(structure);
+			writer.writeMember(edge);
+			writer.writeBoolean(isSource);
+			writer.writeMember(terminal);
+			writer.writeMember(expected);
+		}
+
+		@Override
+		public void readChange(ChangeReader reader) throws IOException {
+			structure = reader.readMember(MemberType.STRUCTURE);
+			edge = reader.readMember(MemberType.EDGE);
+			isSource = reader.readBoolean();
+			terminal = reader.readMember(MemberType.ITEM);
+			expected = reader.readMember(MemberType.ITEM);
+		}
+
 		@Override
 		public void execute() {
 			checkExpectedMember("Wrong host structure", edge.getStructure(), structure);
@@ -730,14 +737,10 @@ public class SerializableAtomicModelChange {
 			terminal = oldTerminal;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
-		 */
 		@Override
 		public CorpusMember getAffectedMember() {
 			return edge;
 		}
-
 	}
 
 	/**
@@ -752,10 +755,10 @@ public class SerializableAtomicModelChange {
 	 */
 	public static class PositionChange implements SerializableAtomicChange {
 
-		protected final Fragment fragment;
-		protected final boolean isBegin;
+		private Fragment fragment;
+		private boolean isBegin;
 
-		protected Position position;
+		private Position position;
 
 		// We do not store expected position, since its implementation details are undefined
 
@@ -765,21 +768,29 @@ public class SerializableAtomicModelChange {
 			this.position = position;
 		}
 
-		protected PositionChange(AtomicChangeProxy proxy) {
-			this(proxy.getFragment(), proxy.getIsBegin(), proxy.getPosition());
+		protected PositionChange() {
+			// no-op
 		}
 
 		@Override
-		public AtomicChangeProxy toProxy() {
-			return new AtomicChangeProxy(AtomicChangeType.POSITION_CHANGE)
-				.setFragment(fragment)
-				.setIsBegin(isBegin)
-				.setPosition(position);
+		public AtomicChangeType getType() {
+			return AtomicChangeType.POSITION_CHANGE;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
-		 */
+		@Override
+		public void writeChange(ChangeWriter writer) throws IOException {
+			writer.writeMember(fragment);
+			writer.writeBoolean(isBegin);
+			writer.writePosition(position);
+		}
+
+		@Override
+		public void readChange(ChangeReader reader) throws IOException {
+			fragment = reader.readMember(MemberType.FRAGMENT);
+			isBegin = reader.readBoolean();
+			position = reader.readPosition();
+		}
+
 		@Override
 		public void execute() {
 			Position currentPosition = isBegin ? fragment.getFragmentBegin() : fragment.getFragmentEnd();
@@ -797,14 +808,10 @@ public class SerializableAtomicModelChange {
 			position = currentPosition;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
-		 */
 		@Override
 		public CorpusMember getAffectedMember() {
 			return fragment;
 		}
-
 	}
 
 	/**
@@ -814,9 +821,9 @@ public class SerializableAtomicModelChange {
 	 *
 	 */
 	public abstract static class AbstractValueChange implements SerializableAtomicChange {
-		protected final AnnotationLayer layer;
-		protected final Item item;
-		protected final String key;
+		protected AnnotationLayer layer;
+		protected Item item;
+		protected String key;
 
 		public AbstractValueChange(AnnotationLayer layer, Item item, String key) {
 			this.layer = layer;
@@ -824,18 +831,25 @@ public class SerializableAtomicModelChange {
 			this.key = key;
 		}
 
-		protected AbstractValueChange(AtomicChangeProxy proxy) {
-			this(proxy.getAnnotationLayer(), proxy.getItem1(), proxy.getKey());
+		protected AbstractValueChange() {
+			// no-op
 		}
 
-		protected AtomicChangeProxy toProxy0(ValueType valueType, Object value1, Object value2) {
-			return new AtomicChangeProxy(AtomicChangeType.VALUE_CHANGE)
-			.setAnnotationLayer(layer)
-			.setItem1(item)
-			.setKey(key)
-			.setValueType(valueType)
-			.setValue1(value1)
-			.setValue2(value2);
+		@Override
+		public AtomicChangeType getType() {
+			return AtomicChangeType.VALUE_CHANGE;
+		}
+
+		protected void defaultWriteValueChange(ChangeWriter writer) throws IOException {
+			writer.writeMember(layer);
+			writer.writeString(key);
+			writer.writeMember(item);
+		}
+
+		protected void defaultReadValueChange(ChangeReader reader) throws IOException {
+			layer = reader.readMember(MemberType.LAYER);
+			key = reader.readString();
+			item = reader.readMember(MemberType.ITEM);
 		}
 	}
 
@@ -853,8 +867,8 @@ public class SerializableAtomicModelChange {
 	 */
 	public static class ValueChange extends AbstractValueChange {
 
-		protected Object value, expectedValue;
-		protected final ValueType valueType;
+		private Object value, expectedValue;
+		private ValueType valueType;
 
 		public ValueChange(AnnotationLayer layer, ValueType valueType, Item item, String key, Object value, Object expectedValue) {
 			super(layer, item, key);
@@ -864,14 +878,22 @@ public class SerializableAtomicModelChange {
 			this.valueType = valueType;
 		}
 
-		protected ValueChange(AtomicChangeProxy proxy) {
-			this(proxy.getAnnotationLayer(), proxy.getValueType(), proxy.getItem1(),
-					proxy.getKey(), proxy.getValue1(), proxy.getValue2());
+		protected ValueChange() {
+			// no-op
 		}
 
 		@Override
-		public AtomicChangeProxy toProxy() {
-			return toProxy0(valueType, value, expectedValue);
+		public void writeChange(ChangeWriter writer) throws IOException {
+			defaultWriteValueChange(writer);
+			writer.writeValue(valueType, expectedValue);
+			writer.writeValue(valueType, value);
+		}
+
+		@Override
+		public void readChange(ChangeReader reader) throws IOException {
+			defaultReadValueChange(reader);
+			expectedValue = reader.readValue();
+			value = reader.readValue();
 		}
 
 		/**
@@ -891,9 +913,6 @@ public class SerializableAtomicModelChange {
 			value = oldValue;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
-		 */
 		@Override
 		public CorpusMember getAffectedMember() {
 			return item;
@@ -909,7 +928,7 @@ public class SerializableAtomicModelChange {
 	 */
 	public static class IntegerValueChange extends AbstractValueChange {
 
-		protected int value, expectedValue;
+		private int value, expectedValue;
 
 		public IntegerValueChange(AnnotationLayer layer, Item item, String key, int value, int expectedValue) {
 			super(layer, item, key);
@@ -917,26 +936,24 @@ public class SerializableAtomicModelChange {
 			this.expectedValue = expectedValue;
 		}
 
-		protected IntegerValueChange(AtomicChangeProxy proxy) {
-			super(proxy.getAnnotationLayer(), proxy.getItem1(), proxy.getKey());
-
-			if(proxy.value1!=null) {
-				value = ((Integer)proxy.value1).intValue();
-			}
-
-			if(proxy.value2!=null) {
-				expectedValue = ((Integer)proxy.value2).intValue();
-			}
+		protected IntegerValueChange() {
+			// no-op
 		}
 
 		@Override
-		public AtomicChangeProxy toProxy() {
-			return toProxy0(ValueType.INTEGER, Integer.valueOf(value), Integer.valueOf(expectedValue));
+		public void writeChange(ChangeWriter writer) throws IOException {
+			defaultWriteValueChange(writer);
+			writer.writeInt(expectedValue);
+			writer.writeInt( value);
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
-		 */
+		@Override
+		public void readChange(ChangeReader reader) throws IOException {
+			defaultReadValueChange(reader);
+			expectedValue = reader.readInt();
+			value = reader.readInt();
+		}
+
 		@Override
 		public void execute() {
 			int oldValue = layer.getAnnotationStorage().getInteger(item, key);
@@ -951,9 +968,6 @@ public class SerializableAtomicModelChange {
 			value = oldValue;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
-		 */
 		@Override
 		public CorpusMember getAffectedMember() {
 			return item;
@@ -969,7 +983,7 @@ public class SerializableAtomicModelChange {
 	 */
 	public static class LongValueChange extends AbstractValueChange {
 
-		protected long value, expectedValue;
+		private long value, expectedValue;
 
 		public LongValueChange(AnnotationLayer layer, Item item, String key, long value, long expectedValue) {
 			super(layer, item, key);
@@ -978,26 +992,24 @@ public class SerializableAtomicModelChange {
 			this.expectedValue = expectedValue;
 		}
 
-		protected LongValueChange(AtomicChangeProxy proxy) {
-			super(proxy.getAnnotationLayer(), proxy.getItem1(), proxy.getKey());
-
-			if(proxy.value1!=null) {
-				value = ((Long)proxy.value1).longValue();
-			}
-
-			if(proxy.value2!=null) {
-				expectedValue = ((Long)proxy.value2).longValue();
-			}
+		protected LongValueChange() {
+			// no-op
 		}
 
 		@Override
-		public AtomicChangeProxy toProxy() {
-			return toProxy0(ValueType.LONG, Long.valueOf(value), Long.valueOf(expectedValue));
+		public void writeChange(ChangeWriter writer) throws IOException {
+			defaultWriteValueChange(writer);
+			writer.writeLong(expectedValue);
+			writer.writeLong( value);
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
-		 */
+		@Override
+		public void readChange(ChangeReader reader) throws IOException {
+			defaultReadValueChange(reader);
+			expectedValue = reader.readLong();
+			value = reader.readLong();
+		}
+
 		@Override
 		public void execute() {
 			long oldValue = layer.getAnnotationStorage().getLong(item, key);
@@ -1012,9 +1024,6 @@ public class SerializableAtomicModelChange {
 			value = oldValue;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
-		 */
 		@Override
 		public CorpusMember getAffectedMember() {
 			return item;
@@ -1030,7 +1039,7 @@ public class SerializableAtomicModelChange {
 	 */
 	public static class FloatValueChange extends AbstractValueChange {
 
-		protected float value, expectedValue;
+		private float value, expectedValue;
 
 		public FloatValueChange(AnnotationLayer layer, Item item, String key, float value, float expectedValue) {
 			super(layer, item, key);
@@ -1052,13 +1061,19 @@ public class SerializableAtomicModelChange {
 		}
 
 		@Override
-		public AtomicChangeProxy toProxy() {
-			return toProxy0(ValueType.FLOAT, Float.valueOf(value), Float.valueOf(expectedValue));
+		public void writeChange(ChangeWriter writer) throws IOException {
+			defaultWriteValueChange(writer);
+			writer.writeFloat(expectedValue);
+			writer.writeFloat( value);
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
-		 */
+		@Override
+		public void readChange(ChangeReader reader) throws IOException {
+			defaultReadValueChange(reader);
+			expectedValue = reader.readFloat();
+			value = reader.readFloat();
+		}
+
 		@Override
 		public void execute() {
 			float oldValue = layer.getAnnotationStorage().getFloat(item, key);
@@ -1073,9 +1088,6 @@ public class SerializableAtomicModelChange {
 			value = oldValue;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
-		 */
 		@Override
 		public CorpusMember getAffectedMember() {
 			return item;
@@ -1091,7 +1103,7 @@ public class SerializableAtomicModelChange {
 	 */
 	public static class DoubleValueChange extends AbstractValueChange {
 
-		protected double value, expectedValue;
+		private double value, expectedValue;
 
 		public DoubleValueChange(AnnotationLayer layer, Item item, String key, double value, double expectedValue) {
 			super(layer, item, key);
@@ -1100,26 +1112,24 @@ public class SerializableAtomicModelChange {
 			this.expectedValue = expectedValue;
 		}
 
-		protected DoubleValueChange(AtomicChangeProxy proxy) {
-			super(proxy.getAnnotationLayer(), proxy.getItem1(), proxy.getKey());
-
-			if(proxy.value1!=null) {
-				value = ((Double)proxy.value1).doubleValue();
-			}
-
-			if(proxy.value2!=null) {
-				expectedValue = ((Double)proxy.value2).doubleValue();
-			}
+		protected DoubleValueChange() {
+			// no-op
 		}
 
 		@Override
-		public AtomicChangeProxy toProxy() {
-			return toProxy0(ValueType.DOUBLE, Double.valueOf(value), Double.valueOf(expectedValue));
+		public void writeChange(ChangeWriter writer) throws IOException {
+			defaultWriteValueChange(writer);
+			writer.writeDouble(expectedValue);
+			writer.writeDouble( value);
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#execute()
-		 */
+		@Override
+		public void readChange(ChangeReader reader) throws IOException {
+			defaultReadValueChange(reader);
+			expectedValue = reader.readDouble();
+			value = reader.readDouble();
+		}
+
 		@Override
 		public void execute() {
 			double oldValue = layer.getAnnotationStorage().getDouble(item, key);
@@ -1134,9 +1144,6 @@ public class SerializableAtomicModelChange {
 			value = oldValue;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
-		 */
 		@Override
 		public CorpusMember getAffectedMember() {
 			return item;
@@ -1152,7 +1159,7 @@ public class SerializableAtomicModelChange {
 	 */
 	public static class BooleanValueChange extends AbstractValueChange {
 
-		protected boolean value, expectedValue;
+		private boolean value, expectedValue;
 
 		public BooleanValueChange(AnnotationLayer layer, Item item, String key, boolean value, boolean expectedValue) {
 			super(layer, item, key);
@@ -1161,21 +1168,22 @@ public class SerializableAtomicModelChange {
 			this.expectedValue = expectedValue;
 		}
 
-		protected BooleanValueChange(AtomicChangeProxy proxy) {
-			super(proxy.getAnnotationLayer(), proxy.getItem1(), proxy.getKey());
-
-			if(proxy.value1!=null) {
-				value = ((Boolean)proxy.value1).booleanValue();
-			}
-
-			if(proxy.value2!=null) {
-				expectedValue = ((Boolean)proxy.value2).booleanValue();
-			}
+		protected BooleanValueChange() {
+			// no-op
 		}
 
 		@Override
-		public AtomicChangeProxy toProxy() {
-			return toProxy0(ValueType.BOOLEAN, Boolean.valueOf(value), Boolean.valueOf(expectedValue));
+		public void writeChange(ChangeWriter writer) throws IOException {
+			defaultWriteValueChange(writer);
+			writer.writeBoolean(expectedValue);
+			writer.writeBoolean( value);
+		}
+
+		@Override
+		public void readChange(ChangeReader reader) throws IOException {
+			defaultReadValueChange(reader);
+			expectedValue = reader.readBoolean();
+			value = reader.readBoolean();
 		}
 
 		/**
@@ -1195,47 +1203,27 @@ public class SerializableAtomicModelChange {
 			value = oldValue;
 		}
 
-		/**
-		 * @see de.ims.icarus2.model.api.edit.change.AtomicChange#getAffectedMember()
-		 */
 		@Override
 		public CorpusMember getAffectedMember() {
 			return item;
 		}
 	}
 
-	public static AtomicChange fromProxy(AtomicChangeProxy proxy) {
-		requireNonNull(proxy);
+	public static SerializableAtomicChange forType(AtomicChangeType type) {
+		switch (type) {
 
-		switch (proxy.getType()) {
-
-		case ITEM_CHANGE: return new ItemChange(proxy);
-		case ITEM_MOVE_CHANGE: return new ItemMoveChange(proxy);
-		case ITEMS_CHANGE: return new ItemSequenceChange(proxy);
-		case EDGE_CHANGE: return new EdgeChange(proxy);
-		case EDGE_MOVE_CHANGE: return new EdgeMoveChange(proxy);
-		case EDGES_CHANGE: return new EdgeSequenceChange(proxy);
-		case POSITION_CHANGE: return new PositionChange(proxy);
-		case TERMINAL_CHANGE: return new TerminalChange(proxy);
-		case VALUE_CHANGE: {
-			ValueType valueType = proxy.getValueType();
-			switch (valueType.getStringValue().toLowerCase()) {
-
-			// For "primitive" annotations use the specialized change implementations
-			case ValueType.INTEGER_TYPE_LABEL: return new IntegerValueChange(proxy);
-			case ValueType.LONG_TYPE_LABEL: return new LongValueChange(proxy);
-			case ValueType.FLOAT_TYPE_LABEL: return new FloatValueChange(proxy);
-			case ValueType.DOUBLE_TYPE_LABEL: return new DoubleValueChange(proxy);
-			case ValueType.BOOLEAN_TYPE_LABEL: return new BooleanValueChange(proxy);
-
-			// For anything else use the object based fallback
-			default:
-				return new ValueChange(proxy);
-			}
-		}
+		case ITEM_CHANGE: return new ItemChange();
+		case ITEM_MOVE_CHANGE: return new ItemMoveChange();
+		case ITEMS_CHANGE: return new ItemSequenceChange();
+		case EDGE_CHANGE: return new EdgeChange();
+		case EDGE_MOVE_CHANGE: return new EdgeMoveChange();
+		case EDGES_CHANGE: return new EdgeSequenceChange();
+		case POSITION_CHANGE: return new PositionChange();
+		case TERMINAL_CHANGE: return new TerminalChange();
+		case VALUE_CHANGE: return new ValueChange();
 
 		default:
-			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Unrecognized change type: "+proxy.getType());
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Unrecognized change type: "+type);
 		}
 	}
 }
