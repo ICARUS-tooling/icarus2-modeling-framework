@@ -137,6 +137,7 @@ class CorpusEditManagerTest implements ApiGuardedTest<CorpusEditManager> {
 
 		@Test
 		void beginRedundantNamedUpdate() {
+			manager.beginUpdate();
 			assertModelException(GlobalErrorCode.ILLEGAL_STATE,
 					() -> manager.beginUpdate(randomString(20)));
 		}
