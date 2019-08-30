@@ -3,23 +3,27 @@
  */
 package de.ims.icarus2.model.api.members.item.manager;
 
+import static de.ims.icarus2.SharedTestUtils.mockSequence;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.api.members.item.manager.ItemLookupTest.makeItems;
+import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertIOOB;
 import static de.ims.icarus2.test.TestUtils.random;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.util.collections.CollectionUtils;
+import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
  * @author Markus Gärtner
@@ -138,7 +142,25 @@ public interface ItemListTest<L extends ItemList> extends ItemLookupTest<L> {
 	 */
 	@Test
 	default void testSwapItems() {
-		fail("Not yet implemented"); // TODO
+		Item[] items = makeItems();
+		L list = createFilled(items);
+		Item[] tmp = items.clone();
+
+		for (int i = 0; i < items.length; i++) {
+			int idx = random(0, items.length);
+			if(i!=idx) {
+				list.swapItems(i, idx);
+
+				Item item = tmp[i];
+				tmp[i] = tmp[idx];
+				tmp[idx] = item;
+			}
+		}
+
+		assertEquals(tmp.length, list.getItemCount());
+		for (int i = 0; i < tmp.length; i++) {
+			assertSame(tmp[i], list.getItemAt(i));
+		}
 	}
 
 	/**
@@ -146,7 +168,35 @@ public interface ItemListTest<L extends ItemList> extends ItemLookupTest<L> {
 	 */
 	@Test
 	default void testAddItems() {
-		fail("Not yet implemented"); // TODO
+		Item[] items = makeItems();
+		L list = create();
+
+		list.addItems(0, mockSequence(items));
+
+		assertEquals(items.length, list.getItemCount());
+		for (int i = 0; i < items.length; i++) {
+			assertSame(items[i], list.getItemAt(i));
+		}
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.api.members.item.manager.ItemList#addItems(long, de.ims.icarus2.util.collections.seq.DataSequence)}.
+	 */
+	@RepeatedTest(RUNS)
+	default void testAddItemsRandom() {
+		Item[] items = makeItems();
+		L list = createFilled(items);
+		List<Item> tmp = CollectionUtils.list(items);
+
+		Item[] add = makeItems();
+		int index = random(0, items.length+1);
+		list.addItems(index, mockSequence(add));
+		tmp.addAll(index, CollectionUtils.list(add));
+
+		assertEquals(tmp.size(), list.getItemCount());
+		for (int i = 0; i < tmp.size(); i++) {
+			assertSame(tmp.get(i), list.getItemAt(i));
+		}
 	}
 
 	/**
@@ -154,15 +204,44 @@ public interface ItemListTest<L extends ItemList> extends ItemLookupTest<L> {
 	 */
 	@Test
 	default void testRemoveAllItems() {
-		fail("Not yet implemented"); // TODO
+		Item[] items = makeItems();
+		L list = createFilled(items);
+
+		DataSequence<? extends Item> removed = list.removeAllItems();
+		assertTrue(list.isEmpty());
+
+		assertEquals(items.length, removed.entryCount());
+		for (int i = 0; i < items.length; i++) {
+			assertSame(items[i], removed.elementAt(i));
+		}
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.members.item.manager.ItemList#removeItems(long, long)}.
 	 */
-	@Test
+	@RepeatedTest(RUNS)
 	default void testRemoveItems() {
-		fail("Not yet implemented"); // TODO
+		Item[] items = makeItems();
+		L list = createFilled(items);
+		List<Item> tmp = CollectionUtils.list(items);
+
+		int from = random(0, items.length);
+		int to = random(from, items.length);
+
+		DataSequence<? extends Item> removed = list.removeItems(from, to);
+		List<Item> subList = tmp.subList(from, to+1);
+
+		assertEquals(subList.size(), removed.entryCount());
+		for (int i = 0; i < subList.size(); i++) {
+			assertSame(subList.get(i), removed.elementAt(i));
+		}
+
+		subList.clear();
+
+		assertEquals(tmp.size(), list.getItemCount());
+		for (int i = 0; i < tmp.size(); i++) {
+			assertSame(tmp.get(i), list.getItemAt(i));
+		}
 	}
 
 }

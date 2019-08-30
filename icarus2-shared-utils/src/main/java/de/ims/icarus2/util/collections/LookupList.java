@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.util.collections;
 
+import static de.ims.icarus2.util.IcarusUtils.MAX_INTEGER_INDEX;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
 
@@ -95,7 +96,7 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 	}
 
 	public LookupList(int capacity) {
-        if (capacity <= 0)
+        if (capacity <= 0 || capacity>MAX_INTEGER_INDEX)
             throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT,
             		"Illegal Capacity: "+capacity);
 
