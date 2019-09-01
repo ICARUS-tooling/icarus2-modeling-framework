@@ -109,6 +109,13 @@ public class ArrayUtils {
 		return max;
 	}
 
+	public static <T> void swap(T[] array, int index0, int index1) {
+		T item0 = array[index0];
+		T item1 = array[index1];
+		array[index0] = item1;
+		array[index1] = item0;
+	}
+
 	public static int[] fillAscending(int[] a) {
 		for(int i=0; i<a.length; i++)
 			a[i] = i;

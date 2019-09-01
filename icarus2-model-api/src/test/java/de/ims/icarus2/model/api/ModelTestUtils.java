@@ -166,6 +166,14 @@ public class ModelTestUtils {
 		return stubHost(stubType(mock(Edge.class), MemberType.EDGE), STRUCTURE);
 	}
 
+	public static Edge[] mockEdges(int count) {
+		Edge[] items = new Edge[count];
+		while (--count >= 0) {
+			items[count] = mockEdge();
+		}
+		return items;
+	}
+
 	public static Edge mockUsableEdge() {
 		return stubFlags(mockEdge(), true, true, true);
 	}

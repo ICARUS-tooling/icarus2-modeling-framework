@@ -16,14 +16,25 @@
  */
 package de.ims.icarus2.model.api.edit.io;
 
+import static de.ims.icarus2.util.lang.Primitives._boolean;
+import static de.ims.icarus2.util.lang.Primitives._double;
+import static de.ims.icarus2.util.lang.Primitives._float;
+import static de.ims.icarus2.util.lang.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives._long;
+import static java.util.Objects.requireNonNull;
+
 import java.io.IOException;
+
+import javax.annotation.Nullable;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.edit.change.AtomicAddChange;
+import de.ims.icarus2.model.api.edit.change.AtomicBulkChange;
 import de.ims.icarus2.model.api.edit.change.AtomicChangeType;
 import de.ims.icarus2.model.api.edit.change.AtomicMoveChange;
+import de.ims.icarus2.model.api.edit.change.AtomicValueChange;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.CorpusMember;
 import de.ims.icarus2.model.api.members.MemberType;
@@ -83,9 +94,10 @@ public class SerializableAtomicModelChange {
 		private boolean add;
 		private long expectedSize;
 
-		public ItemChange(Container container, Item item, long expectedSize, long index, boolean add) {
-			this.container = container;
-			this.item = item;
+		public ItemChange(Container container, Item item,
+				long expectedSize, long index, boolean add) {
+			this.container = requireNonNull(container);
+			this.item = requireNonNull(item);
 			this.index = index;
 			this.add = add;
 			this.expectedSize = expectedSize;
@@ -179,11 +191,11 @@ public class SerializableAtomicModelChange {
 		private long expectedSize;
 
 		public ItemMoveChange(Container container, long expectedSize, long index0, long index1, Item item0, Item item1) {
-			this.container = container;
+			this.container = requireNonNull(container);
 			this.index0 = index0;
 			this.index1 = index1;
-			this.item0 = item0;
-			this.item1 = item1;
+			this.item0 = requireNonNull(item0);
+			this.item1 = requireNonNull(item1);
 			this.expectedSize = expectedSize;
 		}
 
@@ -220,18 +232,12 @@ public class SerializableAtomicModelChange {
 		public void execute() {
 			checkExpectedSize("Move failed", container.getItemCount(), expectedSize);
 
-			Item currentItem0 = container.getItemAt(index0);
-			Item currentItem1 = container.getItemAt(index1);
-
-			checkExpectedMember("Move failed - item0", currentItem0, item0);
-			checkExpectedMember("Move failed - item1", currentItem1, item1);
+			checkExpectedMember("Move failed - item0", container.getItemAt(index0), item0);
+			checkExpectedMember("Move failed - item1", container.getItemAt(index1), item1);
 
 			container.swapItems(index0, index1);
 
-			// Swap indices and expected items
-
-			item0 = currentItem1;
-			item1 = currentItem0;
+			// Swap indices (expected items stay the same)
 
 			long tmp = index0;
 			index0 = index1;
@@ -278,7 +284,8 @@ public class SerializableAtomicModelChange {
 	 * @see CorpusModel#addItems(Container, long, DataSequence)
 	 * @see CorpusModel#removeItems(Container, long, long)
 	 */
-	public static class ItemSequenceChange implements SerializableAtomicChange {
+	public static class ItemSequenceChange implements SerializableAtomicChange,
+			AtomicBulkChange<Item, Container> {
 
 		private Container container;
 		private long index0, index1;
@@ -295,9 +302,9 @@ public class SerializableAtomicModelChange {
 		 * @param items
 		 */
 		public ItemSequenceChange(Container container, long expectedSize, long index, DataSequence<? extends Item> items) {
-			this.container = container;
+			this.container = requireNonNull(container);
 			this.index0 = index;
-			this.index1 = index + items.entryCount();
+			this.index1 = index + items.entryCount()-1;
 			this.items = items;
 			this.add = true;
 			this.expectedSize = expectedSize;
@@ -311,7 +318,7 @@ public class SerializableAtomicModelChange {
 		 * @param index1
 		 */
 		public ItemSequenceChange(Container container, long expectedSize, long index0, long index1) {
-			this.container = container;
+			this.container = requireNonNull(container);
 			this.index0 = index0;
 			this.index1 = index1;
 			this.items = null;
@@ -374,6 +381,31 @@ public class SerializableAtomicModelChange {
 			return container;
 		}
 
+		@Override
+		public boolean isAdd() {
+			return add;
+		}
+
+		@Override
+		public DataSequence<? extends Item> getItems() {
+			return items;
+		}
+
+		@Override
+		public Container getContainer() {
+			return container;
+		}
+
+		@Override
+		public long getBeginIndex() {
+			return index0;
+		}
+
+		@Override
+		public long getEndIndex() {
+			return index1;
+		}
+
 	}
 
 	/**
@@ -395,8 +427,8 @@ public class SerializableAtomicModelChange {
 		protected long expectedSize;
 
 		public EdgeChange(Structure structure, Edge edge, long expectedSize, long index, boolean add) {
-			this.structure = structure;
-			this.edge = edge;
+			this.structure = requireNonNull(structure);
+			this.edge = requireNonNull(edge);
 			this.index = index;
 			this.add = add;
 			this.expectedSize = expectedSize;
@@ -489,11 +521,11 @@ public class SerializableAtomicModelChange {
 		private long expectedSize;
 
 		public EdgeMoveChange(Structure structure, long expectedSize, long index0, long index1, Edge edge0, Edge edge1) {
-			this.structure = structure;
+			this.structure = requireNonNull(structure);
 			this.index0 = index0;
 			this.index1 = index1;
-			this.edge0 = edge0;
-			this.edge1 = edge1;
+			this.edge0 = requireNonNull(edge0);
+			this.edge1 = requireNonNull(edge1);
 			this.expectedSize = expectedSize;
 		}
 
@@ -531,18 +563,12 @@ public class SerializableAtomicModelChange {
 		public void execute() {
 			checkExpectedSize("Move failed", structure.getEdgeCount(), expectedSize);
 
-			Edge currentEdge0 = structure.getEdgeAt(index0);
-			Edge currentEdge1 = structure.getEdgeAt(index1);
-
-			checkExpectedMember("Move failed - edge0", currentEdge0, edge0);
-			checkExpectedMember("Move failed - edge1", currentEdge1, edge1);
+			checkExpectedMember("Move failed - edge0", structure.getEdgeAt(index0), edge0);
+			checkExpectedMember("Move failed - edge1", structure.getEdgeAt(index1), edge1);
 
 			structure.swapEdges(index0, index1);
 
-			// Swap indices and expected edges
-
-			edge0 = currentEdge1;
-			edge1 = currentEdge0;
+			// Swap indices (expected edges stay the same)
 
 			long tmp = index0;
 			index0 = index1;
@@ -589,7 +615,8 @@ public class SerializableAtomicModelChange {
 	 * @see CorpusModel#addEdges(Structure, long, DataSequence)
 	 * @see CorpusModel#removeEdges(Structure, long, long)
 	 */
-	public static class EdgeSequenceChange implements SerializableAtomicChange {
+	public static class EdgeSequenceChange implements SerializableAtomicChange,
+			AtomicBulkChange<Edge, Structure> {
 
 		private Structure structure;
 		private long index0, index1;
@@ -599,16 +626,16 @@ public class SerializableAtomicModelChange {
 		private long expectedSize;
 
 		public EdgeSequenceChange(Structure structure, long expectedSize, long index, DataSequence<? extends Edge> edges) {
-			this.structure = structure;
+			this.structure = requireNonNull(structure);
 			this.index0 = index;
-			this.index1 = index + edges.entryCount();
+			this.index1 = index + edges.entryCount()-1;
 			this.edges = edges;
 			this.add = true;
 			this.expectedSize = expectedSize;
 		}
 
 		public EdgeSequenceChange(Structure structure, long expectedSize, long index0, long index1) {
-			this.structure = structure;
+			this.structure = requireNonNull(structure);
 			this.index0 = index0;
 			this.index1 = index1;
 			this.edges = null;
@@ -668,6 +695,31 @@ public class SerializableAtomicModelChange {
 		public CorpusMember getAffectedMember() {
 			return structure;
 		}
+
+		@Override
+		public boolean isAdd() {
+			return add;
+		}
+
+		@Override
+		public DataSequence<? extends Edge> getItems() {
+			return edges;
+		}
+
+		@Override
+		public Structure getContainer() {
+			return structure;
+		}
+
+		@Override
+		public long getBeginIndex() {
+			return index0;
+		}
+
+		@Override
+		public long getEndIndex() {
+			return index1;
+		}
 	}
 
 	/**
@@ -689,9 +741,10 @@ public class SerializableAtomicModelChange {
 		private Item terminal;
 		private Item expected;
 
-		public TerminalChange(Structure structure, Edge edge, boolean isSource, Item terminal, Item expected) {
-			this.structure = structure;
-			this.edge = edge;
+		public TerminalChange(Structure structure, Edge edge, boolean isSource,
+				@Nullable Item terminal, @Nullable Item expected) {
+			this.structure = requireNonNull(structure);
+			this.edge = requireNonNull(edge);
 			this.isSource = isSource;
 
 			this.terminal = terminal;
@@ -734,6 +787,7 @@ public class SerializableAtomicModelChange {
 
 			structure.setTerminal(edge, terminal, isSource);
 
+			expected = terminal;
 			terminal = oldTerminal;
 		}
 
@@ -762,8 +816,9 @@ public class SerializableAtomicModelChange {
 
 		// We do not store expected position, since its implementation details are undefined
 
-		public PositionChange(Fragment fragment, boolean isBegin, Position position) {
-			this.fragment = fragment;
+		public PositionChange(Fragment fragment, boolean isBegin,
+				@Nullable Position position) {
+			this.fragment = requireNonNull(fragment);
 			this.isBegin = isBegin;
 			this.position = position;
 		}
@@ -820,7 +875,9 @@ public class SerializableAtomicModelChange {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public abstract static class AbstractValueChange implements SerializableAtomicChange {
+	public abstract static class AbstractValueChange<T> implements SerializableAtomicChange,
+			AtomicValueChange<T> {
+
 		protected AnnotationLayer layer;
 		protected Item item;
 		protected String key;
@@ -851,6 +908,21 @@ public class SerializableAtomicModelChange {
 			key = reader.readString();
 			item = reader.readMember(MemberType.ITEM);
 		}
+
+		@Override
+		public CorpusMember getAffectedMember() {
+			return item;
+		}
+
+		@Override
+		public String getKey() {
+			return key;
+		}
+
+		@Override
+		public AnnotationLayer getLayer() {
+			return layer;
+		}
 	}
 
 	/**
@@ -865,7 +937,7 @@ public class SerializableAtomicModelChange {
 	 *
 	 * @see CorpusModel#setValue(AnnotationLayer, Item, String, Object)
 	 */
-	public static class ValueChange extends AbstractValueChange {
+	public static class ValueChange extends AbstractValueChange<Object> {
 
 		private Object value, expectedValue;
 		private ValueType valueType;
@@ -914,8 +986,13 @@ public class SerializableAtomicModelChange {
 		}
 
 		@Override
-		public CorpusMember getAffectedMember() {
-			return item;
+		public Object getPreviousValue() {
+			return expectedValue;
+		}
+
+		@Override
+		public Object getValue() {
+			return value;
 		}
 	}
 
@@ -926,7 +1003,7 @@ public class SerializableAtomicModelChange {
 	 *
 	 * @see CorpusModel#setIntegerValue(AnnotationLayer, Item, String, int)
 	 */
-	public static class IntegerValueChange extends AbstractValueChange {
+	public static class IntegerValueChange extends AbstractValueChange<Integer> {
 
 		private int value, expectedValue;
 
@@ -969,8 +1046,13 @@ public class SerializableAtomicModelChange {
 		}
 
 		@Override
-		public CorpusMember getAffectedMember() {
-			return item;
+		public Integer getPreviousValue() {
+			return _int(expectedValue);
+		}
+
+		@Override
+		public Integer getValue() {
+			return _int(value);
 		}
 	}
 
@@ -981,7 +1063,7 @@ public class SerializableAtomicModelChange {
 	 *
 	 * @see CorpusModel#setLongValue(AnnotationLayer, Item, String, long)
 	 */
-	public static class LongValueChange extends AbstractValueChange {
+	public static class LongValueChange extends AbstractValueChange<Long> {
 
 		private long value, expectedValue;
 
@@ -1025,8 +1107,13 @@ public class SerializableAtomicModelChange {
 		}
 
 		@Override
-		public CorpusMember getAffectedMember() {
-			return item;
+		public Long getPreviousValue() {
+			return _long(expectedValue);
+		}
+
+		@Override
+		public Long getValue() {
+			return _long(value);
 		}
 	}
 
@@ -1037,7 +1124,7 @@ public class SerializableAtomicModelChange {
 	 *
 	 * @see CorpusModel#setFloatValue(AnnotationLayer, Item, String, float)
 	 */
-	public static class FloatValueChange extends AbstractValueChange {
+	public static class FloatValueChange extends AbstractValueChange<Float> {
 
 		private float value, expectedValue;
 
@@ -1048,16 +1135,8 @@ public class SerializableAtomicModelChange {
 			this.expectedValue = expectedValue;
 		}
 
-		protected FloatValueChange(AtomicChangeProxy proxy) {
-			super(proxy.getAnnotationLayer(), proxy.getItem1(), proxy.getKey());
-
-			if(proxy.value1!=null) {
-				value = ((Float)proxy.value1).floatValue();
-			}
-
-			if(proxy.value2!=null) {
-				expectedValue = ((Float)proxy.value2).floatValue();
-			}
+		protected FloatValueChange() {
+			// no-op
 		}
 
 		@Override
@@ -1089,8 +1168,13 @@ public class SerializableAtomicModelChange {
 		}
 
 		@Override
-		public CorpusMember getAffectedMember() {
-			return item;
+		public Float getPreviousValue() {
+			return _float(expectedValue);
+		}
+
+		@Override
+		public Float getValue() {
+			return _float(value);
 		}
 	}
 
@@ -1101,7 +1185,7 @@ public class SerializableAtomicModelChange {
 	 *
 	 * @see CorpusModel#setDoubleValue(AnnotationLayer, Item, String, double)
 	 */
-	public static class DoubleValueChange extends AbstractValueChange {
+	public static class DoubleValueChange extends AbstractValueChange<Double> {
 
 		private double value, expectedValue;
 
@@ -1145,8 +1229,13 @@ public class SerializableAtomicModelChange {
 		}
 
 		@Override
-		public CorpusMember getAffectedMember() {
-			return item;
+		public Double getPreviousValue() {
+			return _double(expectedValue);
+		}
+
+		@Override
+		public Double getValue() {
+			return _double(value);
 		}
 	}
 
@@ -1157,7 +1246,7 @@ public class SerializableAtomicModelChange {
 	 *
 	 * @see CorpusModel#setBooleanValue(AnnotationLayer, Item, String, boolean)
 	 */
-	public static class BooleanValueChange extends AbstractValueChange {
+	public static class BooleanValueChange extends AbstractValueChange<Boolean> {
 
 		private boolean value, expectedValue;
 
@@ -1204,8 +1293,13 @@ public class SerializableAtomicModelChange {
 		}
 
 		@Override
-		public CorpusMember getAffectedMember() {
-			return item;
+		public Boolean getPreviousValue() {
+			return _boolean(expectedValue);
+		}
+
+		@Override
+		public Boolean getValue() {
+			return _boolean(value);
 		}
 	}
 

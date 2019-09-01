@@ -16,10 +16,20 @@
  */
 package de.ims.icarus2.model.api.edit.change;
 
+import de.ims.icarus2.model.api.layer.AnnotationLayer;
+
 /**
  * @author Markus Gärtner
  *
+ * @param <T> type of the value that is being changed
  */
 public interface AtomicValueChange<T extends Object> extends AtomicChange {
 
+	T getPreviousValue();
+
+	T getValue();
+
+	String getKey();
+
+	AnnotationLayer getLayer();
 }

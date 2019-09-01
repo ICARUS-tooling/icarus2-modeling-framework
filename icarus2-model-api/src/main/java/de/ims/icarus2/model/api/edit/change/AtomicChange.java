@@ -55,4 +55,13 @@ public interface AtomicChange {
 	default boolean canReverse() {
 		return true;
 	}
+
+	/**
+	 * CHanges are expected to provide a simple human-readable representation
+	 * of their configuration via the {@code toString} method.
+	 *
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	String toString();
 }

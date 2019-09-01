@@ -533,16 +533,15 @@ public final class ModelUtils {
 	 * {@link Fragment#getItem() associated with} the {@code fragment}.
 	 */
 	public static void checkFragmentPositions(Fragment fragment, Position begin, Position end) {
-		if(begin==null && end==null)
-			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					"At least one position must be non-null!"); //$NON-NLS-1$
-
-		Item item = fragment.getItem();
 		FragmentLayer layer = fragment.getLayer();
 
 		if(layer==null) {
 			return;
 		}
+
+		if(begin==null && end==null)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					"At least one position must be non-null!");
 
 		Rasterizer rasterizer = layer.getRasterizer();
 		int dimensionality = rasterizer.getAxisCount();
@@ -555,6 +554,8 @@ public final class ModelUtils {
 			throw new ModelException(ModelErrorCode.MODEL_INVALID_POSITION,
 					"End position dimensionality mismatch: expected " //$NON-NLS-1$
 					+dimensionality+" - got "+end.getDimensionality()); //$NON-NLS-1$
+
+		Item item = fragment.getItem();
 
 		for(int axis=0; axis<dimensionality; axis++) {
 			long size = layer.getRasterSize(item, axis);
