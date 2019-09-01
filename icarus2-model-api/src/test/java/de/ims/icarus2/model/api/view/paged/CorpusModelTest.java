@@ -1188,8 +1188,10 @@ public interface CorpusModelTest<M extends CorpusModel>
 	default List<DynamicTest> testRemoveItemContainerLong() {
 		long itemCount = random(10, Long.MAX_VALUE/2);
 		long index = random(0, itemCount);
+		Item item = mockItem();
 		Container container = mockUsableContainer();
 		stubItemCount(container, itemCount);
+		when(container.getItemAt(index)).thenReturn(item);
 		MutableObject<AtomicChange> change = new MutableObject<>();
 
 		return new ModelTest<>(this, Container.class)
@@ -1218,6 +1220,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 		Item item = mockItem();
 		Container container = mockUsableContainer();
 		when(container.indexOfItem(item)).thenReturn(index);
+		when(container.getItemAt(index)).thenReturn(item);
 		stubItemCount(container, itemCount);
 		MutableObject<AtomicChange> change = new MutableObject<>();
 
@@ -1274,8 +1277,12 @@ public interface CorpusModelTest<M extends CorpusModel>
 		long itemCount = random(10, Long.MAX_VALUE/2);
 		long index0 = random(0, itemCount/2);
 		long index1 = random(index0, itemCount);
+		Item item0 = mockItem();
+		Item item1 = mockItem();
 		Container container = mockUsableContainer();
 		stubItemCount(container, itemCount);
+		when(container.getItemAt(index0)).thenReturn(item0);
+		when(container.getItemAt(index1)).thenReturn(item1);
 		MutableObject<AtomicChange> change = new MutableObject<>();
 
 		return new ModelTest<>(this, Container.class)
@@ -1773,6 +1780,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 		Structure structure = mockUsableStructure();
 		stubEdgeCount(structure, edgeCount);
 		when(structure.indexOfEdge(edge)).thenReturn(index);
+		when(structure.getEdgeAt(index)).thenReturn(edge);
 		MutableObject<AtomicChange> change = new MutableObject<>();
 
 		return new ModelTest<>(this, Structure.class)
@@ -1828,8 +1836,12 @@ public interface CorpusModelTest<M extends CorpusModel>
 		long edgeCount = random(10, Long.MAX_VALUE);
 		long index0 = random(0, edgeCount/2);
 		long index1 = random(index0, edgeCount);
+		Edge edge0 = mockEdge();
+		Edge edge1 = mockEdge();
 		Structure structure = mockUsableStructure();
 		stubEdgeCount(structure, edgeCount);
+		when(structure.getEdgeAt(index0)).thenReturn(edge0);
+		when(structure.getEdgeAt(index1)).thenReturn(edge1);
 		MutableObject<AtomicChange> change = new MutableObject<>();
 
 		return new ModelTest<>(this, Structure.class)
