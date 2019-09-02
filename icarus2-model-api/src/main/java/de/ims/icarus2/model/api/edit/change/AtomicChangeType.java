@@ -39,6 +39,12 @@ public enum AtomicChangeType implements StringResource {
 	POSITION_CHANGE("position"),
 
 	VALUE_CHANGE("value"),
+
+	INT_VALUE_CHANGE("int-value"),
+	LONG_VALUE_CHANGE("long-value"),
+	FLOAT_VALUE_CHANGE("float-value"),
+	DOUBLE_VALUE_CHANGE("double-value"),
+	BOOLEAN_VALUE_CHANGE("boolean-value"),
 	;
 
 	private final String key;

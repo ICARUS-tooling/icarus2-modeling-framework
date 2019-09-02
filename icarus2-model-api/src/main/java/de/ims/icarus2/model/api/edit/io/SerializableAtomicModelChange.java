@@ -892,11 +892,6 @@ public class SerializableAtomicModelChange {
 			// no-op
 		}
 
-		@Override
-		public AtomicChangeType getType() {
-			return AtomicChangeType.VALUE_CHANGE;
-		}
-
 		protected void defaultWriteValueChange(ChangeWriter writer) throws IOException {
 			writer.writeMember(layer);
 			writer.writeString(key);
@@ -953,6 +948,11 @@ public class SerializableAtomicModelChange {
 
 		protected ValueChange() {
 			// no-op
+		}
+
+		@Override
+		public AtomicChangeType getType() {
+			return AtomicChangeType.VALUE_CHANGE;
 		}
 
 		@Override
@@ -1019,6 +1019,11 @@ public class SerializableAtomicModelChange {
 		}
 
 		@Override
+		public AtomicChangeType getType() {
+			return AtomicChangeType.INT_VALUE_CHANGE;
+		}
+
+		@Override
 		public void writeChange(ChangeWriter writer) throws IOException {
 			defaultWriteValueChange(writer);
 			writer.writeInt(expectedValue);
@@ -1077,6 +1082,11 @@ public class SerializableAtomicModelChange {
 
 		protected LongValueChange() {
 			// no-op
+		}
+
+		@Override
+		public AtomicChangeType getType() {
+			return AtomicChangeType.LONG_VALUE_CHANGE;
 		}
 
 		@Override
@@ -1141,6 +1151,11 @@ public class SerializableAtomicModelChange {
 		}
 
 		@Override
+		public AtomicChangeType getType() {
+			return AtomicChangeType.FLOAT_VALUE_CHANGE;
+		}
+
+		@Override
 		public void writeChange(ChangeWriter writer) throws IOException {
 			defaultWriteValueChange(writer);
 			writer.writeFloat(expectedValue);
@@ -1199,6 +1214,11 @@ public class SerializableAtomicModelChange {
 
 		protected DoubleValueChange() {
 			// no-op
+		}
+
+		@Override
+		public AtomicChangeType getType() {
+			return AtomicChangeType.DOUBLE_VALUE_CHANGE;
 		}
 
 		@Override
@@ -1263,6 +1283,11 @@ public class SerializableAtomicModelChange {
 		}
 
 		@Override
+		public AtomicChangeType getType() {
+			return AtomicChangeType.BOOLEAN_VALUE_CHANGE;
+		}
+
+		@Override
 		public void writeChange(ChangeWriter writer) throws IOException {
 			defaultWriteValueChange(writer);
 			writer.writeBoolean(expectedValue);
@@ -1315,7 +1340,13 @@ public class SerializableAtomicModelChange {
 		case EDGES_CHANGE: return new EdgeSequenceChange();
 		case POSITION_CHANGE: return new PositionChange();
 		case TERMINAL_CHANGE: return new TerminalChange();
+
 		case VALUE_CHANGE: return new ValueChange();
+		case INT_VALUE_CHANGE: return new IntegerValueChange();
+		case LONG_VALUE_CHANGE: return new LongValueChange();
+		case FLOAT_VALUE_CHANGE: return new FloatValueChange();
+		case DOUBLE_VALUE_CHANGE: return new DoubleValueChange();
+		case BOOLEAN_VALUE_CHANGE: return new BooleanValueChange();
 
 		default:
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Unrecognized change type: "+type);

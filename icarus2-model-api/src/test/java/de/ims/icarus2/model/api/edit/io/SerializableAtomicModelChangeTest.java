@@ -25,6 +25,7 @@ import static de.ims.icarus2.util.lang.Primitives._long;
 import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -51,6 +52,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.mockito.stubbing.Answer;
 
@@ -120,6 +122,11 @@ class SerializableAtomicModelChangeTest {
 		/** For some source data create testable change instances (defaults to createChange()) */
 		default List<Pair<String, C>> createChanges(B source) {
 			return Arrays.asList(pair("default", createChange(source)));
+		}
+
+		@Test
+		default void testGetChangeType() {
+			assertNotNull(create().getType());
 		}
 
 		/** For each data run a single change in isolation */
@@ -1190,7 +1197,7 @@ class SerializableAtomicModelChangeTest {
 		@Override
 		Stream<Pair<String, Object>> createValues(ValueType type) {
 			assertSame(ValueType.BOOLEAN, type);
-			return Stream.of(Boolean.FALSE, Boolean.TRUE)
+			return Stream.of(Boolean.valueOf(!noEntryValue))
 					.map(v -> pair(String.valueOf(v), v));
 		}
 
