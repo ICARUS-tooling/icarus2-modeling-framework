@@ -883,9 +883,9 @@ public class SerializableAtomicModelChange {
 		protected String key;
 
 		public AbstractValueChange(AnnotationLayer layer, Item item, String key) {
-			this.layer = layer;
-			this.item = item;
-			this.key = key;
+			this.layer = requireNonNull(layer);
+			this.item = requireNonNull(item);
+			this.key = requireNonNull(key);
 		}
 
 		protected AbstractValueChange() {
@@ -942,12 +942,13 @@ public class SerializableAtomicModelChange {
 		private Object value, expectedValue;
 		private ValueType valueType;
 
-		public ValueChange(AnnotationLayer layer, ValueType valueType, Item item, String key, Object value, Object expectedValue) {
+		public ValueChange(AnnotationLayer layer, ValueType valueType, Item item,
+				String key, @Nullable Object value, @Nullable Object expectedValue) {
 			super(layer, item, key);
 
+			this.valueType = requireNonNull(valueType);
 			this.value = value;
 			this.expectedValue = expectedValue;
-			this.valueType = valueType;
 		}
 
 		protected ValueChange() {

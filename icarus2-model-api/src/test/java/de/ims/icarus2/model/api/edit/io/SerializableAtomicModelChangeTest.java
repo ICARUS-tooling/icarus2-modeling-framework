@@ -9,14 +9,21 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockEdges;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItems;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockPosition;
+import static de.ims.icarus2.model.manifest.ManifestTestUtils.getTestValues;
 import static de.ims.icarus2.test.TestUtils.abort;
 import static de.ims.icarus2.test.TestUtils.assertCollectionNotEmpty;
 import static de.ims.icarus2.test.TestUtils.random;
+import static de.ims.icarus2.test.TestUtils.randomString;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.util.collections.ArrayUtils.swap;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
+import static de.ims.icarus2.util.lang.Primitives._boolean;
+import static de.ims.icarus2.util.lang.Primitives._double;
+import static de.ims.icarus2.util.lang.Primitives._float;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
 import static de.ims.icarus2.util.lang.Primitives.strictToInt;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -32,33 +39,52 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.TestFactory;
 import org.mockito.stubbing.Answer;
 
+import de.ims.icarus2.model.api.edit.io.SerializableAtomicModelChange.BooleanValueChange;
+import de.ims.icarus2.model.api.edit.io.SerializableAtomicModelChange.DoubleValueChange;
 import de.ims.icarus2.model.api.edit.io.SerializableAtomicModelChange.EdgeChange;
 import de.ims.icarus2.model.api.edit.io.SerializableAtomicModelChange.EdgeMoveChange;
 import de.ims.icarus2.model.api.edit.io.SerializableAtomicModelChange.EdgeSequenceChange;
+import de.ims.icarus2.model.api.edit.io.SerializableAtomicModelChange.FloatValueChange;
+import de.ims.icarus2.model.api.edit.io.SerializableAtomicModelChange.IntegerValueChange;
 import de.ims.icarus2.model.api.edit.io.SerializableAtomicModelChange.ItemChange;
 import de.ims.icarus2.model.api.edit.io.SerializableAtomicModelChange.ItemMoveChange;
 import de.ims.icarus2.model.api.edit.io.SerializableAtomicModelChange.ItemSequenceChange;
+import de.ims.icarus2.model.api.edit.io.SerializableAtomicModelChange.LongValueChange;
 import de.ims.icarus2.model.api.edit.io.SerializableAtomicModelChange.PositionChange;
 import de.ims.icarus2.model.api.edit.io.SerializableAtomicModelChange.TerminalChange;
+import de.ims.icarus2.model.api.edit.io.SerializableAtomicModelChange.ValueChange;
+import de.ims.icarus2.model.api.layer.AnnotationLayer;
+import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.raster.Position;
+import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.guard.ApiGuard;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.Mutable.MutableObject;
+import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.collections.seq.DataSequence;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner
@@ -864,5 +890,471 @@ class SerializableAtomicModelChangeTest {
 
 			return changes;
 		}
+	}
+
+	abstract class AnnotationContent<C extends SerializableAtomicChange>
+			implements ModelChangeTest<C, AnnotationLayer> {
+
+		/** Return all supported value types, at least 1! */
+		abstract Stream<ValueType> getValueTypes();
+
+		/** Create a series of test values, the first of which will be used as initial value */
+		abstract Stream<Pair<String,Object>> createValues(ValueType type);
+
+		abstract Object noEntryValue(ValueType type);
+
+		AnnotationLayer mockLayer(AnnotationStorage storage) {
+			if(storage==null) {
+				storage = mock(AnnotationStorage.class, UNSUPPORTED);
+			}
+
+			final AnnotationStorage s = storage;
+
+			AnnotationLayer layer = mock(AnnotationLayer.class, UNSUPPORTED);
+			doAnswer(invoc -> s).when(layer).getAnnotationStorage();
+
+			return layer;
+		}
+
+		@Override
+		public Stream<Pair<String, AnnotationLayer>> createData() {
+			return getValueTypes().map(type -> pair(type.getName(), mockLayer(
+					new AnnotationStorageDummy(type, noEntryValue(type)))));
+		}
+
+		@Override
+		public AnnotationLayer cloneData(AnnotationLayer source) {
+			AnnotationStorageDummy storage0 = (AnnotationStorageDummy) source.getAnnotationStorage();
+			AnnotationStorageDummy storage = new AnnotationStorageDummy(
+					storage0.getValueType(), storage0.getNoEntryValue());
+			storage.copyFrom(storage0);
+			return mockLayer(storage);
+		}
+
+		@Override
+		public boolean dataEquals(AnnotationLayer expected, AnnotationLayer actual) {
+			return expected.getAnnotationStorage().equals(actual.getAnnotationStorage());
+		}
+
+		abstract C createChange(AnnotationLayer layer, ValueType type,
+				Item item, String key, Object newValue, Object oldValue);
+
+		@Override
+		public C createTestInstance(TestSettings settings) {
+			ValueType valueType = getValueTypes().findFirst().get();
+			Object noEntryValue = noEntryValue(valueType);
+			return settings.process(createChange(mockLayer(
+					new AnnotationStorageDummy(valueType, noEntryValue))));
+		}
+
+		@Override
+		public C createChange(AnnotationLayer source) {
+			AnnotationStorageDummy storage = (AnnotationStorageDummy) source.getAnnotationStorage();
+			ValueType type = storage.getValueType();
+			Object value = createValues(type).findAny().map(p -> p.second).get();
+			Item item = mockItem();
+			String key = randomString(10);
+
+			return createChange(source, type, item, key, value,
+					storage.getValue(item, key));
+		}
+
+		@Override
+		public List<Pair<String, C>> createChanges(AnnotationLayer source) {
+			// TODO Auto-generated method stub
+			return ModelChangeTest.super.createChanges(source);
+		}
+	}
+
+	@Nested
+	class ValueChangeTest extends AnnotationContent<ValueChange> {
+
+		@Override
+		public Class<?> getTestTargetClass() {
+			return ValueChange.class;
+		}
+
+		@Override
+		Stream<ValueType> getValueTypes() {
+			return Stream.of(ValueType.CUSTOM, ValueType.ENUM, ValueType.STRING);
+		}
+
+		@Override
+		Stream<Pair<String, Object>> createValues(ValueType type) {
+			MutableInteger idx = new MutableInteger();
+			return Stream.of(getTestValues(type)).map(
+					val -> pair(type.getName()+idx.getAndIncrement(), val));
+		}
+
+		@Override
+		ValueChange createChange(AnnotationLayer layer, ValueType type, Item item,
+				String key, Object newValue, Object oldValue) {
+			return new ValueChange(layer, type, item, key, newValue, oldValue);
+		}
+
+		@Override
+		Object noEntryValue(ValueType type) {
+			return null;
+		}
+	}
+
+	@Nested
+	class IntegerValueChangeTest extends AnnotationContent<IntegerValueChange> {
+
+		private int noEntryValue;
+
+		@BeforeEach
+		void setUp() {
+			noEntryValue = random().nextInt();
+		}
+
+		@Override
+		public Class<?> getTestTargetClass() {
+			return IntegerValueChange.class;
+		}
+
+		@Override
+		Stream<ValueType> getValueTypes() {
+			return Stream.of(ValueType.INTEGER);
+		}
+
+		@Override
+		Object noEntryValue(ValueType type) {
+			return _int(noEntryValue);
+		}
+
+		@Override
+		Stream<Pair<String, Object>> createValues(ValueType type) {
+			assertSame(ValueType.INTEGER, type);
+			return random().ints()
+					.limit(10)
+					.mapToObj(v -> pair(String.valueOf(v), _int(v)));
+		}
+
+		@Override
+		IntegerValueChange createChange(AnnotationLayer layer, ValueType type,
+				Item item, String key, Object newValue, Object oldValue) {
+			return new IntegerValueChange(layer, item, key,
+					((Number)newValue).intValue(), ((Number)oldValue).intValue());
+		}
+	}
+
+	@Nested
+	class LongValueChangeTest extends AnnotationContent<LongValueChange> {
+
+		private long noEntryValue;
+
+		@BeforeEach
+		void setUp() {
+			noEntryValue = random().nextLong();
+		}
+
+		@Override
+		public Class<?> getTestTargetClass() {
+			return LongValueChange.class;
+		}
+
+		@Override
+		Stream<ValueType> getValueTypes() {
+			return Stream.of(ValueType.LONG);
+		}
+
+		@Override
+		Object noEntryValue(ValueType type) {
+			return _long(noEntryValue);
+		}
+
+		@Override
+		Stream<Pair<String, Object>> createValues(ValueType type) {
+			assertSame(ValueType.LONG, type);
+			return random().longs()
+					.limit(10)
+					.mapToObj(v -> pair(String.valueOf(v), _long(v)));
+		}
+
+		@Override
+		LongValueChange createChange(AnnotationLayer layer, ValueType type,
+				Item item, String key, Object newValue, Object oldValue) {
+			return new LongValueChange(layer, item, key,
+					((Number)newValue).longValue(), ((Number)oldValue).longValue());
+		}
+	}
+
+	@Nested
+	class FloatValueChangeTest extends AnnotationContent<FloatValueChange> {
+
+		private float noEntryValue;
+
+		@BeforeEach
+		void setUp() {
+			noEntryValue = random().nextFloat();
+		}
+
+		@Override
+		public Class<?> getTestTargetClass() {
+			return FloatValueChange.class;
+		}
+
+		@Override
+		Stream<ValueType> getValueTypes() {
+			return Stream.of(ValueType.FLOAT);
+		}
+
+		@Override
+		Object noEntryValue(ValueType type) {
+			return _float(noEntryValue);
+		}
+
+		@Override
+		Stream<Pair<String, Object>> createValues(ValueType type) {
+			assertSame(ValueType.FLOAT, type);
+			return DoubleStream.generate(random()::nextFloat)
+					.limit(10)
+					.mapToObj(v -> pair(String.valueOf(v), _float((float)v)));
+		}
+
+		@Override
+		FloatValueChange createChange(AnnotationLayer layer, ValueType type,
+				Item item, String key, Object newValue, Object oldValue) {
+			return new FloatValueChange(layer, item, key,
+					((Number)newValue).floatValue(), ((Number)oldValue).floatValue());
+		}
+	}
+
+	@Nested
+	class DoubleValueChangeTest extends AnnotationContent<DoubleValueChange> {
+
+		private double noEntryValue;
+
+		@BeforeEach
+		void setUp() {
+			noEntryValue = random().nextDouble();
+		}
+
+		@Override
+		public Class<?> getTestTargetClass() {
+			return DoubleValueChange.class;
+		}
+
+		@Override
+		Stream<ValueType> getValueTypes() {
+			return Stream.of(ValueType.DOUBLE);
+		}
+
+		@Override
+		Object noEntryValue(ValueType type) {
+			return _double(noEntryValue);
+		}
+
+		@Override
+		Stream<Pair<String, Object>> createValues(ValueType type) {
+			assertSame(ValueType.DOUBLE, type);
+			return random().doubles()
+					.limit(10)
+					.mapToObj(v -> pair(String.valueOf(v), _double(v)));
+		}
+
+		@Override
+		DoubleValueChange createChange(AnnotationLayer layer, ValueType type,
+				Item item, String key, Object newValue, Object oldValue) {
+			return new DoubleValueChange(layer, item, key,
+					((Number)newValue).doubleValue(), ((Number)oldValue).doubleValue());
+		}
+	}
+
+	@Nested
+	class BooleanValueChangeTest extends AnnotationContent<BooleanValueChange> {
+
+		private boolean noEntryValue;
+
+		@BeforeEach
+		void setUp() {
+			noEntryValue = random().nextBoolean();
+		}
+
+		@Override
+		public Class<?> getTestTargetClass() {
+			return BooleanValueChange.class;
+		}
+
+		@Override
+		Stream<ValueType> getValueTypes() {
+			return Stream.of(ValueType.BOOLEAN);
+		}
+
+		@Override
+		Object noEntryValue(ValueType type) {
+			return _boolean(noEntryValue);
+		}
+
+		@Override
+		Stream<Pair<String, Object>> createValues(ValueType type) {
+			assertSame(ValueType.BOOLEAN, type);
+			return Stream.of(Boolean.FALSE, Boolean.TRUE)
+					.map(v -> pair(String.valueOf(v), v));
+		}
+
+		@Override
+		BooleanValueChange createChange(AnnotationLayer layer, ValueType type,
+				Item item, String key, Object newValue, Object oldValue) {
+			return new BooleanValueChange(layer, item, key,
+					((Boolean)newValue).booleanValue(), ((Boolean)oldValue).booleanValue());
+		}
+	}
+
+	static class AnnotationStorageDummy implements AnnotationStorage {
+
+		static class Key {
+			final Item item;
+			final String key;
+
+			Key(Item item, String key) {
+				this.item = requireNonNull(item);
+				this.key = requireNonNull(key);
+			}
+
+			@Override
+			public int hashCode() { return Objects.hash(item, key); }
+
+			@Override
+			public boolean equals(Object obj) {
+				if(obj==this) {
+					return true;
+				} else if(obj instanceof Key) {
+					Key other = (Key) obj;
+					return item==other.item && key.equals(other.key);
+				}
+				return false;
+			}
+		}
+
+		private final ValueType valueType;
+
+		private final Map<Key, Object> data = new Object2ObjectOpenHashMap<>();
+
+		private final Object noEntryValue;
+
+		AnnotationStorageDummy(ValueType valueType, Object noEntryValue) {
+			this.valueType = requireNonNull(valueType);
+			this.noEntryValue = noEntryValue;
+		}
+
+		void copyFrom(AnnotationStorageDummy source) {
+			data.putAll(source.data);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof AnnotationStorageDummy) {
+				AnnotationStorageDummy other = (AnnotationStorageDummy) obj;
+				return valueType.equals(other.valueType) && data.equals(other.data);
+			}
+			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			return data.hashCode();
+		}
+
+		public ValueType getValueType() { return valueType; }
+
+		public Object getNoEntryValue() { return noEntryValue; }
+
+		public Set<String> getKeys() {
+			return data.keySet().stream().map(k -> k.key).collect(Collectors.toSet());
+		}
+
+		public Set<Item> getItems() {
+			return data.keySet().stream().map(k -> k.item).collect(Collectors.toSet());
+		}
+
+		@Override
+		public boolean collectKeys(Item item, Consumer<String> action) {
+			throw new UnsupportedOperationException();
+		}
+
+		private Key key(Item item, String key) {
+			return new Key(item, key);
+		}
+
+		@Override
+		public Object getValue(Item item, String key) {
+			return data.getOrDefault(key(item, key), noEntryValue);
+		}
+
+		@Override
+		public int getInteger(Item item, String key) {
+			return ((Number)getValue(item, key)).intValue();
+		}
+
+		@Override
+		public float getFloat(Item item, String key) {
+			return ((Number)getValue(item, key)).floatValue();
+		}
+
+		@Override
+		public double getDouble(Item item, String key) {
+			return ((Number)getValue(item, key)).doubleValue();
+		}
+
+		@Override
+		public long getLong(Item item, String key) {
+			return ((Number)getValue(item, key)).longValue();
+		}
+
+		@Override
+		public boolean getBoolean(Item item, String key) {
+			return ((Boolean)getValue(item, key)).booleanValue();
+		}
+
+		@Override
+		public void removeAllValues(Supplier<? extends Item> source) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public void setValue(Item item, String key, Object value) {
+			if(value==null || value.equals(noEntryValue)) {
+				data.remove(key(item, key));
+			} else {
+				valueType.checkValue(value);
+				data.put(key(item, key), value);
+			}
+		}
+
+		@Override
+		public void setInteger(Item item, String key, int value) {
+			setValue(item, key, _int(value));
+		}
+
+		@Override
+		public void setLong(Item item, String key, long value) {
+			setValue(item, key, _long(value));
+		}
+
+		@Override
+		public void setFloat(Item item, String key, float value) {
+			setValue(item, key, _float(value));
+		}
+
+		@Override
+		public void setDouble(Item item, String key, double value) {
+			setValue(item, key, _double(value));
+		}
+
+		@Override
+		public void setBoolean(Item item, String key, boolean value) {
+			setValue(item, key, _boolean(value));
+		}
+
+		@Override
+		public boolean hasAnnotations() { throw new UnsupportedOperationException(); }
+
+		@Override
+		public boolean hasAnnotations(Item item) { throw new UnsupportedOperationException(); }
+
 	}
 }
