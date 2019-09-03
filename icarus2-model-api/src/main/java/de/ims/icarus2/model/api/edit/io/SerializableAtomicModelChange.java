@@ -401,6 +401,14 @@ public class SerializableAtomicModelChange {
 		public void execute() {
 			checkExpectedSize("Batch Remove/Add failed", container.getItemCount(), expectedSize);
 
+			/*
+			 * Implementation note:
+			 * We do not verify the integrity of the sequence of removed
+			 * items. This means that manipulations regarding the order
+			 * of items in the host container without affecting the total
+			 * number of items will _not_ cause this change to fail!
+			 */
+
 			if(add) {
 				container.addItems(index0, items);
 				expectedSize += items.entryCount();
@@ -941,6 +949,10 @@ public class SerializableAtomicModelChange {
 						&& expected==other.expected;
 			}
 			return false;
+		}
+
+		public boolean isSource() {
+			return isSource;
 		}
 	}
 
