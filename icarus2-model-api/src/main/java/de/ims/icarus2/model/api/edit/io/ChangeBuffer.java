@@ -19,15 +19,22 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
  */
 public class ChangeBuffer implements ChangeWriter, ChangeReader {
 
-	private final Deque<Object> buffer = new ArrayDeque<>(200);
+	private final Deque<Object> buffer = new ArrayDeque<>(100);
+
+	private static final Object NULL_DUMMY = new Object();
 
 	@SuppressWarnings("unchecked")
 	private <T> T pop() {
-		return (T) buffer.removeFirst();
+		Object obj = buffer.removeFirst();
+		return (T) (obj==NULL_DUMMY ? null : obj);
 	}
 
 	private void push(Object obj) {
-		buffer.addLast(obj);
+		buffer.addLast(obj==null ? NULL_DUMMY : obj);
+	}
+
+	public boolean isEmpty() {
+		return buffer.isEmpty();
 	}
 
 	/**

@@ -199,6 +199,25 @@ class SerializableAtomicModelChangeTest {
 			}));
 		}
 
+		/** For each data create a change and serialize it*/
+		@TestFactory
+		default Stream<DynamicNode> testSerializationIsolated() {
+			return createData().map(p -> dynamicTest(p.first, () -> {
+				B source = p.second;
+				B data = cloneData(source);
+				assertNotSame(source, data);
+
+				C change = createChange(data);
+
+				// Serialize the change
+				ChangeBuffer buffer = new ChangeBuffer();
+				change.writeChange(buffer);
+
+				// Assert that _something_ was written
+				assertFalse(buffer.isEmpty());
+			}));
+		}
+
 		//TODO add tests for: serialization, deserialization, full I/O cycle, corrupted data
 	}
 

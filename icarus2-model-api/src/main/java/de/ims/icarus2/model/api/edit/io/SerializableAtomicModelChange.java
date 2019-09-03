@@ -24,6 +24,7 @@ import static de.ims.icarus2.util.lang.Primitives._long;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import javax.annotation.Nullable;
 
@@ -174,6 +175,26 @@ public class SerializableAtomicModelChange {
 		public long getIndex() {
 			return index;
 		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(container, item, _long(index), _long(expectedSize), _boolean(add));
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof ItemChange) {
+				ItemChange other = (ItemChange) obj;
+				return container==other.container
+						&& item==other.item
+						&& index==other.index
+						&& expectedSize==other.expectedSize
+						&& add==other.add;
+			}
+			return false;
+		}
 	}
 
 	/**
@@ -272,6 +293,27 @@ public class SerializableAtomicModelChange {
 		@Override
 		public long getTargetIndex() {
 			return index1;
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(container, item0, item1, _long(index0), _long(index1), _long(expectedSize));
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof ItemMoveChange) {
+				ItemMoveChange other = (ItemMoveChange) obj;
+				return container==other.container
+						&& item0==other.item0
+						&& item1==other.item1
+						&& expectedSize==other.expectedSize
+						&& index0==other.index0
+						&& index1==other.index1;
+			}
+			return false;
 		}
 	}
 
@@ -406,6 +448,27 @@ public class SerializableAtomicModelChange {
 			return index1;
 		}
 
+		@Override
+		public int hashCode() {
+			return Objects.hash(container, items, _long(index0), _long(index1),
+					_long(expectedSize), _boolean(add));
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof ItemSequenceChange) {
+				ItemSequenceChange other = (ItemSequenceChange) obj;
+				return container==other.container
+						&& items==other.items
+						&& expectedSize==other.expectedSize
+						&& index0==other.index0
+						&& index1==other.index1
+						&& add==other.add;
+			}
+			return false;
+		}
 	}
 
 	/**
@@ -502,6 +565,26 @@ public class SerializableAtomicModelChange {
 		@Override
 		public long getIndex() {
 			return index;
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(structure, edge, _long(index), _long(expectedSize), _boolean(add));
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof EdgeChange) {
+				EdgeChange other = (EdgeChange) obj;
+				return structure==other.structure
+						&& edge==other.edge
+						&& expectedSize==other.expectedSize
+						&& index==other.index
+						&& add==other.add;
+			}
+			return false;
 		}
 	}
 
@@ -603,6 +686,28 @@ public class SerializableAtomicModelChange {
 		@Override
 		public long getTargetIndex() {
 			return index1;
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(structure, edge0, edge1, _long(index0),
+					_long(index1), _long(expectedSize));
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof EdgeMoveChange) {
+				EdgeMoveChange other = (EdgeMoveChange) obj;
+				return structure==other.structure
+						&& edge0==other.edge0
+						&& edge1==other.edge1
+						&& expectedSize==other.expectedSize
+						&& index0==other.index0
+						&& index1==other.index1;
+			}
+			return false;
 		}
 	}
 
@@ -720,6 +825,28 @@ public class SerializableAtomicModelChange {
 		public long getEndIndex() {
 			return index1;
 		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(structure, edges, _long(index0),
+					_long(index1), _long(expectedSize), _boolean(add));
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof EdgeSequenceChange) {
+				EdgeSequenceChange other = (EdgeSequenceChange) obj;
+				return structure==other.structure
+						&& edges==other.edges
+						&& expectedSize==other.expectedSize
+						&& index0==other.index0
+						&& index1==other.index1
+						&& add==other.add;
+			}
+			return false;
+		}
 	}
 
 	/**
@@ -795,6 +922,26 @@ public class SerializableAtomicModelChange {
 		public CorpusMember getAffectedMember() {
 			return edge;
 		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(structure, edge, _boolean(isSource), terminal, expected);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof TerminalChange) {
+				TerminalChange other = (TerminalChange) obj;
+				return structure==other.structure
+						&& edge==other.edge
+						&& isSource==other.isSource
+						&& terminal==other.terminal
+						&& expected==other.expected;
+			}
+			return false;
+		}
 	}
 
 	/**
@@ -867,6 +1014,24 @@ public class SerializableAtomicModelChange {
 		public CorpusMember getAffectedMember() {
 			return fragment;
 		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(fragment, _boolean(isBegin), position);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof PositionChange) {
+				PositionChange other = (PositionChange) obj;
+				return fragment==other.fragment
+						&& isBegin==other.isBegin
+						&& position==other.position;
+			}
+			return false;
+		}
 	}
 
 	/**
@@ -917,6 +1082,10 @@ public class SerializableAtomicModelChange {
 		@Override
 		public AnnotationLayer getLayer() {
 			return layer;
+		}
+
+		protected boolean equals(AbstractValueChange<T> other) {
+			return layer==other.layer && item==other.item && key.equals(other.key);
 		}
 	}
 
@@ -995,6 +1164,25 @@ public class SerializableAtomicModelChange {
 		public Object getValue() {
 			return value;
 		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(layer, item, key, value, expectedValue, valueType);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof ValueChange) {
+				ValueChange other = (ValueChange) obj;
+				return equals(other)
+						&& valueType==other.valueType
+						&& ClassUtils.equals(value, other.value)
+						&& ClassUtils.equals(expectedValue, other.expectedValue);
+			}
+			return false;
+		}
 	}
 
 	/**
@@ -1059,6 +1247,24 @@ public class SerializableAtomicModelChange {
 		@Override
 		public Integer getValue() {
 			return _int(value);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(layer, item, key, _int(value), _int(expectedValue));
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof IntegerValueChange) {
+				IntegerValueChange other = (IntegerValueChange) obj;
+				return equals(other)
+						&& value==other.value
+						&& expectedValue==other.expectedValue;
+			}
+			return false;
 		}
 	}
 
@@ -1126,6 +1332,24 @@ public class SerializableAtomicModelChange {
 		public Long getValue() {
 			return _long(value);
 		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(layer, item, key, _long(value), _long(expectedValue));
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof LongValueChange) {
+				LongValueChange other = (LongValueChange) obj;
+				return equals(other)
+						&& value==other.value
+						&& expectedValue==other.expectedValue;
+			}
+			return false;
+		}
 	}
 
 	/**
@@ -1192,6 +1416,24 @@ public class SerializableAtomicModelChange {
 		public Float getValue() {
 			return _float(value);
 		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(layer, item, key, _float(value), _float(expectedValue));
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof FloatValueChange) {
+				FloatValueChange other = (FloatValueChange) obj;
+				return equals(other)
+						&& Float.compare(value, other.value)==0
+						&& Float.compare(expectedValue, other.expectedValue)==0;
+			}
+			return false;
+		}
 	}
 
 	/**
@@ -1257,6 +1499,24 @@ public class SerializableAtomicModelChange {
 		@Override
 		public Double getValue() {
 			return _double(value);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(layer, item, key, _double(value),  _double(expectedValue));
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof DoubleValueChange) {
+				DoubleValueChange other = (DoubleValueChange) obj;
+				return equals(other)
+						&& Double.compare(value, other.value)==0
+						&& Double.compare(expectedValue, other.expectedValue)==0;
+			}
+			return false;
 		}
 	}
 
@@ -1326,6 +1586,24 @@ public class SerializableAtomicModelChange {
 		@Override
 		public Boolean getValue() {
 			return _boolean(value);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(layer, item, key, _boolean(value),  _boolean(expectedValue));
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof BooleanValueChange) {
+				BooleanValueChange other = (BooleanValueChange) obj;
+				return equals(other)
+						&& value==other.value
+						&& expectedValue==other.expectedValue;
+			}
+			return false;
 		}
 	}
 
