@@ -237,6 +237,61 @@ class SerializableAtomicModelChangeTest {
 			}));
 		}
 
+		/** For each data run a sequence of changes */
+		@SuppressWarnings("unchecked")
+		@TestFactory
+		default Stream<DynamicNode> testBulkSerializationCycle() {
+			return createData().map(p -> dynamicTest(p.first, () -> {
+				B source = p.second;
+				List<Pair<String,C>> changes = createChanges(source);
+				assertCollectionNotEmpty(changes);
+				int count = changes.size();
+
+				// Lists the states before and after each change
+				List<B> states = new ArrayList<>(count+1);
+				states.add(cloneData(source));
+
+				ChangeBuffer buffer = new ChangeBuffer();
+
+				// Apply changes once
+				for (int i = 0; i < count; i++) {
+					C change = changes.get(i).second;
+					B before = states.get(i);
+					B after = source;
+					assertNotSame(before, after);
+					change.execute();
+					states.add(cloneData(after));
+					assertFalse(dataEquals(before, after),
+							i+" Nothing changed: "+changes.get(i).first);
+
+					buffer.writeChange(change);
+				}
+
+
+				List<C> changes2 = new ArrayList<>(count);
+				for (int i = 0; i < count; i++) {
+					C change = (C) buffer.readChange();
+					assertEquals(changes.get(i).second, change);
+					changes2.add(change);
+				}
+
+				Collections.reverse(states);
+				Collections.reverse(changes);
+				Collections.reverse(changes2);
+
+				// Now reverse changes
+				for(int i=0; i<count; i++) {
+					C change = changes2.get(i);
+					assertTrue(dataEquals(states.get(i), source));
+					B before = source;
+					B after = states.get(i+1);
+					assertNotSame(before, after);
+					change.execute();
+					assertTrue(dataEquals(before, after));
+				}
+			}));
+		}
+
 		//TODO add tests for: serialization, deserialization, full I/O cycle, corrupted data
 	}
 
