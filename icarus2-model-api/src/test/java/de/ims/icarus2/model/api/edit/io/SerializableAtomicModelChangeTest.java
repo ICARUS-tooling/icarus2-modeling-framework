@@ -44,6 +44,7 @@ import static org.mockito.Mockito.mock;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -66,6 +67,8 @@ import org.junit.jupiter.api.TestFactory;
 import org.mockito.stubbing.Answer;
 
 import de.ims.icarus2.model.api.ModelErrorCode;
+import de.ims.icarus2.model.api.corpus.Corpus;
+import de.ims.icarus2.model.api.edit.change.AtomicValueChange;
 import de.ims.icarus2.model.api.edit.io.SerializableAtomicModelChange.BooleanValueChange;
 import de.ims.icarus2.model.api.edit.io.SerializableAtomicModelChange.DoubleValueChange;
 import de.ims.icarus2.model.api.edit.io.SerializableAtomicModelChange.EdgeChange;
@@ -127,7 +130,7 @@ class SerializableAtomicModelChangeTest {
 		boolean dataEquals(B expected, B actual);
 
 		/** Create a collection of individually testable changes for source */
-		Stream<Pair<String, Function<B, C>>> createIndividualChanges();
+		Stream<Pair<String, Function<B, C>>> createIndividualChanges(B origin);
 
 		/** Create corrupted modifications to the given data to test against failure */
 		Stream<Pair<String, BiConsumer<B, C>>> corruptData();
@@ -147,8 +150,8 @@ class SerializableAtomicModelChangeTest {
 		@TestFactory
 		default Stream<DynamicNode> testIsolated() {
 			return createData()
-					.map(pDat -> dynamicContainer(pDat.first, createIndividualChanges()
-					.map(pCha -> dynamicTest(pCha.first, () -> {
+					.map(pDat -> dynamicContainer("data: "+pDat.first, createIndividualChanges(pDat.second)
+					.map(pCha -> dynamicTest("change: "+pCha.first, () -> {
 						B original = pDat.second;
 						B data = cloneData(original);
 						assertNotSame(original, data);
@@ -168,7 +171,7 @@ class SerializableAtomicModelChangeTest {
 		/** For each data run a sequence of changes */
 		@TestFactory
 		default Stream<DynamicNode> testBulk() {
-			return createData().map(p -> dynamicTest(p.first, () -> {
+			return createData().map(p -> dynamicTest("data: "+p.first, () -> {
 				B source = p.second;
 				List<Pair<String,C>> changes = createBulkChanges(source);
 				assertCollectionNotEmpty(changes);
@@ -214,8 +217,8 @@ class SerializableAtomicModelChangeTest {
 		@TestFactory
 		default Stream<DynamicNode> testSerializationIsolated() {
 			return createData()
-					.map(pDat -> dynamicContainer(pDat.first, createIndividualChanges()
-					.map(pCha -> dynamicTest(pCha.first, () -> {
+					.map(pDat -> dynamicContainer("data: "+pDat.first, createIndividualChanges(pDat.second)
+					.map(pCha -> dynamicTest("change: "+pCha.first, () -> {
 						B original = pDat.second;
 						B data = cloneData(original);
 						assertNotSame(original, data);
@@ -231,12 +234,12 @@ class SerializableAtomicModelChangeTest {
 					}))));
 		}
 
-		/** For each data create a change serialize it and then deserialiue and compare */
+		/** For each data create a change serialize it and then deserialize and compare */
 		@TestFactory
 		default Stream<DynamicNode> testDeserializationIsolated() {
 			return createData()
-					.map(pDat -> dynamicContainer(pDat.first, createIndividualChanges()
-					.map(pCha -> dynamicTest(pCha.first, () -> {
+					.map(pDat -> dynamicContainer("data: "+pDat.first, createIndividualChanges(pDat.second)
+					.map(pCha -> dynamicTest("change: "+pCha.first, () -> {
 						B original = pDat.second;
 						B data = cloneData(original);
 						assertNotSame(original, data);
@@ -256,7 +259,7 @@ class SerializableAtomicModelChangeTest {
 		@SuppressWarnings("unchecked")
 		@TestFactory
 		default Stream<DynamicNode> testBulkSerializationCycle() {
-			return createData().map(p -> dynamicTest(p.first, () -> {
+			return createData().map(p -> dynamicTest("data: "+p.first, () -> {
 				B source = p.second;
 				List<Pair<String,C>> changes = createBulkChanges(source);
 				assertCollectionNotEmpty(changes);
@@ -311,9 +314,9 @@ class SerializableAtomicModelChangeTest {
 		@TestFactory
 		default Stream<DynamicNode> testCorruptedIsolated() {
 			return createData()
-					.map(pDat -> dynamicContainer(pDat.first, createIndividualChanges()
-					.map(pCha -> dynamicContainer(pCha.first, corruptData()
-					.map(pCor -> dynamicTest(pCor.first, () -> {
+					.map(pDat -> dynamicContainer("data: "+pDat.first, createIndividualChanges(pDat.second)
+					.map(pCha -> dynamicContainer("change: "+pCha.first, corruptData()
+					.map(pCor -> dynamicTest("corruption: "+pCor.first, () -> {
 						// Make a copy of original data, as we're gonna change it
 						B data = cloneData(pDat.second);
 
@@ -330,13 +333,13 @@ class SerializableAtomicModelChangeTest {
 					}))))));
 		}
 
-		/** For each data, create corrupted instances and then try to run a single change */
+		/** For each data, create corrupted instances and then try to reverse a single change */
 		@TestFactory
 		default Stream<DynamicNode> testCorruptedReverseIsolated() {
 			return createData()
-					.map(pDat -> dynamicContainer(pDat.first, createIndividualChanges()
-					.map(pCha -> dynamicContainer(pCha.first, corruptData()
-					.map(pCor -> dynamicTest(pCor.first, () -> {
+					.map(pDat -> dynamicContainer("data: "+pDat.first, createIndividualChanges(pDat.second)
+					.map(pCha -> dynamicContainer("change: "+pCha.first, corruptData()
+					.map(pCor -> dynamicTest("corruption: "+pCor.first, () -> {
 						// Make a copy of original data, as we're gonna change it
 						B data = cloneData(pDat.second);
 
@@ -359,9 +362,9 @@ class SerializableAtomicModelChangeTest {
 		@TestFactory
 		default Stream<DynamicNode> testMutatedIsolated() {
 			return createData()
-					.map(pDat -> dynamicContainer(pDat.first, createIndividualChanges()
-					.map(pCha -> dynamicContainer(pCha.first, mutateData()
-					.map(pCor -> dynamicTest(pCor.first, () -> {
+					.map(pDat -> dynamicContainer("data: "+pDat.first, createIndividualChanges(pDat.second)
+					.map(pCha -> dynamicContainer("change: "+pCha.first, mutateData()
+					.map(pMut -> dynamicTest("mutation: "+pMut.first, () -> {
 						// Make a copy of original data, as we're gonna change it
 						B data = cloneData(pDat.second);
 
@@ -369,7 +372,7 @@ class SerializableAtomicModelChangeTest {
 
 						B data2 = cloneData(data);
 						// Apply mutation
-						pCor.second.accept(data, change);
+						pMut.second.accept(data, change);
 						assertFalse(dataEquals(data, data2));
 
 						// Check that the mutation won't cause the change to fail
@@ -377,13 +380,13 @@ class SerializableAtomicModelChangeTest {
 					}))))));
 		}
 
-		/** For each data, create mutated instances and then verify successful changes */
+		/** For each data, create mutated instances and then verify successful reversals */
 		@TestFactory
 		default Stream<DynamicNode> testMutatedReversedIsolated() {
 			return createData()
-					.map(pDat -> dynamicContainer(pDat.first, createIndividualChanges()
-					.map(pCha -> dynamicContainer(pCha.first, mutateData()
-					.map(pCor -> dynamicTest(pCor.first, () -> {
+					.map(pDat -> dynamicContainer("data: "+pDat.first, createIndividualChanges(pDat.second)
+					.map(pCha -> dynamicContainer("change: "+pCha.first, mutateData()
+					.map(pMut -> dynamicTest("mutation: "+pMut.first, () -> {
 						// Make a copy of original data, as we're gonna change it
 						B data = cloneData(pDat.second);
 
@@ -393,15 +396,13 @@ class SerializableAtomicModelChangeTest {
 
 						B data2 = cloneData(data);
 						// Apply mutation
-						pCor.second.accept(data, change);
+						pMut.second.accept(data, change);
 						assertFalse(dataEquals(data, data2));
 
 						// Check that the mutation won't cause the reversion to fail
 						change.execute();
 					}))))));
 		}
-
-		//TODO add tests for: serialization, deserialization, full I/O cycle, corrupted data
 	}
 
 	private static int randomSize() {
@@ -632,7 +633,7 @@ class SerializableAtomicModelChangeTest {
 		}
 
 		@Override
-		public Stream<Pair<String, Function<Container, ItemChange>>> createIndividualChanges() {
+		public Stream<Pair<String, Function<Container, ItemChange>>> createIndividualChanges(Container origin) {
 			return Stream.of(
 				pair("add", container -> {
 					long index = container.getItemCount();
@@ -642,7 +643,7 @@ class SerializableAtomicModelChangeTest {
 				}),
 				pair("remove", container -> {
 					long size = container.getItemCount();
-					if(size==0L) abort();
+					if(size==0L) abort("Container already empty");
 					long index = random(0, size);
 					return new ItemChange(container, container.getItemAt(index),
 							container.getItemCount(), index, false);
@@ -682,16 +683,16 @@ class SerializableAtomicModelChangeTest {
 						container.addItem(index, mockItem());
 					}),
 					pair("item removed", (container, change) -> {
-						if(container.getItemCount()<1) abort();
+						if(container.getItemCount()<1) abort("Container already empty");
 						container.removeItem(random(0, container.getItemCount()));
 					}),
 					pair("emptied", (container, change) -> {
-						if(container.getItemCount()<1) abort();
+						if(container.getItemCount()<1) abort("Container already empty");
 						container.removeItems(0, container.getItemCount()-1);
 					}),
 					pair("item moved", (container, change) -> {
 						if(change.isAdd()) abort();
-						if(container.getItemCount()<2) abort();
+						if(container.getItemCount()<2) abort("Need 2 items for swapping");
 						long index0 = change.getIndex();
 						long index1;
 						do {
@@ -706,7 +707,7 @@ class SerializableAtomicModelChangeTest {
 		public Stream<Pair<String, BiConsumer<Container, ItemChange>>> mutateData() {
 			return Stream.of(
 					pair("items moved", (container, change) -> {
-						if(container.getItemCount()<3) abort();
+						if(container.getItemCount()<3) abort("Need 2 other items");
 						long size = container.getItemCount();
 						long index = change.getIndex();
 						long index0;
@@ -731,20 +732,19 @@ class SerializableAtomicModelChangeTest {
 
 		@Override
 		public ItemMoveChange createTestInstance(TestSettings settings) {
-			return settings.process(createIndividualChanges()
+			Container container = mockContainer(randomSize());
+			return settings.process(createIndividualChanges(container)
 					.findFirst()
 					.get()
-					.second.apply(mockContainer(randomSize())));
+					.second.apply(container));
 		}
 
 		@Override
-		public Stream<Pair<String, Function<Container, ItemMoveChange>>> createIndividualChanges() {
+		public Stream<Pair<String, Function<Container, ItemMoveChange>>> createIndividualChanges(Container origin) {
 			return Stream.of(
 				pair("move", container -> {
 					int size = strictToInt(container.getItemCount());
-					if(size<2) {
-						abort();
-					}
+					if(size<2) abort("Need 2 items for swapping");
 					int index0 = random(0, size);
 					int index1;
 					do {
@@ -760,9 +760,7 @@ class SerializableAtomicModelChangeTest {
 		@Override
 		public List<Pair<String, ItemMoveChange>> createBulkChanges(Container source) {
 			int size = strictToInt(source.getItemCount());
-			if(size<2) {
-				abort();
-			}
+			if(size<2) abort("Need 2 items for swapping");
 
 			List<Pair<String, ItemMoveChange>> changes = new ArrayList<>();
 			Item[] dummy = items(source);
@@ -790,15 +788,15 @@ class SerializableAtomicModelChangeTest {
 						container.addItem(index, mockItem());
 					}),
 					pair("item removed", (container, change) -> {
-						if(container.getItemCount()<1) abort();
+						if(container.getItemCount()<1) abort("Container already empty");
 						container.removeItem(random(0, container.getItemCount()));
 					}),
 					pair("emptied", (container, change) -> {
-						if(container.getItemCount()<1) abort();
+						if(container.getItemCount()<1) abort("Container already empty");
 						container.removeItems(0, container.getItemCount()-1);
 					}),
 					pair("item0 moved", (container, change) -> {
-						if(container.getItemCount()<2) abort();
+						if(container.getItemCount()<2) abort("Need 2 items for swapping");
 						long index0 = change.getSourceIndex();
 						long index1;
 						do {
@@ -807,7 +805,7 @@ class SerializableAtomicModelChangeTest {
 						container.swapItems(index0, index1);
 					}),
 					pair("item1 moved", (container, change) -> {
-						if(container.getItemCount()<2) abort();
+						if(container.getItemCount()<2) abort("Need 2 items for swapping");
 						long index0 = change.getTargetIndex();
 						long index1;
 						do {
@@ -822,7 +820,7 @@ class SerializableAtomicModelChangeTest {
 		public Stream<Pair<String, BiConsumer<Container, ItemMoveChange>>> mutateData() {
 			return Stream.of(
 					pair("items moved", (container, change) -> {
-						if(container.getItemCount()<4) abort();
+						if(container.getItemCount()<4) abort("Need 2 disjoint pairs");
 						long size = container.getItemCount();
 						long indexS = change.getSourceIndex();
 						long indexT = change.getTargetIndex();
@@ -855,7 +853,7 @@ class SerializableAtomicModelChangeTest {
 		}
 
 		@Override
-		public Stream<Pair<String, Function<Container, ItemSequenceChange>>> createIndividualChanges() {
+		public Stream<Pair<String, Function<Container, ItemSequenceChange>>> createIndividualChanges(Container origin) {
 			return Stream.of(
 				pair("add single", container -> {
 					long index = container.getItemCount();
@@ -871,14 +869,14 @@ class SerializableAtomicModelChangeTest {
 				}),
 				pair("remove single", container -> {
 					long size = container.getItemCount();
-					if(size<1) abort();
+					if(size<1) abort("Container already empty");
 					long index = random(0, size);
 					return new ItemSequenceChange(container, container.getItemCount(),
 							index, index);
 				}),
 				pair("remove bulk", container -> {
 					long size = container.getItemCount();
-					if(size<2) abort();
+					if(size<2) abort("Need 2 items");
 					long index0 = random(0, size-1);
 					long index1 = random(index0+1, size);
 					return new ItemSequenceChange(container, container.getItemCount(),
@@ -921,11 +919,11 @@ class SerializableAtomicModelChangeTest {
 						container.addItem(index, mockItem());
 					}),
 					pair("item removed", (container, change) -> {
-						if(container.getItemCount()<1) abort();
+						if(container.getItemCount()<1) abort("Container already empty");
 						container.removeItem(random(0, container.getItemCount()));
 					}),
 					pair("emptied", (container, change) -> {
-						if(container.getItemCount()<1) abort();
+						if(container.getItemCount()<1) abort("Container already empty");
 						container.removeItems(0, container.getItemCount()-1);
 					})
 					// Sequence changes do not verify individual item integrity!
@@ -937,7 +935,7 @@ class SerializableAtomicModelChangeTest {
 			return Stream.of(
 					// Move random items
 					pair("items moved (random)", (container, change) -> {
-						if(container.getItemCount()<4) abort();
+						if(container.getItemCount()<4) abort("Need 2 disjoint pairs");
 						long size = container.getItemCount();
 						long index0;
 						long index1;
@@ -949,7 +947,8 @@ class SerializableAtomicModelChangeTest {
 					}),
 					// Move random items
 					pair("items moved (overlap)", (container, change) -> {
-						if(container.getItemCount()<4) abort();
+						if(change.isAdd()) abort("Cannot remove overlapping sequence before adding");
+						if(container.getItemCount()<4) abort("Need 2 disjoint pairs");
 						long size = container.getItemCount();
 						long index0 = (change.getBeginIndex()+change.getEndIndex())/2;
 						long index1;
@@ -972,14 +971,15 @@ class SerializableAtomicModelChangeTest {
 
 		@Override
 		public EdgeChange createTestInstance(TestSettings settings) {
-			return settings.process(createIndividualChanges()
+			Structure structure = mockStructure(randomSize());
+			return settings.process(createIndividualChanges(structure)
 					.findFirst()
 					.get()
-					.second.apply(mockStructure(randomSize())));
+					.second.apply(structure));
 		}
 
 		@Override
-		public Stream<Pair<String, Function<Structure, EdgeChange>>> createIndividualChanges() {
+		public Stream<Pair<String, Function<Structure, EdgeChange>>> createIndividualChanges(Structure origin) {
 			return Stream.of(
 				pair("add", structure -> {
 					long index = structure.getEdgeCount();
@@ -989,7 +989,7 @@ class SerializableAtomicModelChangeTest {
 				}),
 				pair("remove", structure -> {
 					long size = structure.getEdgeCount();
-					if(size<1) abort();
+					if(size<1) abort("Structure already empty");
 					long index = random(0, size);
 					return new EdgeChange(structure, structure.getEdgeAt(index),
 							structure.getEdgeCount(), index, false);
@@ -1029,16 +1029,16 @@ class SerializableAtomicModelChangeTest {
 						container.addEdge(index, mockEdge());
 					}),
 					pair("edge removed", (structure, change) -> {
-						if(structure.getEdgeCount()<1) abort();
+						if(structure.getEdgeCount()<1) abort("Structure already empty");
 						structure.removeEdge(random(0, structure.getEdgeCount()));
 					}),
 					pair("emptied", (structure, change) -> {
-						if(structure.getEdgeCount()<1) abort();
+						if(structure.getEdgeCount()<1) abort("Structure already empty");
 						structure.removeEdges(0, structure.getEdgeCount()-1);
 					}),
 					pair("edge moved", (structure, change) -> {
 						if(change.isAdd()) abort();
-						if(structure.getEdgeCount()<2) abort();
+						if(structure.getEdgeCount()<2) abort("Need 2 edges for swapping");
 						long index0 = change.getIndex();
 						long index1;
 						do {
@@ -1053,7 +1053,7 @@ class SerializableAtomicModelChangeTest {
 		public Stream<Pair<String, BiConsumer<Structure, EdgeChange>>> mutateData() {
 			return Stream.of(
 					pair("edges moved", (structure, change) -> {
-						if(structure.getEdgeCount()<3) abort();
+						if(structure.getEdgeCount()<3) abort("Need 2 other edges");
 						long size = structure.getEdgeCount();
 						long index = change.getIndex();
 						long index0;
@@ -1078,20 +1078,19 @@ class SerializableAtomicModelChangeTest {
 
 		@Override
 		public EdgeMoveChange createTestInstance(TestSettings settings) {
-			return settings.process(createIndividualChanges()
+			Structure structure = mockStructure(randomSize());
+			return settings.process(createIndividualChanges(structure)
 					.findFirst()
 					.get()
-					.second.apply(mockStructure(randomSize())));
+					.second.apply(structure));
 		}
 
 		@Override
-		public Stream<Pair<String, Function<Structure, EdgeMoveChange>>> createIndividualChanges() {
+		public Stream<Pair<String, Function<Structure, EdgeMoveChange>>> createIndividualChanges(Structure origin) {
 			return Stream.of(
 				pair("move", structure -> {
 					int size = strictToInt(structure.getEdgeCount());
-					if(size<2) {
-						abort();
-					}
+					if(size<2) abort("Need 2 edges for swapping");
 					int index0 = random(0, size);
 					int index1;
 					do {
@@ -1107,9 +1106,7 @@ class SerializableAtomicModelChangeTest {
 		@Override
 		public List<Pair<String, EdgeMoveChange>> createBulkChanges(Structure source) {
 			int size = strictToInt(source.getEdgeCount());
-			if(size<2) {
-				abort();
-			}
+			if(size<2) abort("Need 2 edges for swapping");
 
 			List<Pair<String, EdgeMoveChange>> changes = new ArrayList<>();
 			Edge[] dummy = edges(source);
@@ -1131,21 +1128,21 @@ class SerializableAtomicModelChangeTest {
 		@Override
 		public Stream<Pair<String, BiConsumer<Structure, EdgeMoveChange>>> corruptData() {
 			return Stream.of(
-					pair("item added", (structure, change) -> {
+					pair("edge added", (structure, change) -> {
 						long index = structure.getEdgeCount();
 						if(index>0) index = random(0, index);
 						structure.addEdge(index, mockEdge());
 					}),
-					pair("item removed", (structure, change) -> {
-						if(structure.getEdgeCount()<1) abort();
+					pair("edge removed", (structure, change) -> {
+						if(structure.getEdgeCount()<1) abort("Structure already empty");
 						structure.removeEdge(random(0, structure.getEdgeCount()));
 					}),
 					pair("emptied", (structure, change) -> {
-						if(structure.getEdgeCount()<1) abort();
+						if(structure.getEdgeCount()<1) abort("Structure already empty");
 						structure.removeEdges(0, structure.getEdgeCount()-1);
 					}),
-					pair("item0 moved", (structure, change) -> {
-						if(structure.getEdgeCount()<2) abort();
+					pair("edge0 moved", (structure, change) -> {
+						if(structure.getEdgeCount()<2) abort("Need 2 edges for swapping");
 						long index0 = change.getSourceIndex();
 						long index1;
 						do {
@@ -1153,8 +1150,8 @@ class SerializableAtomicModelChangeTest {
 						} while(index1==index0);
 						structure.swapEdges(index0, index1);
 					}),
-					pair("item1 moved", (structure, change) -> {
-						if(structure.getEdgeCount()<2) abort();
+					pair("edge1 moved", (structure, change) -> {
+						if(structure.getEdgeCount()<2) abort("Need 2 edges for swapping");
 						long index0 = change.getTargetIndex();
 						long index1;
 						do {
@@ -1168,8 +1165,8 @@ class SerializableAtomicModelChangeTest {
 		@Override
 		public Stream<Pair<String, BiConsumer<Structure, EdgeMoveChange>>> mutateData() {
 			return Stream.of(
-					pair("items moved", (structure, change) -> {
-						if(structure.getEdgeCount()<4) abort();
+					pair("edges moved", (structure, change) -> {
+						if(structure.getEdgeCount()<4) abort("Need 2 disjoint pairs");
 						long size = structure.getEdgeCount();
 						long indexS = change.getSourceIndex();
 						long indexT = change.getTargetIndex();
@@ -1202,7 +1199,7 @@ class SerializableAtomicModelChangeTest {
 		}
 
 		@Override
-		public Stream<Pair<String, Function<Structure, EdgeSequenceChange>>> createIndividualChanges() {
+		public Stream<Pair<String, Function<Structure, EdgeSequenceChange>>> createIndividualChanges(Structure origin) {
 			return Stream.of(
 				pair("add single", structure -> {
 					long index = structure.getEdgeCount();
@@ -1218,14 +1215,14 @@ class SerializableAtomicModelChangeTest {
 				}),
 				pair("remove single", structure -> {
 					long size = structure.getEdgeCount();
-					if(size<1) abort();
+					if(size<1) abort("Structure already empty");
 					long index = random(0, size);
 					return new EdgeSequenceChange(structure, structure.getEdgeCount(),
 							index, index);
 				}),
 				pair("remove bulk", structure -> {
 					long size = structure.getEdgeCount();
-					if(size<2) abort();
+					if(size<2) abort("Structure already empty");
 					long index0 = random(0, size-1);
 					long index1 = random(index0+1, size);
 					return new EdgeSequenceChange(structure, structure.getEdgeCount(),
@@ -1262,17 +1259,17 @@ class SerializableAtomicModelChangeTest {
 		@Override
 		public Stream<Pair<String, BiConsumer<Structure, EdgeSequenceChange>>> corruptData() {
 			return Stream.of(
-					pair("item added", (structure, change) -> {
+					pair("edge added", (structure, change) -> {
 						long index = structure.getEdgeCount();
 						if(index>0) index = random(0, index);
 						structure.addEdge(index, mockEdge());
 					}),
-					pair("item removed", (structure, change) -> {
-						if(structure.getEdgeCount()<1) abort();
+					pair("edge removed", (structure, change) -> {
+						if(structure.getEdgeCount()<1) abort("Cannot remove from empty structure");
 						structure.removeEdge(random(0, structure.getEdgeCount()));
 					}),
 					pair("emptied", (structure, change) -> {
-						if(structure.getEdgeCount()<1) abort();
+						if(structure.getEdgeCount()<1) abort("Cannot empty an empty structure");
 						structure.removeEdges(0, structure.getEdgeCount()-1);
 					})
 					// Sequence changes do not verify individual edge integrity!
@@ -1283,8 +1280,8 @@ class SerializableAtomicModelChangeTest {
 		public Stream<Pair<String, BiConsumer<Structure, EdgeSequenceChange>>> mutateData() {
 			return Stream.of(
 					// Move random items
-					pair("items moved (random)", (structure, change) -> {
-						if(structure.getEdgeCount()<4) abort();
+					pair("edges moved (random)", (structure, change) -> {
+						if(structure.getEdgeCount()<4) abort("Needs 2 items outside span");
 						long size = structure.getEdgeCount();
 						long index0;
 						long index1;
@@ -1295,8 +1292,9 @@ class SerializableAtomicModelChangeTest {
 						structure.swapEdges(index0, index1);
 					}),
 					// Move random items
-					pair("items moved (overlap)", (structure, change) -> {
-						if(structure.getEdgeCount()<4) abort();
+					pair("edges moved (overlap)", (structure, change) -> {
+						if(change.isAdd()) abort("Cannot remove overlapping sequence before adding");
+						if(structure.getEdgeCount()<3) abort("Needs at least 1 item outside span");
 						long size = structure.getEdgeCount();
 						long index0 = (change.getBeginIndex()+change.getEndIndex())/2;
 						long index1;
@@ -1386,10 +1384,11 @@ class SerializableAtomicModelChangeTest {
 
 		@Override
 		public TerminalChange createTestInstance(TestSettings settings) {
-			return settings.process(createIndividualChanges()
+			Structure structure = createData(mockItem(), mockItem());
+			return settings.process(createIndividualChanges(structure)
 					.findFirst()
 					.get()
-					.second.apply(createData(mockItem(), mockItem())));
+					.second.apply(structure));
 		}
 
 		@Override
@@ -1403,18 +1402,18 @@ class SerializableAtomicModelChangeTest {
 		}
 
 		@Override
-		public Stream<Pair<String, Function<Structure, TerminalChange>>> createIndividualChanges() {
+		public Stream<Pair<String, Function<Structure, TerminalChange>>> createIndividualChanges(Structure origin) {
 			return Stream.of(
 					pair("source null", structure -> {
 						Edge edge = structure.getEdgeAt(0);
-						if(edge.getSource()==null) abort();
+						if(edge.getSource()==null) abort("Source already null");
 						return new TerminalChange(structure, edge, true, null, edge.getSource());
 					}),
 					pair("source valid", structure -> new TerminalChange(structure,
 							structure.getEdgeAt(0), true, mockItem(), structure.getEdgeAt(0).getSource())),
 					pair("target null", structure -> {
 						Edge edge = structure.getEdgeAt(0);
-						if(edge.getTarget()==null) abort();
+						if(edge.getTarget()==null) abort("Target already null");
 						return new TerminalChange(structure, edge, false, null, edge.getTarget());
 					}),
 					pair("target valid", structure -> new TerminalChange(structure,
@@ -1452,12 +1451,12 @@ class SerializableAtomicModelChangeTest {
 		public Stream<Pair<String, BiConsumer<Structure, TerminalChange>>> corruptData() {
 			return Stream.of(
 					pair("source changed", (structure, change) -> {
-						if(!change.isSource()) abort();
+						if(!change.isSource()) abort("Change unaffected by source");
 						Edge edge = structure.getEdgeAt(0);
 						edge.setSource(mockItem());
 					}),
 					pair("target changed", (structure, change) -> {
-						if(change.isSource()) abort();
+						if(change.isSource()) abort("Change unaffected by target");
 						Edge edge = structure.getEdgeAt(0);
 						edge.setTarget(mockItem());
 					})
@@ -1468,12 +1467,12 @@ class SerializableAtomicModelChangeTest {
 		public Stream<Pair<String, BiConsumer<Structure, TerminalChange>>> mutateData() {
 			return Stream.of(
 					pair("source changed", (structure, change) -> {
-						if(change.isSource()) abort();
+						if(change.isSource()) abort("Change affected by source");
 						Edge edge = structure.getEdgeAt(0);
 						edge.setSource(mockItem());
 					}),
 					pair("target changed", (structure, change) -> {
-						if(!change.isSource()) abort();
+						if(!change.isSource()) abort("Change affected by target");
 						Edge edge = structure.getEdgeAt(0);
 						edge.setTarget(mockItem());
 					})
@@ -1535,22 +1534,23 @@ class SerializableAtomicModelChangeTest {
 
 		@Override
 		public PositionChange createTestInstance(TestSettings settings) {
-			return settings.process(createIndividualChanges()
+			Fragment fragment = mockFragment(mockPosition(0, 2), mockPosition(0, 3));
+			return settings.process(createIndividualChanges(fragment)
 					.findFirst()
 					.get()
-					.second.apply(mockFragment(mockPosition(0, 2), mockPosition(0, 3))));
+					.second.apply(fragment));
 		}
 
 		@Override
-		public Stream<Pair<String, Function<Fragment, PositionChange>>> createIndividualChanges() {
+		public Stream<Pair<String, Function<Fragment, PositionChange>>> createIndividualChanges(Fragment origin) {
 			return Stream.of(
 					pair("begin null", fragment -> {
-						if(fragment.getFragmentBegin()==null) abort();
+						if(fragment.getFragmentBegin()==null) abort("begin already null");
 						return new PositionChange(fragment, true, null);
 					}),
 					pair("begin valid", fragment -> new PositionChange(fragment, true, mockPosition(1,2))),
 					pair("end null", fragment -> {
-						if(fragment.getFragmentEnd()==null) abort();
+						if(fragment.getFragmentEnd()==null) abort("End already null");
 						return new PositionChange(fragment, false, null);
 					}),
 					pair("end valid", fragment -> new PositionChange(fragment, false, mockPosition(3, 4)))
@@ -1600,7 +1600,15 @@ class SerializableAtomicModelChangeTest {
 		}
 	}
 
-	abstract class AnnotationContent<C extends SerializableAtomicChange>
+	private static String randomKey() {
+		return randomString(10);
+	}
+
+	private static String randomKey2() {
+		return randomString(12);
+	}
+
+	abstract class AnnotationContent<T, C extends AtomicValueChange<T> & SerializableAtomicChange>
 			implements ModelChangeTest<C, AnnotationLayer> {
 
 		/** Return all supported value types, at least 1! */
@@ -1618,8 +1626,10 @@ class SerializableAtomicModelChangeTest {
 
 			final AnnotationStorage s = storage;
 
+			Corpus corpus = mock(Corpus.class);
 			AnnotationLayer layer = mock(AnnotationLayer.class, UNSUPPORTED);
 			doAnswer(invoc -> s).when(layer).getAnnotationStorage();
+			doAnswer(invoc -> corpus).when(layer).getCorpus();
 
 			return layer;
 		}
@@ -1651,20 +1661,26 @@ class SerializableAtomicModelChangeTest {
 		public C createTestInstance(TestSettings settings) {
 			ValueType valueType = getValueTypes().findFirst().get();
 			Object noEntryValue = noEntryValue(valueType);
-			return settings.process(createIndividualChanges(mockLayer(
-					new AnnotationStorageDummy(valueType, noEntryValue))));
+			AnnotationLayer layer = mockLayer(new AnnotationStorageDummy(valueType, noEntryValue));
+			return settings.process(createIndividualChanges(layer)
+					.findFirst()
+					.get()
+					.second.apply(layer));
 		}
 
 		@Override
-		public C createIndividualChanges(AnnotationLayer source) {
-			AnnotationStorageDummy storage = (AnnotationStorageDummy) source.getAnnotationStorage();
-			ValueType type = storage.getValueType();
-			Object value = createValues(type).findAny().map(p -> p.second).get();
-			Item item = mockItem();
-			String key = randomString(10);
-
-			return createChange(source, type, item, key, value,
-					storage.getValue(item, key));
+		public Stream<Pair<String, Function<AnnotationLayer, C>>> createIndividualChanges(AnnotationLayer origin) {
+			return createValues(((AnnotationStorageDummy)origin.getAnnotationStorage()).getValueType())
+					.map(pVal -> pair(pVal.first, layer -> {
+						AnnotationStorageDummy storage = (AnnotationStorageDummy) layer.getAnnotationStorage();
+						ValueType type = storage.getValueType();
+						Object value = pVal.second;
+						if(Objects.equals(storage.getNoEntryValue(), value)) abort("noEntryValue/null");
+						Item item = mockItem();
+						String key = randomKey();
+						return createChange(layer, type, item, key, value,
+								storage.getValue(item, key));
+					}));
 		}
 
 		@SuppressWarnings("unchecked")
@@ -1672,8 +1688,10 @@ class SerializableAtomicModelChangeTest {
 		public List<Pair<String, C>> createBulkChanges(AnnotationLayer source) {
 			AnnotationStorageDummy storage = (AnnotationStorageDummy) source.getAnnotationStorage();
 			return mix(Stream.of(mockItems(randomSize()))
+					// Make keys
 					.flatMap(item -> IntStream.rangeClosed(1, 6)
 							.mapToObj(idx -> pair(item, "key_"+idx)))
+					// Make queue of changes for every item+key combo
 					.map(p -> {
 						Item item = p.first;
 						String key = p.second;
@@ -1685,6 +1703,11 @@ class SerializableAtomicModelChangeTest {
 							Pair<String,Object> value = values.get(i);
 							Pair<String,Object> oldValue = i>0 ? values.get(i-1)
 									: nullablePair("noEntryValue", storage.getNoEntryValue());
+
+							// Skip "empty" changes
+							if(Objects.equals(value.second, oldValue.second)) {
+								continue;
+							}
 							changes.add(pair(String.format("%s-%s-%d: %s->%s", item, key, _int(i),
 										oldValue.first, value.first),
 									createChange(source, storage.getValueType(),
@@ -1694,10 +1717,58 @@ class SerializableAtomicModelChangeTest {
 						return changes;
 					}).toArray(Queue[]::new));
 		}
+
+		@Override
+		public Stream<Pair<String, BiConsumer<AnnotationLayer, C>>> corruptData() {
+			return Stream.of(
+					pair("remove item", (layer, change) -> {
+						AnnotationStorageDummy storage = (AnnotationStorageDummy) layer.getAnnotationStorage();
+						if(storage.isEmpty()) abort("Storage already empty");
+						storage.remove(change.getItem());
+					}),
+					pair("change value", (layer, change) -> {
+						AnnotationStorageDummy storage = (AnnotationStorageDummy) layer.getAnnotationStorage();
+						Object value = change.getPreviousValue();
+						Object replacement = createValues(storage.getValueType())
+								.map(p -> p.second)
+								.filter(v -> !v.equals(value))
+								.findFirst()
+								.get();
+						storage.setValue(change.getItem(), change.getKey(), replacement);
+					})
+			);
+		}
+
+		@Override
+		public Stream<Pair<String, BiConsumer<AnnotationLayer, C>>> mutateData() {
+			return Stream.of(
+					pair("add extra key+value", (layer, change) -> {
+						AnnotationStorageDummy storage = (AnnotationStorageDummy) layer.getAnnotationStorage();
+						Object value = createValues(storage.getValueType())
+								.map(p -> p.second)
+								.filter(v -> !Objects.equals(v, storage.getNoEntryValue()))
+								.findAny()
+								.get();
+						storage.setValue(change.getItem(), randomKey2(), value);
+					}),
+					pair("add extra key - same value", (layer, change) -> {
+						AnnotationStorageDummy storage = (AnnotationStorageDummy) layer.getAnnotationStorage();
+						Object value = storage.getValue(change.getItem(), change.getKey());
+						if(Objects.equals(value, storage.getNoEntryValue())) abort("Already mapped to noEntryValue");
+						storage.setValue(change.getItem(), randomKey2(), value);
+					}),
+					pair("add extra item - same key+value", (layer, change) -> {
+						AnnotationStorageDummy storage = (AnnotationStorageDummy) layer.getAnnotationStorage();
+						Object value = storage.getValue(change.getItem(), change.getKey());
+						if(Objects.equals(value, storage.getNoEntryValue())) abort("Already mapped to noEntryValue");
+						storage.setValue(mockItem(), change.getKey(), value);
+					})
+			);
+		}
 	}
 
 	@Nested
-	class ValueChangeTest extends AnnotationContent<ValueChange> {
+	class ValueChangeTest extends AnnotationContent<Object, ValueChange> {
 
 		@Override
 		public Class<?> getTestTargetClass() {
@@ -1729,7 +1800,7 @@ class SerializableAtomicModelChangeTest {
 	}
 
 	@Nested
-	class IntegerValueChangeTest extends AnnotationContent<IntegerValueChange> {
+	class IntegerValueChangeTest extends AnnotationContent<Integer, IntegerValueChange> {
 
 		private int noEntryValue;
 
@@ -1770,7 +1841,7 @@ class SerializableAtomicModelChangeTest {
 	}
 
 	@Nested
-	class LongValueChangeTest extends AnnotationContent<LongValueChange> {
+	class LongValueChangeTest extends AnnotationContent<Long, LongValueChange> {
 
 		private long noEntryValue;
 
@@ -1811,7 +1882,7 @@ class SerializableAtomicModelChangeTest {
 	}
 
 	@Nested
-	class FloatValueChangeTest extends AnnotationContent<FloatValueChange> {
+	class FloatValueChangeTest extends AnnotationContent<Float, FloatValueChange> {
 
 		private float noEntryValue;
 
@@ -1852,7 +1923,7 @@ class SerializableAtomicModelChangeTest {
 	}
 
 	@Nested
-	class DoubleValueChangeTest extends AnnotationContent<DoubleValueChange> {
+	class DoubleValueChangeTest extends AnnotationContent<Double, DoubleValueChange> {
 
 		private double noEntryValue;
 
@@ -1893,14 +1964,7 @@ class SerializableAtomicModelChangeTest {
 	}
 
 	@Nested
-	class BooleanValueChangeTest extends AnnotationContent<BooleanValueChange> {
-
-		private boolean noEntryValue;
-
-		@BeforeEach
-		void setUp() {
-			noEntryValue = random().nextBoolean();
-		}
+	class BooleanValueChangeTest extends AnnotationContent<Boolean, BooleanValueChange> {
 
 		@Override
 		public Class<?> getTestTargetClass() {
@@ -1914,13 +1978,27 @@ class SerializableAtomicModelChangeTest {
 
 		@Override
 		Object noEntryValue(ValueType type) {
-			return _boolean(noEntryValue);
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Stream<Pair<String, AnnotationLayer>> createData() {
+			return createValues(ValueType.BOOLEAN)
+					.map(p -> pair("noEntryValue="+p.first, mockLayer(
+							new AnnotationStorageDummy(ValueType.BOOLEAN, p.second))));
+		}
+
+		@Override
+		public BooleanValueChange createTestInstance(TestSettings settings) {
+			return settings.process(new BooleanValueChange(
+					mockLayer(new AnnotationStorageDummy(ValueType.BOOLEAN, Boolean.FALSE)),
+					mockItem(), "test", true, false));
 		}
 
 		@Override
 		Stream<Pair<String, Object>> createValues(ValueType type) {
 			assertSame(ValueType.BOOLEAN, type);
-			return Stream.of(Boolean.valueOf(!noEntryValue))
+			return Stream.of(Boolean.TRUE, Boolean.FALSE)
 					.map(v -> pair(String.valueOf(v), v));
 		}
 
@@ -1999,6 +2077,22 @@ class SerializableAtomicModelChangeTest {
 
 		public Set<Item> getItems() {
 			return data.keySet().stream().map(k -> k.item).collect(Collectors.toSet());
+		}
+
+		public Set<Key> keys() {
+			return data.keySet();
+		}
+
+		public void remove(Item item) {
+			for(Iterator<Key> it = data.keySet().iterator(); it.hasNext();) {
+				if(it.next().item==item) {
+					it.remove();
+				}
+			}
+		}
+
+		public boolean isEmpty() {
+			return data.isEmpty();
 		}
 
 		@Override

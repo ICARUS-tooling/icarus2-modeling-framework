@@ -89,6 +89,10 @@ public class TestUtils {
 		throw new TestAbortedException();
 	}
 
+	public static void abort(String msg) {
+		throw new TestAbortedException(msg);
+	}
+
 	public static void noOp() {
 		// no-op
 	}

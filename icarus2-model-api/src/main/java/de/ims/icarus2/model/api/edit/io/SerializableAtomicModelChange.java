@@ -1096,6 +1096,11 @@ public class SerializableAtomicModelChange {
 			return layer;
 		}
 
+		@Override
+		public Item getItem() {
+			return item;
+		}
+
 		protected boolean equals(AbstractValueChange<T> other) {
 			return layer==other.layer && item==other.item && key.equals(other.key);
 		}

@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.api.edit.change;
 
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
+import de.ims.icarus2.model.api.members.item.Item;
 
 /**
  * @author Markus Gärtner
@@ -24,6 +25,8 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
  * @param <T> type of the value that is being changed
  */
 public interface AtomicValueChange<T extends Object> extends AtomicChange {
+
+	Item getItem();
 
 	T getPreviousValue();
 
