@@ -26,6 +26,7 @@ import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
 import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
@@ -211,10 +212,28 @@ class SerializableAtomicModelChangeTest {
 
 				// Serialize the change
 				ChangeBuffer buffer = new ChangeBuffer();
-				change.writeChange(buffer);
+				buffer.writeChange(change);
 
 				// Assert that _something_ was written
 				assertFalse(buffer.isEmpty());
+			}));
+		}
+
+		/** For each data create a change serialize it and then deserialiue and compare */
+		@TestFactory
+		default Stream<DynamicNode> testDeserializationIsolated() {
+			return createData().map(p -> dynamicTest(p.first, () -> {
+				B source = p.second;
+				B data = cloneData(source);
+				assertNotSame(source, data);
+
+				C change = createChange(data);
+
+				// Serialize the change
+				ChangeBuffer buffer = new ChangeBuffer();
+				buffer.writeChange(change);
+
+				assertEquals(change, buffer.readChange());
 			}));
 		}
 

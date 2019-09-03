@@ -1127,6 +1127,7 @@ public class SerializableAtomicModelChange {
 		@Override
 		public void writeChange(ChangeWriter writer) throws IOException {
 			defaultWriteValueChange(writer);
+			writer.writeString(valueType.getStringValue());
 			writer.writeValue(valueType, expectedValue);
 			writer.writeValue(valueType, value);
 		}
@@ -1134,8 +1135,9 @@ public class SerializableAtomicModelChange {
 		@Override
 		public void readChange(ChangeReader reader) throws IOException {
 			defaultReadValueChange(reader);
-			expectedValue = reader.readValue();
-			value = reader.readValue();
+			valueType = ValueType.parseValueType(reader.readString());
+			expectedValue = reader.readValue(valueType);
+			value = reader.readValue(valueType);
 		}
 
 		/**

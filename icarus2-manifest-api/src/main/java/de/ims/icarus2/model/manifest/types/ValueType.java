@@ -700,6 +700,10 @@ public class ValueType implements StringResource, NamedObject {
 	 * @throws ManifestException with type {@link ManifestErrorCode#MANIFEST_TYPE_CAST} if the value check fails
 	 */
 	public Class<?> checkValue(Object value) {
+		if(!isPrimitiveType() && value==null) {
+			return Void.class;
+		}
+
 		Class<?> type = extractClass(value);
 
 		checkType(type);

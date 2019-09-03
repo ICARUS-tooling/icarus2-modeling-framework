@@ -9,6 +9,7 @@ import de.ims.icarus2.model.api.edit.change.AtomicChangeType;
 import de.ims.icarus2.model.api.members.CorpusMember;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.raster.Position;
+import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.util.collections.seq.ArraySequence;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
@@ -54,7 +55,7 @@ public interface ChangeReader {
 
 	String readString() throws IOException;
 
-	Object readValue() throws IOException;
+	Object readValue(ValueType valueType) throws IOException;
 
 	Position readPosition() throws IOException;
 }

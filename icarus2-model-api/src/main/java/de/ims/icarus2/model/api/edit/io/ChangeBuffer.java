@@ -95,11 +95,13 @@ public class ChangeBuffer implements ChangeWriter, ChangeReader {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.edit.io.ChangeReader#readValue()
+	 * @see de.ims.icarus2.model.api.edit.io.ChangeReader#readValue(ValueType)
 	 */
 	@Override
-	public Object readValue() throws IOException {
-		return pop();
+	public Object readValue(ValueType valueType) throws IOException {
+		Object value = pop();
+		valueType.checkValue(value);
+		return value;
 	}
 
 	/**
