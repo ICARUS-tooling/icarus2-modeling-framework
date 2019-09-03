@@ -24,12 +24,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Objects;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.test.TestUtils;
 
 public class Pair<E_1 extends Object, E_2 extends Object> {
 
 	public static <E_1, E_2> Pair<E_1, E_2> pair(E_1 first, E_2 second) {
 		return new Pair<>(first, second);
+	}
+
+	public static <E_1, E_2> Pair<E_1, E_2> nullablePair(
+			@Nullable E_1 first, @Nullable E_2 second) {
+		return new Pair<>(first, second, true);
 	}
 
 	@SuppressWarnings("boxing")
@@ -71,8 +78,12 @@ public class Pair<E_1 extends Object, E_2 extends Object> {
 	public final E_2 second;
 
 	public Pair(E_1 first, E_2 second) {
-		this.first = requireNonNull(first);
-		this.second = requireNonNull(second);
+		this(first, second, false);
+	}
+
+	private Pair(E_1 first, E_2 second, boolean allowNull) {
+		this.first = allowNull ? first : requireNonNull(first);
+		this.second = allowNull ? second : requireNonNull(second);
 	}
 
 	/**

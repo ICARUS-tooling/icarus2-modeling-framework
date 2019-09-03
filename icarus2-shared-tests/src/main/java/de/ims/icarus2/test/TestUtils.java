@@ -46,6 +46,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.PrimitiveIterator;
+import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -58,6 +59,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -899,6 +901,25 @@ public class TestUtils {
 	public static <E extends Object> void assertArrayNotEmpty(E[] array) {
 		assertNotNull(array);
 		assertTrue(array.length>0);
+	}
+
+	public static <T> List<T> mix(@SuppressWarnings("unchecked") Queue<T>...input) {
+		List<Queue<T>> sources = Stream.of(input)
+				.filter(q -> !q.isEmpty())
+				.collect(Collectors.toList());
+
+		List<T> output = new ArrayList<>();
+
+		while(!sources.isEmpty()) {
+			int index = random(0, sources.size());
+			Queue<T> queue = sources.get(index);
+			output.add(queue.remove());
+			if(queue.isEmpty()) {
+				sources.remove(index);
+			}
+		}
+
+		return output;
 	}
 
 	@SuppressWarnings("unchecked")

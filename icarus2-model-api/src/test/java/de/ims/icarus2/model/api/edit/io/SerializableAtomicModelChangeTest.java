@@ -12,8 +12,10 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockPosition;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.getTestValues;
 import static de.ims.icarus2.test.TestUtils.abort;
 import static de.ims.icarus2.test.TestUtils.assertCollectionNotEmpty;
+import static de.ims.icarus2.test.TestUtils.mix;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.test.TestUtils.randomString;
+import static de.ims.icarus2.test.util.Pair.nullablePair;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.util.collections.ArrayUtils.swap;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
@@ -36,17 +38,20 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -193,6 +198,8 @@ class SerializableAtomicModelChangeTest {
 				}
 			}));
 		}
+
+		//TODO add tests for: serialization, deserialization, full I/O cycle, corrupted data
 	}
 
 	private static int randomSize() {
@@ -905,7 +912,7 @@ class SerializableAtomicModelChangeTest {
 		/** Return all supported value types, at least 1! */
 		abstract Stream<ValueType> getValueTypes();
 
-		/** Create a series of test values, the first of which will be used as initial value */
+		/** Create a series of test values, with at least 1 entry! */
 		abstract Stream<Pair<String,Object>> createValues(ValueType type);
 
 		abstract Object noEntryValue(ValueType type);
@@ -966,10 +973,32 @@ class SerializableAtomicModelChangeTest {
 					storage.getValue(item, key));
 		}
 
+		@SuppressWarnings("unchecked")
 		@Override
 		public List<Pair<String, C>> createChanges(AnnotationLayer source) {
-			// TODO Auto-generated method stub
-			return ModelChangeTest.super.createChanges(source);
+			AnnotationStorageDummy storage = (AnnotationStorageDummy) source.getAnnotationStorage();
+			return mix(Stream.of(mockItems(randomSize()))
+					.flatMap(item -> IntStream.rangeClosed(1, 6)
+							.mapToObj(idx -> pair(item, "key_"+idx)))
+					.map(p -> {
+						Item item = p.first;
+						String key = p.second;
+						List<Pair<String,Object>> values = createValues(storage.getValueType())
+								.collect(Collectors.toList());
+						Queue<Pair<String, C>> changes = new ArrayDeque<>();
+
+						for (int i = 0; i < values.size(); i++) {
+							Pair<String,Object> value = values.get(i);
+							Pair<String,Object> oldValue = i>0 ? values.get(i-1)
+									: nullablePair("noEntryValue", storage.getNoEntryValue());
+							changes.add(pair(String.format("%s-%s-%d: %s->%s", item, key, _int(i),
+										oldValue.first, value.first),
+									createChange(source, storage.getValueType(),
+											item, key, value.second, oldValue.second)));
+						}
+
+						return changes;
+					}).toArray(Queue[]::new));
 		}
 	}
 
