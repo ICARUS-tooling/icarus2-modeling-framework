@@ -22,10 +22,10 @@ import static java.util.Objects.requireNonNull;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.function.Consumer;
 
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.collections.set.DataSet;
 
@@ -67,17 +67,6 @@ public interface DataSequence<E extends Object> extends Iterable<E> {
 	E elementAt(long index);
 
 	/**
-	 * Applies the given {@code action} sequentially to every {@link #elementAt(long) element}
-	 * in this sequence.
-	 * @param action
-	 */
-	default void forEachEntry(Consumer<? super E> action) {
-		for(long i =0L; i<entryCount(); i++) {
-			action.accept(elementAt(i));
-		}
-	}
-
-	/**
 	 * Helper method to transform the content of this sequence into a regular
 	 * {@link List}. Note that this method will fail if the size of this
 	 * sequence exceeds the capacity of integer addressing.
@@ -90,7 +79,7 @@ public interface DataSequence<E extends Object> extends Iterable<E> {
 		int size = IcarusUtils.ensureIntegerValueRange(entryCount());
 
 		return LazyCollection.<E>lazyList(size)
-				.addFromForEach(this::forEachEntry)
+				.addFromForEach(this::forEach)
 				.getAsList();
 	}
 
@@ -99,7 +88,8 @@ public interface DataSequence<E extends Object> extends Iterable<E> {
 	 */
 	@Override
 	default Iterator<E> iterator() {
-		return new DataSequenceIterator<>(this);
+		return entryCount()==0L ? CollectionUtils.emptyIterator()
+				: new DataSequenceIterator<>(this);
 	}
 
 	@SuppressWarnings("unchecked")

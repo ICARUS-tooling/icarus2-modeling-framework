@@ -520,6 +520,13 @@ public class TestUtils {
 				.toArray();
 	}
 
+	@SuppressWarnings("unchecked")
+	public static <T> T[] randomContent(Supplier<T> gen) {
+		return (T[]) Stream.generate(gen)
+				.limit(random(10, 100))
+				.toArray();
+	}
+
 	public static long[] randomLongs(int size, long min, long max) {
 		return random().longs(size, min, max).toArray();
 	}

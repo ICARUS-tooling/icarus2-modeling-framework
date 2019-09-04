@@ -29,33 +29,22 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.function.Consumer;
-import java.util.stream.StreamSupport;
 
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.TestUtils;
-import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.test.guard.ApiGuard;
+import de.ims.icarus2.util.collections.IterableTest;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface DataSetTest<S extends DataSet<Object>> extends ApiGuardedTest<S> {
+public interface DataSetTest<S extends DataSet<Object>>
+		extends ApiGuardedTest<S>, IterableTest<Object, S> {
 
 	/**
 	 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
@@ -66,12 +55,7 @@ public interface DataSetTest<S extends DataSet<Object>> extends ApiGuardedTest<S
 		apiGuard.nullGuard(true);
 	}
 
-	@Provider
-	S createEmpty();
-
-	@Provider
-	S createFilled(Object...items);
-
+	@Override
 	default Object[] randomContent() {
 		return TestUtils.randomContent();
 	}
@@ -252,67 +236,11 @@ public interface DataSetTest<S extends DataSet<Object>> extends ApiGuardedTest<S
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#iterator()}.
-	 */
-	@Test
-	default void testIterator() {
-		Object[] items = randomContent();
-		S set = createFilled(items);
-		Iterator<Object> it = set.iterator();
-		for (int i = 0; i < items.length; i++) {
-			assertTrue(it.hasNext());
-			assertSame(items[i], it.next());
-		}
-		assertFalse(it.hasNext());
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#iterator()}.
-	 */
-	@Test
-	default void testIteratorEmpty() {
-		assertFalse(createEmpty().iterator().hasNext());
-		assertThrows(NoSuchElementException.class, () -> createEmpty().iterator().next());
-	}
-
-	/**
 	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#emptySet()}.
 	 */
 	@Test
 	default void testEmptySet() {
 		assertTrue(DataSet.emptySet().isEmpty());
-	}
-
-	/**
-	 * Test method for {@link java.lang.Iterable#forEach(java.util.function.Consumer)}.
-	 */
-	@Test
-	default void testForEach() {
-		Object[] items = randomContent();
-		S set = createFilled(items);
-		List<Object> tmp = new ArrayList<>();
-		set.forEach(tmp::add);
-		assertCollectionEquals(tmp, items);
-	}
-
-	/**
-	 * Test method for {@link java.lang.Iterable#forEach(java.util.function.Consumer)}.
-	 */
-	@Test
-	default void testForEachEmpty() {
-		Consumer<Object> action = mock(Consumer.class);
-		createEmpty().forEach(action);
-		verify(action, never()).accept(any());
-	}
-
-	/**
-	 * Test method for {@link java.lang.Iterable#spliterator()}.
-	 */
-	@Test
-	default void testSpliterator() {
-		Object[] items = randomContent();
-		S set = createFilled(items);
-		assertArrayEquals(items, StreamSupport.stream(set.spliterator(), false).toArray());
 	}
 
 }
