@@ -16,8 +16,7 @@
  */
 package de.ims.icarus2.util.collections.seq;
 
-import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusRuntimeException;
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Markus Gärtner
@@ -28,10 +27,11 @@ public class SingletonSequence<E extends Object> implements DataSequence<E> {
 	private final E element;
 
 	public SingletonSequence(E element) {
-		if (element == null)
-			throw new NullPointerException("Invalid element");
+		this.element = requireNonNull(element);
+	}
 
-		this.element = element;
+	public SingletonSequence() {
+		element = null;
 	}
 
 	/**
@@ -39,7 +39,7 @@ public class SingletonSequence<E extends Object> implements DataSequence<E> {
 	 */
 	@Override
 	public long entryCount() {
-		return 1;
+		return element==null ? 0 : 1;
 	}
 
 	/**
@@ -47,9 +47,8 @@ public class SingletonSequence<E extends Object> implements DataSequence<E> {
 	 */
 	@Override
 	public E elementAt(long index) {
-		if(index!=0L)
-			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT,
-					"Invalid index for singleton sequence (only 0 allowed): "+index);
+		if(index!=0L || element==null)
+			throw new IndexOutOfBoundsException("Invalid index for singleton sequence (only 0 allowed): "+index);
 
 		return element;
 	}
