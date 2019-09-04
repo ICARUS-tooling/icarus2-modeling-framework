@@ -3,7 +3,10 @@
  */
 package de.ims.icarus2.util.collections.seq;
 
+import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static org.junit.jupiter.api.Assertions.assertSame;
+
+import java.util.Collections;
 
 import org.junit.jupiter.api.Test;
 
@@ -11,15 +14,15 @@ import org.junit.jupiter.api.Test;
  * @author Markus Gärtner
  *
  */
-class ArraySequenceTest implements DataSequenceTest<ArraySequence<Object>> {
+class ListSequenceTest implements DataSequenceTest<ListSequence<Object>> {
 
 	/**
-	 * Test method for {@link de.ims.icarus2.util.collections.seq.ArraySequence#ArraySequence(E[])}.
+	 * Test method for {@link de.ims.icarus2.util.collections.seq.ListSequence#ListSequence(java.util.List)}.
 	 */
 	@Test
-	void testArraySequence() {
+	void testListSequence() {
 		Object[] items = randomContent();
-		ArraySequence<Object> seq = new ArraySequence<>(items);
+		ListSequence<Object> seq = new ListSequence<>(list(items));
 		for (int i = 0; i < items.length; i++) {
 			assertSame(items[i], seq.elementAt(i));
 		}
@@ -30,22 +33,23 @@ class ArraySequenceTest implements DataSequenceTest<ArraySequence<Object>> {
 	 */
 	@Override
 	public Class<?> getTestTargetClass() {
-		return ArraySequence.class;
+		return ListSequence.class;
 	}
 
 	/**
 	 * @see de.ims.icarus2.util.collections.IterableTest#createEmpty()
 	 */
 	@Override
-	public ArraySequence<Object> createEmpty() {
-		return new ArraySequence<>(new Object[0]);
+	public ListSequence<Object> createEmpty() {
+		return new ListSequence<>(Collections.emptyList());
 	}
 
 	/**
 	 * @see de.ims.icarus2.util.collections.IterableTest#createFilled(java.lang.Object[])
 	 */
 	@Override
-	public ArraySequence<Object> createFilled(Object... items) {
-		return new ArraySequence<>(items);
+	public ListSequence<Object> createFilled(Object... items) {
+		return new ListSequence<>(list(items));
 	}
+
 }
