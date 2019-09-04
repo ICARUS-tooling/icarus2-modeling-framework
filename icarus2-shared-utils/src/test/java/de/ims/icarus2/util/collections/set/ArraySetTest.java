@@ -7,7 +7,6 @@ import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomContent;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -63,7 +62,9 @@ class ArraySetTest implements DataSetTest<ArraySet<Object>> {
 		 */
 		@Test
 		void testArraySetEArray() {
-			assertNotNull(new ArraySet<>(randomContent()));
+			Object[] items = randomContent();
+			ArraySet<Object> set = new ArraySet<>(items);
+			assertArrayEquals(items, set.toArray());
 		}
 
 		/**
