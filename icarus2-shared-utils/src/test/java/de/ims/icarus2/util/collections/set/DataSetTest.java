@@ -24,7 +24,6 @@ import static de.ims.icarus2.test.TestUtils.assertCollectionEmpty;
 import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
 import static de.ims.icarus2.test.TestUtils.assertIOOB;
 import static de.ims.icarus2.test.TestUtils.assertListEquals;
-import static de.ims.icarus2.test.TestUtils.randomContent;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -48,6 +47,7 @@ import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.test.guard.ApiGuard;
 
@@ -71,6 +71,10 @@ public interface DataSetTest<S extends DataSet<Object>> extends ApiGuardedTest<S
 
 	@Provider
 	S createFilled(Object...items);
+
+	default Object[] randomContent() {
+		return TestUtils.randomContent();
+	}
 
 	/**
 	 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
