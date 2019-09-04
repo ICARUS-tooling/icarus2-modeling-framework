@@ -19,20 +19,43 @@
  */
 package de.ims.icarus2.util.collections.set;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static de.ims.icarus2.test.TestUtils.assertArrayEmpty;
+import static de.ims.icarus2.test.TestUtils.assertCollectionEmpty;
+import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
+import static de.ims.icarus2.test.TestUtils.assertIOOB;
+import static de.ims.icarus2.test.TestUtils.assertListEquals;
+import static de.ims.icarus2.test.TestUtils.randomContent;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
-import org.junit.jupiter.api.Disabled;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.function.Consumer;
+import java.util.stream.StreamSupport;
+
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.test.ApiGuardedTest;
+import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.test.guard.ApiGuard;
 
 /**
  * @author Markus Gärtner
  *
  */
-@Disabled
-public interface DataSetTest<S extends DataSet<?>> extends ApiGuardedTest<S> {
+public interface DataSetTest<S extends DataSet<Object>> extends ApiGuardedTest<S> {
 
 	/**
 	 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
@@ -43,12 +66,35 @@ public interface DataSetTest<S extends DataSet<?>> extends ApiGuardedTest<S> {
 		apiGuard.nullGuard(true);
 	}
 
+	@Provider
+	S createEmpty();
+
+	@Provider
+	S createFilled(Object...items);
+
+	/**
+	 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
+	 */
+	@Override
+	default S createTestInstance(TestSettings settings) {
+		return settings.process(createEmpty());
+	}
+
 	/**
 	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#entryCount()}.
 	 */
 	@Test
 	default void testEntryCount() {
-		fail("Not yet implemented"); // TODO
+		Object[] items = randomContent();
+		assertEquals(items.length, createFilled(items).entryCount());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#entryCount()}.
+	 */
+	@Test
+	default void testEntryCountEmpty() {
+		assertEquals(0, createEmpty().entryCount());
 	}
 
 	/**
@@ -56,7 +102,15 @@ public interface DataSetTest<S extends DataSet<?>> extends ApiGuardedTest<S> {
 	 */
 	@Test
 	default void testIsEmpty() {
-		fail("Not yet implemented"); // TODO
+		assertFalse(createFilled(randomContent()).isEmpty());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#isEmpty()}.
+	 */
+	@Test
+	default void testIsEmptyEmpty() {
+		assertTrue(createEmpty().isEmpty());
 	}
 
 	/**
@@ -64,7 +118,19 @@ public interface DataSetTest<S extends DataSet<?>> extends ApiGuardedTest<S> {
 	 */
 	@Test
 	default void testEntryAt() {
-		fail("Not yet implemented"); // TODO
+		Object[] items = randomContent();
+		S set = createFilled(items);
+		for (int i = 0; i < items.length; i++) {
+			assertSame(items[i], set.entryAt(i));
+		}
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#entryAt(int)}.
+	 */
+	@Test
+	default void testEntryAtEmpty() {
+		assertIOOB(() -> createEmpty().entryAt(0));
 	}
 
 	/**
@@ -72,15 +138,27 @@ public interface DataSetTest<S extends DataSet<?>> extends ApiGuardedTest<S> {
 	 */
 	@Test
 	default void testContains() {
-		fail("Not yet implemented"); // TODO
+		Object[] items = randomContent();
+		S set = createFilled(items);
+		for (int i = 0; i < items.length; i++) {
+			assertTrue(set.contains(items[i]));
+		}
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#forEachEntry(java.util.function.Consumer)}.
+	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#contains(java.lang.Object)}.
 	 */
 	@Test
-	default void testForEachEntry() {
-		fail("Not yet implemented"); // TODO
+	default void testContainsForeign() {
+		assertFalse(createFilled(randomContent()).contains(new Object()));
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#contains(java.lang.Object)}.
+	 */
+	@Test
+	default void testContainsEmpty() {
+		assertFalse(createEmpty().contains(new Object()));
 	}
 
 	/**
@@ -88,7 +166,17 @@ public interface DataSetTest<S extends DataSet<?>> extends ApiGuardedTest<S> {
 	 */
 	@Test
 	default void testToSet() {
-		fail("Not yet implemented"); // TODO
+		Object[] items = randomContent();
+		S set = createFilled(items);
+		assertCollectionEquals(set.toSet(), items);
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#toSet()}.
+	 */
+	@Test
+	default void testToSetEmpty() {
+		assertCollectionEmpty(createEmpty().toSet());
 	}
 
 	/**
@@ -96,7 +184,17 @@ public interface DataSetTest<S extends DataSet<?>> extends ApiGuardedTest<S> {
 	 */
 	@Test
 	default void testToList() {
-		fail("Not yet implemented"); // TODO
+		Object[] items = randomContent();
+		S set = createFilled(items);
+		assertListEquals(set.toList(), items);
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#toList()}.
+	 */
+	@Test
+	default void testToListEmpty() {
+		assertCollectionEmpty(createEmpty().toList());
 	}
 
 	/**
@@ -104,15 +202,49 @@ public interface DataSetTest<S extends DataSet<?>> extends ApiGuardedTest<S> {
 	 */
 	@Test
 	default void testToArray() {
-		fail("Not yet implemented"); // TODO
+		Object[] items = randomContent();
+		S set = createFilled(items);
+		assertArrayEquals(items, set.toArray());
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#toArray(T[])}.
+	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#toArray()}.
+	 */
+	@Test
+	default void testToArrayEmpty() {
+		assertArrayEmpty(createEmpty().toArray());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#toArray(Object[])}.
 	 */
 	@Test
 	default void testToArrayTArray() {
-		fail("Not yet implemented"); // TODO
+		Object[] items = randomContent();
+		S set = createFilled(items);
+		// Direct fit
+		assertArrayEquals(items, set.toArray(new Object[items.length]));
+		// Growing
+		assertArrayEquals(items, set.toArray(new Object[0]));
+
+		// Null-marker in array with extra capacity
+		Object[] target = new Object[items.length*2];
+		Object[] result = set.toArray(target);
+		assertSame(target, result);
+
+		for (int i = 0; i < items.length; i++) {
+			assertSame(items[i], result[i]);
+		}
+		assertNull(result[items.length]);
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#toArray(Object[]))}.
+	 */
+	@Test
+	default void testToArrayTArrayEmpty() {
+		assertArrayEmpty(createEmpty().toArray(new Object[0]));
+		assertNull(createEmpty().toArray(new Object[10])[0]);
 	}
 
 	/**
@@ -120,7 +252,23 @@ public interface DataSetTest<S extends DataSet<?>> extends ApiGuardedTest<S> {
 	 */
 	@Test
 	default void testIterator() {
-		fail("Not yet implemented"); // TODO
+		Object[] items = randomContent();
+		S set = createFilled(items);
+		Iterator<Object> it = set.iterator();
+		for (int i = 0; i < items.length; i++) {
+			assertTrue(it.hasNext());
+			assertSame(items[i], it.next());
+		}
+		assertFalse(it.hasNext());
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#iterator()}.
+	 */
+	@Test
+	default void testIteratorEmpty() {
+		assertFalse(createEmpty().iterator().hasNext());
+		assertThrows(NoSuchElementException.class, () -> createEmpty().iterator().next());
 	}
 
 	/**
@@ -128,15 +276,7 @@ public interface DataSetTest<S extends DataSet<?>> extends ApiGuardedTest<S> {
 	 */
 	@Test
 	default void testEmptySet() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	/**
-	 * Test method for {@link java.lang.Iterable#iterator()}.
-	 */
-	@Test
-	default void testIterator1() {
-		fail("Not yet implemented"); // TODO
+		assertTrue(DataSet.emptySet().isEmpty());
 	}
 
 	/**
@@ -144,7 +284,21 @@ public interface DataSetTest<S extends DataSet<?>> extends ApiGuardedTest<S> {
 	 */
 	@Test
 	default void testForEach() {
-		fail("Not yet implemented"); // TODO
+		Object[] items = randomContent();
+		S set = createFilled(items);
+		List<Object> tmp = new ArrayList<>();
+		set.forEach(tmp::add);
+		assertCollectionEquals(tmp, items);
+	}
+
+	/**
+	 * Test method for {@link java.lang.Iterable#forEach(java.util.function.Consumer)}.
+	 */
+	@Test
+	default void testForEachEmpty() {
+		Consumer<Object> action = mock(Consumer.class);
+		createEmpty().forEach(action);
+		verify(action, never()).accept(any());
 	}
 
 	/**
@@ -152,7 +306,9 @@ public interface DataSetTest<S extends DataSet<?>> extends ApiGuardedTest<S> {
 	 */
 	@Test
 	default void testSpliterator() {
-		fail("Not yet implemented"); // TODO
+		Object[] items = randomContent();
+		S set = createFilled(items);
+		assertArrayEquals(items, StreamSupport.stream(set.spliterator(), false).toArray());
 	}
 
 }

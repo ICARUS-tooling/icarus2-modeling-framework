@@ -17,6 +17,7 @@
 package de.ims.icarus2.util.collections.set;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.collections.CollectionUtils.emptyIterator;
 import static java.util.Objects.requireNonNull;
 
 import java.lang.reflect.Array;
@@ -24,7 +25,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.function.Consumer;
 
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.collections.seq.DataSequence;
@@ -54,21 +54,15 @@ public interface DataSet<E extends Object> extends Iterable<E> {
 
 	boolean contains(E element);
 
-	default void forEachEntry(Consumer<? super E> action) {
-		for(int i = 0; i<entryCount(); i++) {
-			action.accept(entryAt(i));
-		}
-	}
-
 	default Set<E> toSet() {
 		return LazyCollection.<E>lazySet(entryCount())
-				.addFromForEach(this::forEachEntry)
+				.addFromForEach(this::forEach)
 				.getAsSet();
 	}
 
 	default List<E> toList() {
 		return LazyCollection.<E>lazyList(entryCount())
-				.addFromForEach(this::forEachEntry)
+				.addFromForEach(this::forEach)
 				.getAsList();
 	}
 
@@ -109,7 +103,7 @@ public interface DataSet<E extends Object> extends Iterable<E> {
 	 */
 	@Override
 	default Iterator<E> iterator() {
-		return new DataSetIterator<>(this);
+		return isEmpty() ? emptyIterator() : new DataSetIterator<>(this);
 	}
 
 

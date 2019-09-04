@@ -54,7 +54,7 @@ public interface HighlightInfo extends Identifiable {
 		LazyCollection<AnnotationLayer> result = LazyCollection.lazySet(links.entryCount());
 
 		if(!links.isEmpty()) {
-			links.forEachEntry(l -> result.add(l.getLayer()));
+			links.forEach(l -> result.add(l.getLayer()));
 		}
 
 		return result.getAsSet();
@@ -66,7 +66,7 @@ public interface HighlightInfo extends Identifiable {
 		LazyCollection<String> result = LazyCollection.lazySet(links.entryCount());
 
 		if(!links.isEmpty()) {
-			links.forEachEntry(l -> {
+			links.forEach(l -> {
 				if(l.getLayer()==layer)
 					result.add(l.getKey());
 			});

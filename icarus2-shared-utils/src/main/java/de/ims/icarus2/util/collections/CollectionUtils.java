@@ -421,6 +421,23 @@ public final class CollectionUtils {
 		return val==null ? defaultValue : Boolean.parseBoolean(val);
 	}
 
+	public static final Iterator<Object> EMPTY_ITERATOR = new Iterator<Object>() {
+
+		@Override
+		public Object next() {
+			throw new NoSuchElementException();
+		}
+
+		@Override
+		public boolean hasNext() {
+			return false;
+		}
+	};
+
+	public static <T> Iterator<T> emptyIterator() {
+		return (Iterator<T>) EMPTY_ITERATOR;
+	}
+
 	public static <E extends Object> List<E> list(@SuppressWarnings("unchecked") E...items) {
 		ArrayList<E> list = new ArrayList<>();
 		feedItems(list, items);

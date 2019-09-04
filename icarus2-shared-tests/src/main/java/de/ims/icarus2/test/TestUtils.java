@@ -514,6 +514,12 @@ public class TestUtils {
 
 	// RANDOM ARRAYS
 
+	public static Object[] randomContent() {
+		return Stream.generate(Object::new)
+				.limit(random(10, 100))
+				.toArray();
+	}
+
 	public static long[] randomLongs(int size, long min, long max) {
 		return random().longs(size, min, max).toArray();
 	}

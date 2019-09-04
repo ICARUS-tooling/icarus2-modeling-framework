@@ -305,7 +305,7 @@ public class Graph<E extends Object> {
 	public static BiConsumer<Layer, Consumer<? super Layer>> layerMapper(Graph<Layer> graph, Set<DependencyType> dependencies) {
 		return (source, action) -> {
 			if(dependencies.contains(DependencyType.STRONG)) {
-				source.getBaseLayers().forEachEntry(action);
+				source.getBaseLayers().forEach(action);
 			}
 
 			if(ModelUtils.isItemLayer(source)) {

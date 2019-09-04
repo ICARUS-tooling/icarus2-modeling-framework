@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.util.collections.set;
 
-import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
 import java.util.List;
@@ -28,6 +28,12 @@ import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Reference;
 import de.ims.icarus2.util.mem.ReferenceType;
 
+/**
+ *
+ * @author Markus Gärtner
+ *
+ * @param <E> type of elements contained in this set
+ */
 @Assessable
 public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 
@@ -35,7 +41,7 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 	private Object[] items;
 
 	public ArraySet() {
-		// no-op
+		items = new Object[0];
 	}
 
 	@SafeVarargs
@@ -48,7 +54,8 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 	}
 
 	private void checkItems() {
-		checkState("Missing items", items!=null);
+		if(items==null)
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Missing items");
 	}
 
 	/**
@@ -65,11 +72,10 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 	 */
 	@Override
 	public E entryAt(int index) {
-		if(items==null)
-			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Missing items");
+		checkItems();
 		@SuppressWarnings("unchecked")
 		E item = (E) items[index];
-		return item;
+		return requireNonNull(item);
 	}
 
 	/**
@@ -92,9 +98,12 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 
 	public void reset(int size) {
 		if(size<1)
-			throw new IllegalArgumentException("Size must not be negative"); //$NON-NLS-1$
+			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT,
+					"Size must not be negative");
 
+		// If our size already matches, just clear content
 		if(items!=null && items.length==size) {
+			Arrays.fill(items, null);
 			return;
 		}
 
@@ -102,22 +111,20 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 	}
 
 	public void set(int index, E member) {
-		if(items==null)
-			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Missing items");
+		requireNonNull(member);
+		checkItems();
 
 		items[index] = member;
 	}
 
 	public void reset(Object[] elements) {
-		if (elements == null)
-			throw new NullPointerException("Invalid elements"); //$NON-NLS-1$
+		requireNonNull(elements);
 
 		items = elements;
 	}
 
 	public void reset(List<? extends E> elements) {
-		if (elements == null)
-			throw new NullPointerException("Invalid elements"); //$NON-NLS-1$
+		requireNonNull(elements);
 
 		items = new Object[elements.size()];
 		elements.toArray(items);
@@ -129,10 +136,8 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 	 */
 	@Override
 	public boolean contains(E member) {
-		if(items==null)
-			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Missing items");
-		if (member == null)
-			throw new NullPointerException("Invalid member"); //$NON-NLS-1$
+		requireNonNull(member);
+		checkItems();
 
 		return ArrayUtils.contains(items, member);
 	}
@@ -142,10 +147,8 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 	 */
 	@Override
 	public void add(E element) {
-		if(items==null)
-			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Missing items");
-		if (element == null)
-			throw new NullPointerException("Invalid element"); //$NON-NLS-1$
+		requireNonNull(element);
+		checkItems();
 
 		for(int i=0; i<items.length; i++) {
 			if(items[i]==null) {
@@ -154,6 +157,6 @@ public class ArraySet<E extends Object> extends AbstractDataSet<E> {
 			}
 		}
 
-		throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Set already full"); //$NON-NLS-1$
+		throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Set already full");
 	}
 }

@@ -47,8 +47,6 @@ public class ArrayUtils {
 	}
 
 	public static <T extends Object> int indexOf(T[] array, T target) {
-		//FIXME change implementation to use Arrays.binarySearch() <-- not possible for unsorted arrays!!!
-
 		if(array!=null) {
 			if(target==null) {
 				for(int i=0; i<array.length; i++) {
