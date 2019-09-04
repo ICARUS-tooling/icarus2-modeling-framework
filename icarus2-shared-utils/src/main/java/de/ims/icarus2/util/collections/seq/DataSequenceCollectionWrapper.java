@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.util.collections.seq;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.AbstractCollection;
 import java.util.Iterator;
 
@@ -30,10 +32,7 @@ public class DataSequenceCollectionWrapper<E extends Object> extends AbstractCol
 	private final DataSequence<E> sequence;
 
 	public DataSequenceCollectionWrapper(DataSequence<E> sequence) {
-		if (sequence == null)
-			throw new NullPointerException("Invalid sequence");
-
-		this.sequence = sequence;
+		this.sequence = requireNonNull(sequence);
 	}
 
 	/**
@@ -41,7 +40,7 @@ public class DataSequenceCollectionWrapper<E extends Object> extends AbstractCol
 	 */
 	@Override
 	public Iterator<E> iterator() {
-		return new SequenceIterator<>(sequence);
+		return sequence.iterator();
 	}
 
 	/**
