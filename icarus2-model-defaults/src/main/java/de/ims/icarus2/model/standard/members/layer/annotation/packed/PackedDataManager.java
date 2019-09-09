@@ -28,6 +28,7 @@ import java.util.Deque;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
@@ -47,6 +48,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.collections.LazyMap;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.mem.ByteAllocator;
+import de.ims.icarus2.util.strings.ToStringBuilder;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -145,6 +147,8 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	/** Delegates construction of the storage construction */
 	private final IntFunction<ByteAllocator> storageSource;
 
+	private final Stats stats;
+
 	/**
 	 * The lookup structure for defining raw package handlers.
 	 * To actually support growing and shrinking the underlying storage,
@@ -169,6 +173,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		allowBitPacking = builder.isAllowBitPacking();
 		allowDynamicChunkComposition = builder.isAllowDynamicChunkComposition();
 		autoRegister = builder.isAutoRegister();
+		stats = builder.isCollectStats() ? new Stats() : null;
 
 		packageHandles.addAll(builder.getHandles());
 	}
@@ -683,6 +688,18 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		return validId;
 	}
 
+	private void recordWrite() {
+		if(stats!=null) stats.written.increment();
+	}
+
+	private void recordOptimisticRead() {
+		if(stats!=null) stats.readOptimistic.increment();
+	}
+
+	private void recordLockedRead() {
+		if(stats!=null) stats.readLocked.increment();
+	}
+
 	// GetXXX methods
 
 	/**
@@ -707,6 +724,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			// Try optimistically
 			if(prepareCursor(chunkAddressForRead(item))) {
 				result = handle.converter.getBoolean(handle, cursor);
+				recordOptimisticRead();
 			}
 		}
 
@@ -716,6 +734,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			try {
 				if(prepareCursor(chunkAddressForRead(item))) {
 					result = handle.converter.getBoolean(handle, cursor);
+					recordLockedRead();
 				}
 			} finally {
 				lock.unlockRead(stamp);
@@ -748,6 +767,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			// Try optimistically
 			if(prepareCursor(chunkAddressForRead(item))) {
 				result = handle.converter.getInteger(handle, cursor);
+				recordOptimisticRead();
 			}
 		}
 
@@ -757,6 +777,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			try {
 				if(prepareCursor(chunkAddressForRead(item))) {
 					result = handle.converter.getInteger(handle, cursor);
+					recordLockedRead();
 				}
 			} finally {
 				lock.unlockRead(stamp);
@@ -789,6 +810,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			// Try optimistically
 			if(prepareCursor(chunkAddressForRead(item))) {
 				result = handle.converter.getLong(handle, cursor);
+				recordOptimisticRead();
 			}
 		}
 
@@ -798,6 +820,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			try {
 				if(prepareCursor(chunkAddressForRead(item))) {
 					result = handle.converter.getLong(handle, cursor);
+					recordLockedRead();
 				}
 			} finally {
 				lock.unlockRead(stamp);
@@ -830,6 +853,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			// Try optimistically
 			if(prepareCursor(chunkAddressForRead(item))) {
 				result = handle.converter.getFloat(handle, cursor);
+				recordOptimisticRead();
 			}
 		}
 
@@ -839,6 +863,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			try {
 				if(prepareCursor(chunkAddressForRead(item))) {
 					result = handle.converter.getFloat(handle, cursor);
+					recordLockedRead();
 				}
 			} finally {
 				lock.unlockRead(stamp);
@@ -871,6 +896,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			// Try optimistically
 			if(prepareCursor(chunkAddressForRead(item))) {
 				result = handle.converter.getDouble(handle, cursor);
+				recordOptimisticRead();
 			}
 		}
 
@@ -880,6 +906,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			try {
 				if(prepareCursor(chunkAddressForRead(item))) {
 					result = handle.converter.getDouble(handle, cursor);
+					recordLockedRead();
 				}
 			} finally {
 				lock.unlockRead(stamp);
@@ -912,6 +939,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			// Try optimistically
 			if(prepareCursor(chunkAddressForRead(item))) {
 				result = handle.converter.getValue(handle, cursor);
+				recordOptimisticRead();
 			}
 		}
 
@@ -921,6 +949,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			try {
 				if(prepareCursor(chunkAddressForRead(item))) {
 					result = handle.converter.getValue(handle, cursor);
+					recordLockedRead();
 				}
 			} finally {
 				lock.unlockRead(stamp);
@@ -953,6 +982,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			// Try optimistically
 			if(prepareCursor(chunkAddressForRead(item))) {
 				result = handle.converter.getString(handle, cursor);
+				recordOptimisticRead();
 			}
 		}
 
@@ -962,6 +992,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			try {
 				if(prepareCursor(chunkAddressForRead(item))) {
 					result = handle.converter.getString(handle, cursor);
+					recordLockedRead();
 				}
 			} finally {
 				lock.unlockRead(stamp);
@@ -998,6 +1029,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			if(prepareCursor(id)) {
 				handle.converter.setBoolean(handle, cursor, value);
 				markUsed(item, id);
+				recordWrite();
 			}
 		} finally {
 			lock.unlockWrite(stamp);
@@ -1029,6 +1061,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			if(prepareCursor(id)) {
 				handle.converter.setInteger(handle, cursor, value);
 				markUsed(item, id);
+				recordWrite();
 			}
 		} finally {
 			lock.unlockWrite(stamp);
@@ -1060,6 +1093,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			if(prepareCursor(id)) {
 				handle.converter.setLong(handle, cursor, value);
 				markUsed(item, id);
+				recordWrite();
 			}
 		} finally {
 			lock.unlockWrite(stamp);
@@ -1091,6 +1125,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			if(prepareCursor(id)) {
 				handle.converter.setFloat(handle, cursor, value);
 				markUsed(item, id);
+				recordWrite();
 			}
 		} finally {
 			lock.unlockWrite(stamp);
@@ -1122,6 +1157,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			if(prepareCursor(id)) {
 				handle.converter.setDouble(handle, cursor, value);
 				markUsed(item, id);
+				recordWrite();
 			}
 		} finally {
 			lock.unlockWrite(stamp);
@@ -1157,6 +1193,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			if(prepareCursor(id)) {
 				handle.converter.setValue(handle, cursor, value);
 				markUsed(item, id);
+				recordWrite();
 			}
 		} finally {
 			lock.unlockWrite(stamp);
@@ -1192,6 +1229,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			if(prepareCursor(id)) {
 				handle.converter.setString(handle, cursor, value);
 				markUsed(item, id);
+				recordWrite();
 			}
 		} finally {
 			lock.unlockWrite(stamp);
@@ -1311,6 +1349,82 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		return result;
 	}
 
+	public boolean isCollectStats() {
+		return stats!=null;
+	}
+
+	private void checkCollectStats() {
+		checkState("Not configured to record statistics", stats!=null);
+	}
+
+	public Stats resetStats() {
+		checkCollectStats();
+		Stats result = stats.clone();
+		stats.reset();
+		return result;
+	}
+
+	public Stats getStats() {
+		checkCollectStats();
+		return stats.clone();
+	}
+
+	/**
+	 * Utility class for recording various usage statistics of the
+	 * enclosing  {@link PackedDataManager}.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	public static final class Stats implements Cloneable {
+		private LongAdder written = new LongAdder();
+		private LongAdder readOptimistic = new LongAdder();
+		private LongAdder readLocked = new LongAdder();
+
+		private Stats() { /* no-op */ }
+
+		public long getWritten() { return written.longValue(); }
+		public long getReadOptimistic() { return readOptimistic.longValue(); }
+		public long getReadLocked() { return readLocked.longValue(); }
+
+		private synchronized void reset() {
+			written = new LongAdder();
+			readOptimistic = new LongAdder();
+			readLocked = new LongAdder();
+		}
+
+		@Override
+		public synchronized Stats clone() {
+			try {
+				Stats clone = (Stats) super.clone();
+				clone.written = clone(clone.written);
+				clone.readOptimistic = clone(clone.readOptimistic);
+				clone.readLocked = clone(clone.readLocked);
+				return clone;
+			} catch (CloneNotSupportedException e) {
+				throw new InternalError(e);
+			}
+		}
+
+		private LongAdder clone(LongAdder source) {
+			LongAdder adder = new LongAdder();
+			adder.add(source.longValue());
+			return adder;
+		}
+
+		/**
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return ToStringBuilder.create()
+					.add("written", written.longValue())
+					.add("optimistic", readOptimistic.longValue())
+					.add("readLocked", readLocked.longValue())
+					.build();
+		}
+	}
+
 	/**
 	 *
 	 * @author Markus Gärtner
@@ -1330,6 +1444,8 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		private Boolean weakKeys;
 
 		private Boolean autoRegister;
+
+		private Boolean collectStats;
 
 		private Set<PackageHandle> handles = new ObjectOpenHashSet<>();
 
@@ -1387,6 +1503,14 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			return thisAsCast();
 		}
 
+		public Builder<E,O> collectStats(boolean collectStats) {
+			checkState("Flag 'collectStats' already set", this.autoRegister==null);
+
+			this.collectStats = Boolean.valueOf(collectStats);
+
+			return thisAsCast();
+		}
+
 		public int getInitialCapacity() {
 			return initialCapacity==null ? 0 : initialCapacity.intValue();
 		}
@@ -1405,6 +1529,10 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		public boolean isAutoRegister() {
 			return autoRegister==null ? false : autoRegister.booleanValue();
+		}
+
+		public boolean isCollectStats() {
+			return collectStats==null ? false : collectStats.booleanValue();
 		}
 
 		public Builder<E,O> addHandles(PackageHandle...handles) {

@@ -20,11 +20,14 @@
 package de.ims.icarus2.model.standard.members.layer.annotation.packed;
 
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertUnsupportedType;
+import static de.ims.icarus2.test.TestTags.CONCURRENT;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
 import static de.ims.icarus2.test.TestUtils.random;
+import static de.ims.icarus2.test.TestUtils.randomContent;
 import static de.ims.icarus2.test.TestUtils.randomString;
 import static de.ims.icarus2.test.TestUtils.randomSubLists;
+import static de.ims.icarus2.test.util.Triple.nullableTriple;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,14 +41,18 @@ import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -56,18 +63,23 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.api.TestReporter;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle;
-import de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager;
-import de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataUtils;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.DisabledOnCi;
+import de.ims.icarus2.test.concurrent.Circuit;
 import de.ims.icarus2.test.guard.ApiGuard;
+import de.ims.icarus2.test.util.Triple;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * @author Markus Gärtner
@@ -344,6 +356,7 @@ class PackedDataManagerTest {
 						.defaultStorageSource()
 						.addHandles(handles)
 						.initialCapacity(10)
+						.collectStats(true)
 						.build();
 			}
 
@@ -516,6 +529,133 @@ class PackedDataManagerTest {
 										assertUnsupportedType(() -> manager.getString(item(), handle));
 									}
 								}));
+					}
+				}
+
+				@Nested
+				class Concurrent {
+
+					@DisabledOnCi
+					@Tag(CONCURRENT)
+					@ParameterizedTest
+					@CsvSource({
+						"2,   2",
+						"10,  10",
+						"20,  10",
+						"100, 10",
+						"100, 50",
+						"20,  20",
+					})
+					void testConcurrentWrite(int writers, int threads,
+							TestReporter reporter) throws Exception {
+						Object[] items = randomContent();
+						LongAdder totalWrites = new LongAdder();
+
+						try(Circuit circuit = new Circuit(threads)) {
+							for (int i = 0; i < writers; i++) {
+								circuit.task(() -> {
+//									long start = System.currentTimeMillis();
+									int steps = random(100, 10_000);
+									for (int j = 0; j < steps; j++) {
+										int index = random(0, handles.size());
+
+										Object value = generators.get(index).get();
+										PackageHandle handle = handles.get(index);
+										Object item = random(items);
+
+										manager.setValue(item, handle, value);
+									}
+									totalWrites.add(steps);
+//									long end = System.currentTimeMillis();
+//									System.out.printf("Executed %d writes in %dms on thread %s%n",
+//											Integer.valueOf(steps), Long.valueOf(end-start),
+//											Thread.currentThread().getName());
+								});
+							}
+
+							Duration duration = circuit.execute(2, TimeUnit.SECONDS);
+
+							reporter.publishEntry(String.format(
+									"writers=%d entries=%d threads=%d time=%s stats=%s",
+									Integer.valueOf(writers), Long.valueOf(totalWrites.sum()),
+									Integer.valueOf(threads), duration, manager.getStats()));
+						}
+					}
+
+					@DisabledOnCi
+					@Tag(CONCURRENT)
+					@ParameterizedTest
+					@CsvSource({
+						// writers, readers, threads
+						"1,  20,  10",
+						"1,  100, 10",
+						"5,  20,  10",
+						"5,  100, 10",
+						"5,  100, 20",
+						"20, 20,  10",
+						"20, 5,   10",
+						"20, 5,   10",
+					})
+					void testConcurrentReadAndWrite(int writers, int readers, int threads,
+							TestReporter reporter) throws Exception {
+						Object[] items = randomContent();
+
+						Set<Triple<Object, PackageHandle, Object>> legalCombinations =
+								Collections.synchronizedSet(new ObjectOpenHashSet<>());
+
+						LongAdder totalWrites = new LongAdder();
+						LongAdder totalReads = new LongAdder();
+
+						try(Circuit circuit = new Circuit(threads)) {
+							// Add writer tasks
+							for (int i = 0; i < writers; i++) {
+								circuit.task(() -> {
+									int steps = random(10, 1000);
+									for (int j = 0; j < steps; j++) {
+										int index = random(0, handles.size());
+
+										Object value = generators.get(index).get();
+										PackageHandle handle = handles.get(index);
+										Object item = random(items);
+
+										legalCombinations.add(nullableTriple(item, handle, value));
+
+										manager.setValue(item, handle, value);
+									}
+									totalWrites.add(steps);
+								});
+							}
+							// Add reader tasks
+							for (int i = 0; i < writers; i++) {
+								circuit.task(() -> {
+									int steps = random(100, 50_000);
+									for (int j = 0; j < steps; j++) {
+										int index = random(0, handles.size());
+
+										PackageHandle handle = handles.get(index);
+										Object item = random(items);
+
+										Object value = manager.getValue(items, handle);
+
+										Triple<Object, PackageHandle, Object> combo =
+												nullableTriple(item, handle, value);
+
+										assertTrue(Objects.equals(value, handle.getNoEntryValue())
+												|| legalCombinations.contains(combo),
+												() -> combo.toString());
+									}
+									totalReads.add(steps);
+								});
+							}
+
+							Duration duration = circuit.execute(2, TimeUnit.SECONDS);
+
+							reporter.publishEntry(String.format(
+									"%d writers wrote %d entries, %d readers read %d entries, all on %d threads in %s",
+									Integer.valueOf(writers), Long.valueOf(totalWrites.sum()),
+									Integer.valueOf(readers), Long.valueOf(totalReads.sum()),
+									Integer.valueOf(threads), duration));
+						}
 					}
 				}
 

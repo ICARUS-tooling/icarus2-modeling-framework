@@ -44,13 +44,14 @@ public enum RequestHint implements Flag {
 	 * methods.
 	 * <p>
 	 * This hint exists to work around the fact that the info from an index set is
-	 * usually done on a best-effort basis.
+	 * usually done on a best-effort basis or that obtaining that info could be
+	 * time consuming.
 	 */
 	INPUT_ORDER_SORTED,
 
 	/**
 	 * Signals that a mapping should not throw an exception when encountering
-	 * indices that it has no entries for.
+	 * indices that it has no entries for, but instead simply omitt them.
 	 */
 	IGNORE_UNKNOWN_INDICES,
 	;
