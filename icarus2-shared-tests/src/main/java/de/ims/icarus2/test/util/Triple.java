@@ -21,16 +21,21 @@ package de.ims.icarus2.test.util;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Objects;
+
 import de.ims.icarus2.test.TestUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class Triple<E_1, E_2, E_3> {
+public final class Triple<E_1, E_2, E_3> {
 
 	public static <E_1, E_2, E_3> Triple<E_1, E_2, E_3> triple(E_1 first, E_2 second, E_3 third) {
-		return new Triple<>(first, second, third);
+		return new Triple<>(first, second, third, false);
+	}
+	public static <E_1, E_2, E_3> Triple<E_1, E_2, E_3> nullableTriple(E_1 first, E_2 second, E_3 third) {
+		return new Triple<>(first, second, third, true);
 	}
 
 	public final E_1 first;
@@ -43,9 +48,12 @@ public class Triple<E_1, E_2, E_3> {
 	 * @param third
 	 */
 	public Triple(E_1 first, E_2 second, E_3 third) {
-		this.first = requireNonNull(first);
-		this.second = requireNonNull(second);
-		this.third = requireNonNull(third);
+		this(first, second, third, false);
+	}
+	public Triple(E_1 first, E_2 second, E_3 third, boolean allowNull) {
+		this.first = allowNull ? first : requireNonNull(first);
+		this.second = allowNull ? second : requireNonNull(second);
+		this.third = allowNull ? third : requireNonNull(third);
 	}
 
 	/**
@@ -54,5 +62,30 @@ public class Triple<E_1, E_2, E_3> {
 	@Override
 	public String toString() {
 		return TestUtils.displayString("<%s,%s,%s>", first, second, third);
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(first, second, third);
+	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if(obj==this) {
+			return true;
+		} else if(obj instanceof Triple) {
+			@SuppressWarnings("rawtypes")
+			Triple other = (Triple) obj;
+			return Objects.equals(first, other.first)
+					&& Objects.equals(second, other.second)
+					&& Objects.equals(third, other.third);
+		}
+		return false;
 	}
 }

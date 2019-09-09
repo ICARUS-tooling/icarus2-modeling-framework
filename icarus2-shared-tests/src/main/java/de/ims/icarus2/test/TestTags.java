@@ -69,4 +69,12 @@ public final class TestTags {
 	 * shuffle the underlying data.
 	 */
 	public static final String SHUFFLE = "shuffle";
+
+	/**
+	 * Marks tests intended to test the thread-safety of an implementation.
+	 * While it is impossible due to JVM threading to reliably guarantee
+	 * thread-safety based on runtime samples, simulating high concurrency
+	 * might at least help spot some more obvious concurrency flaws in the code.
+	 */
+	public static final String CONCURRENT = "concurrent";
 }

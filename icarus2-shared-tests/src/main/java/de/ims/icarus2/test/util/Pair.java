@@ -103,8 +103,8 @@ public class Pair<E_1 extends Object, E_2 extends Object> {
 			return true;
 		} else if(obj instanceof Pair) {
 			Pair<?,?> other = (Pair<?, ?>) obj;
-			return first.equals(other.first)
-					&& second.equals(other.second);
+			return Objects.equals(first, other.first)
+					&& Objects.equals(second, other.second);
 		}
 		return false;
 	}
