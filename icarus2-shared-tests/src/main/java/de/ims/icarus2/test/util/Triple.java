@@ -50,7 +50,8 @@ public final class Triple<E_1, E_2, E_3> {
 	public Triple(E_1 first, E_2 second, E_3 third) {
 		this(first, second, third, false);
 	}
-	public Triple(E_1 first, E_2 second, E_3 third, boolean allowNull) {
+
+	private Triple(E_1 first, E_2 second, E_3 third, boolean allowNull) {
 		this.first = allowNull ? first : requireNonNull(first);
 		this.second = allowNull ? second : requireNonNull(second);
 		this.third = allowNull ? third : requireNonNull(third);

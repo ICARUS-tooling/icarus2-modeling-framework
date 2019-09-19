@@ -43,6 +43,7 @@ import de.ims.icarus2.util.Wrapper;
 import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.lang.ClassUtils;
 import de.ims.icarus2.util.lang.Primitives;
+import de.ims.icarus2.util.mem.ByteAllocator;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
@@ -286,7 +287,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 	 * In case the given {@code value} is not a primitive wrapper it will simply be
 	 * {@link AnnotationBundle#setValue(String, Object) stored} in the annotation mapping.
 	 *
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.Object)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, ByteAllocator, int, java.lang.Object)
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {

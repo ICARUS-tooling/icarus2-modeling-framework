@@ -98,10 +98,9 @@ public class PackedDataUtils {
 
 	private static PackageHandle createDefaultSubstitutingHandler(AnnotationManifest manifest) {
 		LookupList<Object> buffer = new LookupList<>(1000);
+		Substitutor<Object> substitutor = new Substitutor<>(buffer, true);
 		BytePackConverter converter = new BytePackConverter.SubstitutingConverterInt<>(
-				manifest.getValueType(), 4,
-				new Substitutor<>(buffer, true),
-				new Resubstitutor<>(buffer));
+				manifest.getValueType(), 4, substitutor, substitutor);
 
 		return new PackageHandle(manifest, manifest.getNoEntryValue().orElse(null), converter);
 	}
@@ -113,13 +112,33 @@ public class PackedDataUtils {
 	 */
 	private static final int EMPTY_VALUE = 0;
 
-	public static class Substitutor<T> implements Closeable, ToIntFunction<T> {
+	/**
+	 * Implements (re)substitution of arbitrary types via a backing {@link LookupList}.
+	 * Note that the back-end storage only ever grows through the lifetime of any instance
+	 * of this class!
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @param <T> type of values to be substituted (must be immutable
+	 * wrt {@link Object#equals(Object)})
+	 */
+	public static class Substitutor<T> implements Closeable, ToIntFunction<T>, IntFunction<T> {
 		private final LookupList<T> buffer;
 		private final boolean clearOnClose;
 
 		public Substitutor(LookupList<T> buffer, boolean clearOnClose) {
 			this.buffer = requireNonNull(buffer);
 			this.clearOnClose = clearOnClose;
+		}
+
+		public Substitutor(int capacity) {
+			buffer = new LookupList<>(capacity);
+			clearOnClose = true;
+		}
+
+		public Substitutor() {
+			buffer = new LookupList<>();
+			clearOnClose = true;
 		}
 
 		@Override
@@ -130,10 +149,17 @@ public class PackedDataUtils {
 
 			int index = buffer.indexOf(value);
 			if(index==UNSET_INT) {
-				index = buffer.size();
-				buffer.add(index, value);
+				synchronized (buffer) {
+					index = buffer.size();
+					buffer.add(index, value);
+				}
 			}
 			return index+1;
+		}
+
+		@Override
+		public T apply(int value) {
+			return value==EMPTY_VALUE ? null : buffer.get(value-1);
 		}
 
 		@Override
@@ -141,19 +167,6 @@ public class PackedDataUtils {
 			if(clearOnClose) {
 				buffer.clear();
 			}
-		}
-	}
-
-	public static class Resubstitutor<T> implements IntFunction<T> {
-		private final LookupList<T> buffer;
-
-		public Resubstitutor(LookupList<T> buffer) {
-			this.buffer = requireNonNull(buffer);
-		}
-
-		@Override
-		public T apply(int value) {
-			return value==EMPTY_VALUE ? null : buffer.get(value-1);
 		}
 	}
 }

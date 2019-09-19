@@ -37,9 +37,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -48,11 +47,13 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -60,6 +61,8 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.RepeatedTest;
@@ -69,16 +72,21 @@ import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.TestReporter;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.opentest4j.AssertionFailedError;
 
-import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataUtils.Substitutor;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.DisabledOnCi;
 import de.ims.icarus2.test.concurrent.Circuit;
 import de.ims.icarus2.test.guard.ApiGuard;
+import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.test.util.Triple;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
+import de.ims.icarus2.util.mem.ByteAllocator;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
@@ -118,15 +126,7 @@ class PackedDataManagerTest {
 	}
 
 	private static String key(int index) {
-		return "test_"+index;
-	}
-
-	private static AnnotationManifest mockAnnotationManifest(ValueType type, String key) {
-		AnnotationManifest annotationManifest = mock(AnnotationManifest.class);
-		when(annotationManifest.getValueType()).thenReturn(type);
-		when(annotationManifest.getKey()).thenReturn(Optional.of(key));
-		when(annotationManifest.getNoEntryValue()).thenReturn(Optional.ofNullable(noEntryValue(type)));
-		return annotationManifest;
+		return "key_"+index;
 	}
 
 	private static Object testValue(PackageHandle handle) {
@@ -161,8 +161,17 @@ class PackedDataManagerTest {
 	}
 
 	private static PackageHandle createHandle(ValueType type, String key, boolean allowBitPacking) {
-		AnnotationManifest manifest = mockAnnotationManifest(type, key);
-		return PackedDataUtils.createHandle(manifest, allowBitPacking);
+		Object noEntryValue = noEntryValue(type);
+		if(type.isPrimitiveType()) {
+			return new PackageHandle(key, noEntryValue,
+					BytePackConverter.forPrimitiveType(type, allowBitPacking));
+		}
+
+		Substitutor<Object> substitutor = new Substitutor<>(10_000);
+		BytePackConverter converter = new BytePackConverter.SubstitutingConverterInt<>(
+				type, 4, substitutor, substitutor);
+
+		return new PackageHandle(key, noEntryValue, converter);
 	}
 
 	private static Object item() {
@@ -356,7 +365,6 @@ class PackedDataManagerTest {
 						.defaultStorageSource()
 						.addHandles(handles)
 						.initialCapacity(10)
-						.collectStats(true)
 						.build();
 			}
 
@@ -415,7 +423,7 @@ class PackedDataManagerTest {
 				class Empty {
 
 					/**
-					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getBoolean(java.lang.Object, de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle)}.
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getBoolean(java.lang.Object, ByteAllocator, int)}.
 					 */
 					@SuppressWarnings("boxing")
 					@TestFactory
@@ -433,7 +441,7 @@ class PackedDataManagerTest {
 					}
 
 					/**
-					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getInteger(java.lang.Object, de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle)}.
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getInteger(java.lang.Object, ByteAllocator, int)}.
 					 */
 					@TestFactory
 					Stream<DynamicTest> testGetInteger() {
@@ -450,7 +458,7 @@ class PackedDataManagerTest {
 					}
 
 					/**
-					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getLong(java.lang.Object, de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle)}.
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getLong(java.lang.Object, ByteAllocator, int)}.
 					 */
 					@TestFactory
 					Stream<DynamicTest> testGetLong() {
@@ -467,7 +475,7 @@ class PackedDataManagerTest {
 					}
 
 					/**
-					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getFloat(java.lang.Object, de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle)}.
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getFloat(java.lang.Object, ByteAllocator, int)}.
 					 */
 					@TestFactory
 					Stream<DynamicTest> testGetFloat() {
@@ -484,7 +492,7 @@ class PackedDataManagerTest {
 					}
 
 					/**
-					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getDouble(java.lang.Object, de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle)}.
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getDouble(java.lang.Object, ByteAllocator, int)}.
 					 */
 					@TestFactory
 					Stream<DynamicTest> testGetDouble() {
@@ -501,7 +509,7 @@ class PackedDataManagerTest {
 					}
 
 					/**
-					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getValue(java.lang.Object, de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle)}.
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getValue(java.lang.Object, ByteAllocator, int)}.
 					 */
 					@TestFactory
 					Stream<DynamicTest> testGetValue() {
@@ -514,7 +522,7 @@ class PackedDataManagerTest {
 					}
 
 					/**
-					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getValue(java.lang.Object, de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle)}.
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getValue(java.lang.Object, ByteAllocator, int)}.
 					 */
 					@SuppressWarnings("cast")
 					@TestFactory
@@ -533,137 +541,10 @@ class PackedDataManagerTest {
 				}
 
 				@Nested
-				class Concurrent {
-
-					@DisabledOnCi
-					@Tag(CONCURRENT)
-					@ParameterizedTest
-					@CsvSource({
-						"2,   2",
-						"10,  10",
-						"20,  10",
-						"100, 10",
-						"100, 50",
-						"20,  20",
-					})
-					void testConcurrentWrite(int writers, int threads,
-							TestReporter reporter) throws Exception {
-						Object[] items = randomContent();
-						LongAdder totalWrites = new LongAdder();
-
-						try(Circuit circuit = new Circuit(threads)) {
-							for (int i = 0; i < writers; i++) {
-								circuit.task(() -> {
-//									long start = System.currentTimeMillis();
-									int steps = random(100, 10_000);
-									for (int j = 0; j < steps; j++) {
-										int index = random(0, handles.size());
-
-										Object value = generators.get(index).get();
-										PackageHandle handle = handles.get(index);
-										Object item = random(items);
-
-										manager.setValue(item, handle, value);
-									}
-									totalWrites.add(steps);
-//									long end = System.currentTimeMillis();
-//									System.out.printf("Executed %d writes in %dms on thread %s%n",
-//											Integer.valueOf(steps), Long.valueOf(end-start),
-//											Thread.currentThread().getName());
-								});
-							}
-
-							Duration duration = circuit.execute(2, TimeUnit.SECONDS);
-
-							reporter.publishEntry(String.format(
-									"writers=%d entries=%d threads=%d time=%s stats=%s",
-									Integer.valueOf(writers), Long.valueOf(totalWrites.sum()),
-									Integer.valueOf(threads), duration, manager.getStats()));
-						}
-					}
-
-					@DisabledOnCi
-					@Tag(CONCURRENT)
-					@ParameterizedTest
-					@CsvSource({
-						// writers, readers, threads
-						"1,  20,  10",
-						"1,  100, 10",
-						"5,  20,  10",
-						"5,  100, 10",
-						"5,  100, 20",
-						"20, 20,  10",
-						"20, 5,   10",
-						"20, 5,   10",
-					})
-					void testConcurrentReadAndWrite(int writers, int readers, int threads,
-							TestReporter reporter) throws Exception {
-						Object[] items = randomContent();
-
-						Set<Triple<Object, PackageHandle, Object>> legalCombinations =
-								Collections.synchronizedSet(new ObjectOpenHashSet<>());
-
-						LongAdder totalWrites = new LongAdder();
-						LongAdder totalReads = new LongAdder();
-
-						try(Circuit circuit = new Circuit(threads)) {
-							// Add writer tasks
-							for (int i = 0; i < writers; i++) {
-								circuit.task(() -> {
-									int steps = random(10, 1000);
-									for (int j = 0; j < steps; j++) {
-										int index = random(0, handles.size());
-
-										Object value = generators.get(index).get();
-										PackageHandle handle = handles.get(index);
-										Object item = random(items);
-
-										legalCombinations.add(nullableTriple(item, handle, value));
-
-										manager.setValue(item, handle, value);
-									}
-									totalWrites.add(steps);
-								});
-							}
-							// Add reader tasks
-							for (int i = 0; i < writers; i++) {
-								circuit.task(() -> {
-									int steps = random(100, 50_000);
-									for (int j = 0; j < steps; j++) {
-										int index = random(0, handles.size());
-
-										PackageHandle handle = handles.get(index);
-										Object item = random(items);
-
-										Object value = manager.getValue(items, handle);
-
-										Triple<Object, PackageHandle, Object> combo =
-												nullableTriple(item, handle, value);
-
-										assertTrue(Objects.equals(value, handle.getNoEntryValue())
-												|| legalCombinations.contains(combo),
-												() -> combo.toString());
-									}
-									totalReads.add(steps);
-								});
-							}
-
-							Duration duration = circuit.execute(2, TimeUnit.SECONDS);
-
-							reporter.publishEntry(String.format(
-									"%d writers wrote %d entries, %d readers read %d entries, all on %d threads in %s",
-									Integer.valueOf(writers), Long.valueOf(totalWrites.sum()),
-									Integer.valueOf(readers), Long.valueOf(totalReads.sum()),
-									Integer.valueOf(threads), duration));
-						}
-					}
-				}
-
-				@Nested
 				class NoEntryValue {
 
 					/**
-					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getBoolean(java.lang.Object, de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle)}.
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getBoolean(java.lang.Object, ByteAllocator, int)}.
 					 */
 					@SuppressWarnings("boxing")
 					@TestFactory
@@ -683,7 +564,7 @@ class PackedDataManagerTest {
 					}
 
 					/**
-					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getInteger(java.lang.Object, de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle)}.
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getInteger(java.lang.Object, ByteAllocator, int)}.
 					 */
 					@TestFactory
 					Stream<DynamicTest> testGetInteger() {
@@ -702,7 +583,7 @@ class PackedDataManagerTest {
 					}
 
 					/**
-					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getLong(java.lang.Object, de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle)}.
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getLong(java.lang.Object, ByteAllocator, int)}.
 					 */
 					@TestFactory
 					Stream<DynamicTest> testGetLong() {
@@ -721,7 +602,7 @@ class PackedDataManagerTest {
 					}
 
 					/**
-					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getFloat(java.lang.Object, de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle)}.
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getFloat(java.lang.Object, ByteAllocator, int)}.
 					 */
 					@TestFactory
 					Stream<DynamicTest> testGetFloat() {
@@ -740,7 +621,7 @@ class PackedDataManagerTest {
 					}
 
 					/**
-					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getDouble(java.lang.Object, de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle)}.
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getDouble(java.lang.Object, ByteAllocator, int)}.
 					 */
 					@TestFactory
 					Stream<DynamicTest> testGetDouble() {
@@ -759,7 +640,7 @@ class PackedDataManagerTest {
 					}
 
 					/**
-					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getValue(java.lang.Object, de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle)}.
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getValue(java.lang.Object, ByteAllocator, int)}.
 					 */
 					@TestFactory
 					Stream<DynamicTest> testGetValue() {
@@ -773,7 +654,7 @@ class PackedDataManagerTest {
 					}
 
 					/**
-					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getValue(java.lang.Object, de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle)}.
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getValue(java.lang.Object, ByteAllocator, int)}.
 					 */
 					@SuppressWarnings("cast")
 					@TestFactory
@@ -797,7 +678,7 @@ class PackedDataManagerTest {
 				class FullCycle {
 
 					/**
-					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getBoolean(java.lang.Object, de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle)}.
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getBoolean(java.lang.Object, ByteAllocator, int)}.
 					 */
 					@SuppressWarnings("boxing")
 					@TestFactory
@@ -810,6 +691,7 @@ class PackedDataManagerTest {
 									boolean value = random().nextBoolean();
 									if(typesForSetters(handle).contains(ValueType.BOOLEAN)) {
 										manager.setBoolean(item, handle, value);
+										assertTrue(manager.isUsed(item));
 										assertEquals(value, manager.getBoolean(item, handle));
 									} else {
 										assertUnsupportedType(() -> manager.setBoolean(item, handle, value));
@@ -818,7 +700,7 @@ class PackedDataManagerTest {
 					}
 
 					/**
-					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getInteger(java.lang.Object, de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle)}.
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getInteger(java.lang.Object, ByteAllocator, int)}.
 					 */
 					@TestFactory
 					Stream<DynamicTest> testGetInteger() {
@@ -830,6 +712,7 @@ class PackedDataManagerTest {
 									int value = random().nextInt();
 									if(typesForSetters(handle).contains(ValueType.INTEGER)) {
 										manager.setInteger(item, handle, value);
+										assertTrue(manager.isUsed(item));
 										assertEquals(value, manager.getInteger(item, handle));
 									} else {
 										assertUnsupportedType(() -> manager.setInteger(item, handle, value));
@@ -838,7 +721,7 @@ class PackedDataManagerTest {
 					}
 
 					/**
-					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getLong(java.lang.Object, de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle)}.
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getLong(java.lang.Object, ByteAllocator, int)}.
 					 */
 					@TestFactory
 					Stream<DynamicTest> testGetLong() {
@@ -850,6 +733,7 @@ class PackedDataManagerTest {
 									long value = random().nextLong();
 									if(typesForSetters(handle).contains(ValueType.LONG)) {
 										manager.setLong(item, handle, value);
+										assertTrue(manager.isUsed(item));
 										assertEquals(value, manager.getLong(item, handle));
 									} else {
 										assertUnsupportedType(() -> manager.setLong(item, handle, value));
@@ -858,7 +742,7 @@ class PackedDataManagerTest {
 					}
 
 					/**
-					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getFloat(java.lang.Object, de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle)}.
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getFloat(java.lang.Object, ByteAllocator, int)}.
 					 */
 					@TestFactory
 					Stream<DynamicTest> testGetFloat() {
@@ -870,6 +754,7 @@ class PackedDataManagerTest {
 									float value = random().nextFloat();
 									if(typesForSetters(handle).contains(ValueType.FLOAT)) {
 										manager.setFloat(item, handle, value);
+										assertTrue(manager.isUsed(item));
 										assertEquals(value, manager.getFloat(item, handle));
 									} else {
 										assertUnsupportedType(() -> manager.setFloat(item, handle, value));
@@ -878,7 +763,7 @@ class PackedDataManagerTest {
 					}
 
 					/**
-					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getDouble(java.lang.Object, de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle)}.
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getDouble(java.lang.Object, ByteAllocator, int)}.
 					 */
 					@TestFactory
 					Stream<DynamicTest> testGetDouble() {
@@ -890,6 +775,7 @@ class PackedDataManagerTest {
 									double value = random().nextDouble();
 									if(typesForSetters(handle).contains(ValueType.DOUBLE)) {
 										manager.setDouble(item, handle, value);
+										assertTrue(manager.isUsed(item));
 										assertEquals(value, manager.getDouble(item, handle));
 									} else {
 										assertUnsupportedType(() -> manager.setDouble(item, handle, value));
@@ -898,7 +784,7 @@ class PackedDataManagerTest {
 					}
 
 					/**
-					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getValue(java.lang.Object, de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle)}.
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#getValue(java.lang.Object, ByteAllocator, int)}.
 					 */
 					@TestFactory
 					Stream<DynamicTest> testGetValue() {
@@ -911,6 +797,7 @@ class PackedDataManagerTest {
 									if(typesForSetters(handle).contains(ValueType.CUSTOM)
 											|| typesForSetters(handle).contains(ValueType.STRING)) {
 										manager.setValue(item, handle, value);
+										assertTrue(manager.isUsed(item));
 										assertEquals(value, manager.getValue(item, handle));
 									} else {
 										assertUnsupportedType(() -> manager.setValue(item, handle, value));
@@ -928,6 +815,7 @@ class PackedDataManagerTest {
 									Object value = new Object();
 									if(typesForSetters(handle).contains(ValueType.STRING)) {
 										manager.setValue(item, handle, value);
+										assertTrue(manager.isUsed(item));
 										assertEquals(value, manager.getValue(item, handle));
 									} else {
 										assertUnsupportedType(() -> manager.setValue(item, handle, value));
@@ -1323,6 +1211,385 @@ class PackedDataManagerTest {
 						assertFalse(manager.isRegistered(item()));
 					}
 
+					/**
+					 * Test method for {@link de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager#isUsed(Object)}.
+					 */
+					@Test
+					void testIsUsedUnwritten() {
+						Object item = item();
+						assertTrue(manager.register(item));
+						assertFalse(manager.isUsed(item));
+					}
+				}
+
+			}
+		}
+
+		/**
+		 * Note: The following tests are NOT meant to provide proof of thread-safety, but
+		 * merely as a cheap way to potentially flag missing thread-safety.
+		 *
+		 * @author Markus Gärtner
+		 *
+		 */
+		@Nested
+		class Concurrent {
+
+			@DisabledOnCi
+			@Tag(CONCURRENT)
+			@TestFactory
+			@DisplayName("readers+writers, single handle+item, all types")
+			Stream<DynamicNode> testReadAndWriteSingleHandle(TestReporter reporter) throws Exception {
+
+				return IntStream.of(1, 2, 10, 100).boxed() // writers
+						.flatMap(writers -> IntStream.of(1, 2, 10, 100).boxed() // readers
+								.map(readers -> Pair.pair(writers, readers)))
+						.map(pRW -> dynamicContainer(String.format("writers=%d readers=%d", pRW.first, pRW.second),
+								IntStream.range(0, _types.length) // only pick the deterministic subset of handles
+								.mapToObj(i -> Pair.pair(handles.get(i), _gen[i]))
+								.map(pHG -> dynamicTest(pHG.first.getConverter().getValueType().getName(), () -> {
+									PackageHandle handle = pHG.first;
+									Supplier<?> gen = pHG.second;
+
+									PackedDataManager<Object, Object> manager = PackedDataManager.builder()
+										.allowBitPacking(true)
+										.defaultStorageSource()
+										.addHandles(singleton(handle))
+										.initialCapacity(10)
+										.collectStats(true)
+										.build();
+
+									Object owner = new Object();
+									manager.addNotify(owner);
+
+									Object item = "item_0";
+									manager.register(item);
+
+									Object[] values = Stream.generate(gen)
+											.limit(100)
+											.toArray();
+
+									Set<Object> legalValues = set(values);
+									legalValues.add(handle.getNoEntryValue());
+
+									int writers = pRW.first.intValue();
+									int readers = pRW.second.intValue();
+
+									int writes = 100_000;
+									int reads = 100_000;
+
+									try(Circuit circuit = new Circuit(writers+readers)) {
+
+										LongAdder totalWrites = new LongAdder();
+										LongAdder totalReads = new LongAdder();
+
+										// Add writer tasks
+										for (int i = 0; i < writers; i++) {
+											circuit.addTask(() -> {
+												for (int j = 0; j < writes; j++) {
+													Object value = values[j%values.length];
+													manager.setValue(item, handle, value);
+													totalWrites.increment();
+												}
+											});
+										}
+										// Add reader tasks
+										for (int i = 0; i < readers; i++) {
+											circuit.addTask(() -> {
+												for (int j = 0; j < reads; j++) {
+													Object value = manager.getValue(item, handle);
+													assertTrue(legalValues.contains(value),
+															String.format("Cycle %d: expected %s to be a legal value",
+																	Integer.valueOf(j), value));
+													totalReads.increment();
+												}
+											});
+										}
+
+										Duration duration = circuit.executeAndWait();
+
+										reporter.publishEntry(String.format(
+												"type=%s writers=%d writeOps=%d readers=%d readOps=%d duration=%s stats=%s",
+												handle.getConverter().getValueType(),
+												Integer.valueOf(writers), Long.valueOf(totalWrites.sum()),
+												Integer.valueOf(readers), Long.valueOf(totalReads.sum()),
+												duration, manager.getStats()));
+									}
+								}))));
+			}
+
+			@Nested
+			class WithFixedManager {
+
+				PackedDataManager<Object, Object> manager;
+
+				Object owner;
+				Object[] items;
+
+				@BeforeEach
+				void setUp() {
+					manager = PackedDataManager.builder()
+							.allowBitPacking(true)
+							.defaultStorageSource()
+							.addHandles(handles)
+							.initialCapacity(10)
+							.collectStats(true)
+//							.failForUnwritten(true)
+							.build();
+
+					owner = new Object();
+					manager.addNotify(owner);
+					items = randomContent();
+					Stream.of(items).forEach(manager::register);
+
+					for(Object item : items) {
+						assertTrue(manager.isRegistered(item));
+					}
+
+				}
+
+				@AfterEach
+				void tearDown() {
+					for(Object item : items) {
+						assertTrue(manager.isRegistered(item));
+					}
+
+					Stream.of(items).forEach(manager::unregister);
+
+					manager.removeNotify(owner);
+					owner = null;
+					manager = null;
+				}
+
+				@DisabledOnCi
+				@Tag(CONCURRENT)
+				@ParameterizedTest(name="write [{index}] writers={0}")
+				@DisplayName("writers only")
+				@ValueSource(ints = {1, 2, 10, 20, 100})
+				void testConcurrentWrite(int writers,
+						TestReporter reporter) throws Exception {
+					LongAdder totalWrites = new LongAdder();
+
+					try(Circuit circuit = new Circuit(writers)) {
+						for (int i = 0; i < writers; i++) {
+							circuit.addTask(() -> {
+								int steps = random(100, 10_000);
+								for (int j = 0; j < steps; j++) {
+									int index = random(0, handles.size());
+
+									Object value = generators.get(index).get();
+									PackageHandle handle = handles.get(index);
+									Object item = random(items);
+
+									assertTrue(manager.isRegistered(item));
+
+									manager.setValue(item, handle, value);
+								}
+								totalWrites.add(steps);
+							});
+						}
+
+						Duration duration = circuit.executeAndWait(2, TimeUnit.SECONDS);
+
+						reporter.publishEntry(String.format(
+								"writers=%d entries=%d time=%s stats=%s",
+								Integer.valueOf(writers), Long.valueOf(totalWrites.sum()),
+								duration, manager.getStats()));
+					}
+				}
+
+				@DisabledOnCi
+				@Tag(CONCURRENT)
+				@ParameterizedTest(name="read+write [{index}] writers={0} readers={1}")
+				@DisplayName("readers+writers, fixed data")
+				@CsvSource({
+					// writers, readers
+					"1,   1",
+					"1,   20",
+					"1,   100",
+					"5,   20",
+					"5,   100",
+					"20,  20",
+					"20,  5",
+					"100, 5",
+					"100, 1",
+				})
+				void testConcurrentReadAndWriteFixed(int writers, int readers,
+						TestReporter reporter) throws Exception {
+
+					Map<String, PackageHandle> handleLookup = new Object2ObjectOpenHashMap<>();
+					handles.forEach(handle -> handleLookup.put((String) handle.getSource(), handle));
+
+					// item, handle, value
+					Set<Triple<Object, String, Object>> legalCombinations
+						= Collections.synchronizedSet(new ObjectOpenHashSet<>(
+								items.length*handles.size()*101));
+
+					int valuesPerCombo = 10;
+
+					// Generate fixed data
+					for (Object item : items) {
+						for (int i = 0; i < handles.size(); i++) {
+							PackageHandle handle = handles.get(i);
+							Object noEntryValue = handle.getNoEntryValue();
+							legalCombinations.add(nullableTriple(item, (String)handle.getSource(), noEntryValue));
+
+							for (int j = 0; j < valuesPerCombo; j++) {
+								Object value = generators.get(i).get();
+								legalCombinations.add(nullableTriple(item, (String)handle.getSource(), value));
+							}
+						}
+					}
+
+					LongAdder totalWrites = new LongAdder();
+					LongAdder totalReads = new LongAdder();
+
+					BiConsumer<Object, PackageHandle> verifier = (item, handle) -> {
+						Object value = manager.getValue(item, handle);
+						Triple<Object, String, Object> combo =
+								nullableTriple(item, (String)handle.getSource(), value);
+
+						if(!legalCombinations.contains(combo))
+							throw new AssertionFailedError(String.format(
+									"Unrecognized combo after %d reads: %s",
+										Long.valueOf(totalReads.sum()),combo));
+						totalReads.increment();
+					};
+
+					try(Circuit circuit = new Circuit(writers+readers)) {
+						// Add writer tasks
+						for (int i = 0; i < writers; i++) {
+							circuit.addTask(() -> {
+								for(Triple<Object, String, Object> t : legalCombinations) {
+									PackageHandle handle = handleLookup.get(t.second);
+									manager.setValue(t.first, handle, t.third);
+									totalWrites.increment();
+								}
+							});
+						}
+						// Add reader tasks
+						for (int i = 0; i < readers; i++) {
+							circuit.addTask(() -> {
+								for(Object item : items) {
+									for(PackageHandle handle : handles) {
+										verifier.accept(item, handle);
+									}
+								}
+							});
+						}
+
+						Duration duration = circuit.executeAndWait(0, TimeUnit.SECONDS);
+
+						reporter.publishEntry(String.format(
+								"writers=%d writeOps=%d readers=%d readOps=%d time=%s stats=%s",
+								Integer.valueOf(writers), Long.valueOf(totalWrites.sum()),
+								Integer.valueOf(readers), Long.valueOf(totalReads.sum()),
+								duration, manager.getStats()));
+					}
+				}
+
+				@DisabledOnCi
+				@Tag(CONCURRENT)
+				@ParameterizedTest(name="read+write [{index}] writers={0} readers={1}")
+				@DisplayName("readers+writers, randomized data")
+				@CsvSource({
+					// writers, readers
+					"1,   1",
+					"1,   20",
+					"1,   100",
+					"5,   20",
+					"5,   100",
+					"20,  20",
+					"20,  5",
+					"100, 5",
+					"100, 1",
+				})
+				void testConcurrentReadAndWriteRandom(int writers, int readers,
+						TestReporter reporter) throws Exception {
+
+					// item, handle, value
+					Set<Triple<Object, PackageHandle, Object>> legalCombinations
+						= Collections.synchronizedSet(new ObjectOpenHashSet<>());
+
+					LongAdder totalWrites = new LongAdder();
+					LongAdder totalReads = new LongAdder();
+
+					LongAdder unsetReads = new LongAdder();
+					LongAdder comparisons = new LongAdder();
+
+					Consumer<Object> writer = item -> {
+						int index = random(0, handles.size());
+
+						Object value = generators.get(index).get();
+						PackageHandle handle = handles.get(index);
+
+						assertTrue(manager.isRegistered(item));
+
+						legalCombinations.add(nullableTriple(item, handle, value));
+
+						manager.setValue(item, handle, value);
+
+						assertTrue(manager.isUsed(item));
+					};
+
+					Consumer<Object> reader = item -> {
+						int index = random(0, handles.size());
+
+						PackageHandle handle = handles.get(index);
+
+						assertTrue(manager.isRegistered(item));
+
+						Object value = manager.getValue(item, handle);
+
+						if(Objects.equals(handle.getNoEntryValue(), value)) {
+							unsetReads.increment();
+							return;
+						}
+
+						assertTrue(manager.isUsed(item));
+
+						Triple<Object, PackageHandle, Object> combo =
+								nullableTriple(item, handle, value);
+						comparisons.increment();
+
+						assertTrue(legalCombinations.contains(combo),
+								() -> "Unrecognized combo: "+combo);
+					};
+
+					// Write _something_ initially for every item, so we guarantee actual readable content
+	//				Stream.of(items).forEach(writer);
+
+					try(Circuit circuit = new Circuit(writers+readers)) {
+						// Add writer tasks
+						for (int i = 0; i < writers; i++) {
+							circuit.addTask(() -> {
+								int steps = random(10, 1000);
+								for (int j = 0; j < steps; j++) {
+									writer.accept(random(items));
+								}
+								totalWrites.add(steps);
+							});
+						}
+						// Add reader tasks
+						for (int i = 0; i < readers; i++) {
+							circuit.addTask(() -> {
+								int steps = random(100, 50_000);
+								for (int j = 0; j < steps; j++) {
+									reader.accept(random(items));
+								}
+								totalReads.add(steps);
+							});
+						}
+
+						Duration duration = circuit.executeAndWait(0, TimeUnit.SECONDS);
+
+						reporter.publishEntry(String.format(
+								"writers=%d writeOps=%d readers=%d readOps=%d unsetReads=%d comparisons=%d time=%s stats=%s",
+								Integer.valueOf(writers), Long.valueOf(totalWrites.sum()),
+								Integer.valueOf(readers), Long.valueOf(totalReads.sum()),
+								Long.valueOf(unsetReads.sum()), Long.valueOf(comparisons.sum()),
+								duration, manager.getStats()));
+					}
 				}
 
 			}

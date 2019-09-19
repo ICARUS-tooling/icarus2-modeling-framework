@@ -158,9 +158,6 @@ subprojects {
 		// https://mvnrepository.com/artifact/com.fasterxml.uuid/java-uuid-generator
 		uuid "com.fasterxml.uuid:java-uuid-generator:${versions.uuid}"
 		
-		// https://search.maven.org/artifact/net.jodah/concurrentunit/0.4.6/jar
-		concurrentunit "net.jodah:concurrentunit:${versions.concurrentunit}"
-		
 		// BENCHMARK ENVIRONMENT (JMH)
 		
 		jmhCompile project

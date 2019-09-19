@@ -47,8 +47,6 @@ import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter;
-import de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle;
 import de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter.BitwiseBooleanConverter;
 import de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter.BooleanConverter;
 import de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter.DoubleConverter;
@@ -59,7 +57,6 @@ import de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackCon
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.mem.ByteAllocator;
-import de.ims.icarus2.util.mem.ByteAllocator.Cursor;
 
 /**
  * @author Markus Gärtner
@@ -70,15 +67,14 @@ class BytePackConverterTest {
 	abstract class BaseTest<C extends BytePackConverter> {
 
 		ByteAllocator alloc;
-		Cursor cursor;
+		int id = UNSET_INT;
 		PackageHandle handle;
 
 		@SuppressWarnings("boxing")
 		@BeforeEach
 		void setUp() {
 			alloc = new ByteAllocator(ByteAllocator.MIN_SLOT_SIZE, ByteAllocator.MIN_CHUNK_POWER);
-			cursor = alloc.newCursor();
-			cursor.moveTo(alloc.alloc());
+			id = alloc.alloc();
 			handle = mock(PackageHandle.class);
 			when(handle.getIndex()).thenReturn(0);
 			when(handle.getBit()).thenReturn(0);
@@ -88,7 +84,7 @@ class BytePackConverterTest {
 		void tearDown() {
 			alloc.clear();
 			alloc = null;
-			cursor = null;
+			id = UNSET_INT;
 			handle = null;
 		}
 
@@ -115,22 +111,22 @@ class BytePackConverterTest {
 				C converter = p.second;
 
 				if(types().contains(ValueType.BOOLEAN)) {
-					converter.setBoolean(handle, cursor, true);
-					assertTrue(converter.getBoolean(handle, cursor));
+					converter.setBoolean(handle, alloc, id, true);
+					assertTrue(converter.getBoolean(handle, alloc, id));
 
-					converter.setBoolean(handle, cursor, false);
-					assertFalse(converter.getBoolean(handle, cursor));
+					converter.setBoolean(handle, alloc, id, false);
+					assertFalse(converter.getBoolean(handle, alloc, id));
 
-					converter.setValue(handle, cursor, Boolean.TRUE);
-					assertEquals(Boolean.TRUE, converter.getValue(handle, cursor));
+					converter.setValue(handle, alloc, id, Boolean.TRUE);
+					assertEquals(Boolean.TRUE, converter.getValue(handle, alloc, id));
 
-					converter.setValue(handle, cursor, Boolean.FALSE);
-					assertEquals(Boolean.FALSE, converter.getValue(handle, cursor));
+					converter.setValue(handle, alloc, id, Boolean.FALSE);
+					assertEquals(Boolean.FALSE, converter.getValue(handle, alloc, id));
 				} else {
 					ManifestTestUtils.assertUnsupportedType(
-							() -> converter.setBoolean(handle, cursor, random().nextBoolean()));
+							() -> converter.setBoolean(handle, alloc, id, random().nextBoolean()));
 					ManifestTestUtils.assertUnsupportedType(
-							() -> converter.getBoolean(handle, cursor));
+							() -> converter.getBoolean(handle, alloc, id));
 				}
 			}));
 		}
@@ -144,21 +140,21 @@ class BytePackConverterTest {
 					IntStream.generate(random()::nextInt)
 						.limit(random(10, 20))
 						.forEach(value -> {
-							converter.setInteger(handle, cursor, value);
-							assertEquals(value, converter.getInteger(handle, cursor));
+							converter.setInteger(handle, alloc, id, value);
+							assertEquals(value, converter.getInteger(handle, alloc, id));
 						});
 					IntStream.generate(random()::nextInt)
 						.limit(random(10, 20))
 						.forEach(value -> {
 							Integer wrapped = Integer.valueOf(value);
-							converter.setValue(handle, cursor, wrapped);
-							assertEquals(wrapped, converter.getValue(handle, cursor));
+							converter.setValue(handle, alloc, id, wrapped);
+							assertEquals(wrapped, converter.getValue(handle, alloc, id));
 						});
 				} else {
 					ManifestTestUtils.assertUnsupportedType(
-							() -> converter.setInteger(handle, cursor, random().nextInt()));
+							() -> converter.setInteger(handle, alloc, id, random().nextInt()));
 					ManifestTestUtils.assertUnsupportedType(
-							() -> converter.getInteger(handle, cursor));
+							() -> converter.getInteger(handle, alloc, id));
 				}
 			}));
 		}
@@ -172,21 +168,21 @@ class BytePackConverterTest {
 					LongStream.generate(random()::nextLong)
 						.limit(random(10, 20))
 						.forEach(value -> {
-							converter.setLong(handle, cursor, value);
-							assertEquals(value, converter.getLong(handle, cursor));
+							converter.setLong(handle, alloc, id, value);
+							assertEquals(value, converter.getLong(handle, alloc, id));
 						});
 					LongStream.generate(random()::nextLong)
 						.limit(random(10, 20))
 						.forEach(value -> {
 							Long wrapped = Long.valueOf(value);
-							converter.setValue(handle, cursor, wrapped);
-							assertEquals(wrapped, converter.getValue(handle, cursor));
+							converter.setValue(handle, alloc, id, wrapped);
+							assertEquals(wrapped, converter.getValue(handle, alloc, id));
 						});
 				} else {
 					ManifestTestUtils.assertUnsupportedType(
-							() -> converter.setLong(handle, cursor, random().nextLong()));
+							() -> converter.setLong(handle, alloc, id, random().nextLong()));
 					ManifestTestUtils.assertUnsupportedType(
-							() -> converter.getLong(handle, cursor));
+							() -> converter.getLong(handle, alloc, id));
 				}
 			}));
 		}
@@ -200,21 +196,21 @@ class BytePackConverterTest {
 					DoubleStream.generate(random()::nextFloat)
 						.limit(random(10, 20))
 						.forEach(value -> {
-							converter.setFloat(handle, cursor, (float) value);
-							assertEquals((float)value, converter.getFloat(handle, cursor));
+							converter.setFloat(handle, alloc, id, (float) value);
+							assertEquals((float)value, converter.getFloat(handle, alloc, id));
 						});
 					DoubleStream.generate(random()::nextFloat)
 						.limit(random(10, 20))
 						.forEach(value -> {
 							Float wrapped = Float.valueOf((float)value);
-							converter.setValue(handle, cursor, wrapped);
-							assertEquals(wrapped, converter.getValue(handle, cursor));
+							converter.setValue(handle, alloc, id, wrapped);
+							assertEquals(wrapped, converter.getValue(handle, alloc, id));
 						});
 				} else {
 					ManifestTestUtils.assertUnsupportedType(
-							() -> converter.setFloat(handle, cursor, random().nextFloat()));
+							() -> converter.setFloat(handle, alloc, id, random().nextFloat()));
 					ManifestTestUtils.assertUnsupportedType(
-							() -> converter.getFloat(handle, cursor));
+							() -> converter.getFloat(handle, alloc, id));
 				}
 			}));
 		}
@@ -228,21 +224,21 @@ class BytePackConverterTest {
 					DoubleStream.generate(random()::nextDouble)
 						.limit(random(10, 20))
 						.forEach(value -> {
-							converter.setDouble(handle, cursor, value);
-							assertEquals(value, converter.getDouble(handle, cursor));
+							converter.setDouble(handle, alloc, id, value);
+							assertEquals(value, converter.getDouble(handle, alloc, id));
 						});
 					DoubleStream.generate(random()::nextDouble)
 						.limit(random(10, 20))
 						.forEach(value -> {
 							Double wrapped = Double.valueOf(value);
-							converter.setValue(handle, cursor, wrapped);
-							assertEquals(wrapped, converter.getValue(handle, cursor));
+							converter.setValue(handle, alloc, id, wrapped);
+							assertEquals(wrapped, converter.getValue(handle, alloc, id));
 						});
 				} else {
 					ManifestTestUtils.assertUnsupportedType(
-							() -> converter.setDouble(handle, cursor, random().nextDouble()));
+							() -> converter.setDouble(handle, alloc, id, random().nextDouble()));
 					ManifestTestUtils.assertUnsupportedType(
-							() -> converter.getDouble(handle, cursor));
+							() -> converter.getDouble(handle, alloc, id));
 				}
 			}));
 		}
@@ -256,13 +252,13 @@ class BytePackConverterTest {
 					Stream.generate(Object::new)
 						.limit(random(10, 20))
 						.forEach(value -> {
-							converter.setValue(handle, cursor, value);
-							assertEquals(value, converter.getValue(handle, cursor));
+							converter.setValue(handle, alloc, id, value);
+							assertEquals(value, converter.getValue(handle, alloc, id));
 						});
 				} else if(valueType().isPrimitiveType()) {
 					ManifestTestUtils.assertUnsupportedType(
-							() -> converter.setValue(handle, cursor, new Object()));
-					assertNotNull(converter.getValue(handle, cursor));
+							() -> converter.setValue(handle, alloc, id, new Object()));
+					assertNotNull(converter.getValue(handle, alloc, id));
 				}
 			}));
 		}
@@ -276,14 +272,14 @@ class BytePackConverterTest {
 					Stream.generate(() -> randomString(20))
 						.limit(random(10, 20))
 						.forEach(value -> {
-							converter.setString(handle, cursor, value);
-							assertEquals(value, converter.getString(handle, cursor));
+							converter.setString(handle, alloc, id, value);
+							assertEquals(value, converter.getString(handle, alloc, id));
 						});
 				} else {
 					ManifestTestUtils.assertUnsupportedType(
-							() -> converter.setString(handle, cursor, randomString(10)));
+							() -> converter.setString(handle, alloc, id, randomString(10)));
 					ManifestTestUtils.assertUnsupportedType(
-							() -> converter.getString(handle, cursor));
+							() -> converter.getString(handle, alloc, id));
 				}
 			}));
 		}
@@ -310,11 +306,11 @@ class BytePackConverterTest {
 					.mapToObj(bit -> dynamicTest("bit "+bit, () -> {
 						when(handle.getBit()).thenReturn(bit);
 						try(BitwiseBooleanConverter converter = new BitwiseBooleanConverter()) {
-							converter.setBoolean(handle, cursor, true);
-							assertTrue(converter.getBoolean(handle, cursor));
+							converter.setBoolean(handle, alloc, id, true);
+							assertTrue(converter.getBoolean(handle, alloc, id));
 
-							converter.setBoolean(handle, cursor, false);
-							assertFalse(converter.getBoolean(handle, cursor));
+							converter.setBoolean(handle, alloc, id, false);
+							assertFalse(converter.getBoolean(handle, alloc, id));
 						}
 					}));
 		}

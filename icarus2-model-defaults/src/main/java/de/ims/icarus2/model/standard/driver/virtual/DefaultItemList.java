@@ -101,8 +101,8 @@ public class DefaultItemList extends LookupList<Item> implements ItemList {
 		int idx1 = ensureIntegerValueRange(index1);
 		Item item0 = get(idx0);
 		Item item1 = get(idx1);
-		set(item1, idx0);
-		set(item0, idx1);
+		set(idx0, item1);
+		set(idx1, item0);
 	}
 
 	/**

@@ -28,7 +28,6 @@ import java.util.Deque;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
@@ -40,15 +39,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusRuntimeException;
+import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.Part;
+import de.ims.icarus2.util.Stats;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.collections.LazyMap;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.mem.ByteAllocator;
-import de.ims.icarus2.util.strings.ToStringBuilder;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -109,6 +110,13 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	private final boolean autoRegister;
 
 	/**
+	 * Flag to signal that any time we encounter an item in a {@code getXXX} method
+	 * that has not yet been registered or been written to, we should throw an
+	 * exception.
+	 */
+	private final boolean failForUnwritten;
+
+	/**
 	 * Keeps track of the number of annotation storages using this manager.
 	 * Allows lazy creation of the actual storage and to release the entire
 	 * data once it is no longer needed.
@@ -121,20 +129,15 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	private transient ByteAllocator rawStorage;
 
 	/**
-	 * For more efficient interaction with the raw storage
-	 * in terms of locality.
-	 */
-	private transient ByteAllocator.Cursor cursor;
-
-	/**
 	 * Maps individual items to their associated chunks of
 	 * allocated data in the {@link #rawStorage raw storage}.
 	 * <p>
 	 * Value semantics:
-	 * The stored index value based on an original {@code x} is:
+	 * The stored index value based on an original {@code x} for a given {@code item} is:
 	 * <ul>
-	 * <li>{@code x} if the index has a valid value</li>
-	 * <li>{@code -x-2} if the index is unused, i.e. the registered item has no annotation yes</li>
+	 * <li>{@code x} if the {@code item} has a valid value stored</li>
+	 * <li>{@code -1} if {@code item} is not registered yet</li>
+	 * <li>{@code -x-2} if the index is unused, i.e. the registered item has no value stored yes</li>
 	 * </ul>
 	 */
 	private transient Object2IntMap<E> chunkAddresses;
@@ -147,7 +150,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	/** Delegates construction of the storage construction */
 	private final IntFunction<ByteAllocator> storageSource;
 
-	private final Stats stats;
+	private final Stats<StatField> statFields;
 
 	/**
 	 * The lookup structure for defining raw package handlers.
@@ -173,7 +176,8 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		allowBitPacking = builder.isAllowBitPacking();
 		allowDynamicChunkComposition = builder.isAllowDynamicChunkComposition();
 		autoRegister = builder.isAutoRegister();
-		stats = builder.isCollectStats() ? new Stats() : null;
+		failForUnwritten = builder.isFailForUnwritten();
+		statFields = builder.isCollectStats() ? new Stats<>(StatField.class) : null;
 
 		packageHandles.addAll(builder.getHandles());
 	}
@@ -381,8 +385,6 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 				// Make sure we honor the minimum slot size, even if this means wasting memory
 				requiredSlotSize = Math.max(requiredSlotSize, ByteAllocator.MIN_SLOT_SIZE);
 				rawStorage = storageSource.apply(requiredSlotSize);
-
-				cursor = rawStorage.newCursor();
 			} finally {
 				lock.unlockWrite(stamp);
 			}
@@ -407,9 +409,6 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 				rawStorage.clear();
 				rawStorage = null;
-
-				cursor.clear();
-				cursor = null;
 			} finally {
 				lock.unlockWrite(stamp);
 			}
@@ -462,6 +461,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		if(isNewItem) {
 			id = rawStorage.alloc();
+			if(id<0)
+				throw new ModelException(ModelErrorCode.MODEL_CORRUPTED_STATE,
+						"Failed to allocate slots for item: "+item);
 
 			chunkAddresses.put(item, toggleId(id));
 		}
@@ -554,6 +556,30 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		return registered;
 	}
 
+	public boolean isUsed(E item) {
+		requireNonNull(item);
+
+		boolean used = false;
+
+		// Try optimistically first
+		long stamp = lock.tryOptimisticRead();
+		if(stamp!=0L) {
+			used = isMarkedWritten(chunkAddresses.getInt(item));
+		}
+
+		// Run a real lock if needed
+		if(!lock.validate(stamp)) {
+			stamp = lock.readLock();
+			try {
+				used = isMarkedWritten(chunkAddresses.getInt(item));
+			} finally {
+				lock.unlockRead(stamp);
+			}
+		}
+
+		return used;
+	}
+
 	/**
 	 * Clears (i.e. sets to the respective {@code noEntryValue})
 	 * all the annotations defined by the {@code handles} array
@@ -576,8 +602,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			E item;
 			while((item = items.get()) != null) {
 				// We ignore all items that have no annotations assigned to them anyway
-				if(prepareCursor(chunkAddressForRead(item))) {
-					clearCurrent(handles);
+				int id = chunkAddressForRead(item);
+				if(isMarkedWritten(id)) {
+					clearContent(id, handles);
 				}
 			}
 		} finally {
@@ -585,36 +612,12 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		}
 	}
 
-//	/**
-//	 * Clears (i.e. sets to the respective {@code noEntryValue})
-//	 * all the annotations defined by the {@code handles} array
-//	 * for as long as the specified supplier produces {@code ids}
-//	 * that are different to {@link IcarusUtils#UNSET_INT -1}.
-//	 *
-//	 * @param ids
-//	 * @param handles
-//	 */
-//	public void clear(IntSupplier ids, PackageHandle[] handles) {
-//		requireNonNull(ids);
-//		requireNonNull(handles);
-//		checkArgument("Empty handles array", handles.length>0);
-//
-//		long stamp = lock.writeLock();
-//		try {
-//			int id;
-//			while((id = ids.getAsInt()) != UNSET_INT) {
-//				cursor.moveTo(id);
-//				clearCurrent(handles);
-//			}
-//		} finally {
-//			lock.unlockWrite(stamp);
-//		}
-//	}
-
 	/**
 	 * Clears (i.e. sets to the respective {@code noEntryValue})
 	 * all the annotations defined by the {@code handles} array
 	 * for all currently registered items.
+	 * <p>
+	 * Note that this can be a rather costly operation.
 	 *
 	 * @param handles
 	 */
@@ -626,9 +629,8 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		try {
 			for(IntIterator it = chunkAddresses.values().iterator(); it.hasNext();) {
 				int id = it.nextInt();
-				if(id>UNSET_INT) {
-					cursor.moveTo(id);
-					clearCurrent(handles);
+				if(isMarkedWritten(id)) {
+					clearContent(id, handles);
 				}
 			}
 		} finally {
@@ -643,11 +645,11 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * <p>
 	 * Must be called under write lock.
 	 */
-	private void clearCurrent(PackageHandle[] handles) {
+	private void clearContent(int id, PackageHandle[] handles) {
 
 		for(int i=handles.length-1; i>=0; i--) {
 			PackageHandle handle = handles[i];
-			handle.converter.setValue(handle, cursor, handle.noEntryValue);
+			handle.converter.setValue(handle, rawStorage, id, handle.noEntryValue);
 		}
 	}
 
@@ -672,32 +674,31 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		chunkAddresses.put(item, asWriteId(id));
 	}
 
-	/**
-	 * Shift cursor to the address of given item.
-	 *
-	 * @param item
-	 * @return {@code true} iff given item had a valid address
-	 */
-	private boolean prepareCursor(int id) {
-		boolean validId =  id>UNSET_INT;
-
-		if(validId) {
-			cursor.moveTo(id);
-		}
-
-		return validId;
+	private boolean isMarkedWritten(int id) {
+		return id>UNSET_INT;
 	}
 
 	private void recordWrite() {
-		if(stats!=null) stats.written.increment();
+		if(statFields!=null) statFields.count(StatField.WRITE);
 	}
 
 	private void recordOptimisticRead() {
-		if(stats!=null) stats.readOptimistic.increment();
+		if(statFields!=null) statFields.count(StatField.READ_OPTIMISTIC);
+	}
+
+	private void recordCompromisedRead() {
+		if(statFields!=null) statFields.count(StatField.READ_COMPROMISED);
 	}
 
 	private void recordLockedRead() {
-		if(stats!=null) stats.readLocked.increment();
+		if(statFields!=null) statFields.count(StatField.READ);
+	}
+
+	private void handleUnwritten(E item) {
+		if(failForUnwritten) {
+			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE,
+					"Given item has not been written to before: "+item);
+		}
 	}
 
 	// GetXXX methods
@@ -712,19 +713,23 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @param handle the specification which annotation to access
 	 * @return the annotation for {@code item} specified by {@code handle} as an {@code boolean}
 	 *
-	 * @see BytePackConverter#getBoolean(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
+	 * @see BytePackConverter#getBoolean(PackageHandle, ByteAllocator, int)
 	 */
 	public boolean getBoolean(E item, PackageHandle handle) {
 
 		boolean result = ((Boolean)handle.noEntryValue).booleanValue();
 
 		long stamp = lock.tryOptimisticRead();
+		int id;
 
 		if(stamp!=0L) {
 			// Try optimistically
-			if(prepareCursor(chunkAddressForRead(item))) {
-				result = handle.converter.getBoolean(handle, cursor);
+			id = chunkAddressForRead(item);
+			if(isMarkedWritten(id)) {
+				result = handle.converter.getBoolean(handle, rawStorage, id);
 				recordOptimisticRead();
+			} else {
+				handleUnwritten(item);
 			}
 		}
 
@@ -732,9 +737,12 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		if(!lock.validate(stamp)) {
 			stamp = lock.readLock();
 			try {
-				if(prepareCursor(chunkAddressForRead(item))) {
-					result = handle.converter.getBoolean(handle, cursor);
+				id = chunkAddressForRead(item);
+				if(isMarkedWritten(id)) {
+					result = handle.converter.getBoolean(handle, rawStorage, id);
 					recordLockedRead();
+				} else {
+					handleUnwritten(item);
 				}
 			} finally {
 				lock.unlockRead(stamp);
@@ -754,7 +762,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @param handle the specification which annotation to access
 	 * @return the annotation for {@code item} specified by {@code handle} as an {@code int}
 	 *
-	 * @see BytePackConverter#getInteger(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
+	 * @see BytePackConverter#getInteger(PackageHandle, ByteAllocator, int)
 	 */
 	public int getInteger(E item, PackageHandle handle) {
 		requireNonNull(item);
@@ -762,11 +770,13 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		int result = ((Integer)handle.noEntryValue).intValue();
 
 		long stamp = lock.tryOptimisticRead();
+		int id;
 
 		if(stamp!=0L) {
 			// Try optimistically
-			if(prepareCursor(chunkAddressForRead(item))) {
-				result = handle.converter.getInteger(handle, cursor);
+			id = chunkAddressForRead(item);
+			if(isMarkedWritten(id)) {
+				result = handle.converter.getInteger(handle, rawStorage, id);
 				recordOptimisticRead();
 			}
 		}
@@ -775,8 +785,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		if(!lock.validate(stamp)) {
 			stamp = lock.readLock();
 			try {
-				if(prepareCursor(chunkAddressForRead(item))) {
-					result = handle.converter.getInteger(handle, cursor);
+				id = chunkAddressForRead(item);
+				if(isMarkedWritten(id)) {
+					result = handle.converter.getInteger(handle, rawStorage, id);
 					recordLockedRead();
 				}
 			} finally {
@@ -797,7 +808,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @param handle the specification which annotation to access
 	 * @return the annotation for {@code item} specified by {@code handle} as a {@code long}
 	 *
-	 * @see BytePackConverter#getLong(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
+	 * @see BytePackConverter#getLong(PackageHandle, ByteAllocator, int)
 	 */
 	public long getLong(E item, PackageHandle handle) {
 		requireNonNull(item);
@@ -805,11 +816,13 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		long result = ((Long)handle.noEntryValue).longValue();
 
 		long stamp = lock.tryOptimisticRead();
+		int id;
 
 		if(stamp!=0L) {
 			// Try optimistically
-			if(prepareCursor(chunkAddressForRead(item))) {
-				result = handle.converter.getLong(handle, cursor);
+			id = chunkAddressForRead(item);
+			if(isMarkedWritten(id)) {
+				result = handle.converter.getLong(handle, rawStorage, id);
 				recordOptimisticRead();
 			}
 		}
@@ -818,8 +831,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		if(!lock.validate(stamp)) {
 			stamp = lock.readLock();
 			try {
-				if(prepareCursor(chunkAddressForRead(item))) {
-					result = handle.converter.getLong(handle, cursor);
+				id = chunkAddressForRead(item);
+				if(isMarkedWritten(id)) {
+					result = handle.converter.getLong(handle, rawStorage, id);
 					recordLockedRead();
 				}
 			} finally {
@@ -840,7 +854,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @param handle the specification which annotation to access
 	 * @return the annotation for {@code item} specified by {@code handle} as a {@code float}
 	 *
-	 * @see BytePackConverter#getFloat(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
+	 * @see BytePackConverter#getFloat(PackageHandle, ByteAllocator, int)
 	 */
 	public float getFloat(E item, PackageHandle handle) {
 		requireNonNull(item);
@@ -848,11 +862,13 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		float result = ((Float)handle.noEntryValue).floatValue();
 
 		long stamp = lock.tryOptimisticRead();
+		int id;
 
 		if(stamp!=0L) {
 			// Try optimistically
-			if(prepareCursor(chunkAddressForRead(item))) {
-				result = handle.converter.getFloat(handle, cursor);
+			id = chunkAddressForRead(item);
+			if(isMarkedWritten(id)) {
+				result = handle.converter.getFloat(handle, rawStorage, id);
 				recordOptimisticRead();
 			}
 		}
@@ -861,8 +877,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		if(!lock.validate(stamp)) {
 			stamp = lock.readLock();
 			try {
-				if(prepareCursor(chunkAddressForRead(item))) {
-					result = handle.converter.getFloat(handle, cursor);
+				id = chunkAddressForRead(item);
+				if(isMarkedWritten(id)) {
+					result = handle.converter.getFloat(handle, rawStorage, id);
 					recordLockedRead();
 				}
 			} finally {
@@ -883,7 +900,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @param handle the specification which annotation to access
 	 * @return the annotation for {@code item} specified by {@code handle} as a {@code double}
 	 *
-	 * @see BytePackConverter#getDouble(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
+	 * @see BytePackConverter#getDouble(PackageHandle, ByteAllocator, int)
 	 */
 	public double getDouble(E item, PackageHandle handle) {
 		requireNonNull(item);
@@ -891,11 +908,13 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		double result = ((Double)handle.noEntryValue).doubleValue();
 
 		long stamp = lock.tryOptimisticRead();
+		int id;
 
 		if(stamp!=0L) {
 			// Try optimistically
-			if(prepareCursor(chunkAddressForRead(item))) {
-				result = handle.converter.getDouble(handle, cursor);
+			id = chunkAddressForRead(item);
+			if(isMarkedWritten(id)) {
+				result = handle.converter.getDouble(handle, rawStorage, id);
 				recordOptimisticRead();
 			}
 		}
@@ -904,8 +923,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		if(!lock.validate(stamp)) {
 			stamp = lock.readLock();
 			try {
-				if(prepareCursor(chunkAddressForRead(item))) {
-					result = handle.converter.getDouble(handle, cursor);
+				id = chunkAddressForRead(item);
+				if(isMarkedWritten(id)) {
+					result = handle.converter.getDouble(handle, rawStorage, id);
 					recordLockedRead();
 				}
 			} finally {
@@ -926,7 +946,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @param handle the specification which annotation to access
 	 * @return the annotation for {@code item} specified by {@code handle}
 	 *
-	 * @see BytePackConverter#getValue(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
+	 * @see BytePackConverter#getValue(PackageHandle, ByteAllocator, int)
 	 */
 	public Object getValue(E item, PackageHandle handle) {
 		requireNonNull(item);
@@ -934,12 +954,21 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		Object result = handle.noEntryValue;
 
 		long stamp = lock.tryOptimisticRead();
+		int id;
 
 		if(stamp!=0L) {
-			// Try optimistically
-			if(prepareCursor(chunkAddressForRead(item))) {
-				result = handle.converter.getValue(handle, cursor);
-				recordOptimisticRead();
+			try {
+				// Try optimistically
+				id = chunkAddressForRead(item);
+				if(isMarkedWritten(id)) {
+					result = handle.converter.getValue(handle, rawStorage, id);
+					recordOptimisticRead();
+				} else {
+					handleUnwritten(item);
+				}
+			} catch(RuntimeException e) {
+				stamp = 0L; // invalidate stamp
+				recordCompromisedRead();
 			}
 		}
 
@@ -947,9 +976,12 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		if(!lock.validate(stamp)) {
 			stamp = lock.readLock();
 			try {
-				if(prepareCursor(chunkAddressForRead(item))) {
-					result = handle.converter.getValue(handle, cursor);
+				id = chunkAddressForRead(item);
+				if(isMarkedWritten(id)) {
+					result = handle.converter.getValue(handle, rawStorage, id);
 					recordLockedRead();
+				} else {
+					handleUnwritten(item);
 				}
 			} finally {
 				lock.unlockRead(stamp);
@@ -969,7 +1001,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @param handle the specification which annotation to access
 	 * @return the annotation for {@code item} specified by {@code handle}
 	 *
-	 * @see BytePackConverter#getValue(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
+	 * @see BytePackConverter#getValue(PackageHandle, ByteAllocator, int)
 	 */
 	public String getString(E item, PackageHandle handle) {
 		requireNonNull(item);
@@ -977,11 +1009,13 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		String result = (String) handle.noEntryValue;
 
 		long stamp = lock.tryOptimisticRead();
+		int id;
 
 		if(stamp!=0L) {
 			// Try optimistically
-			if(prepareCursor(chunkAddressForRead(item))) {
-				result = handle.converter.getString(handle, cursor);
+			id = chunkAddressForRead(item);
+			if(isMarkedWritten(id)) {
+				result = handle.converter.getString(handle, rawStorage, id);
 				recordOptimisticRead();
 			}
 		}
@@ -990,8 +1024,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		if(!lock.validate(stamp)) {
 			stamp = lock.readLock();
 			try {
-				if(prepareCursor(chunkAddressForRead(item))) {
-					result = handle.converter.getString(handle, cursor);
+				id = chunkAddressForRead(item);
+				if(isMarkedWritten(id)) {
+					result = handle.converter.getString(handle, rawStorage, id);
 					recordLockedRead();
 				}
 			} finally {
@@ -1014,7 +1049,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @param handle the specification which annotation to access
 	 * @param value the new annotation value to use
 	 *
-	 * @see BytePackConverter#setBoolean(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, boolean)
+	 * @see BytePackConverter#setBoolean(PackageHandle, ByteAllocator, int, boolean)
 	 */
 	public void setBoolean(E item, PackageHandle handle, boolean value) {
 		requireNonNull(item);
@@ -1026,11 +1061,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 				registerUnsafe(item);
 			}
 			int id = chunkAddressForWrite(item);
-			if(prepareCursor(id)) {
-				handle.converter.setBoolean(handle, cursor, value);
-				markUsed(item, id);
-				recordWrite();
-			}
+			handle.converter.setBoolean(handle, rawStorage, id, value);
+			markUsed(item, id);
+			recordWrite();
 		} finally {
 			lock.unlockWrite(stamp);
 		}
@@ -1046,7 +1079,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @param handle the specification which annotation to access
 	 * @param value the new annotation value to use
 	 *
-	 * @see BytePackConverter#setInteger(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, int)
+	 * @see BytePackConverter#setInteger(PackageHandle, ByteAllocator, int, int)
 	 */
 	public void setInteger(E item, PackageHandle handle, int value) {
 		requireNonNull(item);
@@ -1058,11 +1091,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 				registerUnsafe(item);
 			}
 			int id = chunkAddressForWrite(item);
-			if(prepareCursor(id)) {
-				handle.converter.setInteger(handle, cursor, value);
-				markUsed(item, id);
-				recordWrite();
-			}
+			handle.converter.setInteger(handle, rawStorage, id, value);
+			markUsed(item, id);
+			recordWrite();
 		} finally {
 			lock.unlockWrite(stamp);
 		}
@@ -1078,7 +1109,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @param handle the specification which annotation to access
 	 * @param value the new annotation value to use
 	 *
-	 * @see BytePackConverter#setLong(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, long)
+	 * @see BytePackConverter#setLong(PackageHandle, ByteAllocator, int, long)
 	 */
 	public void setLong(E item, PackageHandle handle, long value) {
 		requireNonNull(item);
@@ -1090,11 +1121,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 				registerUnsafe(item);
 			}
 			int id = chunkAddressForWrite(item);
-			if(prepareCursor(id)) {
-				handle.converter.setLong(handle, cursor, value);
-				markUsed(item, id);
-				recordWrite();
-			}
+			handle.converter.setLong(handle, rawStorage, id, value);
+			markUsed(item, id);
+			recordWrite();
 		} finally {
 			lock.unlockWrite(stamp);
 		}
@@ -1110,7 +1139,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @param handle the specification which annotation to access
 	 * @param value the new annotation value to use
 	 *
-	 * @see BytePackConverter#setFloat(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, float)
+	 * @see BytePackConverter#setFloat(PackageHandle, ByteAllocator, int, float)
 	 */
 	public void setFloat(E item, PackageHandle handle, float value) {
 		requireNonNull(item);
@@ -1122,11 +1151,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 				registerUnsafe(item);
 			}
 			int id = chunkAddressForWrite(item);
-			if(prepareCursor(id)) {
-				handle.converter.setFloat(handle, cursor, value);
-				markUsed(item, id);
-				recordWrite();
-			}
+			handle.converter.setFloat(handle, rawStorage, id, value);
+			markUsed(item, id);
+			recordWrite();
 		} finally {
 			lock.unlockWrite(stamp);
 		}
@@ -1142,7 +1169,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @param handle the specification which annotation to access
 	 * @param value the new annotation value to use
 	 *
-	 * @see BytePackConverter#setDouble(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, double)
+	 * @see BytePackConverter#setDouble(PackageHandle, ByteAllocator, int, double)
 	 */
 	public void setDouble(E item, PackageHandle handle, double value) {
 		requireNonNull(item);
@@ -1154,11 +1181,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 				registerUnsafe(item);
 			}
 			int id = chunkAddressForWrite(item);
-			if(prepareCursor(id)) {
-				handle.converter.setDouble(handle, cursor, value);
-				markUsed(item, id);
-				recordWrite();
-			}
+			handle.converter.setDouble(handle, rawStorage, id, value);
+			markUsed(item, id);
+			recordWrite();
 		} finally {
 			lock.unlockWrite(stamp);
 		}
@@ -1174,7 +1199,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @param handle the specification which annotation to access
 	 * @param value the new annotation value to use
 	 *
-	 * @see BytePackConverter#setValue(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, Object)
+	 * @see BytePackConverter#setValue(PackageHandle, ByteAllocator, int, Object)
 	 */
 	public void setValue(E item, PackageHandle handle, @Nullable Object value) {
 		requireNonNull(item);
@@ -1190,11 +1215,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 				registerUnsafe(item);
 			}
 			int id = chunkAddressForWrite(item);
-			if(prepareCursor(id)) {
-				handle.converter.setValue(handle, cursor, value);
-				markUsed(item, id);
-				recordWrite();
-			}
+			handle.converter.setValue(handle, rawStorage, id, value);
+			markUsed(item, id);
+			recordWrite();
 		} finally {
 			lock.unlockWrite(stamp);
 		}
@@ -1210,7 +1233,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @param handle the specification which annotation to access
 	 * @param value the new annotation value to use
 	 *
-	 * @see BytePackConverter#setValue(PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, Object)
+	 * @see BytePackConverter#setValue(PackageHandle, ByteAllocator, int, Object)
 	 */
 	public void setString(E item, PackageHandle handle, @Nullable String value) {
 		requireNonNull(item);
@@ -1226,11 +1249,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 				registerUnsafe(item);
 			}
 			int id = chunkAddressForWrite(item);
-			if(prepareCursor(id)) {
-				handle.converter.setString(handle, cursor, value);
-				markUsed(item, id);
-				recordWrite();
-			}
+			handle.converter.setString(handle, rawStorage, id, value);
+			markUsed(item, id);
+			recordWrite();
 		} finally {
 			lock.unlockWrite(stamp);
 		}
@@ -1330,10 +1351,11 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		boolean result = false;
 
 		// Move to data chunk and then go through all the specified handles
-		if(prepareCursor(chunkAddressForRead(item))) {
+		int id = chunkAddressForRead(item);
+		if(isMarkedWritten(id)) {
 			for(PackageHandle handle : handles) {
 				// Fetch actual and the "default" value
-				Object value = handle.converter.getValue(handle, cursor);
+				Object value = handle.converter.getValue(handle, rawStorage, id);
 				Object noEntryValue = handle.noEntryValue;
 
 				// If current value is different to default, report it
@@ -1350,79 +1372,39 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	}
 
 	public boolean isCollectStats() {
-		return stats!=null;
+		return statFields!=null;
 	}
 
 	private void checkCollectStats() {
-		checkState("Not configured to record statistics", stats!=null);
+		checkState("Not configured to record statistics", statFields!=null);
 	}
 
-	public Stats resetStats() {
+	public Stats<StatField> resetStats() {
 		checkCollectStats();
-		Stats result = stats.clone();
-		stats.reset();
+		Stats<StatField> result = statFields.clone();
+		statFields.reset();
 		return result;
 	}
 
-	public Stats getStats() {
+	public Stats<StatField> getStats() {
 		checkCollectStats();
-		return stats.clone();
+		return statFields.clone();
 	}
 
-	/**
-	 * Utility class for recording various usage statistics of the
-	 * enclosing  {@link PackedDataManager}.
-	 *
-	 * @author Markus Gärtner
-	 *
-	 */
-	public static final class Stats implements Cloneable {
-		private LongAdder written = new LongAdder();
-		private LongAdder readOptimistic = new LongAdder();
-		private LongAdder readLocked = new LongAdder();
+	private static class ReadWriteProxy {
 
-		private Stats() { /* no-op */ }
+	}
 
-		public long getWritten() { return written.longValue(); }
-		public long getReadOptimistic() { return readOptimistic.longValue(); }
-		public long getReadLocked() { return readLocked.longValue(); }
-
-		private synchronized void reset() {
-			written = new LongAdder();
-			readOptimistic = new LongAdder();
-			readLocked = new LongAdder();
-		}
-
-		@Override
-		public synchronized Stats clone() {
-			try {
-				Stats clone = (Stats) super.clone();
-				clone.written = clone(clone.written);
-				clone.readOptimistic = clone(clone.readOptimistic);
-				clone.readLocked = clone(clone.readLocked);
-				return clone;
-			} catch (CloneNotSupportedException e) {
-				throw new InternalError(e);
-			}
-		}
-
-		private LongAdder clone(LongAdder source) {
-			LongAdder adder = new LongAdder();
-			adder.add(source.longValue());
-			return adder;
-		}
-
-		/**
-		 * @see java.lang.Object#toString()
-		 */
-		@Override
-		public String toString() {
-			return ToStringBuilder.create()
-					.add("written", written.longValue())
-					.add("optimistic", readOptimistic.longValue())
-					.add("readLocked", readLocked.longValue())
-					.build();
-		}
+	public static enum StatField {
+		/** Full lock write operation */
+		WRITE,
+		/** Read operation with optimistic locking */
+		READ_OPTIMISTIC,
+		/** Read operation with full read lock */
+		READ,
+		/** Fail of an optimistic read due to error in underlying system */
+		READ_COMPROMISED,
+		;
 	}
 
 	/**
@@ -1446,6 +1428,8 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		private Boolean autoRegister;
 
 		private Boolean collectStats;
+
+		private Boolean failForUnwritten;
 
 		private Set<PackageHandle> handles = new ObjectOpenHashSet<>();
 
@@ -1511,6 +1495,14 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			return thisAsCast();
 		}
 
+		public Builder<E,O> failForUnwritten(boolean failForUnwritten) {
+			checkState("Flag 'failForUnwritten' already set", this.failForUnwritten==null);
+
+			this.failForUnwritten = Boolean.valueOf(failForUnwritten);
+
+			return thisAsCast();
+		}
+
 		public int getInitialCapacity() {
 			return initialCapacity==null ? 0 : initialCapacity.intValue();
 		}
@@ -1533,6 +1525,10 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		public boolean isCollectStats() {
 			return collectStats==null ? false : collectStats.booleanValue();
+		}
+
+		public boolean isFailForUnwritten() {
+			return failForUnwritten==null ? false : failForUnwritten.booleanValue();
 		}
 
 		public Builder<E,O> addHandles(PackageHandle...handles) {

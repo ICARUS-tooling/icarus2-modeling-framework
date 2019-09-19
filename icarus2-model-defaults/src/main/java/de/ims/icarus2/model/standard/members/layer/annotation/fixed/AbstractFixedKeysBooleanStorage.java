@@ -25,6 +25,7 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.layer.annotation.AbstractManagedAnnotationStorage;
+import de.ims.icarus2.util.mem.ByteAllocator;
 
 /**
  * @author Markus Gärtner
@@ -72,7 +73,7 @@ public abstract class AbstractFixedKeysBooleanStorage extends AbstractManagedAnn
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getValue(de.ims.icarus2.model.api.members.item.Item, ByteAllocator, int)
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
@@ -82,7 +83,7 @@ public abstract class AbstractFixedKeysBooleanStorage extends AbstractManagedAnn
 	protected abstract boolean getNoEntryValue(String key);
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.Object)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, ByteAllocator, int, java.lang.Object)
 	 */
 	@Unguarded(Unguarded.DELEGATE)
 	@Override

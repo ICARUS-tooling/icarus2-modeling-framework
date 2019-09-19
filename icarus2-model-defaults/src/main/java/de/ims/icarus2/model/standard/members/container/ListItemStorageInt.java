@@ -311,8 +311,8 @@ public class ListItemStorageInt implements ItemStorage {
 
 		Item item0 = items.get(idx0);
 		Item item1 = items.get(idx1);
-		items.set(item0, idx1);
-		items.set(item1, idx0);
+		items.set(idx1, item0);
+		items.set(idx0, item1);
 	}
 
 	/**

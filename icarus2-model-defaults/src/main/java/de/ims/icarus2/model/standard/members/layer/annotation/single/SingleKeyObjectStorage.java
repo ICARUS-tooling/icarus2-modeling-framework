@@ -28,6 +28,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.util.annotations.TestableImplementation;
+import de.ims.icarus2.util.mem.ByteAllocator;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
@@ -86,7 +87,7 @@ public class SingleKeyObjectStorage extends AbstractSingleKeyStorage {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getValue(de.ims.icarus2.model.api.members.item.Item, ByteAllocator, int)
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
@@ -102,7 +103,7 @@ public class SingleKeyObjectStorage extends AbstractSingleKeyStorage {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.Object)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, ByteAllocator, int, java.lang.Object)
 	 */
 	@Override
 	public void setValue(Item item, String key, Object value) {

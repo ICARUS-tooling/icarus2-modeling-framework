@@ -244,12 +244,12 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#set(java.lang.Object, int)}.
+		 * Test method for {@link de.ims.icarus2.util.collections.LookupList#set(int, java.lang.Object)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {0, -1, 1})
 		void testSetEIntEmptyInvalidIndex(int index) {
-			assertIOOB(() -> instance.set(new Object(), index));
+			assertIOOB(() -> instance.set(index, new Object()));
 		}
 
 		/**
@@ -445,7 +445,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 				items[random(0, items.length)] = null;
 
 				for (int i = 0; i < items.length; i++) {
-					instance.set(items[i], i);
+					instance.set(i, items[i]);
 					assertEquals(i, instance.indexOf(items[i]), "Mismatch on index "+i+" for "+items[i]);
 				}
 			}
@@ -543,7 +543,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 			}
 
 			/**
-			 * Test method for {@link de.ims.icarus2.util.collections.LookupList#set(java.lang.Object, int)}.
+			 * Test method for {@link de.ims.icarus2.util.collections.LookupList#set(int, java.lang.Object)}.
 			 */
 			@RepeatedTest(RUNS)
 			void testSetEInt() {
@@ -553,7 +553,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 					.forEach(index -> {
 						Object item = new Object();
 						items[index] = item;
-						instance.set(item, index);
+						instance.set(index, item);
 					});
 
 				assertItems(instance, items);

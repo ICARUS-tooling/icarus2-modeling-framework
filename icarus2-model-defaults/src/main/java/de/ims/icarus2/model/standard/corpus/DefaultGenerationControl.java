@@ -225,7 +225,7 @@ public class DefaultGenerationControl implements GenerationControl, SimpleEventL
 	@Override
 	public void close() {
 		if(storage instanceof Closeable) {
-			IOUtil.close((Closeable) storage);
+			IOUtil.closeSilently((Closeable) storage);
 		}
 	}
 

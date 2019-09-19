@@ -85,7 +85,7 @@ public final class IOUtil {
 			try {
 				Files.createDirectory(path);
 			} catch (IOException e) {
-				throw new Error("Unable to create directory: "+path); //$NON-NLS-1$
+				throw new Error("Unable to create directory: "+path);
 			}
 		}
 	}
@@ -155,11 +155,11 @@ public final class IOUtil {
 	}
 
 	public static boolean isZipSource(String name) {
-		return name.endsWith(".zip"); //$NON-NLS-1$
+		return name.endsWith(".zip");
 	}
 
 	public static boolean isGZipSource(String name) {
-		return name.endsWith(".gzip") || name.endsWith(".gz"); //$NON-NLS-1$ //$NON-NLS-2$
+		return name.endsWith(".gzip") || name.endsWith(".gz"); //$NON-NLS-2$
 	}
 
 	public static boolean isGZipSource(Path path) {
@@ -261,22 +261,22 @@ public final class IOUtil {
         return ((long)(readInt(in)) << 32) + (readInt(in) & 0xFFFFFFFFL);
     }
 
-    public static void close(Closeable closeable) {
+    public static void closeSilently(Closeable closeable) {
     	try {
 			closeable.close();
 		} catch (IOException e) {
-			log.error("Failed to close closeable resource", e); //$NON-NLS-1$
+			log.error("Failed to close closeable resource", e);
 		}
     }
 
 	public static boolean isLocalFile(URL url) {
 		String scheme = url.getProtocol();
-		return "file".equalsIgnoreCase(scheme) && !hasHost(url); //$NON-NLS-1$
+		return "file".equalsIgnoreCase(scheme) && !hasHost(url);
 	}
 
 	public static String stripJarContext(String context) {
-		int begin = context.startsWith("jar:") ? 4 : 0; //$NON-NLS-1$
-		int end = context.indexOf("jar!/", begin); //$NON-NLS-1$
+		int begin = context.startsWith("jar:") ? 4 : 0;
+		int end = context.indexOf("jar!/", begin);
 		if(end!=-1) {
 			end += 3;
 		} else {
@@ -288,7 +288,7 @@ public final class IOUtil {
 
 	public static boolean hasHost(URL url) {
 		String host = url.getHost();
-		return host != null && !"".equals(host); //$NON-NLS-1$
+		return host != null && !"".equals(host);
 	}
 
 	public static boolean isLocal(URL url) {
@@ -296,7 +296,7 @@ public final class IOUtil {
 			return true;
 		}
 		String protocol = url.getProtocol();
-		if ("jar".equalsIgnoreCase(protocol)) { //$NON-NLS-1$
+		if ("jar".equalsIgnoreCase(protocol)) {
 			String path = url.getPath();
 			int emIdx = path.lastIndexOf('!');
 			String subUrlString = emIdx == -1 ? path : path.substring(0, emIdx);
@@ -315,11 +315,11 @@ public final class IOUtil {
 		return new BufferedReader(new InputStreamReader(is, cs));
 	}
 
-	public static final Charset UTF8_CHARSET = Charset.forName("UTF-8"); //$NON-NLS-1$
+	public static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
-	public static final String CHARSET_OPTION = "charset"; //$NON-NLS-1$
-	public static final String CHARSET_NAME_OPTION = "charsetName"; //$NON-NLS-1$
-	public static final String ENCODING_OPTION = "encoding"; //$NON-NLS-1$
+	public static final String CHARSET_OPTION = "charset";
+	public static final String CHARSET_NAME_OPTION = "charsetName";
+	public static final String ENCODING_OPTION = "encoding";
 
 	public static Charset getCharset(Options options, Charset defaultCharset) {
 		Object charset = null;
@@ -337,7 +337,7 @@ public final class IOUtil {
 		}
 
 		if(!(charset instanceof Charset))
-			throw new NullPointerException("Invalid charset: "+charset.getClass()); //$NON-NLS-1$
+			throw new NullPointerException("Invalid charset: "+charset.getClass());
 
 		return (Charset) charset;
 	}
@@ -357,7 +357,7 @@ public final class IOUtil {
 	        if (path != null) {
 	            return Files.isReadable(path);
 	        }
-	        if ("jar".equalsIgnoreCase(url.getProtocol())) { //$NON-NLS-1$
+	        if ("jar".equalsIgnoreCase(url.getProtocol())) {
 	            return isJarResourceExists(url);
 	        }
 	        return isUrlResourceExists(url);
@@ -390,7 +390,7 @@ public final class IOUtil {
     public static boolean isJarResourceExists(final URL url) {
         try {
             String urlStr = url.toExternalForm();
-            int p = urlStr.indexOf("!/"); //$NON-NLS-1$
+            int p = urlStr.indexOf("!/");
             if (p == -1) {// this is invalid JAR file URL
                 return false;
             }
@@ -425,8 +425,8 @@ public final class IOUtil {
         } catch (MalformedURLException mue) {
             throw mue;
         } catch (IOError ioe) {
-            throw new MalformedURLException("unable to create absolute path: "  //$NON-NLS-1$
-            		+ p + " " + ioe); //$NON-NLS-1$
+            throw new MalformedURLException("unable to create absolute path: "
+            		+ p + " " + ioe);
         }
     }
 
@@ -440,7 +440,7 @@ public final class IOUtil {
     	String file = source.getPath();
 
     	int fileBegin = file.lastIndexOf(':')+1;
-    	int jarSep = file.indexOf("!/", fileBegin); //$NON-NLS-1$
+    	int jarSep = file.indexOf("!/", fileBegin);
     	if(jarSep==-1) {
     		jarSep = file.length();
     	}
@@ -460,20 +460,20 @@ public final class IOUtil {
     }
 
     private static String encodeUrlFilePart(String file) {
-    	String[] items = file.split("/"); //$NON-NLS-1$
+    	String[] items = file.split("/");
     	for(int i = 0; i<items.length; i++) {
     		if(items[i].isEmpty()) {
     			continue;
     		}
 
     		try {
-				items[i] = URLEncoder.encode(items[i], "UTF-8"); //$NON-NLS-1$
+				items[i] = URLEncoder.encode(items[i], "UTF-8");
 			} catch (UnsupportedEncodingException e) {
 				// cannot happen
 			}
     	}
 
-    	return StringUtil.join(items, "/"); //$NON-NLS-1$
+    	return StringUtil.join(items, "/");
     }
 
     public static Path toRelativePath(Path root, Path p) {
@@ -484,7 +484,7 @@ public final class IOUtil {
     	try {
     		p = p.toAbsolutePath();
     	} catch(IOError e) {
-    		log.warn("Error converting to absolute path: {}", p, e); //$NON-NLS-1$
+    		log.warn("Error converting to absolute path: {}", p, e);
     		return p;
     	}
 

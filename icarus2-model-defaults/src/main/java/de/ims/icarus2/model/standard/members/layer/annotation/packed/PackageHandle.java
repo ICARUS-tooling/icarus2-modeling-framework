@@ -24,6 +24,7 @@ import static java.util.Objects.requireNonNull;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.mem.ByteAllocator;
+import de.ims.icarus2.util.strings.ToStringBuilder;
 
 /**
  * Bundles all the information needed by the {@link PackedDataManager} to map
@@ -150,5 +151,21 @@ public class PackageHandle {
 			return source == ((PackageHandle)obj).source;
 		}
 		return false;
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return ToStringBuilder.create(this)
+				.add("source", source)
+				.add("noEntryValue", noEntryValue)
+				.add("converter", converter)
+				.add("context", converterContext)
+				.add("index", index)
+				.add("offset", offset)
+				.add("bit", bit)
+				.build();
 	}
 }

@@ -20,12 +20,10 @@ import static de.ims.icarus2.util.IcarusUtils.MAX_INTEGER_INDEX;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
 
+import java.util.AbstractList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.ConcurrentModificationException;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
@@ -48,7 +46,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  *
  */
 @Assessable
-public class LookupList<E extends Object> implements Iterable<E>, Clearable {
+public class LookupList<E> extends AbstractList<E> implements Iterable<E>, Clearable {
 
 	/**
 	 * Size of internal array up to which lookup will be done via
@@ -68,11 +66,6 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
      */
     @Link
 	private Object2IntMap<E> lookup;
-    /**
-     * Modification counter for detection of concurrent modifications during iterator traversal
-     */
-    @Primitive
-	private int modCount = 0;
     /**
      * Current number of item in the list
      */
@@ -135,24 +128,30 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 		return items.length;
 	}
 
+	@Override
 	public int size() {
 		return size;
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
 	public E get(int index) {
 		rangeCheck(index);
 		return (E) items[index];
 	}
 
-	public void add(@Nullable E item) {
+	@Override
+	public boolean add(@Nullable E item) {
         ensureCapacity(size + 1);  // Increments modCount!!
 
 		int index = size;
         items[size++] = item;
         addDirtyRegion(index);
+
+        return true;
 	}
 
+	@Override
 	public void add(int index, @Nullable E item) {
         rangeCheckForAdd(index);
 
@@ -164,9 +163,10 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
         addDirtyRegion(index);
 	}
 
-	public void addAll(Collection<? extends E> elements) {
+	@Override
+	public boolean addAll(Collection<? extends E> elements) {
 		if(elements.isEmpty()) {
-			return;
+			return false;
 		}
 		ensureCapacity(size + elements.size()); // Increments modCount!!
 		int firstIndex = size;
@@ -174,11 +174,14 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 			items[size++] = item;
 		}
 		addDirtyRegion(firstIndex);
+
+		return true;
 	}
 
-	public void addAll(int index, Collection<? extends E> elements) {
+	@Override
+	public boolean addAll(int index, Collection<? extends E> elements) {
 		if(elements.isEmpty()) {
-			return;
+			return false;
 		}
 
         rangeCheckForAdd(index);
@@ -195,6 +198,8 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 
 		size += addCount;
 		addDirtyRegion(index);
+
+		return true;
 	}
 
 	public void addAll(@SuppressWarnings("unchecked") E...elements) {
@@ -210,7 +215,8 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 		addDirtyRegion(firstIndex);
 	}
 
-	public E set(@Nullable E item, int index) {
+	@Override
+	public E set(int index, @Nullable E item) {
         rangeCheck(index);
 
         @SuppressWarnings("unchecked")
@@ -223,6 +229,7 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
         return oldValue;
 	}
 
+	@Override
 	public E remove(int index) {
         rangeCheck(index);
 
@@ -253,13 +260,17 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 		fastRemove(index0, index1, c);
 	}
 
-	public void removeAll(Iterable<? extends E> items) {
-		for(E item : items) {
-			remove(item);
+	@Override
+	public boolean removeAll(Collection<?> items) {
+		boolean result = false;
+		for(Object item : items) {
+			result |= remove(item);
 		}
+		return result;
 	}
 
-	public boolean remove(@Nullable E item) {
+	@Override
+	public boolean remove(@Nullable Object item) {
         if (item == null) {
             for (int index = 0; index < size; index++)
                 if (items[index] == null) {
@@ -292,11 +303,13 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
         size = 0;
 	}
 
-	public boolean contains(@Nullable E item) {
+	@Override
+	public boolean contains(@Nullable Object item) {
 		return indexOf(item)!=-1;
 	}
 
-	public int indexOf(@Nullable E item) {
+	@Override
+	public int indexOf(@Nullable Object item) {
 		// If lookup table is active make sure it's up2date and then use it
 		if(checkRequiresLookup()) {
 			return lookup.getInt(item);
@@ -312,10 +325,32 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
         return -1;
 	}
 
+	/**
+	 * @see java.util.AbstractList#lastIndexOf(java.lang.Object)
+	 */
+	@Override
+	public int lastIndexOf(@Nullable Object item) {
+		// If lookup table is active make sure it's up2date and then use it
+		if(checkRequiresLookup()) {
+			return lookup.getInt(item);
+		}
+
+		// For small list sizes just traverse the items
+        for (int i = size-1; i >= 0; i--) {
+            if(items[i] == item) {
+            	return i;
+            }
+        }
+
+        return -1;
+	}
+
+	@Override
 	public boolean isEmpty() {
 		return size==0;
 	}
 
+	@Override
 	public Object[] toArray() {
 		return Arrays.copyOf(items, size);
 	}
@@ -341,6 +376,7 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
 		// dirty index doesn't change
 	}
 
+	@Override
 	public void sort(Comparator<? super E> comparator) {
 		requireNonNull(comparator);
 		@SuppressWarnings("unchecked")
@@ -504,69 +540,4 @@ public class LookupList<E extends Object> implements Iterable<E>, Clearable {
             Integer.MAX_VALUE :
             MAX_ARRAY_SIZE;
     }
-
-	/**
-	 * @see java.lang.Iterable#iterator()
-	 */
-	@Override
-	public Iterator<E> iterator() {
-		return new Itr();
-	}
-
-
-
-	private class Itr implements Iterator<E> {
-        int cursor;       // index of next element to return
-        int lastRet = -1; // index of last element returned; -1 if no such
-        int expectedModCount = modCount;
-
-		/**
-		 * @see java.util.Iterator#hasNext()
-		 */
-		@Override
-		public boolean hasNext() {
-            return cursor != size;
-		}
-
-		/**
-		 * @see java.util.Iterator#next()
-		 */
-		@SuppressWarnings("unchecked")
-		@Override
-		public E next() {
-            checkForComodification();
-            int i = cursor;
-            if (i >= size)
-                throw new NoSuchElementException();
-            Object[] items = LookupList.this.items;
-            if (i >= items.length)
-                throw new ConcurrentModificationException();
-            cursor = i + 1;
-            return (E) items[lastRet = i];
-		}
-
-		/**
-		 * @see java.util.Iterator#remove()
-		 */
-		@Override
-		public void remove() {
-            if (lastRet < 0)
-                throw new IllegalStateException();
-            checkForComodification();
-
-            try {
-            	LookupList.this.remove(lastRet);
-                cursor = lastRet;
-                lastRet = -1;
-                expectedModCount = modCount;
-            } catch (IndexOutOfBoundsException ex) {
-                throw new ConcurrentModificationException();
-            }
-		}
-
-        final void checkForComodification() {
-            if (modCount != expectedModCount)
-                throw new ConcurrentModificationException();
-        }
-	}
 }

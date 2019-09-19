@@ -316,8 +316,8 @@ public abstract class AbstractNodeStorage<N extends NodeInfo, E extends Edge> im
 		E edge0 = edges.get(idx0);
 		E edge1 = edges.get(idx1);
 
-		edges.set(edge0, idx1);
-		edges.set(edge1, idx0);
+		edges.set(idx1, edge0);
+		edges.set(idx0, edge1);
 
 		invalidate();
 	}

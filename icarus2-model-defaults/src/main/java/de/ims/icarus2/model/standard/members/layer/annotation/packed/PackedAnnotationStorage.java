@@ -38,6 +38,7 @@ import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.Part;
 import de.ims.icarus2.util.annotations.TestableImplementation;
+import de.ims.icarus2.util.mem.ByteAllocator;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
@@ -138,7 +139,7 @@ public class PackedAnnotationStorage extends AbstractPart<AnnotationLayer>
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getValue(de.ims.icarus2.model.api.members.item.Item, ByteAllocator, int)
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
@@ -147,7 +148,7 @@ public class PackedAnnotationStorage extends AbstractPart<AnnotationLayer>
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getInteger(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getInteger(de.ims.icarus2.model.api.members.item.Item, ByteAllocator, int)
 	 */
 	@Override
 	public int getInteger(Item item, String key) {
@@ -156,7 +157,7 @@ public class PackedAnnotationStorage extends AbstractPart<AnnotationLayer>
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getFloat(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getFloat(de.ims.icarus2.model.api.members.item.Item, ByteAllocator, int)
 	 */
 	@Override
 	public float getFloat(Item item, String key) {
@@ -165,7 +166,7 @@ public class PackedAnnotationStorage extends AbstractPart<AnnotationLayer>
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getDouble(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getDouble(de.ims.icarus2.model.api.members.item.Item, ByteAllocator, int)
 	 */
 	@Override
 	public double getDouble(Item item, String key) {
@@ -174,7 +175,7 @@ public class PackedAnnotationStorage extends AbstractPart<AnnotationLayer>
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getLong(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getLong(de.ims.icarus2.model.api.members.item.Item, ByteAllocator, int)
 	 */
 	@Override
 	public long getLong(Item item, String key) {
@@ -183,7 +184,7 @@ public class PackedAnnotationStorage extends AbstractPart<AnnotationLayer>
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getBoolean(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getBoolean(de.ims.icarus2.model.api.members.item.Item, ByteAllocator, int)
 	 */
 	@Override
 	public boolean getBoolean(Item item, String key) {
@@ -201,7 +202,7 @@ public class PackedAnnotationStorage extends AbstractPart<AnnotationLayer>
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.Object)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, ByteAllocator, int, java.lang.Object)
 	 */
 	@Override
 	public void setValue(Item item, String key, @Nullable Object value) {
@@ -210,7 +211,7 @@ public class PackedAnnotationStorage extends AbstractPart<AnnotationLayer>
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setInteger(de.ims.icarus2.model.api.members.item.Item, java.lang.String, int)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setInteger(de.ims.icarus2.model.api.members.item.Item, ByteAllocator, int, int)
 	 */
 	@Override
 	public void setInteger(Item item, String key, int value) {
@@ -219,7 +220,7 @@ public class PackedAnnotationStorage extends AbstractPart<AnnotationLayer>
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setLong(de.ims.icarus2.model.api.members.item.Item, java.lang.String, long)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setLong(de.ims.icarus2.model.api.members.item.Item, ByteAllocator, int, long)
 	 */
 	@Override
 	public void setLong(Item item, String key, long value) {
@@ -228,7 +229,7 @@ public class PackedAnnotationStorage extends AbstractPart<AnnotationLayer>
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setFloat(de.ims.icarus2.model.api.members.item.Item, java.lang.String, float)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setFloat(de.ims.icarus2.model.api.members.item.Item, ByteAllocator, int, float)
 	 */
 	@Override
 	public void setFloat(Item item, String key, float value) {
@@ -237,7 +238,7 @@ public class PackedAnnotationStorage extends AbstractPart<AnnotationLayer>
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setDouble(de.ims.icarus2.model.api.members.item.Item, java.lang.String, double)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setDouble(de.ims.icarus2.model.api.members.item.Item, ByteAllocator, int, double)
 	 */
 	@Override
 	public void setDouble(Item item, String key, double value) {
@@ -246,7 +247,7 @@ public class PackedAnnotationStorage extends AbstractPart<AnnotationLayer>
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setBoolean(de.ims.icarus2.model.api.members.item.Item, java.lang.String, boolean)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setBoolean(de.ims.icarus2.model.api.members.item.Item, ByteAllocator, int, boolean)
 	 */
 	@Override
 	public void setBoolean(Item item, String key, boolean value) {

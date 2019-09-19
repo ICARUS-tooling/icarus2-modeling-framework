@@ -322,7 +322,9 @@ public class TestUtils {
 	public static String displayString(String pattern, Object...args) {
 		for(int i=0; i<args.length; i++) {
 			Object arg = args[i];
-			if(isIntType(arg.getClass())) {
+			if(arg==null) {
+				args[i] = "-";
+			} else if(isIntType(arg.getClass())) {
 				args[i] = displayString(((Number)arg).longValue());
 			} else if(arg.getClass()==Float.class) {
 				args[i] = displayString(((Float)arg).floatValue());
@@ -515,8 +517,8 @@ public class TestUtils {
 	// RANDOM ARRAYS
 
 	public static Object[] randomContent() {
-		return Stream.generate(Object::new)
-				.limit(random(10, 100))
+		return IntStream.range(0, random(10, 100))
+				.mapToObj(i -> "item_"+i)
 				.toArray();
 	}
 

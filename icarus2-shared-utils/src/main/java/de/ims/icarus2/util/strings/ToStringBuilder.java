@@ -197,4 +197,14 @@ public class ToStringBuilder {
 		}
 		return buffer.toString();
 	}
+
+	/**
+	 * Defaults to {@link #build()}.
+	 *
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return build();
+	}
 }

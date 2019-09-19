@@ -3,11 +3,13 @@
  */
 package de.ims.icarus2.test.concurrent;
 
+import static de.ims.icarus2.test.TestUtils.random;
 import static java.util.Objects.requireNonNull;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.CountDownLatch;
@@ -34,20 +36,21 @@ public class Circuit implements AutoCloseable {
 		this.executor = requireNonNull(executor);
 	}
 
-	public Circuit task(Executable task) {
+	public Circuit addTask(Executable task) {
 		tasks.add(requireNonNull(task));
 		return this;
 	}
 
-	public synchronized void execute() throws InterruptedException {
-		execute(0, TimeUnit.MILLISECONDS);
+	public synchronized Duration executeAndWait() throws InterruptedException {
+		return executeAndWait(0, TimeUnit.MILLISECONDS);
 	}
 
 	/**
 	 * Schedules all the previously supplied tasks and awaits their
 	 * completion or until the given {@code timeout} has elapsed.
 	 */
-	public synchronized Duration execute(long timeout, TimeUnit unit) throws InterruptedException {
+	public synchronized Duration executeAndWait(long timeout, TimeUnit unit)
+			throws InterruptedException {
 		if(tasks.isEmpty())
 			throw new IllegalStateException("No tasks to execute");
 
@@ -55,6 +58,8 @@ public class Circuit implements AutoCloseable {
 		CountDownLatch done = new CountDownLatch(tasks.size());
 
 		Vector<Throwable> errors = new Vector<>();
+
+		Collections.shuffle(tasks, random());
 
 		for(Executable task : tasks) {
 			executor.execute(() -> {
@@ -75,7 +80,11 @@ public class Circuit implements AutoCloseable {
 		start.countDown();
 
 		// Await completion or failure of all tasks
-		done.await(timeout, unit);
+		if(timeout==0) {
+			done.await();
+		} else if(!done.await(timeout, unit))
+			throw new AssertionError(String.format("Task execution timed out after %d %s",
+					Long.valueOf(timeout), unit));
 
 		Instant tEnd = Instant.now();
 
@@ -85,7 +94,13 @@ public class Circuit implements AutoCloseable {
 			if(errors.size()>1) {
 				errors.subList(1, errors.size()).forEach(error::addSuppressed);
 			}
-			throw new AssertionError("Task execution failed", error);
+
+			StringBuilder sb = new StringBuilder();
+			sb.append("Task execution failed with ").append(errors.size()).append(" errors:");
+			for(Throwable t : errors) {
+				sb.append('\n').append(t.getMessage());
+			}
+			throw new AssertionError(sb.toString(), error);
 		}
 
 		return Duration.between(tStart, tEnd);

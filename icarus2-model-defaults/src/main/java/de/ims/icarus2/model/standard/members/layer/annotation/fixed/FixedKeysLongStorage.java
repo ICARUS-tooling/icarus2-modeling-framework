@@ -28,6 +28,7 @@ import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.annotations.TestableImplementation;
+import de.ims.icarus2.util.mem.ByteAllocator;
 
 /**
  * @author Markus Gärtner
@@ -92,7 +93,7 @@ public class FixedKeysLongStorage extends AbstractFixedKeysStorage<long[]> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#getValue(de.ims.icarus2.model.api.members.item.Item, ByteAllocator, int)
 	 */
 	@Override
 	public Object getValue(Item item, String key) {
@@ -100,7 +101,7 @@ public class FixedKeysLongStorage extends AbstractFixedKeysStorage<long[]> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.Object)
+	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, ByteAllocator, int, java.lang.Object)
 	 */
 	@Unguarded(Unguarded.DELEGATE)
 	@Override

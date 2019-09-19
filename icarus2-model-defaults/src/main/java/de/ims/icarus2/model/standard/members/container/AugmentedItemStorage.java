@@ -228,8 +228,8 @@ public class AugmentedItemStorage extends WrappingItemStorage {
 		Item item0 = augmentation.get(idx0);
 		Item item1 = augmentation.get(idx1);
 
-		augmentation.set(item0, idx1);
-		augmentation.set(item1, idx0);
+		augmentation.set(idx1, item0);
+		augmentation.set(idx0, item1);
 	}
 
 	@Override
