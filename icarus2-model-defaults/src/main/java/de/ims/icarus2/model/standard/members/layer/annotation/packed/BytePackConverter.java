@@ -31,7 +31,7 @@ import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.io.IOUtil;
-import de.ims.icarus2.util.mem.ByteAllocator;
+import de.ims.icarus2.util.mem.ByteAllocator.Cursor;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
@@ -115,61 +115,61 @@ public abstract class BytePackConverter implements Closeable {
 
 	// Read method
 
-	public boolean getBoolean(PackageHandle handle, ByteAllocator allocator, int id) {
+	public boolean getBoolean(PackageHandle handle, Cursor cursor) {
 		throw forUnsupportedType(ValueType.BOOLEAN);
 	}
 
-	public int getInteger(PackageHandle handle, ByteAllocator allocator, int id) {
+	public int getInteger(PackageHandle handle, Cursor cursor) {
 		throw forUnsupportedType(ValueType.INTEGER);
 	}
 
-	public long getLong(PackageHandle handle, ByteAllocator allocator, int id) {
+	public long getLong(PackageHandle handle, Cursor cursor) {
 		throw forUnsupportedType(ValueType.LONG);
 	}
 
-	public float getFloat(PackageHandle handle, ByteAllocator allocator, int id) {
+	public float getFloat(PackageHandle handle, Cursor cursor) {
 		throw forUnsupportedType(ValueType.FLOAT);
 	}
 
-	public double getDouble(PackageHandle handle, ByteAllocator allocator, int id) {
+	public double getDouble(PackageHandle handle, Cursor cursor) {
 		throw forUnsupportedType(ValueType.DOUBLE);
 	}
 
-	public Object getValue(PackageHandle handle, ByteAllocator allocator, int id) {
+	public Object getValue(PackageHandle handle, Cursor cursor) {
 		throw forUnsupportedType(ValueType.CUSTOM);
 	}
 
-	public String getString(PackageHandle handle, ByteAllocator allocator, int id) {
+	public String getString(PackageHandle handle, Cursor cursor) {
 		throw forUnsupportedType(ValueType.STRING);
 	}
 
 	// Write methods
 
-	public void setBoolean(PackageHandle handle, ByteAllocator allocator, int id, boolean value) {
+	public void setBoolean(PackageHandle handle, Cursor cursor, boolean value) {
 		throw forUnsupportedType(ValueType.BOOLEAN);
 	}
 
-	public void setInteger(PackageHandle handle, ByteAllocator allocator, int id, int value) {
+	public void setInteger(PackageHandle handle, Cursor cursor, int value) {
 		throw forUnsupportedType(ValueType.INTEGER);
 	}
 
-	public void setLong(PackageHandle handle, ByteAllocator allocator, int id, long value) {
+	public void setLong(PackageHandle handle, Cursor cursor, long value) {
 		throw forUnsupportedType(ValueType.LONG);
 	}
 
-	public void setFloat(PackageHandle handle, ByteAllocator allocator, int id, float value) {
+	public void setFloat(PackageHandle handle, Cursor cursor, float value) {
 		throw forUnsupportedType(ValueType.FLOAT);
 	}
 
-	public void setDouble(PackageHandle handle, ByteAllocator allocator, int id, double value) {
+	public void setDouble(PackageHandle handle, Cursor cursor, double value) {
 		throw forUnsupportedType(ValueType.DOUBLE);
 	}
 
-	public void setValue(PackageHandle handle, ByteAllocator allocator, int id, Object value) {
+	public void setValue(PackageHandle handle, Cursor cursor, Object value) {
 		throw forUnsupportedType(ValueType.CUSTOM);
 	}
 
-	public void setString(PackageHandle handle, ByteAllocator allocator, int id, String value) {
+	public void setString(PackageHandle handle, Cursor cursor, String value) {
 		throw forUnsupportedType(ValueType.STRING);
 	}
 
@@ -234,18 +234,18 @@ public abstract class BytePackConverter implements Closeable {
 		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getBoolean(de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public boolean getBoolean(PackageHandle handle, ByteAllocator allocator, int id) {
+		public boolean getBoolean(PackageHandle handle, Cursor cursor) {
 			byte mask = (byte) ((1<<handle.getBit()) & 0xff);
-			return (allocator.getByte(id, handle.getOffset()) & mask) == mask;
+			return (cursor.getByte(handle.getOffset()) & mask) == mask;
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setBoolean(de.ims.icarus2.util.mem.ByteAllocator.Cursor, boolean)
 		 */
 		@Override
-		public void setBoolean(PackageHandle handle, ByteAllocator allocator, int id, boolean value) {
+		public void setBoolean(PackageHandle handle, Cursor cursor, boolean value) {
 			int offset = handle.getOffset();
-			byte block = allocator.getByte(id, offset);
+			byte block = cursor.getByte(offset);
 
 			byte mask = (byte) ((1<<handle.getBit()) & 0xff);
 			if(value) {
@@ -254,23 +254,23 @@ public abstract class BytePackConverter implements Closeable {
 				block &= ~mask;
 			}
 
-			allocator.setByte(id, offset, block);
+			cursor.setByte(offset, block);
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, ByteAllocator, int, java.lang.Object)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, java.lang.Object)
 		 */
 		@Override
-		public void setValue(PackageHandle handle, ByteAllocator allocator, int id, Object value) {
-			setBoolean(handle, allocator, id, ((Boolean)value).booleanValue());
+		public void setValue(PackageHandle handle, Cursor cursor, Object value) {
+			setBoolean(handle, cursor, ((Boolean)value).booleanValue());
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, ByteAllocator, int)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public Object getValue(PackageHandle handle, ByteAllocator allocator, int id) {
-			return Boolean.valueOf(getBoolean(handle, allocator, id));
+		public Object getValue(PackageHandle handle, Cursor cursor) {
+			return Boolean.valueOf(getBoolean(handle, cursor));
 		}
 	}
 
@@ -299,33 +299,33 @@ public abstract class BytePackConverter implements Closeable {
 		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getBoolean(de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public boolean getBoolean(PackageHandle handle, ByteAllocator allocator, int id) {
-			return allocator.getByte(id, handle.getOffset())==TRUE;
+		public boolean getBoolean(PackageHandle handle, Cursor cursor) {
+			return cursor.getByte(handle.getOffset())==TRUE;
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setBoolean(de.ims.icarus2.util.mem.ByteAllocator.Cursor, boolean)
 		 */
 		@Override
-		public void setBoolean(PackageHandle handle, ByteAllocator allocator, int id, boolean value) {
+		public void setBoolean(PackageHandle handle, Cursor cursor, boolean value) {
 			byte flag = value ? TRUE : FALSE;
-			allocator.setByte(id, handle.getOffset(), flag);
+			cursor.setByte(handle.getOffset(), flag);
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, ByteAllocator, int, java.lang.Object)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, java.lang.Object)
 		 */
 		@Override
-		public void setValue(PackageHandle handle, ByteAllocator allocator, int id, Object value) {
-			setBoolean(handle, allocator, id, ((Boolean)value).booleanValue());
+		public void setValue(PackageHandle handle, Cursor cursor, Object value) {
+			setBoolean(handle, cursor, ((Boolean)value).booleanValue());
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, ByteAllocator, int)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public Object getValue(PackageHandle handle, ByteAllocator allocator, int id) {
-			return Boolean.valueOf(getBoolean(handle, allocator, id));
+		public Object getValue(PackageHandle handle, Cursor cursor) {
+			return Boolean.valueOf(getBoolean(handle, cursor));
 		}
 	}
 
@@ -351,32 +351,32 @@ public abstract class BytePackConverter implements Closeable {
 		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getInteger(de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public int getInteger(PackageHandle handle, ByteAllocator allocator, int id) {
-			return allocator.getInt(id, handle.getOffset());
+		public int getInteger(PackageHandle handle, Cursor cursor) {
+			return cursor.getInt(handle.getOffset());
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setInteger(de.ims.icarus2.util.mem.ByteAllocator.Cursor, int)
 		 */
 		@Override
-		public void setInteger(PackageHandle handle, ByteAllocator allocator, int id, int value) {
-			allocator.setInt(id, handle.getOffset(), value);
+		public void setInteger(PackageHandle handle, Cursor cursor, int value) {
+			cursor.setInt(handle.getOffset(), value);
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, ByteAllocator, int, java.lang.Object)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, java.lang.Object)
 		 */
 		@Override
-		public void setValue(PackageHandle handle, ByteAllocator allocator, int id, Object value) {
-			setInteger(handle, allocator, id, ((Number)value).intValue());
+		public void setValue(PackageHandle handle, Cursor cursor, Object value) {
+			setInteger(handle, cursor, ((Number)value).intValue());
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, ByteAllocator, int)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public Object getValue(PackageHandle handle, ByteAllocator allocator, int id) {
-			return Integer.valueOf(getInteger(handle, allocator, id));
+		public Object getValue(PackageHandle handle, Cursor cursor) {
+			return Integer.valueOf(getInteger(handle, cursor));
 		}
 	}
 
@@ -402,32 +402,32 @@ public abstract class BytePackConverter implements Closeable {
 		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getLong(de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public long getLong(PackageHandle handle, ByteAllocator allocator, int id) {
-			return allocator.getLong(id, handle.getOffset());
+		public long getLong(PackageHandle handle, Cursor cursor) {
+			return cursor.getLong(handle.getOffset());
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setLong(de.ims.icarus2.util.mem.ByteAllocator.Cursor, long)
 		 */
 		@Override
-		public void setLong(PackageHandle handle, ByteAllocator allocator, int id, long value) {
-			allocator.setLong(id, handle.getOffset(), value);
+		public void setLong(PackageHandle handle, Cursor cursor, long value) {
+			cursor.setLong(handle.getOffset(), value);
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, ByteAllocator, int, java.lang.Object)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, java.lang.Object)
 		 */
 		@Override
-		public void setValue(PackageHandle handle, ByteAllocator allocator, int id, Object value) {
-			setLong(handle, allocator, id, ((Number)value).longValue());
+		public void setValue(PackageHandle handle, Cursor cursor, Object value) {
+			setLong(handle, cursor, ((Number)value).longValue());
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, ByteAllocator, int)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public Object getValue(PackageHandle handle, ByteAllocator allocator, int id) {
-			return Long.valueOf(getLong(handle, allocator, id));
+		public Object getValue(PackageHandle handle, Cursor cursor) {
+			return Long.valueOf(getLong(handle, cursor));
 		}
 	}
 
@@ -453,32 +453,32 @@ public abstract class BytePackConverter implements Closeable {
 		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getFloat(de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public float getFloat(PackageHandle handle, ByteAllocator allocator, int id) {
-			return Float.intBitsToFloat(allocator.getInt(id, handle.getOffset()));
+		public float getFloat(PackageHandle handle, Cursor cursor) {
+			return Float.intBitsToFloat(cursor.getInt(handle.getOffset()));
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setFloat(de.ims.icarus2.util.mem.ByteAllocator.Cursor, float)
 		 */
 		@Override
-		public void setFloat(PackageHandle handle, ByteAllocator allocator, int id, float value) {
-			allocator.setInt(id, handle.getOffset(), Float.floatToIntBits(value));
+		public void setFloat(PackageHandle handle, Cursor cursor, float value) {
+			cursor.setInt(handle.getOffset(), Float.floatToIntBits(value));
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, ByteAllocator, int, java.lang.Object)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, java.lang.Object)
 		 */
 		@Override
-		public void setValue(PackageHandle handle, ByteAllocator allocator, int id, Object value) {
-			setFloat(handle, allocator, id, ((Number)value).floatValue());
+		public void setValue(PackageHandle handle, Cursor cursor, Object value) {
+			setFloat(handle, cursor, ((Number)value).floatValue());
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, ByteAllocator, int)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public Object getValue(PackageHandle handle, ByteAllocator allocator, int id) {
-			return Float.valueOf(getFloat(handle, allocator, id));
+		public Object getValue(PackageHandle handle, Cursor cursor) {
+			return Float.valueOf(getFloat(handle, cursor));
 		}
 	}
 
@@ -504,32 +504,32 @@ public abstract class BytePackConverter implements Closeable {
 		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getDouble(de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public double getDouble(PackageHandle handle, ByteAllocator allocator, int id) {
-			return Double.longBitsToDouble(allocator.getLong(id, handle.getOffset()));
+		public double getDouble(PackageHandle handle, Cursor cursor) {
+			return Double.longBitsToDouble(cursor.getLong(handle.getOffset()));
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setDouble(de.ims.icarus2.util.mem.ByteAllocator.Cursor, double)
 		 */
 		@Override
-		public void setDouble(PackageHandle handle, ByteAllocator allocator, int id, double value) {
-			allocator.setLong(id, handle.getOffset(), Double.doubleToLongBits(value));
+		public void setDouble(PackageHandle handle, Cursor cursor, double value) {
+			cursor.setLong(handle.getOffset(), Double.doubleToLongBits(value));
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, ByteAllocator, int, java.lang.Object)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, java.lang.Object)
 		 */
 		@Override
-		public void setValue(PackageHandle handle, ByteAllocator allocator, int id, Object value) {
-			setDouble(handle, allocator, id, ((Number)value).doubleValue());
+		public void setValue(PackageHandle handle, Cursor cursor, Object value) {
+			setDouble(handle, cursor, ((Number)value).doubleValue());
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, ByteAllocator, int)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getValue(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public Object getValue(PackageHandle handle, ByteAllocator allocator, int id) {
-			return Double.valueOf(getDouble(handle, allocator, id));
+		public Object getValue(PackageHandle handle, Cursor cursor) {
+			return Double.valueOf(getDouble(handle, cursor));
 		}
 	}
 
@@ -580,36 +580,36 @@ public abstract class BytePackConverter implements Closeable {
 		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getValue(de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public Object getValue(PackageHandle handle, ByteAllocator allocator, int id) {
-			return resubstitution.apply((int)allocator.getNBytes(id, handle.getOffset(), bytes));
+		public Object getValue(PackageHandle handle, Cursor cursor) {
+			return resubstitution.apply((int)cursor.getNBytes(handle.getOffset(), bytes));
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getString(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle, ByteAllocator, int)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#getString(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor)
 		 */
 		@Override
-		public String getString(PackageHandle handle, ByteAllocator allocator, int id) {
+		public String getString(PackageHandle handle, Cursor cursor) {
 			valueType.checkType(String.class);
-			return (String) getValue(handle, allocator, id);
+			return (String) getValue(handle, cursor);
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setValue(de.ims.icarus2.util.mem.ByteAllocator.Cursor, java.lang.Object)
 		 */
 		@Override
-		public void setValue(PackageHandle handle, ByteAllocator allocator, int id, Object value) {
+		public void setValue(PackageHandle handle, Cursor cursor, Object value) {
 			@SuppressWarnings("unchecked")
 			int index = substitution.applyAsInt((T) value);
-			allocator.setNBytes(id, handle.getOffset(), index, bytes);
+			cursor.setNBytes(handle.getOffset(), index, bytes);
 		}
 
 		/**
-		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setString(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle, ByteAllocator, int, java.lang.String)
+		 * @see de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter#setString(de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.PackageHandle, de.ims.icarus2.util.mem.ByteAllocator.Cursor, java.lang.String)
 		 */
 		@Override
-		public void setString(PackageHandle handle, ByteAllocator allocator, int id, String value) {
+		public void setString(PackageHandle handle, Cursor cursor, String value) {
 			valueType.checkType(String.class);
-			setValue(handle, allocator, id, value);
+			setValue(handle, cursor, value);
 		}
 
 		/**

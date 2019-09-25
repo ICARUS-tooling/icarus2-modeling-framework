@@ -49,7 +49,9 @@ import de.ims.icarus2.util.Stats;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.collections.LazyMap;
 import de.ims.icarus2.util.collections.LookupList;
+import de.ims.icarus2.util.concurrent.CloseableThreadLocal;
 import de.ims.icarus2.util.mem.ByteAllocator;
+import de.ims.icarus2.util.mem.ByteAllocator.Cursor;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -166,6 +168,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * </ul>
 	 */
 	private LookupList<PackageHandle> packageHandles = new LookupList<>();
+
+	private CloseableThreadLocal<ReadWriteProxy> readWriteProxy = CloseableThreadLocal.withInitial(
+			ReadWriteProxy::new);
 
 	protected PackedDataManager(Builder<E,O> builder) {
 		requireNonNull(builder);
@@ -409,6 +414,8 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 				rawStorage.clear();
 				rawStorage = null;
+
+				readWriteProxy.close();
 			} finally {
 				lock.unlockWrite(stamp);
 			}
@@ -702,6 +709,8 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	}
 
 	// GetXXX methods
+
+	private void
 
 	/**
 	 * Reads the stored annotation value specified by the given {@code handle}
@@ -1391,8 +1400,25 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		return statFields.clone();
 	}
 
-	private static class ReadWriteProxy {
+	private class ReadWriteProxy {
 
+		/** Cursor for interacting with the data storage */
+		Cursor cursor = PackedDataManager.this.rawStorage.newCursor();
+
+		void close() {
+			cursor.clear();
+			cursor = null;
+		}
+
+		int id;
+
+		// Buffers for transporting values between lambda layers
+		Object value;
+		int intValue;
+		long longValue;
+		float floatValue;
+		double doubleValue;
+		boolean booleanValue;
 	}
 
 	public static enum StatField {

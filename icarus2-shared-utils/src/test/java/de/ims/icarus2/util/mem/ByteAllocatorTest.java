@@ -262,7 +262,9 @@ class ByteAllocatorTest {
 	 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#clear()}.
 	 */
 	@Test
+	@Tag(STANDALONE)
 	void testClear() {
+		allocator = new ByteAllocator(defaultSlotSize, defaultChunkPower);
 		allocator.alloc();
 
 		assertEquals(1, allocator.size());

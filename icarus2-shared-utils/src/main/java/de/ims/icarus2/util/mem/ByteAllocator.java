@@ -21,11 +21,18 @@ import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.StampedLock;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
+import de.ims.icarus2.util.MutablePrimitives.MutableByte;
+import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
+import de.ims.icarus2.util.MutablePrimitives.MutableLong;
+import de.ims.icarus2.util.MutablePrimitives.MutableShort;
 import de.ims.icarus2.util.io.Bits;
 
 /**
@@ -87,18 +94,10 @@ public final class ByteAllocator {
 	private static final int SLOT_HEADER_SIZE = Integer.BYTES;
 
 	/**
-	 * Number of reserved bytes in each buffer chunk for maintenance
-	 * information. Stores the counter keeping track of how many live
-	 * slots the buffer chunk contains. Chosen to hold a single
-	 * integer value.
-	 */
-	private static final int CHUNK_HEADER_SIZE = Integer.BYTES;
-
-	/**
 	 * Raw value for bytes per slot as defined at constructor time.
 	 * This value does not include the {@link #SLOT_HEADER_SIZE slot header}.
 	 */
-	private int rawSlotSize;
+	private volatile int rawSlotSize;
 
 	/**
 	 * Constant size of individual slots that
@@ -107,7 +106,7 @@ public final class ByteAllocator {
 	 * Value is given as number of bytes, including the
 	 * {@link #SLOT_HEADER_SIZE slot header}.
 	 */
-	private int slotSize;
+	private volatile int slotSize;
 
 	/**
 	 * Constant size of collections of slots. Calculated as
@@ -132,20 +131,27 @@ public final class ByteAllocator {
 	 * Note that currently we have no mechanism in place to
 	 * dynamically shrink the buffer if entire chunks are
 	 * no longer needed.
+	 * <p>
+	 * This array follows copy-on-write semantics
 	 */
-	private final List<byte[]> chunks = new ArrayList<>();
+	private volatile Chunk[] chunks;
+
+	/** Number of currently used chunks in the {@link #chunks} array */
+	private volatile int chunkCount = 0;
 
 	/**
 	 * Keeps track of the total number of currently allocated slots.
 	 */
-	private int slots = 0;
+	private volatile int slots = 0;
 
 	/**
 	 * Head pointer of the free-list.
 	 * Is either {@code -1} to signal an empty list or {@code id+1}
 	 * where id is the id of the first empty slot in the list.
 	 */
-	private int freeSlot = UNSET_INT;
+	private volatile int freeSlot = UNSET_INT;
+
+	private final LockStrategy sync = new Unsafe(); //TODO
 
 	/**
 	 * Creates a {@code ByteAllocator} whose chunks all contain
@@ -169,6 +175,8 @@ public final class ByteAllocator {
 
 		rawSlotSize = slotSize;
 		chunkSize = 1<<chunkPower;
+
+		chunks = new Chunk[10]; //TODO make customizable or find a good default
 	}
 
 	/**
@@ -216,8 +224,7 @@ public final class ByteAllocator {
 	 * @return
 	 */
 	private int rawSlotIndex(int id) {
-		// First slot begins after the chunk header
-		return CHUNK_HEADER_SIZE + ((id & (chunkSize-1)) * slotSize);
+		return ((id & (chunkSize-1)) * slotSize);
 	}
 
 	/**
@@ -250,41 +257,46 @@ public final class ByteAllocator {
 	 * Returns (and creates if necessary) the byte chunk for a given
 	 * {@code chunkIndex}. The specified {@code policy} controls whether
 	 * or not creation of additional buffer chunks is allowed.
+	 * <p>
+	 * If the given policy allows growing the internal chunks buffer, this
+	 * method <b>must</b> be called under sync!!
 	 *
 	 * @param chunkIndex
 	 * @param policy
 	 * @return
 	 *
 	 * @throws IndexOutOfBoundsException if the specified {@code chunkIndex}
-	 * lies
+	 * lies outside {@code 0<= x <chunkCount} and the given {@code policy} does
+	 * not support growths.
 	 */
-	private byte[] getChunk(int chunkIndex, GrowthPolicy policy) {
-		// Grow our buffer depending on the given policy as needed
-		while(policy!=GrowthPolicy.NO_GROWTH && chunkIndex>=chunks.size()) {
-			chunks.add(createChunk());
-			// If we only need to append we can exit after having added a single chunk
-			if(policy==GrowthPolicy.APPEND) {
-				break;
+	private Chunk getChunkUnsafe(int chunkIndex, GrowthPolicy policy) {
+		Chunk[] chunks = this.chunks;
+		int chunkCount = this.chunkCount;
+		if(policy!=GrowthPolicy.NO_GROWTH && chunkIndex>=chunkCount) {
+			// Grow our buffer depending on the given policy as needed
+			if(chunkIndex>=chunks.length) {
+				int newSize = Math.max(chunks.length*2, chunkIndex);
+				if(newSize<=0)
+					throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Size overflow");
+				chunks = Arrays.copyOf(chunks, newSize);
 			}
+			while(chunkIndex>=chunkCount) {
+				chunks[chunkCount++] = new Chunk(chunkSize * slotSize);
+				// If we only need to append we can exit after having added a single chunk
+				if(policy==GrowthPolicy.APPEND) {
+					break;
+				}
+			}
+			this.chunks = chunks;
+			this.chunkCount = chunkCount;
 		}
 		// If invalid chunk index was requested this will fail with IndexOutOfBoundsException
-		return chunks.get(chunkIndex);
+		return chunks[chunkIndex];
 	}
 
 	private boolean isUsed(int chunkIndex) {
-		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
-
-		int liveCount = Bits.readInt(chunk, 0);
-
-		return liveCount>0;
-	}
-
-	/**
-	 * Create a byte chunk of appropriate size for this heap.
-	 * @return
-	 */
-	private byte[] createChunk() {
-		return new byte[(chunkSize * slotSize) + CHUNK_HEADER_SIZE];
+		Chunk chunk = getChunkUnsafe(chunkIndex, GrowthPolicy.NO_GROWTH);
+		return chunk!= null && !chunk.dead && chunk.liveSlots>0;
 	}
 
 	/**
@@ -299,43 +311,43 @@ public final class ByteAllocator {
 	 * @throws IndexOutOfBoundsException if the heap space is exhausted
 	 */
 	public int alloc() {
-		int id = UNSET_INT;
+		MutableInteger result = new MutableInteger();
+		sync.syncGlobal(() -> {
+			int id = UNSET_INT;
+			Chunk chunk;
+			int rawSlotIndex;
 
-		byte[] chunk;
+			if(freeSlot!=UNSET_INT) {
+				// Allocate slot and re-route marker
+				id = freeSlot-1;
 
-		int rawSlotIndex;
+				// Chunk has been allocated before, so access must not fail
+				chunk = getChunkUnsafe(chunkIndex(id), GrowthPolicy.NO_GROWTH);
 
-		if(freeSlot!=UNSET_INT) {
-			// Allocate slot and re-route marker
-			id = freeSlot-1;
+				rawSlotIndex = rawSlotIndex(id);
 
-			// Chunk has been allocated before, so access must not fail
-			chunk = getChunk(chunkIndex(id), GrowthPolicy.NO_GROWTH);
+				// New "free slot" will have been set by a previous free() call
+				freeSlot = Bits.readInt(chunk.data, rawSlotIndex);
+			} else {
+				// Grab a new slot
+				id = idGen.getAndIncrement();
 
-			rawSlotIndex = rawSlotIndex(id);
+				// Make sure we have the associated chunk in memory
+				chunk = getChunkUnsafe(chunkIndex(id), GrowthPolicy.APPEND);
+				rawSlotIndex = rawSlotIndex(id);
+			}
 
-			// New "free slot" will have been set by a previous free() call
-			freeSlot = Bits.readInt(chunk, rawSlotIndex);
-		} else {
-			// Grab a new slot
-			id = idGen.getAndIncrement();
+			// Mark slot live
+			Bits.writeInt(chunk.data, rawSlotIndex, SLOT_ALIVE);
 
-			// Make sure we have the associated chunk in memory
-			chunk = getChunk(chunkIndex(id), GrowthPolicy.APPEND);
-			rawSlotIndex = rawSlotIndex(id);
-		}
+			// Update live counter for chunk
+			chunk.liveSlots++;
 
-		// Mark slot live
-		Bits.writeInt(chunk, rawSlotIndex, SLOT_ALIVE);
+			slots++;
+			result.setInt(id);
+		});
 
-		// Update live counter for chunk
-		int liveCount = Bits.readInt(chunk, 0);
-		liveCount++;
-		Bits.writeInt(chunk, 0, liveCount);
-
-		slots++;
-
-		return id;
+		return result.intValue();
 	}
 
 	/**
@@ -350,20 +362,20 @@ public final class ByteAllocator {
 		if(id<0)
 			throw new IndexOutOfBoundsException("Slot id must not be negative: "+id);
 
-		byte[] chunk = getChunk(chunkIndex(id), GrowthPolicy.NO_GROWTH);
+		sync.syncGlobal(() -> {
+			sync.syncWrite(id, 0, (chunkIndex, rawSlotIndex, chunk) -> {
+				// Keep link to previous "empty slot" intact
+				Bits.writeInt(chunk.data, rawSlotIndex(id), freeSlot);
+				// Simply mark supplied id as the next free slot
+				freeSlot = id+1;
 
-		// Keep link to previous "empty slot" intact
-		Bits.writeInt(chunk, rawSlotIndex(id), freeSlot);
-		// Simply mark supplied id as the next free slot
-		freeSlot = id+1;
+				// Update live counter for chunk
+				chunk.liveSlots--;
+				checkState("Counter must not become negative", chunk.liveSlots>=0);
+			});
 
-		// Update live counter for chunk
-		int liveCount = Bits.readInt(chunk, 0);
-		liveCount--;
-		checkState("Counter must not become negative", liveCount>=0);
-		Bits.writeInt(chunk, 0, liveCount);
-
-		slots--;
+			slots--;
+		});
 	}
 
 	/**
@@ -371,10 +383,16 @@ public final class ByteAllocator {
 	 * deletes all active slot allocations.
 	 */
 	public void clear() {
-		chunks.clear();
-		freeSlot = UNSET_INT;
-		idGen.set(0);
-		slots = 0;
+		sync.syncGlobal(() -> {
+			for (int i = 0; i < chunkCount; i++) {
+				chunks[i].dead = true;
+				chunks[i] = null;
+			}
+			freeSlot = UNSET_INT;
+			chunkCount = 0;
+			idGen.set(0);
+			slots = 0;
+		});
 	}
 
 	/**
@@ -393,7 +411,7 @@ public final class ByteAllocator {
 	 * @return
 	 */
 	public int chunksUsed() {
-		return chunks.size();
+		return chunkCount;
 	}
 
 	/**
@@ -410,98 +428,115 @@ public final class ByteAllocator {
 		 * scaled-down buffer.
 		 */
 
-		boolean couldTrim = false;
+		MutableBoolean couldTrim = new MutableBoolean(false);
 
-		while(!chunks.isEmpty()) {
-			int chunkIndex = chunks.size()-1;
+		sync.syncGlobal(() -> {
+			while(chunkCount>0) {
+				int chunkIndex = chunkCount-1;
 
-			if(isUsed(chunkIndex)) {
-				// If we encounter a chunk that's still in use we need to abort
-				break;
+				if(isUsed(chunkIndex)) {
+					// If we encounter a chunk that's still in use we need to abort
+					break;
+				}
+
+				// Delete the trailing chunk
+				Chunk chunk = chunks[--chunkCount];
+				chunk.dead = true;
+				chunks[chunkCount] = null;
+				// Adjust idGen
+				idGen.set(chunkCount*getChunkSize());
+
+				couldTrim.setBoolean(true);
 			}
+		});
 
-			// Delete the trailing chunk
-			chunks.remove(chunkIndex);
-			// Adjust idGen
-			idGen.set(chunks.size()*getChunkSize());
-
-			couldTrim = true;
-		}
-
-		return couldTrim;
+		return couldTrim.booleanValue();
 	}
 
 	/**
 	 * Increases the space available for every slot in this storage
 	 * to {@code newSlotSize}.
 	 * Does nothing if there are no entries currently.
+	 * <p>
+	 * This method should be used with great care and only when the caller
+	 * can guarantee that there are no concurrent read or write operations
+	 * being performed, as it manipulates internal fields that are generally
+	 * not guarded against concurrent modification!
 	 *
 	 * @param newSlotSize
 	 */
 	public void adjustSlotSize(int size) {
-		checkArgument("Slot size must not be less than "+MIN_SLOT_SIZE, slotSize>=MIN_SLOT_SIZE);
+		checkArgument("Slot size must not be less than "+MIN_SLOT_SIZE, size>=MIN_SLOT_SIZE);
 
 		//TODO guard against overflowing the address space
 
-		boolean grow = size>rawSlotSize;
+		sync.syncGlobal(() -> {
+			boolean grow = size>rawSlotSize;
 
-		int oldSlotSize = slotSize;
-		slotSize = size + SLOT_HEADER_SIZE; // so that createChunk() uses the right values!
-		rawSlotSize = size;
+			int oldSlotSize = slotSize;
+			int newSlotSize = size + SLOT_HEADER_SIZE;
 
-		// Nothing in storage
-		if(chunks.isEmpty()) {
-			return;
-		}
+			slotSize = newSlotSize;
+			rawSlotSize = size;
 
-		// No live slots, so just erase current storage
-		if(slots<=0) {
-			clear();
-			return;
-		}
-
-		int copySlotSize = grow ? oldSlotSize : slotSize;
-
-		// Chunk by chunk adjust the content
-		for (int i = 0; i < chunks.size(); i++) {
-			byte[] oldChunk = chunks.get(i);
-			byte[] newChunk = createChunk();
-			chunks.set(i, newChunk);
-
-			// Copy over chunk header
-			System.arraycopy(oldChunk, 0, newChunk, 0, CHUNK_HEADER_SIZE);
-
-			// If chunk had no data previously and we have no free-list, we can ignore it
-			if(freeSlot==UNSET_INT && Bits.readInt(newChunk, 0)<=0) {
-				continue;
+			// Nothing in storage
+			if(chunkCount==0) {
+				return;
 			}
 
-			int idxOld = CHUNK_HEADER_SIZE;
-			int idxNew = CHUNK_HEADER_SIZE;
-
-			// Now copy over all individual slots
-			for (int j = 0; j < chunkSize; j++) {
-				int header = Bits.readInt(oldChunk, idxOld);
-				if(header==SLOT_ALIVE) {
-					System.arraycopy(oldChunk, idxOld, newChunk, idxNew, copySlotSize);
-				} else if(header>0) {
-					Bits.writeInt(newChunk, idxNew, header);
-				}
-
-				idxOld += oldSlotSize;
-				idxNew += slotSize;
+			// No live slots, so just erase current storage
+			if(slots<=0) {
+				clear();
+				return;
 			}
-		}
+
+			int copySlotSize = grow ? oldSlotSize : newSlotSize;
+
+			// Chunk by chunk adjust the content
+			for (int i = 0; i < chunkCount; i++) {
+				// Dummy id to make the syncWrite call fetch the right chunk
+				int id = i*oldSlotSize;
+				sync.syncWrite(id, 0, (chunkIndex, rawSlotIndex, chunk) -> {
+					chunk.dead = true;
+					Chunk newChunk = new Chunk(chunkSize * newSlotSize);
+					chunks[chunkIndex] = newChunk;
+
+					// Copy over chunk header data
+					newChunk.liveSlots = chunk.liveSlots;
+
+					// If chunk had no data previously and we have no free-list, we can ignore it
+					if(freeSlot==UNSET_INT && newChunk.liveSlots<=0) {
+						return;
+					}
+
+					int idxOld = 0;
+					int idxNew = 0;
+
+					// Now copy over all individual slots
+					for (int j = 0; j < chunkSize; j++) {
+						int header = Bits.readInt(chunk.data, idxOld);
+						if(header==SLOT_ALIVE) {
+							System.arraycopy(chunk.data, idxOld, newChunk.data, idxNew, copySlotSize);
+						} else if(header>0) {
+							Bits.writeInt(newChunk.data, idxNew, header);
+						}
+
+						idxOld += oldSlotSize;
+						idxNew += slotSize;
+					}
+				});
+			}
+		});
 	}
 
 	/**
-	 * Throws {@link IndexOutOfBoundsException} if {@code id < 0 || id >= chunkSize*chunks.size()}
+	 * Throws {@link IndexOutOfBoundsException} if {@code id < 0 || id >= chunkSize*chunkCount}
 	 * or if {@code offset < 0 || offset >= rawSlotSize}
 	 * @param id
 	 * @param offset
 	 */
 	private void checkIdAndOffset(int id, int offset) {
-		if(id<0 || id>=chunkSize*chunks.size())
+		if(id<0 || id>=chunkSize*chunkCount)
 			throw new IndexOutOfBoundsException("Slot id out of bounds: "+id);
 
 		if(offset<0)
@@ -515,8 +550,10 @@ public final class ByteAllocator {
 			throw new IndexOutOfBoundsException("Offset does not leave enough bytes to satisfy request: "+offset);
 	}
 
-	private void checkLiveSlot(byte[] chunk, int rawSlotIndex, int id) {
-		if(Bits.readInt(chunk, rawSlotIndex)!=SLOT_ALIVE)
+	private void checkLiveSlot(Chunk chunk, int rawSlotIndex, int id) {
+		if(chunk.dead)
+			throw new IllegalStateException("Designated slot's host chunk alread marked as dead: "+id);
+		if(Bits.readInt(chunk.data, rawSlotIndex)!=SLOT_ALIVE)
 			throw new IllegalStateException("Designated slot is not allocated: "+id);
 	}
 
@@ -533,14 +570,11 @@ public final class ByteAllocator {
 	 * constraints of this heap
 	 */
 	public byte getByte(int id, int offset) {
-		checkIdAndOffset(id, offset);
+		MutableByte result = new MutableByte();
+		sync.syncRead(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
+			result.setByte(chunk.data[rawSlotIndex+SLOT_HEADER_SIZE+offset]));
 
-		int chunkIndex = chunkIndex(id);
-		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
-		int rawSlotIndex = rawSlotIndex(id);
-		checkLiveSlot(chunk, rawSlotIndex, id);
-
-		return chunk[rawSlotIndex+SLOT_HEADER_SIZE+offset];
+		return result.byteValue();
 	}
 
 	/**
@@ -562,17 +596,14 @@ public final class ByteAllocator {
 	 * @see Bits#readNBytes(byte[], int, int)
 	 */
 	public long getNBytes(int id, int offset, int n) {
-		checkIdAndOffset(id, offset);
 		checkArgument(n>0 && n<9);
 		checkBytesAvailable(offset, n);
 
-		int chunkIndex = chunkIndex(id);
-		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
+		MutableLong result = new MutableLong();
+		sync.syncRead(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
+			result.setLong(Bits.readNBytes(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, n)));
 
-		int rawSlotIndex = rawSlotIndex(id);
-		checkLiveSlot(chunk, rawSlotIndex, id);
-
-		return Bits.readNBytes(chunk, rawSlotIndex+SLOT_HEADER_SIZE+offset, n);
+		return result.longValue();
 	}
 
 	/**
@@ -591,16 +622,13 @@ public final class ByteAllocator {
 	 * @see Bits#readShort(byte[], int)
 	 */
 	public short getShort(int id, int offset) {
-		checkIdAndOffset(id, offset);
 		checkBytesAvailable(offset, Short.BYTES);
 
-		int chunkIndex = chunkIndex(id);
-		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
+		MutableShort result = new MutableShort();
+		sync.syncRead(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
+			result.setShort(Bits.readShort(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset)));
 
-		int rawSlotIndex = rawSlotIndex(id);
-		checkLiveSlot(chunk, rawSlotIndex, id);
-
-		return Bits.readShort(chunk, rawSlotIndex+SLOT_HEADER_SIZE+offset);
+		return result.shortValue();
 	}
 
 	/**
@@ -619,16 +647,13 @@ public final class ByteAllocator {
 	 * @see Bits#readInt(byte[], int)
 	 */
 	public int getInt(int id, int offset) {
-		checkIdAndOffset(id, offset);
 		checkBytesAvailable(offset, Integer.BYTES);
 
-		int chunkIndex = chunkIndex(id);
-		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
+		MutableInteger result = new MutableInteger();
+		sync.syncRead(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
+			result.setInt(Bits.readInt(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset)));
 
-		int rawSlotIndex = rawSlotIndex(id);
-		checkLiveSlot(chunk, rawSlotIndex, id);
-
-		return Bits.readInt(chunk, rawSlotIndex+SLOT_HEADER_SIZE+offset);
+		return result.intValue();
 	}
 
 	/**
@@ -647,16 +672,13 @@ public final class ByteAllocator {
 	 * @see Bits#readLong(byte[], int)
 	 */
 	public long getLong(int id, int offset) {
-		checkIdAndOffset(id, offset);
 		checkBytesAvailable(offset, Long.BYTES);
 
-		int chunkIndex = chunkIndex(id);
-		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
+		MutableLong result = new MutableLong();
+		sync.syncRead(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
+			result.setLong(Bits.readLong(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset)));
 
-		int rawSlotIndex = rawSlotIndex(id);
-		checkLiveSlot(chunk, rawSlotIndex, id);
-
-		return Bits.readLong(chunk, rawSlotIndex+SLOT_HEADER_SIZE+offset);
+		return result.longValue();
 	}
 
 	// SETxxx methods
@@ -664,66 +686,37 @@ public final class ByteAllocator {
 	public void setByte(int id, int offset, byte value) {
 		checkIdAndOffset(id, offset);
 
-		int chunkIndex = chunkIndex(id);
-		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
-
-		int rawSlotIndex = rawSlotIndex(id);
-		checkLiveSlot(chunk, rawSlotIndex, id);
-
-		chunk[rawSlotIndex+SLOT_HEADER_SIZE+offset] = value;
+		sync.syncWrite(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
+			chunk.data[rawSlotIndex+SLOT_HEADER_SIZE+offset] = value);
 	}
 
 	public void setNBytes(int id, int offset, long value, int n) {
-		checkIdAndOffset(id, offset);
 		checkArgument(n>0);
 		checkBytesAvailable(offset, n);
 
-		int chunkIndex = chunkIndex(id);
-		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
-
-		int rawSlotIndex = rawSlotIndex(id);
-		checkLiveSlot(chunk, rawSlotIndex, id);
-
-		Bits.writeNBytes(chunk, rawSlotIndex+SLOT_HEADER_SIZE+offset, value, n);
+		sync.syncWrite(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
+			Bits.writeNBytes(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, value, n));
 	}
 
 	public void setShort(int id, int offset, short value) {
-		checkIdAndOffset(id, offset);
 		checkBytesAvailable(offset, Short.BYTES);
 
-		int chunkIndex = chunkIndex(id);
-		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
-
-		int rawSlotIndex = rawSlotIndex(id);
-		checkLiveSlot(chunk, rawSlotIndex, id);
-
-		Bits.writeShort(chunk, rawSlotIndex+SLOT_HEADER_SIZE+offset, value);
+		sync.syncWrite(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
+			Bits.writeShort(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, value));
 	}
 
 	public void setInt(int id, int offset, int value) {
-		checkIdAndOffset(id, offset);
 		checkBytesAvailable(offset, Integer.BYTES);
 
-		int chunkIndex = chunkIndex(id);
-		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
-
-		int rawSlotIndex = rawSlotIndex(id);
-		checkLiveSlot(chunk, rawSlotIndex, id);
-
-		Bits.writeInt(chunk, rawSlotIndex+SLOT_HEADER_SIZE+offset, value);
+		sync.syncWrite(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
+			Bits.writeInt(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, value));
 	}
 
 	public void setLong(int id, int offset, long value) {
-		checkIdAndOffset(id, offset);
 		checkBytesAvailable(offset, Long.BYTES);
 
-		int chunkIndex = chunkIndex(id);
-		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
-
-		int rawSlotIndex = rawSlotIndex(id);
-		checkLiveSlot(chunk, rawSlotIndex, id);
-
-		Bits.writeLong(chunk, rawSlotIndex+SLOT_HEADER_SIZE+offset, value);
+		sync.syncWrite(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
+			Bits.writeLong(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, value));
 	}
 
 	// Buffer methods
@@ -745,18 +738,12 @@ public final class ByteAllocator {
 	 * bytes to be read in the slot
 	 */
 	public void writeBytes(int id, int offset, byte[] source, int n) {
-		checkIdAndOffset(id, offset);
 		requireNonNull(source);
 		checkArgument(n>0 && n<=source.length);
 		checkBytesAvailable(offset, n);
 
-		int chunkIndex = chunkIndex(id);
-		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
-
-		int rawSlotIndex = rawSlotIndex(id);
-		checkLiveSlot(chunk, rawSlotIndex, id);
-
-		System.arraycopy(source, 0, chunk, rawSlotIndex+SLOT_HEADER_SIZE+offset, n);
+		sync.syncWrite(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
+			System.arraycopy(source, 0, chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, n));
 	}
 
 	/**
@@ -776,18 +763,12 @@ public final class ByteAllocator {
 	 * bytes to be read in the slot
 	 */
 	public void readBytes(int id, int offset, byte[] destination, int n) {
-		checkIdAndOffset(id, offset);
 		requireNonNull(destination);
 		checkArgument(n>0 && n <= destination.length);
 		checkBytesAvailable(offset, n);
 
-		int chunkIndex = chunkIndex(id);
-		byte[] chunk = getChunk(chunkIndex, GrowthPolicy.NO_GROWTH);
-
-		int rawSlotIndex = rawSlotIndex(id);
-		checkLiveSlot(chunk, rawSlotIndex, id);
-
-		System.arraycopy(chunk, rawSlotIndex+SLOT_HEADER_SIZE+offset, destination, 0, n);
+		sync.syncWrite(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
+		System.arraycopy(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, destination, 0, n));
 	}
 
 	public Cursor newCursor() {
@@ -798,6 +779,9 @@ public final class ByteAllocator {
 	 * A convenient mechanism for moving around inside a {@link ByteAllocator}
 	 * instance and to perform bulk operations on selected slots.
 	 * <p>
+	 * Note that cursor instances are designed to be used on a per-thread level!
+	 * While the underlying read and write operations are thread-safe,
+	 * {@link #moveTo(int) moving} a cursor isn't.
 	 * Note that neither the surrounding {@link ByteAllocator} or instances of
 	 * this class are thread-safe! If the {@link ByteAllocator} for a cursor
 	 * is structurally modified (e.g. by {@link ByteAllocator#free(int) freeing}
@@ -816,11 +800,11 @@ public final class ByteAllocator {
 		/**
 		 * Begin of payload section in current slot byte data
 		 */
-		private int slotIndex = UNSET_INT;
+		private int rawSlotIndex = UNSET_INT;
 		/**
 		 * Buffer chunk to write into
 		 */
-		private byte[] chunk = null;
+		private Chunk chunk = null;
 
 		Cursor() {
 			// not visible for foreign code
@@ -842,6 +826,8 @@ public final class ByteAllocator {
 		/**
 		 * {@link ByteAllocator#alloc() allocates} a new slot and {@link #moveTo(int) moves}
 		 * to it for immediate access.
+		 * <p>
+		 * Note that allocating and moving are separate atomic operations.
 		 * @return
 		 */
 		public Cursor alloc() {
@@ -860,7 +846,7 @@ public final class ByteAllocator {
 		 * @param id
 		 * @return this cursor
 		 *
-		 * @see ByteAllocator#getChunk(int, GrowthPolicy)
+		 * @see ByteAllocator#getChunkUnsafe(int, GrowthPolicy)
 		 */
 		public Cursor moveTo(int id) {
 			if(id<IcarusUtils.UNSET_INT || id>=size())
@@ -868,15 +854,13 @@ public final class ByteAllocator {
 
 			this.id = id;
 			if(id==IcarusUtils.UNSET_INT) {
-				slotIndex = IcarusUtils.UNSET_INT;
+				rawSlotIndex = IcarusUtils.UNSET_INT;
 				chunk = null;
 			} else {
-				chunk = getChunk(chunkIndex(id), GrowthPolicy.NO_GROWTH);
+				chunk = getChunkUnsafe(chunkIndex(id), GrowthPolicy.NO_GROWTH);
 
-				int rawSlotIndex = rawSlotIndex(id);
+				rawSlotIndex = rawSlotIndex(id);
 				checkLiveSlot(chunk, rawSlotIndex, id);
-
-				slotIndex = rawSlotIndex+SLOT_HEADER_SIZE;
 			}
 			return this;
 		}
@@ -919,7 +903,9 @@ public final class ByteAllocator {
 		public byte getByte(int offset) {
 			checkChunkAvailable();
 			checkOffset(offset);
-			return chunk[slotIndex+offset];
+			MutableByte result = new MutableByte();
+			sync.syncRead(this, () -> result.setByte(chunk.data[rawSlotIndex+SLOT_HEADER_SIZE+offset]));
+			return result.byteValue();
 		}
 
 		public long getNBytes(int offset, int n) {
@@ -927,25 +913,37 @@ public final class ByteAllocator {
 			checkOffset(offset);
 			checkArgument(n>0 && n<=8);
 			checkBytesAvailable(offset, n);
-			return Bits.readNBytes(chunk, slotIndex+offset, n);
+			MutableLong result = new MutableLong();
+			sync.syncRead(this, () -> result.setLong(
+					Bits.readNBytes(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, n)));
+			return result.longValue();
 		}
 
 		public short getShort(int offset) {
 			checkChunkAvailable();
 			checkOffset(offset);
-			return Bits.readShort(chunk, slotIndex+offset);
+			MutableShort result = new MutableShort();
+			sync.syncRead(this, () -> result.setShort(
+					Bits.readShort(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset)));
+			return result.shortValue();
 		}
 
 		public int getInt(int offset) {
 			checkChunkAvailable();
 			checkOffset(offset);
-			return Bits.readInt(chunk, slotIndex+offset);
+			MutableInteger result = new MutableInteger();
+			sync.syncRead(this, () -> result.setInt(
+					Bits.readInt(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset)));
+			return result.intValue();
 		}
 
 		public long getLong(int offset) {
 			checkChunkAvailable();
 			checkOffset(offset);
-			return Bits.readLong(chunk, slotIndex+offset);
+			MutableLong result = new MutableLong();
+			sync.syncRead(this, () -> result.setLong(
+					Bits.readLong(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset)));
+			return result.longValue();
 		}
 
 		// SETxxx methods
@@ -954,7 +952,7 @@ public final class ByteAllocator {
 			checkChunkAvailable();
 			checkOffset(offset);
 			checkBytesAvailable(offset, 1);
-			chunk[slotIndex+offset] = value;
+			sync.syncWrite(this, () -> chunk.data[rawSlotIndex+SLOT_HEADER_SIZE+offset] = value);
 			return this;
 		}
 
@@ -963,7 +961,8 @@ public final class ByteAllocator {
 			checkOffset(offset);
 			checkArgument(n>0 && n<=8);
 			checkBytesAvailable(offset, n);
-			Bits.writeNBytes(chunk, slotIndex+offset, value, n);
+			sync.syncWrite(this, () ->
+				Bits.writeNBytes(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, value, n));
 			return this;
 		}
 
@@ -971,7 +970,8 @@ public final class ByteAllocator {
 			checkChunkAvailable();
 			checkOffset(offset);
 			checkBytesAvailable(offset, Short.BYTES);
-			Bits.writeShort(chunk, slotIndex+offset, value);
+			sync.syncWrite(this, () ->
+				Bits.writeShort(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, value));
 			return this;
 		}
 
@@ -979,7 +979,8 @@ public final class ByteAllocator {
 			checkChunkAvailable();
 			checkOffset(offset);
 			checkBytesAvailable(offset, Integer.BYTES);
-			Bits.writeInt(chunk, slotIndex+offset, value);
+			sync.syncWrite(this, () ->
+				Bits.writeInt(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, value));
 			return this;
 		}
 
@@ -987,7 +988,8 @@ public final class ByteAllocator {
 			checkChunkAvailable();
 			checkOffset(offset);
 			checkBytesAvailable(offset, Long.BYTES);
-			Bits.writeLong(chunk, slotIndex+offset, value);
+			sync.syncWrite(this, () ->
+				Bits.writeLong(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, value));
 			return this;
 		}
 
@@ -999,7 +1001,8 @@ public final class ByteAllocator {
 			checkOffset(offset);
 			checkArgument(n>0 && n<=bytes.length);
 			checkBytesAvailable(offset, n);
-			System.arraycopy(bytes, 0, chunk, slotIndex+offset, n);
+			sync.syncWrite(this, () ->
+				System.arraycopy(bytes, 0, chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, n));
 			return this;
 		}
 
@@ -1009,8 +1012,96 @@ public final class ByteAllocator {
 			checkOffset(offset);
 			checkArgument(n>0 && n<=bytes.length);
 			checkBytesAvailable(offset, n);
-			System.arraycopy(chunk, slotIndex+offset, bytes, 0, n);
+			sync.syncRead(this, () ->
+				System.arraycopy(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, bytes, 0, n));
 			return this;
 		}
+	}
+
+	/**
+	 * Data storage for a single chunk. This class extends {@link StampedLock} as a side
+	 * effect of one of the supported {@link LockStrategy} implementations. Since instances
+	 * of this class are never exposed to client code and the {@code StampedLock} class is
+	 * rather light-weight, this shouldn't create any issues.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	@SuppressWarnings("serial")
+	private static class Chunk /*extends StampedLock*/ {
+		/** The actual slots */
+		private final byte[] data;
+		/** The current number of slots that are actually used */
+		private volatile int liveSlots = 0;
+		/** Switch to signal that this chunk should no longer be used */
+		private volatile boolean dead = false;
+		Chunk(int size) {
+			data = new byte[size];
+		}
+	}
+
+	@FunctionalInterface
+	interface Task {
+		void execute();
+	}
+
+	@FunctionalInterface
+	interface ChunkTask {
+		void execute(int chunkIndex, int rawSlotIndex, Chunk chunk);
+	}
+
+	interface LockStrategy {
+		void syncGlobal(Task task);
+		void syncWrite(int id, int offset, ChunkTask task);
+		void syncRead(int id, int offset, ChunkTask task);
+		void syncWrite(Cursor cursor, Task task);
+		void syncRead(Cursor cursor, Task task);
+	}
+
+	/**
+	 * Implements a strategy without any actual locking.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	class Unsafe implements LockStrategy {
+
+		@Override
+		public void syncGlobal(Task task) {
+			task.execute();
+		}
+
+		@Override
+		public void syncWrite(int id, int offset, ChunkTask task) {
+			checkIdAndOffset(id, offset);
+			int chunkIndex = chunkIndex(id);
+			int rawSlotIndex = rawSlotIndex(id);
+			Chunk chunk = getChunkUnsafe(chunkIndex, GrowthPolicy.NO_GROWTH);
+			checkLiveSlot(chunk, rawSlotIndex, id);
+			task.execute(chunkIndex, rawSlotIndex, chunk);
+		}
+
+		@Override
+		public void syncRead(int id, int offset, ChunkTask task) {
+			checkIdAndOffset(id, offset);
+			int chunkIndex = chunkIndex(id);
+			int rawSlotIndex = rawSlotIndex(id);
+			Chunk chunk = getChunkUnsafe(chunkIndex, GrowthPolicy.NO_GROWTH);
+			checkLiveSlot(chunk, rawSlotIndex, id);
+			task.execute(chunkIndex, rawSlotIndex, chunk);
+		}
+
+		@Override
+		public void syncWrite(Cursor cursor, Task task) {
+			checkLiveSlot(cursor.chunk, cursor.rawSlotIndex, cursor.id);
+			task.execute();
+		}
+
+		@Override
+		public void syncRead(Cursor cursor, Task task) {
+			checkLiveSlot(cursor.chunk, cursor.rawSlotIndex, cursor.id);
+			task.execute();
+		}
+
 	}
 }
