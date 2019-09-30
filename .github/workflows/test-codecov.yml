@@ -17,6 +17,7 @@ jobs:
       with:
         java-version: ${{ matrix.java_version }}
     - name: Build with Gradle
+      run: chmod a+x gradlew
       run: ./gradlew build
     - name: Upload code coverage of tests
       uses: codecov/codecov-action@v1.0.2
