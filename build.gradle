@@ -370,7 +370,8 @@ subprojects {
     
 	// Bundle test classes into a jar usable for other projects
 	task testJar(type: Jar, dependsOn: testClasses) {
-		baseName = "test-${project.archivesBaseName}"
+		baseName = project.archivesBaseName
+		archiveClassifier = "test"
 	    from sourceSets.test.output
 	}
 	
