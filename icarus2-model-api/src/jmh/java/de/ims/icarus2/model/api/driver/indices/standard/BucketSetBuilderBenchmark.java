@@ -21,7 +21,6 @@ package de.ims.icarus2.model.api.driver.indices.standard;
 
 import static de.ims.icarus2.test.TestUtils.K10;
 import static de.ims.icarus2.test.TestUtils.M100;
-import static de.ims.icarus2.test.TestUtils.jmhOptions;
 import static de.ims.icarus2.test.TestUtils.randomLongs;
 
 import java.util.ArrayList;
@@ -54,6 +53,7 @@ import org.openjdk.jmh.runner.options.ChainedOptionsBuilder;
 
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.BucketSetBuilder;
+import de.ims.icarus2.test.JmhUtils;
 
 /**
  * @author Markus Gärtner
@@ -199,7 +199,7 @@ BucketSetBuilderBenchmark.addSingleRandom       100000000              LONG     
 		final int size = M100;
 
 		ChainedOptionsBuilder builder =
-				jmhOptions(BucketSetBuilderBenchmark.class, false, ResultFormatType.CSV)
+				JmhUtils.jmhOptions(BucketSetBuilderBenchmark.class, false, ResultFormatType.CSV)
 				.jvmArgsAppend("-Xmx8g", "-Xms8g")
 				.shouldDoGC(true)
 

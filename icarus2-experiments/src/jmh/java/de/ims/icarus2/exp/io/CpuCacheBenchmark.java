@@ -19,8 +19,6 @@
  */
 package de.ims.icarus2.exp.io;
 
-import static de.ims.icarus2.test.TestUtils.jmhOptions;
-
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -42,6 +40,8 @@ import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.ChainedOptionsBuilder;
+
+import de.ims.icarus2.test.JmhUtils;
 
 /**
  * @author Markus Gärtner
@@ -127,7 +127,7 @@ CpuCacheBenchmark.testAccess       131072    ss    5  12.544 ± 0.497   s/op
 	 * @throws RunnerException
 	 */
 	public static void main(String[] args) throws RunnerException {
-		ChainedOptionsBuilder builder = jmhOptions(CpuCacheBenchmark.class,
+		ChainedOptionsBuilder builder = JmhUtils.jmhOptions(CpuCacheBenchmark.class,
 				false, ResultFormatType.TEXT);
 
 		new Runner(builder.build()).run();

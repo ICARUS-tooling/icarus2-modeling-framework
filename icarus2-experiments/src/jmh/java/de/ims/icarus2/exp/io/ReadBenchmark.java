@@ -20,7 +20,6 @@
 package de.ims.icarus2.exp.io;
 
 import static de.ims.icarus2.test.TestUtils.LOREM_IPSUM_CHINESE;
-import static de.ims.icarus2.test.TestUtils.jmhOptions;
 import static de.ims.icarus2.test.TestUtils.randomString;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -65,6 +64,7 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.ChainedOptionsBuilder;
 
+import de.ims.icarus2.test.JmhUtils;
 import de.ims.icarus2.util.io.IOUtil;
 
 /**
@@ -354,7 +354,7 @@ public class ReadBenchmark {
 	 * @throws RunnerException
 	 */
 	public static void main(String[] args) throws RunnerException {
-		ChainedOptionsBuilder builder = jmhOptions(ReadBenchmark.class,
+		ChainedOptionsBuilder builder = JmhUtils.jmhOptions(ReadBenchmark.class,
 				false, ResultFormatType.CSV);
 
 		builder.param("sizeInMb", "10", "30")

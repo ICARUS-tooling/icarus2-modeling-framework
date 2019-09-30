@@ -20,7 +20,6 @@
 package de.ims.icarus2.model.api.driver.indices.standard;
 
 import static de.ims.icarus2.test.TestUtils.M1;
-import static de.ims.icarus2.test.TestUtils.jmhOptions;
 import static de.ims.icarus2.test.TestUtils.randomLongs;
 
 import java.util.concurrent.TimeUnit;
@@ -43,6 +42,7 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
+import de.ims.icarus2.test.JmhUtils;
 
 /**
  * @author Markus Gärtner
@@ -100,7 +100,7 @@ Benchmark                              (indexValueType)   (size)  Mode  Cnt  Sco
 IndexBufferBenchmark.testAddSingle_1M           INTEGER  1000000  avgt   25  4.636 ± 0.210  ns/op
 	 */
 	public static void main(String[] args) throws RunnerException {
-		new Runner(jmhOptions(IndexBufferBenchmark.class, true, ResultFormatType.CSV)
+		new Runner(JmhUtils.jmhOptions(IndexBufferBenchmark.class, true, ResultFormatType.CSV)
 				.param("size", "1000000")
 				.param("indexValueType", "INTEGER")
 
