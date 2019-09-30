@@ -114,10 +114,25 @@ public class CloseableThreadLocal<T> implements Closeable {
 
 	@Override
 	public void close() {
+		// Try to close individual instances first
+		Map<Thread, T> hardRefs = this.hardRefs;
+		if(hardRefs!=null) {
+			try {
+				for(T instance : hardRefs.values()) {
+					if(instance instanceof AutoCloseable) {
+						((AutoCloseable)instance).close();
+					}
+				}
+			} catch(Throwable t) {
+				// ignore, we do this as best effort only
+			}
+
+		}
+
 		// Clear the hard refs; then, the only remaining refs to
-		// all values we were storing are weak (unless somewhere
+		// all values we wer'e storing are weak (unless somewhere
 		// else is still using them) and so GC may reclaim them:
-		hardRefs = null;
+		this.hardRefs = null;
 		// Take care of the current thread right now; others will be
 		// taken care of via the WeakReferences.
 		if (t != null) {
