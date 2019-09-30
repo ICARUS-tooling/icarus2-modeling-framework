@@ -118,6 +118,8 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 */
 	private final boolean failForUnwritten;
 
+	private final int optimisticAttempts = 3; //TODO make customizable
+
 	/**
 	 * Keeps track of the number of annotation storages using this manager.
 	 * Allows lazy creation of the actual storage and to release the entire
@@ -169,8 +171,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 */
 	private LookupList<PackageHandle> packageHandles = new LookupList<>();
 
-	private CloseableThreadLocal<ReadWriteProxy> readWriteProxy = CloseableThreadLocal.withInitial(
-			ReadWriteProxy::new);
+	private CloseableThreadLocal<ReadWriteProxy> readWriteProxy;
 
 	protected PackedDataManager(Builder<E,O> builder) {
 		requireNonNull(builder);
@@ -183,6 +184,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		autoRegister = builder.isAutoRegister();
 		failForUnwritten = builder.isFailForUnwritten();
 		statFields = builder.isCollectStats() ? new Stats<>(StatField.class) : null;
+
+		readWriteProxy = CloseableThreadLocal.withInitial(
+				() -> new ReadWriteProxy(rawStorage.newCursor()));
 
 		packageHandles.addAll(builder.getHandles());
 	}
@@ -443,6 +447,8 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 	// Item management
 
+	//TODO rework the (un)registration process for items so that the manager keeps a usage counter
+
 	/**
 	 * Reserves a chunk of byte buffer for the specified {@code item}
 	 * if it hasn't been registered already.
@@ -542,49 +548,17 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	public boolean isRegistered(E item) {
 		requireNonNull(item);
 
-		boolean registered = false;
-
-		// Try optimistically first
-		long stamp = lock.tryOptimisticRead();
-		if(stamp!=0L) {
-			registered = chunkAddresses.containsKey(item);
-		}
-
-		// Run a real lock if needed
-		if(!lock.validate(stamp)) {
-			stamp = lock.readLock();
-			try {
-				registered = chunkAddresses.containsKey(item);
-			} finally {
-				lock.unlockRead(stamp);
-			}
-		}
-
-		return registered;
+		ReadWriteProxy proxy = syncRead(item,
+				(i, id, p) -> p.booleanValue = id!=UNSET_INT);
+		return proxy.opSuccess && proxy.booleanValue;
 	}
 
 	public boolean isUsed(E item) {
 		requireNonNull(item);
 
-		boolean used = false;
-
-		// Try optimistically first
-		long stamp = lock.tryOptimisticRead();
-		if(stamp!=0L) {
-			used = isMarkedWritten(chunkAddresses.getInt(item));
-		}
-
-		// Run a real lock if needed
-		if(!lock.validate(stamp)) {
-			stamp = lock.readLock();
-			try {
-				used = isMarkedWritten(chunkAddresses.getInt(item));
-			} finally {
-				lock.unlockRead(stamp);
-			}
-		}
-
-		return used;
+		// Our supplied lambda will only be called if the item is marked _written_
+		ReadWriteProxy proxy = syncRead(item, (i, id, p) -> p.booleanValue = isMarkedWritten(id));
+		return proxy.opSuccess && proxy.booleanValue;
 	}
 
 	/**
@@ -606,12 +580,14 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		long stamp = lock.writeLock();
 		try {
+			ReadWriteProxy proxy = getProxy();
 			E item;
 			while((item = items.get()) != null) {
 				// We ignore all items that have no annotations assigned to them anyway
 				int id = chunkAddressForRead(item);
 				if(isMarkedWritten(id)) {
-					clearContent(id, handles);
+					proxy.cursor.moveTo(id);
+					clearContent(handles, proxy);
 				}
 			}
 		} finally {
@@ -634,10 +610,12 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		long stamp = lock.writeLock();
 		try {
+			ReadWriteProxy proxy  = getProxy();
 			for(IntIterator it = chunkAddresses.values().iterator(); it.hasNext();) {
 				int id = it.nextInt();
 				if(isMarkedWritten(id)) {
-					clearContent(id, handles);
+					proxy.cursor.moveTo(id);
+					clearContent(handles, proxy);
 				}
 			}
 		} finally {
@@ -652,11 +630,11 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * <p>
 	 * Must be called under write lock.
 	 */
-	private void clearContent(int id, PackageHandle[] handles) {
+	private void clearContent(PackageHandle[] handles, ReadWriteProxy proxy) {
 
 		for(int i=handles.length-1; i>=0; i--) {
 			PackageHandle handle = handles[i];
-			handle.converter.setValue(handle, rawStorage, id, handle.noEntryValue);
+			handle.converter.setValue(handle, proxy.cursor, handle.noEntryValue);
 		}
 	}
 
@@ -701,16 +679,20 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		if(statFields!=null) statFields.count(StatField.READ);
 	}
 
+	private void recordReadMiss() {
+		if(statFields!=null) statFields.count(StatField.READ_MISS);
+	}
+
 	private void handleUnwritten(E item) {
 		if(failForUnwritten) {
 			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE,
 					"Given item has not been written to before: "+item);
 		}
+
+		recordReadMiss();
 	}
 
 	// GetXXX methods
-
-	private void
 
 	/**
 	 * Reads the stored annotation value specified by the given {@code handle}
@@ -725,40 +707,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#getBoolean(PackageHandle, ByteAllocator, int)
 	 */
 	public boolean getBoolean(E item, PackageHandle handle) {
-
-		boolean result = ((Boolean)handle.noEntryValue).booleanValue();
-
-		long stamp = lock.tryOptimisticRead();
-		int id;
-
-		if(stamp!=0L) {
-			// Try optimistically
-			id = chunkAddressForRead(item);
-			if(isMarkedWritten(id)) {
-				result = handle.converter.getBoolean(handle, rawStorage, id);
-				recordOptimisticRead();
-			} else {
-				handleUnwritten(item);
-			}
-		}
-
-		// Do a real locking in case we encountered parallel modifications
-		if(!lock.validate(stamp)) {
-			stamp = lock.readLock();
-			try {
-				id = chunkAddressForRead(item);
-				if(isMarkedWritten(id)) {
-					result = handle.converter.getBoolean(handle, rawStorage, id);
-					recordLockedRead();
-				} else {
-					handleUnwritten(item);
-				}
-			} finally {
-				lock.unlockRead(stamp);
-			}
-		}
-
-		return result;
+		ReadWriteProxy proxy = syncRead(item, handle,
+				(h, p) -> p.booleanValue = h.converter.getBoolean(h, p.cursor));
+		return proxy.opSuccess ? proxy.booleanValue : ((Boolean)handle.noEntryValue).booleanValue();
 	}
 
 	/**
@@ -774,37 +725,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#getInteger(PackageHandle, ByteAllocator, int)
 	 */
 	public int getInteger(E item, PackageHandle handle) {
-		requireNonNull(item);
-
-		int result = ((Integer)handle.noEntryValue).intValue();
-
-		long stamp = lock.tryOptimisticRead();
-		int id;
-
-		if(stamp!=0L) {
-			// Try optimistically
-			id = chunkAddressForRead(item);
-			if(isMarkedWritten(id)) {
-				result = handle.converter.getInteger(handle, rawStorage, id);
-				recordOptimisticRead();
-			}
-		}
-
-		// Do a real locking in case we encountered parallel modifications
-		if(!lock.validate(stamp)) {
-			stamp = lock.readLock();
-			try {
-				id = chunkAddressForRead(item);
-				if(isMarkedWritten(id)) {
-					result = handle.converter.getInteger(handle, rawStorage, id);
-					recordLockedRead();
-				}
-			} finally {
-				lock.unlockRead(stamp);
-			}
-		}
-
-		return result;
+		ReadWriteProxy proxy = syncRead(item, handle,
+				(h, p) -> p.intValue = h.converter.getInteger(h, p.cursor));
+		return proxy.opSuccess ? proxy.intValue : ((Integer)handle.noEntryValue).intValue();
 	}
 
 	/**
@@ -820,37 +743,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#getLong(PackageHandle, ByteAllocator, int)
 	 */
 	public long getLong(E item, PackageHandle handle) {
-		requireNonNull(item);
-
-		long result = ((Long)handle.noEntryValue).longValue();
-
-		long stamp = lock.tryOptimisticRead();
-		int id;
-
-		if(stamp!=0L) {
-			// Try optimistically
-			id = chunkAddressForRead(item);
-			if(isMarkedWritten(id)) {
-				result = handle.converter.getLong(handle, rawStorage, id);
-				recordOptimisticRead();
-			}
-		}
-
-		// Do a real locking in case we encountered parallel modifications
-		if(!lock.validate(stamp)) {
-			stamp = lock.readLock();
-			try {
-				id = chunkAddressForRead(item);
-				if(isMarkedWritten(id)) {
-					result = handle.converter.getLong(handle, rawStorage, id);
-					recordLockedRead();
-				}
-			} finally {
-				lock.unlockRead(stamp);
-			}
-		}
-
-		return result;
+		ReadWriteProxy proxy = syncRead(item, handle,
+				(h, p) -> p.longValue = h.converter.getLong(h, p.cursor));
+		return proxy.opSuccess ? proxy.longValue : ((Long)handle.noEntryValue).longValue();
 	}
 
 	/**
@@ -866,37 +761,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#getFloat(PackageHandle, ByteAllocator, int)
 	 */
 	public float getFloat(E item, PackageHandle handle) {
-		requireNonNull(item);
-
-		float result = ((Float)handle.noEntryValue).floatValue();
-
-		long stamp = lock.tryOptimisticRead();
-		int id;
-
-		if(stamp!=0L) {
-			// Try optimistically
-			id = chunkAddressForRead(item);
-			if(isMarkedWritten(id)) {
-				result = handle.converter.getFloat(handle, rawStorage, id);
-				recordOptimisticRead();
-			}
-		}
-
-		// Do a real locking in case we encountered parallel modifications
-		if(!lock.validate(stamp)) {
-			stamp = lock.readLock();
-			try {
-				id = chunkAddressForRead(item);
-				if(isMarkedWritten(id)) {
-					result = handle.converter.getFloat(handle, rawStorage, id);
-					recordLockedRead();
-				}
-			} finally {
-				lock.unlockRead(stamp);
-			}
-		}
-
-		return result;
+		ReadWriteProxy proxy = syncRead(item, handle,
+				(h, p) -> p.floatValue = h.converter.getFloat(h, p.cursor));
+		return proxy.opSuccess ? proxy.floatValue : ((Float)handle.noEntryValue).floatValue();
 	}
 
 	/**
@@ -912,37 +779,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#getDouble(PackageHandle, ByteAllocator, int)
 	 */
 	public double getDouble(E item, PackageHandle handle) {
-		requireNonNull(item);
-
-		double result = ((Double)handle.noEntryValue).doubleValue();
-
-		long stamp = lock.tryOptimisticRead();
-		int id;
-
-		if(stamp!=0L) {
-			// Try optimistically
-			id = chunkAddressForRead(item);
-			if(isMarkedWritten(id)) {
-				result = handle.converter.getDouble(handle, rawStorage, id);
-				recordOptimisticRead();
-			}
-		}
-
-		// Do a real locking in case we encountered parallel modifications
-		if(!lock.validate(stamp)) {
-			stamp = lock.readLock();
-			try {
-				id = chunkAddressForRead(item);
-				if(isMarkedWritten(id)) {
-					result = handle.converter.getDouble(handle, rawStorage, id);
-					recordLockedRead();
-				}
-			} finally {
-				lock.unlockRead(stamp);
-			}
-		}
-
-		return result;
+		ReadWriteProxy proxy = syncRead(item, handle,
+				(h, p) -> p.doubleValue = h.converter.getDouble(h, p.cursor));
+		return proxy.opSuccess ? proxy.doubleValue : ((Double)handle.noEntryValue).doubleValue();
 	}
 
 	/**
@@ -958,46 +797,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#getValue(PackageHandle, ByteAllocator, int)
 	 */
 	public Object getValue(E item, PackageHandle handle) {
-		requireNonNull(item);
-
-		Object result = handle.noEntryValue;
-
-		long stamp = lock.tryOptimisticRead();
-		int id;
-
-		if(stamp!=0L) {
-			try {
-				// Try optimistically
-				id = chunkAddressForRead(item);
-				if(isMarkedWritten(id)) {
-					result = handle.converter.getValue(handle, rawStorage, id);
-					recordOptimisticRead();
-				} else {
-					handleUnwritten(item);
-				}
-			} catch(RuntimeException e) {
-				stamp = 0L; // invalidate stamp
-				recordCompromisedRead();
-			}
-		}
-
-		// Do a real locking in case we encountered parallel modifications
-		if(!lock.validate(stamp)) {
-			stamp = lock.readLock();
-			try {
-				id = chunkAddressForRead(item);
-				if(isMarkedWritten(id)) {
-					result = handle.converter.getValue(handle, rawStorage, id);
-					recordLockedRead();
-				} else {
-					handleUnwritten(item);
-				}
-			} finally {
-				lock.unlockRead(stamp);
-			}
-		}
-
-		return result;
+		ReadWriteProxy proxy = syncRead(item, handle,
+				(h, p) -> p.value = h.converter.getValue(h, p.cursor));
+		return proxy.opSuccess && proxy.value!=null ? proxy.value : handle.getNoEntryValue();
 	}
 
 	/**
@@ -1013,40 +815,16 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#getValue(PackageHandle, ByteAllocator, int)
 	 */
 	public String getString(E item, PackageHandle handle) {
-		requireNonNull(item);
-
-		String result = (String) handle.noEntryValue;
-
-		long stamp = lock.tryOptimisticRead();
-		int id;
-
-		if(stamp!=0L) {
-			// Try optimistically
-			id = chunkAddressForRead(item);
-			if(isMarkedWritten(id)) {
-				result = handle.converter.getString(handle, rawStorage, id);
-				recordOptimisticRead();
-			}
-		}
-
-		// Do a real locking in case we encountered parallel modifications
-		if(!lock.validate(stamp)) {
-			stamp = lock.readLock();
-			try {
-				id = chunkAddressForRead(item);
-				if(isMarkedWritten(id)) {
-					result = handle.converter.getString(handle, rawStorage, id);
-					recordLockedRead();
-				}
-			} finally {
-				lock.unlockRead(stamp);
-			}
-		}
-
-		return result;
+		ReadWriteProxy proxy = syncRead(item, handle,
+				(h, p) -> p.value = h.converter.getString(h, p.cursor));
+		return (String)(proxy.opSuccess && proxy.value!=null ? proxy.value : handle.getNoEntryValue());
 	}
 
 	// SetXXX methods
+
+	private ReadWriteProxy getProxy() {
+		return readWriteProxy.get();
+	}
 
 	/**
 	 * Changes the stored annotation value specified by the given {@code handle}
@@ -1061,21 +839,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#setBoolean(PackageHandle, ByteAllocator, int, boolean)
 	 */
 	public void setBoolean(E item, PackageHandle handle, boolean value) {
-		requireNonNull(item);
-		requireNonNull(handle);
-
-		long stamp = lock.writeLock();
-		try {
-			if(autoRegister) {
-				registerUnsafe(item);
-			}
-			int id = chunkAddressForWrite(item);
-			handle.converter.setBoolean(handle, rawStorage, id, value);
-			markUsed(item, id);
-			recordWrite();
-		} finally {
-			lock.unlockWrite(stamp);
-		}
+		ReadWriteProxy proxy = getProxy();
+		proxy.booleanValue = value;
+		syncWrite(item, handle, proxy, (h, p) -> h.converter.setBoolean(h, p.cursor, p.booleanValue));
 	}
 
 	/**
@@ -1091,21 +857,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#setInteger(PackageHandle, ByteAllocator, int, int)
 	 */
 	public void setInteger(E item, PackageHandle handle, int value) {
-		requireNonNull(item);
-		requireNonNull(handle);
-
-		long stamp = lock.writeLock();
-		try {
-			if(autoRegister) {
-				registerUnsafe(item);
-			}
-			int id = chunkAddressForWrite(item);
-			handle.converter.setInteger(handle, rawStorage, id, value);
-			markUsed(item, id);
-			recordWrite();
-		} finally {
-			lock.unlockWrite(stamp);
-		}
+		ReadWriteProxy proxy = getProxy();
+		proxy.intValue = value;
+		syncWrite(item, handle, proxy, (h, p) -> h.converter.setInteger(h, p.cursor, p.intValue));
 	}
 
 	/**
@@ -1121,21 +875,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#setLong(PackageHandle, ByteAllocator, int, long)
 	 */
 	public void setLong(E item, PackageHandle handle, long value) {
-		requireNonNull(item);
-		requireNonNull(handle);
-
-		long stamp = lock.writeLock();
-		try {
-			if(autoRegister) {
-				registerUnsafe(item);
-			}
-			int id = chunkAddressForWrite(item);
-			handle.converter.setLong(handle, rawStorage, id, value);
-			markUsed(item, id);
-			recordWrite();
-		} finally {
-			lock.unlockWrite(stamp);
-		}
+		ReadWriteProxy proxy = getProxy();
+		proxy.longValue = value;
+		syncWrite(item, handle, proxy, (h, p) -> h.converter.setLong(h, p.cursor, p.longValue));
 	}
 
 	/**
@@ -1151,21 +893,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#setFloat(PackageHandle, ByteAllocator, int, float)
 	 */
 	public void setFloat(E item, PackageHandle handle, float value) {
-		requireNonNull(item);
-		requireNonNull(handle);
-
-		long stamp = lock.writeLock();
-		try {
-			if(autoRegister) {
-				registerUnsafe(item);
-			}
-			int id = chunkAddressForWrite(item);
-			handle.converter.setFloat(handle, rawStorage, id, value);
-			markUsed(item, id);
-			recordWrite();
-		} finally {
-			lock.unlockWrite(stamp);
-		}
+		ReadWriteProxy proxy = getProxy();
+		proxy.floatValue = value;
+		syncWrite(item, handle, proxy, (h, p) -> h.converter.setFloat(h, p.cursor, p.floatValue));
 	}
 
 	/**
@@ -1181,21 +911,9 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#setDouble(PackageHandle, ByteAllocator, int, double)
 	 */
 	public void setDouble(E item, PackageHandle handle, double value) {
-		requireNonNull(item);
-		requireNonNull(handle);
-
-		long stamp = lock.writeLock();
-		try {
-			if(autoRegister) {
-				registerUnsafe(item);
-			}
-			int id = chunkAddressForWrite(item);
-			handle.converter.setDouble(handle, rawStorage, id, value);
-			markUsed(item, id);
-			recordWrite();
-		} finally {
-			lock.unlockWrite(stamp);
-		}
+		ReadWriteProxy proxy = getProxy();
+		proxy.doubleValue = value;
+		syncWrite(item, handle, proxy, (h, p) -> h.converter.setDouble(h, p.cursor, p.doubleValue));
 	}
 
 	/**
@@ -1211,25 +929,12 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#setValue(PackageHandle, ByteAllocator, int, Object)
 	 */
 	public void setValue(E item, PackageHandle handle, @Nullable Object value) {
-		requireNonNull(item);
-		requireNonNull(handle);
-
 		if(value==null) {
 			value = handle.noEntryValue;
 		}
-
-		long stamp = lock.writeLock();
-		try {
-			if(autoRegister) {
-				registerUnsafe(item);
-			}
-			int id = chunkAddressForWrite(item);
-			handle.converter.setValue(handle, rawStorage, id, value);
-			markUsed(item, id);
-			recordWrite();
-		} finally {
-			lock.unlockWrite(stamp);
-		}
+		ReadWriteProxy proxy = getProxy();
+		proxy.value = value;
+		syncWrite(item, handle, proxy, (h, p) -> h.converter.setValue(h, p.cursor, p.value));
 	}
 
 	/**
@@ -1245,25 +950,12 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 * @see BytePackConverter#setValue(PackageHandle, ByteAllocator, int, Object)
 	 */
 	public void setString(E item, PackageHandle handle, @Nullable String value) {
-		requireNonNull(item);
-		requireNonNull(handle);
-
 		if(value==null) {
 			value = (String) handle.noEntryValue;
 		}
-
-		long stamp = lock.writeLock();
-		try {
-			if(autoRegister) {
-				registerUnsafe(item);
-			}
-			int id = chunkAddressForWrite(item);
-			handle.converter.setString(handle, rawStorage, id, value);
-			markUsed(item, id);
-			recordWrite();
-		} finally {
-			lock.unlockWrite(stamp);
-		}
+		ReadWriteProxy proxy = getProxy();
+		proxy.value = value;
+		syncWrite(item, handle, proxy, (h, p) -> h.converter.setString(h, p.cursor, (String) p.value));
 	}
 
 	// Utility
@@ -1313,8 +1005,6 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		requireNonNull(item);
 		requireNonNull(handles);
 
-		boolean result = false;
-
 		/*
 		 *  Using lazy collection can prevent necessity of creating real buffer.
 		 *
@@ -1329,23 +1019,18 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		Consumer<PackageHandle> collector = action==null ? null : buffer;
 
-		// Try to optimistically collect the information
-		long stamp = lock.tryOptimisticRead();
-		if(stamp!=0L) {
-			result = collectUsedHandlesUnsafe(item, handles, collector);
-		}
-
-		// If we failed, go and properly lock before trying again
-		if(!lock.validate(stamp)) {
-			stamp = lock.readLock();
-			try {
+		ReadWriteProxy proxy = syncRead(item, (i, id, p) -> {
+			if(isMarkedWritten(id)) {
 				// Make sure the buffer doesn't hold duplicates or stale information
 				buffer.clear();
-				result = collectUsedHandlesUnsafe(item, handles, collector);
-			} finally {
-				lock.unlockRead(stamp);
+				p.cursor.moveTo(id);
+				p.booleanValue = collectUsedHandlesUnsafe(i, handles, collector);
+			} else {
+				p.booleanValue = false;
 			}
-		}
+		});
+
+		boolean result = proxy.opSuccess && proxy.booleanValue;
 
 		// Don't forget to actually report the handles for which we found annotation values
 		if(result && action!=null) {
@@ -1362,9 +1047,11 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		// Move to data chunk and then go through all the specified handles
 		int id = chunkAddressForRead(item);
 		if(isMarkedWritten(id)) {
+			ReadWriteProxy proxy = getProxy();
+			proxy.cursor.moveTo(id);
 			for(PackageHandle handle : handles) {
 				// Fetch actual and the "default" value
-				Object value = handle.converter.getValue(handle, rawStorage, id);
+				Object value = handle.converter.getValue(handle, proxy.cursor);
 				Object noEntryValue = handle.noEntryValue;
 
 				// If current value is different to default, report it
@@ -1400,17 +1087,159 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		return statFields.clone();
 	}
 
-	private class ReadWriteProxy {
+	@FunctionalInterface
+	private interface Task<E> {
+		void execute(E item, int id, ReadWriteProxy proxy);
+	}
 
-		/** Cursor for interacting with the data storage */
-		Cursor cursor = PackedDataManager.this.rawStorage.newCursor();
+	@FunctionalInterface
+	private interface ReadTask {
+		void execute(PackageHandle handle, ReadWriteProxy proxy);
+	}
 
-		void close() {
-			cursor.clear();
-			cursor = null;
+	@FunctionalInterface
+	private interface WriteTask {
+		void execute(PackageHandle handle, ReadWriteProxy proxy);
+	}
+
+	private void syncWrite(E item, PackageHandle handle, ReadWriteProxy proxy, WriteTask task) {
+		requireNonNull(item);
+		requireNonNull(handle);
+
+		long stamp = lock.writeLock();
+		try {
+			if(autoRegister) {
+				registerUnsafe(item);
+			}
+			int id = chunkAddressForWrite(item);
+			proxy.cursor.moveTo(id);
+			task.execute(handle, proxy);
+			markUsed(item, id);
+			recordWrite();
+		} finally {
+			lock.unlockWrite(stamp);
 		}
+	}
+
+	private ReadWriteProxy syncRead(E item, PackageHandle handle, ReadTask task) {
+		requireNonNull(item);
+		requireNonNull(handle);
+		// "task" is given by our methods and not forwarded user argument, so don't check it
 
 		int id;
+		ReadWriteProxy proxy = readWriteProxy.get();
+		proxy.opSuccess = false;
+
+		long stamp;
+		int attempts = optimisticAttempts;
+
+		// Try optimistically
+		while(attempts-->0) {
+			stamp = lock.tryOptimisticRead();
+			if(stamp!=0L) {
+				try {
+					id = chunkAddressForRead(item);
+					if(isMarkedWritten(id)) {
+						proxy.cursor.moveTo(id);
+						task.execute(handle, proxy);
+						proxy.opSuccess = true;
+						recordOptimisticRead();
+					} else {
+						handleUnwritten(item);
+					}
+					if(lock.validate(stamp)) {
+						// All good, we got valid data, so exit out
+						return proxy;
+					}
+				} catch(RuntimeException e) {
+					recordCompromisedRead();
+					// ignore exception, but switch to non-optimistic locking
+					break;
+				}
+			}
+		}
+
+		proxy.opSuccess = false;
+
+		// At this point we exhausted our optimistic attempts -> upgrade to real lock
+		stamp = lock.readLock();
+		try {
+			id = chunkAddressForRead(item);
+			if(isMarkedWritten(id)) {
+				proxy.cursor.moveTo(id);
+				task.execute(handle, proxy);
+				proxy.opSuccess = true;
+				recordLockedRead();
+			} else {
+				handleUnwritten(item);
+			}
+			return proxy;
+		} finally {
+			lock.unlockRead(stamp);
+		}
+	}
+
+	private ReadWriteProxy syncRead(E item, Task<E> task) {
+		requireNonNull(item);
+
+		ReadWriteProxy proxy = readWriteProxy.get();
+		proxy.opSuccess = false;
+
+		long stamp;
+		int attempts = optimisticAttempts;
+
+		// Try optimistically
+		while(attempts-->0) {
+			stamp = lock.tryOptimisticRead();
+			if(stamp!=0L) {
+				try {
+					task.execute(item, chunkAddressForRead(item), proxy);
+					proxy.opSuccess = true;
+					recordOptimisticRead();
+					if(lock.validate(stamp)) {
+						// All good, we got valid data, so exit out
+						return proxy;
+					}
+				} catch(RuntimeException e) {
+					recordCompromisedRead();
+					// ignore exception, but switch to non-optimistic locking
+					break;
+				}
+			}
+		}
+
+		proxy.opSuccess = false;
+
+		// At this point we exhausted our optimistic attempts -> upgrade to real lock
+		stamp = lock.readLock();
+		try {
+			task.execute(item, chunkAddressForRead(item), proxy);
+			proxy.opSuccess = true;
+			recordLockedRead();
+			return proxy;
+		} finally {
+			lock.unlockRead(stamp);
+		}
+	}
+
+	private static class ReadWriteProxy implements AutoCloseable {
+
+		/** Cursor for interacting with the data storage */
+		Cursor cursor;
+
+		ReadWriteProxy(Cursor cursor) {
+			this.cursor = requireNonNull(cursor);
+		}
+
+		@Override
+		public void close() {
+			cursor.clear();
+			cursor = null;
+			value = null;
+		}
+
+		/** Flag for read operations to signal that a valid value has been found */
+		boolean opSuccess;
 
 		// Buffers for transporting values between lambda layers
 		Object value;
@@ -1430,6 +1259,8 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		READ,
 		/** Fail of an optimistic read due to error in underlying system */
 		READ_COMPROMISED,
+		/** Item not registered or not written */
+		READ_MISS,
 		;
 	}
 

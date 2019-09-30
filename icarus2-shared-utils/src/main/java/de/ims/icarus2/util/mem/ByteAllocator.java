@@ -19,6 +19,7 @@ package de.ims.icarus2.util.mem;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
@@ -29,10 +30,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
-import de.ims.icarus2.util.MutablePrimitives.MutableByte;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
-import de.ims.icarus2.util.MutablePrimitives.MutableLong;
-import de.ims.icarus2.util.MutablePrimitives.MutableShort;
 import de.ims.icarus2.util.io.Bits;
 
 /**
@@ -131,8 +129,6 @@ public final class ByteAllocator {
 	 * Note that currently we have no mechanism in place to
 	 * dynamically shrink the buffer if entire chunks are
 	 * no longer needed.
-	 * <p>
-	 * This array follows copy-on-write semantics
 	 */
 	private volatile Chunk[] chunks;
 
@@ -151,7 +147,11 @@ public final class ByteAllocator {
 	 */
 	private volatile int freeSlot = UNSET_INT;
 
-	private final LockStrategy sync = new Unsafe(); //TODO
+	private final Sync sync;
+
+	public ByteAllocator(int slotSize, int chunkPower) {
+		this(slotSize, chunkPower, LockType.NONE);
+	}
 
 	/**
 	 * Creates a {@code ByteAllocator} whose chunks all contain
@@ -163,10 +163,23 @@ public final class ByteAllocator {
 	 * chunk. Legal values range from {@link #MIN_CHUNK_POWER 7} to
 	 * {@link #MAX_CHUNK_POWER 17}.
 	 */
-	public ByteAllocator(int slotSize, int chunkPower) {
+	public ByteAllocator(int slotSize, int chunkPower, LockType lockType) {
+		requireNonNull(lockType);
 		checkArgument("Slot size must not be less than "+MIN_SLOT_SIZE, slotSize>=MIN_SLOT_SIZE);
 		checkArgument("Chunk power must be between "+MIN_CHUNK_POWER+" and "+MAX_CHUNK_POWER,
 				chunkPower>=MIN_CHUNK_POWER && chunkPower<=MAX_CHUNK_POWER);
+
+		Sync sync;
+		switch (lockType) {
+		case NONE: sync = new Unsafe(); break;
+		case NATIVE: sync = new Native(); break;
+		case OPTIMISTIC: sync = new Optimistic(3); break;
+		case HIGHLY_OPTIMISTIC: sync = new Optimistic(10); break;
+
+		default:
+			throw new IllegalArgumentException("Unknown lock type: "+lockType);
+		}
+		this.sync = sync;
 
 		//TODO ensure that we can't get an int overflow with chunkSize*max_list_size
 
@@ -363,7 +376,7 @@ public final class ByteAllocator {
 			throw new IndexOutOfBoundsException("Slot id must not be negative: "+id);
 
 		sync.syncGlobal(() -> {
-			sync.syncWrite(id, 0, (chunkIndex, rawSlotIndex, chunk) -> {
+			sync.syncWrite(id, 0, 0, (chunk, index, v) -> {
 				// Keep link to previous "empty slot" intact
 				Bits.writeInt(chunk.data, rawSlotIndex(id), freeSlot);
 				// Simply mark supplied id as the next free slot
@@ -496,10 +509,10 @@ public final class ByteAllocator {
 			for (int i = 0; i < chunkCount; i++) {
 				// Dummy id to make the syncWrite call fetch the right chunk
 				int id = i*oldSlotSize;
-				sync.syncWrite(id, 0, (chunkIndex, rawSlotIndex, chunk) -> {
+				sync.syncWrite(id, 0, 0, (chunk, index, v) -> {
 					chunk.dead = true;
 					Chunk newChunk = new Chunk(chunkSize * newSlotSize);
-					chunks[chunkIndex] = newChunk;
+					chunks[chunkIndex(id)] = newChunk;
 
 					// Copy over chunk header data
 					newChunk.liveSlots = chunk.liveSlots;
@@ -570,11 +583,17 @@ public final class ByteAllocator {
 	 * constraints of this heap
 	 */
 	public byte getByte(int id, int offset) {
-		MutableByte result = new MutableByte();
-		sync.syncRead(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
-			result.setByte(chunk.data[rawSlotIndex+SLOT_HEADER_SIZE+offset]));
+		return (byte) sync.syncRead(id, offset, (chunk, index) -> chunk.data[index]);
+	}
 
-		return result.byteValue();
+	private static final ReadTask[] nBytesReaders = new ReadTask[9];
+	private static final WriteTask[] nBytesWriters = new WriteTask[9];
+	static {
+		for (int i = 1; i < nBytesReaders.length; i++) {
+			int slot = i;
+			nBytesReaders[i] = (chunk, index) -> Bits.readNBytes(chunk.data, index, slot);
+			nBytesWriters[i] = (chunk, index, v) -> Bits.writeNBytes(chunk.data, index, v, slot);
+		}
 	}
 
 	/**
@@ -599,11 +618,7 @@ public final class ByteAllocator {
 		checkArgument(n>0 && n<9);
 		checkBytesAvailable(offset, n);
 
-		MutableLong result = new MutableLong();
-		sync.syncRead(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
-			result.setLong(Bits.readNBytes(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, n)));
-
-		return result.longValue();
+		return sync.syncRead(id, offset, nBytesReaders[n]);
 	}
 
 	/**
@@ -624,11 +639,7 @@ public final class ByteAllocator {
 	public short getShort(int id, int offset) {
 		checkBytesAvailable(offset, Short.BYTES);
 
-		MutableShort result = new MutableShort();
-		sync.syncRead(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
-			result.setShort(Bits.readShort(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset)));
-
-		return result.shortValue();
+		return (short) sync.syncRead(id, offset, (chunk, index) -> Bits.readShort(chunk.data, index));
 	}
 
 	/**
@@ -649,11 +660,7 @@ public final class ByteAllocator {
 	public int getInt(int id, int offset) {
 		checkBytesAvailable(offset, Integer.BYTES);
 
-		MutableInteger result = new MutableInteger();
-		sync.syncRead(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
-			result.setInt(Bits.readInt(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset)));
-
-		return result.intValue();
+		return (int) sync.syncRead(id, offset, (chunk, index) -> Bits.readInt(chunk.data, index));
 	}
 
 	/**
@@ -674,11 +681,7 @@ public final class ByteAllocator {
 	public long getLong(int id, int offset) {
 		checkBytesAvailable(offset, Long.BYTES);
 
-		MutableLong result = new MutableLong();
-		sync.syncRead(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
-			result.setLong(Bits.readLong(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset)));
-
-		return result.longValue();
+		return sync.syncRead(id, offset, (chunk, index) -> Bits.readLong(chunk.data, index));
 	}
 
 	// SETxxx methods
@@ -686,37 +689,36 @@ public final class ByteAllocator {
 	public void setByte(int id, int offset, byte value) {
 		checkIdAndOffset(id, offset);
 
-		sync.syncWrite(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
-			chunk.data[rawSlotIndex+SLOT_HEADER_SIZE+offset] = value);
+		sync.syncWrite(id, offset, value,
+				(chunk, index, v) -> chunk.data[index] = (byte)v);
 	}
 
 	public void setNBytes(int id, int offset, long value, int n) {
 		checkArgument(n>0);
 		checkBytesAvailable(offset, n);
 
-		sync.syncWrite(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
-			Bits.writeNBytes(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, value, n));
+		sync.syncWrite(id, offset, value, nBytesWriters[n]);
 	}
 
 	public void setShort(int id, int offset, short value) {
 		checkBytesAvailable(offset, Short.BYTES);
 
-		sync.syncWrite(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
-			Bits.writeShort(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, value));
+		sync.syncWrite(id, offset, value,
+				(chunk, index, v) -> Bits.writeShort(chunk.data, index, (short) v));
 	}
 
 	public void setInt(int id, int offset, int value) {
 		checkBytesAvailable(offset, Integer.BYTES);
 
-		sync.syncWrite(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
-			Bits.writeInt(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, value));
+		sync.syncWrite(id, offset, value,
+				(chunk, index, v) -> Bits.writeInt(chunk.data, index, (int) v));
 	}
 
 	public void setLong(int id, int offset, long value) {
 		checkBytesAvailable(offset, Long.BYTES);
 
-		sync.syncWrite(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
-			Bits.writeLong(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, value));
+		sync.syncWrite(id, offset, value,
+				(chunk, index, v) -> Bits.writeLong(chunk.data, index, v));
 	}
 
 	// Buffer methods
@@ -742,8 +744,8 @@ public final class ByteAllocator {
 		checkArgument(n>0 && n<=source.length);
 		checkBytesAvailable(offset, n);
 
-		sync.syncWrite(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
-			System.arraycopy(source, 0, chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, n));
+		sync.syncWrite(id, offset, 0, (chunk, index, v) ->
+			System.arraycopy(source, 0, chunk.data, index, n));
 	}
 
 	/**
@@ -767,8 +769,10 @@ public final class ByteAllocator {
 		checkArgument(n>0 && n <= destination.length);
 		checkBytesAvailable(offset, n);
 
-		sync.syncWrite(id, offset, (chunkIndex, rawSlotIndex, chunk) ->
-		System.arraycopy(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, destination, 0, n));
+		sync.syncRead(id, offset, (chunk, index) -> {
+			System.arraycopy(chunk.data, index, destination, 0, n);
+			return UNSET_LONG;
+		});
 	}
 
 	public Cursor newCursor() {
@@ -903,9 +907,7 @@ public final class ByteAllocator {
 		public byte getByte(int offset) {
 			checkChunkAvailable();
 			checkOffset(offset);
-			MutableByte result = new MutableByte();
-			sync.syncRead(this, () -> result.setByte(chunk.data[rawSlotIndex+SLOT_HEADER_SIZE+offset]));
-			return result.byteValue();
+			return (byte) sync.syncRead(this, offset, (chunk, index) -> chunk.data[index]);
 		}
 
 		public long getNBytes(int offset, int n) {
@@ -913,37 +915,29 @@ public final class ByteAllocator {
 			checkOffset(offset);
 			checkArgument(n>0 && n<=8);
 			checkBytesAvailable(offset, n);
-			MutableLong result = new MutableLong();
-			sync.syncRead(this, () -> result.setLong(
-					Bits.readNBytes(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, n)));
-			return result.longValue();
+
+			return sync.syncRead(this, offset, nBytesReaders[n]);
 		}
 
 		public short getShort(int offset) {
 			checkChunkAvailable();
 			checkOffset(offset);
-			MutableShort result = new MutableShort();
-			sync.syncRead(this, () -> result.setShort(
-					Bits.readShort(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset)));
-			return result.shortValue();
+			return (short) sync.syncRead(this, offset, (chunk, index) ->
+					Bits.readShort(chunk.data, index));
 		}
 
 		public int getInt(int offset) {
 			checkChunkAvailable();
 			checkOffset(offset);
-			MutableInteger result = new MutableInteger();
-			sync.syncRead(this, () -> result.setInt(
-					Bits.readInt(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset)));
-			return result.intValue();
+			return (int) sync.syncRead(this, offset, (chunk, index) ->
+				Bits.readInt(chunk.data, index));
 		}
 
 		public long getLong(int offset) {
 			checkChunkAvailable();
 			checkOffset(offset);
-			MutableLong result = new MutableLong();
-			sync.syncRead(this, () -> result.setLong(
-					Bits.readLong(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset)));
-			return result.longValue();
+			return sync.syncRead(this, offset, (chunk, index) ->
+				Bits.readLong(chunk.data, index));
 		}
 
 		// SETxxx methods
@@ -952,7 +946,7 @@ public final class ByteAllocator {
 			checkChunkAvailable();
 			checkOffset(offset);
 			checkBytesAvailable(offset, 1);
-			sync.syncWrite(this, () -> chunk.data[rawSlotIndex+SLOT_HEADER_SIZE+offset] = value);
+			sync.syncWrite(this, offset, value, (chunk, index, v) -> chunk.data[index] = value);
 			return this;
 		}
 
@@ -961,8 +955,7 @@ public final class ByteAllocator {
 			checkOffset(offset);
 			checkArgument(n>0 && n<=8);
 			checkBytesAvailable(offset, n);
-			sync.syncWrite(this, () ->
-				Bits.writeNBytes(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, value, n));
+			sync.syncWrite(this, offset, value, nBytesWriters[n]);
 			return this;
 		}
 
@@ -970,8 +963,8 @@ public final class ByteAllocator {
 			checkChunkAvailable();
 			checkOffset(offset);
 			checkBytesAvailable(offset, Short.BYTES);
-			sync.syncWrite(this, () ->
-				Bits.writeShort(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, value));
+			sync.syncWrite(this, offset, value, (chunk, index, v) ->
+				Bits.writeShort(chunk.data, index, (short)v));
 			return this;
 		}
 
@@ -979,8 +972,8 @@ public final class ByteAllocator {
 			checkChunkAvailable();
 			checkOffset(offset);
 			checkBytesAvailable(offset, Integer.BYTES);
-			sync.syncWrite(this, () ->
-				Bits.writeInt(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, value));
+			sync.syncWrite(this, offset, value, (chunk, index, v) ->
+				Bits.writeInt(chunk.data, index, (int)v));
 			return this;
 		}
 
@@ -988,8 +981,8 @@ public final class ByteAllocator {
 			checkChunkAvailable();
 			checkOffset(offset);
 			checkBytesAvailable(offset, Long.BYTES);
-			sync.syncWrite(this, () ->
-				Bits.writeLong(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, value));
+			sync.syncWrite(this, offset, value, (chunk, index, v) ->
+				Bits.writeLong(chunk.data, index, v));
 			return this;
 		}
 
@@ -1001,8 +994,8 @@ public final class ByteAllocator {
 			checkOffset(offset);
 			checkArgument(n>0 && n<=bytes.length);
 			checkBytesAvailable(offset, n);
-			sync.syncWrite(this, () ->
-				System.arraycopy(bytes, 0, chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, n));
+			sync.syncWrite(this, offset, 0, (chunk, index, v) ->
+				System.arraycopy(bytes, 0, chunk.data, index, n));
 			return this;
 		}
 
@@ -1012,15 +1005,17 @@ public final class ByteAllocator {
 			checkOffset(offset);
 			checkArgument(n>0 && n<=bytes.length);
 			checkBytesAvailable(offset, n);
-			sync.syncRead(this, () ->
-				System.arraycopy(chunk.data, rawSlotIndex+SLOT_HEADER_SIZE+offset, bytes, 0, n));
+			sync.syncRead(this, offset, (chunk, index) -> {
+				System.arraycopy(chunk.data, index, bytes, 0, n);
+				return UNSET_LONG;
+			});
 			return this;
 		}
 	}
 
 	/**
 	 * Data storage for a single chunk. This class extends {@link StampedLock} as a side
-	 * effect of one of the supported {@link LockStrategy} implementations. Since instances
+	 * effect of one of the supported {@link Sync} implementations. Since instances
 	 * of this class are never exposed to client code and the {@code StampedLock} class is
 	 * rather light-weight, this shouldn't create any issues.
 	 *
@@ -1028,7 +1023,7 @@ public final class ByteAllocator {
 	 *
 	 */
 	@SuppressWarnings("serial")
-	private static class Chunk /*extends StampedLock*/ {
+	private static class Chunk extends StampedLock {
 		/** The actual slots */
 		private final byte[] data;
 		/** The current number of slots that are actually used */
@@ -1046,16 +1041,37 @@ public final class ByteAllocator {
 	}
 
 	@FunctionalInterface
-	interface ChunkTask {
-		void execute(int chunkIndex, int rawSlotIndex, Chunk chunk);
+	interface WriteTask {
+		void execute(Chunk chunk, int index, long value);
 	}
 
-	interface LockStrategy {
+	@FunctionalInterface
+	interface ReadTask {
+		long execute(Chunk chunk, int index);
+	}
+
+	public enum LockType {
+		/** NO locking at all */
+		NONE,
+		/** Use native {@code synchronized} keyword for locking on global and chunk objects */
+		NATIVE,
+//		/** Use {@link ReentrantLock} or similar implementation to synchronize everything. */
+//		LOCK,
+		/** Use {@code synchronized} for global and {@link StampedLock} for chunk-level locking */
+		OPTIMISTIC,
+		/** Same as {@link #OPTIMISTIC} but with a higher threshold of failed optimistic attempts */
+		HIGHLY_OPTIMISTIC,
+		;
+	}
+
+	interface Sync {
 		void syncGlobal(Task task);
-		void syncWrite(int id, int offset, ChunkTask task);
-		void syncRead(int id, int offset, ChunkTask task);
-		void syncWrite(Cursor cursor, Task task);
-		void syncRead(Cursor cursor, Task task);
+
+		void syncWrite(int id, int offset, long value, WriteTask task);
+		long syncRead(int id, int offset, ReadTask task);
+
+		void syncWrite(Cursor cursor, int offset, long value, WriteTask task);
+		long syncRead(Cursor cursor, int offset, ReadTask task);
 	}
 
 	/**
@@ -1064,7 +1080,7 @@ public final class ByteAllocator {
 	 * @author Markus Gärtner
 	 *
 	 */
-	class Unsafe implements LockStrategy {
+	class Unsafe implements Sync {
 
 		@Override
 		public void syncGlobal(Task task) {
@@ -1072,36 +1088,229 @@ public final class ByteAllocator {
 		}
 
 		@Override
-		public void syncWrite(int id, int offset, ChunkTask task) {
+		public void syncWrite(int id, int offset, long value, WriteTask task) {
 			checkIdAndOffset(id, offset);
 			int chunkIndex = chunkIndex(id);
 			int rawSlotIndex = rawSlotIndex(id);
 			Chunk chunk = getChunkUnsafe(chunkIndex, GrowthPolicy.NO_GROWTH);
 			checkLiveSlot(chunk, rawSlotIndex, id);
-			task.execute(chunkIndex, rawSlotIndex, chunk);
+			task.execute(chunk, rawSlotIndex+SLOT_HEADER_SIZE+offset, value);
 		}
 
 		@Override
-		public void syncRead(int id, int offset, ChunkTask task) {
+		public long syncRead(int id, int offset, ReadTask task) {
 			checkIdAndOffset(id, offset);
 			int chunkIndex = chunkIndex(id);
 			int rawSlotIndex = rawSlotIndex(id);
 			Chunk chunk = getChunkUnsafe(chunkIndex, GrowthPolicy.NO_GROWTH);
 			checkLiveSlot(chunk, rawSlotIndex, id);
-			task.execute(chunkIndex, rawSlotIndex, chunk);
+			return task.execute(chunk, rawSlotIndex+SLOT_HEADER_SIZE+offset);
 		}
 
 		@Override
-		public void syncWrite(Cursor cursor, Task task) {
+		public void syncWrite(Cursor cursor, int offset, long value, WriteTask task) {
 			checkLiveSlot(cursor.chunk, cursor.rawSlotIndex, cursor.id);
-			task.execute();
+			task.execute(cursor.chunk, cursor.rawSlotIndex+SLOT_HEADER_SIZE+offset, value);
 		}
 
 		@Override
-		public void syncRead(Cursor cursor, Task task) {
+		public long syncRead(Cursor cursor, int offset, ReadTask task) {
 			checkLiveSlot(cursor.chunk, cursor.rawSlotIndex, cursor.id);
-			task.execute();
+			return task.execute(cursor.chunk, cursor.rawSlotIndex+SLOT_HEADER_SIZE+offset);
+		}
+	}
+
+	/**
+	 * Implements a strategy that does native locking via {@code synchronized}
+	 * on global scale and relies on the {@link StampedLock} mechanics for
+	 * synchronizing read and write operations on individual chunks.
+	 * <p>
+	 * Note that this implementation does <b>not</b> synchronize the read access
+	 * to global fields in the read and write sync calls!!
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	class Optimistic implements Sync {
+
+		private final Object globalLock = new Object();
+
+		/** Max optimistic repetitions before upgrading to full lock */
+		private final int optimisticAttempts;
+
+		public Optimistic(int optimisticAttempts) {
+			checkArgument("Number of optimistic attempts must be greater than 0: "+optimisticAttempts, optimisticAttempts>0);
+			this.optimisticAttempts = optimisticAttempts;
 		}
 
+		@Override
+		public void syncGlobal(Task task) {
+			synchronized (globalLock) {
+				task.execute();
+			}
+		}
+
+		@Override
+		public void syncWrite(int id, int offset, long value, WriteTask task) {
+			checkIdAndOffset(id, offset);
+			int chunkIndex = chunkIndex(id);
+			int rawSlotIndex = rawSlotIndex(id);
+			Chunk chunk = getChunkUnsafe(chunkIndex, GrowthPolicy.NO_GROWTH);
+			long stamp = chunk.writeLock();
+			try {
+				checkLiveSlot(chunk, rawSlotIndex, id);
+				task.execute(chunk, rawSlotIndex+SLOT_HEADER_SIZE+offset, value);
+			} finally {
+				chunk.unlockWrite(stamp);
+			}
+		}
+
+		@Override
+		public long syncRead(int id, int offset, ReadTask task) {
+			checkIdAndOffset(id, offset);
+			int chunkIndex = chunkIndex(id);
+			int rawSlotIndex = rawSlotIndex(id);
+			Chunk chunk = getChunkUnsafe(chunkIndex, GrowthPolicy.NO_GROWTH);
+			int index = rawSlotIndex+SLOT_HEADER_SIZE+offset;
+
+			long stamp;
+			int attempts = optimisticAttempts;
+
+			while(attempts>0) {
+				stamp = chunk.tryOptimisticRead();
+				if(stamp!=0L) {
+					checkLiveSlot(chunk, rawSlotIndex, id);
+					long value = task.execute(chunk, index);
+					if(chunk.validate(stamp)) {
+						// All good, we got valid data, so exit out
+						return value;
+					}
+				}
+			}
+
+			// At this point we exhausted our optimistic attempts -> upgrade to real lock
+			stamp = chunk.readLock();
+			try {
+				checkLiveSlot(chunk, rawSlotIndex, id);
+				return task.execute(chunk, index);
+			} finally {
+				chunk.unlockRead(stamp);
+			}
+		}
+
+		@Override
+		public void syncWrite(Cursor cursor, int offset, long value, WriteTask task) {
+			Chunk chunk = cursor.chunk;
+			long stamp = chunk.writeLock();
+			try {
+				checkLiveSlot(chunk, cursor.rawSlotIndex, cursor.id);
+				task.execute(cursor.chunk, cursor.rawSlotIndex+SLOT_HEADER_SIZE+offset, value);
+			} finally {
+				chunk.unlockWrite(stamp);
+			}
+		}
+
+		@Override
+		public long syncRead(Cursor cursor, int offset, ReadTask task) {
+			checkLiveSlot(cursor.chunk, cursor.rawSlotIndex, cursor.id);
+
+			Chunk chunk = cursor.chunk;
+			long stamp;
+			int attempts = optimisticAttempts;
+
+			while(attempts>0) {
+				stamp = chunk.tryOptimisticRead();
+				if(stamp!=0L) {
+					checkLiveSlot(chunk, cursor.rawSlotIndex, cursor.id);
+					long value = task.execute(cursor.chunk, cursor.rawSlotIndex+SLOT_HEADER_SIZE+offset);
+					if(chunk.validate(stamp)) {
+						// All good, we got valid data, so exit out
+						return value;
+					}
+				}
+			}
+
+			// At this point we exhausted our optimistic attempts -> upgrade to real lock
+			stamp = chunk.readLock();
+			try {
+				checkLiveSlot(chunk, cursor.rawSlotIndex, cursor.id);
+				return task.execute(cursor.chunk, cursor.rawSlotIndex+SLOT_HEADER_SIZE+offset);
+			} finally {
+				chunk.unlockRead(stamp);
+			}
+		}
+	}
+
+	/**
+	 * Implements a strategy based on the built-in {@code synchronized} keyword.
+	 * Calls to {@link #syncGlobal(Task)} are synchronized on an internal lock object.
+	 * Calls to all the other read and write methods are synchronized on the affected
+	 * {@link Chunk} object, so as to reduce the scope of locking to a minimum and
+	 * improve interference between operations on different chunks in the heap.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	class Native implements Sync {
+		private final Object globalLock = new Object();
+
+		@Override
+		public void syncGlobal(Task task) {
+			synchronized (globalLock) {
+				task.execute();
+			}
+		}
+
+		@Override
+		public void syncWrite(int id, int offset, long value, WriteTask task) {
+			int chunkIndex, rawSlotIndex;
+			Chunk chunk;
+
+			synchronized (globalLock) {
+				checkIdAndOffset(id, offset);
+				chunkIndex = chunkIndex(id);
+				rawSlotIndex = rawSlotIndex(id);
+				chunk = getChunkUnsafe(chunkIndex, GrowthPolicy.NO_GROWTH);
+			}
+
+			synchronized (chunk) {
+				checkLiveSlot(chunk, rawSlotIndex, id);
+				task.execute(chunk, rawSlotIndex+SLOT_HEADER_SIZE+offset, value);
+			}
+		}
+
+		@Override
+		public long syncRead(int id, int offset, ReadTask task) {
+			int chunkIndex, rawSlotIndex;
+			Chunk chunk;
+
+			synchronized (globalLock) {
+				checkIdAndOffset(id, offset);
+				chunkIndex = chunkIndex(id);
+				rawSlotIndex = rawSlotIndex(id);
+				chunk = getChunkUnsafe(chunkIndex, GrowthPolicy.NO_GROWTH);
+			}
+
+			synchronized (chunk) {
+				checkLiveSlot(chunk, rawSlotIndex, id);
+				return task.execute(chunk, rawSlotIndex+SLOT_HEADER_SIZE+offset);
+			}
+		}
+
+		@Override
+		public void syncWrite(Cursor cursor, int offset, long value, WriteTask task) {
+			synchronized (cursor.chunk) {
+				checkLiveSlot(cursor.chunk, cursor.rawSlotIndex, cursor.id);
+				task.execute(cursor.chunk, cursor.rawSlotIndex+SLOT_HEADER_SIZE+offset, value);
+			}
+		}
+
+		@Override
+		public long syncRead(Cursor cursor, int offset, ReadTask task) {
+			synchronized (cursor.chunk) {
+				checkLiveSlot(cursor.chunk, cursor.rawSlotIndex, cursor.id);
+				return task.execute(cursor.chunk, cursor.rawSlotIndex+SLOT_HEADER_SIZE+offset);
+			}
+		}
 	}
 }

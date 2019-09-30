@@ -28,11 +28,13 @@ import static de.ims.icarus2.test.TestUtils.randomContent;
 import static de.ims.icarus2.test.TestUtils.randomString;
 import static de.ims.icarus2.test.TestUtils.randomSubLists;
 import static de.ims.icarus2.test.util.Triple.nullableTriple;
+import static de.ims.icarus2.util.collections.ArrayUtils.shuffle;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -1233,7 +1235,7 @@ class PackedDataManagerTest {
 		 *
 		 */
 		@Nested
-		class Concurrent {
+		class ConcurrentStress {
 
 			@DisabledOnCi
 			@Tag(CONCURRENT)
@@ -1265,12 +1267,13 @@ class PackedDataManagerTest {
 									Object item = "item_0";
 									manager.register(item);
 
-									Object[] values = Stream.generate(gen)
-											.limit(100)
+									Object[] values = Stream.concat(
+												Stream.generate(gen)
+												.limit(100),
+												Stream.of(handle.getNoEntryValue()))
 											.toArray();
 
 									Set<Object> legalValues = set(values);
-									legalValues.add(handle.getNoEntryValue());
 
 									int writers = pRW.first.intValue();
 									int readers = pRW.second.intValue();
@@ -1321,6 +1324,9 @@ class PackedDataManagerTest {
 			@Nested
 			class WithFixedManager {
 
+				private int itemCount = 100;
+				private int valuesPerCombo = 10;
+
 				PackedDataManager<Object, Object> manager;
 
 				Object owner;
@@ -1339,26 +1345,18 @@ class PackedDataManagerTest {
 
 					owner = new Object();
 					manager.addNotify(owner);
-					items = randomContent();
+					items = randomContent(itemCount);
 					Stream.of(items).forEach(manager::register);
-
-					for(Object item : items) {
-						assertTrue(manager.isRegistered(item));
-					}
-
 				}
 
 				@AfterEach
 				void tearDown() {
-					for(Object item : items) {
-						assertTrue(manager.isRegistered(item));
-					}
-
 					Stream.of(items).forEach(manager::unregister);
 
 					manager.removeNotify(owner);
-					owner = null;
 					manager = null;
+					owner = null;
+					items = null;
 				}
 
 				@DisabledOnCi
@@ -1421,24 +1419,26 @@ class PackedDataManagerTest {
 					handles.forEach(handle -> handleLookup.put((String) handle.getSource(), handle));
 
 					// item, handle, value
-					Set<Triple<Object, String, Object>> legalCombinations
-						= Collections.synchronizedSet(new ObjectOpenHashSet<>(
-								items.length*handles.size()*101));
-
-					int valuesPerCombo = 10;
+					Map<Object, Map<String, Set<Object>>> data = new Object2ObjectOpenHashMap<>();
 
 					// Generate fixed data
 					for (Object item : items) {
+						Map<String, Set<Object>> map = new Object2ObjectOpenHashMap<>();
 						for (int i = 0; i < handles.size(); i++) {
 							PackageHandle handle = handles.get(i);
+							Set<Object> values = new ObjectOpenHashSet<>();
+
 							Object noEntryValue = handle.getNoEntryValue();
-							legalCombinations.add(nullableTriple(item, (String)handle.getSource(), noEntryValue));
+							values.add(noEntryValue);
 
 							for (int j = 0; j < valuesPerCombo; j++) {
 								Object value = generators.get(i).get();
-								legalCombinations.add(nullableTriple(item, (String)handle.getSource(), value));
+								values.add(value);
+								manager.setValue(item, handle, handle.getNoEntryValue());
 							}
+							map.put((String)handle.getSource(), values);
 						}
+						data.put(item, map);
 					}
 
 					LongAdder totalWrites = new LongAdder();
@@ -1446,13 +1446,15 @@ class PackedDataManagerTest {
 
 					BiConsumer<Object, PackageHandle> verifier = (item, handle) -> {
 						Object value = manager.getValue(item, handle);
-						Triple<Object, String, Object> combo =
-								nullableTriple(item, (String)handle.getSource(), value);
+						Map<String, Set<Object>> map = data.get(item);
+						assertNotNull(map, "No data for tiem: "+item);
+						Set<Object> values = map.get(handle.getSource());
+						assertNotNull(values, String.format("No values for %s/%s", item, handle.getSource()));
 
-						if(!legalCombinations.contains(combo))
+						if(!values.contains(value))
 							throw new AssertionFailedError(String.format(
-									"Unrecognized combo after %d reads: %s",
-										Long.valueOf(totalReads.sum()),combo));
+									"Unrecognized combo after %d reads: %s/%s/%s - lega values are %s",
+										Long.valueOf(totalReads.sum()), item, handle.getSource(),value, values));
 						totalReads.increment();
 					};
 
@@ -1460,10 +1462,19 @@ class PackedDataManagerTest {
 						// Add writer tasks
 						for (int i = 0; i < writers; i++) {
 							circuit.addTask(() -> {
-								for(Triple<Object, String, Object> t : legalCombinations) {
-									PackageHandle handle = handleLookup.get(t.second);
-									manager.setValue(t.first, handle, t.third);
-									totalWrites.increment();
+								Object[] items = WithFixedManager.this.items.clone();
+								String[] keys = handleLookup.keySet().toArray(new String[0]);
+								shuffle(items, random());
+								shuffle(keys, random());
+
+								for(Object item : items) {
+									for(String key : keys) {
+										Object[] values = data.get(item).get(key).toArray();
+										shuffle(values, random());
+										for(Object value : values) {
+											manager.setValue(item, handleLookup.get(key), value);
+										}
+									}
 								}
 							});
 						}
@@ -1510,6 +1521,13 @@ class PackedDataManagerTest {
 					// item, handle, value
 					Set<Triple<Object, PackageHandle, Object>> legalCombinations
 						= Collections.synchronizedSet(new ObjectOpenHashSet<>());
+
+					for(Object item : items) {
+						for(PackageHandle handle : handles) {
+							legalCombinations.add(nullableTriple(item, handle, handle.getNoEntryValue()));
+							manager.setValue(item, handle, handle.getNoEntryValue());
+						}
+					}
 
 					LongAdder totalWrites = new LongAdder();
 					LongAdder totalReads = new LongAdder();

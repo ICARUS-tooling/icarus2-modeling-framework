@@ -169,6 +169,12 @@ public class ArrayUtils {
 		}
 	}
 
+	public static void shuffle(Object[] array, Random random) {
+		for (int i = 0; i < array.length; i++) {
+			array[i] = array[random.nextInt(array.length)];
+		}
+	}
+
 	public static void permutate(int[] a, int[] permutation) {
 		if(a.length<permutation.length)
 			throw new IllegalArgumentException();
