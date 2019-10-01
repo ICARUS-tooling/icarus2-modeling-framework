@@ -16,8 +16,10 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: ${{ matrix.java_version }}
-    - name: Build with Gradle
+    - name: Prepare Gradle worker
       run: chmod a+x gradlew
+      shell: bash
+    - name: Build with Gradle
       run: ./gradlew build
     - name: Upload code coverage of tests
       uses: codecov/codecov-action@v1.0.2
