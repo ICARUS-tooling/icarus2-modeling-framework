@@ -251,7 +251,9 @@ subprojects {
 	}
 
 	test {
-	    useJUnitPlatform()
+	    useJUnitPlatform {
+			excludeTags ['concurrent', 'integration']
+		}
 		
 		minHeapSize = "256m"
 		maxHeapSize = "2g"
