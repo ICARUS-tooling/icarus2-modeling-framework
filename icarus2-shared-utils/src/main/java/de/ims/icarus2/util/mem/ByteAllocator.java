@@ -74,7 +74,7 @@ import de.ims.icarus2.util.io.Bits;
  * @author Markus Gärtner
  *
  */
-public final class ByteAllocator {
+public final class ByteAllocator implements AutoCloseable {
 
 	public static final int MIN_SLOT_SIZE = 2 * Integer.BYTES;
 
@@ -406,6 +406,15 @@ public final class ByteAllocator {
 			idGen.set(0);
 			slots = 0;
 		});
+	}
+
+	/**
+	 * Defaults to {@link #clear()}.
+	 * @see java.lang.AutoCloseable#close()
+	 */
+	@Override
+	public void close() {
+		clear();
 	}
 
 	/**
@@ -786,8 +795,8 @@ public final class ByteAllocator {
 	 * Note that cursor instances are designed to be used on a per-thread level!
 	 * While the underlying read and write operations are thread-safe,
 	 * {@link #moveTo(int) moving} a cursor isn't.
-	 * Note that neither the surrounding {@link ByteAllocator} or instances of
-	 * this class are thread-safe! If the {@link ByteAllocator} for a cursor
+	 *
+	 * If the {@link ByteAllocator} for a cursor
 	 * is structurally modified (e.g. by {@link ByteAllocator#free(int) freeing}
 	 * or {@link ByteAllocator#trim() trimming}) most of the methods in this class
 	 * will throw an {@link IllegalStateException} in case the underlying data
