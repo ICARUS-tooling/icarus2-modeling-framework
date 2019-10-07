@@ -252,7 +252,7 @@ subprojects {
 
 	test {
 	    useJUnitPlatform {
-			excludeTags ['concurrent', 'integration']
+			excludeTags = ['concurrent', 'integration']
 		}
 		
 		minHeapSize = "256m"
