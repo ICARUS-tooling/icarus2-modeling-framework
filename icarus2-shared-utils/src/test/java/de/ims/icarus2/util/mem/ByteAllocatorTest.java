@@ -20,11 +20,11 @@
 package de.ims.icarus2.util.mem;
 
 import static de.ims.icarus2.test.TestTags.RANDOMIZED;
-import static de.ims.icarus2.test.TestTags.SHUFFLE;
 import static de.ims.icarus2.test.TestTags.STANDALONE;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertIOOB;
 import static de.ims.icarus2.test.TestUtils.random;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -54,9 +54,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestReporter;
@@ -82,7 +80,7 @@ class ByteAllocatorTest {
 
 	/** Object under test **/
 	@Deprecated
-	private ByteAllocator allocator;
+	private ByteAllocator alloc;
 
 	/** 12 **/
 	@Deprecated
@@ -92,8 +90,13 @@ class ByteAllocatorTest {
 	private static final int defaultChunkPower = ByteAllocator.MIN_CHUNK_POWER;
 
 	private Stream<Config> configurations() {
+		return configurations(UNSET_INT);
+	}
+
+	private Stream<Config> configurations(int minSlotSize) {
 		return Stream.of(LockType.values())
-				.flatMap(lockType -> IntStream.of(8, 20, 100)
+				.flatMap(lockType -> IntStream.of(ByteAllocator.MIN_SLOT_SIZE, 20, 100)
+						.filter(v -> minSlotSize==UNSET_INT || v>=minSlotSize)
 						.boxed()
 						.map(i -> Pair.pair(lockType, i)))
 				.flatMap(p -> IntStream.of(7, 10, 17)
@@ -105,7 +108,7 @@ class ByteAllocatorTest {
 	@BeforeEach
 	void setUp(TestInfo testInfo) {
 		if(!testInfo.getTags().contains(STANDALONE)) {
-			allocator = new ByteAllocator(defaultSlotSize, defaultChunkPower);
+			alloc = new ByteAllocator(defaultSlotSize, defaultChunkPower);
 		}
 	}
 
@@ -113,9 +116,9 @@ class ByteAllocatorTest {
 	@AfterEach
 	void tearDown(TestInfo testInfo) {
 		if(!testInfo.getTags().contains(STANDALONE)) {
-			allocator.clear();
+			alloc.clear();
 		}
-		allocator = null;
+		alloc = null;
 	}
 
 	/**
@@ -147,7 +150,7 @@ class ByteAllocatorTest {
 				}));
 	}
 
-	private Stream<DynamicNode> iteratedTests(ObjIntConsumer<ByteAllocator> action, int...values) {
+	private Stream<DynamicNode> parameterizedTests(ObjIntConsumer<ByteAllocator> action, int...values) {
 		return configurations()
 				.map(config -> dynamicContainer(config.label(),
 						IntStream.of(values)
@@ -162,8 +165,7 @@ class ByteAllocatorTest {
 		return configurations()
 				.map(config -> dynamicContainer(config.label(),
 						IntStream.rangeClosed(1, runs)
-						.mapToObj(run -> dynamicTest(
-								String.format("Run %d of %d", _int(run), _int(runs)), () -> {
+						.mapToObj(run -> dynamicTest(runLabel(run, runs), () -> {
 							try(ByteAllocator allocator = config.createInstance()) {
 								action.accept(allocator);
 							}
@@ -202,7 +204,7 @@ class ByteAllocatorTest {
 	 */
 	@TestFactory
 	Stream<DynamicNode> testFreeIllegal() {
-		return iteratedTests((allocator, id) -> assertIOOB(() -> allocator.free(id)),
+		return parameterizedTests((allocator, id) -> assertIOOB(() -> allocator.free(id)),
 				-1, 0, 1);
 	}
 
@@ -431,6 +433,30 @@ class ByteAllocatorTest {
 		void execute(ByteAllocator allocator, int id, int offset, int n);
 	}
 
+	@FunctionalInterface
+	interface CursorBatchTask {
+		void execute(Cursor cursor, int id, int offset);
+	}
+
+	private Stream<DynamicNode> batchTests(Consumer<ByteAllocator> task) {
+		return batchTests(UNSET_INT, task);
+	}
+
+	private Stream<DynamicNode> batchTests(int minSlotSize, Consumer<ByteAllocator> task) {
+		return configurations(minSlotSize)
+				.map(config -> dynamicContainer(config.label(),
+						IntStream.rangeClosed(1, RUNS).mapToObj(run -> dynamicTest(runLabel(run, RUNS),
+										() -> {
+											try(ByteAllocator allocator = config.createInstance()) {
+												task.accept(allocator);
+											}
+										}))));
+	}
+
+	private static String runLabel(int run, int runs) {
+		return String.format("Run %d of %d", _int(run), _int(runs));
+	}
+
 	private static class Config {
 		private final int slotSize;
 		private final int chunkPower;
@@ -468,7 +494,7 @@ class ByteAllocatorTest {
 		 */
 		@TestFactory
 		Stream<DynamicNode> testGetByte() {
-			return iteratedTests((allocator, id) ->
+			return parameterizedTests((allocator, id) ->
 				assertIdOutOfBounds(() -> allocator.getByte(id, 0)), INVALID_IDS);
 		}
 
@@ -477,7 +503,7 @@ class ByteAllocatorTest {
 		 */
 		@TestFactory
 		Stream<DynamicNode> testGetNBytes() {
-			return iteratedTests((allocator, id) ->
+			return parameterizedTests((allocator, id) ->
 				assertIdOutOfBounds(() -> allocator.getNBytes(id, 0, 1)), INVALID_IDS);
 		}
 
@@ -486,7 +512,7 @@ class ByteAllocatorTest {
 		 */
 		@TestFactory
 		Stream<DynamicNode> testGetShort() {
-			return iteratedTests((allocator, id) ->
+			return parameterizedTests((allocator, id) ->
 				assertIdOutOfBounds(() -> allocator.getShort(id, 0)), INVALID_IDS);
 		}
 
@@ -495,7 +521,7 @@ class ByteAllocatorTest {
 		 */
 		@TestFactory
 		Stream<DynamicNode> testGetInt() {
-			return iteratedTests((allocator, id) ->
+			return parameterizedTests((allocator, id) ->
 				assertIdOutOfBounds(() -> allocator.getInt(id, 0)), INVALID_IDS);
 		}
 
@@ -504,7 +530,7 @@ class ByteAllocatorTest {
 		 */
 		@TestFactory
 		Stream<DynamicNode> testGetLong() {
-			return iteratedTests((allocator, id) ->
+			return parameterizedTests((allocator, id) ->
 				assertIdOutOfBounds(() -> allocator.getLong(id, 0)), INVALID_IDS);
 		}
 
@@ -513,7 +539,7 @@ class ByteAllocatorTest {
 		 */
 		@TestFactory
 		Stream<DynamicNode> testSetByte() {
-			return iteratedTests((allocator, id) ->
+			return parameterizedTests((allocator, id) ->
 				assertIdOutOfBounds(() -> allocator.setByte(id, 0, Byte.MAX_VALUE)), INVALID_IDS);
 		}
 
@@ -522,7 +548,7 @@ class ByteAllocatorTest {
 		 */
 		@TestFactory
 		Stream<DynamicNode> testSetNBytes() {
-			return iteratedTests((allocator, id) ->
+			return parameterizedTests((allocator, id) ->
 				assertIdOutOfBounds(() -> allocator.setNBytes(id, 0, Long.MAX_VALUE, 3)), INVALID_IDS);
 		}
 
@@ -531,7 +557,7 @@ class ByteAllocatorTest {
 		 */
 		@TestFactory
 		Stream<DynamicNode> testSetShort() {
-			return iteratedTests((allocator, id) ->
+			return parameterizedTests((allocator, id) ->
 				assertIdOutOfBounds(() -> allocator.setShort(id, 0, Short.MAX_VALUE)), INVALID_IDS);
 		}
 
@@ -540,7 +566,7 @@ class ByteAllocatorTest {
 		 */
 		@TestFactory
 		Stream<DynamicNode> testSetInt() {
-			return iteratedTests((allocator, id) ->
+			return parameterizedTests((allocator, id) ->
 				assertIdOutOfBounds(() -> allocator.setInt(id, 0, Integer.MAX_VALUE)), INVALID_IDS);
 		}
 
@@ -549,7 +575,7 @@ class ByteAllocatorTest {
 		 */
 		@TestFactory
 		Stream<DynamicNode> testSetLong() {
-			return iteratedTests((allocator, id) ->
+			return parameterizedTests((allocator, id) ->
 				assertIdOutOfBounds(() -> allocator.setLong(id, 0, Long.MAX_VALUE)), INVALID_IDS);
 		}
 
@@ -558,7 +584,7 @@ class ByteAllocatorTest {
 		 */
 		@TestFactory
 		Stream<DynamicNode> testWriteBytes() {
-			return iteratedTests((allocator, id) ->
+			return parameterizedTests((allocator, id) ->
 				assertIdOutOfBounds(() -> allocator.writeBytes(id, 0, new byte[1], 1)), INVALID_IDS);
 		}
 
@@ -567,7 +593,7 @@ class ByteAllocatorTest {
 		 */
 		@TestFactory
 		Stream<DynamicNode> testReadBytes() {
-			return iteratedTests((allocator, id) ->
+			return parameterizedTests((allocator, id) ->
 				assertIdOutOfBounds(() -> allocator.readBytes(id, 0, new byte[1], 1)), INVALID_IDS);
 		}
 	}
@@ -792,18 +818,6 @@ class ByteAllocatorTest {
 
 		private static final int SIZE = 100;
 
-		private Stream<DynamicNode> batchTests(Consumer<ByteAllocator> task) {
-			return configurations()
-					.map(config -> dynamicContainer(config.label(),
-							IntStream.rangeClosed(1, RUNS).mapToObj(run -> dynamicTest(
-									String.format("run %d of %d", _int(run), _int(RUNS)),
-											() -> {
-												try(ByteAllocator allocator = config.createInstance()) {
-													task.accept(allocator);
-												}
-											}))));
-		}
-
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getByte(int, int)}.
 		 */
@@ -952,185 +966,197 @@ class ByteAllocatorTest {
 
 		private static final int SIZE = 100;
 
-		private int newSlotSize;
-
-		@BeforeEach
-		void setUp() {
-			int oldSize = allocator.getSlotSize();
-			newSlotSize = random(oldSize/2, oldSize-1);
-		}
+		private static final int MIN_SLOT_SIZE = ByteAllocator.MIN_SLOT_SIZE*2;
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getByte(int, int)}.
 		 */
-		@RepeatedTest(RUNS)
 		@Tag(RANDOMIZED)
-		void testForByte() {
-			final int offset = random().nextInt(allocator.getSlotSize());
-			byte[] array = new byte[SIZE]; // [id] = byte_stored
+		@TestFactory
+		Stream<DynamicNode> testForByte() {
+			return batchTests(MIN_SLOT_SIZE, alloc -> {
+				final int offset = random().nextInt(alloc.getSlotSize());
+				byte[] array = new byte[SIZE]; // [id] = byte_stored
 
-			random().ints(SIZE, Byte.MIN_VALUE, Byte.MAX_VALUE)
-				.forEach(v -> {
-					int id = allocator.alloc();
-					allocator.setByte(id, offset, (byte)v);
-					array[id] = (byte) v;
-				});
+				random().ints(SIZE, Byte.MIN_VALUE, Byte.MAX_VALUE)
+					.forEach(v -> {
+						int id = alloc.alloc();
+						alloc.setByte(id, offset, (byte)v);
+						array[id] = (byte) v;
+					});
 
-			allocator.adjustSlotSize(newSlotSize);
+				int newSlotSize = alloc.getSlotSize()/2;
+				alloc.adjustSlotSize(newSlotSize);
 
-			if(offset<newSlotSize) {
-				IntStream.range(0, array.length)
-					.forEach(id -> assertEquals(array[id], allocator.getByte(id, offset)));
-			} else {
-				IntStream.range(0, array.length)
-				.forEach(id -> assertIOOB(() -> allocator.getByte(id, offset)));
-			}
+				if(offset<newSlotSize) {
+					IntStream.range(0, array.length)
+						.forEach(id -> assertEquals(array[id], alloc.getByte(id, offset)));
+				} else {
+					IntStream.range(0, array.length)
+						.forEach(id -> assertIOOB(() -> alloc.getByte(id, offset)));
+				}
+			});
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getNBytes(int, int, int)}.
 		 */
-		@RepeatedTest(RUNS)
 		@Tag(RANDOMIZED)
-		void testForNBytes() {
-			final int offset = random().nextInt(allocator.getSlotSize()-Long.BYTES);
-			long[] array = new long[SIZE]; // [id] = long_stored
-			int[] n_bytes = new int[SIZE]; // [id] = n
+		@TestFactory
+		Stream<DynamicNode> testForNBytes() {
+			return batchTests(MIN_SLOT_SIZE, alloc -> {
+				final int offset = random().nextInt(alloc.getSlotSize()-Long.BYTES+1);
+				long[] array = new long[SIZE]; // [id] = long_stored
+				int[] n_bytes = new int[SIZE]; // [id] = n
 
-			random().longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
-				.forEach(v -> {
-					int id = allocator.alloc();
-					int n = random().nextInt(Long.BYTES-2)+1;
-					allocator.setNBytes(id, offset, v, n);
-					array[id] = Bits.extractNBytes(v, n);
-					n_bytes[id] = n;
-				});
+				random().longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
+					.forEach(v -> {
+						int id = alloc.alloc();
+						int n = random().nextInt(Long.BYTES-2)+1;
+						alloc.setNBytes(id, offset, v, n);
+						array[id] = Bits.extractNBytes(v, n);
+						n_bytes[id] = n;
+					});
 
-			allocator.adjustSlotSize(newSlotSize);
+				int newSlotSize = alloc.getSlotSize()/2;
+				alloc.adjustSlotSize(newSlotSize);
 
-			IntStream.range(0, array.length)
-				.forEach(id -> {
-					if(offset+n_bytes[id]<=newSlotSize) {
-						assertEquals(array[id], allocator.getNBytes(
-							id, offset, n_bytes[id]));
-					} else {
-						assertIOOB(() -> allocator.getNBytes(id, offset, n_bytes[id]));
-					}
-				});
+				IntStream.range(0, array.length)
+					.forEach(id -> {
+						if(offset+n_bytes[id]<=newSlotSize) {
+							assertEquals(array[id], alloc.getNBytes(
+								id, offset, n_bytes[id]));
+						} else {
+							assertIOOB(() -> alloc.getNBytes(id, offset, n_bytes[id]));
+						}
+					});
+			});
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getShort(int, int)}.
 		 */
-		@RepeatedTest(RUNS)
 		@Tag(RANDOMIZED)
-		void testGetShort() {
-			final int offset = random().nextInt(allocator.getSlotSize()-Short.BYTES);
-			short[] array = new short[SIZE]; // [id] = short_stored
+		@TestFactory
+		Stream<DynamicNode> testForShort() {
+			return batchTests(MIN_SLOT_SIZE, alloc -> {
+				final int offset = random().nextInt(alloc.getSlotSize()-Short.BYTES+1);
+				short[] array = new short[SIZE]; // [id] = short_stored
 
-			random().ints(SIZE, Short.MIN_VALUE, Short.MAX_VALUE)
-				.forEach(v -> {
-					int id = allocator.alloc();
-					allocator.setShort(id, offset, (short)v);
-					array[id] = (short) v;
-				});
+				random().ints(SIZE, Short.MIN_VALUE, Short.MAX_VALUE)
+					.forEach(v -> {
+						int id = alloc.alloc();
+						alloc.setShort(id, offset, (short)v);
+						array[id] = (short) v;
+					});
 
-			allocator.adjustSlotSize(newSlotSize);
+				int newSlotSize = alloc.getSlotSize()/2;
+				alloc.adjustSlotSize(newSlotSize);
 
-			if(offset+Short.BYTES<=newSlotSize) {
-				IntStream.range(0, array.length)
-					.forEach(id -> assertEquals(array[id], allocator.getShort(id, offset)));
-			} else {
-				IntStream.range(0, array.length)
-				.forEach(id -> assertIOOB(() -> allocator.getShort(id, offset)));
-			}
+				if(offset+Short.BYTES<=newSlotSize) {
+					IntStream.range(0, array.length)
+						.forEach(id -> assertEquals(array[id], alloc.getShort(id, offset)));
+				} else {
+					IntStream.range(0, array.length)
+						.forEach(id -> assertIOOB(() -> alloc.getShort(id, offset)));
+				}
+			});
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getInt(int, int)}.
 		 */
-		@RepeatedTest(RUNS)
 		@Tag(RANDOMIZED)
-		void testGetInt() {
-			final int offset = random().nextInt(allocator.getSlotSize()-Integer.BYTES);
-			int[] array = new int[SIZE]; // [id] = int_stored
+		@TestFactory
+		Stream<DynamicNode> testForInt() {
+			return batchTests(MIN_SLOT_SIZE, alloc -> {
+				final int offset = random().nextInt(alloc.getSlotSize()-Integer.BYTES+1);
+				int[] array = new int[SIZE]; // [id] = int_stored
 
-			random().ints(SIZE, Integer.MIN_VALUE, Integer.MAX_VALUE)
-				.forEach(v -> {
-					int id = allocator.alloc();
-					allocator.setInt(id, offset, v);
-					array[id] = v;
-				});
+				random().ints(SIZE, Integer.MIN_VALUE, Integer.MAX_VALUE)
+					.forEach(v -> {
+						int id = alloc.alloc();
+						alloc.setInt(id, offset, v);
+						array[id] = v;
+					});
 
-			allocator.adjustSlotSize(newSlotSize);
+				int newSlotSize = alloc.getSlotSize()/2;
+				alloc.adjustSlotSize(newSlotSize);
 
-			if(offset+Integer.BYTES<=newSlotSize) {
-				IntStream.range(0, array.length)
-					.forEach(id -> assertEquals(array[id], allocator.getInt(id, offset)));
-			} else {
-				IntStream.range(0, array.length)
-				.forEach(id -> assertIOOB(() -> allocator.getInt(id, offset)));
-			}
+				if(offset+Integer.BYTES<=newSlotSize) {
+					IntStream.range(0, array.length)
+						.forEach(id -> assertEquals(array[id], alloc.getInt(id, offset)));
+				} else {
+					IntStream.range(0, array.length)
+						.forEach(id -> assertIOOB(() -> alloc.getInt(id, offset)));
+				}
+			});
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getLong(int, int)}.
 		 */
-		@RepeatedTest(RUNS)
 		@Tag(RANDOMIZED)
-		void testGetLong() {
-			final int offset = random().nextInt(allocator.getSlotSize()-Long.BYTES);
-			long[] array = new long[SIZE]; // [id] = long_stored
+		@TestFactory
+		Stream<DynamicNode> testForLong() {
+			return batchTests(MIN_SLOT_SIZE, alloc -> {
+				final int offset = random().nextInt(alloc.getSlotSize()-Long.BYTES+1);
+				long[] array = new long[SIZE]; // [id] = long_stored
 
-			random().longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
-				.forEach(v -> {
-					int id = allocator.alloc();
-					allocator.setLong(id, offset, v);
-					array[id] = v;
-				});
+				random().longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
+					.forEach(v -> {
+						int id = alloc.alloc();
+						alloc.setLong(id, offset, v);
+						array[id] = v;
+					});
 
-			allocator.adjustSlotSize(newSlotSize);
+				int newSlotSize = alloc.getSlotSize()/2;
+				alloc.adjustSlotSize(newSlotSize);
 
-			if(offset+Long.BYTES<=newSlotSize) {
-				IntStream.range(0, array.length)
-					.forEach(id -> assertEquals(array[id], allocator.getLong(id, offset)));
-			} else {
-				IntStream.range(0, array.length)
-				.forEach(id -> assertIOOB(() -> allocator.getLong(id, offset)));
-			}
+				if(offset+Long.BYTES<=newSlotSize) {
+					IntStream.range(0, array.length)
+						.forEach(id -> assertEquals(array[id], alloc.getLong(id, offset)));
+				} else {
+					IntStream.range(0, array.length)
+						.forEach(id -> assertIOOB(() -> alloc.getLong(id, offset)));
+				}
+			});
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#writeBytes(int, int, byte[], int)}.
 		 */
-		@RepeatedTest(RUNS)
 		@Tag(RANDOMIZED)
-		void testForBulk() {
-			final int offset = random().nextInt(allocator.getSlotSize()-Long.BYTES);
-			byte[][] array = new byte[SIZE][]; // [id] = bytes_stored
+		@TestFactory
+		Stream<DynamicNode> testForBulk() {
+			return batchTests(MIN_SLOT_SIZE, alloc -> {
+				final int offset = random().nextInt(alloc.getSlotSize()-Long.BYTES+1);
+				byte[][] array = new byte[SIZE][]; // [id] = bytes_stored
 
-			random().ints(SIZE, 1, defaultSlotSize-offset)
-				.forEach(n -> {
-					int id = allocator.alloc();
-					byte[] bytes = new byte[n];
-					random().nextBytes(bytes);
-					allocator.writeBytes(id, offset, bytes, n);
-					array[id] = bytes;
-				});
+				random().ints(SIZE, 1, alloc.getSlotSize()-offset)
+					.forEach(n -> {
+						int id = alloc.alloc();
+						byte[] bytes = new byte[n];
+						random().nextBytes(bytes);
+						alloc.writeBytes(id, offset, bytes, n);
+						array[id] = bytes;
+					});
 
-			allocator.adjustSlotSize(newSlotSize);
+				int newSlotSize = alloc.getSlotSize()/2;
+				alloc.adjustSlotSize(newSlotSize);
 
-			IntStream.range(0, array.length)
-				.forEach(id -> {
-					byte[] expected = array[id];
-					byte[] actual = new byte[expected.length];
-					if(offset+expected.length<=newSlotSize) {
-						allocator.readBytes(id, offset, actual, actual.length);
-						assertArrayEquals(expected, actual);
-					} else {
-						assertIOOB(() -> allocator.readBytes(id, offset, actual, actual.length));
-					}
-				});
+				IntStream.range(0, array.length)
+					.forEach(id -> {
+						byte[] expected = array[id];
+						byte[] actual = new byte[expected.length];
+						if(offset+expected.length<=newSlotSize) {
+							alloc.readBytes(id, offset, actual, actual.length);
+							assertArrayEquals(expected, actual);
+						} else {
+							assertIOOB(() -> alloc.readBytes(id, offset, actual, actual.length));
+						}
+					});
+			});
 		}
 	}
 
@@ -1139,167 +1165,180 @@ class ByteAllocatorTest {
 
 		private static final int SIZE = 100;
 
-		private int newSlotSize;
-
-		@BeforeEach
-		void setUp() {
-			int oldSize = allocator.getSlotSize();
-			newSlotSize = random(oldSize+1, oldSize*4);
-		}
-
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getByte(int, int)}.
 		 */
-		@RepeatedTest(RUNS)
 		@Tag(RANDOMIZED)
-		void testForByte() {
-			final int offset = random().nextInt(allocator.getSlotSize());
-			byte[] array = new byte[SIZE]; // [id] = byte_stored
+		@TestFactory
+		Stream<DynamicNode> testForByte() {
+			return batchTests(alloc -> {
+				final int offset = random().nextInt(alloc.getSlotSize());
+				byte[] array = new byte[SIZE]; // [id] = byte_stored
 
-			random().ints(SIZE, Byte.MIN_VALUE, Byte.MAX_VALUE)
-				.forEach(v -> {
-					int id = allocator.alloc();
-					allocator.setByte(id, offset, (byte)v);
-					array[id] = (byte) v;
-				});
+				random().ints(SIZE, Byte.MIN_VALUE, Byte.MAX_VALUE)
+					.forEach(v -> {
+						int id = alloc.alloc();
+						alloc.setByte(id, offset, (byte)v);
+						array[id] = (byte) v;
+					});
 
-			allocator.adjustSlotSize(newSlotSize);
+				int newSlotSize = alloc.getSlotSize()*2;
+				alloc.adjustSlotSize(newSlotSize);
 
-			IntStream.range(0, array.length)
-				.forEach(id -> assertEquals(array[id], allocator.getByte(id, offset)));
+				IntStream.range(0, array.length)
+					.forEach(id -> assertEquals(array[id], alloc.getByte(id, offset)));
+			});
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getNBytes(int, int, int)}.
 		 */
-		@RepeatedTest(RUNS)
 		@Tag(RANDOMIZED)
-		void testForNBytes() {
-			final int offset = random().nextInt(allocator.getSlotSize()-Long.BYTES);
-			long[] array = new long[SIZE]; // [id] = long_stored
-			int[] n_bytes = new int[SIZE]; // [id] = n
+		@TestFactory
+		Stream<DynamicNode> testForNBytes() {
+			return batchTests(alloc -> {
+				final int offset = random().nextInt(alloc.getSlotSize()-Long.BYTES+1);
+				long[] array = new long[SIZE]; // [id] = long_stored
+				int[] n_bytes = new int[SIZE]; // [id] = n
 
-			random().longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
-				.forEach(v -> {
-					int id = allocator.alloc();
-					int n = random().nextInt(Long.BYTES-2)+1;
-					allocator.setNBytes(id, offset, v, n);
-					array[id] = Bits.extractNBytes(v, n);
-					n_bytes[id] = n;
-				});
+				random().longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
+					.forEach(v -> {
+						int id = alloc.alloc();
+						int n = random().nextInt(Long.BYTES-2)+1;
+						alloc.setNBytes(id, offset, v, n);
+						array[id] = Bits.extractNBytes(v, n);
+						n_bytes[id] = n;
+					});
 
-			allocator.adjustSlotSize(newSlotSize);
+				int newSlotSize = alloc.getSlotSize()*2;
+				alloc.adjustSlotSize(newSlotSize);
 
-			IntStream.range(0, array.length)
-				.forEach(id -> assertEquals(array[id], allocator.getNBytes(id, offset, n_bytes[id])));
+				IntStream.range(0, array.length)
+					.forEach(id -> assertEquals(array[id], alloc.getNBytes(id, offset, n_bytes[id])));
+			});
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getShort(int, int)}.
 		 */
-		@RepeatedTest(RUNS)
 		@Tag(RANDOMIZED)
-		void testGetShort() {
-			final int offset = random().nextInt(allocator.getSlotSize()-Short.BYTES);
-			short[] array = new short[SIZE]; // [id] = short_stored
+		@TestFactory
+		Stream<DynamicNode> testGetShort() {
+			return batchTests(alloc -> {
+				final int offset = random().nextInt(alloc.getSlotSize()-Short.BYTES+1);
+				short[] array = new short[SIZE]; // [id] = short_stored
 
-			random().ints(SIZE, Short.MIN_VALUE, Short.MAX_VALUE)
-				.forEach(v -> {
-					int id = allocator.alloc();
-					allocator.setShort(id, offset, (short)v);
-					array[id] = (short) v;
-				});
+				random().ints(SIZE, Short.MIN_VALUE, Short.MAX_VALUE)
+					.forEach(v -> {
+						int id = alloc.alloc();
+						alloc.setShort(id, offset, (short)v);
+						array[id] = (short) v;
+					});
 
-			allocator.adjustSlotSize(newSlotSize);
+				int newSlotSize = alloc.getSlotSize()*2;
+				alloc.adjustSlotSize(newSlotSize);
 
-			IntStream.range(0, array.length)
-				.forEach(id -> assertEquals(array[id], allocator.getShort(id, offset)));
+				IntStream.range(0, array.length)
+					.forEach(id -> assertEquals(array[id], alloc.getShort(id, offset)));
+			});
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getInt(int, int)}.
 		 */
-		@RepeatedTest(RUNS)
 		@Tag(RANDOMIZED)
-		void testGetInt() {
-			final int offset = random().nextInt(allocator.getSlotSize()-Integer.BYTES);
-			int[] array = new int[SIZE]; // [id] = int_stored
+		@TestFactory
+		Stream<DynamicNode> testGetInt() {
+			return batchTests(alloc -> {
+				final int offset = random().nextInt(alloc.getSlotSize()-Integer.BYTES+1);
+				int[] array = new int[SIZE]; // [id] = int_stored
 
-			random().ints(SIZE, Integer.MIN_VALUE, Integer.MAX_VALUE)
-				.forEach(v -> {
-					int id = allocator.alloc();
-					allocator.setInt(id, offset, v);
-					array[id] = v;
-				});
+				random().ints(SIZE, Integer.MIN_VALUE, Integer.MAX_VALUE)
+					.forEach(v -> {
+						int id = alloc.alloc();
+						alloc.setInt(id, offset, v);
+						array[id] = v;
+					});
 
-			allocator.adjustSlotSize(newSlotSize);
+				int newSlotSize = alloc.getSlotSize()*2;
+				alloc.adjustSlotSize(newSlotSize);
 
-			IntStream.range(0, array.length)
-				.forEach(id -> assertEquals(array[id], allocator.getInt(id, offset)));
+				IntStream.range(0, array.length)
+					.forEach(id -> assertEquals(array[id], alloc.getInt(id, offset)));
+			});
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getLong(int, int)}.
 		 */
-		@RepeatedTest(RUNS)
 		@Tag(RANDOMIZED)
-		void testGetLong() {
-			final int offset = random().nextInt(allocator.getSlotSize()-Long.BYTES);
-			long[] array = new long[SIZE]; // [id] = long_stored
+		@TestFactory
+		Stream<DynamicNode> testGetLong() {
+			return batchTests(alloc -> {
+				final int offset = random().nextInt(alloc.getSlotSize()-Long.BYTES+1);
+				long[] array = new long[SIZE]; // [id] = long_stored
 
-			random().longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
-				.forEach(v -> {
-					int id = allocator.alloc();
-					allocator.setLong(id, offset, v);
-					array[id] = v;
-				});
+				random().longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
+					.forEach(v -> {
+						int id = alloc.alloc();
+						alloc.setLong(id, offset, v);
+						array[id] = v;
+					});
 
-			allocator.adjustSlotSize(newSlotSize);
+				int newSlotSize = alloc.getSlotSize()*2;
+				alloc.adjustSlotSize(newSlotSize);
 
-			IntStream.range(0, array.length)
-				.forEach(id -> assertEquals(array[id], allocator.getLong(id, offset)));
+				IntStream.range(0, array.length)
+					.forEach(id -> assertEquals(array[id], alloc.getLong(id, offset)));
+			});
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#writeBytes(int, int, byte[], int)}.
 		 */
-		@RepeatedTest(RUNS)
 		@Tag(RANDOMIZED)
-		void testForBulk() {
-			final int offset = random().nextInt(allocator.getSlotSize()-Long.BYTES);
-			byte[][] array = new byte[SIZE][]; // [id] = bytes_stored
+		@TestFactory
+		Stream<DynamicNode> testForBulk() {
+			return batchTests(alloc -> {
+				final int offset = random().nextInt(alloc.getSlotSize()-Long.BYTES+1);
+				byte[][] array = new byte[SIZE][]; // [id] = bytes_stored
 
-			random().ints(SIZE, 1, defaultSlotSize-offset)
-				.forEach(n -> {
-					int id = allocator.alloc();
-					byte[] bytes = new byte[n];
-					random().nextBytes(bytes);
-					allocator.writeBytes(id, offset, bytes, n);
-					array[id] = bytes;
-				});
+				random().ints(SIZE, 1, alloc.getSlotSize()-offset)
+					.forEach(n -> {
+						int id = alloc.alloc();
+						byte[] bytes = new byte[n];
+						random().nextBytes(bytes);
+						alloc.writeBytes(id, offset, bytes, n);
+						array[id] = bytes;
+					});
 
-			allocator.adjustSlotSize(newSlotSize);
+				int newSlotSize = alloc.getSlotSize()*2;
+				alloc.adjustSlotSize(newSlotSize);
 
-			IntStream.range(0, array.length)
-				.forEach(id -> {
-					byte[] expected = array[id];
-					byte[] actual = new byte[expected.length];
-					allocator.readBytes(id, offset, actual, actual.length);
-					assertArrayEquals(expected, actual);
-				});
+				IntStream.range(0, array.length)
+					.forEach(id -> {
+						byte[] expected = array[id];
+						byte[] actual = new byte[expected.length];
+						alloc.readBytes(id, offset, actual, actual.length);
+						assertArrayEquals(expected, actual);
+					});
+			});
 		}
 	}
+
+	//TODO rework cursor tests
 
 	@Nested
 	class ForCursor {
 
 		/** Object under test **/
+		@Deprecated
 		private Cursor cursor;
 
 
 		@BeforeEach
 		void setUp() {
-			cursor = allocator.newCursor();
+			cursor = alloc.newCursor();
 		}
 
 
@@ -1308,125 +1347,178 @@ class ByteAllocatorTest {
 			cursor = null;
 		}
 
-		private void fill(int slots) {
+		private Stream<DynamicNode> cursorTests(Consumer<Cursor> task) {
+			return configurations()
+					.map(config -> dynamicTest(config.label(), () -> {
+							try(ByteAllocator allocator = config.createInstance()) {
+								Cursor cursor = allocator.newCursor();
+								task.accept(cursor);
+							}
+					}));
+		}
+
+		private Stream<DynamicNode> parameterizedCursorTests(ObjIntConsumer<Cursor> task, int...ids) {
+			return configurations()
+					.map(config -> dynamicContainer(config.label(),
+							IntStream.of(ids).mapToObj(id -> dynamicTest(String.valueOf(id), () -> {
+								try(ByteAllocator allocator = config.createInstance()) {
+									Cursor cursor = allocator.newCursor();
+									task.accept(cursor, id);
+								}
+						}))));
+		}
+
+		private void fill(Cursor cursor, int slots) {
 			while(slots-->0)
-				allocator.alloc();
+				cursor.source().alloc();
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#clear()}.
 		 */
-		@Test
-		void testClear() {
-			assertFalse(cursor.hasChunk());
+		@TestFactory
+		Stream<DynamicNode> testClear() {
+			return cursorTests(cursor -> {
+				assertFalse(cursor.hasChunk());
 
-			allocator.alloc();
-			cursor.moveTo(0);
+				cursor.source().alloc();
+				cursor.moveTo(0);
 
-			assertTrue(cursor.hasChunk());
+				assertTrue(cursor.hasChunk());
 
-			cursor.clear();
+				cursor.clear();
 
-			assertFalse(cursor.hasChunk());
+				assertFalse(cursor.hasChunk());
+			});
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#clear()}.
+		 */
+		@TestFactory
+		Stream<DynamicNode> testClearViaMove() {
+			return cursorTests(cursor -> {
+				assertFalse(cursor.hasChunk());
+
+				cursor.source().alloc();
+				cursor.moveTo(0);
+
+				assertTrue(cursor.hasChunk());
+
+				cursor.moveTo(UNSET_INT); // has _clear_ semantics
+
+				assertFalse(cursor.hasChunk());
+			});
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#moveTo(int)}.
 		 */
-		@Test
-		void testMoveToEmpty() {
-			assertIOOB(() -> cursor.moveTo(0));
+		@TestFactory
+		Stream<DynamicNode> testMoveToEmpty() {
+			return cursorTests(cursor -> assertIOOB(() -> cursor.moveTo(0)));
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#moveTo(int)}.
 		 */
-		@ParameterizedTest
-		@ValueSource(ints = {-2, 10})
-		void testMoveToOutOfBounds(int id) {
-			fill(3);
-			assertIOOB(() -> cursor.moveTo(id));
+		@TestFactory
+		Stream<DynamicNode> testMoveToOutOfBounds() {
+			return parameterizedCursorTests((cursor, id) -> {
+				fill(cursor, 3);
+				assertIOOB(() -> cursor.moveTo(id));
+			}, -2, 10);
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#moveTo(int)}.
 		 */
-		@Test
-		void testMoveToUnsetInt() {
-			fill(3);
+		@TestFactory
+		Stream<DynamicNode> testMoveToUnsetInt() {
+			return cursorTests(cursor -> {
+				fill(cursor, 3);
 
-			cursor.moveTo(1);
-			assertTrue(cursor.hasChunk());
+				cursor.moveTo(1);
+				assertTrue(cursor.hasChunk());
 
-			cursor.moveTo(IcarusUtils.UNSET_INT);
-			assertFalse(cursor.hasChunk());
+				cursor.moveTo(IcarusUtils.UNSET_INT);
+				assertFalse(cursor.hasChunk());
+			});
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#moveTo(int)}.
 		 */
-		@Test
-		void testMoveTo() {
-			fill(defaultSlotSize);
+		@TestFactory
+		Stream<DynamicNode> testMoveTo() {
+			return cursorTests(cursor -> {
+				int slotSize = cursor.source().getSlotSize();
+				fill(cursor, slotSize);
 
-			IntStream.range(0, defaultSlotSize)
-				.boxed()
-				.collect(Collectors.collectingAndThen(Collectors.toList(), list -> {
-					Collections.shuffle(list);
-					return list;
-				}))
-				.stream()
-				.forEach(id -> {
-					cursor.moveTo(id.intValue());
-					assertTrue(cursor.hasChunk());
-				});
+				IntStream.range(0, slotSize)
+					.boxed()
+					.collect(Collectors.collectingAndThen(Collectors.toList(), list -> {
+						Collections.shuffle(list);
+						return list;
+					}))
+					.stream()
+					.forEach(id -> {
+						cursor.moveTo(id.intValue());
+						assertTrue(cursor.hasChunk());
+					});
 
-			// Expect movement to dead storage to fail
-			allocator.free(0);
-			assertThrows(IllegalStateException.class, () -> cursor.moveTo(0));
+				// Expect movement to dead storage to fail
+				cursor.source().free(0);
+				assertThrows(IllegalStateException.class, () -> cursor.moveTo(0));
+			});
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getId()}.
 		 */
-		@Test
-		void testGetId() {
-			fill(defaultSlotSize);
+		@TestFactory
+		Stream<DynamicNode> testGetId() {
+			return cursorTests(cursor -> {
+				int slotSize = cursor.source().getSlotSize();
+				fill(cursor, slotSize);
 
-			assertEquals(IcarusUtils.UNSET_INT, cursor.getId());
+				assertEquals(IcarusUtils.UNSET_INT, cursor.getId());
 
-			IntStream.range(0, defaultSlotSize)
-				.boxed()
-				.collect(Collectors.collectingAndThen(Collectors.toList(), list -> {
-					Collections.shuffle(list);
-					return list;
-				}))
-				.stream()
-				.forEach(id -> {
-					cursor.moveTo(id.intValue());
-					assertTrue(cursor.hasChunk());
-					assertEquals(id.intValue(), cursor.getId());
+				IntStream.range(0, slotSize)
+					.boxed()
+					.collect(Collectors.collectingAndThen(Collectors.toList(), list -> {
+						Collections.shuffle(list);
+						return list;
+					}))
+					.stream()
+					.forEach(id -> {
+						cursor.moveTo(id.intValue());
+						assertTrue(cursor.hasChunk());
+						assertEquals(id.intValue(), cursor.getId());
 
-					cursor.clear();
+						cursor.clear();
 
-					assertEquals(IcarusUtils.UNSET_INT, cursor.getId());
-				});
+						assertEquals(IcarusUtils.UNSET_INT, cursor.getId());
+					});
+			});
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#hasChunk()}.
 		 */
-		@Test
-		void testHasChunk() {
-			assertFalse(cursor.hasChunk());
+		@TestFactory
+		Stream<DynamicNode> testHasChunk() {
+			return cursorTests(cursor -> {
+				assertFalse(cursor.hasChunk());
 
-			cursor.alloc();
+				cursor.alloc();
 
-			assertTrue(cursor.hasChunk());
+				assertTrue(cursor.hasChunk());
 
-			cursor.clear();
+				cursor.clear();
 
-			assertFalse(cursor.hasChunk());
+				assertFalse(cursor.hasChunk());
+			});
 		}
 
 		@Nested
@@ -1434,439 +1526,355 @@ class ByteAllocatorTest {
 
 			private static final int SIZE = 100;
 
-			private int[] ids = new int[SIZE];
-
-			@BeforeEach
-			void setUp(TestInfo testInfo) {
-				// Allocate sufficient slots
-				for (int i = 0; i < SIZE; i++) {
-					ids[i] = allocator.alloc();
-				}
-
-				if(testInfo.getTags().contains(SHUFFLE)) {
-					shuffleIds();
-				}
+			private void shuffleIds(int[] ids) {
+				ArrayUtils.shuffle(ids, random());
 			}
 
-			private void shuffleIds() {
-				ArrayUtils.shuffle(ids, random());
+			private Stream<DynamicNode> shuffledTests(ToIntFunction<ByteAllocator> bytes, int runs,
+					CursorBatchTask writer, CursorBatchTask reader) {
+				return configurations()
+						.map(config -> dynamicContainer(config.label(),
+								IntStream.rangeClosed(1, runs).mapToObj(run -> dynamicTest(
+										runLabel(run, runs), () -> {
+									try(ByteAllocator allocator = config.createInstance()) {
+										// Allocate sufficient slots
+										int[] ids = new int[SIZE];
+										for (int i = 0; i < SIZE; i++) {
+											ids[i] = allocator.alloc();
+										}
+
+										Cursor cursor = allocator.newCursor();
+										int offset = random().nextInt(
+												allocator.getSlotSize()-bytes.applyAsInt(allocator)+1);
+
+										shuffleIds(ids);
+
+										// Write everything
+										for (int id : ids) {
+											cursor.moveTo(id);
+											assertTrue(cursor.hasChunk());
+											writer.execute(cursor, id, offset);
+										}
+
+										// Ensure we don't use the same order
+										shuffleIds(ids);
+
+										// Read and verify everything again
+										for(int id : ids) {
+											cursor.moveTo(id);
+											assertTrue(cursor.hasChunk());
+											reader.execute(cursor, id, offset);
+										}
+									}
+							}))));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getByte(int)}.
 			 */
-			@RepeatedTest(RUNS)
-			@Tag(SHUFFLE)
-			@Tag(RANDOMIZED)
-			void testBytes() {
+			@TestFactory
+			Stream<DynamicNode> testBytes() {
 				final int[] values = random()
 						.ints(SIZE, Byte.MIN_VALUE, Byte.MAX_VALUE)
 						.toArray(); // [id] = byte_value
-				final int offset = random().nextInt(defaultSlotSize);
 
-				// Write everything
-				for (int id : ids) {
-					byte v = (byte)values[id];
-					cursor.moveTo(id);
-					assertTrue(cursor.hasChunk());
-					cursor.setByte(offset, v);
-					assertEquals(v, cursor.getByte(offset));
-				}
-
-				// Ensure we don't use the same order
-				shuffleIds();
-
-				// Read and verify everything again
-				for(int id : ids) {
-					byte v = (byte)values[id];
-					cursor.moveTo(id);
-
-					assertTrue(cursor.hasChunk());
-					assertEquals(v, cursor.getByte(offset));
-				}
+				return shuffledTests(alloc -> Byte.BYTES, RUNS,
+						(c, id, offset) -> {
+							byte v = (byte)values[id];
+							c.setByte(offset, v);
+							assertEquals(v, c.getByte(offset));
+						},
+						(c, id, offset) -> {
+							byte v = (byte)values[id];
+							assertEquals(v, c.getByte(offset));
+						});
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getShort(int)}.
 			 */
-			@RepeatedTest(RUNS)
-			@Tag(SHUFFLE)
-			@Tag(RANDOMIZED)
-			void testShort() {
+			@TestFactory
+			Stream<DynamicNode> testShort() {
 				final int[] values = random()
 						.ints(SIZE, Short.MIN_VALUE, Short.MAX_VALUE)
 						.toArray(); // [id] = short_value
-				final int offset = random().nextInt(defaultSlotSize-Short.BYTES);
 
-				// Write everything
-				for (int id : ids) {
-					short v = (short)values[id];
-					cursor.moveTo(id);
-					assertTrue(cursor.hasChunk());
-					cursor.setShort(offset, v);
-					assertEquals(v, cursor.getShort(offset));
-				}
-
-				// Ensure we don't use the same order
-				shuffleIds();
-
-				// Read and verify everything again
-				for(int id : ids) {
-					short v = (short)values[id];
-					cursor.moveTo(id);
-
-					assertTrue(cursor.hasChunk());
-					assertEquals(v, cursor.getShort(offset));
-				}
+				return shuffledTests(alloc -> Short.BYTES, RUNS,
+						(c, id, offset) -> {
+							short v = (short)values[id];
+							c.setShort(offset, v);
+							assertEquals(v, c.getShort(offset));
+						},
+						(c, id, offset) -> {
+							short v = (short)values[id];
+							assertEquals(v, c.getShort(offset));
+						});
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getInt(int)}.
 			 */
-			@RepeatedTest(RUNS)
-			@Tag(SHUFFLE)
-			@Tag(RANDOMIZED)
-			void testInt() {
+			@TestFactory
+			Stream<DynamicNode> testInt() {
 				final int[] values = random()
 						.ints(SIZE, Integer.MIN_VALUE, Integer.MAX_VALUE)
 						.toArray(); // [id] = int_value
-				final int offset = random().nextInt(defaultSlotSize-Integer.BYTES);
 
-				// Write everything
-				for (int id : ids) {
-					int v = values[id];
-					cursor.moveTo(id);
-					assertTrue(cursor.hasChunk());
-					cursor.setInt(offset, v);
-					assertEquals(v, cursor.getInt(offset));
-				}
-
-				// Ensure we don't use the same order
-				shuffleIds();
-
-				// Read and verify everything again
-				for(int id : ids) {
-					int v = values[id];
-					cursor.moveTo(id);
-
-					assertTrue(cursor.hasChunk());
-					assertEquals(v, cursor.getInt(offset));
-				}
+				return shuffledTests(alloc -> Integer.BYTES, RUNS,
+						(c, id, offset) -> {
+							int v = values[id];
+							c.setInt(offset, v);
+							assertEquals(v, c.getInt(offset));
+						},
+						(c, id, offset) -> {
+							int v = values[id];
+							assertEquals(v, c.getInt(offset));
+						});
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getLong(int)}.
 			 */
-			@RepeatedTest(RUNS)
-			@Tag(SHUFFLE)
-			@Tag(RANDOMIZED)
-			void testLong() {
+			@TestFactory
+			Stream<DynamicNode> testLong() {
 				final long[] values = random()
 						.longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
 						.toArray(); // [id] = long_value
-				final int offset = random().nextInt(defaultSlotSize-Long.BYTES);
 
-				// Write everything
-				for (int id : ids) {
-					long v = values[id];
-					cursor.moveTo(id);
-					assertTrue(cursor.hasChunk());
-					cursor.setLong(offset, v);
-					assertEquals(v, cursor.getLong(offset));
-				}
-
-				// Ensure we don't use the same order
-				shuffleIds();
-
-				// Read and verify everything again
-				for(int id : ids) {
-					long v = values[id];
-					cursor.moveTo(id);
-
-					assertTrue(cursor.hasChunk());
-					assertEquals(v, cursor.getLong(offset));
-				}
+				return shuffledTests(alloc -> Long.BYTES, RUNS,
+						(c, id, offset) -> {
+							long v = values[id];
+							c.setLong(offset, v);
+							assertEquals(v, c.getLong(offset));
+						},
+						(c, id, offset) -> {
+							long v = values[id];
+							assertEquals(v, c.getLong(offset));
+						});
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getNBytes(int, int)}.
 			 */
-			@RepeatedTest(RUNS*2)
-			@Tag(SHUFFLE)
-			@Tag(RANDOMIZED)
-			void testNBytes() {
+			@TestFactory
+			Stream<DynamicNode> testNBytes() {
 				final long[] values = random()
 						.longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
 						.toArray(); // [id] = long_value
 				final int n = random().nextInt(8)+1;
-				final int offset = random().nextInt(defaultSlotSize-n);
 
-				// Write everything
-				for (int id : ids) {
-					long v = values[id];
-					cursor.moveTo(id);
-					assertTrue(cursor.hasChunk());
-					cursor.setNBytes(offset, v, n);
-					assertEquals(Bits.extractNBytes(v, n), cursor.getNBytes(offset, n));
-				}
-
-				// Ensure we don't use the same order
-				shuffleIds();
-
-				// Read and verify everything again
-				for(int id : ids) {
-					long v = values[id];
-					cursor.moveTo(id);
-
-					assertTrue(cursor.hasChunk());
-					assertEquals(Bits.extractNBytes(v, n), cursor.getNBytes(offset, n));
-				}
+				return shuffledTests(alloc -> n, RUNS,
+						(c, id, offset) -> {
+							long v = values[id];
+							c.setNBytes(offset, v, n);
+							assertEquals(Bits.extractNBytes(v, n), c.getNBytes(offset, n));
+						},
+						(c, id, offset) -> {
+							long v = values[id];
+							assertEquals(Bits.extractNBytes(v, n), c.getNBytes(offset, n));
+						});
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#writeBytes(int, byte[], int)}.
 			 */
-			@RepeatedTest(RUNS*2)
-			@Tag(SHUFFLE)
-			@Tag(RANDOMIZED)
-			void testBytesArray() {
+			@TestFactory
+			Stream<DynamicNode> testBytesArray() {
 				final byte[][] values = new byte[SIZE][]; // [id] = long_value
 				final int n = random().nextInt(8)+1;
-				final int offset = random().nextInt(defaultSlotSize-n);
 
 				for (int i = 0; i < values.length; i++) {
 					values[i] = new byte[n];
 					random().nextBytes(values[i]);
 				}
 
-				// Write everything
-				for (int id : ids) {
-					byte[] v = values[id];
-					cursor.moveTo(id);
-					assertTrue(cursor.hasChunk());
-					cursor.writeBytes(offset, v, n);
-					byte[] read = new byte[n];
-					cursor.readBytes(offset, read, n);
-					assertArrayEquals(v, read);
-				}
-
-				// Ensure we don't use the same order
-				shuffleIds();
-
-				// Read and verify everything again
-				for(int id : ids) {
-					byte[] v = values[id];
-					cursor.moveTo(id);
-
-					assertTrue(cursor.hasChunk());
-					byte[] read = new byte[n];
-					cursor.readBytes(offset, read, n);
-					assertArrayEquals(v, read);
-				}
+				return shuffledTests(alloc -> n, RUNS,
+						(c, id, offset) -> {
+							byte[] v = values[id];
+							c.writeBytes(offset, v, n);
+							byte[] read = new byte[n];
+							c.readBytes(offset, read, n);
+							assertArrayEquals(v, read);
+						},
+						(c, id, offset) -> {
+							byte[] v = values[id];
+							byte[] read = new byte[n];
+							c.readBytes(offset, read, n);
+							assertArrayEquals(v, read);
+						});
 			}
 		}
 
 		@Nested
 		class ForInvalidBatchSizes {
 
-			private int id;
-
-			/**
-			 * Offsets are checked after slot ids, so we need to prepare a proper slot first
-			 */
-			@BeforeEach
-			void setUp() {
-				id = allocator.alloc();
-				cursor.moveTo(id);
-			}
-
 			private void assertIllegalArgument(Executable executable) {
 				assertThrows(IllegalArgumentException.class, executable);
+			}
+
+			private Stream<DynamicNode> invalidBatchTests(ObjIntConsumer<Cursor> task) {
+				return configurations()
+						.map(config -> dynamicContainer(config.label(),
+								IntStream.of(-1, 0, config.slotSize+1)
+								.sorted()
+								.mapToObj(value -> dynamicTest(String.valueOf(value), () -> {
+									try(ByteAllocator allocator = config.createInstance()) {
+										Cursor cursor = allocator.newCursor();
+										cursor.alloc();
+										assertIllegalArgument(() -> task.accept(cursor, value));
+									}
+								}))));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getNBytes(int, int)}.
 			 */
-			@ParameterizedTest
-			@ValueSource(ints = {-1, 0, 9})
-			void testGetNBytes(int n) {
-				assertIllegalArgument(() -> cursor.getNBytes(0, n));
+			@TestFactory
+			Stream<DynamicNode> testGetNBytes() {
+				return invalidBatchTests((c, n) -> c.getNBytes(0, n));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#setNBytes(int, long, int)}.
 			 */
-			@ParameterizedTest
-			@ValueSource(ints = {-1, 0, 9})
-			void testSetNBytes(int n) {
-				assertIllegalArgument(() -> cursor.setNBytes(0, Long.MAX_VALUE, n));
+			@TestFactory
+			Stream<DynamicNode> testSetNBytes() {
+				return invalidBatchTests((c, n) -> c.setNBytes(0, Long.MAX_VALUE, n));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#writeBytes(int, byte[], int)}.
 			 */
-			@ParameterizedTest
-			@ValueSource(ints = {-1, 0,defaultSlotSize+1})
-			void testWriteBytes(int n) {
-				assertIllegalArgument(() -> allocator.writeBytes(id, 0, new byte[defaultSlotSize], n));
+			@TestFactory
+			Stream<DynamicNode> testWriteBytes() {
+				return invalidBatchTests((c, n) -> c.writeBytes(0, new byte[c.source().getSlotSize()], n));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#readBytes(int, byte[], int)}.
 			 */
-			@ParameterizedTest
-			@ValueSource(ints = {-1, 0,defaultSlotSize+1})
-			void testReadBytes(int n) {
-				assertIllegalArgument(() -> allocator.readBytes(id, 0, new byte[defaultSlotSize], n));
+			@TestFactory
+			Stream<DynamicNode> testReadBytes() {
+				return invalidBatchTests((c, n) -> c.readBytes(0, new byte[c.source().getSlotSize()], n));
 			}
 		}
 
 		@Nested
 		class ForOffsetOutOfBounds {
 
-			private int id;
-
-			@BeforeEach
-			void setUp() {
-				id = allocator.alloc();
-				cursor.moveTo(id);
-			}
-
 			private void assertOffsetOutOfBounds(Executable executable) {
 				IndexOutOfBoundsException ex = assertIOOB(executable);
 				assertTrue(ex.getMessage().toLowerCase().contains("offset"));
 			}
 
+			private Stream<DynamicNode> invalidOffsetTests(ToIntFunction<Config> bytes, ObjIntConsumer<Cursor> task) {
+				return configurations()
+						.map(config -> dynamicContainer(config.label(),
+								IntStream.of(-1, config.slotSize, config.slotSize+1)
+								.sorted()
+								.mapToObj(value -> dynamicTest(String.valueOf(value), () -> {
+									try(ByteAllocator allocator = config.createInstance()) {
+										Cursor cursor = allocator.newCursor();
+										cursor.alloc();
+										assertOffsetOutOfBounds(() -> task.accept(cursor, value));
+									}
+								}))));
+			}
+
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getByte(int)}.
 			 */
-			@ParameterizedTest
-			@ValueSource(ints = {-1, defaultSlotSize, defaultSlotSize+1})
-			void testGetByte(int offset) {
-				assertOffsetOutOfBounds(() -> cursor.getByte(offset));
+			@TestFactory
+			Stream<DynamicNode> testGetByte() {
+				return invalidOffsetTests(c -> Byte.BYTES, (c, offset) -> c.getByte(offset));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getNBytes(int, int)}.
 			 */
-			@ParameterizedTest
-			@ValueSource(ints = {-1, defaultSlotSize, defaultSlotSize+1})
-			void testGetNBytes(int offset) {
-				assertOffsetOutOfBounds(() -> cursor.getNBytes(offset, 1));
+			@TestFactory
+			Stream<DynamicNode> testGetNBytes() {
+				return invalidOffsetTests(c -> Byte.BYTES, (c, offset) -> c.getNBytes(offset, 1));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getShort(int)}.
 			 */
-			@ParameterizedTest
-			@ValueSource(ints = {-1, defaultSlotSize, defaultSlotSize+1})
-			void testGetShort(int offset) {
-				assertOffsetOutOfBounds(() -> cursor.getShort(offset));
+			@TestFactory
+			Stream<DynamicNode> testGetShort() {
+				return invalidOffsetTests(c -> Short.BYTES, (c, offset) -> c.getShort(offset));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getInt(int)}.
 			 */
-			@ParameterizedTest
-			@ValueSource(ints = {-1, defaultSlotSize, defaultSlotSize+1})
-			void testGetInt(int offset) {
-				assertOffsetOutOfBounds(() -> cursor.getInt(offset));
+			@TestFactory
+			Stream<DynamicNode> testGetInt() {
+				return invalidOffsetTests(c -> Integer.BYTES, (c, offset) -> c.getInt(offset));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getLong(int)}.
 			 */
-			@ParameterizedTest
-			@ValueSource(ints = {-1, defaultSlotSize, defaultSlotSize+1})
-			void testGetLong(int offset) {
-				assertOffsetOutOfBounds(() -> cursor.getLong(offset));
+			@TestFactory
+			Stream<DynamicNode> testGetLong() {
+				return invalidOffsetTests(c -> Long.BYTES, (c, offset) -> c.getLong(offset));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#setByte(int, byte)}.
 			 */
-			@ParameterizedTest
-			@ValueSource(ints = {-1, defaultSlotSize, defaultSlotSize+1})
-			void testSetByte(int offset) {
-				assertOffsetOutOfBounds(() -> cursor.setByte(offset, Byte.MAX_VALUE));
+			@TestFactory
+			Stream<DynamicNode> testSetByte() {
+				return invalidOffsetTests(c -> Byte.BYTES, (c, offset) -> c.setByte(offset, Byte.MAX_VALUE));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#setNBytes(int, long, int)}.
 			 */
-			@ParameterizedTest
-			@ValueSource(ints = {-1, defaultSlotSize, defaultSlotSize+1})
-			void testSetNBytes(int offset) {
-				assertOffsetOutOfBounds(() -> cursor.setNBytes(offset, Long.MAX_VALUE, 1));
+			@TestFactory
+			Stream<DynamicNode> testSetNBytes() {
+				return invalidOffsetTests(c -> Byte.BYTES, (c, offset) -> c.setNBytes(offset, Byte.MAX_VALUE, 1));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#setShort(int, short)}.
 			 */
-			@ParameterizedTest
-			@ValueSource(ints = {-1, defaultSlotSize, defaultSlotSize+1})
-			void testSetShort(int offset) {
-				assertOffsetOutOfBounds(() -> cursor.setShort(offset, Short.MAX_VALUE));
+			@TestFactory
+			Stream<DynamicNode> testSetShort() {
+				return invalidOffsetTests(c -> Short.BYTES, (c, offset) -> c.setShort(offset,  Short.MAX_VALUE));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#setInt(int, int)}.
 			 */
-			@ParameterizedTest
-			@ValueSource(ints = {-1, defaultSlotSize, defaultSlotSize+1})
-			void testSetInt(int offset) {
-				assertOffsetOutOfBounds(() -> cursor.setByte(offset, Byte.MAX_VALUE));
+			@TestFactory
+			Stream<DynamicNode> testSetInt() {
+				return invalidOffsetTests(c -> Integer.BYTES, (c, offset) -> c.setInt(offset,  Integer.MAX_VALUE));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#setLong(int, long)}.
 			 */
-			@ParameterizedTest
-			@ValueSource(ints = {-1, defaultSlotSize, defaultSlotSize+1})
-			void testSetLong(int offset) {
-				assertOffsetOutOfBounds(() -> cursor.setLong(offset, Long.MAX_VALUE));
+			@TestFactory
+			Stream<DynamicNode> testSetLong() {
+				return invalidOffsetTests(c -> Long.BYTES, (c, offset) -> c.setLong(offset,  Long.MAX_VALUE));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#writeBytes(int, byte[], int)}.
 			 */
-			@ParameterizedTest
-			@ValueSource(ints = {-1, defaultSlotSize, defaultSlotSize+1})
-			void testWriteBytes(int offset) {
-				assertOffsetOutOfBounds(() -> cursor.writeBytes(offset, new byte[1], 1));
-			}
-
-			/**
-			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#writeBytes(int, int, byte[], int)}.
-			 */
 			@TestFactory
-			Stream<DynamicTest> testWriteBytes() {
-				return IntStream.range(1, defaultSlotSize)
-					.mapToObj(offset -> DynamicTest.dynamicTest(String.valueOf(offset),
-							() -> assertOffsetOutOfBounds(
-									() -> cursor.writeBytes(offset,
-											new byte[defaultSlotSize], defaultSlotSize-offset+1))));
+			Stream<DynamicNode> testWriteBytes() {
+				return invalidOffsetTests(c -> Byte.BYTES, (c, offset) -> c.writeBytes(offset, new byte[1], 1));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#readBytes(int, byte[], int)}.
 			 */
-			@ParameterizedTest
-			@ValueSource(ints = {-1, defaultSlotSize, defaultSlotSize+1})
-			void testReadBytes(int offset) {
-				assertOffsetOutOfBounds(() -> cursor.readBytes(offset, new byte[1], 1));
-			}
-
-			/**
-			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#readBytes(int, int, byte[], int)}.
-			 */
 			@TestFactory
-			Stream<DynamicTest> testReadBytes() {
-				return IntStream.range(1, defaultSlotSize)
-					.mapToObj(offset -> DynamicTest.dynamicTest(String.valueOf(offset),
-							() -> assertOffsetOutOfBounds(
-									() -> cursor.readBytes(offset,
-											new byte[defaultSlotSize], defaultSlotSize-offset+1))));
+			Stream<DynamicNode> testReadBytes() {
+				return invalidOffsetTests(c -> Byte.BYTES, (c, offset) -> c.readBytes(offset, new byte[1], 1));
 			}
 		}
 
@@ -1877,100 +1885,110 @@ class ByteAllocatorTest {
 				assertThrows(IllegalStateException.class, executable);
 			}
 
+			private Stream<DynamicNode> invalidOffsetTests(Consumer<Cursor> task) {
+				return configurations()
+						.map(config -> dynamicTest(config.label(), () -> {
+							try(ByteAllocator allocator = config.createInstance()) {
+								Cursor cursor = allocator.newCursor();
+								assertIllegalState(() -> task.accept(cursor));
+							}
+						}));
+			}
+
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getByte(int)}.
 			 */
-			@Test
-			void testGetByte() {
-				assertIllegalState(() -> cursor.getByte(0));
+			@TestFactory
+			Stream<DynamicNode> testGetByte() {
+				return invalidOffsetTests(c -> c.getByte(0));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getNBytes(int, int)}.
 			 */
-			@Test
-			void testGetNBytes() {
-				assertIllegalState(() -> cursor.getNBytes(0, 1));
+			@TestFactory
+			Stream<DynamicNode> testGetNBytes() {
+				return invalidOffsetTests(c -> c.getNBytes(0, 1));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getShort(int)}.
 			 */
-			@Test
-			void testGetShort() {
-				assertIllegalState(() -> cursor.getShort(0));
+			@TestFactory
+			Stream<DynamicNode> testGetShort() {
+				return invalidOffsetTests(c -> c.getShort(0));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getInt(int)}.
 			 */
-			@Test
-			void testGetInt() {
-				assertIllegalState(() -> cursor.getInt(0));
+			@TestFactory
+			Stream<DynamicNode> testGetInt() {
+				return invalidOffsetTests(c -> c.getInt(0));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getLong(int)}.
 			 */
-			@Test
-			void testGetLong() {
-				assertIllegalState(() -> cursor.getLong(0));
+			@TestFactory
+			Stream<DynamicNode> testGetLong() {
+				return invalidOffsetTests(c -> c.getLong(0));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#setByte(int, byte)}.
 			 */
-			@Test
-			void testSetByte() {
-				assertIllegalState(() -> cursor.setByte(0, Byte.MAX_VALUE));
+			@TestFactory
+			Stream<DynamicNode> testSetByte() {
+				return invalidOffsetTests(c -> c.setByte(0, Byte.MAX_VALUE));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#setNBytes(int, long, int)}.
 			 */
-			@Test
-			void testSetNBytes() {
-				assertIllegalState(() -> cursor.setNBytes(0, Long.MAX_VALUE, 1));
+			@TestFactory
+			Stream<DynamicNode> testSetNBytes() {
+				return invalidOffsetTests(c -> c.setNBytes(0, Long.MAX_VALUE, 1));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#setShort(int, short)}.
 			 */
-			@Test
-			void testSetShort() {
-				assertIllegalState(() -> cursor.setShort(0, Short.MAX_VALUE));
+			@TestFactory
+			Stream<DynamicNode> testSetShort() {
+				return invalidOffsetTests(c -> c.setShort(0, Short.MAX_VALUE));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#setInt(int, int)}.
 			 */
-			@Test
-			void testSetInt() {
-				assertIllegalState(() -> cursor.setInt(0, Integer.MAX_VALUE));
+			@TestFactory
+			Stream<DynamicNode> testSetInt() {
+				return invalidOffsetTests(c -> c.setInt(0, Integer.MAX_VALUE));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#setLong(int, long)}.
 			 */
-			@Test
-			void testSetLong() {
-				assertIllegalState(() -> cursor.setLong(0, Long.MAX_VALUE));
+			@TestFactory
+			Stream<DynamicNode> testSetLong() {
+				return invalidOffsetTests(c -> c.setLong(0, Long.MAX_VALUE));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#writeBytes(int, byte[], int)}.
 			 */
-			@Test
-			void testWriteBytes() {
-				assertIllegalState(() -> cursor.writeBytes(0, new byte[1], 1));
+			@TestFactory
+			Stream<DynamicNode> testWriteBytes() {
+				return invalidOffsetTests(c -> c.writeBytes(0, new byte[1], 1));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#readBytes(int, byte[], int)}.
 			 */
-			@Test
-			void testReadBytes() {
-				assertIllegalState(() -> cursor.readBytes(0, new byte[1], 1));
+			@TestFactory
+			Stream<DynamicNode> testReadBytes() {
+				return invalidOffsetTests(c -> c.readBytes(0, new byte[1], 1));
 			}
 		}
 	}
