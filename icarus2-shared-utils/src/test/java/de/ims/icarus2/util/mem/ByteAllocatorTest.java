@@ -47,8 +47,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicNode;
@@ -56,10 +54,8 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestFactory;
-import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestReporter;
 import org.junit.jupiter.api.function.Executable;
-import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -78,17 +74,6 @@ import de.ims.icarus2.util.mem.ByteAllocator.LockType;
  */
 class ByteAllocatorTest {
 
-	/** Object under test **/
-	@Deprecated
-	private ByteAllocator alloc;
-
-	/** 12 **/
-	@Deprecated
-	private static final int defaultSlotSize = ByteAllocator.MIN_SLOT_SIZE*2+4;
-	/** 7 **/
-	@Deprecated
-	private static final int defaultChunkPower = ByteAllocator.MIN_CHUNK_POWER;
-
 	private Stream<Config> configurations() {
 		return configurations(UNSET_INT);
 	}
@@ -105,22 +90,6 @@ class ByteAllocatorTest {
 				.map(t -> new Config(t.second.intValue(), t.third.intValue(), t.first));
 	}
 
-	@BeforeEach
-	void setUp(TestInfo testInfo) {
-		if(!testInfo.getTags().contains(STANDALONE)) {
-			alloc = new ByteAllocator(defaultSlotSize, defaultChunkPower);
-		}
-	}
-
-
-	@AfterEach
-	void tearDown(TestInfo testInfo) {
-		if(!testInfo.getTags().contains(STANDALONE)) {
-			alloc.clear();
-		}
-		alloc = null;
-	}
-
 	/**
 	 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#ByteAllocator(int, int)}.
 	 */
@@ -128,17 +97,17 @@ class ByteAllocatorTest {
 	@ValueSource(ints = {-1, 0, 7})
 	@Tag(STANDALONE)
 	void testIllegalSlotSizeConstructor(int slotSize) {
-		assertThrows(IllegalArgumentException.class, () -> new ByteAllocator(slotSize, defaultSlotSize));
+		assertThrows(IllegalArgumentException.class, () -> new ByteAllocator(slotSize, ByteAllocator.MIN_CHUNK_POWER));
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#ByteAllocator(int, int)}.
 	 */
 	@ParameterizedTest
-	@ValueSource(ints = {-1, 0, 6, 18, Integer.MAX_VALUE})
+	@ValueSource(ints = {-1, 0, ByteAllocator.MIN_CHUNK_POWER-1, ByteAllocator.MAX_CHUNK_POWER+1, Integer.MAX_VALUE})
 	@Tag(STANDALONE)
 	void testIllegalChunkPowerConstructor(int chunkpower) {
-		assertThrows(IllegalArgumentException.class, () -> new ByteAllocator(defaultSlotSize, chunkpower));
+		assertThrows(IllegalArgumentException.class, () -> new ByteAllocator(ByteAllocator.MIN_SLOT_SIZE, chunkpower));
 	}
 
 	private Stream<DynamicTest> tests(BiConsumer<Config, ByteAllocator> action) {
@@ -157,17 +126,6 @@ class ByteAllocatorTest {
 						.mapToObj(value -> dynamicTest(String.valueOf(value), () -> {
 							try(ByteAllocator allocator = config.createInstance()) {
 								action.accept(allocator, value);
-							}
-						}))));
-	}
-
-	private Stream<DynamicNode> repeatedTests(int runs, ThrowingConsumer<ByteAllocator> action) {
-		return configurations()
-				.map(config -> dynamicContainer(config.label(),
-						IntStream.rangeClosed(1, runs)
-						.mapToObj(run -> dynamicTest(runLabel(run, runs), () -> {
-							try(ByteAllocator allocator = config.createInstance()) {
-								action.accept(allocator);
 							}
 						}))));
 	}
@@ -1330,22 +1288,6 @@ class ByteAllocatorTest {
 
 	@Nested
 	class ForCursor {
-
-		/** Object under test **/
-		@Deprecated
-		private Cursor cursor;
-
-
-		@BeforeEach
-		void setUp() {
-			cursor = alloc.newCursor();
-		}
-
-
-		@AfterEach
-		void tearDown() {
-			cursor = null;
-		}
 
 		private Stream<DynamicNode> cursorTests(Consumer<Cursor> task) {
 			return configurations()

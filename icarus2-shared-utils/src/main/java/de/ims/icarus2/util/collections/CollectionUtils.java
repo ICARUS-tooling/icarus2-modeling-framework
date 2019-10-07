@@ -434,6 +434,7 @@ public final class CollectionUtils {
 		}
 	};
 
+	@SuppressWarnings("unchecked")
 	public static <T> Iterator<T> emptyIterator() {
 		return (Iterator<T>) EMPTY_ITERATOR;
 	}
