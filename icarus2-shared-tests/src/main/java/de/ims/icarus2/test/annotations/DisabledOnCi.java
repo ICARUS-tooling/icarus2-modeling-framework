@@ -21,6 +21,7 @@ package de.ims.icarus2.test.annotations;
 
 import static de.ims.icarus2.test.TestTags.LOCAL;
 import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Documented;
@@ -39,7 +40,7 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
  */
 @Documented
 @Retention(RUNTIME)
-@Target(METHOD)
+@Target({METHOD, TYPE})
 @Tag(LOCAL)
 @DisabledIfEnvironmentVariable(named = "CI", matches = "true")
 public @interface DisabledOnCi {

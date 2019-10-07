@@ -1235,6 +1235,7 @@ class PackedDataManagerTest {
 		 *
 		 */
 		@Nested
+		@DisabledOnCi
 		class ConcurrentStress {
 
 			@DisabledOnCi
