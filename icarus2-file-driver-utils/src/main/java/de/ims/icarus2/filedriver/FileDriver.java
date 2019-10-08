@@ -124,7 +124,7 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
  */
 public class FileDriver extends AbstractDriver {
 
-	public static Builder newBuilder() {
+	public static Builder builder() {
 		return new Builder();
 	}
 
