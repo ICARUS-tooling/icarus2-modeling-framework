@@ -131,7 +131,7 @@ class DefaultStreamedCorpusViewTest implements StreamedCorpusViewTest<DefaultStr
 					public <T> T instantiate(Class<T> resultClass) {
 						if(Driver.class.equals(resultClass)) {
 							return resultClass.cast(
-									VirtualDriver.newBuilder()
+									VirtualDriver.builder()
 									.itemLayerManager(itemLayerManager)
 									.manifest(driverManifest)
 									.build());

@@ -57,7 +57,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 @TestableImplementation(Driver.class)
 public class VirtualDriver extends AbstractDriver {
 
-	public static Builder newBuilder() {
+	public static Builder builder() {
 		return new Builder();
 	}
 
