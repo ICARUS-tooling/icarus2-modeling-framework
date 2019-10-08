@@ -85,7 +85,7 @@ public class DefaultChunkIndex implements ChunkIndex {
 
 		int entriesPerBlock = 1<<blockPower;
 
-		resource = BufferedIOResource.newBuilder()
+		resource = BufferedIOResource.builder()
 			.cacheSize(builder.getCacheSize())
 			.blockCache(builder.getBlockCache())
 			.resource(builder.getResource())

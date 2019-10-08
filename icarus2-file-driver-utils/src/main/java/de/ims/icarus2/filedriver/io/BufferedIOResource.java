@@ -82,7 +82,7 @@ import it.unimi.dsi.fastutil.ints.IntSet;
  */
 public class BufferedIOResource {
 
-	public static Builder newBuilder() {
+	public static Builder builder() {
 		return new Builder();
 	}
 

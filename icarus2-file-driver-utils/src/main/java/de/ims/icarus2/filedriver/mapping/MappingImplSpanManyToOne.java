@@ -644,7 +644,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 			int bytesPerBlock = getEntriesPerBlock()*blockStorage.spanSize();
 			PayloadConverter payloadConverter = new PayloadConverterImpl(blockStorage);
 
-			return BufferedIOResource.newBuilder()
+			return BufferedIOResource.builder()
 				.resource(getResource())
 				.blockCache(getBlockCache())
 				.cacheSize(getCacheSize())
