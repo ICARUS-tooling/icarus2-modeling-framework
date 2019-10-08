@@ -29,15 +29,16 @@ import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestFactory;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.standard.DefaultManifestFactory;
 import de.ims.icarus2.model.manifest.standard.DefaultManifestRegistry;
+import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.manifest.util.ManifestBuilder;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class CreateManifestsWithFactory {
+public class ICARUS2Sample_02_CreateManifestsWithBuilder {
 
 	public static void main(String[] args) {
 		// Set up the factory
@@ -45,36 +46,24 @@ public class CreateManifestsWithFactory {
 		ManifestLocation location = ManifestLocation.builder().virtual().build();
 		ManifestFactory factory = new DefaultManifestFactory(location, registry);
 
-		// Start creating and assembling manifests
-		ContextManifest contextManifest = factory.create(ManifestType.CONTEXT_MANIFEST);
-		contextManifest.setId("myContext");
+		ContextManifest contextManifest;
 
-		LayerGroupManifest group = factory.create(ManifestType.LAYER_GROUP_MANIFEST, contextManifest);
-		contextManifest.addLayerGroup(group);
-
-		ItemLayerManifest tokenLayer = factory
-				.<ItemLayerManifest>create(ManifestType.ITEM_LAYER_MANIFEST, group)
-				.setId("tokens");
-
-		ItemLayerManifest sentenceLayer = factory
-				.<ItemLayerManifest>create(ManifestType.ITEM_LAYER_MANIFEST, group)
-				.setId("sentences")
-				.setFoundationLayerId("tokens", DO_NOTHING())
-				.addBaseLayerId("tokens", DO_NOTHING());
-
-		AnnotationLayerManifest annoLayer = factory
-				.<AnnotationLayerManifest>create(ManifestType.ANNOTATION_LAYER_MANIFEST, group)
-				.addBaseLayerId("tokens", DO_NOTHING());
-
-		AnnotationManifest forms = factory
-				.<AnnotationManifest>create(ManifestType.ANNOTATION_MANIFEST, annoLayer)
-				.setKey("forms");
-		annoLayer.addAnnotationManifest(forms);
-		annoLayer.setDefaultKey("forms");
-
-		group.addLayerManifest(tokenLayer);
-		group.addLayerManifest(sentenceLayer);
-		group.addLayerManifest(annoLayer);
+		try(ManifestBuilder builder = new ManifestBuilder(factory)) {
+			// Start creating and assembling manifests
+			contextManifest = builder.create(ContextManifest.class, "myContext")
+					.addLayerGroup(builder.create(LayerGroupManifest.class, "myGroup", "myContext")
+							.addLayerManifest(builder.create(ItemLayerManifest.class, "tokens", "myGroup"))
+							.addLayerManifest(builder.create(ItemLayerManifest.class, "sentences", "myGroup")
+									.setFoundationLayerId("tokens", DO_NOTHING())
+									.addBaseLayerId("tokens", DO_NOTHING()))
+							.addLayerManifest(builder.create(AnnotationLayerManifest.class, "surface", "myGroup")
+									.addBaseLayerId("tokens", DO_NOTHING())
+									.addAnnotationManifest(builder.create(AnnotationManifest.class, "forms", "surface")
+											.setKey("forms")
+											.setValueType(ValueType.STRING)
+											.setAllowUnknownValues(true))
+									.setDefaultKey("forms")));
+		}
 
 		// Do stuff with manifest
 		System.out.println(contextManifest);

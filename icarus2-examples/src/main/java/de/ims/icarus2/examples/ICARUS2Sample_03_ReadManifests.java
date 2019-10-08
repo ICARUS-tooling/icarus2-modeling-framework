@@ -32,7 +32,7 @@ import de.ims.icarus2.model.manifest.xml.ManifestXmlReader;
  * @author Markus Gärtner
  *
  */
-public class ReadManifests {
+public class ICARUS2Sample_03_ReadManifests {
 
 	public static void main(String[] args) throws IOException, SAXException {
 		// -- registry setup boilerplate code --
@@ -50,7 +50,7 @@ public class ReadManifests {
 						 * Alternatively you could use the file(Path) method on the builder
 						 * to point it to a physical file on the file system.
 						 */
-						.url(ReadManifests.class.getResource("ReadManifests01.imf.xml"))
+						.url(ICARUS2Sample_03_ReadManifests.class.getResource("ReadManifests01.imf.xml"))
 						.template()
 						.build())
 				.build();

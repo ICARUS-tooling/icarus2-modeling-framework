@@ -53,7 +53,7 @@ group.addLayerManifest(sentenceLayer);
 group.addLayerManifest(annoLayer);
 ```
 
-Above code will create 3 layers representing tokens, sentences and surface form annotations and group them into a context. For a proper specification a lot of additional information is needed, such as value types for annotations or tagsets, etc. Since this can be quite cumbersome via code, and since corpus resources typically change much wrt their structure, the preferred way of obtaining manifests for a resource is to read its accompanying manifest file as explained in the next section. [example source code](../icarus2-examples/src/main/java/de/ims/icarus2/examples/CreateManifestsWithFactory.java)
+Above code will create 3 layers representing tokens, sentences and surface form annotations and group them into a context. For a proper specification a lot of additional information is needed, such as value types for annotations or tagsets, etc. Since this can be quite cumbersome via code, and since corpus resources typically change much wrt their structure, the preferred way of obtaining manifests for a resource is to read its accompanying manifest file as explained in the next section. [example source code](../icarus2-examples/src/main/java/de/ims/icarus2/examples/ICARUS2Sample_01_CreateManifestsWithFactory.java)
 
 The same result can be achieved by using the `de.ims.icarus2.model.manifest.util.ManifestBuilder` and chaining all the construction calls to generate a more compact code block:
 
@@ -83,7 +83,7 @@ try(ManifestBuilder builder = new ManifestBuilder(factory)) {
 }
 ```
 
-The `ManifestBuilder` utility makes it easier to directly link manifest at their time of creation. It also allows for easy lookups of any manifest that has been created by it with an id. [example source code](../icarus2-examples/src/main/java/de/ims/icarus2/examples/CreateManifestsWithBuilder.java)
+The `ManifestBuilder` utility makes it easier to directly link manifest at their time of creation. It also allows for easy lookups of any manifest that has been created by it with an id. [example source code](../icarus2-examples/src/main/java/de/ims/icarus2/examples/ICARUS2Sample_02_CreateManifestsWithBuilder.java)
 
 ## Reading Manifests
 
@@ -111,7 +111,7 @@ manifestXmlReader.readAndRegisterAll();
 System.out.println(registry.getTemplates());
 ```
 
-Example source code is also available in the examples project [here](../icarus2-examples/src/main/java/de/ims/icarus2/examples/ReadManifests.java).
+Example source code is also available in the examples project [here](../icarus2-examples/src/main/java/de/ims/icarus2/examples/ICARUS2Sample_03_ReadManifests.java).
 
 Assuming the file at path `myCorpus.imf.xml` contains the following XML data, we will get a `ContextManifest` very similar to the one created manually above (the XML data contains some additional information which was omitted previously to shorten the code snippet).
 
@@ -244,4 +244,4 @@ for(AnnotationManifest annotationManifest : annotationManifests) {
 }
 ```
 
-For a more complete code example (GUI code tends to be quite verbose) look [here](../icarus2-examples/src/main/java/de/ims/icarus2/examples/ProcessManifestsForGui.java)
+For a more complete code example (GUI code tends to be quite verbose) look [here](../icarus2-examples/src/main/java/de/ims/icarus2/examples/ICARUS2Sample_04_ProcessManifestsForGui.java)

@@ -64,7 +64,7 @@ import de.ims.icarus2.util.Options;
  * @author Markus Gärtner
  *
  */
-public class ProcessManifestsForGui {
+public class ICARUS2Sample_04_ProcessManifestsForGui {
 
 	public static void main(String[] args) {
 
@@ -137,7 +137,7 @@ public class ProcessManifestsForGui {
 
 	private static void initAndShowGui(List<AnnotationManifest> annotationManifests) {
 
-		JFrame frame = new JFrame("ICARUS2 Example - "+ProcessManifestsForGui.class.getSimpleName());
+		JFrame frame = new JFrame("ICARUS2 Example - "+ICARUS2Sample_04_ProcessManifestsForGui.class.getSimpleName());
 
 		frame.add(new AnnotationValuePicker(annotationManifests));
 
