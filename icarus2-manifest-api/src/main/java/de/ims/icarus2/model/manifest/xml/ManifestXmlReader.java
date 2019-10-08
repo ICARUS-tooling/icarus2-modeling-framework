@@ -120,7 +120,7 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 		return schema.value();
 	}
 
-	public static Builder newBuilder() {
+	public static Builder builder() {
 		return new Builder();
 	}
 

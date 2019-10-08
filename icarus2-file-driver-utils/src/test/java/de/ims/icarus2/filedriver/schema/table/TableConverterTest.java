@@ -55,7 +55,7 @@ public class TableConverterTest {
 			.build();
 
 		// Get template
-		ManifestXmlReader manifestXmlReader = ManifestXmlReader.newBuilder()
+		ManifestXmlReader manifestXmlReader = ManifestXmlReader.builder()
 				.registry(corpusManager.getManifestRegistry())
 				.useImplementationDefaults()
 				.build();

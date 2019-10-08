@@ -50,7 +50,7 @@ public class ManifestIO {
 			registry = new DefaultManifestRegistry();
 		}
 
-		ManifestXmlReader reader = ManifestXmlReader.newBuilder()
+		ManifestXmlReader reader = ManifestXmlReader.builder()
 				.delegateFactory(new DefaultManifestXmlDelegateFactory())
 				.registry(registry)
 				.source(location)

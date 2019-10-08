@@ -93,7 +93,7 @@ public class ManifestXmlTestUtils {
 
 		ManifestRegistry registry = manifest.getRegistry();
 
-		ManifestXmlReader reader = ManifestXmlReader.newBuilder().registry(registry).useImplementationDefaults().build();
+		ManifestXmlReader reader = ManifestXmlReader.builder().registry(registry).useImplementationDefaults().build();
 
 		reader.addSource(inputLocation);
 

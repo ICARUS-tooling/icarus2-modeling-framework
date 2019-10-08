@@ -40,7 +40,7 @@ public class ReadManifests {
 		// -------------------------------
 
 		// Configure the reader (here with direct location definition via the builder)
-		ManifestXmlReader manifestXmlReader = ManifestXmlReader.newBuilder()
+		ManifestXmlReader manifestXmlReader = ManifestXmlReader.builder()
 				// Use above registry to store manifests
 				.registry(registry)
 				// Let the reader select its default settings
