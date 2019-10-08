@@ -47,8 +47,8 @@
 				
 				<imf:driver>
 					<imf:properties>
-						<imf:property name="loadOnConnect" valueType="boolean">true</imf:property>
-						<imf:property name="encoding">UTF-8</imf:property>
+						<imf:property name="de.ims.icarus2.filedriver.loadOnConnect" valueType="boolean">true</imf:property>
+						<imf:property name="de.ims.icarus2.filedriver.encoding">UTF-8</imf:property>
 					</imf:properties>	
 					<imf:implementation classname="de.ims.icarus2.filedriver.DefaultFileDriverFactory" factory="true" />			
 					<imf:module id="converter">

@@ -37,7 +37,6 @@ import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
-import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.io.resource.FileResource;
@@ -49,8 +48,9 @@ import de.ims.icarus2.util.io.resource.IOResource;
  */
 public class FileDriverUtils {
 
-	static final String SHARED_PROPERTY_PREFIX = ModelUtils.SHARED_PROPERTY_PREFIX+".fileDriver";
+	public static final String SHARED_PROPERTY_PREFIX = IcarusUtils.SHARED_PROPERTY_PREFIX+".filedriver";
 
+	public static final String CONVERTER_PROPERTY = SHARED_PROPERTY_PREFIX+".converter";
 	public static final String FILE_SIZE_THRESHOLD_FOR_CHUNKING_PROPERTY = SHARED_PROPERTY_PREFIX+".fileSizeThresholdForChunking";
 
 	public static final String CACHE_SIZE_FOR_CHUNKING_PROPERTY = SHARED_PROPERTY_PREFIX+".cacheSizeForChunking";

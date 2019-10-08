@@ -83,8 +83,6 @@ import de.ims.icarus2.util.id.Identity;
  */
 public final class ModelUtils {
 
-	public static final String SHARED_PROPERTY_PREFIX = "de.ims.icarus2.model";
-
 	private ModelUtils() {
 		throw new AssertionError();
 	}

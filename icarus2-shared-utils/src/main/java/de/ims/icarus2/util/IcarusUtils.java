@@ -39,6 +39,9 @@ import de.ims.icarus2.util.Mutable.MutableObject;
  */
 public final class IcarusUtils {
 
+	/** Globally shared prefix of all properties used by core members of the framework */
+	public static final String SHARED_PROPERTY_PREFIX = "de.ims.icarus2";
+
 	public static final Runnable NO_OP = () -> {/* no-op */};
 
 	// Use the type-safe DO_NOTHING() method instead

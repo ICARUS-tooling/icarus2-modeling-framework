@@ -206,7 +206,8 @@ public class FileDriver extends AbstractDriver {
 	protected Converter createConverter() {
 
 		// Fetch the (hopefully) single module manifest describing our converter to be used
-		Set<ModuleManifest> converterManifests = getManifest().getModuleManifests("converter");
+		Set<ModuleManifest> converterManifests = getManifest().getModuleManifests(
+				FileDriverUtils.CONVERTER_PROPERTY);
 
 		if(converterManifests.isEmpty())
 			throw new ModelException(ModelErrorCode.DRIVER_ERROR,
@@ -1765,7 +1766,7 @@ public class FileDriver extends AbstractDriver {
 		private final ValueType type;
 
 		private OptionKey(String key, ValueType type) {
-			this.key = key;
+			this.key = FileDriverUtils.SHARED_PROPERTY_PREFIX+'.'+key;
 			this.type = type;
 		}
 

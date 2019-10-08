@@ -18,6 +18,7 @@ package de.ims.icarus2.filedriver.schema.tabular;
 
 import java.util.function.Consumer;
 
+import de.ims.icarus2.filedriver.FileDriverUtils;
 import de.ims.icarus2.filedriver.schema.Schema;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
@@ -38,7 +39,7 @@ import de.ims.icarus2.util.strings.StringResource;
  */
 public interface TableSchema extends Schema {
 
-	public static final String SCHEMA_TYPE_ID = "de.ims.icarus2.filedriver.schema.tabular";
+	public static final String SCHEMA_TYPE_ID = FileDriverUtils.SHARED_PROPERTY_PREFIX+".schema.tabular";
 
 	public static final String SEPARATOR_TAB = "TAB";
 	public static final String SEPARATOR_SPACE = "SPACE";
