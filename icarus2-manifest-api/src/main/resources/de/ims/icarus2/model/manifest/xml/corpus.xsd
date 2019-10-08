@@ -684,7 +684,7 @@
 						</xsd:element>
 						<xsd:element name="pathEntry" type="imf:pathEntryType" minOccurs="0" maxOccurs="unbounded">
 							<xsd:annotation>
-								<xsd:documentation>Optional links to additional resoruces. Expected to be relative to the main path.</xsd:documentation>
+								<xsd:documentation>Optional links to additional resources. Expected to be relative to the main path.</xsd:documentation>
 							</xsd:annotation>
 						</xsd:element>
 						<xsd:element name="pathResolver" type="imf:pathResolverManifestType" minOccurs="0">
