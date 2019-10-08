@@ -70,7 +70,7 @@ public class CorpusVerifier {
 	}
 
 	public static Report<ReportItem> checkManifest(CorpusManifest corpusManifest) {
-		return checkManifest(corpusManifest, ReportBuilder.newBuilder(corpusManifest)).build();
+		return checkManifest(corpusManifest, ReportBuilder.builder(corpusManifest)).build();
 	}
 
 	public static ReportBuilder<ReportItem> checkManifest(CorpusManifest corpusManifest, ReportBuilder<ReportItem> reportBuilder) {

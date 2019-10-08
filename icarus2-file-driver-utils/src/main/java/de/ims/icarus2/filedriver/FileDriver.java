@@ -554,7 +554,7 @@ public class FileDriver extends AbstractDriver {
 			final List<PreparationStep> steps = computeStepList();
 			final int stepCount = steps.size();
 
-			ReportBuilder<ReportItem> reportBuilder = ReportBuilder.newBuilder(getManifest());
+			ReportBuilder<ReportItem> reportBuilder = ReportBuilder.builder(getManifest());
 			reportBuilder.addInfo("Connecting to corpus");
 
 			boolean driverIsValid = true;

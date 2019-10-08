@@ -170,7 +170,7 @@ public final class LayerBinding implements Bindable, Serializable {
 	public Report<ReportItem> resolve(ManifestRegistry registry) {
 
 		if(isResolved.compareAndSet(false, true)) {
-			ReportBuilder<ReportItem> reportBuilder = ReportBuilder.newBuilder();
+			ReportBuilder<ReportItem> reportBuilder = ReportBuilder.builder();
 			if(source!=null) {
 				reportBuilder.source(source);
 			}

@@ -46,11 +46,11 @@ public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportB
 	private int warningCount;
 	private Identity source;
 
-	public static <R extends ReportItem> ReportBuilder<R> newBuilder() {
+	public static <R extends ReportItem> ReportBuilder<R> builder() {
 		return new ReportBuilder<>();
 	}
 
-	public static <R extends ReportItem> ReportBuilder<R> newBuilder(Identity source) {
+	public static <R extends ReportItem> ReportBuilder<R> builder(Identity source) {
 		ReportBuilder<R> builder = new ReportBuilder<>();
 		return builder.source(source);
 	}

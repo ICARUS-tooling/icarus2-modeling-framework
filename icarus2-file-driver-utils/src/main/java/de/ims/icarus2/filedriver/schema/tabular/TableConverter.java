@@ -322,7 +322,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		blockHandler.prepareForReading(this, ReadMode.SCAN, caches::get);
 
 		// Use default report builder mechanism and link analyzers to it
-		ReportBuilder<ReportItem> reportBuilder = ReportBuilder.newBuilder(tableSchema);
+		ReportBuilder<ReportItem> reportBuilder = ReportBuilder.builder(tableSchema);
 		analyzers.values().forEach(a -> a.init(reportBuilder));
 
 		// Flag to keep track whether or not we encountered a "real" error that causes the scan to stop
