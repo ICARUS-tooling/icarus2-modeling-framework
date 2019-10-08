@@ -40,8 +40,8 @@ import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathEntry;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
-import de.ims.icarus2.util.io.resource.ResourceProvider;
 import de.ims.icarus2.model.manifest.api.LocationType;
+import de.ims.icarus2.util.io.resource.ResourceProvider;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
@@ -97,7 +97,8 @@ public class DirectPathResolver implements PathResolver {
 		List<String> files = new ArrayList<>();
 
 		if(rootPathType==PathType.RESOURCE) {
-			ClassLoader classLoader = DirectPathResolver.class.getClassLoader();
+			// Use the class loader assigned to the manifest's location
+			ClassLoader classLoader = manifest.getManifestLocation().getClassLoader();
 			URL url = classLoader.getResource(rootPath);
 			Path path;
 
@@ -150,10 +151,6 @@ public class DirectPathResolver implements PathResolver {
 					case PATTERN: {
 						// For pattern entries we collect them and wait for a second pass
 						patterns.add(entry.getValue());
-					} break;
-
-					case RESOURCE: {
-						//TODO
 					} break;
 
 					default:
