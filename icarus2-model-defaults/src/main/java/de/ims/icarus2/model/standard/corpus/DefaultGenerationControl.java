@@ -46,7 +46,7 @@ import it.unimi.dsi.fastutil.Stack;
 @TestableImplementation(GenerationControl.class)
 public class DefaultGenerationControl implements GenerationControl, SimpleEventListener {
 
-	public static Builder newBuilder() {
+	public static Builder builder() {
 		return new Builder();
 	}
 

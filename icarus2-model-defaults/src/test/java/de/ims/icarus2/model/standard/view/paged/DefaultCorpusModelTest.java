@@ -96,7 +96,7 @@ class DefaultCorpusModelTest implements CorpusModelTest<DefaultCorpusModel> {
 		CorpusManifest corpusManifest = createDefaultCorpusManifest();
 		CorpusManager corpusManager = createDefaultCorpusManager(corpusManifest);
 
-		Corpus corpus = DefaultCorpus.newBuilder()
+		Corpus corpus = DefaultCorpus.builder()
 				.manager(corpusManager)
 				.metadataRegistry(new VirtualMetadataRegistry())
 				.manifest(corpusManifest)

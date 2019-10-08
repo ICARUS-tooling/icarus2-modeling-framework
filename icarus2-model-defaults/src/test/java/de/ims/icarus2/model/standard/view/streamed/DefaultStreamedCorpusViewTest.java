@@ -86,7 +86,7 @@ class DefaultStreamedCorpusViewTest implements StreamedCorpusViewTest<DefaultStr
 	 */
 	@Override
 	public Corpus createEnvironment() {
-		return DefaultCorpus.newBuilder()
+		return DefaultCorpus.builder()
 				.manifest(corpusManifest)
 				.metadataRegistry(new VirtualMetadataRegistry())
 				.manager(corpusManager)

@@ -144,7 +144,7 @@ public class DefaultCorpus implements Corpus {
 
 	private static final Logger log = LoggerFactory.getLogger(DefaultCorpus.class);
 
-	public static Builder newBuilder() {
+	public static Builder builder() {
 		return new Builder();
 	}
 
@@ -221,7 +221,7 @@ public class DefaultCorpus implements Corpus {
 		manifest.getRegistry().addListener(manifestTracker, Events.ADDED);
 
 		if(manifest.isEditable()) {
-			generationControl = DefaultGenerationControl.newBuilder()
+			generationControl = DefaultGenerationControl.builder()
 					//FIXME properly setup the builder
 					.build();
 		} else {

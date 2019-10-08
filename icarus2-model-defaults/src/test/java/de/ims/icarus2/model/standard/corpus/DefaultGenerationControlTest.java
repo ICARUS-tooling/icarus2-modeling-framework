@@ -66,7 +66,7 @@ public class DefaultGenerationControlTest {
 
 		Stack<String> storage = new ObjectArrayList<>();
 
-		instance = DefaultGenerationControl.newBuilder()
+		instance = DefaultGenerationControl.builder()
 				.corpus(corpus)
 				.uuidGenerator(generator::generate)
 				.storage(storage)

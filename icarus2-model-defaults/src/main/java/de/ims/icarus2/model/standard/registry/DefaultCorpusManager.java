@@ -455,7 +455,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	 */
 	protected Corpus instantiate(CorpusManifest manifest) throws InterruptedException {
 
-		return DefaultCorpus.newBuilder()
+		return DefaultCorpus.builder()
 			.manager(this)
 			.manifest(manifest)
 			.metadataRegistry(new SubRegistry(metadataRegistry, ManifestUtils.requireId(manifest)))
