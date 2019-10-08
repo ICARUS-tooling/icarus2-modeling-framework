@@ -62,7 +62,7 @@ import de.ims.icarus2.util.strings.NamedObject;
 @Assessable
 public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements PageControl {
 
-	public static Builder newBuilder() {
+	public static Builder builder() {
 		return new Builder();
 	}
 

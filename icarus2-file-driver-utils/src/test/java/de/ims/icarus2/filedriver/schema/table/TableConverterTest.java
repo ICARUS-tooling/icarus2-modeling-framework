@@ -50,7 +50,7 @@ public class TableConverterTest {
 	@ResourceTest
 	public void test1TierSchema() throws Exception {
 
-		CorpusManager corpusManager = DefaultCorpusManager.newBuilder()
+		CorpusManager corpusManager = DefaultCorpusManager.builder()
 			.defaultEnvironment()
 			.build();
 

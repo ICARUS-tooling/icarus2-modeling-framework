@@ -82,7 +82,7 @@ import de.ims.icarus2.util.io.resource.ResourceProvider;
 @TestableImplementation(CorpusManager.class)
 public class DefaultCorpusManager implements CorpusManager {
 
-	public static Builder newBuilder() {
+	public static Builder builder() {
 		return new Builder();
 	}
 

@@ -148,7 +148,7 @@ class DefaultPagedCorpusViewTest implements PagedCorpusViewTest<DefaultPagedCorp
 			}
 		}
 
-		return DefaultPagedCorpusView.newBuilder()
+		return DefaultPagedCorpusView.builder()
 				.accessMode(accessMode)
 				.scope(scope)
 				.itemLayerManager(itemLayerManager)

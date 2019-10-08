@@ -36,7 +36,7 @@ import de.ims.icarus2.util.lang.Lazy;
 @TestableImplementation(PagedCorpusView.class)
 public class DefaultPagedCorpusView extends AbstractCorpusView implements PagedCorpusView {
 
-	public static Builder newBuilder() {
+	public static Builder builder() {
 		return new Builder();
 	}
 
@@ -71,7 +71,7 @@ public class DefaultPagedCorpusView extends AbstractCorpusView implements PagedC
 	}
 
 	protected PageControl createPageControl() {
-		PageControl pageControl = DefaultPageControl.newBuilder()
+		PageControl pageControl = DefaultPageControl.builder()
 			.indices(indices)
 			.itemLayerManager(itemLayerManager)
 			.pageSize(pageSize)
@@ -83,7 +83,7 @@ public class DefaultPagedCorpusView extends AbstractCorpusView implements PagedC
 	}
 
 	protected CorpusModel createModel() {
-		CorpusModel model = DefaultCorpusModel.newBuilder()
+		CorpusModel model = DefaultCorpusModel.builder()
 			.accessMode(accessMode)
 			.itemLayerManager(itemLayerManager)
 			.build();

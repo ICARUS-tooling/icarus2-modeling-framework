@@ -68,7 +68,7 @@ import de.ims.icarus2.util.strings.ToStringBuilder;
  */
 public class StructureBuilder {
 
-	public static StructureBuilder newBuilder(StructureManifest manifest) {
+	public static StructureBuilder builder(StructureManifest manifest) {
 		requireNonNull(manifest);
 
 		StructureBuilder builder = new StructureBuilder(manifest);

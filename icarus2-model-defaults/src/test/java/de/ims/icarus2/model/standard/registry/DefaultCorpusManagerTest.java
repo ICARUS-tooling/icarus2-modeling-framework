@@ -51,7 +51,7 @@ class DefaultCorpusManagerTest implements CorpusManagerTest<DefaultCorpusManager
 	 */
 	@Override
 	public DefaultCorpusManager createTestInstance(TestSettings settings) {
-		return settings.process(DefaultCorpusManager.newBuilder()
+		return settings.process(DefaultCorpusManager.builder()
 				.fileManager(new DefaultFileManager(Paths.get(".")))
 				.resourceProvider(new VirtualResourceProvider())
 				.manifestRegistry(new DefaultManifestRegistry())
@@ -64,7 +64,7 @@ class DefaultCorpusManagerTest implements CorpusManagerTest<DefaultCorpusManager
 	 */
 	@Override
 	public DefaultCorpusManager createCustomManager(BiFunction<CorpusManager, CorpusManifest, Corpus> corpusProducer, TestSettings settings) {
-		return settings.process(DefaultCorpusManager.newBuilder()
+		return settings.process(DefaultCorpusManager.builder()
 				.fileManager(new DefaultFileManager(Paths.get(".")))
 				.resourceProvider(new VirtualResourceProvider())
 				.manifestRegistry(new DefaultManifestRegistry())

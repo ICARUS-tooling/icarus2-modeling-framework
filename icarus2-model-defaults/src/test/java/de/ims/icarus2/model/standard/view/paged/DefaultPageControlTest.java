@@ -77,7 +77,7 @@ class DefaultPageControlTest implements PageControlTest<DefaultPageControl> {
 			itemLayerManager.addItem(layer, mockItem());
 		}
 
-		DefaultPageControl control = DefaultPageControl.newBuilder()
+		DefaultPageControl control = DefaultPageControl.builder()
 				.pageSize(pageSize)
 				.indices(indices)
 				.itemLayerManager(itemLayerManager)
@@ -93,7 +93,7 @@ class DefaultPageControlTest implements PageControlTest<DefaultPageControl> {
 	 */
 	@Override
 	public DefaultPageControl createUnadded() {
-		return DefaultPageControl.newBuilder()
+		return DefaultPageControl.builder()
 				.pageSize(DEFAULT_PAGE_SIZE)
 				.indices(DEFAULT_INDICES)
 				.itemLayerManager(mock(ItemLayerManager.class))

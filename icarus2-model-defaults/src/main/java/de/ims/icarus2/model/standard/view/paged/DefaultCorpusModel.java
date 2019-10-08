@@ -93,7 +93,7 @@ import de.ims.icarus2.util.mem.ReferenceType;
 @Assessable
 public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements CorpusModel {
 
-	public static Builder newBuilder() {
+	public static Builder builder() {
 		return new Builder();
 	}
 

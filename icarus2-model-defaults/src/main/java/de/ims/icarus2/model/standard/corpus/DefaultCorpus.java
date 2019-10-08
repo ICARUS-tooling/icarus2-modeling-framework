@@ -281,7 +281,7 @@ public class DefaultCorpus implements Corpus {
 				throw new ModelException(this, ModelErrorCode.VIEW_ALREADY_OPENED,
 						"Cannot open another view in mode: "+mode);
 
-			PagedCorpusView view = DefaultPagedCorpusView.newBuilder()
+			PagedCorpusView view = DefaultPagedCorpusView.builder()
 				.accessMode(mode)
 				.scope(scope)
 				.indices(indices)

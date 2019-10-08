@@ -105,7 +105,7 @@ public class DependencyStructureResolver implements BatchResolver {
 
 		ItemLayer sentenceLayer = dependencyLayer.getBoundaryLayer();
 
-		structureBuilder = StructureBuilder.newBuilder(
+		structureBuilder = StructureBuilder.builder(
 				dependencyLayer.getManifest().getRootStructureManifest().orElseThrow(
 						ManifestException.error("No root structure manifest available")));
 

@@ -128,7 +128,7 @@ class DefaultCorpusModelTest implements CorpusModelTest<DefaultCorpusModel> {
 		};
 		when(corpusManager.newFactory()).thenReturn(corpusMemberFactory);
 
-		return DefaultPagedCorpusView.newBuilder()
+		return DefaultPagedCorpusView.builder()
 				.accessMode(accessMode)
 				.indices(indices)
 				.itemLayerManager(itemLayerManager)
@@ -141,7 +141,7 @@ class DefaultCorpusModelTest implements CorpusModelTest<DefaultCorpusModel> {
 	public DefaultCorpusModel createModel(PagedCorpusView view,
 			ItemLayerManager itemLayerManager, Consumer<AtomicChange> changeHandler) {
 
-		DefaultCorpusModel model = DefaultCorpusModel.newBuilder()
+		DefaultCorpusModel model = DefaultCorpusModel.builder()
 				.accessMode(view.getAccessMode())
 				.itemLayerManager(itemLayerManager)
 				.changeHandler(changeHandler)
@@ -158,7 +158,7 @@ class DefaultCorpusModelTest implements CorpusModelTest<DefaultCorpusModel> {
 	@Override
 	public DefaultCorpusModel createUnadded() {
 
-		return DefaultCorpusModel.newBuilder()
+		return DefaultCorpusModel.builder()
 				.accessMode(AccessMode.READ_WRITE)
 				.itemLayerManager(mock(ItemLayerManager.class))
 				.build();
