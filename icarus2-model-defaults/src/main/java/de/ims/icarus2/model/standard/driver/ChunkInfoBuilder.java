@@ -36,11 +36,11 @@ public class ChunkInfoBuilder {
 		return new ChunkInfoBuilder(new EmptyChunkInfo());
 	}
 
-	public static ChunkInfoBuilder newBuilder() {
-		return newBuilder(DEFAULT_CAPACITY);
+	public static ChunkInfoBuilder builder() {
+		return builder(DEFAULT_CAPACITY);
 	}
 
-	public static ChunkInfoBuilder newBuilder(int capacity) {
+	public static ChunkInfoBuilder builder(int capacity) {
 		return new ChunkInfoBuilder(new BufferedChunkStorage(capacity));
 	}
 

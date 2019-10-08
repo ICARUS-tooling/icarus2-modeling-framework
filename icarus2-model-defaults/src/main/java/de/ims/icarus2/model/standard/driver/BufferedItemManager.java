@@ -51,7 +51,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
  */
 public class BufferedItemManager {
 
-	public static Builder newBuilder() {
+	public static Builder builder() {
 		return new Builder();
 	}
 

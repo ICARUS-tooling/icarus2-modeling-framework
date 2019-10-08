@@ -215,7 +215,7 @@ public class VirtualItemLayerManager implements ItemLayerManager {
 
 		long count = 0;
 		RootContainer rootContainer = getRootContainer(layer);
-		ChunkInfoBuilder infoBuilder = ChunkInfoBuilder.newBuilder(Math.min(200, (int)count)); // Somehow arbitrary capacity number
+		ChunkInfoBuilder infoBuilder = ChunkInfoBuilder.builder(Math.min(200, (int)count)); // Somehow arbitrary capacity number
 
 		final long size = rootContainer.getItemCount();
 		for(IndexSet set : indices) {

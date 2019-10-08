@@ -449,7 +449,7 @@ public class FileDriver extends AbstractDriver {
 	}
 
 	protected BufferedItemManager createBufferedItemManager() {
-		BufferedItemManager.Builder builder = BufferedItemManager.newBuilder();
+		BufferedItemManager.Builder builder = BufferedItemManager.builder();
 
 		for(LayerManifest<?> layerManifest : getContext().getManifest().getLayerManifests(ManifestUtils::isItemLayerManifest)) {
 			ItemLayerManifestBase<?> itemLayerManifest = (ItemLayerManifestBase<?>) layerManifest;
@@ -1578,7 +1578,7 @@ public class FileDriver extends AbstractDriver {
 			if(bufferSize<=0) {
 				bufferSize = DEFAULT_CHUNK_INFO_SIZE;
 			}
-			ChunkInfoBuilder buffer = ChunkInfoBuilder.newBuilder(100);
+			ChunkInfoBuilder buffer = ChunkInfoBuilder.builder(100);
 			consumer = new BufferedChunkInfoPublisher(buffer, action);
 		}
 
