@@ -2106,7 +2106,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 			ItemLayer layer = blockHandler.getItemLayer();
 
-			ComponentSupplier.Builder builder = ComponentSupplier.newBuilder();
+			ComponentSupplier.Builder builder = ComponentSupplier.builder();
 			builder.componentLayer(layer);
 			builder.componentType(blockHandler.getSchema().getComponentSchema().getMemberType());
 			builder.memberFactory(memberFactory);

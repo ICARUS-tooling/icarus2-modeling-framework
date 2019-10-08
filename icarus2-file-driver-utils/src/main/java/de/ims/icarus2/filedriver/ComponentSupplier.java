@@ -53,7 +53,7 @@ import de.ims.icarus2.util.annotations.OptionalMethod;
  */
 public interface ComponentSupplier extends AutoCloseable {
 
-	public static Builder newBuilder() {
+	public static Builder builder() {
 		return new Builder();
 	}
 
