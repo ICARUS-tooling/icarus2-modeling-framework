@@ -55,7 +55,7 @@ import de.ims.icarus2.util.IcarusUtils;
  */
 public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 
-	public static Builder newBuilder() {
+	public static Builder builder() {
 		return new Builder();
 	}
 
