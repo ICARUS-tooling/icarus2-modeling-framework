@@ -88,7 +88,10 @@ public interface ManifestFactory {
 	 * Instantiate a manifest object for the specified {@code type}. If the {@code host} argument is
 	 * not {@code null}, it will be used as environment for the manifest.
 	 * <p>
-	 * Note that the {@code options} parameter is currently unused.
+	 * Note that the {@code options} parameter is an important carrier for obligatory secondary
+	 * constructor arguments, such as the {@link ValueType} for certain storage classes. In those
+	 * cases the {@link #OPTION_VALUE_TYPE} key should be used to store the desired value type in
+	 * the supplied {@link Options} object.
 	 *
 	 * @param type
 	 * @param host

@@ -166,6 +166,7 @@ public interface AnnotationManifest extends MemberManifest<AnnotationManifest>, 
 	 * predefined and limited set or range.
 	 * @see #getValueRange()
 	 * @see #getValueSet()
+	 * @see #DEFAULT_ALLOW_UNKNOWN_VALUES
 	 */
 	@AccessRestriction(AccessMode.READ)
 	boolean isAllowUnknownValues();
