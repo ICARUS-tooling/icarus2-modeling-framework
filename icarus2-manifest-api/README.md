@@ -53,7 +53,7 @@ group.addLayerManifest(sentenceLayer);
 group.addLayerManifest(annoLayer);
 ```
 
-Above code will create 3 layers representing tokens, sentences and surface form annotations and group them into a context. For a proper specification a lot of additional information is needed, such as value types for annotations or tagsets, etc. Since this can be quite cumbersome via code, and since corpus resources typically change much wrt their structure, the preferred way of obtaining manifests for a resource is to read its accompanying manifest file as explained in the next section.
+Above code will create 3 layers representing tokens, sentences and surface form annotations and group them into a context. For a proper specification a lot of additional information is needed, such as value types for annotations or tagsets, etc. Since this can be quite cumbersome via code, and since corpus resources typically change much wrt their structure, the preferred way of obtaining manifests for a resource is to read its accompanying manifest file as explained in the next section. [example source code](../icarus2-examples/src/main/java/de/ims/icarus2/examples/CreateManifestsWithFactory.java)
 
 The same result can be achieved by using the `de.ims.icarus2.model.manifest.util.ManifestBuilder` and chaining all the construction calls to generate a more compact code block:
 
@@ -83,11 +83,11 @@ try(ManifestBuilder builder = new ManifestBuilder(factory)) {
 }
 ```
 
-The `ManifestBuilder` utility makes it easier to directly link manifest at their time of creation. It also allows for easy lookups of any manifest that has been created by it with an id.
+The `ManifestBuilder` utility makes it easier to directly link manifest at their time of creation. It also allows for easy lookups of any manifest that has been created by it with an id. [example source code](../icarus2-examples/src/main/java/de/ims/icarus2/examples/CreateManifestsWithBuilder.java)
 
 ## Reading Manifests
 
-The framework ships with a default (de)serialization facility for XML. The XML representation follows [this](https://github.com/ICARUS-tooling/icarus2-modeling-framework/blob/dev/icarus2-manifest-api/src/main/resources/de/ims/icarus2/model/manifest/xml/corpus.xsd) schema.
+The framework ships with a default (de)serialization facility for XML. The XML representation follows [this](src/main/resources/de/ims/icarus2/model/manifest/xml/corpus.xsd) schema.
 
 Reading in manifests starts again with a registry where the final manifest instances are to be stored. An instance of `ManifestXmlReader` is then used together with an arbitrary number of `ManifestLocations` definitions to do the actual parsing and registration:
 
@@ -110,6 +110,8 @@ manifestXmlReader.readAndRegisterAll();
 // Process manifest(s)
 System.out.println(registry.getTemplates());
 ```
+
+Example source code is also available in the examples project [here](../icarus2-examples/src/main/java/de/ims/icarus2/examples/ReadManifests.java).
 
 Assuming the file at path `myCorpus.imf.xml` contains the following XML data, we will get a `ContextManifest` very similar to the one created manually above (the XML data contains some additional information which was omitted previously to shorten the code snippet).
 
@@ -153,14 +155,93 @@ Inheritance is supported on a vast number of attributes in the manifest framewor
 
 ## Processing Manifests
 
-Once a manifest is constructed either programmatically or by parsing a manifest XML file, it can be processed further. Imagine for example an annotation tool that wishes to improve its usability by providing specialized UI components to the user depending on the annotation constraints of the current resource. Examining an `AnnotationLayerManifest` allows client code to decide on required UI functionality without having to consult additional information or hard-code the settings into the application.
+Once a manifest is constructed either programmatically or by parsing a manifest XML file, it can be processed further. Imagine for example an annotation tool that wishes to improve its usability by providing specialized UI components to the user depending on the annotation constraints of the current resource. Examining an `AnnotationLayerManifest` allows client code to decide on required UI functionality without having to consult additional information or hard-code the settings into the application. Assuming a given `ManifestBuilder` and a list to store finished annotation manifests in, the following code generates common types of annotation definitions (categorial, bounded numerical, free text):
 
 ```java
+annotationManifests.add(builder.create(AnnotationManifest.class, "anno1",
+			Options.of(ManifestFactory.OPTION_VALUE_TYPE, ValueType.STRING))
+		.setKey("stringValues")
+		.setName("Fixed Annotation")
+		.setValueType(ValueType.STRING)
+		.setValueSet(builder.create(ValueSet.class)
+				.addValue(builder.create(ValueManifest.class)
+						.setValue("xyz")
+						.setName("value1")
+						.setDescription("a specific value"))
+				.addValue(builder.create(ValueManifest.class)
+						.setValue("foo")
+						.setName("value2")
+						.setDescription("another cool value"))
+				.addValue(builder.create(ValueManifest.class)
+						.setValue("bar")
+						.setName("value3")
+						.setDescription("the most awesome value of them all ^^")))
+		.setAllowUnknownValues(true));
 
+annotationManifests.add(builder.create(AnnotationManifest.class, "anno2",
+			Options.of(ManifestFactory.OPTION_VALUE_TYPE, ValueType.INTEGER))
+		.setKey("intValues")
+		.setName("Range Annotation")
+		.setValueRange(builder.create(ValueRange.class,
+					Options.of(ManifestFactory.OPTION_VALUE_TYPE, ValueType.INTEGER))
+				.setLowerBound(Integer.valueOf(10))
+				.setUpperBound(Integer.valueOf(100))
+				.setStepSize(Integer.valueOf(5)))
+		.setNoEntryValue(Integer.valueOf(45))
+		.setAllowUnknownValues(true));
+
+annotationManifests.add(builder.create(AnnotationManifest.class, "anno3",
+			Options.of(ManifestFactory.OPTION_VALUE_TYPE, ValueType.INTEGER))
+		.setKey("freeValues")
+		.setName("Free Annotation")
+		.setNoEntryValue("Nothing set yet...")
+		.setAllowUnknownValues(true));
 ```
 
+We now can define GUI-related methods to produce specialized widgets:
+
 ```java
-default boolean isProxy() {
-	return false;
+private void addChoice(AnnotationManifest manifest, ValueSet valueSet, JComponent container) {
+	JComboBox<Object> comboBox = new JComboBox<>(valueSet.getValues());
+	comboBox.setEditable(manifest.isAllowUnknownValues());
+	manifest.getNoEntryValue().ifPresent(comboBox::setSelectedItem);
+	comboBox.setRenderer(new ValueRenderer());
+	container.add(comboBox);
+}
+
+private void addRange(AnnotationManifest manifest, ValueRange valueRange, JComponent container) {
+	SpinnerNumberModel model = new SpinnerNumberModel();
+	valueRange.<Comparable<?>>getLowerBound().ifPresent(model::setMinimum);
+	valueRange.<Comparable<?>>getUpperBound().ifPresent(model::setMaximum);
+	valueRange.<Number>getStepSize().ifPresent(model::setStepSize);
+	manifest.getNoEntryValue().ifPresent(model::setValue);
+	JSpinner spinner = new JSpinner(model);
+	container.add(spinner);
+}
+
+private void addFreeText(AnnotationManifest manifest, JComponent container) {
+	JTextField textField = new JTextField(20);
+	manifest.getNoEntryValue().ifPresent(noEntryValue -> textField.setText(noEntryValue.toString()));
+	container.add(new JScrollPane(textField));
 }
 ```
+
+And finally use those specialized methods to dynamically generate GUI elements from our list of annotation manifests:
+
+```java
+for(AnnotationManifest annotationManifest : annotationManifests) {
+	JPanel panel = new JPanel();
+	annotationManifest.getValueSet().ifPresent(
+			set -> addChoice(annotationManifest, set, panel));
+	annotationManifest.getValueRange().ifPresent(
+			range -> addRange(annotationManifest, range, panel));
+
+	if(panel.getComponentCount()==0 && annotationManifest.isAllowUnknownValues()) {
+		addFreeText(annotationManifest, panel);
+	}
+
+	contentPanel.add(panel);
+}
+```
+
+For a more complete code example (GUI code tends to be quite verbose) look [here](../icarus2-examples/src/main/java/de/ims/icarus2/examples/ProcessManifestsForGui.java)
