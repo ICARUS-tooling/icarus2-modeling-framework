@@ -1078,7 +1078,7 @@ public class FileDriver extends AbstractDriver {
 		checkState("Failed to obtain block cache for chunk index: "+layerManifest, blockCache!=null);
 
 		// Finally throw all the settings into a builder and let it assemble the actual chunk index instance
-		return DefaultChunkIndex.newBuilder()
+		return DefaultChunkIndex.builder()
 				.resourceSet(getDataFiles())
 				.indexValueType(valueType)
 				.resource(new FileResource(path))

@@ -63,7 +63,7 @@ public class DefaultChunkIndex implements ChunkIndex {
 	private final int blockMask;
 	private final BufferedIOResource resource;
 
-	public static Builder newBuilder() {
+	public static Builder builder() {
 		return new Builder();
 	}
 
