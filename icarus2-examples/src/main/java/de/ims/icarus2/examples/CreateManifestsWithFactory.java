@@ -42,7 +42,7 @@ public class CreateManifestsWithFactory {
 	public static void main(String[] args) {
 		// Set up the factory
 		ManifestRegistry registry = new DefaultManifestRegistry();
-		ManifestLocation location = ManifestLocation.newBuilder().virtual().build();
+		ManifestLocation location = ManifestLocation.builder().virtual().build();
 		ManifestFactory factory = new DefaultManifestFactory(location, registry);
 
 		// Start creating and assembling manifests

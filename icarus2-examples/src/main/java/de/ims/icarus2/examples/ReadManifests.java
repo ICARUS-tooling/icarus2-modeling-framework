@@ -45,7 +45,7 @@ public class ReadManifests {
 				.registry(registry)
 				// Let the reader select its default settings
 				.useImplementationDefaults()
-				.source(ManifestLocation.newBuilder()
+				.source(ManifestLocation.builder()
 						/*
 						 * Alternatively you could use the file(Path) method on the builder
 						 * to point it to a physical file on the file system.

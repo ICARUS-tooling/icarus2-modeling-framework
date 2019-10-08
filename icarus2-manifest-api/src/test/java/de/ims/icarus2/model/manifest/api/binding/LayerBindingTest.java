@@ -71,7 +71,7 @@ public class LayerBindingTest implements BindableTest<LayerBinding> {
 	 */
 	@Override
 	public LayerBinding createTestInstance(TestSettings settings) {
-		return settings.process(LayerBinding.newBuilder().build());
+		return settings.process(LayerBinding.builder().build());
 	}
 
 	/**
@@ -79,7 +79,7 @@ public class LayerBindingTest implements BindableTest<LayerBinding> {
 	 */
 	@Override
 	public LayerBinding createWithBindingEndpoints(TestSettings settings, Set<LayerPrerequisite> bindingEndpoints) {
-		LayerBinding.Builder builder = LayerBinding.newBuilder(CORPUS_ID);
+		LayerBinding.Builder builder = LayerBinding.builder(CORPUS_ID);
 		for(LayerPrerequisite binding : bindingEndpoints) {
 			builder.addPrerequisite(binding);
 		}
@@ -105,7 +105,7 @@ public class LayerBindingTest implements BindableTest<LayerBinding> {
 	@Test
 	public void testMissingCorpusId() throws Exception {
 		assertThrows(IllegalStateException.class, () -> {
-			LayerBinding.Builder builder = LayerBinding.newBuilder();
+			LayerBinding.Builder builder = LayerBinding.builder();
 
 			builder.addPointer(ALIAS_1, CONTEX_ID_1, LAYER_ID_1);
 
@@ -115,7 +115,7 @@ public class LayerBindingTest implements BindableTest<LayerBinding> {
 
 	@Test
 	public void testEmptyBuilder() throws Exception {
-		assertNotNull(LayerBinding.newBuilder().build());
+		assertNotNull(LayerBinding.builder().build());
 	}
 
 	@Test
@@ -182,7 +182,7 @@ public class LayerBindingTest implements BindableTest<LayerBinding> {
 	 */
 	@Test
 	public void testSinglePredefinedPrereq() throws Exception {
-		LayerBinding.Builder builder = LayerBinding.newBuilder(CORPUS_ID);
+		LayerBinding.Builder builder = LayerBinding.builder(CORPUS_ID);
 
 		LayerPrerequisite prerequisite = new LayerBinding.LayerPrerequisiteImpl(LAYER_TYPE_ID_1, ALIAS_1, Multiplicity.ONE, null);
 
@@ -202,7 +202,7 @@ public class LayerBindingTest implements BindableTest<LayerBinding> {
 	 */
 	@Test
 	public void testSinglePrereq1() throws Exception {
-		LayerBinding.Builder builder = LayerBinding.newBuilder(CORPUS_ID);
+		LayerBinding.Builder builder = LayerBinding.builder(CORPUS_ID);
 
 		builder.addPrerequisite(ALIAS_1, LAYER_TYPE_ID_1, DESCRIPTION_1);
 
@@ -226,7 +226,7 @@ public class LayerBindingTest implements BindableTest<LayerBinding> {
 	 */
 	@Test
 	public void testSinglePrereq2() throws Exception {
-		LayerBinding.Builder builder = LayerBinding.newBuilder(CORPUS_ID);
+		LayerBinding.Builder builder = LayerBinding.builder(CORPUS_ID);
 
 		Multiplicity multiplicity = Multiplicity.ANY;
 
@@ -252,7 +252,7 @@ public class LayerBindingTest implements BindableTest<LayerBinding> {
 	 */
 	@Test
 	public void testSinglePrereq3() throws Exception {
-		LayerBinding.Builder builder = LayerBinding.newBuilder(CORPUS_ID);
+		LayerBinding.Builder builder = LayerBinding.builder(CORPUS_ID);
 
 		builder.addPrerequisite(ALIAS_1, CONTEX_ID_1, LAYER_ID_1, DESCRIPTION_1);
 
@@ -276,7 +276,7 @@ public class LayerBindingTest implements BindableTest<LayerBinding> {
 	 */
 	@Test
 	public void testSinglePrereq4() throws Exception {
-		LayerBinding.Builder builder = LayerBinding.newBuilder(CORPUS_ID);
+		LayerBinding.Builder builder = LayerBinding.builder(CORPUS_ID);
 
 		Multiplicity multiplicity = Multiplicity.ANY;
 
@@ -302,7 +302,7 @@ public class LayerBindingTest implements BindableTest<LayerBinding> {
 	 */
 	@Test
 	public void testSinglePredefinedPointer() throws Exception {
-		LayerBinding.Builder builder = LayerBinding.newBuilder(CORPUS_ID);
+		LayerBinding.Builder builder = LayerBinding.builder(CORPUS_ID);
 
 		LayerPointer pointer = new LayerBinding.LayerPointerImpl(CONTEX_ID_1, LAYER_ID_1);
 
@@ -326,7 +326,7 @@ public class LayerBindingTest implements BindableTest<LayerBinding> {
 	 */
 	@Test
 	public void testSinglePointer() throws Exception {
-		LayerBinding.Builder builder = LayerBinding.newBuilder(CORPUS_ID);
+		LayerBinding.Builder builder = LayerBinding.builder(CORPUS_ID);
 
 		builder.addPointer(ALIAS_1, CONTEX_ID_1, LAYER_ID_1);
 
@@ -349,7 +349,7 @@ public class LayerBindingTest implements BindableTest<LayerBinding> {
 	 */
 	@Test
 	public void testBatchPointers() throws Exception {
-		LayerBinding.Builder builder = LayerBinding.newBuilder(CORPUS_ID);
+		LayerBinding.Builder builder = LayerBinding.builder(CORPUS_ID);
 
 		Collection<LayerPointer> pointers = new ArrayList<LayerPointer>();
 		pointers.add(new LayerBinding.LayerPointerImpl(CONTEX_ID_1, LAYER_ID_1));

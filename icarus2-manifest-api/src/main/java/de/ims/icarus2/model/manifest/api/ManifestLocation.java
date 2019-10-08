@@ -303,7 +303,7 @@ public abstract class ManifestLocation {
 
 	}
 
-	public static Builder newBuilder() {
+	public static Builder builder() {
 		return new Builder();
 	}
 

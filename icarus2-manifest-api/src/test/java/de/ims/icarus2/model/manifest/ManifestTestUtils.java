@@ -76,7 +76,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 public class ManifestTestUtils {
 
 	public static final ManifestFactory MANIFEST_FACTORY = new DefaultManifestFactory(
-			ManifestLocation.newBuilder()
+			ManifestLocation.builder()
 				.readOnly()
 				.virtual()
 				.build(),

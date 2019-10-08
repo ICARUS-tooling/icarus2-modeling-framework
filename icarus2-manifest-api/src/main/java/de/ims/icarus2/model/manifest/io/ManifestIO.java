@@ -84,7 +84,7 @@ public class ManifestIO {
 	}
 
 	public static <M extends Manifest> M loadTemplate(URL url) throws SAXException, IOException {
-		return loadSingle0(ManifestLocation.newBuilder()
+		return loadSingle0(ManifestLocation.builder()
 				.url(url)
 				.template()
 				.build(),
@@ -92,7 +92,7 @@ public class ManifestIO {
 	}
 
 	public static <M extends Manifest> M loadTemplate(Path file) throws SAXException, IOException {
-		return loadSingle0(ManifestLocation.newBuilder()
+		return loadSingle0(ManifestLocation.builder()
 				.file(file)
 				.template()
 				.build(),

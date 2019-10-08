@@ -70,7 +70,7 @@ public class ProcessManifestsForGui {
 
 		// Set up the factory
 		ManifestRegistry registry = new DefaultManifestRegistry();
-		ManifestLocation location = ManifestLocation.newBuilder().virtual().build();
+		ManifestLocation location = ManifestLocation.builder().virtual().build();
 		ManifestFactory factory = new DefaultManifestFactory(location, registry);
 
 		List<AnnotationManifest> annotationManifests = new ArrayList<>();

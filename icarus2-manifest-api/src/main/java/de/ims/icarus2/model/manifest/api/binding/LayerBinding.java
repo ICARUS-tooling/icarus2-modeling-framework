@@ -91,11 +91,11 @@ public final class LayerBinding implements Bindable, Serializable {
 
 	// Global access to builders
 
-	public static Builder newBuilder() {
+	public static Builder builder() {
 		return new Builder();
 	}
 
-	public static Builder newBuilder(String corpusId) {
+	public static Builder builder(String corpusId) {
 		return new Builder().corpusId(corpusId);
 	}
 
