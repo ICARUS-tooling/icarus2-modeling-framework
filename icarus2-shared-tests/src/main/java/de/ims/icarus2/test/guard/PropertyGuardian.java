@@ -139,7 +139,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 		detectUnmarkedMethods = apiGuard.isDetectUnmarkedMethods();
 		creator = apiGuard.instanceCreator();
 
-		classCache = ClassCache.<T>newBuilder()
+		classCache = ClassCache.<T>builder()
 				.targetClass(targetClass)
 				.methodFilter(createPropertyMethodFilter(apiGuard.isStrictNameFilter()))
 //				.log(System.out::println)

@@ -240,7 +240,7 @@ public class ClassCache<T> {
 		}
 	}
 
-	public static <T> Builder<T> newBuilder() {
+	public static <T> Builder<T> builder() {
 		return new Builder<>();
 	}
 

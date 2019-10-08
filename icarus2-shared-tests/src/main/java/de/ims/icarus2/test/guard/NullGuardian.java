@@ -93,7 +93,7 @@ public class NullGuardian<T> extends Guardian<T> {
 		targetClass = apiGuard.getTargetClass();
 		creator = apiGuard.instanceCreator();
 
-		classCache = ClassCache.<T>newBuilder()
+		classCache = ClassCache.<T>builder()
 				.targetClass(targetClass)
 				.methodFilter(METHOD_FILTER)
 //				.log(System.out::println)
