@@ -36,12 +36,16 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestFactory;
@@ -73,9 +77,16 @@ public class ProcessManifestsForGui {
 
 		// Create example manifest
 		try(ManifestBuilder builder = new ManifestBuilder(factory)) {
+
+			/*
+			 * Example of a classic category annotation with a fixed set of
+			 * available values to choose from. In addition we allow "unseen"
+			 * (i.e. new) values.
+			 */
 			annotationManifests.add(builder.create(AnnotationManifest.class, "anno1",
 						Options.of(ManifestFactory.OPTION_VALUE_TYPE, ValueType.STRING))
 					.setKey("stringValues")
+					.setName("Fixed Annotation")
 					.setValueType(ValueType.STRING)
 					.setValueSet(builder.create(ValueSet.class)
 							.addValue(builder.create(ValueManifest.class)
@@ -91,14 +102,32 @@ public class ProcessManifestsForGui {
 									.setName("value3")
 									.setDescription("the most awesome value of them all ^^")))
 					.setAllowUnknownValues(true));
+
+			/*
+			 * Numeric annotation that follows a bounded-range model to
+			 * limit the value space.
+			 */
 			annotationManifests.add(builder.create(AnnotationManifest.class, "anno2",
 						Options.of(ManifestFactory.OPTION_VALUE_TYPE, ValueType.INTEGER))
 					.setKey("intValues")
+					.setName("Range Annotation")
 					.setValueRange(builder.create(ValueRange.class,
 								Options.of(ManifestFactory.OPTION_VALUE_TYPE, ValueType.INTEGER))
 							.setLowerBound(Integer.valueOf(10))
 							.setUpperBound(Integer.valueOf(100))
 							.setStepSize(Integer.valueOf(5)))
+					.setNoEntryValue(Integer.valueOf(45))
+					.setAllowUnknownValues(true));
+
+			/*
+			 * A completely unbounded textual annotation, allowing arbitrary
+			 * text.
+			 */
+			annotationManifests.add(builder.create(AnnotationManifest.class, "anno3",
+						Options.of(ManifestFactory.OPTION_VALUE_TYPE, ValueType.INTEGER))
+					.setKey("freeValues")
+					.setName("Free Annotation")
+					.setNoEntryValue("Nothing set yet...")
 					.setAllowUnknownValues(true));
 		}
 
@@ -118,7 +147,8 @@ public class ProcessManifestsForGui {
 		frame.setVisible(true);
 	}
 
-	static class AnnotationValuePicker extends JPanel implements ActionListener, ChangeListener {
+	static class AnnotationValuePicker extends JPanel implements ActionListener,
+			ChangeListener, DocumentListener {
 		private static final long serialVersionUID = -8569680717430416493L;
 
 		private final JTextArea textArea;
@@ -146,7 +176,7 @@ public class ProcessManifestsForGui {
 				annotationManifest.getValueRange().ifPresent(
 						range -> addRange(annotationManifest, range, panel));
 
-				if(panel.getComponentCount()==0) {
+				if(panel.getComponentCount()==0 && annotationManifest.isAllowUnknownValues()) {
 					addFreeText(annotationManifest, panel);
 				}
 
@@ -176,9 +206,9 @@ public class ProcessManifestsForGui {
 			valueRange.<Comparable<?>>getLowerBound().ifPresent(model::setMinimum);
 			valueRange.<Comparable<?>>getUpperBound().ifPresent(model::setMaximum);
 			valueRange.<Number>getStepSize().ifPresent(model::setStepSize);
+			manifest.getNoEntryValue().ifPresent(model::setValue);
 
 			JSpinner spinner = new JSpinner(model);
-			manifest.getNoEntryValue().ifPresent(spinner::setValue);
 			spinner.addChangeListener(this);
 			spinner.putClientProperty(MANIFEST_KEY, manifest);
 
@@ -186,7 +216,12 @@ public class ProcessManifestsForGui {
 		}
 
 		private void addFreeText(AnnotationManifest manifest, JComponent container) {
-			//TODO
+			JTextField textField = new JTextField(20);
+			manifest.getNoEntryValue().ifPresent(noEntryValue -> textField.setText(noEntryValue.toString()));
+			textField.getDocument().addDocumentListener(this);
+			textField.putClientProperty(MANIFEST_KEY, manifest);
+
+			container.add(new JScrollPane(textField));
 		}
 
 		private void displayValue(JComponent source, Object value) {
@@ -197,22 +232,32 @@ public class ProcessManifestsForGui {
 			textArea.append(text);
 		}
 
-		/**
-		 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-		 */
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			JComboBox<?> source = (JComboBox<?>) e.getSource();
 			displayValue(source, source.getSelectedItem());
 		}
 
-		/**
-		 * @see javax.swing.event.ChangeListener#stateChanged(javax.swing.event.ChangeEvent)
-		 */
 		@Override
 		public void stateChanged(ChangeEvent e) {
 			JSpinner source = (JSpinner) e.getSource();
 			displayValue(source, source.getValue());
+		}
+
+		@Override
+		public void changedUpdate(DocumentEvent e) {
+			textArea.append("Free text changed\n");
+		}
+
+		@Override
+		public void insertUpdate(DocumentEvent e) {
+			changedUpdate(e);
+		}
+
+		@Override
+		public void removeUpdate(DocumentEvent e) {
+			changedUpdate(e);
+
 		}
 	}
 
