@@ -1,6 +1,6 @@
 # ICARUS2 Corpus Modeling Framework
 
-[![Build Status](https://github.com/icarus-tooling/icarus2-modeling-framework/workflows/build/badge.svg)](https://github.com/ICARUS-tooling/icarus2-modeling-framework/actions)
+[![Build Status](https://github.com/icarus-tooling/icarus2-modeling-framework/workflows/build/badge.svg)](https://github.com/ICARUS-tooling/icarus2-modeling-framework/actions?workflow=build)
 [![codecov](https://codecov.io/gh/icarus-tooling/icarus2-modeling-framework/branch/dev/graph/badge.svg)](https://codecov.io/gh/icarus-tooling/icarus2-modeling-framework)
 [![License](https://img.shields.io/badge/License-Apache%202.0-yellowgreen.svg)](https://github.com/icarus-tooling/icarus2-modeling-framework/blob/master/LICENSE)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/ICARUS-tooling/icarus2-modeling-framework/issues)
