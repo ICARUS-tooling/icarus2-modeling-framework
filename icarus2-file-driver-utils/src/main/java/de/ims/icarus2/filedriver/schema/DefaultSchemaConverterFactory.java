@@ -35,12 +35,14 @@ import de.ims.icarus2.filedriver.FileDriverUtils;
 import de.ims.icarus2.filedriver.schema.tabular.TableConverter;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema;
 import de.ims.icarus2.filedriver.schema.tabular.xml.TableSchemaXmlReader;
+import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
+import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.io.IOUtil;
 
 /**
@@ -59,7 +61,10 @@ public class DefaultSchemaConverterFactory implements Factory {
 	public <T> T create(Class<T> resultClass, ImplementationManifest manifest, ImplementationLoader<?> environment)
 			throws ClassNotFoundException, IllegalAccessException, InstantiationException, ClassCastException {
 
-		//TODO check that we can actually cast Converter to the given resultClass before instantiating stuff?
+		if(!Converter.class.isAssignableFrom(resultClass))
+			throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH, Messages.mismatch(
+					"Requested result class is not compatible with "+Converter.class.getName(),
+					Converter.class, resultClass));
 
 		String schemaType = ManifestUtils.require(
 				manifest, m -> m.getPropertyValue(FileDriverUtils.PROPERTY_SCHEMA_ID), FileDriverUtils.PROPERTY_SCHEMA_ID);
@@ -71,7 +76,7 @@ public class DefaultSchemaConverterFactory implements Factory {
 				converter = buildTableConverter(manifest);
 				break;
 
-			//TODO
+			//TODO handle other schema types here, once they exist
 
 			default:
 				throw new ModelException(ManifestErrorCode.IMPLEMENTATION_ERROR, "Unknown schema type declared: "+schemaType);
@@ -97,12 +102,12 @@ public class DefaultSchemaConverterFactory implements Factory {
 		}
 
 		// Direct inline declaration
-		String schema = manifest.<String>getPropertyValue(FileDriverUtils.PROPERTY_SCHEMA).orElse(null);
+		String schema = manifest.<String>getPropertyValue(FileDriverUtils.PROPERTY_SCHEMA_CONTENT).orElse(null);
 		if(schema!=null) {
 			return new StringReader(schema);
 		}
 
-		// Resource avialable from manifest location
+		// Resource available from manifest location
 		String resource = manifest.<String>getPropertyValue(FileDriverUtils.PROPERTY_SCHEMA_RESOURCE).orElse(null);
 		if(resource!=null) {
 			ClassLoader classLoader = manifest.getManifestLocation().getClassLoader();

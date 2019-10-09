@@ -24,6 +24,12 @@ import de.ims.icarus2.filedriver.Converter;
  */
 public interface SchemaBasedConverter extends Converter {
 
-
+	/**
+	 * Returns the schema this converter is based on. Usually this schema will not
+	 * change over the lifetime of a converter, so this method should return a constant
+	 * value.
+	 *
+	 * @return
+	 */
 	Schema getSchema();
 }

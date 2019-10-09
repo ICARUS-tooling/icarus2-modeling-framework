@@ -75,7 +75,7 @@ public class FileDriverUtils {
 	 * Needs {@link #PROPERTY_SCHEMA_TYPE} to be able to decide how to
 	 * read the schema text.
 	 */
-	public static final String PROPERTY_SCHEMA = SCHEMA_PROPERTY_PREFIX+".content";
+	public static final String PROPERTY_SCHEMA_CONTENT = SCHEMA_PROPERTY_PREFIX+".content";
 
 	/**
 	 * Type declaration, specifying how to interpret the schema.
