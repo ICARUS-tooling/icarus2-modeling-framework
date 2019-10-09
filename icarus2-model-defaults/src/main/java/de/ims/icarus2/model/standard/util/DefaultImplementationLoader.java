@@ -140,7 +140,7 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 			try {
 				instance = factory.create(resultClass, manifest, this);
 			} catch (Exception e) { // Usually it's bad to catch all exceptions, but we gonna wrap it anyway
-				throw new ModelException(getCorpus(), ManifestErrorCode.IMPLEMENTATION_FACTORY,
+				throw new ModelException(ManifestErrorCode.IMPLEMENTATION_FACTORY,
 						message+"Delegated instatiation via factory failed: "+getName(getEnvironment()), e);
 			}
 		}
