@@ -16,7 +16,6 @@
  */
 package de.ims.icarus2.filedriver.schema;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -32,6 +31,7 @@ import java.util.zip.GZIPInputStream;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.Converter;
+import de.ims.icarus2.filedriver.FileDriverUtils;
 import de.ims.icarus2.filedriver.schema.tabular.TableConverter;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema;
 import de.ims.icarus2.filedriver.schema.tabular.xml.TableSchemaXmlReader;
@@ -44,10 +44,15 @@ import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.io.IOUtil;
 
 /**
+ * Implements a factory that picks or loads a {@link Converter} implementation based
+ * on the properties defined in the the provided {@link ImplementationManifest}.
+ *
  * @author Markus Gärtner
  *
  */
 public class DefaultSchemaConverterFactory implements Factory {
+
+	private static final String SHARED_PROPERTY_PREFIX = FileDriverUtils.SHARED_PROPERTY_PREFIX+".schema";
 
 	/**
 	 * Property containing an inline definition of the schema to be used.
@@ -55,31 +60,36 @@ public class DefaultSchemaConverterFactory implements Factory {
 	 * Needs {@link #PROPERTY_SCHEMA_TYPE} to be able to decide how to
 	 * read the schema text.
 	 */
-	public static final String PROPERTY_SCHEMA = "schema";
+	public static final String PROPERTY_SCHEMA = SHARED_PROPERTY_PREFIX+".content";
 
 	/**
-	 * Type declaration, specifying how to interprete the schema.
+	 * Type declaration, specifying how to interpret the schema.
 	 *
 	 * @see TableSchema#SCHEMA_TYPE_ID
 	 */
-	public static final String PROPERTY_SCHEMA_ID = "schemaTypeId";
+	public static final String PROPERTY_SCHEMA_ID = SHARED_PROPERTY_PREFIX+".typeId";
 
 	/**
 	 * Property denoting one of the available default schemas.
 	 */
-	public static final String PROPERTY_SCHEMA_NAME = "schemaName";
+	public static final String PROPERTY_SCHEMA_NAME = SHARED_PROPERTY_PREFIX+".name";
 
 	/**
 	 * Path to the schema file that should be read
 	 */
-	public static final String PROPERTY_SCHEMA_FILE = "schemaFile";
+	public static final String PROPERTY_SCHEMA_FILE = SHARED_PROPERTY_PREFIX+".file";
+
+	/**
+	 * Path to the schema that should be read, accessibe from the manifest's class loader.
+	 */
+	public static final String PROPERTY_SCHEMA_RESOURCE = SHARED_PROPERTY_PREFIX+".resource";
 
 	/**
 	 * Remote location of the schema definition.
 	 *
 	 *  TODO mention caching?
 	 */
-	public static final String PROPERTY_SCHEMA_URL = "schemaUrl";
+	public static final String PROPERTY_SCHEMA_URL = SHARED_PROPERTY_PREFIX+".url";
 
 	/**
 	 * The character encoding to use for reading the schema.
@@ -88,7 +98,7 @@ public class DefaultSchemaConverterFactory implements Factory {
 	 * <p>
 	 * When missing, the UTF-8 unicode charset will be used.
 	 */
-	public static final String PROPERTY_SCHEMA_ENCODING = "schemaEncoding";
+	public static final String PROPERTY_SCHEMA_ENCODING = SHARED_PROPERTY_PREFIX+".encoding";
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory#create(java.lang.Class, de.ims.icarus2.model.manifest.api.ImplementationManifest, de.ims.icarus2.model.manifest.api.ImplementationLoader)
@@ -100,7 +110,7 @@ public class DefaultSchemaConverterFactory implements Factory {
 		//TODO check that we can actually cast Converter to the given resultClass before instantiating stuff?
 
 		String schemaType = ManifestUtils.require(
-				manifest, m -> m.getPropertyValue(PROPERTY_SCHEMA_ID), "schema type");
+				manifest, m -> m.getPropertyValue(PROPERTY_SCHEMA_ID), PROPERTY_SCHEMA_ID);
 
 		Converter converter = null;
 
@@ -130,8 +140,8 @@ public class DefaultSchemaConverterFactory implements Factory {
 
 		String name = manifest.<String>getPropertyValue(PROPERTY_SCHEMA_NAME).orElse(null);
 		if(name!=null) {
-			//TODO
-			throw new UnsupportedOperationException();
+			//TODO link this with a registry facility to load schemata from
+			throw new UnsupportedOperationException("Resolution of schemate by name not supported yet");
 		}
 
 		// Direct inline declaration
@@ -140,11 +150,20 @@ public class DefaultSchemaConverterFactory implements Factory {
 			return new StringReader(schema);
 		}
 
+		// Resource avialable from manifest location
+		String resource = manifest.<String>getPropertyValue(PROPERTY_SCHEMA_RESOURCE).orElse(null);
+		if(resource!=null) {
+			ClassLoader classLoader = manifest.getManifestLocation().getClassLoader();
+			return new InputStreamReader(classLoader.getResourceAsStream(resource), getCharset(manifest));
+		}
+
+		// Physical file on local file system
 		String path = manifest.<String>getPropertyValue(PROPERTY_SCHEMA_FILE).orElse(null);
 		if(path!=null) {
 			Path file = Paths.get(path);
 
 			InputStream in = Files.newInputStream(file);
+			// Kinda easy to decide whether local file is a zip source
 			if(IOUtil.isGZipSource(path)) {
 				in = new GZIPInputStream(in);
 			}
@@ -154,7 +173,7 @@ public class DefaultSchemaConverterFactory implements Factory {
 
 		String url = manifest.<String>getPropertyValue(PROPERTY_SCHEMA_URL).orElse(null);
 		if(url!=null) {
-			//TODO support compression on this stream as well!
+			//TODO support compression on this stream as well! (<- difficult to decide?)
 			return new InputStreamReader(new URL(url).openStream(), getCharset(manifest));
 		}
 
@@ -162,7 +181,6 @@ public class DefaultSchemaConverterFactory implements Factory {
 				"Cannot determine what schema to load or how to locate it");
 	}
 
-	@SuppressWarnings("resource")
 	private Converter buildTableConverter(ImplementationManifest manifest) {
 
 		Reader reader;
@@ -173,9 +191,7 @@ public class DefaultSchemaConverterFactory implements Factory {
 			throw new ModelException(GlobalErrorCode.IO_ERROR, "Failed to prepare access to schema location", e);
 		}
 
-		if(!(reader instanceof BufferedReader)) {
-			reader = new BufferedReader(reader);
-		}
+		reader = IOUtil.buffer(reader);
 
 		TableSchema schema;
 
@@ -186,11 +202,7 @@ public class DefaultSchemaConverterFactory implements Factory {
 		} catch (IOException | InterruptedException e) {
 			throw new ModelException(GlobalErrorCode.IO_ERROR, "Failed to load table schema", e);
 		} finally {
-			try {
-				reader.close();
-			} catch (IOException e) {
-				// ignore
-			}
+			IOUtil.closeSilently(reader);
 		}
 
 		return new TableConverter(schema);

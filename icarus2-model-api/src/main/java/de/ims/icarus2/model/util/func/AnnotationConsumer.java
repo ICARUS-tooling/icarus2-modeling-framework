@@ -18,9 +18,17 @@ package de.ims.icarus2.model.util.func;
 
 import static de.ims.icarus2.util.lang.Primitives.cast;
 
+import java.util.function.Consumer;
+
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 
 /**
+ * A specialized non-primitive version of the {@link Consumer} interface,
+ * meant to consume entire triples of annotations, consisting of the
+ * annotated {@link Item}, the {@link AnnotationManifest#getKey() annotation key}
+ * and the {@code AnnotationLayer#getValue(Item, String) annotation value} itself.
+ *
  * @author Markus Gärtner
  *
  */

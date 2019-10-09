@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.MalformedURLException;
@@ -217,6 +218,14 @@ public final class IOUtil {
         }
     }
 
+    public static BufferedReader buffer(Reader reader) {
+    	if(reader instanceof BufferedReader) {
+    		return (BufferedReader) reader;
+    	}
+
+    	return new BufferedReader(reader);
+    }
+
     /**
      * @see RandomAccessFile#writeInt(int)
      */
@@ -261,6 +270,11 @@ public final class IOUtil {
         return ((long)(readInt(in)) << 32) + (readInt(in) & 0xFFFFFFFFL);
     }
 
+    /**
+     * {@link AutoCloseable#close() close} the given {@code closeable}, ignoring any
+     * {@link IOException} being thrown.
+     * @param closeable
+     */
     public static void closeSilently(Closeable closeable) {
     	try {
 			closeable.close();
