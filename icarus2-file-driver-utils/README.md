@@ -11,7 +11,7 @@ This part of the ICARUS2 framework provides driver implementations and supportin
 
 ## Usage
 
-To define and fully enable a file-based corpus driver, the associated manifest definition has to contain three elemental parts:
+To define and fully enable a file-based corpus driver, the associated manifest definition has to contain three elemental parts (location, converter and schema):
 
 ### 1. Location
 
@@ -67,7 +67,43 @@ Note that the order in which locations are declared in the manifest **does** mat
 
 ### 1.1 Path Resolvers
 
-Besides declaring the physical location of corpus files through aforementioned mechanisms, it is also possible to specify the desired `de.ims.icarus2.model.api.io.PathResolver` implementation to be used for actually resolving the `location` element to its corresponding files. Per default implementations are used that follow the above protocols for resolving simple corpus structures. For corpora 
+Besides declaring the physical location of corpus files through aforementioned mechanisms, it is also possible to specify the desired `de.ims.icarus2.model.api.io.PathResolver` implementation to be used for actually resolving the `location` element to its corresponding files. Per default implementations are used that follow the above protocols for resolving simple corpus structures. For corpora of a more complex structure, for instance with integrated additional resources or hierarchical file structures, users can implement their own `PathResolver` variations and use them for manifest declarations:
+
+```xml
+<imf:location>
+	<imf:path type="resource">path/to/my/custom/corpus</imf:path>
+	<imf:pathResolver>
+		<imf:implementation classname="my.awsome.CustomPathResolver" />
+	</imf:pathResolver>
+</imf:location>
+```
+
+### 2. Converter
+
+Converters shoulder the ultimate responsibility of transforming between the physical representation of a corpus resource and the in-memory framework members used to model it. Currently the framework supports a `Converter` usable for converting from tabular formats, such as the popular CoNLL formats used for various shared tasks over the years. The converter to be used in a given driver context is defined via a normal `module` section with the `de.ims.icarus2.filedriver.converter` id in the manifest:
+
+```xml			
+<imf:module id="de.ims.icarus2.filedriver.converter">
+	<imf:implementation classname="de.ims.icarus2.filedriver.schema.DefaultSchemaConverterFactory" factory="true">
+	...
+	</imf:implementation>
+</imf:module>
+```
+
+Currently the default approach to defining and customizing a converter is to use the `DefaultSchemaConverterFactory` factory to pick and initialize the desired converter based on a series of properties given inside the `module` section. The following properties are supported in order to select the actual converter implementation and schema instance (note that all but the `typeId` property are mutually exclusive):
+
+|          Property                            |               Description                        |
+|:---------------------------------------------|:-------------------------------------------------| 
+| de.ims.icarus2.filedriver.schema.typeId      | Type definition to indicate how the schema should be interpreted |
+| de.ims.icarus2.filedriver.schema.content     | The inline definition of the schema              |
+| de.ims.icarus2.filedriver.schema.name        | For shared schema definition (usually established formats) this designates the unique identifier of the desired schema |
+| de.ims.icarus2.filedriver.schema.file        | Path to the schema definition within the local file system |
+| de.ims.icarus2.filedriver.schema.resource    | Path to the schema definition as a local resource (typically bundled together with the manifest in a jar archive) |
+| de.ims.icarus2.filedriver.schema.url         | Remote location of the schema definition |
+
+### 3. Schema
+
+### 3.1 Tabular Schema
 
 ```xml
 <imf:corpus>
@@ -79,12 +115,14 @@ Besides declaring the physical location of corpus files through aforementioned m
 		<imf:driver>
 			<imf:implementation classname="de.ims.icarus2.filedriver.DefaultFileDriverFactory" factory="true" />			
 			<imf:module id="converter">
-				...
 			</imf:module>
 		</imf:driver>
 	</imf:rootContext>
 </imf:corpus>
 ```
+
+
+A complete example for a single-file corpus with tabular structure and inline schema definition could look like the following:
 
 ```xml
 <imf:corpus>
