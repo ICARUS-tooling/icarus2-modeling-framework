@@ -207,7 +207,7 @@ public class FileDriver extends AbstractDriver {
 
 		// Fetch the (hopefully) single module manifest describing our converter to be used
 		Set<ModuleManifest> converterManifests = getManifest().getModuleManifests(
-				FileDriverUtils.CONVERTER_PROPERTY);
+				FileDriverUtils.PROPERTY_CONVERTER);
 
 		if(converterManifests.isEmpty())
 			throw new ModelException(ModelErrorCode.DRIVER_ERROR,
@@ -839,7 +839,7 @@ public class FileDriver extends AbstractDriver {
 	 * @return
 	 */
 	protected long getFileSizeThresholdForChunking() {
-		String key = FileDriverUtils.FILE_SIZE_THRESHOLD_FOR_CHUNKING_PROPERTY;
+		String key = FileDriverUtils.PROPERTY_CHUNKING_FILE_SIZE_THRESHOLD;
 		String value = getCorpus().getManager().getProperty(key);
 
 		if(value==null || value.isEmpty()) {
@@ -1022,7 +1022,7 @@ public class FileDriver extends AbstractDriver {
 
 		if(cacheSize==IcarusUtils.UNSET_INT) {
 			// Fetch default value from global config
-			String key = FileDriverUtils.CACHE_SIZE_FOR_CHUNKING_PROPERTY;
+			String key = FileDriverUtils.PROPERTY_CHUNKING_CACHE_SIZE;
 			String value = getCorpus().getManager().getProperty(key);
 
 			if(value!=null && !value.isEmpty()) {
@@ -1045,7 +1045,7 @@ public class FileDriver extends AbstractDriver {
 
 		if(blockPower==IcarusUtils.UNSET_INT) {
 			// Fetch default block power from global config
-			String key = FileDriverUtils.BLOCK_POWER_FOR_CHUNKING_PROPERTY;
+			String key = FileDriverUtils.PROPERTY_CHUNKING_BLOCK_POWER;
 			String value = getCorpus().getManager().getProperty(key);
 
 			if(value!=null && !value.isEmpty()) {

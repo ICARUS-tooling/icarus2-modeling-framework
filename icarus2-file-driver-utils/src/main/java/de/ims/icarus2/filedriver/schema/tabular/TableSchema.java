@@ -39,7 +39,7 @@ import de.ims.icarus2.util.strings.StringResource;
  */
 public interface TableSchema extends Schema {
 
-	public static final String SCHEMA_TYPE_ID = FileDriverUtils.SHARED_PROPERTY_PREFIX+".schema.tabular";
+	public static final String SCHEMA_TYPE_ID = FileDriverUtils.SCHEMA_PROPERTY_PREFIX+".tabular";
 
 	public static final String SEPARATOR_TAB = "TAB";
 	public static final String SEPARATOR_SPACE = "SPACE";

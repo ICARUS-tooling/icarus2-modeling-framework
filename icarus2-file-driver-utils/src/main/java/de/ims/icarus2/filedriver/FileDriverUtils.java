@@ -26,6 +26,7 @@ import de.ims.icarus2.filedriver.io.RUBlockCache;
 import de.ims.icarus2.filedriver.io.UnlimitedBlockCache;
 import de.ims.icarus2.filedriver.mapping.DefaultMappingFactory;
 import de.ims.icarus2.filedriver.mapping.MappingFactory;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchema;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
@@ -48,14 +49,71 @@ import de.ims.icarus2.util.io.resource.IOResource;
  */
 public class FileDriverUtils {
 
-	public static final String SHARED_PROPERTY_PREFIX = IcarusUtils.SHARED_PROPERTY_PREFIX+".filedriver";
+	static final String SHARED_PROPERTY_PREFIX = IcarusUtils.SHARED_PROPERTY_PREFIX+".filedriver";
 
-	public static final String CONVERTER_PROPERTY = SHARED_PROPERTY_PREFIX+".converter";
-	public static final String FILE_SIZE_THRESHOLD_FOR_CHUNKING_PROPERTY = SHARED_PROPERTY_PREFIX+".fileSizeThresholdForChunking";
+	// GENERAL PROPERTIES
 
-	public static final String CACHE_SIZE_FOR_CHUNKING_PROPERTY = SHARED_PROPERTY_PREFIX+".cacheSizeForChunking";
+	public static final String PROPERTY_CONVERTER = SHARED_PROPERTY_PREFIX+".converter";
 
-	public static final String BLOCK_POWER_FOR_CHUNKING_PROPERTY = SHARED_PROPERTY_PREFIX+".blockPowerForChunking";
+	// CHUNKING PROPERTIES
+
+	public static final String CHUNKING_PROPERTY_PREFIX = SHARED_PROPERTY_PREFIX+".chunking";
+
+	public static final String PROPERTY_CHUNKING_FILE_SIZE_THRESHOLD = CHUNKING_PROPERTY_PREFIX+".fileSizeThreshold";
+
+	public static final String PROPERTY_CHUNKING_CACHE_SIZE = CHUNKING_PROPERTY_PREFIX+".cacheSize";
+
+	public static final String PROPERTY_CHUNKING_BLOCK_POWER = CHUNKING_PROPERTY_PREFIX+".blockPower";
+
+	// SCHEMA PROPERTIES
+
+	public static final String SCHEMA_PROPERTY_PREFIX = SHARED_PROPERTY_PREFIX+".schema";
+
+	/**
+	 * Property containing an inline definition of the schema to be used.
+	 *
+	 * Needs {@link #PROPERTY_SCHEMA_TYPE} to be able to decide how to
+	 * read the schema text.
+	 */
+	public static final String PROPERTY_SCHEMA = SCHEMA_PROPERTY_PREFIX+".content";
+
+	/**
+	 * Type declaration, specifying how to interpret the schema.
+	 *
+	 * @see TableSchema#SCHEMA_TYPE_ID
+	 */
+	public static final String PROPERTY_SCHEMA_ID = SCHEMA_PROPERTY_PREFIX+".typeId";
+
+	/**
+	 * Property denoting one of the available default schemas.
+	 */
+	public static final String PROPERTY_SCHEMA_NAME = SCHEMA_PROPERTY_PREFIX+".name";
+
+	/**
+	 * Path to the schema file that should be read
+	 */
+	public static final String PROPERTY_SCHEMA_FILE = SCHEMA_PROPERTY_PREFIX+".file";
+
+	/**
+	 * Path to the schema that should be read, accessible from the manifest's class loader.
+	 */
+	public static final String PROPERTY_SCHEMA_RESOURCE = SCHEMA_PROPERTY_PREFIX+".resource";
+
+	/**
+	 * Remote location of the schema definition.
+	 *
+	 *  TODO mention caching?
+	 */
+	public static final String PROPERTY_SCHEMA_URL = SCHEMA_PROPERTY_PREFIX+".url";
+
+	/**
+	 * The character encoding to use for reading the schema.
+	 * This is only relevant when the schema is to be read from a file
+	 * or remote source.
+	 * <p>
+	 * When missing, the UTF-8 unicode charset will be used.
+	 */
+	public static final String PROPERTY_SCHEMA_ENCODING = SCHEMA_PROPERTY_PREFIX+".encoding";
 
 	/**
 	 * Suffix to be appended to a {@link LayerGroupManifest}'s {@link LayerGroupManifest#getId() id}

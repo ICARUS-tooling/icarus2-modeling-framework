@@ -52,54 +52,6 @@ import de.ims.icarus2.util.io.IOUtil;
  */
 public class DefaultSchemaConverterFactory implements Factory {
 
-	private static final String SHARED_PROPERTY_PREFIX = FileDriverUtils.SHARED_PROPERTY_PREFIX+".schema";
-
-	/**
-	 * Property containing an inline definition of the schema to be used.
-	 *
-	 * Needs {@link #PROPERTY_SCHEMA_TYPE} to be able to decide how to
-	 * read the schema text.
-	 */
-	public static final String PROPERTY_SCHEMA = SHARED_PROPERTY_PREFIX+".content";
-
-	/**
-	 * Type declaration, specifying how to interpret the schema.
-	 *
-	 * @see TableSchema#SCHEMA_TYPE_ID
-	 */
-	public static final String PROPERTY_SCHEMA_ID = SHARED_PROPERTY_PREFIX+".typeId";
-
-	/**
-	 * Property denoting one of the available default schemas.
-	 */
-	public static final String PROPERTY_SCHEMA_NAME = SHARED_PROPERTY_PREFIX+".name";
-
-	/**
-	 * Path to the schema file that should be read
-	 */
-	public static final String PROPERTY_SCHEMA_FILE = SHARED_PROPERTY_PREFIX+".file";
-
-	/**
-	 * Path to the schema that should be read, accessibe from the manifest's class loader.
-	 */
-	public static final String PROPERTY_SCHEMA_RESOURCE = SHARED_PROPERTY_PREFIX+".resource";
-
-	/**
-	 * Remote location of the schema definition.
-	 *
-	 *  TODO mention caching?
-	 */
-	public static final String PROPERTY_SCHEMA_URL = SHARED_PROPERTY_PREFIX+".url";
-
-	/**
-	 * The character encoding to use for reading the schema.
-	 * This is only relevant when the schema is to be read from a file
-	 * or remote source.
-	 * <p>
-	 * When missing, the UTF-8 unicode charset will be used.
-	 */
-	public static final String PROPERTY_SCHEMA_ENCODING = SHARED_PROPERTY_PREFIX+".encoding";
-
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory#create(java.lang.Class, de.ims.icarus2.model.manifest.api.ImplementationManifest, de.ims.icarus2.model.manifest.api.ImplementationLoader)
 	 */
@@ -110,7 +62,7 @@ public class DefaultSchemaConverterFactory implements Factory {
 		//TODO check that we can actually cast Converter to the given resultClass before instantiating stuff?
 
 		String schemaType = ManifestUtils.require(
-				manifest, m -> m.getPropertyValue(PROPERTY_SCHEMA_ID), PROPERTY_SCHEMA_ID);
+				manifest, m -> m.getPropertyValue(FileDriverUtils.PROPERTY_SCHEMA_ID), FileDriverUtils.PROPERTY_SCHEMA_ID);
 
 		Converter converter = null;
 
@@ -131,34 +83,34 @@ public class DefaultSchemaConverterFactory implements Factory {
 
 	private Charset getCharset(ImplementationManifest manifest) {
 
-		return manifest.<String>getPropertyValue(PROPERTY_SCHEMA_ENCODING)
+		return manifest.<String>getPropertyValue(FileDriverUtils.PROPERTY_SCHEMA_ENCODING)
 				.map(Charset::forName)
 				.orElse(StandardCharsets.UTF_8);
 	}
 
 	private Reader createSchemaReader(ImplementationManifest manifest) throws IOException {
 
-		String name = manifest.<String>getPropertyValue(PROPERTY_SCHEMA_NAME).orElse(null);
+		String name = manifest.<String>getPropertyValue(FileDriverUtils.PROPERTY_SCHEMA_NAME).orElse(null);
 		if(name!=null) {
 			//TODO link this with a registry facility to load schemata from
 			throw new UnsupportedOperationException("Resolution of schemate by name not supported yet");
 		}
 
 		// Direct inline declaration
-		String schema = manifest.<String>getPropertyValue(PROPERTY_SCHEMA).orElse(null);
+		String schema = manifest.<String>getPropertyValue(FileDriverUtils.PROPERTY_SCHEMA).orElse(null);
 		if(schema!=null) {
 			return new StringReader(schema);
 		}
 
 		// Resource avialable from manifest location
-		String resource = manifest.<String>getPropertyValue(PROPERTY_SCHEMA_RESOURCE).orElse(null);
+		String resource = manifest.<String>getPropertyValue(FileDriverUtils.PROPERTY_SCHEMA_RESOURCE).orElse(null);
 		if(resource!=null) {
 			ClassLoader classLoader = manifest.getManifestLocation().getClassLoader();
 			return new InputStreamReader(classLoader.getResourceAsStream(resource), getCharset(manifest));
 		}
 
 		// Physical file on local file system
-		String path = manifest.<String>getPropertyValue(PROPERTY_SCHEMA_FILE).orElse(null);
+		String path = manifest.<String>getPropertyValue(FileDriverUtils.PROPERTY_SCHEMA_FILE).orElse(null);
 		if(path!=null) {
 			Path file = Paths.get(path);
 
@@ -171,7 +123,7 @@ public class DefaultSchemaConverterFactory implements Factory {
 			return new InputStreamReader(in, getCharset(manifest));
 		}
 
-		String url = manifest.<String>getPropertyValue(PROPERTY_SCHEMA_URL).orElse(null);
+		String url = manifest.<String>getPropertyValue(FileDriverUtils.PROPERTY_SCHEMA_URL).orElse(null);
 		if(url!=null) {
 			//TODO support compression on this stream as well! (<- difficult to decide?)
 			return new InputStreamReader(new URL(url).openStream(), getCharset(manifest));
