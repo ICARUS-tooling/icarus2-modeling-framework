@@ -3,7 +3,7 @@
  */
 package de.ims.icarus2.util.stat;
 
-import static de.ims.icarus2.test.TestUtils.MAX_INTEGER_INDEX;
+import static de.ims.icarus2.util.IcarusUtils.MAX_INTEGER_INDEX;
 import static de.ims.icarus2.util.IcarusUtils.ensureIntegerValueRange;
 
 import java.util.Arrays;
