@@ -27,10 +27,11 @@ import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
  */
 public class LongCounter<T extends Object> {
 
-	private final Object2LongOpenHashMap<T> counts = new Object2LongOpenHashMap<>();
+	private final Object2LongOpenHashMap<T> counts;
 
 	public LongCounter() {
-		// no-op
+		counts = new Object2LongOpenHashMap<>();
+		counts.defaultReturnValue(0L);
 	}
 
 	public void copyFrom(LongCounter<? extends T> source) {
@@ -49,9 +50,6 @@ public class LongCounter<T extends Object> {
 
 	public long add(T data, long delta) {
 		long c = counts.getLong(data);
-		if(c==counts.defaultReturnValue()) {
-			c = 0;
-		}
 
 		c += delta;
 
@@ -85,16 +83,17 @@ public class LongCounter<T extends Object> {
 	}
 
 	public long getCount(Object data) {
-		long c = counts.getLong(data);
-		return c==counts.defaultReturnValue() ? 0 : c;
+		return counts.getLong(data);
 	}
 
 	public void setCount(T data, long count) {
+		if(count<0)
+			throw new IllegalStateException("Counter cannot get negative: "+count);
 		counts.put(data, count);
 	}
 
 	/**
-	 * Returns {@code true} iff the count for the giveb {@code data} is greater
+	 * Returns {@code true} iff the count for the given {@code data} is greater
 	 * that {@code 0}.
 	 *
 	 * @param data
