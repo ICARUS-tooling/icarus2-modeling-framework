@@ -198,7 +198,7 @@ annotationManifests.add(builder.create(AnnotationManifest.class, "anno3",
 		.setAllowUnknownValues(true));
 ```
 
-We now can define GUI-related methods to produce specialized widgets:
+We now can define GUI-related methods to produce specialized widgets...
 
 ```java
 private void addChoice(AnnotationManifest manifest, ValueSet valueSet, JComponent container) {
@@ -226,7 +226,7 @@ private void addFreeText(AnnotationManifest manifest, JComponent container) {
 }
 ```
 
-And finally use those specialized methods to dynamically generate GUI elements from our list of annotation manifests:
+... and finally use those specialized methods to dynamically generate GUI elements from our list of annotation manifests:
 
 ```java
 for(AnnotationManifest annotationManifest : annotationManifests) {

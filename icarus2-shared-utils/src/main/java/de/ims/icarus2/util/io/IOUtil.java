@@ -209,7 +209,7 @@ public final class IOUtil {
     public static void copyStream(final InputStream in, final OutputStream out,
             int bufferSize) throws IOException {
     	if(bufferSize==0) {
-    		bufferSize = 8000;
+    		bufferSize = DEFAULT_BUFFER_SIZE;
     	}
         byte[] buf = new byte[bufferSize];
         int len;
@@ -218,6 +218,12 @@ public final class IOUtil {
         }
     }
 
+    /**
+     * Wraps a given {@link Reader} within a {@link BufferedReader} or returns
+     * the {@code reader} in case it already is an instance of {@link BufferedReader}.
+     * @param reader
+     * @return
+     */
     public static BufferedReader buffer(Reader reader) {
     	if(reader instanceof BufferedReader) {
     		return (BufferedReader) reader;

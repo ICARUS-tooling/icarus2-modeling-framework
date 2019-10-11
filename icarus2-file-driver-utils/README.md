@@ -105,6 +105,30 @@ Currently the default approach to defining and customizing a converter is to use
 
 ### 3.1 Tabular Schema
 
+By setting the correct type property value `de.ims.icarus2.filedriver.schema.tabular` within the converter declaration, a schema can be defined to be interpreted as tabular:
+
+```xml
+<imf:implementation classname="de.ims.icarus2.filedriver.schema.DefaultSchemaConverterFactory" factory="true">
+	<imf:properties>
+		<imf:property name="de.ims.icarus2.filedriver.schema.typeId">de.ims.icarus2.filedriver.schema.tabular</imf:property>
+	...
+	</imf:properties>
+</imf:implementation>
+```
+
+Tabular corpus formats organize the textual data in a way similar to `CSV` files. Each unit of interest, such as tokens, occupy individual rows in the file, while the annotations or other information are structured in columns, typically separated by some sort of delimiter, for instance the tab symbol `\t`, whitespaces or commata.
+The following simple example shows 5 units with 3 annotation layers: 
+ 
+```xml
+1 A a
+2 B b
+3 C c
+4 D d
+5 E e
+```
+
+TODO: introduce the actual schema xml elements here?
+
 ```xml
 <imf:corpus>
 	<imf:rootContext>
@@ -121,23 +145,44 @@ Currently the default approach to defining and customizing a converter is to use
 </imf:corpus>
 ```
 
-
 A complete example for a single-file corpus with tabular structure and inline schema definition could look like the following:
 
 ```xml
-<imf:corpus>
-	<imf:rootContext>
+<imf:corpus editable="false" id="testCorpus">
+	<imf:rootContext id="test.tier1.format" independent="true" name="Tier-1 Tabular Format" primaryLayer="token" foundationLayer="token">
+		
 		<imf:location>
-			<imf:path type="resource">path/to/my/corpus/MyCorpus.txt</imf:path>
+			<imf:path type="resource">de/ims/icarus2/filedriver/schema/table/singleBlock.txt</imf:path>
 		</imf:location>
 		
+		<imf:layerGroup id="main" independent="true" primaryLayer="token">
+			
+			<!-- SURFACE PART -->
+			
+			<imf:itemLayer id="token" />	
+			
+			<imf:annotationLayer id="form" defaultKey="form">	
+				<imf:baseLayer layerId="token"/>
+				<imf:annotation key="form" name="Word Form"/>
+			</imf:annotationLayer>	
+			
+			<imf:annotationLayer id="lemma" defaultKey="lemma">	
+				<imf:baseLayer layerId="token"/>
+				<imf:annotation key="lemma" name="Word Lemma"/>
+			</imf:annotationLayer>
+		</imf:layerGroup>
+		
 		<imf:driver>
+			<imf:properties>
+				<imf:property name="de.ims.icarus2.filedriver.loadOnConnect" valueType="boolean">true</imf:property>
+				<imf:property name="de.ims.icarus2.filedriver.encoding">UTF-8</imf:property>
+			</imf:properties>	
 			<imf:implementation classname="de.ims.icarus2.filedriver.DefaultFileDriverFactory" factory="true" />			
-			<imf:module id="converter">
+			<imf:module id="de.ims.icarus2.filedriver.converter">
 				<imf:implementation classname="de.ims.icarus2.filedriver.schema.DefaultSchemaConverterFactory" factory="true">
 					<imf:properties>
-						<imf:property name="schemaTypeId">de.ims.icarus2.filedriver.schema.tabular</imf:property>
-						<imf:property name="schema"><![CDATA[
+						<imf:property name="de.ims.icarus2.filedriver.schema.typeId">de.ims.icarus2.filedriver.schema.tabular</imf:property>
+						<imf:property name="de.ims.icarus2.filedriver.schema.content"><![CDATA[
 						<table id="test.tier1.tbl" name="Tier-1 Tabular Format"  group-id="main">
 							<block layerId="token">
 								<separator>WHITESPACES</separator>
@@ -162,3 +207,4 @@ A complete example for a single-file corpus with tabular structure and inline sc
 </imf:corpus>
 ```
 
+TODO: mention chunking
