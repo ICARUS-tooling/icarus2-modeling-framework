@@ -19,12 +19,9 @@ package de.ims.icarus2.filedriver.analysis;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
-import java.util.function.LongConsumer;
-
 import de.ims.icarus2.filedriver.FileDataStates;
 import de.ims.icarus2.filedriver.FileDataStates.FileInfo;
 import de.ims.icarus2.filedriver.FileDataStates.LayerInfo;
-import de.ims.icarus2.filedriver.FileDataStates.NumericalStats;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -36,6 +33,7 @@ import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.LongCounter;
+import de.ims.icarus2.util.stat.Histogram;
 
 /**
  * @author Markus Gärtner
@@ -74,9 +72,9 @@ public class DefaultItemLayerAnalyzer extends AbstractFileDriverAnalyzer impleme
 	 * Largest {@link Container#getItemCount() size} of a container
 	 * encountered during analysis.
 	 */
-	private final StatsBuffer containerSizes = new StatsBuffer();
+	private final Histogram containerSizes = Histogram.fixedHistogram(1000);
 
-	private final StatsBuffer spanSizes = new StatsBuffer();
+	private final Histogram spanSizes = Histogram.fixedHistogram(1000);
 
 	/**
 	 * Individual counts for every {@link ContainerType type} of
@@ -127,13 +125,13 @@ public class DefaultItemLayerAnalyzer extends AbstractFileDriverAnalyzer impleme
 		LayerInfo layerInfo = states.getLayerInfo(layer.getManifest());
 		layerInfo.setSize(layerInfo.getSize() + elementCount);
 
-		containerSizes.saveTo(layerInfo.getItemCountStats());
+		layerInfo.getItemCountStats().copyFrom(containerSizes);
 
 		if(!containerTypeCount.isEmpty()) {
 			layerInfo.addCountsForContainerTypes(containerTypeCount);
 		}
 
-		spanSizes.saveTo(layerInfo.getSpanSizeStats());
+		layerInfo.getSpanSizeStats().copyFrom(spanSizes);
 	}
 
 	/**
@@ -153,46 +151,6 @@ public class DefaultItemLayerAnalyzer extends AbstractFileDriverAnalyzer impleme
 			}
 
 			containerTypeCount.increment(container.getContainerType());
-		}
-	}
-
-	public static class StatsBuffer implements LongConsumer {
-		private long sum = 0L;
-		private long count = 0L;
-		private long min = Long.MAX_VALUE;
-		private long max = Long.MIN_VALUE;
-
-		/**
-		 * @see java.util.function.LongConsumer#accept(long)
-		 */
-		@Override
-		public void accept(long value) {
-			if(value<0) { // Takes care of UNSET_LONG and any other invalid values
-				return;
-			}
-
-			count++;
-			sum += value;
-			min = Math.min(min, value);
-			max = Math.max(max, value);
-		}
-
-		public long getCount() {
-			return count;
-		}
-
-		public boolean isEmpty() {
-			return count==0L;
-		}
-
-		public void saveTo(NumericalStats target) {
-			if(isEmpty()) {
-				target.reset();
-			} else {
-				target.setMin(min);
-				target.setMax(max);
-				target.setAvg(sum/(double)count);
-			}
 		}
 	}
 }

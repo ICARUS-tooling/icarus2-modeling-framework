@@ -39,6 +39,7 @@ import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.LongCounter;
+import de.ims.icarus2.util.stat.Histogram;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -338,6 +339,14 @@ public class FileDataStates {
 			min = IcarusUtils.UNSET_LONG;
 			max = IcarusUtils.UNSET_LONG;
 			avg = IcarusUtils.UNSET_DOUBLE;
+		}
+		public void copyFrom(Histogram source) {
+			reset();
+			if(source.entries()>0L) {
+				min = source.min();
+				max = source.max();
+				avg = source.average();
+			}
 		}
 	}
 

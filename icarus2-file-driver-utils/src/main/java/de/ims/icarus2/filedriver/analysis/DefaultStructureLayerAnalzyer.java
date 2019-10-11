@@ -24,6 +24,7 @@ import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.LongCounter;
+import de.ims.icarus2.util.stat.Histogram;
 
 /**
  * @author Markus Gärtner
@@ -31,11 +32,11 @@ import de.ims.icarus2.util.LongCounter;
  */
 public class DefaultStructureLayerAnalzyer extends DefaultItemLayerAnalyzer {
 
-	private StatsBuffer structureSizes = new StatsBuffer();
-	private StatsBuffer rootCounts = new StatsBuffer();
+	private Histogram structureSizes = Histogram.fixedHistogram(1000);
+	private Histogram rootCounts = Histogram.fixedHistogram(1000);
 
-	private StatsBuffer treeHeights = new StatsBuffer();
-	private StatsBuffer branching = new StatsBuffer();
+	private Histogram treeHeights = Histogram.fixedHistogram(1000);
+	private Histogram branching = Histogram.fixedHistogram(1000);
 
 	private LongCounter<StructureType> structureTypeCount = new LongCounter<>();
 
@@ -60,10 +61,10 @@ public class DefaultStructureLayerAnalzyer extends DefaultItemLayerAnalyzer {
 
 		LayerInfo layerInfo = states.getLayerInfo(getLayer().getManifest());
 
-		structureSizes.saveTo(layerInfo.getEdgeCountStats());
-		rootCounts.saveTo(layerInfo.getRootStats());
-		treeHeights.saveTo(layerInfo.getHeightStats());
-		branching.saveTo(layerInfo.getBranchingStats());
+		layerInfo.getEdgeCountStats().copyFrom(structureSizes);
+		layerInfo.getRootStats().copyFrom(rootCounts);
+		layerInfo.getHeightStats().copyFrom(treeHeights);
+		layerInfo.getBranchingStats().copyFrom(branching);
 	}
 
 	/**
