@@ -16,10 +16,15 @@
  */
 package de.ims.icarus2.filedriver.schema.tabular;
 
+import static java.util.Objects.requireNonNull;
+
+import java.util.Map;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.FileDriverUtils;
 import de.ims.icarus2.filedriver.schema.Schema;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
 import de.ims.icarus2.model.api.members.MemberType;
@@ -29,9 +34,11 @@ import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.util.ModelUtils;
+import de.ims.icarus2.util.LazyStore;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.strings.NamedObject;
 import de.ims.icarus2.util.strings.StringResource;
+import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 
 /**
  * @author Markus Gärtner
@@ -210,16 +217,36 @@ public interface TableSchema extends Schema {
 //		CURRENT_BLOCK,
 //		PARENT_BLOCK,
 //		ROOT_BLOCK,
-		NEXT_ITEM,
-		PREVIOUS_ITEM,
+		NEXT_ITEM("nextItem"),
+		PREVIOUS_ITEM("previousItem"),
 		;
+
+		private final String label;
+
+		private AttributeTarget(String label) {
+			this.label = requireNonNull(label);
+		}
 
 		/**
 		 * @see de.ims.icarus2.util.strings.StringResource#getStringValue()
 		 */
 		@Override
 		public String getStringValue() {
-			return name().toLowerCase();
+			return label;
+		}
+
+		private static Map<String, AttributeTarget> map = new Object2ObjectArrayMap<>();
+		static {
+			for (AttributeTarget target : values()) {
+				map.put(target.label, target);
+			}
+		}
+
+		public static AttributeTarget parseAttributeTarget(String s) {
+			AttributeTarget target = map.get(s);
+			if(target==null)
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Unknown attribute target: "+s);
+			return target;
 		}
 	}
 
@@ -321,26 +348,38 @@ public interface TableSchema extends Schema {
 		/**
 		 * Replaces the slot of the column with a new member
 		 */
-		REPLACEMENT,
+		REPLACEMENT("replacement"),
 
 		/**
 		 * Adds a new member to the loading process and makes
 		 * it addressable by name
 		 */
-		ADDITION,
+		ADDITION("addition"),
 
 		/**
 		 * Redirect annotation target to named member
 		 */
-		TARGET,
+		TARGET("target"),
 		;
+
+		private final String xml;
+
+		private SubstituteType(String xml) {
+			this.xml = requireNonNull(xml);
+		}
+
+		private static final LazyStore<SubstituteType, String> store = LazyStore.forStringResource(SubstituteType.class);
+
+		public static SubstituteType parseSubstituteType(String s) {
+			return store.lookup(s);
+		}
 
 		/**
 		 * @see de.ims.icarus2.util.strings.StringResource#getStringValue()
 		 */
 		@Override
 		public String getStringValue() {
-			return name().toLowerCase();
+			return xml;
 		}
 	}
 

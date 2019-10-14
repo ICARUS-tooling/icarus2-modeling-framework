@@ -16,6 +16,9 @@
  */
 package de.ims.icarus2.model.api.members;
 
+import static java.util.Objects.requireNonNull;
+
+import de.ims.icarus2.util.LazyStore;
 import de.ims.icarus2.util.strings.StringResource;
 
 /**
@@ -28,20 +31,32 @@ import de.ims.icarus2.util.strings.StringResource;
  *
  */
 public enum MemberType implements StringResource {
-	FRAGMENT,
-	ITEM,
-	EDGE,
-	CONTAINER,
-	STRUCTURE,
-	LAYER, // No distinction between different layer types. they are defined by the manifest type
-	CONTEXT,
+	FRAGMENT("fragment"),
+	ITEM("item"),
+	EDGE("edge"),
+	CONTAINER("container"),
+	STRUCTURE("structure"),
+	LAYER("layer"), // No distinction between different layer types. they are defined by the manifest type
+	CONTEXT("context"),
 	;
+
+	private final String xmlForm;
+
+	private MemberType(String xmlForm) {
+		this.xmlForm = requireNonNull(xmlForm);
+	}
 
 	/**
 	 * @see de.ims.icarus2.model.util.StringResource.XmlResource#getStringValue()
 	 */
 	@Override
 	public String getStringValue() {
-		return name();
+		return xmlForm;
+	}
+
+	private static LazyStore<MemberType,String> store = LazyStore.forStringResource(MemberType.class);
+
+	public static MemberType parseMemberType(String s) {
+		return store.lookup(s);
 	}
 }

@@ -18,28 +18,19 @@ package de.ims.icarus2.filedriver.schema.tabular.xml;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import java.util.Stack;
 
-import javax.xml.namespace.QName;
-import javax.xml.stream.FactoryConfigurationError;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.Attribute;
-import javax.xml.stream.events.Characters;
-import javax.xml.stream.events.EndElement;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.validation.Schema;
 
-import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusRuntimeException;
+import org.xml.sax.Attributes;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema;
-import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.AttributeSchema;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.AttributeTarget;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.BlockSchema;
@@ -48,6 +39,7 @@ import de.ims.icarus2.filedriver.schema.tabular.TableSchema.MemberSchema;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.ResolverSchema;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.SubstituteSchema;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.SubstituteType;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.AttributeSchemaImpl;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.BlockSchemaImpl;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.ColumnSchemaImpl;
@@ -55,48 +47,83 @@ import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.MemberSchemaImpl
 import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.ResolverSchemaImpl;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.SubstituteSchemaImpl;
 import de.ims.icarus2.model.api.members.MemberType;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlUtils;
 import de.ims.icarus2.util.Options;
-import de.ims.icarus2.util.io.ObjectReader;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import de.ims.icarus2.util.lang.Lazy;
+import de.ims.icarus2.util.xml.XmlHandler;
+import de.ims.icarus2.util.xml.XmlUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class TableSchemaXmlReader implements ObjectReader<TableSchema> {
+public class TableSchemaXmlReader extends XmlHandler implements AutoCloseable {
 
-	public static List<TableSchema> readAllAsList(Reader reader, Options options)
-			throws IOException, InterruptedException {
-		List<TableSchema> result = new ArrayList<>();
-		try(TableSchemaXmlReader schemaReader = new TableSchemaXmlReader()) {
-			schemaReader.init(reader, options);
+	/**
+	 * Creates a default {@link XMLReader} that is namespace aware
+	 * and using the {@link #getDefaultSchema() default schema} for
+	 * manifest instances if the {@code validate} parameter is set
+	 * to {@code true}.
+	 *
+	 * @return
+	 * @throws SAXException
+	 */
+	public static XMLReader defaultCreateReader(boolean validate) throws SAXException {
+		SAXParserFactory parserFactory = SAXParserFactory.newInstance();
 
-			schemaReader.readAll(result::add);
+		parserFactory.setNamespaceAware(true);
+		parserFactory.setValidating(false);
+		if(validate) {
+			parserFactory.setSchema(getDefaultSchema());
 		}
-		return result;
+
+		SAXParser parser = null;
+		try {
+			parser = parserFactory.newSAXParser();
+		} catch (ParserConfigurationException e) {
+			throw new SAXException("Parser creation failed", e);
+		}
+
+		return parser.getXMLReader();
 	}
 
-	private XMLEventReader eventReader;
+	private static final Lazy<Schema> schema = XmlUtils.createShareableSchemaSource(
+			TableSchemaXmlReader.class.getResource("tabular-schema.xsd"));
+
+	public static Schema getDefaultSchema() {
+		return schema.value();
+	}
+
 	private Stack<Object> stack = new Stack<>();
 
-	/**
-	 * @see de.ims.icarus2.util.io.ObjectReader#init(java.io.Reader, de.ims.icarus2.util.Options)
-	 */
-	@Override
-	public void init(Reader input, Options options) {
+	public TableSchema read(Reader input, Options options) throws IOException {
+		XMLReader reader;
 		try {
-			eventReader = XMLInputFactory.newFactory().createXMLEventReader(input);
-		} catch (XMLStreamException | FactoryConfigurationError e) {
-			throw new IcarusRuntimeException(GlobalErrorCode.DELEGATION_FAILED, "Unable to create xml event reader", e);
+			reader = defaultCreateReader(true);
+		} catch (SAXException e) {
+			throw new IOException("Failed to prepare XML reader", e);
 		}
-	}
 
-	/**
-	 * @see de.ims.icarus2.util.io.ObjectReader#hasMoreData()
-	 */
-	@Override
-	public boolean hasMoreData() throws IOException, InterruptedException {
-		return eventReader.hasNext();
+		InputSource inputSource = new InputSource();
+		reader.setContentHandler(this);
+		reader.setErrorHandler(this);
+		reader.setEntityResolver(this);
+		reader.setDTDHandler(this);
+
+		inputSource.setCharacterStream(input);
+
+		TableSchema schema;
+		try {
+			reader.parse(inputSource);
+			schema = pop(TableSchema.class);
+		} catch (SAXException e) {
+			throw new IOException("Failed to parse tabular schema", e);
+		} finally {
+			// Make sure we hold no references
+			clearStack();
+		}
+
+		return schema;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -123,227 +150,91 @@ public class TableSchemaXmlReader implements ObjectReader<TableSchema> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.io.ObjectReader#read()
+	 * @see org.xml.sax.helpers.DefaultHandler#startElement(java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
 	 */
 	@Override
-	public TableSchema read() throws IOException, InterruptedException {
-		clearStack();
-
-		TableSchema result = null;
-
-		try {
-			readTableSchema();
-
-			result = pop(TableSchema.class);
-		} catch (XMLStreamException e) {
-			throw new IOException("Failed to fetch xml event at "+e.getLocation(), e);
-		} finally {
-			// Make sure we hold no references
-			clearStack();
-		}
-
-		return result;
-	}
-
-	private static boolean isTableTag(QName name) {
-		return name.getLocalPart().equals(TableSchemaXmlConstants.TAG_TABLE);
-	}
-
-	private void readTableSchema() throws XMLStreamException {
-		parse_loop : while(eventReader.hasNext()) {
-			XMLEvent event = eventReader.nextEvent();
-
-			switch (event.getEventType()) {
-			case XMLStreamConstants.START_ELEMENT:
-				startElement(event.asStartElement());
-				break;
-
-			case XMLStreamConstants.END_ELEMENT: {
-				// Perform default handling first
-				EndElement element = event.asEndElement();
-				endElement(element);
-
-				// Then check if we reached the end of our table declaration
-				if(isTableTag(element.getName())) {
-					break parse_loop;
-				}
-			} break;
-
-			case XMLStreamConstants.CHARACTERS:
-				characters(event.asCharacters());
-				break;
-
-			default:
-				break;
-			}
-		}
-
-		// Skim content till next table declaration or skip footer part after last table
-		while(eventReader.hasNext() && !eventReader.peek().isStartElement()) {
-			eventReader.next();
-		}
-	}
-
-	private StringBuilder buffer = new StringBuilder();
-
-	private Map<String, String> attributes = new Object2ObjectOpenHashMap<>();
-
-	private void mapAttributes(StartElement element) {
-		attributes.clear();
-
-		for(Iterator<Attribute> it = element.getAttributes(); it.hasNext();) {
-			Attribute attribute = it.next();
-			attributes.put(attribute.getName().getLocalPart(), attribute.getValue());
-		}
-	}
-
-	private String getAttribute(String name) {
-		String value = attributes.get(name);
-		if(value!=null && value.isEmpty()) {
-			value = null;
-		}
-		return value;
-	}
-
-	private void startElement(StartElement element) throws XMLStreamException {
-		switch (element.getName().getLocalPart()) {
+	public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+		switch (localName) {
 		case TableSchemaXmlConstants.TAG_TABLE: {
 			TableSchemaImpl tableSchema = push(new TableSchemaImpl());
-			mapAttributes(element);
-
-			String id = getAttribute(TableSchemaXmlConstants.ATTR_ID);
-			if(id!=null) {
-				tableSchema.setId(id);
-			}
-
-			String name = getAttribute(TableSchemaXmlConstants.ATTR_NAME);
-			if(name!=null) {
-				tableSchema.setName(name);
-			}
-
-			String description = getAttribute(TableSchemaXmlConstants.ATTR_DESCRIPTION);
-			if(description!=null) {
-				tableSchema.setDescription(description);
-			}
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_ID)
+				.ifPresent(tableSchema::setId);
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_NAME)
+				.ifPresent(tableSchema::setName);
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_DESCRIPTION)
+				.ifPresent(tableSchema::setDescription);
 			// ignore icon declaration
-
-			String groupId = getAttribute(TableSchemaXmlConstants.ATTR_GROUP_ID);
-			if(groupId!=null) {
-				tableSchema.setGroupId(groupId);
-			}
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_GROUP_ID)
+				.ifPresent(tableSchema::setGroupId);
 		} break;
 
 		case TableSchemaXmlConstants.TAG_BLOCK: {
 			BlockSchemaImpl blockSchema = push(new BlockSchemaImpl());
-			mapAttributes(element);
-
-			String layerId = getAttribute(TableSchemaXmlConstants.ATTR_LAYER_ID);
-			if(layerId!=null) {
-				blockSchema.setLayerId(layerId);
-			}
-
-			String noEntryLabel = getAttribute(TableSchemaXmlConstants.ATTR_NO_ENTRY_LABEL);
-			if(noEntryLabel!=null) {
-				blockSchema.setNoEntryLabel(noEntryLabel);
-			}
-
-			String columnOrderFixed = getAttribute(TableSchemaXmlConstants.ATTR_COLUMN_ORDER_FIXED);
-			if(columnOrderFixed!=null) {
-				blockSchema.setColumnOrderFixed(Boolean.parseBoolean(columnOrderFixed));
-			}
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_LAYER_ID)
+				.ifPresent(blockSchema::setLayerId);
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_NO_ENTRY_LABEL)
+				.ifPresent(blockSchema::setNoEntryLabel);
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_COLUMN_ORDER_FIXED)
+				.map(Boolean::valueOf)
+				.ifPresent(blockSchema::setColumnOrderFixed);
 		} break;
 
 		case TableSchemaXmlConstants.TAG_BEGIN_DELIMITER:
 		case TableSchemaXmlConstants.TAG_END_DELIMITER:
 		case TableSchemaXmlConstants.TAG_ATTRIBUTE: {
 			AttributeSchemaImpl attributeSchema = push(new AttributeSchemaImpl());
-			mapAttributes(element);
-
-			String target = getAttribute(TableSchemaXmlConstants.ATTR_TARGET);
-			if(target!=null) {
-				attributeSchema.setTarget(AttributeTarget.valueOf(target.toUpperCase())); //TODO maybe implement dedicated parsing method on the enum?
-			}
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_TARGET)
+				.map(AttributeTarget::parseAttributeTarget)
+				.ifPresent(attributeSchema::setTarget);
 		} break;
 
 		case TableSchemaXmlConstants.TAG_FALLBACK_COLUMN:
 		case TableSchemaXmlConstants.TAG_COLUMN: {
 			ColumnSchemaImpl columnSchema = push(new ColumnSchemaImpl());
-			mapAttributes(element);
-
-			String name = getAttribute(TableSchemaXmlConstants.ATTR_NAME);
-			if(name!=null) {
-				columnSchema.setName(name);
-			}
-
-			String annotationKey = getAttribute(TableSchemaXmlConstants.ATTR_ANNOTATION_KEY);
-			if(annotationKey!=null) {
-				columnSchema.setAnnotationKey(annotationKey);
-			}
-
-			String ignoreColumn = getAttribute(TableSchemaXmlConstants.ATTR_IGNORE);
-			if(ignoreColumn!=null) {
-				columnSchema.setIsIgnoreColumn(Boolean.parseBoolean(ignoreColumn));
-			}
-
-			String layerId = getAttribute(TableSchemaXmlConstants.ATTR_LAYER_ID);
-			if(layerId!=null) {
-				columnSchema.setLayerId(layerId);
-			}
-
-			String noEntryLabel = getAttribute(TableSchemaXmlConstants.ATTR_NO_ENTRY_LABEL);
-			if(noEntryLabel!=null) {
-				columnSchema.setNoEntryLabel(noEntryLabel);
-			}
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_NAME)
+				.ifPresent(columnSchema::setName);
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_ANNOTATION_KEY)
+				.ifPresent(columnSchema::setAnnotationKey);
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_IGNORE)
+				.map(Boolean::valueOf)
+				.ifPresent(columnSchema::setIsIgnoreColumn);
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_LAYER_ID)
+				.ifPresent(columnSchema::setLayerId);
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_NO_ENTRY_LABEL)
+				.ifPresent(columnSchema::setNoEntryLabel);
 		} break;
 
 		case TableSchemaXmlConstants.TAG_COMPONENT: {
 			MemberSchemaImpl memberSchema = push(new MemberSchemaImpl());
-			mapAttributes(element);
-
-			String memberType = getAttribute(TableSchemaXmlConstants.ATTR_MEMBER_TYPE);
-			if(memberType!=null) {
-				memberSchema.setMemberType(MemberType.valueOf(memberType.toUpperCase()));
-			}
-
-			String reference = getAttribute(TableSchemaXmlConstants.ATTR_REFERENCE);
-			if(reference!=null) {
-				memberSchema.setIsReference(Boolean.parseBoolean(reference));
-			}
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_MEMBER_TYPE)
+				.map(MemberType::parseMemberType)
+				.ifPresent(memberSchema::setMemberType);
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_REFERENCE)
+				.map(Boolean::valueOf)
+				.ifPresent(memberSchema::setIsReference);
 		} break;
 
 		case TableSchemaXmlConstants.TAG_RESOLVER: {
 			ResolverSchemaImpl resolverSchema = push(new ResolverSchemaImpl());
-			mapAttributes(element);
-
-			String type = getAttribute(TableSchemaXmlConstants.ATTR_TYPE);
-			if(type!=null) {
-				resolverSchema.setType(type);
-			}
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_TYPE)
+				.ifPresent(resolverSchema::setType);
 		} break;
 
 		case TableSchemaXmlConstants.TAG_OPTION: {
-			mapAttributes(element);
-			push(getAttribute(TableSchemaXmlConstants.ATTR_NAME));
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_NAME)
+				.ifPresent(this::push);
 		} break;
 
 		case TableSchemaXmlConstants.TAG_SUBSTITUTE: {
-			mapAttributes(element);
 			SubstituteSchemaImpl substituteSchema = push(new SubstituteSchemaImpl());
-
-			String type = getAttribute(TableSchemaXmlConstants.ATTR_TYPE);
-			if(type!=null) {
-				substituteSchema.setType(SubstituteType.valueOf(type.toUpperCase()));
-			}
-
-			String memberType = getAttribute(TableSchemaXmlConstants.ATTR_MEMBER_TYPE);
-			if(memberType!=null) {
-				substituteSchema.setMemberType(MemberType.valueOf(memberType.toUpperCase()));
-			}
-
-			String name = getAttribute(TableSchemaXmlConstants.ATTR_NAME);
-			if(name!=null) {
-				substituteSchema.setName(name);
-			}
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_TYPE)
+				.map(SubstituteType::parseSubstituteType)
+				.ifPresent(substituteSchema::setType);
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_MEMBER_TYPE)
+				.map(MemberType::parseMemberType)
+				.ifPresent(substituteSchema::setMemberType);
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_NAME)
+				.ifPresent(substituteSchema::setName);
 		} break;
 
 		// Text-only tags
@@ -358,15 +249,19 @@ public class TableSchemaXmlReader implements ObjectReader<TableSchema> {
 			break;
 
 		default:
-			throw new XMLStreamException("Unexpected begin tag: "+element.getName(), element.getLocation());
+			throw new SAXException("Unexpected begin tag: "+localName);
 		}
 
 		// Make sure we collect text for all valid tags
 		clearText();
 	}
 
-	private void endElement(EndElement element) throws XMLStreamException {
-		switch (element.getName().getLocalPart()) {
+	/**
+	 * @see org.xml.sax.helpers.DefaultHandler#endElement(java.lang.String, java.lang.String, java.lang.String)
+	 */
+	@Override
+	public void endElement(String uri, String localName, String qName) throws SAXException {
+		switch (localName) {
 		case TableSchemaXmlConstants.TAG_TABLE:
 			// Leave table schema on the stack
 			break;
@@ -425,7 +320,7 @@ public class TableSchemaXmlReader implements ObjectReader<TableSchema> {
 		} break;
 
 		case TableSchemaXmlConstants.TAG_SEPARATOR: {
-			String separator = text();
+			String separator = getText();
 			if(isContext(TableSchema.class)) {
 				peek(TableSchemaImpl.class).setSeparator(separator);
 			} else {
@@ -434,16 +329,16 @@ public class TableSchemaXmlReader implements ObjectReader<TableSchema> {
 		} break;
 
 		case TableSchemaXmlConstants.TAG_PATTERN:
-			peek(AttributeSchemaImpl.class).setPattern(text());
+			peek(AttributeSchemaImpl.class).setPattern(getText());
 			break;
 
 		case TableSchemaXmlConstants.TAG_DESCRIPTION:
-			peek(TableSchemaImpl.class).setDescription(text());
+			peek(TableSchemaImpl.class).setDescription(getText());
 			break;
 
 		case TableSchemaXmlConstants.TAG_OPTION: {
 			String key = pop(String.class);
-			String value = text();
+			String value = getText();
 
 			if(isContext(BlockSchema.class)) {
 				peek(BlockSchemaImpl.class).addOption(key, value);
@@ -461,33 +356,8 @@ public class TableSchemaXmlReader implements ObjectReader<TableSchema> {
 			break;
 
 		default:
-			throw new XMLStreamException("Unexpected end tag: "+element.getName(), element.getLocation());
+			throw new SAXException("Unexpected end tag: "+localName);
 		}
-	}
-
-	private void characters(Characters characters) {
-		buffer.append(characters.getData());
-	}
-
-	private void clearText() {
-		buffer.setLength(0);
-	}
-
-	private String text() {
-		int begin = 0;
-		while(begin<buffer.length() && Character.isWhitespace(buffer.charAt(begin))) {
-			begin++;
-		}
-		int end = buffer.length();
-		while(end>begin && Character.isWhitespace(buffer.charAt(end-1))) {
-			end--;
-		}
-
-		String text = (end<=begin) ? null : buffer.substring(begin, end);
-
-		clearText();
-
-		return text;
 	}
 
 	/**
@@ -495,14 +365,7 @@ public class TableSchemaXmlReader implements ObjectReader<TableSchema> {
 	 */
 	@Override
 	public void close() throws IOException {
-		try {
-			eventReader.close();
-		} catch (XMLStreamException e) {
-			throw new IOException("Failed to close xml event reader", e);
-		} finally {
-			eventReader = null;
-		}
-
+		stack.clear();
 	}
 
 }

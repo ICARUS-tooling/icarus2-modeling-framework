@@ -22,6 +22,11 @@ package de.ims.icarus2.filedriver.schema.tabular.xml;
  */
 public final class TableSchemaXmlConstants {
 
+	public static final String NS_PREFIX = "its";
+	public static final String NS_URI = "http://www.ims.uni-stuttgart.de/icarus/xml/schema";
+
+	public static final String SCHEMA_NAME = NS_URI+"/tabular-schema.xsd";
+
 	public static final String TAG_TABLE = "table";
 	public static final String TAG_BLOCK = "block";
 	public static final String TAG_NESTED_BLOCKS = "nestedBlocks";

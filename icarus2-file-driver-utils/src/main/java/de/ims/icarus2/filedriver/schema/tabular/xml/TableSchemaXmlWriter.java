@@ -35,6 +35,8 @@ import de.ims.icarus2.filedriver.schema.tabular.TableSchema.SubstituteSchema;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.SubstituteType;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.io.ObjectWriter;
+import de.ims.icarus2.util.xml.XmlSerializer;
+import de.ims.icarus2.util.xml.XmlUtils;
 import de.ims.icarus2.util.xml.stream.XmlStreamSerializer;
 
 /**
@@ -43,7 +45,15 @@ import de.ims.icarus2.util.xml.stream.XmlStreamSerializer;
  */
 public class TableSchemaXmlWriter implements ObjectWriter<TableSchema> {
 
+	public static void writeDefaultXsiInfo(XmlSerializer serializer) throws XMLStreamException {
+		serializer.writeAttribute("xmlns:xsi", XmlUtils.XSI_NS_URI);
+		serializer.writeSchemaInfo();
+		serializer.writeAttribute("xsi:schemaLocation",
+				TableSchemaXmlConstants.NS_URI+" "+TableSchemaXmlConstants.SCHEMA_NAME);
+	}
+
 	private XmlStreamSerializer serializer;
+	private boolean xsiInfoWritten = false;
 
 	/**
 	 * @see de.ims.icarus2.util.io.ObjectWriter#init(java.io.Writer, de.ims.icarus2.util.Options)
@@ -51,8 +61,9 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema> {
 	@Override
 	public void init(Writer output, Options options) {
 		try {
-			serializer = XmlStreamSerializer.withoutNamespace(
-					XMLOutputFactory.newFactory().createXMLStreamWriter(output));
+			serializer = XmlStreamSerializer.withNamespace(
+					XMLOutputFactory.newFactory().createXMLStreamWriter(output),
+					TableSchemaXmlConstants.NS_PREFIX, TableSchemaXmlConstants.NS_URI);
 		} catch (XMLStreamException | FactoryConfigurationError e) {
 			throw new IcarusRuntimeException(GlobalErrorCode.DELEGATION_FAILED, "Unable to create xml stream writer", e);
 		}
@@ -96,6 +107,7 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema> {
 
 	private void writeTableSchema(TableSchema schema) throws Exception {
 		serializer.startElement(TableSchemaXmlConstants.TAG_TABLE);
+		writeDefaultXsiInfo(serializer);
 
 		// ATTRIBUTES
 

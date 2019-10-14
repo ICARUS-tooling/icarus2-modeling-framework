@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    ICARUS2 Corpus Modeling Framework
+    Copyright (C) 2014-2019 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	targetNamespace="http://www.ims.uni-stuttgart.de/icarus/xml/schema"
+	xmlns:its="http://www.ims.uni-stuttgart.de/icarus/xml/schema"
+	xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning"
+	vc:minVersion="1.0"
+	attributeFormDefault="unqualified"
+	elementFormDefault="qualified"
+	version="1.0">
+	
+	<xsd:annotation>
+		<xsd:documentation>This schema defines the legal elements of the ICARUS2 schema specification for file-based corpora.</xsd:documentation>
+	</xsd:annotation>
+	
+	<xsd:element name="table" type="its:tableType" />
+	
+	<xsd:complexType name="tableType">
+		<xsd:annotation>
+			<xsd:documentation>Contains the entire specification for a tabular format.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="description" type="xsd:string" minOccurs="0" />
+			<xsd:element name="separator" type="xsd:string" minOccurs="0" />
+			<xsd:element name="block" type="its:blockType" />
+		</xsd:sequence>
+		<xsd:attribute name="id" type="its:identifierAttr">
+			<xsd:annotation>
+				<xsd:documentation>Identifier for the schema.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="name" type="its:complexNameAttr">
+			<xsd:annotation>
+				<xsd:documentation>Human-readable identifier for the schema.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="description" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>Human-readable description of the schema.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="groupId" type="its:identifierAttr">
+			<xsd:annotation>
+				<xsd:documentation>TODO.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+	</xsd:complexType>
+	
+	<xsd:complexType name="blockType">
+		<xsd:annotation>
+			<xsd:documentation>Defines the schema for a single block.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="separator" type="xsd:string" minOccurs="0" />
+			<xsd:element name="beginDelimiter" type="its:delimiterType" minOccurs="0" />
+			<xsd:element name="endDelimiter" type="its:delimiterType" minOccurs="0" />
+			<xsd:element name="attributes" minOccurs="0">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="attribute" type="its:attributeType" maxOccurs="unbounded" />
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="columns">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="column" type="its:columnType" maxOccurs="unbounded" />
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="fallbackColumn" type="its:columnType" minOccurs="0" />
+			<xsd:element name="component" type="its:componentType" minOccurs="0" />
+			<xsd:element name="option" type="its:optionType" minOccurs="0" maxOccurs="unbounded" />
+		</xsd:sequence>
+		<xsd:attribute name="layerId" type="its:identifierAttr">
+			<xsd:annotation>
+				<xsd:documentation>TODO.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="noEntryLabel" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>TODO.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="columnOrderFixed" type="xsd:boolean">
+			<xsd:annotation>
+				<xsd:documentation>TODO.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+	</xsd:complexType>
+	
+	<xsd:complexType name="delimiterType">
+		<xsd:annotation>
+			<xsd:documentation>TODO.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="its:attachableType" />
+		</xsd:complexContent>
+	</xsd:complexType>
+	
+	<xsd:complexType name="attributeType">
+		<xsd:annotation>
+			<xsd:documentation>TODO.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="its:attachableType">
+				<xsd:sequence>
+					<xsd:element name="pattern" type="xsd:string" minOccurs="0" />
+					<xsd:element name="resolver" type="its:resolverType" minOccurs="0" />
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	
+	<xsd:complexType name="attachableType">
+		<xsd:annotation>
+			<xsd:documentation>Ability to be attached via target definition to another element.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:attribute name="target" type="its:attributeTargetAttr">
+			<xsd:annotation>
+				<xsd:documentation>TODO.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+	</xsd:complexType>
+	
+	<xsd:complexType name="columnType">
+		<xsd:annotation>
+			<xsd:documentation>TODO.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="resolver" type="its:resolverType" minOccurs="0" />
+			<xsd:element name="substitute" type="its:substituteType" minOccurs="0" maxOccurs="unbounded" />
+		</xsd:sequence>
+		<xsd:attribute name="name" type="its:complexNameAttr">
+			<xsd:annotation>
+				<xsd:documentation>TODO.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="annotationKey" type="its:identifierAttr">
+			<xsd:annotation>
+				<xsd:documentation>Key to use when storing annotation data from this column in the associated layer.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="ignore" type="xsd:boolean">
+			<xsd:annotation>
+				<xsd:documentation>Hint to ignore this column when reading the corpus.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="layerId" type="its:identifierAttr">
+			<xsd:annotation>
+				<xsd:documentation>Layer to store data from this column.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="noEntryLabel" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>Label to be expected when the column content is "empty".</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+	</xsd:complexType>
+	
+	<xsd:complexType name="componentType">
+		<xsd:annotation>
+			<xsd:documentation>TODO.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:attribute name="memberType" type="its:memberTypeAttr">
+			<xsd:annotation>
+				<xsd:documentation>TODO.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="reference" type="xsd:boolean">
+			<xsd:annotation>
+				<xsd:documentation>TODO.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+	</xsd:complexType>
+	
+	<xsd:complexType name="resolverType">
+		<xsd:annotation>
+			<xsd:documentation>TODO.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="option" type="its:optionType" minOccurs="0" maxOccurs="unbounded" />
+		</xsd:sequence>
+		<xsd:attribute name="type" type="its:identifierAttr"> <!-- TODO type?? -->
+			<xsd:annotation>
+				<xsd:documentation>TODO.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+	</xsd:complexType>
+	
+	<xsd:complexType name="optionType">
+		<xsd:annotation>
+			<xsd:documentation>TODO.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:simpleContent>
+			<xsd:extension base="xsd:string">
+				<xsd:attribute name="name" type="its:simpleNameAttr">
+					<xsd:annotation>
+						<xsd:documentation>TODO.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+			</xsd:extension>
+		</xsd:simpleContent>
+	</xsd:complexType>
+	
+	<xsd:complexType name="substituteType">
+		<xsd:annotation>
+			<xsd:documentation>TODO.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="its:attachableType">
+				<xsd:attribute name="type" type="its:substituteTypeAttr">
+					<xsd:annotation>
+						<xsd:documentation>TODO.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+				<xsd:attribute name="name" type="its:simpleNameAttr">
+					<xsd:annotation>
+						<xsd:documentation>TODO.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	
+	<xsd:simpleType name="attributeTargetAttr">
+		<xsd:annotation>
+			<xsd:documentation>TODO.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="nextItem">
+				<xsd:annotation>
+					<xsd:documentation>Attach the associated element to the definition of the next item.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="previousItem">
+				<xsd:annotation>
+					<xsd:documentation>Attach the associated element to the definition of the previous item.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+	
+	<xsd:simpleType name="memberTypeAttr">
+		<xsd:annotation>
+			<xsd:documentation>The supported basic member types of a corpus.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="fragment" />
+			<xsd:enumeration value="item" />
+			<xsd:enumeration value="edge" />
+			<xsd:enumeration value="container" />
+			<xsd:enumeration value="structure" />
+			<xsd:enumeration value="layer" />
+			<xsd:enumeration value="context" />
+		</xsd:restriction>
+	</xsd:simpleType>
+	
+	<xsd:simpleType name="substituteTypeAttr">
+		<xsd:annotation>
+			<xsd:documentation>TODO.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="replacement">
+				<xsd:annotation>
+					<xsd:documentation>Replaces the slot of the column with a new member.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="addition">
+				<xsd:annotation>
+					<xsd:documentation>Adds a new member to the loading process and makes it addressable by name.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="target">
+				<xsd:annotation>
+					<xsd:documentation>Redirect annotation target to named member.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+
+	<xsd:simpleType name="complexNameAttr">
+		<xsd:annotation>
+			<xsd:documentation>A more complex identifier that allows some special characters and whitespaces</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:pattern value="[A-Za-z][\w \-_]*" />
+		</xsd:restriction>
+	</xsd:simpleType>
+
+	<xsd:simpleType name="simpleNameAttr">
+		<xsd:annotation>
+			<xsd:documentation>A compact identifier starting with a upper- or lowercase letter and otherwise only containing alphanumeric characters without any whitespaces</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:pattern value="[A-Za-z]\w*" />
+		</xsd:restriction>
+	</xsd:simpleType>
+
+    <xsd:simpleType name="identifierAttr">
+        <xsd:annotation>
+        	<xsd:documentation>General format of identifiers, minimum length of 3 characters, starting with a letter character, followed by any positive number of any one of alphanumeric, colon, underscore, dot or hyphen and ended by an alphanumeric character</xsd:documentation>
+        </xsd:annotation>
+        <xsd:restriction base="xsd:string">
+    		<xsd:pattern value="[A-Za-z][:_\.\-\w]+\w" />
+    	</xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="qualifiedClassNameAttr">
+        <xsd:annotation>
+        	<xsd:documentation>Fully qualified class name of a java class. Note that the pattern used expresses a less strict version of the java identifier format by allowing lower case letters to be used in the beginning of the final class name!</xsd:documentation>
+        </xsd:annotation>
+        <xsd:restriction base="xsd:string">
+    		<xsd:pattern value="([a-z][a-z_0-9]*\.)*[A-Z_]($[A-Za-z_]|[\w_])*" />
+    	</xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:attributeGroup name="category">
+    	<xsd:annotation>
+    		<xsd:documentation>Identifiable entity that is associated with a namespace to bind the id field to.</xsd:documentation>
+    	</xsd:annotation>
+    	<xsd:attributeGroup ref="its:fullIdentity" />
+		<xsd:attribute name="namespace" type="xsd:string" use="optional">
+			<xsd:annotation>
+				<xsd:documentation>Namespace (typically a URI) to bind the id to. This is used to link to established categories, such as ISOCat/DatCatInfo</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+    </xsd:attributeGroup>
+	
+	<xsd:attributeGroup name="optionalIdentity">
+		<xsd:annotation>
+			<xsd:documentation>Entity with mandatory identifier fields.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:attribute name="id" type="its:identifierAttr" use="optional">
+			<xsd:annotation>
+				<xsd:documentation>Machine readable identifier of the element</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attributeGroup ref="its:partialIdentity" />
+	</xsd:attributeGroup>
+	
+	<xsd:attributeGroup name="fullIdentity">
+		<xsd:annotation>
+			<xsd:documentation>Entity with mandatory identifier fields.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:attribute name="id" type="its:identifierAttr" use="required">
+			<xsd:annotation>
+				<xsd:documentation>Machine readable identifier of the element</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attributeGroup ref="its:partialIdentity" />
+	</xsd:attributeGroup>
+	
+	<xsd:attributeGroup name="partialIdentity">
+		<xsd:annotation>
+			<xsd:documentation>Equivalent of the identity attribute group with all the field optional.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:attribute name="name" type="its:complexNameAttr" use="optional">
+			<xsd:annotation>
+				<xsd:documentation>Human readable identifier of the element</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="description" type="xsd:string" use="optional">
+			<xsd:annotation>
+				<xsd:documentation>Simple free text documentation of the element.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="icon" type="xsd:string" use="optional">
+			<xsd:annotation>
+				<xsd:documentation>Either a name of registered icon object or embedded base-64 binary text.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+	</xsd:attributeGroup>
+	
+	<xsd:group name="identityGroup">
+		<xsd:annotation>
+			<xsd:documentation>Type with all identity related fields being optional.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="name" type="xsd:string" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Human readable identifier of the element</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="description" type="xsd:string" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Simple free text documentation of the element.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:group>
+
+</xsd:schema>

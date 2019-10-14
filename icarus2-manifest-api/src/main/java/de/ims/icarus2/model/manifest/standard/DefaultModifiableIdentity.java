@@ -162,6 +162,6 @@ public class DefaultModifiableIdentity<I extends ModifiableIdentity>
 	 */
 	@Override
 	public String toString() {
-		return "ModifiableIdentity@"+(id.orElse("<unnamed>"));
+		return getClass().getSimpleName()+"@"+(id.orElse("<unnamed>"));
 	}
 }

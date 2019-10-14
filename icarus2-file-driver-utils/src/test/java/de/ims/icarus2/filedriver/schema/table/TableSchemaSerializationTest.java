@@ -27,7 +27,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema;
-import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.AttributeSchema;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.AttributeTarget;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.BlockSchema;
@@ -36,6 +35,7 @@ import de.ims.icarus2.filedriver.schema.tabular.TableSchema.MemberSchema;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.ResolverSchema;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.SubstituteSchema;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.SubstituteType;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.AttributeSchemaImpl;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.BlockSchemaImpl;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.ColumnSchemaImpl;
@@ -45,6 +45,7 @@ import de.ims.icarus2.filedriver.schema.tabular.TableSchemaImpl.SubstituteSchema
 import de.ims.icarus2.filedriver.schema.tabular.xml.TableSchemaXmlReader;
 import de.ims.icarus2.filedriver.schema.tabular.xml.TableSchemaXmlWriter;
 import de.ims.icarus2.model.api.members.MemberType;
+import de.ims.icarus2.util.Options;
 
 /**
  * @author Markus Gärtner
@@ -70,15 +71,13 @@ public class TableSchemaSerializationTest {
 			serializedForm = sw.toString();
 		}
 
-//		System.out.println("--------------------------------------------");
-//		System.out.println(serializedForm); //DEBUG
+		System.out.println("--------------------------------------------");
+		System.out.println(serializedForm); //DEBUG
 
 		try(TableSchemaXmlReader reader = new TableSchemaXmlReader()) {
 			StringReader sr = new StringReader(serializedForm);
 
-			reader.init(sr, null);
-
-			deserialized = reader.read();
+			deserialized = reader.read(sr, Options.NONE);
 		}
 
 		return serializedForm;

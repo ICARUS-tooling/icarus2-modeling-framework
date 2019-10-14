@@ -153,10 +153,8 @@ public class DefaultSchemaConverterFactory implements Factory {
 		TableSchema schema;
 
 		try(TableSchemaXmlReader schemaReader = new TableSchemaXmlReader()) {
-			schemaReader.init(reader, manifest.getPropertiesAsOptions());
-
-			schema = schemaReader.read();
-		} catch (IOException | InterruptedException e) {
+			schema = schemaReader.read(reader, manifest.getPropertiesAsOptions());
+		} catch (IOException e) {
 			throw new ModelException(GlobalErrorCode.IO_ERROR, "Failed to load table schema", e);
 		} finally {
 			IOUtil.closeSilently(reader);
