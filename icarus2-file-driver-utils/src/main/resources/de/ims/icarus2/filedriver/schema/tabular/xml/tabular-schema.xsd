@@ -111,7 +111,11 @@
 			<xsd:documentation>TODO.</xsd:documentation>
 		</xsd:annotation>
 		<xsd:complexContent>
-			<xsd:extension base="its:attachableType" />
+			<xsd:extension base="its:attachableType">
+				<xsd:sequence>
+					<xsd:element name="pattern" type="xsd:string" minOccurs="0" />
+				</xsd:sequence>
+			</xsd:extension>
 		</xsd:complexContent>
 	</xsd:complexType>
 	

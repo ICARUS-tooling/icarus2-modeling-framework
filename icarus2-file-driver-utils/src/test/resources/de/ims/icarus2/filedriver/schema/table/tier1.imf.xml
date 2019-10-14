@@ -56,20 +56,23 @@
 							<imf:properties>
 								<imf:property name="de.ims.icarus2.filedriver.schema.typeId">de.ims.icarus2.filedriver.schema.tabular</imf:property>
 								<imf:property name="de.ims.icarus2.filedriver.schema.content"><![CDATA[
-								<table id="test.tier1.tbl" name="Tier-1 Tabular Format"  group-id="main">
-									<block layerId="token">
-										<separator>WHITESPACES</separator>
-										<component memberType="ITEM"/>
-										<endDelimiter>
-											<pattern>EMPTY_LINE</pattern>
-										</endDelimiter>
-										<columns>
-											<column name="ID" ignore="true"/>
-											<column name="FORM" layerId="form"/>
-											<column name="LEMMA" layerId="lemma"/>
-										</columns>
-									</block>
-								</table>
+								<its:table xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+									xmlns:its="http://www.ims.uni-stuttgart.de/icarus/xml/schema" 
+									xsi:schemaLocation="http://www.ims.uni-stuttgart.de/icarus/xml/schema http://www.ims.uni-stuttgart.de/icarus/xml/schema/tabular-schema.xsd" 
+									id="test.tier1.tbl" name="Tier-1 Tabular Format"  groupId="main">
+									<its:block layerId="token">
+										<its:separator>WHITESPACES</its:separator>
+										<its:component memberType="item"/>
+										<its:endDelimiter>
+											<its:pattern>EMPTY_LINE</its:pattern>
+										</its:endDelimiter>
+										<its:columns>
+											<its:column name="ID" ignore="true"/>
+											<its:column name="FORM" layerId="form"/>
+											<its:column name="LEMMA" layerId="lemma"/>
+										</its:columns>
+									</its:block>
+								</its:table>
 								]]>
 								</imf:property>
 							</imf:properties>
