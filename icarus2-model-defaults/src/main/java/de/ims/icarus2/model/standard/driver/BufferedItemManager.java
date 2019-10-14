@@ -100,16 +100,29 @@ public class BufferedItemManager {
 	 */
 	public interface InputCache {
 
+		/** Add a given item and index to the cache */
 		void offer(Item item, long index);
 
+		/** Returns {@code true} iff this cache is not empty */
 		boolean hasPendingEntries();
 
+		/**
+		 * Applies the given action to all item-index pairs in this cache.
+		 * Note that the order in which the cached entries will be presented
+		 * to the action is <b>not</b> guaranteed.
+		 */
 		void forEach(ObjLongConsumer<Item> action);
 
+		/**
+		 * Provides an alternative way of traversing the elements in this cache.
+		 * @see #forEach(ObjLongConsumer)
+		 */
 		Iterator<Item> pendingItemIterator();
 
+		/** Remove all entries in this cache */
 		int discard();
 
+		/** Persist the content of this cache in the back-end storage and clear the cache */
 		int commit();
 
 	}
@@ -282,6 +295,7 @@ public class BufferedItemManager {
 			if(pendingEntries!=null && !pendingEntries.isEmpty()) {
 				result = pendingEntries.size();
 				getBuffer().commit(this);
+				discard();
 			}
 
 			return result;

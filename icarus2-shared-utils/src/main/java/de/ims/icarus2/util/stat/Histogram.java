@@ -3,6 +3,7 @@
  */
 package de.ims.icarus2.util.stat;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.IcarusUtils.MAX_INTEGER_INDEX;
 import static de.ims.icarus2.util.IcarusUtils.ensureIntegerValueRange;
 
@@ -35,6 +36,11 @@ public interface Histogram extends LongConsumer {
 
 	int bin(long value);
 
+	/** Computes the average for all values in this histogram and returns it. If
+	 * such value could not be computed (e.g. for lack of entries) the method
+	 * should return {@link Double#NaN}.
+	 * @return
+	 */
 	double average();
 
 	default long min() {
@@ -48,14 +54,41 @@ public interface Histogram extends LongConsumer {
 	//TODO add method for average and percentile retrieval
 
 	public static Histogram fixedHistogram(int capacity) {
-		return new ArrayHistogram(capacity, 0);
+		return ArrayHistogram.fixed(capacity);
+	}
+
+	public static Histogram rangedHistogram(int capacity) {
+		return ArrayHistogram.fixed(capacity);
 	}
 
 	public static class ArrayHistogram implements Histogram, LongConsumer {
+
+		public static ArrayHistogram fixed(int capacity) {
+			return new ArrayHistogram(capacity, 0, true);
+		}
+
+		public static ArrayHistogram fixed(int capacity, long offset) {
+			return new ArrayHistogram(capacity, offset, true);
+		}
+
+		public static ArrayHistogram range(long lowerBound, long upperBound) {
+			checkArgument(lowerBound<=upperBound);
+			long range = upperBound-lowerBound+1;
+			return new ArrayHistogram(ensureIntegerValueRange(range), lowerBound, true);
+		}
+
+		public static ArrayHistogram open(int initialCapacity) {
+			return new ArrayHistogram(initialCapacity, 0, false);
+		}
+
+		public static ArrayHistogram open(int initialCapacity, long offset) {
+			return new ArrayHistogram(initialCapacity, offset, false);
+		}
+
 		/** Buffer for frequencies */
 		private int[] bins;
-		/** Number of used bins */
-		private int used;
+		/** FLag to indicate if the bins array is allowed to grow */
+		private boolean fixed;
 		/** Total number of samples contained */
 		private long entries;
 		/** Total sum of all sampled values */
@@ -63,9 +96,10 @@ public interface Histogram extends LongConsumer {
 		/** Offset to be applied when determining the bin for a given value */
 		private long offset;
 
-		private ArrayHistogram(int capacity, int offset) {
+		private ArrayHistogram(int capacity, long offset, boolean fixed) {
 			this.bins = new int[capacity];
 			this.offset = offset;
+			this.fixed = fixed;
 		}
 
 		/**
@@ -73,7 +107,7 @@ public interface Histogram extends LongConsumer {
 		 */
 		@Override
 		public int bins() {
-			return used;
+			return bins.length;
 		}
 
 		/**
@@ -117,7 +151,7 @@ public interface Histogram extends LongConsumer {
 		 */
 		@Override
 		public double average() {
-			return entries==0L ? 0D : (double) sum / entries;
+			return entries==0L ? Double.NaN : (double) sum / entries;
 		}
 
 		private int rawBin(long v) {
@@ -135,7 +169,7 @@ public interface Histogram extends LongConsumer {
 		@Override
 		public int bin(long value) {
 			int rawBin = rawBin(value);
-			if(rawBin>=used)
+			if(rawBin>=bins.length)
 				throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT,
 						"Given value exceeds bin count: "+value);
 			return rawBin;
@@ -147,14 +181,13 @@ public interface Histogram extends LongConsumer {
 		@Override
 		public void accept(long value) {
 			int rawBin = rawBin(value);
-			if(rawBin>=bins.length) {
+			if(rawBin>=bins.length && !fixed) {
 				int newCapacity = Math.max(rawBin, bins.length * 2);
 				if(newCapacity<0) { // overflow-conscious
 					newCapacity = MAX_INTEGER_INDEX;
 				}
 				bins = Arrays.copyOf(bins, newCapacity);
 			}
-			used = Math.max(used, rawBin-1);
 			bins[rawBin]++;
 			sum += value;
 			entries++;

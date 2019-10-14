@@ -22,6 +22,5 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew build
     - name: Upload code coverage of tests
-      uses: codecov/codecov-action@v1.0.2
-      with:
-        token: ${{secrets.CODECOV_TOKEN}}
+      run: <(curl -s https://codecov.io/bash)
+      shell: bash

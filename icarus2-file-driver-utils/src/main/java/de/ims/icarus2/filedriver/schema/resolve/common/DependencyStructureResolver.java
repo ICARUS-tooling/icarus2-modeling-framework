@@ -69,7 +69,7 @@ public class DependencyStructureResolver implements BatchResolver {
 	private int offset;
 
 	/**
-	 * The label indicating that the current item is  directly connected
+	 * The label indicating that the current item is directly connected
 	 * to the artificial root node.
 	 */
 	private String rootLabel;
