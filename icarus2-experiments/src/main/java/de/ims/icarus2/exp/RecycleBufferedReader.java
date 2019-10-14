@@ -19,6 +19,7 @@ package de.ims.icarus2.exp;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
@@ -35,7 +36,13 @@ import de.ims.icarus2.util.nio.SubChannel;
 public class RecycleBufferedReader {
 
 	public static void main(String[] args) throws IOException, URISyntaxException {
-		Path file = Paths.get("D:","Workspaces","git","icarus2","experiments","src","main","java","de","ims","icarus2","exp","RecycleBufferedReader.java");
+		Path file;
+		URL url = RecycleBufferedReader.class.getResource("RecycleBufferedReader.java");
+		if(url==null) {
+			file = Paths.get("src/main/java/de/ims/icarus2/exp/RecycleBufferedReader.java");
+		} else {
+			file = Paths.get(url.toURI());
+		}
 
 		try(SeekableByteChannel channel = Files.newByteChannel(file)) {
 			try(SubChannel subChannel = new SubChannel()) {
