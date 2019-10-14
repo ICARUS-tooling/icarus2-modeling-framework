@@ -12,9 +12,9 @@ This part of the ICARUS2 framework provides driver implementations and supportin
 ## Usage
 
 To define and fully enable a file-based corpus driver, the associated manifest definition has to contain three elemental parts:
-1. [Location of the corpus](#location)
-1. [Converter implementation to be used](#converter)
-1. [Schema to inform the converter on how to read the corpus](#schema)
+1. [Location of the corpus](#1-location)
+1. [Converter implementation to be used](#2-converter)
+1. [Schema to inform the converter on how to read the corpus](#3-schema)
 
 ### 1. Location
 
