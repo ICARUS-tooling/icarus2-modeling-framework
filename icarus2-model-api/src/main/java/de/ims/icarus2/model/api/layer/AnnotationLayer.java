@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.api.layer;
 
+import static java.util.Objects.requireNonNull;
+
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -103,14 +107,17 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 	 */
 	@SuppressWarnings("unchecked")
 	default <T extends Object> T getValue(Item item) {
+		requireNonNull(item);
 		return (T) getAnnotationStorage().getValue(item, getManifest().getDefaultKey().get());
 	}
 
-	default void setValue(Item item, String key, Object value) {
+	default void setValue(Item item, String key, @Nullable Object value) {
 		getAnnotationStorage().setValue(item, key, value);
 	}
 
 	default void clearValue(Item item, String key) {
+		requireNonNull(item);
+		requireNonNull(key);
 		getManifest().getAnnotationManifest(key)
 			.flatMap(AnnotationManifest::getNoEntryValue)
 			.ifPresent(v -> getAnnotationStorage().setValue(item, key, v));
