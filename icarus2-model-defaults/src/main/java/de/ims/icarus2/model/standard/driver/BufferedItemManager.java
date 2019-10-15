@@ -295,7 +295,8 @@ public class BufferedItemManager {
 			if(pendingEntries!=null && !pendingEntries.isEmpty()) {
 				result = pendingEntries.size();
 				getBuffer().commit(this);
-				discard();
+				// Soft reset by discarding the current buffer content
+				pendingEntries.clear();
 			}
 
 			return result;

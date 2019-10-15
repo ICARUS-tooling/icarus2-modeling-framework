@@ -69,8 +69,8 @@
 		</xsd:annotation>
 		<xsd:sequence>
 			<xsd:element name="separator" type="xsd:string" minOccurs="0" />
-			<xsd:element name="beginDelimiter" type="its:delimiterType" minOccurs="0" />
-			<xsd:element name="endDelimiter" type="its:delimiterType" minOccurs="0" />
+			<xsd:element name="beginDelimiter" type="its:attributeType" minOccurs="0" />
+			<xsd:element name="endDelimiter" type="its:attributeType" minOccurs="0" />
 			<xsd:element name="attributes" minOccurs="0">
 				<xsd:complexType>
 					<xsd:sequence>
@@ -104,19 +104,6 @@
 				<xsd:documentation>TODO.</xsd:documentation>
 			</xsd:annotation>
 		</xsd:attribute>
-	</xsd:complexType>
-	
-	<xsd:complexType name="delimiterType">
-		<xsd:annotation>
-			<xsd:documentation>TODO.</xsd:documentation>
-		</xsd:annotation>
-		<xsd:complexContent>
-			<xsd:extension base="its:attachableType">
-				<xsd:sequence>
-					<xsd:element name="pattern" type="xsd:string" minOccurs="0" />
-				</xsd:sequence>
-			</xsd:extension>
-		</xsd:complexContent>
 	</xsd:complexType>
 	
 	<xsd:complexType name="attributeType">

@@ -62,7 +62,6 @@
 									id="test.tier1.tbl" name="Tier-1 Tabular Format"  groupId="main">
 									<its:block layerId="token">
 										<its:separator>WHITESPACES</its:separator>
-										<its:component memberType="item"/>
 										<its:endDelimiter>
 											<its:pattern>EMPTY_LINE</its:pattern>
 										</its:endDelimiter>
@@ -71,6 +70,7 @@
 											<its:column name="FORM" layerId="form"/>
 											<its:column name="LEMMA" layerId="lemma"/>
 										</its:columns>
+										<its:component memberType="item"/>
 									</its:block>
 								</its:table>
 								]]>
