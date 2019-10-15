@@ -22,7 +22,5 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew build
     - name: Upload code coverage of tests
-      run: curl -s https://codecov.io/bash > .codecov
-            chmod +x .codecov
-            ./.codecov
+      run: curl -s https://codecov.io/bash > .codecov && chmod +x .codecov && ./.codecov
       shell: bash
