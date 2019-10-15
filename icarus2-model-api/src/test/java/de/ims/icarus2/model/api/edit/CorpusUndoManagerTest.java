@@ -40,7 +40,6 @@ import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.corpus.GenerationControl;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
-import de.ims.icarus2.test.guard.ApiGuard;
 
 /**
  * @author Markus Gärtner
@@ -59,12 +58,6 @@ class CorpusUndoManagerTest implements ApiGuardedTest<CorpusUndoManager> {
 		Corpus corpus = mock(Corpus.class);
 		when(corpus.getEditManager()).thenReturn(editManager);
 		return settings.process(new CorpusUndoManager(corpus));
-	}
-
-	@Override
-	public void configureApiGuard(ApiGuard<CorpusUndoManager> apiGuard) {
-		ApiGuardedTest.super.configureApiGuard(apiGuard);
-		apiGuard.nullGuard(true);
 	}
 
 	private static UndoableCorpusEdit mockEdit(boolean undoable, boolean redoable) {

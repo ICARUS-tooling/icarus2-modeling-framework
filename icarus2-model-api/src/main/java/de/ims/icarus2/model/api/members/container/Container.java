@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.api.members.container;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
@@ -197,6 +199,7 @@ public interface Container extends Item, ManifestOwner<ContainerManifestBase<?>>
 	 * @param action
 	 */
 	default void forEachItem(BiConsumer<? super Container, ? super Item> action) {
+		requireNonNull(action);
 		elements().forEach(item -> action.accept(this, item));
 	}
 

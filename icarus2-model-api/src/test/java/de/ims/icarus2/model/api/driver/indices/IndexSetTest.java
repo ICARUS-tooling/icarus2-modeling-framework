@@ -45,7 +45,6 @@ import org.junit.jupiter.api.TestFactory;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.driver.indices.IndexSet.Feature;
 import de.ims.icarus2.test.ApiGuardedTest;
-import de.ims.icarus2.test.guard.ApiGuard;
 import de.ims.icarus2.util.collections.ArrayUtils;
 
 /**
@@ -53,15 +52,6 @@ import de.ims.icarus2.util.collections.ArrayUtils;
  *
  */
 public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
-
-	/**
-	 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
-	 */
-	@Override
-	default void configureApiGuard(ApiGuard<S> apiGuard) {
-		ApiGuardedTest.super.configureApiGuard(apiGuard);
-		apiGuard.nullGuard(true);
-	}
 
 	Stream<Config> configurations();
 

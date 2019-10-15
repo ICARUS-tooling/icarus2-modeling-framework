@@ -37,7 +37,6 @@ import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.annotations.Provider;
-import de.ims.icarus2.test.guard.ApiGuard;
 
 /**
  * @author Markus Gärtner
@@ -76,17 +75,6 @@ public interface ItemStorageTest<S extends ItemStorage> extends ApiGuardedTest<S
 		when(container.getManifest()).then(inv -> manifest);
 
 		return container;
-	}
-
-	/**
-	 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
-	 */
-	@Override
-	default void configureApiGuard(ApiGuard<S> apiGuard) {
-		ApiGuardedTest.super.configureApiGuard(apiGuard);
-
-		apiGuard.detectUnmarkedMethods(true)
-			.nullGuard(true);
 	}
 
 	/**

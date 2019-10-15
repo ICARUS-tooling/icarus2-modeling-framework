@@ -63,6 +63,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 import org.opentest4j.TestAbortedException;
 
 import de.ims.icarus2.test.DiffUtils.Trace;
@@ -1090,6 +1091,15 @@ public class TestUtils {
 		public String toString() {
 			return "Dummy@"+hashCode(); //$NON-NLS-1$
 		}
+	}
+
+	public static final <T> Answer<T> defaultNullCheck() {
+		return invoc -> {
+			for(Object arg : invoc.getArguments()) {
+				requireNonNull(arg);
+			}
+			return null;
+		};
 	}
 
 	/**

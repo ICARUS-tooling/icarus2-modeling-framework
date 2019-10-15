@@ -51,7 +51,6 @@ import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.test.ApiGuardedTest;
-import de.ims.icarus2.test.guard.ApiGuard;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.set.DataSet;
 
@@ -61,16 +60,6 @@ import de.ims.icarus2.util.collections.set.DataSet;
  */
 public interface LayerMemberFactoryTest<F extends LayerMemberFactory>
 		extends ApiGuardedTest<F>{
-
-	/**
-	 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
-	 */
-	@Override
-	default void configureApiGuard(ApiGuard<F> apiGuard) {
-		ApiGuardedTest.super.configureApiGuard(apiGuard);
-
-		apiGuard.nullGuard(true);
-	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.registry.LayerMemberFactory#newContainer(de.ims.icarus2.model.manifest.api.ContainerManifestBase, de.ims.icarus2.model.api.members.container.Container, long)}.

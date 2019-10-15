@@ -63,7 +63,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
-import de.ims.icarus2.test.guard.ApiGuard;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 
 /**
@@ -73,16 +72,6 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 @SuppressWarnings("rawtypes")
 @Tag(RANDOMIZED)
 class LookupListTest implements ApiGuardedTest<LookupList> {
-
-	/**
-	 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
-	 */
-	@Override
-	public void configureApiGuard(ApiGuard<LookupList> apiGuard) {
-		ApiGuardedTest.super.configureApiGuard(apiGuard);
-
-		apiGuard.nullGuard(true);
-	}
 
 	@Override
 	public Class<LookupList> getTestTargetClass() {

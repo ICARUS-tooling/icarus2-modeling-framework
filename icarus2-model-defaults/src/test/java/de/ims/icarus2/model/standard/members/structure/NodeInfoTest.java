@@ -35,22 +35,12 @@ import org.junit.jupiter.api.TestFactory;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.test.ApiGuardedTest;
-import de.ims.icarus2.test.guard.ApiGuard;
 
 /**
  * @author Markus Gärtner
  *
  */
 public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
-
-	/**
-	 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
-	 */
-	@Override
-	default void configureApiGuard(ApiGuard<I> apiGuard) {
-		ApiGuardedTest.super.configureApiGuard(apiGuard);
-		apiGuard.nullGuard(true);
-	}
 
 	/**
 	 * Returns the structure type that adequately describes the

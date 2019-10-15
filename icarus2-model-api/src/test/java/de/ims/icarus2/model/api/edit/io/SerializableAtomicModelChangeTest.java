@@ -110,7 +110,6 @@ import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
-import de.ims.icarus2.test.guard.ApiGuard;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.Mutable.MutableObject;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
@@ -131,12 +130,6 @@ class SerializableAtomicModelChangeTest {
 	 * @param <B> buffer data holding the state of whatever the change affects
 	 */
 	interface ModelChangeTest<C extends SerializableAtomicChange, B> extends ApiGuardedTest<C> {
-
-		@Override
-		default void configureApiGuard(ApiGuard<C> apiGuard) {
-			ApiGuardedTest.super.configureApiGuard(apiGuard);
-			apiGuard.nullGuard(true);
-		}
 
 		/** Create a bunch of usable data instances */
 		Stream<Pair<String, B>> createData();

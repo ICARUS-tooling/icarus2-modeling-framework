@@ -36,9 +36,6 @@ public interface ManifestApiTest<T extends Object> extends GenericTest<T>, ApiGu
 	default void configureApiGuard(ApiGuard<T> apiGuard) {
 		ApiGuardedTest.super.configureApiGuard(apiGuard);
 
-		apiGuard.detectUnmarkedMethods(true)
-			.nullGuard(true);
-
 		//TODO adjust api guard for derivable properties!
 	}
 }

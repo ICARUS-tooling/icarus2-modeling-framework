@@ -57,9 +57,16 @@ public class ApiGuard<T> extends DummyCache<ApiGuard<T>, T> {
 
 	/**
 	 * If the class defines no no-args constructor, we require
-	 * external help in constructing the
+	 * external help in constructing the test instance.
 	 */
 	private Supplier<? extends T> noArgsFallback;
+
+	/**
+	 * If a class requires complex setup for its test instances,
+	 * we cannot use the default no-args constructor fallback
+	 * and should be supplied a helper implementation!
+	 */
+	private Supplier<? extends T> constructorOverride;
 
 	/**
 	 * Signals that the api guard should also construct tests that
@@ -123,6 +130,12 @@ public class ApiGuard<T> extends DummyCache<ApiGuard<T>, T> {
 	public ApiGuard<T> noArgsFallback(Supplier<? extends T> noArgsFallback) {
 		assertNull(this.noArgsFallback, "noArgsFallback already set");
 		this.noArgsFallback = requireNonNull(noArgsFallback);
+		return self();
+	}
+
+	public ApiGuard<T> constructorOverride(Supplier<? extends T> constructorOverride) {
+		assertNull(this.constructorOverride, "constructorOverride already set");
+		this.constructorOverride = requireNonNull(constructorOverride);
 		return self();
 	}
 
@@ -231,6 +244,10 @@ public class ApiGuard<T> extends DummyCache<ApiGuard<T>, T> {
 	}
 
 	public Supplier<? extends T> instanceCreator() {
+		if(constructorOverride!=null) {
+			return constructorOverride;
+		}
+
 		Constructor<T> noArgsConstructor = null;
 		try {
 			noArgsConstructor = targetClass.getConstructor();

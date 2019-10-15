@@ -83,7 +83,6 @@ import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.DisabledOnCi;
 import de.ims.icarus2.test.concurrent.Circuit;
-import de.ims.icarus2.test.guard.ApiGuard;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.test.util.Triple;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
@@ -400,17 +399,6 @@ class PackedDataManagerTest {
 				@Override
 				public Class<?> getTestTargetClass() {
 					return PackedDataManager.class;
-				}
-
-				/**
-				 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
-				 */
-				@Override
-				public void configureApiGuard(ApiGuard<PackedDataManager<Object, Object>> apiGuard) {
-					ApiGuardedTest.super.configureApiGuard(apiGuard);
-
-					apiGuard.detectUnmarkedMethods(true)
-						.nullGuard(true);
 				}
 
 				/**

@@ -61,7 +61,6 @@ import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
-import de.ims.icarus2.test.guard.ApiGuard;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
@@ -71,16 +70,6 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
  */
 public interface AnnotationStorageTest<S extends AnnotationStorage>
 		extends ApiGuardedTest<S> {
-
-	/**
-	 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
-	 */
-	@Override
-	default void configureApiGuard(ApiGuard<S> apiGuard) {
-		ApiGuardedTest.super.configureApiGuard(apiGuard);
-
-		apiGuard.nullGuard(true);
-	}
 
 	static final Set<ValueType> ALL_TYPES = Collections.unmodifiableSet(
 			new ObjectOpenHashSet<>(ValueType.valueTypes()));

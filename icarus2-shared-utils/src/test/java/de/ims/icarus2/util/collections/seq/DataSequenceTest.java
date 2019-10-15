@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Test;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.TestUtils;
-import de.ims.icarus2.test.guard.ApiGuard;
 import de.ims.icarus2.util.collections.IterableTest;
 
 /**
@@ -40,15 +39,6 @@ import de.ims.icarus2.util.collections.IterableTest;
  */
 public interface DataSequenceTest<S extends DataSequence<Object>>
 	extends ApiGuardedTest<S>, IterableTest<Object, S> {
-
-	/**
-	 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
-	 */
-	@Override
-	default void configureApiGuard(ApiGuard<S> apiGuard) {
-		ApiGuardedTest.super.configureApiGuard(apiGuard);
-		apiGuard.nullGuard(true);
-	}
 
 	@Override
 	default Object[] randomContent() {

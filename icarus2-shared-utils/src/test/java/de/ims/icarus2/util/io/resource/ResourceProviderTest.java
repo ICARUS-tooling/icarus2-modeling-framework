@@ -36,7 +36,6 @@ import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.test.ApiGuardedTest;
-import de.ims.icarus2.test.guard.ApiGuard;
 import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**
@@ -44,16 +43,6 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  *
  */
 public interface ResourceProviderTest<P extends ResourceProvider> extends ApiGuardedTest<P> {
-
-	/**
-	 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
-	 */
-	@Override
-	default void configureApiGuard(ApiGuard<P> apiGuard) {
-		ApiGuardedTest.super.configureApiGuard(apiGuard);
-
-		apiGuard.nullGuard(true);
-	}
 
 	void cleanup(P provider, Path...paths) throws IOException;
 

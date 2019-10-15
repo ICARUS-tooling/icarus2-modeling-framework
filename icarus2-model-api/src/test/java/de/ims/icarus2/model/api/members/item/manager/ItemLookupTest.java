@@ -47,22 +47,12 @@ import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.test.ApiGuardedTest;
-import de.ims.icarus2.test.guard.ApiGuard;
 
 /**
  * @author Markus Gärtner
  *
  */
 public interface ItemLookupTest<L extends ItemLookup> extends ApiGuardedTest<L> {
-
-	/**
-	 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
-	 */
-	@Override
-	default void configureApiGuard(ApiGuard<L> apiGuard) {
-		ApiGuardedTest.super.configureApiGuard(apiGuard);
-		apiGuard.nullGuard(true);
-	}
 
 	L createFilled(Item...items);
 

@@ -44,7 +44,6 @@ import de.ims.icarus2.model.api.edit.change.AtomicChange;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
-import de.ims.icarus2.test.guard.ApiGuard;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.events.SimpleEventListener;
 
@@ -63,12 +62,6 @@ class CorpusEditManagerTest implements ApiGuardedTest<CorpusEditManager> {
 	@Override
 	public CorpusEditManager createTestInstance(TestSettings settings) {
 		return settings.process(new CorpusEditManager(mock(Corpus.class)));
-	}
-
-	@Override
-	public void configureApiGuard(ApiGuard<CorpusEditManager> apiGuard) {
-		ApiGuardedTest.super.configureApiGuard(apiGuard);
-		apiGuard.nullGuard(true);
 	}
 
 	@Nested

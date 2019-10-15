@@ -61,6 +61,7 @@ public interface ApiGuardedTest<T extends Object> extends TargetedTest<T> {
 	default void configureApiGuard(ApiGuard<T> apiGuard) {
 		apiGuard
 			.testPropertiesIfApi()
+			.nullGuard(true)
 			.noArgsFallback(this::create);
 	}
 

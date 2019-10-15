@@ -39,7 +39,6 @@ import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.annotations.Provider;
-import de.ims.icarus2.test.guard.ApiGuard;
 
 /**
  * @author Markus Gärtner
@@ -78,17 +77,6 @@ public interface EdgeStorageTest<S extends EdgeStorage> extends ApiGuardedTest<S
 		when(structure.getManifest()).then(inv -> manifest);
 
 		return structure;
-	}
-
-	/**
-	 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
-	 */
-	@Override
-	default void configureApiGuard(ApiGuard<S> apiGuard) {
-		ApiGuardedTest.super.configureApiGuard(apiGuard);
-
-		apiGuard.detectUnmarkedMethods(true)
-			.nullGuard(true);
 	}
 
 	/**

@@ -32,6 +32,7 @@ import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.assertFlagGetter;
 import static de.ims.icarus2.test.TestUtils.assertGetter;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
+import static de.ims.icarus2.test.TestUtils.defaultNullCheck;
 import static de.ims.icarus2.test.TestUtils.filledArray;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.test.TestUtils.randomLongPair;
@@ -76,6 +77,7 @@ import de.ims.icarus2.model.manifest.api.ContainerFlag;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ContainerType;
+import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.guard.ApiGuard;
 import de.ims.icarus2.test.util.Pair;
@@ -98,6 +100,7 @@ class DefaultContainerTest implements ContainerTest<Container> {
 
 		apiGuard.parameterResolver(ContainerManifestBase.class,
 				instance -> mock(ContainerManifest.class));
+		apiGuard.constructorOverride(this::create);
 	}
 
 	/**
@@ -106,6 +109,25 @@ class DefaultContainerTest implements ContainerTest<Container> {
 	@Override
 	public Class<? extends Container> getTestTargetClass() {
 		return DefaultContainer.class;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.MemberTest#createTestInstance(de.ims.icarus2.test.TestSettings)
+	 */
+	@Override
+	public Container createTestInstance(TestSettings settings) {
+		DefaultContainer container = new DefaultContainer();
+
+		ContainerManifest manifest = mock(ContainerManifest.class);
+		when(manifest.getContainerType()).thenReturn(ContainerType.LIST);
+
+		ItemStorage itemStorage = mock(ItemStorage.class, defaultNullCheck());
+		when(itemStorage.getContainerType()).thenReturn(ContainerType.LIST);
+
+		container.setManifest(manifest);
+		container.setItemStorage(itemStorage);
+
+		return settings.process(container);
 	}
 
 	@Nested
@@ -292,6 +314,7 @@ class DefaultContainerTest implements ContainerTest<Container> {
 		}
 	}
 
+	/** Base class for test instances that require setup environment */
 	@Nested
 	class WithManifestEnvironment {
 		ContainerManifest manifest;
@@ -319,7 +342,6 @@ class DefaultContainerTest implements ContainerTest<Container> {
 			itemStorage = null;
 			instance = null;
 		}
-
 	}
 
 	@Nested
