@@ -91,7 +91,7 @@ public class NullGuardian<T> extends Guardian<T> {
 		super(apiGuard);
 
 		targetClass = apiGuard.getTargetClass();
-		creator = apiGuard.instanceCreator();
+		creator = apiGuard.instanceCreator(false);
 
 		classCache = ClassCache.<T>builder()
 				.targetClass(targetClass)

@@ -137,7 +137,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 
 		targetClass = apiGuard.getTargetClass();
 		detectUnmarkedMethods = apiGuard.isDetectUnmarkedMethods();
-		creator = apiGuard.instanceCreator();
+		creator = apiGuard.instanceCreator(true);
 
 		classCache = ClassCache.<T>builder()
 				.targetClass(targetClass)

@@ -243,8 +243,8 @@ public class ApiGuard<T> extends DummyCache<ApiGuard<T>, T> {
 		return Collections.unmodifiableMap(defaultReturnValues);
 	}
 
-	public Supplier<? extends T> instanceCreator() {
-		if(constructorOverride!=null) {
+	public Supplier<? extends T> instanceCreator(boolean allowBlank) {
+		if(constructorOverride!=null && !allowBlank) {
 			return constructorOverride;
 		}
 
