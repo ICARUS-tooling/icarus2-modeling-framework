@@ -154,7 +154,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	/** Delegates construction of the storage construction */
 	private final IntFunction<ByteAllocator> storageSource;
 
-	private final Stats<StatField> statFields;
+	private final Stats<StatField> stats;
 
 	/**
 	 * The lookup structure for defining raw package handlers.
@@ -183,7 +183,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		allowDynamicChunkComposition = builder.isAllowDynamicChunkComposition();
 		autoRegister = builder.isAutoRegister();
 		failForUnwritten = builder.isFailForUnwritten();
-		statFields = builder.isCollectStats() ? new Stats<>(StatField.class) : null;
+		stats = builder.isCollectStats() ? new Stats<>(StatField.class) : null;
 
 		readWriteProxy = CloseableThreadLocal.withInitial(
 				() -> new ReadWriteProxy(rawStorage.newCursor()));
@@ -664,23 +664,23 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	}
 
 	private void recordWrite() {
-		if(statFields!=null) statFields.count(StatField.WRITE);
+		if(stats!=null) stats.count(StatField.WRITE);
 	}
 
 	private void recordOptimisticRead() {
-		if(statFields!=null) statFields.count(StatField.READ_OPTIMISTIC);
+		if(stats!=null) stats.count(StatField.READ_OPTIMISTIC);
 	}
 
 	private void recordCompromisedRead() {
-		if(statFields!=null) statFields.count(StatField.READ_COMPROMISED);
+		if(stats!=null) stats.count(StatField.READ_COMPROMISED);
 	}
 
 	private void recordLockedRead() {
-		if(statFields!=null) statFields.count(StatField.READ);
+		if(stats!=null) stats.count(StatField.READ);
 	}
 
 	private void recordReadMiss() {
-		if(statFields!=null) statFields.count(StatField.READ_MISS);
+		if(stats!=null) stats.count(StatField.READ_MISS);
 	}
 
 	private void handleUnwritten(E item) {
@@ -1068,23 +1068,23 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	}
 
 	public boolean isCollectStats() {
-		return statFields!=null;
+		return stats!=null;
 	}
 
 	private void checkCollectStats() {
-		checkState("Not configured to record statistics", statFields!=null);
+		checkState("Not configured to record statistics", stats!=null);
 	}
 
 	public Stats<StatField> resetStats() {
 		checkCollectStats();
-		Stats<StatField> result = statFields.clone();
-		statFields.reset();
+		Stats<StatField> result = stats.clone();
+		stats.reset();
 		return result;
 	}
 
 	public Stats<StatField> getStats() {
 		checkCollectStats();
-		return statFields.clone();
+		return stats.clone();
 	}
 
 	@FunctionalInterface
