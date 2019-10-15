@@ -143,7 +143,7 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 			int id = id(sourceIndex);
 			int localIndex = localIndex(sourceIndex);
 
-			Block block = getBlock(id, false);
+			Block block = getBlock(id);
 			if(block==null) {
 				return IcarusUtils.UNSET_LONG;
 			}
@@ -378,7 +378,7 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 
 		private long find0(int id, int localFrom, int localTo, long targetIndex) {
 
-			Block block = getBlock(id, false);
+			Block block = getBlock(id);
 
 			if(block==null) {
 				return IcarusUtils.UNSET_LONG;
@@ -447,7 +447,7 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 			int id = id(sourceIndex);
 			int localIndex = localIndex(sourceIndex);
 
-			Block block = getBlock(id, true);
+			Block block = getBlock(id);
 			blockStorage.setEntry(block.getData(), localIndex, targetIndex);
 		}
 

@@ -58,6 +58,12 @@ class RUBlockCacheTest {
 		return new Block(new Object());
 	}
 
+	private static Block block(int id) {
+		Block block = block();
+		block.setId(id);
+		return block;
+	}
+
 	interface TestBase extends ApiGuardedTest<RUBlockCache> {
 
 		/**
@@ -109,7 +115,7 @@ class RUBlockCacheTest {
 				IntStream.generate(() -> random(0, 100))
 					.distinct()
 					.limit(RUNS)
-					.forEach(id -> assertNull(cache.addBlock(block(), id)));
+					.forEach(id -> assertNull(cache.addBlock(block(id))));
 				assertNull(cache.getBlock(101));
 			}
 		}
@@ -121,10 +127,10 @@ class RUBlockCacheTest {
 		default void testGetBlock() {
 			try(RUBlockCache cache = create()) {
 				cache.open(100);
-				Block block = block();
 				int id = randomId();
+				Block block = block(id);
 
-				assertNull(cache.addBlock(block, id));
+				assertNull(cache.addBlock(block));
 				assertSame(block, cache.getBlock(id));
 			}
 		}
@@ -135,7 +141,7 @@ class RUBlockCacheTest {
 		@Test
 		default void testAddBlockBlank() {
 			try(RUBlockCache cache = create()) {
-				assertThrows(RuntimeException.class, () -> cache.addBlock(block(), randomId()));
+				assertThrows(RuntimeException.class, () -> cache.addBlock(block()));
 			}
 		}
 
@@ -146,7 +152,7 @@ class RUBlockCacheTest {
 		default void testAddBlock() {
 			try(RUBlockCache cache = create()) {
 				cache.open(100);
-				assertNull(cache.addBlock(block(), randomId()));
+				assertNull(cache.addBlock(block(randomId())));
 			}
 		}
 
@@ -157,11 +163,10 @@ class RUBlockCacheTest {
 		default void testAddBlockDublicate() {
 			try(RUBlockCache cache = create()) {
 				cache.open(100);
-				Block block = block();
-				int id = randomId();
+				Block block = block(randomId());
 
-				assertNull(cache.addBlock(block, id));
-				assertISE(() -> cache.addBlock(block, id));
+				assertNull(cache.addBlock(block));
+				assertISE(() -> cache.addBlock(block));
 			}
 		}
 
@@ -175,11 +180,11 @@ class RUBlockCacheTest {
 				cache.open(capacty);
 				Block[] blocks = new Block[capacty];
 				for (int i = 0; i < capacty; i++) {
-					Block block = blocks[i] = block();
-					assertNull(cache.addBlock(block, i));
+					Block block = blocks[i] = block(i);
+					assertNull(cache.addBlock(block));
 				}
 
-				Block overflow = cache.addBlock(block(), MAX_INTEGER_INDEX);
+				Block overflow = cache.addBlock(block(MAX_INTEGER_INDEX));
 				if(cache.isLRU()) {
 					assertSame(blocks[0], overflow);
 				} else {
@@ -198,8 +203,8 @@ class RUBlockCacheTest {
 				cache.open(capacty);
 				Block[] blocks = new Block[capacty];
 				for (int i = 0; i < capacty; i++) {
-					Block block = blocks[i] = block();
-					assertNull(cache.addBlock(block, i));
+					Block block = blocks[i] = block(i);
+					assertNull(cache.addBlock(block));
 				}
 
 				// Now lock all blocks
@@ -207,7 +212,7 @@ class RUBlockCacheTest {
 					blocks[i].lock();
 				}
 
-				assertISE(() -> cache.addBlock(block(), MAX_INTEGER_INDEX));
+				assertISE(() -> cache.addBlock(block(MAX_INTEGER_INDEX)));
 			}
 		}
 
@@ -221,8 +226,8 @@ class RUBlockCacheTest {
 				cache.open(capacty);
 				Block[] blocks = new Block[capacty];
 				for (int i = 0; i < capacty; i++) {
-					Block block = blocks[i] = block();
-					assertNull(cache.addBlock(block, i));
+					Block block = blocks[i] = block(i);
+					assertNull(cache.addBlock(block));
 				}
 
 				for (int i = 0; i < blocks.length; i++) {
@@ -260,7 +265,7 @@ class RUBlockCacheTest {
 			try(RUBlockCache cache = create()) {
 				cache.open(100);
 				int id = randomId();
-				cache.addBlock(block(), id);
+				cache.addBlock(block(id));
 				assertNull(cache.removeBlock(id+1));
 			}
 		}
@@ -273,8 +278,8 @@ class RUBlockCacheTest {
 			try(RUBlockCache cache = create()) {
 				cache.open(100);
 				int id = randomId();
-				Block block = block();
-				cache.addBlock(block, id);
+				Block block = block(id);
+				cache.addBlock(block);
 
 				assertSame(block, cache.getBlock(id));
 
@@ -314,13 +319,13 @@ class RUBlockCacheTest {
 			RUBlockCache cache = create();
 			cache.open(100);
 			int id = randomId();
-			cache.addBlock(block(), id);
+			cache.addBlock(block(id));
 			assertNotNull(cache.getBlock(id));
 
 			cache.close();
 
 			assertThrows(RuntimeException.class, () -> cache.getBlock(id));
-			assertThrows(RuntimeException.class, () -> cache.addBlock(block(), id));
+			assertThrows(RuntimeException.class, () -> cache.addBlock(block(id)));
 			assertThrows(RuntimeException.class, () -> cache.removeBlock(id));
 		}
 
@@ -334,7 +339,7 @@ class RUBlockCacheTest {
 			RUBlockCache cache = create();
 			cache.open(100);
 			int id = randomId();
-			cache.addBlock(block(), id);
+			cache.addBlock(block(id));
 			assertNotNull(cache.getBlock(id));
 
 			cache.close();
@@ -342,7 +347,7 @@ class RUBlockCacheTest {
 			cache.open(200);
 			assertNull(cache.getBlock(id));
 
-			cache.addBlock(block(), id);
+			cache.addBlock(block(id));
 			assertNotNull(cache.getBlock(id));
 		}
 	}

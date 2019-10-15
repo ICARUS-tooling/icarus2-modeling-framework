@@ -67,7 +67,8 @@ public class UnlimitedBlockCache implements BlockCache {
 	 * @see de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache#addBlock(de.ims.icarus2.filedriver.io.BufferedIOResource.Block, int)
 	 */
 	@Override
-	public Block addBlock(Block block, int id) {
+	public Block addBlock(Block block) {
+		int id = block.getId();
 		blocks.put(id, block);
 		return null;
 	}
@@ -88,6 +89,7 @@ public class UnlimitedBlockCache implements BlockCache {
 	 */
 	@Override
 	public void close() {
+		blocks.clear(); // really needed?
 		blocks = null;
 	}
 

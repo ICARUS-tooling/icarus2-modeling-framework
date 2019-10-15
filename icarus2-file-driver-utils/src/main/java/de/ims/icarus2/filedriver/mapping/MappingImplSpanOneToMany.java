@@ -164,7 +164,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			int id = id(sourceIndex);
 			int localIndex = localIndex(sourceIndex);
 
-			Block block = getBlock(id, false);
+			Block block = getBlock(id);
 			if(block==null) {
 				return IcarusUtils.UNSET_LONG;
 			}
@@ -184,7 +184,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			int id = id(sourceIndex);
 			int localIndex = localIndex(sourceIndex);
 
-			Block block = getBlock(id, false);
+			Block block = getBlock(id);
 			if(block==null) {
 				return false;
 			}
@@ -204,7 +204,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			int id = id(sourceIndex);
 			int localIndex = localIndex(sourceIndex);
 
-			Block block = getBlock(id, false);
+			Block block = getBlock(id);
 			if(block==null) {
 				return EMPTY;
 			}
@@ -222,7 +222,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			int id = id(sourceIndex);
 			int localIndex = localIndex(sourceIndex);
 
-			Block block = getBlock(id, false);
+			Block block = getBlock(id);
 			return block==null ? IcarusUtils.UNSET_LONG : blockStorage.getSpanBegin(block.getData(), localIndex);
 		}
 
@@ -234,7 +234,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			int id = id(sourceIndex);
 			int localIndex = localIndex(sourceIndex);
 
-			Block block = getBlock(id, false);
+			Block block = getBlock(id);
 			return block==null ? IcarusUtils.UNSET_LONG : blockStorage.getSpanEnd(block.getData(), localIndex);
 		}
 
@@ -422,7 +422,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 
 		private long find0(int id, int localFrom, int localTo, long targetIndex) {
 
-			Block block = getBlock(id, false);
+			Block block = getBlock(id);
 
 			if(block==null) {
 				return IcarusUtils.UNSET_LONG;
@@ -624,7 +624,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			int id = id(sourceFrom);
 			int localIndex = localIndex(sourceFrom);
 
-			Block block = getBlock(id, true);
+			Block block = getBlock(id);
 			blockStorage.setSpanBegin(block.getData(), localIndex, targetFrom);
 			blockStorage.setSpanEnd(block.getData(), localIndex, targetTo);
 		}

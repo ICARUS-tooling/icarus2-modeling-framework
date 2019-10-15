@@ -126,10 +126,6 @@ public class DefaultChunkIndex implements ChunkIndex {
 		return this.new Cursor(readOnly);
 	}
 
-	protected Block getBlock(int id, boolean writeAccess) {
-		return resource.getBlock(id, writeAccess);
-	}
-
 	protected ArrayAdapter getAdapter() {
 		return arrayAdapter;
 	}
@@ -239,18 +235,17 @@ public class DefaultChunkIndex implements ChunkIndex {
 			delegateAccessor.close();
 		}
 
-		protected Block getBlock(int id, boolean writeAccess) {
-			return delegateAccessor.getSource().getBlock(id, writeAccess);
+		protected Block getBlock(int id) {
+			return delegateAccessor.getBlock(id);
 		}
 
-		protected void lockBlock(int id, Block block) {
-			delegateAccessor.getSource().lockBlock(id, block);
+		protected void lockBlock(Block block) {
+			delegateAccessor.lockBlock(block);
 		}
 	}
 
 	private class Cursor extends ResourceAccessor implements ChunkIndexCursor {
 
-		private int id = IcarusUtils.UNSET_INT;
 		private int localIndex = IcarusUtils.UNSET_INT;
 		private Block block = null;
 
@@ -296,10 +291,9 @@ public class DefaultChunkIndex implements ChunkIndex {
 			localIndex = localIndex(index);
 
 			// Only delegate to cache lookup if we need a new block
-			int newId = id(index);
-			if(newId!=id) {
-				id = newId;
-				block = getBlock(id, !isReadOnly());
+			int id = id(index);
+			if(block==null || block.getId()!=id) {
+				block = getBlock(id);
 			}
 
 			return block!=null;
@@ -343,7 +337,7 @@ public class DefaultChunkIndex implements ChunkIndex {
 			checkWriteAccess();
 
 			int result = arrayAdapter.setFileId(block.getData(), localIndex, fileId);
-			lockBlock(id, block);
+			lockBlock(block);
 
 			return result;
 		}
@@ -356,7 +350,7 @@ public class DefaultChunkIndex implements ChunkIndex {
 			checkWriteAccess();
 
 			long result = arrayAdapter.setBeginOffset(block.getData(), localIndex, offset);
-			lockBlock(id, block);
+			lockBlock(block);
 
 			return result;
 		}
@@ -369,7 +363,7 @@ public class DefaultChunkIndex implements ChunkIndex {
 			checkWriteAccess();
 
 			long result = arrayAdapter.setEndOffset(block.getData(), localIndex, offset);
-			lockBlock(id, block);
+			lockBlock(block);
 
 			return result;
 		}

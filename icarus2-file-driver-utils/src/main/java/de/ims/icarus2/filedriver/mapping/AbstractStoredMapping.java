@@ -224,8 +224,8 @@ public abstract class AbstractStoredMapping implements WritableMapping {
 			delegateAccessor.close();
 		}
 
-		Block getBlock(int id, boolean writeAccess) {
-			return delegateAccessor.getSource().getBlock(id, writeAccess);
+		Block getBlock(int id) {
+			return delegateAccessor.getBlock(id);
 		}
 	}
 
@@ -263,7 +263,6 @@ public abstract class AbstractStoredMapping implements WritableMapping {
 		public IndexBlockStorage getBlockStorage() {
 			return blockStorage;
 		}
-
 	}
 
 	/**

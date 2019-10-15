@@ -1345,7 +1345,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		}
 
 		public Builder<E,O> collectStats(boolean collectStats) {
-			checkState("Flag 'collectStats' already set", this.autoRegister==null);
+			checkState("Flag 'collectStats' already set", this.collectStats==null);
 
 			this.collectStats = Boolean.valueOf(collectStats);
 

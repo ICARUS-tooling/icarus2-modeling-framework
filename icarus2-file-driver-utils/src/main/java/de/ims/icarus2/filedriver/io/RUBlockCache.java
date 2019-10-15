@@ -39,14 +39,18 @@ import it.unimi.dsi.fastutil.HashCommon;
  */
 public class RUBlockCache implements BlockCache {
 
+	/** Buffer of cached blocks */
 	private Entry[] table;
+	/** Upper limit of allowed blocks. Purging will occur beyond that point. */
 	private int capacity;
+	/** Mask to use for addressing bins in the power-of-2 sized table */
 	private int mask;
+	/** Number of currently cached blocks */
 	private int count;
-	private int threshold; //FIXME init capacity, load factor etc..!!!
-
+	/** Number of cached blocks that will trigger rehashing */
+	private int threshold;
+	/** We simply stick to a default load factor */
 	private static final float LOAD_FACTOR = CollectionUtils.DEFAULT_LOAD_FACTOR;
-	private static final float INITIAL_CAPACITY = BlockCache.MIN_CAPACITY;
 
 	private final boolean isLRU;
 
@@ -54,7 +58,7 @@ public class RUBlockCache implements BlockCache {
 
 	private static class Entry {
 
-		/** Block id used as hash key */
+		/** Block id used as hash key (saved as backup measure against corrupted blocks) */
 		int key;
 
 		/** Data block */
@@ -75,10 +79,20 @@ public class RUBlockCache implements BlockCache {
 		}
 	}
 
+	/**
+	 * Creates a cache implementation that will discard the least recently used block
+	 * when free capacity is used up.
+	 * @return
+	 */
 	public static RUBlockCache newLeastRecentlyUsedCache() {
 		return new RUBlockCache(true);
 	}
 
+	/**
+	 * Creates a cache implementation that will discard the most recently used block
+	 * when free capacity is used up.
+	 * @return
+	 */
 	public static RUBlockCache newMostRecentlyUsedCache() {
 		return new RUBlockCache(false);
 	}
@@ -138,8 +152,9 @@ public class RUBlockCache implements BlockCache {
 	 * @see de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache#addBlock(de.ims.icarus2.filedriver.io.BufferedIOResource.Block, int)
 	 */
 	@Override
-	public Block addBlock(Block block, int id) {
+	public Block addBlock(Block block) {
 		Entry tab[] = table;
+		int id = block.getId();
 		int index = (id & 0x7FFFFFFF) & mask;
 		for (Entry e = tab[index]; e != null; e = e.next) {
 			if (e.key == id)

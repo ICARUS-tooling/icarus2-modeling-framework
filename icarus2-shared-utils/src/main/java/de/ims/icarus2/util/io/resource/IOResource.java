@@ -83,6 +83,9 @@ public interface IOResource {
 	/**
 	 * Initializes the resource so that subsequent calls to fetch {@link #getReadChannel() read}
 	 * and {@link #getWriteChannel() write} access to data will not require expensive preparation time.
+	 * <p>
+	 * The implementation of this method should be reentrant, i.e. repeated calls should not cause
+	 * any issues or unnecessary resource allocations!
 	 *
 	 * @throws IOException
 	 */

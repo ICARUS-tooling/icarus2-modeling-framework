@@ -18,6 +18,7 @@ package de.ims.icarus2.filedriver.io;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
@@ -33,6 +34,7 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.io.SynchronizedAccessor;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.Stats;
 import de.ims.icarus2.util.io.resource.IOResource;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -156,9 +158,11 @@ public class BufferedIOResource {
 	private Block tmpBlock;
 
 	private Block lastReturnedBlock = null;
-	private int lastReturnedBlockId = -1;
 
-	public BufferedIOResource(IOResource resource, PayloadConverter payloadConverter, BlockCache cache, int cacheSize, int bytesPerBlock) {
+	private final Stats<StatField> stats;
+
+	public BufferedIOResource(IOResource resource, PayloadConverter payloadConverter,
+			BlockCache cache, int cacheSize, int bytesPerBlock) {
 		requireNonNull(resource);
 		requireNonNull(payloadConverter);
 		requireNonNull(cache);
@@ -169,10 +173,10 @@ public class BufferedIOResource {
 		this.cache = cache;
 		this.cacheSize = cacheSize;
 		this.bytesPerBlock = bytesPerBlock;
+		stats = null;
 	}
 
-	protected BufferedIOResource(Builder builder) {
-		// TODO maybe redundant call or should leave it here for safety?
+	private BufferedIOResource(Builder builder) {
 		builder.validate();
 
 		this.resource = builder.getResource();
@@ -180,9 +184,10 @@ public class BufferedIOResource {
 		this.cache = builder.getBlockCache();
 		this.cacheSize = builder.getCacheSize();
 		this.bytesPerBlock = builder.getBytesPerBlock();
+		stats = builder.isCollectStats() ? new Stats<>(StatField.class) : null;
 	}
 
-	protected StampedLock getLock() {
+	private StampedLock getLock() {
 		return lock;
 	}
 
@@ -217,86 +222,29 @@ public class BufferedIOResource {
 		return useCount.get();
 	}
 
+	public boolean isUsed() {
+		return useCount.get()>0;
+	}
+
 	public int getCacheSize() {
 		return cacheSize;
 	}
 
-	public long getBlockCount() throws IOException {
-		return resource.size()/bytesPerBlock;
+	/**
+	 * Tries to close down and then delete the underlying {@link #getResource() resource}.
+	 * This method will fail in case there are still {@link ReadWriteAccessor accessors}
+	 * active that potentially hold locks on this resource.
+	 *
+	 * @throws IOException
+	 */
+	public void delete() throws IOException {
+		syncWrite(() -> {
+			closeUnsafe();
+			resource.delete();
+		});
 	}
 
-	public final void delete() throws IOException {
-		close();
-		resource.delete();
-	}
-
-	public final void lockBlock(int id, Block block) {
-		changedBlocks.add(id);
-		block.lock();
-	}
-
-	public final void refreshBlockSize(Block block, int size) {
-		if(size<0 || size>block.getSize()+1)
-			throw new ModelException(ModelErrorCode.DRIVER_INDEX_WRITE_VIOLATION,
-					"Entry index out of boundy for block: "+size+" - expected non negative value up to "+(block.getSize()+1)); //$NON-NLS-1$ //$NON-NLS-2$
-		block.setSize(size);
-	}
-
-	public final Block getBlock(int id, boolean writeAccess) {
-		if(id==lastReturnedBlockId && lastReturnedBlock!=null) {
-			return lastReturnedBlock;
-		}
-
-		Block block = cache.getBlock(id);
-
-		if(block==null) {
-
-			// Automatic flushing if cache gets stale
-			if(changedBlocks.size()>(cacheSize>>1)) {
-				try {
-					flush();
-				} catch (IOException e) {
-					throw new ModelException(ModelErrorCode.DRIVER_INDEX_IO,
-							"Failed to automatically flush index changes", e); //$NON-NLS-1$
-				}
-			}
-
-			// Byte offset of the beginning of the block to be read
-			long offset = id*(long)bytesPerBlock;
-
-			try {
-				boolean exists = resource.size()>offset;
-
-				// We can abort lookup if our desired offset is outside the channel bounds
-				// and all we want to do is read data
-				if(!exists && !writeAccess) {
-					return null;
-				}
-
-				if(tmpBlock==null || tmpBlock.isLocked()) { // Technically it should never happen to have a block locked at this point
-					tmpBlock = new Block(payloadConverter.newBlockData(bytesPerBlock));
-				}
-
-				block = tmpBlock;
-
-				if(exists && !readBlock(block, offset)) {
-					return null;
-				}
-
-				tmpBlock = cache.addBlock(block, id);
-			} catch(IOException e) {
-				throw new ModelException(ModelErrorCode.DRIVER_INDEX_IO,
-						"Failed to read block "+id+" in resource "+resource, e); //$NON-NLS-1$ //$NON-NLS-2$
-			}
-		}
-
-		lastReturnedBlock = block;
-		lastReturnedBlockId = id;
-
-		return block;
-	}
-
-	private boolean readBlock(Block block, long offset) throws IOException {
+	private boolean readBlockUnsafe(Block block, long offset) throws IOException {
 		try(SeekableByteChannel channel = resource.getReadChannel()) {
 
 			// Read data from channel
@@ -310,15 +258,14 @@ public class BufferedIOResource {
 			// Read entries from buffer
 			int entriesRead = payloadConverter.read(block.data, buffer);
 
-			// Save number of entries read
-			//TODO evaluate if setting them even in case of empty block is desired
+			// Save number of entries read (needed in case we're filling a recycled block)
 			block.setSize(Math.max(entriesRead, 0));
 
 			return entriesRead>0;
 		}
 	}
 
-	private boolean writeBlock(Block block, long offset) throws IOException {
+	private boolean writeBlockUnsafe(Block block, long offset) throws IOException {
 		try(SeekableByteChannel channel = resource.getWriteChannel()) {
 
 			// Write data to buffer
@@ -332,43 +279,64 @@ public class BufferedIOResource {
 		}
 	}
 
+	/**
+	 * Stores all pending changes in the underlying resource.
+	 *
+	 * @throws IOException
+	 */
 	public void flush() throws IOException {
+		syncWrite(this::flushUnsafe);
+	}
 
+	private void flushUnsafe() throws IOException {
 		for(IntIterator it = changedBlocks.iterator(); it.hasNext(); ) {
 			int id = it.nextInt();
 
 			Block block = cache.getBlock(id);
 			if(block==null)
-				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Missing block previously marked as locked: "+id); //$NON-NLS-1$
+				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Missing block previously marked as locked: "+id);
 
 			long offset = id*(long)bytesPerBlock;
 
-			writeBlock(block, offset);
+			writeBlockUnsafe(block, offset);
 
 			it.remove();
 			block.unlock();
 		}
 	}
 
-	public final void incrementUseCount() {
+	/**
+	 * Executes the given {@code task} under write lock and forwards any occurring
+	 *  {@link IOException} to the caller.
+	 * @param task
+	 * @throws IOException
+	 */
+	private void syncWrite(Task task) throws IOException {
+		long stamp = getLock().writeLock();
+		try {
+			task.execute();
+		} finally {
+			getLock().unlockWrite(stamp);
+		}
+	}
+
+	private void incrementUseCount() {
 		// Previous use count
 		int count = useCount.getAndIncrement();
 
 		if(count==0) {
 			try {
-				open();
+				syncWrite(this::openUnsafe);
 			} catch (IOException e) {
 				throw new ModelException(ModelErrorCode.DRIVER_INDEX_IO,
-						"Failed to open managed resource", e); //$NON-NLS-1$
+						"Failed to open managed resource", e);
 			}
 		}
 	}
 
-	protected void open() throws IOException {
+	private void openUnsafe() throws IOException {
 		if(bytesPerBlock<0)
-			throw new IllegalStateException("No block size defined - cannot allocate buffer"); //$NON-NLS-1$
-
-		//TODO add sanity check for upper limit of buffer size!!!
+			throw new IllegalStateException("No block size defined - cannot allocate buffer");
 
 		buffer = ByteBuffer.allocateDirect(bytesPerBlock);
 
@@ -376,21 +344,21 @@ public class BufferedIOResource {
 		resource.prepare();
 	}
 
-	public final void decrementUseCount() {
+	private void decrementUseCount() {
 		// New use count
 		int count = useCount.decrementAndGet();
 
 		if(count==0) {
 			try {
-				close();
+				syncWrite(this::closeUnsafe);
 			} catch (IOException e) {
 				throw new ModelException(ModelErrorCode.DRIVER_INDEX_IO,
-						"Failed to close managed resource", e); //$NON-NLS-1$
+						"Failed to close managed resource", e);
 			}
 		}
 	}
 
-	protected void close() throws IOException {
+	private void closeUnsafe() throws IOException {
 
 		//TODO having a corrupted accessor prevent resource from closing might pose problems?
 		if(useCount.get()>0)
@@ -398,7 +366,7 @@ public class BufferedIOResource {
 					"Cannot close resource while there are still accessors using it");
 
 		try {
-			flush();
+			flushUnsafe();
 		} finally {
 			buffer = null;
 			tmpBlock = null;
@@ -413,9 +381,29 @@ public class BufferedIOResource {
 	 *
 	 * @param readOnly
 	 * @return
+	 *
+	 * @throws ModelException if an attempt is made to create a write accessor
+	 * for a read-only resource
 	 */
 	public ReadWriteAccessor newAccessor(boolean readOnly) {
+		if(!readOnly && !resource.getAccessMode().isWrite())
+			throw new ModelException(GlobalErrorCode.NO_WRITE_ACCESS,
+					"Cannot create write accessor for read-only resource");
 		return this.new ReadWriteAccessor(readOnly);
+	}
+
+	@FunctionalInterface
+	private interface Task {
+		void execute() throws IOException;
+	}
+
+	public static enum StatField {
+		READ,
+		WRITE,
+		READ_ACCESSOR,
+		WRITE_ACCESSOR,
+		CACHE_MISS,
+		;
 	}
 
 	public interface PayloadConverter {
@@ -466,6 +454,8 @@ public class BufferedIOResource {
 		// Flag to prevent removal from cache
 		private boolean locked;
 
+		private int id = UNSET_INT;
+
 		Block(Object data) {
 			this.data = data;
 		}
@@ -494,12 +484,23 @@ public class BufferedIOResource {
 			return locked;
 		}
 
+		/**
+		 * @return the id
+		 */
+		public int getId() {
+			return id;
+		}
+
 		void setSize(int size) {
 			this.size = size;
 		}
 
 		void setData(Object data) {
 			this.data = data;
+		}
+
+		void setId(int id) {
+			this.id = id;
 		}
 
 		void lock() {
@@ -541,7 +542,7 @@ public class BufferedIOResource {
 		 * prior to calling this method or {@code null}.
 		 * @throws IllegalStateException if the supplied block is already present in the cache
 		 */
-		Block addBlock(Block block, int id);
+		Block addBlock(Block block);
 
 		/**
 		 * Initialize storage and allocate basic resources.
@@ -553,7 +554,7 @@ public class BufferedIOResource {
 
 		/**
 		 * Discard any stored data and invalidate cache until
-		 * {@link #open()} gets called.
+		 * {@link #openUnsafe()} gets called.
 		 */
 		@Override
 		void close();
@@ -570,7 +571,7 @@ public class BufferedIOResource {
 	 *
 	 * @param <T> The source type of the accessor
 	 */
-	public class ReadWriteAccessor implements SynchronizedAccessor<BufferedIOResource> {
+	public final class ReadWriteAccessor implements SynchronizedAccessor<BufferedIOResource> {
 
 		private long stamp;
 		private final boolean readOnly;
@@ -627,6 +628,86 @@ public class BufferedIOResource {
 		public void close() {
 			decrementUseCount();
 		}
+
+		public void lockBlock(Block block) {
+			changedBlocks.add(block.getId());
+			block.lock();
+		}
+
+		/**
+		 * Fetches a block from the cache, loading a new block if required.
+		 * Note that this method will temporarily elevate the lock held by this
+		 * accessor to a full write lock if needed (this is the case if this
+		 * accessor only holds a read lock, but the method has to load a new block
+		 * and therefore structurally modify internal buffer data).
+		 * @param id
+		 * @return
+		 */
+		public Block getBlock(int id) {
+			// CHeap effort at MRU caching
+			Block lastBlock = lastReturnedBlock;
+			if(lastBlock!=null && lastBlock.getId()==id) {
+				return lastBlock;
+			}
+
+			Block block = cache.getBlock(id);
+
+			if(block==null) {
+				// Upgrade the lock to write lock if needed
+				stamp = getLock().tryConvertToWriteLock(stamp);
+				try {
+					// Automatic flushing if cache gets stale
+					if(changedBlocks.size()>(cacheSize>>1)) {
+						try {
+							flushUnsafe();
+						} catch (IOException e) {
+							throw new ModelException(ModelErrorCode.DRIVER_INDEX_IO,
+									"Failed to automatically flush index changes", e);
+						}
+					}
+
+					// Byte offset of the beginning of the block to be read
+					long offset = id*(long)bytesPerBlock;
+
+					try {
+						boolean exists = resource.size()>offset;
+
+						// We can abort lookup if our desired offset is outside the channel bounds
+						// and all we want to do is read data
+						if(!exists && readOnly) {
+							return null;
+						}
+
+						if(tmpBlock==null || tmpBlock.isLocked()) { // Technically it should never happen to have a block locked at this point
+							tmpBlock = new Block(payloadConverter.newBlockData(bytesPerBlock));
+						}
+
+						block = tmpBlock;
+
+						// Empty data -> bail
+						if(exists && !readBlockUnsafe(block, offset)) {
+							return null;
+						}
+
+						// Properly loaded data -> update id and cache it
+						block.setId(id);
+						tmpBlock = cache.addBlock(block);
+					} catch(IOException e) {
+						throw new ModelException(ModelErrorCode.DRIVER_INDEX_IO,
+								"Failed to read block "+id+" in resource "+resource, e); //$NON-NLS-2$
+					}
+				} finally {
+					// If this accessor is read-only, downgrade the lock again
+					if(readOnly) {
+						stamp = getLock().tryConvertToReadLock(stamp);
+					}
+				}
+			}
+
+			lastReturnedBlock = block;
+
+			return block;
+		}
 	}
 
 	/**
@@ -641,6 +722,8 @@ public class BufferedIOResource {
 		private IOResource resource;
 		private BlockCache blockCache;
 		private PayloadConverter payloadConverter;
+
+		private Boolean collectStats;
 
 		protected Builder() {
 			// no-op
@@ -691,6 +774,14 @@ public class BufferedIOResource {
 			return thisAsCast();
 		}
 
+		public Builder collectStats(boolean collectStats) {
+			checkState("Flag 'collectStats' already set", this.collectStats==null);
+
+			this.collectStats = Boolean.valueOf(collectStats);
+
+			return thisAsCast();
+		}
+
 		public int getCacheSize() {
 			return cacheSize;
 		}
@@ -709,6 +800,10 @@ public class BufferedIOResource {
 
 		public PayloadConverter getPayloadConverter() {
 			return payloadConverter;
+		}
+
+		public boolean isCollectStats() {
+			return collectStats==null ? false : collectStats.booleanValue();
 		}
 
 		@Override

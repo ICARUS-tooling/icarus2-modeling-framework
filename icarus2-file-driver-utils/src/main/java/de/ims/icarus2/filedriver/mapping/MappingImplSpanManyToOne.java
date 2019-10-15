@@ -202,7 +202,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 			// Index of data within block
 			int localIndex = localIndex(group);
 
-			Block block = getBlock(id, false);
+			Block block = getBlock(id);
 			if(block==null) {
 				return IcarusUtils.UNSET_LONG;
 			}
@@ -486,7 +486,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 			// Index of data within block
 			int localIndex = localIndex(group);
 
-			Block block = getBlock(id, true);
+			Block block = getBlock(id);
 			Object buffer = block.getData();
 
 			long currentFrom = blockStorage.getSpanBegin(buffer, localIndex);
