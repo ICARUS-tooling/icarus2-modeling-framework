@@ -30,6 +30,7 @@ import static de.ims.icarus2.test.TestUtils.NO_NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertFlagGetter;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
+import static de.ims.icarus2.test.TestUtils.defaultNullCheck;
 import static de.ims.icarus2.test.TestUtils.filledArray;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.test.TestUtils.randomLongPair;
@@ -77,6 +78,7 @@ import de.ims.icarus2.model.manifest.api.StructureFlag;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.standard.members.container.ItemStorage;
+import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.guard.ApiGuard;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.collections.seq.DataSequence;
@@ -97,6 +99,7 @@ class DefaultStructureTest implements StructureTest<Structure> {
 
 		apiGuard.parameterResolver(ContainerManifestBase.class,
 				instance -> mock(StructureManifest.class));
+		apiGuard.constructorOverride(this::create);
 	}
 
 	/**
@@ -105,6 +108,30 @@ class DefaultStructureTest implements StructureTest<Structure> {
 	@Override
 	public Class<? extends Structure> getTestTargetClass() {
 		return DefaultStructure.class;
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.members.MemberTest#createTestInstance(de.ims.icarus2.test.TestSettings)
+	 */
+	@Override
+	public Structure createTestInstance(TestSettings settings) {
+		DefaultStructure structure = new DefaultStructure();
+
+		StructureManifest manifest = mock(StructureManifest.class);
+		when(manifest.getContainerType()).thenReturn(ContainerType.LIST);
+		when(manifest.getStructureType()).thenReturn(StructureType.CHAIN);
+
+		ItemStorage itemStorage = mock(ItemStorage.class, defaultNullCheck());
+		when(itemStorage.getContainerType()).thenReturn(ContainerType.LIST);
+
+		EdgeStorage edgeStorage = mock(EdgeStorage.class, defaultNullCheck());
+		when(edgeStorage.getStructureType()).thenReturn(StructureType.CHAIN);
+
+		structure.setManifest(manifest);
+		structure.setItemStorage(itemStorage);
+		structure.setEdgeStorage(edgeStorage);
+
+		return settings.process(structure);
 	}
 
 	@Nested

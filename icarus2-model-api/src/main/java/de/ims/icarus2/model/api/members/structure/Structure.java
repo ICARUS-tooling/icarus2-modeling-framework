@@ -506,6 +506,7 @@ public interface Structure extends Container {
 	 * @param action
 	 */
 	default void forEachNode(BiConsumer<? super Structure, ? super Item> action) {
+		requireNonNull(action);
 		nodes().forEach(item -> action.accept(this, item));
 	}
 
@@ -523,6 +524,7 @@ public interface Structure extends Container {
 	 * @param action
 	 */
 	default void forEachEdge(BiConsumer<? super Structure, ? super Edge> action) {
+		requireNonNull(action);
 		edges().forEach(edge -> action.accept(this, edge));
 	}
 
@@ -541,14 +543,20 @@ public interface Structure extends Container {
 	 * @param action
 	 */
 	default void forEachEdge(Item node, boolean isSource, Consumer<? super Edge> action) {
+		requireNonNull(node);
+		requireNonNull(action);
 		edges(node, isSource).forEach(action);
 	}
 
 	default void forEachIncomingEdge(Item node, Consumer<? super Edge> action) {
+		requireNonNull(node);
+		requireNonNull(action);
 		forEachEdge(node, false, action);
 	}
 
 	default void forEachOutgoingEdge(Item node, Consumer<? super Edge> action) {
+		requireNonNull(node);
+		requireNonNull(action);
 		forEachEdge(node, true, action);
 	}
 
